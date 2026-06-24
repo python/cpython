@@ -168,6 +168,8 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
         gcstate->generations[2].threshold = threshold2;
     }
 #else
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
     gcstate->young.threshold = threshold0;
     if (group_right_1) {
         gcstate->old[0].threshold = threshold1;
@@ -175,6 +177,7 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
     if (group_right_2) {
         gcstate->old[1].threshold = threshold2;
     }
+    _PyEval_StartTheWorld(interp);
 #endif
     Py_RETURN_NONE;
 }
@@ -326,13 +329,13 @@ gc.get_objects
 
 Return a list of objects tracked by the collector (excluding the list returned).
 
-If generation is not None, return only the objects tracked by the collector
-that are in that generation.
+If generation is not None, return only the objects tracked by the
+collector that are in that generation.
 [clinic start generated code]*/
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
-/*[clinic end generated code: output=48b35fea4ba6cb0e input=ef7da9df9806754c]*/
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=3a819826fbde5eef]*/
 {
     if (PySys_Audit("gc.get_objects", "n", generation) < 0) {
         return NULL;
@@ -442,14 +445,15 @@ gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
 
-This can be used before a POSIX fork() call to make the gc copy-on-write friendly.
-Note: collection before a POSIX fork() call may free pages for future allocation
-which can cause copy-on-write.
+This can be used before a POSIX fork() call to make the gc copy-on-write
+friendly.
+Note: collection before a POSIX fork() call may free pages for future
+allocation which can cause copy-on-write.
 [clinic start generated code]*/
 
 static PyObject *
 gc_freeze_impl(PyObject *module)
-/*[clinic end generated code: output=502159d9cdc4c139 input=b602b16ac5febbe5]*/
+/*[clinic end generated code: output=502159d9cdc4c139 input=989012d0ba5a066f]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyGC_Freeze(interp);

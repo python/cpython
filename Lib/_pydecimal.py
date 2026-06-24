@@ -104,8 +104,8 @@ class DecimalException(ArithmeticError):
     anything, though.
 
     handle  -- Called when context._raise_error is called and the
-               trap_enabler is not set.  First argument is self, second is the
-               context.  More arguments can be given, those being after
+               trap_enabler is not set.  First argument is self, second is
+               the context.  More arguments can be given, those being after
                the explanation in _raise_error (For example,
                context._raise_error(NewError, '(-x)!', self._sign) would
                call NewError().handle(context, self._sign).)
@@ -222,11 +222,12 @@ class InvalidContext(InvalidOperation):
     """Invalid context.  Unknown rounding, for example.
 
     This occurs and signals invalid-operation if an invalid context was
-    detected during an operation.  This can occur if contexts are not checked
-    on creation and either the precision exceeds the capability of the
-    underlying concrete representation or an unknown or unsupported rounding
-    was specified.  These aspects of the context need only be checked when
-    the values are required to be used.  The result is [0,qNaN].
+    detected during an operation.  This can occur if contexts are not
+    checked on creation and either the precision exceeds the capability of
+    the underlying concrete representation or an unknown or unsupported
+    rounding was specified.  These aspects of the context need only be
+    checked when the values are required to be used.  The result is
+    [0,qNaN].
     """
 
     def handle(self, context, *args):
@@ -319,8 +320,9 @@ class FloatOperation(DecimalException, TypeError):
     Decimal.from_float() or context.create_decimal_from_float() do not
     set the flag.
 
-    Otherwise (the signal is trapped), only equality comparisons and explicit
-    conversions are silent. All other mixed operations raise FloatOperation.
+    Otherwise (the signal is trapped), only equality comparisons and
+    explicit conversions are silent.  All other mixed operations raise
+    FloatOperation.
     """
 
 # List of public traps and flags
@@ -2898,8 +2900,8 @@ class Decimal(object):
         """Compares self to other using the abstract representations.
 
         This is not like the standard compare, which use their numerical
-        value. Note that a total ordering is defined for all possible abstract
-        representations.
+        value. Note that a total ordering is defined for all possible
+        abstract representations.
         """
         other = _convert_other(other, raiseit=True)
 
@@ -2970,7 +2972,8 @@ class Decimal(object):
     def compare_total_mag(self, other, context=None):
         """Compares self to other using abstract repr., ignoring sign.
 
-        Like compare_total, but with operand's sign ignored and assumed to be 0.
+        Like compare_total, but with operand's sign ignored and assumed to
+        be 0.
         """
         other = _convert_other(other, raiseit=True)
 
@@ -4107,9 +4110,9 @@ class Context(object):
     def abs(self, a):
         """Returns the absolute value of the operand.
 
-        If the operand is negative, the result is the same as using the minus
-        operation on the operand.  Otherwise, the result is the same as using
-        the plus operation on the operand.
+        If the operand is negative, the result is the same as using the
+        minus operation on the operand.  Otherwise, the result is the same
+        as using the plus operation on the operand.
 
         >>> ExtendedContext.abs(Decimal('2.1'))
         Decimal('2.1')
@@ -4165,16 +4168,17 @@ class Context(object):
     def compare(self, a, b):
         """Compares values numerically.
 
-        If the signs of the operands differ, a value representing each operand
-        ('-1' if the operand is less than zero, '0' if the operand is zero or
-        negative zero, or '1' if the operand is greater than zero) is used in
-        place of that operand for the comparison instead of the actual
-        operand.
+        If the signs of the operands differ, a value representing each
+        operand ('-1' if the operand is less than zero, '0' if the operand
+        is zero or negative zero, or '1' if the operand is greater than
+        zero) is used in place of that operand for the comparison instead of
+        the actual operand.
 
-        The comparison is then effected by subtracting the second operand from
-        the first and then returning a value according to the result of the
-        subtraction: '-1' if the result is less than zero, '0' if the result is
-        zero or negative zero, or '1' if the result is greater than zero.
+        The comparison is then effected by subtracting the second operand
+        from the first and then returning a value according to the result of
+        the subtraction: '-1' if the result is less than zero, '0' if the
+        result is zero or negative zero, or '1' if the result is greater
+        than zero.
 
         >>> ExtendedContext.compare(Decimal('2.1'), Decimal('3'))
         Decimal('-1')
@@ -4237,8 +4241,8 @@ class Context(object):
         """Compares two operands using their abstract representation.
 
         This is not like the standard compare, which use their numerical
-        value. Note that a total ordering is defined for all possible abstract
-        representations.
+        value.  Note that a total ordering is defined for all possible
+        abstract representations.
 
         >>> ExtendedContext.compare_total(Decimal('12.73'), Decimal('127.9'))
         Decimal('-1')
@@ -4265,7 +4269,8 @@ class Context(object):
     def compare_total_mag(self, a, b):
         """Compares two operands using their abstract representation ignoring sign.
 
-        Like compare_total, but with operand's sign ignored and assumed to be 0.
+        Like compare_total, but with operand's sign ignored and assumed to
+        be 0.
         """
         a = _convert_other(a, raiseit=True)
         return a.compare_total_mag(b)
@@ -4923,8 +4928,8 @@ class Context(object):
 
         If either operand is a special value then the general rules apply.
         Otherwise, the operands are multiplied together
-        ('long multiplication'), resulting in a number which may be as long as
-        the sum of the lengths of the two operands.
+        ('long multiplication'), resulting in a number which may be as long
+        as the sum of the lengths of the two operands.
 
         >>> ExtendedContext.multiply(Decimal('1.20'), Decimal('3'))
         Decimal('3.60')
@@ -5200,19 +5205,19 @@ class Context(object):
         """Returns a value equal to 'a' (rounded), having the exponent of 'b'.
 
         The coefficient of the result is derived from that of the left-hand
-        operand.  It may be rounded using the current rounding setting (if the
-        exponent is being increased), multiplied by a positive power of ten (if
-        the exponent is being decreased), or is unchanged (if the exponent is
-        already equal to that of the right-hand operand).
+        operand.  It may be rounded using the current rounding setting (if
+        the exponent is being increased), multiplied by a positive power of
+        ten (if the exponent is being decreased), or is unchanged (if the
+        exponent is already equal to that of the right-hand operand).
 
         Unlike other operations, if the length of the coefficient after the
         quantize operation would be greater than precision then an Invalid
-        operation condition is raised.  This guarantees that, unless there is
-        an error condition, the exponent of the result of a quantize is always
-        equal to that of the right-hand operand.
+        operation condition is raised.  This guarantees that, unless there
+        is an error condition, the exponent of the result of a quantize is
+        always equal to that of the right-hand operand.
 
-        Also unlike other operations, quantize will never raise Underflow, even
-        if the result is subnormal and inexact.
+        Also unlike other operations, quantize will never raise Underflow,
+        even if the result is subnormal and inexact.
 
         >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.001'))
         Decimal('2.170')
@@ -5266,13 +5271,13 @@ class Context(object):
         """Returns the remainder from integer division.
 
         The result is the residue of the dividend after the operation of
-        calculating integer division as described for divide-integer, rounded
-        to precision digits if necessary.  The sign of the result, if
-        non-zero, is the same as that of the original dividend.
+        calculating integer division as described for divide-integer,
+        rounded to precision digits if necessary.  The sign of the result,
+        if non-zero, is the same as that of the original dividend.
 
-        This operation will fail under the same conditions as integer division
-        (that is, if integer division on the same two operands would fail, the
-        remainder cannot be calculated).
+        This operation will fail under the same conditions as integer
+        division (that is, if integer division on the same two operands
+        would fail, the remainder cannot be calculated).
 
         >>> ExtendedContext.remainder(Decimal('2.1'), Decimal('3'))
         Decimal('2.1')
@@ -5306,9 +5311,9 @@ class Context(object):
         is chosen).  If the result is equal to 0 then its sign will be the
         sign of a.
 
-        This operation will fail under the same conditions as integer division
-        (that is, if integer division on the same two operands would fail, the
-        remainder cannot be calculated).
+        This operation will fail under the same conditions as integer
+        division (that is, if integer division on the same two operands
+        would fail, the remainder cannot be calculated).
 
         >>> ExtendedContext.remainder_near(Decimal('2.1'), Decimal('3'))
         Decimal('-0.9')
@@ -5366,8 +5371,8 @@ class Context(object):
     def same_quantum(self, a, b):
         """Returns True if the two operands have the same exponent.
 
-        The result is never affected by either the sign or the coefficient of
-        either operand.
+        The result is never affected by either the sign or the coefficient
+        of either operand.
 
         >>> ExtendedContext.same_quantum(Decimal('2.17'), Decimal('0.001'))
         False
@@ -5439,8 +5444,8 @@ class Context(object):
     def sqrt(self, a):
         """Square root of a non-negative number to context precision.
 
-        If the result must be inexact, it is rounded using the round-half-even
-        algorithm.
+        If the result must be inexact, it is rounded using the
+        round-half-even algorithm.
 
         >>> ExtendedContext.sqrt(Decimal('0'))
         Decimal('0')

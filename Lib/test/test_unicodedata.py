@@ -580,6 +580,34 @@ class UnicodeFunctionsTest(unittest.TestCase):
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
 
+    def test_long_combining_mark_run(self):
+        # gh-149079: avoid quadratic canonical ordering.
+        payload = "a" + ("\u0300\u0327" * 32)
+        nfd = "a" + ("\u0327" * 32) + ("\u0300" * 32)
+        nfc = "\u00e0" + ("\u0327" * 32) + ("\u0300" * 31)
+
+        self.assertEqual(self.db.normalize("NFD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFKD", payload), nfd)
+        self.assertEqual(self.db.normalize("NFC", payload), nfc)
+        self.assertEqual(self.db.normalize("NFKC", payload), nfc)
+
+    def test_combining_mark_run_fast_paths(self):
+        # gh-149079: cover short runs and already-sorted long runs.
+        short_payload = "a" + ("\u0300\u0327" * 9) + "\u0300"
+        short_nfd = "a" + ("\u0327" * 9) + ("\u0300" * 10)
+        short_nfc = "\u00e0" + ("\u0327" * 9) + ("\u0300" * 9)
+        long_sorted = "a" + ("\u0327" * 30) + ("\u0300" * 30)
+        long_sorted_nfc = "\u00e0" + ("\u0327" * 30) + ("\u0300" * 29)
+
+        self.assertEqual(self.db.normalize("NFD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFKD", short_payload), short_nfd)
+        self.assertEqual(self.db.normalize("NFC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFKC", short_payload), short_nfc)
+        self.assertEqual(self.db.normalize("NFD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFKD", long_sorted), long_sorted)
+        self.assertEqual(self.db.normalize("NFC", long_sorted), long_sorted_nfc)
+        self.assertEqual(self.db.normalize("NFKC", long_sorted), long_sorted_nfc)
+
     def test_issue29456(self):
         # Fix #29456
         u1176_str_a = '\u1100\u1176\u11a8'
@@ -684,6 +712,22 @@ class UnicodeMiscTest(unittest.TestCase):
         error = "SyntaxError: (unicode error) \\N escapes not supported " \
             "(can't load unicodedata module)"
         self.assertIn(error, result.err.decode("ascii"))
+
+    def test_unicodedata_unload_reload(self):
+        # gh-149449: dropping unicodedata and running gc must not leave the
+        # cached _ucnhash_CAPI pointer dangling.
+        code = (
+            "import gc, sys\n"
+            "assert '\\N{GRINNING FACE}'.encode("
+            "    'ascii', errors='namereplace') == b'\\\\N{GRINNING FACE}'\n"
+            "compile(r\"x = '\\\\N{LATIN CAPITAL LETTER A}'\", '<x>', 'exec')\n"
+            "del sys.modules['unicodedata']\n"
+            "gc.collect()\n"
+            "assert '\\N{WINKING FACE}'.encode("
+            "    'ascii', errors='namereplace') == b'\\\\N{WINKING FACE}'\n"
+            "compile(r\"x = '\\\\N{LATIN CAPITAL LETTER B}'\", '<x>', 'exec')\n"
+        )
+        script_helper.assert_python_ok("-c", code)
 
     def test_decimal_numeric_consistent(self):
         # Test that decimal and numeric are consistent,

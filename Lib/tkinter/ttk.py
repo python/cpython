@@ -648,7 +648,7 @@ class Entry(Widget, tkinter.Entry):
         Widget.__init__(self, master, widget or "ttk::entry", kw)
 
 
-    def bbox(self, index):
+    def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of (x, y, width, height) which describes the
         bounding box of the character given by index."""
         return self._getints(self.tk.call(self._w, "bbox", index))
@@ -826,7 +826,7 @@ class Notebook(Widget):
         self.tk.call(self._w, "add", child, *(_format_optdict(kw)))
 
 
-    def forget(self, tab_id):
+    def forget(self, tab_id):  # overrides Pack.forget
         """Removes the tab specified by tab_id, unmaps and unmanages the
         associated window."""
         self.tk.call(self._w, "forget", tab_id)
@@ -1189,7 +1189,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         Widget.__init__(self, master, "ttk::treeview", kw)
 
 
-    def bbox(self, item, column=None):
+    def bbox(self, item, column=None):  # overrides Misc.bbox
         """Returns the bounding box (relative to the treeview widget's
         window) of the specified item in the form x y width height.
 
@@ -1248,7 +1248,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         return self.tk.getboolean(self.tk.call(self._w, "exists", item))
 
 
-    def focus(self, item=None):
+    def focus(self, item=None):  # overrides Misc.focus
         """If item is specified, sets the focus item to item. Otherwise,
         returns the current focus item, or '' if there is none."""
         return self.tk.call(self._w, "focus", item)

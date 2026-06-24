@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
-      WASMTIME_VERSION: 22.0.0
+      WASMTIME_VERSION: 38.0.3
       WASI_SDK_VERSION: 24
       WASI_SDK_PATH: /opt/wasi-sdk
       CROSS_BUILD_PYTHON: cross-build/build

@@ -1947,21 +1947,33 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
             return NULL;
         }
         if (PyDict_CheckExact(modules)) {
+            PyObject *found_name = NULL;
+            int error = 0;
             i = 0;
+            Py_BEGIN_CRITICAL_SECTION(modules);
             while (PyDict_Next(modules, &i, &module_name, &module)) {
                 Py_INCREF(module_name);
                 Py_INCREF(module);
                 if (_checkmodule(module_name, module, global, dotted_path) == 0) {
                     Py_DECREF(module);
-                    Py_DECREF(modules);
-                    return module_name;
+                    found_name = module_name;
+                    break;
                 }
                 Py_DECREF(module);
                 Py_DECREF(module_name);
                 if (PyErr_Occurred()) {
-                    Py_DECREF(modules);
-                    return NULL;
+                    error = 1;
+                    break;
                 }
+            }
+            Py_END_CRITICAL_SECTION();
+            if (error) {
+                Py_DECREF(modules);
+                return NULL;
+            }
+            if (found_name != NULL) {
+                Py_DECREF(modules);
+                return found_name;
             }
         }
         else {
@@ -3351,12 +3363,9 @@ batch_dict(PickleState *state, PicklerObject *self, PyObject *iter, PyObject *or
  * Returns 0 on success, -1 on error.
  *
  * Note that this currently doesn't work for protocol 0.
-
- * gh-146452: Wrap the dict iteration in a critical sections to prevent
- * concurrent mutation from invalidating PyDict_Next() iteration state.
  */
 static int
-batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
+batch_dict_exact_impl(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *key = NULL, *value = NULL;
     int i;
@@ -3373,19 +3382,9 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
 
     /* Special-case len(d) == 1 to save space. */
     if (dict_size == 1) {
-        int next;
-        Py_BEGIN_CRITICAL_SECTION(obj);
-        next = PyDict_Next(obj, &ppos, &key, &value);
-        if (next) {
-            Py_INCREF(key);
-            Py_INCREF(value);
-        }
-        Py_END_CRITICAL_SECTION();
-        if (!next) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "dictionary changed size during iteration");
-            goto error;
-        }
+        PyDict_Next(obj, &ppos, &key, &value);
+        Py_INCREF(key);
+        Py_INCREF(value);
         if (save(state, self, key, 0) < 0) {
             goto error;
         }
@@ -3405,18 +3404,9 @@ batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         i = 0;
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
-        int next;
-        while (1) {
-            Py_BEGIN_CRITICAL_SECTION(obj);
-            next = PyDict_Next(obj, &ppos, &key, &value);
-            if (next) {
-                Py_INCREF(key);
-                Py_INCREF(value);
-            }
-            Py_END_CRITICAL_SECTION();
-            if (!next) {
-                break;
-            }
+        while (PyDict_Next(obj, &ppos, &key, &value)) {
+            Py_INCREF(key);
+            Py_INCREF(value);
             if (save(state, self, key, 0) < 0) {
                 goto error;
             }
@@ -3444,6 +3434,18 @@ error:
     Py_XDECREF(key);
     Py_XDECREF(value);
     return -1;
+}
+
+/* gh-146452: Wrap the dict iteration in a critical section to prevent
+   concurrent mutation from invalidating PyDict_Next() iteration state. */
+static int
+batch_dict_exact(PickleState *state, PicklerObject *self, PyObject *obj)
+{
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    ret = batch_dict_exact_impl(state, self, obj);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static int

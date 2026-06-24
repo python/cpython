@@ -1187,8 +1187,10 @@ gethandlelist(PyObject *mapping, const char *name, Py_ssize_t *size)
     }
 
     ret = PyMem_Malloc(*size);
-    if (ret == NULL)
+    if (ret == NULL) {
+        PyErr_NoMemory();
         goto cleanup;
+    }
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(value_fast); i++) {
         ret[i] = PYNUM_TO_HANDLE(PySequence_Fast_GET_ITEM(value_fast, i));
@@ -1271,6 +1273,7 @@ getattributelist(PyObject *obj, const char *name, AttributeList *attribute_list)
     attribute_list->attribute_list = PyMem_Malloc(attribute_list_size);
     if (attribute_list->attribute_list == NULL) {
         ret = -1;
+        PyErr_NoMemory();
         goto cleanup;
     }
 

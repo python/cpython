@@ -80,9 +80,9 @@ assemble_init(struct assembler *a, int firstlineno)
     }
     return SUCCESS;
 error:
-    Py_XDECREF(a->a_bytecode);
-    Py_XDECREF(a->a_linetable);
-    Py_XDECREF(a->a_except_table);
+    Py_CLEAR(a->a_bytecode);
+    Py_CLEAR(a->a_linetable);
+    Py_CLEAR(a->a_except_table);
     return ERROR;
 }
 

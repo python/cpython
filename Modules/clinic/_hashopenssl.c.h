@@ -1859,8 +1859,8 @@ PyDoc_STRVAR(_hashlib_HMAC_hexdigest__doc__,
 "\n"
 "Return hexadecimal digest of the bytes passed to the update() method so far.\n"
 "\n"
-"This may be used to exchange the value safely in email or other non-binary\n"
-"environments.");
+"This may be used to exchange the value safely in email or other\n"
+"non-binary environments.");
 
 #define _HASHLIB_HMAC_HEXDIGEST_METHODDEF    \
     {"hexdigest", (PyCFunction)_hashlib_HMAC_hexdigest, METH_NOARGS, _hashlib_HMAC_hexdigest__doc__},
@@ -1881,8 +1881,8 @@ PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
 "Determine the OpenSSL FIPS mode of operation.\n"
 "\n"
 "For OpenSSL 3.0.0 and newer it returns the state of the default provider\n"
-"in the default OSSL context. It\'s not quite the same as FIPS_mode() but good\n"
-"enough for unittests.\n"
+"in the default OSSL context. It\'s not quite the same as FIPS_mode() but\n"
+"good enough for unittests.\n"
 "\n"
 "Effectively any non-zero return value indicates FIPS mode;\n"
 "values other than 1 may have additional significance.");
@@ -1984,4 +1984,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=a863ec4166ed2fbb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e8d61a057978436 input=a9049054013a1b77]*/

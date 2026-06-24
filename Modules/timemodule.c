@@ -820,12 +820,15 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             PyErr_NoMemory();
             return NULL;
         }
-        *outbuf = (time_char *)PyMem_Realloc(*outbuf,
-                                             *bufsize*sizeof(time_char));
-        if (*outbuf == NULL) {
+        time_char *tmp = (time_char *)PyMem_Realloc(*outbuf,
+                                                    *bufsize*sizeof(time_char));
+        if (tmp == NULL) {
+            PyMem_Free(*outbuf);
+            *outbuf = NULL;
             PyErr_NoMemory();
             return NULL;
         }
+        *outbuf = tmp;
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         errno = 0;
 #endif

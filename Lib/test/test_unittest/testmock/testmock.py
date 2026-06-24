@@ -2108,6 +2108,15 @@ class MockTest(unittest.TestCase):
         self.assertEqual([], h.readlines())
         self.assertEqual([], h.readlines())
 
+    def test_mock_open_exit_with_contextlib_exit_stack(self):
+        # gh-150484: mock_open's __exit__ should work when called from
+        # contextlib.ExitStack, which passes (exctype, excinst, exctb).
+        from contextlib import ExitStack
+        with mock.patch('builtins.open', mock.mock_open()) as m:
+            with ExitStack() as exit_stack:
+                with exit_stack.enter_context(open('/tmp/test.txt', 'w')):
+                    pass
+
     def test_mock_parents(self):
         for Klass in Mock, MagicMock:
             m = Klass()

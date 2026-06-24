@@ -1580,7 +1580,9 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
 finally:
-    _PyXI_FreeExcInfo(info);
+    if (info != NULL) {
+        _PyXI_FreeExcInfo(info);
+    }
     if (exc != exc_arg) {
         if (PyErr_Occurred()) {
             PyErr_SetRaisedException(exc);

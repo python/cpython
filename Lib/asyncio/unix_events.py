@@ -54,7 +54,8 @@ def waitstatus_to_exitcode(status):
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Unix event loop.
 
-    Adds signal handling and UNIX Domain Socket support to SelectorEventLoop.
+    Adds signal handling and UNIX Domain Socket support to
+    SelectorEventLoop.
     """
 
     def __init__(self, selector=None):
@@ -384,12 +385,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             # order to simplify the common case.
             self.remove_writer(registered_fd)
         if fut.cancelled():
-            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+            self._sock_sendfile_update_filepos(fileno, offset)
             return
         if count:
             blocksize = count - total_sent
             if blocksize <= 0:
-                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                self._sock_sendfile_update_filepos(fileno, offset)
                 fut.set_result(total_sent)
                 return
 
@@ -423,20 +424,20 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # plain send().
                 err = exceptions.SendfileNotAvailableError(
                     "os.sendfile call failed")
-                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                self._sock_sendfile_update_filepos(fileno, offset)
                 fut.set_exception(err)
             else:
-                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                self._sock_sendfile_update_filepos(fileno, offset)
                 fut.set_exception(exc)
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
-            self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+            self._sock_sendfile_update_filepos(fileno, offset)
             fut.set_exception(exc)
         else:
             if sent == 0:
                 # EOF
-                self._sock_sendfile_update_filepos(fileno, offset, total_sent)
+                self._sock_sendfile_update_filepos(fileno, offset)
                 fut.set_result(total_sent)
             else:
                 offset += sent
@@ -447,9 +448,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                 fd, sock, fileno,
                                 offset, count, blocksize, total_sent)
 
-    def _sock_sendfile_update_filepos(self, fileno, offset, total_sent):
-        if total_sent > 0:
-            os.lseek(fileno, offset, os.SEEK_SET)
+    def _sock_sendfile_update_filepos(self, fileno, offset):
+        # After this helper runs, the source fd's lseek pointer is at offset."
+        os.lseek(fileno, offset, os.SEEK_SET)
 
     def _sock_add_cancellation_callback(self, fut, sock):
         def cb(fut):

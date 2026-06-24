@@ -36,14 +36,14 @@ _zstd.ZstdDict.__new__ as _zstd_ZstdDict_new
 
 Represents a Zstandard dictionary.
 
-The dictionary can be used for compression or decompression, and can be shared
-by multiple ZstdCompressor or ZstdDecompressor objects.
+The dictionary can be used for compression or decompression, and can be
+shared by multiple ZstdCompressor or ZstdDecompressor objects.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
                         int is_raw)
-/*[clinic end generated code: output=685b7406a48b0949 input=9e8c493e31c98383]*/
+/*[clinic end generated code: output=685b7406a48b0949 input=3bb66063c0240433]*/
 {
     /* All dictionaries must be at least 8 bytes */
     if (dict_content->len < 8) {
@@ -161,17 +161,17 @@ Load as a digested dictionary to compressor.
 Pass this attribute as zstd_dict argument:
 compress(dat, zstd_dict=zd.as_digested_dict)
 
-1. Some advanced compression parameters of compressor may be overridden
-   by parameters of digested dictionary.
-2. ZstdDict has a digested dictionaries cache for each compression level.
-   It's faster when loading again a digested dictionary with the same
-   compression level.
+1. Some advanced compression parameters of compressor may be
+   overridden by parameters of digested dictionary.
+2. ZstdDict has a digested dictionaries cache for each compression
+   level.  It's faster when loading again a digested dictionary with
+   the same compression level.
 3. No need to use this for decompression.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=09b086e7a7320dbb input=ee45e1b4a48f6f2c]*/
+/*[clinic end generated code: output=09b086e7a7320dbb input=a9417d40f1d7fedd]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_DIGESTED);
 }
@@ -185,15 +185,16 @@ Load as an undigested dictionary to compressor.
 Pass this attribute as zstd_dict argument:
 compress(dat, zstd_dict=zd.as_undigested_dict)
 
-1. The advanced compression parameters of compressor will not be overridden.
-2. Loading an undigested dictionary is costly. If load an undigested dictionary
-   multiple times, consider reusing a compressor object.
+1. The advanced compression parameters of compressor will not be
+   overridden.
+2. Loading an undigested dictionary is costly. If load an undigested
+   dictionary multiple times, consider reusing a compressor object.
 3. No need to use this for decompression.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=43c7a989e6d4253a input=d39210eedec76fed]*/
+/*[clinic end generated code: output=43c7a989e6d4253a input=56443c9c4e589cd5]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_UNDIGESTED);
 }
@@ -207,15 +208,16 @@ Load as a prefix to compressor/decompressor.
 Pass this attribute as zstd_dict argument:
 compress(dat, zstd_dict=zd.as_prefix)
 
-1. Prefix is compatible with long distance matching, while dictionary is not.
-2. It only works for the first frame, then the compressor/decompressor will
-   return to no prefix state.
+1. Prefix is compatible with long distance matching, while
+   dictionary is not.
+2. It only works for the first frame, then the
+   compressor/decompressor will return to no prefix state.
 3. When decompressing, must use the same prefix as when compressing.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=6f7130c356595a16 input=45b3b6110f36d127]*/
+/*[clinic end generated code: output=6f7130c356595a16 input=192681a899c6fad0]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_PREFIX);
 }

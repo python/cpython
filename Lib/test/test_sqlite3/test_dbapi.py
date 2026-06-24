@@ -1408,6 +1408,18 @@ class BlobTests(unittest.TestCase):
         self.blob[0:0] = b""
         self.assertEqual(self.blob[:], self.data)
 
+    def test_blob_set_empty_slice_wrong_type(self):
+        with self.assertRaises(TypeError):
+            self.blob[5:5] = None
+
+    def test_blob_set_empty_slice_wrong_size(self):
+        with self.assertRaisesRegex(IndexError, "wrong size"):
+            self.blob[5:5] = b"123"
+
+    def test_blob_set_empty_slice_correct(self):
+        self.blob[5:5] = b""
+        self.assertEqual(self.blob[:], self.data)
+
     def test_blob_set_slice_with_skip(self):
         self.blob[0:10:2] = b"12345"
         actual = self.cx.execute("select b from test").fetchone()[0]

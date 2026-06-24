@@ -756,8 +756,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 offset += blocksize
                 total_sent += blocksize
         finally:
-            if total_sent > 0:
-                file.seek(offset)
+            file.seek(offset)
 
     async def _sendfile_native(self, transp, file, offset, count):
         resume_reading = transp.is_reading()

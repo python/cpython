@@ -1899,7 +1899,8 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 /*[clinic end generated code: output=0042f5e8ae0e8631 input=61bf9f99bc8b112d]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->long_state.max_str_digits);
+    int maxdigits = _Py_atomic_load_int(&interp->long_state.max_str_digits);
+    return PyLong_FromLong(maxdigits);
 }
 
 
@@ -2314,12 +2315,13 @@ sys._stats_dump -> bool
 
 Dump stats to file, and clears the stats.
 
-Return False if no statistics were not dumped because stats gathering was off.
+Return False if no statistics were not dumped because stats gathering
+was off.
 [clinic start generated code]*/
 
 static int
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=6e346b4ba0de4489 input=31a489e39418b2a5]*/
+/*[clinic end generated code: output=6e346b4ba0de4489 input=7f3b7758cb59d2ff]*/
 {
     int res = _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
@@ -2463,16 +2465,16 @@ sys.remote_exec
 Executes a file containing Python code in a given remote Python process.
 
 This function returns immediately, and the code will be executed by the
-target process's main thread at the next available opportunity, similarly
-to how signals are handled. There is no interface to determine when the
-code has been executed. The caller is responsible for making sure that
-the file still exists whenever the remote process tries to read it and that
-it hasn't been overwritten.
+target process's main thread at the next available opportunity,
+similarly to how signals are handled.  There is no interface to
+determine when the code has been executed.  The caller is responsible
+for making sure that the file still exists whenever the remote process
+tries to read it and that it hasn't been overwritten.
 
-The remote process must be running a CPython interpreter of the same major
-and minor version as the local process. If either the local or remote
-interpreter is pre-release (alpha, beta, or release candidate) then the
-local and remote interpreters must be the same exact version.
+The remote process must be running a CPython interpreter of the same
+major and minor version as the local process.  If either the local or
+remote interpreter is pre-release (alpha, beta, or release candidate)
+then the local and remote interpreters must be the same exact version.
 
 Args:
      pid (int): The process ID of the target Python process.
@@ -2482,7 +2484,7 @@ Args:
 
 static PyObject *
 sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
-/*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
+/*[clinic end generated code: output=7d94c56afe4a52c0 input=7bd58f8da20cb74c]*/
 {
     PyObject *path;
     const char *debugger_script_path;
@@ -3433,14 +3435,39 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *flags = _PySys_GetRequiredAttrString("flags");
-    if (flags == NULL) {
-        return -1;
+    PyObject *new_flags = NULL;
+    PyObject *flags_str = &_Py_ID(flags);  // immortal ref
+
+    PyObject *old_flags = _PySys_GetRequiredAttr(flags_str);
+    if (old_flags == NULL) {
+        goto error;
     }
 
-    sys_set_flag(flags, pos, value);
-    Py_DECREF(flags);
-    return 0;
+    new_flags = PyStructSequence_New(&FlagsType);
+    if (new_flags == NULL) {
+        goto error;
+    }
+
+    for (Py_ssize_t i = 0; i < (Py_ssize_t)(Py_ARRAY_LENGTH(flags_fields) - 1); i++) {
+        if (i != pos) {
+            PyObject *old_value;
+            old_value = PyStructSequence_GET_ITEM(old_flags, i);  // borrowed ref
+            sys_set_flag(new_flags, i, old_value);
+        }
+        else {
+            sys_set_flag(new_flags, pos, value);
+        }
+    }
+
+    int res = _PySys_SetAttr(flags_str, new_flags);
+    Py_DECREF(old_flags);
+    Py_DECREF(new_flags);
+    return res;
+
+error:
+    Py_XDECREF(old_flags);
+    Py_XDECREF(new_flags);
+    return -1;
 }
 
 
@@ -3464,8 +3491,6 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
-    // _PySys_UpdateConfig() modifies sys.flags in-place:
-    // Py_XDECREF() is needed in this case.
     Py_ssize_t pos = 0;
 #define SetFlagObj(expr) \
     do { \
@@ -3888,7 +3913,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     /* implementation */
     SET_SYS("implementation", make_impl_info(version_info));
 
-    // sys.flags: updated in-place later by _PySys_UpdateConfig()
+    // sys.flags: updated later by _PySys_UpdateConfig()
     ENSURE_INFO_TYPE(FlagsType, flags_desc);
     SET_SYS("flags", make_flags(tstate->interp));
 
@@ -4006,16 +4031,21 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_LIST
 #undef COPY_WSTR
 
-    // sys.flags
-    PyObject *flags = _PySys_GetRequiredAttrString("flags");
-    if (flags == NULL) {
+    // replace sys.flags
+    PyObject *new_flags = PyStructSequence_New(&FlagsType);
+    if (new_flags == NULL) {
         return -1;
     }
-    if (set_flags_from_config(interp, flags) < 0) {
-        Py_DECREF(flags);
+    if (set_flags_from_config(interp, new_flags) < 0) {
+        Py_DECREF(new_flags);
         return -1;
     }
-    Py_DECREF(flags);
+
+    res = _PySys_SetAttr(&_Py_ID(flags), new_flags);
+    Py_DECREF(new_flags);
+    if (res < 0) {
+        return -1;
+    }
 
     SET_SYS("dont_write_bytecode", PyBool_FromLong(!config->write_bytecode));
 
@@ -4516,7 +4546,7 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
     // Set PyInterpreterState.long_state.max_str_digits
     // and PyInterpreterState.config.int_max_str_digits.
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->long_state.max_str_digits = maxdigits;
-    interp->config.int_max_str_digits = maxdigits;
+    _Py_atomic_store_int(&interp->long_state.max_str_digits, maxdigits);
+    _Py_atomic_store_int(&interp->config.int_max_str_digits, maxdigits);
     return 0;
 }

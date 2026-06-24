@@ -8,15 +8,13 @@
 
 import os
 import sys
-from importlib import import_module
 from importlib.util import find_spec
 
 # Make our custom extensions available to Sphinx
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
-# Python specific content from Doc/Tools/extensions/pyspecific.py
-from pyspecific import SOURCE_URI
+from patchlevel import get_header_version_info, get_version_info
 
 # General configuration
 # ---------------------
@@ -77,7 +75,7 @@ _doc_authors = 'Python documentation authors'
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
 # See Doc/tools/extensions/patchlevel.py
-version, release = import_module('patchlevel').get_version_info()
+version, release = get_version_info()
 
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
@@ -555,8 +553,12 @@ linkcheck_ignore = [
     r'https://unix.org/version2/whatsnew/lp64_wp.html',
 ]
 
+
 # Options for sphinx.ext.extlinks
 # -------------------------------
+
+v = get_header_version_info()
+branch = "main" if v.releaselevel == "alpha" else f"{v.major}.{v.minor}"
 
 # This config is a dictionary of external sites,
 # mapping unique short aliases to a base URL and a prefix.
@@ -564,7 +566,7 @@ linkcheck_ignore = [
 extlinks = {
     "oss-fuzz": ("https://issues.oss-fuzz.com/issues/%s", "#%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
-    "source": (SOURCE_URI, "%s"),
+    "source": (f"https://github.com/python/cpython/tree/{branch}/%s", "%s"),
 }
 extlinks_detect_hardcoded_links = True
 

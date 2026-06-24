@@ -623,6 +623,10 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    .. versionadded:: 3.14
 
+   .. versionchanged:: next
+      The function now replaces :data:`sys.flags` (create a new object),
+      instead of modifying :data:`sys.flags` in-place.
+
 
 .. _pyconfig_api:
 

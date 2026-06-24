@@ -1,1 +1,0 @@
-Fix race condition in :attr:`ssl.SSLContext.sni_callback`

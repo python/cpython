@@ -593,13 +593,13 @@ _heapq.heappushpop_max
 
 Maxheap variant of heappushpop.
 
-The combined action runs more efficiently than heappush_max() followed by
-a separate call to heappop_max().
+The combined action runs more efficiently than heappush_max()
+followed by a separate call to heappop_max().
 [clinic start generated code]*/
 
 static PyObject *
 _heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=ff0019f0941aca0d input=24d0defa6fd6df4a]*/
+/*[clinic end generated code: output=ff0019f0941aca0d input=52030929667a4c08]*/
 {
     PyObject *returnitem;
     int cmp;

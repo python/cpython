@@ -474,7 +474,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
+   See also :ref:`typesmapping` for documentation about this class.
 
    For other containers see the built-in :class:`list`, :class:`set`, and
    :class:`tuple` classes, as well as the :mod:`collections` module.
@@ -852,7 +852,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
-   *iterable*.  ``frozenset`` is a built-in class.  See :class:`frozenset` and
+   *iterable*.  :class:`frozenset` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`set`, :class:`list`,
@@ -1808,7 +1808,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
-   *iterable*.  ``set`` is a built-in class.  See :class:`set` and
+   *iterable*.  :class:`set` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`frozenset`, :class:`list`,

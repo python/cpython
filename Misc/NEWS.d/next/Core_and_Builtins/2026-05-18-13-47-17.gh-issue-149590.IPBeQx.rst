@@ -1,1 +1,0 @@
-Fix crash when faulthandler is imported more than once.

@@ -488,13 +488,13 @@ _io.BytesIO.read1
 
 Read at most size bytes, returned as a bytes object.
 
-If the size argument is negative or omitted, read until EOF is reached.
-Return an empty bytes object at EOF.
+If the size argument is negative or omitted, read until EOF is
+reached.  Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=d0f843285aa95f1c input=a08fc9e507ab380c]*/
+/*[clinic end generated code: output=d0f843285aa95f1c input=796ff4e0efccc4d9]*/
 {
     return _io_BytesIO_read_impl(self, size);
 }
@@ -792,13 +792,13 @@ _io.BytesIO.writelines
 Write lines to the file.
 
 Note that newlines are not added.  lines can be any iterable object
-producing bytes-like objects. This is equivalent to calling write() for
-each element.
+producing bytes-like objects.  This is equivalent to calling write()
+for each element.
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO_writelines_impl(bytesio *self, PyObject *lines)
-/*[clinic end generated code: output=03a43a75773bc397 input=5d6a616ae39dc9ca]*/
+/*[clinic end generated code: output=03a43a75773bc397 input=d265f76533b058e7]*/
 {
     PyObject *it, *item;
 

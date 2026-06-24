@@ -152,12 +152,14 @@ def splitdrive(p):
     It is always true that:
         result[0] + result[1] == p
 
-    If the path contained a drive letter, drive_or_unc will contain everything
-    up to and including the colon.  e.g. splitdrive("c:/dir") returns ("c:", "/dir")
+    If the path contained a drive letter, drive_or_unc will contain
+    everything up to and including the colon.  e.g. splitdrive("c:/dir")
+    returns ("c:", "/dir")
 
-    If the path contained a UNC path, the drive_or_unc will contain the host name
-    and share up to but not including the fourth directory separator character.
-    e.g. splitdrive("//host/computer/dir") returns ("//host/computer", "/dir")
+    If the path contained a UNC path, the drive_or_unc will contain the
+    host name and share up to but not including the fourth directory
+    separator character.  e.g. splitdrive("//host/computer/dir") returns
+    ("//host/computer", "/dir")
 
     Paths cannot contain both a drive letter and a UNC path.
 
@@ -222,8 +224,8 @@ except ImportError:
 def split(p):
     """Split a pathname.
 
-    Return tuple (head, tail) where tail is everything after the final slash.
-    Either part may be empty."""
+    Return tuple (head, tail) where tail is everything after the final
+    slash.  Either part may be empty."""
     p = os.fspath(p)
     seps = _get_bothseps(p)
     d, r, p = splitroot(p)

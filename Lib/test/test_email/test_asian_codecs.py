@@ -58,6 +58,62 @@ Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
         # TK: full decode comparison
         eq(str(h).encode(jcode), subject_bytes)
 
+        h = Header("Japanese")
+        s = '\u65e5\u672c\u8a9e' # 日本語
+        h.append(s, Charset('euc-jp'))
+        h.append(s, Charset('iso-2022-jp'))
+        h.append(s, Charset('shift_jis'))
+        eq(h.encode(), """\
+Japanese =?iso-2022-jp?b?GyRCRnxLXDhsGyhC?= =?iso-2022-jp?b?GyRCRnxLXDhsGyhC?=
+ =?iso-2022-jp?b?GyRCRnxLXDhsGyhC?=""")
+        eq(decode_header(h.encode()),
+           [(b'Japanese ', None),
+            (b'\x1b$BF|K\\8l\x1b(B\x1b$BF|K\\8l\x1b(B\x1b$BF|K\\8l\x1b(B', 'iso-2022-jp'),
+           ])
+
+    def test_chinese_codecs(self):
+        eq = self.ndiffAssertEqual
+        h = Header("Chinese")
+        s = '\u4e2d\u6587' # 中文
+        h.append(s, Charset('gb2312'))
+        h.append(s, Charset('gbk'))
+        h.append(s, Charset('gb18030'))
+        h.append(s, Charset('hz'))
+        h.append(s, Charset('big5'))
+        h.append(s, Charset('big5hkscs'))
+        eq(h.encode(), """\
+Chinese =?gb2312?b?1tDOxA==?= =?gbk?b?1tDOxA==?= =?gb18030?b?1tDOxA==?=
+ =?hz?b?fntWUE5Efn0=?= =?big5?b?pKSk5Q==?= =?big5hkscs?b?pKSk5Q==?=""")
+        eq(decode_header(h.encode()),
+           [(b'Chinese ', None),
+            (b'\xd6\xd0\xce\xc4', 'gb2312'),
+            (b'\xd6\xd0\xce\xc4', 'gbk'),
+            (b'\xd6\xd0\xce\xc4', 'gb18030'),
+            (b'~{VPND~}', 'hz'),
+            (b'\xa4\xa4\xa4\xe5', 'big5'),
+            (b'\xa4\xa4\xa4\xe5', 'big5hkscs'),
+           ])
+
+    def test_korean_codecs(self):
+        eq = self.ndiffAssertEqual
+        h = Header("Korean")
+        s = '\ud55c\uad6d\uc5b4' # 한국어
+        h.append(s, Charset('euc-kr'))
+        h.append(s, Charset('ks_c_5601-1987'))
+        h.append(s, Charset('cp949'))
+        h.append(s, Charset('iso-2022-kr'))
+        h.append(s, Charset('johab'))
+        eq(h.encode(), """\
+Korean =?euc-kr?b?x9Gxub7u?= =?ks_c_5601-1987?b?x9Gxub7uIMfRsbm+7g==?=
+ =?iso-2022-kr?b?GyQpQw5HUTE5Pm4P?= =?johab?b?0GWKgrTh?=""")
+        eq(decode_header(h.encode()),
+           [(b'Korean ', None),
+            (b'\xc7\xd1\xb1\xb9\xbe\xee', 'euc-kr'),
+            (b'\xc7\xd1\xb1\xb9\xbe\xee \xc7\xd1\xb1\xb9\xbe\xee', 'ks_c_5601-1987'),
+            (b'\x1b$)C\x0eGQ19>n\x0f', 'iso-2022-kr'),
+            (b'\xd0e\x8a\x82\xb4\xe1', 'johab'),
+           ])
+
     def test_payload_encoding_utf8(self):
         jhello = str(b'\xa5\xcf\xa5\xed\xa1\xbc\xa5\xef\xa1\xbc'
                      b'\xa5\xeb\xa5\xc9\xa1\xaa', 'euc-jp')

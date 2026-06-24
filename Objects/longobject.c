@@ -2049,7 +2049,7 @@ long_to_decimal_string_internal(PyObject *aa,
     if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
                   / (3 * PyLong_SHIFT) + 2) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_str_digits = interp->long_state.max_str_digits;
+        int max_str_digits = _Py_atomic_load_int(&interp->long_state.max_str_digits);
         if ((max_str_digits > 0) &&
             (max_str_digits / (3 * PyLong_SHIFT) <= (size_a - 11) / 10)) {
             PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
@@ -2130,7 +2130,7 @@ long_to_decimal_string_internal(PyObject *aa,
     }
     if (strlen > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_str_digits = interp->long_state.max_str_digits;
+        int max_str_digits = _Py_atomic_load_int(&interp->long_state.max_str_digits);
         Py_ssize_t strlen_nosign = strlen - negative;
         if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
             Py_DECREF(scratch);
@@ -2942,7 +2942,7 @@ long_from_string_base(const char **str, int base, PyLongObject **res)
          * quadratic algorithm. */
         if (digits > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
-            int max_str_digits = interp->long_state.max_str_digits;
+            int max_str_digits = _Py_atomic_load_int(&interp->long_state.max_str_digits);
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
                 PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_INT,
                              max_str_digits, digits);
@@ -6277,20 +6277,21 @@ int_as_integer_ratio_impl(PyObject *self)
 int.to_bytes
 
     length: Py_ssize_t = 1
-        Length of bytes object to use.  An OverflowError is raised if the
-        integer is not representable with the given number of bytes.  Default
-        is length 1.
+        Length of bytes object to use.  An OverflowError is raised if
+        the integer is not representable with the given number of bytes.
+        Default is length 1.
     byteorder: unicode(c_default="NULL") = "big"
-        The byte order used to represent the integer.  If byteorder is 'big',
-        the most significant byte is at the beginning of the byte array.  If
-        byteorder is 'little', the most significant byte is at the end of the
-        byte array.  To request the native byte order of the host system, use
-        sys.byteorder as the byte order value.  Default is to use 'big'.
+        The byte order used to represent the integer.  If byteorder is
+        'big', the most significant byte is at the beginning of the byte
+        array.  If byteorder is 'little', the most significant byte is at
+        the end of the byte array.  To request the native byte order of
+        the host system, use sys.byteorder as the byte order value.
+        Default is to use 'big'.
     *
     signed as is_signed: bool = False
-        Determines whether two's complement is used to represent the integer.
-        If signed is False and a negative integer is given, an OverflowError
-        is raised.
+        Determines whether two's complement is used to represent the
+        integer.  If signed is False and a negative integer is given,
+        an OverflowError is raised.
 
 Return an array of bytes representing an integer.
 [clinic start generated code]*/
@@ -6298,7 +6299,7 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=a0103d0e9ad85c2b]*/
+/*[clinic end generated code: output=89c801df114050a3 input=661d7e615a4f132d]*/
 {
     int little_endian;
     PyObject *bytes;
@@ -6341,18 +6342,20 @@ int.from_bytes
 
     bytes as bytes_obj: object
         Holds the array of bytes to convert.  The argument must either
-        support the buffer protocol or be an iterable object producing bytes.
-        Bytes and bytearray are examples of built-in objects that support the
-        buffer protocol.
+        support the buffer protocol or be an iterable object producing
+        bytes.  Bytes and bytearray are examples of built-in objects that
+        support the buffer protocol.
     byteorder: unicode(c_default="NULL") = "big"
-        The byte order used to represent the integer.  If byteorder is 'big',
-        the most significant byte is at the beginning of the byte array.  If
-        byteorder is 'little', the most significant byte is at the end of the
-        byte array.  To request the native byte order of the host system, use
-        sys.byteorder as the byte order value.  Default is to use 'big'.
+        The byte order used to represent the integer.  If byteorder is
+        'big', the most significant byte is at the beginning of the byte
+        array.  If byteorder is 'little', the most significant byte is at
+        the end of the byte array.  To request the native byte order of
+        the host system, use sys.byteorder as the byte order value.
+        Default is to use 'big'.
     *
     signed as is_signed: bool = False
-        Indicates whether two's complement is used to represent the integer.
+        Indicates whether two's complement is used to represent the
+        integer.
 
 Return the integer represented by the given array of bytes.
 [clinic start generated code]*/
@@ -6360,7 +6363,7 @@ Return the integer represented by the given array of bytes.
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed)
-/*[clinic end generated code: output=efc5d68e31f9314f input=2ff527997fe7b0c5]*/
+/*[clinic end generated code: output=efc5d68e31f9314f input=95801e50b942e164]*/
 {
     int little_endian;
     PyObject *long_obj, *bytes;
@@ -6495,7 +6498,8 @@ If x is not a number or if base is given, then x must be a string,\n\
 bytes, or bytearray instance representing an integer literal in the\n\
 given base.  The literal can be preceded by '+' or '-' and be surrounded\n\
 by whitespace.  The base defaults to 10.  Valid bases are 0 and 2-36.\n\
-Base 0 means to interpret the base from the string as an integer literal.\n\
+Base 0 means to interpret the base from the string as an integer\n\
+iteral.\n\
 >>> int('0b100', base=0)\n\
 4");
 

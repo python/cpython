@@ -771,7 +771,8 @@ static PyMethodDef partial_methods[] = {
     {"__reduce__", partial_reduce, METH_NOARGS},
     {"__setstate__", partial_setstate, METH_O},
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("partial is generic over the wrapped function's return type")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -979,9 +980,9 @@ _functools.reduce
 
 Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
 
-This effectively reduces the iterable to a single value.  If initial is present,
-it is placed before the items of the iterable in the calculation, and serves as
-a default when the iterable is empty.
+This effectively reduces the iterable to a single value.  If initial is
+present, it is placed before the items of the iterable in the
+calculation, and serves as a default when the iterable is empty.
 
 For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
 calculates ((((1 + 2) + 3) + 4) + 5).
@@ -990,7 +991,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=1511e9a8c38581ac]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=1e2c850f5229ff2a]*/
 {
     PyObject *args, *it;
 

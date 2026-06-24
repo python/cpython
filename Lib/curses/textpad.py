@@ -23,22 +23,25 @@ class Textbox:
     Ctrl-A      Go to left edge of window.
     Ctrl-B      Cursor left, wrapping to previous line if appropriate.
     Ctrl-D      Delete character under cursor.
-    Ctrl-E      Go to right edge (stripspaces off) or end of line (stripspaces on).
+    Ctrl-E      Go to right edge (stripspaces off) or end of line
+                (stripspaces on).
     Ctrl-F      Cursor right, wrapping to next line when appropriate.
     Ctrl-G      Terminate, returning the window contents.
     Ctrl-H      Delete character backward.
-    Ctrl-J      Terminate if the window is 1 line, otherwise insert newline.
+    Ctrl-J      Terminate if the window is 1 line, otherwise move to start
+                of next line.
     Ctrl-K      If line is blank, delete it, otherwise clear to end of line.
     Ctrl-L      Refresh screen.
     Ctrl-N      Cursor down; move down one line.
     Ctrl-O      Insert a blank line at cursor location.
     Ctrl-P      Cursor up; move up one line.
 
-    Move operations do nothing if the cursor is at an edge where the movement
-    is not possible.  The following synonyms are supported where possible:
+    Move operations do nothing if the cursor is at an edge where the
+    movement is not possible.  The following synonyms are supported where
+    possible:
 
-    KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P, KEY_DOWN = Ctrl-N
-    KEY_BACKSPACE = Ctrl-h
+    KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P,
+    KEY_DOWN = Ctrl-N, KEY_BACKSPACE = Ctrl-h
     """
     def __init__(self, win, insert_mode=False):
         self.win = win
