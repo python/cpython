@@ -253,6 +253,69 @@ class TestCurses(unittest.TestCase):
                 self.assertIs(win.is_wintouched(), syncok)
                 self.assertIs(stdscr.is_wintouched(), syncok)
 
+    @requires_curses_window_meth('get_wch')
+    def test_addch_combining(self):
+        # A character cell may hold a spacing char plus combining marks.
+        stdscr = self.stdscr
+        stdscr.move(0, 0)
+        stdscr.addch('e\u0301')              # 'e' + COMBINING ACUTE ACCENT
+        stdscr.addch(1, 0, 'a\u0323\u0300')  # base plus two combining marks
+        # Too many code points to fit in a single character cell.
+        self.assertRaises(TypeError, stdscr.addch, 'e' + '\u0301' * 10)
+        # Only the first code point may be a spacing character.
+        self.assertRaises(ValueError, stdscr.addch, 'ab')
+        self.assertRaises(ValueError, stdscr.addch, 'a\u0301b')
+        # A lone control character is allowed (like addch(ord('\n'))), but it
+        # cannot be combined with other characters, as base or otherwise.
+        stdscr.addch('\n')
+        self.assertRaises(ValueError, stdscr.addch, 'a\n')
+        self.assertRaises(ValueError, stdscr.addch, '\n\u0301')
+        self.assertRaises(ValueError, stdscr.addch, '\ne\u0301')
+
+    @requires_curses_window_meth('get_wch')
+    def test_addch_emoji(self):
+        # curses has no grapheme-cluster support: a cell holds one spacing
+        # character plus zero-width combining characters.  A lone emoji fits,
+        # as does an emoji with a zero-width variation selector.
+        stdscr = self.stdscr
+        stdscr.addch(0, 0, '\U0001f600')          # single emoji
+        stdscr.addch(1, 0, '\u263a\ufe0f')        # WHITE SMILING FACE + VS-16
+        # An emoji ZWJ sequence or an emoji with a modifier is more than one
+        # spacing character and cannot share a single cell.
+        self.assertRaises(ValueError, stdscr.addch,
+                          '\U0001f44d\U0001f3fd')          # thumbs up + skin tone
+        self.assertRaises(ValueError, stdscr.addch,
+                          '\U0001f468\u200d\U0001f469')    # man ZWJ woman
+
+    @requires_curses_window_meth('get_wch')
+    def test_wide_characters(self):
+        # Wide and combining characters in the character-cell methods.
+        stdscr = self.stdscr
+        combining = 'e\u0301'              # 'e' + COMBINING ACUTE ACCENT
+        vline, hline = '\u2502', '\u2500'  # box-drawing vertical/horizontal
+        stdscr.move(0, 0)
+        stdscr.echochar(combining)
+        stdscr.insch(1, 0, combining)
+        stdscr.hline(2, 0, hline, 5)
+        stdscr.vline(3, 0, vline, 3)
+        stdscr.bkgdset(combining)
+        stdscr.bkgd(combining)
+        stdscr.border(vline, vline, hline, hline)
+        stdscr.box(vline, hline)
+        # border() and box() cannot mix integer and wide-string characters.
+        self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
+
+
+    @requires_curses_window_meth('in_wstr')
+    def test_in_wstr(self):
+        # The wide-character window read returns a str (instr returns bytes).
+        stdscr = self.stdscr
+        s = 'a\u00e9\u2502z'  # 'a', 'e'+acute (precomposed), box vline, 'z'
+        stdscr.addstr(0, 0, s)
+        self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
+        self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
+
+
     def test_output_character(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
@@ -281,13 +344,16 @@ class TestCurses(unittest.TestCase):
         stdscr.echochar('A')
         stdscr.echochar(b'A')
         stdscr.echochar(65)
-        with self.assertRaises((UnicodeEncodeError, OverflowError)):
-            # Unicode is not fully supported yet, but at least it does
-            # not crash.
-            # It is supposed to fail because either the character is
-            # not encodable with the current encoding, or it is encoded to
-            # a multibyte sequence.
-            stdscr.echochar('\u0114')
+        c = '\u0114'
+        try:
+            stdscr.echochar(c)
+        except UnicodeEncodeError:
+            # The character is not encodable with the current encoding.
+            self.assertRaises(UnicodeEncodeError, c.encode, encoding)
+        except OverflowError:
+            # The character is encoded to a multibyte sequence.
+            encoded = c.encode(encoding)
+            self.assertNotEqual(len(encoded), 1, repr(encoded))
         stdscr.echochar('A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), False)
 
@@ -742,7 +808,6 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.inch(3, 1), b'a'[0])
 
     def test_unctrl(self):
-        # TODO: wunctrl()
         self.assertEqual(curses.unctrl(b'A'), b'A')
         self.assertEqual(curses.unctrl('A'), b'A')
         self.assertEqual(curses.unctrl(65), b'A')
@@ -753,6 +818,21 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(TypeError, curses.unctrl, b'AB')
         self.assertRaises(TypeError, curses.unctrl, '')
         self.assertRaises(TypeError, curses.unctrl, 'AB')
+
+    @requires_curses_func('wunctrl')
+    def test_wunctrl(self):
+        # The wide-character variant of unctrl() returns a str.
+        self.assertEqual(curses.wunctrl(b'A'), 'A')
+        self.assertEqual(curses.wunctrl('A'), 'A')
+        self.assertEqual(curses.wunctrl(65), 'A')
+        self.assertEqual(curses.wunctrl('\n'), '^J')
+        self.assertEqual(curses.wunctrl(10), '^J')
+        self.assertEqual(curses.wunctrl('é'), 'é')  # printable
+        self.assertRaises(TypeError, curses.wunctrl, b'')
+        self.assertRaises(TypeError, curses.wunctrl, b'AB')
+        self.assertRaises(TypeError, curses.wunctrl, '')
+        # More than one spacing character is not a single cell.
+        self.assertRaises(ValueError, curses.wunctrl, 'AB')
         self.assertRaises(OverflowError, curses.unctrl, 2**64)
 
     def test_endwin(self):
@@ -800,7 +880,7 @@ class TestCurses(unittest.TestCase):
         curses.newpad(50, 50)
 
     def test_env_queries(self):
-        # TODO: term_attrs(), erasewchar(), killwchar()
+        # TODO: term_attrs()
         self.assertIsInstance(curses.termname(), bytes)
         self.assertIsInstance(curses.longname(), bytes)
         self.assertIsInstance(curses.baudrate(), int)
@@ -814,6 +894,24 @@ class TestCurses(unittest.TestCase):
         c = curses.erasechar()
         self.assertIsInstance(c, bytes)
         self.assertEqual(len(c), 1)
+
+        # The erase and kill characters are a property of the controlling
+        # terminal: the wide variants report ERR (raising curses.error) without
+        # one, while the narrow variants above return an unspecified byte.
+        try:
+            tty_fd = os.open(os.ctermid(), os.O_RDONLY)
+        except OSError:
+            tty_fd = None
+        if tty_fd is not None:
+            os.close(tty_fd)
+            if hasattr(curses, 'erasewchar'):
+                c = curses.erasewchar()
+                self.assertIsInstance(c, str)
+                self.assertEqual(len(c), 1)
+            if hasattr(curses, 'killwchar'):
+                c = curses.killwchar()
+                self.assertIsInstance(c, str)
+                self.assertEqual(len(c), 1)
 
     def test_output_options(self):
         stdscr = self.stdscr

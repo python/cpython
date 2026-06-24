@@ -20,7 +20,7 @@ assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 _LITERAL_CODES = {LITERAL, NOT_LITERAL}
 _SUCCESS_CODES = {SUCCESS, FAILURE}
 _ASSERT_CODES = {ASSERT, ASSERT_NOT}
-_UNIT_CODES = _LITERAL_CODES | {ANY, IN}
+_UNIT_CODES = _LITERAL_CODES | {ANY, IN, CATEGORY}
 
 _REPEATING_CODES = {
     MIN_REPEAT: (REPEAT, MIN_UNTIL, MIN_REPEAT_ONE),
@@ -494,6 +494,8 @@ def _get_charset_prefix(pattern, flags):
     if op is LITERAL:
         if iscased and iscased(av):
             return None
+        return [(op, av)]
+    elif op is CATEGORY:
         return [(op, av)]
     elif op is BRANCH:
         charset = []
