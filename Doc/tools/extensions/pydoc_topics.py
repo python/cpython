@@ -40,7 +40,6 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "break",
     "callable-types",
     "calls",
-    "case",
     "class",
     "comparisons",
     "compound",
