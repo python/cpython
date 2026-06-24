@@ -112,6 +112,7 @@ def decref_inputs(
 
 
 def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
+    assert stack.physical_sp is not None
     null = CWriter.null()
     for var in reversed(uop.stack.inputs):
         stack.pop(var, null)
@@ -152,6 +153,19 @@ class OptimizerEmitter(Emitter):
 
     def emit_reload(self, storage: Storage) -> None:
         pass
+
+    def reload_stack(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        return True
 
     def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
         self.out.emit(goto)
