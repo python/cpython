@@ -129,116 +129,6 @@ the modern themed widget set and API::
    from tkinter import ttk
 
 
-.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=True, sync=False, use=None)
-
-   Construct a toplevel Tk widget, which is usually the main window of an
-   application, and initialize a Tcl interpreter for this widget.  Each
-   instance has its own associated Tcl interpreter.
-
-   The :class:`Tk` class is typically instantiated using all default values.
-   However, the following keyword arguments are currently recognized:
-
-   *screenName*
-      When given (as a string), sets the :envvar:`DISPLAY` environment
-      variable. (X11 only)
-   *baseName*
-      Name of the profile file.  By default, *baseName* is derived from the
-      program name (``sys.argv[0]``).
-   *className*
-      Name of the widget class.  Used as a profile file and also as the name
-      with which Tcl is invoked (*argv0* in *interp*).
-   *useTk*
-      If ``True``, initialize the Tk subsystem.  The :func:`tkinter.Tcl() <Tcl>`
-      function sets this to ``False``.
-   *sync*
-      If ``True``, execute all X server commands synchronously, so that errors
-      are reported immediately.  Can be used for debugging. (X11 only)
-   *use*
-      Specifies the *id* of the window in which to embed the application,
-      instead of it being created as an independent toplevel window. *id* must
-      be specified in the same way as the value for the -use option for
-      toplevel widgets (that is, it has a form like that returned by
-      :meth:`~Misc.winfo_id`).
-
-      Note that on some platforms this will only work correctly if *id* refers
-      to a Tk frame or toplevel that has its -container option enabled.
-
-   :class:`Tk` reads and interprets profile files, named
-   :file:`.{className}.tcl` and :file:`.{baseName}.tcl`, into the Tcl
-   interpreter and calls :func:`exec` on the contents of
-   :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
-   profile files is the :envvar:`HOME` environment variable or, if that
-   isn't defined, then :data:`os.curdir`.
-
-   .. attribute:: tk
-
-      The Tk application object created by instantiating :class:`Tk`.  This
-      provides access to the Tcl interpreter.  Each widget that is attached
-      the same instance of :class:`Tk` has the same value for its :attr:`tk`
-      attribute.
-
-   .. attribute:: master
-
-      The widget object that contains this widget.
-      For :class:`Tk`, the :attr:`!master` is :const:`None` because it is the
-      main window.
-      The terms *master* and *parent* are similar and sometimes used
-      interchangeably as argument names; however, calling
-      :meth:`~Misc.winfo_parent` returns a string of the widget name whereas
-      :attr:`!master` returns the object.
-      *parent*/*child* reflects the tree-like relationship while *master* (or
-      *container*)/*content* reflects the container structure.
-
-   .. attribute:: children
-
-      The immediate descendants of this widget as a :class:`dict` with the
-      child widget names as the keys and the child instance objects as the
-      values.
-
-   .. method:: destroy()
-
-      Destroy this and all descendant widgets and, for the main window, end the
-      connection to the underlying Tcl interpreter.
-
-   .. method:: loadtk()
-
-      Finish loading and initializing the Tk subsystem.
-      This is needed only when the interpreter was created without Tk (for
-      example through :func:`Tcl`); it is called automatically when *useTk* is
-      true.
-
-   .. method:: readprofile(baseName, className)
-
-      Read and source the user's profile files :file:`.{className}.tcl` and
-      :file:`.{baseName}.tcl` into the Tcl interpreter, and execute the
-      corresponding :file:`.{className}.py` and :file:`.{baseName}.py` files.
-      This is called during initialization; see the description of the
-      constructor above.
-
-   .. method:: report_callback_exception(exc, val, tb)
-
-      Report a callback exception.
-      This is called when an exception propagates out of a Tkinter callback;
-      *exc*, *val* and *tb* are the exception type, value and traceback as
-      returned by :func:`sys.exc_info`.
-      The default implementation prints a traceback to :data:`sys.stderr`.
-      It can be overridden to customize error handling, for example to display
-      the traceback in a dialog.
-
-
-.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
-
-   The :func:`Tcl` function is a factory function which creates an object much
-   like that created by the :class:`Tk` class, except that it does not
-   initialize the Tk subsystem.
-   This is most often useful when driving the Tcl interpreter in an environment
-   where one doesn't want to create extraneous toplevel windows, or where one
-   cannot (such as Unix/Linux systems without an X server).
-   An object created by the :func:`Tcl` object can have a Toplevel window
-   created (and the Tk subsystem initialized) by calling its :meth:`~Tk.loadtk`
-   method.
-
-
 The modules that provide Tk support include:
 
 :mod:`!tkinter`
@@ -1069,55 +959,6 @@ wherever the image was used.
     The `Pillow <https://python-pillow.org/>`_ package adds support for
     formats such as BMP, JPEG, TIFF, and WebP, among others.
 
-.. _tkinter-file-handlers:
-
-File handlers
--------------
-
-Tk allows you to register and unregister a callback function which will be
-called from the Tk mainloop when I/O is possible on a file descriptor.
-Only one handler may be registered per file descriptor. Example code::
-
-   import tkinter
-   widget = tkinter.Tk()
-   mask = tkinter.READABLE | tkinter.WRITABLE
-   widget.tk.createfilehandler(file, mask, callback)
-   ...
-   widget.tk.deletefilehandler(file)
-
-This feature is not available on Windows.
-
-Since you don't know how many bytes are available for reading, you may not
-want to use the :class:`~io.BufferedIOBase` or :class:`~io.TextIOBase`
-:meth:`~io.BufferedIOBase.read` or :meth:`~io.IOBase.readline` methods,
-since these will insist on reading a predefined number of bytes.
-For sockets, the :meth:`~socket.socket.recv` or
-:meth:`~socket.socket.recvfrom` methods will work fine; for other files,
-use raw reads or ``os.read(file.fileno(), maxbytecount)``.
-
-
-.. method:: Widget.tk.createfilehandler(file, mask, func)
-
-   Registers the file handler callback function *func*. The *file* argument
-   may either be an object with a :meth:`~io.IOBase.fileno` method (such as
-   a file or socket object), or an integer file descriptor. The *mask*
-   argument is an ORed combination of any of the three constants below.
-   The callback is called as follows::
-
-      callback(file, mask)
-
-
-.. method:: Widget.tk.deletefilehandler(file)
-
-   Unregisters a file handler.
-
-
-.. data:: READABLE
-          WRITABLE
-          EXCEPTION
-
-   Constants used in the *mask* arguments.
-
 
 Reference
 ---------
@@ -1461,6 +1302,9 @@ Base and mixin classes
 
       .. versionadded:: 3.15
 
+   The methods with the ``bind`` and ``unbind`` prefixes associate event
+   patterns with callbacks and remove those associations.
+
    .. method:: bind(sequence=None, func=None, add=None)
 
       Bind the event pattern *sequence* on this widget to the callable *func*.
@@ -1544,6 +1388,9 @@ Base and mixin classes
       binding tags are set to its elements, which determines the order in which
       bindings are evaluated.
 
+   The methods with the ``event_`` prefix define virtual events and generate
+   events programmatically.
+
    .. method:: event_add(virtual, *sequences)
 
       Associate the virtual event *virtual*, whose name has the form
@@ -1577,6 +1424,9 @@ Base and mixin classes
       are currently defined.
       If *virtual* is given, return a tuple of the physical event sequences
       currently associated with it, or an empty tuple if it is not defined.
+
+   The methods with the ``after`` prefix schedule callbacks to run after a
+   delay or when the application is idle.
 
    .. method:: after(ms, func=None, *args, **kw)
 
@@ -1686,6 +1536,9 @@ Base and mixin classes
       If *window* is omitted, this widget is used.
       This is typically used to wait for a newly created window to become
       visible before acting on it.
+
+   The methods with the ``focus_`` prefix manage the keyboard focus.
+
    .. method:: focus_set()
       :no-typesetting:
 
@@ -1753,6 +1606,9 @@ Base and mixin classes
       See :meth:`tk_focusNext` for how the order is defined.
       This method is used in the default bindings for the :kbd:`Shift-Tab` key.
 
+   The methods with the ``grab_`` prefix set and query the input grab, which
+   directs all input events to a single widget.
+
    .. method:: grab_set()
 
       Set a local grab on this widget.
@@ -1791,6 +1647,9 @@ Base and mixin classes
 
       Return ``None`` if no grab is currently set on this widget, ``"local"``
       if a local grab is set, or ``"global"`` if a global grab is set.
+
+   The methods with the ``selection_`` prefix retrieve and manage the X
+   selection.
 
    .. method:: selection_clear(**kw)
 
@@ -1850,6 +1709,8 @@ Base and mixin classes
       The *displayof* keyword argument names a widget that determines the
       display to query, and defaults to this widget.
 
+   The methods with the ``clipboard_`` prefix manage the clipboard.
+
    .. method:: clipboard_append(string, **kw)
 
       Append *string* to the Tk clipboard and claim ownership of the clipboard
@@ -1883,6 +1744,9 @@ Base and mixin classes
       The *displayof* keyword argument names a widget that determines the
       display, and defaults to the root window of the application.
       This is equivalent to ``selection_get(selection='CLIPBOARD')``.
+
+   The methods with the ``option_`` prefix query and modify the Tk option
+   database.
 
    .. method:: option_add(pattern, value, priority=None)
 
@@ -2005,6 +1869,9 @@ Base and mixin classes
 
       .. versionadded:: next
 
+   The methods with the ``busy_`` prefix manage the busy state of a window,
+   which shows a busy cursor and ignores user input.
+
    .. method:: busy(**kw)
       :no-typesetting:
 
@@ -2119,6 +1986,9 @@ Base and mixin classes
       :meth:`busy_current` is an alias of :meth:`!tk_busy_current`.
 
       .. versionadded:: 3.13
+
+   The methods with the ``winfo_`` prefix retrieve information about windows
+   managed by Tk.
 
    .. method:: winfo_atom(name, displayof=0)
 
@@ -3457,6 +3327,110 @@ Base and mixin classes
    managed by any of the three geometry managers.
    The concrete widget classes (:class:`Button`, :class:`Label`, and so on)
    derive from :class:`!Widget`.
+
+
+Toplevel widgets
+^^^^^^^^^^^^^^^^
+
+.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=True, sync=False, use=None)
+
+   Construct a toplevel Tk widget, which is usually the main window of an
+   application, and initialize a Tcl interpreter for this widget.  Each
+   instance has its own associated Tcl interpreter.
+   Inherits from :class:`Misc` and :class:`Wm`.
+
+   To create a Tcl interpreter without initializing the Tk subsystem, use the
+   :func:`Tcl` factory function instead.
+
+   The :class:`Tk` class is typically instantiated using all default values.
+   However, the following keyword arguments are currently recognized:
+
+   *screenName*
+      When given (as a string), sets the :envvar:`DISPLAY` environment
+      variable. (X11 only)
+   *baseName*
+      Name of the profile file.  By default, *baseName* is derived from the
+      program name (``sys.argv[0]``).
+   *className*
+      Name of the widget class.  Used as a profile file and also as the name
+      with which Tcl is invoked (*argv0* in *interp*).
+   *useTk*
+      If ``True``, initialize the Tk subsystem.  The :func:`tkinter.Tcl() <Tcl>`
+      function sets this to ``False``.
+   *sync*
+      If ``True``, execute all X server commands synchronously, so that errors
+      are reported immediately.  Can be used for debugging. (X11 only)
+   *use*
+      Specifies the *id* of the window in which to embed the application,
+      instead of it being created as an independent toplevel window. *id* must
+      be specified in the same way as the value for the -use option for
+      toplevel widgets (that is, it has a form like that returned by
+      :meth:`~Misc.winfo_id`).
+
+      Note that on some platforms this will only work correctly if *id* refers
+      to a Tk frame or toplevel that has its -container option enabled.
+
+   :class:`Tk` reads and interprets profile files, named
+   :file:`.{className}.tcl` and :file:`.{baseName}.tcl`, into the Tcl
+   interpreter and calls :func:`exec` on the contents of
+   :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
+   profile files is the :envvar:`HOME` environment variable or, if that
+   isn't defined, then :data:`os.curdir`.
+
+   .. attribute:: tk
+
+      The Tk application object created by instantiating :class:`Tk`.  This
+      provides access to the Tcl interpreter.  Each widget that is attached
+      the same instance of :class:`Tk` has the same value for its :attr:`tk`
+      attribute.
+
+   .. attribute:: master
+
+      The widget object that contains this widget.
+      For :class:`Tk`, the :attr:`!master` is :const:`None` because it is the
+      main window.
+      The terms *master* and *parent* are similar and sometimes used
+      interchangeably as argument names; however, calling
+      :meth:`~Misc.winfo_parent` returns a string of the widget name whereas
+      :attr:`!master` returns the object.
+      *parent*/*child* reflects the tree-like relationship while *master* (or
+      *container*)/*content* reflects the container structure.
+
+   .. attribute:: children
+
+      The immediate descendants of this widget as a :class:`dict` with the
+      child widget names as the keys and the child instance objects as the
+      values.
+
+   .. method:: destroy()
+
+      Destroy this and all descendant widgets and, for the main window, end the
+      connection to the underlying Tcl interpreter.
+
+   .. method:: loadtk()
+
+      Finish loading and initializing the Tk subsystem.
+      This is needed only when the interpreter was created without Tk (for
+      example through :func:`Tcl`); it is called automatically when *useTk* is
+      true.
+
+   .. method:: readprofile(baseName, className)
+
+      Read and source the user's profile files :file:`.{className}.tcl` and
+      :file:`.{baseName}.tcl` into the Tcl interpreter, and execute the
+      corresponding :file:`.{className}.py` and :file:`.{baseName}.py` files.
+      This is called during initialization; see the description of the
+      constructor above.
+
+   .. method:: report_callback_exception(exc, val, tb)
+
+      Report a callback exception.
+      This is called when an exception propagates out of a Tkinter callback;
+      *exc*, *val* and *tb* are the exception type, value and traceback as
+      returned by :func:`sys.exc_info`.
+      The default implementation prints a traceback to :data:`sys.stderr`.
+      It can be overridden to customize error handling, for example to display
+      the traceback in a dialog.
 
 
 .. class:: Toplevel(master=None, cnf={}, **kw)
@@ -6512,6 +6486,18 @@ Other classes
 Module-level functions
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
+
+   The :func:`Tcl` function is a factory function which creates an object much
+   like that created by the :class:`Tk` class, except that it does not
+   initialize the Tk subsystem.
+   This is most often useful when driving the Tcl interpreter in an environment
+   where one doesn't want to create extraneous toplevel windows, or where one
+   cannot (such as Unix/Linux systems without an X server).
+   An object created by the :func:`Tcl` object can have a Toplevel window
+   created (and the Tk subsystem initialized) by calling its :meth:`~Tk.loadtk`
+   method.
+
 .. function:: NoDefaultRoot()
 
    Inhibit the creation of an implicit default root window.
@@ -6551,6 +6537,57 @@ Module-level functions
 
    Return the available image types (such as ``'photo'`` and ``'bitmap'``) in
    the default root's interpreter.
+
+
+.. _tkinter-file-handlers:
+
+File handlers
+^^^^^^^^^^^^^
+
+Tk allows you to register and unregister a callback function which will be
+called from the Tk mainloop when I/O is possible on a file descriptor.
+Only one handler may be registered per file descriptor. Example code::
+
+   import tkinter
+   widget = tkinter.Tk()
+   mask = tkinter.READABLE | tkinter.WRITABLE
+   widget.tk.createfilehandler(file, mask, callback)
+   ...
+   widget.tk.deletefilehandler(file)
+
+This feature is not available on Windows.
+
+Since you don't know how many bytes are available for reading, you may not
+want to use the :class:`~io.BufferedIOBase` or :class:`~io.TextIOBase`
+:meth:`~io.BufferedIOBase.read` or :meth:`~io.IOBase.readline` methods,
+since these will insist on reading a predefined number of bytes.
+For sockets, the :meth:`~socket.socket.recv` or
+:meth:`~socket.socket.recvfrom` methods will work fine; for other files,
+use raw reads or ``os.read(file.fileno(), maxbytecount)``.
+
+
+.. method:: Widget.tk.createfilehandler(file, mask, func)
+
+   Registers the file handler callback function *func*. The *file* argument
+   may either be an object with a :meth:`~io.IOBase.fileno` method (such as
+   a file or socket object), or an integer file descriptor. The *mask*
+   argument is an ORed combination of any of the three constants below.
+   The callback is called as follows::
+
+      callback(file, mask)
+
+
+.. method:: Widget.tk.deletefilehandler(file)
+
+   Unregisters a file handler.
+
+
+.. data:: READABLE
+          WRITABLE
+          EXCEPTION
+
+   Constants used in the *mask* arguments.
+
 
 Constants
 ^^^^^^^^^
