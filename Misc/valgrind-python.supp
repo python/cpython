@@ -317,10 +317,8 @@
 {
    Avoid problems w/readline doing a putenv and leaking on exit
    Memcheck:Leak
-   match-leak-kinds: definite,indirect
    ...
    fun:setup_readline
-   fun:PyInit_readline
 }
 
 # Valgrind emits "Conditional jump or move depends on uninitialised value(s)"
