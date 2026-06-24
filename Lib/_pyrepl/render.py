@@ -4,10 +4,10 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, Self
 
-from Lib._colorize import ANSIColors
+from _colorize import ANSIColors
 
-from .utils import ANSI_ESCAPE_SEQUENCE, THEME, StyleRef, str_width
 from .types import CursorXY
+from .utils import ANSI_ESCAPE_SEQUENCE, THEME, StyleRef, str_width
 
 type RenderStyle = StyleRef | str | None
 type LineUpdateKind = Literal[

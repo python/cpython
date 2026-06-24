@@ -40,7 +40,8 @@ from ctypes.wintypes import (
 from ctypes import Structure, POINTER, Union
 from typing import TYPE_CHECKING
 
-from Lib._colorize import ANSIColors
+from _colorize import ANSIColors
+
 from .console import Event, Console
 from .render import (
     EMPTY_RENDER_LINE,

@@ -36,7 +36,7 @@ from dataclasses import dataclass
 from fcntl import ioctl
 from typing import TYPE_CHECKING, overload
 
-from Lib._colorize import ANSIColors
+from _colorize import ANSIColors
 
 from . import terminfo
 from .console import Console, Event
