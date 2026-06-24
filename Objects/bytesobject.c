@@ -2015,13 +2015,12 @@ PyBytes_Join(PyObject *sep, PyObject *iterable)
 
 /*[clinic input]
 @permit_long_summary
-@text_signature "($self, sub[, start[, end]], /)"
 bytes.find
 
     sub: object
-    start: slice_index(accept={int, NoneType}, c_default='0') = None
+    start: slice_index(accept={int, NoneType}, c_default='0') = 0
          Optional start position. Default: start of the bytes.
-    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = sys.maxsize
          Optional stop position. Default: end of the bytes.
     /
 
@@ -2033,7 +2032,7 @@ Return -1 on failure.
 static PyObject *
 bytes_find_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                 Py_ssize_t end)
-/*[clinic end generated code: output=d5961a1c77b472a1 input=47d0929adafc6b0b]*/
+/*[clinic end generated code: output=d5961a1c77b472a1 input=efb565afb22a8837]*/
 {
     return _Py_bytes_find(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                           sub, start, end);
