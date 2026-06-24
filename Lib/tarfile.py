@@ -256,6 +256,32 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
         dst.write(buf)
     return
 
+# Maximum number of bytes read in a single call when reading a member's
+# extended header (a GNU long name/link or a pax header).  The size of such
+# a header is taken from the archive and is not trustworthy, so it is read in
+# bounded chunks to avoid a huge up-front allocation when a crafted or
+# truncated archive claims far more data than the file actually contains
+# (gh-151497).
+_EXTHEADER_READ_CHUNK = 1024 * 1024  # 1 MiB
+
+def _safe_read(fileobj, size):
+    """Read up to *size* bytes from *fileobj* in bounded chunks.
+
+    Returns the same bytes as ``fileobj.read(size)`` would (including a short
+    result at end of file), but limits pre-allocation, so an
+    oversized size field in a crafted header cannot force a huge allocation.
+    """
+    if size <= _EXTHEADER_READ_CHUNK:
+        return fileobj.read(size)
+    chunks = []
+    while size > 0:
+        chunk = fileobj.read(min(size, _EXTHEADER_READ_CHUNK))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        size -= len(chunk)
+    return b"".join(chunks)
+
 def _safe_print(s):
     encoding = getattr(sys.stdout, 'encoding', None)
     if encoding is not None:
@@ -1445,7 +1471,7 @@ class TarInfo(object):
         """Process the blocks that hold a GNU longname
            or longlink member.
         """
-        buf = tarfile.fileobj.read(self._block(self.size))
+        buf = _safe_read(tarfile.fileobj, self._block(self.size))
 
         # Fetch the next header and process it.
         try:
@@ -1501,7 +1527,7 @@ class TarInfo(object):
            POSIX.1-2008.
         """
         # Read the header information.
-        buf = tarfile.fileobj.read(self._block(self.size))
+        buf = _safe_read(tarfile.fileobj, self._block(self.size))
 
         # A pax header stores supplemental information for either
         # the following file (extended) or all following files
