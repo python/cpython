@@ -2,6 +2,7 @@
 
 import json
 import os
+import pathlib
 import random
 import struct
 import tempfile
@@ -814,6 +815,35 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             with BinaryReader("/nonexistent/path/file.bin") as reader:
                 reader.replay_samples(RawCollector())
 
+    def test_path_arguments_round_trip(self):
+        """Reader and writer accept str, bytes or os.PathLike."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        for path_arg in (filename, os.fsencode(filename), pathlib.Path(filename)):
+            with self.subTest(path_type=type(path_arg).__name__):
+                writer = _remote_debugging.BinaryWriter(path_arg, 1000, 0)
+                writer.finalize()
+                reader = _remote_debugging.BinaryReader(path_arg)
+                info = reader.get_info()
+                reader.close()
+                self.assertEqual(info["sample_count"], 0)
+
+    def test_rejects_non_pathlike(self):
+        """Reader and writer raise TypeError on non-path-like filenames."""
+        with self.assertRaises(TypeError):
+            _remote_debugging.BinaryWriter(123, 1000, 0)
+        with self.assertRaises(TypeError):
+            _remote_debugging.BinaryReader(123)
+
+    def test_invalid_path_error_preserves_pathlib(self):
+        """Missing path: OSError carries the original path object, not a string."""
+        missing = pathlib.Path("/i/do/not/exist")
+        with self.assertRaises(FileNotFoundError) as cm:
+            _remote_debugging.BinaryReader(missing)
+        self.assertEqual(os.fspath(cm.exception.filename), os.fspath(missing))
+
     def test_writer_handles_empty_stack_first_sample(self):
         """BinaryWriter.write_sample tolerates an empty stack on a fresh thread.
 
@@ -945,7 +975,11 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
 class TestBinaryFormatValidation(BinaryFormatTestBase):
     """Tests for malformed binary files."""
 
+    HDR_OFF_SAMPLES = 28
     HDR_OFF_THREADS = 32
+    HDR_OFF_STR_TABLE = 36
+    HDR_OFF_FRAME_TABLE = 44
+    FILE_HEADER_PLACEHOLDER_SIZE = 64
 
     def test_replay_rejects_more_threads_than_declared(self):
         """Replay rejects files with more unique threads than the header declares."""
@@ -969,6 +1003,43 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
                 "Invalid thread count: sample data contains more unique "
                 "threads than declared in header (declared 1, found at least 2)",
             )
+
+    def test_replay_rejects_sample_count_mismatch(self):
+        """Replay rejects files whose decoded samples disagree with the header."""
+        samples = [[make_interpreter(0, [
+            make_thread(1, [make_frame("sample.py", 10, "sample")])
+        ])]]
+        filename = self.create_binary_file(samples, compression="none")
+
+        with open(filename, "r+b") as raw:
+            raw.seek(self.HDR_OFF_SAMPLES)
+            raw.write(struct.pack("=I", 2))
+
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["sample_count"], 2)
+            with self.assertRaises(ValueError) as cm:
+                reader.replay_samples(RawCollector())
+            self.assertEqual(
+                str(cm.exception),
+                "Sample count mismatch: header declares 2 samples "
+                "but replay decoded 1",
+            )
+
+    def test_replay_rejects_trailing_partial_sample_header(self):
+        """Replay rejects partial sample bytes instead of silently stopping."""
+        filename = self.create_binary_file([], compression="none")
+        sample_data_end = self.FILE_HEADER_PLACEHOLDER_SIZE + 1
+
+        with open(filename, "r+b") as raw:
+            raw.seek(self.HDR_OFF_STR_TABLE)
+            raw.write(struct.pack("=Q", sample_data_end))
+            raw.seek(self.HDR_OFF_FRAME_TABLE)
+            raw.write(struct.pack("=Q", sample_data_end))
+
+        with BinaryReader(filename) as reader:
+            with self.assertRaises(ValueError) as cm:
+                reader.replay_samples(RawCollector())
+            self.assertEqual(str(cm.exception), "Truncated sample data: 1 trailing bytes")
 
 
 class TestBinaryEncodings(BinaryFormatTestBase):

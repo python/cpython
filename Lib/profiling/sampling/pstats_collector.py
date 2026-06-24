@@ -8,6 +8,8 @@ from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 
 
 class PstatsCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)

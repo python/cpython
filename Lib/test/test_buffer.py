@@ -24,7 +24,6 @@ import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
-from test.support import warnings_helper
 
 try:
     from _testbuffer import *
@@ -3260,15 +3259,6 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertNotEqual(a, point)
             self.assertNotEqual(point, a)
             self.assertRaises(NotImplementedError, a.tolist)
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
-    def test_memoryview_compare_special_cases_deprecated_u_type_code(self):
-
-        # Depends on issue #15625: the struct module does not understand 'u'.
-        a = array.array('u', 'xyz')
-        v = memoryview(a)
-        self.assertNotEqual(a, v)
-        self.assertNotEqual(v, a)
 
     def test_memoryview_compare_ndim_zero(self):
 

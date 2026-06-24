@@ -18,4 +18,4 @@ etree -- The ElementTree XML library.  This is a subset of the full
 
 from .utils import *
 
-__all__ = ["dom", "parsers", "sax", "etree", "is_valid_name"]
+__all__ = ["dom", "parsers", "sax", "etree", "is_valid_name", "is_valid_text"]

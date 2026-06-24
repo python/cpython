@@ -340,6 +340,10 @@ class MockPopenPipe:
 @requires_subprocess()
 class MacOSTest(unittest.TestCase):
 
+    def setUp(self):
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset("BROWSER")
+
     def test_default(self):
         browser = webbrowser.get()
         self.assertIsInstance(browser, webbrowser.MacOS)

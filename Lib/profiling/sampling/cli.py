@@ -167,7 +167,9 @@ def _build_child_profiler_args(args):
         child_args.extend(["--mode", mode])
 
     # Format options (skip pstats as it's the default)
-    if args.format != "pstats":
+    if args.format == "diff_flamegraph":
+        child_args.extend(["--diff-flamegraph", args.diff_baseline])
+    elif args.format != "pstats":
         child_args.append(f"--{args.format}")
 
     return child_args

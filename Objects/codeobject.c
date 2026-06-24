@@ -743,6 +743,10 @@ _PyCode_New(struct _PyCodeConstructor *con)
         return NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    co->_co_unique_id = _Py_INVALID_UNIQUE_ID;
+#endif
+
     if (init_code(co, con) < 0) {
         Py_DECREF(co);
         return NULL;
@@ -2449,15 +2453,17 @@ code_dealloc(PyObject *self)
     FT_CLEAR_WEAKREFS(self, co->co_weakreflist);
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
-    // The first element always points to the mutable bytecode at the end of
-    // the code object, which will be freed when the code object is freed.
-    for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
-        char *entry = co->co_tlbc->entries[i];
-        if (entry != NULL) {
-            PyMem_Free(entry);
+    if (co->co_tlbc != NULL) {
+        // The first element always points to the mutable bytecode at the end of
+        // the code object, which will be freed when the code object is freed.
+        for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
+            char *entry = co->co_tlbc->entries[i];
+            if (entry != NULL) {
+                PyMem_Free(entry);
+            }
         }
+        PyMem_Free(co->co_tlbc);
     }
-    PyMem_Free(co->co_tlbc);
 #endif
     PyObject_Free(co);
 }
@@ -2840,12 +2846,13 @@ code._varname_from_oparg
 
 (internal-only) Return the local variable name for the given oparg.
 
-WARNING: this method is for internal use only and may change or go away.
+WARNING: this method is for internal use only and may change or go
+away.
 [clinic start generated code]*/
 
 static PyObject *
 code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
-/*[clinic end generated code: output=1fd1130413184206 input=c5fa3ee9bac7d4ca]*/
+/*[clinic end generated code: output=1fd1130413184206 input=6ba7d6df0d566463]*/
 {
     PyObject *name = PyTuple_GetItem(self->co_localsplusnames, oparg);
     if (name == NULL) {

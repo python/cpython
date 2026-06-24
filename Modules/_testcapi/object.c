@@ -560,16 +560,23 @@ pysentinel_new(PyObject *self, PyObject *args)
 {
     const char *name;
     const char *module_name = NULL;
-    if (!PyArg_ParseTuple(args, "s|s", &name, &module_name)) {
+    const char *repr = NULL;
+    if (!PyArg_ParseTuple(args, "s|ss", &name, &module_name, &repr)) {
         return NULL;
     }
-    return PySentinel_New(name, module_name);
+    return PySentinel_New(name, module_name, repr);
 }
 
 static PyObject *
 pysentinel_check(PyObject *self, PyObject *obj)
 {
     return PyBool_FromLong(PySentinel_Check(obj));
+}
+
+static PyObject *
+pysentinel_checkexact(PyObject *self, PyObject *obj)
+{
+    return PyBool_FromLong(PySentinel_CheckExact(obj));
 }
 
 
@@ -604,6 +611,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_dump", pyobject_dump, METH_VARARGS},
     {"pysentinel_new", pysentinel_new, METH_VARARGS},
     {"pysentinel_check", pysentinel_check, METH_O},
+    {"pysentinel_checkexact", pysentinel_checkexact, METH_O},
     {NULL},
 };
 

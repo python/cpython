@@ -1991,15 +1991,11 @@
         case _LOAD_COMMON_CONSTANT: {
             JitOptRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
-            PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-            if (_Py_IsImmortal(val)) {
-                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-                value = PyJitRef_Borrow(sym_new_const(ctx, val));
-            }
-            else {
-                ADD_OP(_LOAD_CONST_INLINE, 0, (uintptr_t)val);
-                value = sym_new_const(ctx, val);
-            }
+            PyObject *val = PyStackRef_AsPyObjectBorrow(
+                _PyInterpreterState_GET()->common_consts[oparg]);
+            assert(_Py_IsImmortal(val));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            value = PyJitRef_Borrow(sym_new_const(ctx, val));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -3916,7 +3912,11 @@
                 PyObject *name = _Py_SpecialMethods[oparg].name;
                 PyObject *descr = _PyType_Lookup(type, name);
                 if (descr != NULL && (Py_TYPE(descr)->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-                    ADD_OP(_GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                    _PyUOpInstruction *insert_null = uop_buffer_last(&ctx->out_buffer);
+                    assert(insert_null->opcode == _INSERT_NULL);
+                    assert(insert_null->target == this_instr->target);
+                    REPLACE_OP(insert_null, _GUARD_TYPE_VERSION, 0, type->tp_version_tag);
+                    ADD_OP(_INSERT_NULL, 0, 0);
                     bool immortal = _Py_IsImmortal(descr) || (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
                     ADD_OP(immortal ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE,
                         0, (uintptr_t)descr);
@@ -3958,10 +3958,6 @@
         }
 
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
-            break;
-        }
-
-        case _GUARD_KEYS_VERSION: {
             break;
         }
 
@@ -4652,12 +4648,13 @@
                         length = PyUnicode_GET_LENGTH(const_val);
                     }
                     else if (PyBytes_CheckExact(const_val)) {
-                        CHECK_STACK_BOUNDS(-2);
-                        stack_pointer[-3] = res;
-                        stack_pointer += -2;
-                        ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                         length = PyBytes_GET_SIZE(const_val);
-                        stack_pointer += 2;
+                    }
+                    else if (PyFrozenDict_CheckExact(const_val)) {
+                        length = PyDict_GET_SIZE(const_val);
+                    }
+                    else if (PyFrozenSet_CheckExact(const_val)) {
+                        length = PySet_GET_SIZE(const_val);
                     }
                 }
             }

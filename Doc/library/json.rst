@@ -211,7 +211,7 @@ Basic Usage
       a string (such as ``"\t"``) is used to indent each level.
       If zero, negative, or ``""`` (the empty string),
       only newlines are inserted.
-      If ``None`` (the default), the most compact representation is used.
+      If ``None`` (the default), no newlines are inserted.
    :type indent: int | str | None
 
    :param separators:

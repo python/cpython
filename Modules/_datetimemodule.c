@@ -126,8 +126,8 @@ get_module_state(PyObject *module)
 
 #define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))
 
-static PyObject *
-get_current_module(PyInterpreterState *interp)
+static int
+get_current_module(PyInterpreterState *interp, PyObject **p_mod)
 {
     PyObject *mod = NULL;
 
@@ -139,20 +139,24 @@ get_current_module(PyInterpreterState *interp)
     if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
         goto error;
     }
-    if (ref != NULL) {
-        if (ref != Py_None) {
-            (void)PyWeakref_GetRef(ref, &mod);
-            if (mod == Py_None) {
-                Py_CLEAR(mod);
-            }
+    if (ref != NULL && ref != Py_None) {
+        if (PyWeakref_GetRef(ref, &mod) < 0) {
             Py_DECREF(ref);
+            goto error;
         }
+        if (mod == Py_None) {
+            Py_CLEAR(mod);
+        }
+        Py_DECREF(ref);
     }
-    return mod;
+    assert(!PyErr_Occurred());
+    *p_mod = mod;
+    return mod != NULL;
 
 error:
     assert(PyErr_Occurred());
-    return NULL;
+    *p_mod = NULL;
+    return -1;
 }
 
 static PyModuleDef datetimemodule;
@@ -161,22 +165,26 @@ static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *mod = get_current_module(interp);
+    PyObject *mod;
+    if (get_current_module(interp, &mod) < 0) {
+        goto error;
+    }
     if (mod == NULL) {
-        assert(!PyErr_Occurred());
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
         /* The static types can outlive the module,
          * so we must re-import the module. */
         mod = PyImport_ImportModule("_datetime");
         if (mod == NULL) {
-            return NULL;
+            goto error;
         }
     }
     datetime_state *st = get_module_state(mod);
     *p_mod = mod;
     return st;
+
+error:
+    assert(PyErr_Occurred());
+    *p_mod = NULL;
+    return NULL;
 }
 
 #define GET_CURRENT_STATE(MOD_VAR)  \
@@ -1509,7 +1517,7 @@ get_tzinfo_member(PyObject *self)
  * this returns NULL.  Else result is returned.
  */
 static PyObject *
-call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
+call_tzinfo_method(PyObject *tzinfo, PyObject *name, PyObject *tzinfoarg)
 {
     PyObject *offset;
 
@@ -1519,7 +1527,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
 
     if (tzinfo == Py_None)
         Py_RETURN_NONE;
-    offset = PyObject_CallMethod(tzinfo, name, "O", tzinfoarg);
+    offset = PyObject_CallMethodOneArg(tzinfo, name, tzinfoarg);
     if (offset == Py_None || offset == NULL)
         return offset;
     if (PyDelta_Check(offset)) {
@@ -1536,7 +1544,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "tzinfo.%s() must return None or "
+                     "tzinfo.%U() must return None or "
                      "timedelta, not '%.200s'",
                      name, Py_TYPE(offset)->tp_name);
         Py_DECREF(offset);
@@ -1557,7 +1565,7 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
 static PyObject *
 call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
 {
-    return call_tzinfo_method(tzinfo, "utcoffset", tzinfoarg);
+    return call_tzinfo_method(tzinfo, &_Py_ID(utcoffset), tzinfoarg);
 }
 
 /* Call tzinfo.dst(tzinfoarg), and extract an integer from the
@@ -1571,7 +1579,7 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg)
 static PyObject *
 call_dst(PyObject *tzinfo, PyObject *tzinfoarg)
 {
-    return call_tzinfo_method(tzinfo, "dst", tzinfoarg);
+    return call_tzinfo_method(tzinfo, &_Py_ID(dst), tzinfoarg);
 }
 
 /* Call tzinfo.tzname(tzinfoarg), and return the result.  tzinfo must be
@@ -2128,8 +2136,11 @@ delta_to_microseconds(PyDateTime_Delta *self)
     PyObject *x3 = NULL;
     PyObject *result = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
@@ -2207,8 +2218,11 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     tuple = checked_divmod(pyus, CONST_US_PER_SECOND(st));
     if (tuple == NULL) {
@@ -2815,8 +2829,11 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
 {
     PyObject *self = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     PyObject *x = NULL;         /* running sum of microseconds */
     PyObject *y = NULL;         /* temp sum of microseconds */
@@ -3014,8 +3031,12 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
     if (total_microseconds == NULL)
         return NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        Py_DECREF(total_microseconds);
+        return NULL;
+    }
 
     total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
 
@@ -3325,7 +3346,6 @@ datetime_date_today_impl(PyTypeObject *type)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 datetime.date.fromtimestamp
 
@@ -3334,13 +3354,13 @@ datetime.date.fromtimestamp
 
 Create a date from a POSIX timestamp.
 
-The timestamp is a number, e.g. created via time.time(), that is interpreted
-as local time.
+The timestamp is a number, e.g. created via time.time(), that is
+interpreted as local time.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=59def4e32c028fb6 input=55ff6940f0a8339f]*/
+/*[clinic end generated code: output=59def4e32c028fb6 input=15720eef43b169a1]*/
 {
     return date_fromtimestamp(type, timestamp);
 }
@@ -3476,6 +3496,7 @@ datetime_date_fromisocalendar_impl(PyTypeObject *type, int year, int week,
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 datetime.date.strptime
 
@@ -3492,7 +3513,7 @@ For a list of supported format codes, see the documentation:
 static PyObject *
 datetime_date_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=454d473bee2d5161 input=31d57bb789433e99]*/
+/*[clinic end generated code: output=454d473bee2d5161 input=2db8f0b2b5242deb]*/
 {
     PyObject *result;
 
@@ -3867,8 +3888,11 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
         week = 0;
     }
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     PyObject *v = iso_calendar_date_new_impl(ISOCALENDAR_DATE_TYPE(st),
                                              year, week + 1, day + 1);
@@ -4744,6 +4768,7 @@ datetime_time_impl(PyTypeObject *type, int hour, int minute, int second,
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 datetime.time.strptime
 
@@ -4760,7 +4785,7 @@ For a list of supported format codes, see the documentation:
 static PyObject *
 datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=ae05a9bc0241d3bf input=82ba425ecacc54aa]*/
+/*[clinic end generated code: output=ae05a9bc0241d3bf input=f01d0b9eb5383da5]*/
 {
     PyObject *result;
 
@@ -4856,8 +4881,8 @@ datetime.time.isoformat
 
 Return the time formatted according to ISO.
 
-The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
-part is omitted if self.microsecond == 0.
+The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the
+fractional part is omitted if self.microsecond == 0.
 
 The optional argument timespec specifies the number of additional
 terms of the time to include. Valid options are 'auto', 'hours',
@@ -4866,7 +4891,7 @@ terms of the time to include. Valid options are 'auto', 'hours',
 
 static PyObject *
 datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
-/*[clinic end generated code: output=2bcc7cab65c35545 input=afbbbd953d10ad07]*/
+/*[clinic end generated code: output=2bcc7cab65c35545 input=0efae103081060f4]*/
 {
     char buf[100];
 
@@ -4927,14 +4952,14 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 datetime.time.strftime
 
     format: unicode
 
 Format using strftime().
 
-The date part of the timestamp passed to underlying strftime should not be used.
+The date part of the timestamp passed to underlying strftime should
+not be used.
 
 For a list of supported format codes, see the documentation:
     https://docs.python.org/3/library/datetime.html#format-codes
@@ -4942,7 +4967,7 @@ For a list of supported format codes, see the documentation:
 
 static PyObject *
 datetime_time_strftime_impl(PyDateTime_Time *self, PyObject *format)
-/*[clinic end generated code: output=10f65af20e2a78c7 input=c4a5bbecd798654b]*/
+/*[clinic end generated code: output=10f65af20e2a78c7 input=184e1c0d7d356c5d]*/
 {
     PyObject *result;
     PyObject *tuple;
@@ -5510,15 +5535,15 @@ datetime.datetime.__new__
 
 A combination of a date and a time.
 
-The year, month and day arguments are required. tzinfo may be None, or an
-instance of a tzinfo subclass. The remaining arguments may be ints.
+The year, month and day arguments are required. tzinfo may be None, or
+an instance of a tzinfo subclass. The remaining arguments may be ints.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_impl(PyTypeObject *type, int year, int month, int day,
                        int hour, int minute, int second, int microsecond,
                        PyObject *tzinfo, int fold)
-/*[clinic end generated code: output=47983ddb47d36037 input=2af468d7a9c1e568]*/
+/*[clinic end generated code: output=47983ddb47d36037 input=c7fd85dcf6fe9691]*/
 {
     return new_datetime_ex2(year, month, day,
                             hour, minute, second, microsecond,
@@ -5735,7 +5760,6 @@ datetime_datetime_utcnow_impl(PyTypeObject *type)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 datetime.datetime.fromtimestamp
 
@@ -5744,14 +5768,14 @@ datetime.datetime.fromtimestamp
 
 Create a datetime from a POSIX timestamp.
 
-The timestamp is a number, e.g. created via time.time(), that is interpreted
-as local time.
+The timestamp is a number, e.g. created via time.time(), that is
+interpreted as local time.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp,
                                      PyObject *tzinfo)
-/*[clinic end generated code: output=9c47ea2b2ebdaded input=d6b5b2095c5a34b2]*/
+/*[clinic end generated code: output=9c47ea2b2ebdaded input=7a2bc81a049ea287]*/
 {
     PyObject *self;
     if (check_tzinfo_subclass(tzinfo) < 0)
@@ -6120,7 +6144,7 @@ datetime_datetime_fromisoformat_impl(PyTypeObject *type, PyObject *string)
         goto error;
     }
 
-    if ((hour == 24) && (month <= 12))  {
+    if ((hour == 24) && (month >= 1 && month <= 12))  {
         int d_in_month = days_in_month(year, month);
         if (day <= d_in_month) {
             if (minute == 0 && second == 0 && microsecond == 0) {
@@ -6800,8 +6824,11 @@ local_timezone(PyDateTime_DateTime *utc_time)
     PyObject *one_second;
     PyObject *seconds;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     delta = datetime_subtract((PyObject *)utc_time, CONST_EPOCH(st));
     RELEASE_CURRENT_STATE(st, current_mod);
@@ -7047,8 +7074,11 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
     PyObject *result;
 
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
-        PyObject *current_mod = NULL;
+        PyObject *current_mod;
         datetime_state *st = GET_CURRENT_STATE(current_mod);
+        if (st == NULL) {
+            return NULL;
+        }
 
         PyObject *delta;
         delta = datetime_subtract(op, CONST_EPOCH(st));
@@ -7581,9 +7611,8 @@ _datetime_exec(PyObject *module)
     datetime_state *st = get_module_state(module);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *old_module = get_current_module(interp);
-    if (PyErr_Occurred()) {
-        assert(old_module == NULL);
+    PyObject *old_module;
+    if (get_current_module(interp, &old_module) < 0) {
         goto error;
     }
     /* We actually set the "current" module right before a successful return. */

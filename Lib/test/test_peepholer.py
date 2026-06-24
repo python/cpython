@@ -1140,8 +1140,8 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f(self):
             if x: pass
             self.x
-            from shutil import ExecError
-            print(ExecError)
+            from heapq import heapify_max
+            print(heapify_max)
         self.assertInBytecode(f, "LOAD_FAST_BORROW", "self")
 
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
@@ -1320,10 +1320,10 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0),
         ]
         after = [
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', opcode._common_constants.index(()), 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[()])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
     def test_fold_tuple_of_constants(self):
         before = [
@@ -1378,10 +1378,10 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0)
         ]
         after = [
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_COMMON_CONSTANT', opcode._common_constants.index(()), 0),
             ('RETURN_VALUE', None, 0)
         ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[()])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
         # multiple BUILD_LIST 0: ([], 1, [], 2)
         same = [

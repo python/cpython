@@ -2915,6 +2915,23 @@ class TestMove(BaseTest, unittest.TestCase):
             os_helper.rmtree(TESTFN)
 
     @os_helper.skip_unless_symlink
+    def test_destinsrc_symlink_bypass(self):
+        tmp = self.mkdtemp()
+        src = os.path.join(tmp, 'src')
+        os.makedirs(src)
+        # tmp/link -> tmp (one level up)
+        link = os.path.join(tmp, 'link')
+        os.symlink(tmp, link)
+        # raw path: tmp/link/src/sub - no src prefix in string space
+        # real path: tmp/src/sub     - physically inside src
+        dst = os.path.join(link, 'src', 'sub')
+        self.assertTrue(
+            shutil._destinsrc(src, dst),
+            msg='_destinsrc failed to detect dst inside src via symlink '
+                '(dst=%s, src=%s)' % (dst, src),
+        )
+
+    @os_helper.skip_unless_symlink
     @mock_rename
     def test_move_file_symlink(self):
         dst = os.path.join(self.src_dir, 'bar')
@@ -3580,8 +3597,6 @@ class PublicAPITests(unittest.TestCase):
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
-        with self.assertWarns(DeprecationWarning):
-            from shutil import ExecError  # noqa: F401
 
 
 if __name__ == '__main__':

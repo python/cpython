@@ -1594,7 +1594,12 @@ type_set_qualname(PyObject *tp, PyObject *value, void *context)
     }
 
     et = (PyHeapTypeObject*)type;
-    Py_SETREF(et->ht_qualname, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_qualname = et->ht_qualname;
+    et->ht_qualname = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_DECREF(old_qualname);
     return 0;
 }
 
@@ -3712,9 +3717,9 @@ find_best_base(PyObject *bases)
     for (i = 0; i < n; i++) {
         PyObject *base_proto = PyTuple_GET_ITEM(bases, i);
         if (!PyType_Check(base_proto)) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_TypeError,
-                "bases must be types");
+                "bases must be types; got '%T'", base_proto);
             return NULL;
         }
         PyTypeObject *base_i = (PyTypeObject *)base_proto;
@@ -3788,7 +3793,7 @@ solid_base(PyTypeObject *type)
 // or when __bases__ is re-assigned.  Since the slots are read without atomic
 // operations and without locking, we can only safely update them while the
 // world is stopped.  However, with the world stopped, we are very limited on
-// which APIs can be safely used.  For example, calling _PyObject_HashFast()
+// which APIs can be safely used.  For example, calling _PyObject_HashDictKey()
 // or _PyDict_GetItemRef_KnownHash() are not safe and can potentially cause
 // deadlocks.  Hashing can be re-entrant and _PyDict_GetItemRef_KnownHash can
 // acquire a lock if the dictionary is not owned by the current thread, to
@@ -4162,8 +4167,9 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
     for (i = 0; i < nbases; i++) {
         tmp = PyTuple_GET_ITEM(bases, i);
         tmptype = Py_TYPE(tmp);
-        if (PyType_IsSubtype(winner, tmptype))
+        if (PyType_IsSubtype(winner, tmptype)) {
             continue;
+        }
         if (PyType_IsSubtype(tmptype, winner)) {
             winner = tmptype;
             continue;
@@ -4841,6 +4847,18 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
     if (type_new_set_classdictcell(dict) < 0) {
         return -1;
     }
+
+#ifdef Py_GIL_DISABLED
+    // enable deferred reference counting on functions and descriptors
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        if (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL) {
+            PyUnstable_Object_EnableDeferredRefcount(value);
+        }
+    }
+#endif
+
     return 0;
 }
 
@@ -5475,6 +5493,7 @@ type_from_slots_or_spec(
     Py_ssize_t name_buf_len = strlen(it.name) + 1;
     _ht_tpname = PyMem_Malloc(name_buf_len);
     if (_ht_tpname == NULL) {
+        PyErr_NoMemory();
         goto finally;
     }
     memcpy(_ht_tpname, it.name, name_buf_len);
@@ -5512,6 +5531,12 @@ type_from_slots_or_spec(
         }
     }
 
+    /* Calculate best base, and check that all bases are type objects */
+    PyTypeObject *base = find_best_base(bases);  // borrowed ref
+    if (base == NULL) {
+        goto finally;
+    }
+
     /* Calculate the metaclass */
 
     if (!metaclass) {
@@ -5534,11 +5559,6 @@ type_from_slots_or_spec(
         goto finally;
     }
 
-    /* Calculate best base, and check that all bases are type objects */
-    PyTypeObject *base = find_best_base(bases);  // borrowed ref
-    if (base == NULL) {
-        goto finally;
-    }
     // find_best_base() should check Py_TPFLAGS_BASETYPE & raise a proper
     // exception, here we just check its work
     assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
@@ -5760,7 +5780,7 @@ type_from_slots_or_spec(
     ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
 #endif
 
- finally:
+finally:
     if (PyErr_Occurred()) {
         Py_CLEAR(res);
     }
@@ -6117,7 +6137,7 @@ PyObject_GetItemData(PyObject *obj)
 static int
 find_name_in_mro(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    Py_hash_t hash = _PyObject_HashFast(name);
+    Py_hash_t hash = _PyObject_HashDictKey(name);
     if (hash == -1) {
         PyErr_Clear();
         return -1;
@@ -6478,9 +6498,25 @@ set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 void
 _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
+    BEGIN_TYPE_LOCK();
+    /* Ideally, changing flags and invalidating the old version tag would
+       happen in one step. But type_modified_unlocked() is re-entrant and
+       cannot run with the world stopped, so we must invalidate first.
+       Immutable/static-builtin types are skipped because
+       set_flags_recursive() does not modify them. */
+    if (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
+        (self->tp_flags & mask) != flags)
+    {
+        type_modified_unlocked(self);
+    }
+    /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
+       can reassign a version tag before the flag update. */
+    type_lock_prevent_release();
     types_stop_world();
     set_flags_recursive(self, mask, flags);
     types_start_world();
+    type_lock_allow_release();
+    END_TYPE_LOCK();
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -6746,12 +6782,11 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
 
 #ifdef Py_GIL_DISABLED
-    // gh-139103: Enable deferred refcounting for functions assigned
-    // to type objects.  This is important for `dataclass.__init__`,
-    // which is generated dynamically.
-    if (value != NULL &&
-        PyFunction_Check(value) &&
-        !_PyObject_HasDeferredRefcount(value))
+    // gh-139103: Enable deferred refcounting for functions and descriptors
+    // assigned to type objects.  This is important for `dataclass.__init__`,
+    // which is generated dynamically, and for descriptor scaling on
+    // free-threaded builds.
+    if (value != NULL && (PyFunction_Check(value) || Py_TYPE(value)->tp_descr_get != NULL))
     {
         PyUnstable_Object_EnableDeferredRefcount(value);
     }
@@ -6991,7 +7026,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     if (et->ht_cached_keys) {
-        _PyDictKeys_DecRef(et->ht_cached_keys);
+        _PyDict_RemoveKeysForClass(et);
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
@@ -11089,10 +11124,12 @@ static PyObject *
 slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject *get;
-
-    get = _PyType_LookupRef(tp, &_Py_ID(__get__));
-    if (get == NULL) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _PyType_LookupStackRefAndVersion(tp, &_Py_ID(__get__), &cref.ref);
+    if (PyStackRef_IsNull(cref.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &cref);
 #ifndef Py_GIL_DISABLED
         /* Avoid further slowdowns */
         if (tp->tp_descr_get == slot_tp_descr_get)
@@ -11104,9 +11141,10 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         obj = Py_None;
     if (type == NULL)
         type = Py_None;
+    PyObject *get = PyStackRef_AsPyObjectBorrow(cref.ref);
     PyObject *stack[3] = {self, obj, type};
     PyObject *res = PyObject_Vectorcall(get, stack, 3, NULL);
-    Py_DECREF(get);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     return res;
 }
 
@@ -11297,6 +11335,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
 
     wrapper = PyObject_GC_New(PyBufferWrapper, &_PyBufferWrapper_Type);
     if (wrapper == NULL) {
+        PyBuffer_Release(buffer);
         goto fail;
     }
     wrapper->mv = ret;
@@ -12911,7 +12950,8 @@ PyDoc_STRVAR(super_doc,
 "super() -> same as super(__class__, <first argument>)\n"
 "super(type) -> unbound super object\n"
 "super(type, obj) -> bound super object; requires isinstance(obj, type)\n"
-"super(type, type2) -> bound super object; requires issubclass(type2, type)\n"
+"super(type, type2) -> bound super object; requires\n"
+"    issubclass(type2, type)\n"
 "Typical use to call a cooperative superclass method:\n"
 "class C(B):\n"
 "    def meth(self, arg):\n"

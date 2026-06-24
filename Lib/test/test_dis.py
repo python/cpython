@@ -15,7 +15,8 @@ import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
                           requires_specialization, cpython_only,
-                          os_helper, import_helper, reset_code)
+                          os_helper, import_helper, reset_code,
+                          requires_jit_enabled)
 from test.support.bytecode_helper import BytecodeTestCase
 
 
@@ -1480,6 +1481,37 @@ class DisTests(DisTestBase):
         self.assertRegex(assem_op, fr"--> {opname}")
         # Make sure when lasti points to cache, it shows the same disassembly
         self.assertEqual(assem_op, assem_cache)
+
+
+    @cpython_only
+    @requires_specialization
+    @requires_jit_enabled
+    def test_show_jit(self):
+        def loop(n):
+            for i in range(n):
+                pass
+        for _ in range(10):
+            loop(500)
+        line = loop.__code__.co_firstlineno
+        loop_dis = f"""\
+{line}           RESUME_CHECK_JIT         0
+
+{line+1}           LOAD_GLOBAL_BUILTIN      1 (range + NULL)
+               LOAD_FAST_BORROW         0 (n)
+               CALL_BUILTIN_CLASS       1
+               GET_ITER                 0
+       L1:     FOR_ITER_RANGE           3 (to L2)
+               STORE_FAST               1 (i)
+
+{line+2}           ENTER_EXECUTOR           0
+
+{line+1}   L2:     END_FOR
+               POP_ITER
+               LOAD_COMMON_CONSTANT     7 (None)
+               RETURN_VALUE
+"""
+        got = self.get_disassembly(loop, adaptive=True, show_jit=True)
+        self.do_disassembly_compare(got, loop_dis)
 
 
 class DisWithFileTests(DisTests):
