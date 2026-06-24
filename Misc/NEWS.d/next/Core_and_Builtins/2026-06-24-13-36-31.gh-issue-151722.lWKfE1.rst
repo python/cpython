@@ -1,0 +1,3 @@
+:meth:`!frozendict.fromkeys` now creates a :class:`frozendict` which is not
+tracked by the garbage collector, and only tracks it once the dictionary is
+fully initialized. Patch by Donghee Na and Victor Stinner.
