@@ -398,6 +398,41 @@ The module :mod:`!curses` defines the following functions:
    no flushing is done.
 
 
+.. function:: is_cbreak()
+
+   Return ``True`` if cbreak mode (see :func:`cbreak`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_echo()
+
+   Return ``True`` if echo mode (see :func:`echo`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_nl()
+
+   Return ``True`` if nl mode (see :func:`nl`) is enabled, ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_raw()
+
+   Return ``True`` if raw mode (see :func:`raw`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
 .. function:: is_term_resized(nlines, ncols)
 
    Return ``True`` if :func:`resize_term` would modify the window structure,
@@ -1154,6 +1189,16 @@ Window objects
    .. versionadded:: 3.3
 
 
+.. method:: window.getdelay()
+
+   Return the window's read timeout in milliseconds,
+   as set by :meth:`nodelay` or :meth:`timeout`:
+   ``-1`` for blocking, ``0`` for non-blocking,
+   or a positive number of milliseconds.
+
+   .. versionadded:: next
+
+
 .. method:: window.getkey([y, x])
 
    Get a character, returning a string instead of an integer, as :meth:`getch`
@@ -1167,11 +1212,27 @@ Window objects
    Return a tuple ``(y, x)`` of the height and width of the window.
 
 
+.. method:: window.getparent()
+
+   Return the parent window of this subwindow,
+   or ``None`` if this window is not a subwindow.
+
+   .. versionadded:: next
+
+
 .. method:: window.getparyx()
 
    Return the beginning coordinates of this window relative to its parent window
    as a tuple ``(y, x)``.  Return ``(-1, -1)`` if this window has no
    parent.
+
+
+.. method:: window.getscrreg()
+
+   Return a tuple ``(top, bottom)`` of the window's current scrolling region,
+   as set by :meth:`setscrreg`.
+
+   .. versionadded:: next
 
 
 .. method:: window.getstr()
@@ -1319,11 +1380,96 @@ Window objects
    .. versionadded:: next
 
 
+.. method:: window.is_cleared()
+
+   Return the current value set by :meth:`clearok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_idcok()
+
+   Return the current value set by :meth:`idcok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_idlok()
+
+   Return the current value set by :meth:`idlok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_immedok()
+
+   Return the current value set by :meth:`immedok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_keypad()
+
+   Return the current value set by :meth:`keypad`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_leaveok()
+
+   Return the current value set by :meth:`leaveok`.
+
+   .. versionadded:: next
+
+
 .. method:: window.is_linetouched(line)
 
    Return ``True`` if the specified line was modified since the last call to
    :meth:`refresh`; otherwise return ``False``.  Raise a :exc:`curses.error`
    exception if *line* is not valid for the given window.
+
+
+.. method:: window.is_nodelay()
+
+   Return the current value set by :meth:`nodelay`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_notimeout()
+
+   Return the current value set by :meth:`notimeout`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_pad()
+
+   Return ``True`` if the window is a pad created by :func:`newpad`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_scrollok()
+
+   Return the current value set by :meth:`scrollok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_subwin()
+
+   Return ``True`` if the window is a subwindow created by :meth:`subwin`
+   or :meth:`derwin`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_syncok()
+
+   Return the current value set by :meth:`syncok`.
+
+   .. versionadded:: next
 
 
 .. method:: window.is_wintouched()

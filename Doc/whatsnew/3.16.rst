@@ -125,6 +125,12 @@ curses
   support.
   (Contributed by Serhiy Storchaka in :gh:`151774`.)
 
+* Add :mod:`curses` functions and window methods that report state which could
+  previously only be set, such as :meth:`curses.window.is_keypad`,
+  :meth:`curses.window.getparent` and :func:`curses.is_cbreak`,
+  available when built against an ncurses with ``NCURSES_EXT_FUNCS``.
+  (Contributed by Serhiy Storchaka in :gh:`151776`.)
+
 gzip
 ----
 

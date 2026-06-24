@@ -1991,6 +1991,94 @@ exit:
     return return_value;
 }
 
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
+
+PyDoc_STRVAR(_curses_is_cbreak__doc__,
+"is_cbreak($module, /)\n"
+"--\n"
+"\n"
+"Return True if cbreak mode is enabled, False otherwise.");
+
+#define _CURSES_IS_CBREAK_METHODDEF    \
+    {"is_cbreak", (PyCFunction)_curses_is_cbreak, METH_NOARGS, _curses_is_cbreak__doc__},
+
+static PyObject *
+_curses_is_cbreak_impl(PyObject *module);
+
+static PyObject *
+_curses_is_cbreak(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_is_cbreak_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
+
+PyDoc_STRVAR(_curses_is_echo__doc__,
+"is_echo($module, /)\n"
+"--\n"
+"\n"
+"Return True if echo mode is enabled, False otherwise.");
+
+#define _CURSES_IS_ECHO_METHODDEF    \
+    {"is_echo", (PyCFunction)_curses_is_echo, METH_NOARGS, _curses_is_echo__doc__},
+
+static PyObject *
+_curses_is_echo_impl(PyObject *module);
+
+static PyObject *
+_curses_is_echo(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_is_echo_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
+
+PyDoc_STRVAR(_curses_is_nl__doc__,
+"is_nl($module, /)\n"
+"--\n"
+"\n"
+"Return True if nl mode is enabled, False otherwise.");
+
+#define _CURSES_IS_NL_METHODDEF    \
+    {"is_nl", (PyCFunction)_curses_is_nl, METH_NOARGS, _curses_is_nl__doc__},
+
+static PyObject *
+_curses_is_nl_impl(PyObject *module);
+
+static PyObject *
+_curses_is_nl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_is_nl_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
+
+PyDoc_STRVAR(_curses_is_raw__doc__,
+"is_raw($module, /)\n"
+"--\n"
+"\n"
+"Return True if raw mode is enabled, False otherwise.");
+
+#define _CURSES_IS_RAW_METHODDEF    \
+    {"is_raw", (PyCFunction)_curses_is_raw, METH_NOARGS, _curses_is_raw__doc__},
+
+static PyObject *
+_curses_is_raw_impl(PyObject *module);
+
+static PyObject *
+_curses_is_raw(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_is_raw_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
+
 PyDoc_STRVAR(_curses_color_content__doc__,
 "color_content($module, color_number, /)\n"
 "--\n"
@@ -4751,6 +4839,22 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_NOFILTER_METHODDEF
 #endif /* !defined(_CURSES_NOFILTER_METHODDEF) */
 
+#ifndef _CURSES_IS_CBREAK_METHODDEF
+    #define _CURSES_IS_CBREAK_METHODDEF
+#endif /* !defined(_CURSES_IS_CBREAK_METHODDEF) */
+
+#ifndef _CURSES_IS_ECHO_METHODDEF
+    #define _CURSES_IS_ECHO_METHODDEF
+#endif /* !defined(_CURSES_IS_ECHO_METHODDEF) */
+
+#ifndef _CURSES_IS_NL_METHODDEF
+    #define _CURSES_IS_NL_METHODDEF
+#endif /* !defined(_CURSES_IS_NL_METHODDEF) */
+
+#ifndef _CURSES_IS_RAW_METHODDEF
+    #define _CURSES_IS_RAW_METHODDEF
+#endif /* !defined(_CURSES_IS_RAW_METHODDEF) */
+
 #ifndef _CURSES_ERASEWCHAR_METHODDEF
     #define _CURSES_ERASEWCHAR_METHODDEF
 #endif /* !defined(_CURSES_ERASEWCHAR_METHODDEF) */
@@ -4862,4 +4966,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=35a3d93708112587 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fd0f4e65dc594a65 input=a9049054013a1b77]*/
