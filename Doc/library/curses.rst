@@ -85,6 +85,20 @@ The module :mod:`!curses` defines the following functions:
    .. versionadded:: 3.14
 
 
+.. function:: alloc_pair(fg, bg)
+
+   Allocate a color pair for foreground color *fg* and background color *bg*,
+   and return its number.  If a color pair for the same combination of colors
+   already exists, return its number.  Otherwise allocate a new color pair and
+   return its number.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+
 .. function:: baudrate()
 
    Return the output speed of the terminal in bits per second.  On software
@@ -226,6 +240,19 @@ The module :mod:`!curses` defines the following functions:
    .. versionadded:: next
 
 
+.. function:: find_pair(fg, bg)
+
+   Return the number of a color pair for foreground color *fg* and background
+   color *bg*, or ``-1`` if no color pair for this combination of colors has
+   been allocated.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+
 .. function:: flash()
 
    Flash the screen.  That is, change it to reverse-video and then change it back
@@ -237,6 +264,18 @@ The module :mod:`!curses` defines the following functions:
 
    Flush all input buffers.  This throws away any  typeahead  that  has been typed
    by the user and has not yet been processed by the program.
+
+
+.. function:: free_pair(pair_number)
+
+   Free the color pair *pair_number*, which must have been allocated by
+   :func:`alloc_pair`.  The pair must not be in use.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: getmouse()
@@ -357,6 +396,41 @@ The module :mod:`!curses` defines the following functions:
    If *flag* is ``True``, pressing an interrupt key (interrupt, break, or quit)
    will flush all output in the terminal driver queue.  If *flag* is ``False``,
    no flushing is done.
+
+
+.. function:: is_cbreak()
+
+   Return ``True`` if cbreak mode (see :func:`cbreak`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_echo()
+
+   Return ``True`` if echo mode (see :func:`echo`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_nl()
+
+   Return ``True`` if nl mode (see :func:`nl`) is enabled, ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_raw()
+
+   Return ``True`` if raw mode (see :func:`raw`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
 
 
 .. function:: is_term_resized(nlines, ncols)
@@ -568,6 +642,18 @@ The module :mod:`!curses` defines the following functions:
    Enter raw mode.  In raw mode, normal line buffering and  processing of
    interrupt, quit, suspend, and flow control keys are turned off; characters are
    presented to curses input functions one by one.
+
+
+.. function:: reset_color_pairs()
+
+   Discard all color-pair definitions, releasing the color pairs allocated by
+   :func:`init_pair` and :func:`alloc_pair`.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: reset_prog_mode()
@@ -1103,6 +1189,16 @@ Window objects
    .. versionadded:: 3.3
 
 
+.. method:: window.getdelay()
+
+   Return the window's read timeout in milliseconds,
+   as set by :meth:`nodelay` or :meth:`timeout`:
+   ``-1`` for blocking, ``0`` for non-blocking,
+   or a positive number of milliseconds.
+
+   .. versionadded:: next
+
+
 .. method:: window.getkey([y, x])
 
    Get a character, returning a string instead of an integer, as :meth:`getch`
@@ -1116,11 +1212,27 @@ Window objects
    Return a tuple ``(y, x)`` of the height and width of the window.
 
 
+.. method:: window.getparent()
+
+   Return the parent window of this subwindow,
+   or ``None`` if this window is not a subwindow.
+
+   .. versionadded:: next
+
+
 .. method:: window.getparyx()
 
    Return the beginning coordinates of this window relative to its parent window
    as a tuple ``(y, x)``.  Return ``(-1, -1)`` if this window has no
    parent.
+
+
+.. method:: window.getscrreg()
+
+   Return a tuple ``(top, bottom)`` of the window's current scrolling region,
+   as set by :meth:`setscrreg`.
+
+   .. versionadded:: next
 
 
 .. method:: window.getstr()
@@ -1268,11 +1380,96 @@ Window objects
    .. versionadded:: next
 
 
+.. method:: window.is_cleared()
+
+   Return the current value set by :meth:`clearok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_idcok()
+
+   Return the current value set by :meth:`idcok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_idlok()
+
+   Return the current value set by :meth:`idlok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_immedok()
+
+   Return the current value set by :meth:`immedok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_keypad()
+
+   Return the current value set by :meth:`keypad`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_leaveok()
+
+   Return the current value set by :meth:`leaveok`.
+
+   .. versionadded:: next
+
+
 .. method:: window.is_linetouched(line)
 
    Return ``True`` if the specified line was modified since the last call to
    :meth:`refresh`; otherwise return ``False``.  Raise a :exc:`curses.error`
    exception if *line* is not valid for the given window.
+
+
+.. method:: window.is_nodelay()
+
+   Return the current value set by :meth:`nodelay`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_notimeout()
+
+   Return the current value set by :meth:`notimeout`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_pad()
+
+   Return ``True`` if the window is a pad created by :func:`newpad`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_scrollok()
+
+   Return the current value set by :meth:`scrollok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_subwin()
+
+   Return ``True`` if the window is a subwindow created by :meth:`subwin`
+   or :meth:`derwin`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_syncok()
+
+   Return the current value set by :meth:`syncok`.
+
+   .. versionadded:: next
 
 
 .. method:: window.is_wintouched()

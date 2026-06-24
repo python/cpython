@@ -900,6 +900,52 @@ Window_NoArgNoReturnFunction(wdeleteln)
 
 Window_NoArgTrueFalseFunction(is_wintouched)
 
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+Window_NoArgTrueFalseFunction(is_cleared)
+Window_NoArgTrueFalseFunction(is_idcok)
+Window_NoArgTrueFalseFunction(is_idlok)
+Window_NoArgTrueFalseFunction(is_immedok)
+Window_NoArgTrueFalseFunction(is_keypad)
+Window_NoArgTrueFalseFunction(is_leaveok)
+Window_NoArgTrueFalseFunction(is_nodelay)
+Window_NoArgTrueFalseFunction(is_notimeout)
+Window_NoArgTrueFalseFunction(is_pad)
+Window_NoArgTrueFalseFunction(is_scrollok)
+Window_NoArgTrueFalseFunction(is_subwin)
+Window_NoArgTrueFalseFunction(is_syncok)
+
+static PyObject *
+PyCursesWindow_getdelay(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    return PyLong_FromLong(wgetdelay(self->win));
+}
+
+static PyObject *
+PyCursesWindow_getscrreg(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    int top, bottom;
+    if (wgetscrreg(self->win, &top, &bottom) == ERR) {
+        curses_window_set_error(self, "wgetscrreg", "getscrreg");
+        return NULL;
+    }
+    return Py_BuildValue("(ii)", top, bottom);
+}
+
+static PyObject *
+PyCursesWindow_getparent(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    /* The standard window has no parent; subwindows keep a reference to the
+       window they were derived from. */
+    if (self->orig == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef((PyObject *)self->orig);
+}
+#endif /* NCURSES_EXT_FUNCS */
+
 Window_NoArgNoReturnVoidFunction(wsyncup)
 Window_NoArgNoReturnVoidFunction(wsyncdown)
 Window_NoArgNoReturnVoidFunction(wstandend)
@@ -3373,12 +3419,28 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_GETCH_METHODDEF
     _CURSES_WINDOW_GETKEY_METHODDEF
     _CURSES_WINDOW_GET_WCH_METHODDEF
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+    {"getdelay", PyCursesWindow_getdelay, METH_NOARGS,
+     "getdelay($self, /)\n--\n\n"
+     "Return the window's read timeout in milliseconds.\n\n"
+     "-1 means blocking, 0 means non-blocking; see nodelay() and timeout()."},
+#endif
     {"getmaxyx", PyCursesWindow_getmaxyx, METH_NOARGS,
      "getmaxyx($self, /)\n--\n\n"
      "Return a tuple (y, x) of the window height and width."},
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+    {"getparent", PyCursesWindow_getparent, METH_NOARGS,
+     "getparent($self, /)\n--\n\n"
+     "Return the parent window, or None if this is not a subwindow."},
+#endif
     {"getparyx", PyCursesWindow_getparyx, METH_NOARGS,
      "getparyx($self, /)\n--\n\n"
      "Return (y, x) relative to the parent window, or (-1, -1) if none."},
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+    {"getscrreg", PyCursesWindow_getscrreg, METH_NOARGS,
+     "getscrreg($self, /)\n--\n\n"
+     "Return a tuple (top, bottom) of the current scrolling region."},
+#endif
     {
         "getstr", PyCursesWindow_getstr, METH_VARARGS,
         _curses_window_getstr__doc__
@@ -3428,6 +3490,44 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"is_wintouched", PyCursesWindow_is_wintouched, METH_NOARGS,
      "is_wintouched($self, /)\n--\n\n"
      "Return True if the window changed since the last refresh()."},
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+    {"is_cleared", PyCursesWindow_is_cleared, METH_NOARGS,
+     "is_cleared($self, /)\n--\n\n"
+     "Return the current value set by clearok()."},
+    {"is_idcok", PyCursesWindow_is_idcok, METH_NOARGS,
+     "is_idcok($self, /)\n--\n\n"
+     "Return the current value set by idcok()."},
+    {"is_idlok", PyCursesWindow_is_idlok, METH_NOARGS,
+     "is_idlok($self, /)\n--\n\n"
+     "Return the current value set by idlok()."},
+    {"is_immedok", PyCursesWindow_is_immedok, METH_NOARGS,
+     "is_immedok($self, /)\n--\n\n"
+     "Return the current value set by immedok()."},
+    {"is_keypad", PyCursesWindow_is_keypad, METH_NOARGS,
+     "is_keypad($self, /)\n--\n\n"
+     "Return the current value set by keypad()."},
+    {"is_leaveok", PyCursesWindow_is_leaveok, METH_NOARGS,
+     "is_leaveok($self, /)\n--\n\n"
+     "Return the current value set by leaveok()."},
+    {"is_nodelay", PyCursesWindow_is_nodelay, METH_NOARGS,
+     "is_nodelay($self, /)\n--\n\n"
+     "Return the current value set by nodelay()."},
+    {"is_notimeout", PyCursesWindow_is_notimeout, METH_NOARGS,
+     "is_notimeout($self, /)\n--\n\n"
+     "Return the current value set by notimeout()."},
+    {"is_pad", PyCursesWindow_is_pad, METH_NOARGS,
+     "is_pad($self, /)\n--\n\n"
+     "Return True if the window is a pad."},
+    {"is_scrollok", PyCursesWindow_is_scrollok, METH_NOARGS,
+     "is_scrollok($self, /)\n--\n\n"
+     "Return the current value set by scrollok()."},
+    {"is_subwin", PyCursesWindow_is_subwin, METH_NOARGS,
+     "is_subwin($self, /)\n--\n\n"
+     "Return True if the window is a subwindow."},
+    {"is_syncok", PyCursesWindow_is_syncok, METH_NOARGS,
+     "is_syncok($self, /)\n--\n\n"
+     "Return the current value set by syncok()."},
+#endif
     {"keypad", PyCursesWindow_keypad, METH_VARARGS,
      "keypad($self, flag, /)\n--\n\n"
      "Interpret escape sequences for special keys if flag is true."},
@@ -3896,6 +3996,65 @@ static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=9f9dee9664769751 input=42d81687f11ddbf3]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
+
+/* is_cbreak()/is_echo()/is_nl()/is_raw() were added in ncurses 6.5. */
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427
+/*[clinic input]
+_curses.is_cbreak
+
+Return True if cbreak mode is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_is_cbreak_impl(PyObject *module)
+/*[clinic end generated code: output=8a1ad7889fb43daf input=99988df6fd2f1c81]*/
+{
+    PyCursesStatefulInitialised(module);
+    return PyBool_FromLong(is_cbreak());
+}
+
+/*[clinic input]
+_curses.is_echo
+
+Return True if echo mode is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_is_echo_impl(PyObject *module)
+/*[clinic end generated code: output=72692d2aa41591c4 input=f6152cf7c00e47eb]*/
+{
+    PyCursesStatefulInitialised(module);
+    return PyBool_FromLong(is_echo());
+}
+
+/*[clinic input]
+_curses.is_nl
+
+Return True if nl mode is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_is_nl_impl(PyObject *module)
+/*[clinic end generated code: output=999eb44abc43ce65 input=1e0a2607e45a01e1]*/
+{
+    PyCursesStatefulInitialised(module);
+    return PyBool_FromLong(is_nl());
+}
+
+/*[clinic input]
+_curses.is_raw
+
+Return True if raw mode is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_is_raw_impl(PyObject *module)
+/*[clinic end generated code: output=dd9816d777561c35 input=a64fa6a251ed3ece]*/
+{
+    PyCursesStatefulInitialised(module);
+    return PyBool_FromLong(is_raw());
+}
+#endif /* NCURSES_EXT_FUNCS */
 
 /*[clinic input]
 _curses.color_content
@@ -4457,6 +4616,100 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
 
     Py_RETURN_NONE;
 }
+
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+/*[clinic input]
+_curses.alloc_pair
+
+    fg: color_allow_default
+        Foreground color number.
+    bg: color_allow_default
+        Background color number.
+    /
+
+Allocate a color pair for the given foreground and background colors.
+
+If a color pair for the same colors already exists, return its number.
+Otherwise allocate a new color pair and return its number.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_alloc_pair_impl(PyObject *module, int fg, int bg)
+/*[clinic end generated code: output=6eb08cb643d4b5a2 input=b29bafd7b360fa35]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    int pair = alloc_pair(fg, bg);
+    if (pair < 0) {
+        curses_set_error(module, "alloc_pair", NULL);
+        return NULL;
+    }
+    return PyLong_FromLong(pair);
+}
+
+/*[clinic input]
+_curses.find_pair
+
+    fg: color_allow_default
+        Foreground color number.
+    bg: color_allow_default
+        Background color number.
+    /
+
+Return the number of a color pair for the given colors, or -1.
+
+Return -1 if no color pair for this combination of foreground and
+background colors has been allocated.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_find_pair_impl(PyObject *module, int fg, int bg)
+/*[clinic end generated code: output=376026c2a3ac4a9b input=930feac14892c251]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    return PyLong_FromLong(find_pair(fg, bg));
+}
+
+/*[clinic input]
+_curses.free_pair
+
+    pair: pair
+        The number of the color pair to free.
+    /
+
+Free a color pair allocated by alloc_pair().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_free_pair_impl(PyObject *module, int pair)
+/*[clinic end generated code: output=61be0fb2e4bb4e4a input=d24df62feb4161c6]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    return curses_check_err(module, free_pair(pair), "free_pair", NULL);
+}
+
+/*[clinic input]
+_curses.reset_color_pairs
+
+Discard all color-pair definitions.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_reset_color_pairs_impl(PyObject *module)
+/*[clinic end generated code: output=117e68c6614e1d06 input=57c1cf7e5447e1ac]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    reset_color_pairs();
+    Py_RETURN_NONE;
+}
+#endif /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 /* Refresh the private copy of the screen encoding from a freshly created
    stdscr window object.  Returns 0 on success, -1 with an exception set. */
@@ -6241,6 +6494,7 @@ _curses_has_extended_color_support_impl(PyObject *module)
 /* List of functions defined in the module */
 
 static PyMethodDef cursesmodule_methods[] = {
+    _CURSES_ALLOC_PAIR_METHODDEF
     _CURSES_BAUDRATE_METHODDEF
     _CURSES_BEEP_METHODDEF
     _CURSES_CAN_CHANGE_COLOR_METHODDEF
@@ -6258,8 +6512,10 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_ERASEWCHAR_METHODDEF
     _CURSES_FILTER_METHODDEF
     _CURSES_NOFILTER_METHODDEF
+    _CURSES_FIND_PAIR_METHODDEF
     _CURSES_FLASH_METHODDEF
     _CURSES_FLUSHINP_METHODDEF
+    _CURSES_FREE_PAIR_METHODDEF
     _CURSES_GETMOUSE_METHODDEF
     _CURSES_UNGETMOUSE_METHODDEF
     _CURSES_GETSYX_METHODDEF
@@ -6274,6 +6530,10 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_INIT_PAIR_METHODDEF
     _CURSES_INITSCR_METHODDEF
     _CURSES_INTRFLUSH_METHODDEF
+    _CURSES_IS_CBREAK_METHODDEF
+    _CURSES_IS_ECHO_METHODDEF
+    _CURSES_IS_NL_METHODDEF
+    _CURSES_IS_RAW_METHODDEF
     _CURSES_ISENDWIN_METHODDEF
     _CURSES_IS_TERM_RESIZED_METHODDEF
     _CURSES_KEYNAME_METHODDEF
@@ -6301,6 +6561,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_PUTP_METHODDEF
     _CURSES_QIFLUSH_METHODDEF
     _CURSES_RAW_METHODDEF
+    _CURSES_RESET_COLOR_PAIRS_METHODDEF
     _CURSES_RESET_PROG_MODE_METHODDEF
     _CURSES_RESET_SHELL_MODE_METHODDEF
     _CURSES_RESETTY_METHODDEF
