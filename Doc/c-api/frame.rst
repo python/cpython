@@ -245,13 +245,13 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
-.. c:type:: PyUnstable_ExecutableKinds
+.. c:var:: PyUnstable_ExecutableKinds
 
    An array of executable kinds (executor types) for frames, used for internal
    debugging and tracing.
 
    Tools like debuggers and profilers can use this to identify the type of execution
-   context associated with a frame (For example: to filter out internal frames).
+   context associated with a frame (such as to filter out internal frames).
    The entries are indexed by the following constants:
 
    .. list-table::
@@ -264,43 +264,40 @@ Unless using :pep:`523`, you will not need this.
         - The frame is internal (For example: inlined) and should be skipped by tools.
       * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
         - The frame corresponds to a standard Python function.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
+        - The frame corresponds to a function defined in native code.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
+        - The frame corresponds to a method on a class instance.
 
-   Example usage:
+   However, Python's C API lacks a function to read the executable kind from
+   a frame. Instead, use this recipe:
 
    .. code-block:: c
 
-      int kind = PyUnstable_Frame_GetExecutableKind(frame);
+      int
+      get_executable_kind(PyFrameObject *frame)
+      {
+         _PyInterpreterFrame *f = frame->f_frame;
+         PyObject *exec = PyStackRef_AsPyObjectBorrow(f->f_executable);
 
-      if (kind == PyUnstable_EXECUTABLE_KIND_SKIP) {
-          continue;
+         if (PyCode_Check(exec)) {
+            return PyUnstable_EXECUTABLE_KIND_PY_FUNCTION;
+         }
+         if (PyMethod_Check(exec)) {
+            return PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION;
+         }
+         if (Py_IS_TYPE(exec, &PyMethodDescr_Type)) {
+            return PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR;
+         }
+
+         return PyUnstable_EXECUTABLE_KIND_SKIP;
       }
-
-   .. versionadded:: 3.13
-
-
-.. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
-
-   Index for the "Python function" kind in ``PyUnstable_ExecutableKinds``.
-
-   .. versionadded:: 3.13
-
-
-.. c:macro:: PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
-
-   Index for the "built-in function" kind in ``PyUnstable_ExecutableKinds``.
-
-   .. versionadded:: 3.13
-
-
-.. c:macro:: PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
-
-   Index for the "method descriptor" kind in ``PyUnstable_ExecutableKinds``.
 
    .. versionadded:: 3.13
 
 
 .. c:macro:: PyUnstable_EXECUTABLE_KINDS
 
-   The number of entries in ``PyUnstable_ExecutableKinds``.
+   The number of entries in :c:data:`PyUnstable_ExecutableKinds`.
 
    .. versionadded:: 3.13
