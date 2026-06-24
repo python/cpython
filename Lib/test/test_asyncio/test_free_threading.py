@@ -165,6 +165,45 @@ class TestFreeThreading:
             loop.set_task_factory(self.factory)
             r.run(main())
 
+    def test_all_tasks_from_other_thread_includes_eager_tasks(self):
+        # gh-152020: all_tasks() called from another thread used to drop
+        # eager-started tasks on free-threaded builds.
+        loop = asyncio.new_event_loop()
+
+        async def _forever():
+            await asyncio.Event().wait()
+
+        def eager_factory(loop, coro, **kwargs):
+            return self.factory(loop, coro, eager_start=True, **kwargs)
+
+        async def setup():
+            loop.set_task_factory(eager_factory)
+            eager = loop.create_task(_forever(), name="EAGER")
+            loop.set_task_factory(None)
+            normal = loop.create_task(_forever(), name="NORMAL")
+            return eager, normal
+
+        async def teardown():
+            tasks = [t for t in asyncio.all_tasks()
+                     if t is not asyncio.current_task()]
+            for t in tasks:
+                t.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+        thread = threading.Thread(target=loop.run_forever)
+        thread.start()
+        try:
+            held = asyncio.run_coroutine_threadsafe(setup(), loop).result()
+            names = {t.get_name() for t in asyncio.all_tasks(loop)}
+            self.assertIn("NORMAL", names)
+            self.assertIn("EAGER", names)
+            del held
+        finally:
+            asyncio.run_coroutine_threadsafe(teardown(), loop).result()
+            loop.call_soon_threadsafe(loop.stop)
+            thread.join()
+            loop.close()
+
 
 class TestPyFreeThreading(TestFreeThreading, TestCase):
 
