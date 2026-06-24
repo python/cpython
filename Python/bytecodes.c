@@ -5108,6 +5108,7 @@ dummy_func(
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
+                DECREF_INPUTS();
                 ERROR_NO_POP();
             }
             c = callable;
