@@ -1169,7 +1169,8 @@ Sequence types also support the following methods:
    :no-contents-entry:
    :no-index-entry:
    :no-typesetting:
-.. method:: sequence.index(value[, start[, stop]])
+.. method:: sequence.index(value, /)
+            sequence.index(value, start=0, stop=sys.maxsize, /)
 
    Return the index of the first occurrence of *value* in *sequence*.
 
