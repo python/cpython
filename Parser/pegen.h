@@ -174,7 +174,6 @@ typedef enum {
 } TARGETS_TYPE;
 
 int _Pypegen_raise_decode_error(Parser *p);
-void _PyPegen_raise_tokenizer_init_error(PyObject *filename);
 int _Pypegen_tokenizer_error(Parser *p);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
@@ -367,7 +366,7 @@ void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
 stmt_ty _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq *,
-                                       int , int, int , int , int , PyArena *);
+                                       int, expr_ty, int, int, int, int, PyArena *);
 asdl_stmt_seq* _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts);
 stmt_ty _PyPegen_register_stmt(Parser *p, stmt_ty s);
 

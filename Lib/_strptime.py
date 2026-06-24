@@ -7,7 +7,7 @@ CLASSES:
 
 FUNCTIONS:
     _getlang -- Figure out what language is being used for the locale
-    strptime -- Calculates the time struct represented by the passed-in string
+    _strptime -- Calculates the time struct represented by the passed-in string
 
 """
 import os
@@ -382,7 +382,10 @@ class TimeRE(dict):
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
                                 'Z'),
-            '%': '%'}
+            'n': r'\s*',
+            't': r'\s*',
+            '%': '%',
+        }
         if self.locale_time.LC_alt_digits is None:
             for d in 'dmyCHIMS':
                 mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d
@@ -418,6 +421,8 @@ class TimeRE(dict):
         mapping['W'] = mapping['U'].replace('U', 'W')
 
         base.__init__(mapping)
+        base.__setitem__('D', self.pattern('%m/%d/%y'))
+        base.__setitem__('F', self.pattern('%Y-%m-%d'))
         base.__setitem__('T', self.pattern('%H:%M:%S'))
         base.__setitem__('R', self.pattern('%H:%M'))
         base.__setitem__('r', self.pattern(self.locale_time.LC_time_ampm))
@@ -459,7 +464,8 @@ class TimeRE(dict):
         format = re_sub(r'\s+', r'\\s+', format)
         format = re_sub(r"'", "['\u02bc]", format)  # needed for br_FR
         year_in_format = False
-        day_of_month_in_format = False
+        day_d_in_format = False
+        day_e_in_format = False
         def repl(m):
             directive = m.group()[1:] # exclude `%` symbol
             match directive:
@@ -467,20 +473,30 @@ class TimeRE(dict):
                     nonlocal year_in_format
                     year_in_format = True
                 case 'd':
-                    nonlocal day_of_month_in_format
-                    day_of_month_in_format = True
+                    nonlocal day_d_in_format
+                    day_d_in_format = True
+                case 'e':
+                    nonlocal day_e_in_format
+                    day_e_in_format = True
             return self[directive]
         format = re_sub(r'%[-_0^#]*[0-9]*([OE]?[:\\]?.?)', repl, format)
-        if day_of_month_in_format and not year_in_format:
-            import warnings
-            warnings.warn("""\
+        if not year_in_format:
+            if day_d_in_format:
+                raise ValueError(
+                    "Day of month directive '%d' may not be used without "
+                    "a year directive. Parsing dates involving a day of "
+                    "month without a year is ambiguous and fails to parse "
+                    "leap day. Add a year to the input and format. "
+                    "See https://github.com/python/cpython/issues/70647.")
+            if day_e_in_format:
+                import warnings
+                warnings.warn("""\
 Parsing dates involving a day of month without a year specified is ambiguous
-and fails to parse leap day. The default behavior will change in Python 3.15
-to either always raise an exception or to use a different default year (TBD).
-To avoid trouble, add a specific year to the input & format.
+and fails to parse leap day. '%e' without a year will become an error in Python 3.17.
+To avoid trouble, add a specific year to the input and format.
 See https://github.com/python/cpython/issues/70647.""",
-                          DeprecationWarning,
-                          skip_file_prefixes=(os.path.dirname(__file__),))
+                              DeprecationWarning,
+                              skip_file_prefixes=(os.path.dirname(__file__),))
         return format
 
     def compile(self, format):
@@ -516,9 +532,10 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
 
 
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a 2-tuple consisting of a time struct and an int containing
-    the number of microseconds based on the input string and the
-    format string."""
+    """Return a 3-tuple consisting of a tuple with time components,
+    an int containing the number of microseconds, and an int
+    containing the microseconds part of the GMT offset, based on the
+    input string and the format string."""
 
     for index, arg in enumerate([data_string, format]):
         if not isinstance(arg, str):

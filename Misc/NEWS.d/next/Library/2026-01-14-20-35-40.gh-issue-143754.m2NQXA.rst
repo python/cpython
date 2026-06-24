@@ -1,3 +1,0 @@
-Add new :mod:`tkinter` widget methods :meth:`!pack_content`,
-:meth:`!place_content` and :meth:`!grid_content` which are alternative
-spelling of old :meth:`!*_slaves` methods.

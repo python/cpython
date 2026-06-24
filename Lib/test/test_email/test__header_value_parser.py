@@ -1060,6 +1060,78 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_phrase(' (foo) ')
 
+    def test_get_phrase_adjacent_ew(self):
+        # "'linear-white-space' that separates a pair of adjacent
+        # 'encoded-word's is ignored" (rfc2047 section 6.2)
+        self._test_get_x(parser.get_phrase, '=?ascii?q?Joi?= \t =?ascii?q?ned?=', 'Joined', 'Joined', [], '')
+
+    def test_get_phrase_adjacent_ew_different_encodings(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?utf-8?q?B=C3=A9r?= =?iso-8859-1?q?=E9nice?=', 'Bérénice', 'Bérénice', [], ''
+        )
+
+    def test_get_phrase_adjacent_ew_encoded_spaces(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?Encoded?= =?ascii?q?_spaces_?= =?ascii?q?preserved?=',
+            'Encoded spaces preserved',
+            'Encoded spaces preserved',
+            [],
+            ''
+        )
+
+    def test_get_phrase_adjacent_ew_comment_is_not_linear_white_space(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?Comment?= (is not) =?ascii?q?linear-white-space?=',
+            'Comment (is not) linear-white-space',
+            'Comment linear-white-space',
+            [],
+            '',
+            comments=['is not'],
+        )
+
+    def test_get_phrase_adjacent_ew_no_error_on_defects(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?Def?= =?ascii?q?ect still joins?=',
+            'Defect still joins',
+            'Defect still joins',
+            [errors.InvalidHeaderDefect],  # whitespace inside encoded word
+            ''
+        )
+
+    def test_get_phrase_adjacent_ew_ignore_non_ew(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?No?= =?join?= for non-ew',
+            'No =?join?= for non-ew',
+            'No =?join?= for non-ew',
+            [],
+            ''
+        )
+
+    def test_get_phrase_adjacent_ew_ignore_invalid_ew(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?No?= =?ascii?rot13?wbva= for invalid ew',
+            'No =?ascii?rot13?wbva= for invalid ew',
+            'No =?ascii?rot13?wbva= for invalid ew',
+            [],
+            ''
+        )
+
+    def test_get_phrase_adjacent_ew_missing_space(self):
+        self._test_get_x(
+            parser.get_phrase,
+            '=?ascii?q?Joi?==?ascii?q?ned?=',
+            'Joined',
+            'Joined',
+            [errors.InvalidHeaderDefect],  # missing trailing whitespace
+            ''
+        )
+
     # get_local_part
 
     def test_get_local_part_simple(self):
@@ -1234,17 +1306,6 @@ class TestParser(TestParserMixin, TestEmailBase):
             [errors.InvalidHeaderDefect]*5,
             '@example.com')
         self.assertEqual(local_part.local_part, r'\example\\ example')
-
-    def test_get_local_part_unicode_defect(self):
-        # Currently this only happens when parsing unicode, not when parsing
-        # stuff that was originally binary.
-        local_part = self._test_get_x(parser.get_local_part,
-            'exámple@example.com',
-            'exámple',
-            'exámple',
-            [errors.NonASCIILocalPartDefect],
-            '@example.com')
-        self.assertEqual(local_part.local_part, 'exámple')
 
     # get_dtext
 
@@ -2398,6 +2459,22 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(address[0].token_type,
                          'mailbox')
 
+    def test_get_address_rfc2047_display_name_adjacent_ews(self):
+        address = self._test_get_x(parser.get_address,
+            '=?utf-8?q?B=C3=A9r?= =?utf-8?q?=C3=A9nice?= <foo@example.com>',
+            'Bérénice <foo@example.com>',
+            'Bérénice <foo@example.com>',
+            [],
+            '')
+        self.assertEqual(address.token_type, 'address')
+        self.assertEqual(len(address.mailboxes), 1)
+        self.assertEqual(address.mailboxes,
+                         address.all_mailboxes)
+        self.assertEqual(address.mailboxes[0].display_name,
+                         'Bérénice')
+        self.assertEqual(address[0].token_type,
+                         'mailbox')
+
     def test_get_address_empty_group(self):
         address = self._test_get_x(parser.get_address,
             'Monty Python:;',
@@ -2617,7 +2694,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             '')
         self.assertEqual(address_list.token_type, 'address-list')
         self.assertEqual(len(address_list.mailboxes), 1)
-        self.assertEqual(len(address_list.all_mailboxes), 3)
+        self.assertEqual(len(address_list.all_mailboxes), 4)
         self.assertEqual([str(x) for x in address_list.all_mailboxes],
                          [str(x) for x in address_list.addresses])
         self.assertEqual(address_list.mailboxes[0].domain, 'example.com')
@@ -2626,11 +2703,13 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(address_list.addresses[1].token_type, 'address')
         self.assertEqual(len(address_list.addresses[0].mailboxes), 1)
         self.assertEqual(len(address_list.addresses[1].mailboxes), 0)
-        self.assertEqual(len(address_list.addresses[1].mailboxes), 0)
+        self.assertEqual(len(address_list.addresses[2].mailboxes), 0)
+        self.assertEqual(len(address_list.addresses[3].mailboxes), 0)
         self.assertEqual(
             address_list.addresses[1].all_mailboxes[0].local_part, 'Foo x')
+        self.assertEqual(address_list.addresses[2].all_mailboxes[0].value, '[]')
         self.assertEqual(
-            address_list.addresses[2].all_mailboxes[0].display_name,
+            address_list.addresses[3].all_mailboxes[0].display_name,
                 "Nobody Is. Special")
 
     def test_get_address_list_group_empty(self):
@@ -2694,6 +2773,14 @@ class TestParser(TestParserMixin, TestEmailBase):
                          'y')
         self.assertEqual(str(address_list.addresses[1]),
                          str(address_list.mailboxes[2]))
+
+    def test_get_address_list_trailing_garbage(self):
+        address_list = self._test_get_x(parser.get_address_list,
+            'unlisted-recipients:; (no To-header on input)',
+            'unlisted-recipients:; (no To-header on input)',
+            'unlisted-recipients:; ',
+            [errors.InvalidHeaderDefect]*2 + [errors.ObsoleteHeaderDefect],
+            '')
 
     def test_invalid_content_disposition(self):
         content_disp = self._test_parse_x(
@@ -3364,10 +3451,12 @@ class TestFolding(TestEmailBase):
         self._test(token, expected, policy=policy)
 
     def test_encoded_word_with_undecodable_bytes(self):
-        self._test(parser.get_address_list(
-            ' =?utf-8?Q?=E5=AE=A2=E6=88=B6=E6=AD=A3=E8=A6=8F=E4=BA=A4=E7?='
+        self._test(
+            parser.get_address_list(
+                ' =?utf-8?Q?=E5=AE=A2=E6=88=B6=E6=AD=A3=E8=A6=8F=E4=BA=A4=E7?='
+                ' <xyz@abc.com>'
                 )[0],
-            ' =?unknown-8bit?b?5a6i5oi25q2j6KaP5Lqk5w==?=\n',
+            ' =?unknown-8bit?b?5a6i5oi25q2j6KaP5Lqk5w==?= <xyz@abc.com>\n',
             )
 
 

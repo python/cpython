@@ -39,10 +39,11 @@ Glossary
       ABCs with the :mod:`abc` module.
 
    annotate function
-      A function that can be called to retrieve the :term:`annotations <annotation>`
-      of an object. This function is accessible as the :attr:`~object.__annotate__`
-      attribute of functions, classes, and modules. Annotate functions are a
-      subset of :term:`evaluate functions <evaluate function>`.
+      A callable that can be called to retrieve the :term:`annotations <annotation>` of
+      an object. Annotate functions are usually :term:`functions <function>`,
+      automatically generated as the :attr:`~object.__annotate__` attribute of functions,
+      classes, and modules. Annotate functions are a subset of
+      :term:`evaluate functions <evaluate function>`.
 
    annotation
       A label associated with a variable, a class
@@ -95,21 +96,24 @@ Glossary
       :meth:`~object.__aexit__` methods.  Introduced by :pep:`492`.
 
    asynchronous generator
-      A function which returns an :term:`asynchronous generator iterator`.  It
-      looks like a coroutine function defined with :keyword:`async def` except
-      that it contains :keyword:`yield` expressions for producing a series of
-      values usable in an :keyword:`async for` loop.
+      Informally used to mean either an :term:`asynchronous generator
+      function` or an :term:`asynchronous generator iterator`, depending on
+      context.  The formal terms :term:`asynchronous generator function` and
+      :term:`asynchronous generator iterator` are uncommon in practice;
+      "asynchronous generator" alone is almost always sufficient.
 
-      Usually refers to an asynchronous generator function, but may refer to an
-      *asynchronous generator iterator* in some contexts.  In cases where the
-      intended meaning isn't clear, using the full terms avoids ambiguity.
+   asynchronous generator function
+      A function which returns an :term:`asynchronous generator iterator`.
+      It looks like a coroutine function defined with :keyword:`async def`
+      except that it contains :keyword:`yield` expressions for producing a
+      series of values usable in an :keyword:`async for` loop.  See :pep:`525`.
 
       An asynchronous generator function may contain :keyword:`await`
       expressions as well as :keyword:`async for`, and :keyword:`async with`
       statements.
 
    asynchronous generator iterator
-      An object created by an :term:`asynchronous generator` function.
+      An object created by an :term:`asynchronous generator function`.
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`~object.__anext__` method returns an awaitable object which will execute
@@ -160,9 +164,9 @@ Glossary
       On most builds of Python, having an attached thread state implies that the
       caller holds the :term:`GIL` for the current interpreter, so only
       one OS thread can have an attached thread state at a given moment. In
-      :term:`free-threaded <free threading>` builds of Python, threads can concurrently
-      hold an attached thread state, allowing for true parallelism of the bytecode
-      interpreter.
+      :term:`free-threaded builds <free-threaded build>` of Python, threads can
+      concurrently hold an attached thread state, allowing for true parallelism of
+      the bytecode interpreter.
 
    attribute
       A value associated with an object which is usually referenced by name
@@ -412,7 +416,7 @@ Glossary
    decorator
       A function returning another function, usually applied as a function
       transformation using the ``@wrapper`` syntax.  Common examples for
-      decorators are :func:`classmethod` and :func:`staticmethod`.
+      decorators are :deco:`classmethod` and :deco:`staticmethod`.
 
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::
@@ -580,6 +584,13 @@ Glossary
       the :term:`global interpreter lock` which allows only one thread to
       execute Python bytecode at a time.  See :pep:`703`.
 
+   free-threaded build
+
+      A build of :term:`CPython` that supports :term:`free threading`,
+      configured using the :option:`--disable-gil` option before compilation.
+
+      See :ref:`freethreading-python-howto`.
+
    free variable
       Formally, as defined in the :ref:`language execution model <bind_names>`, a free
       variable is any variable used in a namespace which is not a local variable in that
@@ -633,23 +644,33 @@ Glossary
       .. index:: single: generator
 
    generator
-      A function which returns a :term:`generator iterator`.  It looks like a
-      normal function except that it contains :keyword:`yield` expressions
-      for producing a series of values usable in a for-loop or that can be
-      retrieved one at a time with the :func:`next` function.
+      Informally used to mean either a :term:`generator function` or a
+      :term:`generator iterator`, depending on context.  The formal terms
+      :term:`generator function` and :term:`generator iterator` are uncommon
+      in practice; "generator" alone is almost always sufficient.
 
-      Usually refers to a generator function, but may refer to a
-      *generator iterator* in some contexts.  In cases where the intended
-      meaning isn't clear, using the full terms avoids ambiguity.
+      .. index:: single: generator function
+
+   generator function
+      A function which returns a :term:`generator` object.  It looks like a
+      normal function except that it contains :keyword:`yield` expressions
+      for producing a series of values usable in a :keyword:`for`\-loop or
+      that can be retrieved one at a time with the :func:`next` function.
+      See :ref:`yieldexpr`.
 
    generator iterator
-      An object created by a :term:`generator` function.
+      An object created by a :term:`generator function` or a
+      :term:`generator expression`.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      execution state (including local variables and pending
-      try-statements).  When the *generator iterator* resumes, it picks up where
-      it left off (in contrast to functions which start fresh on every
-      invocation).
+      execution state (including local variables and pending try-statements).
+      When the *generator iterator* resumes, it picks up where it left off
+      (in contrast to functions which start fresh on every invocation).
+
+      Generator iterators also implement the :meth:`~generator.send` method
+      to send a value into the suspended generator, and the
+      :meth:`~generator.throw` method to raise an exception at the point
+      where the generator was paused.  See :ref:`generator-methods`.
 
       .. index:: single: generator expression
 
@@ -668,7 +689,7 @@ Glossary
       determined by the dispatch algorithm.
 
       See also the :term:`single dispatch` glossary entry, the
-      :func:`functools.singledispatch` decorator, and :pep:`443`.
+      :deco:`functools.singledispatch` decorator, and :pep:`443`.
 
    generic type
       A :term:`type` that can be parameterized; typically a
@@ -779,6 +800,19 @@ Glossary
       An object that both finds and loads a module; both a
       :term:`finder` and :term:`loader` object.
 
+   index
+      A numeric value that represents the position of an element in
+      a :term:`sequence`.
+
+      In Python, indexing starts at zero.
+      For example, ``things[0]`` names the *first* element of ``things``;
+      ``things[1]`` names the second one.
+
+      In some contexts, Python allows negative indexes for counting from the
+      end of a sequence, and indexing using :term:`slices <slice>`.
+
+      See also :term:`subscript`.
+
    interactive
       Python has an interactive interpreter which means you can enter
       statements and expressions at the interpreter prompt, immediately
@@ -856,6 +890,9 @@ Glossary
          CPython does not guarantee :term:`thread-safe` behavior of iterator
          operations.
 
+   key
+      A value that identifies an entry in a :term:`mapping`.
+      See also :term:`subscript`.
 
    key function
       A key function or collation function is a callable that returns a value
@@ -927,6 +964,16 @@ Glossary
       :term:`thread-safe` access to shared data.  Alternative design patterns
       to locks exist such as queues, producer/consumer patterns, and
       thread-local state. See also :term:`deadlock`, and :term:`reentrant`.
+
+   lock-free
+      An operation that does not acquire any :term:`lock` and uses atomic CPU
+      instructions to ensure correctness. Lock-free operations can execute
+      concurrently without blocking each other and cannot be blocked by
+      operations that hold locks. In :term:`free-threaded <free threading>`
+      Python, built-in types like :class:`dict` and :class:`list` provide
+      lock-free read operations, which means other threads may observe
+      intermediate states during multi-step modifications even when those
+      modifications hold the :term:`per-object lock`.
 
    loader
       An object that loads a module.
@@ -1194,6 +1241,16 @@ Glossary
       <faq-argument-vs-parameter>`, the :class:`inspect.Parameter` class, the
       :ref:`function` section, and :pep:`362`.
 
+   per-object lock
+      A :term:`lock` associated with an individual object instance rather than
+      a global lock shared across all objects. In :term:`free-threaded
+      <free threading>` Python, built-in types like :class:`dict` and
+      :class:`list` use per-object locks to allow concurrent operations on
+      different objects while serializing operations on the same object.
+      Operations that hold the per-object lock prevent other locking operations
+      on the same object from proceeding, but do not block :term:`lock-free`
+      operations.
+
    path entry
       A single location on the :term:`import path` which the :term:`path
       based finder` consults to find modules for importing.
@@ -1316,7 +1373,7 @@ Glossary
          'email.mime.text'
 
    race condition
-      A condition of a program where the its behavior
+      A condition of a program where the behavior
       depends on the relative timing or ordering of events, particularly in
       multi-threaded programs.  Race conditions can lead to
       :term:`non-deterministic` behavior and bugs that are difficult to
@@ -1410,10 +1467,11 @@ Glossary
       chosen based on the type of a single argument.
 
    slice
-      An object usually containing a portion of a :term:`sequence`.  A slice is
-      created using the subscript notation, ``[]`` with colons between numbers
-      when several are given, such as in ``variable_name[1:3:5]``.  The bracket
-      (subscript) notation uses :class:`slice` objects internally.
+      An object of type :class:`slice`, used to describe a portion of
+      a :term:`sequence`.
+      A slice object is created when using the :ref:`slicing <slicings>` form
+      of :ref:`subscript notation <subscriptions>`, with colons inside square
+      brackets, such as in ``variable_name[1:3:5]``.
 
    soft deprecated
       A soft deprecated API should not be used in new code,
@@ -1470,6 +1528,14 @@ Glossary
       avoid leaking one reference.
 
       See also :term:`borrowed reference`.
+
+   subscript
+      The expression in square brackets of a
+      :ref:`subscription expression <subscriptions>`, for example,
+      the ``3`` in ``items[3]``.
+      Usually used to select an element of a container.
+      Also called a :term:`key` when subscripting a :term:`mapping`,
+      or an :term:`index` when subscripting a :term:`sequence`.
 
    synchronization primitive
       A basic building block for coordinating (synchronizing) the execution of

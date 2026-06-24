@@ -1,3 +1,0 @@
-Fix erroneous "cannot reuse already awaited coroutine" error that could
-occur when a generator was run during the process of clearing a coroutine's
-frame.

@@ -1,2 +1,0 @@
-Prevent static builds from clashing with curses by making the optimizer
-COLORS table static.

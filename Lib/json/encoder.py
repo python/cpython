@@ -79,7 +79,7 @@ class JSONEncoder(object):
     +-------------------+---------------+
     | Python            | JSON          |
     +===================+===============+
-    | dict              | object        |
+    | dict, frozendict  | object        |
     +-------------------+---------------+
     | list, tuple       | array         |
     +-------------------+---------------+
@@ -308,7 +308,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     yield buf
                     if isinstance(value, (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
-                    elif isinstance(value, dict):
+                    elif isinstance(value, (dict, frozendict)):
                         chunks = _iterencode_dict(value, _current_indent_level)
                     else:
                         chunks = _iterencode(value, _current_indent_level)
@@ -395,7 +395,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 else:
                     if isinstance(value, (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
-                    elif isinstance(value, dict):
+                    elif isinstance(value, (dict, frozendict)):
                         chunks = _iterencode_dict(value, _current_indent_level)
                     else:
                         chunks = _iterencode(value, _current_indent_level)
@@ -429,7 +429,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield _floatstr(o)
         elif isinstance(o, (list, tuple)):
             yield from _iterencode_list(o, _current_indent_level)
-        elif isinstance(o, dict):
+        elif isinstance(o, (dict, frozendict)):
             yield from _iterencode_dict(o, _current_indent_level)
         else:
             if markers is not None:
