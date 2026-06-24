@@ -526,6 +526,17 @@ boolean {0[0]} NO
             cf.get(self.default_section, "Foo"), "Bar",
             "could not locate option, expecting case-insensitive defaults")
 
+    def test_crlf_normalization(self):
+        cf = self.newconfig({"key1": "a\nb","key2": "a\rb", "key3": "a\r\nb", "key4": "a\r\nb"})
+        buf = io.StringIO()
+        cf.write(buf)
+        cf_str = buf.getvalue()
+        self.assertNotIn("\r", cf_str)
+        self.assertNotIn("\r\n", cf_str)
+        self.assertEqual(cf_str.count("\n"), 10)
+        self.assertEqual(cf_str.count("\n\t"), 4)
+        self.assertTrue(cf_str.endswith("\n\n"))
+
     def test_parse_errors(self):
         cf = self.newconfig()
         self.parse_error(cf, configparser.ParsingError,
