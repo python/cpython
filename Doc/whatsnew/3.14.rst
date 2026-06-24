@@ -2718,7 +2718,7 @@ New deprecations
   (Contributed by Tian Gao in :gh:`124369` and :gh:`125951`.)
 
 * :mod:`symtable`:
-  Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest,
+  Deprecate :meth:`!symtable.Class.get_methods` due to the lack of interest,
   scheduled for removal in Python 3.16.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
 
@@ -2747,6 +2747,8 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-3.21.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 

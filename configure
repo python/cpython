@@ -642,11 +642,14 @@ ac_includes_default="\
 #endif"
 
 ac_header_c_list=
+ac_func_c_list=
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
 JIT_SHIM_BUILD_O
 JIT_SHIM_O
 JIT_STENCILS_H
+MODULE_XXLIMITED_3_13_FALSE
+MODULE_XXLIMITED_3_13_TRUE
 MODULE_XXLIMITED_35_FALSE
 MODULE_XXLIMITED_35_TRUE
 MODULE_XXLIMITED_FALSE
@@ -826,6 +829,7 @@ MODULE__IO_FALSE
 MODULE__IO_TRUE
 MODULE_BUILDTYPE
 _PYTHREAD_NAME_MAXLEN
+BUILD_DETAILS
 TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -891,7 +895,6 @@ TCLTK_LIBS
 TCLTK_CFLAGS
 LIBSQLITE3_LIBS
 LIBSQLITE3_CFLAGS
-LIBMPDEC_INTERNAL
 LIBMPDEC_LIBS
 LIBMPDEC_CFLAGS
 MODULE__CTYPES_MALLOC_CLOSURE
@@ -1126,7 +1129,6 @@ with_hash_algorithm
 with_tzpath
 with_libs
 with_system_expat
-with_system_libmpdec
 with_decimal_contextvar
 enable_loadable_sqlite_extensions
 with_dbmliborder
@@ -1154,6 +1156,7 @@ with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 enable_test_modules
+with_build_details_suffix
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1936,9 +1939,6 @@ Optional Packages:
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
-  --with-system-libmpdec  build _decimal module using an installed mpdecimal
-                          library, see Doc/library/decimal.rst (default is
-                          yes)
   --with-decimal-contextvar
                           build _decimal module using a coroutine-local rather
                           than a thread-local context (default is yes)
@@ -1992,6 +1992,10 @@ Optional Packages:
   --with-builtin-hashlib-hashes=md5,sha1,sha2,sha3,blake2
                           builtin hash modules, md5, sha1, sha2, sha3 (with
                           shake), blake2
+  --with-build-details-suffix=
+                          rename build-details.json to permit multiple
+                          colocated Python installs; optionally specify a
+                          custom suffix (default: no)
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -3418,6 +3422,13 @@ as_fn_append ac_header_c_list " sys/types.h sys_types_h HAVE_SYS_TYPES_H"
 as_fn_append ac_header_c_list " unistd.h unistd_h HAVE_UNISTD_H"
 as_fn_append ac_header_c_list " wchar.h wchar_h HAVE_WCHAR_H"
 as_fn_append ac_header_c_list " minix/config.h minix_config_h HAVE_MINIX_CONFIG_H"
+as_fn_append ac_func_c_list " acospi HAVE_ACOSPI"
+as_fn_append ac_func_c_list " asinpi HAVE_ASINPI"
+as_fn_append ac_func_c_list " atanpi HAVE_ATANPI"
+as_fn_append ac_func_c_list " atan2pi HAVE_ATAN2PI"
+as_fn_append ac_func_c_list " cospi HAVE_COSPI"
+as_fn_append ac_func_c_list " sinpi HAVE_SINPI"
+as_fn_append ac_func_c_list " tanpi HAVE_TANPI"
 
 # Auxiliary files required by this configure script.
 ac_aux_files="install-sh config.guess config.sub"
@@ -4154,7 +4165,7 @@ then
 		ac_sys_system=Linux
 		;;
 	*-*-cygwin*)
-		ac_sys_system=Cygwin
+		ac_sys_system=CYGWIN
 		;;
 	*-apple-ios*)
 		ac_sys_system=iOS
@@ -6643,7 +6654,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6692,7 +6703,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6724,7 +6735,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="g++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6753,7 +6764,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6802,7 +6813,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6834,7 +6845,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="c++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6863,7 +6874,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6912,7 +6923,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -6944,7 +6955,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="clang++"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6973,7 +6984,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -7022,7 +7033,7 @@ else case e in #(
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in notfound
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   case $as_dir in #(((
@@ -7054,7 +7065,7 @@ printf "%s\n" "no" >&6; }
 fi
 
   if test "x$ac_pt_CXX" = x; then
-    CXX="icpc"
+    CXX="notfound"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -7786,7 +7797,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
     CYGWIN*)
       LDLIBRARY='libpython$(LDVERSION).dll.a'
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
-      DLLLIBRARY='libpython$(LDVERSION).dll'
+      DLLLIBRARY='cygpython$(LDVERSION).dll'
       ;;
     SunOS*)
       LDLIBRARY='libpython$(LDVERSION).so'
@@ -7845,7 +7856,7 @@ else # shared is disabled
   case $ac_sys_system in
     CYGWIN*)
       BLDLIBRARY='$(LIBRARY)'
-      LDLIBRARY='libpython$(LDVERSION).dll.a'
+      LDLIBRARY='libpython$(LDVERSION).a'
       ;;
   esac
 fi
@@ -9590,7 +9601,7 @@ printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
 printf %s "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
+  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=0 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
@@ -9792,6 +9803,8 @@ fi
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
+            as_fn_append LDFLAGS_NODIST " -Wl,--wrap=getentropy"
+
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
 
@@ -9863,6 +9876,65 @@ fi
   *) :
      ;;
 esac
+
+if test "$ac_sys_system" = "Linux" -a "$cross_compiling" = no; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for thread stack size" >&5
+printf %s "checking for thread stack size... " >&6; }
+if test ${ac_cv_thread_stack_size+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+    cat > conftest.c <<EOF
+#include <pthread.h>
+
+int main()
+{
+    pthread_attr_t attrs;
+    size_t size;
+
+    int rc = pthread_attr_init(&attrs);
+    if (rc != 0) {
+        return 2;
+    }
+
+    rc = pthread_attr_getstacksize(&attrs, &size);
+    if (rc != 0) {
+        return 2;
+    }
+
+    if (size < 1024 * 1024) {
+        return 1;
+    }
+    return 0;
+}
+EOF
+
+    ac_cv_thread_stack_size=unknown
+    if $CC -pthread $CFLAGS conftest.c -o conftest &>/dev/null; then
+        ./conftest &>/dev/null
+        exitcode=$?
+        if test $exitcode -eq 1; then
+            ac_cv_thread_stack_size=1048576
+        elif test $exitcode -eq 0; then
+            ac_cv_thread_stack_size="default"
+        fi
+    fi
+    rm -f conftest.c conftest
+     ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_thread_stack_size" >&5
+printf "%s\n" "$ac_cv_thread_stack_size" >&6; }
+
+    if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
+        LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+        # Stack size used by Python/ceval.c to set Py_C_STACK_SIZE
+
+printf "%s\n" "#define _Py_LINKER_THREAD_STACK_SIZE $ac_cv_thread_stack_size" >>confdefs.h
+
+    fi
+fi
 
 case $enable_wasm_dynamic_linking in #(
   yes) :
@@ -14174,8 +14246,8 @@ then :
 
 fi;;
 	CYGWIN*)
-		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
-		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+		LDSHARED='$(CC) -shared -Wl,--enable-auto-image-base'
+		LDCXXSHARED='$(CXX) -shared -Wl,--enable-auto-image-base';;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -14359,17 +14431,35 @@ printf "%s\n" "$SHLIBS" >&6; }
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking perf trampoline" >&5
 printf %s "checking perf trampoline... " >&6; }
+PERF_TRAMPOLINE_OBJ=""
 case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
-    perf_trampoline=yes ;; #(
+    perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o ;; #(
   aarch64-linux-gnu) :
-    perf_trampoline=yes ;; #(
+    perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o ;; #(
   darwin) :
     case $MACOSX_DEPLOYMENT_TARGET in #(
   10.[0-9]|10.1[0-1]) :
     perf_trampoline=no ;; #(
   *) :
     perf_trampoline=yes
+                 if test "${enable_universalsdk}" && test "$UNIVERSAL_ARCHS" = "universal2"; then
+                   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_universal2.o
+                 else
+                   case "$host_cpu" in
+                     x86_64)
+                       PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o
+                       ;;
+                     aarch64|arm64)
+                       PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o
+                       ;;
+                     *)
+                       perf_trampoline=no
+                       ;;
+                   esac
+                 fi
              ;;
 esac ;; #(
   *) :
@@ -14385,7 +14475,6 @@ then :
 
 printf "%s\n" "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
-  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
 fi
 
@@ -14619,7 +14708,7 @@ if test "x$ac_cv_have_libgcc_eh_frame_registration" = xyes
 then :
 
 
-printf "%s\n" "#define HAVE_LIBGCC_EH_FRAME_REGISTRATION 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION 1" >>confdefs.h
 
 
 fi
@@ -16344,32 +16433,6 @@ printf "%s\n" "#define _Py_FFI_SUPPORT_C_COMPLEX 1" >>confdefs.h
 
 fi
 
-# Check for use of the system libmpdec library
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-system-libmpdec" >&5
-printf %s "checking for --with-system-libmpdec... " >&6; }
-
-
-# Check whether --with-system_libmpdec was given.
-if test ${with_system_libmpdec+y}
-then :
-  withval=$with_system_libmpdec; if test "x$with_system_libmpdec" = xno
-then :
-  LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
-          LIBMPDEC_LIBS="-lm \$(LIBMPDEC_A)"
-          LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-          have_mpdec=yes
-          with_system_libmpdec=no
-fi
-else case e in #(
-  e) with_system_libmpdec="yes" ;;
-esac
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
-printf "%s\n" "$with_system_libmpdec" >&6; }
-
-if test "x$with_system_libmpdec" = xyes
-then :
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libmpdec >= 2.5.0" >&5
@@ -16429,26 +16492,7 @@ fi
         # Put the nasty error message in config.log where it belongs
         echo "$LIBMPDEC_PKG_ERRORS" >&5
 
-        LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=
-elif test $pkg_failed = untried; then
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-        LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
-     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
-     LIBMPDEC_INTERNAL=
-else
-        LIBMPDEC_CFLAGS=$pkg_cv_LIBMPDEC_CFLAGS
-        LIBMPDEC_LIBS=$pkg_cv_LIBMPDEC_LIBS
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
 
-fi
-fi
-
-if test "x$with_system_libmpdec" = xyes
-then :
   save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
@@ -16457,33 +16501,101 @@ save_LIBS=$LIBS
 
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
+    ac_fn_c_check_header_compile "$LINENO" "mpdecimal.h" "ac_cv_header_mpdecimal_h" "$ac_includes_default"
+if test "x$ac_cv_header_mpdecimal_h" = xyes
+then :
 
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mpd_version in -lmpdec" >&5
+printf %s "checking for mpd_version in -lmpdec... " >&6; }
+if test ${ac_cv_lib_mpdec_mpd_version+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpdec  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
-        #include <mpdecimal.h>
-        #if MPD_VERSION_HEX < 0x02050000
-        #  error "mpdecimal 2.5.0 or higher required"
-        #endif
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mpd_version (void);
 int
 main (void)
 {
-const char *x = mpd_version();
+return mpd_version ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
+  ac_cv_lib_mpdec_mpd_version=yes
+else case e in #(
+  e) ac_cv_lib_mpdec_mpd_version=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpdec_mpd_version" >&5
+printf "%s\n" "$ac_cv_lib_mpdec_mpd_version" >&6; }
+if test "x$ac_cv_lib_mpdec_mpd_version" = xyes
+then :
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+            #include <mpdecimal.h>
+            #if MPD_VERSION_HEX < 0x02050000
+            #  error "mpdecimal 2.5.0 or higher required"
+            #endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
   have_mpdec=yes
 else case e in #(
   e) have_mpdec=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+
+
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+
+
+    if test "x$have_mpdec" = xyes
+then :
+
+     LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+
+fi
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
@@ -16491,12 +16603,128 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
+    LIBS="$LIBS $LIBMPDEC_LIBS"
+    ac_fn_c_check_header_compile "$LINENO" "mpdecimal.h" "ac_cv_header_mpdecimal_h" "$ac_includes_default"
+if test "x$ac_cv_header_mpdecimal_h" = xyes
+then :
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mpd_version in -lmpdec" >&5
+printf %s "checking for mpd_version in -lmpdec... " >&6; }
+if test ${ac_cv_lib_mpdec_mpd_version+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpdec  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mpd_version (void);
+int
+main (void)
+{
+return mpd_version ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_mpdec_mpd_version=yes
+else case e in #(
+  e) ac_cv_lib_mpdec_mpd_version=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpdec_mpd_version" >&5
+printf "%s\n" "$ac_cv_lib_mpdec_mpd_version" >&6; }
+if test "x$ac_cv_lib_mpdec_mpd_version" = xyes
+then :
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+            #include <mpdecimal.h>
+            #if MPD_VERSION_HEX < 0x02050000
+            #  error "mpdecimal 2.5.0 or higher required"
+            #endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  have_mpdec=yes
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+else case e in #(
+  e) have_mpdec=no ;;
+esac
 fi
 
-# Disable forced inlining in debug builds, see GH-94847
-if test "x$with_pydebug" = xyes
+
+else case e in #(
+  e) have_mpdec=no ;;
+esac
+fi
+
+
+    if test "x$have_mpdec" = xyes
 then :
-  as_fn_append LIBMPDEC_CFLAGS " -DTEST_COVERAGE"
+
+     LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
+     LIBMPDEC_LIBS=${LIBMPDEC_LIBS-"-lmpdec -lm"}
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else
+        LIBMPDEC_CFLAGS=$pkg_cv_LIBMPDEC_CFLAGS
+        LIBMPDEC_LIBS=$pkg_cv_LIBMPDEC_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+        have_mpdec=yes
 fi
 
 # Check whether _decimal should use a coroutine-local or thread-local context
@@ -16522,90 +16750,6 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
 printf "%s\n" "$with_decimal_contextvar" >&6; }
-
-if test "x$with_system_libmpdec" = xno
-then :
-  # Check for libmpdec machine flavor
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for decimal libmpdec machine" >&5
-printf %s "checking for decimal libmpdec machine... " >&6; }
-   case $ac_sys_system in #(
-  Darwin*) :
-    libmpdec_system=Darwin ;; #(
-  SunOS*) :
-    libmpdec_system=sunos ;; #(
-  *) :
-    libmpdec_system=other
-    ;;
-esac
-
-   libmpdec_machine=unknown
-   if test "$libmpdec_system" = Darwin; then
-       # universal here means: build libmpdec with the same arch options
-       # the python interpreter was built with
-       libmpdec_machine=universal
-   elif test $ac_cv_sizeof_size_t -eq 8; then
-       if test "$ac_cv_gcc_asm_for_x64" = yes; then
-           libmpdec_machine=x64
-       elif test "$ac_cv_type___uint128_t" = yes; then
-           libmpdec_machine=uint128
-       else
-           libmpdec_machine=ansi64
-       fi
-   elif test $ac_cv_sizeof_size_t -eq 4; then
-       if test "$ac_cv_gcc_asm_for_x87" = yes -a "$libmpdec_system" != sunos; then
-           case $ac_cv_cc_name in #(
-  *gcc*) :
-    libmpdec_machine=ppro ;; #(
-  *clang*) :
-    libmpdec_machine=ppro ;; #(
-  *) :
-    libmpdec_machine=ansi32
-            ;;
-esac
-       else
-           libmpdec_machine=ansi32
-       fi
-   fi
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $libmpdec_machine" >&5
-printf "%s\n" "$libmpdec_machine" >&6; }
-
-   case $libmpdec_machine in #(
-  x64) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DASM=1" ;; #(
-  uint128) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DANSI=1 -DHAVE_UINT128_T=1" ;; #(
-  ansi64) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_64=1 -DANSI=1" ;; #(
-  ppro) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1 -DASM=1 -Wno-unknown-pragmas" ;; #(
-  ansi32) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1" ;; #(
-  ansi-legacy) :
-    as_fn_append LIBMPDEC_CFLAGS " -DCONFIG_32=1 -DANSI=1 -DLEGACY_COMPILER=1" ;; #(
-  universal) :
-    as_fn_append LIBMPDEC_CFLAGS " -DUNIVERSAL=1" ;; #(
-  *) :
-    as_fn_error $? "_decimal: unsupported architecture" "$LINENO" 5
-    ;;
-esac
-fi
-
-if test "$have_ipa_pure_const_bug" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    as_fn_append LIBMPDEC_CFLAGS " -fno-ipa-pure-const"
-fi
-
-if test "$have_glibc_memmove_bug" = yes; then
-    # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-    # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-    as_fn_append LIBMPDEC_CFLAGS " -U_FORTIFY_SOURCE"
-fi
-
-
-
-
 
 
 
@@ -19483,7 +19627,7 @@ if test "x$ac_cv_efficient_builtin_shufflevector" = xyes
 then :
 
 
-printf "%s\n" "#define HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR 1" >>confdefs.h
 
 
 fi
@@ -19964,12 +20108,6 @@ then :
   printf "%s\n" "#define HAVE_DUP 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
-if test "x$ac_cv_func_dup3" = xyes
-then :
-  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "execv" "ac_cv_func_execv"
 if test "x$ac_cv_func_execv" = xyes
 then :
@@ -20442,12 +20580,6 @@ ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
 if test "x$ac_cv_func_pipe" = xyes
 then :
   printf "%s\n" "#define HAVE_PIPE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
-if test "x$ac_cv_func_pipe2" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "plock" "ac_cv_func_plock"
@@ -21116,7 +21248,13 @@ fi
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
 if test "$ac_sys_system" != "iOS" ; then
-  ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
+  ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
+if test "x$ac_cv_func_dup3" = xyes
+then :
+  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
 if test "x$ac_cv_func_getentropy" = xyes
 then :
   printf "%s\n" "#define HAVE_GETENTROPY 1" >>confdefs.h
@@ -21126,6 +21264,12 @@ ac_fn_c_check_func "$LINENO" "getgroups" "ac_cv_func_getgroups"
 if test "x$ac_cv_func_getgroups" = xyes
 then :
   printf "%s\n" "#define HAVE_GETGROUPS 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
+if test "x$ac_cv_func_pipe2" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "system" "ac_cv_func_system"
@@ -24582,7 +24726,7 @@ printf "%s\n" "#define HAVE_DECL_PR_SET_VMA_ANON_NAME $ac_have_decl" >>confdefs.
 if test $ac_have_decl = 1
 then :
 
-printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 
 fi
 
@@ -26873,6 +27017,27 @@ esac
 fi
 
 done
+
+ac_func=
+for ac_item in $ac_func_c_list
+do
+  if test $ac_func; then
+    ac_fn_c_check_func "$LINENO" $ac_func ac_cv_func_$ac_func
+    if eval test \"x\$ac_cv_func_$ac_func\" = xyes; then
+      echo "#define $ac_item 1" >> confdefs.h
+    fi
+    ac_func=
+  else
+    ac_func=$ac_item
+  fi
+done
+
+
+
+
+
+
+
 LIBS=$LIBS_SAVE
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether POSIX semaphores are enabled" >&5
@@ -30121,6 +30286,66 @@ fi
 
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function nofilter" >&5
+printf %s "checking for curses function nofilter... " >&6; }
+if test ${ac_cv_lib_curses_nofilter+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef nofilter
+        void *x=nofilter
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_nofilter=yes
+else case e in #(
+  e) ac_cv_lib_curses_nofilter=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_nofilter" >&5
+printf "%s\n" "$ac_cv_lib_curses_nofilter" >&6; }
+  if test "x$ac_cv_lib_curses_nofilter" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_NOFILTER 1" >>confdefs.h
+
+fi
+
+
+
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function has_key" >&5
 printf %s "checking for curses function has_key... " >&6; }
 if test ${ac_cv_lib_curses_has_key+y}
@@ -30294,6 +30519,186 @@ printf "%s\n" "$ac_cv_lib_curses_use_env" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_USE_ENV 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function new_prescr" >&5
+printf %s "checking for curses function new_prescr... " >&6; }
+if test ${ac_cv_lib_curses_new_prescr+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef new_prescr
+        void *x=new_prescr
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_new_prescr=yes
+else case e in #(
+  e) ac_cv_lib_curses_new_prescr=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_new_prescr" >&5
+printf "%s\n" "$ac_cv_lib_curses_new_prescr" >&6; }
+  if test "x$ac_cv_lib_curses_new_prescr" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_NEW_PRESCR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_screen" >&5
+printf %s "checking for curses function use_screen... " >&6; }
+if test ${ac_cv_lib_curses_use_screen+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef use_screen
+        void *x=use_screen
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_use_screen=yes
+else case e in #(
+  e) ac_cv_lib_curses_use_screen=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_use_screen" >&5
+printf "%s\n" "$ac_cv_lib_curses_use_screen" >&6; }
+  if test "x$ac_cv_lib_curses_use_screen" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_USE_SCREEN 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_window" >&5
+printf %s "checking for curses function use_window... " >&6; }
+if test ${ac_cv_lib_curses_use_window+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef use_window
+        void *x=use_window
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_use_window=yes
+else case e in #(
+  e) ac_cv_lib_curses_use_window=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_use_window" >&5
+printf "%s\n" "$ac_cv_lib_curses_use_window" >&6; }
+  if test "x$ac_cv_lib_curses_use_window" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_USE_WINDOW 1" >>confdefs.h
 
 fi
 
@@ -30624,7 +31029,6 @@ SRCDIRS="\
   Modules \
   Modules/_ctypes \
   Modules/_decimal \
-  Modules/_decimal/libmpdec \
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
@@ -31723,6 +32127,50 @@ fi
 printf "%s\n" "$TEST_MODULES" >&6; }
 
 
+# Check for --with-build-details-suffix
+BUILD_DETAILS=build-details.json
+
+# Check whether --with-build-details-suffix was given.
+if test ${with_build_details_suffix+y}
+then :
+  withval=$with_build_details_suffix;
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-build-details-suffix" >&5
+printf %s "checking for --with-build-details-suffix... " >&6; }
+    if test "x$with_build_details_suffix" = xno
+then :
+  as_fn_error $? "invalid --with-build-details-suffix option: expected custom suffix or \"yes\", not \"no\"" "$LINENO" 5
+
+fi
+    if test "x$with_build_details_suffix" = xyes
+then :
+
+        colocated_install=yes
+        threading_suffix=""
+        if [ "$ABI_THREAD" = "t" ]; then
+          threading_suffix=-free-threading
+        fi
+        debug_suffix=""
+        if [ "$Py_DEBUG" = "true" ]; then
+          debug_suffix=-debug
+        fi
+        BUILD_DETAILS=build-details.$MULTIARCH$threading_suffix$debug_suffix.json
+
+else case e in #(
+  e)
+        BUILD_DETAILS=build-details.$with_build_details_suffix.json
+
+     ;;
+esac
+fi
+
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_build_details_suffix" >&5
+printf "%s\n" "$with_build_details_suffix" >&6; }
+BUILD_DETAILS=$BUILD_DETAILS
+
+
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked
 # explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
@@ -31817,6 +32265,7 @@ case "$ac_sys_system" in
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  CYGWIN*) _PYTHREAD_NAME_MAXLEN=16;;
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then
@@ -31944,6 +32393,7 @@ case $ac_sys_system in #(
     py_cv_module_termios=n/a
     py_cv_module_xxlimited=n/a
     py_cv_module_xxlimited_35=n/a
+    py_cv_module_xxlimited_3_13=n/a
     py_cv_module_=n/a
 
    ;; #(
@@ -33927,12 +34377,7 @@ fi
 printf "%s\n" "$py_cv_module__decimal" >&6; }
 
 
-if test "x$with_system_libmpdec" = xno
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&5
-printf "%s\n" "$as_me: WARNING: the bundled copy of libmpdec is scheduled for removal in Python 3.16; consider using a system installed mpdecimal library." >&2;}
-fi
-if test "$with_system_libmpdec" = "yes" && test "$have_mpdec" = "no"
+if test "$have_mpdec" = "no"
 then :
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no system libmpdec found; falling back to pure-Python version for the decimal module" >&5
 printf "%s\n" "$as_me: WARNING: no system libmpdec found; falling back to pure-Python version for the decimal module" >&2;}
@@ -34443,6 +34888,15 @@ fi
 printf "%s\n" "$py_cv_module__hashlib" >&6; }
 
 
+case $ac_sys_system in #(
+  # On FreeBSD, _testcapi.get_process_memory_usage() calls kvm_openfiles()
+  # and so needs libkvm.
+  FreeBSD*) :
+    LIBKVM="-lkvm"
+ ;; #(
+  *) :
+     ;;
+esac
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testcapi" >&5
 printf %s "checking for stdlib extension module _testcapi... " >&6; }
@@ -34469,7 +34923,7 @@ fi
 then :
 
 
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC $LIBKVM$as_nl"
 
 fi
    if test "$py_cv_module__testcapi" = yes; then
@@ -34908,8 +35362,8 @@ fi
   if test "x$py_cv_module__ctypes_test" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_CFLAGS=$LIBFFI_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBFFI_LIBS $LIBM$as_nl"
+
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBM$as_nl"
 
 fi
    if test "$py_cv_module__ctypes_test" = yes; then
@@ -35003,6 +35457,46 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited_35" >&5
 printf "%s\n" "$py_cv_module_xxlimited_35" >&6; }
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited_3_13" >&5
+printf %s "checking for stdlib extension module xxlimited_3_13... " >&6; }
+        if test "$py_cv_module_xxlimited_3_13" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if test "$ac_cv_func_dlopen" = yes
+then :
+  py_cv_module_xxlimited_3_13=yes
+else case e in #(
+  e) py_cv_module_xxlimited_3_13=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module_xxlimited_3_13=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_3_13_STATE=$py_cv_module_xxlimited_3_13$as_nl"
+  if test "x$py_cv_module_xxlimited_3_13" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module_xxlimited_3_13" = yes; then
+  MODULE_XXLIMITED_3_13_TRUE=
+  MODULE_XXLIMITED_3_13_FALSE='#'
+else
+  MODULE_XXLIMITED_3_13_TRUE='#'
+  MODULE_XXLIMITED_3_13_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited_3_13" >&5
+printf "%s\n" "$py_cv_module_xxlimited_3_13" >&6; }
 
 
 # Determine JIT stencils header files based on target platform
@@ -35516,6 +36010,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_XXLIMITED_35\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_3_13_TRUE}" && test -z "${MODULE_XXLIMITED_3_13_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED_3_13\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

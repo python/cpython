@@ -151,7 +151,7 @@ Dictionary objects
    * If the key is present, set *\*result* to a new :term:`strong reference`
      to the value and return ``1``.
    * If the key is missing, set *\*result* to ``NULL`` and return ``0``.
-   * On error, raise an exception and return ``-1``.
+   * On error, raise an exception, set *\*result* to ``NULL`` and return ``-1``.
 
    The first argument can be a :class:`dict` or a :class:`frozendict`.
 

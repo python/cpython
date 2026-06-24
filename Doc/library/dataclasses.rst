@@ -100,12 +100,25 @@ Module contents
      ignored.
 
    - *eq*: If true (the default), an :meth:`~object.__eq__` method will be
-     generated.  This method compares the class as if it were a tuple
-     of its fields, in order.  Both instances in the comparison must
-     be of the identical type.
+     generated.
 
-     If the class already defines :meth:`!__eq__`, this parameter is
-     ignored.
+     This method compares the class by comparing each field in order. Both
+     instances in the comparison must be of the identical type.
+
+     If the class already defines :meth:`!__eq__`, this parameter is ignored.
+
+     .. versionchanged:: 3.13
+        The generated ``__eq__`` method now compares each field individually
+        (for example, ``self.a == other.a and self.b == other.b``), rather than
+        comparing tuples of fields as in previous versions.
+
+        This change makes the comparison faster but it may alter results in cases
+        where attributes compare equal by identity but not by value (such as
+        ``float('nan')``).
+
+        In Python 3.12 and earlier, the comparison was performed by creating
+        tuples of the fields and comparing them (for example,
+        ``(self.a, self.b) == (other.a, other.b)``).
 
    - *order*: If true (the default is ``False``), :meth:`~object.__lt__`,
      :meth:`~object.__le__`, :meth:`~object.__gt__`, and :meth:`~object.__ge__` methods will be
@@ -418,7 +431,7 @@ Module contents
    :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, decorator=dataclass)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, qualname=None, decorator=dataclass)
 
    Creates a new dataclass with name *cls_name*, fields as defined
    in *fields*, base classes as given in *bases*, and initialized
@@ -433,6 +446,9 @@ Module contents
    If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
+
+   If *qualname* is defined, the :attr:`~type.__qualname__` attribute of the dataclass
+   is set to that value. By default, it is set to the value passed to *cls_name*.
 
    The *decorator* parameter is a callable that will be used to create the dataclass.
    It should take the class object as a first argument and the same keyword arguments
@@ -464,6 +480,8 @@ Module contents
 
    .. versionadded:: 3.14
       Added the *decorator* parameter.
+   .. versionadded:: next
+      Added the *qualname* parameter.
 
 .. function:: replace(obj, /, **changes)
 
@@ -498,7 +516,8 @@ Module contents
 .. function:: is_dataclass(obj)
 
    Return ``True`` if its parameter is a dataclass (including subclasses of a
-   dataclass) or an instance of one, otherwise return ``False``.
+   dataclass, but not including :ref:`generic aliases <types-genericalias>`)
+   or an instance of one, otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
    not a dataclass itself), then add a further check for ``not

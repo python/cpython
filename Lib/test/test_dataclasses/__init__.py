@@ -2792,6 +2792,55 @@ class TestEq(unittest.TestCase):
         self.assertEqual(C(1), 5)
         self.assertNotEqual(C(1), 1)
 
+    def test_eq_field_by_field(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+
+        p1 = Point(1, 2)
+        p2 = Point(1, 2)
+        p3 = Point(2, 1)
+        self.assertEqual(p1, p2)
+        self.assertNotEqual(p1, p3)
+
+    def test_eq_type_check(self):
+        @dataclasses.dataclass
+        class A:
+            x: int
+
+        @dataclasses.dataclass
+        class B:
+            x: int
+
+        a = A(1)
+        b = B(1)
+        self.assertNotEqual(a, b)
+
+    def test_eq_custom_field(self):
+        class AlwaysEqual(int):
+            def __eq__(self, other):
+                return True
+
+        @dataclasses.dataclass
+        class Foo:
+            x: AlwaysEqual
+            y: int
+
+        f1 = Foo(AlwaysEqual(1), 2)
+        f2 = Foo(AlwaysEqual(2), 2)
+        self.assertEqual(f1, f2)
+
+    def test_eq_nan_field(self):
+        @dataclasses.dataclass
+        class D:
+            x: float
+
+        nan = float('nan')
+        d1 = D(nan)
+        d2 = D(nan)
+        self.assertNotEqual(d1, d2)
+
 
 class TestOrdering(unittest.TestCase):
     def test_functools_total_ordering(self):
@@ -5289,6 +5338,15 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertEqual(len(fs), 1)
         self.assertEqual(fs[0].name, 'x')
 
+    def test_makedataclass_with_qualname(self):
+        A = make_dataclass("A", ['a'], qualname='ClassA')
+        self.assertEqual(A.__qualname__, 'ClassA')
+
+        B = make_dataclass("B", ['b'], qualname='module1.ClassB')
+        self.assertEqual(B.__qualname__, 'module1.ClassB')
+
+        C = make_dataclass("C", ['c'])
+        self.assertEqual(C.__qualname__, 'C')
 
 class TestZeroArgumentSuperWithSlots(unittest.TestCase):
     def test_zero_argument_super(self):

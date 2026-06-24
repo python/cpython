@@ -646,26 +646,23 @@ Disallow: /spam\
 )
 class BaseLocalNetworkTestCase:
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         # clear _opener global variable
-        self.addCleanup(urllib.request.urlcleanup)
+        cls.addClassCleanup(urllib.request.urlcleanup)
 
-        self.server = HTTPServer((socket_helper.HOST, 0), self.RobotHandler)
+        cls.server = HTTPServer((socket_helper.HOST, 0), cls.RobotHandler)
+        cls.addClassCleanup(cls.server.server_close)
 
-        self.t = threading.Thread(
+        t = threading.Thread(
             name='HTTPServer serving',
-            target=self.server.serve_forever,
+            target=cls.server.serve_forever,
             # Short poll interval to make the test finish quickly.
             # Time between requests is short enough that we won't wake
             # up spuriously too many times.
             kwargs={'poll_interval':0.01})
-        self.t.daemon = True  # In case this function raises.
-        self.t.start()
-
-    def tearDown(self):
-        self.server.shutdown()
-        self.t.join()
-        self.server.server_close()
+        cls.enterClassContext(threading_helper.start_threads([t]))
+        cls.addClassCleanup(cls.server.shutdown)
 
 
 SAMPLE_ROBOTS_TXT = b'''\
@@ -687,7 +684,6 @@ class LocalNetworkTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         def log_message(self, format, *args):
             pass
 
-    @threading_helper.reap_threads
     def testRead(self):
         # Test that reading a weird robots.txt doesn't fail.
         addr = self.server.server_address
@@ -702,31 +698,79 @@ class LocalNetworkTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         self.assertTrue(parser.can_fetch(agent, url + '/utf8/'))
         self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
         self.assertFalse(parser.can_fetch(agent, url + '/utf8/%F0%9F%90%8D'))
-        self.assertFalse(parser.can_fetch(agent, url + '/utf8/\U0001f40d'))
         self.assertTrue(parser.can_fetch(agent, url + '/non-utf8/'))
         self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/%F0'))
         self.assertFalse(parser.can_fetch(agent, url + '/non-utf8/\U0001f40d'))
         self.assertFalse(parser.can_fetch(agent, url + '/%2F[spam]/path'))
 
 
-class PasswordProtectedSiteTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
+class HttpErrorsTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
     class RobotHandler(BaseHTTPRequestHandler):
 
         def do_GET(self):
-            self.send_error(403, "Forbidden access")
+            self.send_error(self.server.return_code)
 
         def log_message(self, format, *args):
             pass
 
-    @threading_helper.reap_threads
-    def testPasswordProtectedSite(self):
+    def setUp(self):
+        # Make sure that a valid code is set in the test.
+        self.server.return_code = None
+
+    def testUnauthorized(self):
+        self.server.return_code = 401
         addr = self.server.server_address
-        url = 'http://' + socket_helper.HOST + ':' + str(addr[1])
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
         robots_url = url + "/robots.txt"
         parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
         parser.read()
         self.assertFalse(parser.can_fetch("*", robots_url))
+        self.assertFalse(parser.can_fetch("*", url + '/some/file.html'))
+
+    def testForbidden(self):
+        self.server.return_code = 403
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertFalse(parser.can_fetch("*", robots_url))
+        self.assertFalse(parser.can_fetch("*", url + '/some/file.html'))
+
+    def testNotFound(self):
+        self.server.return_code = 404
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertTrue(parser.can_fetch("*", robots_url))
+        self.assertTrue(parser.can_fetch("*", url + '/path/file.html'))
+
+    def testTeapot(self):
+        self.server.return_code = 418
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertTrue(parser.can_fetch("*", robots_url))
+        self.assertTrue(parser.can_fetch("*", url + '/pot-1?milk-type=Cream'))
+
+    def testServiceUnavailable(self):
+        self.server.return_code = 503
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(url)
+        parser.read()
+        self.assertFalse(parser.can_fetch("*", robots_url))
+        self.assertFalse(parser.can_fetch("*", url + '/path/file.html'))
 
 
 @support.requires_working_socket()
@@ -738,6 +782,7 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires('network')
+        cls.addClassCleanup(urllib.request.urlcleanup)
         with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
