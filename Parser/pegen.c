@@ -9,6 +9,7 @@
 
 #include "lexer/lexer.h"
 #include "tokenizer/tokenizer.h"
+#include "tokenizer/helpers.h"
 #include "pegen.h"
 
 // Internal parser functions
@@ -993,7 +994,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
-            _PyPegen_raise_tokenizer_init_error(filename_ob);
+            _PyTokenizer_raise_init_error(filename_ob);
             return NULL;
         }
         return NULL;
@@ -1051,7 +1052,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
-            _PyPegen_raise_tokenizer_init_error(filename_ob);
+            _PyTokenizer_raise_init_error(filename_ob);
         }
         return NULL;
     }

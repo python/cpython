@@ -101,8 +101,6 @@ static int
 faulthandler_get_fileno(PyObject **file_ptr)
 {
     PyObject *result;
-    long fd_long;
-    int fd;
     PyObject *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
@@ -124,7 +122,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
                 return -1;
             }
         }
-        fd = PyLong_AsInt(file);
+        int fd = PyLong_AsInt(file);
         if (fd == -1 && PyErr_Occurred())
             return -1;
         if (fd < 0) {
@@ -145,15 +143,16 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    fd = -1;
+    int fd;
     if (PyLong_Check(result)) {
-        fd_long = PyLong_AsLong(result);
-        if (0 <= fd_long && fd_long < INT_MAX)
-            fd = (int)fd_long;
+        fd = PyLong_AsInt(result);
+    }
+    else {
+        fd = -1;
     }
     Py_DECREF(result);
 
-    if (fd == -1) {
+    if (fd < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "file.fileno() is not a valid file descriptor");
         Py_DECREF(file);
@@ -407,10 +406,8 @@ faulthandler_fatal_error(int signum)
         PUTS(fd, "\n\n");
     }
     else {
-        char unknown_signum[23] = {0,};
-        snprintf(unknown_signum, 23, "%d", signum);
         PUTS(fd, "Fatal Python error from unexpected signum: ");
-        PUTS(fd, unknown_signum);
+        _Py_DumpDecimal(fd, signum);
         PUTS(fd, "\n\n");
     }
 
@@ -713,7 +710,7 @@ faulthandler_thread(void *unused)
         /* Timeout => dump traceback */
         assert(st == PY_LOCK_FAILURE);
 
-        (void)_Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
+        (void)_Py_write_noraise(thread.fd, thread.header, thread.header_len);
 
         errmsg = PyUnstable_DumpTracebackThreads(thread.fd, thread.interp, NULL,
                                                  thread.max_threads);
@@ -1224,7 +1221,7 @@ static PyObject *
 faulthandler__fatal_error_c_thread_impl(PyObject *module)
 /*[clinic end generated code: output=101bc8aaf4a5eec1 input=fbdca6fffd639a39]*/
 {
-    long tid;
+    unsigned long tid;
     PyThread_type_lock lock;
 
     faulthandler_suppress_crash_report();
@@ -1236,7 +1233,7 @@ faulthandler__fatal_error_c_thread_impl(PyObject *module)
     PyThread_acquire_lock(lock, WAIT_LOCK);
 
     tid = PyThread_start_new_thread(faulthandler_fatal_error_thread, lock);
-    if (tid == -1) {
+    if (tid == PYTHREAD_INVALID_THREAD_ID) {
         PyThread_free_lock(lock);
         PyErr_SetString(PyExc_RuntimeError, "unable to start the thread");
         return NULL;

@@ -53,6 +53,10 @@ Copyright (C) 1994 Steen Lumholt.
 #  include <tk.h>
 #endif
 
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+#  include <tkPlatDecls.h>
+#endif
+
 #include "tkinter.h"
 
 #if TK_HEX_VERSION < 0x0805020c
@@ -174,6 +178,57 @@ _get_tcl_lib_path(void)
     return tcl_library_path;
 }
 #endif /* MS_WINDOWS */
+
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+static void
+mount_tk_dll_zip(void)
+{
+    HINSTANCE tk_module = Tk_GetHINSTANCE();
+    wchar_t *tk_path = NULL;
+    DWORD path_len = 0;
+    for (DWORD buffer_len = 256;
+         tk_path == NULL && buffer_len < (1024 * 1024);
+         buffer_len *= 2)
+    {
+        tk_path = (wchar_t *)PyMem_RawMalloc(
+            buffer_len * sizeof(*tk_path));
+        if (tk_path != NULL) {
+            path_len = GetModuleFileNameW(tk_module, tk_path, buffer_len);
+            if (path_len == buffer_len) {
+                PyMem_RawFree(tk_path);
+                tk_path = NULL;
+            }
+        }
+    }
+
+    if (tk_path == NULL || path_len == 0) {
+        PyMem_RawFree(tk_path);
+        return;
+    }
+
+    Tcl_DString utf8_path;
+
+    Tcl_DStringInit(&utf8_path);
+    Tcl_WCharToUtfDString(tk_path, path_len, &utf8_path);
+    /* Failure is harmless if the DLL has no embedded ZIP or if another
+       interpreter has already mounted it. */
+    (void) TclZipfs_Mount(NULL, Tcl_DStringValue(&utf8_path),
+                          "//zipfs:/lib/tk", NULL);
+    Tcl_DStringFree(&utf8_path);
+    PyMem_RawFree(tk_path);
+}
+#endif
+
+int
+Tkinter_TkInit(Tcl_Interp *interp)
+{
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+    /* Tcl/Tk 9 may embed the tk_library in the Tk DLL which tcl_findLibrary
+       does not search. Mount the DLL using Zipfs if possible.  */
+    mount_tk_dll_zip();
+#endif
+    return Tk_Init(interp);
+}
 
 /* The threading situation is complicated.  Tcl is not thread-safe, except
    when configured with --enable-threads.
@@ -544,7 +599,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-    if (Tk_Init(interp) == TCL_ERROR) {
+    if (Tkinter_TkInit(interp) == TCL_ERROR) {
         PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
         return TCL_ERROR;
     }
@@ -2988,7 +3043,7 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
         return NULL;
     }
     if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)     {
-        if (Tk_Init(interp)             == TCL_ERROR) {
+        if (Tkinter_TkInit(interp)      == TCL_ERROR) {
             Tkinter_Error(self);
             return NULL;
         }
@@ -3216,6 +3271,20 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
     CHECK_STRING_LENGTH(baseName);
     CHECK_STRING_LENGTH(className);
     CHECK_STRING_LENGTH(use);
+
+#if TCL_MAJOR_VERSION < 9
+    /* className is title-cased during Tk initialization.  Tcl 8.x does not
+     * support non-BMP characters (encoded as 4-byte UTF-8 sequences) there
+     * and crashes in Tcl_UtfToTitle (see gh-126219).  Reject them up front. */
+    for (const unsigned char *p = (const unsigned char *)className; *p; p++) {
+        if (*p >= 0xF0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "className must not contain non-BMP characters "
+                            "with this version of Tcl/Tk");
+            return NULL;
+        }
+    }
+#endif
 
     return (PyObject *) Tkapp_New(screenName, className,
                                   interactive, wantobjects, wantTk,

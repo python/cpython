@@ -1843,6 +1843,34 @@ bad_template:
 #define GET_SKIP GET_SKIP_ADJ(0)
 
 static int
+_validate_category(SRE_CODE arg)
+{
+    switch (arg) {
+    case SRE_CATEGORY_DIGIT:
+    case SRE_CATEGORY_NOT_DIGIT:
+    case SRE_CATEGORY_SPACE:
+    case SRE_CATEGORY_NOT_SPACE:
+    case SRE_CATEGORY_WORD:
+    case SRE_CATEGORY_NOT_WORD:
+    case SRE_CATEGORY_LINEBREAK:
+    case SRE_CATEGORY_NOT_LINEBREAK:
+    case SRE_CATEGORY_LOC_WORD:
+    case SRE_CATEGORY_LOC_NOT_WORD:
+    case SRE_CATEGORY_UNI_DIGIT:
+    case SRE_CATEGORY_UNI_NOT_DIGIT:
+    case SRE_CATEGORY_UNI_SPACE:
+    case SRE_CATEGORY_UNI_NOT_SPACE:
+    case SRE_CATEGORY_UNI_WORD:
+    case SRE_CATEGORY_UNI_NOT_WORD:
+    case SRE_CATEGORY_UNI_LINEBREAK:
+    case SRE_CATEGORY_UNI_NOT_LINEBREAK:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static int
 _validate_charset(SRE_CODE *code, SRE_CODE *end)
 {
     /* Some variables are manipulated by the macros above */
@@ -1894,27 +1922,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
 
         case SRE_OP_CATEGORY:
             GET_ARG;
-            switch (arg) {
-            case SRE_CATEGORY_DIGIT:
-            case SRE_CATEGORY_NOT_DIGIT:
-            case SRE_CATEGORY_SPACE:
-            case SRE_CATEGORY_NOT_SPACE:
-            case SRE_CATEGORY_WORD:
-            case SRE_CATEGORY_NOT_WORD:
-            case SRE_CATEGORY_LINEBREAK:
-            case SRE_CATEGORY_NOT_LINEBREAK:
-            case SRE_CATEGORY_LOC_WORD:
-            case SRE_CATEGORY_LOC_NOT_WORD:
-            case SRE_CATEGORY_UNI_DIGIT:
-            case SRE_CATEGORY_UNI_NOT_DIGIT:
-            case SRE_CATEGORY_UNI_SPACE:
-            case SRE_CATEGORY_UNI_NOT_SPACE:
-            case SRE_CATEGORY_UNI_WORD:
-            case SRE_CATEGORY_UNI_NOT_WORD:
-            case SRE_CATEGORY_UNI_LINEBREAK:
-            case SRE_CATEGORY_UNI_NOT_LINEBREAK:
-                break;
-            default:
+            if (!_validate_category(arg)) {
                 FAIL;
             }
             break;
@@ -1991,6 +1999,13 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             case SRE_AT_UNI_NON_BOUNDARY:
                 break;
             default:
+                FAIL;
+            }
+            break;
+
+        case SRE_OP_CATEGORY:
+            GET_ARG;
+            if (!_validate_category(arg)) {
                 FAIL;
             }
             break;

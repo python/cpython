@@ -9803,6 +9803,8 @@ fi
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
+            as_fn_append LDFLAGS_NODIST " -Wl,--wrap=getentropy"
+
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
 
@@ -9927,6 +9929,10 @@ printf "%s\n" "$ac_cv_thread_stack_size" >&6; }
 
     if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
         LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+        # Stack size used by Python/ceval.c to set Py_C_STACK_SIZE
+
+printf "%s\n" "#define _Py_LINKER_THREAD_STACK_SIZE $ac_cv_thread_stack_size" >>confdefs.h
+
     fi
 fi
 
@@ -30280,6 +30286,66 @@ fi
 
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function nofilter" >&5
+printf %s "checking for curses function nofilter... " >&6; }
+if test ${ac_cv_lib_curses_nofilter+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef nofilter
+        void *x=nofilter
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_nofilter=yes
+else case e in #(
+  e) ac_cv_lib_curses_nofilter=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_nofilter" >&5
+printf "%s\n" "$ac_cv_lib_curses_nofilter" >&6; }
+  if test "x$ac_cv_lib_curses_nofilter" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_NOFILTER 1" >>confdefs.h
+
+fi
+
+
+
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function has_key" >&5
 printf %s "checking for curses function has_key... " >&6; }
 if test ${ac_cv_lib_curses_has_key+y}
@@ -35116,8 +35182,8 @@ fi
   if test "x$py_cv_module__ctypes_test" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_CFLAGS=$LIBFFI_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBFFI_LIBS $LIBM$as_nl"
+
+    as_fn_append MODULE_BLOCK "MODULE__CTYPES_TEST_LDFLAGS=$LIBM$as_nl"
 
 fi
    if test "$py_cv_module__ctypes_test" = yes; then

@@ -8,10 +8,6 @@ import time
 from collections import deque
 lazy from _colorize import ANSIColors
 
-from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector, FlamegraphCollector
-from .heatmap_collector import HeatmapCollector
-from .gecko_collector import GeckoCollector
 from .binary_collector import BinaryCollector
 
 

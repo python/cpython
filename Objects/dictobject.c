@@ -138,6 +138,7 @@ As a consequence of this, split keys have a maximum size of 16.
 // Forward declarations
 static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
+static PyObject* frozendict_new_untracked(PyTypeObject *type);
 static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey);
 static int dict_contains(PyObject *op, PyObject *key);
@@ -2384,7 +2385,7 @@ dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
     }
     PyDictObject *mp = (PyDictObject *)op;
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         PyErr_FormatUnraisable(warnmsg);
         return NULL;
@@ -2456,7 +2457,7 @@ _PyDict_LookupIndexAndValue(PyDictObject *mp, PyObject *key, PyObject **value)
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type((PyObject*)mp, key);
         return -1;
@@ -2560,7 +2561,7 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
         return -1;
     }
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         *result = NULL;
@@ -2576,7 +2577,7 @@ _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **
     ASSERT_DICT_LOCKED(op);
     assert(PyUnicode_CheckExact(key));
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type((PyObject*)op, key);
         *result = NULL;
@@ -2614,7 +2615,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
         PyErr_BadInternalCall();
         return NULL;
     }
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         return NULL;
@@ -2673,7 +2674,7 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     Py_hash_t hash;
     PyObject *value;
 
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         return NULL;
     }
@@ -2697,7 +2698,7 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     Py_ssize_t ix;
     Py_hash_t hash;
 
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         *res = PyStackRef_NULL;
         return;
@@ -2774,7 +2775,7 @@ setitem_take2_lock_held_known_hash(PyDictObject *mp, PyObject *key, PyObject *va
 static int
 setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type((PyObject*)mp, key);
         Py_DECREF(key);
@@ -2952,7 +2953,7 @@ int
 PyDict_DelItem(PyObject *op, PyObject *key)
 {
     assert(key);
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         return -1;
@@ -3296,7 +3297,7 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
         return 0;
     }
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         if (result) {
@@ -3734,7 +3735,7 @@ _PyDict_SubscriptKnownHash(PyObject *self, PyObject *key, Py_hash_t hash)
 PyObject *
 _PyDict_Subscript(PyObject *self, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(self, key);
         return NULL;
@@ -4146,12 +4147,9 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
             set_keys(mp, keys);
             STORE_USED(mp, other->ma_used);
             ASSERT_CONSISTENT(mp);
-
-            if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
-                /* Maintain tracking. */
-                _PyObject_GC_TRACK(mp);
+            if (PyDict_Check(mp)) {
+                assert(_PyObject_GC_IS_TRACKED(mp));
             }
-
             return 0;
         }
     }
@@ -4686,7 +4684,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     Py_hash_t hash;
     Py_ssize_t ix;
 
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type((PyObject*)self, key);
         return NULL;
@@ -4723,7 +4721,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     Py_hash_t hash;
     Py_ssize_t ix;
 
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(d, key);
         if (result) {
@@ -5165,7 +5163,7 @@ static PyMethodDef mapp_methods[] = {
 static int
 dict_contains(PyObject *op, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         return -1;
@@ -5242,14 +5240,13 @@ static PyNumberMethods dict_as_number = {
 };
 
 static PyObject *
-dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+dict_new_untracked(PyTypeObject *type)
 {
     assert(type != NULL);
-    assert(type->tp_alloc != NULL);
     // dict subclasses must implement the GC protocol
     assert(_PyType_IS_GC(type));
 
-    PyObject *self = type->tp_alloc(type, 0);
+    PyObject *self = _PyType_AllocNoTrack(type, 0);
     if (self == NULL) {
         return NULL;
     }
@@ -5262,9 +5259,19 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
-    if (!_PyObject_GC_IS_TRACKED(d)) {
-        _PyObject_GC_TRACK(d);
+    return self;
+}
+
+static PyObject *
+dict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwds))
+{
+    /* tp_new ignores args/kwds; args/kwds are consumed by dict_init (tp_init). */
+    PyObject *self = dict_new_untracked(type);
+    if (self == NULL) {
+        return NULL;
     }
+    assert(!_PyObject_GC_IS_TRACKED(self));
+    _PyObject_GC_TRACK(self);
     return self;
 }
 
@@ -5323,7 +5330,9 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
         return Py_NewRef(args[0]);
     }
 
-    PyObject *self = frozendict_new(_PyType_CAST(type), NULL, NULL);
+    /* gh-151722: Keep the frozendict untracked until it is fully built,
+       so a half-built object is never reachable from another thread (using the gc module). */
+    PyObject *self = frozendict_new_untracked(_PyType_CAST(type));
     if (self == NULL) {
         return NULL;
     }
@@ -5343,6 +5352,8 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
             }
         }
     }
+    assert(!_PyObject_GC_IS_TRACKED(self));
+    _PyObject_GC_TRACK(self);
     return self;
 }
 
@@ -7298,7 +7309,7 @@ _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
     }
 
     if (value == NULL) {
-        Py_hash_t hash = _PyObject_HashFast(name);
+        Py_hash_t hash = _PyObject_HashDictKey(name);
         if (hash == -1) {
             dict_unhashable_type((PyObject*)dict, name);
             return -1;
@@ -8361,17 +8372,27 @@ frozendict_hash(PyObject *op)
 }
 
 
+/* Allocate an empty, GC-untracked frozendict; the constructor tracks it once
+   fully built. */
 static PyObject *
-frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+frozendict_new_untracked(PyTypeObject *type)
 {
-    PyObject *d = dict_new(type, args, kwds);
+    PyObject *d = dict_new_untracked(type);
     if (d == NULL) {
         return NULL;
     }
     assert(can_modify_dict(_PyAnyDict_CAST(d)));
+    _PyFrozenDictObject_CAST(d)->ma_hash = -1;
+    return d;
+}
 
-    PyFrozenDictObject *self = _PyFrozenDictObject_CAST(d);
-    self->ma_hash = -1;
+static PyObject *
+frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *d = frozendict_new_untracked(type);
+    if (d == NULL) {
+        return NULL;
+    }
 
     if (args != NULL) {
         if (dict_update_common(d, args, kwds, "frozendict") < 0) {
@@ -8383,6 +8404,8 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         assert(kwds == NULL);
     }
 
+    assert(!_PyObject_GC_IS_TRACKED(d));
+    _PyObject_GC_TRACK(d);
     return d;
 }
 
