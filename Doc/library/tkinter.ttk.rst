@@ -465,6 +465,9 @@ ttk.Spinbox
 
 .. class:: Spinbox
 
+   With a non-integer increment, see :ref:`numeric values and the locale
+   <tkinter-numeric-locale>`.
+
    .. versionadded:: 3.8
 
    .. method:: get()
