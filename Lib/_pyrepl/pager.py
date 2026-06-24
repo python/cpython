@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 import re
+import shlex
 import sys
 
 
@@ -45,7 +46,7 @@ def get_pager() -> Pager:
     (fd, filename) = tempfile.mkstemp()
     os.close(fd)
     try:
-        if hasattr(os, 'system') and os.system('more "%s"' % filename) == 0:
+        if hasattr(os, 'system') and os.system('more %s' % shlex.quote(filename)) == 0:
             return lambda text, title='': pipe_pager(text, 'more', title)
         else:
             return tty_pager
