@@ -170,7 +170,7 @@ class TestFreeThreading:
         # eager-started tasks on free-threaded builds.
         loop = asyncio.new_event_loop()
 
-        async def _forever():
+        async def wait_forever():
             await asyncio.Event().wait()
 
         def eager_factory(loop, coro, **kwargs):
