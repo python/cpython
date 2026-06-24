@@ -89,6 +89,13 @@ Improved modules
 curses
 ------
 
+* Add support for multiple terminals to the :mod:`curses` module:
+  the new functions :func:`curses.newterm`, :func:`curses.set_term`
+  and :func:`curses.new_prescr`,
+  the corresponding :ref:`screen <curses-screen-objects>` object,
+  and the :meth:`window.use() <curses.window.use>` method.
+  (Contributed by Serhiy Storchaka in :gh:`90092`.)
+
 * The :mod:`curses` character-cell window methods now accept a full character
   cell --- a spacing character optionally followed by combining characters ---
   in addition to a single integer or byte character.  This affects
@@ -295,10 +302,12 @@ re
 --
 
 * Character class escapes (``\d``, ``\D``, ``\s``, ``\S``, ``\w`` and ``\W``)
-  outside a character set are now compiled to a single ``CATEGORY`` opcode
-  instead of being wrapped in an ``IN`` block.  This speeds up matching of
-  patterns such as ``\d+`` and reduces the size of the compiled byte code.
-  (Contributed by Serhiy Storchaka in :gh:`152033`.)
+  outside a character set, and character sets containing a single such escape
+  (such as ``[\d]`` or ``[^\s]``), are now compiled to a single ``CATEGORY``
+  opcode instead of being wrapped in an ``IN`` block.  This speeds up matching
+  of patterns such as ``\d+`` and reduces the size of the compiled byte code.
+  (Contributed by Serhiy Storchaka in :gh:`152033` and Pieter Eendebak in
+  :gh:`152056`.)
 
 module_name
 -----------
