@@ -516,14 +516,19 @@ def _charset_node(items):
         return items[0]
     return (IN, items)
 
-def _flat_items(elements):
-    # The items if `elements` is a single flat charset (no complement), else
-    # None -- the dual of _charset_node: a lone LITERAL or CATEGORY is an item.
+def _flat_items(elements, complement=False):
+    # The items if `elements` is a single flat charset, else None -- the dual
+    # of _charset_node: a lone LITERAL or CATEGORY is an item.  A complemented
+    # charset (a NEGATE-bearing IN) qualifies only when `complement` is true.
     if len(elements) == 1:
         op, av = elements[0]
         if op in _SETITEMCODES:
             return [elements[0]]
-        if op is IN and all(o is not NEGATE for o, _av in av):
+        if op is IN:
+            if not complement:
+                for o, _av in av:
+                    if o is NEGATE:
+                        return None
             return av
     return None
 
@@ -677,6 +682,8 @@ def _parse_charset(source, state, nested):
     #   [A--B]  ->  A (?<![B])           difference
     #   [A&&B]  ->  A (?<=[B])           intersection
     #   [A||B]  ->  [AB] or (?:A|B)      union
+    # A flat-operand difference [A--B] is later fused back into a single charset
+    # by Lib/re/_optimizer.py (see that module).
     # Operators chain left-to-right with no precedence.  A leading '^' negates by
     # De Morgan, pushing the negation into the operands (no lookahead needed):
     #   [^A--B] -> [^A] | B ; [^A&&B] -> [^A] | [^B] ; [^A||B] -> [^A] && [^B]
