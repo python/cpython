@@ -112,13 +112,13 @@ def capture_call_graph(
     optional keyword-only 'depth' argument can be used to skip the specified
     number of frames from top of the stack.
 
-    If the optional keyword-only 'limit' argument is provided, each call stack
-    in the resulting graph is truncated to include at most ``abs(limit)``
-    entries. If 'limit' is positive, the entries left are the closest to
-    the invocation point. If 'limit' is negative, the topmost entries are
-    left. If 'limit' is omitted or None, all entries are present.
-    If 'limit' is 0, the call stack is not captured at all, only
-    "awaited by" information is present.
+    If the optional keyword-only 'limit' argument is provided, each call
+    stack in the resulting graph is truncated to include at most
+    ``abs(limit)`` entries.  If 'limit' is positive, the entries left are
+    the closest to the invocation point.  If 'limit' is negative, the
+    topmost entries are left.  If 'limit' is omitted or None, all entries
+    are present.  If 'limit' is 0, the call stack is not captured at all,
+    only "awaited by" information is present.
     """
 
     loop = events._get_running_loop()

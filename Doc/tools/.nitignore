@@ -18,7 +18,6 @@ Doc/library/lzma.rst
 Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
-Doc/library/os.rst
 Doc/library/pickletools.rst
 Doc/library/pyexpat.rst
 Doc/library/select.rst
@@ -26,10 +25,6 @@ Doc/library/socket.rst
 Doc/library/ssl.rst
 Doc/library/termios.rst
 Doc/library/test.rst
-Doc/library/tkinter.rst
-Doc/library/tkinter.scrolledtext.rst
-Doc/library/tkinter.ttk.rst
-Doc/library/unittest.mock.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
 Doc/library/wsgiref.rst

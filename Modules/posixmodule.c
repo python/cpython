@@ -5699,7 +5699,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 
     buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (wcslen(path->wide) + 1));
     if (!buffer) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     wcscpy(buffer, path->wide);
     for (wchar_t *p = wcschr(buffer, L'/'); p; p = wcschr(p, L'/')) {
@@ -6144,6 +6144,9 @@ os__path_normpath_impl(PyObject *module, path_t *path)
     }
     else {
         result = PyUnicode_FromWideChar(norm_path, norm_len);
+    }
+    if (result == NULL) {
+        return NULL;
     }
     if (PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));

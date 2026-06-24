@@ -126,8 +126,8 @@ get_module_state(PyObject *module)
 
 #define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))
 
-static PyObject *
-get_current_module(PyInterpreterState *interp)
+static int
+get_current_module(PyInterpreterState *interp, PyObject **p_mod)
 {
     PyObject *mod = NULL;
 
@@ -139,20 +139,24 @@ get_current_module(PyInterpreterState *interp)
     if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
         goto error;
     }
-    if (ref != NULL) {
-        if (ref != Py_None) {
-            (void)PyWeakref_GetRef(ref, &mod);
-            if (mod == Py_None) {
-                Py_CLEAR(mod);
-            }
+    if (ref != NULL && ref != Py_None) {
+        if (PyWeakref_GetRef(ref, &mod) < 0) {
             Py_DECREF(ref);
+            goto error;
         }
+        if (mod == Py_None) {
+            Py_CLEAR(mod);
+        }
+        Py_DECREF(ref);
     }
-    return mod;
+    assert(!PyErr_Occurred());
+    *p_mod = mod;
+    return mod != NULL;
 
 error:
     assert(PyErr_Occurred());
-    return NULL;
+    *p_mod = NULL;
+    return -1;
 }
 
 static PyModuleDef datetimemodule;
@@ -161,22 +165,26 @@ static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *mod = get_current_module(interp);
+    PyObject *mod;
+    if (get_current_module(interp, &mod) < 0) {
+        goto error;
+    }
     if (mod == NULL) {
-        assert(!PyErr_Occurred());
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
         /* The static types can outlive the module,
          * so we must re-import the module. */
         mod = PyImport_ImportModule("_datetime");
         if (mod == NULL) {
-            return NULL;
+            goto error;
         }
     }
     datetime_state *st = get_module_state(mod);
     *p_mod = mod;
     return st;
+
+error:
+    assert(PyErr_Occurred());
+    *p_mod = NULL;
+    return NULL;
 }
 
 #define GET_CURRENT_STATE(MOD_VAR)  \
@@ -2128,8 +2136,11 @@ delta_to_microseconds(PyDateTime_Delta *self)
     PyObject *x3 = NULL;
     PyObject *result = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
@@ -2207,8 +2218,11 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     tuple = checked_divmod(pyus, CONST_US_PER_SECOND(st));
     if (tuple == NULL) {
@@ -2815,8 +2829,11 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
 {
     PyObject *self = NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     PyObject *x = NULL;         /* running sum of microseconds */
     PyObject *y = NULL;         /* temp sum of microseconds */
@@ -3014,8 +3031,12 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
     if (total_microseconds == NULL)
         return NULL;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        Py_DECREF(total_microseconds);
+        return NULL;
+    }
 
     total_seconds = PyNumber_TrueDivide(total_microseconds, CONST_US_PER_SECOND(st));
 
@@ -3867,8 +3888,11 @@ date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
         week = 0;
     }
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     PyObject *v = iso_calendar_date_new_impl(ISOCALENDAR_DATE_TYPE(st),
                                              year, week + 1, day + 1);
@@ -6120,7 +6144,7 @@ datetime_datetime_fromisoformat_impl(PyTypeObject *type, PyObject *string)
         goto error;
     }
 
-    if ((hour == 24) && (month <= 12))  {
+    if ((hour == 24) && (month >= 1 && month <= 12))  {
         int d_in_month = days_in_month(year, month);
         if (day <= d_in_month) {
             if (minute == 0 && second == 0 && microsecond == 0) {
@@ -6800,8 +6824,11 @@ local_timezone(PyDateTime_DateTime *utc_time)
     PyObject *one_second;
     PyObject *seconds;
 
-    PyObject *current_mod = NULL;
+    PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     delta = datetime_subtract((PyObject *)utc_time, CONST_EPOCH(st));
     RELEASE_CURRENT_STATE(st, current_mod);
@@ -7047,8 +7074,11 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
     PyObject *result;
 
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
-        PyObject *current_mod = NULL;
+        PyObject *current_mod;
         datetime_state *st = GET_CURRENT_STATE(current_mod);
+        if (st == NULL) {
+            return NULL;
+        }
 
         PyObject *delta;
         delta = datetime_subtract(op, CONST_EPOCH(st));
@@ -7581,9 +7611,8 @@ _datetime_exec(PyObject *module)
     datetime_state *st = get_module_state(module);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *old_module = get_current_module(interp);
-    if (PyErr_Occurred()) {
-        assert(old_module == NULL);
+    PyObject *old_module;
+    if (get_current_module(interp, &old_module) < 0) {
         goto error;
     }
     /* We actually set the "current" module right before a successful return. */

@@ -1541,7 +1541,9 @@ _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
     }
 
 finally:
-    _PyXI_FreeExcInfo(info);
+    if (info != NULL) {
+        _PyXI_FreeExcInfo(info);
+    }
     if (exc != exc_arg) {
         if (PyErr_Occurred()) {
             PyErr_SetRaisedException(exc);
