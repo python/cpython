@@ -19097,6 +19097,7 @@
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
+                stack_pointer[-1] = PyStackRef_NULL;
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
@@ -19139,6 +19140,7 @@
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
+                stack_pointer[-1] = PyStackRef_NULL;
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
@@ -19185,6 +19187,7 @@
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
+                stack_pointer[-1] = PyStackRef_NULL;
                 stack_pointer[0] = self;
                 stack_pointer += 2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -19234,6 +19237,7 @@
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
+                stack_pointer[-1] = PyStackRef_NULL;
                 stack_pointer[0] = callable;
                 stack_pointer[1] = self;
                 stack_pointer += 3;
