@@ -16,6 +16,15 @@ def normalize_text(text):
     return text.strip()
 
 
+def read_first_line(filename):
+    # Get the first line of a text file and strip trailing spaces
+    try:
+        with open(filename, encoding="utf-8") as fp:
+            return fp.readline().rstrip()
+    except OSError:
+        return ''
+
+
 class PythonInfo:
     def __init__(self):
         self.info = {}
@@ -1015,14 +1024,9 @@ def collect_fips(info_add):
     if _hashlib is not None:
         call_func(info_add, 'fips.openssl_fips_mode', _hashlib, 'get_fips_mode')
 
-    try:
-        with open("/proc/sys/crypto/fips_enabled", encoding="utf-8") as fp:
-            line = fp.readline().rstrip()
-
-        if line:
-            info_add('fips.linux_crypto_fips_enabled', line)
-    except OSError:
-        pass
+    fips_enabled = read_first_line("/proc/sys/crypto/fips_enabled")
+    if fips_enabled:
+        info_add('fips.linux_crypto_fips_enabled', fips_enabled)
 
 
 def collect_tempfile(info_add):
@@ -1049,14 +1053,11 @@ def linux_get_uptime():
         pass
 
     # Otherwise, parse the first member of /proc/uptime
-    try:
-        with open("/proc/uptime", encoding="utf-8") as fp:
-            line = fp.readline()
-    except OSError:
+    uptime = read_first_line("/proc/uptime")
+    if not uptime:
         return
-
     try:
-        parts = line.split()
+        parts = uptime.split()
         if not parts:
             return
         return float(parts[0])
@@ -1065,13 +1066,14 @@ def linux_get_uptime():
 
 
 def collect_linux(info_add):
-    try:
-        with open("/proc/sys/kernel/random/boot_id", encoding="utf-8") as fp:
-            boot_id = fp.readline().rstrip()
-    except OSError:
-        pass
-    else:
+    boot_id = read_first_line("/proc/sys/kernel/random/boot_id")
+    if boot_id:
         info_add('linux.boot_id', boot_id)
+
+    # https://www.freedesktop.org/software/systemd/man/latest/machine-id.html
+    machine_id = read_first_line("/etc/machine-id")
+    if machine_id:
+        info_add('linux.machine_id', machine_id)
 
     uptime = linux_get_uptime()
     if uptime is not None:
