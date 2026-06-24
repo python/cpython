@@ -168,6 +168,18 @@ os
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
 
+re
+--
+
+* :mod:`re` now supports set operations and nested sets in character classes,
+  as described in `Unicode Technical Standard #18
+  <https://unicode.org/reports/tr18/>`__: set difference (``[A--B]``),
+  intersection (``[A&&B]``) and union (``[A||B]``), where an operand may be a
+  nested set written in square brackets.  For example, ``[a-z--[aeiou]]``
+  matches an ASCII lowercase consonant.
+  (Contributed by Serhiy Storchaka in :gh:`152100`.)
+
+
 shlex
 -----
 
