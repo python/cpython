@@ -809,8 +809,6 @@ class ListComprehensionTest(unittest.TestCase):
         self.assertEqual(count, 5)
 
     def test_async_optimization_with_side_effects(self):
-        import asyncio
-
         async def gen1(aiterator):
             with self.assertRaises(ZeroDivisionError):
                 [0/0 async for _ in aiterator]
@@ -827,8 +825,14 @@ class ListComprehensionTest(unittest.TestCase):
             nonlocal count
             count += 1
 
-        asyncio.run(gen1(numbers()))
-        asyncio.run(gen2(numbers()))
+        def exhaust(coro):
+            try:
+                coro.send(None)
+            except StopIteration:
+                pass
+
+        exhaust(gen1(numbers()))
+        exhaust(gen2(numbers()))
         self.assertEqual(count, 5)
 
 __test__ = {'doctests' : doctests}
