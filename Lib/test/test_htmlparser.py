@@ -1011,6 +1011,57 @@ text
              ('endtag', 'a'), ('data', ' bar & baz')]
         )
 
+    def test_reset_in_handler(self):
+        # gh-70398: calling reset() from within a handler used to leave
+        # goahead() processing a stale buffer and crash with an
+        # AssertionError.  It should instead stop parsing the current data.
+        class Resetter(html.parser.HTMLParser):
+            def __init__(self, trigger, **kw):
+                super().__init__(**kw)
+                self.trigger = trigger
+                self.done = False
+                self.events = []
+            def _reset_once(self):
+                if not self.done:
+                    self.done = True
+                    self.reset()
+            def handle_starttag(self, tag, attrs):
+                self.events.append(('starttag', tag))
+                if self.trigger == 'starttag':
+                    self._reset_once()
+            def handle_endtag(self, tag):
+                self.events.append(('endtag', tag))
+                if self.trigger == 'endtag':
+                    self._reset_once()
+            def handle_data(self, data):
+                self.events.append(('data', data))
+                if self.trigger == 'data':
+                    self._reset_once()
+            def handle_comment(self, data):
+                self.events.append(('comment', data))
+                if self.trigger == 'comment':
+                    self._reset_once()
+
+        for trigger, source, expected in [
+            ('data', 'abc<x>def', [('data', 'abc')]),
+            ('starttag', '<a>x<b>y', [('starttag', 'a')]),
+            ('endtag', '<a></a>tail<b>', [('starttag', 'a'), ('endtag', 'a')]),
+            ('comment', '<!--c-->after<x>', [('comment', 'c')]),
+        ]:
+            with self.subTest(trigger=trigger):
+                parser = Resetter(trigger)
+                parser.feed(source)
+                # Only events up to the reset() call are reported; the rest
+                # of the now-discarded buffer is not processed.
+                self.assertEqual(parser.events, expected)
+                self.assertEqual(parser.rawdata, '')
+                # A fresh document still parses correctly after the reset.
+                parser.events.clear()
+                parser.feed('<keep>kept')
+                parser.close()
+                self.assertEqual(parser.events, [('starttag', 'keep'),
+                                                 ('data', 'kept')])
+
     @support.requires_resource('cpu')
     def test_eof_no_quadratic_complexity(self):
         # Each of these examples used to take about an hour.
