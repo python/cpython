@@ -1028,6 +1028,75 @@ class TestCurses(unittest.TestCase):
         stdscr.timeout(0)
         stdscr.timeout(5)
 
+    @requires_curses_window_meth('is_scrollok')
+    def test_state_getters(self):
+        stdscr = self.stdscr
+        # Each is_*() getter returns the value set by the matching setter.
+        for setter, getter in [
+            ('clearok', 'is_cleared'),
+            ('idcok', 'is_idcok'),
+            ('idlok', 'is_idlok'),
+            ('keypad', 'is_keypad'),
+            ('leaveok', 'is_leaveok'),
+            ('nodelay', 'is_nodelay'),
+            ('notimeout', 'is_notimeout'),
+            ('scrollok', 'is_scrollok'),
+        ]:
+            getattr(stdscr, setter)(True)
+            self.assertIs(getattr(stdscr, getter)(), True)
+            getattr(stdscr, setter)(False)
+            self.assertIs(getattr(stdscr, getter)(), False)
+        if hasattr(stdscr, 'immedok'):
+            stdscr.immedok(True)
+            self.assertIs(stdscr.is_immedok(), True)
+            stdscr.immedok(False)
+        if hasattr(stdscr, 'syncok'):
+            stdscr.syncok(True)
+            self.assertIs(stdscr.is_syncok(), True)
+            stdscr.syncok(False)
+
+        # getdelay() reflects timeout()/nodelay().
+        stdscr.timeout(100)
+        self.assertEqual(stdscr.getdelay(), 100)
+        stdscr.nodelay(True)
+        self.assertEqual(stdscr.getdelay(), 0)
+        stdscr.timeout(-1)
+        self.assertEqual(stdscr.getdelay(), -1)
+
+        # getscrreg() reflects setscrreg().
+        stdscr.setscrreg(5, 10)
+        self.assertEqual(stdscr.getscrreg(), (5, 10))
+
+        # is_pad()/is_subwin()/getparent().
+        self.assertIs(stdscr.is_pad(), False)
+        self.assertIs(stdscr.is_subwin(), False)
+        self.assertIsNone(stdscr.getparent())
+        sub = stdscr.subwin(3, 3, 0, 0)
+        self.assertIs(sub.is_subwin(), True)
+        self.assertIs(sub.getparent(), stdscr)
+        pad = curses.newpad(5, 5)
+        self.assertIs(pad.is_pad(), True)
+
+    @requires_curses_func('is_cbreak')
+    def test_global_state_getters(self):
+        if self.isatty:
+            curses.cbreak()
+            self.assertIs(curses.is_cbreak(), True)
+            curses.nocbreak()
+            self.assertIs(curses.is_cbreak(), False)
+            curses.raw()
+            self.assertIs(curses.is_raw(), True)
+            curses.noraw()
+            self.assertIs(curses.is_raw(), False)
+        curses.echo()
+        self.assertIs(curses.is_echo(), True)
+        curses.noecho()
+        self.assertIs(curses.is_echo(), False)
+        curses.nl()
+        self.assertIs(curses.is_nl(), True)
+        curses.nonl()
+        self.assertIs(curses.is_nl(), False)
+
     @requires_curses_func('typeahead')
     def test_typeahead(self):
         curses.typeahead(sys.__stdin__.fileno())
@@ -1208,6 +1277,54 @@ class TestCurses(unittest.TestCase):
         for color in self.bad_colors2():
             self.assertRaises(ValueError, curses.init_pair, 1, color, 0)
             self.assertRaises(ValueError, curses.init_pair, 1, 0, color)
+
+    @requires_curses_func('alloc_pair')
+    @requires_colors
+    def test_dynamic_color_pairs(self):
+        # alloc_pair()/find_pair()/free_pair() (extended-color extension).
+        fg = bg = curses.COLORS - 1
+        pair = curses.alloc_pair(fg, bg)
+        self.assertGreater(pair, 0)
+        self.assertEqual(curses.pair_content(pair), (fg, bg))
+        # The same combination of colors reuses the same pair.
+        self.assertEqual(curses.alloc_pair(fg, bg), pair)
+        self.assertEqual(curses.find_pair(fg, bg), pair)
+        # Once freed, the pair is no longer found.
+        self.assertIsNone(curses.free_pair(pair))
+        self.assertEqual(curses.find_pair(fg, bg), -1)
+
+        # Error paths.
+        for color in self.bad_colors2():
+            self.assertRaises(ValueError, curses.alloc_pair, color, 0)
+            self.assertRaises(ValueError, curses.alloc_pair, 0, color)
+            self.assertRaises(ValueError, curses.find_pair, color, 0)
+            self.assertRaises(ValueError, curses.find_pair, 0, color)
+        for pair in self.bad_pairs():
+            self.assertRaises(ValueError, curses.free_pair, pair)
+        # Color pair 0 is reserved and cannot be freed.
+        self.assertRaises(curses.error, curses.free_pair, 0)
+
+        # Invalid number or type of arguments.
+        self.assertRaises(TypeError, curses.alloc_pair)
+        self.assertRaises(TypeError, curses.alloc_pair, 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 0, 0, 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 'red', 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 0, 'red')
+        self.assertRaises(TypeError, curses.alloc_pair, fg=0, bg=0)
+        self.assertRaises(TypeError, curses.find_pair)
+        self.assertRaises(TypeError, curses.find_pair, 0)
+        self.assertRaises(TypeError, curses.find_pair, 0, 0, 0)
+        self.assertRaises(TypeError, curses.find_pair, 'red', 0)
+        self.assertRaises(TypeError, curses.find_pair, 0, 'red')
+        self.assertRaises(TypeError, curses.free_pair)
+        self.assertRaises(TypeError, curses.free_pair, 1, 2)
+        self.assertRaises(TypeError, curses.free_pair, 'red')
+
+    @requires_curses_func('reset_color_pairs')
+    @requires_colors
+    def test_reset_color_pairs(self):
+        self.assertIsNone(curses.reset_color_pairs())
+        self.assertRaises(TypeError, curses.reset_color_pairs, 0)
 
     @requires_colors
     def test_color_attrs(self):
