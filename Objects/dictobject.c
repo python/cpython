@@ -3425,9 +3425,6 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     if (d == NULL) {
         return NULL;
     }
-    // The constructor returns a tracked object; keep it untracked while it is
-    // filled and GC-track it once complete.
-    _PyObject_GC_UNTRACK(d);
 
     // If cls is a dict or frozendict subclass with overridden constructor,
     // copy the frozendict.
@@ -3452,6 +3449,11 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         Py_SETREF(d, copy);
     }
     assert(!PyFrozenDict_Check(d) || can_modify_dict((PyDictObject*)d));
+
+    // Keep d untracked while it is filled; GC-track it once complete (done:).
+    if (_PyObject_GC_IS_TRACKED(d)) {
+        _PyObject_GC_UNTRACK(d);
+    }
 
     if (PyDict_CheckExact(d)) {
         if (PyDict_CheckExact(iterable)) {
