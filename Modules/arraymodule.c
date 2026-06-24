@@ -1105,35 +1105,34 @@ array_array___copy___impl(arrayobject *self)
 /*[clinic input]
 array.array.__deepcopy__
 
-    unused: object
+    memo: object(subclass_of="&PyDict_Type")
     /
 
 Return a copy of the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array___deepcopy___impl(arrayobject *self, PyObject *unused)
-/*[clinic end generated code: output=703b4c412feaaf31 input=2405ecb4933748c4]*/
+array_array___deepcopy___impl(arrayobject *self, PyObject *memo)
+/*[clinic end generated code: output=4f54235d9f41697e input=b38ca00fa84a5843]*/
 {
-    PyObject *memo = unused;     /* the copy.deepcopy() memo dict */
     PyObject *copy = array_copy_buffer(self);
     if (copy == NULL) {
         return NULL;
     }
     /* Register the copy in the memo before deep-copying the instance dict so
-       that self-referential attributes do not recurse forever. */
-    if (PyDict_Check(memo)) {
-        PyObject *key = PyLong_FromVoidPtr(self);
-        if (key == NULL) {
-            Py_DECREF(copy);
-            return NULL;
-        }
-        int err = PyDict_SetItem(memo, key, copy);
-        Py_DECREF(key);
-        if (err < 0) {
-            Py_DECREF(copy);
-            return NULL;
-        }
+       that a subclass instance whose attributes refer back to itself does not
+       recurse forever.  This mirrors _elementtree.Element.__deepcopy__() and
+       copy._reconstruct(), which likewise record id(self) in the memo. */
+    PyObject *key = PyLong_FromVoidPtr(self);
+    if (key == NULL) {
+        Py_DECREF(copy);
+        return NULL;
+    }
+    int err = PyDict_SetItem(memo, key, copy);
+    Py_DECREF(key);
+    if (err < 0) {
+        Py_DECREF(copy);
+        return NULL;
     }
     if (array_copy_dict((PyObject *)self, copy, memo) < 0) {
         Py_DECREF(copy);

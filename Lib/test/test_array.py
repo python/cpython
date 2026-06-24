@@ -324,6 +324,20 @@ class BaseTest:
         a2.payload[0] = 99
         self.assertEqual(b2.payload, [1])
 
+    def test_deepcopy_subclass_self_reference(self):
+        # gh-152042: deepcopy() of a subclass instance whose __dict__ refers
+        # back to itself must terminate and rebind the reference to the copy,
+        # not recurse forever.  __deepcopy__ registers the new object in the
+        # memo before deep-copying the instance dict to make this work.
+        import copy
+        a = ArraySubclass(self.typecode, self.example)
+        a.self_ref = a
+        b = copy.deepcopy(a)
+        self.assertIs(type(b), ArraySubclass)
+        self.assertEqual(a, b)
+        self.assertIs(b.self_ref, b)
+        self.assertIsNot(b, a)
+
     def test_reduce_ex(self):
         a = array.array(self.typecode, self.example)
         for protocol in range(3):
