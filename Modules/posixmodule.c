@@ -5684,6 +5684,9 @@ os__path_normpath_impl(PyObject *module, path_t *path)
     else {
         result = PyUnicode_FromWideChar(norm_path, norm_len);
     }
+    if (result == NULL) {
+        return NULL;
+    }
     if (PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
