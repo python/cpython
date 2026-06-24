@@ -3426,7 +3426,14 @@ static PyGetSetDef PyCursesWindow_getsets[] = {
     {NULL, NULL, NULL, NULL }  /* sentinel */
 };
 
+PyDoc_STRVAR(PyCursesWindow_Type_doc,
+"A curses window.\n"
+"\n"
+"Window objects are returned by initscr() and newwin(), and by the\n"
+"methods that create subwindows and pads.");
+
 static PyType_Slot PyCursesWindow_Type_slots[] = {
+    {Py_tp_doc, (void *)PyCursesWindow_Type_doc},
     {Py_tp_methods, PyCursesWindow_methods},
     {Py_tp_getset, PyCursesWindow_getsets},
     {Py_tp_dealloc, PyCursesWindow_dealloc},
@@ -6003,7 +6010,10 @@ cursesmodule_exec(PyObject *module)
     }
 
     /* For exception curses.error */
-    state->error = PyErr_NewException("_curses.error", NULL, NULL);
+    state->error = PyErr_NewExceptionWithDoc(
+        "_curses.error",
+        "Exception raised when a curses library function returns an error.",
+        NULL, NULL);
     if (state->error == NULL) {
         return -1;
     }
