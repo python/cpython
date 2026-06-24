@@ -7,6 +7,7 @@ import tkinter
 from tkinter import TclError
 import enum
 from test import support
+from test.support import os_helper
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel)
@@ -357,6 +358,19 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.option_clear()
         self.assertEqual(b.option_get('background', 'Background'), '')
 
+    def test_option_readfile(self):
+        self.addCleanup(self.root.option_clear)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
+            f.write('*Button.background: red\n')
+        self.root.option_readfile(os_helper.TESTFN)
+        b = tkinter.Button(self.root)
+        self.assertEqual(b.option_get('background', 'Background'), 'red')
+        self.assertRaises(TclError, self.root.option_readfile,
+                          os_helper.TESTFN + '.nonexistent')
+        self.assertRaises(TypeError, self.root.option_readfile)
+        self.assertRaises(TypeError, self.root.option_readfile, 'a', 'b', 'c')
+
     def test_nametowidget(self):
         b = tkinter.Button(self.root, name='btn')
         self.assertIs(self.root.nametowidget('btn'), b)
@@ -416,6 +430,121 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_bell(self):
         self.root.bell()  # No exception.
         self.root.bell(displayof=self.root)
+
+    def test_tk_focusNext_focusPrev(self):
+        f = tkinter.Frame(self.root)
+        f.pack()
+        entries = [tkinter.Entry(f) for _ in range(3)]
+        for entry in entries:
+            entry.pack()
+        # tk_focusNext skips widgets that are not viewable.
+        entries[-1].wait_visibility()
+        self.assertIs(entries[0].tk_focusNext(), entries[1])
+        self.assertIs(entries[1].tk_focusNext(), entries[2])
+        self.assertIs(entries[2].tk_focusPrev(), entries[1])
+        self.assertIs(entries[1].tk_focusPrev(), entries[0])
+        self.assertRaises(TypeError, entries[0].tk_focusNext, 'x')
+        self.assertRaises(TypeError, entries[0].tk_focusPrev, 'x')
+
+    def test_tk_strictMotif(self):
+        self.addCleanup(self.root.tk_strictMotif, False)
+        self.assertIs(self.root.tk_strictMotif(), False)
+        self.assertIs(self.root.tk_strictMotif(True), True)
+        self.assertIs(self.root.tk_strictMotif(), True)
+        self.assertIs(self.root.tk_strictMotif(False), False)
+        self.assertRaises(TypeError, self.root.tk_strictMotif, 1, 2)
+
+    def test_tk_bisque(self):
+        # tk_bisque resets the color palette; use a separate root so that
+        # the shared one is not affected.
+        root = tkinter.Tk()
+        self.addCleanup(root.destroy)
+        root.tk_bisque()
+        self.assertEqual(root['background'], '#ffe4c4')
+        self.assertRaises(TypeError, root.tk_bisque, 'x')
+
+    def test_tk_appname(self):
+        old = self.root.tk_appname()
+        self.assertIsInstance(old, str)
+        self.addCleanup(self.root.tk_appname, old)
+        # Setting the name returns the actual name (possibly with a suffix
+        # appended to keep it unique).
+        new = self.root.tk_appname('PythonTkTest')
+        self.assertIsInstance(new, str)
+        self.assertEqual(self.root.tk_appname(), new)
+
+    def test_tk_useinputmethods(self):
+        old = self.root.tk_useinputmethods()
+        self.assertIsInstance(old, bool)
+        self.addCleanup(self.root.tk_useinputmethods, old)
+        # Setting returns the resulting state.  On systems without XIM support
+        # the state is always False, so only check the True->False direction.
+        self.assertIs(self.root.tk_useinputmethods(False), False)
+
+    def test_tk_caret(self):
+        self.assertIsNone(self.root.tk_caret(x=5, y=10, height=20))
+        caret = self.root.tk_caret()
+        self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
+
+    def test_tk_scaling(self):
+        old = self.root.tk_scaling()
+        self.assertIsInstance(old, float)
+        self.assertGreater(old, 0)
+        self.addCleanup(self.root.tk_scaling, old)
+        # Setting the factor is reflected by a subsequent query.  Tk may round
+        # it slightly when converting to and from its internal representation.
+        self.root.tk_scaling(2.0)
+        self.assertAlmostEqual(self.root.tk_scaling(), 2.0, delta=0.1)
+
+    def test_tk_inactive(self):
+        ms = self.root.tk_inactive()
+        self.assertIsInstance(ms, int)
+        # A count of milliseconds, or -1 if the windowing system lacks support.
+        self.assertGreaterEqual(ms, -1)
+        # Resetting the timer returns None and does not raise.
+        self.assertIsNone(self.root.tk_inactive(reset=True))
+
+    def test_wait_variable(self):
+        var = tkinter.StringVar(self.root)
+        self.assertEqual(self.root.waitvar, self.root.wait_variable)
+        self.root.after(1, var.set, 'done')
+        self.root.wait_variable(var)  # Returns once the variable is set.
+        self.assertEqual(var.get(), 'done')
+
+    def test_wait_window(self):
+        top = tkinter.Toplevel(self.root)
+        self.root.after(1, top.destroy)
+        self.root.wait_window(top)  # Returns once the window is destroyed.
+        self.assertFalse(top.winfo_exists())
+
+    def test_tk_focusFollowsMouse(self):
+        self.root.tk_focusFollowsMouse()  # No exception.
+
+    def test_selection_handle(self):
+        f = tkinter.Frame(self.root)
+        def handler(offset, length):
+            return 'PAYLOAD'[int(offset):int(offset) + int(length)]
+        f.selection_handle(handler)
+        f.selection_own()
+        self.assertEqual(f.selection_get(), 'PAYLOAD')
+
+    def test_grab_set_global(self):
+        # A successful global grab directs all events on the display to this
+        # application, so only the error paths are tested here.
+        self.assertRaises(TypeError, self.root.grab_set_global, 'extra')
+        with self.subTest('non-viewable window'):
+            if self.root._windowingsystem != 'x11':
+                # Grabbing a non-viewable window fails only on X11; elsewhere
+                # it would actually grab the whole display.
+                self.skipTest('only X11 fails the grab')
+            f = tkinter.Frame(self.root)  # not yet viewable
+            self.assertRaisesRegex(TclError, 'grab failed', f.grab_set_global)
+
+    def test_send(self):
+        if self.root._windowingsystem != 'x11':
+            self.skipTest('send is only supported on X11')
+        self.assertRaisesRegex(TclError, 'no application named',
+                               self.root.send, 'no_such_interp_xyzzy', 'set x 1')
 
     def test_event_repr_defaults(self):
         e = tkinter.Event()
@@ -663,6 +792,12 @@ class WinfoTest(AbstractTkTest, unittest.TestCase):
         self.root.update()
         self.assertTrue(f.winfo_viewable())
 
+    @requires_tk(9, 1)
+    def test_winfo_isdark(self):
+        self.assertIsInstance(self.root.winfo_isdark(), bool)
+        if self.root._windowingsystem == 'x11':
+            self.assertFalse(self.root.winfo_isdark())
+
     def test_winfo_atom(self):
         atom = self.root.winfo_atom('PRIMARY')
         self.assertIsInstance(atom, int)
@@ -819,6 +954,13 @@ class WmTest(AbstractTkTest, unittest.TestCase):
 
         t.destroy()
 
+    def test_wm_iconphoto(self):
+        t = tkinter.Toplevel(self.root)
+        img = tkinter.PhotoImage(master=t, width=16, height=16)
+        t.wm_iconphoto(False, img)  # No exception.
+        t.wm_iconphoto(True, img)
+        self.assertRaises(tkinter.TclError, t.wm_iconphoto, False, 'spam')
+
     def test_wm_title(self):
         t = tkinter.Toplevel(self.root)
         t.title('Hello')
@@ -881,6 +1023,35 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         t.iconname('Icon')
         self.assertIn(t.iconname(), ('Icon', ''))
 
+    def test_wm_iconposition(self):
+        t = tkinter.Toplevel(self.root)
+        t.wm_iconposition(3, 4)  # An X11 hint; may be a no-op elsewhere.
+        if t._windowingsystem == 'x11':
+            self.assertEqual(t.wm_iconposition(), (3, 4))
+
+    def test_wm_iconmask_iconwindow(self):
+        if self.root._windowingsystem != 'x11':
+            self.skipTest('iconmask and iconwindow are X11-specific')
+        t = tkinter.Toplevel(self.root)
+        t.wm_iconmask('gray50')  # No exception.
+        icon = tkinter.Toplevel(self.root)
+        t.wm_iconwindow(icon)
+        self.assertEqual(str(t.wm_iconwindow()), str(icon))
+
+    def test_wm_colormapwindows(self):
+        if self.root._windowingsystem != 'x11':
+            self.skipTest('colormapwindows is X11-specific')
+        t = tkinter.Toplevel(self.root)
+        self.assertEqual(t.wm_colormapwindows(), [])
+        f = tkinter.Frame(t)
+        t.wm_colormapwindows(f)
+        self.assertEqual([str(w) for w in t.wm_colormapwindows()], [str(f)])
+
+    def test_wm_manage_forget(self):
+        f = tkinter.Frame(self.root)
+        self.root.wm_manage(f)  # Make the frame a top-level window.
+        self.root.wm_forget(f)  # Revert it; no exception either way.
+
     def test_wm_client_command(self):
         t = tkinter.Toplevel(self.root)
         t.client('myhost')
@@ -932,6 +1103,37 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(t.transient(), '')
         t.transient(self.root)
         self.assertEqual(str(t.transient()), str(self.root))
+
+    def test_wm_stackorder(self):
+        t1 = tkinter.Toplevel(self.root)
+        t2 = tkinter.Toplevel(self.root)
+        t1.deiconify()
+        t2.deiconify()
+        self.root.update()
+        t1.lift(t2)  # Raise t1 above t2.
+        self.root.update()
+        order = self.root.wm_stackorder()
+        self.assertIsInstance(order, list)
+        self.assertTrue(all(isinstance(w, tkinter.Misc) for w in order))
+        names = [str(w) for w in order]
+        self.assertIn(str(t1), names)
+        self.assertIn(str(t2), names)
+        # The list is ordered from lowest to highest, consistently with the
+        # isabove/isbelow queries.
+        self.assertGreater(names.index(str(t1)), names.index(str(t2)))
+        self.assertIs(t1.wm_stackorder('isabove', t2), True)
+        self.assertIs(t1.wm_stackorder('isbelow', t2), False)
+        self.assertIs(t2.wm_stackorder('isbelow', t1), True)
+
+    @requires_tk(9, 0)
+    def test_wm_iconbadge(self):
+        if self.root._windowingsystem == 'x11':
+            # On X11 the badge requires ::tk::icons::base_icon to be set.
+            self.skipTest('iconbadge needs a base icon on X11')
+        # The badge is not queryable, so just check the call does not fail.
+        self.root.wm_iconbadge('3')
+        self.root.wm_iconbadge('!')
+        self.root.wm_iconbadge('')
 
 
 class EventTest(AbstractTkTest, unittest.TestCase):
@@ -1362,6 +1564,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def test_bind_class(self):
@@ -1406,8 +1610,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         unbind_class('Test', event)
         self.assertEqual(bind_class('Test', event), '')
         self.assertEqual(bind_class('Test'), ())
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
 
         unbind_class('Test', event)  # idempotent
 
@@ -1435,8 +1639,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def test_bind_all(self):
@@ -1478,8 +1682,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         unbind_all(event)
         self.assertEqual(bind_all(event), '')
         self.assertNotIn(event, bind_all())
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
 
         unbind_all(event)  # idempotent
 
@@ -1507,8 +1711,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn(funcid, script)
         self.assertNotIn(funcid2, script)
         self.assertIn(funcid3, script)
-        self.assertCommandExist(funcid)
-        self.assertCommandExist(funcid2)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
         self.assertCommandExist(funcid3)
 
     def _test_tag_bind(self, w):
