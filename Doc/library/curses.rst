@@ -217,8 +217,9 @@ The module :mod:`!curses` defines the following functions:
 .. function:: nofilter()
 
    Undo the effect of a previous :func:`.filter` call.
-   Like :func:`.filter`, it must be called before :func:`initscr` so that the
-   next initialization uses the full screen again.
+   Like :func:`.filter`, it must be called before :func:`initscr` (or
+   :func:`newterm`) so that the next initialization uses the full screen
+   again.
 
    Availability: if the underlying curses library provides ``nofilter()``.
 
@@ -462,6 +463,36 @@ The module :mod:`!curses` defines the following functions:
    right corner of the screen.
 
 
+.. function:: newterm(type=None, fd=None, infd=None, /)
+
+   Initialize a new terminal in addition to the one initialized by
+   :func:`initscr`,
+   and return a :ref:`screen <curses-screen-objects>` for it.
+   This allows a program to drive more than one terminal.
+
+   *type* is the terminal name, as in :func:`setupterm`;
+   if ``None``, the value of the :envvar:`TERM` environment variable is used.
+   *fd* and *infd* are the output and input files for the terminal:
+   either a file object or a file descriptor.
+   They default to :data:`sys.stdout` and :data:`sys.stdin`.
+
+   The new screen becomes the current one.
+   Use :func:`set_term` to switch between screens.
+
+   .. versionadded:: next
+
+
+.. function:: new_prescr()
+
+   Return a new :ref:`screen <curses-screen-objects>`
+   that can be used to call functions that affect global state
+   before :func:`initscr` or :func:`newterm` is called.
+
+   Availability: if the underlying curses library provides ``new_prescr()``.
+
+   .. versionadded:: next
+
+
 .. function:: nl(flag=True)
 
    Enter newline mode.  This mode translates the return key into newline on input,
@@ -605,6 +636,17 @@ The module :mod:`!curses` defines the following functions:
    character to spaces as it adds the tab to a window.
 
    .. versionadded:: 3.9
+
+
+.. function:: set_term(screen, /)
+
+   Make *screen*, a :ref:`screen <curses-screen-objects>` returned by
+   :func:`newterm`, the current terminal,
+   and return the previously current screen.
+   Returns ``None`` if the previous screen was the one created by
+   :func:`initscr`.
+
+   .. versionadded:: next
 
 .. function:: setsyx(y, x)
 
@@ -1469,6 +1511,18 @@ Window objects
    :meth:`refresh`.
 
 
+.. method:: window.use(func, /, *args, **kwargs)
+
+   Call ``func(window, *args, **kwargs)`` with the lock of the window held,
+   and return its result.
+   This provides automatic protection for the window
+   against concurrent access from another thread.
+
+   Availability: if the underlying curses library provides ``use_window()``.
+
+   .. versionadded:: next
+
+
 .. method:: window.vline(ch, n[, attr])
             window.vline(y, x, ch, n[, attr])
 
@@ -1477,6 +1531,60 @@ Window objects
 
    .. versionchanged:: next
       Wide and combining characters are now accepted.
+
+
+.. _curses-screen-objects:
+
+Screen objects
+--------------
+
+.. class:: screen
+
+   A *screen* object represents a terminal initialized by :func:`newterm`
+   (or :func:`new_prescr`),
+   in addition to the default screen created by :func:`initscr`.
+   Screen objects are returned by those functions;
+   they cannot be instantiated directly.
+
+   A screen is freed automatically once it is no longer referenced,
+   either directly or through one of its windows.
+   Each window keeps its screen alive,
+   so a screen remains valid as long as any of its windows does.
+
+   .. versionadded:: next
+
+
+.. method:: screen.close()
+
+   Detach the screen's standard window,
+   breaking the reference cycle between them
+   so the screen can be reclaimed promptly instead of waiting for a
+   garbage collection.
+   Afterwards :attr:`~screen.stdscr` is ``None``
+   and the window it returned earlier can no longer be used.
+   The screen's resources are released
+   once it and all its windows are no longer referenced.
+
+   .. versionadded:: next
+
+
+.. attribute:: screen.stdscr
+
+   The standard :ref:`window <curses-window-objects>` of the screen,
+   covering the whole terminal,
+   or ``None`` for a screen created by :func:`new_prescr`.
+
+
+.. method:: screen.use(func, /, *args, **kwargs)
+
+   Call ``func(screen, *args, **kwargs)`` with the lock of the screen held,
+   and return its result.
+   This provides automatic protection for the screen
+   against concurrent access from another thread.
+
+   Availability: if the underlying curses library provides ``use_screen()``.
+
+   .. versionadded:: next
 
 
 Constants

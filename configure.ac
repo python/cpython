@@ -7196,6 +7196,9 @@ PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
+PY_CHECK_CURSES_FUNC([new_prescr])
+PY_CHECK_CURSES_FUNC([use_screen])
+PY_CHECK_CURSES_FUNC([use_window])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

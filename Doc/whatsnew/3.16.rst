@@ -89,6 +89,13 @@ Improved modules
 curses
 ------
 
+* Add support for multiple terminals to the :mod:`curses` module:
+  the new functions :func:`curses.newterm`, :func:`curses.set_term`
+  and :func:`curses.new_prescr`,
+  the corresponding :ref:`screen <curses-screen-objects>` object,
+  and the :meth:`window.use() <curses.window.use>` method.
+  (Contributed by Serhiy Storchaka in :gh:`90092`.)
+
 * The :mod:`curses` character-cell window methods now accept a full character
   cell --- a spacing character optionally followed by combining characters ---
   in addition to a single integer or byte character.  This affects
