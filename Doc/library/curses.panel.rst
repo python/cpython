@@ -56,6 +56,22 @@ The module :mod:`!curses.panel` defines the following functions:
 Panel objects
 -------------
 
+.. raw:: html
+
+   <!-- Keep the old URL fragments working (see gh-89554) -->
+   <span id='curses.panel.Panel.above'></span>
+   <span id='curses.panel.Panel.below'></span>
+   <span id='curses.panel.Panel.bottom'></span>
+   <span id='curses.panel.Panel.hidden'></span>
+   <span id='curses.panel.Panel.hide'></span>
+   <span id='curses.panel.Panel.move'></span>
+   <span id='curses.panel.Panel.replace'></span>
+   <span id='curses.panel.Panel.set_userptr'></span>
+   <span id='curses.panel.Panel.show'></span>
+   <span id='curses.panel.Panel.top'></span>
+   <span id='curses.panel.Panel.userptr'></span>
+   <span id='curses.panel.Panel.window'></span>
+
 .. class:: panel
 
    Panel objects, as returned by :func:`new_panel` above, are windows with a
