@@ -1040,6 +1040,51 @@ def collect_libregrtest_utils(info_add):
     info_add('libregrtests.build_info', ' '.join(utils.get_build_info()))
 
 
+def linux_get_uptime():
+    # Use CLOCK_BOOTTIME if available
+    import time
+    try:
+        return time.clock_gettime(time.CLOCK_BOOTTIME)
+    except (AttributeError, OSError):
+        pass
+
+    # Otherwise, parse the first member of /proc/uptime
+    try:
+        with open("/proc/uptime", encoding="utf-8") as fp:
+            line = fp.readline()
+    except OSError:
+        return
+
+    try:
+        parts = line.split()
+        if not parts:
+            return
+        return float(parts[0])
+    except ValueError:
+        return
+
+
+def collect_linux(info_add):
+    try:
+        with open("/proc/sys/kernel/random/boot_id", encoding="utf-8") as fp:
+            boot_id = fp.readline().rstrip()
+    except OSError:
+        pass
+    else:
+        info_add('linux.boot_id', boot_id)
+
+    uptime = linux_get_uptime()
+    if uptime is not None:
+        # truncate microseconds
+        uptime = int(uptime)
+        try:
+            import datetime
+            uptime = str(datetime.timedelta(seconds=uptime))
+        except ImportError:
+            uptime = f'{uptime} sec'
+        info_add('linux.uptime', uptime)
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -1081,6 +1126,7 @@ def collect_info(info):
         collect_zlib,
         collect_zstd,
         collect_libregrtest_utils,
+        collect_linux,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
