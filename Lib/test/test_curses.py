@@ -1278,6 +1278,54 @@ class TestCurses(unittest.TestCase):
             self.assertRaises(ValueError, curses.init_pair, 1, color, 0)
             self.assertRaises(ValueError, curses.init_pair, 1, 0, color)
 
+    @requires_curses_func('alloc_pair')
+    @requires_colors
+    def test_dynamic_color_pairs(self):
+        # alloc_pair()/find_pair()/free_pair() (extended-color extension).
+        fg = bg = curses.COLORS - 1
+        pair = curses.alloc_pair(fg, bg)
+        self.assertGreater(pair, 0)
+        self.assertEqual(curses.pair_content(pair), (fg, bg))
+        # The same combination of colors reuses the same pair.
+        self.assertEqual(curses.alloc_pair(fg, bg), pair)
+        self.assertEqual(curses.find_pair(fg, bg), pair)
+        # Once freed, the pair is no longer found.
+        self.assertIsNone(curses.free_pair(pair))
+        self.assertEqual(curses.find_pair(fg, bg), -1)
+
+        # Error paths.
+        for color in self.bad_colors2():
+            self.assertRaises(ValueError, curses.alloc_pair, color, 0)
+            self.assertRaises(ValueError, curses.alloc_pair, 0, color)
+            self.assertRaises(ValueError, curses.find_pair, color, 0)
+            self.assertRaises(ValueError, curses.find_pair, 0, color)
+        for pair in self.bad_pairs():
+            self.assertRaises(ValueError, curses.free_pair, pair)
+        # Color pair 0 is reserved and cannot be freed.
+        self.assertRaises(curses.error, curses.free_pair, 0)
+
+        # Invalid number or type of arguments.
+        self.assertRaises(TypeError, curses.alloc_pair)
+        self.assertRaises(TypeError, curses.alloc_pair, 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 0, 0, 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 'red', 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 0, 'red')
+        self.assertRaises(TypeError, curses.alloc_pair, fg=0, bg=0)
+        self.assertRaises(TypeError, curses.find_pair)
+        self.assertRaises(TypeError, curses.find_pair, 0)
+        self.assertRaises(TypeError, curses.find_pair, 0, 0, 0)
+        self.assertRaises(TypeError, curses.find_pair, 'red', 0)
+        self.assertRaises(TypeError, curses.find_pair, 0, 'red')
+        self.assertRaises(TypeError, curses.free_pair)
+        self.assertRaises(TypeError, curses.free_pair, 1, 2)
+        self.assertRaises(TypeError, curses.free_pair, 'red')
+
+    @requires_curses_func('reset_color_pairs')
+    @requires_colors
+    def test_reset_color_pairs(self):
+        self.assertIsNone(curses.reset_color_pairs())
+        self.assertRaises(TypeError, curses.reset_color_pairs, 0)
+
     @requires_colors
     def test_color_attrs(self):
         for pair in 0, 1, 255:

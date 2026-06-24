@@ -118,6 +118,13 @@ curses
 * Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
   (Contributed by Serhiy Storchaka in :gh:`151744`.)
 
+* Add the :mod:`curses` functions :func:`curses.alloc_pair`,
+  :func:`curses.find_pair`, :func:`curses.free_pair` and
+  :func:`curses.reset_color_pairs` for dynamic color-pair management,
+  available when built against a wide-character ncurses with extended-color
+  support.
+  (Contributed by Serhiy Storchaka in :gh:`151774`.)
+
 * Add :mod:`curses` functions and window methods that report state which could
   previously only be set, such as :meth:`curses.window.is_keypad`,
   :meth:`curses.window.getparent` and :func:`curses.is_cbreak`,
