@@ -178,9 +178,9 @@ class TestFreeThreading:
 
         async def setup():
             loop.set_task_factory(eager_factory)
-            eager = loop.create_task(_forever(), name="EAGER")
+            eager = loop.create_task(wait_forever(), name="EAGER")
             loop.set_task_factory(None)
-            normal = loop.create_task(_forever(), name="NORMAL")
+            normal = loop.create_task(wait_forever(), name="NORMAL")
             return eager, normal
 
         async def teardown():
