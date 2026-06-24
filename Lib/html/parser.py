@@ -217,8 +217,7 @@ class HTMLParser(_markupbase.ParserBase):
         n = len(rawdata)
         while i < n:
             if self.rawdata is not rawdata:
-                # A handler called reset() or feed() and replaced the buffer
-                # we are processing; the rest is handled by a later call.
+                # A handler called reset()/feed() and replaced the buffer.
                 return
             if self.convert_charrefs and not self.cdata_elem:
                 j = rawdata.find('<', i)
@@ -248,8 +247,7 @@ class HTMLParser(_markupbase.ParserBase):
                 else:
                     self.handle_data(rawdata[i:j])
                 if self.rawdata is not rawdata:
-                    # handle_data() called reset() or feed() and replaced the
-                    # buffer; stop processing the now-stale data.
+                    # handle_data() called reset()/feed() and replaced it.
                     return
             i = self.updatepos(i, j)
             if i == n: break
