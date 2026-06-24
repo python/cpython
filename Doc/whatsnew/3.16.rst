@@ -89,6 +89,25 @@ Improved modules
 curses
 ------
 
+* The :mod:`curses` character-cell window methods now accept a full character
+  cell --- a spacing character optionally followed by combining characters ---
+  in addition to a single integer or byte character.  This affects
+  :meth:`~curses.window.addch`, :meth:`~curses.window.bkgd`,
+  :meth:`~curses.window.bkgdset`, :meth:`~curses.window.border`,
+  :meth:`~curses.window.box`, :meth:`~curses.window.echochar`,
+  :meth:`~curses.window.hline`, :meth:`~curses.window.insch` and
+  :meth:`~curses.window.vline`.
+  Also add the wide-character read methods :meth:`~curses.window.get_wstr` and
+  :meth:`~curses.window.in_wstr`, the counterparts of
+  :meth:`~curses.window.getstr` and :meth:`~curses.window.instr` that return a
+  :class:`str` rather than :class:`bytes`,
+  and the module functions :func:`curses.erasewchar`, :func:`curses.killwchar`
+  and :func:`curses.wunctrl`, the wide-character counterparts of
+  :func:`curses.erasechar`, :func:`curses.killchar` and :func:`curses.unctrl`.
+  These features are only available when built against the wide-character
+  ncursesw library.
+  (Contributed by Serhiy Storchaka in :gh:`151757`.)
+
 * Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
   (Contributed by Serhiy Storchaka in :gh:`151744`.)
 
