@@ -5522,8 +5522,8 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
         di->di_pos = 0;
     }
     /* gh-152107: track before allocating di_result. A dictiter with a NULL
-    di_result is a valid state for dictiter_traverse()/dictiter_dealloc(),
-    so a failure of the allocation below can safely DECREF a tracked di. */
+       di_result is a valid state for dictiter_traverse()/dictiter_dealloc(),
+       so a failure of the allocation below can safely DECREF a tracked di. */
     _PyObject_GC_TRACK(di);
     if (itertype == &PyDictIterItem_Type ||
         itertype == &PyDictRevIterItem_Type) {
