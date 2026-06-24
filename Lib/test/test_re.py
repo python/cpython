@@ -2815,6 +2815,12 @@ ATOMIC_GROUP
 17: SUCCESS
 ''')
 
+    def test_debug_charset_bitmap(self):
+        # gh-152100: disassembling a charset that compiles to a CHARSET/
+        # BIGCHARSET bitmap must not fail (the disassembler needs _CODEBITS).
+        out = get_debug_out(r'[aeiou]')
+        self.assertIn('CHARSET', out)
+
     def test_possesive_repeat_one(self):
         self.assertEqual(get_debug_out(r'a?+'), '''\
 POSSESSIVE_REPEAT 0 1
@@ -2940,7 +2946,7 @@ class ImplementationTest(unittest.TestCase):
             tp.foo = 1
 
     def test_overlap_table(self):
-        f = re._compiler._generate_overlap_table
+        f = re._optimizer._generate_overlap_table
         self.assertEqual(f(""), [])
         self.assertEqual(f("a"), [0])
         self.assertEqual(f("abcd"), [0, 0, 0, 0])
