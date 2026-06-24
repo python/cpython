@@ -144,9 +144,7 @@ class TestFail:
             ('"', 'Unterminated string starting at', 0),
             ('"spam', 'Unterminated string starting at', 0),
         ]
-        # A \uXXXX escape whose final hex digit is the last character of
-        # the input forms a complete, valid escape, so the string is
-        # unterminated rather than containing an invalid escape.
+        # A complete \uXXXX escape at end of input leaves it unterminated.
         test_cases += [
             (r'"\u0041', 'Unterminated string starting at', 0),
             (r'"\ud834', 'Unterminated string starting at', 0),

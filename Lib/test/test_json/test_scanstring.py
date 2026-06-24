@@ -137,8 +137,7 @@ class TestScanstring:
             '"\\ud834\\u-123"',
             '"\\ud834\\u+123"',
             '"\\ud834\\u1_23"',
-            # A \uXXXX escape at the end of the input: too few hex digits
-            # before EOF, and the right number of non-hex characters.
+            # Truncated or non-hex \uXXXX escape at end of input.
             '"\\u004',
             '"\\uXYZW',
         ]
