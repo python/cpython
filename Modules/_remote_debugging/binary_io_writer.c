@@ -645,7 +645,6 @@ flush_pending_rle(BinaryWriter *writer, ThreadEntry *entry)
     return 0;
 }
 
-
 /* Write a single sample with the specified encoding.
  * Returns 0 on success, -1 on failure. */
 static int
