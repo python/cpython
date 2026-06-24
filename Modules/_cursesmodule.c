@@ -4458,6 +4458,100 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+/*[clinic input]
+_curses.alloc_pair
+
+    fg: color_allow_default
+        Foreground color number.
+    bg: color_allow_default
+        Background color number.
+    /
+
+Allocate a color pair for the given foreground and background colors.
+
+If a color pair for the same colors already exists, return its number.
+Otherwise allocate a new color pair and return its number.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_alloc_pair_impl(PyObject *module, int fg, int bg)
+/*[clinic end generated code: output=6eb08cb643d4b5a2 input=b29bafd7b360fa35]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    int pair = alloc_pair(fg, bg);
+    if (pair < 0) {
+        curses_set_error(module, "alloc_pair", NULL);
+        return NULL;
+    }
+    return PyLong_FromLong(pair);
+}
+
+/*[clinic input]
+_curses.find_pair
+
+    fg: color_allow_default
+        Foreground color number.
+    bg: color_allow_default
+        Background color number.
+    /
+
+Return the number of a color pair for the given colors, or -1.
+
+Return -1 if no color pair for this combination of foreground and
+background colors has been allocated.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_find_pair_impl(PyObject *module, int fg, int bg)
+/*[clinic end generated code: output=376026c2a3ac4a9b input=930feac14892c251]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    return PyLong_FromLong(find_pair(fg, bg));
+}
+
+/*[clinic input]
+_curses.free_pair
+
+    pair: pair
+        The number of the color pair to free.
+    /
+
+Free a color pair allocated by alloc_pair().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_free_pair_impl(PyObject *module, int pair)
+/*[clinic end generated code: output=61be0fb2e4bb4e4a input=d24df62feb4161c6]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    return curses_check_err(module, free_pair(pair), "free_pair", NULL);
+}
+
+/*[clinic input]
+_curses.reset_color_pairs
+
+Discard all color-pair definitions.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_reset_color_pairs_impl(PyObject *module)
+/*[clinic end generated code: output=117e68c6614e1d06 input=57c1cf7e5447e1ac]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    reset_color_pairs();
+    Py_RETURN_NONE;
+}
+#endif /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
 /* Refresh the private copy of the screen encoding from a freshly created
    stdscr window object.  Returns 0 on success, -1 with an exception set. */
 static int
@@ -6241,6 +6335,7 @@ _curses_has_extended_color_support_impl(PyObject *module)
 /* List of functions defined in the module */
 
 static PyMethodDef cursesmodule_methods[] = {
+    _CURSES_ALLOC_PAIR_METHODDEF
     _CURSES_BAUDRATE_METHODDEF
     _CURSES_BEEP_METHODDEF
     _CURSES_CAN_CHANGE_COLOR_METHODDEF
@@ -6258,8 +6353,10 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_ERASEWCHAR_METHODDEF
     _CURSES_FILTER_METHODDEF
     _CURSES_NOFILTER_METHODDEF
+    _CURSES_FIND_PAIR_METHODDEF
     _CURSES_FLASH_METHODDEF
     _CURSES_FLUSHINP_METHODDEF
+    _CURSES_FREE_PAIR_METHODDEF
     _CURSES_GETMOUSE_METHODDEF
     _CURSES_UNGETMOUSE_METHODDEF
     _CURSES_GETSYX_METHODDEF
@@ -6301,6 +6398,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_PUTP_METHODDEF
     _CURSES_QIFLUSH_METHODDEF
     _CURSES_RAW_METHODDEF
+    _CURSES_RESET_COLOR_PAIRS_METHODDEF
     _CURSES_RESET_PROG_MODE_METHODDEF
     _CURSES_RESET_SHELL_MODE_METHODDEF
     _CURSES_RESETTY_METHODDEF

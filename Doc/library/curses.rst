@@ -85,6 +85,20 @@ The module :mod:`!curses` defines the following functions:
    .. versionadded:: 3.14
 
 
+.. function:: alloc_pair(fg, bg)
+
+   Allocate a color pair for foreground color *fg* and background color *bg*,
+   and return its number.  If a color pair for the same combination of colors
+   already exists, return its number.  Otherwise allocate a new color pair and
+   return its number.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+
 .. function:: baudrate()
 
    Return the output speed of the terminal in bits per second.  On software
@@ -226,6 +240,19 @@ The module :mod:`!curses` defines the following functions:
    .. versionadded:: next
 
 
+.. function:: find_pair(fg, bg)
+
+   Return the number of a color pair for foreground color *fg* and background
+   color *bg*, or ``-1`` if no color pair for this combination of colors has
+   been allocated.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+
 .. function:: flash()
 
    Flash the screen.  That is, change it to reverse-video and then change it back
@@ -237,6 +264,18 @@ The module :mod:`!curses` defines the following functions:
 
    Flush all input buffers.  This throws away any  typeahead  that  has been typed
    by the user and has not yet been processed by the program.
+
+
+.. function:: free_pair(pair_number)
+
+   Free the color pair *pair_number*, which must have been allocated by
+   :func:`alloc_pair`.  The pair must not be in use.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: getmouse()
@@ -568,6 +607,18 @@ The module :mod:`!curses` defines the following functions:
    Enter raw mode.  In raw mode, normal line buffering and  processing of
    interrupt, quit, suspend, and flow control keys are turned off; characters are
    presented to curses input functions one by one.
+
+
+.. function:: reset_color_pairs()
+
+   Discard all color-pair definitions, releasing the color pairs allocated by
+   :func:`init_pair` and :func:`alloc_pair`.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: reset_prog_mode()
