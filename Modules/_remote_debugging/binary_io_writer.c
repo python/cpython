@@ -522,13 +522,6 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
         return NULL;
     }
 
-    entry->pending_rle = PyMem_Malloc(MAX_RLE_BUF_SIZE);
-    if (!entry->pending_rle) {
-        PyMem_Free(entry->prev_stack);
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     writer->thread_count++;
     if (is_new) {
         *is_new = 1;
@@ -994,6 +987,13 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
          * STACK_REPEAT against an empty curr_stack (depth 0). Buffering
          * it here is correct; the RLE flush path emits it as a normal
          * STACK_REPEAT record. */
+        if (entry->pending_rle == NULL) {
+            entry->pending_rle = PyMem_Malloc(MAX_RLE_BUF_SIZE);
+            if (!entry->pending_rle) {
+                PyErr_NoMemory();
+                return -1;
+            }
+        }
         if (entry->pending_rle_bytes + MAX_RLE_ENTRY_SIZE > MAX_RLE_BUF_SIZE
                 && flush_pending_rle(writer, entry) < 0) {
             return -1;
