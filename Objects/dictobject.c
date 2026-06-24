@@ -3438,13 +3438,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     // the GC, create a frozendict copy which is not tracked by the GC.
     if (PyFrozenDict_Check(d) && _PyObject_GC_IS_TRACKED(d)) {
         // Subclass-friendly copy
-        PyObject *copy;
-        if (PyObject_IsSubclass(cls, (PyObject*)&PyFrozenDict_Type)) {
-            copy = frozendict_new_untracked(cls_type);
-        }
-        else {
-            copy = dict_new_untracked(cls_type);
-        }
+        PyObject *copy = frozendict_new_untracked(Py_TYPE(d));
         if (copy == NULL) {
             goto Fail;
         }

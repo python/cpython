@@ -1944,12 +1944,22 @@ class FrozenDictTests(unittest.TestCase):
 
         fd = FrozenDictSubclass.fromkeys("abc")
         self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
-        self.assertEqual(type(fd), FrozenDictSubclass)
+        self.assertEqual(type(fd), frozendict)
         self.assertEqual(created, frozendict(x=1))
 
         fd = FrozenDictSubclass.fromkeys(frozendict(y=2))
         self.assertEqual(fd, frozendict(x=1, y=None))
-        self.assertEqual(type(fd), FrozenDictSubclass)
+        self.assertEqual(type(fd), frozendict)
+        self.assertEqual(created, frozendict(x=1))
+
+        # Dict subclass which overrides the constructor
+        class DictSubclass(dict):
+            def __new__(self):
+                return created
+
+        fd = DictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), frozendict)
         self.assertEqual(created, frozendict(x=1))
 
         # Subclass which doesn't override the constructor
@@ -1959,16 +1969,6 @@ class FrozenDictTests(unittest.TestCase):
         fd = FrozenDictSubclass2.fromkeys("abc")
         self.assertEqual(fd, frozendict(a=None, b=None, c=None))
         self.assertEqual(type(fd), FrozenDictSubclass2)
-
-        # Dict subclass which overrides the constructor
-        class DictSubclass(dict):
-            def __new__(self):
-                return created
-
-        fd = DictSubclass.fromkeys("abc")
-        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
-        self.assertEqual(type(fd), DictSubclass)
-        self.assertEqual(created, frozendict(x=1))
 
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
