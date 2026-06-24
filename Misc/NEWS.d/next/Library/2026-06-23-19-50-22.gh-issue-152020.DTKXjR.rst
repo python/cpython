@@ -1,3 +1,0 @@
-On the free-threaded build, :func:`asyncio.all_tasks` no longer lost
-eager-started tasks when called from a thread other than the one running the
-event loop
