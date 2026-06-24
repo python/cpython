@@ -1,1 +1,0 @@
-The Android build tools have been moved to the Platforms folder.

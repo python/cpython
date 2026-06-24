@@ -44,6 +44,10 @@ extern int _PyDict_Next(
 
 extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
+PyAPI_FUNC(PyObject *) _PyDict_Subscript(PyObject *self, PyObject *key);
+PyAPI_FUNC(PyObject *) _PyDict_SubscriptKnownHash(PyObject *self, PyObject *key, Py_hash_t hash);
+PyAPI_FUNC(int) _PyDict_StoreSubscript(PyObject *self, PyObject *key, PyObject *value);
+
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
 
@@ -86,6 +90,8 @@ typedef struct {
 } PyDictUnicodeEntry;
 
 extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
+extern void _PyDict_RemoveKeysForClass(PyHeapTypeObject *);
+extern void _PyDict_SplitKeysInvalidated(PyDictKeysObject* keys);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Implementations of the `|` and `|=` operators for dict, used by the
@@ -234,6 +240,17 @@ struct _dictkeysobject {
     /* "PyDictKeyEntry or PyDictUnicodeEntry dk_entries[USABLE_FRACTION(DK_SIZE(dk))];" array follows:
        see the DK_ENTRIES() / DK_UNICODE_ENTRIES() functions below */
 };
+
+struct _instancekeysobject {
+    PyTypeObject* dsk_owning_type;
+    struct _dictkeysobject dsk_keys;
+};
+
+static inline struct _instancekeysobject *_PyDictKeys_AsSharedKeys(struct _dictkeysobject *keys)
+{
+    assert(keys->dk_kind == DICT_KEYS_SPLIT);
+    return _Py_CONTAINER_OF(keys, struct _instancekeysobject, dsk_keys);
+}
 
 /* This must be no more than 250, for the prefix size to fit in one byte. */
 #define SHARED_KEYS_MAX_SIZE 30

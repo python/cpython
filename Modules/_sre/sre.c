@@ -42,6 +42,7 @@ static const char copyright[] =
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"             // _PyDict_Next()
 #include "pycore_long.h"             // _PyLong_GetZero()
+#include "pycore_list.h"             // _PyList_AppendTakeRef()
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
 #include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
@@ -548,10 +549,16 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     memset(state, 0, sizeof(SRE_STATE));
 
-    state->mark = PyMem_New(const void *, pattern->groups * 2);
-    if (!state->mark) {
-        PyErr_NoMemory();
-        goto err;
+    /* Patterns with no capturing groups never emit MARK opcodes and never
+       read state->mark (group 0's span comes from state->start/ptr), so skip
+       the allocation entirely -- state->mark stays NULL, which both the err
+       path and state_fini already free safely. */
+    if (pattern->groups) {
+        state->mark = PyMem_New(const void *, pattern->groups * 2);
+        if (!state->mark) {
+            PyErr_NoMemory();
+            goto err;
+        }
     }
     state->lastmark = -1;
     state->lastindex = -1;
@@ -980,8 +987,7 @@ _sre_SRE_Pattern_findall_impl(PatternObject *self, PyObject *string,
             break;
         }
 
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
+        status = _PyList_AppendTakeRef((PyListObject *)list, item);
         if (status < 0)
             goto error;
 
@@ -1327,8 +1333,7 @@ pattern_subx(_sremodulestate* module_state,
                 string, i, b);
             if (!item)
                 goto error;
-            status = PyList_Append(list, item);
-            Py_DECREF(item);
+            status = _PyList_AppendTakeRef((PyListObject *)list, item);
             if (status < 0)
                 goto error;
 
@@ -1357,8 +1362,7 @@ pattern_subx(_sremodulestate* module_state,
 
         /* add to list */
         if (item != Py_None) {
-            status = PyList_Append(list, item);
-            Py_DECREF(item);
+            status = _PyList_AppendTakeRef((PyListObject *)list, item);
             if (status < 0)
                 goto error;
         }
@@ -1375,8 +1379,7 @@ pattern_subx(_sremodulestate* module_state,
                         string, i, state.endpos);
         if (!item)
             goto error;
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
+        status = _PyList_AppendTakeRef((PyListObject *)list, item);
         if (status < 0)
             goto error;
     }
@@ -1840,6 +1843,34 @@ bad_template:
 #define GET_SKIP GET_SKIP_ADJ(0)
 
 static int
+_validate_category(SRE_CODE arg)
+{
+    switch (arg) {
+    case SRE_CATEGORY_DIGIT:
+    case SRE_CATEGORY_NOT_DIGIT:
+    case SRE_CATEGORY_SPACE:
+    case SRE_CATEGORY_NOT_SPACE:
+    case SRE_CATEGORY_WORD:
+    case SRE_CATEGORY_NOT_WORD:
+    case SRE_CATEGORY_LINEBREAK:
+    case SRE_CATEGORY_NOT_LINEBREAK:
+    case SRE_CATEGORY_LOC_WORD:
+    case SRE_CATEGORY_LOC_NOT_WORD:
+    case SRE_CATEGORY_UNI_DIGIT:
+    case SRE_CATEGORY_UNI_NOT_DIGIT:
+    case SRE_CATEGORY_UNI_SPACE:
+    case SRE_CATEGORY_UNI_NOT_SPACE:
+    case SRE_CATEGORY_UNI_WORD:
+    case SRE_CATEGORY_UNI_NOT_WORD:
+    case SRE_CATEGORY_UNI_LINEBREAK:
+    case SRE_CATEGORY_UNI_NOT_LINEBREAK:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static int
 _validate_charset(SRE_CODE *code, SRE_CODE *end)
 {
     /* Some variables are manipulated by the macros above */
@@ -1891,27 +1922,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
 
         case SRE_OP_CATEGORY:
             GET_ARG;
-            switch (arg) {
-            case SRE_CATEGORY_DIGIT:
-            case SRE_CATEGORY_NOT_DIGIT:
-            case SRE_CATEGORY_SPACE:
-            case SRE_CATEGORY_NOT_SPACE:
-            case SRE_CATEGORY_WORD:
-            case SRE_CATEGORY_NOT_WORD:
-            case SRE_CATEGORY_LINEBREAK:
-            case SRE_CATEGORY_NOT_LINEBREAK:
-            case SRE_CATEGORY_LOC_WORD:
-            case SRE_CATEGORY_LOC_NOT_WORD:
-            case SRE_CATEGORY_UNI_DIGIT:
-            case SRE_CATEGORY_UNI_NOT_DIGIT:
-            case SRE_CATEGORY_UNI_SPACE:
-            case SRE_CATEGORY_UNI_NOT_SPACE:
-            case SRE_CATEGORY_UNI_WORD:
-            case SRE_CATEGORY_UNI_NOT_WORD:
-            case SRE_CATEGORY_UNI_LINEBREAK:
-            case SRE_CATEGORY_UNI_NOT_LINEBREAK:
-                break;
-            default:
+            if (!_validate_category(arg)) {
                 FAIL;
             }
             break;
@@ -1988,6 +1999,13 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             case SRE_AT_UNI_NON_BOUNDARY:
                 break;
             default:
+                FAIL;
+            }
+            break;
+
+        case SRE_OP_CATEGORY:
+            GET_ARG;
+            if (!_validate_category(arg)) {
                 FAIL;
             }
             break;
@@ -2587,6 +2605,7 @@ _pair(Py_ssize_t i1, Py_ssize_t i2)
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.span
 
     group: object(c_default="NULL") = 0
@@ -2597,7 +2616,7 @@ For match object m, return the 2-tuple (m.start(group), m.end(group)).
 
 static PyObject *
 _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group)
-/*[clinic end generated code: output=f02ae40594d14fe6 input=8fa6014e982d71d4]*/
+/*[clinic end generated code: output=f02ae40594d14fe6 input=834cfe444f0f55cf]*/
 {
     Py_ssize_t index = match_getindex(self, group);
 
@@ -3179,7 +3198,7 @@ static PyMethodDef pattern_methods[] = {
     _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF
     _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
+     PyDoc_STR("Patterns are generic over the type of string they handle (str or bytes)")},
     {NULL, NULL}
 };
 
@@ -3235,7 +3254,7 @@ static PyMethodDef match_methods[] = {
     _SRE_SRE_MATCH___COPY___METHODDEF
     _SRE_SRE_MATCH___DEEPCOPY___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
+     PyDoc_STR("Matches are generic over the type of string which was matched (str or bytes)")},
     {NULL, NULL}
 };
 

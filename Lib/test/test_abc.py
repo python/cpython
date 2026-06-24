@@ -11,20 +11,30 @@ import unittest
 import abc
 import _py_abc
 from inspect import isabstract
+from test.support import warnings_helper
 
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
 
         def test_abstractproperty_basics(self):
-            @abc.abstractproperty
-            def foo(self): pass
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractproperty',
+            ):
+                @abc.abstractproperty
+                def foo(self): pass
+
             self.assertTrue(foo.__isabstractmethod__)
             def bar(self): pass
             self.assertNotHasAttr(bar, "__isabstractmethod__")
 
-            class C(metaclass=abc_ABCMeta):
-                @abc.abstractproperty
-                def foo(self): return 3
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractproperty',
+            ):
+                class C(metaclass=abc_ABCMeta):
+                    @abc.abstractproperty
+                    def foo(self): return 3
             self.assertRaises(TypeError, C)
             class D(C):
                 @property
@@ -33,16 +43,26 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertFalse(getattr(D.foo, "__isabstractmethod__", False))
 
         def test_abstractclassmethod_basics(self):
-            @abc.abstractclassmethod
-            def foo(cls): pass
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractclassmethod',
+            ):
+                @abc.abstractclassmethod
+                def foo(cls): pass
+
             self.assertTrue(foo.__isabstractmethod__)
             @classmethod
             def bar(cls): pass
             self.assertFalse(getattr(bar, "__isabstractmethod__", False))
 
-            class C(metaclass=abc_ABCMeta):
-                @abc.abstractclassmethod
-                def foo(cls): return cls.__name__
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractclassmethod',
+            ):
+                class C(metaclass=abc_ABCMeta):
+                    @abc.abstractclassmethod
+                    def foo(cls): return cls.__name__
+
             self.assertRaises(TypeError, C)
             class D(C):
                 @classmethod
@@ -51,16 +71,26 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertEqual(D().foo(), 'D')
 
         def test_abstractstaticmethod_basics(self):
-            @abc.abstractstaticmethod
-            def foo(): pass
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractstaticmethod',
+            ):
+                @abc.abstractstaticmethod
+                def foo(): pass
+
             self.assertTrue(foo.__isabstractmethod__)
             @staticmethod
             def bar(): pass
             self.assertFalse(getattr(bar, "__isabstractmethod__", False))
 
-            class C(metaclass=abc_ABCMeta):
-                @abc.abstractstaticmethod
-                def foo(): return 3
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                'abstractstaticmethod',
+            ):
+                class C(metaclass=abc_ABCMeta):
+                    @abc.abstractstaticmethod
+                    def foo(): return 3
+
             self.assertRaises(TypeError, C)
             class D(C):
                 @staticmethod
@@ -168,6 +198,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             msg = r"class C without an implementation for abstract methods 'method_one', 'method_two'"
             self.assertRaisesRegex(TypeError, msg, C)
 
+        @warnings_helper.ignore_warnings(category=DeprecationWarning)
         def test_abstractmethod_integration(self):
             for abstractthing in [abc.abstractmethod, abc.abstractproperty,
                                   abc.abstractclassmethod,

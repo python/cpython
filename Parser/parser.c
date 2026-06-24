@@ -9066,7 +9066,7 @@ complex_number_rule(Parser *p)
     return _res;
 }
 
-// signed_number: NUMBER | '-' NUMBER
+// signed_number: NUMBER | '+' NUMBER | '-' NUMBER
 static expr_ty
 signed_number_rule(Parser *p)
 {
@@ -9106,6 +9106,33 @@ signed_number_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s signed_number[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NUMBER"));
+    }
+    { // '+' NUMBER
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> signed_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'+' NUMBER"));
+        Token * _literal;
+        expr_ty number;
+        if (
+            (_literal = _PyPegen_expect_token(p, 14))  // token='+'
+            &&
+            (number = _PyPegen_number_token(p))  // NUMBER
+        )
+        {
+            D(fprintf(stderr, "%*c+ signed_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'+' NUMBER"));
+            _res = number;
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s signed_number[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+' NUMBER"));
     }
     { // '-' NUMBER
         if (p->error_indicator) {
@@ -9149,7 +9176,7 @@ signed_number_rule(Parser *p)
     return _res;
 }
 
-// signed_real_number: real_number | '-' real_number
+// signed_real_number: real_number | '+' real_number | '-' real_number
 static expr_ty
 signed_real_number_rule(Parser *p)
 {
@@ -9189,6 +9216,33 @@ signed_real_number_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s signed_real_number[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "real_number"));
+    }
+    { // '+' real_number
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> signed_real_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'+' real_number"));
+        Token * _literal;
+        expr_ty real;
+        if (
+            (_literal = _PyPegen_expect_token(p, 14))  // token='+'
+            &&
+            (real = real_number_rule(p))  // real_number
+        )
+        {
+            D(fprintf(stderr, "%*c+ signed_real_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'+' real_number"));
+            _res = real;
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s signed_real_number[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+' real_number"));
     }
     { // '-' real_number
         if (p->error_indicator) {
@@ -9275,7 +9329,7 @@ real_number_rule(Parser *p)
     return _res;
 }
 
-// imaginary_number: NUMBER
+// imaginary_number: NUMBER | '+' NUMBER
 static expr_ty
 imaginary_number_rule(Parser *p)
 {
@@ -9311,6 +9365,33 @@ imaginary_number_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s imaginary_number[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NUMBER"));
+    }
+    { // '+' NUMBER
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> imaginary_number[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'+' NUMBER"));
+        Token * _literal;
+        expr_ty imag;
+        if (
+            (_literal = _PyPegen_expect_token(p, 14))  // token='+'
+            &&
+            (imag = _PyPegen_number_token(p))  // NUMBER
+        )
+        {
+            D(fprintf(stderr, "%*c+ imaginary_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'+' NUMBER"));
+            _res = _PyPegen_ensure_imaginary ( p , imag );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s imaginary_number[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'+' NUMBER"));
     }
     _res = NULL;
   done:

@@ -995,7 +995,11 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
         for z in values:
-            for f in ['F', 'D', '>F', '>D', '<F', '<D']:
+            for f in [
+                'F', 'D', 'Zf', 'Zd',
+                '>F', '>D', '>Zf', '>Zd',
+                '<F', '<D', '<Zf', '<Zd',
+            ]:
                 with self.subTest(z=z, format=f):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)

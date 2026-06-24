@@ -1,2 +1,0 @@
-A bypass in :mod:`webbrowser` allowed URLs prefixed with ``%action`` to pass
-the dash-prefix safety check.

@@ -16,8 +16,8 @@ PyDoc_STRVAR(py_scanstring__doc__,
 "ValueError on attempt to decode an invalid string. If strict is False\n"
 "then literal control characters are allowed in the string.\n"
 "\n"
-"Returns a tuple of the decoded string and the index of the character in s\n"
-"after the end quote.");
+"Returns a tuple of the decoded string and the index of the character in\n"
+"s after the end quote.");
 
 #define PY_SCANSTRING_METHODDEF    \
     {"scanstring", _PyCFunction_CAST(py_scanstring), METH_FASTCALL, py_scanstring__doc__},
@@ -125,4 +125,4 @@ py_encode_basestring(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5bdd16375c95a4d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea6e9a271d4ceaf2 input=a9049054013a1b77]*/

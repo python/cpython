@@ -113,7 +113,8 @@ PyDoc_STRVAR(_dbm_dbm_setdefault__doc__,
 "\n"
 "Return the value for key if present, otherwise default.\n"
 "\n"
-"If key is not in the database, it is inserted with default as the value.");
+"If key is not in the database, it is inserted with default as the\n"
+"value.");
 
 #define _DBM_DBM_SETDEFAULT_METHODDEF    \
     {"setdefault", _PyCFunction_CAST(_dbm_dbm_setdefault), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_setdefault__doc__},
@@ -246,4 +247,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=279511ea7cda38dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=677deecf525167a5 input=a9049054013a1b77]*/

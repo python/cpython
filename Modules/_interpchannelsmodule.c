@@ -921,7 +921,8 @@ static _channelends *
 _channelends_new(void)
 {
     _channelends *ends = GLOBAL_MALLOC(_channelends);
-    if (ends== NULL) {
+    if (ends == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     ends->numsendopen = 0;
@@ -1115,6 +1116,7 @@ _channel_new(PyThread_type_lock mutex, struct _channeldefaults defaults)
     assert(check_unbound(defaults.unboundop));
     _channel_state *chan = GLOBAL_MALLOC(_channel_state);
     if (chan == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     chan->mutex = mutex;
@@ -1313,6 +1315,7 @@ _channelref_new(int64_t cid, _channel_state *chan)
 {
     _channelref *ref = GLOBAL_MALLOC(_channelref);
     if (ref == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     ref->cid = cid;
@@ -1698,6 +1701,7 @@ _channel_set_closing(_channelref *ref, PyThread_type_lock mutex) {
     }
     chan->closing = GLOBAL_MALLOC(struct _channel_closing);
     if (chan->closing == NULL) {
+        PyErr_NoMemory();
         goto done;
     }
     chan->closing->ref = ref;
@@ -2586,6 +2590,7 @@ static PyObject *
 _channelid_from_xid(_PyXIData_t *data)
 {
     struct _channelid_xid *xid = (struct _channelid_xid *)_PyXIData_DATA(data);
+    PyObject *cidobj = NULL;
 
     // It might not be imported yet, so we can't use _get_current_module().
     PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
@@ -2595,11 +2600,10 @@ _channelid_from_xid(_PyXIData_t *data)
     assert(mod != Py_None);
     module_state *state = get_module_state(mod);
     if (state == NULL) {
-        return NULL;
+        goto done;
     }
 
     // Note that we do not preserve the "resolve" flag.
-    PyObject *cidobj = NULL;
     int err = newchannelid(state->ChannelIDType, xid->cid, xid->end,
                            _global_channels(), 0, 0,
                            (channelid **)&cidobj);

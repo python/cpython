@@ -356,9 +356,11 @@ class CAPITests(unittest.TestCase):
                     for value in new_values:
                         expected, expect_flag = expect_func(value)
 
+                        old_flags = sys.flags
                         config_set(name, value)
                         self.assertEqual(config_get(name), expected)
                         self.assertEqual(getattr(sys.flags, sys_flag), expect_flag)
+                        self.assertIsNot(sys.flags, old_flags)
                         if name == "write_bytecode":
                             self.assertEqual(getattr(sys, "dont_write_bytecode"),
                                              expect_flag)

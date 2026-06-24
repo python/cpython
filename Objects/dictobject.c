@@ -138,6 +138,7 @@ As a consequence of this, split keys have a maximum size of 16.
 // Forward declarations
 static PyObject* frozendict_new(PyTypeObject *type, PyObject *args,
                                 PyObject *kwds);
+static PyObject* frozendict_new_untracked(PyTypeObject *type);
 static PyObject* dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey);
 static int dict_contains(PyObject *op, PyObject *key);
@@ -443,7 +444,7 @@ _PyDict_DebugMallocStats(FILE *out)
 {
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            _Py_FREELIST_SIZE(dicts),
-                           sizeof(PyDictObject));
+                           _PyType_PreHeaderSize(&PyDict_Type) + sizeof(PyDictObject));
     _PyDebugAllocatorStats(out, "free PyDictKeysObject",
                            _Py_FREELIST_SIZE(dictkeys),
                            sizeof(PyDictKeysObject));
@@ -784,16 +785,12 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
 }
 
 
-static PyDictKeysObject*
-new_keys_object(uint8_t log2_size, bool unicode)
+static inline int
+get_log2_bytes(uint8_t log2_size)
 {
-    Py_ssize_t usable;
     int log2_bytes;
-    size_t entry_size = unicode ? sizeof(PyDictUnicodeEntry) : sizeof(PyDictKeyEntry);
-
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
-    usable = USABLE_FRACTION((size_t)1<<log2_size);
     if (log2_size < 8) {
         log2_bytes = log2_size;
     }
@@ -809,6 +806,38 @@ new_keys_object(uint8_t log2_size, bool unicode)
         log2_bytes = log2_size + 2;
     }
 
+    return log2_bytes;
+}
+
+static inline void
+init_keys_object(PyDictKeysObject* dk, uint8_t log2_size, int log2_bytes, int kind,
+                 Py_ssize_t usable, Py_ssize_t entry_size)
+{
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+    dk->dk_refcnt = 1;
+    dk->dk_log2_size = log2_size;
+    dk->dk_log2_index_bytes = log2_bytes;
+    dk->dk_kind = kind;
+#ifdef Py_GIL_DISABLED
+    dk->dk_mutex = (PyMutex){0};
+#endif
+    dk->dk_nentries = 0;
+    dk->dk_usable = usable;
+    dk->dk_version = 0;
+    memset(&dk->dk_indices[0], 0xff, ((size_t)1 << log2_bytes));
+    memset(&dk->dk_indices[(size_t)1 << log2_bytes], 0, entry_size * usable);
+}
+
+static PyDictKeysObject*
+new_keys_object(uint8_t log2_size, bool unicode)
+{
+    Py_ssize_t usable = USABLE_FRACTION((size_t)1<<log2_size);
+    size_t entry_size = unicode ? sizeof(PyDictUnicodeEntry) : sizeof(PyDictKeyEntry);
+
+    int log2_bytes = get_log2_bytes(log2_size);
+
     PyDictKeysObject *dk = NULL;
     if (log2_size == PyDict_LOG_MINSIZE && unicode) {
         dk = _Py_FREELIST_POP_MEM(dictkeys);
@@ -822,30 +851,28 @@ new_keys_object(uint8_t log2_size, bool unicode)
             return NULL;
         }
     }
-#ifdef Py_REF_DEBUG
-    _Py_IncRefTotal(_PyThreadState_GET());
-#endif
-    dk->dk_refcnt = 1;
-    dk->dk_log2_size = log2_size;
-    dk->dk_log2_index_bytes = log2_bytes;
-    dk->dk_kind = unicode ? DICT_KEYS_UNICODE : DICT_KEYS_GENERAL;
-#ifdef Py_GIL_DISABLED
-    dk->dk_mutex = (PyMutex){0};
-#endif
-    dk->dk_nentries = 0;
-    dk->dk_usable = usable;
-    dk->dk_version = 0;
-    memset(&dk->dk_indices[0], 0xff, ((size_t)1 << log2_bytes));
-    memset(&dk->dk_indices[(size_t)1 << log2_bytes], 0, entry_size * usable);
+    init_keys_object(dk, log2_size, log2_bytes,
+                     unicode ? DICT_KEYS_UNICODE : DICT_KEYS_GENERAL,
+                     usable, entry_size);
     return dk;
 }
 
 static void
 free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
 {
+    void *ptr = keys;
+#ifdef Py_GIL_DISABLED
+    size_t size = _PyDict_KeysSize(keys);
+#endif
+    if (keys->dk_kind == DICT_KEYS_SPLIT) {
+        ptr = _PyDictKeys_AsSharedKeys(keys);
+#ifdef Py_GIL_DISABLED
+        size += offsetof(struct _instancekeysobject, dsk_keys);
+#endif
+    }
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeDelayed(keys, _PyDict_KeysSize(keys));
+        _PyMem_FreeDelayed(ptr, size);
         return;
     }
 #endif
@@ -853,7 +880,7 @@ free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
         _Py_FREELIST_FREE(dictkeys, keys, PyMem_Free);
     }
     else {
-        PyMem_Free(keys);
+        PyMem_Free(ptr);
     }
 }
 
@@ -900,7 +927,7 @@ free_values(PyDictValues *values, bool use_qsbr)
 static inline PyObject *
 new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
               PyDictValues *values, Py_ssize_t used,
-              int free_values_on_failure)
+              int free_values_on_failure, int frozendict)
 {
     assert(keys != NULL);
     if (mp == NULL) {
@@ -915,6 +942,9 @@ new_dict_impl(PyDictObject *mp, PyDictKeysObject *keys,
     mp->ma_values = values;
     mp->ma_used = used;
     mp->_ma_watcher_tag = 0;
+    if (frozendict) {
+        ((PyFrozenDictObject *)mp)->ma_hash = -1;
+    }
     ASSERT_CONSISTENT(mp);
     _PyObject_GC_TRACK(mp);
     return (PyObject *)mp;
@@ -931,7 +961,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values,
     }
     assert(mp == NULL || Py_IS_TYPE(mp, &PyDict_Type));
 
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure, 0);
 }
 
 /* Consumes a reference to the keys object */
@@ -940,7 +970,7 @@ new_frozendict(PyDictKeysObject *keys, PyDictValues *values,
                Py_ssize_t used, int free_values_on_failure)
 {
     PyDictObject *mp = PyObject_GC_New(PyDictObject, &PyFrozenDict_Type);
-    return new_dict_impl(mp, keys, values, used, free_values_on_failure);
+    return new_dict_impl(mp, keys, values, used, free_values_on_failure, 1);
 }
 
 static PyObject *
@@ -1898,6 +1928,7 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
         FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
+        _PyDict_SplitKeysInvalidated(keys);
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
@@ -2354,7 +2385,7 @@ dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
     }
     PyDictObject *mp = (PyDictObject *)op;
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         PyErr_FormatUnraisable(warnmsg);
         return NULL;
@@ -2426,7 +2457,7 @@ _PyDict_LookupIndexAndValue(PyDictObject *mp, PyObject *key, PyObject **value)
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type((PyObject*)mp, key);
         return -1;
@@ -2530,7 +2561,7 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
         return -1;
     }
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         *result = NULL;
@@ -2546,7 +2577,7 @@ _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **
     ASSERT_DICT_LOCKED(op);
     assert(PyUnicode_CheckExact(key));
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type((PyObject*)op, key);
         *result = NULL;
@@ -2584,7 +2615,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
         PyErr_BadInternalCall();
         return NULL;
     }
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         return NULL;
@@ -2643,7 +2674,7 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     Py_hash_t hash;
     PyObject *value;
 
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         return NULL;
     }
@@ -2667,7 +2698,7 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
     Py_ssize_t ix;
     Py_hash_t hash;
 
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         *res = PyStackRef_NULL;
         return;
@@ -2744,7 +2775,7 @@ setitem_take2_lock_held_known_hash(PyDictObject *mp, PyObject *key, PyObject *va
 static int
 setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type((PyObject*)mp, key);
         Py_DECREF(key);
@@ -2922,7 +2953,7 @@ int
 PyDict_DelItem(PyObject *op, PyObject *key)
 {
     assert(key);
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         return -1;
@@ -3036,7 +3067,7 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
     assert(nentries <= SHARED_KEYS_MAX_SIZE);
     for (Py_ssize_t i = 0; i < nentries; i++) {
         refs[i] = values->values[i];
-        values->values[i] = NULL;
+        FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
     }
     values->size = 0;
     for (Py_ssize_t i = 0; i < nentries; i++) {
@@ -3080,10 +3111,12 @@ clear_lock_held(PyObject *op)
         set_keys(mp, Py_EMPTY_KEYS);
         n = oldkeys->dk_nentries;
         for (i = 0; i < n; i++) {
-            Py_CLEAR(oldvalues->values[i]);
+            PyObject *tmp = oldvalues->values[i];
+            FT_ATOMIC_STORE_PTR_RELEASE(oldvalues->values[i], NULL);
+            Py_XDECREF(tmp);
         }
         free_values(oldvalues, IS_DICT_SHARED(mp));
-        dictkeys_decref(oldkeys, false);
+        dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
     }
     ASSERT_CONSISTENT(mp);
 }
@@ -3264,7 +3297,7 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
         return 0;
     }
 
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         if (result) {
@@ -3669,19 +3702,13 @@ frozendict_length(PyObject *self)
     return _PyAnyDict_CAST(self)->ma_used;
 }
 
-static PyObject *
-dict_subscript(PyObject *self, PyObject *key)
+PyObject *
+_PyDict_SubscriptKnownHash(PyObject *self, PyObject *key, Py_hash_t hash)
 {
     PyDictObject *mp = (PyDictObject *)self;
     Py_ssize_t ix;
-    Py_hash_t hash;
     PyObject *value;
 
-    hash = _PyObject_HashFast(key);
-    if (hash == -1) {
-        dict_unhashable_type(self, key);
-        return NULL;
-    }
     ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
         return NULL;
@@ -3705,8 +3732,19 @@ dict_subscript(PyObject *self, PyObject *key)
     return value;
 }
 
-static int
-dict_ass_sub(PyObject *mp, PyObject *v, PyObject *w)
+PyObject *
+_PyDict_Subscript(PyObject *self, PyObject *key)
+{
+    Py_hash_t hash = _PyObject_HashDictKey(key);
+    if (hash == -1) {
+        dict_unhashable_type(self, key);
+        return NULL;
+    }
+    return _PyDict_SubscriptKnownHash(self, key, hash);
+}
+
+int
+_PyDict_StoreSubscript(PyObject *mp, PyObject *v, PyObject *w)
 {
     if (w == NULL)
         return PyDict_DelItem(mp, v);
@@ -3716,8 +3754,8 @@ dict_ass_sub(PyObject *mp, PyObject *v, PyObject *w)
 
 static PyMappingMethods dict_as_mapping = {
     dict_length, /*mp_length*/
-    dict_subscript, /*mp_subscript*/
-    dict_ass_sub, /*mp_ass_subscript*/
+    _PyDict_Subscript, /*mp_subscript*/
+    _PyDict_StoreSubscript, /*mp_ass_subscript*/
 };
 
 static PyObject *
@@ -3882,6 +3920,7 @@ PyDict_Items(PyObject *dict)
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 dict.fromkeys
     iterable: object
@@ -3893,7 +3932,7 @@ Create a new dictionary with keys from iterable and values set to value.
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: output=8fb98e4b10384999 input=382ba4855d0f74c3]*/
+/*[clinic end generated code: output=8fb98e4b10384999 input=3903715eb48b287e]*/
 {
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
@@ -4108,12 +4147,9 @@ dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **
             set_keys(mp, keys);
             STORE_USED(mp, other->ma_used);
             ASSERT_CONSISTENT(mp);
-
-            if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
-                /* Maintain tracking. */
-                _PyObject_GC_TRACK(mp);
+            if (PyDict_Check(mp)) {
+                assert(_PyObject_GC_IS_TRACKED(mp));
             }
-
             return 0;
         }
     }
@@ -4648,7 +4684,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     Py_hash_t hash;
     Py_ssize_t ix;
 
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type((PyObject*)self, key);
         return NULL;
@@ -4685,7 +4721,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     Py_hash_t hash;
     Py_ssize_t ix;
 
-    hash = _PyObject_HashFast(key);
+    hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(d, key);
         if (result) {
@@ -5103,7 +5139,7 @@ In either case, this is followed by: for k in F:  D[k] = F[k]");
 
 static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__",     dict_subscript,                 METH_O | METH_COEXIST,
+    {"__getitem__",     _PyDict_Subscript,                 METH_O | METH_COEXIST,
      getitem__doc__},
     DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
@@ -5119,14 +5155,15 @@ static PyMethodDef mapp_methods[] = {
     DICT_CLEAR_METHODDEF
     DICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("dicts are generic over two types, signifying (respectively) the types of their keys and values")},
     {NULL,              NULL}   /* sentinel */
 };
 
 static int
 dict_contains(PyObject *op, PyObject *key)
 {
-    Py_hash_t hash = _PyObject_HashFast(key);
+    Py_hash_t hash = _PyObject_HashDictKey(key);
     if (hash == -1) {
         dict_unhashable_type(op, key);
         return -1;
@@ -5203,14 +5240,13 @@ static PyNumberMethods dict_as_number = {
 };
 
 static PyObject *
-dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+dict_new_untracked(PyTypeObject *type)
 {
     assert(type != NULL);
-    assert(type->tp_alloc != NULL);
     // dict subclasses must implement the GC protocol
     assert(_PyType_IS_GC(type));
 
-    PyObject *self = type->tp_alloc(type, 0);
+    PyObject *self = _PyType_AllocNoTrack(type, 0);
     if (self == NULL) {
         return NULL;
     }
@@ -5223,9 +5259,19 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
-    if (!_PyObject_GC_IS_TRACKED(d)) {
-        _PyObject_GC_TRACK(d);
+    return self;
+}
+
+static PyObject *
+dict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwds))
+{
+    /* tp_new ignores args/kwds; args/kwds are consumed by dict_init (tp_init). */
+    PyObject *self = dict_new_untracked(type);
+    if (self == NULL) {
+        return NULL;
     }
+    assert(!_PyObject_GC_IS_TRACKED(self));
+    _PyObject_GC_TRACK(self);
     return self;
 }
 
@@ -5284,7 +5330,9 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
         return Py_NewRef(args[0]);
     }
 
-    PyObject *self = frozendict_new(_PyType_CAST(type), NULL, NULL);
+    /* gh-151722: Keep the frozendict untracked until it is fully built,
+       so a half-built object is never reachable from another thread (using the gc module). */
+    PyObject *self = frozendict_new_untracked(_PyType_CAST(type));
     if (self == NULL) {
         return NULL;
     }
@@ -5304,6 +5352,8 @@ frozendict_vectorcall(PyObject *type, PyObject * const*args,
             }
         }
     }
+    assert(!_PyObject_GC_IS_TRACKED(self));
+    _PyObject_GC_TRACK(self);
     return self;
 }
 
@@ -7087,16 +7137,24 @@ dictvalues_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDictKeysObject *
 _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
 {
-    PyDictKeysObject *keys = new_keys_object(NEXT_LOG2_SHARED_KEYS_MAX_SIZE, 1);
-    if (keys == NULL) {
+    int log2_bytes = get_log2_bytes(NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
+    Py_ssize_t usable = USABLE_FRACTION((size_t)1<<NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
+
+    struct _instancekeysobject *shared_keys =
+                          PyMem_Malloc(sizeof(struct _instancekeysobject)
+                          + ((size_t)1 << log2_bytes)
+                          + sizeof(PyDictUnicodeEntry) * usable);
+    if (shared_keys == NULL) {
         PyErr_Clear();
+        return NULL;
     }
-    else {
-        assert(keys->dk_nentries == 0);
-        /* Set to max size+1 as it will shrink by one before each new object */
-        keys->dk_usable = SHARED_KEYS_MAX_SIZE;
-        keys->dk_kind = DICT_KEYS_SPLIT;
-    }
+
+    shared_keys->dsk_owning_type = (PyTypeObject *)cls;
+    PyDictKeysObject* keys = &shared_keys->dsk_keys;
+    init_keys_object(keys, NEXT_LOG2_SHARED_KEYS_MAX_SIZE, log2_bytes, DICT_KEYS_SPLIT,
+                     SHARED_KEYS_MAX_SIZE, sizeof(PyDictUnicodeEntry));
+    assert(keys->dk_nentries == 0);
+    /* Set to max size+1 as it will shrink by one before each new object */
     if (cls->ht_type.tp_dict) {
         PyObject *attrs = PyDict_GetItem(cls->ht_type.tp_dict, &_Py_ID(__static_attributes__));
         if (attrs != NULL && PyTuple_Check(attrs)) {
@@ -7112,6 +7170,25 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
         }
     }
     return keys;
+}
+
+void
+_PyDict_RemoveKeysForClass(PyHeapTypeObject *cls)
+{
+    struct _instancekeysobject *shared_keys = _PyDictKeys_AsSharedKeys(cls->ht_cached_keys);
+    FT_ATOMIC_STORE_PTR_RELEASE(shared_keys->dsk_owning_type, NULL);
+
+    _PyDictKeys_DecRef(cls->ht_cached_keys);
+}
+
+void
+_PyDict_SplitKeysInvalidated(PyDictKeysObject* keys)
+{
+    struct _instancekeysobject *shared_keys = _PyDictKeys_AsSharedKeys(keys);
+    PyTypeObject *type = FT_ATOMIC_LOAD_PTR_ACQUIRE(shared_keys->dsk_owning_type);
+    if (type) {
+        PyType_Modified(type);
+    }
 }
 
 void
@@ -7232,7 +7309,7 @@ _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
     }
 
     if (value == NULL) {
-        Py_hash_t hash = _PyObject_HashFast(name);
+        Py_hash_t hash = _PyObject_HashDictKey(name);
         if (hash == -1) {
             dict_unhashable_type((PyObject*)dict, name);
             return -1;
@@ -8010,12 +8087,18 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->dict_state.watchers[watcher_id]) {
+    PyDict_WatchCallback cb = FT_ATOMIC_LOAD_PTR_RELAXED(
+        interp->dict_state.watchers[watcher_id]);
+    if (cb == NULL) {
         PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
         return -1;
     }
     return 0;
 }
+
+// In free-threaded builds, Add/Clear serialize on watcher_mutex and publish
+// callbacks with release stores. SendEvent reads them lock-free using
+// acquire loads.
 
 int
 PyDict_Watch(int watcher_id, PyObject* dict)
@@ -8028,7 +8111,8 @@ PyDict_Watch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    FT_ATOMIC_OR_UINT64(((PyDictObject*)dict)->_ma_watcher_tag, (1LL << watcher_id));
+    FT_ATOMIC_OR_UINT64(((PyDictObject*)dict)->_ma_watcher_tag,
+                        1ULL << watcher_id);
     return 0;
 }
 
@@ -8043,36 +8127,48 @@ PyDict_Unwatch(int watcher_id, PyObject* dict)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    FT_ATOMIC_AND_UINT64(((PyDictObject*)dict)->_ma_watcher_tag, ~(1LL << watcher_id));
+    FT_ATOMIC_AND_UINT64(((PyDictObject*)dict)->_ma_watcher_tag,
+                         ~(1ULL << watcher_id));
     return 0;
 }
 
 int
 PyDict_AddWatcher(PyDict_WatchCallback callback)
 {
+    int watcher_id = -1;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
+    FT_MUTEX_LOCK_FLAGS(&interp->dict_state.watcher_mutex,
+                        _Py_LOCK_DONT_DETACH);
     /* Some watchers are reserved for CPython, start at the first available one */
     for (int i = FIRST_AVAILABLE_WATCHER; i < DICT_MAX_WATCHERS; i++) {
         if (!interp->dict_state.watchers[i]) {
-            interp->dict_state.watchers[i] = callback;
-            return i;
+            FT_ATOMIC_STORE_PTR_RELEASE(interp->dict_state.watchers[i], callback);
+            watcher_id = i;
+            goto done;
         }
     }
-
     PyErr_SetString(PyExc_RuntimeError, "no more dict watcher IDs available");
-    return -1;
+done:
+    FT_MUTEX_UNLOCK(&interp->dict_state.watcher_mutex);
+    return watcher_id;
 }
 
 int
 PyDict_ClearWatcher(int watcher_id)
 {
+    int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_MUTEX_LOCK_FLAGS(&interp->dict_state.watcher_mutex,
+                        _Py_LOCK_DONT_DETACH);
     if (validate_watcher_id(interp, watcher_id)) {
-        return -1;
+        res = -1;
+        goto done;
     }
-    interp->dict_state.watchers[watcher_id] = NULL;
-    return 0;
+    FT_ATOMIC_STORE_PTR_RELEASE(interp->dict_state.watchers[watcher_id], NULL);
+done:
+    FT_MUTEX_UNLOCK(&interp->dict_state.watcher_mutex);
+    return res;
 }
 
 static const char *
@@ -8097,7 +8193,8 @@ _PyDict_SendEvent(int watcher_bits,
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (watcher_bits & 1) {
-            PyDict_WatchCallback cb = interp->dict_state.watchers[i];
+            PyDict_WatchCallback cb = FT_ATOMIC_LOAD_PTR_ACQUIRE(
+                interp->dict_state.watchers[i]);
             if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
                 // We don't want to resurrect the dict by potentially having an
                 // unraisablehook keep a reference to it, so we don't pass the
@@ -8153,12 +8250,12 @@ static PyNumberMethods frozendict_as_number = {
 
 static PyMappingMethods frozendict_as_mapping = {
     .mp_length = frozendict_length,
-    .mp_subscript = dict_subscript,
+    .mp_subscript = _PyDict_Subscript,
 };
 
 static PyMethodDef frozendict_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__", dict_subscript, METH_O | METH_COEXIST, getitem__doc__},
+    {"__getitem__", _PyDict_Subscript, METH_O | METH_COEXIST, getitem__doc__},
     DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
     DICT_KEYS_METHODDEF
@@ -8167,7 +8264,8 @@ static PyMethodDef frozendict_methods[] = {
     DICT_FROMKEYS_METHODDEF
     FROZENDICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("frozendicts are generic over two types, signifying (respectively) the types of the frozendict's keys and values")},
     {"__getnewargs__", frozendict_getnewargs, METH_NOARGS},
     {NULL,              NULL}   /* sentinel */
 };
@@ -8200,6 +8298,39 @@ _shuffle_bits(Py_uhash_t h)
     return ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
 }
 
+// Compute hash((key, value)).
+// Code copied from tuple_hash().
+static Py_hash_t
+frozendict_pair_hash(Py_hash_t key_hash, PyObject *value)
+{
+    assert(key_hash != -1);
+
+    const Py_ssize_t len = 2;
+    Py_uhash_t acc = _PyTuple_HASH_XXPRIME_5;
+
+    Py_uhash_t lane = key_hash;
+    acc += lane * _PyTuple_HASH_XXPRIME_2;
+    acc = _PyTuple_HASH_XXROTATE(acc);
+    acc *= _PyTuple_HASH_XXPRIME_1;
+
+    lane = PyObject_Hash(value);
+    if (lane == (Py_uhash_t)-1) {
+        return -1;
+    }
+    acc += lane * _PyTuple_HASH_XXPRIME_2;
+    acc = _PyTuple_HASH_XXROTATE(acc);
+    acc *= _PyTuple_HASH_XXPRIME_1;
+
+    /* Add input length, mangled to keep the historical value of hash(()). */
+    acc += len ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL);
+
+    if (acc == (Py_uhash_t)-1) {
+        acc = 1546275796;
+    }
+    return acc;
+}
+
+
 // Code copied from frozenset_hash()
 static Py_hash_t
 frozendict_hash(PyObject *op)
@@ -8213,20 +8344,15 @@ frozendict_hash(PyObject *op)
     PyDictObject *mp = _PyAnyDict_CAST(op);
     Py_uhash_t hash = 0;
 
-    PyObject *key, *value;  // borrowed refs
+    PyObject *value;  // borrowed ref
     Py_ssize_t pos = 0;
-    while (PyDict_Next(op, &pos, &key, &value)) {
-        Py_hash_t key_hash = PyObject_Hash(key);
-        if (key_hash == -1) {
+    Py_hash_t key_hash;
+    while (_PyDict_Next(op, &pos, NULL, &value, &key_hash)) {
+        Py_hash_t pair_hash = frozendict_pair_hash(key_hash, value);
+        if (pair_hash == -1) {
             return -1;
         }
-        hash ^= _shuffle_bits(key_hash);
-
-        Py_hash_t value_hash = PyObject_Hash(value);
-        if (value_hash == -1) {
-            return -1;
-        }
-        hash ^= _shuffle_bits(value_hash);
+        hash ^= _shuffle_bits(pair_hash);
     }
 
     /* Factor in the number of active entries */
@@ -8246,17 +8372,27 @@ frozendict_hash(PyObject *op)
 }
 
 
+/* Allocate an empty, GC-untracked frozendict; the constructor tracks it once
+   fully built. */
 static PyObject *
-frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+frozendict_new_untracked(PyTypeObject *type)
 {
-    PyObject *d = dict_new(type, args, kwds);
+    PyObject *d = dict_new_untracked(type);
     if (d == NULL) {
         return NULL;
     }
     assert(can_modify_dict(_PyAnyDict_CAST(d)));
+    _PyFrozenDictObject_CAST(d)->ma_hash = -1;
+    return d;
+}
 
-    PyFrozenDictObject *self = _PyFrozenDictObject_CAST(d);
-    self->ma_hash = -1;
+static PyObject *
+frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *d = frozendict_new_untracked(type);
+    if (d == NULL) {
+        return NULL;
+    }
 
     if (args != NULL) {
         if (dict_update_common(d, args, kwds, "frozendict") < 0) {
@@ -8268,6 +8404,8 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         assert(kwds == NULL);
     }
 
+    assert(!_PyObject_GC_IS_TRACKED(d));
+    _PyObject_GC_TRACK(d);
     return d;
 }
 

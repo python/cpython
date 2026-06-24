@@ -1,11 +1,17 @@
 import importlib
+import inspect
 import os
 import types
 import unittest
 
 from _colorize import ANSIColors, get_theme
 from _pyrepl.completing_reader import stripcolor
-from _pyrepl.fancycompleter import Completer, commonprefix
+from _pyrepl.fancycompleter import (
+    Completer,
+    colorize_matches,
+    commonprefix,
+    _color_for_obj,
+)
 from test.support.import_helper import ready_to_import
 
 class MockPatch:
@@ -35,6 +41,11 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(commonprefix(['isalpha', 'isdigit', 'foo']), '')
         self.assertEqual(commonprefix(['isalpha', 'isdigit']), 'is')
         self.assertEqual(commonprefix([]), '')
+
+    def test_colorize_matches_signature(self):
+        signature = inspect.signature(colorize_matches)
+
+        self.assertEqual(list(signature.parameters), ["names", "values", "theme"])
 
     def test_complete_attribute(self):
         compl = Completer({'a': None}, use_colors=False)
@@ -168,8 +179,8 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('nothing'), [])
 
     def test_colorized_match_is_stripped(self):
-        compl = Completer({'a': 42}, use_colors=True)
-        match = compl._color_for_obj('spam', 1)
+        theme = get_theme()
+        match = _color_for_obj('spam', 1, theme)
         self.assertEqual(stripcolor(match), 'spam')
 
     def test_complete_with_indexer(self):

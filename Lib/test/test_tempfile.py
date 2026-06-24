@@ -332,7 +332,9 @@ class TestBadTempdir:
         with _inside_empty_temp_dir():
             probe = os.path.join(tempfile.tempdir, 'probe')
             if os.name == 'nt':
-                cmd = ['icacls', tempfile.tempdir, '/deny', 'Everyone:(W)']
+                # Use security identifier *S-1-1-0 instead
+                # of localized "Everyone" to not depend on the locale.
+                cmd = ['icacls', tempfile.tempdir, '/deny', '*S-1-1-0:(W)']
                 stdout = None if support.verbose > 1 else subprocess.DEVNULL
                 subprocess.run(cmd, check=True, stdout=stdout)
             else:
@@ -355,7 +357,9 @@ class TestBadTempdir:
                     self.make_temp()
             finally:
                 if os.name == 'nt':
-                    cmd = ['icacls', tempfile.tempdir, '/grant:r', 'Everyone:(M)']
+                    # Use security identifier *S-1-1-0 instead
+                    # of localized "Everyone" to not depend on the locale.
+                    cmd = ['icacls', tempfile.tempdir, '/grant:r', '*S-1-1-0:(M)']
                     subprocess.run(cmd, check=True, stdout=stdout)
                 else:
                     os.chmod(tempfile.tempdir, oldmode)
@@ -511,6 +515,8 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         self.assertFalse(retval > 0, "child process reports failure %d"%retval)
 
     @unittest.skipUnless(has_textmode, "text mode not available")
+    @unittest.skipIf(sys.platform == "cygwin",
+                     "truncate text mode is not supported on Cygwin")
     def test_textmode(self):
         # _mkstemp_inner can create files in text mode
 
