@@ -1514,7 +1514,7 @@ class _ZipRepacker:
                         zinfo.header_offset, entry_size, used_entry_size)
             if used_entry_size > entry_size:
                 raise BadZipFile(
-                    f"Overlapped entries: {zinfo.orig_filename!r} ")
+                    f"Overlapped entries: {zinfo.orig_filename!r}")
 
             if removed is not None and zinfo not in removed_zinfos:
                 used_entry_size = entry_size
