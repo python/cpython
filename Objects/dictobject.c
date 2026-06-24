@@ -3436,6 +3436,9 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
 
     // gh-151722: If cls constructor returns a frozendict which is tracked by
     // the GC, create a frozendict copy which is not tracked by the GC.
+    //
+    // Untracking the dictionary requires tracking again the dictionary on
+    // error which is more complicated. It's easier to work on a copy.
     if (PyFrozenDict_Check(d) && _PyObject_GC_IS_TRACKED(d)) {
         // Subclass-friendly copy
         PyObject *copy = frozendict_new_untracked(Py_TYPE(d));
@@ -3448,8 +3451,8 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         }
         Py_SETREF(d, copy);
     }
-    assert(!PyFrozenDict_Check(d) || can_modify_dict((PyDictObject*)d));
     if (PyFrozenDict_Check(d)) {
+        assert(can_modify_dict((PyDictObject*)d));
         assert(!_PyObject_GC_IS_TRACKED(d));
     }
 
