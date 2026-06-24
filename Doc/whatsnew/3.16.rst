@@ -288,10 +288,12 @@ re
 --
 
 * Character class escapes (``\d``, ``\D``, ``\s``, ``\S``, ``\w`` and ``\W``)
-  outside a character set are now compiled to a single ``CATEGORY`` opcode
-  instead of being wrapped in an ``IN`` block.  This speeds up matching of
-  patterns such as ``\d+`` and reduces the size of the compiled byte code.
-  (Contributed by Serhiy Storchaka in :gh:`152033`.)
+  outside a character set, and character sets containing a single such escape
+  (such as ``[\d]`` or ``[^\s]``), are now compiled to a single ``CATEGORY``
+  opcode instead of being wrapped in an ``IN`` block.  This speeds up matching
+  of patterns such as ``\d+`` and reduces the size of the compiled byte code.
+  (Contributed by Serhiy Storchaka in :gh:`152033` and Pieter Eendebak in
+  :gh:`152056`.)
 
 module_name
 -----------
