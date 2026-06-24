@@ -1235,9 +1235,9 @@ PyConfig
 
    .. c:member:: wchar_t* base_executable
 
-      Python base executable: :data:`sys._base_executable`.
+      Python base executable: ``sys._base_executable``.
 
-      Set by the :envvar:`__PYVENV_LAUNCHER__` environment variable.
+      Set by the ``__PYVENV_LAUNCHER__`` environment variable.
 
       Set from :c:member:`PyConfig.executable` if ``NULL``.
 
@@ -1748,7 +1748,7 @@ PyConfig
 
       * On macOS, use :envvar:`PYTHONEXECUTABLE` environment variable if set.
       * If the ``WITH_NEXT_FRAMEWORK`` macro is defined, use
-        :envvar:`__PYVENV_LAUNCHER__` environment variable if set.
+        ``__PYVENV_LAUNCHER__`` environment variable if set.
       * Use ``argv[0]`` of :c:member:`~PyConfig.argv` if available and
         non-empty.
       * Otherwise, use ``L"python"`` on Windows, or ``L"python3"`` on other
@@ -1984,8 +1984,7 @@ PyConfig
 
       The :mod:`warnings` module adds :data:`sys.warnoptions` in the reverse
       order: the last :c:member:`PyConfig.warnoptions` item becomes the first
-      item of :data:`warnings.filters` which is checked first (highest
-      priority).
+      item of :attr:`warnings.filters` which is checked first (highest priority).
 
       The :option:`-W` command line options adds its value to
       :c:member:`~PyConfig.warnoptions`, it can be used multiple times.
