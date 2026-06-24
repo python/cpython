@@ -937,7 +937,7 @@ class NonCallableMock(Base):
             return _call
 
     def assert_not_called(self):
-        """assert that the mock was never called.
+        """Assert that the mock was never called.
         """
         if self.call_count != 0:
             msg = ("Expected '%s' to not have been called. Called %s times.%s"
@@ -947,7 +947,7 @@ class NonCallableMock(Base):
             raise AssertionError(msg)
 
     def assert_called(self):
-        """assert that the mock was called at least once
+        """Assert that the mock was called at least once.
         """
         if self.call_count == 0:
             msg = ("Expected '%s' to have been called." %
@@ -955,7 +955,7 @@ class NonCallableMock(Base):
             raise AssertionError(msg)
 
     def assert_called_once(self):
-        """assert that the mock was called only once.
+        """Assert that the mock was called only once.
         """
         if not self.call_count == 1:
             msg = ("Expected '%s' to have been called once. Called %s times.%s"
@@ -965,7 +965,7 @@ class NonCallableMock(Base):
             raise AssertionError(msg)
 
     def assert_called_with(self, /, *args, **kwargs):
-        """assert that the last call was made with the specified arguments.
+        """Assert that the last call was made with the specified arguments.
 
         Raises an AssertionError if the args and keyword args passed in are
         different to the last call to the mock."""
@@ -987,7 +987,7 @@ class NonCallableMock(Base):
 
 
     def assert_called_once_with(self, /, *args, **kwargs):
-        """assert that the mock was called exactly once and that call was
+        """Assert that the mock was called exactly once and that call was
         with the specified arguments."""
         if not self.call_count == 1:
             msg = ("Expected '%s' to be called once. Called %s times.%s"
@@ -999,7 +999,7 @@ class NonCallableMock(Base):
 
 
     def assert_has_calls(self, calls, any_order=False):
-        """assert the mock has been called with the specified calls.
+        """Assert the mock has been called with the specified calls.
         The `mock_calls` list is checked for the calls.
 
         If `any_order` is False (the default) then the calls must be
@@ -1044,7 +1044,7 @@ class NonCallableMock(Base):
 
 
     def assert_any_call(self, /, *args, **kwargs):
-        """assert the mock has been called with the specified arguments.
+        """Assert the mock has been called with the specified arguments.
 
         The assert passes if the mock has *ever* been called, unlike
         `assert_called_with` and `assert_called_once_with` that only pass if
