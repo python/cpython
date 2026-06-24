@@ -7427,11 +7427,11 @@ store_instance_attr_dict(PyObject *obj, PyDictObject *dict, PyObject *name, PyOb
 }
 
 static inline int
-store_instance_attr_dict_lock_held(PyObject *obj, PyDictObject *dict, PyObject *name, PyObject *value)
+store_instance_attr_with_dict_lock_held(PyObject *obj, PyDictObject *dict,
+                                        PyObject *name, PyObject *value)
 {
-    // in some scenario, the dict is created so it is not locked, but the object is locked.
-    // ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
-    // ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(dict);
+    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
+    ASSERT_WORLD_STOPPED_OR_DICT_LOCKED(dict);
     int res;
     PyDictValues *values = _PyObject_InlineValues(obj);
     if (dict->ma_values == values) {
@@ -7443,132 +7443,109 @@ store_instance_attr_dict_lock_held(PyObject *obj, PyDictObject *dict, PyObject *
     return res;
 }
 
-static int try_store_instance_attr_invalid_inline(PyObject *obj, PyObject *name, PyObject *value, int *res)
+#ifdef Py_GIL_DISABLED
+typedef enum {
+    TRY_STORE_ATTR_FAILURE = -1,
+    TRY_STORE_ATTR_DONE = 0,
+    TRY_STORE_ATTR_RETRY = 1,
+    TRY_STORE_ATTR_ALREADY_VALID = 2
+} try_store_instance_attr_status;
+
+typedef struct {
+    try_store_instance_attr_status try_status;
+    int res;
+} try_store_instance_attr_result_t;
+
+static try_store_instance_attr_result_t
+try_store_instance_attr_invalid_inline(PyObject *obj, PyObject *name,
+                                       PyObject *value)
 {
     bool valid;
-    bool error_occurred = false;
-    bool lock_dict = false;
+    int res = 0;
     PyDictObject *dict;
     PyDictValues *values = _PyObject_InlineValues(obj);
     Py_BEGIN_CRITICAL_SECTION(obj);
     if ((valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
-      goto unlock;
+        goto unlock;
     }
     dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL) {
-      dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
-      if (dict == NULL) {
-        *res = -1;
-        error_occurred = true;
-        goto unlock;
-      }
-      lock_dict = true;
+        dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
+        if (dict == NULL) {
+            res = -1;
+            goto unlock;
+        }
     } else {
-      dict = (PyDictObject *)Py_NewRef(dict);
-      lock_dict = true;
+        dict = (PyDictObject *)Py_NewRef(dict);
     }
-    unlock:
+
+unlock:
     Py_END_CRITICAL_SECTION();
-    if (error_occurred) {
-        return -1;
+    if (res < 0) {
+        return (try_store_instance_attr_result_t){TRY_STORE_ATTR_FAILURE, res};
     }
 
     if (valid) {
-        return 2;
+        return (try_store_instance_attr_result_t){TRY_STORE_ATTR_ALREADY_VALID, 0};
     }
 
-    if (!valid && !lock_dict) {
-        return 0;
+    bool success = false;
+    Py_BEGIN_CRITICAL_SECTION2(obj, dict);
+    PyDictObject *current_dict = _PyObject_GetManagedDict(obj);
+    if (current_dict == dict && !(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
+        success = true;
+        res = store_instance_attr_with_dict_lock_held(obj, dict, name, value);
     }
-
-    if (lock_dict) {
-        bool success = false;
-        Py_BEGIN_CRITICAL_SECTION2(obj, dict);
-        PyDictObject *current_dict = _PyObject_GetManagedDict(obj);
-        if (current_dict == dict &&
-            !(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
-            success = true;
-            *res = store_instance_attr_dict_lock_held(obj, dict, name, value);
-        }
-        Py_END_CRITICAL_SECTION2();
-        Py_DECREF(dict);
-        if (success) {
-            return 0;
-        }
-        if (valid) {
-            return 2;
-        }
-        if (!success) {
-            return 1;
-        }
+    Py_END_CRITICAL_SECTION2();
+    Py_DECREF(dict);
+    if (success) {
+        return (try_store_instance_attr_result_t){TRY_STORE_ATTR_DONE, res};
     }
-    return 0;
+    if (valid) {
+        return (try_store_instance_attr_result_t){TRY_STORE_ATTR_ALREADY_VALID, 0};
+    }
+    return (try_store_instance_attr_result_t){TRY_STORE_ATTR_RETRY, 0};
 }
+#endif
 
 int
 _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
-    int try_res = 2;
-    int res;
-    while ((!FT_ATOMIC_LOAD_UINT8(values->valid) &&
-            (try_res = try_store_instance_attr_invalid_inline(
-                 obj, name, value, &res)) == 1)) {
-      // Loop until we can store the attribute successfully.  We only need to
-      // loop if we raced with another thread materializing the dict or storing
-      // the attribute for an object without a dict.
+#ifdef Py_GIL_DISABLED
+    try_store_instance_attr_result_t try_res = {TRY_STORE_ATTR_ALREADY_VALID, 0};
+    while (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
+        // Retry if the managed dict changes before we can lock and validate it.
+        try_res = try_store_instance_attr_invalid_inline(obj, name, value);
+        if (try_res.try_status != TRY_STORE_ATTR_RETRY) {
+            break;
+        }
     }
-    if (try_res < 0) {
-      return res;
+    switch (try_res.try_status) {
+        case TRY_STORE_ATTR_FAILURE:
+        case TRY_STORE_ATTR_DONE:
+            return try_res.res;
+        case TRY_STORE_ATTR_ALREADY_VALID:
+            break;
+        case TRY_STORE_ATTR_RETRY:
+        default:
+            Py_UNREACHABLE();
     }
-    if (try_res == 0) {
-      return res;
+#else
+    if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
+        PyDictObject *dict = _PyObject_GetManagedDict(obj);
+        if (dict == NULL) {
+            dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
+            if (dict == NULL) {
+                return -1;
+            }
+            int res = store_instance_attr_dict(obj, dict, name, value);
+            Py_DECREF(dict);
+            return res;
+        }
+        return store_instance_attr_dict(obj, dict, name, value);
     }
-
-//     if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
-//         bool valid;
-//         int res;
-//         PyDictObject *dict;
-//         bool lock_dict = false;
-//         Py_BEGIN_CRITICAL_SECTION(obj);
-//         if ((valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
-//             goto unlock;
-//         }
-//         dict = _PyObject_GetManagedDict(obj);
-//         if (dict == NULL) {
-//             dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
-//             if (dict == NULL) {
-//                 res = -1;
-//                 goto unlock;
-//             }
-//             res = store_instance_attr_dict_lock_held(obj, dict, name, value);
-//             Py_DECREF(dict);
-//         } else {
-//             dict = (PyDictObject *)Py_XNewRef(dict);
-//             lock_dict = true;
-//             // res = store_instance_attr_dict(obj, dict, name, value);
-//         }
-// unlock:
-//         Py_END_CRITICAL_SECTION();
-//         if (!valid && !lock_dict) {
-//             return res;
-//         }
-//         if (lock_dict) {
-//             bool success = false;
-//             Py_BEGIN_CRITICAL_SECTION2(obj, dict);
-//             PyDictObject *current_dict = _PyObject_GetManagedDict(obj);
-//             if (current_dict == dict) {
-//                 success = true;
-//                 res = store_instance_attr_dict_lock_held(obj, dict, name, value);
-//             }
-//             Py_END_CRITICAL_SECTION2();
-//             Py_DECREF(dict);
-//             if (!success) {
-//                 res = _PyObject_StoreInstanceAttribute(obj, name, value);
-//             }
-//             return res;
-//         }
-//     }
+#endif
 
 #ifdef Py_GIL_DISABLED
     // We have a valid inline values, at least for now...  There are two potential
@@ -7583,7 +7560,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
     // prevent resizing.
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL) {
-        // int res;
+        int res;
         Py_BEGIN_CRITICAL_SECTION(obj);
         dict = _PyObject_GetManagedDict(obj);
 
