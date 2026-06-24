@@ -3757,6 +3757,8 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45+00:00:90', # Time zone field out from range
             '2009-04-19T12:30:45-00:90:00', # Time zone field out from range
             '2009-04-19T12:30:45-00:00:90', # Time zone field out from range
+            '2020-2020',                    # Ambiguous 9-char date portion
+            '2020-1234',                    # Ambiguous 9-char date portion
         ]
 
         for bad_str in bad_strs:
