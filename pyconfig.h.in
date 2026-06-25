@@ -1324,7 +1324,7 @@
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
 
-/* Define to 1 if you have the 'sysctlbyname' function. */
+/* Define to 1 if you have the `sysctlbyname' function. */
 #undef HAVE_SYSCTLBYNAME
 
 /* Define to 1 if you have the <sysexits.h> header file. */
