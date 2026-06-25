@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20260628
+MAGIC = 20260622
 
 from _sre import MAXREPEAT, MAXGROUPS  # noqa: F401
 
