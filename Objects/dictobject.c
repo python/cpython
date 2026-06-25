@@ -4530,7 +4530,6 @@ copy_lock_held(PyObject *o, int as_frozendict)
     if (dict_merge(copy, o, 1, NULL) < 0) {
         Py_DECREF(copy);
         return NULL;
-
     }
 
     if (PyDict_Check(copy)) {
