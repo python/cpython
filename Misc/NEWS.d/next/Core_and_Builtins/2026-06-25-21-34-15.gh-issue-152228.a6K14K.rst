@@ -1,0 +1,1 @@
+Fix a crash in :meth:`str.replace` under a limited memory situation.
