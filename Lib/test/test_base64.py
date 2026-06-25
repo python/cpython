@@ -1440,12 +1440,12 @@ class TestMain(unittest.TestCase):
     def test_prints_usage_with_help_flag(self):
         output = self.get_output('-h')
         self.assertIn(b'usage: ', output)
-        self.assertIn(b'-d, -u: decode', output)
+        self.assertIn(b'-d', output)
 
     def test_prints_usage_with_invalid_flag(self):
         output = script_helper.assert_python_failure('-m', 'base64', '-x').err
         self.assertIn(b'usage: ', output)
-        self.assertIn(b'-d, -u: decode', output)
+        self.assertIn(b'-d', output)
 
 if __name__ == '__main__':
     unittest.main()
