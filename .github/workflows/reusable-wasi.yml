@@ -51,7 +51,7 @@ jobs:
     - name: "Make build Python"
       run: python3 Tools/wasm/wasi make-build-python
     - name: "Display build info of the build Python"
-      run: python3 Platforms/WASI pythoninfo-build
+      run: python3 Tools/wasm/wasi pythoninfo-build
     - name: "Configure host/WASI Python"
       # `--with-pydebug` inferred from configure-build-python
       run: python3 Tools/wasm/wasi configure-host -- --config-cache
