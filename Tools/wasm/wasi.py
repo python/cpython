@@ -171,6 +171,12 @@ def make_build_python(context, working_dir):
     print(f"🎉 {binary} {version}")
 
 
+@subdir(BUILD_DIR)
+def pythoninfo_build_python(context, working_dir):
+    """Display build info of the build Python."""
+    call(["make", "pythoninfo"], context=context)
+
+
 def find_wasi_sdk():
     """Find the path to wasi-sdk."""
     if wasi_sdk_path := os.environ.get("WASI_SDK_PATH"):
@@ -316,11 +322,19 @@ def build_all(context):
     steps = [
         configure_build_python,
         make_build_python,
+        pythoninfo_build_python,
         configure_wasi_python,
         make_wasi_python,
+        pythoninfo_wasi_python,
     ]
     for step in steps:
         step(context)
+
+
+@subdir(lambda context: CROSS_BUILD_DIR / context.host_triple)
+def pythoninfo_wasi_python(context, working_dir):
+    """Display build info of the host/WASI Python."""
+    call(["make", "pythoninfo"], context=context)
 
 
 def clean_contents(context):
@@ -364,6 +378,9 @@ def main():
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
     )
+    pythoninfo_build = subcommands.add_parser(
+        "pythoninfo-build", help="Display build info of the build Python"
+    )
     configure_host = subcommands.add_parser(
         "configure-host",
         help="Run `configure` for the "
@@ -374,6 +391,9 @@ def main():
     make_host = subcommands.add_parser(
         "make-host", help="Run `make` for the host/WASI"
     )
+    pythoninfo_host = subcommands.add_parser(
+        "pythoninfo-host", help="Display build info of the host/WASI Python"
+    )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
@@ -381,8 +401,10 @@ def main():
         build,
         configure_build,
         make_build,
+        pythoninfo_build,
         configure_host,
         make_host,
+        pythoninfo_host,
     ):
         subcommand.add_argument(
             "--quiet",
@@ -421,7 +443,12 @@ def main():
             "(default designed for wasmtime 14 or newer: "
             f"`{default_host_runner}`)",
         )
-    for subcommand in build, configure_host, make_host:
+    for subcommand in (
+        build,
+        configure_host,
+        make_host,
+        pythoninfo_host,
+    ):
         subcommand.add_argument(
             "--host-triple",
             action="store",
@@ -434,10 +461,13 @@ def main():
     dispatch = {
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
+        "pythoninfo-build": pythoninfo_build_python,
         "configure-host": configure_wasi_python,
         "make-host": make_wasi_python,
+        "pythoninfo-host": pythoninfo_wasi_python,
         "build": build_all,
         "clean": clean_contents,
+        None: lambda args: parser.print_help(),
     }
     dispatch[context.subcommand](context)
 
