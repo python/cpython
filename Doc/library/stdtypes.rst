@@ -5757,6 +5757,11 @@ Frozen dictionaries
    Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
    signifying (respectively) the types of the frozendict's keys and values.
 
+   .. classmethod:: fromkeys(iterable, value=None, /)
+
+      Similar to :meth:`dict.fromkeys`, but call the type constructor with a
+      :class:`frozendict` if the type is a :class:`frozendict` subclass.
+
    .. versionadded:: 3.15
 
 

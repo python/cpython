@@ -3419,12 +3419,9 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     PyObject *d;
     int need_copy = 0;
 
-    PyTypeObject *cls_type = _PyType_CAST(cls);
-    if (PyObject_IsSubclass(cls, (PyObject*)&PyFrozenDict_Type)
-        && cls_type->tp_new == frozendict_new)
-    {
+    if (cls == (PyObject*)&PyFrozenDict_Type) {
         // gh-151722: Create a frozendict which is not tracked by the GC.
-        d = frozendict_new_untracked(cls_type);
+        d = frozendict_new_untracked(&PyFrozenDict_Type);
     }
     else {
         // Dict subclass, or frozendict subclass which overrides

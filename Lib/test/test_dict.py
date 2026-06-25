@@ -1955,7 +1955,8 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(type(fd), FrozenDictSubclass)
         self.assertEqual(created, frozendict(x=1))
 
-        # Dict subclass which overrides the constructor
+        # Dict subclass with a constructor which returns a frozendict
+        # by default
         class DictSubclass(dict):
             def __new__(cls, *args, **kwargs):
                 if args or kwargs:
