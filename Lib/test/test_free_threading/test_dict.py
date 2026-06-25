@@ -1,10 +1,10 @@
-from collections import deque
 import gc
 import time
 import unittest
 import weakref
 
 from ast import Or
+from collections import deque
 from functools import partial
 from threading import Barrier, Event, Thread
 from unittest import TestCase
