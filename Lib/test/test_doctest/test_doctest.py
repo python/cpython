@@ -1559,6 +1559,26 @@ output to match any substring in the actual output:
     ...                 # doctest: +NORMALIZE_WHITESPACE
     [0,    1, ...,   18,    19]
 
+The IGNORE_CASE flag causes the test runner to ignore case when
+matching the expected output to the actual output.
+
+    >>> print("HeLlO WoRlD") # doctest: +IGNORE_CASE
+    hello world
+
+It can resolve the issues with POSIX and Windows NAN and other types.
+On Windows this should fail without the flag.
+
+    >>> float("NaN") # doctest: +IGNORE_CASE
+    nan
+
+It also works with boolean values.
+
+    >>> print("tRuE") # doctest: +IGNORE_CASE
+    1
+    >>> print("FaLsE") # doctest: +IGNORE_CASE
+    0
+
+
 The SKIP flag causes an example to be skipped entirely.  I.e., the
 example is not run.  It can be useful in contexts where doctest
 examples serve as both documentation and test cases, and an example
