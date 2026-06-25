@@ -601,6 +601,9 @@ jobs:
         run: ./configure --prefix="$BUILD_DIR/cross-python" --with-build-python="$BUILD_DIR/host-python/bin/python3"
       - name: Install cross Python
         run: make -j8 install
+      - name: Display build info
+        run: |
+          "$BUILD_DIR/cross-python/bin/python3" -m test.pythoninfo
       - name: Run test subset with host build
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed

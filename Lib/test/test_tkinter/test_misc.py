@@ -10,7 +10,8 @@ from test import support
 from test.support import os_helper
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
-                                       requires_tk, get_tk_patchlevel)
+                                       requires_tk, get_tk_patchlevel,
+                                       tcl_version)
 
 support.requires('gui')
 
@@ -484,7 +485,11 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_tk_caret(self):
         self.assertIsNone(self.root.tk_caret(x=5, y=10, height=20))
         caret = self.root.tk_caret()
-        self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
+        if self.root._windowingsystem == 'aqua':
+            # macOS records the caret only for the key window.
+            self.assertEqual(set(caret), {'x', 'y', 'height'})
+        else:
+            self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
 
     def test_tk_scaling(self):
         old = self.root.tk_scaling()
@@ -708,6 +713,30 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             iter(widget)
         with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
             widget in widget
+
+
+class TkTest(AbstractTkTest, unittest.TestCase):
+
+    def test_className(self):
+        # The className argument sets the class of the root window.  Tk
+        # title-cases it: the first letter is upper-cased, the rest lower-cased.
+        cases = [
+            ('fooBAR', 'Foobar'),
+            ('éÉ', 'Éé'),  # small and capital E WITH ACUTE
+        ]
+        if tcl_version >= (9, 0):
+            # small and capital DESERET LETTER LONG I (a non-BMP script)
+            cases.append(('\U00010428\U00010400', '\U00010400\U00010428'))
+        for className, klass in cases:
+            root = tkinter.Tk(className=className)
+            try:
+                self.assertEqual(root.winfo_class(), klass)
+            finally:
+                root.destroy()
+        if tcl_version < (9, 0):
+            # gh-126219: title-casing a non-BMP first letter crashed Tcl 8.x;
+            # such a class name is now rejected.
+            self.assertRaises(ValueError, tkinter.Tk, className='\U00010428')
 
 
 class WinfoTest(AbstractTkTest, unittest.TestCase):

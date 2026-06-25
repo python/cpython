@@ -85,6 +85,20 @@ The module :mod:`!curses` defines the following functions:
    .. versionadded:: 3.14
 
 
+.. function:: alloc_pair(fg, bg)
+
+   Allocate a color pair for foreground color *fg* and background color *bg*,
+   and return its number.  If a color pair for the same combination of colors
+   already exists, return its number.  Otherwise allocate a new color pair and
+   return its number.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+
 .. function:: baudrate()
 
    Return the output speed of the terminal in bits per second.  On software
@@ -217,10 +231,24 @@ The module :mod:`!curses` defines the following functions:
 .. function:: nofilter()
 
    Undo the effect of a previous :func:`.filter` call.
-   Like :func:`.filter`, it must be called before :func:`initscr` so that the
-   next initialization uses the full screen again.
+   Like :func:`.filter`, it must be called before :func:`initscr` (or
+   :func:`newterm`) so that the next initialization uses the full screen
+   again.
 
    Availability: if the underlying curses library provides ``nofilter()``.
+
+   .. versionadded:: next
+
+
+.. function:: find_pair(fg, bg)
+
+   Return the number of a color pair for foreground color *fg* and background
+   color *bg*, or ``-1`` if no color pair for this combination of colors has
+   been allocated.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
 
    .. versionadded:: next
 
@@ -236,6 +264,18 @@ The module :mod:`!curses` defines the following functions:
 
    Flush all input buffers.  This throws away any  typeahead  that  has been typed
    by the user and has not yet been processed by the program.
+
+
+.. function:: free_pair(pair_number)
+
+   Free the color pair *pair_number*, which must have been allocated by
+   :func:`alloc_pair`.  The pair must not be in use.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: getmouse()
@@ -358,6 +398,41 @@ The module :mod:`!curses` defines the following functions:
    no flushing is done.
 
 
+.. function:: is_cbreak()
+
+   Return ``True`` if cbreak mode (see :func:`cbreak`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_echo()
+
+   Return ``True`` if echo mode (see :func:`echo`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_nl()
+
+   Return ``True`` if nl mode (see :func:`nl`) is enabled, ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_raw()
+
+   Return ``True`` if raw mode (see :func:`raw`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
 .. function:: is_term_resized(nlines, ncols)
 
    Return ``True`` if :func:`resize_term` would modify the window structure,
@@ -462,6 +537,36 @@ The module :mod:`!curses` defines the following functions:
    right corner of the screen.
 
 
+.. function:: newterm(type=None, fd=None, infd=None, /)
+
+   Initialize a new terminal in addition to the one initialized by
+   :func:`initscr`,
+   and return a :ref:`screen <curses-screen-objects>` for it.
+   This allows a program to drive more than one terminal.
+
+   *type* is the terminal name, as in :func:`setupterm`;
+   if ``None``, the value of the :envvar:`TERM` environment variable is used.
+   *fd* and *infd* are the output and input files for the terminal:
+   either a file object or a file descriptor.
+   They default to :data:`sys.stdout` and :data:`sys.stdin`.
+
+   The new screen becomes the current one.
+   Use :func:`set_term` to switch between screens.
+
+   .. versionadded:: next
+
+
+.. function:: new_prescr()
+
+   Return a new :ref:`screen <curses-screen-objects>`
+   that can be used to call functions that affect global state
+   before :func:`initscr` or :func:`newterm` is called.
+
+   Availability: if the underlying curses library provides ``new_prescr()``.
+
+   .. versionadded:: next
+
+
 .. function:: nl(flag=True)
 
    Enter newline mode.  This mode translates the return key into newline on input,
@@ -539,6 +644,18 @@ The module :mod:`!curses` defines the following functions:
    presented to curses input functions one by one.
 
 
+.. function:: reset_color_pairs()
+
+   Discard all color-pair definitions, releasing the color pairs allocated by
+   :func:`init_pair` and :func:`alloc_pair`.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+
 .. function:: reset_prog_mode()
 
    Restore the  terminal  to "program" mode, as previously saved  by
@@ -605,6 +722,17 @@ The module :mod:`!curses` defines the following functions:
    character to spaces as it adds the tab to a window.
 
    .. versionadded:: 3.9
+
+
+.. function:: set_term(screen, /)
+
+   Make *screen*, a :ref:`screen <curses-screen-objects>` returned by
+   :func:`newterm`, the current terminal,
+   and return the previously current screen.
+   Returns ``None`` if the previous screen was the one created by
+   :func:`initscr`.
+
+   .. versionadded:: next
 
 .. function:: setsyx(y, x)
 
@@ -1061,6 +1189,16 @@ Window objects
    .. versionadded:: 3.3
 
 
+.. method:: window.getdelay()
+
+   Return the window's read timeout in milliseconds,
+   as set by :meth:`nodelay` or :meth:`timeout`:
+   ``-1`` for blocking, ``0`` for non-blocking,
+   or a positive number of milliseconds.
+
+   .. versionadded:: next
+
+
 .. method:: window.getkey([y, x])
 
    Get a character, returning a string instead of an integer, as :meth:`getch`
@@ -1074,11 +1212,27 @@ Window objects
    Return a tuple ``(y, x)`` of the height and width of the window.
 
 
+.. method:: window.getparent()
+
+   Return the parent window of this subwindow,
+   or ``None`` if this window is not a subwindow.
+
+   .. versionadded:: next
+
+
 .. method:: window.getparyx()
 
    Return the beginning coordinates of this window relative to its parent window
    as a tuple ``(y, x)``.  Return ``(-1, -1)`` if this window has no
    parent.
+
+
+.. method:: window.getscrreg()
+
+   Return a tuple ``(top, bottom)`` of the window's current scrolling region,
+   as set by :meth:`setscrreg`.
+
+   .. versionadded:: next
 
 
 .. method:: window.getstr()
@@ -1226,11 +1380,96 @@ Window objects
    .. versionadded:: next
 
 
+.. method:: window.is_cleared()
+
+   Return the current value set by :meth:`clearok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_idcok()
+
+   Return the current value set by :meth:`idcok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_idlok()
+
+   Return the current value set by :meth:`idlok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_immedok()
+
+   Return the current value set by :meth:`immedok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_keypad()
+
+   Return the current value set by :meth:`keypad`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_leaveok()
+
+   Return the current value set by :meth:`leaveok`.
+
+   .. versionadded:: next
+
+
 .. method:: window.is_linetouched(line)
 
    Return ``True`` if the specified line was modified since the last call to
    :meth:`refresh`; otherwise return ``False``.  Raise a :exc:`curses.error`
    exception if *line* is not valid for the given window.
+
+
+.. method:: window.is_nodelay()
+
+   Return the current value set by :meth:`nodelay`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_notimeout()
+
+   Return the current value set by :meth:`notimeout`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_pad()
+
+   Return ``True`` if the window is a pad created by :func:`newpad`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_scrollok()
+
+   Return the current value set by :meth:`scrollok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_subwin()
+
+   Return ``True`` if the window is a subwindow created by :meth:`subwin`
+   or :meth:`derwin`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_syncok()
+
+   Return the current value set by :meth:`syncok`.
+
+   .. versionadded:: next
 
 
 .. method:: window.is_wintouched()
@@ -1469,6 +1708,18 @@ Window objects
    :meth:`refresh`.
 
 
+.. method:: window.use(func, /, *args, **kwargs)
+
+   Call ``func(window, *args, **kwargs)`` with the lock of the window held,
+   and return its result.
+   This provides automatic protection for the window
+   against concurrent access from another thread.
+
+   Availability: if the underlying curses library provides ``use_window()``.
+
+   .. versionadded:: next
+
+
 .. method:: window.vline(ch, n[, attr])
             window.vline(y, x, ch, n[, attr])
 
@@ -1477,6 +1728,60 @@ Window objects
 
    .. versionchanged:: next
       Wide and combining characters are now accepted.
+
+
+.. _curses-screen-objects:
+
+Screen objects
+--------------
+
+.. class:: screen
+
+   A *screen* object represents a terminal initialized by :func:`newterm`
+   (or :func:`new_prescr`),
+   in addition to the default screen created by :func:`initscr`.
+   Screen objects are returned by those functions;
+   they cannot be instantiated directly.
+
+   A screen is freed automatically once it is no longer referenced,
+   either directly or through one of its windows.
+   Each window keeps its screen alive,
+   so a screen remains valid as long as any of its windows does.
+
+   .. versionadded:: next
+
+
+.. method:: screen.close()
+
+   Detach the screen's standard window,
+   breaking the reference cycle between them
+   so the screen can be reclaimed promptly instead of waiting for a
+   garbage collection.
+   Afterwards :attr:`~screen.stdscr` is ``None``
+   and the window it returned earlier can no longer be used.
+   The screen's resources are released
+   once it and all its windows are no longer referenced.
+
+   .. versionadded:: next
+
+
+.. attribute:: screen.stdscr
+
+   The standard :ref:`window <curses-window-objects>` of the screen,
+   covering the whole terminal,
+   or ``None`` for a screen created by :func:`new_prescr`.
+
+
+.. method:: screen.use(func, /, *args, **kwargs)
+
+   Call ``func(screen, *args, **kwargs)`` with the lock of the screen held,
+   and return its result.
+   This provides automatic protection for the screen
+   against concurrent access from another thread.
+
+   Availability: if the underlying curses library provides ``use_screen()``.
+
+   .. versionadded:: next
 
 
 Constants

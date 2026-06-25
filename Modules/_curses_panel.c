@@ -672,7 +672,13 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 
 /* -------------------------------------------------------*/
 
+PyDoc_STRVAR(PyCursesPanel_Type_doc,
+"A curses panel.\n"
+"\n"
+"Panel objects are returned by new_panel().");
+
 static PyType_Slot PyCursesPanel_Type_slots[] = {
+    {Py_tp_doc, (void *)PyCursesPanel_Type_doc},
     {Py_tp_clear, PyCursesPanel_Clear},
     {Py_tp_dealloc, PyCursesPanel_Dealloc},
     {Py_tp_traverse, PyCursesPanel_Traverse},
@@ -821,8 +827,10 @@ _curses_panel_exec(PyObject *mod)
     }
 
     /* For exception _curses_panel.error */
-    state->error = PyErr_NewException(
-        "_curses_panel.error", NULL, NULL);
+    state->error = PyErr_NewExceptionWithDoc(
+        "_curses_panel.error",
+        "Exception raised when a curses panel library function returns an error.",
+        NULL, NULL);
 
     if (PyModule_AddObjectRef(mod, "error", state->error) < 0) {
         return -1;

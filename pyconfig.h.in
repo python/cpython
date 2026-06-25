@@ -218,6 +218,9 @@
 /* Define if you have the 'is_term_resized' function. */
 #undef HAVE_CURSES_IS_TERM_RESIZED
 
+/* Define if you have the 'new_prescr' function. */
+#undef HAVE_CURSES_NEW_PRESCR
+
 /* Define if you have the 'nofilter' function. */
 #undef HAVE_CURSES_NOFILTER
 
@@ -235,6 +238,12 @@
 
 /* Define if you have the 'use_env' function. */
 #undef HAVE_CURSES_USE_ENV
+
+/* Define if you have the 'use_screen' function. */
+#undef HAVE_CURSES_USE_SCREEN
+
+/* Define if you have the 'use_window' function. */
+#undef HAVE_CURSES_USE_WINDOW
 
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT

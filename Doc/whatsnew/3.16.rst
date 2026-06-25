@@ -89,6 +89,13 @@ Improved modules
 curses
 ------
 
+* Add support for multiple terminals to the :mod:`curses` module:
+  the new functions :func:`curses.newterm`, :func:`curses.set_term`
+  and :func:`curses.new_prescr`,
+  the corresponding :ref:`screen <curses-screen-objects>` object,
+  and the :meth:`window.use() <curses.window.use>` method.
+  (Contributed by Serhiy Storchaka in :gh:`90092`.)
+
 * The :mod:`curses` character-cell window methods now accept a full character
   cell --- a spacing character optionally followed by combining characters ---
   in addition to a single integer or byte character.  This affects
@@ -110,6 +117,19 @@ curses
 
 * Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
   (Contributed by Serhiy Storchaka in :gh:`151744`.)
+
+* Add the :mod:`curses` functions :func:`curses.alloc_pair`,
+  :func:`curses.find_pair`, :func:`curses.free_pair` and
+  :func:`curses.reset_color_pairs` for dynamic color-pair management,
+  available when built against a wide-character ncurses with extended-color
+  support.
+  (Contributed by Serhiy Storchaka in :gh:`151774`.)
+
+* Add :mod:`curses` functions and window methods that report state which could
+  previously only be set, such as :meth:`curses.window.is_keypad`,
+  :meth:`curses.window.getparent` and :func:`curses.is_cbreak`,
+  available when built against an ncurses with ``NCURSES_EXT_FUNCS``.
+  (Contributed by Serhiy Storchaka in :gh:`151776`.)
 
 gzip
 ----
@@ -163,6 +183,14 @@ os
 
 re
 --
+
+* :mod:`re` now supports set operations and nested sets in character classes,
+  as described in `Unicode Technical Standard #18
+  <https://unicode.org/reports/tr18/>`__: set difference (``[A--B]``),
+  intersection (``[A&&B]``) and union (``[A||B]``), where an operand may be a
+  nested set written in square brackets.  For example, ``[a-z--[aeiou]]``
+  matches an ASCII lowercase consonant.
+  (Contributed by Serhiy Storchaka in :gh:`152100`.)
 
 * Regular expressions now support Unicode property escapes ``\p{...}`` and
   ``\P{...}``, which match a character by a Unicode property -- for example
@@ -299,10 +327,12 @@ re
 --
 
 * Character class escapes (``\d``, ``\D``, ``\s``, ``\S``, ``\w`` and ``\W``)
-  outside a character set are now compiled to a single ``CATEGORY`` opcode
-  instead of being wrapped in an ``IN`` block.  This speeds up matching of
-  patterns such as ``\d+`` and reduces the size of the compiled byte code.
-  (Contributed by Serhiy Storchaka in :gh:`152033`.)
+  outside a character set, and character sets containing a single such escape
+  (such as ``[\d]`` or ``[^\s]``), are now compiled to a single ``CATEGORY``
+  opcode instead of being wrapped in an ``IN`` block.  This speeds up matching
+  of patterns such as ``\d+`` and reduces the size of the compiled byte code.
+  (Contributed by Serhiy Storchaka in :gh:`152033` and Pieter Eendebak in
+  :gh:`152056`.)
 
 module_name
 -----------
