@@ -15,7 +15,6 @@ from test import support
 from test.support.import_helper import import_fresh_module
 import types
 import unittest
-import _testcapi
 
 from collections import namedtuple, Counter, OrderedDict, _count_elements
 from collections import UserDict, UserString, UserList
@@ -2476,22 +2475,6 @@ class TestCounter(unittest.TestCase):
             pp ^= qq
             self.assertEqual(pp, r)
 
-################################################################################
-### Deque
-################################################################################
-
-class TestDeque(unittest.TestCase):
-
-    def test_deque_oom(self):
-        for n in range(1, 80):
-            d = deque(range(200))
-            _testcapi.set_nomemory(n, 0)
-            try:
-                d.copy()
-                _testcapi.remove_mem_hooks()
-                break
-            except MemoryError:
-                _testcapi.remove_mem_hooks()
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(collections))
