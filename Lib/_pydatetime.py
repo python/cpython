@@ -361,10 +361,7 @@ def _parse_isoformat_date(dtstr):
     if len(dtstr) not in (7, 8, 10):
         raise ValueError("Invalid isoformat string")
     def _read(s, n):
-        # Each date field is a fixed width of exactly n ASCII digits.  int()
-        # would otherwise accept a leading sign or whitespace, or a short slice
-        # that runs off the end of the string, so validate before converting
-        # (this is what the C accelerator's parse_digits() enforces).
+        # Require exactly n ASCII digits, as the C parse_digits() does.
         if len(s) != n or not all(map(_is_ascii_digit, s)):
             raise ValueError(f"Invalid isoformat string: {dtstr!r}")
         return int(s)
