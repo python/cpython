@@ -1357,7 +1357,7 @@ pending_identify(PyObject *self, PyObject *args)
 
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     PyThread_acquire_lock(mutex, WAIT_LOCK);
     /* It gets released in _pending_identify_callback(). */
