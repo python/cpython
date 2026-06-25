@@ -2411,6 +2411,10 @@ AS_CASE([$ac_sys_system],
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
 
+    dnl Workaround for a bug in Emscipten libc's getentropy. See
+    dnl __wrap_getentropy in Python/emscripten_syscalls.c.
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--wrap=getentropy"])
+
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
@@ -2507,6 +2511,9 @@ EOF
 
     if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
         LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+        # Stack size used by Python/ceval.c to set Py_C_STACK_SIZE
+        AC_DEFINE_UNQUOTED([_Py_LINKER_THREAD_STACK_SIZE], [$ac_cv_thread_stack_size],
+                  [Thread stack size set by the linker (in bytes).])
     fi
 fi
 
@@ -7185,9 +7192,13 @@ PY_CHECK_CURSES_FUNC([immedok])
 PY_CHECK_CURSES_FUNC([syncok])
 PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
+PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
+PY_CHECK_CURSES_FUNC([new_prescr])
+PY_CHECK_CURSES_FUNC([use_screen])
+PY_CHECK_CURSES_FUNC([use_window])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

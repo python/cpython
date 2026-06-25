@@ -279,24 +279,46 @@ The special characters are:
      ``[]()[{}]`` will match a right bracket, as well as left bracket, braces,
      and parentheses.
 
-   .. .. index:: single: --; in regular expressions
-   .. .. index:: single: &&; in regular expressions
-   .. .. index:: single: ~~; in regular expressions
-   .. .. index:: single: ||; in regular expressions
+   .. index::
+      single: --; in regular expressions
+      single: &&; in regular expressions
+      single: ||; in regular expressions
 
-   * Support of nested sets and set operations as in `Unicode Technical
-     Standard #18`_ might be added in the future.  This would change the
-     syntax, so to facilitate this change a :exc:`FutureWarning` will be raised
-     in ambiguous cases for the time being.
-     That includes sets starting with a literal ``'['`` or containing literal
-     character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
-     avoid a warning escape them with a backslash.
+   * A character set may contain a nested set written in square brackets, and
+     two sets may be combined with a set operator, as in `Unicode Technical
+     Standard #18`_:
+
+     * ``[A--B]`` (*difference*) matches a character that is in *A* but not
+       in *B*; for example ``[a-z--[aeiou]]`` matches an ASCII lowercase
+       consonant.
+     * ``[A&&B]`` (*intersection*) matches a character that is in both *A*
+       and *B*; for example ``[\w&&[a-z]]`` matches an ASCII lowercase letter.
+     * ``[A||B]`` (*union*) matches a character that is in *A* or in *B*; this
+       is the same as listing the members of both sets in a single set, but
+       allows combining nested sets.
+
+     Operators have no precedence and are applied from left to right.  To
+     group, write a nested set as the operand after an operator, as in
+     ``[a-z--[aeiou]]``.  A leading ``'^'`` complements the whole result.
+     A ``'['`` begins a nested set only immediately after a set operator;
+     anywhere else -- including at the start of a character set -- it is an
+     ordinary character, so existing patterns keep their meaning.  Escape it
+     as ``'\['`` to include a literal ``'['`` right after an operator.
 
    .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
+   .. note::
+
+      Symmetric difference (``A~~B``) is not yet supported; a literal ``'~~'``
+      in a character set still raises a :exc:`FutureWarning`.
 
    .. versionchanged:: 3.7
       :exc:`FutureWarning` is raised if a character set contains constructs
       that will change semantically in the future.
+
+   .. versionchanged:: next
+      Added support for nested sets and the set operators ``--``, ``&&``
+      and ``||``.
 
 .. index:: single: | (vertical bar); in regular expressions
 
