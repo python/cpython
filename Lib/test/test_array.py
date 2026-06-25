@@ -82,6 +82,28 @@ class MiscTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     a.fromlist(lst)
 
+    def test_fromlist_reentrant_self_resize(self):
+        # gh-152166: if an element's __index__ resizes the array being
+        # filled, fromlist() must not skip the preallocated slots (which
+        # exposes uninitialized memory) or misplace items.  It raises
+        # RuntimeError and rolls back, mirroring the list-mutation guard.
+        for label, mutate in (("grow", lambda a: a.append(0)),
+                              ("shrink", lambda a: a.pop())):
+            for typecode in ('i', 'I', 'l', 'L', 'q', 'Q'):
+                with self.subTest(typecode=typecode, mutate=label):
+                    a = array.array(typecode, [1, 2, 3])
+                    before = a.tolist()
+
+                    class Evil:
+                        def __index__(self, _a=a, _m=mutate):
+                            _m(_a)
+                            return 0
+
+                    with self.assertRaises(RuntimeError):
+                        a.fromlist([Evil(), 4, 5])
+                    # The failed call must leave the array unchanged.
+                    self.assertEqual(a.tolist(), before)
+
     def test_typecodes(self):
         self.assertIsInstance(array.typecodes, tuple)
         for typecode in array.typecodes:

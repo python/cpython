@@ -1805,14 +1805,24 @@ array_array_fromlist_impl(arrayobject *self, PyObject *list)
             return NULL;
         for (i = 0; i < n; i++) {
             PyObject *v = PyList_GET_ITEM(list, i);
-            if ((*self->ob_descr->setitem)(self,
-                            Py_SIZE(self) - n + i, v) != 0) {
+            /* setitem may run arbitrary Python (e.g. __index__), which can
+               resize self.  Write to the fixed slot reserved above rather
+               than an offset recomputed from the live Py_SIZE, and bail out
+               if self was resized -- otherwise we would skip a preallocated
+               slot (exposing uninitialized memory) or misplace items. */
+            if ((*self->ob_descr->setitem)(self, old_size + i, v) != 0) {
                 array_resize(self, old_size);
                 return NULL;
             }
             if (n != PyList_GET_SIZE(list)) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "list changed size during iteration");
+                array_resize(self, old_size);
+                return NULL;
+            }
+            if (Py_SIZE(self) != old_size + n) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "array changed size during iteration");
                 array_resize(self, old_size);
                 return NULL;
             }

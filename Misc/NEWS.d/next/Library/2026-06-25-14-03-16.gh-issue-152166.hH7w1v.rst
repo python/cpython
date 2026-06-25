@@ -1,0 +1,4 @@
+Fix :meth:`array.array.fromlist` exposing uninitialized memory (and misplacing
+items) when an element's :meth:`~object.__index__` method resizes the array
+during the conversion.  The reserved slots are now filled at a fixed offset and
+the operation raises :exc:`RuntimeError` if the array is resized mid-iteration.
