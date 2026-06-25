@@ -488,7 +488,7 @@ defining the module state.
 
    .. versionadded:: 3.15
 
-      Use :c:member:`PyModuleDef.m_size` instead to support previous versions.
+      Use :c:member:`PyModuleDef.m_traverse` instead to support previous versions.
 
 .. c:macro:: Py_mod_state_clear
 
