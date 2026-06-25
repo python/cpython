@@ -1288,79 +1288,89 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
         self.assertEqual(re.search(r"\s([^a]*)", " bb").group(1), "bb")
 
-    def test_possible_set_operations(self):
+    def test_set_operations(self):
+        # UTS #18 RL1.3 set operations in character classes: '--' (difference),
+        # '&&' (intersection) and '||' (union) are operators on the matched
+        # character; '~~' (symmetric difference) is still reserved
+        # (FutureWarning).
         s = bytes(range(128)).decode()
-        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
-            p = re.compile(r'[0-9--1]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('-./0123456789'))
-        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
-            self.assertEqual(re.findall(r'[0-9--2]', s), list('-./0123456789'))
-        self.assertEqual(w.filename, __file__)
 
+        # Set difference  A--B == A and not B.
+        self.assertEqual(re.findall(r'[0-9--1]', s), list('023456789'))
+        self.assertEqual(re.findall(r'[0-9--2]', s), list('013456789'))
+        self.assertEqual(re.findall(r'[%--1]', s), list('%'))
+        # A leading '-' is a literal, so this stays a range.
         self.assertEqual(re.findall(r'[--1]', s), list('-./01'))
+        # A dangling operator (empty operand) is an error.
+        self.assertRaises(re.PatternError, re.compile, r'[%--]')
 
-        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
-            p = re.compile(r'[%--1]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list("%&'()*+,-1"))
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible set difference ') as w:
-            p = re.compile(r'[%--]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list("%&'()*+,-"))
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
-            p = re.compile(r'[0-9&&1]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('&0123456789'))
-        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
-            self.assertEqual(re.findall(r'[0-8&&1]', s), list('&012345678'))
-        self.assertEqual(w.filename, __file__)
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
-            p = re.compile(r'[\d&&1]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('&0123456789'))
-
+        # Set intersection  A&&B == A and B.
+        self.assertEqual(re.findall(r'[0-9&&1]', s), list('1'))
+        self.assertEqual(re.findall(r'[0-8&&1]', s), list('1'))
+        self.assertEqual(re.findall(r'[\d&&1]', s), list('1'))
+        # A leading '&' is a literal.
         self.assertEqual(re.findall(r'[&&1]', s), list('&1'))
 
-        with self.assertWarnsRegex(FutureWarning, 'Possible set union ') as w:
-            p = re.compile(r'[0-9||a]')
+        # Nested sets and lookbehind-mapped operands.
+        self.assertEqual(re.findall(r'[a-z--[aeiou]]', s),
+                         list('bcdfghjklmnpqrstvwxyz'))
+        self.assertEqual(re.findall(r'[\w&&[a-z]]', s),
+                         list('abcdefghijklmnopqrstuvwxyz'))
+        # Operators chain and mix left-to-right.
+        self.assertEqual(re.findall(r'[a-z--[aeiou]--[xyz]]', s),
+                         list('bcdfghjklmnpqrstvw'))
+        self.assertEqual(re.findall(r'[\w&&[a-z]&&[m-z]]', s),
+                         list('mnopqrstuvwxyz'))
+        # A negated set operation: [^A--B] == complement of (A minus B).
+        self.assertEqual(re.findall(r'[^a-z--aeiou]', s),
+                         [c for c in s if not ('a' <= c <= 'z' and c not in 'aeiou')])
+        # A nested operand may be complemented or itself a set operation; it is
+        # used directly as the assertion body.
+        self.assertEqual(re.findall(r'[a-z--[^m]]', s), list('m'))
+        self.assertEqual(re.findall(r'[\w&&[a-c--b]]', s), list('ac'))
+        self.assertEqual(re.findall(r'[a-f&&[^bc]]', s), list('adef'))
+        # A nested set is the whole operand; it cannot be mixed with loose
+        # members (write the members in the set instead).
+        self.assertEqual(re.findall(r'[a-c--[ab]]', s), list('c'))
+        self.assertRaises(re.PatternError, re.compile, r'[a-c--[ab]d]')
+        self.assertRaises(re.PatternError, re.compile, r'[a-c--[ab][c]]')
+        # A '[' is a nested set only immediately after a set operator;
+        # elsewhere it is a literal, so these stay backward compatible.
+        self.assertEqual(re.findall(r'[*?[]', s), list('*?['))
+        self.assertEqual(re.findall(r'[a[b]', s), list('[ab'))
+        self.assertEqual(re.findall(r'[^[]', 'a[b'), list('ab'))
+        # A '[' at the start of a class also stays a literal (the position is
+        # reserved, so it still warns) and keeps its historical meaning.
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
+            p = re.compile(r'[[a-z]]')
         self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('0123456789a|'))
+        self.assertEqual(p.findall('a]b[c'), ['a]'])  # {[, a-z} then a literal ']'
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set '):
+            re.compile(r'[[:digit:]]')
+        # A nested set after an operator does not warn.
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', FutureWarning)
+            re.compile(r'[a-z--[aeiou]]')
 
-        with self.assertWarnsRegex(FutureWarning, 'Possible set union ') as w:
-            p = re.compile(r'[\d||a]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('0123456789a|'))
-
+        # Set union  A||B == A or B (an explicit form of [AB]); flat operands
+        # merge into one charset, otherwise the operations are alternated.
+        self.assertEqual(re.findall(r'[0-9||a]', s), list('0123456789a'))
+        self.assertEqual(re.findall(r'[\d||a]', s), list('0123456789a'))
+        self.assertEqual(re.findall(r'[a-z--m||0-9]', s),
+                         list('0123456789abcdefghijklnopqrstuvwxyz'))
+        # A leading '|' is a literal.
         self.assertEqual(re.findall(r'[||1]', s), list('1|'))
+
+        # '~~' remains reserved.
 
         with self.assertWarnsRegex(FutureWarning, 'Possible set symmetric difference ') as w:
             p = re.compile(r'[0-9~~1]')
         self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789~'))
-
         with self.assertWarnsRegex(FutureWarning, 'Possible set symmetric difference ') as w:
-            p = re.compile(r'[\d~~1]')
+            self.assertEqual(re.findall(r'[\d~~1]', s), list('0123456789~'))
         self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('0123456789~'))
-
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
-            p = re.compile(r'[[0-9]|]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('0123456789[]'))
-        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
-            self.assertEqual(re.findall(r'[[0-8]|]', s), list('012345678[]'))
-        self.assertEqual(w.filename, __file__)
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
-            p = re.compile(r'[[:digit:]|]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list(':[]dgit'))
 
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
