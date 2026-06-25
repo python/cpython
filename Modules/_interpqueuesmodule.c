@@ -1042,7 +1042,7 @@ _queues_list_all(_queues *queues, int64_t *p_count)
 {
     struct queue_id_and_info *qids = NULL;
     PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-    struct queue_id_and_info *ids = PyMem_NEW(struct queue_id_and_info,
+    struct queue_id_and_info *ids = PyMem_New(struct queue_id_and_info,
                                               (Py_ssize_t)(queues->count));
     if (ids == NULL) {
         PyErr_NoMemory();
@@ -1322,7 +1322,14 @@ static void *
 _queueid_xid_new(int64_t qid)
 {
     _queues *queues = _get_global_queues();
-    if (_queues_incref(queues, qid) < 0) {
+    int err = _queues_incref(queues, qid);
+    if (err < 0) {
+        PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
+        if (mod == NULL) {
+            return NULL;
+        }
+        (void)handle_queue_error(err, mod, qid);
+        Py_DECREF(mod);
         return NULL;
     }
 
