@@ -18,7 +18,6 @@ Doc/library/lzma.rst
 Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
-Doc/library/pickletools.rst
 Doc/library/pyexpat.rst
 Doc/library/select.rst
 Doc/library/socket.rst
