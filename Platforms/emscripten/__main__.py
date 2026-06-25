@@ -290,6 +290,12 @@ def make_build_python(context, working_dir):
     print(f"🎉 {binary} {version}")
 
 
+@subdir("native_build_dir")
+def pythoninfo_build(context, working_dir):
+    """Display build info for the build Python."""
+    call(["make", "pythoninfo"], quiet=context.quiet)
+
+
 def check_shasum(file: str, expected_shasum: str):
     with open(file, "rb") as f:
         digest = hashlib.file_digest(f, "sha256")
@@ -580,6 +586,16 @@ def make_emscripten_python(context, working_dir):
     subprocess.check_call([exec_script, "--version"])
 
 
+@subdir("host_dir")
+def pythoninfo_emscripten_python(context, working_dir):
+    """Display build info for the host/Emscripten Python."""
+    call(
+        ["make", "pythoninfo"],
+        env=updated_env({}, context.emsdk_cache),
+        quiet=context.quiet,
+    )
+
+
 def run_emscripten_python(context):
     """Run the built emscripten Python."""
     host_dir = context.build_paths["host_dir"]
@@ -595,8 +611,6 @@ def run_emscripten_python(context):
 
     if context.test:
         args = load_config_toml()["test-args"] + args
-    elif context.pythoninfo:
-        args = load_config_toml()["pythoninfo-args"] + args
 
     os.execv(str(exec_script), [str(exec_script), *args])
 
@@ -707,6 +721,10 @@ def main():
         "make-build-python", help="Run `make` for the build Python"
     )
 
+    pythoninfo_build = subcommands.add_parser(
+        "pythoninfo-build", help="Display build info for the build Python"
+    )
+
     configure_host = subcommands.add_parser(
         "configure-host",
         help=(
@@ -717,6 +735,10 @@ def main():
 
     make_host = subcommands.add_parser(
         "make-host", help="Run `make` for the host/emscripten"
+    )
+
+    pythoninfo_host = subcommands.add_parser(
+        "pythoninfo-host", help="Display build info for the host/Emscripten Python"
     )
 
     run = subcommands.add_parser(
@@ -731,12 +753,6 @@ def main():
             "Add the default test arguments to the beginning of the command. "
             "Default arguments loaded from Platforms/emscripten/config.toml"
         ),
-    )
-    run.add_argument(
-        "--pythoninfo",
-        action="store_true",
-        default=False,
-        help="Run -m test.pythoninfo",
     )
     run.add_argument(
         "args",
@@ -770,8 +786,10 @@ def main():
         make_mpdec_cmd,
         make_dependencies_cmd,
         make_build,
+        pythoninfo_build,
         configure_host,
         make_host,
+        pythoninfo_host,
         clean,
     ):
         subcommand.add_argument(
@@ -840,8 +858,10 @@ def main():
         "make-dependencies": make_dependencies,
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
+        "pythoninfo-build": pythoninfo_build,
         "configure-host": configure_emscripten_python,
         "make-host": make_emscripten_python,
+        "pythoninfo-host": pythoninfo_emscripten_python,
         "build": build_target,
         "run": run_emscripten_python,
         "clean": clean_contents,
