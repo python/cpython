@@ -1923,12 +1923,13 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     }
 #endif
 
+    bool inserted = false;
     LOCK_KEYS(keys);
     ix = unicodekeys_lookup_unicode(keys, key, hash);
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
+        inserted = true;
         FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
-        _PyDict_SplitKeysInvalidated(keys);
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
@@ -1938,6 +1939,13 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     }
     assert (ix < SHARED_KEYS_MAX_SIZE);
     UNLOCK_KEYS(keys);
+
+    if (inserted) {
+        // gh-151593: Calling PyType_Modified() with LOCK_KEYS() creates a
+        // deadlock. So only call the function after UNLOCK_KEYS().
+        _PyDict_SplitKeysInvalidated(keys);
+    }
+
     return ix;
 }
 
