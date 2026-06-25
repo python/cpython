@@ -620,6 +620,7 @@ def build_target(context):
         steps.extend([
             configure_build_python,
             make_build_python,
+            pythoninfo_build_python,
         ])
     if context.target in {"host", "all"}:
         steps.extend([
@@ -627,6 +628,7 @@ def build_target(context):
             make_mpdec,
             configure_emscripten_python,
             make_emscripten_python,
+            pythoninfo_emscripten_python,
         ])
 
     for step in steps:
