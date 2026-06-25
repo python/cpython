@@ -1047,7 +1047,7 @@
           "checksumValue": "ef7d1994f533c9e7343d6c19f31064fc8ebbcbcaa144be3812b4f43052a05f4c"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_8_1/expat-2.8.2.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_8_2/expat-2.8.2.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
