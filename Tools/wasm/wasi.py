@@ -174,7 +174,7 @@ def make_build_python(context, working_dir):
 @subdir(BUILD_DIR)
 def pythoninfo_build_python(context, working_dir):
     """Display build info of the build Python."""
-    call(["make", "pythoninfo"], context=context)
+    call(["make", "pythoninfo"], quiet=context.quiet)
 
 
 def find_wasi_sdk():
@@ -334,7 +334,7 @@ def build_all(context):
 @subdir(lambda context: CROSS_BUILD_DIR / context.host_triple)
 def pythoninfo_wasi_python(context, working_dir):
     """Display build info of the host/WASI Python."""
-    call(["make", "pythoninfo"], context=context)
+    call(["make", "pythoninfo"], quiet=context.quiet)
 
 
 def clean_contents(context):
