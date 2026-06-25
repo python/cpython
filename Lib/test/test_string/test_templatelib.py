@@ -104,10 +104,18 @@ world"""
     def test_repr(self):
         self.assertEqual(repr(t''), 'Template()')
         self.assertEqual(repr(t'foo'), "Template('foo')")
+
+        # Test various combination for present/absent conversion and format_spec
         x = 42
         self.assertEqual(
             repr(t'{x}'),
-            "Template(Interpolation(42, 'x', None, ''))")
+            "Template(Interpolation(42, 'x'))")
+        self.assertEqual(
+            repr(t'{x!r}'),
+            "Template(Interpolation(42, 'x', 'r'))")
+        self.assertEqual(
+            repr(t'{x:02}'),
+            "Template(Interpolation(42, 'x', None, '02'))")
         self.assertEqual(
             repr(t'a{x!r:02}b'),
             "Template('a', Interpolation(42, 'x', 'r', '02'), 'b')")
@@ -118,7 +126,7 @@ world"""
         x.append(t)
         self.assertEqual(
             repr(t),
-            "Template('a', Interpolation([Template(...)], 'x', None, ''), 'b')")
+            "Template('a', Interpolation([Template(...)], 'x'), 'b')")
 
     def test_pickle_template(self):
         user = 'test'
