@@ -108,9 +108,45 @@ Programmatic interface
 
    Provides an :term:`iterator` over all of the opcodes in a pickle, returning a
    sequence of ``(opcode, arg, pos)`` triples.  *opcode* is an instance of an
-   :class:`OpcodeInfo` class; *arg* is the decoded value, as a Python object, of
-   the opcode's argument; *pos* is the position at which this opcode is located.
+   :class:`OpcodeInfo`; *arg* is the decoded value, as a Python object, of the
+   opcode's argument; *pos* is the position at which this opcode is located.
    *pickle* can be a string or a file-like object.
+
+.. class:: OpcodeInfo
+
+   Represents information about a pickle opcode.
+
+   Instances of this class are returned as the first element of the tuples
+   yielded by :func:`genops`.
+
+   .. attribute:: name
+
+      The symbolic name of the opcode.
+
+   .. attribute:: code
+
+      The one-character opcode value.
+
+   .. attribute:: arg
+
+      The descriptor for the opcode argument, or ``None`` if the opcode has
+      no argument.
+
+   .. attribute:: stack_before
+
+      A list describing the stack before the opcode executes.
+
+   .. attribute:: stack_after
+
+      A list describing the stack after the opcode executes.
+
+   .. attribute:: proto
+
+      The pickle protocol version in which the opcode was introduced.
+
+   .. attribute:: doc
+
+      A human-readable description of the opcode.
 
 .. function:: optimize(picklestring)
 
