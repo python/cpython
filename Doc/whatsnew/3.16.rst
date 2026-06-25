@@ -138,6 +138,16 @@ curses
   attribute value, and the corresponding ``WA_*`` attribute constants.
   (Contributed by Serhiy Storchaka in :gh:`152219`.)
 
+* Add the :class:`curses.complexchar` type, representing a styled
+  wide-character cell (its text, attributes and color pair), and the window
+  methods :meth:`~curses.window.in_wch` and :meth:`~curses.window.getbkgrnd`
+  that return one --- the wide-character counterparts of
+  :meth:`~curses.window.inch` and :meth:`~curses.window.getbkgd`.  The
+  character-cell methods, such as :meth:`~curses.window.addch` and
+  :meth:`~curses.window.border`, now also accept a
+  :class:`~curses.complexchar`.
+  (Contributed by Serhiy Storchaka in :gh:`152233`.)
+
 gzip
 ----
 

@@ -941,7 +941,8 @@ Window objects
 
    .. versionchanged:: next
       A character may now be given as a string of a base character followed
-      by combining characters, instead of only a single character.
+      by combining characters, instead of only a single character, or as a
+      :class:`complexchar` cell.
 
 
 .. method:: window.addnstr(str, n[, attr])
@@ -1051,7 +1052,8 @@ Window objects
      background character.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.bkgdset(ch[, attr])
@@ -1064,7 +1066,8 @@ Window objects
    the character through any scrolling and insert/delete line/character operations.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.border([ls[, rs[, ts[, bs[, tl[, tr[, bl[, br]]]]]]]])
@@ -1100,7 +1103,8 @@ Window objects
    +-----------+---------------------+-----------------------+
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.  A single call cannot mix
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.  A single call cannot mix
       them with integer or byte characters.
 
 
@@ -1110,7 +1114,8 @@ Window objects
    *bs* are *horch*.  The default corner characters are always used by this function.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.  A single call cannot mix
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.  A single call cannot mix
       them with integer or byte characters.
 
 
@@ -1182,7 +1187,8 @@ Window objects
    on the window.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.enclose(y, x)
@@ -1219,6 +1225,20 @@ Window objects
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+
+
+.. method:: window.getbkgrnd()
+
+   Return the given window's current background as a :class:`complexchar`.
+   This is the wide-character variant of :meth:`getbkgd`: the returned object
+   carries the background character together with its attributes and color pair,
+   and the color pair is not limited to the value that fits in a
+   :func:`color_pair`.
+
+   This method is only available if Python was built against a wide-character
+   version of the underlying curses library.
+
+   .. versionadded:: next
 
 
 .. method:: window.getch([y, x])
@@ -1325,7 +1345,8 @@ Window objects
    of the window if fewer than *n* cells are available.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.idcok(flag)
@@ -1356,6 +1377,20 @@ Window objects
    the character proper, and upper bits are the attributes.
 
 
+.. method:: window.in_wch([y, x])
+
+   Return the complex character at the given position in the window as a
+   :class:`complexchar`.  This is the wide-character variant of :meth:`inch`:
+   the returned object carries the cell's text (a spacing character optionally
+   followed by combining characters) together with its attributes and color
+   pair, none of which :meth:`inch` can represent.
+
+   This method is only available if Python was built against a wide-character
+   version of the underlying curses library.
+
+   .. versionadded:: next
+
+
 .. method:: window.insch(ch[, attr])
             window.insch(y, x, ch[, attr])
 
@@ -1365,7 +1400,8 @@ Window objects
    line being lost.  The cursor position does not change.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.insdelln(nlines)
@@ -1776,7 +1812,8 @@ Window objects
    character *ch* with attributes *attr*.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. _curses-screen-objects:
@@ -1829,6 +1866,49 @@ Screen objects
    against concurrent access from another thread.
 
    Availability: if the underlying curses library provides ``use_screen()``.
+
+   .. versionadded:: next
+
+
+.. _curses-complexchar-objects:
+
+Complex character objects
+-------------------------
+
+.. class:: complexchar(text, /, attr=0, pair=0)
+
+   A *complex character* (or *complexchar*) is an immutable styled
+   wide-character cell: a spacing character optionally followed by combining
+   characters, together with a set of attributes and a color pair.
+
+   *text* is the cell's text, *attr* a combination of the
+   :ref:`WA_* attributes <curses-wa-constants>` (equivalent to the matching
+   ``A_*`` constants), and *pair* a color pair number.  Unlike the packed
+   :class:`chtype <int>` used by :meth:`~window.inch` and the ``A_*`` methods,
+   the color pair is stored separately and is not limited to the value that
+   fits in a :func:`color_pair`.
+
+   Complex characters are returned by :meth:`window.in_wch` and
+   :meth:`window.getbkgrnd`, and are accepted (along with an integer, a byte
+   or a string) by the character-cell methods such as :meth:`window.addch`,
+   :meth:`window.insch`, :meth:`window.bkgd`, :meth:`window.border`,
+   :meth:`window.hline` and :meth:`window.vline`.  A complex character already
+   carries its own rendition, so it cannot be combined with an explicit *attr*
+   argument.
+
+   :func:`str` returns the cell's text; two complex characters are equal when
+   their text, attributes and color pair all match.
+
+   This type is only available if Python was built against a wide-character
+   version of the underlying curses library.
+
+   .. attribute:: attr
+
+      The attributes of the character cell (read-only).
+
+   .. attribute:: pair
+
+      The color pair number of the character cell (read-only).
 
    .. versionadded:: next
 

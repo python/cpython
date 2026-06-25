@@ -6,10 +6,107 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(complexchar_new__doc__,
+"complexchar(text, /, attr=0, pair=0)\n"
+"--\n"
+"\n"
+"A styled wide-character cell.\n"
+"\n"
+"  text\n"
+"    A spacing character optionally followed by combining characters.\n"
+"  attr\n"
+"    The attributes of the character cell.\n"
+"  pair\n"
+"    The color pair number of the character cell.\n"
+"\n"
+"text is a spacing character optionally followed by combining\n"
+"characters.  attr is a set of attributes (the WA_* constants) and pair\n"
+"is a color pair number.  The object is immutable; str(cc) returns its\n"
+"text, and the attr and pair attributes return its rendition.");
+
+static PyObject *
+complexchar_new_impl(PyTypeObject *type, PyObject *text, attr_t attr,
+                     int pair);
+
+static PyObject *
+complexchar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(attr), &_Py_ID(pair), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "attr", "pair", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "complexchar",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    PyObject *text;
+    attr_t attr = 0;
+    int pair = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(fastargs[0])) {
+        _PyArg_BadArgument("complexchar", "argument 1", "str", fastargs[0]);
+        goto exit;
+    }
+    text = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        if (!attr_converter(fastargs[1], &attr)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    pair = PyLong_AsInt(fastargs[2]);
+    if (pair == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = complexchar_new_impl(type, text, attr, pair);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_addch__doc__,
-"addch([y, x,] ch, [attr=_curses.A_NORMAL])\n"
+"addch([y, x,] ch, [attr])\n"
 "Paint the character.\n"
 "\n"
 "  y\n"
@@ -43,7 +140,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = A_NORMAL;
+    long attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -228,9 +325,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_bkgd__doc__,
-"bkgd($self, ch, attr=_curses.A_NORMAL, /)\n"
-"--\n"
-"\n"
+"bkgd(ch, [attr])\n"
 "Set the background property of the window.\n"
 "\n"
 "  ch\n"
@@ -239,31 +334,37 @@ PyDoc_STRVAR(_curses_window_bkgd__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGD_METHODDEF    \
-    {"bkgd", _PyCFunction_CAST(_curses_window_bkgd), METH_FASTCALL, _curses_window_bkgd__doc__},
+    {"bkgd", (PyCFunction)_curses_window_bkgd, METH_VARARGS, _curses_window_bkgd__doc__},
 
 static PyObject *
-_curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch, long attr);
+_curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch,
+                         int group_right_1, long attr);
 
 static PyObject *
-_curses_window_bkgd(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_curses_window_bkgd(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *ch;
-    long attr = A_NORMAL;
+    int group_right_1 = 0;
+    long attr = 0;
 
-    if (!_PyArg_CheckPositional("bkgd", nargs, 1, 2)) {
-        goto exit;
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:bkgd", &ch)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "Ol:bkgd", &ch, &attr)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.bkgd requires 1 to 2 arguments");
+            goto exit;
     }
-    ch = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    attr = PyLong_AsLong(args[1]);
-    if (attr == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _curses_window_bkgd_impl((PyCursesWindowObject *)self, ch, attr);
+    return_value = _curses_window_bkgd_impl((PyCursesWindowObject *)self, ch, group_right_1, attr);
 
 exit:
     return return_value;
@@ -510,9 +611,7 @@ _curses_window_getattrs(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_curses_window_bkgdset__doc__,
-"bkgdset($self, ch, attr=_curses.A_NORMAL, /)\n"
-"--\n"
-"\n"
+"bkgdset(ch, [attr])\n"
 "Set the window\'s background.\n"
 "\n"
 "  ch\n"
@@ -521,32 +620,37 @@ PyDoc_STRVAR(_curses_window_bkgdset__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGDSET_METHODDEF    \
-    {"bkgdset", _PyCFunction_CAST(_curses_window_bkgdset), METH_FASTCALL, _curses_window_bkgdset__doc__},
+    {"bkgdset", (PyCFunction)_curses_window_bkgdset, METH_VARARGS, _curses_window_bkgdset__doc__},
 
 static PyObject *
 _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
-                            long attr);
+                            int group_right_1, long attr);
 
 static PyObject *
-_curses_window_bkgdset(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_curses_window_bkgdset(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *ch;
-    long attr = A_NORMAL;
+    int group_right_1 = 0;
+    long attr = 0;
 
-    if (!_PyArg_CheckPositional("bkgdset", nargs, 1, 2)) {
-        goto exit;
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:bkgdset", &ch)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "Ol:bkgdset", &ch, &attr)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.bkgdset requires 1 to 2 arguments");
+            goto exit;
     }
-    ch = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    attr = PyLong_AsLong(args[1]);
-    if (attr == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _curses_window_bkgdset_impl((PyCursesWindowObject *)self, ch, attr);
+    return_value = _curses_window_bkgdset_impl((PyCursesWindowObject *)self, ch, group_right_1, attr);
 
 exit:
     return return_value;
@@ -797,9 +901,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_echochar__doc__,
-"echochar($self, ch, attr=_curses.A_NORMAL, /)\n"
-"--\n"
-"\n"
+"echochar(ch, [attr])\n"
 "Add character ch with attribute attr, and refresh.\n"
 "\n"
 "  ch\n"
@@ -808,32 +910,37 @@ PyDoc_STRVAR(_curses_window_echochar__doc__,
 "    Attributes for the character.");
 
 #define _CURSES_WINDOW_ECHOCHAR_METHODDEF    \
-    {"echochar", _PyCFunction_CAST(_curses_window_echochar), METH_FASTCALL, _curses_window_echochar__doc__},
+    {"echochar", (PyCFunction)_curses_window_echochar, METH_VARARGS, _curses_window_echochar__doc__},
 
 static PyObject *
 _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
-                             long attr);
+                             int group_right_1, long attr);
 
 static PyObject *
-_curses_window_echochar(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_curses_window_echochar(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *ch;
-    long attr = A_NORMAL;
+    int group_right_1 = 0;
+    long attr = 0;
 
-    if (!_PyArg_CheckPositional("echochar", nargs, 1, 2)) {
-        goto exit;
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:echochar", &ch)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "Ol:echochar", &ch, &attr)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.echochar requires 1 to 2 arguments");
+            goto exit;
     }
-    ch = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    attr = PyLong_AsLong(args[1]);
-    if (attr == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _curses_window_echochar_impl((PyCursesWindowObject *)self, ch, attr);
+    return_value = _curses_window_echochar_impl((PyCursesWindowObject *)self, ch, group_right_1, attr);
 
 exit:
     return return_value;
@@ -901,6 +1008,78 @@ _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
+
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_window_in_wch__doc__,
+"in_wch([y, x])\n"
+"Return the complex character at the given position in the window.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"\n"
+"The returned object is a complexchar carrying the cell\'s text,\n"
+"attributes and color pair.");
+
+#define _CURSES_WINDOW_IN_WCH_METHODDEF    \
+    {"in_wch", (PyCFunction)_curses_window_in_wch, METH_VARARGS, _curses_window_in_wch__doc__},
+
+static PyObject *
+_curses_window_in_wch_impl(PyCursesWindowObject *self, int group_right_1,
+                           int y, int x);
+
+static PyObject *
+_curses_window_in_wch(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    int y = 0;
+    int x = 0;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "ii:in_wch", &y, &x)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.in_wch requires 0 to 2 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_in_wch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_window_getbkgrnd__doc__,
+"getbkgrnd($self, /)\n"
+"--\n"
+"\n"
+"Return the window\'s current background complex character.");
+
+#define _CURSES_WINDOW_GETBKGRND_METHODDEF    \
+    {"getbkgrnd", (PyCFunction)_curses_window_getbkgrnd, METH_NOARGS, _curses_window_getbkgrnd__doc__},
+
+static PyObject *
+_curses_window_getbkgrnd_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_getbkgrnd(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_getbkgrnd_impl((PyCursesWindowObject *)self);
+}
+
+#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
@@ -1049,7 +1228,7 @@ exit:
 #endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_hline__doc__,
-"hline([y, x,] ch, n, [attr=_curses.A_NORMAL])\n"
+"hline([y, x,] ch, n, [attr])\n"
 "Display a horizontal line.\n"
 "\n"
 "  y\n"
@@ -1081,7 +1260,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    long attr = A_NORMAL;
+    long attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -1119,7 +1298,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_insch__doc__,
-"insch([y, x,] ch, [attr=_curses.A_NORMAL])\n"
+"insch([y, x,] ch, [attr])\n"
 "Insert a character before the current or specified position.\n"
 "\n"
 "  y\n"
@@ -1151,7 +1330,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = A_NORMAL;
+    long attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1926,7 +2105,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_vline__doc__,
-"vline([y, x,] ch, n, [attr=_curses.A_NORMAL])\n"
+"vline([y, x,] ch, n, [attr])\n"
 "Display a vertical line.\n"
 "\n"
 "  y\n"
@@ -1958,7 +2137,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    long attr = A_NORMAL;
+    long attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -4979,6 +5158,14 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
 
+#ifndef _CURSES_WINDOW_IN_WCH_METHODDEF
+    #define _CURSES_WINDOW_IN_WCH_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_IN_WCH_METHODDEF) */
+
+#ifndef _CURSES_WINDOW_GETBKGRND_METHODDEF
+    #define _CURSES_WINDOW_GETBKGRND_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_GETBKGRND_METHODDEF) */
+
 #ifndef _CURSES_WINDOW_GET_WCH_METHODDEF
     #define _CURSES_WINDOW_GET_WCH_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_GET_WCH_METHODDEF) */
@@ -5122,4 +5309,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=3d8d59f44ded2226 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=081cc398989ca202 input=a9049054013a1b77]*/
