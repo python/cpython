@@ -291,7 +291,7 @@ def make_build_python(context, working_dir):
 
 
 @subdir("native_build_dir")
-def pythoninfo_build(context, working_dir):
+def pythoninfo_build_python(context, working_dir):
     """Display build info for the build Python."""
     call(["make", "pythoninfo"], quiet=context.quiet)
 
@@ -858,7 +858,7 @@ def main():
         "make-dependencies": make_dependencies,
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
-        "pythoninfo-build": pythoninfo_build,
+        "pythoninfo-build": pythoninfo_build_python,
         "configure-host": configure_emscripten_python,
         "make-host": make_emscripten_python,
         "pythoninfo-host": pythoninfo_emscripten_python,
