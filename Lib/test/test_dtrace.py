@@ -75,10 +75,13 @@ class TraceBackend:
     COMMAND_ARGS = []
 
     def run_case(self, name, optimize_python=None):
-        actual_output = normalize_trace_output(self.trace_python(
-            script_file=abspath(name + self.EXTENSION),
-            python_file=abspath(name + ".py"),
-            optimize_python=optimize_python))
+        try:
+            actual_output = normalize_trace_output(self.trace_python(
+                script_file=abspath(name + self.EXTENSION),
+                python_file=abspath(name + ".py"),
+                optimize_python=optimize_python))
+        except subprocess.TimeoutExpired:
+            raise AssertionError(f"{self.COMMAND[0]} timed out")
 
         with open(abspath(name + self.EXTENSION + ".expected")) as f:
             expected_output = f.read().rstrip()
@@ -91,12 +94,17 @@ class TraceBackend:
             command += ["-c", subcommand]
         return command
 
-    def trace(self, script_file, subcommand=None):
+    def trace(self, script_file, subcommand=None, *, timeout=None):
         command = self.generate_trace_command(script_file, subcommand)
-        stdout, _ = subprocess.Popen(command,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT,
-                                     universal_newlines=True).communicate()
+        proc = create_process_group(command,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    universal_newlines=True)
+        try:
+            stdout, _ = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            kill_process_group(proc)
+            raise
         return stdout
 
     def trace_python(self, script_file, python_file, optimize_python=None):
@@ -104,12 +112,17 @@ class TraceBackend:
         if optimize_python:
             python_flags.extend(["-O"] * optimize_python)
         subcommand = " ".join([sys.executable] + python_flags + [python_file])
-        return self.trace(script_file, subcommand)
+        return self.trace(script_file, subcommand, timeout=60)
 
     def assert_usable(self):
         try:
-            output = self.trace(abspath("assert_usable" + self.EXTENSION))
+            output = self.trace(abspath("assert_usable" + self.EXTENSION),
+                                timeout=10)
             output = output.strip()
+        except subprocess.TimeoutExpired:
+            raise unittest.SkipTest(
+                f"{self.COMMAND[0]} timed out during usability check"
+            )
         except (FileNotFoundError, NotADirectoryError, PermissionError) as fnfe:
             output = str(fnfe)
         if output != "probe: success":

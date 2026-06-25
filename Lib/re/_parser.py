@@ -625,6 +625,12 @@ def _parse(source, state, verbose, nested, first=False):
                     subpatternappend((NOT_LITERAL, set[0][1]))
                 else:
                     subpatternappend(set[0])
+            elif _len(set) == 1 and set[0][0] is CATEGORY:
+                # optimization: a lone category like [\d] or [^\d]
+                if negate:
+                    subpatternappend((CATEGORY, CH_NEGATE[set[0][1]]))
+                else:
+                    subpatternappend(set[0])
             else:
                 if negate:
                     set.insert(0, (NEGATE, None))

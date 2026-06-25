@@ -41,12 +41,12 @@
   Here's a list of currently unsupported functions:
 
   addchnstr addchstr color_set define_key
-  del_curterm delscreen dupwin inchnstr inchstr innstr keyok
+  del_curterm dupwin inchnstr inchstr innstr keyok
   mcprint mvaddchnstr mvaddchstr mvcur mvinchnstr
   mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr
-  mvwinchnstr mvwinchstr mvwinnstr newterm
+  mvwinchnstr mvwinchstr mvwinnstr
   restartterm ripoffline scr_dump
-  scr_init scr_restore scr_set scrl set_curterm set_term setterm
+  scr_init scr_restore scr_set scrl set_curterm setterm
   tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
   vidattr vidputs waddchnstr waddchstr
   wcolor_set winchnstr winchstr winnstr wmouse_trafo wscrl
@@ -108,7 +108,7 @@ static const char PyCursesVersion[] = "2.2";
 #include "pycore_capsule.h"     // _PyCapsule_SetTraverse()
 #include "pycore_long.h"        // _PyLong_GetZero()
 #include "pycore_structseq.h"   // _PyStructSequence_NewType()
-#include "pycore_fileutils.h"   // _Py_set_inheritable
+#include "pycore_fileutils.h"   // _Py_dup(), _Py_set_inheritable()
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -164,6 +164,9 @@ typedef chtype attr_t;           /* No attr_t type is available */
 typedef struct {
     PyObject *error;                // curses exception type
     PyTypeObject *window_type;      // exposed by PyCursesWindow_Type
+    PyTypeObject *screen_type;      // _curses.screen
+    PyObject *topscreen;            // owned ref to the current screen object,
+                                    // or NULL for the initscr() screen
 } cursesmodule_state;
 
 static inline cursesmodule_state *
@@ -189,12 +192,14 @@ get_cursesmodule_state_by_win(PyCursesWindowObject *win)
 }
 
 #define _PyCursesWindowObject_CAST(op)  ((PyCursesWindowObject *)(op))
+#define _PyCursesScreenObject_CAST(op)  ((PyCursesScreenObject *)(op))
 
 /*[clinic input]
 module _curses
 class _curses.window "PyCursesWindowObject *" "clinic_state()->window_type"
+class _curses.screen "PyCursesScreenObject *" "clinic_state()->screen_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ae6cb623018f2cbc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b027ab105ab94e1]*/
 
 /* Indicate whether the module has already been loaded or not. */
 static int curses_module_loaded = 0;
@@ -895,6 +900,52 @@ Window_NoArgNoReturnFunction(wdeleteln)
 
 Window_NoArgTrueFalseFunction(is_wintouched)
 
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+Window_NoArgTrueFalseFunction(is_cleared)
+Window_NoArgTrueFalseFunction(is_idcok)
+Window_NoArgTrueFalseFunction(is_idlok)
+Window_NoArgTrueFalseFunction(is_immedok)
+Window_NoArgTrueFalseFunction(is_keypad)
+Window_NoArgTrueFalseFunction(is_leaveok)
+Window_NoArgTrueFalseFunction(is_nodelay)
+Window_NoArgTrueFalseFunction(is_notimeout)
+Window_NoArgTrueFalseFunction(is_pad)
+Window_NoArgTrueFalseFunction(is_scrollok)
+Window_NoArgTrueFalseFunction(is_subwin)
+Window_NoArgTrueFalseFunction(is_syncok)
+
+static PyObject *
+PyCursesWindow_getdelay(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    return PyLong_FromLong(wgetdelay(self->win));
+}
+
+static PyObject *
+PyCursesWindow_getscrreg(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    int top, bottom;
+    if (wgetscrreg(self->win, &top, &bottom) == ERR) {
+        curses_window_set_error(self, "wgetscrreg", "getscrreg");
+        return NULL;
+    }
+    return Py_BuildValue("(ii)", top, bottom);
+}
+
+static PyObject *
+PyCursesWindow_getparent(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    /* The standard window has no parent; subwindows keep a reference to the
+       window they were derived from. */
+    if (self->orig == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef((PyObject *)self->orig);
+}
+#endif /* NCURSES_EXT_FUNCS */
+
 Window_NoArgNoReturnVoidFunction(wsyncup)
 Window_NoArgNoReturnVoidFunction(wsyncdown)
 Window_NoArgNoReturnVoidFunction(wstandend)
@@ -939,7 +990,7 @@ Window_TwoArgNoReturnFunction(wresize, int, "ii;lines,columns")
 static PyObject *
 PyCursesWindow_New(cursesmodule_state *state,
                    WINDOW *win, const char *encoding,
-                   PyCursesWindowObject *orig)
+                   PyCursesWindowObject *orig, PyObject *screen)
 {
     if (encoding == NULL) {
 #if defined(MS_WINDOWS)
@@ -967,14 +1018,14 @@ PyCursesWindow_New(cursesmodule_state *state,
         return NULL;
     }
     wo->win = win;
+    wo->orig = (PyCursesWindowObject *)Py_XNewRef((PyObject *)orig);
+    wo->screen = Py_XNewRef(screen);
     wo->encoding = _PyMem_Strdup(encoding);
     if (wo->encoding == NULL) {
         Py_DECREF(wo);
         PyErr_NoMemory();
         return NULL;
     }
-    wo->orig = orig;
-    Py_XINCREF(orig);
     PyObject_GC_Track((PyObject *)wo);
     return (PyObject *)wo;
 }
@@ -995,6 +1046,7 @@ PyCursesWindow_dealloc(PyObject *self)
         PyMem_Free(wo->encoding);
     }
     Py_XDECREF(wo->orig);
+    Py_XDECREF(wo->screen);
     window_type->tp_free(self);
     Py_DECREF(window_type);
 }
@@ -1005,6 +1057,7 @@ PyCursesWindow_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
     Py_VISIT(wo->orig);
+    Py_VISIT(wo->screen);
     return 0;
 }
 
@@ -1768,7 +1821,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
     }
 
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-    return PyCursesWindow_New(state, win, NULL, self);
+    return PyCursesWindow_New(state, win, NULL, self, self->screen);
 }
 
 /*[clinic input]
@@ -3066,7 +3119,7 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
     }
 
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-    return PyCursesWindow_New(state, win, self->encoding, self);
+    return PyCursesWindow_New(state, win, self->encoding, self, self->screen);
 }
 
 /*[clinic input]
@@ -3239,6 +3292,84 @@ PyCursesWindow_set_encoding(PyObject *op, PyObject *value, void *Py_UNUSED(ignor
 #include "clinic/_cursesmodule.c.h"
 #undef clinic_state
 
+#if defined(HAVE_CURSES_USE_SCREEN) || defined(HAVE_CURSES_USE_WINDOW)
+/* Shared trampoline for window.use()/screen.use(): call
+   func(obj, *extra, **kwargs) and store the result (NULL on exception) in
+   data->result. */
+typedef struct {
+    PyObject *obj;          /* the window or screen object */
+    PyObject *func;         /* the callable */
+    PyObject *extra;        /* extra positional arguments (a tuple) */
+    PyObject *kwargs;       /* keyword arguments (a dict), or NULL */
+    PyObject *result;       /* output: the call result, or NULL */
+} curses_use_data;
+
+static void
+curses_use_call(curses_use_data *data)
+{
+    Py_ssize_t n = PyTuple_GET_SIZE(data->extra);
+    PyObject *callargs = PyTuple_New(n + 1);
+    if (callargs == NULL) {
+        data->result = NULL;
+        return;
+    }
+    PyTuple_SET_ITEM(callargs, 0, Py_NewRef(data->obj));
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTuple_SET_ITEM(callargs, i + 1,
+                         Py_NewRef(PyTuple_GET_ITEM(data->extra, i)));
+    }
+    data->result = PyObject_Call(data->func, callargs, data->kwargs);
+    Py_DECREF(callargs);
+}
+
+/* Parse (func, *extra) from a use() method's argument tuple. */
+static int
+curses_use_parse(PyObject *args, PyObject **func, PyObject **extra)
+{
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    if (nargs < 1) {
+        PyErr_SetString(PyExc_TypeError,
+                        "use() missing required argument 'func'");
+        return -1;
+    }
+    *func = PyTuple_GET_ITEM(args, 0);
+    if (!PyCallable_Check(*func)) {
+        PyErr_SetString(PyExc_TypeError, "use(): func must be callable");
+        return -1;
+    }
+    *extra = PyTuple_GetSlice(args, 1, nargs);
+    return *extra == NULL ? -1 : 0;
+}
+#endif
+
+#ifdef HAVE_CURSES_USE_WINDOW
+static int
+curses_use_window_cb(WINDOW *Py_UNUSED(win), void *data)
+{
+    curses_use_call((curses_use_data *)data);
+    return 0;
+}
+
+PyDoc_STRVAR(PyCursesWindow_use__doc__,
+"use($self, func, /, *args, **kwargs)\n--\n\n"
+"Call func(win, *args, **kwargs) with the window locked,\n"
+"and return its result.");
+
+static PyObject *
+PyCursesWindow_use(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyCursesWindowObject *wo = _PyCursesWindowObject_CAST(self);
+    PyObject *func, *extra;
+    if (curses_use_parse(args, &func, &extra) < 0) {
+        return NULL;
+    }
+    curses_use_data data = {self, func, extra, kwargs, NULL};
+    use_window(wo->win, curses_use_window_cb, &data);
+    Py_DECREF(extra);
+    return data.result;
+}
+#endif /* HAVE_CURSES_USE_WINDOW */
+
 static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_ADDCH_METHODDEF
     _CURSES_WINDOW_ADDNSTR_METHODDEF
@@ -3288,12 +3419,28 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_GETCH_METHODDEF
     _CURSES_WINDOW_GETKEY_METHODDEF
     _CURSES_WINDOW_GET_WCH_METHODDEF
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+    {"getdelay", PyCursesWindow_getdelay, METH_NOARGS,
+     "getdelay($self, /)\n--\n\n"
+     "Return the window's read timeout in milliseconds.\n\n"
+     "-1 means blocking, 0 means non-blocking; see nodelay() and timeout()."},
+#endif
     {"getmaxyx", PyCursesWindow_getmaxyx, METH_NOARGS,
      "getmaxyx($self, /)\n--\n\n"
      "Return a tuple (y, x) of the window height and width."},
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+    {"getparent", PyCursesWindow_getparent, METH_NOARGS,
+     "getparent($self, /)\n--\n\n"
+     "Return the parent window, or None if this is not a subwindow."},
+#endif
     {"getparyx", PyCursesWindow_getparyx, METH_NOARGS,
      "getparyx($self, /)\n--\n\n"
      "Return (y, x) relative to the parent window, or (-1, -1) if none."},
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+    {"getscrreg", PyCursesWindow_getscrreg, METH_NOARGS,
+     "getscrreg($self, /)\n--\n\n"
+     "Return a tuple (top, bottom) of the current scrolling region."},
+#endif
     {
         "getstr", PyCursesWindow_getstr, METH_VARARGS,
         _curses_window_getstr__doc__
@@ -3343,6 +3490,44 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"is_wintouched", PyCursesWindow_is_wintouched, METH_NOARGS,
      "is_wintouched($self, /)\n--\n\n"
      "Return True if the window changed since the last refresh()."},
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+    {"is_cleared", PyCursesWindow_is_cleared, METH_NOARGS,
+     "is_cleared($self, /)\n--\n\n"
+     "Return the current value set by clearok()."},
+    {"is_idcok", PyCursesWindow_is_idcok, METH_NOARGS,
+     "is_idcok($self, /)\n--\n\n"
+     "Return the current value set by idcok()."},
+    {"is_idlok", PyCursesWindow_is_idlok, METH_NOARGS,
+     "is_idlok($self, /)\n--\n\n"
+     "Return the current value set by idlok()."},
+    {"is_immedok", PyCursesWindow_is_immedok, METH_NOARGS,
+     "is_immedok($self, /)\n--\n\n"
+     "Return the current value set by immedok()."},
+    {"is_keypad", PyCursesWindow_is_keypad, METH_NOARGS,
+     "is_keypad($self, /)\n--\n\n"
+     "Return the current value set by keypad()."},
+    {"is_leaveok", PyCursesWindow_is_leaveok, METH_NOARGS,
+     "is_leaveok($self, /)\n--\n\n"
+     "Return the current value set by leaveok()."},
+    {"is_nodelay", PyCursesWindow_is_nodelay, METH_NOARGS,
+     "is_nodelay($self, /)\n--\n\n"
+     "Return the current value set by nodelay()."},
+    {"is_notimeout", PyCursesWindow_is_notimeout, METH_NOARGS,
+     "is_notimeout($self, /)\n--\n\n"
+     "Return the current value set by notimeout()."},
+    {"is_pad", PyCursesWindow_is_pad, METH_NOARGS,
+     "is_pad($self, /)\n--\n\n"
+     "Return True if the window is a pad."},
+    {"is_scrollok", PyCursesWindow_is_scrollok, METH_NOARGS,
+     "is_scrollok($self, /)\n--\n\n"
+     "Return the current value set by scrollok()."},
+    {"is_subwin", PyCursesWindow_is_subwin, METH_NOARGS,
+     "is_subwin($self, /)\n--\n\n"
+     "Return True if the window is a subwindow."},
+    {"is_syncok", PyCursesWindow_is_syncok, METH_NOARGS,
+     "is_syncok($self, /)\n--\n\n"
+     "Return the current value set by syncok()."},
+#endif
     {"keypad", PyCursesWindow_keypad, METH_VARARGS,
      "keypad($self, flag, /)\n--\n\n"
      "Interpret escape sequences for special keys if flag is true."},
@@ -3413,6 +3598,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "untouchwin($self, /)\n--\n\n"
      "Mark all lines in the window as unchanged since last refresh()."},
     _CURSES_WINDOW_VLINE_METHODDEF
+#ifdef HAVE_CURSES_USE_WINDOW
+    {"use", _PyCFunction_CAST(PyCursesWindow_use),
+     METH_VARARGS | METH_KEYWORDS, PyCursesWindow_use__doc__},
+#endif
     {NULL,                  NULL}   /* sentinel */
 };
 
@@ -3450,6 +3639,182 @@ static PyType_Spec PyCursesWindow_Type_spec = {
         | Py_TPFLAGS_HEAPTYPE
         | Py_TPFLAGS_HAVE_GC,
     .slots = PyCursesWindow_Type_slots
+};
+
+/* -------------------------------------------------------*/
+/* Screen objects (multiple terminals)                    */
+/* -------------------------------------------------------*/
+
+static PyObject *
+PyCursesScreen_New(cursesmodule_state *state, SCREEN *screen,
+                   FILE *outfp, FILE *infp, PyObject *stdscr)
+{
+    PyCursesScreenObject *so = PyObject_GC_New(PyCursesScreenObject,
+                                               state->screen_type);
+    if (so == NULL) {
+        return NULL;
+    }
+    so->screen = screen;
+    so->outfp = outfp;
+    so->infp = infp;
+    so->stdscr = Py_XNewRef(stdscr);
+    PyObject_GC_Track((PyObject *)so);
+    return (PyObject *)so;
+}
+
+/* Free the C SCREEN and the FILE* streams owned by a screen object.
+   Safe to call more than once.
+
+   This must run by reference counting (from the dealloc), not from tp_clear:
+   it has to happen only once every window on the screen is gone, and thus
+   after del_panel() for any panel built on one of those windows.  delscreen()
+   tears down the screen that del_panel() needs, so a panel outliving its
+   screen would crash. */
+static void
+curses_screen_close(PyCursesScreenObject *so)
+{
+    if (so->screen != NULL) {
+        delscreen(so->screen);
+        so->screen = NULL;
+    }
+    if (so->outfp != NULL) {
+        fclose(so->outfp);
+        so->outfp = NULL;
+    }
+    if (so->infp != NULL) {
+        fclose(so->infp);
+        so->infp = NULL;
+    }
+}
+
+static PyObject *
+PyCursesScreen_get_stdscr(PyObject *self, void *Py_UNUSED(closure))
+{
+    PyCursesScreenObject *so = _PyCursesScreenObject_CAST(self);
+    if (so->stdscr == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(so->stdscr);
+}
+
+static int
+PyCursesScreen_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(_PyCursesScreenObject_CAST(self)->stdscr);
+    return 0;
+}
+
+static int
+PyCursesScreen_clear(PyObject *self)
+{
+    PyCursesScreenObject *so = _PyCursesScreenObject_CAST(self);
+    /* Break the reference cycle between a screen and its standard window by
+       dropping the reference to that window.  Do NOT delscreen() here: that is
+       deferred to the dealloc so it runs after every window (see
+       curses_screen_close()).  delscreen() will free the standard window, so
+       detach it from its wrapper first: the wrapper must not delwin() a window
+       that delscreen() frees.  Any further use of the wrapper operates on a
+       NULL window and fails cleanly. */
+    if (so->stdscr != NULL) {
+        ((PyCursesWindowObject *)so->stdscr)->win = NULL;
+    }
+    Py_CLEAR(so->stdscr);
+    return 0;
+}
+
+static void
+PyCursesScreen_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    (void)PyCursesScreen_clear(self);
+    curses_screen_close(_PyCursesScreenObject_CAST(self));
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyGetSetDef PyCursesScreen_getsets[] = {
+    {"stdscr", PyCursesScreen_get_stdscr, NULL,
+     "the screen's standard window (stdscr)", NULL},
+    {NULL, NULL, NULL, NULL, NULL}  /* sentinel */
+};
+
+#ifdef HAVE_CURSES_USE_SCREEN
+static int
+curses_use_screen_cb(SCREEN *Py_UNUSED(sp), void *data)
+{
+    curses_use_call((curses_use_data *)data);
+    return 0;
+}
+
+PyDoc_STRVAR(PyCursesScreen_use__doc__,
+"use($self, func, /, *args, **kwargs)\n--\n\n"
+"Call func(screen, *args, **kwargs) with the screen locked,\n"
+"and return its result.");
+
+static PyObject *
+PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyCursesScreenObject *so = _PyCursesScreenObject_CAST(self);
+    if (so->screen == NULL) {
+        cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(self));
+        PyErr_SetString(state->error, "the screen has been deleted");
+        return NULL;
+    }
+    PyObject *func, *extra;
+    if (curses_use_parse(args, &func, &extra) < 0) {
+        return NULL;
+    }
+    curses_use_data data = {self, func, extra, kwargs, NULL};
+    use_screen(so->screen, curses_use_screen_cb, &data);
+    Py_DECREF(extra);
+    return data.result;
+}
+#endif /* HAVE_CURSES_USE_SCREEN */
+
+PyDoc_STRVAR(PyCursesScreen_close__doc__,
+"close($self, /)\n--\n\n"
+"Detach the screen's standard window, breaking their reference cycle.\n\n"
+"Afterwards the stdscr attribute is None and the window it returned earlier\n"
+"can no longer be used.  The screen is released once it and its windows are\n"
+"no longer referenced.");
+
+static PyObject *
+PyCursesScreen_close(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    (void)PyCursesScreen_clear(self);
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef PyCursesScreen_methods[] = {
+    {"close", PyCursesScreen_close, METH_NOARGS,
+     PyCursesScreen_close__doc__},
+#ifdef HAVE_CURSES_USE_SCREEN
+    {"use", _PyCFunction_CAST(PyCursesScreen_use),
+     METH_VARARGS | METH_KEYWORDS, PyCursesScreen_use__doc__},
+#endif
+    {NULL, NULL}  /* sentinel */
+};
+
+static PyType_Slot PyCursesScreen_Type_slots[] = {
+    {Py_tp_methods, PyCursesScreen_methods},
+    {Py_tp_getset, PyCursesScreen_getsets},
+    {Py_tp_dealloc, PyCursesScreen_dealloc},
+    {Py_tp_traverse, PyCursesScreen_traverse},
+    {Py_tp_clear, PyCursesScreen_clear},
+    {0, NULL}
+};
+
+static PyType_Spec PyCursesScreen_Type_spec = {
+    .name = "_curses.screen",
+    .basicsize = sizeof(PyCursesScreenObject),
+    .flags = Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HEAPTYPE
+        | Py_TPFLAGS_HAVE_GC,
+    .slots = PyCursesScreen_Type_slots
 };
 
 /* -------------------------------------------------------*/
@@ -3560,14 +3925,14 @@ _curses.nofilter
 
 Undo the effect of a preceding filter() call.
 
-Must be called before initscr().  It restores the normal behaviour
-disabled by filter(), so that the next initscr() uses the full screen
-rather than a single line.
+Must be called before initscr().  It restores the normal behaviour that
+filter() disables, so that the next initscr() or newterm() uses the full
+screen rather than a single line.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_nofilter_impl(PyObject *module)
-/*[clinic end generated code: output=d95ca4d48a6bdbdf input=58aea83b1a5c969f]*/
+/*[clinic end generated code: output=d95ca4d48a6bdbdf input=53183055c0901ab7]*/
 {
     /* not checking for PyCursesInitialised here since nofilter() must
        be called before initscr() */
@@ -3631,6 +3996,65 @@ static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=9f9dee9664769751 input=42d81687f11ddbf3]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
+
+/* is_cbreak()/is_echo()/is_nl()/is_raw() were added in ncurses 6.5. */
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427
+/*[clinic input]
+_curses.is_cbreak
+
+Return True if cbreak mode is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_is_cbreak_impl(PyObject *module)
+/*[clinic end generated code: output=8a1ad7889fb43daf input=99988df6fd2f1c81]*/
+{
+    PyCursesStatefulInitialised(module);
+    return PyBool_FromLong(is_cbreak());
+}
+
+/*[clinic input]
+_curses.is_echo
+
+Return True if echo mode is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_is_echo_impl(PyObject *module)
+/*[clinic end generated code: output=72692d2aa41591c4 input=f6152cf7c00e47eb]*/
+{
+    PyCursesStatefulInitialised(module);
+    return PyBool_FromLong(is_echo());
+}
+
+/*[clinic input]
+_curses.is_nl
+
+Return True if nl mode is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_is_nl_impl(PyObject *module)
+/*[clinic end generated code: output=999eb44abc43ce65 input=1e0a2607e45a01e1]*/
+{
+    PyCursesStatefulInitialised(module);
+    return PyBool_FromLong(is_nl());
+}
+
+/*[clinic input]
+_curses.is_raw
+
+Return True if raw mode is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_is_raw_impl(PyObject *module)
+/*[clinic end generated code: output=dd9816d777561c35 input=a64fa6a251ed3ece]*/
+{
+    PyCursesStatefulInitialised(module);
+    return PyBool_FromLong(is_raw());
+}
+#endif /* NCURSES_EXT_FUNCS */
 
 /*[clinic input]
 _curses.color_content
@@ -3808,7 +4232,18 @@ De-initialize the library, and return terminal to normal status.
 static PyObject *
 _curses_endwin_impl(PyObject *module)
 /*[clinic end generated code: output=c0150cd96d2f4128 input=e172cfa43062f3fa]*/
-NoArgNoReturnFunctionBody(endwin)
+{
+    PyCursesStatefulInitialised(module);
+
+    /* endwin() writes to the terminal and may call tcdrain(), which can block
+       (e.g. on a pty whose output is not being read); release the GIL so other
+       threads -- including one draining that terminal -- can run meanwhile. */
+    int code;
+    Py_BEGIN_ALLOW_THREADS
+    code = endwin();
+    Py_END_ALLOW_THREADS
+    return curses_check_err(module, code, "endwin", NULL);
+}
 
 /*[clinic input]
 _curses.erasechar
@@ -4023,7 +4458,7 @@ _curses_getwin(PyObject *module, PyObject *file)
         goto error;
     }
     cursesmodule_state *state = get_cursesmodule_state(module);
-    res = PyCursesWindow_New(state, win, NULL, NULL);
+    res = PyCursesWindow_New(state, win, NULL, NULL, state->topscreen);
 
 error:
     fclose(fp);
@@ -4182,6 +4617,100 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
     Py_RETURN_NONE;
 }
 
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+/*[clinic input]
+_curses.alloc_pair
+
+    fg: color_allow_default
+        Foreground color number.
+    bg: color_allow_default
+        Background color number.
+    /
+
+Allocate a color pair for the given foreground and background colors.
+
+If a color pair for the same colors already exists, return its number.
+Otherwise allocate a new color pair and return its number.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_alloc_pair_impl(PyObject *module, int fg, int bg)
+/*[clinic end generated code: output=6eb08cb643d4b5a2 input=b29bafd7b360fa35]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    int pair = alloc_pair(fg, bg);
+    if (pair < 0) {
+        curses_set_error(module, "alloc_pair", NULL);
+        return NULL;
+    }
+    return PyLong_FromLong(pair);
+}
+
+/*[clinic input]
+_curses.find_pair
+
+    fg: color_allow_default
+        Foreground color number.
+    bg: color_allow_default
+        Background color number.
+    /
+
+Return the number of a color pair for the given colors, or -1.
+
+Return -1 if no color pair for this combination of foreground and
+background colors has been allocated.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_find_pair_impl(PyObject *module, int fg, int bg)
+/*[clinic end generated code: output=376026c2a3ac4a9b input=930feac14892c251]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    return PyLong_FromLong(find_pair(fg, bg));
+}
+
+/*[clinic input]
+_curses.free_pair
+
+    pair: pair
+        The number of the color pair to free.
+    /
+
+Free a color pair allocated by alloc_pair().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_free_pair_impl(PyObject *module, int pair)
+/*[clinic end generated code: output=61be0fb2e4bb4e4a input=d24df62feb4161c6]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    return curses_check_err(module, free_pair(pair), "free_pair", NULL);
+}
+
+/*[clinic input]
+_curses.reset_color_pairs
+
+Discard all color-pair definitions.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_reset_color_pairs_impl(PyObject *module)
+/*[clinic end generated code: output=117e68c6614e1d06 input=57c1cf7e5447e1ac]*/
+{
+    PyCursesStatefulInitialised(module);
+    PyCursesStatefulInitialisedColor(module);
+
+    reset_color_pairs();
+    Py_RETURN_NONE;
+}
+#endif /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
 /* Refresh the private copy of the screen encoding from a freshly created
    stdscr window object.  Returns 0 on success, -1 with an exception set. */
 static int
@@ -4197,50 +4726,16 @@ curses_update_screen_encoding(PyObject *winobj)
     return 0;
 }
 
-/*[clinic input]
-_curses.initscr
-
-Initialize the library.
-
-Return a WindowObject which represents the whole screen.
-[clinic start generated code]*/
-
-static PyObject *
-_curses_initscr_impl(PyObject *module)
-/*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
+/* Populate the module dictionary with the ACS_* line-drawing constants and
+   LINES/COLS.  These are only meaningful once a screen exists (after
+   initscr() or newterm()), which is why this is not done at module
+   initialisation.  Returns 0 on success, -1 with an exception set. */
+static int
+curses_init_dict(PyObject *module)
 {
-    WINDOW *win;
-
-    if (curses_initscr_called) {
-        cursesmodule_state *state = get_cursesmodule_state(module);
-        int code = wrefresh(stdscr);
-        if (code == ERR) {
-            _curses_set_null_error(state, "wrefresh", "initscr");
-            return NULL;
-        }
-        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL);
-        if (winobj == NULL) {
-            return NULL;
-        }
-        if (curses_update_screen_encoding(winobj) < 0) {
-            Py_DECREF(winobj);
-            return NULL;
-        }
-        return winobj;
-    }
-
-    win = initscr();
-
-    if (win == NULL) {
-        curses_set_null_error(module, "initscr", NULL);
-        return NULL;
-    }
-
-    curses_initscr_called = curses_setupterm_called = TRUE;
-
     PyObject *module_dict = PyModule_GetDict(module); // borrowed
     if (module_dict == NULL) {
-        return NULL;
+        return -1;
     }
     /* This was moved from initcurses() because it core dumped on SGI,
        where they're not defined until you've called initscr() */
@@ -4248,12 +4743,12 @@ _curses_initscr_impl(PyObject *module)
     do {                                                            \
         PyObject *value = PyLong_FromLong((long)(VALUE));           \
         if (value == NULL) {                                        \
-            return NULL;                                            \
+            return -1;                                              \
         }                                                           \
         int rc = PyDict_SetItemString(module_dict, (NAME), value);  \
         Py_DECREF(value);                                           \
         if (rc < 0) {                                               \
-            return NULL;                                            \
+            return -1;                                              \
         }                                                           \
     } while (0)
 
@@ -4327,9 +4822,56 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
 #undef SetDictInt
+    return 0;
+}
+
+/*[clinic input]
+_curses.initscr
+
+Initialize the library.
+
+Return a WindowObject which represents the whole screen.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_initscr_impl(PyObject *module)
+/*[clinic end generated code: output=619fb68443810b7b input=514f4bce1821f6b5]*/
+{
+    WINDOW *win;
+
+    if (curses_initscr_called) {
+        cursesmodule_state *state = get_cursesmodule_state(module);
+        int code = wrefresh(stdscr);
+        if (code == ERR) {
+            _curses_set_null_error(state, "wrefresh", "initscr");
+            return NULL;
+        }
+        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL, NULL);
+        if (winobj == NULL) {
+            return NULL;
+        }
+        if (curses_update_screen_encoding(winobj) < 0) {
+            Py_DECREF(winobj);
+            return NULL;
+        }
+        return winobj;
+    }
+
+    win = initscr();
+
+    if (win == NULL) {
+        curses_set_null_error(module, "initscr", NULL);
+        return NULL;
+    }
+
+    curses_initscr_called = curses_setupterm_called = TRUE;
+
+    if (curses_init_dict(module) < 0) {
+        return NULL;
+    }
 
     cursesmodule_state *state = get_cursesmodule_state(module);
-    PyObject *winobj = PyCursesWindow_New(state, win, NULL, NULL);
+    PyObject *winobj = PyCursesWindow_New(state, win, NULL, NULL, NULL);
     if (winobj == NULL) {
         return NULL;
     }
@@ -4398,6 +4940,206 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
 
     Py_RETURN_NONE;
 }
+
+static int update_lines_cols(PyObject *private_module);  /* defined below */
+
+/* Return a file descriptor for obj, or, if obj is NULL or None, for the
+   sys.<stdname> stream.  Returns -1 with an exception set on error. */
+static int
+curses_fileno(PyObject *module, PyObject *obj, const char *stdname)
+{
+    if (obj != NULL && obj != Py_None) {
+        return PyObject_AsFileDescriptor(obj);
+    }
+    PyObject *stream;
+    if (PySys_GetOptionalAttrString(stdname, &stream) < 0) {
+        return -1;
+    }
+    if (stream == NULL || stream == Py_None) {
+        cursesmodule_state *state = get_cursesmodule_state(module);
+        PyErr_Format(state->error, "lost sys.%s", stdname);
+        Py_XDECREF(stream);
+        return -1;
+    }
+    int fd = PyObject_AsFileDescriptor(stream);
+    Py_DECREF(stream);
+    return fd;
+}
+
+/* Duplicate fd and wrap it in a new (non-inheritable) stdio stream that the
+   screen object will own.  Duplicating means closing the stream later does
+   not close the caller's fd.  Returns NULL with an exception set on error. */
+static FILE *
+curses_fdopen_dup(int fd, const char *mode)
+{
+    /* _Py_dup() duplicates the descriptor and makes the copy non-inheritable
+       atomically (and sets the error on failure). */
+    int dfd = _Py_dup(fd);
+    if (dfd < 0) {
+        return NULL;
+    }
+    FILE *stream = fdopen(dfd, mode);
+    if (stream == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        close(dfd);
+        return NULL;
+    }
+    return stream;
+}
+
+/*[clinic input]
+_curses.newterm
+
+    type: str(accept={str, NoneType}) = None
+        Terminal name; if None, the TERM environment variable is used.
+    fd: object = None
+        Output file object or descriptor (default: sys.stdout).
+    infd: object = None
+        Input file object or descriptor (default: sys.stdin).
+    /
+
+Return a new screen for the terminal, in addition to the initial screen.
+
+This is an alternative to initscr() for programs running on more than
+one terminal.  Use set_term() to switch between the screens.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
+                     PyObject *infd)
+/*[clinic end generated code: output=62663c31909d796c input=98507fe48c2e93cb]*/
+{
+    /* Duplicate each descriptor right after resolving it: resolving the other
+       one runs arbitrary Python code (e.g. a fileno() method) that could close
+       this one before it is duplicated. */
+    int out_fd = curses_fileno(module, fd, "stdout");
+    if (out_fd < 0) {
+        return NULL;
+    }
+    FILE *outfp = curses_fdopen_dup(out_fd, "wb");
+    if (outfp == NULL) {
+        return NULL;
+    }
+
+    int in_fd = curses_fileno(module, infd, "stdin");
+    if (in_fd < 0) {
+        fclose(outfp);
+        return NULL;
+    }
+    FILE *infp = curses_fdopen_dup(in_fd, "rb");
+    if (infp == NULL) {
+        fclose(outfp);
+        return NULL;
+    }
+
+    SCREEN *screen = newterm((char *)type, outfp, infp);
+    if (screen == NULL) {
+        curses_set_null_error(module, "newterm", NULL);
+        fclose(outfp);
+        fclose(infp);
+        return NULL;
+    }
+    /* newterm() makes the new screen the current one, so stdscr now refers
+       to its standard window. */
+    curses_initscr_called = curses_setupterm_called = TRUE;
+
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    /* The screen object owns the SCREEN and the streams; deleting it (when it
+       is no longer referenced) calls delscreen() and closes the streams. */
+    PyObject *screenobj = PyCursesScreen_New(state, screen, outfp, infp, NULL);
+    if (screenobj == NULL) {
+        delscreen(screen);
+        fclose(outfp);
+        fclose(infp);
+        return NULL;
+    }
+    /* The standard window keeps the screen alive for its own lifetime. */
+    PyObject *win = PyCursesWindow_New(state, stdscr, NULL, NULL, screenobj);
+    if (win == NULL ||
+        curses_update_screen_encoding(win) < 0 ||
+        curses_init_dict(module) < 0)
+    {
+        Py_XDECREF(win);
+        Py_DECREF(screenobj);
+        return NULL;
+    }
+    ((PyCursesScreenObject *)screenobj)->stdscr = Py_NewRef(win);
+    Py_DECREF(win);
+    Py_XSETREF(state->topscreen, Py_NewRef(screenobj));
+    return screenobj;
+}
+
+/* Check that obj is an open screen object; returns it cast, or NULL with
+   TypeError/curses.error set. */
+static PyCursesScreenObject *
+curses_check_screen(PyObject *module, PyObject *obj)
+{
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (!PyObject_TypeCheck(obj, state->screen_type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a curses screen, got %T", obj);
+        return NULL;
+    }
+    PyCursesScreenObject *so = _PyCursesScreenObject_CAST(obj);
+    if (so->screen == NULL) {
+        PyErr_SetString(state->error, "the screen has been deleted");
+        return NULL;
+    }
+    return so;
+}
+
+/*[clinic input]
+_curses.set_term
+
+    screen: object
+    /
+
+Switch to the given screen and return the previously current screen.
+
+Returns None if the previous screen was the one created by initscr().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_set_term(PyObject *module, PyObject *screen)
+/*[clinic end generated code: output=204cf9c40523bdef input=ed4dba18dd9adf6a]*/
+{
+    PyCursesScreenObject *so = curses_check_screen(module, screen);
+    if (so == NULL) {
+        return NULL;
+    }
+    set_term(so->screen);
+    if (!update_lines_cols(module)) {
+        return NULL;
+    }
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    PyObject *prev = state->topscreen;          /* steal the owned reference */
+    state->topscreen = Py_NewRef(screen);
+    return prev != NULL ? prev : Py_NewRef(Py_None);
+}
+
+#ifdef HAVE_CURSES_NEW_PRESCR
+/*[clinic input]
+_curses.new_prescr
+
+Create a screen and return it, without initializing a terminal.
+
+The screen can be used to call functions that affect the screen before
+calling newterm() or initscr().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_new_prescr_impl(PyObject *module)
+/*[clinic end generated code: output=e7de5031da7511e2 input=1a3a89d630b641c3]*/
+{
+    SCREEN *screen = new_prescr();
+    if (screen == NULL) {
+        curses_set_null_error(module, "new_prescr", NULL);
+        return NULL;
+    }
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    return PyCursesScreen_New(state, screen, NULL, NULL, NULL);
+}
+#endif /* HAVE_CURSES_NEW_PRESCR */
 
 #if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
 // https://invisible-island.net/ncurses/NEWS.html#index-t20080119
@@ -4746,7 +5488,7 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
     }
 
     cursesmodule_state *state = get_cursesmodule_state(module);
-    return PyCursesWindow_New(state, win, NULL, NULL);
+    return PyCursesWindow_New(state, win, NULL, NULL, state->topscreen);
 }
 
 /*[clinic input]
@@ -4786,7 +5528,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
     }
 
     cursesmodule_state *state = get_cursesmodule_state(module);
-    return PyCursesWindow_New(state, win, NULL, NULL);
+    return PyCursesWindow_New(state, win, NULL, NULL, state->topscreen);
 }
 
 /*[clinic input]
@@ -5752,6 +6494,7 @@ _curses_has_extended_color_support_impl(PyObject *module)
 /* List of functions defined in the module */
 
 static PyMethodDef cursesmodule_methods[] = {
+    _CURSES_ALLOC_PAIR_METHODDEF
     _CURSES_BAUDRATE_METHODDEF
     _CURSES_BEEP_METHODDEF
     _CURSES_CAN_CHANGE_COLOR_METHODDEF
@@ -5769,8 +6512,10 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_ERASEWCHAR_METHODDEF
     _CURSES_FILTER_METHODDEF
     _CURSES_NOFILTER_METHODDEF
+    _CURSES_FIND_PAIR_METHODDEF
     _CURSES_FLASH_METHODDEF
     _CURSES_FLUSHINP_METHODDEF
+    _CURSES_FREE_PAIR_METHODDEF
     _CURSES_GETMOUSE_METHODDEF
     _CURSES_UNGETMOUSE_METHODDEF
     _CURSES_GETSYX_METHODDEF
@@ -5785,6 +6530,10 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_INIT_PAIR_METHODDEF
     _CURSES_INITSCR_METHODDEF
     _CURSES_INTRFLUSH_METHODDEF
+    _CURSES_IS_CBREAK_METHODDEF
+    _CURSES_IS_ECHO_METHODDEF
+    _CURSES_IS_NL_METHODDEF
+    _CURSES_IS_RAW_METHODDEF
     _CURSES_ISENDWIN_METHODDEF
     _CURSES_IS_TERM_RESIZED_METHODDEF
     _CURSES_KEYNAME_METHODDEF
@@ -5796,7 +6545,11 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_MOUSEMASK_METHODDEF
     _CURSES_NAPMS_METHODDEF
     _CURSES_NEWPAD_METHODDEF
+    _CURSES_NEWTERM_METHODDEF
     _CURSES_NEWWIN_METHODDEF
+#ifdef HAVE_CURSES_NEW_PRESCR
+    _CURSES_NEW_PRESCR_METHODDEF
+#endif
     _CURSES_NL_METHODDEF
     _CURSES_NOCBREAK_METHODDEF
     _CURSES_NOECHO_METHODDEF
@@ -5808,6 +6561,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_PUTP_METHODDEF
     _CURSES_QIFLUSH_METHODDEF
     _CURSES_RAW_METHODDEF
+    _CURSES_RESET_COLOR_PAIRS_METHODDEF
     _CURSES_RESET_PROG_MODE_METHODDEF
     _CURSES_RESET_SHELL_MODE_METHODDEF
     _CURSES_RESETTY_METHODDEF
@@ -5820,6 +6574,7 @@ static PyMethodDef cursesmodule_methods[] = {
 #endif
     _CURSES_GET_TABSIZE_METHODDEF
     _CURSES_SET_TABSIZE_METHODDEF
+    _CURSES_SET_TERM_METHODDEF
     _CURSES_SETSYX_METHODDEF
     _CURSES_SETUPTERM_METHODDEF
     _CURSES_START_COLOR_METHODDEF
@@ -5944,6 +6699,8 @@ cursesmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     cursesmodule_state *state = get_cursesmodule_state(mod);
     Py_VISIT(state->error);
     Py_VISIT(state->window_type);
+    Py_VISIT(state->screen_type);
+    Py_VISIT(state->topscreen);
     return 0;
 }
 
@@ -5953,6 +6710,8 @@ cursesmodule_clear(PyObject *mod)
     cursesmodule_state *state = get_cursesmodule_state(mod);
     Py_CLEAR(state->error);
     Py_CLEAR(state->window_type);
+    Py_CLEAR(state->screen_type);
+    Py_CLEAR(state->topscreen);
     return 0;
 }
 
@@ -5983,6 +6742,14 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddType(module, state->window_type) < 0) {
+        return -1;
+    }
+    state->screen_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &PyCursesScreen_Type_spec, NULL);
+    if (state->screen_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->screen_type) < 0) {
         return -1;
     }
 

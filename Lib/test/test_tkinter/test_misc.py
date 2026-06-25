@@ -485,7 +485,11 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_tk_caret(self):
         self.assertIsNone(self.root.tk_caret(x=5, y=10, height=20))
         caret = self.root.tk_caret()
-        self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
+        if self.root._windowingsystem == 'aqua':
+            # macOS records the caret only for the key window.
+            self.assertEqual(set(caret), {'x', 'y', 'height'})
+        else:
+            self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
 
     def test_tk_scaling(self):
         old = self.root.tk_scaling()

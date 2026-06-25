@@ -469,6 +469,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         except subprocess.CalledProcessError:
             if not is_installed("2.7"):
                 raise unittest.SkipTest("requires at least one Python 2.x install")
+            raise
         self.assertEqual("PythonCore", data["env.company"])
         self.assertStartsWith(data["env.tag"], "2.")
 
