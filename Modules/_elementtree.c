@@ -3663,8 +3663,12 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
         PyErr_NoMemory();
         return -1;
     }
-    /* expat < 2.1.0 has no XML_SetHashSalt() */
-    if (EXPAT(SetHashSalt) != NULL) {
+    // Prefer 16-byte entropy, only expat >= 2.8.0. See gh-149018
+    if (EXPAT(SetHashSalt16Bytes) != NULL) {
+        EXPAT(SetHashSalt16Bytes)(self->parser,
+                                  _Py_HashSecret.expat.hashsalt16);
+    }
+    else if (EXPAT(SetHashSalt) != NULL) {
         EXPAT(SetHashSalt)(self->parser,
                            (unsigned long)_Py_HashSecret.expat.hashsalt);
     }

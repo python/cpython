@@ -1379,7 +1379,10 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
         Py_DECREF(self);
         return NULL;
     }
-#if XML_COMBINED_VERSION >= 20100
+#if XML_COMBINED_VERSION >= 20800
+    /* This feature was added upstream in libexpat 2.8.0. */
+    XML_SetHashSalt16Bytes(self->itself, _Py_HashSecret.expat.hashsalt16);
+#elif XML_COMBINED_VERSION >= 20100
     /* This feature was added upstream in libexpat 2.1.0. */
     XML_SetHashSalt(self->itself,
                     (unsigned long)_Py_HashSecret.expat.hashsalt);
@@ -2198,6 +2201,11 @@ pyexpat_exec(PyObject *mod)
 #else
     capi.SetAllocTrackerActivationThreshold = NULL;
     capi.SetAllocTrackerMaximumAmplification = NULL;
+#endif
+#if XML_COMBINED_VERSION >= 20800
+    capi.SetHashSalt16Bytes = XML_SetHashSalt16Bytes;
+#else
+    capi.SetHashSalt16Bytes = NULL;
 #endif
 
     /* export using capsule */
