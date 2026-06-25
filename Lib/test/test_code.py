@@ -215,7 +215,10 @@ from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
-from _testcapi import code_offset_to_line
+try:
+    from _testcapi import code_offset_to_line
+except ImportError:
+    code_offset_to_line = None
 try:
     import _testinternalcapi
 except ModuleNotFoundError:
@@ -1490,6 +1493,7 @@ class CodeLocationTest(unittest.TestCase):
 
         rc, out, err = assert_python_ok('-OO', '-c', code)
 
+    @unittest.skipIf(code_offset_to_line is None, "requires _testcapi.code_offset_to_line")
     def test_co_branches(self):
 
         def get_line_branches(func):
