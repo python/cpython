@@ -5271,11 +5271,11 @@ static PyNumberMethods dict_as_number = {
     .nb_inplace_or = _PyDict_IOr,
 };
 
-static PyObject *
-dict_new_untracked(PyTypeObject *type)
+static PyObject*
+anydict_new_untracked(PyTypeObject *type)
 {
     assert(type != NULL);
-    // dict subclasses must implement the GC protocol
+    // dict and frozendict subclasses must implement the GC protocol
     assert(_PyType_IS_GC(type));
 
     PyObject *self = _PyType_AllocNoTrack(type, 0);
@@ -5292,6 +5292,14 @@ dict_new_untracked(PyTypeObject *type)
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
     return self;
+}
+
+static PyObject*
+dict_new_untracked(PyTypeObject *type)
+{
+    assert(PyObject_IsSubclass((PyObject*)type, (PyObject*)&PyDict_Type));
+
+    return anydict_new_untracked(type);
 }
 
 static PyObject *
@@ -8409,7 +8417,9 @@ frozendict_hash(PyObject *op)
 static PyObject *
 frozendict_new_untracked(PyTypeObject *type)
 {
-    PyObject *d = dict_new_untracked(type);
+    assert(PyObject_IsSubclass((PyObject*)type, (PyObject*)&PyFrozenDict_Type));
+
+    PyObject *d = anydict_new_untracked(type);
     if (d == NULL) {
         return NULL;
     }
