@@ -1,0 +1,2 @@
+Log detailed attributes of the :class:`tarfile.TarInfo` object in
+:meth:`tarfile.TarFile.addfile` when ``debug==3``.
