@@ -5759,8 +5759,10 @@ Frozen dictionaries
 
    .. classmethod:: fromkeys(iterable, value=None, /)
 
-      Similar to :meth:`dict.fromkeys`, but call the type constructor with a
-      :class:`frozendict` if the type is a :class:`frozendict` subclass.
+      Similar to :meth:`dict.fromkeys`, but call again the type constructor
+      with an initialized :class:`frozendict` if the type is a
+      :class:`frozendict` subclass or if the constructor returned a
+      :class:`frozendict`.
 
    .. versionadded:: 3.15
 
