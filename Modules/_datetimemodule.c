@@ -1637,8 +1637,8 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
 {
     PyObject *tzinfo;
     if (rv == 1) {
-        // Create a timezone from offset in seconds (0 returns UTC)
-        if (tzoffset == 0) {
+        // Create a timezone from the offset (a zero offset returns UTC)
+        if (tzoffset == 0 && tz_useconds == 0) {
             return Py_NewRef(CONST_UTC(NO_STATE));
         }
 
