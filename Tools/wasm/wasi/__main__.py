@@ -580,7 +580,7 @@ def main():
         "pythoninfo-host": pythoninfo_wasi_python,
         "build": build_steps(build_build_python, build_wasi_python),
         "clean": clean_contents,
-        None: lambda args: parser.print_help()
+        None: lambda args: parser.print_help(),
     }
     dispatch[context.subcommand](context)
 
