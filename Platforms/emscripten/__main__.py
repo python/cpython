@@ -292,7 +292,7 @@ def make_build_python(context, working_dir):
 
 @subdir("native_build_dir")
 def pythoninfo_build_python(context, working_dir):
-    """Display build info for the build Python."""
+    """Display build info of the build Python."""
     call(["make", "pythoninfo"], quiet=context.quiet)
 
 
@@ -609,7 +609,7 @@ def run_emscripten_python(context, args=None):
 
 
 def pythoninfo_emscripten_python(context):
-    """Display build info for the host/Emscripten Python."""
+    """Display build info of the host/Emscripten Python."""
     run_emscripten_python(context, ["-m", "test.pythoninfo"])
 
 
@@ -722,7 +722,7 @@ def main():
     )
 
     pythoninfo_build = subcommands.add_parser(
-        "pythoninfo-build", help="Display build info for the build Python"
+        "pythoninfo-build", help="Display build info of the build Python"
     )
 
     configure_host = subcommands.add_parser(
@@ -738,7 +738,7 @@ def main():
     )
 
     pythoninfo_host = subcommands.add_parser(
-        "pythoninfo-host", help="Display build info for the host/Emscripten Python"
+        "pythoninfo-host", help="Display build info of the host/Emscripten Python"
     )
 
     run = subcommands.add_parser(
