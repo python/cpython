@@ -4263,13 +4263,6 @@ dummy_func(
             DEAD(exc);
         }
 
-        op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            PyDictValues *ivs = _PyObject_InlineValues(owner_o);
-            EXIT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid));
-        }
-
         op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             /* Cached method object */
@@ -4285,7 +4278,7 @@ dummy_func(
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
-            _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
+            _CHECK_MANAGED_OBJECT_HAS_VALUES +
             unused/2 +
             _LOAD_ATTR_METHOD_WITH_VALUES;
 
@@ -4319,7 +4312,7 @@ dummy_func(
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
-            _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
+            _CHECK_MANAGED_OBJECT_HAS_VALUES +
             unused/2 +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 

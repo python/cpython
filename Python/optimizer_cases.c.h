@@ -3937,10 +3937,6 @@
             break;
         }
 
-        case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
-            break;
-        }
-
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
             JitOptRef owner;
             JitOptRef attr;
