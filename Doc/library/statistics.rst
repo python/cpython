@@ -95,6 +95,7 @@ tends to deviate from the typical or average values.
 :func:`pvariance`        Population variance of data.
 :func:`stdev`            Sample standard deviation of data.
 :func:`variance`         Sample variance of data.
+:func:`median_absolute_deviation`  Median absolute deviation of data.
 =======================  =============================================
 
 Statistics for relations between two inputs
@@ -653,6 +654,52 @@ However, for reading convenience, most of the examples show sorted sequences.
       If you somehow know the actual population mean μ you should pass it to the
       :func:`pvariance` function as the *mu* parameter to get the variance of a
       sample.
+
+
+.. function:: median_absolute_deviation(data, *, scale=1.4826)
+
+   Return the median absolute deviation of *data*, a non-empty sequence or
+   iterable of real-valued numbers.  The median absolute deviation is a
+   measure of statistical dispersion: it is the median of the absolute
+   deviations from the median of *data*:
+
+   .. doctest::
+
+      >>> median_absolute_deviation([1, 1, 2, 2, 4, 6, 9])
+      1.4826
+
+   Unlike the standard deviation, the median absolute deviation is not
+   sensitive to outliers; a single extreme value does not move it.  This
+   makes it a robust measure of spread, particularly useful when *data*
+   contains outliers or comes from a heavy-tailed distribution.
+
+   The *scale* argument scales the result by a constant factor.  The
+   default ``scale=1.4826`` is the consistency constant for the normal
+   distribution: for normally distributed data, the result is a consistent
+   estimator of the population standard deviation.  Pass ``scale=1.0`` to
+   retrieve the raw median absolute deviation, or any other ``int`` or
+   ``float`` to scale the result to a custom unit.  Passing a
+   :class:`decimal.Decimal` or :class:`fractions.Fraction` *scale* raises
+   :exc:`TypeError`.
+
+   If *data* is empty, :exc:`StatisticsError` is raised.  If every value in
+   *data* is ``NaN``, :exc:`StatisticsError` is raised; otherwise ``NaN``
+   values propagate.
+
+   Decimals and Fractions are supported:
+
+   .. doctest::
+
+      >>> from decimal import Decimal as D
+      >>> median_absolute_deviation([D("1"), D("1"), D("2"), D("2"), D("4"), D("6"), D("9")])
+      Decimal('1.4826')
+
+      >>> from fractions import Fraction as F
+      >>> median_absolute_deviation([F(1), F(1), F(2), F(2), F(4), F(6), F(9)])
+      Fraction(7413, 5000)
+
+   .. versionadded:: 3.16
+
 
 .. function:: quantiles(data, *, n=4, method='exclusive')
 
