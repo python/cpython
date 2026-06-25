@@ -923,7 +923,8 @@ def winreg_query(path):
         raise ValueError(f"unknown key {key!r}")
 
     try:
-        with winreg.OpenKey(key, sub_key) as key_handle:
+        access = winreg.KEY_READ | winreg.KEY_WOW64_64KEY
+        with winreg.OpenKey(key, sub_key, access=access) as key_handle:
             result, _ = winreg.QueryValueEx(key_handle, value)
         return result
     except OSError:
