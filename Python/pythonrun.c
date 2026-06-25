@@ -538,6 +538,82 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 }
 
 
+/* Variant of _PyRun_SimpleFileObject that returns the result object
+   instead of calling PyErr_Print() on failure. The caller (typically
+   pymain_run_file_obj in Modules/main.c) should handle the error
+   with _Py_HandleSystemExitAndKeyboardInterrupt or pymain_exit_err_print. */
+PyObject *
+_PyRun_SimpleFileObjectEx(FILE *fp, PyObject *filename, int closeit,
+                          PyCompilerFlags *flags)
+{
+    PyObject *v = NULL;
+
+    PyObject *main_module = PyImport_AddModuleRef("__main__");
+    if (main_module == NULL)
+        return NULL;
+    PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
+
+    int set_file_name = 0;
+    int has_file = PyDict_ContainsString(dict, "__file__");
+    if (has_file < 0) {
+        goto done;
+    }
+    if (!has_file) {
+        if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
+            goto done;
+        }
+        set_file_name = 1;
+    }
+
+    int pyc = maybe_pyc_file(fp, filename, closeit);
+    if (pyc < 0) {
+        goto done;
+    }
+
+    if (pyc) {
+        FILE *pyc_fp;
+        /* Try to run a pyc file. First, re-open in binary */
+        if (closeit) {
+            fclose(fp);
+            closeit = 0;  // already closed
+        }
+
+        pyc_fp = Py_fopen(filename, "rb");
+        if (pyc_fp == NULL) {
+            fprintf(stderr, "python: Can't reopen .pyc file\n");
+            goto done;
+        }
+
+        if (set_main_loader(dict, filename, "SourcelessFileLoader") < 0) {
+            fprintf(stderr, "python: failed to set __main__.__loader__\n");
+            fclose(pyc_fp);
+            goto done;
+        }
+        v = run_pyc_file(pyc_fp, dict, dict, flags);
+    } else {
+        /* When running from stdin, leave __main__.__loader__ alone */
+        if ((!PyUnicode_Check(filename) || !PyUnicode_EqualToUTF8(filename, "<stdin>")) &&
+            set_main_loader(dict, filename, "SourceFileLoader") < 0) {
+            fprintf(stderr, "python: failed to set __main__.__loader__\n");
+            goto done;
+        }
+        v = pyrun_file(fp, filename, Py_file_input, dict, dict,
+                       closeit, flags);
+    }
+    flush_io();
+
+done:
+    if (set_file_name) {
+        if (PyDict_PopString(dict, "__file__", NULL) < 0) {
+            /* Non-fatal cleanup error; just clear it */
+            PyErr_Clear();
+        }
+    }
+    Py_XDECREF(main_module);
+    return v;
+}
+
+
 int
 PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
                         PyCompilerFlags *flags)

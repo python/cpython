@@ -20,6 +20,12 @@ extern int _PyRun_AnyFileObject(
     int closeit,
     PyCompilerFlags *flags);
 
+extern PyObject * _PyRun_SimpleFileObjectEx(
+    FILE *fp,
+    PyObject *filename,
+    int closeit,
+    PyCompilerFlags *flags);
+
 extern int _PyRun_InteractiveLoopObject(
     FILE *fp,
     PyObject *filename,
