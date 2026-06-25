@@ -1422,8 +1422,9 @@ class TestMain(unittest.TestCase):
     def test_encode_file(self):
         with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(b'a\xffb\n')
-        output = self.get_output('-e', os_helper.TESTFN)
-        self.assertEqual(output.rstrip(), b'Yf9iCg==')
+        for flag in ('-e', '--encode'):
+            output = self.get_output(flag, os_helper.TESTFN)
+            self.assertEqual(output.rstrip(), b'Yf9iCg==')
 
     def test_encode_from_stdin(self):
         with script_helper.spawn_python('-m', 'base64', '-e') as proc:
@@ -1434,13 +1435,15 @@ class TestMain(unittest.TestCase):
     def test_decode(self):
         with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(b'Yf9iCg==')
-        output = self.get_output('-d', os_helper.TESTFN)
-        self.assertEqual(output.rstrip(), b'a\xffb')
+        for flag in ('-d', '--decode'):
+            output = self.get_output(flag, os_helper.TESTFN)
+            self.assertEqual(output.rstrip(), b'a\xffb')
 
     def test_prints_usage_with_help_flag(self):
-        output = self.get_output('-h')
-        self.assertIn(b'usage: ', output)
-        self.assertIn(b'-d', output)
+        for flag in ('-h', '--help'):
+            output = self.get_output(flag)
+            self.assertIn(b'usage: ', output)
+            self.assertIn(b'-d', output)
 
     def test_prints_usage_with_invalid_flag(self):
         output = script_helper.assert_python_failure('-m', 'base64', '-x').err
