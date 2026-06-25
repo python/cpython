@@ -125,7 +125,8 @@ or on combining URL components into a URL string.
 
    If the *allow_fragments* argument is false, fragment identifiers are not
    recognized.  Instead, they are parsed as part of the path
-   or query component, and :attr:`fragment` is set to ``None`` or the empty
+   or query component, and :attr:`fragment <SplitResult.fragment>` is set to
+   ``None`` or the empty
    string (depending on the value of *missing_as_none*) in the return value.
 
    The return value is a :term:`named tuple`, which means that its items can
@@ -134,37 +135,40 @@ or on combining URL components into a URL string.
    +------------------+-------+-------------------------+-------------------------------+
    | Attribute        | Index | Value                   | Value if not present          |
    +==================+=======+=========================+===============================+
-   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter or         |
+   | |split-scheme|   | 0     | URL scheme specifier    | *scheme* parameter or         |
    |                  |       |                         | empty string [1]_             |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`netloc`   | 1     | Network location part   | ``None`` or empty string [1]_ |
+   | |split-netloc|   | 1     | Network location part   | ``None`` or empty string [1]_ |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`path`     | 2     | Hierarchical path       | empty string                  |
+   | |split-path|     | 2     | Hierarchical path       | empty string                  |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`query`    | 3     | Query component         | ``None`` or empty string [1]_ |
+   | |split-query|    | 3     | Query component         | ``None`` or empty string [1]_ |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`fragment` | 4     | Fragment identifier     | ``None`` or empty string [1]_ |
+   | |split-frag|     | 4     | Fragment identifier     | ``None`` or empty string [1]_ |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`username` |       | User name               | ``None``                      |
+   | |split-username| |       | User name               | ``None``                      |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`password` |       | Password                | ``None``                      |
+   | |split-password| |       | Password                | ``None``                      |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`hostname` |       | Host name (lower case)  | ``None``                      |
+   | |split-hostname| |       | Host name (lower case)  | ``None``                      |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`port`     |       | Port number as integer, | ``None``                      |
+   | |split-port|     |       | Port number as integer, | ``None``                      |
    |                  |       | if present              |                               |
    +------------------+-------+-------------------------+-------------------------------+
 
    .. [1] Depending on the value of the *missing_as_none* argument.
 
-   Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
+   Reading the :attr:`port <SplitResult.port>` attribute will raise a
+   :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
    :ref:`urlparse-result-object` for more information on the result object.
 
-   Unmatched square brackets in the :attr:`netloc` attribute will raise a
+   Unmatched square brackets in the :attr:`netloc <SplitResult.netloc>`
+   attribute will raise a
    :exc:`ValueError`.
 
-   Characters in the :attr:`netloc` attribute that decompose under NFKC
+   Characters in the :attr:`netloc <SplitResult.netloc>` attribute that
+   decompose under NFKC
    normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
    ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
    decomposed before parsing, no error will be raised.
@@ -174,8 +178,10 @@ or on combining URL components into a URL string.
    ``\r`` and tab ``\t`` characters are removed from the URL at any position.
 
    As is the case with all named tuples, the subclass has a few additional methods
-   and attributes that are particularly useful. One such method is :meth:`_replace`.
-   The :meth:`_replace` method will return a new :class:`SplitResult` object
+   and attributes that are particularly useful. One such method is
+   :meth:`~SplitResult._replace`.
+   The :meth:`~SplitResult._replace` method will return a new
+   :class:`SplitResult` object
    replacing specified fields with new values.
 
    .. doctest::
@@ -431,9 +437,9 @@ or on combining URL components into a URL string.
    +------------------+-------+-------------------------+-------------------------------+
    | Attribute        | Index | Value                   | Value if not present          |
    +==================+=======+=========================+===============================+
-   | :attr:`url`      | 0     | URL with no fragment    | empty string                  |
+   | |defrag-url|     | 0     | URL with no fragment    | empty string                  |
    +------------------+-------+-------------------------+-------------------------------+
-   | :attr:`fragment` | 1     | Fragment identifier     | ``None`` or empty string [3]_ |
+   | |defrag-frag|    | 1     | Fragment identifier     | ``None`` or empty string [3]_ |
    +------------------+-------+-------------------------+-------------------------------+
 
    .. [3] Depending on the value of the *missing_as_none* argument.
@@ -506,14 +512,15 @@ byte values will trigger :exc:`UnicodeDecodeError`.
 
 To support easier conversion of result objects between :class:`str` and
 :class:`bytes`, all return values from URL parsing functions provide
-either an :meth:`encode` method (when the result contains :class:`str`
-data) or a :meth:`decode` method (when the result contains :class:`bytes`
+either an :meth:`encode <DefragResult.encode>` method (when the result contains
+:class:`str` data) or a :meth:`decode <DefragResultBytes.decode>` method (when
+the result contains :class:`bytes`
 data). The signatures of these methods match those of the corresponding
 :class:`str` and :class:`bytes` methods (except that the default encoding
 is ``'ascii'`` rather than ``'utf-8'``). Each produces a value of a
 corresponding type that contains either :class:`bytes` data (for
-:meth:`encode` methods) or :class:`str` data (for
-:meth:`decode` methods).
+:meth:`encode <DefragResult.encode>` methods) or :class:`str` data (for
+:meth:`decode <DefragResultBytes.decode>` methods).
 
 Applications that need to operate on potentially improperly quoted URLs
 that may contain non-ASCII data will need to do their own decoding from
@@ -537,7 +544,24 @@ The result objects from the :func:`urlsplit`, :func:`urlparse`  and
 :func:`urldefrag` functions are subclasses of the :class:`tuple` type.
 These subclasses add the attributes listed in the documentation for
 those functions, the encoding and decoding support described in the
-previous section, as well as an additional method:
+previous section, as well as additional methods:
+
+.. |split-scheme| replace:: :attr:`scheme <SplitResult.scheme>`
+.. |split-netloc| replace:: :attr:`netloc <SplitResult.netloc>`
+.. |split-path| replace:: :attr:`path <SplitResult.path>`
+.. |split-query| replace:: :attr:`query <SplitResult.query>`
+.. |split-frag| replace:: :attr:`fragment <SplitResult.fragment>`
+.. |split-username| replace:: :attr:`username <SplitResult.username>`
+.. |split-password| replace:: :attr:`password <SplitResult.password>`
+.. |split-hostname| replace:: :attr:`hostname <SplitResult.hostname>`
+.. |split-port| replace:: :attr:`port <SplitResult.port>`
+.. |defrag-url| replace:: :attr:`url <DefragResult.url>`
+.. |defrag-frag| replace:: :attr:`fragment <DefragResult.fragment>`
+
+.. method:: SplitResult._replace(**kwargs)
+
+   Return a new structured parse result replacing specified fields with new
+   values.
 
 .. method:: urllib.parse.SplitResult.geturl()
 
@@ -573,22 +597,75 @@ results when operating on :class:`str` objects:
 .. class:: DefragResult(url, fragment)
 
    Concrete class for :func:`urldefrag` results containing :class:`str`
-   data. The :meth:`encode` method returns a :class:`DefragResultBytes`
-   instance.
+   data.
+
+   .. attribute:: url
+
+      URL with no fragment.
+
+   .. attribute:: fragment
+
+      Fragment identifier.
+
+   .. method:: encode(encoding='ascii', errors='strict')
+
+      Return a :class:`DefragResultBytes` instance.
 
    .. versionadded:: 3.2
 
 .. class:: ParseResult(scheme, netloc, path, params, query, fragment)
 
    Concrete class for :func:`urlparse` results containing :class:`str`
-   data. The :meth:`encode` method returns a :class:`ParseResultBytes`
-   instance.
+   data.
+
+   .. method:: encode(encoding='ascii', errors='strict')
+
+      Return a :class:`ParseResultBytes` instance.
 
 .. class:: SplitResult(scheme, netloc, path, query, fragment)
 
    Concrete class for :func:`urlsplit` results containing :class:`str`
-   data. The :meth:`encode` method returns a :class:`SplitResultBytes`
-   instance.
+   data.
+
+   .. attribute:: scheme
+
+      URL scheme specifier.
+
+   .. attribute:: netloc
+
+      Network location part.
+
+   .. attribute:: path
+
+      Hierarchical path.
+
+   .. attribute:: query
+
+      Query component.
+
+   .. attribute:: fragment
+
+      Fragment identifier.
+
+   .. attribute:: username
+
+      User name.
+
+   .. attribute:: password
+
+      Password.
+
+   .. attribute:: hostname
+
+      Host name, lower case.
+
+   .. attribute:: port
+
+      Port number as integer, if present.
+
+   .. method:: encode(encoding='ascii', errors='strict')
+
+      Return a :class:`SplitResultBytes` instance.
 
 
 The following classes provide the implementations of the parse results when
@@ -597,24 +674,33 @@ operating on :class:`bytes` or :class:`bytearray` objects:
 .. class:: DefragResultBytes(url, fragment)
 
    Concrete class for :func:`urldefrag` results containing :class:`bytes`
-   data. The :meth:`decode` method returns a :class:`DefragResult`
-   instance.
+   data.
+
+   .. method:: decode(encoding='ascii', errors='strict')
+
+      Return a :class:`DefragResult` instance.
 
    .. versionadded:: 3.2
 
 .. class:: ParseResultBytes(scheme, netloc, path, params, query, fragment)
 
    Concrete class for :func:`urlparse` results containing :class:`bytes`
-   data. The :meth:`decode` method returns a :class:`ParseResult`
-   instance.
+   data.
+
+   .. method:: decode(encoding='ascii', errors='strict')
+
+      Return a :class:`ParseResult` instance.
 
    .. versionadded:: 3.2
 
 .. class:: SplitResultBytes(scheme, netloc, path, query, fragment)
 
    Concrete class for :func:`urlsplit` results containing :class:`bytes`
-   data. The :meth:`decode` method returns a :class:`SplitResult`
-   instance.
+   data.
+
+   .. method:: decode(encoding='ascii', errors='strict')
+
+      Return a :class:`SplitResult` instance.
 
    .. versionadded:: 3.2
 
