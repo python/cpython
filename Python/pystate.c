@@ -1505,6 +1505,7 @@ alloc_threadstate(PyInterpreterState *interp)
         }
         reset_threadstate(tstate);
     }
+    tstate->base.interp = interp;
     return tstate;
 }
 
