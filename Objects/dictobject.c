@@ -214,6 +214,15 @@ set_values(PyDictObject *mp, PyDictValues *values)
     _Py_atomic_store_ptr_release(&mp->ma_values, values);
 }
 
+// gh-151593: The _Py_LOCK_DONT_DETACH flag ensures that the outer critical
+// section is not dropped if there is some contention on the keys lock.
+// It also means that it will be important that LOCK_KEYS() is essentially the
+// "inner-most" code and that we don't call Py_DECREF() or similar while
+// holding the keys lock.
+//
+// We are not allowed to acquire other locks within LOCK_KEYS(). For example,
+// PyType_Modified() must not be called within LOCK_KEYS() since it acquires
+// the type lock.
 #define LOCK_KEYS(keys) PyMutex_LockFlags(&keys->dk_mutex, _Py_LOCK_DONT_DETACH)
 #define UNLOCK_KEYS(keys) PyMutex_Unlock(&keys->dk_mutex)
 
