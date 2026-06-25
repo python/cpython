@@ -210,7 +210,7 @@ statistics
   ``scale=1.4826`` (the consistency constant for the normal distribution) for
   an estimator of the population standard deviation that is consistent with
   :func:`statistics.stdev`.
-  (Contributed by [REPLACE WITH CONTRIBUTOR NAME] in :gh:`[REPLACE WITH PR NUMBER]`.)
+  (Contributed by Anand Sundar in :gh:`152227`.)
 
 
 tkinter
