@@ -3419,12 +3419,13 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     PyObject *key;
     PyObject *d;
     int status;
+    int need_copy = 0;
 
     PyTypeObject *cls_type = _PyType_CAST(cls);
     if (PyObject_IsSubclass(cls, (PyObject*)&PyFrozenDict_Type)
         && cls_type->tp_new == frozendict_new)
     {
-        // gh-151722: Create a frozendict copy which is not tracked by the GC.
+        // gh-151722: Create a frozendict which is not tracked by the GC.
         d = frozendict_new_untracked(cls_type);
     }
     else {
@@ -3437,11 +3438,14 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     // gh-151722: If cls constructor returns a frozendict which is tracked by
     // the GC, create a frozendict copy which is not tracked by the GC.
     //
-    // Untracking the dictionary requires tracking again the dictionary on
+    // At the function exit, return cls(fd) where fd is a frozendict.
+    //
+    // Untracking the frozendict requires tracking again the frozendict on
     // error which is more complicated. It's easier to work on a copy.
     if (PyFrozenDict_Check(d) && _PyObject_GC_IS_TRACKED(d)) {
-        // Subclass-friendly copy
-        PyObject *copy = frozendict_new_untracked(Py_TYPE(d));
+        need_copy = 1;
+
+        PyObject *copy = frozendict_new_untracked(&PyFrozenDict_Type);
         if (copy == NULL) {
             goto Fail;
         }
@@ -3555,8 +3559,15 @@ Fail:
     return NULL;
 
 Done:
-    // d can be NULL
-    if (d != NULL && !_PyObject_GC_IS_TRACKED(d)) {
+    if (d == NULL) {
+        return NULL;
+    }
+
+    if (need_copy) {
+        PyObject *copy = _PyObject_CallOneArg(cls, d);
+        Py_SETREF(d, copy);
+    }
+    else if (!_PyObject_GC_IS_TRACKED(d)) {
         _PyObject_GC_TRACK(d);
     }
     return d;
