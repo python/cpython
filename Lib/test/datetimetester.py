@@ -2106,6 +2106,16 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '10000-W25-1',      # Invalid year
             '2020-W25-0',       # Invalid day-of-week
             '2020-W25-8',       # Invalid day-of-week
+            # gh-152204: each fixed-width field must be exactly N ASCII digits
+            '2020+12',          # '+' accepted in a basic-format field
+            '2020 12',          # space accepted in a basic-format field
+            '+020-06-15',       # leading sign in the year
+            '202012+9',         # '+' in the day field
+            '2020-W 5',         # space in the week day-of-week field
+            '2020061',          # 7 chars: day slice reads a 1-character tail
+            '2020123',          # 7 chars: day slice reads a 1-character tail
+            '9999121',          # 7 chars: day slice reads a 1-character tail
+            '2020-W2',          # 1-digit week number
             '٢025-03-09'        # Unicode characters
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
