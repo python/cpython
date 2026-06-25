@@ -1062,6 +1062,18 @@ def uptime_linux():
         return
 
 
+def uptime_bsd():
+    # Get sysctlbyname("kern.boottime")
+    try:
+        import _testcapi
+    except ImportError:
+        return None
+    try:
+        return _testcapi.uptime_bsd()
+    except (AttributeError, OSError):
+        return None
+
+
 def uptime_windows():
     try:
         import _winapi
@@ -1072,7 +1084,7 @@ def uptime_windows():
 
 
 def get_uptime():
-    for func in (uptime_boottime, uptime_linux, uptime_windows):
+    for func in (uptime_boottime, uptime_linux, uptime_bsd, uptime_windows):
         uptime = func()
         if uptime is not None:
             return uptime
@@ -1086,9 +1098,15 @@ def get_machine_id():
         if machine_guid:
             return machine_guid
 
-    machine_id = read_first_line("/etc/machine-id")
-    if machine_id:
-        return machine_id
+    for filename in (
+        # https://www.freedesktop.org/software/systemd/man/latest/machine-id.html
+        "/etc/machine-id",
+        # BSD
+        "/etc/hostid",
+    ):
+        machine_id = read_first_line(filename)
+        if machine_id:
+            return machine_id
 
     return None
 
@@ -1098,7 +1116,6 @@ def collect_linux(info_add):
     if boot_id:
         info_add('system.boot_id', boot_id)
 
-    # https://www.freedesktop.org/software/systemd/man/latest/machine-id.html
     machine_id = get_machine_id()
     if machine_id:
         info_add('system.machine_id', machine_id)
