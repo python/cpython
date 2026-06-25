@@ -1324,8 +1324,13 @@ _queueid_xid_new(int64_t qid)
     _queues *queues = _get_global_queues();
     int err = _queues_incref(queues, qid);
     if (err < 0) {
-        PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
+        assert(err == ERR_QUEUE_NOT_FOUND);
+        PyObject *mod = _get_current_module();
         if (mod == NULL) {
+            if (!PyErr_Occurred()) {
+                PyErr_SetString(PyExc_SystemError,
+                                "missing " MODULE_NAME_STR " module");
+            }
             return NULL;
         }
         (void)handle_queue_error(err, mod, qid);
