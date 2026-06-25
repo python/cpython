@@ -1250,9 +1250,9 @@ bytearray_dealloc(PyObject *op)
 bytearray.find
 
     sub: object
-    start: slice_index(accept={int, NoneType}, c_default='0') = 0
+    start: slice_index = 0
          Optional start position. Default: start of the bytes.
-    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = sys.maxsize
+    end: slice_index(c_default='PY_SSIZE_T_MAX') = sys.maxsize
          Optional stop position. Default: end of the bytes.
     /
 

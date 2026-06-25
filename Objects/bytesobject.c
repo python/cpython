@@ -2018,9 +2018,9 @@ PyBytes_Join(PyObject *sep, PyObject *iterable)
 bytes.find
 
     sub: object
-    start: slice_index(accept={int, NoneType}, c_default='0') = 0
+    start: slice_index = 0
          Optional start position. Default: start of the bytes.
-    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = sys.maxsize
+    end: slice_index(c_default='PY_SSIZE_T_MAX') = sys.maxsize
          Optional stop position. Default: end of the bytes.
     /
 
@@ -2032,7 +2032,7 @@ Return -1 on failure.
 static PyObject *
 bytes_find_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                 Py_ssize_t end)
-/*[clinic end generated code: output=d5961a1c77b472a1 input=efb565afb22a8837]*/
+/*[clinic end generated code: output=d5961a1c77b472a1 input=38e75762b6c6c8a8]*/
 {
     return _Py_bytes_find(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                           sub, start, end);

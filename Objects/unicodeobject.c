@@ -11433,8 +11433,8 @@ str.count as unicode_count -> Py_ssize_t
 
     self as str: self
     sub as substr: unicode
-    start: slice_index(accept={int, NoneType}, c_default='0') = 0
-    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = sys.maxsize
+    start: slice_index = 0
+    end: slice_index(c_default='PY_SSIZE_T_MAX') = sys.maxsize
     /
 
 Return the number of non-overlapping occurrences of substring sub in string S[start:end].
@@ -11446,7 +11446,7 @@ notation.
 static Py_ssize_t
 unicode_count_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
                    Py_ssize_t end)
-/*[clinic end generated code: output=8fcc3aef0b18edbf input=66a5213425fc7a42]*/
+/*[clinic end generated code: output=8fcc3aef0b18edbf input=2970c103ff09da26]*/
 {
     assert(PyUnicode_Check(str));
     assert(PyUnicode_Check(substr));
