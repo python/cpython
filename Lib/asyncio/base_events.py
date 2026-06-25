@@ -1283,7 +1283,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     raise
 
         if not fallback:
-            raise RuntimeError(
+            raise exceptions.SendfileNotAvailableError(
                 f"fallback is disabled and native sendfile is not "
                 f"supported for transport {transport!r}")
         return await self._sendfile_fallback(transport, file,

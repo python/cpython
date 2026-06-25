@@ -580,7 +580,8 @@ class SendfileMixin(SendfileBase):
         transport = mock.Mock()
         transport.is_closing.side_effect = lambda: False
         transport._sendfile_compatible = constants._SendfileMode.FALLBACK
-        with self.assertRaisesRegex(RuntimeError, 'fallback is disabled'):
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
+                                    'fallback is disabled'):
             self.loop.run_until_complete(
                 self.loop.sendfile(transport, None, fallback=False))
 
