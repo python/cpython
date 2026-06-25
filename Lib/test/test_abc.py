@@ -11,7 +11,7 @@ import unittest
 import abc
 import _py_abc
 from inspect import isabstract
-from test.support import requires_gil_enabled, warnings_helper
+from test.support import warnings_helper
 
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
@@ -198,7 +198,6 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             msg = r"class C without an implementation for abstract methods 'method_one', 'method_two'"
             self.assertRaisesRegex(TypeError, msg, C)
 
-        @requires_gil_enabled()
         @warnings_helper.ignore_warnings(category=DeprecationWarning)
         def test_abstractmethod_integration(self):
             for abstractthing in [abc.abstractmethod, abc.abstractproperty,
