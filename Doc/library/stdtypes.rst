@@ -1898,7 +1898,7 @@ expression support in the :mod:`re` module).
 
 
 .. method:: str.count(sub, /)
-.. method:: str.count(sub, start=0, end=sys.maxsize, /)
+            str.count(sub, start=0, end=sys.maxsize, /)
 
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
@@ -1998,7 +1998,7 @@ expression support in the :mod:`re` module).
 
 
 .. method:: str.find(sub, /)
-.. method:: str.find(sub, start=0, end=sys.maxsize, /)
+            str.find(sub, start=0, end=sys.maxsize, /)
 
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
@@ -2508,7 +2508,7 @@ expression support in the :mod:`re` module).
 
 
 .. method:: str.rfind(sub, /)
-.. method:: str.rfind(sub, start=0, end=sys.maxsize, /)
+            str.rfind(sub, start=0, end=sys.maxsize, /)
 
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
@@ -2526,7 +2526,7 @@ expression support in the :mod:`re` module).
 
 
 .. method:: str.rindex(sub, /)
-.. method:: str.rindex(sub, start=0, end=sys.maxsize, /)
+            str.rindex(sub, start=0, end=sys.maxsize, /)
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
@@ -3608,9 +3608,9 @@ The following methods on bytes and bytearray objects can be used with
 arbitrary binary data.
 
 .. method:: bytes.count(sub, /)
-.. method:: bytes.count(sub, start=0, end=sys.maxsize, /)
-.. method:: bytearray.count(sub, /)
-.. method:: bytearray.count(sub, start=0, end=sys.maxsize, /)
+            bytes.count(sub, start=0, end=sys.maxsize, /)
+            bytearray.count(sub, /)
+            bytearray.count(sub, start=0, end=sys.maxsize, /)
 
    Return the number of non-overlapping occurrences of subsequence *sub* in
    the range [*start*, *end*].  Optional arguments *start* and *end* are

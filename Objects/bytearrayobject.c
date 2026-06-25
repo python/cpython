@@ -1264,7 +1264,7 @@ Return -1 on failure.
 static PyObject *
 bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
                     Py_ssize_t end)
-/*[clinic end generated code: output=413e1cab2ae87da0 input=7a0ab8d211cc4b31]*/
+/*[clinic end generated code: output=413e1cab2ae87da0 input=71e48ba61755c729]*/
 {
     return _bytearray_with_buffer(self, _Py_bytes_find, sub, start, end);
 }
