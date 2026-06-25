@@ -8,6 +8,9 @@ import traceback
 import warnings
 
 
+MS_WINDOWS = (sys.platform == "win32")
+
+
 def normalize_text(text):
     if text is None:
         return None
@@ -906,8 +909,29 @@ def collect_subprocess(info_add):
     copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
 
 
+def winreg_query(path):
+    try:
+        import winreg
+    except ImportError:
+        return None
+
+    key, path = path.split('\\', 1)
+    sub_key, value = path.rsplit('\\', 1)
+    if key == "HKEY_LOCAL_MACHINE":
+        key = winreg.HKEY_LOCAL_MACHINE
+    else:
+        raise ValueError(f"unknown key {key!r}")
+
+    try:
+        with winreg.OpenKey(key, sub_key) as key_handle:
+            result, _ = winreg.QueryValueEx(key_handle, value)
+        return result
+    except OSError:
+        return None
+
+
 def collect_windows(info_add):
-    if sys.platform != "win32":
+    if not MS_WINDOWS:
         # Code specific to Windows
         return
 
@@ -999,19 +1023,10 @@ def collect_windows(info_add):
             info_add('windows.ver', line)
 
     # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
-    import winreg
-    try:
-        key = winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE,
-            r"SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock")
-        subkey = "AllowDevelopmentWithoutDevLicense"
-        try:
-            value, value_type = winreg.QueryValueEx(key, subkey)
-        finally:
-            winreg.CloseKey(key)
-    except OSError:
-        pass
-    else:
+    value = winreg_query(r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows"
+                         r"\CurrentVersion\AppModelUnlock"
+                         r"\AllowDevelopmentWithoutDevLicense")
+    if value is not None:
         info_add('windows.developer_mode', "enabled" if value else "disabled")
 
 
@@ -1044,20 +1059,22 @@ def collect_libregrtest_utils(info_add):
     info_add('libregrtests.build_info', ' '.join(utils.get_build_info()))
 
 
-def linux_get_uptime():
-    # Use CLOCK_BOOTTIME if available
+def uptime_boottime():
+    # Use CLOCK_BOOTTIME
     import time
     try:
         return time.clock_gettime(time.CLOCK_BOOTTIME)
     except (AttributeError, OSError):
-        pass
+        return None
 
-    # Otherwise, parse the first member of /proc/uptime
-    uptime = read_first_line("/proc/uptime")
-    if not uptime:
+
+def uptime_linux():
+    # Parse the first member of /proc/uptime
+    line = read_first_line("/proc/uptime")
+    if not line:
         return
     try:
-        parts = uptime.split()
+        parts = line.split()
         if not parts:
             return
         return float(parts[0])
@@ -1065,17 +1082,48 @@ def linux_get_uptime():
         return
 
 
+def uptime_windows():
+    try:
+        import _winapi
+    except ImportError:
+        return None
+    else:
+        return _winapi.GetTickCount64() / 1000.
+
+
+def get_uptime():
+    for func in (uptime_boottime, uptime_linux, uptime_windows):
+        uptime = func()
+        if uptime is not None:
+            return uptime
+    return None
+
+
+def get_machine_id():
+    if MS_WINDOWS:
+        machine_guid = winreg_query(r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft"
+                                    r"\Cryptography\MachineGuid")
+        if machine_guid:
+            return machine_guid
+
+    machine_id = read_first_line("/etc/machine-id")
+    if machine_id:
+        return machine_id
+
+    return None
+
+
 def collect_linux(info_add):
     boot_id = read_first_line("/proc/sys/kernel/random/boot_id")
     if boot_id:
-        info_add('linux.boot_id', boot_id)
+        info_add('system.boot_id', boot_id)
 
     # https://www.freedesktop.org/software/systemd/man/latest/machine-id.html
-    machine_id = read_first_line("/etc/machine-id")
+    machine_id = get_machine_id()
     if machine_id:
-        info_add('linux.machine_id', machine_id)
+        info_add('system.machine_id', machine_id)
 
-    uptime = linux_get_uptime()
+    uptime = get_uptime()
     if uptime is not None:
         # truncate microseconds
         uptime = int(uptime)
@@ -1084,7 +1132,7 @@ def collect_linux(info_add):
             uptime = str(datetime.timedelta(seconds=uptime))
         except ImportError:
             uptime = f'{uptime} sec'
-        info_add('linux.uptime', uptime)
+        info_add('system.uptime', uptime)
 
 
 def collect_info(info):
