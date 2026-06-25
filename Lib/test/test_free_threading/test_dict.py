@@ -1,3 +1,4 @@
+from collections import deque
 import gc
 import time
 import unittest
@@ -5,7 +6,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Barrier, Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 try:
@@ -335,6 +336,67 @@ class TestDict(TestCase):
 
         with threading_helper.start_threads([t1, t2]):
             pass
+
+    def test_racing_dict_update_and_method_lookup_with_inline_values(self):
+        # gh-149816: sub-case 108
+        # The race below checks that setattr() does not write into a detached
+        # dict after __dict__ is replaced by another thread.
+        class Target:
+            pass
+
+        def appender(obj: Target, start: Barrier, stop: Event) -> None:
+            start.wait()
+            index = 0
+            while not stop.is_set():
+                setattr(obj, f"probe_{index}", index)
+                index += 1
+                time.sleep(0)
+
+        def replacer(obj: Target, start: Barrier, stop: Event,
+                     detached_dict_queue: deque[tuple[dict, frozenset]]) -> None:
+            start.wait()
+            while not stop.is_set():
+                dict_snapshot = obj.__dict__
+                obj.__dict__ = {}
+                current_keys = frozenset(dict_snapshot)
+                detached_dict_queue.append((dict_snapshot, current_keys))
+                time.sleep(0)
+
+        def start_race(start: Barrier, stop: Event, seconds: float) -> None:
+            start.wait()
+            time.sleep(seconds)
+            stop.set()
+
+        def race(seconds: float, appender_threads: int,
+                 replacer_threads: int) -> None:
+            obj = Target()
+            setattr(obj, "origin", 0)
+            _ = obj.__dict__  # Access __dict__ to ensure it's initialized
+
+            start = Barrier(appender_threads + replacer_threads + 1)
+            stop = Event()
+            detached_dict_queue: deque[tuple[dict, frozenset]] = deque()
+            threads = [Thread(target=start_race, args=(start, stop, seconds),
+                              name="starter")]
+            for _ in range(appender_threads):
+                threads.append(Thread(target=appender, args=(obj, start, stop),
+                                      name="appender"))
+            for _ in range(replacer_threads):
+                threads.append(Thread(target=replacer, args=(obj, start, stop, detached_dict_queue),
+                                      name="replacer"))
+
+            with threading_helper.start_threads(threads):
+                pass
+
+            for dict_snapshot, current_keys in detached_dict_queue:
+                self.assertEqual(set(dict_snapshot), current_keys,
+                                 f"Detached dict keys {set(dict_snapshot)} " +
+                                 f"do not match current keys {current_keys}")
+
+        WAIT_FOR_SECONDS = 5
+        APPENDER_THREADS = 8
+        REPLACER_THREADS = 8
+        race(WAIT_FOR_SECONDS, APPENDER_THREADS, REPLACER_THREADS)
 
 if __name__ == "__main__":
     unittest.main()
