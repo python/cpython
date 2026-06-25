@@ -1505,7 +1505,6 @@ alloc_threadstate(PyInterpreterState *interp)
         }
         reset_threadstate(tstate);
     }
-    tstate->base.interp = interp;
     return tstate;
 }
 
@@ -1662,6 +1661,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
     if (tstate == NULL) {
         return NULL;
     }
+    tstate->base.interp = interp;
 
 #ifdef Py_GIL_DISABLED
     Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
