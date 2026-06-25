@@ -181,6 +181,17 @@ os
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
 
+re
+--
+
+* A capturing group name can now be used for more than one group in a regular
+  expression.  Such groups share a single group number, and the name refers to
+  whichever of them matched.  This is useful for giving the same name to
+  corresponding groups in alternative spellings of a pattern, such as
+  ``(?P<y>\d{4})-(?P<m>\d\d)|(?P<m>\d\d)/(?P<y>\d{4})``.
+  (Contributed by Serhiy Storchaka in :gh:`152026`.)
+
+
 shlex
 -----
 

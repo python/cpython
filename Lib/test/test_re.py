@@ -297,9 +297,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(pat, 'xc8yz').span(), (0, 5))
 
     def test_symbolic_groups_errors(self):
-        self.checkPatternError(r'(?P<a>)(?P<a>)',
-                               "redefinition of group name 'a' as group 2; "
-                               "was group 1")
         self.checkPatternError(r'(?P<a>(?P=a))',
                                "cannot refer to an open group", 10)
         self.checkPatternError(r'(?Pxy)', 'unknown extension ?Px')
@@ -379,6 +376,69 @@ class ReTests(unittest.TestCase):
                                 "bad character in group name '¹'", 3)
         self.checkTemplateError('(?P<a>x)', r'\g<१>', 'xx',
                                 "bad character in group name '१'", 3)
+
+    def test_redefined_named_groups(self):
+        # The same name may be used for more than one group.
+        p = re.compile(r'(?P<m>\d+)/(?P<d>\d+)/(?P<y>\d+)|'
+                       r'(?P<y>\d+)-(?P<m>\d+)-(?P<d>\d+)')
+        self.assertEqual(p.fullmatch('07/09/2023').groupdict(),
+                         {'m': '07', 'd': '09', 'y': '2023'})
+        self.assertEqual(p.fullmatch('2023-07-09').groupdict(),
+                         {'m': '07', 'd': '09', 'y': '2023'})
+        # Reused groups share a single group number.
+        self.assertEqual(p.groups, 3)
+        self.assertEqual(p.groupindex, {'m': 1, 'd': 2, 'y': 3})
+        # If more than one of the groups matches, the name refers to the last.
+        p = re.compile(r'(?P<a>\w)(?P<a>\w)')
+        self.assertEqual(p.match('xy').group('a'), 'y')
+        # A reused group may be left unset by the branch that does not match.
+        p = re.compile(r'(?P<a>\d)(?:-(?P<a>\d))?')
+        self.assertEqual(p.match('1').group('a'), '1')
+        self.assertEqual(p.match('1-2').group('a'), '2')
+        # A definition that is backtracked away does not leak into the group.
+        p = re.compile(r'(?P<g>x)(?:(?P<g>y)|z)')
+        self.assertEqual(p.match('xz').group('g'), 'x')
+        self.assertEqual(p.match('xy').group('g'), 'y')
+
+    def test_redefined_named_groups_backref(self):
+        # A backreference to a redefined name refers to whichever definition
+        # participated in the match.
+        p = re.compile(r'(?:(?P<g>a)|(?P<g>b))(?P=g)')
+        self.assertEqual(p.match('aa').group(), 'aa')
+        self.assertEqual(p.match('bb').group(), 'bb')
+        self.assertIsNone(p.match('ab'))
+        # A numeric backreference to the shared group number works too.
+        p = re.compile(r'(?:(?P<g>a)|(?P<g>b))\1')
+        self.assertEqual(p.match('aa').group(), 'aa')
+        self.assertIsNone(p.match('ab'))
+
+    def test_redefined_named_groups_conditional(self):
+        p = re.compile(r'(?:(?P<g>a)|b)(?(g)X|Y)')
+        self.assertEqual(p.match('aX').group(), 'aX')
+        self.assertEqual(p.match('bY').group(), 'bY')
+        self.assertIsNone(p.match('aY'))
+        self.assertIsNone(p.match('bX'))
+
+    def test_redefined_named_groups_width(self):
+        # closegroup() widens the shared group to the union of the definitions.
+        p = re.compile(r'(?:(?P<g>a)|(?P<g>bb))!')
+        self.assertEqual(p.match('a!').group('g'), 'a')
+        self.assertEqual(p.match('bb!').group('g'), 'bb')
+        # A fixed-width union may be used in a look-behind...
+        p = re.compile(r'(?:(?P<g>aa)|(?P<g>bb))(?<=(?P=g))')
+        self.assertEqual(p.match('aa').group(), 'aa')
+        # ...but a variable-width union may not.
+        self.checkPatternError(r'x(?<=(?:(?P<g>a)|(?P<g>bb)))',
+                               'look-behind requires fixed-width pattern')
+
+    def test_redefined_named_groups_backtracking(self):
+        # A definition that matches and is then backtracked away (here the
+        # other branch of the inner alternation is taken) must not leak a stale
+        # capture into the shared group number.
+        p = re.compile(r'(?:(?P<g>a)|(?P<h>(?P<g>b)(?:b|a)|(?:bbb)*))')
+        self.assertIsNone(p.match('b').group('g'))
+        self.assertEqual(p.match('a').group('g'), 'a')
+        self.assertEqual(p.match('bb').group('g'), 'b')
 
     def test_re_subn(self):
         self.assertEqual(re.subn("(?i)b+", "x", "bbbb BBBB"), ('x x', 2))

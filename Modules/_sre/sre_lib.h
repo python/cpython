@@ -863,7 +863,7 @@ dispatch:
             /* <BRANCH> <0=skip> code <JUMP> ... <NULL> */
             TRACE(("|%p|%p|BRANCH\n", pattern, ptr));
             LASTMARK_SAVE();
-            if (state->repeat)
+            if (state->repeat || state->save_marks)
                 MARK_PUSH(ctx->lastmark);
             for (; pattern[0]; pattern += pattern[0]) {
                 if (pattern[1] == SRE_OP_LITERAL &&
@@ -878,16 +878,16 @@ dispatch:
                 state->ptr = ptr;
                 DO_JUMP(JUMP_BRANCH, jump_branch, pattern+1);
                 if (ret) {
-                    if (state->repeat)
+                    if (state->repeat || state->save_marks)
                         MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
-                if (state->repeat)
+                if (state->repeat || state->save_marks)
                     MARK_POP_KEEP(ctx->lastmark);
                 LASTMARK_RESTORE();
             }
-            if (state->repeat)
+            if (state->repeat || state->save_marks)
                 MARK_POP_DISCARD(ctx->lastmark);
             RETURN_FAILURE;
 
@@ -933,7 +933,7 @@ dispatch:
             }
 
             LASTMARK_SAVE();
-            if (state->repeat)
+            if (state->repeat || state->save_marks)
                 MARK_PUSH(ctx->lastmark);
 
             if (pattern[pattern[0]] == SRE_OP_LITERAL) {
@@ -952,19 +952,19 @@ dispatch:
                     DO_JUMP(JUMP_REPEAT_ONE_1, jump_repeat_one_1,
                             pattern+pattern[0]);
                     if (ret) {
-                        if (state->repeat)
+                        if (state->repeat || state->save_marks)
                             MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
-                    if (state->repeat)
+                    if (state->repeat || state->save_marks)
                         MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
                     ptr--;
                     ctx->count--;
                 }
-                if (state->repeat)
+                if (state->repeat || state->save_marks)
                     MARK_POP_DISCARD(ctx->lastmark);
             } else {
                 /* general case */
@@ -973,19 +973,19 @@ dispatch:
                     DO_JUMP(JUMP_REPEAT_ONE_2, jump_repeat_one_2,
                             pattern+pattern[0]);
                     if (ret) {
-                        if (state->repeat)
+                        if (state->repeat || state->save_marks)
                             MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
-                    if (state->repeat)
+                    if (state->repeat || state->save_marks)
                         MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
                     ptr--;
                     ctx->count--;
                 }
-                if (state->repeat)
+                if (state->repeat || state->save_marks)
                     MARK_POP_DISCARD(ctx->lastmark);
             }
             RETURN_FAILURE;
@@ -1035,7 +1035,7 @@ dispatch:
             } else {
                 /* general case */
                 LASTMARK_SAVE();
-                if (state->repeat)
+                if (state->repeat || state->save_marks)
                     MARK_PUSH(ctx->lastmark);
 
                 while ((Py_ssize_t)pattern[2] == SRE_MAXREPEAT
@@ -1044,12 +1044,12 @@ dispatch:
                     DO_JUMP(JUMP_MIN_REPEAT_ONE,jump_min_repeat_one,
                             pattern+pattern[0]);
                     if (ret) {
-                        if (state->repeat)
+                        if (state->repeat || state->save_marks)
                             MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
-                    if (state->repeat)
+                    if (state->repeat || state->save_marks)
                         MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
@@ -1063,7 +1063,7 @@ dispatch:
                     ptr++;
                     ctx->count++;
                 }
-                if (state->repeat)
+                if (state->repeat || state->save_marks)
                     MARK_POP_DISCARD(ctx->lastmark);
             }
             RETURN_FAILURE;
@@ -1252,7 +1252,7 @@ dispatch:
             state->repeat = ctx->u.rep->prev;
 
             LASTMARK_SAVE();
-            if (state->repeat)
+            if (state->repeat || state->save_marks)
                 MARK_PUSH(ctx->lastmark);
 
             DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, pattern);
@@ -1302,16 +1302,10 @@ dispatch:
                pointer */
             state->ptr = ptr;
 
-            /* Set state->repeat to non-NULL */
-            ctx->u.rep = repeat_pool_malloc(state);
-            if (!ctx->u.rep) {
-                RETURN_ERROR(SRE_ERROR_MEMORY);
-            }
-            ctx->u.rep->count = -1;
-            ctx->u.rep->pattern = NULL;
-            ctx->u.rep->prev = state->repeat;
-            ctx->u.rep->last_ptr = NULL;
-            state->repeat = ctx->u.rep;
+            /* Capture groups in the body can be revisited on backtracking
+               between iterations, so their marks must be saved and restored,
+               as is done inside a repeat. */
+            state->save_marks++;
 
             /* Initialize Count to 0 */
             ctx->count = 0;
@@ -1327,9 +1321,7 @@ dispatch:
                 }
                 else {
                     state->ptr = ptr;
-                    /* Restore state->repeat */
-                    state->repeat = ctx->u.rep->prev;
-                    repeat_pool_free(state, ctx->u.rep);
+                    state->save_marks--;
                     RETURN_FAILURE;
                 }
             }
@@ -1402,9 +1394,7 @@ dispatch:
                 }
             }
 
-            /* Restore state->repeat */
-            state->repeat = ctx->u.rep->prev;
-            repeat_pool_free(state, ctx->u.rep);
+            state->save_marks--;
 
             /* Evaluate Tail */
             /* Jump to end of pattern indicated by skip, and then skip
@@ -1586,17 +1576,17 @@ dispatch:
             if ((uintptr_t)(ptr - (SRE_CHAR *)state->beginning) >= pattern[1]) {
                 state->ptr = ptr - pattern[1];
                 LASTMARK_SAVE();
-                if (state->repeat)
+                if (state->repeat || state->save_marks)
                     MARK_PUSH(ctx->lastmark);
 
                 DO_JUMP0(JUMP_ASSERT_NOT, jump_assert_not, pattern+2);
                 if (ret) {
-                    if (state->repeat)
+                    if (state->repeat || state->save_marks)
                         MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
                     RETURN_FAILURE;
                 }
-                if (state->repeat)
+                if (state->repeat || state->save_marks)
                     MARK_POP(ctx->lastmark);
                 LASTMARK_RESTORE();
             }

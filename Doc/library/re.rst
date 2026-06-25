@@ -414,9 +414,15 @@ The special characters are:
    Similar to regular parentheses, but the substring matched by the group is
    accessible via the symbolic group name *name*.  Group names must be valid
    Python identifiers, and in :class:`bytes` patterns they can only contain
-   bytes in the ASCII range.  Each group name must be defined only once within
-   a regular expression.  A symbolic group is also a numbered group, just as if
-   the group were not named.
+   bytes in the ASCII range.  A symbolic group is also a numbered group, just as
+   if the group were not named.
+
+   A group name may be used for more than one group.  All such groups share a
+   single group number, and the name (and that number) refer to whichever of
+   them matched; if more than one matched, they refer to the last.  This is
+   chiefly useful for giving the same name to corresponding groups in
+   alternative spellings of a pattern, for example
+   ``(?P<y>\d{4})-(?P<m>\d\d)|(?P<m>\d\d)/(?P<y>\d{4})``.
 
    Named groups can be referenced in three contexts.  If the pattern is
    ``(?P<quote>['"]).*?(?P=quote)`` (i.e. matching a string quoted with either
@@ -439,6 +445,10 @@ The special characters are:
    .. versionchanged:: 3.12
       In :class:`bytes` patterns, group *name* can only contain bytes
       in the ASCII range (``b'\x00'``-``b'\x7f'``).
+
+   .. versionchanged:: next
+      A group name can be used for more than one group.  Previously each name
+      could be defined only once in a regular expression.
 
 .. index:: single: (?P=; in regular expressions
 

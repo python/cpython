@@ -594,6 +594,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->charsize = charsize;
     state->match_all = 0;
     state->must_advance = 0;
+    state->save_marks = pattern->reused_groups;
     state->debug = ((pattern->flags & SRE_FLAG_DEBUG) != 0);
 
     state->beginning = ptr;
@@ -1647,6 +1648,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     self->pattern = NULL;
     self->groupindex = NULL;
     self->indexgroup = NULL;
+    self->reused_groups = 0;
 #ifdef Py_DEBUG
     self->fail_after_count = -1;
     self->fail_after_exc = NULL;
@@ -1938,7 +1940,8 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
 
 /* Returns 0 on success, -1 on failure, and 1 if the last op is JUMP. */
 static int
-_validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
+_validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups,
+               char *seen, int *reused)
 {
     /* Some variables are manipulated by the macros above */
     SRE_CODE op;
@@ -1963,6 +1966,14 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 VTRACE(("arg=%d, groups=%d\n", (int)arg, (int)groups));
                 FAIL;
             }
+            /* A mark index appears exactly once in well-formed code, unless
+               the same group number is opened in more than one place (a
+               redefined named group).  Such groups need full mark save/restore
+               on backtracking. */
+            if (seen[arg])
+                *reused = 1;
+            else
+                seen[arg] = 1;
             break;
 
         case SRE_OP_LITERAL:
@@ -2096,7 +2107,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     if (skip == 0)
                         break;
                     /* Stop 2 before the end; we check the JUMP below */
-                    if (_validate_inner(code, code+skip-3, groups))
+                    if (_validate_inner(code, code+skip-3, groups, seen, reused))
                         FAIL;
                     code += skip-3;
                     /* Check that it ends with a JUMP, and that each JUMP
@@ -2127,7 +2138,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (_validate_inner(code, code+skip-4, groups))
+                if (_validate_inner(code, code+skip-4, groups, seen, reused))
                     FAIL;
                 code += skip-4;
                 GET_OP;
@@ -2147,7 +2158,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (_validate_inner(code, code+skip-3, groups))
+                if (_validate_inner(code, code+skip-3, groups, seen, reused))
                     FAIL;
                 code += skip-3;
                 GET_OP;
@@ -2165,7 +2176,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_ATOMIC_GROUP:
             {
                 GET_SKIP;
-                if (_validate_inner(code, code+skip-2, groups))
+                if (_validate_inner(code, code+skip-2, groups, seen, reused))
                     FAIL;
                 code += skip-2;
                 GET_OP;
@@ -2218,12 +2229,12 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                for a JUMP opcode preceding our skip target.
             */
             VTRACE(("then part:\n"));
-            int rc = _validate_inner(code+1, code+skip-1, groups);
+            int rc = _validate_inner(code+1, code+skip-1, groups, seen, reused);
             if (rc == 1) {
                 VTRACE(("else part:\n"));
                 code += skip-2; /* Position after JUMP, at <skipno> */
                 GET_SKIP;
-                rc = _validate_inner(code, code+skip-1, groups);
+                rc = _validate_inner(code, code+skip-1, groups, seen, reused);
             }
             if (rc)
                 FAIL;
@@ -2236,7 +2247,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             GET_ARG; /* 0 for lookahead, width for lookbehind */
             code--; /* Back up over arg to simplify math below */
             /* Stop 1 before the end; we check the SUCCESS below */
-            if (_validate_inner(code+1, code+skip-2, groups))
+            if (_validate_inner(code+1, code+skip-2, groups, seen, reused))
                 FAIL;
             code += skip-2;
             GET_OP;
@@ -2261,24 +2272,35 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 }
 
 static int
-_validate_outer(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
+_validate_outer(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups,
+               char *seen, int *reused)
 {
     if (groups < 0 || (size_t)groups > SRE_MAXGROUPS ||
         code >= end || end[-1] != SRE_OP_SUCCESS)
         FAIL;
-    return _validate_inner(code, end-1, groups);
+    return _validate_inner(code, end-1, groups, seen, reused);
 }
 
 static int
 _validate(PatternObject *self)
 {
-    if (_validate_outer(self->code, self->code+self->codesize, self->groups))
-    {
+    /* seen[i] tracks whether mark index i has already been emitted, so that a
+       reused group number (the same mark seen twice) can be detected. */
+    int reused = 0;
+    char *seen = PyMem_Calloc(2 * (size_t)self->groups + 1, 1);
+    if (seen == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    int invalid = _validate_outer(self->code, self->code+self->codesize,
+                                  self->groups, seen, &reused);
+    PyMem_Free(seen);
+    if (invalid) {
         PyErr_SetString(PyExc_RuntimeError, "invalid SRE code");
         return 0;
     }
-    else
-        VTRACE(("Success!\n"));
+    self->reused_groups = reused;
+    VTRACE(("Success!\n"));
     return 1;
 }
 
