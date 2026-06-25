@@ -100,7 +100,11 @@ class TestRepack(unittest.TestCase):
         # It will contain enough copies of self.data to reach about 8 GiB.
         self.datacount = 8*1024**3 // len(self.data)
 
-        # memory usage should not exceed 10 MiB
+        # Memory usage should not exceed 10 MiB during repacking.
+        # This empirical threshold ensures that the internal processing
+        # like signature scanning, compressed block end tracing, and
+        # data copying are properly buffered without loading the entire
+        # large file into memory.
         self.allowed_memory = 10*1024**2
 
     def _write_large_file(self, fh):
