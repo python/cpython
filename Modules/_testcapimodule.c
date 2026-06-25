@@ -22,6 +22,9 @@
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE
 #endif
+#ifdef HAVE_SYS_SYSCTL_H
+#  include <sys/sysctl.h>         // sysctlbyname()
+#endif
 
 #ifdef bool
 #  error "The public headers should not include <stdbool.h>, see gh-48924"
@@ -2970,6 +2973,35 @@ test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args)
     Py_RETURN_NONE;
 }
 
+
+#ifdef HAVE_SYSCTLBYNAME
+static PyObject*
+uptime_bsd(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    const char *name = "kern.boottime";
+    size_t size = 0;
+
+    int res = sysctlbyname(name, NULL, &size, NULL, 0);
+    if (res != 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    struct timeval tv;
+    if (size != sizeof(tv)) {
+        PyErr_SetString(PyExc_ValueError, "unexpected size");
+        return NULL;
+    }
+
+    res = sysctlbyname(name, &tv, &size, NULL, 0);
+    if (res != 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return PyFloat_FromDouble(tv.tv_sec + tv.tv_usec * 1e-6);
+}
+#endif
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3076,6 +3108,9 @@ static PyMethodDef TestMethods[] = {
     {"test_thread_state_ensure_detachment", test_thread_state_ensure_detachment, METH_NOARGS},
     {"test_thread_state_ensure_detached_gilstate", test_thread_state_ensure_detached_gilstate, METH_NOARGS},
     {"test_thread_state_release_with_destructor", test_thread_state_release_with_destructor, METH_NOARGS},
+#ifdef HAVE_SYSCTLBYNAME
+    {"uptime_bsd", uptime_bsd, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
