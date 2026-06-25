@@ -1685,7 +1685,7 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
             PyMem_Free((void *)buffer);
         }
         else {
-            return PyErr_NoMemory();
+            PyErr_NoMemory();
         }
     } else {
         PyErr_SetFromWindowsErr(0);
