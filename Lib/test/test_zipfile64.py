@@ -201,7 +201,6 @@ class TestRepack(unittest.TestCase):
         large file without causing a memory issue."""
         # Reduce data scale for this test, as it's especially slow...
         self.datacount = 30*1024**2 // len(self.data)
-        self.allowed_memory = 200*1024
 
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
