@@ -1897,8 +1897,7 @@ expression support in the :mod:`re` module).
       'Python'
 
 
-.. method:: str.count(sub, /)
-            str.count(sub, start=0, end=sys.maxsize, /)
+.. method:: str.count(sub, start=0, end=sys.maxsize, /)
 
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
@@ -1997,8 +1996,7 @@ expression support in the :mod:`re` module).
       0123    01234
 
 
-.. method:: str.find(sub, /)
-            str.find(sub, start=0, end=sys.maxsize, /)
+.. method:: str.find(sub, start=0, end=sys.maxsize, /)
 
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
@@ -2075,7 +2073,7 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.2
 
 
-.. method:: str.index(sub[, start[, end]])
+.. method:: str.index(sub, start=0, end=sys.maxsize, /)
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
    not found. For example:
@@ -2507,8 +2505,7 @@ expression support in the :mod:`re` module).
       *count* is now supported as a keyword argument.
 
 
-.. method:: str.rfind(sub, /)
-            str.rfind(sub, start=0, end=sys.maxsize, /)
+.. method:: str.rfind(sub, start=0, end=sys.maxsize, /)
 
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
@@ -2525,8 +2522,7 @@ expression support in the :mod:`re` module).
    See also :meth:`find` and :meth:`rindex`.
 
 
-.. method:: str.rindex(sub, /)
-            str.rindex(sub, start=0, end=sys.maxsize, /)
+.. method:: str.rindex(sub, start=0, end=sys.maxsize, /)
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
@@ -3607,10 +3603,9 @@ binary data. These restrictions are covered below.
 The following methods on bytes and bytearray objects can be used with
 arbitrary binary data.
 
-.. method:: bytes.count(sub, /)
-            bytes.count(sub, start=0, end=sys.maxsize, /)
-            bytearray.count(sub, /)
+.. method:: bytes.count(sub, start=0, end=sys.maxsize, /)
             bytearray.count(sub, start=0, end=sys.maxsize, /)
+            
 
    Return the number of non-overlapping occurrences of subsequence *sub* in
    the range [*start*, *end*].  Optional arguments *start* and *end* are
@@ -3713,8 +3708,8 @@ arbitrary binary data.
    The suffix(es) to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.find(sub[, start[, end]])
-            bytearray.find(sub[, start[, end]])
+.. method:: bytes.find(sub, start=0, end=sys.maxsize, /)
+            bytearray.find(sub, start=0, end=sys.maxsize, /)
 
    Return the lowest index in the data where the subsequence *sub* is found,
    such that *sub* is contained in the slice ``s[start:end]``.  Optional
@@ -3737,8 +3732,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.index(sub[, start[, end]])
-            bytearray.index(sub[, start[, end]])
+.. method:: bytes.index(sub, start=0, end=sys.maxsize, /)
+            bytearray.index(sub, start=0, end=sys.maxsize, /)
 
    Like :meth:`~bytes.find`, but raise :exc:`ValueError` when the
    subsequence is not found.
@@ -3805,8 +3800,8 @@ arbitrary binary data.
       *count* is now supported as a keyword argument.
 
 
-.. method:: bytes.rfind(sub[, start[, end]])
-            bytearray.rfind(sub[, start[, end]])
+.. method:: bytes.rfind(sub, start=0, end=sys.maxsize, /)
+            bytearray.rfind(sub, start=0, end=sys.maxsize, /)
 
    Return the highest index in the sequence where the subsequence *sub* is
    found, such that *sub* is contained within ``s[start:end]``.  Optional
@@ -3820,8 +3815,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.rindex(sub[, start[, end]])
-            bytearray.rindex(sub[, start[, end]])
+.. method:: bytes.rindex(sub, start=0, end=sys.maxsize, /)
+            bytearray.rindex(sub, start=0, end=sys.maxsize, /)
 
    Like :meth:`~bytes.rfind` but raises :exc:`ValueError` when the
    subsequence *sub* is not found.
