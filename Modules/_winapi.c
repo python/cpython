@@ -1684,6 +1684,9 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
             }
             PyMem_Free((void *)buffer);
         }
+        else {
+            PyErr_NoMemory();
+        }
     } else {
         PyErr_SetFromWindowsErr(0);
     }
@@ -2394,6 +2397,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
     while (i < nhandles) {
         BatchedWaitData *data = (BatchedWaitData*)PyMem_Malloc(sizeof(BatchedWaitData));
         if (!data) {
+            PyErr_NoMemory();
             goto error;
         }
         thread_data[thread_count++] = data;
