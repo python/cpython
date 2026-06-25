@@ -126,7 +126,13 @@ def main():
             help="Command template for running the WASI host; defaults to "
             f"`{default_host_runner}`",
         )
-    for subcommand in build, configure_host, make_host, build_host, pythoninfo_host:
+    for subcommand in (
+        build,
+        configure_host,
+        make_host,
+        build_host,
+        pythoninfo_host,
+    ):
         subcommand.add_argument(
             "--host-triple",
             action="store",
