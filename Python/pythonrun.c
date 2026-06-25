@@ -604,9 +604,21 @@ _PyRun_SimpleFileObjectEx(FILE *fp, PyObject *filename, int closeit,
 
 done:
     if (set_file_name) {
-        if (PyDict_PopString(dict, "__file__", NULL) < 0) {
-            /* Non-fatal cleanup error; just clear it */
-            PyErr_Clear();
+        if (v == NULL) {
+            // Main code failed: save the exception before cleanup
+            // so PyDict_PopString doesn't overwrite it
+            PyObject *saved_exc = PyErr_GetRaisedException();
+            if (PyDict_PopString(dict, "__file__", NULL) < 0) {
+                /* Non-fatal cleanup error; just clear it */
+                PyErr_Clear();
+            }
+            PyErr_SetRaisedException(saved_exc);
+        } else {
+            // Main code succeeded: if cleanup fails, print it
+            // to match legacy behavior
+            if (PyDict_PopString(dict, "__file__", NULL) < 0) {
+                PyErr_Print();
+            }
         }
     }
     Py_XDECREF(main_module);
@@ -658,6 +670,33 @@ _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompil
     Py_DECREF(res);
     return 0;
 }
+
+PyObject *
+_PyRun_SimpleStringFlagsEx(const char *command, const char* name, PyCompilerFlags *flags)
+{
+    PyObject *main_module = PyImport_AddModuleRef("__main__");
+    if (main_module == NULL) {
+        return NULL;
+    }
+    PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
+
+    PyObject *res = NULL;
+    if (name == NULL) {
+        res = PyRun_StringFlags(command, Py_file_input, dict, dict, flags);
+    } else {
+        PyObject* the_name = PyUnicode_FromString(name);
+        if (!the_name) {
+            Py_DECREF(main_module);
+            return NULL;
+        }
+        res = _PyRun_StringFlagsWithName(command, the_name, Py_file_input,
+                                         dict, dict, flags, 0);
+        Py_DECREF(the_name);
+    }
+    Py_DECREF(main_module);
+    return res;
+}
+
 
 int
 PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)

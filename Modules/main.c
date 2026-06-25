@@ -258,15 +258,7 @@ pymain_run_command(wchar_t *command)
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
-    PyObject *main_module = PyImport_AddModuleRef("__main__");
-    if (main_module == NULL) {
-        Py_DECREF(bytes);
-        return pymain_exit_err_print();
-    }
-    PyObject *dict = PyModule_GetDict(main_module);
-    PyObject *res = PyRun_StringFlags(PyBytes_AsString(bytes), Py_file_input,
-                                       dict, dict, &cf);
-    Py_DECREF(main_module);
+    PyObject *res = _PyRun_SimpleStringFlagsEx(PyBytes_AsString(bytes), "<string>", &cf);
     Py_DECREF(bytes);
     if (res == NULL) {
         return pymain_exit_err_print();

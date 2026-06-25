@@ -111,6 +111,11 @@ PyAPI_FUNC(char*) _Py_SetLocaleFromEnv(int category);
 // Export for special main.c string compiling with source tracebacks
 int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags);
 
+// Like _PyRun_SimpleStringFlagsWithName but returns the result object
+// instead of calling PyErr_Print() on failure. The caller should handle
+// the error with _Py_HandleSystemExitAndKeyboardInterrupt or PyErr_Print.
+PyObject *_PyRun_SimpleStringFlagsEx(const char *command, const char* name, PyCompilerFlags *flags);
+
 
 /* interpreter config */
 
