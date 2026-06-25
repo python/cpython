@@ -2984,8 +2984,16 @@ uptime_bsd(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
     if (res != 0) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
+    double boottime = (double)tv.tv_sec + tv.tv_usec * 1e-6;
 
-    return PyFloat_FromDouble(tv.tv_sec + tv.tv_usec * 1e-6);
+    PyTime_t now_t;
+    if (PyTime_Time(&now_t) < 0) {
+        return NULL;
+    }
+    double now = PyTime_AsSecondsDouble(now_t);
+
+    double uptime = now - boottime;
+    return PyFloat_FromDouble(uptime);
 }
 #endif
 
