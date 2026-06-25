@@ -1,0 +1,2 @@
+Add 'symbols' link to pydoc's html menu bar. Original patch by Ron Adam.
+Enhanced by Sanyam Khurana.
