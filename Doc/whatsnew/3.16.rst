@@ -118,6 +118,19 @@ curses
 * Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
   (Contributed by Serhiy Storchaka in :gh:`151744`.)
 
+* Add the :mod:`curses` functions :func:`curses.alloc_pair`,
+  :func:`curses.find_pair`, :func:`curses.free_pair` and
+  :func:`curses.reset_color_pairs` for dynamic color-pair management,
+  available when built against a wide-character ncurses with extended-color
+  support.
+  (Contributed by Serhiy Storchaka in :gh:`151774`.)
+
+* Add :mod:`curses` functions and window methods that report state which could
+  previously only be set, such as :meth:`curses.window.is_keypad`,
+  :meth:`curses.window.getparent` and :func:`curses.is_cbreak`,
+  available when built against an ncurses with ``NCURSES_EXT_FUNCS``.
+  (Contributed by Serhiy Storchaka in :gh:`151776`.)
+
 gzip
 ----
 
@@ -166,6 +179,18 @@ os
 * Add :func:`os.pidfd_getfd` for duplicating a file descriptor from another
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
+
+
+re
+--
+
+* :mod:`re` now supports set operations and nested sets in character classes,
+  as described in `Unicode Technical Standard #18
+  <https://unicode.org/reports/tr18/>`__: set difference (``[A--B]``),
+  intersection (``[A&&B]``) and union (``[A||B]``), where an operand may be a
+  nested set written in square brackets.  For example, ``[a-z--[aeiou]]``
+  matches an ASCII lowercase consonant.
+  (Contributed by Serhiy Storchaka in :gh:`152100`.)
 
 
 shlex

@@ -310,6 +310,7 @@ MAX_SIZES = {
     # default: (10_000, 200)
     # First match wins.
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
+    _abs('Modules/_cursesmodule.c'): (20_000, 300),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
     _abs('Modules/_hacl/*.c'): (200_000, 500),
     _abs('Modules/posixmodule.c'): (20_000, 500),
