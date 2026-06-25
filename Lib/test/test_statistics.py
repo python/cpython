@@ -2233,6 +2233,169 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         data = (1.0, 2.0)
         self.assertEqual(self.func(data, xbar=2.0), 1.0)
 
+
+class TestMedianAbsoluteDeviation(NumericTestCase):
+    """Tests for statistics.median_absolute_deviation."""
+    def setUp(self):
+        self.func = statistics.median_absolute_deviation
+
+    # --- Happy path: known answers ---
+
+    def test_ints_known_answer(self):
+        # Canonical example: median=2, deviations=[1,1,0,0,2,4,7], MAD=1.
+        self.assertEqual(self.func([1, 1, 2, 2, 4, 6, 9]), 1.4826)
+
+    def test_floats_known_answer(self):
+        # Same shape with floats: median=2.0, MAD=1.0.
+        self.assertEqual(
+            self.func([1.0, 1.0, 2.0, 2.0, 4.0, 6.0, 9.0]), 1.4826
+        )
+
+    def test_scale_default(self):
+        # Default scale is 1.4826 (the consistency constant).
+        self.assertEqual(self.func([1, 1, 2, 2, 4, 6, 9]), 1.4826)
+
+    def test_scale_one(self):
+        # scale=1.0 returns the raw MAD.
+        self.assertEqual(self.func([1, 1, 2, 2, 4, 6, 9], scale=1.0), 1.0)
+
+    def test_scale_custom(self):
+        # Any int or float scale is accepted.
+        self.assertEqual(self.func([1, 1, 2, 2, 4, 6, 9], scale=2.0), 2.0)
+        self.assertEqual(self.func([1, 1, 2, 2, 4, 6, 9], scale=3.0), 3.0)
+
+    def test_scale_negative(self):
+        # Negative scale is allowed (returns a negative value).
+        self.assertEqual(
+            self.func([1, 1, 2, 2, 4, 6, 9], scale=-1.4826), -1.4826
+        )
+
+    # --- Edge cases ---
+
+    def test_empty_raises(self):
+        # Empty input raises StatisticsError.
+        self.assertRaises(statistics.StatisticsError, self.func, [])
+
+    def test_single_value(self):
+        # A single data point has zero absolute deviation from itself.
+        self.assertEqual(self.func([5]), 0.0)
+        self.assertEqual(self.func([5], scale=2.5), 0.0)
+
+    def test_two_values_symmetric(self):
+        # Symmetric two-value input gives MAD == half the spread.
+        self.assertEqual(self.func([1, 3], scale=1.0), 1.0)
+
+    def test_all_same(self):
+        # All-same input has zero absolute deviation.
+        self.assertEqual(self.func([7, 7, 7, 7, 7]), 0.0)
+        self.assertEqual(self.func([3.14, 3.14, 3.14]), 0.0)
+
+    def test_even_count_averages(self):
+        # Even-length input: median of deviations is the average of the
+        # two middle sorted deviations.
+        # [1,2,3,4]: median=2.5, deviations=[1.5,0.5,0.5,1.5],
+        # sorted devs=[0.5,0.5,1.5,1.5], MAD=(0.5+1.5)/2=1.0.
+        self.assertEqual(self.func([1, 2, 3, 4]), 1.4826)
+        self.assertEqual(self.func([1, 2, 3, 4], scale=1.0), 1.0)
+
+    def test_iterator_input(self):
+        # Generators are accepted and consumed exactly once.
+        result = self.func(x * 2 for x in [1, 2, 3, 4])
+        self.assertEqual(result, 2.9652)
+
+    def test_tuple_input(self):
+        # Tuples (and any iterable) are accepted.
+        self.assertEqual(self.func((1, 1, 2, 2, 4, 6, 9)), 1.4826)
+
+    # --- Error and failure paths ---
+
+    def test_non_numeric_raises_type_error(self):
+        # Non-numeric data raises TypeError from arithmetic.
+        self.assertRaises(TypeError, self.func, ['a', 'b', 'c'])
+
+    def test_all_nan_raises(self):
+        # All-NaN input raises StatisticsError (consistent with median()).
+        self.assertRaises(
+            statistics.StatisticsError,
+            self.func,
+            [float('nan')] * 3,
+        )
+
+    def test_partial_nan_returns_nan(self):
+        # Partial NaN propagates as NaN when at least one real value is
+        # present.
+        result = self.func([1.0, 2.0, float('nan'), 4.0, 5.0])
+        self.assertTrue(math.isnan(result))
+
+    # --- Type acceptance ---
+
+    def test_decimal_input(self):
+        # Decimal input returns Decimal.
+        D = Decimal
+        data = [D('1'), D('1'), D('2'), D('2'), D('4'), D('6'), D('9')]
+        result = self.func(data)
+        self.assertIsInstance(result, Decimal)
+        self.assertEqual(result, D('1.4826'))
+
+    def test_fraction_input(self):
+        # Fraction input returns Fraction.
+        F = Fraction
+        data = [F(1), F(1), F(2), F(2), F(4), F(6), F(9)]
+        result = self.func(data)
+        self.assertIsInstance(result, Fraction)
+        # 1.4826 = 7413/5000 (exact decimal-to-fraction conversion).
+        self.assertEqual(result, F(7413, 5000))
+
+    def test_int_returns_float(self):
+        # Int input with default (float) scale yields a float result.
+        result = self.func([1, 1, 2, 2, 4, 6, 9])
+        self.assertIsInstance(result, float)
+
+    def test_decimal_input_preserves_precision(self):
+        # Decimal precision is preserved across the scale conversion.
+        D = Decimal
+        # mad is 1 (Decimal); default scale converts to Decimal('1.4826').
+        result = self.func([D('1'), D('2'), D('3')], scale=1)
+        self.assertEqual(result, D('1'))
+
+    def test_fraction_input_preserves_precision(self):
+        # Fraction precision is preserved.
+        F = Fraction
+        result = self.func([F(1), F(2), F(3)], scale=1)
+        self.assertEqual(result, F(1))
+
+    def test_mixed_int_float_returns_float(self):
+        # Mixed int+float input yields a float result (natural promotion).
+        self.assertIsInstance(self.func([1, 2.5, 3]), float)
+
+    # --- Scale type guard ---
+
+    def test_scale_decimal_raises(self):
+        self.assertRaises(
+            TypeError,
+            self.func,
+            [1, 2, 3],
+            scale=Decimal('1.4826'),
+        )
+
+    def test_scale_fraction_raises(self):
+        self.assertRaises(
+            TypeError,
+            self.func,
+            [1, 2, 3],
+            scale=Fraction(14826, 10000),
+        )
+
+    def test_scale_string_raises(self):
+        self.assertRaises(TypeError, self.func, [1, 2, 3], scale='1.0')
+
+    def test_scale_list_raises(self):
+        self.assertRaises(TypeError, self.func, [1, 2, 3], scale=[1.0])
+
+    def test_scale_none_raises(self):
+        self.assertRaises(TypeError, self.func, [1, 2, 3], scale=None)
+
+
 class TestGeometricMean(unittest.TestCase):
 
     def test_basics(self):
