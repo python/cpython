@@ -201,6 +201,18 @@ shlex
   (Contributed by Jay Berry in :gh:`148846`.)
 
 
+statistics
+----------
+
+* Added :func:`statistics.median_absolute_deviation` for robust measurement
+  of statistical dispersion: the median of the absolute deviations from the
+  median.  Pass ``scale=1`` for the raw value or accept the default
+  ``scale=1.4826`` (the consistency constant for the normal distribution) for
+  an estimator of the population standard deviation that is consistent with
+  :func:`statistics.stdev`.
+  (Contributed by [REPLACE WITH CONTRIBUTOR NAME] in :gh:`[REPLACE WITH PR NUMBER]`.)
+
+
 tkinter
 -------
 
