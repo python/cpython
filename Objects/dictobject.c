@@ -7551,6 +7551,7 @@ store_instance_attr_dict(PyObject *obj, PyDictObject *dict, PyObject *name, PyOb
     return res;
 }
 
+#ifdef Py_GIL_DISABLED
 static inline int
 store_instance_attr_with_dict_lock_held(PyObject *obj, PyDictObject *dict,
                                         PyObject *name, PyObject *value)
@@ -7568,7 +7569,6 @@ store_instance_attr_with_dict_lock_held(PyObject *obj, PyDictObject *dict,
     return res;
 }
 
-#ifdef Py_GIL_DISABLED
 typedef enum {
     TRY_STORE_ATTR_FAILURE = -1,
     TRY_STORE_ATTR_DONE = 0,
@@ -7586,34 +7586,31 @@ try_store_instance_attr_invalid_inline(PyObject *obj, PyObject *name,
                                        PyObject *value)
 {
     bool valid;
-    int res = 0;
     PyDictObject *dict;
     PyDictValues *values = _PyObject_InlineValues(obj);
     Py_BEGIN_CRITICAL_SECTION(obj);
-    if ((valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
-        goto unlock;
-    }
-    dict = _PyObject_GetManagedDict(obj);
-    if (dict == NULL) {
-        dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
-        if (dict == NULL) {
-            res = -1;
-            goto unlock;
+    if (!(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
+        dict = _PyObject_GetManagedDict(obj);
+        if (dict != NULL) {
+            dict = (PyDictObject *)Py_NewRef(dict);
         }
-    } else {
-        dict = (PyDictObject *)Py_NewRef(dict);
     }
-
-unlock:
     Py_END_CRITICAL_SECTION();
-    if (res < 0) {
-        return (try_store_instance_attr_result_t){TRY_STORE_ATTR_FAILURE, res};
-    }
 
     if (valid) {
         return (try_store_instance_attr_result_t){TRY_STORE_ATTR_ALREADY_VALID, 0};
     }
 
+    if (dict == NULL) {
+        // PyObject_GenericGetDict may lock the object,
+        // so we need to do it outside of the critical section.
+        dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
+        if (dict == NULL) {
+            return (try_store_instance_attr_result_t){TRY_STORE_ATTR_FAILURE, -1};
+        }
+    }
+
+    int res;
     bool success = false;
     Py_BEGIN_CRITICAL_SECTION2(obj, dict);
     PyDictObject *current_dict = _PyObject_GetManagedDict(obj);
@@ -7637,9 +7634,10 @@ int
 _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
+    uint8_t valid;
 #ifdef Py_GIL_DISABLED
     try_store_instance_attr_result_t try_res = {TRY_STORE_ATTR_ALREADY_VALID, 0};
-    while (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
+    while (!(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
         // Retry if the managed dict changes before we can lock and validate it.
         try_res = try_store_instance_attr_invalid_inline(obj, name, value);
         if (try_res.try_status != TRY_STORE_ATTR_RETRY) {
@@ -7653,6 +7651,10 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
         case TRY_STORE_ATTR_ALREADY_VALID:
             break;
         case TRY_STORE_ATTR_RETRY:
+        // It will happen if the inline values become valid after we read it
+        // but before we can lock the object.
+            assert(valid);
+            break;
         default:
             Py_UNREACHABLE();
     }
