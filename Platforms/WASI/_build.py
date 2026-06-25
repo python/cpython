@@ -428,5 +428,5 @@ def pythoninfo_build_python(context, working_dir):
 
 @subdir(lambda context: CROSS_BUILD_DIR / host_triple(context))
 def pythoninfo_wasi_python(context, working_dir):
-    """Display build info of the host Python."""
+    """Display build info of the host/WASI Python."""
     call(["make", "pythoninfo"], context=context)
