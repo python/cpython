@@ -1,0 +1,3 @@
+Fix :c:func:`Py_RunMain` incorrectly calling ``exit()`` on
+:exc:`SystemExit` when running a command or file. The exit code
+is now returned to the caller.
