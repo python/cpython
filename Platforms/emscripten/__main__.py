@@ -586,17 +586,7 @@ def make_emscripten_python(context, working_dir):
     subprocess.check_call([exec_script, "--version"])
 
 
-@subdir("host_dir")
-def pythoninfo_emscripten_python(context, working_dir):
-    """Display build info for the host/Emscripten Python."""
-    call(
-        ["make", "pythoninfo"],
-        env=updated_env({}, context.emsdk_cache),
-        quiet=context.quiet,
-    )
-
-
-def run_emscripten_python(context):
+def run_emscripten_python(context, args=None):
     """Run the built emscripten Python."""
     host_dir = context.build_paths["host_dir"]
     exec_script = host_dir / "python.sh"
@@ -604,17 +594,23 @@ def run_emscripten_python(context):
         print("Emscripten not built", file=sys.stderr)
         sys.exit(1)
 
-    args = context.args
-    # Strip the "--" separator if present
-    if args and args[0] == "--":
-        args = args[1:]
+    if args is None:
+        args = context.args
+        # Strip the "--" separator if present
+        if args and args[0] == "--":
+            args = args[1:]
 
-    if context.test:
-        args = load_config_toml()["test-args"] + args
-    elif context.pythoninfo:
-        args = load_config_toml()["pythoninfo-args"] + args
+        if context.test:
+            args = load_config_toml()["test-args"] + args
+        elif context.pythoninfo:
+            args = load_config_toml()["pythoninfo-args"] + args
 
     os.execv(str(exec_script), [str(exec_script), *args])
+
+
+def pythoninfo_emscripten_python(context):
+    """Display build info for the host/Emscripten Python."""
+    run_emscripten_python(context, ["-m", "test.pythoninfo"])
 
 
 def build_target(context):
