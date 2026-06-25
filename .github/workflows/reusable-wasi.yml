@@ -57,7 +57,7 @@ jobs:
       run: python3 Tools/wasm/wasi.py configure-host -- --config-cache
     - name: "Make host/WASI Python"
       run: python3 Tools/wasm/wasi.py make-host
-    - name: "Display build info"
+    - name: "Display build info of the host/WASI Python"
       run: python3 Tools/wasm/wasi.py pythoninfo-host
     - name: "Test"
       run: make --directory "${CROSS_BUILD_WASI}" test
