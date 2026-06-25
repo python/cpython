@@ -3416,9 +3416,7 @@ PyObject *
 _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
 {
     PyObject *it = NULL;       /* iter(iterable) */
-    PyObject *key;
     PyObject *d;
-    int status;
     int need_copy = 0;
 
     PyTypeObject *cls_type = _PyType_CAST(cls);
@@ -3429,6 +3427,8 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         d = frozendict_new_untracked(cls_type);
     }
     else {
+        // Dict subclass, or frozendict subclass which overrides
+        // the constructor.
         d = _PyObject_CallNoArgs(cls);
     }
     if (d == NULL) {
@@ -3516,44 +3516,73 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     }
 
     if (PyDict_CheckExact(d)) {
+        int status = 0;
+
         Py_BEGIN_CRITICAL_SECTION(d);
-        while ((key = PyIter_Next(it)) != NULL) {
+        while (1) {
+            PyObject *key;
+            status = PyIter_NextItem(it, &key);
+            if (status <= 0) {
+                break;
+            }
+
             status = setitem_lock_held((PyDictObject *)d, key, value);
             Py_DECREF(key);
             if (status < 0) {
-                assert(PyErr_Occurred());
-                goto dict_iter_exit;
+                break;
             }
         }
-dict_iter_exit:;
         Py_END_CRITICAL_SECTION();
+
+        if (status < 0) {
+            goto Fail;
+        }
     }
     else if (PyFrozenDict_Check(d)) {
-        while ((key = PyIter_Next(it)) != NULL) {
+        while (1) {
+            PyObject *key;
+            int status = PyIter_NextItem(it, &key);
+            if (status < 0) {
+                goto Fail;
+            }
+            if (status == 0) {
+                break;
+            }
+
             // setitem_take2_lock_held consumes a reference to key
             status = setitem_take2_lock_held((PyDictObject *)d,
                                              key, Py_NewRef(value));
             if (status < 0) {
-                assert(PyErr_Occurred());
                 goto Fail;
             }
         }
     }
     else {
-        while ((key = PyIter_Next(it)) != NULL) {
+        while (1) {
+            PyObject *key;
+            int status = PyIter_NextItem(it, &key);
+            if (status < 0) {
+                goto Fail;
+            }
+            if (status == 0) {
+                break;
+            }
+
             status = PyObject_SetItem(d, key, value);
             Py_DECREF(key);
-            if (status < 0)
+            if (status < 0) {
                 goto Fail;
+            }
         }
+
     }
 
-    if (PyErr_Occurred())
-        goto Fail;
+    assert(!PyErr_Occurred());
     Py_DECREF(it);
     goto Done;
 
 Fail:
+    assert(PyErr_Occurred());
     Py_XDECREF(it);
     Py_DECREF(d);
     return NULL;
