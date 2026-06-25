@@ -7509,8 +7509,8 @@ int
 _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
-    uint8_t valid;
 #ifdef Py_GIL_DISABLED
+    uint8_t valid;
     try_store_instance_attr_result_t try_res = {TRY_STORE_ATTR_ALREADY_VALID, 0};
     while (!(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
         // Retry if the managed dict changes before we can lock and validate it.
