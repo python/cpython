@@ -4297,13 +4297,13 @@ dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey)
     assert(0 <= override && override <= 2);
 
     PyDictObject *mp = _PyAnyDict_CAST(a);
-    assert(can_modify_dict(mp));
 
     int res = 0;
     if (PyAnyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
         PyDictObject *other = (PyDictObject*)b;
         int res;
         Py_BEGIN_CRITICAL_SECTION2(a, b);
+        assert(can_modify_dict(mp));
         res = dict_dict_merge((PyDictObject *)a, other, override, dupkey);
         ASSERT_CONSISTENT(a);
         Py_END_CRITICAL_SECTION2();
@@ -4312,6 +4312,8 @@ dict_merge(PyObject *a, PyObject *b, int override, PyObject **dupkey)
     else {
         /* Do it the generic, slower way */
         Py_BEGIN_CRITICAL_SECTION(a);
+        assert(can_modify_dict(mp));
+
         PyObject *keys = PyMapping_Keys(b);
         PyObject *iter;
         PyObject *key, *value;
