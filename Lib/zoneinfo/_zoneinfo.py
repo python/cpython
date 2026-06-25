@@ -672,7 +672,7 @@ def _parse_tz_str(tz_str):
         except ValueError as e:
             raise ValueError(f"Invalid STD offset in {tz_str}") from e
     else:
-        std_offset = 0
+        raise ValueError(f"Invalid STD offset in {tz_str}")
 
     if dst_abbr is not None:
         if dst_offset := m.group("dstoff"):
