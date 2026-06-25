@@ -505,12 +505,14 @@ class Variable:
         Return the name of the callback.
 
         This deprecated method wraps a deprecated Tcl method removed
-        in Tcl 9.0.  Use trace_add() instead.
+        in Tcl 9.0 and will be removed in Python 3.17.  Use trace_add()
+        instead.
         """
         import warnings
         warnings.warn(
-                "trace_variable() is deprecated and not supported with Tcl 9; "
-                "use trace_add() instead.",
+                "trace_variable() is deprecated and will be removed in Python "
+                "3.17; use trace_add() instead.  It is not supported with "
+                "Tcl 9.",
                 DeprecationWarning, stacklevel=2)
         cbname = self._register(callback)
         self._tk.call("trace", "variable", self._name, mode, cbname)
@@ -525,12 +527,14 @@ class Variable:
         CBNAME is the name of the callback returned from trace_variable or trace.
 
         This deprecated method wraps a deprecated Tcl method removed
-        in Tcl 9.0.  Use trace_remove() instead.
+        in Tcl 9.0 and will be removed in Python 3.17.  Use trace_remove()
+        instead.
         """
         import warnings
         warnings.warn(
-                "trace_vdelete() is deprecated and not supported with Tcl 9; "
-                "use trace_remove() instead.",
+                "trace_vdelete() is deprecated and will be removed in Python "
+                "3.17; use trace_remove() instead.  It is not supported with "
+                "Tcl 9.",
                 DeprecationWarning, stacklevel=2)
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
         cbname = self._tk.splitlist(cbname)[0]
@@ -548,12 +552,14 @@ class Variable:
         """Return all trace callback information.
 
         This deprecated method wraps a deprecated Tcl method removed
-        in Tcl 9.0.  Use trace_info() instead.
+        in Tcl 9.0 and will be removed in Python 3.17.  Use trace_info()
+        instead.
         """
         import warnings
         warnings.warn(
-                "trace_vinfo() is deprecated and not supported with Tcl 9; "
-                "use trace_info() instead.",
+                "trace_vinfo() is deprecated and will be removed in Python "
+                "3.17; use trace_info() instead.  It is not supported with "
+                "Tcl 9.",
                 DeprecationWarning, stacklevel=2)
         return [self._tk.splitlist(x) for x in self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name))]
