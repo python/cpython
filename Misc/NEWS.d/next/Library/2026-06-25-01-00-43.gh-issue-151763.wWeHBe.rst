@@ -1,2 +1,2 @@
-Fix crash in :func:`!_interpqueues.create` on :exc:`MemoryError` when
+Fix crash in :func:`!_interpqueues.create` whe :exc:`MemoryError`
 happens on queue creation.
