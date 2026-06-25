@@ -3605,7 +3605,7 @@ arbitrary binary data.
 
 .. method:: bytes.count(sub, start=0, end=sys.maxsize, /)
             bytearray.count(sub, start=0, end=sys.maxsize, /)
-            
+
 
    Return the number of non-overlapping occurrences of subsequence *sub* in
    the range [*start*, *end*].  Optional arguments *start* and *end* are
