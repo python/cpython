@@ -7,21 +7,22 @@ averages, variance, and standard deviation.
 Calculating averages
 --------------------
 
-==================  ==================================================
-Function            Description
-==================  ==================================================
-mean                Arithmetic mean (average) of data.
-fmean               Fast, floating-point arithmetic mean.
-geometric_mean      Geometric mean of data.
-harmonic_mean       Harmonic mean of data.
-median              Median (middle value) of data.
-median_low          Low median of data.
-median_high         High median of data.
-median_grouped      Median, or 50th percentile, of grouped data.
-mode                Mode (most common value) of data.
-multimode           List of modes (most common values of data).
-quantiles           Divide data into intervals with equal probability.
-==================  ==================================================
+============================  ==================================================
+Function                      Description
+============================  ==================================================
+mean                          Arithmetic mean (average) of data.
+fmean                         Fast, floating-point arithmetic mean.
+geometric_mean                Geometric mean of data.
+harmonic_mean                 Harmonic mean of data.
+median                        Median (middle value) of data.
+median_low                    Low median of data.
+median_high                   High median of data.
+median_grouped                Median, or 50th percentile, of grouped data.
+mode                          Mode (most common value) of data.
+multimode                     List of modes (most common values of data).
+quantiles                     Divide data into intervals with equal probability.
+median_absolute_deviation     Median absolute deviation of data.
+============================  ==================================================
 
 Calculate the arithmetic mean ("the average") of data:
 
@@ -50,14 +51,15 @@ the class interval 3.5-4.5. The median of these data points is 2.8333...
 Calculating variability or spread
 ---------------------------------
 
-==================  =============================================
-Function            Description
-==================  =============================================
-pvariance           Population variance of data.
-variance            Sample variance of data.
-pstdev              Population standard deviation of data.
-stdev               Sample standard deviation of data.
-==================  =============================================
+============================  =============================================
+Function                      Description
+============================  =============================================
+pvariance                     Population variance of data.
+variance                      Sample variance of data.
+pstdev                        Population standard deviation of data.
+stdev                         Sample standard deviation of data.
+median_absolute_deviation     Median absolute deviation of data.
+============================  =============================================
 
 Calculate the standard deviation of sample data:
 
@@ -117,6 +119,7 @@ __all__ = [
     'linear_regression',
     'mean',
     'median',
+    'median_absolute_deviation',
     'median_grouped',
     'median_high',
     'median_low',
@@ -651,6 +654,93 @@ def pstdev(data, mu=None):
     if issubclass(T, Decimal):
         return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
     return _float_sqrt_of_frac(mss_numerator, mss_denominator)
+
+
+def median_absolute_deviation(data, *, scale=1.4826):
+    """Median absolute deviation of data.
+
+    The median absolute deviation (MAD) is a robust measure of the
+    variability of a univariate sample of quantitative data. It is the
+    median of the absolute deviations from the median:
+
+        MAD = median(|x_i - median(x)|)
+
+    For normally distributed data, multiplying MAD by the consistency
+    constant 1.4826 (the default *scale* parameter) produces an estimator
+    of the population standard deviation that is consistent with the
+    sample standard deviation. To get the raw MAD instead, pass
+    ``scale=1``.
+
+    *data* can be a sequence or iterable.  If *data* is empty,
+    :exc:`StatisticsError` will be raised.  *scale* must be an ``int``
+    or ``float``; passing a :class:`Decimal` or :class:`Fraction` raises
+    :exc:`TypeError`.  The result type follows *data*, not *scale*.
+
+    Some examples of use:
+
+    >>> median_absolute_deviation([1, 1, 2, 2, 4, 6, 9])
+    1.4826
+    >>> median_absolute_deviation([1, 1, 2, 2, 4, 6, 9], scale=1.0)
+    1.0
+
+    Decimals and Fractions are supported:
+
+    >>> from decimal import Decimal as D
+    >>> median_absolute_deviation([D("1"), D("1"), D("2"), D("2"), D("4"), D("6"), D("9")])
+    Decimal('1.4826')
+
+    >>> from fractions import Fraction as F
+    >>> median_absolute_deviation([F(1), F(1), F(2), F(2), F(4), F(6), F(9)])
+    Fraction(7413, 5000)
+
+    """
+    if not isinstance(scale, (int, float)):
+        raise TypeError(
+            'scale must be an int or float, not ' + type(scale).__name__
+        )
+
+    if iter(data) is data:
+        data = list(data)
+
+    n = len(data)
+    if n == 0:
+        raise StatisticsError(
+            'median_absolute_deviation requires at least one data point'
+        )
+
+    # All-NaN input raises StatisticsError; partial NaN propagates as NaN.
+    # statistics.median() leaves NaN where it sorts, which would give an
+    # implementation-defined center; we detect NaN explicitly so the
+    # behavior is well-defined regardless of where NaN ends up.
+    has_nan = False
+    all_nan = True
+    for x in data:
+        if isinstance(x, float) and math.isnan(x):
+            has_nan = True
+        else:
+            all_nan = False
+
+    if all_nan:
+        raise StatisticsError(
+            'median_absolute_deviation requires at least one data point'
+        )
+
+    if has_nan:
+        return float('nan')
+
+    center = median(data)
+    deviations = [abs(x - center) for x in data]
+    mad = median(deviations)
+
+    # Result type follows the input data, not the scale parameter.
+    # Decimal and Fraction inputs require explicit conversion so the
+    # returned value preserves precision; int and float inputs produce
+    # a float result via natural arithmetic (because the default scale
+    # is float).
+    T = type(data[0])
+    if T is Decimal or T is Fraction:
+        return T(Decimal(str(scale))) * mad
+    return scale * mad
 
 
 ## Statistics for relations between two inputs #############################
