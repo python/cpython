@@ -2978,21 +2978,9 @@ test_soft_deprecated_macros(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args)
 static PyObject*
 uptime_bsd(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 {
-    const char *name = "kern.boottime";
-    size_t size = 0;
-
-    int res = sysctlbyname(name, NULL, &size, NULL, 0);
-    if (res != 0) {
-        return PyErr_SetFromErrno(PyExc_OSError);
-    }
-
     struct timeval tv;
-    if (size != sizeof(tv)) {
-        PyErr_SetString(PyExc_ValueError, "unexpected size");
-        return NULL;
-    }
-
-    res = sysctlbyname(name, &tv, &size, NULL, 0);
+    size_t size = sizeof(tv);
+    int res = sysctlbyname("kern.boottime", &tv, &size, NULL, 0);
     if (res != 0) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
