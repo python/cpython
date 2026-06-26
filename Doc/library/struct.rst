@@ -283,6 +283,7 @@ platform-dependent.
 
 .. versionchanged:: 3.15
    Added support for the ``'Zf'`` and ``'Zd'`` formats.
+   ``'F'`` and ``'D'`` formats are :term:`soft deprecated`.
 
 .. seealso::
 
