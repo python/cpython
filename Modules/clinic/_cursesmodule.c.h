@@ -105,6 +105,97 @@ exit:
 
 #endif /* defined(HAVE_NCURSESW) */
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(complexstr_new__doc__,
+"complexstr(cells, /, attr=<unrepresentable>, pair=<unrepresentable>)\n"
+"--\n"
+"\n"
+"An immutable string of styled wide-character cells.\n"
+"\n"
+"  cells\n"
+"    An iterable of cells, each a complexchar or a str.\n"
+"  attr\n"
+"    Attributes applied to every cell (only with a string).\n"
+"  pair\n"
+"    Color pair applied to every cell (only with a string).\n"
+"\n"
+"It is the counterpart of complexchar for a run of cells, and the type\n"
+"returned by window.in_wchstr().  Each cell is a complexchar or a str (a\n"
+"spacing character optionally followed by combining characters).\n"
+"\n"
+"When cells is a string it is split into character cells, and attr and\n"
+"pair (if given) style every cell.  Otherwise each item carries its own\n"
+"rendition, and attr and pair must be omitted.");
+
+static PyObject *
+complexstr_new_impl(PyTypeObject *type, PyObject *cells, PyObject *attr,
+                    PyObject *pair);
+
+static PyObject *
+complexstr_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(attr), &_Py_ID(pair), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "attr", "pair", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "complexstr",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    PyObject *cells;
+    PyObject *attr = NULL;
+    PyObject *pair = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    cells = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        attr = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    pair = fastargs[2];
+skip_optional_pos:
+    return_value = complexstr_new_impl(type, cells, attr, pair);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr])\n"
 "Paint the character.\n"
@@ -898,6 +989,28 @@ _curses_window_derwin(PyObject *self, PyObject *args)
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_dupwin__doc__,
+"dupwin($self, /)\n"
+"--\n"
+"\n"
+"Create an exact duplicate of the window.\n"
+"\n"
+"The new window is independent of the original: it has the same size,\n"
+"position, contents and attributes, but its own cell buffer, so later\n"
+"changes to one do not affect the other.");
+
+#define _CURSES_WINDOW_DUPWIN_METHODDEF    \
+    {"dupwin", (PyCFunction)_curses_window_dupwin, METH_NOARGS, _curses_window_dupwin__doc__},
+
+static PyObject *
+_curses_window_dupwin_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_dupwin(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_dupwin_impl((PyCursesWindowObject *)self);
 }
 
 PyDoc_STRVAR(_curses_window_echochar__doc__,
@@ -2903,6 +3016,65 @@ PyDoc_STRVAR(_curses_getwin__doc__,
 
 #define _CURSES_GETWIN_METHODDEF    \
     {"getwin", (PyCFunction)_curses_getwin, METH_O, _curses_getwin__doc__},
+
+PyDoc_STRVAR(_curses_scr_dump__doc__,
+"scr_dump($module, filename, /)\n"
+"--\n"
+"\n"
+"Write the current contents of the virtual screen to a file.\n"
+"\n"
+"  filename\n"
+"    The file to write to.\n"
+"\n"
+"The file can later be used to restore the screen with scr_restore(),\n"
+"scr_init() or scr_set().");
+
+#define _CURSES_SCR_DUMP_METHODDEF    \
+    {"scr_dump", (PyCFunction)_curses_scr_dump, METH_O, _curses_scr_dump__doc__},
+
+PyDoc_STRVAR(_curses_scr_restore__doc__,
+"scr_restore($module, filename, /)\n"
+"--\n"
+"\n"
+"Set the virtual screen to the contents of a file made by scr_dump().\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"The next call to doupdate() or refresh() restores the screen to those\n"
+"contents.");
+
+#define _CURSES_SCR_RESTORE_METHODDEF    \
+    {"scr_restore", (PyCFunction)_curses_scr_restore, METH_O, _curses_scr_restore__doc__},
+
+PyDoc_STRVAR(_curses_scr_init__doc__,
+"scr_init($module, filename, /)\n"
+"--\n"
+"\n"
+"Initialize the assumed terminal contents from a scr_dump() file.\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"Use it as what the terminal currently displays, for example after\n"
+"another program has drawn the screen.");
+
+#define _CURSES_SCR_INIT_METHODDEF    \
+    {"scr_init", (PyCFunction)_curses_scr_init, METH_O, _curses_scr_init__doc__},
+
+PyDoc_STRVAR(_curses_scr_set__doc__,
+"scr_set($module, filename, /)\n"
+"--\n"
+"\n"
+"Use a scr_dump() file as both the virtual screen and the terminal.\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"This combines the effects of scr_restore() and scr_init().");
+
+#define _CURSES_SCR_SET_METHODDEF    \
+    {"scr_set", (PyCFunction)_curses_scr_set, METH_O, _curses_scr_set__doc__},
 
 PyDoc_STRVAR(_curses_halfdelay__doc__,
 "halfdelay($module, tenths, /)\n"
@@ -5754,4 +5926,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=1c4769cac4c2dd46 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5bc1806939dac9f9 input=a9049054013a1b77]*/

@@ -696,6 +696,40 @@ The module :mod:`!curses` defines the following functions:
    Save the current state of the terminal modes in a buffer, usable by
    :func:`resetty`.
 
+.. function:: scr_dump(filename)
+
+   Write the current contents of the virtual screen to *filename*, which may be
+   a string or a :term:`path-like object`.  The file can later be read by
+   :func:`scr_restore`, :func:`scr_init` or :func:`scr_set`.  This is the
+   whole-screen counterpart of :meth:`window.putwin`.
+
+   .. versionadded:: next
+
+.. function:: scr_restore(filename)
+
+   Set the virtual screen to the contents of *filename*, which must have been
+   written by :func:`scr_dump`.  The next call to :func:`doupdate` or
+   :meth:`window.refresh` restores the screen to those contents.
+
+   .. versionadded:: next
+
+.. function:: scr_init(filename)
+
+   Initialize the assumed contents of the terminal from *filename*, which must
+   have been written by :func:`scr_dump`.  Use it when the terminal already
+   displays those contents, for example after another program has drawn the
+   screen, so that curses does not redraw what is already there.
+
+   .. versionadded:: next
+
+.. function:: scr_set(filename)
+
+   Use *filename*, which must have been written by :func:`scr_dump`, as both
+   the virtual screen and the assumed terminal contents.  This combines the
+   effects of :func:`scr_restore` and :func:`scr_init`.
+
+   .. versionadded:: next
+
 .. function:: get_escdelay()
 
    Retrieves the value set by :func:`set_escdelay`.
@@ -1074,12 +1108,20 @@ Window objects
    ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
 
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`; see :meth:`addstr`.
+
 
 .. method:: window.addstr(str[, attr])
             window.addstr(y, x, str[, attr])
 
    Paint the character string *str* at ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
+
+   *str* may also be a :class:`complexstr`, in which case each cell carries its
+   own attributes and color pair, so *attr* must not be given.  A
+   :class:`complexstr` obtained from :meth:`in_wchstr` is written back
+   unchanged.
 
    .. note::
 
@@ -1092,6 +1134,9 @@ Window objects
         If you are stuck with an earlier ncurses, you can avoid triggering it by
         not calling :meth:`!addstr` with a *str* that has embedded newlines;
         instead, call :meth:`!addstr` separately for each line.
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`, as described above.
 
 
 .. method:: window.attroff(attr)
@@ -1301,6 +1346,17 @@ Window objects
    :meth:`subwin`, except that *begin_y* and *begin_x* are relative to the origin
    of the window, rather than relative to the entire screen.  Return a window
    object for the derived window.
+
+
+.. method:: window.dupwin()
+
+   Return a new window that is an exact duplicate of the window: it has the same
+   size, position, contents and attributes.  Unlike a window created by
+   :meth:`subwin` or :meth:`derwin`, the duplicate is independent of the
+   original -- it has its own cell buffer, so later changes to one do not affect
+   the other.
+
+   .. versionadded:: next
 
 
 .. method:: window.echochar(ch[, attr])
@@ -1550,6 +1606,9 @@ Window objects
    cursor are shifted right, with the rightmost characters on the line being lost.
    The cursor position does not change (after moving to *y*, *x*, if specified).
 
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`; see :meth:`insstr`.
+
 
 .. method:: window.insstr(str[, attr])
             window.insstr(y, x, str[, attr])
@@ -1558,6 +1617,12 @@ Window objects
    the character under the cursor.  All characters to the right of the cursor are
    shifted right, with the rightmost characters on the line being lost.  The cursor
    position does not change (after moving to *y*, *x*, if specified).
+
+   *str* may also be a :class:`complexstr`, in which case each cell carries its
+   own attributes and color pair, so *attr* must not be given.
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`, as described above.
 
 
 .. method:: window.instr([n])
@@ -1583,6 +1648,25 @@ Window objects
    than a :class:`bytes` object, so it can return characters that are not
    representable in the window's encoding.  Attributes and color information
    are stripped from the characters.  The maximum value for *n* is 2047.
+
+   .. versionadded:: next
+
+
+.. method:: window.in_wchstr([n])
+            window.in_wchstr(y, x[, n])
+
+   Return a :class:`complexstr` of the styled cells extracted from the window
+   starting at the current cursor position, or at *y*, *x* if specified, and
+   stopping at the end of the line.  This is the variant of :meth:`instr` and
+   :meth:`in_wstr` that *keeps* each cell's attributes and color pair (those
+   methods strip the rendition).  If *n* is specified, at most *n* cells are
+   returned.  The maximum value for *n* is 2047.
+
+   The result can be written back unchanged with :meth:`addstr` (a read and a
+   re-write is a round-trip that preserves every cell's rendition).
+
+   This method is only available if Python was built against a wide-character
+   version of the underlying curses library.
 
    .. versionadded:: next
 
@@ -2031,6 +2115,43 @@ Complex character objects
    .. attribute:: pair
 
       The color pair number of the character cell (read-only).
+
+   .. versionadded:: next
+
+
+.. class:: complexstr(cells[, attr[, pair]])
+
+   A *complex character string* (or *complexstr*) is an immutable sequence of
+   styled wide-character cells -- the string counterpart of
+   :class:`complexchar` (as :class:`str` is to a single character).
+
+   If *cells* is a string, it is split into character cells (each a spacing
+   character optionally followed by combining characters), and *attr* (a
+   combination of the :ref:`WA_* attributes <curses-wa-constants>`) and *pair*
+   (a color pair number), if given, are applied to every cell.
+
+   Otherwise *cells* is an iterable whose items are themselves cells, each a
+   :class:`complexchar` or a string; each item then carries its own rendition,
+   and *attr* and *pair* must be omitted.
+
+   It is returned by :meth:`window.in_wchstr`, and accepted by
+   :meth:`window.addstr`, :meth:`~window.addnstr`, :meth:`~window.insstr` and
+   :meth:`~window.insnstr`, so a run read from a window can be written back
+   unchanged.
+
+   It behaves like an immutable sequence: ``len(s)`` is the number of cells,
+   ``s[i]`` is the *i*-th cell as a :class:`complexchar`, slicing and
+   concatenation produce new :class:`!complexstr` instances, and iterating
+   yields the cells.  :func:`str` returns the cells' text joined together, and
+   two complex character strings are equal when their cells all match.  It is
+   hashable.
+
+   To build or edit a run of cells, use an ordinary :class:`list` of
+   :class:`complexchar` (or strings); a :class:`!complexstr` is the immutable
+   form returned by a read.
+
+   This type is only available if Python was built against a wide-character
+   version of the underlying curses library.
 
    .. versionadded:: next
 
