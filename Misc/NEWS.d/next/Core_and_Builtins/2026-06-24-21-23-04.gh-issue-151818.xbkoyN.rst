@@ -1,0 +1,3 @@
+Fix the error path of the ``CALL_LIST_APPEND`` opcode (``list.append()``):
+handle properly :exc:`MemoryError` on resizing the list. Patch by Victor
+Stinner.
