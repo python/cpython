@@ -1129,21 +1129,27 @@ class TestCurses(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             dump = os.path.join(d, 'dump')
             self.assertIsNone(curses.scr_dump(dump))
-            # Dumping the same screen again is deterministic.
+            with open(dump, 'rb') as f:
+                image = f.read()
+            self.assertTrue(image)
+            # The dump format embeds raw pointers on some platforms (such as
+            # macOS), so two dumps of the same screen are not always identical.
+            # Only compare dump files when the format proves deterministic.
             dump2 = os.path.join(d, 'dump2')
             curses.scr_dump(dump2)
-            with open(dump, 'rb') as f1, open(dump2, 'rb') as f2:
-                self.assertEqual(f1.read(), f2.read())
+            with open(dump2, 'rb') as f:
+                deterministic = f.read() == image
             # scr_restore() reloads that virtual screen, so dumping it again
             # reproduces the original file even after the screen has changed.
             stdscr.erase()
             stdscr.addstr(0, 0, 'something else')
             stdscr.refresh()
             self.assertIsNone(curses.scr_restore(dump))
-            restored = os.path.join(d, 'restored')
-            curses.scr_dump(restored)
-            with open(dump, 'rb') as f1, open(restored, 'rb') as f2:
-                self.assertEqual(f1.read(), f2.read())
+            if deterministic:
+                restored = os.path.join(d, 'restored')
+                curses.scr_dump(restored)
+                with open(restored, 'rb') as f:
+                    self.assertEqual(f.read(), image)
             # scr_init() and scr_set() accept a dump file and return None.
             self.assertIsNone(curses.scr_init(dump))
             self.assertIsNone(curses.scr_set(dump))
