@@ -426,7 +426,7 @@ static inline py_trampoline
 code_arena_new_code(code_arena_t *code_arena)
 {
     py_trampoline trampoline = (py_trampoline)code_arena->current_addr;
-    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding, 
+    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding,
                                   trampoline_api.code_alignment);
     assert(total_code_size % trampoline_api.code_alignment == 0);
     code_arena->size_left -= total_code_size;
