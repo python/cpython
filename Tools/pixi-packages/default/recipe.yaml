@@ -34,6 +34,7 @@ outputs:
       env:
         PYTHON_VARIANT: ${{ variant }}
     python:
+      skip_pyc_compilation: ["**/*.py"]
       site_packages_path: "lib/python${{ version }}${{ freethreading_tag }}/site-packages"
 
   # derived from https://github.com/conda-forge/python-feedstock/blob/main/recipe/meta.yaml
