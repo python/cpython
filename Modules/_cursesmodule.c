@@ -109,6 +109,7 @@ static const char PyCursesVersion[] = "2.2";
 #include "pycore_long.h"        // _PyLong_GetZero()
 #include "pycore_structseq.h"   // _PyStructSequence_NewType()
 #include "pycore_fileutils.h"   // _Py_dup(), _Py_set_inheritable()
+#include "pycore_tuple.h"       // _PyTuple_HASH_XXPRIME_1
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -167,6 +168,7 @@ typedef struct {
     PyTypeObject *screen_type;      // _curses.screen
 #ifdef HAVE_NCURSESW
     PyTypeObject *complexchar_type; // _curses.complexchar
+    PyTypeObject *complexstr_type;  // _curses.complexstr
 #endif
     PyObject *topscreen;            // owned ref to the current screen object,
                                     // or NULL for the initscr() screen
@@ -202,8 +204,9 @@ module _curses
 class _curses.window "PyCursesWindowObject *" "clinic_state()->window_type"
 class _curses.screen "PyCursesScreenObject *" "clinic_state()->screen_type"
 class _curses.complexchar "PyCursesComplexCharObject *" "clinic_state()->complexchar_type"
+class _curses.complexstr "PyCursesComplexStrObject *" "get_cursesmodule_state_by_cls(type)->complexstr_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=211a02287a60aed0]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e9439fe0a704a26e]*/
 
 /* Indicate whether the module has already been loaded or not. */
 static int curses_module_loaded = 0;
@@ -669,6 +672,17 @@ typedef struct {
 
 #define _PyCursesComplexCharObject_CAST(op)  ((PyCursesComplexCharObject *)(op))
 
+/* An immutable packed array of cchar_t cells -- the "complex character
+   string" counterpart of complexchar (as str is to a single character).
+   It owns the contiguous buffer that win_wchnstr() fills directly, so a read
+   and a re-write is a zero-copy round-trip. */
+typedef struct {
+    PyObject_VAR_HEAD
+    cchar_t cells[1];   // ob_size cells, stored inline (variable-size object)
+} PyCursesComplexStrObject;
+
+#define _PyCursesComplexStrObject_CAST(op)  ((PyCursesComplexStrObject *)(op))
+
 /* Build a single character cell from obj.
 
    Return 1 and store a chtype in *pch for an int or bytes, 2 and store a
@@ -1117,6 +1131,430 @@ static PyGetSetDef complexchar_getsets[] = {
     {NULL}
 };
 
+/* -------------------------------------------------------------*/
+/* Complex character strings (immutable arrays of styled cells)  */
+/* -------------------------------------------------------------*/
+
+/* Pack a single Python cell -- a complexchar (used as is) or a str (a spacing
+   character optionally followed by combining characters, with no attributes
+   and color pair 0) -- into *out.  Return 0 on success, -1 with an exception
+   set otherwise. */
+static int
+curses_pack_cell(cursesmodule_state *state, PyObject *item, cchar_t *out)
+{
+    if (Py_IS_TYPE(item, state->complexchar_type)) {
+        *out = _PyCursesComplexCharObject_CAST(item)->cval;
+        return 0;
+    }
+    if (PyUnicode_Check(item)) {
+        wchar_t wstr[CCHARW_MAX + 1];
+        if (PyCurses_ConvertToWideCell(item, wstr) < 0) {
+            return -1;
+        }
+        if (curses_setcchar(out, wstr, A_NORMAL, 0) == ERR) {
+            PyErr_SetString(state->error, "setcchar() returned ERR");
+            return -1;
+        }
+        return 0;
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "complexstr cell must be a complexchar or a str, not %T",
+                 item);
+    return -1;
+}
+
+/* Wrap a buffer of len cells in a new complexstr, copying them in.  tp_alloc
+   sizes the variable-size object for len cells and sets ob_size. */
+static PyObject *
+PyCursesComplexStr_New(cursesmodule_state *state, const cchar_t *cells,
+                       Py_ssize_t len)
+{
+    PyTypeObject *type = state->complexstr_type;
+    PyObject *res = type->tp_alloc(type, len);
+    if (res != NULL && len > 0) {
+        memcpy(_PyCursesComplexStrObject_CAST(res)->cells, cells,
+               (size_t)len * sizeof(cchar_t));
+    }
+    return res;
+}
+
+/* Build a complexstr from a string, grouping each base character with its
+   trailing combining characters into one cell (so "é" is one cell, not two).
+   A string needs this separate path because a generic sequence is packed one
+   cell per item, which would not keep combining marks with their base. */
+static PyObject *
+complexstr_from_string(cursesmodule_state *state, PyObject *str,
+                       attr_t attr, int pair)
+{
+    Py_ssize_t n;
+    wchar_t *wbuf = PyUnicode_AsWideCharString(str, &n);
+    if (wbuf == NULL) {
+        return NULL;
+    }
+    cchar_t *cells = n > 0 ? PyMem_New(cchar_t, n) : NULL;
+    if (n > 0 && cells == NULL) {
+        PyMem_Free(wbuf);
+        return PyErr_NoMemory();
+    }
+    Py_ssize_t count = 0;
+    for (Py_ssize_t i = 0; i < n; ) {
+        wchar_t cell[CCHARW_MAX + 1];
+        Py_ssize_t k = 0;
+        cell[k++] = wbuf[i++];
+        while (i < n && k < CCHARW_MAX && wcwidth(wbuf[i]) == 0) {
+            cell[k++] = wbuf[i++];
+        }
+        cell[k] = L'\0';
+        /* A cell's base must be a spacing character.  A combining character
+           (wcwidth 0) has no base to attach to, so it cannot start a cell.  A
+           control character (wcwidth < 0) may stand alone but cannot carry
+           combining marks. */
+        int width = wcwidth(cell[0]);
+        if (width == 0 || (k > 1 && width < 0)) {
+            PyErr_Format(PyExc_ValueError,
+                         "a character cell must be a single spacing character "
+                         "optionally followed by up to %d combining characters",
+                         (int)(CCHARW_MAX - 1));
+            PyMem_Free(cells);
+            PyMem_Free(wbuf);
+            return NULL;
+        }
+        if (curses_setcchar(&cells[count], cell, attr, pair) == ERR) {
+            if (!PyErr_Occurred()) {
+                PyErr_SetString(state->error, "setcchar() returned ERR");
+            }
+            PyMem_Free(cells);
+            PyMem_Free(wbuf);
+            return NULL;
+        }
+        count++;
+    }
+    PyObject *res = PyCursesComplexStr_New(state, cells, count);
+    PyMem_Free(cells);
+    PyMem_Free(wbuf);
+    return res;
+}
+
+/*[clinic input]
+@classmethod
+_curses.complexstr.__new__ as complexstr_new
+
+    cells: object
+        An iterable of cells, each a complexchar or a str.
+    /
+    attr: object = NULL
+        Attributes applied to every cell (only with a string).
+    pair: object = NULL
+        Color pair applied to every cell (only with a string).
+
+An immutable string of styled wide-character cells.
+
+It is the counterpart of complexchar for a run of cells, and the type
+returned by window.in_wchstr().  Each cell is a complexchar or a str (a
+spacing character optionally followed by combining characters).
+
+When cells is a string it is split into character cells, and attr and
+pair (if given) style every cell.  Otherwise each item carries its own
+rendition, and attr and pair must be omitted.
+[clinic start generated code]*/
+
+static PyObject *
+complexstr_new_impl(PyTypeObject *type, PyObject *cells, PyObject *attr,
+                    PyObject *pair)
+/*[clinic end generated code: output=ef8a53143d35a32a input=9b75aee973cc6565]*/
+{
+    cursesmodule_state *state = get_cursesmodule_state_by_cls(type);
+    /* A string is split into cells (grouping combining characters), not
+       iterated as one cell per code point; attr/pair then style every cell. */
+    if (PyUnicode_Check(cells)) {
+        attr_t cattr = A_NORMAL;
+        int cpair = 0;
+        if (attr != NULL && !attr_converter(attr, &cattr)) {
+            return NULL;
+        }
+        if (pair != NULL) {
+            cpair = PyLong_AsInt(pair);
+            if (cpair == -1 && PyErr_Occurred()) {
+                return NULL;
+            }
+            if (cpair < 0) {
+                PyErr_SetString(PyExc_ValueError, "color pair is less than 0");
+                return NULL;
+            }
+        }
+        return complexstr_from_string(state, cells, cattr, cpair);
+    }
+    /* For any other sequence each item carries its own rendition, so attr and
+       pair cannot be given. */
+    if (attr != NULL || pair != NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "attr and pair can only be given with a string");
+        return NULL;
+    }
+    PyObject *seq = PySequence_Fast(cells,
+                                    "complexstr() argument must be an iterable");
+    if (seq == NULL) {
+        return NULL;
+    }
+    Py_ssize_t n = PySequence_Fast_GET_SIZE(seq);
+    PyObject *res = type->tp_alloc(type, n);
+    if (res == NULL) {
+        Py_DECREF(seq);
+        return NULL;
+    }
+    cchar_t *out = _PyCursesComplexStrObject_CAST(res)->cells;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = PySequence_Fast_GET_ITEM(seq, i);  // borrowed
+        if (curses_pack_cell(state, item, &out[i]) < 0) {
+            Py_DECREF(res);
+            Py_DECREF(seq);
+            return NULL;
+        }
+    }
+    Py_DECREF(seq);
+    return res;
+}
+
+static void
+complexstr_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static Py_ssize_t
+complexstr_length(PyObject *self)
+{
+    return Py_SIZE(self);
+}
+
+/* Wrap cell i (no bounds check) in a new complexchar. */
+static PyObject *
+complexstr_getcell(PyObject *self, Py_ssize_t i)
+{
+    cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(self));
+    cchar_t *cells = _PyCursesComplexStrObject_CAST(self)->cells;
+    return PyCursesComplexChar_New(state, &cells[i]);
+}
+
+static PyObject *
+complexstr_item(PyObject *self, Py_ssize_t i)
+{
+    if (i < 0 || i >= Py_SIZE(self)) {
+        PyErr_SetString(PyExc_IndexError, "complexstr index out of range");
+        return NULL;
+    }
+    return complexstr_getcell(self, i);
+}
+
+static PyObject *
+complexstr_subscript(PyObject *self, PyObject *key)
+{
+    PyCursesComplexStrObject *s = _PyCursesComplexStrObject_CAST(self);
+    if (PyIndex_Check(key)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(key, PyExc_IndexError);
+        if (i == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (i < 0) {
+            i += Py_SIZE(s);
+        }
+        return complexstr_item(self, i);
+    }
+    if (PySlice_Check(key)) {
+        Py_ssize_t start, stop, step, slicelen;
+        if (PySlice_GetIndicesEx(key, Py_SIZE(s), &start, &stop, &step,
+                                 &slicelen) < 0)
+        {
+            return NULL;
+        }
+        cursesmodule_state *state =
+            get_cursesmodule_state_by_cls(Py_TYPE(self));
+        PyTypeObject *type = state->complexstr_type;
+        PyObject *res = type->tp_alloc(type, slicelen);
+        if (res == NULL) {
+            return NULL;
+        }
+        cchar_t *out = _PyCursesComplexStrObject_CAST(res)->cells;
+        for (Py_ssize_t i = 0, idx = start; i < slicelen; i++, idx += step) {
+            out[i] = s->cells[idx];
+        }
+        return res;
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "complexstr indices must be integers or slices, not %T",
+                 key);
+    return NULL;
+}
+
+static PyObject *
+complexstr_concat(PyObject *a, PyObject *b)
+{
+    cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(a));
+    if (!Py_IS_TYPE(b, state->complexstr_type)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    PyCursesComplexStrObject *sa = _PyCursesComplexStrObject_CAST(a);
+    PyCursesComplexStrObject *sb = _PyCursesComplexStrObject_CAST(b);
+    PyTypeObject *type = state->complexstr_type;
+    PyObject *res = type->tp_alloc(type, Py_SIZE(sa) + Py_SIZE(sb));
+    if (res == NULL) {
+        return NULL;
+    }
+    cchar_t *out = _PyCursesComplexStrObject_CAST(res)->cells;
+    if (Py_SIZE(sa)) {
+        memcpy(out, sa->cells, (size_t)Py_SIZE(sa) * sizeof(cchar_t));
+    }
+    if (Py_SIZE(sb)) {
+        memcpy(out + Py_SIZE(sa), sb->cells, (size_t)Py_SIZE(sb) * sizeof(cchar_t));
+    }
+    return res;
+}
+
+static PyObject *
+complexstr_str(PyObject *self)
+{
+    PyCursesComplexStrObject *s = _PyCursesComplexStrObject_CAST(self);
+    if (Py_SIZE(s) == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    }
+    wchar_t *buf = PyMem_New(wchar_t, Py_SIZE(s) * CCHARW_MAX + 1);
+    if (buf == NULL) {
+        return PyErr_NoMemory();
+    }
+    Py_ssize_t pos = 0;
+    for (Py_ssize_t i = 0; i < Py_SIZE(s); i++) {
+        attr_t attrs;
+        int pair;
+        /* getcchar() writes the cell's text (and a terminator) at buf + pos;
+           the next cell overwrites the terminator. */
+        if (curses_getcchar(&s->cells[i], buf + pos, &attrs, &pair) == ERR) {
+            cursesmodule_state *state =
+                get_cursesmodule_state_by_cls(Py_TYPE(self));
+            PyErr_SetString(state->error, "getcchar() returned ERR");
+            PyMem_Free(buf);
+            return NULL;
+        }
+        pos += wcslen(buf + pos);
+    }
+    PyObject *res = PyUnicode_FromWideChar(buf, pos);
+    PyMem_Free(buf);
+    return res;
+}
+
+static PyObject *
+complexstr_repr(PyObject *self)
+{
+    PyObject *list = PySequence_List(self);
+    if (list == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyUnicode_FromFormat("%T(%R)", self, list);
+    Py_DECREF(list);
+    return res;
+}
+
+static Py_hash_t
+complexstr_hash(PyObject *self)
+{
+    PyCursesComplexStrObject *s = _PyCursesComplexStrObject_CAST(self);
+    cursesmodule_state *state = get_cursesmodule_state_by_cls(Py_TYPE(self));
+    /* Combine the per-cell hashes like a tuple. */
+    Py_uhash_t acc = _PyTuple_HASH_XXPRIME_5;
+    for (Py_ssize_t i = 0; i < Py_SIZE(s); i++) {
+        Py_hash_t lane = curses_cchar_hash(state, &s->cells[i]);
+        if (lane == -1) {
+            return -1;
+        }
+        acc += (Py_uhash_t)lane * _PyTuple_HASH_XXPRIME_2;
+        acc = _PyTuple_HASH_XXROTATE(acc);
+        acc *= _PyTuple_HASH_XXPRIME_1;
+    }
+    acc += Py_SIZE(s) ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539);
+    if (acc == (Py_uhash_t)-1) {
+        acc = 1546275796;
+    }
+    return (Py_hash_t)acc;
+}
+
+static PyObject *
+complexstr_richcompare(PyObject *self, PyObject *other, int op)
+{
+    if ((op != Py_EQ && op != Py_NE) || !Py_IS_TYPE(other, Py_TYPE(self))) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    PyCursesComplexStrObject *a = _PyCursesComplexStrObject_CAST(self);
+    PyCursesComplexStrObject *b = _PyCursesComplexStrObject_CAST(other);
+    int equal = (Py_SIZE(a) == Py_SIZE(b));
+    for (Py_ssize_t i = 0; equal && i < Py_SIZE(a); i++) {
+        wchar_t wa[CCHARW_MAX + 1], wb[CCHARW_MAX + 1];
+        attr_t aa, ab;
+        int pa, pb;
+        if (curses_getcchar(&a->cells[i], wa, &aa, &pa) == ERR ||
+            curses_getcchar(&b->cells[i], wb, &ab, &pb) == ERR)
+        {
+            cursesmodule_state *state =
+                get_cursesmodule_state_by_cls(Py_TYPE(self));
+            PyErr_SetString(state->error, "getcchar() returned ERR");
+            return NULL;
+        }
+        equal = (aa == ab && pa == pb && wcscmp(wa, wb) == 0);
+    }
+    return PyBool_FromLong(equal == (op == Py_EQ));
+}
+
+/* Write (insert=0) or insert (insert=1) a complexstr's cells, using its buffer
+   directly, at the current or given position.  n_limit < 0 means the whole run.
+   Returns None or NULL with an exception. */
+static PyObject *
+curses_window_put_cells(PyCursesWindowObject *self, PyObject *obj,
+                        int use_xy, int y, int x, int n_limit, int insert,
+                        const char *funcname)
+{
+    const cchar_t *cells = _PyCursesComplexStrObject_CAST(obj)->cells;
+    Py_ssize_t count = Py_SIZE(obj);
+
+    if (n_limit >= 0 && count > n_limit) {
+        count = n_limit;
+    }
+
+    if (count == 0) {
+        /* Nothing to write; just honour the optional move, like an empty
+           string would. */
+        int rtn = use_xy ? wmove(self->win, y, x) : OK;
+        return curses_window_check_err(self, rtn, "wmove", funcname);
+    }
+
+    int rtn;
+    const char *cfuncname;
+    if (insert) {
+        /* There is no batch cchar_t insert; insert the cells right-to-left at
+           the position so they end up in order. */
+        if (use_xy && wmove(self->win, y, x) == ERR) {
+            curses_window_set_error(self, "wmove", funcname);
+            return NULL;
+        }
+        rtn = OK;
+        cfuncname = "wins_wch";
+        for (Py_ssize_t i = count - 1; i >= 0; i--) {
+            rtn = wins_wch(self->win, &cells[i]);
+            if (rtn == ERR) {
+                break;
+            }
+        }
+    }
+    else if (use_xy) {
+        rtn = mvwadd_wchnstr(self->win, y, x, cells, (int)count);
+        cfuncname = "mvwadd_wchnstr";
+    }
+    else {
+        rtn = wadd_wchnstr(self->win, cells, (int)count);
+        cfuncname = "wadd_wchnstr";
+    }
+    return curses_window_check_err(self, rtn, cfuncname, funcname);
+}
+
 #endif
 
 /*****************************************************************************
@@ -1523,6 +1961,18 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     const char *funcname;
 
 #ifdef HAVE_NCURSESW
+    {
+        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+        if (Py_IS_TYPE(str, state->complexstr_type)) {
+            if (use_attr) {
+                PyErr_SetString(PyExc_TypeError, "addstr(): attr cannot be "
+                                "specified together with a complexstr");
+                return NULL;
+            }
+            return curses_window_put_cells(self, str, use_xy, y, x,
+                                           -1, 0, "addstr");
+        }
+    }
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, &wstr);
 #else
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, NULL);
@@ -1626,6 +2076,18 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
     const char *funcname;
 
 #ifdef HAVE_NCURSESW
+    {
+        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+        if (Py_IS_TYPE(str, state->complexstr_type)) {
+            if (use_attr) {
+                PyErr_SetString(PyExc_TypeError, "addnstr(): attr cannot be "
+                                "specified together with a complexstr");
+                return NULL;
+            }
+            return curses_window_put_cells(self, str, use_xy, y, x,
+                                           n, 0, "addnstr");
+        }
+    }
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, &wstr);
 #else
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, NULL);
@@ -3026,6 +3488,73 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
     PyMem_Free(buf);
     return res;
 }
+
+PyDoc_STRVAR(_curses_window_in_wchstr__doc__,
+"in_wchstr([y, x,] n=2047)\n"
+"Return a complexstr of the styled cells extracted from the window.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  n\n"
+"    Maximal number of cells.\n"
+"\n"
+"This is the wide-character variant of instr() and in_wstr() that keeps\n"
+"each cell's attributes and color pair; it returns a complexstr.");
+
+static PyObject *
+PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    int rtn, use_xy = 0, y = 0, x = 0;
+    unsigned int max_buf_size = 2048;
+    unsigned int n = max_buf_size - 1;
+
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
+                                           "_curses.window.in_wchstr"))
+    {
+        return NULL;
+    }
+
+    n = Py_MIN(n, max_buf_size - 1);
+    cchar_t *buf = PyMem_New(cchar_t, n + 1);
+    if (buf == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    if (use_xy) {
+        rtn = mvwin_wchnstr(self->win, y, x, buf, n);
+    }
+    else {
+        rtn = win_wchnstr(self->win, buf, n);
+    }
+
+    cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+    if (rtn == ERR) {
+        PyMem_Free(buf);
+        return PyCursesComplexStr_New(state, NULL, 0);
+    }
+
+    /* win_wchnstr() stores at most n cells and zero-terminates the array at
+       the actual count; every real cell holds at least a space, so the first
+       empty cell marks the end of the run. */
+    Py_ssize_t count = 0;
+    while (count < (Py_ssize_t)n) {
+        wchar_t wstr[CCHARW_MAX + 1];
+        attr_t attrs;
+        int pair;
+        if (curses_getcchar(&buf[count], wstr, &attrs, &pair) == ERR
+            || wstr[0] == L'\0')
+        {
+            break;
+        }
+        count++;
+    }
+    PyObject *res = PyCursesComplexStr_New(state, buf, count);
+    PyMem_Free(buf);
+    return res;
+}
 #endif /* HAVE_NCURSESW */
 
 /*[clinic input]
@@ -3073,6 +3602,18 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     const char *funcname;
 
 #ifdef HAVE_NCURSESW
+    {
+        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+        if (Py_IS_TYPE(str, state->complexstr_type)) {
+            if (use_attr) {
+                PyErr_SetString(PyExc_TypeError, "insstr(): attr cannot be "
+                                "specified together with a complexstr");
+                return NULL;
+            }
+            return curses_window_put_cells(self, str, use_xy, y, x,
+                                           -1, 1, "insstr");
+        }
+    }
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, &wstr);
 #else
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, NULL);
@@ -3174,6 +3715,18 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     const char *funcname;
 
 #ifdef HAVE_NCURSESW
+    {
+        cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+        if (Py_IS_TYPE(str, state->complexstr_type)) {
+            if (use_attr) {
+                PyErr_SetString(PyExc_TypeError, "insnstr(): attr cannot be "
+                                "specified together with a complexstr");
+                return NULL;
+            }
+            return curses_window_put_cells(self, str, use_xy, y, x,
+                                           n, 1, "insnstr");
+        }
+    }
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, &wstr);
 #else
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, NULL);
@@ -3817,6 +4370,32 @@ static PyType_Spec PyCursesComplexChar_Type_spec = {
         | Py_TPFLAGS_HEAPTYPE,
     .slots = PyCursesComplexChar_Type_slots
 };
+
+static PyType_Slot PyCursesComplexStr_Type_slots[] = {
+    {Py_tp_doc, (void *)complexstr_new__doc__},
+    {Py_tp_new, complexstr_new},
+    {Py_tp_dealloc, complexstr_dealloc},
+    {Py_tp_repr, complexstr_repr},
+    {Py_tp_str, complexstr_str},
+    {Py_tp_richcompare, complexstr_richcompare},
+    {Py_tp_hash, complexstr_hash},
+    {Py_sq_length, complexstr_length},
+    {Py_sq_concat, complexstr_concat},
+    {Py_sq_item, complexstr_item},
+    {Py_mp_length, complexstr_length},
+    {Py_mp_subscript, complexstr_subscript},
+    {0, NULL}
+};
+
+static PyType_Spec PyCursesComplexStr_Type_spec = {
+    .name = "_curses.complexstr",
+    .basicsize = offsetof(PyCursesComplexStrObject, cells),
+    .itemsize = sizeof(cchar_t),
+    .flags = Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HEAPTYPE,
+    .slots = PyCursesComplexStr_Type_slots
+};
 #endif
 #undef clinic_state
 
@@ -4020,6 +4599,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {
         "in_wstr", PyCursesWindow_in_wstr, METH_VARARGS,
         _curses_window_in_wstr__doc__
+    },
+    {
+        "in_wchstr", PyCursesWindow_in_wchstr, METH_VARARGS,
+        _curses_window_in_wchstr__doc__
     },
 #endif
     _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF
@@ -7238,6 +7821,7 @@ cursesmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->screen_type);
 #ifdef HAVE_NCURSESW
     Py_VISIT(state->complexchar_type);
+    Py_VISIT(state->complexstr_type);
 #endif
     Py_VISIT(state->topscreen);
     return 0;
@@ -7252,6 +7836,7 @@ cursesmodule_clear(PyObject *mod)
     Py_CLEAR(state->screen_type);
 #ifdef HAVE_NCURSESW
     Py_CLEAR(state->complexchar_type);
+    Py_CLEAR(state->complexstr_type);
 #endif
     Py_CLEAR(state->topscreen);
     return 0;
@@ -7301,6 +7886,14 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddType(module, state->complexchar_type) < 0) {
+        return -1;
+    }
+    state->complexstr_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &PyCursesComplexStr_Type_spec, NULL);
+    if (state->complexstr_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->complexstr_type) < 0) {
         return -1;
     }
 #endif

@@ -148,6 +148,14 @@ curses
   :class:`~curses.complexchar`.
   (Contributed by Serhiy Storchaka in :gh:`152233`.)
 
+* Add the :class:`curses.complexstr` type, an immutable run of styled cells
+  (the string counterpart of :class:`~curses.complexchar`), and the window
+  method :meth:`~curses.window.in_wchstr` that returns one.  The string-cell
+  methods :meth:`~curses.window.addstr`, :meth:`~curses.window.addnstr`,
+  :meth:`~curses.window.insstr` and :meth:`~curses.window.insnstr` now also
+  accept a :class:`~curses.complexstr`.
+  (Contributed by Serhiy Storchaka in :gh:`152233`.)
+
 gzip
 ----
 

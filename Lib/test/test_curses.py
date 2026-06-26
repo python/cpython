@@ -469,6 +469,145 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(cc), ' ')
         self.assertTrue(cc.attr & curses.A_BOLD)
 
+    @requires_curses_func('complexstr')
+    def test_complexstr(self):
+        # A complexstr is an immutable run of styled wide-character cells: the
+        # string counterpart of complexchar (as str is to a single character).
+        cc = curses.complexchar
+        B = curses.A_BOLD
+        # Built from an iterable whose items are complexchar or str cells.
+        s = curses.complexstr([cc('A', B), 'b', cc('c')])
+        self.assertEqual(len(s), 3)
+        self.assertEqual(str(s), 'Abc')
+        # Indexing yields a complexchar carrying the cell's rendition.
+        self.assertIsInstance(s[0], curses.complexchar)
+        self.assertEqual(str(s[0]), 'A')
+        self.assertTrue(s[0].attr & B)
+        self.assertEqual(s[-1], cc('c'))
+        self.assertRaises(IndexError, lambda: s[3])
+        # Iteration walks the cells.
+        self.assertEqual([str(c) for c in s], ['A', 'b', 'c'])
+        # Slicing and concatenation produce new complexstr instances.
+        self.assertIsInstance(s[1:], curses.complexstr)
+        self.assertEqual(str(s[1:]), 'bc')
+        self.assertEqual(str(s[::-1]), 'cbA')
+        self.assertEqual(str(s + curses.complexstr(['Z'])), 'AbcZ')
+        # The empty complexstr.
+        self.assertEqual(len(curses.complexstr([])), 0)
+        self.assertEqual(str(curses.complexstr('')), '')
+        # Equality and hashing compare the cells (text, attributes, pair).
+        self.assertEqual(s, curses.complexstr([cc('A', B), 'b', cc('c')]))
+        self.assertEqual(hash(s),
+                         hash(curses.complexstr([cc('A', B), 'b', cc('c')])))
+        self.assertNotEqual(s, curses.complexstr([cc('A'), 'b', cc('c')]))
+        self.assertNotEqual(s, curses.complexstr([cc('A', B), 'b']))
+        # A spacing character optionally followed by combining characters.
+        if self._encodable('é'):
+            self.assertEqual(str(curses.complexstr(['é', 'x'])),
+                             'éx')
+        # cells is positional-only.
+        self.assertRaises(TypeError, lambda: curses.complexstr(cells=['x']))
+        # Invalid arguments.
+        self.assertRaises(TypeError, curses.complexstr, 5)
+        self.assertRaises(TypeError, curses.complexstr, [65])
+        self.assertRaises(ValueError, curses.complexstr, ['ab'])
+
+        # A string is split into character cells, grouping each base character
+        # with the combining characters that follow it (not one cell per code
+        # point), unlike a generic sequence whose items are each one cell.
+        self.assertEqual(len(curses.complexstr('abc')), 3)
+        self.assertEqual(str(curses.complexstr('abc')), 'abc')
+        self.assertEqual(len(curses.complexstr('')), 0)
+        base = 'é'  # 'e' + combining acute: two code points, one cell
+        if self._encodable(base):
+            self.assertEqual(len(curses.complexstr(base)), 1)
+            self.assertEqual(curses.complexstr(base)[0], cc(base))
+            self.assertEqual(len(curses.complexstr('a' + base + 'b')), 3)
+            # A combining character cannot begin a cell: one that leads the
+            # string, or overflows a base's combining slots, has no base.
+            self.assertRaises(ValueError, curses.complexstr, '\u0301')
+            self.assertRaises(ValueError, curses.complexstr, 'e' + '\u0301' * 10)
+            # A control character may stand alone but not carry combining marks.
+            self.assertRaises(ValueError, curses.complexstr, '\n\u0301')
+        # attr and pair apply to every cell of a string; pair is optional.
+        styled = curses.complexstr('hi', B, 0)
+        self.assertTrue(all(styled[i].attr & B for i in range(len(styled))))
+        self.assertEqual(curses.complexstr('x', B)[0], cc('x', B))
+        self.assertEqual(curses.complexstr('x', B, 0)[0], cc('x', B, 0))
+        # attr and pair may also be passed by keyword.
+        self.assertEqual(curses.complexstr('x', attr=B)[0], cc('x', B))
+        self.assertEqual(curses.complexstr('x', attr=B, pair=0)[0], cc('x', B, 0))
+        self.assertEqual(curses.complexstr('x', pair=0)[0], cc('x', 0, 0))
+        # cells is positional-only.
+        self.assertRaises(TypeError, lambda: curses.complexstr(cells='x'))
+        self.assertRaises(ValueError, curses.complexstr, 'a', 0, -1)
+        self.assertRaises(ValueError, lambda: curses.complexstr('a', pair=-1))
+        # For a non-string, giving attr/pair at all is an error (the cells
+        # carry their own rendition) -- even attr=0.
+        self.assertRaises(TypeError, curses.complexstr, [cc('A')], B)
+        self.assertRaises(TypeError, curses.complexstr, [cc('A')], 0)
+        self.assertRaises(TypeError, curses.complexstr, ['A'], 0, 0)
+        self.assertRaises(TypeError,
+                          lambda: curses.complexstr([cc('A')], attr=B))
+        self.assertRaises(TypeError,
+                          lambda: curses.complexstr(['A'], pair=0))
+
+    @requires_curses_window_meth('in_wchstr')
+    def test_in_wchstr(self):
+        # in_wchstr() returns a complexstr -- the styled-cell counterpart of
+        # instr() (bytes) and in_wstr() (str), which both strip the rendition.
+        stdscr = self.stdscr
+        cc = curses.complexchar
+        B = curses.A_BOLD
+        s = curses.complexstr([cc('A', B), cc('b'), cc('C', B)])
+        stdscr.addstr(0, 0, s)
+        r = stdscr.in_wchstr(0, 0, 3)
+        self.assertIsInstance(r, curses.complexstr)
+        # A read followed by a re-write is an exact round-trip.
+        self.assertEqual(r, s)
+        self.assertEqual(str(r), 'AbC')
+        self.assertTrue(r[0].attr & B)
+        self.assertFalse(r[1].attr & B)
+        # The count is optional and reads to the end of the line by default.
+        stdscr.move(0, 0)
+        self.assertEqual(str(stdscr.in_wchstr())[:3], 'AbC')
+
+    @requires_curses_window_meth('in_wchstr')
+    def test_complexstr_in_write_methods(self):
+        # addstr/addnstr/insstr/insnstr also accept a complexstr, written via
+        # the wide-character functions; a plain str keeps its current meaning.
+        stdscr = self.stdscr
+        cc = curses.complexchar
+        B = curses.A_BOLD
+        s = curses.complexstr([cc('A', B), cc('b'), cc('C', B)])
+        # addstr with a complexstr round-trips.
+        stdscr.addstr(0, 0, s)
+        self.assertEqual(stdscr.in_wchstr(0, 0, 3), s)
+        # addnstr writes at most n cells.
+        stdscr.addstr(2, 0, '....')
+        stdscr.addnstr(2, 0, s, 2)
+        self.assertEqual(str(stdscr.in_wchstr(2, 0, 4)), 'Ab..')
+        # insstr inserts the cells in order.
+        stdscr.move(3, 0)
+        stdscr.addstr('END')
+        stdscr.insstr(3, 0, curses.complexstr([cc('P'), cc('Q')]))
+        self.assertEqual(str(stdscr.in_wchstr(3, 0, 5)), 'PQEND')
+        # insnstr inserts at most n cells.
+        stdscr.move(4, 0)
+        stdscr.addstr('END')
+        stdscr.insnstr(4, 0, curses.complexstr(['1', '2', '3']), 2)
+        self.assertEqual(str(stdscr.in_wchstr(4, 0, 5)), '12END')
+        # An empty run is accepted (and still honours the move).
+        stdscr.addstr(5, 0, curses.complexstr([]))
+        stdscr.insstr(5, 0, curses.complexstr([]))
+        # Cells carry their own rendition, so an explicit attr is rejected.
+        self.assertRaises(TypeError, stdscr.addstr, s, B)
+        self.assertRaises(TypeError, stdscr.addnstr, s, 2, B)
+        self.assertRaises(TypeError, stdscr.insstr, s, B)
+        self.assertRaises(TypeError, stdscr.insnstr, s, 2, B)
+        # A bare sequence of cells is not accepted; build a complexstr first.
+        self.assertRaises(TypeError, stdscr.addstr, [cc('A'), 'b'])
+        self.assertRaises(TypeError, stdscr.insstr, [cc('A'), 'b'])
 
     def test_output_character(self):
         stdscr = self.stdscr
