@@ -2951,10 +2951,8 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
                            &cidobj);
     if (handle_channel_error(err, self, cid)) {
         assert(cidobj == NULL);
-        err = channel_destroy(&_globals.channels, cid);
-        if (handle_channel_error(err, self, cid)) {
-            // XXX issue a warning?
-        }
+        assert(PyErr_Occurred());
+        (void)channel_destroy(&_globals.channels, cid);
         return NULL;
     }
     assert(cidobj != NULL);
