@@ -7,7 +7,7 @@ import threading
 import unittest
 from functools import partial
 from test.support import force_color, os_helper, force_not_colorized_test_class
-from test.support import threading_helper
+from test.support import threading_helper, is_emscripten
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
@@ -349,6 +349,7 @@ class TestConsole(TestCase):
         console.restore()
         con.restore()
 
+    @unittest.skipIf(is_emscripten, "Causes TypeError: Cannot read properties of undefined (reading '0')")
     def test_getheightwidth_with_invalid_environ(self, _os_write):
         # gh-128636
         console = UnixConsole(term="xterm")
@@ -384,6 +385,7 @@ class TestConsole(TestCase):
 @unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
 class TestUnixConsoleEIOHandling(TestCase):
 
+    @unittest.skipIf(is_emscripten, "Causes TypeError: Cannot read properties of undefined (reading '0')")
     @patch('_pyrepl.unix_console.tcsetattr')
     @patch('_pyrepl.unix_console.tcgetattr')
     def test_eio_error_handling_in_restore(self, mock_tcgetattr, mock_tcsetattr):

@@ -18,11 +18,51 @@ The definition of the `_PyInterpreterFrame` struct is in
 Python semantics allows frames to outlive the activation, so they need to
 be allocated outside the C call stack. To reduce overhead and improve locality
 of reference, most frames are allocated contiguously in a per-thread stack
-(see `_PyThreadState_PushFrame` in [Python/pystate.c](../Python/pystate.c)).
+chunk (see `_PyThreadState_PushFrame` in
+[Python/pystate.c](../Python/pystate.c)).
 
 Frames of generators and coroutines are embedded in the generator and coroutine
 objects, so are not allocated in the per-thread stack. See `_PyGenObject` in
 [Include/internal/pycore_interpframe_structs.h](../Include/internal/pycore_interpframe_structs.h).
+
+## Stack allocation
+
+The per-thread stack is a resizable array backed by `_PyStackChunk`
+allocations. Each `PyThreadState` stores:
+
+* `stack_chunk_list`: the newest stack chunk, with older chunks linked through
+  `_PyStackChunk.previous`;
+* `stack_top`: the next free slot in the newest chunk; and
+* `stack_limit`: the end of the newest chunk.
+
+The first frame allocation creates a chunk of at least
+`_PY_STACK_CHUNK_MIN_SIZE=4096` bytes. If a subsequent frame does not fit,
+`resize_stack()` allocates a larger chunk, twice the size of the
+previous one and large enough for the requested frame. The old chunk is
+retained in `stack_chunk_list->previous`, instead of being copied or
+immediately freed.
+
+The newest chunk is aligned with the previous logical stack by setting its
+`stack_top` to the same offset that was used in the old chunk. New frames are
+then placed in the newest chunk. Existing frame records remain where they were,
+so the `previous` links in the frame chain can cross from the newest chunk into
+older retained chunks.
+
+![Resizable stack after a resize](images/stack-resize.png)
+
+When a frame is popped, `_PyThreadState_PopFrame()` ensures that
+`tstate->stack_top` keeps pointing into the new stack chunk even if the popped
+frame resides in an older chunk. This ensures that when new frames are pushed,
+they are created in the new chunk.
+
+Starting from the situation depicted above, the picture below shows what happens
+after resizing and a number of pops remove one frame in the older chunk, then a
+new frame is created and placed in the newest chunk.
+
+![Stack after a resize, various pops and one push](images/stack-resize-pop-push.png)
+
+All retained stack chunks are freed when the thread state is deleted by
+`clear_stack_chunk_list()`.
 
 ## Layout
 

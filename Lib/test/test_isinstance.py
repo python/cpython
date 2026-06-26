@@ -307,6 +307,8 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
 
         self.assertEqual(True, issubclass(B(), int))
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_infinite_recursion_in_bases(self):
         class X:
             @property

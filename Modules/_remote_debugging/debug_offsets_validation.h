@@ -252,7 +252,7 @@ validate_fixed_field(
 #define PY_REMOTE_DEBUG_THREAD_STATE_FIELDS(APPLY, buffer_size) \
     APPLY(thread_state, native_thread_id, sizeof(unsigned long), _Alignof(long), buffer_size); \
     APPLY(thread_state, interp, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
-    APPLY(thread_state, datastack_chunk, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
+    APPLY(thread_state, stack_chunk_list, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
     APPLY(thread_state, status, FIELD_SIZE(PyThreadState, _status), _Alignof(unsigned int), buffer_size); \
     APPLY(thread_state, holds_gil, sizeof(int), _Alignof(int), buffer_size); \
     APPLY(thread_state, gil_requested, sizeof(int), _Alignof(int), buffer_size); \

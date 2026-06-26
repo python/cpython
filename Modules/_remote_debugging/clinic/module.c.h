@@ -430,6 +430,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stats__doc__,
 "          memory\n"
 "        - memory_reads: Total remote memory read operations\n"
 "        - memory_bytes_read: Total bytes read from remote memory\n"
+"        - stack_chunks_copied: Total stack chunks copied from remote memory\n"
 "        - code_object_cache_hits: Code object cache hits\n"
 "        - code_object_cache_misses: Code object cache misses\n"
 "        - stale_cache_invalidations: Times stale cache entries were\n"
@@ -1588,4 +1589,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3df14a6ab7f2998 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27cbaa4ad1e2960b input=a9049054013a1b77]*/
