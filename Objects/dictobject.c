@@ -655,7 +655,7 @@ typedef struct {
     PyDictKeysObject keys;
 } _PyDict_EmptyKeys;
 
-static _PyDict_EmptyKeys empty_keys = {
+static _PyDict_EmptyKeys empty_keys_struct = {
     .indices = {
         DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
         DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
@@ -674,7 +674,7 @@ static _PyDict_EmptyKeys empty_keys = {
     },
 };
 
-#define Py_EMPTY_KEYS &empty_keys.keys
+#define Py_EMPTY_KEYS &empty_keys_struct.keys
 
 /* Uncomment to check the dict content in _PyDict_CheckConsistency() */
 // #define DEBUG_PYDICT
