@@ -12,6 +12,7 @@ import struct
 import sys
 import threading
 import time
+lazy import warnings
 
 try:
     import zlib # We may need its compression method
@@ -2616,6 +2617,13 @@ class ZipFile:
 
     def __del__(self):
         """Call the "close()" method in case the user forgot."""
+        # gh-81954: Warn if ZipFile is implicitly closed with unwritten end
+        # records. GC cleanup order is non-deterministic and can result in data
+        # loss.
+        if (self.fp is not None and self.mode in ('w', 'x', 'a')
+                and self._didModify):
+            warnings.warn(f"unclosed ZipFile {self!r}",
+                          ResourceWarning, source=self, stacklevel=2)
         self.close()
 
     def close(self):
