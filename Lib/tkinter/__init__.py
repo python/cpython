@@ -1700,7 +1700,16 @@ class Misc:
         for n in name:
             if not n:
                 break
-            w = w.children[n]
+            try:
+                w = w.children[n]
+            except KeyError:
+                # Menu clones (a menu used as a menubar or a cascade) get
+                # auto-generated names where each path component is the
+                # original name prefixed with one or more '#' clone markers.
+                # Map such a name back to the original widget.
+                if not n.startswith('#'):
+                    raise
+                w = w.children[n.rsplit('#', 1)[-1]]
 
         return w
 

@@ -387,6 +387,32 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertIs(self.root.nametowidget(str(b)), b)
         self.assertRaises(KeyError, self.root.nametowidget, '.nonexistent')
 
+    def test_nametowidget_menu_clone(self):
+        # A menu used as a menubar or cascade is cloned by Tk under an
+        # auto-generated name (each path component is the original name
+        # prefixed with one or more '#' clone markers).  nametowidget()
+        # maps such a name back to the original widget (gh-38464).
+        menubar = tkinter.Menu(self.root)
+        filemenu = tkinter.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label='File', menu=filemenu)
+        submenu = tkinter.Menu(filemenu, tearoff=0)
+        filemenu.add_cascade(label='More', menu=submenu)
+        self.root['menu'] = menubar
+        self.root.update_idletasks()
+
+        originals = {menubar, filemenu, submenu}
+        clones = []
+        def collect(parent):
+            for name in self.root.tk.splitlist(
+                    self.root.tk.call('winfo', 'children', parent)):
+                clones.append(name)
+                collect(name)
+        collect('.')
+        # Every menu (originals and clones) resolves to an original widget.
+        self.assertTrue(any('#' in name for name in clones))
+        for name in clones:
+            self.assertIn(self.root.nametowidget(name), originals)
+
     def test_focus_methods(self):
         f = tkinter.Frame(self.root, width=150, height=100)
         f.pack()
