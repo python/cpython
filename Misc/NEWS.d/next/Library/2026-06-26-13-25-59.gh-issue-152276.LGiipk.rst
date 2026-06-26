@@ -1,0 +1,1 @@
+Fix `assert(!_Py_IsImmortal(op))` failure when BRC merge queue races with objects that were recently made immortal.
