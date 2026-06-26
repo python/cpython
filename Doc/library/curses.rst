@@ -139,10 +139,13 @@ The module :mod:`!curses` defines the following functions:
 .. function:: color_pair(pair_number)
 
    Return the attribute value for displaying text in the specified color pair.
-   Only the first 256 color pairs are supported. This
-   attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
-   and the other :const:`!A_\*` attributes.  :func:`pair_number` is the counterpart
-   to this function.
+   Only color pairs that fit in the color-pair field of the returned value can
+   be represented (usually the first 256); a larger *pair_number* raises
+   :exc:`OverflowError` rather than being silently masked to a different pair.
+   Use :meth:`~window.color_set` or :meth:`~window.attr_set` to display higher
+   pairs.  This attribute value can be combined with :const:`A_STANDOUT`,
+   :const:`A_REVERSE`, and the other :const:`!A_\*` attributes.
+   :func:`pair_number` is the counterpart to this function.
 
 
 .. function:: curs_set(visibility)

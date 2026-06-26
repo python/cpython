@@ -784,6 +784,10 @@ class TestCurses(unittest.TestCase):
         # A character argument must be an int, a byte or a one-element string.
         self.assertRaises(TypeError, win.addch, [])
         self.assertRaises(OverflowError, win.addch, 2**64)
+        # The attribute argument is rejected, not truncated, when out of range.
+        self.assertRaises(OverflowError, win.addch, 'a', 2**64)
+        self.assertRaises(OverflowError, win.addstr, 'a', 2**64)
+        self.assertRaises(TypeError, win.addch, 'a', 'bold')
         # A string method rejects a non-string, non-bytes argument.
         self.assertRaises(TypeError, win.addstr, 5)
         self.assertRaises(TypeError, win.addstr)
@@ -939,6 +943,11 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(OverflowError, win.attr_set, -1)
         self.assertRaises(OverflowError, win.attr_on, -1)
         self.assertRaises(OverflowError, win.attr_set, 1 << 64)
+        # attron()/attroff()/attrset() reject a bad attribute too.
+        self.assertRaises(OverflowError, win.attron, 1 << 64)
+        self.assertRaises(OverflowError, win.attroff, -1)
+        self.assertRaises(OverflowError, win.attrset, 1 << 64)
+        self.assertRaises(TypeError, win.attron, 'x')
 
     @requires_colors
     def test_attr_color_pair(self):
@@ -1630,6 +1639,11 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(curses.pair_number(attr | curses.A_BOLD), pair)
         self.assertEqual(curses.color_pair(0), 0)
         self.assertEqual(curses.pair_number(0), 0)
+        # A pair too large to fit is rejected, not silently masked (gh-119138).
+        max_pair = curses.pair_number(curses.A_COLOR)
+        self.assertEqual(curses.pair_number(curses.color_pair(max_pair)), max_pair)
+        self.assertRaises(OverflowError, curses.color_pair, max_pair + 1)
+        self.assertRaises(OverflowError, curses.color_pair, -1)
 
     @requires_curses_func('use_default_colors')
     @requires_colors
