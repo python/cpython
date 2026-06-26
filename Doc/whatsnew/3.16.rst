@@ -163,6 +163,12 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
+io
+--
+
+* Add :meth:`io.BytesIO.peek` method to read without advancing position.
+  (Contributed by Marcel Martin in :gh:`90533`.)
+
 
 logging
 -------
