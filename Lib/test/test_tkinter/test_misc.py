@@ -1,8 +1,10 @@
 import collections.abc
 import functools
+import gc
 import platform
 import sys
 import textwrap
+import time
 import unittest
 import weakref
 import tkinter
@@ -390,6 +392,36 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         del callback, interp
         support.gc_collect()
         self.assertIsNone(ref())
+
+    def test_gc_protocol(self):
+        # gh-116946: _tkinter objects implement the GC protocol.
+        self.assertTrue(gc.is_tracked(self.root))
+        tok = self.root.tk.createtimerhandler(10_000_000, lambda: None)
+        try:
+            self.assertTrue(gc.is_tracked(tok))
+        finally:
+            tok.deletetimerhandler()
+
+    def test_timer_fires_after_gc(self):
+        # gh-116946: a pending timer is kept alive by the Tcl event loop, not by
+        # the garbage collector, so collecting it must not cancel it -- it must
+        # still fire even when the Python token has been dropped.
+        fired = []
+        self.root.tk.createtimerhandler(1, lambda: fired.append(1))
+        support.gc_collect()
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+        while not fired and time.monotonic() < deadline:
+            self.root.update()
+        self.assertEqual(fired, [1])
+
+    def test_pending_timer_at_shutdown(self):
+        # gh-116946: the final garbage collection at interpreter shutdown must
+        # not crash when it visits a timer that is still pending (its type has
+        # already been cleared by the module's tp_clear).
+        assert_python_ok('-c',
+            'import tkinter\n'
+            'interp = tkinter.Tcl()\n'
+            'interp.tk.createtimerhandler(10_000_000, lambda: None)\n')
 
     def test_option(self):
         self.addCleanup(self.root.option_clear)
