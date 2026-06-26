@@ -71,7 +71,7 @@ class TestPerfTrampolineThreadSafety(unittest.TestCase):
         threading_helper.run_concurrently(
             nthreads=NTHREADS, worker_func=worker
         )
-        
+
         del shared_func
         del shared_ns
         # Single final sweep to clean up shared resources safely
