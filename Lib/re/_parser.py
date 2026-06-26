@@ -310,6 +310,22 @@ class Tokenizer:
             msg = "bad character in group name %r" % name
             raise self.error(msg, len(name) + offset)
 
+def _property_escape(source, escape, in_set=False):
+    # handle \p{...} and \P{...} (UTS #18 1.2.4, "Property Syntax")
+    from . import _properties
+    if not source.match('{'):
+        raise source.error("missing {, expected property name")
+    name = source.getuntil('}', 'property name')
+    code = _properties.parse_property(name, escape[1] == 'P')
+    if code is None:
+        raise source.error("unknown property name %r" % name,
+                           len(name) + len(r'\p{}'))
+    if in_set and code[1][0] == (NEGATE, None):
+        # A negated multi-range property cannot be a member of a set.
+        raise source.error("bad escape %s in character class" % escape,
+                           len(name) + len(r'\p{}'))
+    return code
+
 def _class_escape(source, escape):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
@@ -352,6 +368,8 @@ def _class_escape(source, escape):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
+        elif c in "pP" and source.istext:
+            return _property_escape(source, escape, in_set=True)
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
             escape += source.getwhile(2, OCTDIGITS)
@@ -412,6 +430,8 @@ def _escape(source, escape, state):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
+        elif c in "pP" and source.istext:
+            return _property_escape(source, escape)
         elif c == "0":
             # octal escape
             escape += source.getwhile(2, OCTDIGITS)
@@ -566,6 +586,12 @@ def _parse_operand(source, state, nested, here, allow_nested):
     sourcematch = source.match
     set = []
     setappend = set.append
+    def addmember(code):
+        # Flatten a \p{...} property's IN into the member set.
+        if code[0] is IN:
+            set.extend(code[1])
+        else:
+            setappend(code)
     compound = None     # elements of a standalone nested-set operand
     if allow_nested and sourcematch("["):
         # A nested set after an operator is the whole operand, used as-is (not
@@ -608,13 +634,13 @@ def _parse_operand(source, state, nested, here, allow_nested):
                                    source.tell() - here)
             if that == "]":
                 # A trailing '-' is a literal.
-                setappend(code1)
+                addmember(code1)
                 setappend((LITERAL, _ord("-")))
                 return [_charset_node(_uniq(set))], None
             if that == "-":
                 # 'X--': difference, not a range.  '--' after a single member
                 # lands here because the range probe consumed the first '-'.
-                setappend(code1)
+                addmember(code1)
                 return [_charset_node(_uniq(set))], "--"
             if that[0] == "\\":
                 code2 = _class_escape(source, that)
@@ -630,7 +656,7 @@ def _parse_operand(source, state, nested, here, allow_nested):
                 raise source.error(msg, len(this) + 1 + len(that))
             setappend((RANGE, (lo, hi)))
         else:
-            setappend(code1)
+            addmember(code1)
 
 def _complement(elements, state):
     # The complement of `elements` (a single matcher, or a set operation as a
