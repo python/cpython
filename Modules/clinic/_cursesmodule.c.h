@@ -991,6 +991,28 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_curses_window_dupwin__doc__,
+"dupwin($self, /)\n"
+"--\n"
+"\n"
+"Create an exact duplicate of the window.\n"
+"\n"
+"The new window is independent of the original: it has the same size,\n"
+"position, contents and attributes, but its own cell buffer, so later\n"
+"changes to one do not affect the other.");
+
+#define _CURSES_WINDOW_DUPWIN_METHODDEF    \
+    {"dupwin", (PyCFunction)_curses_window_dupwin, METH_NOARGS, _curses_window_dupwin__doc__},
+
+static PyObject *
+_curses_window_dupwin_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_dupwin(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_dupwin_impl((PyCursesWindowObject *)self);
+}
+
 PyDoc_STRVAR(_curses_window_echochar__doc__,
 "echochar(ch, [attr])\n"
 "Add character ch with attribute attr, and refresh.\n"
@@ -5400,4 +5422,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=7940d7d4775b58fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d7ca194927796d8 input=a9049054013a1b77]*/
