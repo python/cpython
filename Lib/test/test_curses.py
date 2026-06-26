@@ -218,6 +218,35 @@ class TestCurses(unittest.TestCase):
         del win2
         gc_collect()
 
+    def test_dupwin(self):
+        win = curses.newwin(5, 10, 2, 3)
+        win.addstr(0, 0, 'ABCDE')
+        win.addstr(1, 0, 'fghij')
+        dup = win.dupwin()
+        # Same geometry and contents as the original.
+        self.assertEqual(dup.getbegyx(), win.getbegyx())
+        self.assertEqual(dup.getmaxyx(), win.getmaxyx())
+        self.assertEqual(dup.instr(0, 0, 5), b'ABCDE')
+        self.assertEqual(dup.instr(1, 0, 5), b'fghij')
+        # The duplicate is independent, not a subwindow.
+        if hasattr(dup, 'is_subwin'):
+            self.assertIs(dup.is_subwin(), False)
+            self.assertIsNone(dup.getparent())
+        # Changes to one do not affect the other.
+        dup.addstr(0, 0, 'xxxxx')
+        win.addstr(1, 0, 'YYYYY')
+        self.assertEqual(win.instr(0, 0, 5), b'ABCDE')
+        self.assertEqual(dup.instr(0, 0, 5), b'xxxxx')
+        self.assertEqual(dup.instr(1, 0, 5), b'fghij')
+        self.assertEqual(win.instr(1, 0, 5), b'YYYYY')
+        # A subwindow can also be duplicated; the duplicate is independent.
+        sub = win.subwin(3, 5, 2, 3)
+        subdup = sub.dupwin()
+        self.assertEqual(subdup.getmaxyx(), sub.getmaxyx())
+        if hasattr(subdup, 'is_subwin'):
+            self.assertIs(subdup.is_subwin(), False)
+            self.assertIsNone(subdup.getparent())
+
     def test_move_cursor(self):
         stdscr = self.stdscr
         win = stdscr.subwin(10, 15, 2, 5)
@@ -1096,6 +1125,43 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(win.getmaxyx(), (5, 12))
             self.assertEqual(win.instr(2, 0), b' Lorem ipsum')
 
+    def test_scr_dump(self):
+        # Test scr_dump(), scr_restore(), scr_init() and scr_set().
+        # scr_dump() writes the virtual screen to a named file; the other three
+        # functions load it back.  The dumped image is internal curses state,
+        # not a window, so the round-trip is checked by comparing dump files
+        # rather than reading cells.
+        stdscr = self.stdscr
+        stdscr.erase()
+        stdscr.addstr(0, 0, 'screen dump test')
+        stdscr.refresh()
+        with tempfile.TemporaryDirectory() as d:
+            dump = os.path.join(d, 'dump')
+            self.assertIsNone(curses.scr_dump(dump))
+            # Dumping the same screen again is deterministic.
+            dump2 = os.path.join(d, 'dump2')
+            curses.scr_dump(dump2)
+            with open(dump, 'rb') as f1, open(dump2, 'rb') as f2:
+                self.assertEqual(f1.read(), f2.read())
+            # scr_restore() reloads that virtual screen, so dumping it again
+            # reproduces the original file even after the screen has changed.
+            stdscr.erase()
+            stdscr.addstr(0, 0, 'something else')
+            stdscr.refresh()
+            self.assertIsNone(curses.scr_restore(dump))
+            restored = os.path.join(d, 'restored')
+            curses.scr_dump(restored)
+            with open(dump, 'rb') as f1, open(restored, 'rb') as f2:
+                self.assertEqual(f1.read(), f2.read())
+            # scr_init() and scr_set() accept a dump file and return None.
+            self.assertIsNone(curses.scr_init(dump))
+            self.assertIsNone(curses.scr_set(dump))
+            # A bytes (path-like) filename is accepted too.
+            curses.scr_dump(os.fsencode(dump))
+            # Restoring from a missing file is an error.
+            self.assertRaises(curses.error,
+                              curses.scr_restore, os.path.join(d, 'nope'))
+
     def test_borders_and_lines(self):
         win = curses.newwin(5, 10, 5, 2)
         win.border('|', '!', '-', '_',
@@ -1339,8 +1405,6 @@ class TestCurses(unittest.TestCase):
         # Each is_*() getter returns the value set by the matching setter.
         for setter, getter in [
             ('clearok', 'is_cleared'),
-            ('idcok', 'is_idcok'),
-            ('idlok', 'is_idlok'),
             ('keypad', 'is_keypad'),
             ('leaveok', 'is_leaveok'),
             ('nodelay', 'is_nodelay'),
@@ -1351,6 +1415,19 @@ class TestCurses(unittest.TestCase):
             self.assertIs(getattr(stdscr, getter)(), True)
             getattr(stdscr, setter)(False)
             self.assertIs(getattr(stdscr, getter)(), False)
+
+        # idcok()/idlok() only take effect if the terminal can insert/delete
+        # characters/lines, so the getter reflects that capability.
+        stdscr.idcok(True)
+        self.assertIs(stdscr.is_idcok(), curses.has_ic())
+        stdscr.idcok(False)
+        self.assertIs(stdscr.is_idcok(), False)
+
+        stdscr.idlok(True)
+        self.assertIs(stdscr.is_idlok(),
+                      curses.has_il() or curses.tigetstr('csr') is not None)
+        stdscr.idlok(False)
+        self.assertIs(stdscr.is_idlok(), False)
         if hasattr(stdscr, 'immedok'):
             stdscr.immedok(True)
             self.assertIs(stdscr.is_immedok(), True)

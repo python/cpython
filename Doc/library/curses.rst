@@ -699,6 +699,40 @@ The module :mod:`!curses` defines the following functions:
    Save the current state of the terminal modes in a buffer, usable by
    :func:`resetty`.
 
+.. function:: scr_dump(filename)
+
+   Write the current contents of the virtual screen to *filename*, which may be
+   a string or a :term:`path-like object`.  The file can later be read by
+   :func:`scr_restore`, :func:`scr_init` or :func:`scr_set`.  This is the
+   whole-screen counterpart of :meth:`window.putwin`.
+
+   .. versionadded:: next
+
+.. function:: scr_restore(filename)
+
+   Set the virtual screen to the contents of *filename*, which must have been
+   written by :func:`scr_dump`.  The next call to :func:`doupdate` or
+   :meth:`window.refresh` restores the screen to those contents.
+
+   .. versionadded:: next
+
+.. function:: scr_init(filename)
+
+   Initialize the assumed contents of the terminal from *filename*, which must
+   have been written by :func:`scr_dump`.  Use it when the terminal already
+   displays those contents, for example after another program has drawn the
+   screen, so that curses does not redraw what is already there.
+
+   .. versionadded:: next
+
+.. function:: scr_set(filename)
+
+   Use *filename*, which must have been written by :func:`scr_dump`, as both
+   the virtual screen and the assumed terminal contents.  This combines the
+   effects of :func:`scr_restore` and :func:`scr_init`.
+
+   .. versionadded:: next
+
 .. function:: get_escdelay()
 
    Retrieves the value set by :func:`set_escdelay`.
@@ -1193,6 +1227,17 @@ Window objects
    :meth:`subwin`, except that *begin_y* and *begin_x* are relative to the origin
    of the window, rather than relative to the entire screen.  Return a window
    object for the derived window.
+
+
+.. method:: window.dupwin()
+
+   Return a new window that is an exact duplicate of the window: it has the same
+   size, position, contents and attributes.  Unlike a window created by
+   :meth:`subwin` or :meth:`derwin`, the duplicate is independent of the
+   original -- it has its own cell buffer, so later changes to one do not affect
+   the other.
+
+   .. versionadded:: next
 
 
 .. method:: window.echochar(ch[, attr])

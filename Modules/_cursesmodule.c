@@ -41,12 +41,12 @@
   Here's a list of currently unsupported functions:
 
   addchnstr addchstr color_set define_key
-  del_curterm dupwin inchnstr inchstr innstr keyok
+  del_curterm inchnstr inchstr innstr keyok
   mcprint mvaddchnstr mvaddchstr mvcur mvinchnstr
   mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr
   mvwinchnstr mvwinchstr mvwinnstr
-  restartterm ripoffline scr_dump
-  scr_init scr_restore scr_set scrl set_curterm setterm
+  restartterm ripoffline
+  scrl set_curterm setterm
   tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
   vidattr vidputs waddchnstr waddchstr
   wcolor_set winchnstr winchstr winnstr wmouse_trafo wscrl
@@ -2723,6 +2723,33 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
+_curses.window.dupwin
+
+Create an exact duplicate of the window.
+
+The new window is independent of the original: it has the same size,
+position, contents and attributes, but its own cell buffer, so later
+changes to one do not affect the other.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_dupwin_impl(PyCursesWindowObject *self)
+/*[clinic end generated code: output=37d91aa8f88f13d1 input=787301b3799b618e]*/
+{
+    WINDOW *win = dupwin(self->win);
+    if (win == NULL) {
+        curses_window_set_null_error(self, "dupwin", NULL);
+        return NULL;
+    }
+
+    /* The duplicate owns an independent cell buffer (unlike a subwindow), so
+       it has no parent: pass NULL as orig.  Inherit the source encoding and
+       screen so it matches the original. */
+    cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+    return PyCursesWindow_New(state, win, self->encoding, NULL, self->screen);
+}
+
+/*[clinic input]
 _curses.window.echochar
 
     ch: object
@@ -4520,6 +4547,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "deleteln($self, /)\n--\n\n"
      "Delete the line under the cursor; move following lines up by one."},
     _CURSES_WINDOW_DERWIN_METHODDEF
+    _CURSES_WINDOW_DUPWIN_METHODDEF
     _CURSES_WINDOW_ECHOCHAR_METHODDEF
     _CURSES_WINDOW_ENCLOSE_METHODDEF
     {"erase", PyCursesWindow_werase, METH_NOARGS,
@@ -5009,6 +5037,22 @@ static PyType_Spec PyCursesScreen_Type_spec = {
   PyCursesStatefulInitialised(module);      \
   X();                                      \
   Py_RETURN_NONE;                           \
+}
+
+/*
+ * Function body for a module function that dumps or restores the whole screen
+ * through a file named by a single filesystem-path argument (filename).
+ */
+#define ScreenDumpFunctionBody(X)                       \
+{                                                       \
+    PyCursesStatefulInitialised(module);                \
+    PyObject *bytes;                                    \
+    if (!PyUnicode_FSConverter(filename, &bytes)) {     \
+        return NULL;                                    \
+    }                                                   \
+    int rtn = X(PyBytes_AS_STRING(bytes));              \
+    Py_DECREF(bytes);                                   \
+    return curses_check_err(module, rtn, # X, NULL);    \
 }
 
 /*********************************************************************
@@ -5596,6 +5640,77 @@ error:
     fclose(fp);
     return res;
 }
+
+/*[clinic input]
+_curses.scr_dump
+
+    filename: object
+        The file to write to.
+    /
+
+Write the current contents of the virtual screen to a file.
+
+The file can later be used to restore the screen with scr_restore(),
+scr_init() or scr_set().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_scr_dump(PyObject *module, PyObject *filename)
+/*[clinic end generated code: output=4425cfa505ac9577 input=358db4b370975345]*/
+ScreenDumpFunctionBody(scr_dump)
+
+/*[clinic input]
+_curses.scr_restore
+
+    filename: object
+        The file to read from.
+    /
+
+Set the virtual screen to the contents of a file made by scr_dump().
+
+The next call to doupdate() or refresh() restores the screen to those
+contents.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_scr_restore(PyObject *module, PyObject *filename)
+/*[clinic end generated code: output=71d669fb560fa57b input=30b1d6b2c328dd55]*/
+ScreenDumpFunctionBody(scr_restore)
+
+/*[clinic input]
+_curses.scr_init
+
+    filename: object
+        The file to read from.
+    /
+
+Initialize the assumed terminal contents from a scr_dump() file.
+
+Use it as what the terminal currently displays, for example after
+another program has drawn the screen.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_scr_init(PyObject *module, PyObject *filename)
+/*[clinic end generated code: output=2e861d381d710419 input=81c45e4702124ef6]*/
+ScreenDumpFunctionBody(scr_init)
+
+/*[clinic input]
+_curses.scr_set
+
+    filename: object
+        The file to read from.
+    /
+
+Use a scr_dump() file as both the virtual screen and the terminal.
+
+This combines the effects of scr_restore() and scr_init().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_scr_set(PyObject *module, PyObject *filename)
+/*[clinic end generated code: output=6056fdec12c5935f input=d248c20543cc289b]*/
+ScreenDumpFunctionBody(scr_set)
 
 /*[clinic input]
 _curses.halfdelay
@@ -7700,6 +7815,10 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
     _CURSES_SAVETTY_METHODDEF
+    _CURSES_SCR_DUMP_METHODDEF
+    _CURSES_SCR_INIT_METHODDEF
+    _CURSES_SCR_RESTORE_METHODDEF
+    _CURSES_SCR_SET_METHODDEF
 #if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
     _CURSES_GET_ESCDELAY_METHODDEF
     _CURSES_SET_ESCDELAY_METHODDEF

@@ -2280,6 +2280,11 @@ New deprecations
 
     (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
 
+  * Using ``'F'`` and ``'D'`` type codes now are :term:`soft deprecated`
+    in favor of two-letter forms ``'Zf'`` and ``'Zd'``.
+    (Contributed by Sergey B Kirpichev in :gh:`121249`.)
+
+
 * :mod:`typing`:
 
   * The following statements now cause ``DeprecationWarning``\ s to be emitted
