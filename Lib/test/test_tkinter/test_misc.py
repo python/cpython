@@ -404,6 +404,22 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.update()
         self.assertIs(self.root.focus_get(), b)
 
+    def test_focus_methods_unresolvable(self):
+        # The focus may be on a widget that tkinter did not create and so
+        # cannot map to an instance (e.g. a torn-off menu).  The focus
+        # methods return None instead of raising KeyError (gh-88758).
+        menu = tkinter.Menu(self.root, tearoff=1)
+        menu.add_command(label='Hello')
+        tearoff = self.root.tk.call('tk::TearOffMenu', str(menu), 0, 0)
+        self.addCleanup(self.root.tk.call, 'destroy', tearoff)
+        self.root.update()
+        self.assertRaises(KeyError, self.root.nametowidget, tearoff)
+
+        self.root.tk.call('focus', '-force', tearoff)
+        self.root.update()
+        self.assertIsNone(self.root.focus_get())
+        self.assertIsNone(self.root.focus_displayof())
+
     def test_grab(self):
         f = tkinter.Frame(self.root)
         f.pack()
