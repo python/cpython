@@ -21,6 +21,6 @@ There are no plans to remove :term:`soft deprecated` APIs.
   Hugo van Kemenade in :gh:`148100`.)
 
 * Using ``'F'`` and ``'D'`` format type codes of the :mod:`struct` module
-  now are :term:`soft deprecated` in favor of two-letter forms (``'Zf'``
-  and ``'Zd'``).
+  now are :term:`soft deprecated` in favor of two-letter forms ``'Zf'``
+  and ``'Zd'``.
   (Contributed by Sergey B Kirpichev in :gh:`121249`.)
