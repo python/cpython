@@ -1080,14 +1080,14 @@ set_update_impl(PySetObject *so, PyObject *args)
    can be retrieved or updated in a single cache line.
 */
 
+// Build a set/frozenset left GC-untracked; the caller must _PyObject_GC_TRACK()
+// it once fully built, so a half-built set is never exposed during filling.
 static PyObject *
-make_new_set(PyTypeObject *type, PyObject *iterable)
+make_new_set_untracked(PyTypeObject *type, PyObject *iterable)
 {
     assert(PyType_Check(type));
     PySetObject *so;
 
-    // Allocate untracked: the fill below runs user code, and a half-built
-    // set must not be reachable from another thread via gc.get_objects().
     so = (PySetObject *)_PyType_AllocNoTrack(type, 0);
     if (so == NULL)
         return NULL;
@@ -1107,13 +1107,21 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
         }
     }
 
-    // Track only once fully built.
-    _PyObject_GC_TRACK(so);
     return (PyObject *)so;
 }
 
 static PyObject *
-make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
+make_new_set(PyTypeObject *type, PyObject *iterable)
+{
+    PyObject *so = make_new_set_untracked(type, iterable);
+    if (so != NULL) {
+        _PyObject_GC_TRACK(so);
+    }
+    return so;
+}
+
+static PyObject *
+make_new_set_basetype_untracked(PyTypeObject *type, PyObject *iterable)
 {
     if (type != &PySet_Type && type != &PyFrozenSet_Type) {
         if (PyType_IsSubtype(type, &PySet_Type))
@@ -1121,7 +1129,17 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
         else
             type = &PyFrozenSet_Type;
     }
-    return make_new_set(type, iterable);
+    return make_new_set_untracked(type, iterable);
+}
+
+static PyObject *
+make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
+{
+    PyObject *so = make_new_set_basetype_untracked(type, iterable);
+    if (so != NULL) {
+        _PyObject_GC_TRACK(so);
+    }
+    return so;
 }
 
 static PyObject *
@@ -1364,7 +1382,7 @@ set_intersection(PySetObject *so, PyObject *other)
     if ((PyObject *)so == other)
         return set_copy_impl(so);
 
-    result = (PySetObject *)make_new_set_basetype(Py_TYPE(so), NULL);
+    result = (PySetObject *)make_new_set_basetype_untracked(Py_TYPE(so), NULL);
     if (result == NULL)
         return NULL;
 
@@ -1397,6 +1415,7 @@ set_intersection(PySetObject *so, PyObject *other)
             }
             Py_DECREF(key);
         }
+        _PyObject_GC_TRACK(result);
         return (PyObject *)result;
     }
 
@@ -1428,6 +1447,7 @@ set_intersection(PySetObject *so, PyObject *other)
         Py_DECREF(result);
         return NULL;
     }
+    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
   error:
     Py_DECREF(it);
@@ -1737,7 +1757,7 @@ set_difference(PySetObject *so, PyObject *other)
         return set_copy_and_difference(so, other);
     }
 
-    result = make_new_set_basetype(Py_TYPE(so), NULL);
+    result = make_new_set_basetype_untracked(Py_TYPE(so), NULL);
     if (result == NULL)
         return NULL;
 
@@ -1761,6 +1781,7 @@ set_difference(PySetObject *so, PyObject *other)
             }
             Py_DECREF(key);
         }
+        _PyObject_GC_TRACK(result);
         return result;
     }
 
@@ -1784,6 +1805,7 @@ set_difference(PySetObject *so, PyObject *other)
         }
         Py_DECREF(key);
     }
+    _PyObject_GC_TRACK(result);
     return result;
 }
 
@@ -1970,7 +1992,8 @@ static PyObject *
 set_symmetric_difference_impl(PySetObject *so, PyObject *other)
 /*[clinic end generated code: output=270ee0b5d42b0797 input=624f6e7bbdf70db1]*/
 {
-    PySetObject *result = (PySetObject *)make_new_set_basetype(Py_TYPE(so), NULL);
+    PySetObject *result =
+        (PySetObject *)make_new_set_basetype_untracked(Py_TYPE(so), NULL);
     if (result == NULL) {
         return NULL;
     }
@@ -1982,6 +2005,7 @@ set_symmetric_difference_impl(PySetObject *so, PyObject *other)
         Py_DECREF(result);
         return NULL;
     }
+    _PyObject_GC_TRACK(result);
     return (PyObject *)result;
 }
 
