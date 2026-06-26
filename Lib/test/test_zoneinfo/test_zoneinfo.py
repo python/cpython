@@ -1009,14 +1009,14 @@ class TZStrTest(ZoneInfoTestBase):
 
         cls._tzif_header = bytes(out)
 
-    def zone_from_tzstr(self, tzstr):
+    def zone_from_tzstr(self, tzstr, encoding="ascii"):
         """Creates a zoneinfo file following a POSIX rule."""
         zonefile = io.BytesIO(self._tzif_header)
         zonefile.seek(0, 2)
 
         # Write the footer
         zonefile.write(b"\x0A")
-        zonefile.write(tzstr.encode("ascii"))
+        zonefile.write(tzstr.encode(encoding))
         zonefile.write(b"\x0A")
 
         zonefile.seek(0)
@@ -1231,23 +1231,12 @@ class TZStrTest(ZoneInfoTestBase):
         # It needs a separate test: it can't be ASCII-encoded for the shared
         # invalid_tzstrs list, and the C error message holds the bytes repr.
         tzstr = "ABÀC3"
-        footer = tzstr.encode("utf-8")
-
-        def from_footer():
-            zonefile = io.BytesIO(self._tzif_header)
-            zonefile.seek(0, 2)
-            zonefile.write(b"\x0A")
-            zonefile.write(footer)
-            zonefile.write(b"\x0A")
-            zonefile.seek(0)
-            return self.klass.from_file(zonefile, key=tzstr)
-
         if self.module is py_zoneinfo:
             expected = re.escape(tzstr)
         else:
-            expected = re.escape(repr(footer))
+            expected = re.escape(repr(tzstr.encode("utf-8")))
         with self.assertRaisesRegex(ValueError, expected):
-            from_footer()
+            self.zone_from_tzstr(tzstr, encoding="utf-8")
 
     @classmethod
     def _populate_test_cases(cls):
