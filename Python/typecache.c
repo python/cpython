@@ -149,6 +149,7 @@ cache_resize(PyTypeObject *type, struct type_cache *cache)
     }
     if (new_size > _Py_TYPECACHE_MAXSIZE) {
         // The new size is too big, don't resize and just return.
+        OBJECT_STAT_INC(type_cache_too_big);
         return -1;
     }
     struct type_cache *new_cache = cache_allocate(new_size);
