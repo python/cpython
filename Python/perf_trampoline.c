@@ -220,25 +220,25 @@ static void free_code_arenas(void);
 static int _PyPerfTrampoline_Fini_Locked(void);
 
 static void
- perf_trampoline_clear_code_watcher(void) 
+perf_trampoline_clear_code_watcher(void)
 {
-  if (code_watcher_id >= 0) {
-    PyCode_ClearWatcher(code_watcher_id);
-    code_watcher_id = -1;
-  }
-  _Py_atomic_store_ssize_relaxed(&extra_code_index, -1);
+    if (code_watcher_id >= 0) {
+        PyCode_ClearWatcher(code_watcher_id);
+        code_watcher_id = -1;
+    }
+    _Py_atomic_store_ssize_relaxed(&extra_code_index, -1);
 }
 
 static void
 perf_trampoline_reset_state(void)
 {
-  free_code_arenas();
-  // We do NOT clear code_watcher_id here. PyCode_ClearWatcher is not
-  // thread-safe in free-threading mode against concurrent code deallocation.
-  // Leaving the watcher active is safe. We MUST reset extra_code_index to -1
-  // so that next activation gets a new index, because the old index's
-  // co_extra array still contains dangling pointers to the freed arenas.
-  _Py_atomic_store_ssize_relaxed(&extra_code_index, -1);
+    free_code_arenas();
+    // We do NOT clear code_watcher_id here. PyCode_ClearWatcher is not
+    // thread-safe in free-threading mode against concurrent code deallocation.
+    // Leaving the watcher active is safe. We MUST reset extra_code_index to -1
+    // so that next activation gets a new index, because the old index's
+    // co_extra array still contains dangling pointers to the freed arenas.
+    _Py_atomic_store_ssize_relaxed(&extra_code_index, -1);
 }
 
 static int
@@ -282,7 +282,7 @@ perf_map_write_entry(void *state, const void *code_addr,
         filename = PyUnicode_AsUTF8(co->co_filename);
     }
     size_t perf_map_entry_size = snprintf(NULL, 0, "py::%s:%s", entry, filename) + 1;
-    char* perf_map_entry = (char*)PyMem_RawMalloc(perf_map_entry_size);
+    char* perf_map_entry = (char*) PyMem_RawMalloc(perf_map_entry_size);
     if (perf_map_entry == NULL) {
         return;
     }
@@ -360,7 +360,7 @@ new_code_arena(void)
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
     size_t unaligned_size = code_size + trampoline_api.code_padding;
- size_t chunk_size = round_up(unaligned_size, trampoline_api.code_alignment);
+    size_t chunk_size = round_up(unaligned_size, trampoline_api.code_alignment);
     assert(chunk_size % trampoline_api.code_alignment == 0);
     // TODO: Check the effect of alignment of the code chunks. Initial investigation
     // showed that this has no effect on performance in x86-64 or aarch64 and the current
@@ -426,8 +426,8 @@ static inline py_trampoline
 code_arena_new_code(code_arena_t *code_arena)
 {
     py_trampoline trampoline = (py_trampoline)code_arena->current_addr;
-    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding,
-                 trampoline_api.code_alignment);
+    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding, 
+                                  trampoline_api.code_alignment);
     assert(total_code_size % trampoline_api.code_alignment == 0);
     code_arena->size_left -= total_code_size;
     code_arena->current_addr += total_code_size;
