@@ -1146,8 +1146,6 @@ class TZStrTest(ZoneInfoTestBase):
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
             # Unquoted abbreviation with embedded or leading whitespace
-            # (accepted by the unmodified pure parser, rejected by the C
-            # implementation; both reject after the fix).
             "AB C3",
             " A B 3",
             "AAA4BB B,J60/2,J300/2",  # Embedded whitespace in DST
@@ -1229,15 +1227,9 @@ class TZStrTest(ZoneInfoTestBase):
                     self.zone_from_tzstr(invalid_tzstr)
 
     def test_invalid_tzstr_non_ascii_abbr(self):
-        # A non-ASCII letter in an unquoted abbreviation is publicly reachable:
-        # from_file() UTF-8-decodes the footer, so b"AB\xc3\x80C3" decodes to
-        # "ABÀC3" and reaches the parser. The C implementation rejects it
-        # (Py_ISALPHA is ASCII-only); the unmodified pure parser accepted it.
-        #
-        # This case is kept out of the shared invalid_tzstrs list: the C error
-        # message embeds the bytes repr, which a re.escape() of the decoded
-        # string would not match, so each implementation is checked against
-        # its own message.
+        # A non-ASCII letter reaches the parser via from_file()'s UTF-8 decode.
+        # It can't use the shared invalid_tzstrs list (encode("ascii") fails and
+        # the C message holds the bytes repr), so check each parser's message.
         tzstr = "ABÀC3"
         footer = tzstr.encode("utf-8")
 
