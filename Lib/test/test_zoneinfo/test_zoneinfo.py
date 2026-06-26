@@ -1184,7 +1184,7 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid weekday
             "AAA4BBB,M1.1.7/2,M2.1.1/2",
             "AAA4BBB,M1.1.1/2,M2.1.7/2",
-            # Invalid Mm.w.d separator (must be a literal '.')
+            # Invalid Mm.w.d separator
             "AAA4BBB,M3.2X0,M11.1.0",
             "AAA4BBB,M3.2.0,M11.1X0",
             "AAA4BBB,M3.2-0,M11.1.0/3",

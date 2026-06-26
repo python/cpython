@@ -1,3 +1,2 @@
-Fix the pure-Python :mod:`zoneinfo` parser accepting a POSIX TZ ``Mm.w.d``
-transition rule with a non-period separator (for example ``M3.2X0``), which
-the C implementation already rejects. Patch by tonghuaroot.
+Fix the pure-Python :mod:`zoneinfo` parser accepting an invalid POSIX TZ
+transition rule with a non-period separator. Patch by tonghuaroot.
