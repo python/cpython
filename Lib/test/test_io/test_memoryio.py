@@ -493,9 +493,11 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # Create a reference loop.
         a = [buf]
         a.append(a)
-        # The Python implementation emits an unraisable exception.
-        with support.catch_unraisable_exception():
+
+        # gh-111330: _pyio GC with exports should pass.
+        with support.catch_unraisable_exception() as cm:
             del memio
+            self.assertIsNone(cm.unraisable)
         del buf
         del a
         # The C implementation emits an unraisable exception.
