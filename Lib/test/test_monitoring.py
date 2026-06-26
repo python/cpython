@@ -2583,6 +2583,7 @@ class TestMonitoringAtShutdown(unittest.TestCase):
 
 
 class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
+
     class Scope:
         def __init__(self, *args):
             self._testcapi = import_helper.import_module("_testcapi")
@@ -2597,7 +2598,8 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
     def setUp(self):
         super(TestCApiEventGeneration, self).setUp()
 
-        capi = import_helper.import_module("_testcapi")
+        self._testcapi = import_helper.import_module("_testcapi")
+        capi = self._testcapi
 
         self.codelike = capi.CodeLike(2)
 
