@@ -3017,6 +3017,65 @@ PyDoc_STRVAR(_curses_getwin__doc__,
 #define _CURSES_GETWIN_METHODDEF    \
     {"getwin", (PyCFunction)_curses_getwin, METH_O, _curses_getwin__doc__},
 
+PyDoc_STRVAR(_curses_scr_dump__doc__,
+"scr_dump($module, filename, /)\n"
+"--\n"
+"\n"
+"Write the current contents of the virtual screen to a file.\n"
+"\n"
+"  filename\n"
+"    The file to write to.\n"
+"\n"
+"The file can later be used to restore the screen with scr_restore(),\n"
+"scr_init() or scr_set().");
+
+#define _CURSES_SCR_DUMP_METHODDEF    \
+    {"scr_dump", (PyCFunction)_curses_scr_dump, METH_O, _curses_scr_dump__doc__},
+
+PyDoc_STRVAR(_curses_scr_restore__doc__,
+"scr_restore($module, filename, /)\n"
+"--\n"
+"\n"
+"Set the virtual screen to the contents of a file made by scr_dump().\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"The next call to doupdate() or refresh() restores the screen to those\n"
+"contents.");
+
+#define _CURSES_SCR_RESTORE_METHODDEF    \
+    {"scr_restore", (PyCFunction)_curses_scr_restore, METH_O, _curses_scr_restore__doc__},
+
+PyDoc_STRVAR(_curses_scr_init__doc__,
+"scr_init($module, filename, /)\n"
+"--\n"
+"\n"
+"Initialize the assumed terminal contents from a scr_dump() file.\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"Use it as what the terminal currently displays, for example after\n"
+"another program has drawn the screen.");
+
+#define _CURSES_SCR_INIT_METHODDEF    \
+    {"scr_init", (PyCFunction)_curses_scr_init, METH_O, _curses_scr_init__doc__},
+
+PyDoc_STRVAR(_curses_scr_set__doc__,
+"scr_set($module, filename, /)\n"
+"--\n"
+"\n"
+"Use a scr_dump() file as both the virtual screen and the terminal.\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"This combines the effects of scr_restore() and scr_init().");
+
+#define _CURSES_SCR_SET_METHODDEF    \
+    {"scr_set", (PyCFunction)_curses_scr_set, METH_O, _curses_scr_set__doc__},
+
 PyDoc_STRVAR(_curses_halfdelay__doc__,
 "halfdelay($module, tenths, /)\n"
 "--\n"
@@ -5422,4 +5481,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=9d7ca194927796d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=864fa5c0f22fcad3 input=a9049054013a1b77]*/

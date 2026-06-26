@@ -1116,6 +1116,43 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(win.getmaxyx(), (5, 12))
             self.assertEqual(win.instr(2, 0), b' Lorem ipsum')
 
+    def test_scr_dump(self):
+        # Test scr_dump(), scr_restore(), scr_init() and scr_set().
+        # scr_dump() writes the virtual screen to a named file; the other three
+        # functions load it back.  The dumped image is internal curses state,
+        # not a window, so the round-trip is checked by comparing dump files
+        # rather than reading cells.
+        stdscr = self.stdscr
+        stdscr.erase()
+        stdscr.addstr(0, 0, 'screen dump test')
+        stdscr.refresh()
+        with tempfile.TemporaryDirectory() as d:
+            dump = os.path.join(d, 'dump')
+            self.assertIsNone(curses.scr_dump(dump))
+            # Dumping the same screen again is deterministic.
+            dump2 = os.path.join(d, 'dump2')
+            curses.scr_dump(dump2)
+            with open(dump, 'rb') as f1, open(dump2, 'rb') as f2:
+                self.assertEqual(f1.read(), f2.read())
+            # scr_restore() reloads that virtual screen, so dumping it again
+            # reproduces the original file even after the screen has changed.
+            stdscr.erase()
+            stdscr.addstr(0, 0, 'something else')
+            stdscr.refresh()
+            self.assertIsNone(curses.scr_restore(dump))
+            restored = os.path.join(d, 'restored')
+            curses.scr_dump(restored)
+            with open(dump, 'rb') as f1, open(restored, 'rb') as f2:
+                self.assertEqual(f1.read(), f2.read())
+            # scr_init() and scr_set() accept a dump file and return None.
+            self.assertIsNone(curses.scr_init(dump))
+            self.assertIsNone(curses.scr_set(dump))
+            # A bytes (path-like) filename is accepted too.
+            curses.scr_dump(os.fsencode(dump))
+            # Restoring from a missing file is an error.
+            self.assertRaises(curses.error,
+                              curses.scr_restore, os.path.join(d, 'nope'))
+
     def test_borders_and_lines(self):
         win = curses.newwin(5, 10, 5, 2)
         win.border('|', '!', '-', '_',

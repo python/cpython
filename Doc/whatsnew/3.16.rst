@@ -160,6 +160,11 @@ curses
   returns a new window that is an independent duplicate of an existing one.
   (Contributed by Serhiy Storchaka in :gh:`152258`.)
 
+* Add the :mod:`curses` functions :func:`~curses.scr_dump`,
+  :func:`~curses.scr_restore`, :func:`~curses.scr_init` and
+  :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
+  (Contributed by Serhiy Storchaka in :gh:`152260`.)
+
 gzip
 ----
 
