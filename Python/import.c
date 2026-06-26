@@ -4567,8 +4567,22 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         }
     }
 
+    // Match __import__: a string fromlist is a sequence of names, not a
+    // single attribute. Normalize to a 1-tuple so resolve() returns the
+    // module (gh-151672).
+    PyObject *fromlist_owned = NULL;
+    if (fromlist != NULL && PyUnicode_Check(fromlist)) {
+        fromlist_owned = PyTuple_Pack(1, fromlist);
+        if (fromlist_owned == NULL) {
+            Py_DECREF(abs_name);
+            return NULL;
+        }
+        fromlist = fromlist_owned;
+    }
+
     // here, 'filter' is either NULL or is equivalent to a borrowed reference
     PyObject *res = _PyLazyImport_New(frame, builtins, abs_name, fromlist);
+    Py_XDECREF(fromlist_owned);
     if (res == NULL) {
         Py_DECREF(abs_name);
         return NULL;
@@ -4580,12 +4594,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         goto error;
     }
 
-    if (fromlist && PyUnicode_Check(fromlist)) {
-        if (register_from_lazy_on_parent(tstate, abs_name, fromlist) < 0) {
-            goto error;
-        }
-    }
-    else if (fromlist && PyTuple_Check(fromlist) &&
+    if (fromlist && PyTuple_Check(fromlist) &&
              PyTuple_GET_SIZE(fromlist)) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(fromlist); i++) {
             if (register_from_lazy_on_parent(tstate, abs_name,
