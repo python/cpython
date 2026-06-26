@@ -345,6 +345,36 @@ class TestCurses(unittest.TestCase):
         # border() and box() cannot mix integer and wide-string characters.
         self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
 
+    @requires_curses_func('complexchar')
+    def test_complexchar_in_cell_methods(self):
+        # Every single-character-cell method also accepts a complexchar, whose
+        # attributes and color pair come from the cell itself.
+        stdscr = self.stdscr
+        cc = curses.complexchar('A', curses.A_BOLD)
+        v = curses.complexchar('|')
+        h = curses.complexchar('-')
+        stdscr.move(0, 0)
+        stdscr.addch(0, 0, cc)
+        self.assertEqual(str(stdscr.in_wch(0, 0)), 'A')
+        self.assertTrue(stdscr.in_wch(0, 0).attr & curses.A_BOLD)
+        stdscr.insch(1, 0, cc)
+        stdscr.echochar(cc)
+        stdscr.bkgdset(cc)
+        stdscr.bkgd(cc)
+        stdscr.hline(2, 0, h, 3)
+        stdscr.vline(3, 0, v, 3)
+        stdscr.border(v, v, h, h)
+        stdscr.box(v, h)
+        # A complexchar already carries its rendition, so combining it with an
+        # explicit attr argument is rejected.
+        self.assertRaises(TypeError, stdscr.addch, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.addch, 0, 0, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.insch, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.echochar, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.bkgd, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.bkgdset, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.hline, h, 3, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.vline, v, 3, curses.A_BOLD)
 
     @requires_curses_window_meth('in_wstr')
     def test_in_wstr(self):
@@ -354,6 +384,90 @@ class TestCurses(unittest.TestCase):
         stdscr.addstr(0, 0, s)
         self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
         self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
+
+    @requires_curses_func('complexchar')
+    def test_complexchar(self):
+        # A complexchar is a styled wide-character cell: str() is its text,
+        # and the attr and pair attributes are its rendition.
+        cc = curses.complexchar('A', curses.A_BOLD)
+        self.assertEqual(str(cc), 'A')
+        self.assertTrue(cc.attr & curses.A_BOLD)
+        self.assertEqual(cc.pair, 0)
+        # A spacing character optionally followed by combining characters.
+        if self._encodable('e\u0301'):
+            self.assertEqual(str(curses.complexchar('e\u0301')), 'e\u0301')
+        # Defaults: no attributes, color pair 0.
+        cc = curses.complexchar('z')
+        self.assertEqual(str(cc), 'z')
+        self.assertEqual(cc.attr, 0)
+        self.assertEqual(cc.pair, 0)
+        # Immutable rendition.
+        self.assertRaises(AttributeError, setattr, cc, 'attr', 1)
+        self.assertRaises(AttributeError, setattr, cc, 'pair', 1)
+        # Equality and hashing compare text, attributes and color pair.
+        self.assertEqual(curses.complexchar('A', curses.A_BOLD),
+                         curses.complexchar('A', curses.A_BOLD))
+        self.assertEqual(hash(curses.complexchar('A', curses.A_BOLD)),
+                         hash(curses.complexchar('A', curses.A_BOLD)))
+        self.assertNotEqual(curses.complexchar('A'),
+                            curses.complexchar('A', curses.A_BOLD))
+        self.assertNotEqual(curses.complexchar('A'), curses.complexchar('B'))
+        # repr() shows only a non-default attr/pair, and is a constructor call.
+        ns = {'_curses': sys.modules[type(cc).__module__]}
+        self.assertNotIn('attr=', repr(curses.complexchar('z')))
+        self.assertNotIn('pair=', repr(curses.complexchar('z')))
+        r = repr(curses.complexchar('A', curses.A_BOLD))
+        self.assertIn('attr=', r)
+        self.assertNotIn('pair=', r)
+        self.assertEqual(eval(r, ns), curses.complexchar('A', curses.A_BOLD))
+        # Invalid arguments.
+        self.assertRaises(TypeError, curses.complexchar, 65)
+        self.assertRaises(TypeError, curses.complexchar, 'A', 'bold')
+        self.assertRaises(OverflowError, curses.complexchar, 'A', -1)
+        self.assertRaises(OverflowError, curses.complexchar, 'A', 1 << 64)
+        self.assertRaises(ValueError, curses.complexchar, 'A', 0, -1)
+        self.assertRaises(ValueError, curses.complexchar, 'ab')
+
+    @requires_curses_window_meth('in_wch')
+    def test_in_wch(self):
+        # in_wch() returns the styled wide cell as a complexchar -- something
+        # inch() (a packed chtype) cannot represent.
+        stdscr = self.stdscr
+        stdscr.addch(0, 0, curses.complexchar('A', curses.A_UNDERLINE))
+        cc = stdscr.in_wch(0, 0)
+        self.assertEqual(str(cc), 'A')
+        self.assertTrue(cc.attr & curses.A_UNDERLINE)
+        if self._encodable('\u00e9'):  # precomposed, for a portable round-trip
+            stdscr.addch(3, 0, curses.complexchar('\u00e9'))
+            self.assertEqual(str(stdscr.in_wch(3, 0)), '\u00e9')
+        # in_wch() without coordinates reads at the cursor position.
+        stdscr.move(0, 0)
+        self.assertEqual(str(stdscr.in_wch()), 'A')
+
+    @requires_curses_window_meth('in_wch')
+    @requires_colors
+    def test_in_wch_color(self):
+        # Unlike the chtype methods (which pack the pair into the value via
+        # COLOR_PAIR), a complex character carries its color pair separately.
+        stdscr = self.stdscr
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        stdscr.addch(0, 0, curses.complexchar('A', curses.A_BOLD, 1))
+        cc = stdscr.in_wch(0, 0)
+        self.assertEqual(str(cc), 'A')
+        self.assertTrue(cc.attr & curses.A_BOLD)
+        self.assertEqual(cc.pair, 1)
+        self.assertEqual(curses.complexchar('A', 0, 1).pair, 1)
+
+    @requires_curses_window_meth('getbkgrnd')
+    def test_getbkgrnd(self):
+        # getbkgrnd() returns the background as a complexchar (getbkgd() can
+        # only return a packed chtype).
+        stdscr = self.stdscr
+        stdscr.bkgdset(curses.complexchar(' ', curses.A_DIM))
+        stdscr.bkgd(curses.complexchar(' ', curses.A_BOLD))
+        cc = stdscr.getbkgrnd()
+        self.assertEqual(str(cc), ' ')
+        self.assertTrue(cc.attr & curses.A_BOLD)
 
 
     def test_output_character(self):
