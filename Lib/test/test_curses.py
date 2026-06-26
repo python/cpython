@@ -1117,6 +1117,7 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(win.instr(2, 0), b' Lorem ipsum')
 
     def test_scr_dump(self):
+        # Test scr_dump(), scr_restore(), scr_init() and scr_set().
         # scr_dump() writes the virtual screen to a named file; the other three
         # functions load it back.  The dumped image is internal curses state,
         # not a window, so the round-trip is checked by comparing dump files
