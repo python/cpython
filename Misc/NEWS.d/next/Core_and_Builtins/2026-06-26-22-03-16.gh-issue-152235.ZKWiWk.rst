@@ -1,0 +1,2 @@
+Defer GC tracking of :meth:`set.intersection`, :meth:`set.difference` and
+:meth:`set.symmetric_difference`. Patch by Donghee Na.
