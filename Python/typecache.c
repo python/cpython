@@ -13,6 +13,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_typeobject.h"    // _PyStaticType_GetState()
+#include "pycore_stats.h"         // OBJECT_STAT_INC
 
 
 // The empty cache is statically allocated and shared across all the types,
