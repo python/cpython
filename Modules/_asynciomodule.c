@@ -1742,7 +1742,8 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+    PyDoc_STR("Futures are generic over the type of their results")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2365,6 +2366,11 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+#ifdef Py_GIL_DISABLED
+    // This is required so that _Py_TryIncref(self)
+    // works correctly in non-owning threads.
+    _PyObject_SetMaybeWeakref((PyObject *)self);
+#endif
     if (eager_start) {
         PyObject *res = PyObject_CallMethodNoArgs(loop, &_Py_ID(is_running));
         if (res == NULL) {
@@ -2383,11 +2389,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
-#ifdef Py_GIL_DISABLED
-    // This is required so that _Py_TryIncref(self)
-    // works correctly in non-owning threads.
-    _PyObject_SetMaybeWeakref((PyObject *)self);
-#endif
     register_task(ts, self);
     return 0;
 }
@@ -2927,7 +2928,8 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
     _ASYNCIO_TASK_GET_CONTEXT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+    PyDoc_STR("Tasks are generic over the return type of their wrapped coroutines")},
     {NULL, NULL}        /* Sentinel */
 };
 
