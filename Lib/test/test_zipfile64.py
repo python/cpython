@@ -92,21 +92,26 @@ class TestsWithSourceFile(unittest.TestCase):
         os_helper.unlink(TESTFN2)
 
 
-class TestRepack(unittest.TestCase):
-    def setUp(self):
-        # Create test data.
-        line_gen = ("Test of zipfile line %d." % i for i in range(1000000))
-        self.data = '\n'.join(line_gen).encode('ascii')
+class TestRepacker(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.largefilename = 'largefile.txt'
 
-        # It will contain enough copies of self.data to reach about 8 GiB.
-        self.datacount = 8*1024**3 // len(self.data)
+        line_gen = ("Test of zipfile line %d." % i for i in range(1000000))
+        cls.chunk = '\n'.join(line_gen).encode('ascii')
+
+        # It will contain enough copies of cls.chunk to reach about 4.1 GiB.
+        cls.chunkcount = int(4.1*1024**3 / len(cls.chunk))
+
+        cls.filename = 'file.txt'
+        cls.lorem = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
 
         # Memory usage should not exceed 10 MiB during repacking.
         # This empirical threshold ensures that the internal processing
         # like signature scanning, compressed block end tracing, and
         # data copying are properly buffered without loading the entire
         # large file into memory.
-        self.allowed_memory = 10*1024**2
+        cls.allowed_memory = 10*1024**2
 
     @contextmanager
     def assert_memory_usage(self, threshold):
@@ -120,31 +125,28 @@ class TestRepack(unittest.TestCase):
 
     def _write_large_file(self, fh):
         next_time = time.monotonic() + _PRINT_WORKING_MSG_INTERVAL
-        for num in range(self.datacount):
-            fh.write(self.data)
+        for num in range(self.chunkcount):
+            fh.write(self.chunk)
             # Print still working message since this test can be really slow
             if next_time <= time.monotonic():
                 next_time = time.monotonic() + _PRINT_WORKING_MSG_INTERVAL
                 print((
                 '  writing %d of %d, be patient...' %
-                (num, self.datacount)), file=sys.__stdout__)
+                (num, self.chunkcount)), file=sys.__stdout__)
                 sys.__stdout__.flush()
 
     def test_strip_removed_large_file(self):
         """Should move the physical data of a file positioned after a large
         removed file without causing a memory issue."""
         with TemporaryFile() as f:
-            file = 'file.txt'
-            file1 = 'largefile.txt'
-            data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
             with zipfile.ZipFile(f, 'w') as zh:
-                with zh.open(file1, 'w', force_zip64=True) as fh:
+                with zh.open(self.largefilename, 'w', force_zip64=True) as fh:
                     self._write_large_file(fh)
-                zh.writestr(file, data)
+                zh.writestr(self.filename, self.lorem)
 
             with self.assert_memory_usage(self.allowed_memory), \
                  zipfile.ZipFile(f, 'a') as zh:
-                zh.remove(file1)
+                zh.remove(self.largefilename)
                 zh.repack()
                 self.assertIsNone(zh.testzip())
 
@@ -152,17 +154,14 @@ class TestRepack(unittest.TestCase):
         """Should move the physical data of a large file positioned after a
         removed file without causing a memory issue."""
         with TemporaryFile() as f:
-            file = 'file.txt'
-            file1 = 'largefile.txt'
-            data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
             with zipfile.ZipFile(f, 'w') as zh:
-                zh.writestr(file, data)
-                with zh.open(file1, 'w', force_zip64=True) as fh:
+                zh.writestr(self.filename, self.lorem)
+                with zh.open(self.largefilename, 'w', force_zip64=True) as fh:
                     self._write_large_file(fh)
 
             with self.assert_memory_usage(self.allowed_memory), \
                  zipfile.ZipFile(f, 'a') as zh:
-                zh.remove(file)
+                zh.remove(self.filename)
                 zh.repack()
                 self.assertIsNone(zh.testzip())
 
@@ -170,17 +169,14 @@ class TestRepack(unittest.TestCase):
         """Should scan for the data descriptor of a removed large file without
         causing a memory issue."""
         with TemporaryFile() as f:
-            file = 'file.txt'
-            file1 = 'largefile.txt'
-            data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
             with zipfile.ZipFile(Unseekable(f), 'w') as zh:
-                with zh.open(file1, 'w', force_zip64=True) as fh:
+                with zh.open(self.largefilename, 'w', force_zip64=True) as fh:
                     self._write_large_file(fh)
-                zh.writestr(file, data)
+                zh.writestr(self.filename, self.lorem)
 
             with self.assert_memory_usage(self.allowed_memory), \
                  zipfile.ZipFile(f, 'a') as zh:
-                zh.remove(file1)
+                zh.remove(self.largefilename)
                 zh.repack()
                 self.assertIsNone(zh.testzip())
 
@@ -188,21 +184,18 @@ class TestRepack(unittest.TestCase):
         """Should scan for the unsigned data descriptor of a removed large file
         without causing a memory issue."""
         # Reduce data scale for this test, as it's especially slow...
-        self.datacount = 30*1024**2 // len(self.data)
+        self.chunkcount = int(30*1024**2 / len(self.chunk))
 
         with TemporaryFile() as f:
-            file = 'file.txt'
-            file1 = 'largefile.txt'
-            data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
             with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig), \
                  zipfile.ZipFile(Unseekable(f), 'w') as zh:
-                with zh.open(file1, 'w', force_zip64=True) as fh:
+                with zh.open(self.largefilename, 'w', force_zip64=True) as fh:
                     self._write_large_file(fh)
-                zh.writestr(file, data)
+                zh.writestr(self.filename, self.lorem)
 
             with self.assert_memory_usage(self.allowed_memory), \
                  zipfile.ZipFile(f, 'a') as zh:
-                zh.remove(file1)
+                zh.remove(self.largefilename)
                 # strict_descriptor=False to scan the unsigned data descriptor
                 # (scanning is disabled under the strict_descriptor=True default)
                 zh.repack(strict_descriptor=False)
@@ -213,18 +206,15 @@ class TestRepack(unittest.TestCase):
         """Should scan for the unsigned data descriptor (via tracing compressed
         block end) of a removed large file without causing a memory issue."""
         with TemporaryFile() as f:
-            file = 'file.txt'
-            file1 = 'largefile.txt'
-            data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
             with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig), \
                  zipfile.ZipFile(Unseekable(f), 'w', compression=zipfile.ZIP_DEFLATED) as zh:
-                with zh.open(file1, 'w', force_zip64=True) as fh:
+                with zh.open(self.largefilename, 'w', force_zip64=True) as fh:
                     self._write_large_file(fh)
-                zh.writestr(file, data)
+                zh.writestr(self.filename, self.lorem)
 
             with self.assert_memory_usage(self.allowed_memory), \
                  zipfile.ZipFile(f, 'a') as zh:
-                zh.remove(file1)
+                zh.remove(self.largefilename)
                 # strict_descriptor=False to detect the unsigned data descriptor
                 # (scanning is disabled under the strict_descriptor=True default)
                 zh.repack(strict_descriptor=False)
