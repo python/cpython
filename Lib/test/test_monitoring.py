@@ -14,7 +14,6 @@ import unittest
 import test.support
 from test.support import import_helper, requires_specialization, script_helper
 
-_testcapi = import_helper.import_module("_testcapi")
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 PAIR = (0,1)
@@ -2579,21 +2578,24 @@ class TestMonitoringAtShutdown(unittest.TestCase):
 
 
 class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
+    _testcapi = import_helper.import_module("_testcapi")
 
     class Scope:
         def __init__(self, *args):
             self.args = args
 
         def __enter__(self):
-            _testcapi.monitoring_enter_scope(*self.args)
+            self._testcapi.monitoring_enter_scope(*self.args)
 
         def __exit__(self, *args):
-            _testcapi.monitoring_exit_scope()
+            self._testcapi.monitoring_exit_scope()
+
+    Scope._testcapi = _testcapi
 
     def setUp(self):
         super(TestCApiEventGeneration, self).setUp()
 
-        capi = _testcapi
+        capi = self._testcapi
 
         self.codelike = capi.CodeLike(2)
 
@@ -2662,7 +2664,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
     def test_fire_event(self):
         for expected, event, function, *args in self.cases:
             offset = 0
-            self.codelike = _testcapi.CodeLike(1)
+            self.codelike = self._testcapi.CodeLike(1)
             with self.subTest(function.__name__):
                 args_ = (self.codelike, offset) + tuple(args)
                 self.check_event_count(event, function, args_, expected)
@@ -2673,7 +2675,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                 continue
             assert args and isinstance(args[-1], BaseException)
             offset = 0
-            self.codelike = _testcapi.CodeLike(1)
+            self.codelike = self._testcapi.CodeLike(1)
             with self.subTest(function.__name__):
                 args_ = (self.codelike, offset) + tuple(args[:-1]) + (None,)
                 evt = int(math.log2(event))
@@ -2683,7 +2685,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
     def test_fire_event_failing_callback(self):
         for expected, event, function, *args in self.cases:
             offset = 0
-            self.codelike = _testcapi.CodeLike(1)
+            self.codelike = self._testcapi.CodeLike(1)
             with self.subTest(function.__name__):
                 args_ = (self.codelike, offset) + tuple(args)
                 exc = OSError(42)
@@ -2733,12 +2735,14 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
     def test_disable_event(self):
         for expected, event, function, *args in self.cases:
             offset = 0
-            self.codelike = _testcapi.CodeLike(2)
+            self.codelike = self._testcapi.CodeLike(2)
             with self.subTest(function.__name__):
                 args_ = (self.codelike, 0) + tuple(args)
                 self.check_disable(event, function, args_, expected)
 
     def test_enter_scope_two_events(self):
+        _testcapi = self._testcapi
+
         try:
             yield_counter = CounterWithDisable()
             unwind_counter = CounterWithDisable()
