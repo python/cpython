@@ -1,8 +1,9 @@
-"""Utilities for writing StencilGroups out to a C header file."""
+"""Utilities for writing JIT build artifacts out to C header files."""
 
 import typing
 import math
 
+import _dwarf
 import _stencils
 
 
@@ -70,3 +71,26 @@ def dump(
     for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
     yield from _dump_footer(groups, symbols)
+
+
+def dump_unwind_info(
+    unwind_info: _dwarf.UnwindInfo | None,
+) -> typing.Iterator[str]:
+    """Yield JIT unwind information line-by-line as a C header file."""
+    if unwind_info is None:
+        yield "#define JIT_UNWIND_INFO_SUPPORTED 0"
+        return
+
+    yield "#define JIT_UNWIND_INFO_SUPPORTED 1"
+    fields = [
+        ("JIT_UNWIND_CODE_ALIGNMENT_FACTOR", unwind_info.code_alignment_factor),
+        ("JIT_UNWIND_DATA_ALIGNMENT_FACTOR", unwind_info.data_alignment_factor),
+        ("JIT_UNWIND_RA_REG", unwind_info.return_address_register),
+        ("JIT_UNWIND_CFA_REG", unwind_info.cfa_register),
+        ("JIT_UNWIND_CFA_OFFSET", unwind_info.cfa_offset),
+        ("JIT_UNWIND_FP_REG", unwind_info.frame_pointer_register),
+        ("JIT_UNWIND_FP_OFFSET", unwind_info.frame_pointer_offset),
+        ("JIT_UNWIND_RA_OFFSET", unwind_info.return_address_offset),
+    ]
+    for name, value in fields:
+        yield f"#define {name} {value}"

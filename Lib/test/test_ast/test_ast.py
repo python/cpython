@@ -1,4 +1,5 @@
 import _ast_unparse
+import _ast
 import ast
 import builtins
 import contextlib
@@ -85,7 +86,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(ast_node._fields, ast_node.__match_args__)
 
     def test_AST_objects(self):
-        x = ast.AST()
+        # Directly instantiating abstract node class AST is allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.AST()
         self.assertEqual(x._fields, ())
         x.foobar = 42
         self.assertEqual(x.foobar, 42)
@@ -94,7 +97,7 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             x.vararg
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError), self.assertWarns(DeprecationWarning):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
@@ -110,15 +113,21 @@ class AST_Tests(unittest.TestCase):
 
         msg = "type object 'ast.AST' has no attribute '_fields'"
         # Both examples used to crash:
-        with self.assertRaisesRegex(AttributeError, msg):
+        with (
+            self.assertRaisesRegex(AttributeError, msg),
+            self.assertWarns(DeprecationWarning),
+        ):
             ast.AST(arg1=123)
-        with self.assertRaisesRegex(AttributeError, msg):
+        with (
+            self.assertRaisesRegex(AttributeError, msg),
+            self.assertWarns(DeprecationWarning),
+        ):
             ast.AST()
 
-    def test_AST_garbage_collection(self):
+    def test_node_garbage_collection(self):
         class X:
             pass
-        a = ast.AST()
+        a = ast.Module()
         a.x = X()
         a.x.a = a
         ref = weakref.ref(a.x)
@@ -439,7 +448,15 @@ class AST_Tests(unittest.TestCase):
             elif typ is object:
                 kwargs[name] = b'capybara'
             elif isinstance(typ, type) and issubclass(typ, ast.AST):
-                kwargs[name] = self._construct_ast_class(typ)
+                if _ast._is_abstract(typ):
+                    # Use an arbitrary concrete subclass
+                    concrete = next((sub for sub in typ.__subclasses__()
+                                     if not _ast._is_abstract(sub)), None)
+                    msg = f"abstract node class {typ} has no concrete subclasses"
+                    self.assertIsNotNone(concrete, msg)
+                else:
+                    concrete = typ
+                kwargs[name] = self._construct_ast_class(concrete)
         return cls(**kwargs)
 
     def test_arguments(self):
@@ -505,6 +522,12 @@ class AST_Tests(unittest.TestCase):
         self.assertIs(ast.Constant(False).value, False)
         self.assertIs(ast.Constant(None).value, None)
         self.assertIs(ast.Constant(...).value, ...)
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Tuple().dims
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Tuple().dims = 3
 
     def test_constant_subclasses(self):
         class N(ast.Constant):
@@ -578,6 +601,10 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             ast.BinOp(1, 2, 3, foobarbaz=42)
 
+        # Directly instantiating abstract node types is allowed (but deprecated)
+        self.assertWarns(DeprecationWarning, ast.stmt)
+        self.assertWarns(DeprecationWarning, ast.expr_context)
+
     def test_no_fields(self):
         # this used to fail because Sub._fields was None
         x = ast.Sub()
@@ -585,7 +612,10 @@ class AST_Tests(unittest.TestCase):
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
-        m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
+        with self.assertWarns(DeprecationWarning):
+            # Creating instances of ast.expr is deprecated
+            e = ast.expr(**pos)
+        m = ast.Module([ast.Expr(e, **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
         self.assertIn("but got expr()", str(cm.exception))
@@ -595,7 +625,7 @@ class AST_Tests(unittest.TestCase):
         ast.fix_missing_locations(m)
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("identifier must be of type str", str(cm.exception))
+        self.assertIn("expecting a string object", str(cm.exception))
 
     def test_invalid_constant(self):
         for invalid_constant in int, (1, 2, int), frozenset((1, 2, int)):
@@ -1051,6 +1081,30 @@ class AST_Tests(unittest.TestCase):
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
 
+    def test_required_field_messages(self):
+        binop = ast.BinOp(
+            left=ast.Constant(value=2),
+            right=ast.Constant(value=2),
+            op=ast.Add(),
+        )
+        expr_without_position = ast.Expression(body=binop)
+        expr_with_wrong_body = ast.Expression(body=[binop])
+
+        with self.assertRaisesRegex(TypeError, "required field") as cm:
+            compile(expr_without_position, "<test>", "eval")
+        with self.assertRaisesRegex(
+            TypeError,
+            "field 'body' was expecting node of type 'expr', got 'list'",
+        ):
+            compile(expr_with_wrong_body, "<test>", "eval")
+
+        constant = ast.parse("u'test'", mode="eval")
+        constant.body.kind = 0xFF
+        with self.assertRaisesRegex(
+            TypeError, "field 'kind' was expecting a string or bytes object"
+        ):
+            compile(constant, "<test>", "eval")
+
     def test_repr(self) -> None:
         snapshots = AST_REPR_DATA_FILE.read_text().split("\n")
         for test, snapshot in zip(ast_repr_get_test_cases(), snapshots, strict=True):
@@ -1075,6 +1129,38 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
         self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
         self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+    def test_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            ast.slice
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Index
+
+        with self.assertWarns(DeprecationWarning):
+            ast.ExtSlice
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Suite
+
+        with self.assertWarns(DeprecationWarning):
+            ast.AugLoad
+
+        with self.assertWarns(DeprecationWarning):
+            ast.AugStore
+
+        with self.assertWarns(DeprecationWarning):
+            ast.Param
+
+        namespace = {}
+        exec("from ast import *", namespace)
+        self.assertNotIn("slice", namespace)
+        self.assertNotIn("Index", namespace)
+        self.assertNotIn("ExtSlice", namespace)
+        self.assertNotIn("Suite", namespace)
+        self.assertNotIn("AugLoad", namespace)
+        self.assertNotIn("AugStore", namespace)
+        self.assertNotIn("Param", namespace)
 
     def test_filter_syntax_warnings_by_module(self):
         filename = support.findfile('test_import/data/syntax_warnings.py')
@@ -1107,13 +1193,19 @@ class CopyTests(unittest.TestCase):
     def iter_ast_classes():
         """Iterate over the (native) subclasses of ast.AST recursively.
 
-        This excludes the special class ast.Index since its constructor
-        returns an integer.
+        This excludes:
+          * abstract AST nodes
+          * the special class ast.Index, since its constructor returns
+            an integer.
         """
         def do(cls):
             if cls.__module__ != 'ast':
                 return
-            if cls is ast.Index:
+            with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
+                if cls is ast.Index:
+                    return
+            # Don't attempt to create instances of abstract AST nodes
+            if _ast._is_abstract(cls):
                 return
 
             yield cls
@@ -2656,11 +2748,12 @@ class ConstantTests(unittest.TestCase):
 
     def get_load_const(self, tree):
         # Compile to bytecode, disassemble and get parameter of LOAD_CONST
-        # instructions
+        # and LOAD_COMMON_CONSTANT instructions
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opcode in dis.hasconst:
+            if instr.opcode in dis.hasconst or \
+                    instr.opname == 'LOAD_COMMON_CONSTANT':
                 consts.append(instr.argval)
         return consts
 

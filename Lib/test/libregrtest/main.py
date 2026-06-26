@@ -27,7 +27,7 @@ from .utils import (
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
     is_cross_compiled, get_host_runner, display_title,
-    EXIT_TIMEOUT)
+    get_process_memory_usage, EXIT_TIMEOUT)
 
 
 class Regrtest:
@@ -393,7 +393,12 @@ class Regrtest:
 
         return result
 
+    def _get_mem_usage(self):
+        return get_process_memory_usage(os.getpid())
+
     def run_tests_sequentially(self, runtests: RunTests) -> None:
+        if not self.pgo:
+            self.logger.get_mem_usage = self._get_mem_usage
         if self.coverage:
             tracer = trace.Trace(trace=False, count=True)
         else:

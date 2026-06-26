@@ -237,6 +237,7 @@
     <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
     <ClCompile Include="..\Python\jit.c" />
+    <ClCompile Include="..\Python\jit_publish.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />
     <ClCompile Include="..\Python\lock.c" />
     <ClCompile Include="..\Python\marshal.c" />
@@ -269,6 +270,8 @@
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\qsbr.c" />
     <ClCompile Include="..\Python\remote_debugging.c" />
+    <ClCompile Include="..\Python\slots.c" />
+    <ClCompile Include="..\Python\slots_generated.c" />
     <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />

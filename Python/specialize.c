@@ -113,7 +113,8 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
     }
     #else
     for (Py_ssize_t i = 0; i < size-1; i++) {
-        if (instructions[i].op.code == GET_ITER) {
+        int opcode = instructions[i].op.code;
+        if (opcode == GET_ITER) {
             fixup_getiter(&instructions[i], flags);
         }
         i += _PyOpcode_Caches[opcode];
@@ -1285,7 +1286,6 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
         }
-        write_u32(cache->keys_version, shared_keys_version);
         specialize(instr, is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
     }
     else {
@@ -1595,7 +1595,9 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
             return;
         }
     }
-    if (container_type == &PyDict_Type) {
+    if (container_type->tp_as_mapping != NULL &&
+        container_type->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
+    {
         specialize(instr, STORE_SUBSCR_DICT);
         return;
     }
@@ -2122,55 +2124,23 @@ is_compactlong(PyObject *v)
            _PyLong_IsCompact((PyLongObject *)v);
 }
 
-/* sequence * int helpers: bypass PyNumber_Multiply dispatch overhead
-   by calling sq_repeat directly with PyLong_AsSsize_t. */
-
-static inline PyObject *
-seq_int_multiply(PyObject *seq, PyObject *n,
-                 ssizeargfunc repeat)
-{
-    Py_ssize_t count = PyLong_AsSsize_t(n);
-    if (count == -1 && PyErr_Occurred()) {
-        return NULL;
+#define SEQ_INT_MULTIPLY_ACTION(NAME, REPEAT, SEQ, COUNT) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        Py_ssize_t count = PyLong_AsSsize_t(COUNT); \
+        if (count == -1 && PyErr_Occurred()) { \
+            return NULL; \
+        } \
+        return REPEAT(SEQ, count); \
     }
-    return repeat(seq, count);
-}
-
-static PyObject *
-str_int_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(lhs, rhs, PyUnicode_Type.tp_as_sequence->sq_repeat);
-}
-
-static PyObject *
-int_str_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(rhs, lhs, PyUnicode_Type.tp_as_sequence->sq_repeat);
-}
-
-static PyObject *
-bytes_int_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(lhs, rhs, PyBytes_Type.tp_as_sequence->sq_repeat);
-}
-
-static PyObject *
-int_bytes_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(rhs, lhs, PyBytes_Type.tp_as_sequence->sq_repeat);
-}
-
-static PyObject *
-tuple_int_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(lhs, rhs, PyTuple_Type.tp_as_sequence->sq_repeat);
-}
-
-static PyObject *
-int_tuple_multiply(PyObject *lhs, PyObject *rhs)
-{
-    return seq_int_multiply(rhs, lhs, PyTuple_Type.tp_as_sequence->sq_repeat);
-}
+SEQ_INT_MULTIPLY_ACTION(str_int_multiply,   _PyUnicode_Repeat, lhs, rhs)
+SEQ_INT_MULTIPLY_ACTION(int_str_multiply,   _PyUnicode_Repeat, rhs, lhs)
+SEQ_INT_MULTIPLY_ACTION(bytes_int_multiply, _PyBytes_Repeat,   lhs, rhs)
+SEQ_INT_MULTIPLY_ACTION(int_bytes_multiply, _PyBytes_Repeat,   rhs, lhs)
+SEQ_INT_MULTIPLY_ACTION(tuple_int_multiply, _PyTuple_Repeat,   lhs, rhs)
+SEQ_INT_MULTIPLY_ACTION(int_tuple_multiply, _PyTuple_Repeat,   rhs, lhs)
+#undef SEQ_INT_MULTIPLY_ACTION
 
 static int
 compactlongs_guard(PyObject *lhs, PyObject *rhs)
@@ -2276,12 +2246,20 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1, NULL, NULL},
     {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1, NULL, NULL},
     {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_MULTIPLY, float_compactlong_guard, float_compactlong_multiply, &PyFloat_Type, 1, NULL, NULL},
 
     /* long-float arithmetic: guards also check NaN and compactness. */
     {NB_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1, NULL, NULL},
     {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1, NULL, NULL},
     {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1, NULL, NULL},
     {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_ADD, compactlong_float_guard, compactlong_float_add, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_SUBTRACT, compactlong_float_guard, compactlong_float_subtract, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div, &PyFloat_Type, 1, NULL, NULL},
+    {NB_INPLACE_MULTIPLY, compactlong_float_guard, compactlong_float_multiply, &PyFloat_Type, 1, NULL, NULL},
 
     /* list-list concatenation: _PyList_Concat always allocates a new list */
     {NB_ADD, NULL, _PyList_Concat, &PyList_Type, 1, &PyList_Type, &PyList_Type},
@@ -2290,8 +2268,8 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
        to be a freshly allocated object. */
     {NB_ADD, NULL, _PyTuple_Concat, &PyTuple_Type, 0, &PyTuple_Type, &PyTuple_Type},
 
-    /* str * int / int * str: call unicode_repeat directly.
-       unicode_repeat returns the original when n == 1. */
+    /* str * int / int * str: call _PyUnicode_Repeat directly.
+       _PyUnicode_Repeat returns the original when n == 1. */
     {NB_MULTIPLY, NULL, str_int_multiply, &PyUnicode_Type, 0, &PyUnicode_Type, &PyLong_Type},
     {NB_MULTIPLY, NULL, int_str_multiply, &PyUnicode_Type, 0, &PyLong_Type, &PyUnicode_Type},
     {NB_INPLACE_MULTIPLY, NULL, str_int_multiply, &PyUnicode_Type, 0, &PyUnicode_Type, &PyLong_Type},
@@ -2302,15 +2280,15 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_ADD, NULL, _PyBytes_Concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
     {NB_INPLACE_ADD, NULL, _PyBytes_Concat, &PyBytes_Type, 0, &PyBytes_Type, &PyBytes_Type},
 
-    /* bytes * int / int * bytes: call bytes_repeat directly.
-       bytes_repeat returns the original when n == 1. */
+    /* bytes * int / int * bytes: call _PyBytes_Repeat directly.
+       _PyBytes_Repeat returns the original when n == 1. */
     {NB_MULTIPLY, NULL, bytes_int_multiply, &PyBytes_Type, 0, &PyBytes_Type, &PyLong_Type},
     {NB_MULTIPLY, NULL, int_bytes_multiply, &PyBytes_Type, 0, &PyLong_Type, &PyBytes_Type},
     {NB_INPLACE_MULTIPLY, NULL, bytes_int_multiply, &PyBytes_Type, 0, &PyBytes_Type, &PyLong_Type},
     {NB_INPLACE_MULTIPLY, NULL, int_bytes_multiply, &PyBytes_Type, 0, &PyLong_Type, &PyBytes_Type},
 
-    /* tuple * int / int * tuple: call tuple_repeat directly.
-       tuple_repeat returns the original when n == 1. */
+    /* tuple * int / int * tuple: call _PyTuple_Repeat directly.
+       _PyTuple_Repeat returns the original when n == 1. */
     {NB_MULTIPLY, NULL, tuple_int_multiply, &PyTuple_Type, 0, &PyTuple_Type, &PyLong_Type},
     {NB_MULTIPLY, NULL, int_tuple_multiply, &PyTuple_Type, 0, &PyLong_Type, &PyTuple_Type},
     {NB_INPLACE_MULTIPLY, NULL, tuple_int_multiply, &PyTuple_Type, 0, &PyTuple_Type, &PyLong_Type},
@@ -2429,7 +2407,9 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                     }
                 }
             }
-            if (PyAnyDict_CheckExact(lhs)) {
+            if (Py_TYPE(lhs)->tp_as_mapping != NULL &&
+                Py_TYPE(lhs)->tp_as_mapping->mp_subscript == _PyDict_Subscript)
+            {
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
                 return;
             }
@@ -2755,6 +2735,14 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
             goto failure;
         }
         specialize(instr, SEND_GEN);
+        return;
+    }
+    if (tp->_tp_iteritem != NULL) {
+        specialize(instr, SEND_VIRTUAL);
+        return;
+    }
+    if (tp == &_PyAsyncGenASend_Type) {
+        specialize(instr, SEND_ASYNC_GEN);
         return;
     }
     SPECIALIZATION_FAIL(SEND,

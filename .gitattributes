@@ -84,6 +84,7 @@ Include/internal/pycore_uop_ids.h                   generated
 Include/internal/pycore_uop_metadata.h              generated
 Include/opcode.h                                    generated
 Include/opcode_ids.h                                generated
+Include/slots_generated.h                           generated
 Include/token.h                                     generated
 Lib/_opcode_metadata.py                             generated
 Lib/idlelib/help.html                               generated
@@ -99,7 +100,6 @@ Lib/token.py                                        generated
 Misc/sbom.spdx.json                                 generated
 Modules/_testinternalcapi/test_cases.c.h            generated
 Modules/_testinternalcapi/test_targets.h            generated
-Objects/typeslots.inc                               generated
 PC/python3dll.c                                     generated
 Parser/parser.c                                     generated
 Parser/token.c                                      generated
@@ -110,6 +110,7 @@ Python/generated_cases.c.h                          generated
 Python/optimizer_cases.c.h                          generated
 Python/opcode_targets.h                             generated
 Python/record_functions.c.h                         generated
+Python/slots_generated.c                            generated
 Python/stdlib_module_names.h                        generated
 Tools/peg_generator/pegen/grammar_parser.py         generated
 aclocal.m4                                          generated

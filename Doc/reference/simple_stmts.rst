@@ -181,7 +181,7 @@ Assignment of an object to a single target is recursively defined as follows.
      inst.x = inst.x + 1   # writes inst.x as 4 leaving Cls.x as 3
 
   This description does not necessarily apply to descriptor attributes, such as
-  properties created with :func:`property`.
+  properties created with :deco:`property`.
 
   .. index::
      pair: subscription; assignment
@@ -761,8 +761,9 @@ The basic import statement (no :keyword:`from` clause) is executed in two
 steps:
 
 #. find a module, loading and initializing it if necessary
-#. define a name or names in the local namespace for the scope where
-   the :keyword:`import` statement occurs.
+#. define a name or names in the current namespace for the scope where
+   the :keyword:`import` statement occurs, just as an assignment statement
+   would (including :keyword:`global` and :keyword:`nonlocal` semantics).
 
 When the statement contains multiple clauses (separated by
 commas) the two steps are carried out separately for each clause, just
@@ -807,7 +808,7 @@ The :keyword:`from` form uses a slightly more complex process:
    #. if not, attempt to import a submodule with that name and then
       check the imported module again for that attribute
    #. if the attribute is not found, :exc:`ImportError` is raised.
-   #. otherwise, a reference to that value is stored in the local namespace,
+   #. otherwise, a reference to that value is stored in the current namespace,
       using the name in the :keyword:`!as` clause if it is present,
       otherwise using the attribute name
 
@@ -963,10 +964,6 @@ For ``from``-style imports, the relevant name is the module following
 Imports inside functions, class bodies, or
 :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are always eager,
 regardless of :attr:`!__lazy_modules__`.
-
-Setting ``-X lazy_imports=none`` (or the :envvar:`PYTHON_LAZY_IMPORTS`
-environment variable to ``none``) overrides :attr:`!__lazy_modules__` and
-forces all imports to be eager.
 
 .. versionadded:: 3.15
 

@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_jit_publish.h"
 #include "pycore_uop.h"           // _PyUOpInstruction
 #include "pycore_uop_ids.h"
 #include "pycore_stackref.h"      // _PyStackRef
@@ -30,9 +31,8 @@ extern "C" {
  * 4. A push followed by a matching return is net-zero on frame-specific
  *    fitness, excluding per-slot costs.
  */
-#define MAX_TARGET_LENGTH          (UOP_MAX_TRACE_LENGTH / 2)
 #define OPTIMIZER_EFFECTIVENESS    2
-#define FITNESS_INITIAL            (MAX_TARGET_LENGTH * OPTIMIZER_EFFECTIVENESS)
+#define MAX_TARGET_LENGTH          (FITNESS_INITIAL / OPTIMIZER_EFFECTIVENESS)
 
 /* Exit quality thresholds: trace stops when fitness < exit_quality.
  * Higher = trace is more willing to stop here. */
@@ -198,6 +198,7 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
+    _PyJitCodeRegistration *jit_registration;
     _PyExitData exits[1];
 } _PyExecutorObject;
 
@@ -311,7 +312,7 @@ int _Py_uop_analyze_and_optimize(
     _PyUOpInstruction *input, int trace_len, int curr_stackentries,
     _PyUOpInstruction *output, _PyBloomFilter *dependencies);
 
-extern PyTypeObject _PyUOpExecutor_Type;
+PyAPI_DATA(PyTypeObject) _PyUOpExecutor_Type;
 
 
 #define UOP_FORMAT_TARGET 0

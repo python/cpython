@@ -995,7 +995,7 @@ class TestCase(unittest.TestCase):
         self.assertNotIn('x', D.__dict__)
 
     def test_missing_repr(self):
-        self.assertIn('MISSING_TYPE object', repr(MISSING))
+        self.assertEqual(repr(MISSING), 'MISSING')
 
     def test_dont_include_other_annotations(self):
         @dataclass
@@ -2792,6 +2792,55 @@ class TestEq(unittest.TestCase):
         self.assertEqual(C(1), 5)
         self.assertNotEqual(C(1), 1)
 
+    def test_eq_field_by_field(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+
+        p1 = Point(1, 2)
+        p2 = Point(1, 2)
+        p3 = Point(2, 1)
+        self.assertEqual(p1, p2)
+        self.assertNotEqual(p1, p3)
+
+    def test_eq_type_check(self):
+        @dataclasses.dataclass
+        class A:
+            x: int
+
+        @dataclasses.dataclass
+        class B:
+            x: int
+
+        a = A(1)
+        b = B(1)
+        self.assertNotEqual(a, b)
+
+    def test_eq_custom_field(self):
+        class AlwaysEqual(int):
+            def __eq__(self, other):
+                return True
+
+        @dataclasses.dataclass
+        class Foo:
+            x: AlwaysEqual
+            y: int
+
+        f1 = Foo(AlwaysEqual(1), 2)
+        f2 = Foo(AlwaysEqual(2), 2)
+        self.assertEqual(f1, f2)
+
+    def test_eq_nan_field(self):
+        @dataclasses.dataclass
+        class D:
+            x: float
+
+        nan = float('nan')
+        d1 = D(nan)
+        d2 = D(nan)
+        self.assertNotEqual(d1, d2)
+
 
 class TestOrdering(unittest.TestCase):
     def test_functools_total_ordering(self):
@@ -4353,10 +4402,17 @@ class TestStringAnnotations(unittest.TestCase):
         from test.test_dataclasses import dataclass_module_1_str
         from test.test_dataclasses import dataclass_module_2
         from test.test_dataclasses import dataclass_module_2_str
+        from test.test_dataclasses import dataclass_module_3
+        from test.test_dataclasses import dataclass_module_3_str
+        from test.test_dataclasses import dataclass_module_4
+        from test.test_dataclasses import dataclass_module_4_str
 
-        for m in (dataclass_module_1, dataclass_module_1_str,
-                  dataclass_module_2, dataclass_module_2_str,
-                  ):
+        for m in (
+            dataclass_module_1, dataclass_module_1_str,
+            dataclass_module_2, dataclass_module_2_str,
+            dataclass_module_3, dataclass_module_3_str,
+            dataclass_module_4, dataclass_module_4_str,
+        ):
             with self.subTest(m=m):
                 # There's a difference in how the ClassVars are
                 # interpreted when using string annotations or
@@ -4659,6 +4715,14 @@ class TestMakeDataclass(unittest.TestCase):
         c = C(10)
         self.assertEqual(c.x, 10)
         self.assertEqual(c.__custom__, True)
+
+    def test_empty_annotation_string(self):
+        @dataclass
+        class DataclassWithEmptyTypeAnnotation:
+            x: ""
+
+        c = DataclassWithEmptyTypeAnnotation(10)
+        self.assertEqual(c.x, 10)
 
 
 class TestReplace(unittest.TestCase):
@@ -5274,6 +5338,15 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertEqual(len(fs), 1)
         self.assertEqual(fs[0].name, 'x')
 
+    def test_makedataclass_with_qualname(self):
+        A = make_dataclass("A", ['a'], qualname='ClassA')
+        self.assertEqual(A.__qualname__, 'ClassA')
+
+        B = make_dataclass("B", ['b'], qualname='module1.ClassB')
+        self.assertEqual(B.__qualname__, 'module1.ClassB')
+
+        C = make_dataclass("C", ['c'])
+        self.assertEqual(C.__qualname__, 'C')
 
 class TestZeroArgumentSuperWithSlots(unittest.TestCase):
     def test_zero_argument_super(self):

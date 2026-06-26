@@ -384,14 +384,18 @@ Getters
 
    Get the writer size.
 
+   The function does not invalidate pointers returned by
+   :c:func:`PyBytesWriter_GetData`.
+
    The function cannot fail.
 
 .. c:function:: void* PyBytesWriter_GetData(PyBytesWriter *writer)
 
    Get the writer data: start of the internal buffer.
 
-   The pointer is valid until :c:func:`PyBytesWriter_Finish` or
-   :c:func:`PyBytesWriter_Discard` is called on *writer*.
+   The pointer remains valid until a :c:type:`PyBytesWriter` function other
+   than :c:func:`PyBytesWriter_GetData` or :c:func:`PyBytesWriter_GetSize` is
+   called on *writer*.
 
    The function cannot fail.
 

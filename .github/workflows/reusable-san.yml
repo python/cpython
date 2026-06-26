@@ -82,19 +82,16 @@ jobs:
       run: make -j4
     - name: Display build info
       run: make pythoninfo
-    # test_{capi,faulthandler} are skipped under UBSan because
-    # they raise signals that UBSan with halt_on_error=1 intercepts.
     - name: Tests
       run: >-
         ./python -m test
         ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
-        ${{ inputs.sanitizer == 'UBSan' && '-x test_capi -x test_faulthandler' || '' }}
-        -j4
+        -j4 -W --timeout=900 --slowest
     - name: Parallel tests
       if: >-
         inputs.sanitizer == 'TSan'
         && fromJSON(inputs.free-threading)
-      run: ./python -m test --tsan-parallel --parallel-threads=4 -j4
+      run: ./python -m test --tsan-parallel --parallel-threads=4 -j4 -W --timeout=600 --slowest
     - name: Display logs
       if: always()
       run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000

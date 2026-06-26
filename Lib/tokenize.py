@@ -578,7 +578,7 @@ def _main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
-                        help='the file to tokenize; defaults to stdin')
+                        help='the file to tokenize; defaults to `stdin`')
     parser.add_argument('-e', '--exact', dest='exact', action='store_true',
                         help='display token names using the exact type')
     args = parser.parse_args(args)

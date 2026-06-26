@@ -144,8 +144,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_TUPLE] = HAS_EXIT_FLAG,
     [_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_TUPLE_INT] = 0,
-    [_GUARD_NOS_DICT] = HAS_EXIT_FLAG,
-    [_GUARD_NOS_ANY_DICT] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_DICT_SUBSCRIPT] = HAS_DEOPT_FLAG,
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT] = HAS_DEOPT_FLAG,
     [_GUARD_TOS_ANY_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
     [_GUARD_TOS_FROZENDICT] = HAS_EXIT_FLAG,
@@ -163,12 +163,17 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_INTRINSIC_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_2] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_HEAP_SAFE] = 0,
-    [_RETURN_VALUE] = HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
+    [_RETURN_VALUE] = HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SEND_GEN_FRAME] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
-    [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
+    [_GUARD_TOS_IS_NONE] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_NOT_NULL] = HAS_EXIT_FLAG,
+    [_SEND_VIRTUAL_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
+    [_GUARD_3OS_ASYNC_GEN_ASEND] = HAS_EXIT_FLAG,
+    [_SEND_ASYNC_GEN_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
     [_LOAD_BUILD_CLASS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -262,7 +267,10 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_PUSH_TAGGED_ZERO] = 0,
     [_GET_ITER_TRAD] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_FOR_ITER_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_TYPE_ITER] = HAS_EXIT_FLAG,
+    [_ITER_NEXT_INLINE] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_ITER_VIRTUAL] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_NOT_NULL] = HAS_EXIT_FLAG,
     [_FOR_ITER_VIRTUAL_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_LIST] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_LIST] = HAS_EXIT_FLAG,
@@ -279,7 +287,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_EXC_INFO] = 0,
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = HAS_EXIT_FLAG,
-    [_GUARD_KEYS_VERSION] = HAS_EXIT_FLAG,
     [_LOAD_ATTR_METHOD_WITH_VALUES] = HAS_ARG_FLAG,
     [_LOAD_ATTR_METHOD_NO_DICT] = HAS_ARG_FLAG,
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
@@ -308,7 +315,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS] = HAS_ARG_FLAG | HAS_PURE_FLAG,
     [_PUSH_FRAME] = HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_GUARD_NOS_NULL] = HAS_EXIT_FLAG,
-    [_GUARD_NOS_NOT_NULL] = HAS_EXIT_FLAG,
     [_GUARD_THIRD_NULL] = HAS_EXIT_FLAG,
     [_GUARD_CALLABLE_TYPE_1] = HAS_EXIT_FLAG,
     [_CALL_TYPE_1] = HAS_ARG_FLAG,
@@ -361,7 +367,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_FUNCTION_EX_NON_PY_GENERAL] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG,
-    [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
+    [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_BUILD_SLICE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CONVERT_VALUE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_FORMAT_SIMPLE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -397,6 +403,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
+    [_RROT_3] = HAS_PURE_FLAG,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
@@ -1422,22 +1429,22 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_GUARD_NOS_DICT] = {
+    [_GUARD_NOS_DICT_SUBSCRIPT] = {
         .best = { 0, 1, 2, 3 },
         .entries = {
-            { 2, 0, _GUARD_NOS_DICT_r02 },
-            { 2, 1, _GUARD_NOS_DICT_r12 },
-            { 2, 2, _GUARD_NOS_DICT_r22 },
-            { 3, 3, _GUARD_NOS_DICT_r33 },
+            { 2, 0, _GUARD_NOS_DICT_SUBSCRIPT_r02 },
+            { 2, 1, _GUARD_NOS_DICT_SUBSCRIPT_r12 },
+            { 2, 2, _GUARD_NOS_DICT_SUBSCRIPT_r22 },
+            { 3, 3, _GUARD_NOS_DICT_SUBSCRIPT_r33 },
         },
     },
-    [_GUARD_NOS_ANY_DICT] = {
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT] = {
         .best = { 0, 1, 2, 3 },
         .entries = {
-            { 2, 0, _GUARD_NOS_ANY_DICT_r02 },
-            { 2, 1, _GUARD_NOS_ANY_DICT_r12 },
-            { 2, 2, _GUARD_NOS_ANY_DICT_r22 },
-            { 3, 3, _GUARD_NOS_ANY_DICT_r33 },
+            { 3, 0, _GUARD_NOS_DICT_STORE_SUBSCRIPT_r03 },
+            { 3, 1, _GUARD_NOS_DICT_STORE_SUBSCRIPT_r13 },
+            { 3, 2, _GUARD_NOS_DICT_STORE_SUBSCRIPT_r23 },
+            { 3, 3, _GUARD_NOS_DICT_STORE_SUBSCRIPT_r33 },
         },
     },
     [_GUARD_TOS_ANY_DICT] = {
@@ -1636,6 +1643,51 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 3, 3, _SEND_GEN_FRAME_r33 },
+        },
+    },
+    [_GUARD_TOS_IS_NONE] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_IS_NONE_r01 },
+            { 1, 1, _GUARD_TOS_IS_NONE_r11 },
+            { 2, 2, _GUARD_TOS_IS_NONE_r22 },
+            { 3, 3, _GUARD_TOS_IS_NONE_r33 },
+        },
+    },
+    [_GUARD_NOS_NOT_NULL] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _GUARD_NOS_NOT_NULL_r02 },
+            { 2, 1, _GUARD_NOS_NOT_NULL_r12 },
+            { 2, 2, _GUARD_NOS_NOT_NULL_r22 },
+            { 3, 3, _GUARD_NOS_NOT_NULL_r33 },
+        },
+    },
+    [_SEND_VIRTUAL_TIER_TWO] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 3, 0, _SEND_VIRTUAL_TIER_TWO_r03 },
+            { 3, 1, _SEND_VIRTUAL_TIER_TWO_r13 },
+            { 3, 2, _SEND_VIRTUAL_TIER_TWO_r23 },
+            { 3, 3, _SEND_VIRTUAL_TIER_TWO_r33 },
+        },
+    },
+    [_GUARD_3OS_ASYNC_GEN_ASEND] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 3, 0, _GUARD_3OS_ASYNC_GEN_ASEND_r03 },
+            { 3, 1, _GUARD_3OS_ASYNC_GEN_ASEND_r13 },
+            { 3, 2, _GUARD_3OS_ASYNC_GEN_ASEND_r23 },
+            { 3, 3, _GUARD_3OS_ASYNC_GEN_ASEND_r33 },
+        },
+    },
+    [_SEND_ASYNC_GEN_TIER_TWO] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 3, _SEND_ASYNC_GEN_TIER_TWO_r33 },
         },
     },
     [_YIELD_VALUE] = {
@@ -2484,6 +2536,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_GUARD_TYPE_ITER] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _GUARD_TYPE_ITER_r02 },
+            { 2, 1, _GUARD_TYPE_ITER_r12 },
+            { 2, 2, _GUARD_TYPE_ITER_r22 },
+            { 3, 3, _GUARD_TYPE_ITER_r33 },
+        },
+    },
+    [_ITER_NEXT_INLINE] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _ITER_NEXT_INLINE_r23 },
+            { -1, -1, -1 },
+        },
+    },
     [_GUARD_NOS_ITER_VIRTUAL] = {
         .best = { 0, 1, 2, 3 },
         .entries = {
@@ -2491,6 +2561,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 1, _GUARD_NOS_ITER_VIRTUAL_r12 },
             { 2, 2, _GUARD_NOS_ITER_VIRTUAL_r22 },
             { 3, 3, _GUARD_NOS_ITER_VIRTUAL_r33 },
+        },
+    },
+    [_GUARD_TOS_NOT_NULL] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _GUARD_TOS_NOT_NULL_r01 },
+            { 1, 1, _GUARD_TOS_NOT_NULL_r11 },
+            { 2, 2, _GUARD_TOS_NOT_NULL_r22 },
+            { 3, 3, _GUARD_TOS_NOT_NULL_r33 },
         },
     },
     [_FOR_ITER_VIRTUAL_TIER_TWO] = {
@@ -2635,15 +2714,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11 },
             { 2, 2, _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22 },
             { 3, 3, _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33 },
-        },
-    },
-    [_GUARD_KEYS_VERSION] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 1, 0, _GUARD_KEYS_VERSION_r01 },
-            { 1, 1, _GUARD_KEYS_VERSION_r11 },
-            { 2, 2, _GUARD_KEYS_VERSION_r22 },
-            { 3, 3, _GUARD_KEYS_VERSION_r33 },
         },
     },
     [_LOAD_ATTR_METHOD_WITH_VALUES] = {
@@ -2896,15 +2966,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 1, _GUARD_NOS_NULL_r12 },
             { 2, 2, _GUARD_NOS_NULL_r22 },
             { 3, 3, _GUARD_NOS_NULL_r33 },
-        },
-    },
-    [_GUARD_NOS_NOT_NULL] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 2, 0, _GUARD_NOS_NOT_NULL_r02 },
-            { 2, 1, _GUARD_NOS_NOT_NULL_r12 },
-            { 2, 2, _GUARD_NOS_NOT_NULL_r22 },
-            { 3, 3, _GUARD_NOS_NOT_NULL_r33 },
         },
     },
     [_GUARD_THIRD_NULL] = {
@@ -3378,7 +3439,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
     [_RETURN_GENERATOR] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 1, 0, _RETURN_GENERATOR_r01 },
+            { 1, 1, _RETURN_GENERATOR_r01 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -3697,6 +3758,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 1, _LOAD_CONST_INLINE_BORROW_r12 },
             { 3, 2, _LOAD_CONST_INLINE_BORROW_r23 },
             { -1, -1, -1 },
+        },
+    },
+    [_RROT_3] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 3, 0, _RROT_3_r03 },
+            { 3, 1, _RROT_3_r13 },
+            { 3, 2, _RROT_3_r23 },
+            { 3, 3, _RROT_3_r33 },
         },
     },
     [_START_EXECUTOR] = {
@@ -4177,14 +4247,14 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_SUBSCR_TUPLE_INT_r03] = _BINARY_OP_SUBSCR_TUPLE_INT,
     [_BINARY_OP_SUBSCR_TUPLE_INT_r13] = _BINARY_OP_SUBSCR_TUPLE_INT,
     [_BINARY_OP_SUBSCR_TUPLE_INT_r23] = _BINARY_OP_SUBSCR_TUPLE_INT,
-    [_GUARD_NOS_DICT_r02] = _GUARD_NOS_DICT,
-    [_GUARD_NOS_DICT_r12] = _GUARD_NOS_DICT,
-    [_GUARD_NOS_DICT_r22] = _GUARD_NOS_DICT,
-    [_GUARD_NOS_DICT_r33] = _GUARD_NOS_DICT,
-    [_GUARD_NOS_ANY_DICT_r02] = _GUARD_NOS_ANY_DICT,
-    [_GUARD_NOS_ANY_DICT_r12] = _GUARD_NOS_ANY_DICT,
-    [_GUARD_NOS_ANY_DICT_r22] = _GUARD_NOS_ANY_DICT,
-    [_GUARD_NOS_ANY_DICT_r33] = _GUARD_NOS_ANY_DICT,
+    [_GUARD_NOS_DICT_SUBSCRIPT_r02] = _GUARD_NOS_DICT_SUBSCRIPT,
+    [_GUARD_NOS_DICT_SUBSCRIPT_r12] = _GUARD_NOS_DICT_SUBSCRIPT,
+    [_GUARD_NOS_DICT_SUBSCRIPT_r22] = _GUARD_NOS_DICT_SUBSCRIPT,
+    [_GUARD_NOS_DICT_SUBSCRIPT_r33] = _GUARD_NOS_DICT_SUBSCRIPT,
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT_r03] = _GUARD_NOS_DICT_STORE_SUBSCRIPT,
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT_r13] = _GUARD_NOS_DICT_STORE_SUBSCRIPT,
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT_r23] = _GUARD_NOS_DICT_STORE_SUBSCRIPT,
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT_r33] = _GUARD_NOS_DICT_STORE_SUBSCRIPT,
     [_GUARD_TOS_ANY_DICT_r01] = _GUARD_TOS_ANY_DICT,
     [_GUARD_TOS_ANY_DICT_r11] = _GUARD_TOS_ANY_DICT,
     [_GUARD_TOS_ANY_DICT_r22] = _GUARD_TOS_ANY_DICT,
@@ -4222,6 +4292,23 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GET_ANEXT_r12] = _GET_ANEXT,
     [_GET_AWAITABLE_r11] = _GET_AWAITABLE,
     [_SEND_GEN_FRAME_r33] = _SEND_GEN_FRAME,
+    [_GUARD_TOS_IS_NONE_r01] = _GUARD_TOS_IS_NONE,
+    [_GUARD_TOS_IS_NONE_r11] = _GUARD_TOS_IS_NONE,
+    [_GUARD_TOS_IS_NONE_r22] = _GUARD_TOS_IS_NONE,
+    [_GUARD_TOS_IS_NONE_r33] = _GUARD_TOS_IS_NONE,
+    [_GUARD_NOS_NOT_NULL_r02] = _GUARD_NOS_NOT_NULL,
+    [_GUARD_NOS_NOT_NULL_r12] = _GUARD_NOS_NOT_NULL,
+    [_GUARD_NOS_NOT_NULL_r22] = _GUARD_NOS_NOT_NULL,
+    [_GUARD_NOS_NOT_NULL_r33] = _GUARD_NOS_NOT_NULL,
+    [_SEND_VIRTUAL_TIER_TWO_r03] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_VIRTUAL_TIER_TWO_r13] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_VIRTUAL_TIER_TWO_r23] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_VIRTUAL_TIER_TWO_r33] = _SEND_VIRTUAL_TIER_TWO,
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r03] = _GUARD_3OS_ASYNC_GEN_ASEND,
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r13] = _GUARD_3OS_ASYNC_GEN_ASEND,
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r23] = _GUARD_3OS_ASYNC_GEN_ASEND,
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r33] = _GUARD_3OS_ASYNC_GEN_ASEND,
+    [_SEND_ASYNC_GEN_TIER_TWO_r33] = _SEND_ASYNC_GEN_TIER_TWO,
     [_YIELD_VALUE_r11] = _YIELD_VALUE,
     [_POP_EXCEPT_r10] = _POP_EXCEPT,
     [_LOAD_COMMON_CONSTANT_r01] = _LOAD_COMMON_CONSTANT,
@@ -4388,10 +4475,19 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_PUSH_TAGGED_ZERO_r23] = _PUSH_TAGGED_ZERO,
     [_GET_ITER_TRAD_r12] = _GET_ITER_TRAD,
     [_FOR_ITER_TIER_TWO_r23] = _FOR_ITER_TIER_TWO,
+    [_GUARD_TYPE_ITER_r02] = _GUARD_TYPE_ITER,
+    [_GUARD_TYPE_ITER_r12] = _GUARD_TYPE_ITER,
+    [_GUARD_TYPE_ITER_r22] = _GUARD_TYPE_ITER,
+    [_GUARD_TYPE_ITER_r33] = _GUARD_TYPE_ITER,
+    [_ITER_NEXT_INLINE_r23] = _ITER_NEXT_INLINE,
     [_GUARD_NOS_ITER_VIRTUAL_r02] = _GUARD_NOS_ITER_VIRTUAL,
     [_GUARD_NOS_ITER_VIRTUAL_r12] = _GUARD_NOS_ITER_VIRTUAL,
     [_GUARD_NOS_ITER_VIRTUAL_r22] = _GUARD_NOS_ITER_VIRTUAL,
     [_GUARD_NOS_ITER_VIRTUAL_r33] = _GUARD_NOS_ITER_VIRTUAL,
+    [_GUARD_TOS_NOT_NULL_r01] = _GUARD_TOS_NOT_NULL,
+    [_GUARD_TOS_NOT_NULL_r11] = _GUARD_TOS_NOT_NULL,
+    [_GUARD_TOS_NOT_NULL_r22] = _GUARD_TOS_NOT_NULL,
+    [_GUARD_TOS_NOT_NULL_r33] = _GUARD_TOS_NOT_NULL,
     [_FOR_ITER_VIRTUAL_TIER_TWO_r23] = _FOR_ITER_VIRTUAL_TIER_TWO,
     [_ITER_CHECK_LIST_r02] = _ITER_CHECK_LIST,
     [_ITER_CHECK_LIST_r12] = _ITER_CHECK_LIST,
@@ -4437,10 +4533,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
-    [_GUARD_KEYS_VERSION_r01] = _GUARD_KEYS_VERSION,
-    [_GUARD_KEYS_VERSION_r11] = _GUARD_KEYS_VERSION,
-    [_GUARD_KEYS_VERSION_r22] = _GUARD_KEYS_VERSION,
-    [_GUARD_KEYS_VERSION_r33] = _GUARD_KEYS_VERSION,
     [_LOAD_ATTR_METHOD_WITH_VALUES_r02] = _LOAD_ATTR_METHOD_WITH_VALUES,
     [_LOAD_ATTR_METHOD_WITH_VALUES_r12] = _LOAD_ATTR_METHOD_WITH_VALUES,
     [_LOAD_ATTR_METHOD_WITH_VALUES_r23] = _LOAD_ATTR_METHOD_WITH_VALUES,
@@ -4490,10 +4582,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_NOS_NULL_r12] = _GUARD_NOS_NULL,
     [_GUARD_NOS_NULL_r22] = _GUARD_NOS_NULL,
     [_GUARD_NOS_NULL_r33] = _GUARD_NOS_NULL,
-    [_GUARD_NOS_NOT_NULL_r02] = _GUARD_NOS_NOT_NULL,
-    [_GUARD_NOS_NOT_NULL_r12] = _GUARD_NOS_NOT_NULL,
-    [_GUARD_NOS_NOT_NULL_r22] = _GUARD_NOS_NOT_NULL,
-    [_GUARD_NOS_NOT_NULL_r33] = _GUARD_NOS_NOT_NULL,
     [_GUARD_THIRD_NULL_r03] = _GUARD_THIRD_NULL,
     [_GUARD_THIRD_NULL_r13] = _GUARD_THIRD_NULL,
     [_GUARD_THIRD_NULL_r23] = _GUARD_THIRD_NULL,
@@ -4695,6 +4783,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_CONST_INLINE_BORROW_r01] = _LOAD_CONST_INLINE_BORROW,
     [_LOAD_CONST_INLINE_BORROW_r12] = _LOAD_CONST_INLINE_BORROW,
     [_LOAD_CONST_INLINE_BORROW_r23] = _LOAD_CONST_INLINE_BORROW,
+    [_RROT_3_r03] = _RROT_3,
+    [_RROT_3_r13] = _RROT_3,
+    [_RROT_3_r23] = _RROT_3,
+    [_RROT_3_r33] = _RROT_3,
     [_START_EXECUTOR_r00] = _START_EXECUTOR,
     [_MAKE_WARM_r00] = _MAKE_WARM,
     [_MAKE_WARM_r11] = _MAKE_WARM,
@@ -5167,6 +5259,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GET_ITER_TRAD_r12] = "_GET_ITER_TRAD_r12",
     [_GET_LEN] = "_GET_LEN",
     [_GET_LEN_r12] = "_GET_LEN_r12",
+    [_GUARD_3OS_ASYNC_GEN_ASEND] = "_GUARD_3OS_ASYNC_GEN_ASEND",
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r03] = "_GUARD_3OS_ASYNC_GEN_ASEND_r03",
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r13] = "_GUARD_3OS_ASYNC_GEN_ASEND_r13",
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r23] = "_GUARD_3OS_ASYNC_GEN_ASEND_r23",
+    [_GUARD_3OS_ASYNC_GEN_ASEND_r33] = "_GUARD_3OS_ASYNC_GEN_ASEND_r33",
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
     [_GUARD_BINARY_OP_EXTEND_r22] = "_GUARD_BINARY_OP_EXTEND_r22",
     [_GUARD_BINARY_OP_EXTEND_LHS] = "_GUARD_BINARY_OP_EXTEND_LHS",
@@ -5362,31 +5459,26 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_ITER_VIRTUAL_r11] = "_GUARD_ITER_VIRTUAL_r11",
     [_GUARD_ITER_VIRTUAL_r22] = "_GUARD_ITER_VIRTUAL_r22",
     [_GUARD_ITER_VIRTUAL_r33] = "_GUARD_ITER_VIRTUAL_r33",
-    [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",
-    [_GUARD_KEYS_VERSION_r01] = "_GUARD_KEYS_VERSION_r01",
-    [_GUARD_KEYS_VERSION_r11] = "_GUARD_KEYS_VERSION_r11",
-    [_GUARD_KEYS_VERSION_r22] = "_GUARD_KEYS_VERSION_r22",
-    [_GUARD_KEYS_VERSION_r33] = "_GUARD_KEYS_VERSION_r33",
     [_GUARD_LOAD_SUPER_ATTR_METHOD] = "_GUARD_LOAD_SUPER_ATTR_METHOD",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r03] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r03",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r13] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r13",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r23] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r23",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r33] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r33",
-    [_GUARD_NOS_ANY_DICT] = "_GUARD_NOS_ANY_DICT",
-    [_GUARD_NOS_ANY_DICT_r02] = "_GUARD_NOS_ANY_DICT_r02",
-    [_GUARD_NOS_ANY_DICT_r12] = "_GUARD_NOS_ANY_DICT_r12",
-    [_GUARD_NOS_ANY_DICT_r22] = "_GUARD_NOS_ANY_DICT_r22",
-    [_GUARD_NOS_ANY_DICT_r33] = "_GUARD_NOS_ANY_DICT_r33",
     [_GUARD_NOS_COMPACT_ASCII] = "_GUARD_NOS_COMPACT_ASCII",
     [_GUARD_NOS_COMPACT_ASCII_r02] = "_GUARD_NOS_COMPACT_ASCII_r02",
     [_GUARD_NOS_COMPACT_ASCII_r12] = "_GUARD_NOS_COMPACT_ASCII_r12",
     [_GUARD_NOS_COMPACT_ASCII_r22] = "_GUARD_NOS_COMPACT_ASCII_r22",
     [_GUARD_NOS_COMPACT_ASCII_r33] = "_GUARD_NOS_COMPACT_ASCII_r33",
-    [_GUARD_NOS_DICT] = "_GUARD_NOS_DICT",
-    [_GUARD_NOS_DICT_r02] = "_GUARD_NOS_DICT_r02",
-    [_GUARD_NOS_DICT_r12] = "_GUARD_NOS_DICT_r12",
-    [_GUARD_NOS_DICT_r22] = "_GUARD_NOS_DICT_r22",
-    [_GUARD_NOS_DICT_r33] = "_GUARD_NOS_DICT_r33",
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT] = "_GUARD_NOS_DICT_STORE_SUBSCRIPT",
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT_r03] = "_GUARD_NOS_DICT_STORE_SUBSCRIPT_r03",
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT_r13] = "_GUARD_NOS_DICT_STORE_SUBSCRIPT_r13",
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT_r23] = "_GUARD_NOS_DICT_STORE_SUBSCRIPT_r23",
+    [_GUARD_NOS_DICT_STORE_SUBSCRIPT_r33] = "_GUARD_NOS_DICT_STORE_SUBSCRIPT_r33",
+    [_GUARD_NOS_DICT_SUBSCRIPT] = "_GUARD_NOS_DICT_SUBSCRIPT",
+    [_GUARD_NOS_DICT_SUBSCRIPT_r02] = "_GUARD_NOS_DICT_SUBSCRIPT_r02",
+    [_GUARD_NOS_DICT_SUBSCRIPT_r12] = "_GUARD_NOS_DICT_SUBSCRIPT_r12",
+    [_GUARD_NOS_DICT_SUBSCRIPT_r22] = "_GUARD_NOS_DICT_SUBSCRIPT_r22",
+    [_GUARD_NOS_DICT_SUBSCRIPT_r33] = "_GUARD_NOS_DICT_SUBSCRIPT_r33",
     [_GUARD_NOS_FLOAT] = "_GUARD_NOS_FLOAT",
     [_GUARD_NOS_FLOAT_r02] = "_GUARD_NOS_FLOAT_r02",
     [_GUARD_NOS_FLOAT_r12] = "_GUARD_NOS_FLOAT_r12",
@@ -5492,11 +5584,21 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TOS_INT_r11] = "_GUARD_TOS_INT_r11",
     [_GUARD_TOS_INT_r22] = "_GUARD_TOS_INT_r22",
     [_GUARD_TOS_INT_r33] = "_GUARD_TOS_INT_r33",
+    [_GUARD_TOS_IS_NONE] = "_GUARD_TOS_IS_NONE",
+    [_GUARD_TOS_IS_NONE_r01] = "_GUARD_TOS_IS_NONE_r01",
+    [_GUARD_TOS_IS_NONE_r11] = "_GUARD_TOS_IS_NONE_r11",
+    [_GUARD_TOS_IS_NONE_r22] = "_GUARD_TOS_IS_NONE_r22",
+    [_GUARD_TOS_IS_NONE_r33] = "_GUARD_TOS_IS_NONE_r33",
     [_GUARD_TOS_LIST] = "_GUARD_TOS_LIST",
     [_GUARD_TOS_LIST_r01] = "_GUARD_TOS_LIST_r01",
     [_GUARD_TOS_LIST_r11] = "_GUARD_TOS_LIST_r11",
     [_GUARD_TOS_LIST_r22] = "_GUARD_TOS_LIST_r22",
     [_GUARD_TOS_LIST_r33] = "_GUARD_TOS_LIST_r33",
+    [_GUARD_TOS_NOT_NULL] = "_GUARD_TOS_NOT_NULL",
+    [_GUARD_TOS_NOT_NULL_r01] = "_GUARD_TOS_NOT_NULL_r01",
+    [_GUARD_TOS_NOT_NULL_r11] = "_GUARD_TOS_NOT_NULL_r11",
+    [_GUARD_TOS_NOT_NULL_r22] = "_GUARD_TOS_NOT_NULL_r22",
+    [_GUARD_TOS_NOT_NULL_r33] = "_GUARD_TOS_NOT_NULL_r33",
     [_GUARD_TOS_OVERFLOWED] = "_GUARD_TOS_OVERFLOWED",
     [_GUARD_TOS_OVERFLOWED_r01] = "_GUARD_TOS_OVERFLOWED_r01",
     [_GUARD_TOS_OVERFLOWED_r11] = "_GUARD_TOS_OVERFLOWED_r11",
@@ -5527,6 +5629,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_TYPE_r11] = "_GUARD_TYPE_r11",
     [_GUARD_TYPE_r22] = "_GUARD_TYPE_r22",
     [_GUARD_TYPE_r33] = "_GUARD_TYPE_r33",
+    [_GUARD_TYPE_ITER] = "_GUARD_TYPE_ITER",
+    [_GUARD_TYPE_ITER_r02] = "_GUARD_TYPE_ITER_r02",
+    [_GUARD_TYPE_ITER_r12] = "_GUARD_TYPE_ITER_r12",
+    [_GUARD_TYPE_ITER_r22] = "_GUARD_TYPE_ITER_r22",
+    [_GUARD_TYPE_ITER_r33] = "_GUARD_TYPE_ITER_r33",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_GUARD_TYPE_VERSION_r01] = "_GUARD_TYPE_VERSION_r01",
     [_GUARD_TYPE_VERSION_r11] = "_GUARD_TYPE_VERSION_r11",
@@ -5583,6 +5690,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_ITER_CHECK_TUPLE_r12] = "_ITER_CHECK_TUPLE_r12",
     [_ITER_CHECK_TUPLE_r22] = "_ITER_CHECK_TUPLE_r22",
     [_ITER_CHECK_TUPLE_r33] = "_ITER_CHECK_TUPLE_r33",
+    [_ITER_NEXT_INLINE] = "_ITER_NEXT_INLINE",
+    [_ITER_NEXT_INLINE_r23] = "_ITER_NEXT_INLINE_r23",
     [_ITER_NEXT_LIST_TIER_TWO] = "_ITER_NEXT_LIST_TIER_TWO",
     [_ITER_NEXT_LIST_TIER_TWO_r23] = "_ITER_NEXT_LIST_TIER_TWO_r23",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
@@ -5896,13 +6005,25 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_RETURN_GENERATOR_r01] = "_RETURN_GENERATOR_r01",
     [_RETURN_VALUE] = "_RETURN_VALUE",
     [_RETURN_VALUE_r11] = "_RETURN_VALUE_r11",
+    [_RROT_3] = "_RROT_3",
+    [_RROT_3_r03] = "_RROT_3_r03",
+    [_RROT_3_r13] = "_RROT_3_r13",
+    [_RROT_3_r23] = "_RROT_3_r23",
+    [_RROT_3_r33] = "_RROT_3_r33",
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
     [_SAVE_RETURN_OFFSET_r00] = "_SAVE_RETURN_OFFSET_r00",
     [_SAVE_RETURN_OFFSET_r11] = "_SAVE_RETURN_OFFSET_r11",
     [_SAVE_RETURN_OFFSET_r22] = "_SAVE_RETURN_OFFSET_r22",
     [_SAVE_RETURN_OFFSET_r33] = "_SAVE_RETURN_OFFSET_r33",
+    [_SEND_ASYNC_GEN_TIER_TWO] = "_SEND_ASYNC_GEN_TIER_TWO",
+    [_SEND_ASYNC_GEN_TIER_TWO_r33] = "_SEND_ASYNC_GEN_TIER_TWO_r33",
     [_SEND_GEN_FRAME] = "_SEND_GEN_FRAME",
     [_SEND_GEN_FRAME_r33] = "_SEND_GEN_FRAME_r33",
+    [_SEND_VIRTUAL_TIER_TWO] = "_SEND_VIRTUAL_TIER_TWO",
+    [_SEND_VIRTUAL_TIER_TWO_r03] = "_SEND_VIRTUAL_TIER_TWO_r03",
+    [_SEND_VIRTUAL_TIER_TWO_r13] = "_SEND_VIRTUAL_TIER_TWO_r13",
+    [_SEND_VIRTUAL_TIER_TWO_r23] = "_SEND_VIRTUAL_TIER_TWO_r23",
+    [_SEND_VIRTUAL_TIER_TWO_r33] = "_SEND_VIRTUAL_TIER_TWO_r33",
     [_SETUP_ANNOTATIONS] = "_SETUP_ANNOTATIONS",
     [_SETUP_ANNOTATIONS_r00] = "_SETUP_ANNOTATIONS_r00",
     [_SET_ADD] = "_SET_ADD",
@@ -6302,9 +6423,9 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _BINARY_OP_SUBSCR_TUPLE_INT:
             return 2;
-        case _GUARD_NOS_DICT:
+        case _GUARD_NOS_DICT_SUBSCRIPT:
             return 0;
-        case _GUARD_NOS_ANY_DICT:
+        case _GUARD_NOS_DICT_STORE_SUBSCRIPT:
             return 0;
         case _GUARD_TOS_ANY_DICT:
             return 0;
@@ -6350,6 +6471,16 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _SEND_GEN_FRAME:
             return 1;
+        case _GUARD_TOS_IS_NONE:
+            return 0;
+        case _GUARD_NOS_NOT_NULL:
+            return 0;
+        case _SEND_VIRTUAL_TIER_TWO:
+            return 1;
+        case _GUARD_3OS_ASYNC_GEN_ASEND:
+            return 0;
+        case _SEND_ASYNC_GEN_TIER_TWO:
+            return 3;
         case _YIELD_VALUE:
             return 1;
         case _POP_EXCEPT:
@@ -6538,7 +6669,13 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _FOR_ITER_TIER_TWO:
             return 0;
+        case _GUARD_TYPE_ITER:
+            return 0;
+        case _ITER_NEXT_INLINE:
+            return 0;
         case _GUARD_NOS_ITER_VIRTUAL:
+            return 0;
+        case _GUARD_TOS_NOT_NULL:
             return 0;
         case _FOR_ITER_VIRTUAL_TIER_TWO:
             return 0;
@@ -6571,8 +6708,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _PUSH_EXC_INFO:
             return 1;
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT:
-            return 0;
-        case _GUARD_KEYS_VERSION:
             return 0;
         case _LOAD_ATTR_METHOD_WITH_VALUES:
             return 1;
@@ -6629,8 +6764,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _PUSH_FRAME:
             return 1;
         case _GUARD_NOS_NULL:
-            return 0;
-        case _GUARD_NOS_NOT_NULL:
             return 0;
         case _GUARD_THIRD_NULL:
             return 0;
@@ -6807,6 +6940,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_CONST_INLINE:
             return 0;
         case _LOAD_CONST_INLINE_BORROW:
+            return 0;
+        case _RROT_3:
             return 0;
         case _START_EXECUTOR:
             return 0;
