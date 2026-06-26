@@ -1,6 +1,7 @@
 import collections.abc
 import functools
 import unittest
+import weakref
 import tkinter
 from tkinter import TclError
 import enum
@@ -347,6 +348,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(result, [1])
         self.root.deletecommand(name)
         self.assertRaises(TclError, self.root.tk.call, name)
+
+    def test_createcommand_no_leak(self):
+        # gh-80937: dropping the interpreter must release a command's callback,
+        # even without an explicit deletecommand().
+        interp = tkinter.Tcl()
+        callback = lambda: ''
+        ref = weakref.ref(callback)
+        interp.tk.createcommand('cb', callback)
+        del callback, interp
+        support.gc_collect()
+        self.assertIsNone(ref())
 
     def test_option(self):
         self.addCleanup(self.root.option_clear)
