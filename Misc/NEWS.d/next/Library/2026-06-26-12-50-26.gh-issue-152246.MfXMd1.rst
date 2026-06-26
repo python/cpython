@@ -1,0 +1,6 @@
+Fixed a parity bug in the pure-Python :mod:`zoneinfo` implementation, which
+accepted a POSIX TZ ``Mm.w.d`` transition rule whose third separator was not a
+period (for example ``M3.2X0``). Only the first period was escaped in the
+regular expression, so the third one matched any character. Such a string is
+invalid per POSIX and is already rejected by the C accelerator. Patch by
+tonghuaroot.
