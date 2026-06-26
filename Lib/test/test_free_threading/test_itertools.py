@@ -1,5 +1,5 @@
 import unittest
-from itertools import accumulate, batched, chain, combinations_with_replacement, cycle, permutations
+from itertools import accumulate, batched, chain, combinations_with_replacement, cycle, permutations, zip_longest
 from test.support import threading_helper
 
 
@@ -61,6 +61,13 @@ class ItertoolsThreading(unittest.TestCase):
         for _ in range(number_of_iterations):
             it = permutations(tuple(range(4)), 2)
             threading_helper.run_concurrently(work_iterator, nthreads=6, args=[it])
+
+    @threading_helper.reap_threads
+    def test_zip_longest(self):
+        number_of_iterations = 10
+        for _ in range(number_of_iterations):
+            it = zip_longest(list(range(4)), list(range(8)), fillvalue=0)
+            threading_helper.run_concurrently(work_iterator, nthreads=10, args=[it])
 
 
 if __name__ == "__main__":

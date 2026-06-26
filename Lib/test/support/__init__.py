@@ -35,7 +35,7 @@ __all__ = [
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
-    "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
+    "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
@@ -71,7 +71,9 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code", "on_github_actions"
+    "reset_code", "on_github_actions",
+    "requires_root_user", "requires_non_root_user",
+    "skip_if_double_rounding",
     ]
 
 
@@ -323,16 +325,6 @@ def requires(resource, msg=None):
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
-def _get_kernel_version(sysname="Linux"):
-    import platform
-    if platform.system() != sysname:
-        return None
-    version_txt = platform.release().split('-', 1)[0]
-    try:
-        return tuple(map(int, version_txt.split('.')))
-    except ValueError:
-        return None
-
 def _requires_unix_version(sysname, min_version):
     """Decorator raising SkipTest if the OS is `sysname` and the version is less
     than `min_version`.
@@ -522,6 +514,15 @@ SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
+
+# detect evidence of double-rounding:
+x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
+HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
+skip_if_double_rounding = unittest.skipIf(HAVE_DOUBLE_ROUNDING,
+                                          "accuracy not guaranteed on "
+                                          "machines with double rounding")
+del x, y, HAVE_DOUBLE_ROUNDING
+
 
 def requires_zlib(reason='requires zlib'):
     try:
@@ -1240,29 +1241,20 @@ class _MemoryWatchdog:
     """
 
     def __init__(self):
-        self.procfile = '/proc/{pid}/statm'.format(pid=os.getpid())
         self.started = False
 
     def start(self):
-        try:
-            f = open(self.procfile, 'r')
-        except OSError as e:
-            logging.getLogger(__name__).warning('/proc not available for stats: %s', e, exc_info=e)
-            sys.stderr.flush()
-            return
-
         import subprocess
-        with f:
-            watchdog_script = findfile("memory_watchdog.py")
-            self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
-                                                 stdin=f,
-                                                 stderr=subprocess.DEVNULL)
+        watchdog_script = findfile("memory_watchdog.py")
+        cmd = [sys.executable, watchdog_script, str(os.getpid())]
+        self.mem_watchdog = subprocess.Popen(cmd)
         self.started = True
 
     def stop(self):
-        if self.started:
-            self.mem_watchdog.terminate()
-            self.mem_watchdog.wait()
+        if not self.started:
+            return
+        self.mem_watchdog.terminate()
+        self.mem_watchdog.wait()
 
 
 def bigmemtest(size, memuse, dry_run=True):
@@ -1295,8 +1287,8 @@ def bigmemtest(size, memuse, dry_run=True):
 
             if real_max_memuse and verbose:
                 print()
-                print(" ... expected peak memory use: {peak:.1f}G"
-                      .format(peak=size * memuse / (1024 ** 3)))
+                peak = (size * memuse) / (1024 ** 3)
+                print(f" ... expected peak memory use: {peak:.1f} GiB")
                 watchdog = _MemoryWatchdog()
                 watchdog.start()
             else:
@@ -1312,6 +1304,22 @@ def bigmemtest(size, memuse, dry_run=True):
         wrapper.memuse = memuse
         return wrapper
     return decorator
+
+def nomemtest(f):
+    """Check that we can use this test with `_testcapi.set_nomemory`."""
+    from .import_helper import import_module
+
+    @functools.wraps(f)
+    def internal(*args, **kwargs):
+        import_module('_testcapi')
+        return f(*args, **kwargs)
+
+    return unittest.skipIf(
+        # Python built with Py_TRACE_REFS fail with a fatal error in
+        # _PyRefchain_Trace() on memory allocation error.
+        Py_TRACE_REFS,
+        'cannot test Py_TRACE_REFS build',
+    )(cpython_only(internal))
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -1396,7 +1404,7 @@ def no_tracing(func):
                 sys.settrace(original_trace)
 
     coverage_wrapper = trace_wrapper
-    if 'test.cov' in sys.modules:  # -Xpresite=test.cov used
+    if 'test.cov' in sys.modules:  # -Xpresite=test.cov:enable used
         cov = sys.monitoring.COVERAGE_ID
         @functools.wraps(func)
         def coverage_wrapper(*args, **kwargs):
@@ -2814,6 +2822,10 @@ def exceeds_recursion_limit():
 is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
 skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
+# Cygwin uses the newlib C library
+skip_on_newlib = unittest.skipIf(sys.platform == 'cygwin',
+                                 'the test fails on newlib C library')
+
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
 _JIT_ENABLED = sys._jit.is_enabled()
@@ -3163,7 +3175,7 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
         with open("/run/systemd/container", "rb") as fp:
             if fp.read().rstrip() != b"systemd-nspawn":
                 return False
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError):
         return False
 
     # If systemd-nspawn is used, O_SYNC flag will immediately
@@ -3317,3 +3329,23 @@ def control_characters_c0() -> list[str]:
     C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
     """
     return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
+
+
+_ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
+requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
+requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
+
+
+STATUS_DLL_INIT_FAILED = 0xC0000142
+def skip_on_low_desktop_heap_memory_subprocess(returncode):
+    if sys.platform not in ('win32', 'cygwin'):
+        return
+    # On Windows, STATUS_DLL_INIT_FAILED is a generic error code that could
+    # come from any of the DLLs being loaded when a new Python process is
+    # created. In practice, it's likely a memory allocation failure in the
+    # desktop heap memory which caused the DLL init failure, especially on
+    # process created with CREATE_NEW_CONSOLE creation flag. See the article:
+    # https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/desktop-heap-limitation-out-of-memory
+    if returncode == STATUS_DLL_INIT_FAILED:
+        raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
+                                'of low desktop heap memory')

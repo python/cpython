@@ -1,0 +1,3 @@
+Add the :mod:`curses` functions :func:`~curses.scr_dump`,
+:func:`~curses.scr_restore`, :func:`~curses.scr_init` and
+:func:`~curses.scr_set`, which dump the whole screen to a file and restore it.

@@ -756,7 +756,7 @@ functools
 ---------
 
 * The :mod:`functools` module includes a new decorator for caching function
-  calls.  :func:`functools.lru_cache` can save repeated queries to an external
+  calls.  :deco:`functools.lru_cache` can save repeated queries to an external
   resource whenever the results are expected to be the same.
 
   For example, adding a caching decorator to a database query function can save
@@ -789,7 +789,7 @@ functools
   <https://code.activestate.com/recipes/577479-simple-caching-decorator/>`_\, :issue:`10586`, and
   :issue:`10593`.)
 
-* The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
+* The :deco:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
   pointing to the original callable function.  This allows wrapped functions to
   be introspected.  It also copies :attr:`~function.__annotations__` if
   defined.  And now it also gracefully skips over missing attributes such as
@@ -805,11 +805,11 @@ functools
   :issue:`8814`.)
 
 * To help write classes with rich comparison methods, a new decorator
-  :func:`functools.total_ordering` will use existing equality and inequality
+  :deco:`functools.total_ordering` will use existing equality and inequality
   methods to fill in the remaining methods.
 
   For example, supplying *__eq__* and *__lt__* will enable
-  :func:`~functools.total_ordering` to fill-in *__le__*, *__gt__* and *__ge__*::
+  :deco:`~functools.total_ordering` to fill-in *__le__*, *__gt__* and *__ge__*::
 
     @total_ordering
     class Student:
@@ -1097,11 +1097,11 @@ logarithm of the gamma function:
 abc
 ---
 
-The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
-:func:`~abc.abstractstaticmethod`.
+The :mod:`abc` module now supports :deco:`~abc.abstractclassmethod` and
+:deco:`~abc.abstractstaticmethod`.
 
 These tools make it possible to define an :term:`abstract base class` that
-requires a particular :func:`classmethod` or :func:`staticmethod` to be
+requires a particular :deco:`classmethod` or :deco:`staticmethod` to be
 implemented::
 
     class Temperature(metaclass=abc.ABCMeta):
@@ -1155,7 +1155,7 @@ self-reference by displaying "..." in the recursive part of the representation
 string.
 
 To help write such :meth:`~object.__repr__` methods, the :mod:`reprlib` module has a new
-decorator, :func:`~reprlib.recursive_repr`, for detecting recursive calls to
+decorator, :deco:`~reprlib.recursive_repr`, for detecting recursive calls to
 :meth:`!__repr__` and substituting a placeholder string instead::
 
         >>> class MyList(list):
@@ -1241,7 +1241,7 @@ There is a new and slightly mind-blowing tool
 :term:`context manager` that does double duty as a function decorator.
 
 As a convenience, this new functionality is used by
-:func:`~contextlib.contextmanager` so that no extra effort is needed to support
+:deco:`~contextlib.contextmanager` so that no extra effort is needed to support
 both roles.
 
 The basic idea is that both context managers and function decorators can be used
@@ -1253,7 +1253,7 @@ write a pre-action or post-action wrapper that can be used in either role.
 For example, it is sometimes useful to wrap functions or groups of statements
 with a logger that can track the time of entry and time of exit.  Rather than
 writing both a function decorator and a context manager for the task, the
-:func:`~contextlib.contextmanager` provides both capabilities in a single
+:deco:`~contextlib.contextmanager` provides both capabilities in a single
 definition::
 
     from contextlib import contextmanager

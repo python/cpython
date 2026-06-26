@@ -1868,6 +1868,11 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(fd | {}, fd)
         self.assertEqual(frozendict() | fd, fd)
 
+        # gh-149676: Test hash(frozendict | frozendict)
+        a = frozendict({"a": 1})
+        b = frozendict({"b": 2})
+        self.assertEqual(hash(a | b), hash(frozendict({"a": 1, "b": 2})))
+
     def test_update(self):
         # test "a |= b" operator
         d = frozendict(x=1)
@@ -1898,9 +1903,34 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(hash(frozendict(x=1, y=2)),
                          hash(frozendict(y=2, x=1)))
 
+        # Check that hash() computes the hash of (key, value) pairs
+        cases = [
+            frozendict(a=False, b=True, c=True),
+            frozendict(a=True, b=False, c=True),
+            frozendict(a=True, b=True, c=False),
+            frozendict({False: "a", "b": True, "c": True}),
+            frozendict({"a": "b", False: True, True: "c"}),
+        ]
+        hashes = {hash(fd) for fd in cases}
+        self.assertEqual(len(hashes), len(cases))
+
         fd = frozendict(x=[1], y=[2])
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
             hash(fd)
+
+    @support.cpython_only
+    def test_hash_cpython(self):
+        # Check that hash(frozendict) implementation is:
+        # hash(frozenset(fd.items()))
+        for fd in (
+            frozendict(),
+            frozendict(x=1, y=2),
+            frozendict(y=2, x=1),
+            frozendict(a=False, b=True, c=True),
+            frozendict.fromkeys('abc'),
+        ):
+            with self.subTest(fd=fd):
+                self.assertEqual(hash(fd), hash(frozenset(fd.items())))
 
     def test_fromkeys(self):
         self.assertEqual(frozendict.fromkeys('abc'),
@@ -1909,8 +1939,11 @@ class FrozenDictTests(unittest.TestCase):
         # Subclass which overrides the constructor
         created = frozendict(x=1)
         class FrozenDictSubclass(frozendict):
-            def __new__(self):
-                return created
+            def __new__(cls, *args, **kwargs):
+                if args or kwargs:
+                    return super().__new__(cls, *args, **kwargs)
+                else:
+                    return created
 
         fd = FrozenDictSubclass.fromkeys("abc")
         self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
@@ -1922,6 +1955,20 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(type(fd), FrozenDictSubclass)
         self.assertEqual(created, frozendict(x=1))
 
+        # Dict subclass with a constructor which returns a frozendict
+        # by default
+        class DictSubclass(dict):
+            def __new__(cls, *args, **kwargs):
+                if args or kwargs:
+                    return super().__new__(cls, *args, **kwargs)
+                else:
+                    return created
+
+        fd = DictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), DictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
         # Subclass which doesn't override the constructor
         class FrozenDictSubclass2(frozendict):
             pass
@@ -1929,16 +1976,6 @@ class FrozenDictTests(unittest.TestCase):
         fd = FrozenDictSubclass2.fromkeys("abc")
         self.assertEqual(fd, frozendict(a=None, b=None, c=None))
         self.assertEqual(type(fd), FrozenDictSubclass2)
-
-        # Dict subclass which overrides the constructor
-        class DictSubclass(dict):
-            def __new__(self):
-                return created
-
-        fd = DictSubclass.fromkeys("abc")
-        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
-        self.assertEqual(type(fd), DictSubclass)
-        self.assertEqual(created, frozendict(x=1))
 
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

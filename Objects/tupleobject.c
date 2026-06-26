@@ -363,6 +363,9 @@ error:
    https://github.com/Cyan4973/xxHash/blob/master/doc/xxhash_spec.md
 
    The constants for the hash function are defined in pycore_tuple.h.
+
+   If you update this code, update also frozendict_pair_hash() which copied
+   this code.
 */
 
 static Py_hash_t
@@ -547,8 +550,8 @@ PyTuple_GetSlice(PyObject *op, Py_ssize_t i, Py_ssize_t j)
     return tuple_slice((PyTupleObject *)op, i, j);
 }
 
-static PyObject *
-tuple_concat(PyObject *aa, PyObject *bb)
+PyObject *
+_PyTuple_Concat(PyObject *aa, PyObject *bb)
 {
     PyTupleObject *a = _PyTuple_CAST(aa);
     if (Py_SIZE(a) == 0 && PyTuple_CheckExact(bb)) {
@@ -594,8 +597,8 @@ tuple_concat(PyObject *aa, PyObject *bb)
     return (PyObject *)np;
 }
 
-static PyObject *
-tuple_repeat(PyObject *self, Py_ssize_t n)
+PyObject *
+_PyTuple_Repeat(PyObject *self, Py_ssize_t n)
 {
     PyTupleObject *a = _PyTuple_CAST(self);
     const Py_ssize_t input_size = Py_SIZE(a);
@@ -864,14 +867,25 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
 
 static PySequenceMethods tuple_as_sequence = {
     tuple_length,                               /* sq_length */
-    tuple_concat,                               /* sq_concat */
-    tuple_repeat,                               /* sq_repeat */
+    _PyTuple_Concat,                            /* sq_concat */
+    _PyTuple_Repeat,                            /* sq_repeat */
     tuple_item,                                 /* sq_item */
     0,                                          /* sq_slice */
     0,                                          /* sq_ass_item */
     0,                                          /* sq_ass_slice */
     tuple_contains,                             /* sq_contains */
 };
+
+static _PyObjectIndexPair
+tuple_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    if (index >= PyTuple_GET_SIZE(obj)) {
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
+    }
+    PyObject *result = PyTuple_GET_ITEM(obj, index);
+    Py_INCREF(result);
+    return (_PyObjectIndexPair) { .object = result, .index = index + 1 };
+}
 
 static PyObject*
 tuple_subscript(PyObject *op, PyObject* item)
@@ -940,11 +954,19 @@ tuple___getnewargs___impl(PyTupleObject *self)
     return Py_BuildValue("(N)", tuple_slice(self, 0, Py_SIZE(self)));
 }
 
+
+PyDoc_STRVAR(tuple_class_getitem_doc,
+"Tuples are generic over the types of their contents.\n\n\
+For example, use ``tuple[int, str]`` for a pair whose first element\n\
+is an int and second element is a string.\n\n\
+Tuples also support the form ``tuple[T, ...]`` to indicate\n\
+an arbitrary length tuple of elements of type T.");
+
 static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, tuple_class_getitem_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1000,6 +1022,7 @@ PyTypeObject PyTuple_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
+    ._tp_iteritem = tuple_iteritem,
 };
 
 /* The following function breaks the notion that tuples are immutable:
@@ -1274,6 +1297,6 @@ _PyTuple_DebugMallocStats(FILE *out)
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
         _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
-                               _PyObject_VAR_SIZE(&PyTuple_Type, len));
+                               _PyType_PreHeaderSize(&PyTuple_Type) + _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
 }

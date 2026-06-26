@@ -136,7 +136,7 @@ class DemoWindow(object):
             # so that our menu bar appears.
             subprocess.run(
                     [
-                        'osascript',
+                        '/usr/bin/osascript',
                         '-e', 'tell application "System Events"',
                         '-e', 'set frontmost of the first process whose '
                               'unix id is {} to true'.format(os.getpid()),

@@ -173,3 +173,34 @@ class IsolatedCodeGenTests(CodegenTestCase):
         self.assertIsNone(cm.exception.text)
         self.assertEqual(cm.exception.offset, 1)
         self.assertEqual(cm.exception.end_offset, 10)
+
+    def test_frozenset_optimization(self):
+        l1 = self.Label()
+        snippet = "frozenset({1, 2, 3})"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('LOAD_NAME', 0),
+            ('COPY', 1),
+            ('LOAD_COMMON_CONSTANT', 12),
+            ('IS_OP', 0),
+            ('POP_JUMP_IF_FALSE', l1),
+            ('POP_TOP', None),
+            ('LOAD_CONST', 1),
+            ('LOAD_CONST', 2),
+            ('LOAD_CONST', 3),
+            ('BUILD_SET', 3),
+            ('CALL_INTRINSIC_1', 12),
+            ('JUMP', 0),
+            l1,
+            ('PUSH_NULL', None),
+            ('LOAD_CONST', 1),
+            ('LOAD_CONST', 2),
+            ('LOAD_CONST', 3),
+            ('BUILD_SET', 3),
+            ('CALL', 1),
+            ('POP_TOP', None),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None)
+        ]
+        self.codegen_test(snippet, expected)

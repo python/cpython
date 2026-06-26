@@ -741,6 +741,38 @@ class WeirdZoneTest(ZoneInfoTestBase):
         with self.assertRaises(ValueError):
             self.klass.from_file(zf)
 
+    def test_invalid_transition_index(self):
+        STD = ZoneOffset("STD", ZERO)
+        DST = ZoneOffset("DST", ONE_H, ONE_H)
+
+        zf = self.construct_zone([
+            ZoneTransition(datetime(2026, 3, 1, 2), STD, DST),
+            ZoneTransition(datetime(2026, 11, 1, 2), DST, STD),
+        ], after="", version=1)
+
+        data = bytearray(zf.read())
+        timecnt = struct.unpack_from(">l", data, 32)[0]
+        idx_offset = 44 + timecnt * 4
+        data[idx_offset + 1] = 2  # typecnt is 2, so index 2 is OOB
+        f = io.BytesIO(bytes(data))
+
+        with self.assertRaises(ValueError):
+            self.klass.from_file(f)
+
+    def test_transition_lookahead_out_of_bounds(self):
+        STD = ZoneOffset("STD", ZERO)
+        DST = ZoneOffset("DST", ONE_H, ONE_H)
+        EXT = ZoneOffset("EXT", ONE_H)
+
+        zf = self.construct_zone([
+            ZoneTransition(datetime(2026, 3, 1), STD, DST),
+            ZoneTransition(datetime(2026, 6, 1), DST, EXT),
+            ZoneTransition(datetime(2026, 9, 1), EXT, DST),
+        ], after="")
+
+        zi = self.klass.from_file(zf)
+        self.assertIsNotNone(zi)
+
     def test_zone_very_large_timestamp(self):
         """Test when a transition is in the far past or future.
 
@@ -1152,6 +1184,11 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid weekday
             "AAA4BBB,M1.1.7/2,M2.1.1/2",
             "AAA4BBB,M1.1.1/2,M2.1.7/2",
+            # Invalid Mm.w.d separator
+            "AAA4BBB,M3.2X0,M11.1.0",
+            "AAA4BBB,M3.2.0,M11.1X0",
+            "AAA4BBB,M3.2-0,M11.1.0/3",
+            "AAA4BBB,M3.2.0/2,M11.1:0",
             # Invalid numeric offset
             "AAA4BBB,-1/2,20/2",
             "AAA4BBB,1/2,-1/2",

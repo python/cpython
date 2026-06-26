@@ -574,8 +574,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_tlbc->entries[0] = co->co_code_adaptive;
 #endif
     int entry_point = 0;
-    while (entry_point < Py_SIZE(co) &&
-        _PyCode_CODE(co)[entry_point].op.code != RESUME) {
+    while (entry_point < Py_SIZE(co)) {
+        if (_PyCode_CODE(co)[entry_point].op.code == RESUME &&
+           (_PyCode_CODE(co)[entry_point].op.arg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_GEN_EXPR_START
+        ) {
+            break;
+        }
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
@@ -738,6 +742,10 @@ _PyCode_New(struct _PyCodeConstructor *con)
         PyErr_NoMemory();
         return NULL;
     }
+
+#ifdef Py_GIL_DISABLED
+    co->_co_unique_id = _Py_INVALID_UNIQUE_ID;
+#endif
 
     if (init_code(co, con) < 0) {
         Py_DECREF(co);
@@ -1008,14 +1016,18 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-static int
-_PyCode_Addr2Line(PyCodeObject *co, int addrq)
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-    if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    _PyCoMonitoringData *data = _Py_atomic_load_ptr_acquire(&co->_co_monitoring);
+    if (data) {
+        _PyCoLineInstrumentationData *lines = _Py_atomic_load_ptr_acquire(&data->lines);
+        if (lines) {
+            return _Py_Instrumentation_GetLine(co, lines, addrq/sizeof(_Py_CODEUNIT));
+        }
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
@@ -1030,7 +1042,7 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
         return co->co_firstlineno;
     }
     if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+        return _Py_Instrumentation_GetLine(co, co->_co_monitoring->lines, addrq/sizeof(_Py_CODEUNIT));
     }
     if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
         return -1;
@@ -1038,16 +1050,6 @@ _PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
-}
-
-int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
-{
-    int lineno;
-    Py_BEGIN_CRITICAL_SECTION(co);
-    lineno = _PyCode_Addr2Line(co, addrq);
-    Py_END_CRITICAL_SECTION();
-    return lineno;
 }
 
 void
@@ -1296,77 +1298,6 @@ _PyLineTable_NextAddressRange(PyCodeAddressRange *range)
     advance(range);
     assert(range->ar_end > range->ar_start);
     return 1;
-}
-
-static int
-emit_pair(PyObject **bytes, int *offset, int a, int b)
-{
-    Py_ssize_t len = PyBytes_GET_SIZE(*bytes);
-    if (*offset + 2 >= len) {
-        if (_PyBytes_Resize(bytes, len * 2) < 0)
-            return 0;
-    }
-    unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(*bytes);
-    lnotab += *offset;
-    *lnotab++ = a;
-    *lnotab++ = b;
-    *offset += 2;
-    return 1;
-}
-
-static int
-emit_delta(PyObject **bytes, int bdelta, int ldelta, int *offset)
-{
-    while (bdelta > 255) {
-        if (!emit_pair(bytes, offset, 255, 0)) {
-            return 0;
-        }
-        bdelta -= 255;
-    }
-    while (ldelta > 127) {
-        if (!emit_pair(bytes, offset, bdelta, 127)) {
-            return 0;
-        }
-        bdelta = 0;
-        ldelta -= 127;
-    }
-    while (ldelta < -128) {
-        if (!emit_pair(bytes, offset, bdelta, -128)) {
-            return 0;
-        }
-        bdelta = 0;
-        ldelta += 128;
-    }
-    return emit_pair(bytes, offset, bdelta, ldelta);
-}
-
-static PyObject *
-decode_linetable(PyCodeObject *code)
-{
-    PyCodeAddressRange bounds;
-    PyObject *bytes;
-    int table_offset = 0;
-    int code_offset = 0;
-    int line = code->co_firstlineno;
-    bytes = PyBytes_FromStringAndSize(NULL, 64);
-    if (bytes == NULL) {
-        return NULL;
-    }
-    _PyCode_InitAddressRange(code, &bounds);
-    while (_PyLineTable_NextAddressRange(&bounds)) {
-        if (bounds.opaque.computed_line != line) {
-            int bdelta = bounds.ar_start - code_offset;
-            int ldelta = bounds.opaque.computed_line - line;
-            if (!emit_delta(&bytes, bdelta, ldelta, &table_offset)) {
-                Py_DECREF(bytes);
-                return NULL;
-            }
-            code_offset = bounds.ar_start;
-            line = bounds.opaque.computed_line;
-        }
-    }
-    _PyBytes_Resize(&bytes, table_offset);
-    return bytes;
 }
 
 
@@ -2201,10 +2132,6 @@ code_returns_only_none(PyCodeObject *co)
     int len = (int)Py_SIZE(co);
     assert(len > 0);
 
-    // The last instruction either returns or raises.  We can take advantage
-    // of that for a quick exit.
-    _Py_CODEUNIT final = _Py_GetBaseCodeUnit(co, len-1);
-
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
     int none_index = 0;
@@ -2213,45 +2140,25 @@ code_returns_only_none(PyCodeObject *co)
             break;
         }
     }
-    if (none_index == nconsts) {
-        // None wasn't there, which means there was no implicit return,
-        // "return", or "return None".
-
-        // That means there must be
-        // an explicit return (non-None), or it only raises.
-        if (IS_RETURN_OPCODE(final.op.code)) {
-            // It was an explicit return (non-None).
-            return 0;
+    /* We don't worry about EXTENDED_ARG for now. */
+    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+        if (!IS_RETURN_OPCODE(inst.op.code)) {
+            continue;
         }
-        // It must end with a raise then.  We still have to walk the
-        // bytecode to see if there's any explicit return (non-None).
-        assert(IS_RAISE_OPCODE(final.op.code));
-        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
-            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-            if (IS_RETURN_OPCODE(inst.op.code)) {
-                // We alraedy know it isn't returning None.
-                return 0;
-            }
+        assert(i != 0);
+        _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
+        if (prev.op.code == LOAD_COMMON_CONSTANT &&
+            prev.op.arg == CONSTANT_NONE)
+        {
+            continue;
         }
-        // It must only raise.
-    }
-    else {
-        // Walk the bytecode, looking for RETURN_VALUE.
-        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
-            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-            if (IS_RETURN_OPCODE(inst.op.code)) {
-                assert(i != 0);
-                // Ignore it if it returns None.
-                _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
-                if (prev.op.code == LOAD_CONST) {
-                    // We don't worry about EXTENDED_ARG for now.
-                    if (prev.op.arg == none_index) {
-                        continue;
-                    }
-                }
-                return 0;
-            }
+        if (none_index < nconsts && prev.op.code == LOAD_CONST
+            && prev.op.arg == none_index)
+        {
+            continue;
         }
+        return 0;
     }
     return 1;
 }
@@ -2546,15 +2453,17 @@ code_dealloc(PyObject *self)
     FT_CLEAR_WEAKREFS(self, co->co_weakreflist);
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
-    // The first element always points to the mutable bytecode at the end of
-    // the code object, which will be freed when the code object is freed.
-    for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
-        char *entry = co->co_tlbc->entries[i];
-        if (entry != NULL) {
-            PyMem_Free(entry);
+    if (co->co_tlbc != NULL) {
+        // The first element always points to the mutable bytecode at the end of
+        // the code object, which will be freed when the code object is freed.
+        for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
+            char *entry = co->co_tlbc->entries[i];
+            if (entry != NULL) {
+                PyMem_Free(entry);
+            }
         }
+        PyMem_Free(co->co_tlbc);
     }
-    PyMem_Free(co->co_tlbc);
 #endif
     PyObject_Free(co);
 }
@@ -2607,7 +2516,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     cp = (PyCodeObject *)other;
 
     eq = PyObject_RichCompareBool(co->co_name, cp->co_name, Py_EQ);
-    if (!eq) goto unequal;
+    if (eq <= 0) goto unequal;
     eq = co->co_argcount == cp->co_argcount;
     if (!eq) goto unequal;
     eq = co->co_posonlyargcount == cp->co_posonlyargcount;
@@ -2742,18 +2651,6 @@ static PyMemberDef code_memberlist[] = {
 
 
 static PyObject *
-code_getlnotab(PyObject *self, void *closure)
-{
-    PyCodeObject *code = _PyCodeObject_CAST(self);
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "co_lnotab is deprecated, use co_lines instead.",
-                     1) < 0) {
-        return NULL;
-    }
-    return decode_linetable(code);
-}
-
-static PyObject *
 code_getvarnames(PyObject *self, void *closure)
 {
     PyCodeObject *code = _PyCodeObject_CAST(self);
@@ -2790,7 +2687,6 @@ code_getcode(PyObject *self, void *closure)
 }
 
 static PyGetSetDef code_getsetlist[] = {
-    {"co_lnotab",         code_getlnotab,       NULL, NULL},
     {"_co_code_adaptive", code_getcodeadaptive, NULL, NULL},
     // The following old names are kept for backward compatibility.
     {"co_varnames",       code_getvarnames,     NULL, NULL},
@@ -2950,12 +2846,13 @@ code._varname_from_oparg
 
 (internal-only) Return the local variable name for the given oparg.
 
-WARNING: this method is for internal use only and may change or go away.
+WARNING: this method is for internal use only and may change or go
+away.
 [clinic start generated code]*/
 
 static PyObject *
 code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
-/*[clinic end generated code: output=1fd1130413184206 input=c5fa3ee9bac7d4ca]*/
+/*[clinic end generated code: output=1fd1130413184206 input=6ba7d6df0d566463]*/
 {
     PyObject *name = PyTuple_GetItem(self->co_localsplusnames, oparg);
     if (name == NULL) {
@@ -3052,7 +2949,7 @@ _PyCode_ConstantKey(PyObject *op)
     else if (PyBool_Check(op) || PyBytes_CheckExact(op)) {
         /* Make booleans different from integers 0 and 1.
          * Avoid BytesWarning from comparing bytes with strings. */
-        key = PyTuple_Pack(2, Py_TYPE(op), op);
+        key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
     }
     else if (PyFloat_CheckExact(op)) {
         double d = PyFloat_AS_DOUBLE(op);
@@ -3062,7 +2959,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (d == 0.0 && copysign(1.0, d) < 0.0)
             key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
         else
-            key = PyTuple_Pack(2, Py_TYPE(op), op);
+            key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
     }
     else if (PyComplex_CheckExact(op)) {
         Py_complex z;
@@ -3086,7 +2983,7 @@ _PyCode_ConstantKey(PyObject *op)
             key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
         }
         else {
-            key = PyTuple_Pack(2, Py_TYPE(op), op);
+            key = _PyTuple_FromPair((PyObject *)Py_TYPE(op), op);
         }
     }
     else if (PyTuple_CheckExact(op)) {
@@ -3111,7 +3008,7 @@ _PyCode_ConstantKey(PyObject *op)
             PyTuple_SET_ITEM(tuple, i, item_key);
         }
 
-        key = PyTuple_Pack(2, tuple, op);
+        key = _PyTuple_FromPair(tuple, op);
         Py_DECREF(tuple);
     }
     else if (PyFrozenSet_CheckExact(op)) {
@@ -3145,7 +3042,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (set == NULL)
             return NULL;
 
-        key = PyTuple_Pack(2, set, op);
+        key = _PyTuple_FromPair(set, op);
         Py_DECREF(set);
         return key;
     }
@@ -3176,7 +3073,7 @@ _PyCode_ConstantKey(PyObject *op)
             goto slice_exit;
         }
 
-        key = PyTuple_Pack(2, slice_key, op);
+        key = _PyTuple_FromPair(slice_key, op);
         Py_DECREF(slice_key);
     slice_exit:
         Py_XDECREF(start_key);
@@ -3190,7 +3087,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (obj_id == NULL)
             return NULL;
 
-        key = PyTuple_Pack(2, obj_id, op);
+        key = _PyTuple_FromPair(obj_id, op);
         Py_DECREF(obj_id);
     }
     return key;

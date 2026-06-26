@@ -290,6 +290,12 @@ def make_build_python(context, working_dir):
     print(f"🎉 {binary} {version}")
 
 
+@subdir("native_build_dir")
+def pythoninfo_build_python(context, working_dir):
+    """Display build info of the build Python."""
+    call(["make", "pythoninfo"], quiet=context.quiet)
+
+
 def check_shasum(file: str, expected_shasum: str):
     with open(file, "rb") as f:
         digest = hashlib.file_digest(f, "sha256")
@@ -350,11 +356,18 @@ def write_library_config(prefix, name, config, quiet):
 def make_emscripten_libffi(context, working_dir):
     validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
-    libffi_config = load_config_toml()["libffi"]
+    libffi_config = load_config_toml()["dependencies"]["libffi"]
+    with open(EMSCRIPTEN_DIR / "make_libffi.sh", "rb") as f:
+        libffi_config["make_libffi_shasum"] = hashlib.file_digest(f, "sha256").hexdigest()
     if not should_build_library(
         prefix, "libffi", libffi_config, context.quiet
     ):
         return
+
+    if context.check_up_to_date:
+        print("libffi out of date, expected to be up to date", file=sys.stderr)
+        sys.exit(1)
+
     url = libffi_config["url"]
     version = libffi_config["version"]
     shasum = libffi_config["shasum"]
@@ -378,9 +391,13 @@ def make_emscripten_libffi(context, working_dir):
 def make_mpdec(context, working_dir):
     validate_emsdk_version(context.emsdk_cache)
     prefix = context.build_paths["prefix_dir"]
-    mpdec_config = load_config_toml()["mpdec"]
+    mpdec_config = load_config_toml()["dependencies"]["mpdec"]
     if not should_build_library(prefix, "mpdec", mpdec_config, context.quiet):
         return
+
+    if context.check_up_to_date:
+        print("libmpdec out of date, expected to be up to date", file=sys.stderr)
+        sys.exit(1)
 
     url = mpdec_config["url"]
     version = mpdec_config["version"]
@@ -507,6 +524,10 @@ def configure_emscripten_python(context, working_dir):
         EMSCRIPTEN_DIR / "node_entry.mjs", working_dir / "node_entry.mjs"
     )
 
+    shutil.copy(
+        EMSCRIPTEN_DIR / "streams.mjs", working_dir / "streams.mjs"
+    )
+
     node_entry = working_dir / "node_entry.mjs"
     exec_script = working_dir / "python.sh"
     exec_script.write_text(
@@ -565,7 +586,7 @@ def make_emscripten_python(context, working_dir):
     subprocess.check_call([exec_script, "--version"])
 
 
-def run_emscripten_python(context):
+def run_emscripten_python(context, args=None):
     """Run the built emscripten Python."""
     host_dir = context.build_paths["host_dir"]
     exec_script = host_dir / "python.sh"
@@ -573,15 +594,23 @@ def run_emscripten_python(context):
         print("Emscripten not built", file=sys.stderr)
         sys.exit(1)
 
-    args = context.args
-    # Strip the "--" separator if present
-    if args and args[0] == "--":
-        args = args[1:]
+    if args is None:
+        args = context.args
+        # Strip the "--" separator if present
+        if args and args[0] == "--":
+            args = args[1:]
 
-    if context.test:
-        args = load_config_toml()["test-args"] + args
+        if context.test:
+            args = load_config_toml()["test-args"] + args
+        elif context.pythoninfo:
+            args = load_config_toml()["pythoninfo-args"] + args
 
     os.execv(str(exec_script), [str(exec_script), *args])
+
+
+def pythoninfo_emscripten_python(context):
+    """Display build info of the host/Emscripten Python."""
+    run_emscripten_python(context, ["-m", "test.pythoninfo"])
 
 
 def build_target(context):
@@ -591,6 +620,7 @@ def build_target(context):
         steps.extend([
             configure_build_python,
             make_build_python,
+            pythoninfo_build_python,
         ])
     if context.target in {"host", "all"}:
         steps.extend([
@@ -598,6 +628,7 @@ def build_target(context):
             make_mpdec,
             configure_emscripten_python,
             make_emscripten_python,
+            pythoninfo_emscripten_python,
         ])
 
     for step in steps:
@@ -633,7 +664,7 @@ def add_cross_build_dir_option(subcommand):
         help=(
             "Path to the cross-build directory "
             f"(default: {DEFAULT_CROSS_BUILD_DIR}). "
-            "Can also be set with the CROSS_BUILD_DIR environment variable.",
+            "Can also be set with the CROSS_BUILD_DIR environment variable."
         ),
     )
 
@@ -678,8 +709,20 @@ def main():
         help="Build all static library dependencies",
     )
 
+    for cmd in [make_mpdec_cmd, make_libffi_cmd, make_dependencies_cmd]:
+        cmd.add_argument(
+            "--check-up-to-date",
+            action="store_true",
+            default=False,
+            help=("If passed, will fail if dependency is out of date"),
+        )
+
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
+    )
+
+    pythoninfo_build = subcommands.add_parser(
+        "pythoninfo-build", help="Display build info of the build Python"
     )
 
     configure_host = subcommands.add_parser(
@@ -694,6 +737,10 @@ def main():
         "make-host", help="Run `make` for the host/emscripten"
     )
 
+    pythoninfo_host = subcommands.add_parser(
+        "pythoninfo-host", help="Display build info of the host/Emscripten Python"
+    )
+
     run = subcommands.add_parser(
         "run",
         help="Run the built emscripten Python",
@@ -703,17 +750,23 @@ def main():
         action="store_true",
         default=False,
         help=(
-            "If passed, will add the default test arguments to the beginning of the command. "
+            "Add the default test arguments to the beginning of the command. "
             "Default arguments loaded from Platforms/emscripten/config.toml"
-        )
+        ),
+    )
+    run.add_argument(
+        "--pythoninfo",
+        action="store_true",
+        default=False,
+        help="Run -m test.pythoninfo",
     )
     run.add_argument(
         "args",
         nargs=argparse.REMAINDER,
         help=(
             "Arguments to pass to the emscripten Python "
-            "(use '--' to separate from run options)",
-        )
+            "(use '--' to separate from run options)"
+        ),
     )
     add_cross_build_dir_option(run)
 
@@ -739,8 +792,10 @@ def main():
         make_mpdec_cmd,
         make_dependencies_cmd,
         make_build,
+        pythoninfo_build,
         configure_host,
         make_host,
+        pythoninfo_host,
         clean,
     ):
         subcommand.add_argument(
@@ -793,6 +848,7 @@ def main():
     context = parser.parse_args()
     context.emsdk_cache = getattr(context, "emsdk_cache", None)
     context.cross_build_dir = getattr(context, "cross_build_dir", None)
+    context.check_up_to_date = getattr(context, "check_up_to_date", False)
 
     if context.emsdk_cache:
         context.emsdk_cache = Path(context.emsdk_cache).absolute()
@@ -808,8 +864,10 @@ def main():
         "make-dependencies": make_dependencies,
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
+        "pythoninfo-build": pythoninfo_build_python,
         "configure-host": configure_emscripten_python,
         "make-host": make_emscripten_python,
+        "pythoninfo-host": pythoninfo_emscripten_python,
         "build": build_target,
         "run": run_emscripten_python,
         "clean": clean_contents,

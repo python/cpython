@@ -1580,6 +1580,7 @@ extern "C" {
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
+    INIT_ID(all_interpreters), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
     INIT_ID(alphabet), \
@@ -1594,6 +1595,7 @@ extern "C" {
     INIT_ID(asend), \
     INIT_ID(ast), \
     INIT_ID(athrow), \
+    INIT_ID(attr), \
     INIT_ID(attribute), \
     INIT_ID(autocommit), \
     INIT_ID(backtick), \
@@ -1634,6 +1636,7 @@ extern "C" {
     INIT_ID(callable), \
     INIT_ID(callback), \
     INIT_ID(cancel), \
+    INIT_ID(canonical), \
     INIT_ID(capath), \
     INIT_ID(capitals), \
     INIT_ID(category), \
@@ -1894,6 +1897,7 @@ extern "C" {
     INIT_ID(mask), \
     INIT_ID(match), \
     INIT_ID(max_length), \
+    INIT_ID(max_threads), \
     INIT_ID(maxdigits), \
     INIT_ID(maxevents), \
     INIT_ID(maxlen), \
@@ -1972,7 +1976,9 @@ extern "C" {
     INIT_ID(overlapped), \
     INIT_ID(owner), \
     INIT_ID(pad), \
+    INIT_ID(padded), \
     INIT_ID(pages), \
+    INIT_ID(pair), \
     INIT_ID(parameter), \
     INIT_ID(parent), \
     INIT_ID(password), \
@@ -1984,6 +1990,7 @@ extern "C" {
     INIT_ID(person), \
     INIT_ID(pi_factory), \
     INIT_ID(pid), \
+    INIT_ID(pidfd), \
     INIT_ID(pointer_bits), \
     INIT_ID(policy), \
     INIT_ID(pos), \
@@ -2025,6 +2032,7 @@ extern "C" {
     INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(repr), \
     INIT_ID(reqrefs), \
     INIT_ID(require_ready), \
     INIT_ID(reserved), \
@@ -2102,6 +2110,7 @@ extern "C" {
     INIT_ID(take_bytes), \
     INIT_ID(target), \
     INIT_ID(target_is_directory), \
+    INIT_ID(targetfd), \
     INIT_ID(task), \
     INIT_ID(tb_frame), \
     INIT_ID(tb_lasti), \
@@ -2144,6 +2153,7 @@ extern "C" {
     INIT_ID(updates), \
     INIT_ID(uri), \
     INIT_ID(usedforsecurity), \
+    INIT_ID(utcoffset), \
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \
