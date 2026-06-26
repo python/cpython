@@ -41,7 +41,7 @@
   Here's a list of currently unsupported functions:
 
   addchnstr addchstr color_set define_key
-  del_curterm dupwin inchnstr inchstr innstr keyok
+  del_curterm inchnstr inchstr innstr keyok
   mcprint mvaddchnstr mvaddchstr mvcur mvinchnstr
   mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr
   mvwinchnstr mvwinchstr mvwinnstr
@@ -2723,6 +2723,33 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
+_curses.window.dupwin
+
+Create an exact duplicate of the window.
+
+The new window is independent of the original: it has the same size,
+position, contents and attributes, but its own cell buffer, so later
+changes to one do not affect the other.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_dupwin_impl(PyCursesWindowObject *self)
+/*[clinic end generated code: output=37d91aa8f88f13d1 input=787301b3799b618e]*/
+{
+    WINDOW *win = dupwin(self->win);
+    if (win == NULL) {
+        curses_window_set_null_error(self, "dupwin", NULL);
+        return NULL;
+    }
+
+    /* The duplicate owns an independent cell buffer (unlike a subwindow), so
+       it has no parent: pass NULL as orig.  Inherit the source encoding and
+       screen so it matches the original. */
+    cursesmodule_state *state = get_cursesmodule_state_by_win(self);
+    return PyCursesWindow_New(state, win, self->encoding, NULL, self->screen);
+}
+
+/*[clinic input]
 _curses.window.echochar
 
     ch: object
@@ -4520,6 +4547,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "deleteln($self, /)\n--\n\n"
      "Delete the line under the cursor; move following lines up by one."},
     _CURSES_WINDOW_DERWIN_METHODDEF
+    _CURSES_WINDOW_DUPWIN_METHODDEF
     _CURSES_WINDOW_ECHOCHAR_METHODDEF
     _CURSES_WINDOW_ENCLOSE_METHODDEF
     {"erase", PyCursesWindow_werase, METH_NOARGS,

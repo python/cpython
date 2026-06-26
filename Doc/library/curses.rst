@@ -1192,6 +1192,17 @@ Window objects
    object for the derived window.
 
 
+.. method:: window.dupwin()
+
+   Return a new window that is an exact duplicate of the window: it has the same
+   size, position, contents and attributes.  Unlike a window created by
+   :meth:`subwin` or :meth:`derwin`, the duplicate is independent of the
+   original -- it has its own cell buffer, so later changes to one do not affect
+   the other.
+
+   .. versionadded:: next
+
+
 .. method:: window.echochar(ch[, attr])
 
    Add character *ch* with attribute *attr*, and immediately  call :meth:`refresh`

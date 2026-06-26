@@ -218,6 +218,35 @@ class TestCurses(unittest.TestCase):
         del win2
         gc_collect()
 
+    def test_dupwin(self):
+        win = curses.newwin(5, 10, 2, 3)
+        win.addstr(0, 0, 'ABCDE')
+        win.addstr(1, 0, 'fghij')
+        dup = win.dupwin()
+        # Same geometry and contents as the original.
+        self.assertEqual(dup.getbegyx(), win.getbegyx())
+        self.assertEqual(dup.getmaxyx(), win.getmaxyx())
+        self.assertEqual(dup.instr(0, 0, 5), b'ABCDE')
+        self.assertEqual(dup.instr(1, 0, 5), b'fghij')
+        # The duplicate is independent, not a subwindow.
+        if hasattr(dup, 'is_subwin'):
+            self.assertIs(dup.is_subwin(), False)
+            self.assertIsNone(dup.getparent())
+        # Changes to one do not affect the other.
+        dup.addstr(0, 0, 'xxxxx')
+        win.addstr(1, 0, 'YYYYY')
+        self.assertEqual(win.instr(0, 0, 5), b'ABCDE')
+        self.assertEqual(dup.instr(0, 0, 5), b'xxxxx')
+        self.assertEqual(dup.instr(1, 0, 5), b'fghij')
+        self.assertEqual(win.instr(1, 0, 5), b'YYYYY')
+        # A subwindow can also be duplicated; the duplicate is independent.
+        sub = win.subwin(3, 5, 2, 3)
+        subdup = sub.dupwin()
+        self.assertEqual(subdup.getmaxyx(), sub.getmaxyx())
+        if hasattr(subdup, 'is_subwin'):
+            self.assertIs(subdup.is_subwin(), False)
+            self.assertIsNone(subdup.getparent())
+
     def test_move_cursor(self):
         stdscr = self.stdscr
         win = stdscr.subwin(10, 15, 2, 5)
