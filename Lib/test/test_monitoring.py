@@ -14,8 +14,6 @@ import unittest
 import test.support
 from test.support import import_helper, requires_specialization, script_helper
 
-_testinternalcapi = import_helper.import_module("_testinternalcapi")
-
 PAIR = (0,1)
 
 def f1():
@@ -866,6 +864,8 @@ class ExceptionMonitoringTest(CheckEvents):
            This test checks that both paths record an equivalent event.
            """
 
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+
         def gen():
             yield 1
             return 2
@@ -1033,6 +1033,8 @@ class ExceptionMonitoringTest(CheckEvents):
 
     @requires_specialization
     def test_no_unwind_for_shim_frame(self):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+
         class ValueErrorRaiser:
             def __init__(self):
                 raise ValueError()
@@ -2454,6 +2456,7 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
 
     def test_108390(self):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
         class Foo:
             def __init__(self, set_event):
@@ -2545,6 +2548,8 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 class TestTier2Optimizer(CheckEvents):
 
     def test_monitoring_already_opimized_loop(self):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+
         def test_func(recorder):
             set_events = sys.monitoring.set_events
             line = E.LINE
