@@ -165,6 +165,11 @@ curses
   :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
   (Contributed by Serhiy Storchaka in :gh:`152260`.)
 
+* Add the :mod:`curses` key-management functions :func:`~curses.define_key`,
+  :func:`~curses.key_defined` and :func:`~curses.keyok`, available when built
+  against an ncurses with ``NCURSES_EXT_FUNCS``.
+  (Contributed by Serhiy Storchaka in :gh:`152334`.)
+
 gzip
 ----
 
