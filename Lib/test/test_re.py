@@ -1061,6 +1061,19 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(r'\p{ASCII_Hex_Digit}', '０'))
         self.assertIsNone(re.fullmatch(r'\p{Hex_Digit}', 'g'))
 
+        # A negated multi-range property (not backed by an engine category) can
+        # be a set member; it is alternated in with the other members.
+        self.assertIsNone(re.fullmatch(r'[\P{ASCII}]', 'a'))
+        self.assertTrue(re.fullmatch(r'[\P{ASCII}]', 'ä'))
+        self.assertTrue(re.fullmatch(r'[\P{ASCII}abc]+', 'abäc日'))
+        self.assertIsNone(re.fullmatch(r'[\P{ASCII}abc]', 'd'))
+        self.assertTrue(re.fullmatch(r'[abc\P{ASCII}]+', 'abäc日'))
+        self.assertTrue(re.fullmatch(r'[^\P{ASCII}]+', 'AZ09~'))   # = ASCII
+        self.assertIsNone(re.fullmatch(r'[^\P{ASCII}]', 'ä'))
+        # Composes with set operations.
+        self.assertTrue(re.fullmatch(r'[\w--\P{ASCII}]+', 'AZ09_'))  # \w and ASCII
+        self.assertIsNone(re.fullmatch(r'[\w--\P{ASCII}]', 'д'))
+
         # Errors.
         self.checkPatternError(r'\p', 'missing {, expected property name', 2)
         self.checkPatternError(r'[\p]', 'missing {, expected property name', 3)
@@ -1072,10 +1085,6 @@ class ReTests(unittest.TestCase):
         # \p is not special in bytes patterns.
         self.checkPatternError(br'\p{Lu}', r'bad escape \p', 0)
         self.checkPatternError(br'\P{Lu}', r'bad escape \P', 0)
-        # A negated multi-range property (one not backed by an engine
-        # category) cannot be a set member.
-        self.checkPatternError(r'[\P{ASCII}]',
-                               r'bad escape \P in character class', 1)
 
     def test_word_boundaries(self):
         # See http://bugs.python.org/issue10713
