@@ -1,6 +1,6 @@
 variant:
   - freethreading
 abi_tag:
-  - cp315t
+  - cp316t
 version:
-  - 3.15
+  - 3.16
