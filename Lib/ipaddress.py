@@ -2010,6 +2010,23 @@ class IPv6Address(_BaseV6, _BaseAddress):
             return False
         return self._scope_id == getattr(other, '_scope_id', None)
 
+    def __lt__(self, other):
+        if not isinstance(other, _BaseAddress):
+            return NotImplemented
+        if self.version != other.version:
+            raise TypeError('%s and %s are not of the same version' % (
+                             self, other))
+        if self._ip != other._ip:
+            return self._ip < other._ip
+        # Tie-break on scope_id so ordering is consistent with __eq__/__hash__.
+        # Unscoped sorts before scoped; scope ids compare lexicographically.
+        other_scope = getattr(other, '_scope_id', None)
+        if self._scope_id is None:
+            return other_scope is not None
+        if other_scope is None:
+            return False
+        return self._scope_id < other_scope
+
     def __reduce__(self):
         return (self.__class__, (str(self),))
 
