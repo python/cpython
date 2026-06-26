@@ -1330,8 +1330,6 @@ class TestCurses(unittest.TestCase):
         # Each is_*() getter returns the value set by the matching setter.
         for setter, getter in [
             ('clearok', 'is_cleared'),
-            ('idcok', 'is_idcok'),
-            ('idlok', 'is_idlok'),
             ('keypad', 'is_keypad'),
             ('leaveok', 'is_leaveok'),
             ('nodelay', 'is_nodelay'),
@@ -1342,6 +1340,19 @@ class TestCurses(unittest.TestCase):
             self.assertIs(getattr(stdscr, getter)(), True)
             getattr(stdscr, setter)(False)
             self.assertIs(getattr(stdscr, getter)(), False)
+
+        # idcok()/idlok() only take effect if the terminal can insert/delete
+        # characters/lines, so the getter reflects that capability.
+        stdscr.idcok(True)
+        self.assertIs(stdscr.is_idcok(), curses.has_ic())
+        stdscr.idcok(False)
+        self.assertIs(stdscr.is_idcok(), False)
+
+        stdscr.idlok(True)
+        self.assertIs(stdscr.is_idlok(),
+                      curses.has_il() or curses.tigetstr('csr') is not None)
+        stdscr.idlok(False)
+        self.assertIs(stdscr.is_idlok(), False)
         if hasattr(stdscr, 'immedok'):
             stdscr.immedok(True)
             self.assertIs(stdscr.is_immedok(), True)
