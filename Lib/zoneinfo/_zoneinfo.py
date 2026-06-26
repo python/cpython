@@ -707,7 +707,7 @@ def _parse_dst_start_end(dststr):
     type = date[:1]
     if type == "M":
         n_is_julian = False
-        m = re.fullmatch(r"M(\d{1,2})\.(\d).(\d)", date, re.ASCII)
+        m = re.fullmatch(r"M(\d{1,2})\.(\d)\.(\d)", date, re.ASCII)
         if m is None:
             raise ValueError(f"Invalid dst start/end date: {dststr}")
         date_offset = tuple(map(int, m.groups()))
