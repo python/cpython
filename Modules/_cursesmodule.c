@@ -931,8 +931,9 @@ attr_converter(PyObject *arg, void *ptr)
 class attr_converter(CConverter):
     type = 'attr_t'
     converter = 'attr_converter'
+    c_ignored_default = '0'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=6132d3d99d3ec25a]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=57b994c97cbd5e80]*/
 
 #ifdef HAVE_NCURSESW
 /* -------------------------------------------------------*/

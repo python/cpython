@@ -231,7 +231,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -303,7 +303,7 @@ _curses_window_addstr(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *str;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -378,7 +378,7 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
     PyObject *str;
     int n;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -437,7 +437,7 @@ _curses_window_bkgd(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -720,7 +720,7 @@ _curses_window_bkgdset(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1032,7 +1032,7 @@ _curses_window_echochar(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1370,7 +1370,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -1440,7 +1440,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1559,7 +1559,7 @@ _curses_window_insstr(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *str;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1636,7 +1636,7 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
     PyObject *str;
     int n;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -2247,7 +2247,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    attr_t attr;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -5478,4 +5478,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=f76340c98e75e824 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3ddb2b89cc5f7f07 input=a9049054013a1b77]*/
