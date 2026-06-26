@@ -457,7 +457,9 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # raises a BufferError.
         self.assertRaises(BufferError, memio.write, b'x' * 100)
         self.assertRaises(BufferError, memio.truncate)
-        self.assertRaises(BufferError, memio.close)
+        # gh-111049: _io.BytesIO detach on close would lead to corruption.
+        if self.ioclass is io.BytesIO:
+            self.assertRaises(BufferError, memio.close)
         self.assertFalse(memio.closed)
         # Mutating the buffer updates the BytesIO
         buf[3:6] = b"abc"
@@ -469,6 +471,23 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         support.gc_collect()
         memio.truncate()
         memio.close()
+        self.assertRaises(ValueError, memio.getbuffer)
+
+    def test_getbuffer_delete(self):
+        # gh-111330: _pyio .close() works and the buffer stays working
+        if self.ioclass is io.BytesIO:
+            # gh-111049: _io.BytesIO detach on close would lead to corruption.
+            # gh-111331: It would be nice to support this.
+            self.skipTest("io.BytesIO does not support, gh-111049")
+
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        self.assertEqual(bytes(buf), b"1234567890")
+        memio.close()
+        self.assertTrue(memio.closed)
+        self.assertEqual(bytes(buf), b"1234567890")
+        buf[3:6] = b"abc"
+        self.assertEqual(bytes(buf), b"123abc7890")
         self.assertRaises(ValueError, memio.getbuffer)
 
     def test_getbuffer_empty(self):
