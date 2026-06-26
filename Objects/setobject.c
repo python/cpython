@@ -1351,7 +1351,9 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     assert(PyType_Check(type));
     PySetObject *so;
 
-    so = (PySetObject *)type->tp_alloc(type, 0);
+    // Allocate untracked: the fill below runs user code, and a half-built
+    // set must not be reachable from another thread via gc.get_objects().
+    so = (PySetObject *)_PyType_AllocNoTrack(type, 0);
     if (so == NULL)
         return NULL;
 
@@ -1370,6 +1372,8 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
         }
     }
 
+    // Track only once fully built.
+    _PyObject_GC_TRACK(so);
     return (PyObject *)so;
 }
 
@@ -2885,7 +2889,7 @@ PyTypeObject PySet_Type = {
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
     set_init,                           /* tp_init */
-    PyType_GenericAlloc,                /* tp_alloc */
+    _PyType_AllocNoTrack,               /* tp_alloc */
     set_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = set_vectorcall,
@@ -2977,7 +2981,7 @@ PyTypeObject PyFrozenSet_Type = {
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
-    PyType_GenericAlloc,                /* tp_alloc */
+    _PyType_AllocNoTrack,               /* tp_alloc */
     frozenset_new,                      /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = frozenset_vectorcall,
