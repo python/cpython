@@ -5025,6 +5025,447 @@ PyDoc_STRVAR(_curses_unget_wch__doc__,
 
 #endif /* defined(HAVE_NCURSESW) */
 
+PyDoc_STRVAR(_curses_slk_init__doc__,
+"slk_init($module, fmt=0, /)\n"
+"--\n"
+"\n"
+"Reserve a line for soft labels and choose their layout.\n"
+"\n"
+"  fmt\n"
+"    Label layout: 0 = 3-2-3, 1 = 4-4 (8 labels each); 2 = 4-4-4,\n"
+"    3 = 4-4-4 with an index line (12 labels each, ncurses extensions).\n"
+"\n"
+"Must be called before initscr() or newterm().");
+
+#define _CURSES_SLK_INIT_METHODDEF    \
+    {"slk_init", _PyCFunction_CAST(_curses_slk_init), METH_FASTCALL, _curses_slk_init__doc__},
+
+static PyObject *
+_curses_slk_init_impl(PyObject *module, int fmt);
+
+static PyObject *
+_curses_slk_init(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fmt = 0;
+
+    if (!_PyArg_CheckPositional("slk_init", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    fmt = PyLong_AsInt(args[0]);
+    if (fmt == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _curses_slk_init_impl(module, fmt);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_set__doc__,
+"slk_set($module, labnum, label, justify=0, /)\n"
+"--\n"
+"\n"
+"Set the text of a soft label.\n"
+"\n"
+"  labnum\n"
+"    The label number (1 to 8, or 1 to 12 in a 12-label layout).\n"
+"  label\n"
+"    The text to display.\n"
+"  justify\n"
+"    0 = left, 1 = centre, 2 = right.");
+
+#define _CURSES_SLK_SET_METHODDEF    \
+    {"slk_set", _PyCFunction_CAST(_curses_slk_set), METH_FASTCALL, _curses_slk_set__doc__},
+
+static PyObject *
+_curses_slk_set_impl(PyObject *module, int labnum, PyObject *label,
+                     int justify);
+
+static PyObject *
+_curses_slk_set(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int labnum;
+    PyObject *label;
+    int justify = 0;
+
+    if (!_PyArg_CheckPositional("slk_set", nargs, 2, 3)) {
+        goto exit;
+    }
+    labnum = PyLong_AsInt(args[0]);
+    if (labnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("slk_set", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    label = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    justify = PyLong_AsInt(args[2]);
+    if (justify == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _curses_slk_set_impl(module, labnum, label, justify);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_label__doc__,
+"slk_label($module, labnum, /)\n"
+"--\n"
+"\n"
+"Return the current text of a soft label.\n"
+"\n"
+"  labnum\n"
+"    The label number.");
+
+#define _CURSES_SLK_LABEL_METHODDEF    \
+    {"slk_label", (PyCFunction)_curses_slk_label, METH_O, _curses_slk_label__doc__},
+
+static PyObject *
+_curses_slk_label_impl(PyObject *module, int labnum);
+
+static PyObject *
+_curses_slk_label(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int labnum;
+
+    labnum = PyLong_AsInt(arg);
+    if (labnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_slk_label_impl(module, labnum);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_refresh__doc__,
+"slk_refresh($module, /)\n"
+"--\n"
+"\n"
+"Update the soft labels on the screen.");
+
+#define _CURSES_SLK_REFRESH_METHODDEF    \
+    {"slk_refresh", (PyCFunction)_curses_slk_refresh, METH_NOARGS, _curses_slk_refresh__doc__},
+
+static PyObject *
+_curses_slk_refresh_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_refresh(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_refresh_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_noutrefresh__doc__,
+"slk_noutrefresh($module, /)\n"
+"--\n"
+"\n"
+"Update the soft labels on the virtual screen only.");
+
+#define _CURSES_SLK_NOUTREFRESH_METHODDEF    \
+    {"slk_noutrefresh", (PyCFunction)_curses_slk_noutrefresh, METH_NOARGS, _curses_slk_noutrefresh__doc__},
+
+static PyObject *
+_curses_slk_noutrefresh_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_noutrefresh(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_noutrefresh_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_clear__doc__,
+"slk_clear($module, /)\n"
+"--\n"
+"\n"
+"Erase the soft labels from the screen.");
+
+#define _CURSES_SLK_CLEAR_METHODDEF    \
+    {"slk_clear", (PyCFunction)_curses_slk_clear, METH_NOARGS, _curses_slk_clear__doc__},
+
+static PyObject *
+_curses_slk_clear_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_clear(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_clear_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_restore__doc__,
+"slk_restore($module, /)\n"
+"--\n"
+"\n"
+"Restore the soft labels after a preceding slk_clear().");
+
+#define _CURSES_SLK_RESTORE_METHODDEF    \
+    {"slk_restore", (PyCFunction)_curses_slk_restore, METH_NOARGS, _curses_slk_restore__doc__},
+
+static PyObject *
+_curses_slk_restore_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_restore(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_restore_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_touch__doc__,
+"slk_touch($module, /)\n"
+"--\n"
+"\n"
+"Force the soft labels to be redrawn by the next slk_refresh().");
+
+#define _CURSES_SLK_TOUCH_METHODDEF    \
+    {"slk_touch", (PyCFunction)_curses_slk_touch, METH_NOARGS, _curses_slk_touch__doc__},
+
+static PyObject *
+_curses_slk_touch_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_touch(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_touch_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_attron__doc__,
+"slk_attron($module, attr, /)\n"
+"--\n"
+"\n"
+"Add the given chtype attributes to the soft labels.");
+
+#define _CURSES_SLK_ATTRON_METHODDEF    \
+    {"slk_attron", (PyCFunction)_curses_slk_attron, METH_O, _curses_slk_attron__doc__},
+
+static PyObject *
+_curses_slk_attron_impl(PyObject *module, long attr);
+
+static PyObject *
+_curses_slk_attron(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    long attr;
+
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_slk_attron_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_attroff__doc__,
+"slk_attroff($module, attr, /)\n"
+"--\n"
+"\n"
+"Remove the given chtype attributes from the soft labels.");
+
+#define _CURSES_SLK_ATTROFF_METHODDEF    \
+    {"slk_attroff", (PyCFunction)_curses_slk_attroff, METH_O, _curses_slk_attroff__doc__},
+
+static PyObject *
+_curses_slk_attroff_impl(PyObject *module, long attr);
+
+static PyObject *
+_curses_slk_attroff(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    long attr;
+
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_slk_attroff_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_attrset__doc__,
+"slk_attrset($module, attr, /)\n"
+"--\n"
+"\n"
+"Set the chtype attributes of the soft labels.");
+
+#define _CURSES_SLK_ATTRSET_METHODDEF    \
+    {"slk_attrset", (PyCFunction)_curses_slk_attrset, METH_O, _curses_slk_attrset__doc__},
+
+static PyObject *
+_curses_slk_attrset_impl(PyObject *module, long attr);
+
+static PyObject *
+_curses_slk_attrset(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    long attr;
+
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_slk_attrset_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+#if defined(NCURSES_EXT_FUNCS)
+
+PyDoc_STRVAR(_curses_slk_attr__doc__,
+"slk_attr($module, /)\n"
+"--\n"
+"\n"
+"Return the current chtype attributes of the soft labels.");
+
+#define _CURSES_SLK_ATTR_METHODDEF    \
+    {"slk_attr", (PyCFunction)_curses_slk_attr, METH_NOARGS, _curses_slk_attr__doc__},
+
+static PyObject *
+_curses_slk_attr_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_attr(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_attr_impl(module);
+}
+
+#endif /* defined(NCURSES_EXT_FUNCS) */
+
+PyDoc_STRVAR(_curses_slk_attr_on__doc__,
+"slk_attr_on($module, attr, /)\n"
+"--\n"
+"\n"
+"Turn on attributes of the soft labels without affecting others.");
+
+#define _CURSES_SLK_ATTR_ON_METHODDEF    \
+    {"slk_attr_on", (PyCFunction)_curses_slk_attr_on, METH_O, _curses_slk_attr_on__doc__},
+
+static PyObject *
+_curses_slk_attr_on_impl(PyObject *module, attr_t attr);
+
+static PyObject *
+_curses_slk_attr_on(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+
+    if (!attr_converter(arg, &attr)) {
+        goto exit;
+    }
+    return_value = _curses_slk_attr_on_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_attr_off__doc__,
+"slk_attr_off($module, attr, /)\n"
+"--\n"
+"\n"
+"Turn off attributes of the soft labels without affecting others.");
+
+#define _CURSES_SLK_ATTR_OFF_METHODDEF    \
+    {"slk_attr_off", (PyCFunction)_curses_slk_attr_off, METH_O, _curses_slk_attr_off__doc__},
+
+static PyObject *
+_curses_slk_attr_off_impl(PyObject *module, attr_t attr);
+
+static PyObject *
+_curses_slk_attr_off(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+
+    if (!attr_converter(arg, &attr)) {
+        goto exit;
+    }
+    return_value = _curses_slk_attr_off_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_attr_set__doc__,
+"slk_attr_set($module, attr, pair=0, /)\n"
+"--\n"
+"\n"
+"Set the attributes and color pair of the soft labels.");
+
+#define _CURSES_SLK_ATTR_SET_METHODDEF    \
+    {"slk_attr_set", _PyCFunction_CAST(_curses_slk_attr_set), METH_FASTCALL, _curses_slk_attr_set__doc__},
+
+static PyObject *
+_curses_slk_attr_set_impl(PyObject *module, attr_t attr, int pair);
+
+static PyObject *
+_curses_slk_attr_set(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+    int pair = 0;
+
+    if (!_PyArg_CheckPositional("slk_attr_set", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!attr_converter(args[0], &attr)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!pair_converter(args[1], &pair)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _curses_slk_attr_set_impl(module, attr, pair);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_color__doc__,
+"slk_color($module, pair, /)\n"
+"--\n"
+"\n"
+"Set the color pair of the soft labels.");
+
+#define _CURSES_SLK_COLOR_METHODDEF    \
+    {"slk_color", (PyCFunction)_curses_slk_color, METH_O, _curses_slk_color__doc__},
+
+static PyObject *
+_curses_slk_color_impl(PyObject *module, int pair);
+
+static PyObject *
+_curses_slk_color(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int pair;
+
+    if (!pair_converter(arg, &pair)) {
+        goto exit;
+    }
+    return_value = _curses_slk_color_impl(module, pair);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_CURSES_USE_ENV)
 
 PyDoc_STRVAR(_curses_use_env__doc__,
@@ -5298,6 +5739,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_UNGET_WCH_METHODDEF
 #endif /* !defined(_CURSES_UNGET_WCH_METHODDEF) */
 
+#ifndef _CURSES_SLK_ATTR_METHODDEF
+    #define _CURSES_SLK_ATTR_METHODDEF
+#endif /* !defined(_CURSES_SLK_ATTR_METHODDEF) */
+
 #ifndef _CURSES_USE_ENV_METHODDEF
     #define _CURSES_USE_ENV_METHODDEF
 #endif /* !defined(_CURSES_USE_ENV_METHODDEF) */
@@ -5309,4 +5754,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=081cc398989ca202 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c4769cac4c2dd46 input=a9049054013a1b77]*/

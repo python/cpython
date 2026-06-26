@@ -148,6 +148,18 @@ curses
   :class:`~curses.complexchar`.
   (Contributed by Serhiy Storchaka in :gh:`152233`.)
 
+* Add the soft-label-key functions to the :mod:`curses` module, which manage a
+  row of labels along the bottom line of the screen:
+  :func:`~curses.slk_init`, :func:`~curses.slk_set`, :func:`~curses.slk_label`,
+  :func:`~curses.slk_refresh`, :func:`~curses.slk_noutrefresh`,
+  :func:`~curses.slk_clear`, :func:`~curses.slk_restore`,
+  :func:`~curses.slk_touch`, the attribute functions
+  :func:`~curses.slk_attron`, :func:`~curses.slk_attroff`,
+  :func:`~curses.slk_attrset`, :func:`~curses.slk_attr`,
+  :func:`~curses.slk_attr_on`, :func:`~curses.slk_attr_off`,
+  :func:`~curses.slk_attr_set`, and :func:`~curses.slk_color`.
+  (Contributed by Serhiy Storchaka in :gh:`152263`.)
+
 gzip
 ----
 
