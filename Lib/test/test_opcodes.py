@@ -3,6 +3,7 @@
 import unittest
 from test import support
 from test.typinganndata import ann_module
+from test.support.import_helper import import_module
 
 class OpcodeTest(unittest.TestCase):
 

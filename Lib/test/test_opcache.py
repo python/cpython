@@ -14,6 +14,7 @@ from test.support.import_helper import import_module
 if check_impl_detail(cpython=False):
     raise unittest.SkipTest('implementation detail specific to cpython')
 
+_testcapi = import_module('_testcapi')
 _testinternalcapi = import_module("_testinternalcapi")
 
 
@@ -2170,6 +2171,37 @@ class TestSpecializer(TestBase):
         self.assert_specialized(my_list_append, "CALL_METHOD_DESCRIPTOR_O")
         self.assert_no_opcode(my_list_append, "CALL_LIST_APPEND")
         self.assert_no_opcode(my_list_append, "CALL")
+
+    @cpython_only
+    @requires_specialization
+    def test_call_list_append_steal(self):
+        # gh-152090: Test CALL_LIST_APPEND error path: when resizing the list
+        # fails with MemoryError. The temporary argument must be destroyed
+        # (exactly once).
+        list_capacity = _testinternalcapi.list_capacity
+
+        def func(offset):
+            lst = [1, 2, 3]
+            small = 10
+            # Run 'threshold' iterations to specialize the opcode
+            # to CALL_LIST_APPEND
+            threshold = _testinternalcapi.SPECIALIZATION_THRESHOLD
+            loops = max(threshold, 1000)
+            for i in range(loops):
+                if i >= threshold and list_capacity(lst) == len(lst):
+                    # The list is full: calling lst.append() has to resize
+                    # the list. Inject a MemoryError on the list resize.
+                    _testcapi.set_nomemory(offset, 0)
+                try:
+                    try:
+                        lst.append(b'x' * small)
+                    finally:
+                        _testcapi.remove_mem_hooks()
+                except MemoryError:
+                    break
+
+        for offset in range(0, 10):
+            func(offset)
 
     @cpython_only
     @requires_specialization
