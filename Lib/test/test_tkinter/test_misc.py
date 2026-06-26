@@ -73,8 +73,13 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         """)
         rc, out, err = assert_python_ok('-c', script)
         self.assertEqual(out.strip(), b'ok')
-        self.assertIn(b'RuntimeWarning', err)
-        self.assertIn(b'gh-83274', err)
+        if not support.Py_GIL_DISABLED:
+            # On the free-threaded build the interpreter may instead be
+            # deallocated in its own thread (deferred reference counting), so
+            # the warning is not necessarily emitted.  The crucial guarantee --
+            # no crash -- is already checked by assert_python_ok() above.
+            self.assertIn(b'RuntimeWarning', err)
+            self.assertIn(b'gh-83274', err)
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):
