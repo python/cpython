@@ -2889,7 +2889,7 @@ PyTypeObject PySet_Type = {
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
     set_init,                           /* tp_init */
-    PyType_GenericAlloc,                /* tp_alloc */
+    _PyType_AllocNoTrack,               /* tp_alloc */
     set_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = set_vectorcall,
@@ -2981,7 +2981,7 @@ PyTypeObject PyFrozenSet_Type = {
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
-    PyType_GenericAlloc,                /* tp_alloc */
+    _PyType_AllocNoTrack,               /* tp_alloc */
     frozenset_new,                      /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = frozenset_vectorcall,
