@@ -423,7 +423,7 @@ class CheckDtraceProbes(unittest.TestCase):
                 version, stderr = proc.communicate()
 
             if proc.returncode:
-                raise Exception(
+                raise AssertionError(
                     f"Command {' '.join(cmd)!r} failed "
                     f"with exit code {proc.returncode}: "
                     f"stdout={version!r} stderr={stderr!r}"
@@ -464,13 +464,21 @@ class CheckDtraceProbes(unittest.TestCase):
         command = ["readelf", "-n", binary]
         # Force the C locale to disable localization.
         env = dict(os.environ, LC_ALL="C")
-        stdout, _ = subprocess.Popen(
+        proc = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
             env=env,
-        ).communicate()
+        )
+        with proc:
+            stdout, _ = proc.communicate()
+
+        if proc.returncode:
+            raise AssertionError(
+                f"Command {' '.join(command)!r} failed "
+                f"with exit code {proc.returncode}: stdout={stdout!r}"
+            )
         return stdout
 
     def test_check_probes(self):
