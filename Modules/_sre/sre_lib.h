@@ -1848,6 +1848,29 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             ptr++;
             RESET_CAPTURE_GROUP();
         }
+    } else if (pattern[0] == SRE_OP_AT &&
+               pattern[1] == SRE_AT_BEGINNING_LINE) {
+        /* pattern is anchored at the start of a line (MULTILINE "^").
+           Only the start of the string and the character after a linebreak
+           can match, so jump from one line start to the next instead of
+           trying SRE(match) at every position. */
+        end = (SRE_CHAR *)state->end;
+        TRACE(("|%p|%p|SEARCH AT_BEGINNING_LINE\n", pattern, ptr));
+        state->start = state->ptr = ptr;
+        status = SRE(match)(state, pattern, 1);
+        state->must_advance = 0;
+        while (status == 0) {
+            /* skip to the next linebreak ... */
+            while (ptr < end && !SRE_IS_LINEBREAK((int) *ptr))
+                ptr++;
+            if (ptr >= end)
+                return 0;
+            ptr++;  /* ... and step past it, onto a line start */
+            RESET_CAPTURE_GROUP();
+            TRACE(("|%p|%p|SEARCH AT_BEGINNING_LINE\n", pattern, ptr));
+            state->start = state->ptr = ptr;
+            status = SRE(match)(state, pattern, 0);
+        }
     } else {
         /* general case */
         assert(ptr <= end);
@@ -1863,19 +1886,6 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             return 0;
         }
         while (status == 0 && ptr < end) {
-            if (pattern[0] == SRE_OP_AT &&
-                pattern[1] == SRE_AT_BEGINNING_LINE &&
-                (void*) ptr > state->beginning &&
-                !SRE_IS_LINEBREAK((int) ptr[-1]))
-            {
-                /* fast-forward to the next newline character */
-                while (ptr < end && !SRE_IS_LINEBREAK((int) *ptr)) {
-                    ptr++;
-                }
-                if (ptr >= end) {
-                    return 0;
-                }
-            }
             ptr++;
             RESET_CAPTURE_GROUP();
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
