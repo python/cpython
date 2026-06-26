@@ -613,7 +613,7 @@ character ``'$'``.
 
       Matches ``[0-9]`` if the :py:const:`~re.ASCII` flag is used.
 
-      __ https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G134153
+      __ https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G124142
 
    For 8-bit (bytes) patterns:
       Matches any decimal digit in the ASCII character set;
@@ -679,6 +679,51 @@ character ``'$'``.
    If the :py:const:`~re.LOCALE` flag is used,
    matches characters which are neither alphanumeric in the current locale
    nor the underscore.
+
+.. index:: single: \p; in regular expressions
+           single: \P; in regular expressions
+
+``\p{property=value}``, ``\p{value}``
+   Matches any character with the given Unicode property
+   (see `Unicode Technical Standard #18
+   <https://unicode.org/reports/tr18/>`_, requirement RL1.2 "Properties").
+   Property and value names are matched loosely:
+   case, whitespace, ``'-'`` and ``'_'`` are ignored.
+   The following properties are supported:
+
+   * The ``General_Category`` property (short name ``gc``),
+     spelled ``\p{Lu}``, ``\p{gc=Lu}`` or, for a one-letter group, ``\p{L}``.
+     The supported values are the groups ``L``, ``N``, ``Z`` and ``C`` and the
+     values ``Lu``, ``Lt``, ``Lm``, ``Nd``, ``Nl``, ``No``, ``Zs``, ``Zl``,
+     ``Zp``, ``Cc``, ``Cf``, ``Cs``, ``Co`` and ``Cn``.
+   * The binary properties ``XID_Start``, ``XID_Continue``, ``Alphabetic``,
+     ``Lowercase``, ``Uppercase``, ``Numeric``, ``Printable``, ``Cased`` and
+     ``Case_Ignorable``.  A binary property may also be spelled
+     ``\p{name=yes}`` or ``\p{name=no}``.
+   * The POSIX compatibility classes ``alpha``, ``alnum``, ``blank``,
+     ``cntrl``, ``digit``, ``graph``, ``lower``, ``print``, ``space``,
+     ``upper``, ``word`` and ``xdigit``.
+   * The properties ``ASCII``, ``Any``, ``Assigned``,
+     ``Noncharacter_Code_Point``, ``Join_Control``, ``Regional_Indicator``,
+     ``ASCII_Hex_Digit``, ``Hex_Digit``, ``Pattern_Syntax`` and
+     ``Pattern_White_Space``.
+
+   Where a supported property corresponds to a :mod:`unicodedata` accessor or
+   :class:`str` method, the set of characters it matches is exactly the one
+   they report.  For consistency with these, ``space`` follows
+   :py:meth:`str.isspace` (like ``\s``) and ``xdigit`` matches only the ASCII
+   hexadecimal digits.
+
+   This is only recognized in Unicode (str) patterns.
+   In bytes patterns it is an error.
+
+   .. versionadded:: next
+
+``\P{...}``
+   Matches any character which does *not* have the given Unicode property.
+   This is the opposite of ``\p``.
+
+   .. versionadded:: next
 
 .. index:: single: \z; in regular expressions
            single: \Z; in regular expressions
