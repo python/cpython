@@ -5776,6 +5776,77 @@ _curses_has_key_impl(PyObject *module, int key)
 }
 #endif
 
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS
+/*[clinic input]
+_curses.define_key
+
+    definition: str(accept={str, NoneType})
+        Escape sequence to bind, or None to remove a binding.
+    keycode: int
+        Key code to generate.
+    /
+
+Define an escape sequence for a key code.
+
+If definition is None, any existing binding for keycode is removed.
+If keycode is zero or negative, the binding for definition is removed.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_define_key_impl(PyObject *module, const char *definition,
+                        int keycode)
+/*[clinic end generated code: output=9dc655653bb09062 input=8db9e0d8802c709f]*/
+{
+    PyCursesStatefulInitialised(module);
+
+    return curses_check_err(module, define_key(definition, keycode),
+                            "define_key", NULL);
+}
+
+/*[clinic input]
+_curses.key_defined
+
+    definition: str
+        Escape sequence.
+    /
+
+Return the key code bound to an escape sequence.
+
+Return 0 if no key code is bound to the escape sequence, or -1 if the
+escape sequence is a prefix of another bound sequence (so ambiguous).
+[clinic start generated code]*/
+
+static PyObject *
+_curses_key_defined_impl(PyObject *module, const char *definition)
+/*[clinic end generated code: output=2d357e01fe277c88 input=03749d7bd79d8d2c]*/
+{
+    PyCursesStatefulInitialised(module);
+
+    return PyLong_FromLong(key_defined(definition));
+}
+
+/*[clinic input]
+_curses.keyok
+
+    keycode: int
+        Key code.
+    enable: bool
+        Whether the key code is interpreted.
+    /
+
+Enable or disable interpretation of an individual key code.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_keyok_impl(PyObject *module, int keycode, int enable)
+/*[clinic end generated code: output=43eab0b4d9973e44 input=5bee51d850f481b9]*/
+{
+    PyCursesStatefulInitialised(module);
+
+    return curses_check_err(module, keyok(keycode, enable), "keyok", NULL);
+}
+#endif
+
 /*[clinic input]
 _curses.init_color
 
@@ -7759,6 +7830,9 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_HAS_IC_METHODDEF
     _CURSES_HAS_IL_METHODDEF
     _CURSES_HAS_KEY_METHODDEF
+    _CURSES_DEFINE_KEY_METHODDEF
+    _CURSES_KEY_DEFINED_METHODDEF
+    _CURSES_KEYOK_METHODDEF
     _CURSES_HALFDELAY_METHODDEF
     _CURSES_INIT_COLOR_METHODDEF
     _CURSES_INIT_PAIR_METHODDEF
