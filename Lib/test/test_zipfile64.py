@@ -197,8 +197,8 @@ class TestRepack(unittest.TestCase):
             self.assertFalse(f.closed)
 
     def test_strip_removed_large_file_with_dd_no_sig(self):
-        """Should scan for the data descriptor (without signature) of a removed
-        large file without causing a memory issue."""
+        """Should scan for the unsigned data descriptor of a removed large file
+        without causing a memory issue."""
         # Reduce data scale for this test, as it's especially slow...
         self.datacount = 30*1024**2 // len(self.data)
 
@@ -208,11 +208,11 @@ class TestRepack(unittest.TestCase):
             file = 'file.txt'
             file1 = 'largefile.txt'
             data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
-            with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
-                with zipfile.ZipFile(Unseekable(f), 'w') as zh:
-                    with zh.open(file1, 'w', force_zip64=True) as fh:
-                        self._write_large_file(fh)
-                    zh.writestr(file, data)
+            with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig), \
+                 zipfile.ZipFile(Unseekable(f), 'w') as zh:
+                with zh.open(file1, 'w', force_zip64=True) as fh:
+                    self._write_large_file(fh)
+                zh.writestr(file, data)
 
             with self.assert_memory_usage(self.allowed_memory), \
                  zipfile.ZipFile(f, 'a') as zh:
@@ -226,20 +226,19 @@ class TestRepack(unittest.TestCase):
 
     @requires_zlib()
     def test_strip_removed_large_file_with_dd_no_sig_by_decompression(self):
-        """Should scan for the data descriptor (without signature) of a removed
-        large file without causing a memory issue."""
+        """Should scan for the unsigned data descriptor (via tracing compressed
+        block end) of a removed large file without causing a memory issue."""
         # Try the temp file.  If we do TESTFN2, then it hogs
         # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
             file = 'file.txt'
             file1 = 'largefile.txt'
             data = b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'
-            with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig):
-                with zipfile.ZipFile(Unseekable(f), 'w',
-                                     compression=zipfile.ZIP_DEFLATED) as zh:
-                    with zh.open(file1, 'w', force_zip64=True) as fh:
-                        self._write_large_file(fh)
-                    zh.writestr(file, data)
+            with mock.patch('zipfile.struct.pack', side_effect=struct_pack_no_dd_sig), \
+                 zipfile.ZipFile(Unseekable(f), 'w', compression=zipfile.ZIP_DEFLATED) as zh:
+                with zh.open(file1, 'w', force_zip64=True) as fh:
+                    self._write_large_file(fh)
+                zh.writestr(file, data)
 
             with self.assert_memory_usage(self.allowed_memory), \
                  zipfile.ZipFile(f, 'a') as zh:
