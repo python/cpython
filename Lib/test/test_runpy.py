@@ -916,6 +916,45 @@ class TestExit(unittest.TestCase):
         ham = self.ham
         self.assertSigInt(["-m", ham.stem], cwd=ham.parent)
 
+    # Tests for sys.exit() handling (gh-152132)
+    @requires_subprocess()
+    def test_sys_exit_run_command(self):
+        cmd = [sys.executable, '-c', 'import sys; sys.exit(42)']
+        proc = subprocess.run(cmd, text=True, stderr=subprocess.PIPE)
+        self.assertEqual(proc.returncode, 42)
+
+    @requires_subprocess()
+    def test_sys_exit_run_command_default(self):
+        cmd = [sys.executable, '-c', 'import sys; sys.exit()']
+        proc = subprocess.run(cmd, text=True, stderr=subprocess.PIPE)
+        self.assertEqual(proc.returncode, 0)
+
+    @requires_subprocess()
+    def test_sys_exit_run_command_message(self):
+        cmd = [sys.executable, '-c', "import sys; sys.exit('error message')"]
+        proc = subprocess.run(cmd, text=True, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn('error message', proc.stderr)
+
+    @requires_subprocess()
+    def test_sys_exit_run_file(self):
+        with self.tmp_path() as tmp:
+            script = tmp / "exit_script.py"
+            script.write_text("import sys; sys.exit(42)")
+            cmd = [sys.executable, str(script)]
+            proc = subprocess.run(cmd, text=True, stderr=subprocess.PIPE)
+            self.assertEqual(proc.returncode, 42)
+
+    @requires_subprocess()
+    def test_sys_exit_run_module(self):
+        with self.tmp_path() as tmp:
+            script = tmp / "exit_mod.py"
+            script.write_text("import sys; sys.exit(42)")
+            cmd = [sys.executable, '-m', 'exit_mod']
+            proc = subprocess.run(cmd, cwd=tmp, text=True, stderr=subprocess.PIPE)
+            self.assertEqual(proc.returncode, 42)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,7 +10,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_pythonrun.h"     // _PyRun_SimpleFileObjectEx()
+#include "pycore_pythonrun.h"     // _PyRun_SimpleFileObjectNoPrint()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Dedent()
 
@@ -258,12 +258,12 @@ pymain_run_command(wchar_t *command)
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
-    PyObject *res = _PyRun_SimpleStringFlagsEx(PyBytes_AsString(bytes), "<string>", &cf);
+    PyObject *result = _PyRun_SimpleStringFlagsNoPrint(PyBytes_AsString(bytes), "<string>", &cf);
     Py_DECREF(bytes);
-    if (res == NULL) {
+    if (result == NULL) {
         return pymain_exit_err_print();
     }
-    Py_DECREF(res);
+    Py_DECREF(result);
     return 0;
 
 error:
@@ -409,14 +409,14 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
-    /* Use _PyRun_SimpleFileObjectEx which returns PyObject* without calling
+    /* Use _PyRun_SimpleFileObjectNoPrint which returns PyObject* without calling
        PyErr_Print(), so we can handle SystemExit properly via pymain_exit_err_print. */
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    PyObject *v = _PyRun_SimpleFileObjectEx(fp, filename, 1, &cf);
-    if (v == NULL) {
+    PyObject *result = _PyRun_SimpleFileObjectNoPrint(fp, filename, 1, &cf);
+    if (result == NULL) {
         return pymain_exit_err_print();
     }
-    Py_DECREF(v);
+    Py_DECREF(result);
     return 0;
 }
 
