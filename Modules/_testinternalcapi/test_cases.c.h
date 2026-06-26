@@ -3978,11 +3978,18 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
-                int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+                PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
+                int err = _PyList_AppendTakeRef((PyListObject *)self_o, Py_NewRef(arg_o));
                 UNLOCK_OBJECT(self_o);
                 if (err) {
                     JUMP_TO_LABEL(error);
                 }
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_CLOSE(arg);
+                _PyFrame_StackPointerInvalidate(frame);
                 c = callable;
                 s = self;
                 none = PyStackRef_None;
@@ -3990,11 +3997,9 @@
             // _POP_TOP
             {
                 value = s;
-                stack_pointer[-3] = none;
-                stack_pointer[-2] = c;
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
+                stack_pointer[-2] = none;
+                stack_pointer[-1] = c;
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
                 PyStackRef_XCLOSE(value);
                 _PyFrame_StackPointerInvalidate(frame);
