@@ -12541,7 +12541,7 @@
             PyObject *ns = LOCALS();
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            int error = _PyEval_StoreName(tstate, v, name, ns, oparg);
+            int error = _PyEval_StoreName(tstate, v, name, ns);
             _PyFrame_StackPointerInvalidate(frame);
             if (PyStackRef_IsNull(v)) {
             }

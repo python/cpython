@@ -1997,7 +1997,7 @@ dummy_func(
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
-            int error = _PyEval_StoreName(tstate, v, name, ns, oparg);
+            int error = _PyEval_StoreName(tstate, v, name, ns);
             if (PyStackRef_IsNull(v)) {
                 DEAD(v);
             }

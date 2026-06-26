@@ -203,3 +203,4 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('LOAD_CONST', 0),
             ('RETURN_VALUE', None)
         ]
+        self.codegen_test(snippet, expected)
