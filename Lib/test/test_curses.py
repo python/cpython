@@ -442,7 +442,8 @@ class TestCurses(unittest.TestCase):
                             curses.complexchar('A', curses.A_BOLD))
         self.assertNotEqual(curses.complexchar('A'), curses.complexchar('B'))
         # repr() shows only a non-default attr/pair, and is a constructor call.
-        ns = {'_curses': sys.modules[type(cc).__module__]}
+        modname = type(cc).__module__
+        ns = {modname: sys.modules[modname]}
         self.assertNotIn('attr=', repr(curses.complexchar('z')))
         self.assertNotIn('pair=', repr(curses.complexchar('z')))
         r = repr(curses.complexchar('A', curses.A_BOLD))
@@ -2186,6 +2187,24 @@ class MiscTests(unittest.TestCase):
     def test_has_extended_color_support(self):
         r = curses.has_extended_color_support()
         self.assertIsInstance(r, bool)
+
+    def test_type_names(self):
+        # The curses types report their public module rather than the
+        # underscore extension that implements them.
+        for name in 'window', 'complexchar', 'complexstr', 'screen', 'error':
+            tp = getattr(curses, name)
+            self.assertEqual(tp.__module__, 'curses')
+            self.assertEqual(tp.__qualname__, name)
+            self.assertEqual(tp.__name__, name)
+
+    @requires_curses_func('panel')
+    def test_panel_type_names(self):
+        import curses.panel
+        for name in 'panel', 'error':
+            tp = getattr(curses.panel, name)
+            self.assertEqual(tp.__module__, 'curses.panel')
+            self.assertEqual(tp.__qualname__, name)
+            self.assertEqual(tp.__name__, name)
 
 
 class TestAscii(unittest.TestCase):
