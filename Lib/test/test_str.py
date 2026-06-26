@@ -607,9 +607,7 @@ class StrTest(string_tests.StringLikeTest,
         text = 'abc def'
         self.assertIs(text.replace(pattern, pattern), text)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, reason="_testcapi is required for this test")
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.nomemtest
     def test_replace_oom(self):
         # https://github.com/python/cpython/issues/152228
         s1 = "轘" * 4
