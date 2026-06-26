@@ -308,8 +308,6 @@ struct _import_runtime_state {
            Modules are added there and looked up in _imp.find_extension(). */
         struct _Py_hashtable_t *hashtable;
     } extensions;
-    /* Package context -- the full module name for package imports */
-    const char * pkgcontext;
 };
 
 struct _import_state {

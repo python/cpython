@@ -75,7 +75,7 @@ def parse_mtestfile(fname):
     -- starts a comment
     blank lines, or lines containing only a comment, are ignored
     other lines are expected to have the form
-      id fn arg -> expected [flag]*
+      id fn arg... -> expected [flag]*
 
     """
     with open(fname, encoding="utf-8") as fp:
@@ -87,12 +87,12 @@ def parse_mtestfile(fname):
                 continue
 
             lhs, rhs = line.split('->')
-            id, fn, arg = lhs.split()
+            id, fn, *args = lhs.split()
             rhs_pieces = rhs.split()
             exp = rhs_pieces[0]
             flags = rhs_pieces[1:]
 
-            yield (id, fn, float(arg), float(exp), flags)
+            yield (id, fn, [float(arg) for arg in args], float(exp), flags)
 
 
 def parse_testfile(fname):
@@ -2141,10 +2141,10 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_mtestfile(self):
-        fail_fmt = "{}: {}({!r}): {}"
+        fail_fmt = "{}: {}{!r}: {}"
 
         failures = []
-        for id, fn, arg, expected, flags in parse_mtestfile(math_testcases):
+        for id, fn, args, expected, flags in parse_mtestfile(math_testcases):
             func = getattr(math, fn)
 
             if 'invalid' in flags or 'divide-by-zero' in flags:
@@ -2153,7 +2153,7 @@ class MathTests(unittest.TestCase):
                 expected = 'OverflowError'
 
             try:
-                got = func(arg)
+                got = func(*args)
             except ValueError:
                 got = 'ValueError'
             except OverflowError:
@@ -2176,7 +2176,7 @@ class MathTests(unittest.TestCase):
                 # general.
                 abs_tol = 1e-15
 
-            elif fn == 'erfc' and arg >= 0.0:
+            elif fn == 'erfc' and (arg := args[0]) >= 0.0:
                 # erfc has less-than-ideal accuracy for large
                 # arguments (x ~ 25 or so), mainly due to the
                 # error involved in computing exp(-x*x).
@@ -2199,7 +2199,7 @@ class MathTests(unittest.TestCase):
             if failure is None:
                 continue
 
-            msg = fail_fmt.format(id, fn, arg, failure)
+            msg = fail_fmt.format(id, fn, args, failure)
             failures.append(msg)
 
         if failures:

@@ -256,6 +256,32 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
         dst.write(buf)
     return
 
+# Maximum number of bytes read in a single call when reading a member's
+# extended header (a GNU long name/link or a pax header).  The size of such
+# a header is taken from the archive and is not trustworthy, so it is read in
+# bounded chunks to avoid a huge up-front allocation when a crafted or
+# truncated archive claims far more data than the file actually contains
+# (gh-151497).
+_EXTHEADER_READ_CHUNK = 1024 * 1024  # 1 MiB
+
+def _safe_read(fileobj, size):
+    """Read up to *size* bytes from *fileobj* in bounded chunks.
+
+    Returns the same bytes as ``fileobj.read(size)`` would (including a short
+    result at end of file), but limits pre-allocation, so an
+    oversized size field in a crafted header cannot force a huge allocation.
+    """
+    if size <= _EXTHEADER_READ_CHUNK:
+        return fileobj.read(size)
+    chunks = []
+    while size > 0:
+        chunk = fileobj.read(min(size, _EXTHEADER_READ_CHUNK))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        size -= len(chunk)
+    return b"".join(chunks)
+
 def _safe_print(s):
     encoding = getattr(sys.stdout, 'encoding', None)
     if encoding is not None:
@@ -380,7 +406,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("bz2 module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = bz2.BZ2Decompressor()
                     self.exception = OSError
                 else:
@@ -392,7 +417,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("lzma module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
@@ -403,7 +427,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("compression.zstd module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = zstd.ZstdDecompressor()
                     self.exception = zstd.ZstdError
                 else:
@@ -485,7 +508,6 @@ class _Stream:
         """Initialize for reading a gzip compressed fileobj.
         """
         self.cmp = self.zlib.decompressobj(-self.zlib.MAX_WBITS)
-        self.dbuf = b""
 
         # taken from gzip.GzipFile with some alterations
         if self.__read(2) != b"\037\213":
@@ -524,7 +546,9 @@ class _Stream:
         if pos - self.pos >= 0:
             blocks, remainder = divmod(pos - self.pos, self.bufsize)
             for i in range(blocks):
-                self.read(self.bufsize)
+                data = self.read(self.bufsize)
+                if not data:
+                    break
             self.read(remainder)
         else:
             raise StreamError("seeking backwards is not allowed")
@@ -543,26 +567,44 @@ class _Stream:
         if self.comptype == "tar":
             return self.__read(size)
 
-        c = len(self.dbuf)
-        t = [self.dbuf]
+        c = 0
+        t = []
         while c < size:
-            # Skip underlying buffer to avoid unaligned double buffering.
-            if self.buf:
-                buf = self.buf
-                self.buf = b""
+            if self.comptype == "gz":
+                # zlib interface is different than others.
+                # It returns data in unconsumed_tail.
+                if self.buf:
+                    cbuf = self.buf
+                    self.buf = b""
+                else:
+                    cbuf = self.fileobj.read(self.bufsize)
+                    if not cbuf:
+                        break
+
+                try:
+                    dbuf = self.cmp.decompress(cbuf, size - c)
+                    self.buf = self.cmp.unconsumed_tail
+                except self.exception as e:
+                    raise ReadError("invalid compressed data") from e
             else:
-                buf = self.fileobj.read(self.bufsize)
-                if not buf:
-                    break
-            try:
-                buf = self.cmp.decompress(buf)
-            except self.exception as e:
-                raise ReadError("invalid compressed data") from e
-            t.append(buf)
-            c += len(buf)
-        t = b"".join(t)
-        self.dbuf = t[size:]
-        return t[:size]
+                # Other decompressors have needs_input.
+                # decompress() can buffer data internally.
+                if self.cmp.needs_input:
+                    cbuf = self.fileobj.read(self.bufsize)
+                    if not cbuf:
+                        break
+                else:
+                    cbuf = b""
+
+                try:
+                    dbuf = self.cmp.decompress(cbuf, size - c)
+                except self.exception as e:
+                    raise ReadError("invalid compressed data") from e
+
+            t.append(dbuf)
+            c += len(dbuf)
+
+        return b"".join(t)
 
     def __read(self, size):
         """Return size bytes from stream. If internal buffer is empty,
@@ -1410,7 +1452,7 @@ class TarInfo(object):
         """Process the blocks that hold a GNU longname
            or longlink member.
         """
-        buf = tarfile.fileobj.read(self._block(self.size))
+        buf = _safe_read(tarfile.fileobj, self._block(self.size))
 
         # Fetch the next header and process it.
         try:
@@ -1466,7 +1508,7 @@ class TarInfo(object):
            POSIX.1-2008.
         """
         # Read the header information.
-        buf = tarfile.fileobj.read(self._block(self.size))
+        buf = _safe_read(tarfile.fileobj, self._block(self.size))
 
         # A pax header stores supplemental information for either
         # the following file (extended) or all following files
@@ -2770,6 +2812,9 @@ class TarFile(object):
                     "makelink_with_filter: if filter_function is not None, "
                     + "extraction_root must also not be None")
             try:
+                filter_function(
+                    unfiltered.replace(name=tarinfo.name, deep=False),
+                    extraction_root)
                 filtered = filter_function(unfiltered, extraction_root)
             except _FILTER_ERRORS as cause:
                 raise LinkFallbackError(tarinfo, unfiltered.name) from cause

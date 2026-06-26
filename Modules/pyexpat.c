@@ -1473,6 +1473,9 @@ pyexpat_encoding_create(const char *name, PyObject *mapping)
 static int
 pyexpat_encoding_convert(void *data, const char *s)
 {
+    if (PyErr_Occurred()) {
+        return -1;
+    }
     pyexpat_encoding_info *info = (pyexpat_encoding_info *)data;
     int i = (unsigned char)s[0];
     assert(info->map[i] < -1);
@@ -2546,8 +2549,8 @@ pyexpat_exec(PyObject *mod)
     capi->SetBillionLaughsAttackProtectionActivationThreshold = XML_SetBillionLaughsAttackProtectionActivationThreshold;
     capi->SetBillionLaughsAttackProtectionMaximumAmplification = XML_SetBillionLaughsAttackProtectionMaximumAmplification;
 #else
-    capi->SetAllocTrackerActivationThreshold = NULL;
-    capi->SetAllocTrackerMaximumAmplification = NULL;
+    capi->SetBillionLaughsAttackProtectionActivationThreshold = NULL;
+    capi->SetBillionLaughsAttackProtectionMaximumAmplification = NULL;
 #endif
 
     /* export using capsule */

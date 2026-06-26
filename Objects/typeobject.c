@@ -1594,7 +1594,12 @@ type_set_qualname(PyObject *tp, PyObject *value, void *context)
     }
 
     et = (PyHeapTypeObject*)type;
-    Py_SETREF(et->ht_qualname, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_qualname = et->ht_qualname;
+    et->ht_qualname = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_DECREF(old_qualname);
     return 0;
 }
 
@@ -3712,9 +3717,9 @@ find_best_base(PyObject *bases)
     for (i = 0; i < n; i++) {
         PyObject *base_proto = PyTuple_GET_ITEM(bases, i);
         if (!PyType_Check(base_proto)) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_TypeError,
-                "bases must be types");
+                "bases must be types; got '%T'", base_proto);
             return NULL;
         }
         PyTypeObject *base_i = (PyTypeObject *)base_proto;
@@ -3788,7 +3793,7 @@ solid_base(PyTypeObject *type)
 // or when __bases__ is re-assigned.  Since the slots are read without atomic
 // operations and without locking, we can only safely update them while the
 // world is stopped.  However, with the world stopped, we are very limited on
-// which APIs can be safely used.  For example, calling _PyObject_HashFast()
+// which APIs can be safely used.  For example, calling _PyObject_HashDictKey()
 // or _PyDict_GetItemRef_KnownHash() are not safe and can potentially cause
 // deadlocks.  Hashing can be re-entrant and _PyDict_GetItemRef_KnownHash can
 // acquire a lock if the dictionary is not owned by the current thread, to
@@ -4162,8 +4167,9 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
     for (i = 0; i < nbases; i++) {
         tmp = PyTuple_GET_ITEM(bases, i);
         tmptype = Py_TYPE(tmp);
-        if (PyType_IsSubtype(winner, tmptype))
+        if (PyType_IsSubtype(winner, tmptype)) {
             continue;
+        }
         if (PyType_IsSubtype(tmptype, winner)) {
             winner = tmptype;
             continue;
@@ -5487,6 +5493,7 @@ type_from_slots_or_spec(
     Py_ssize_t name_buf_len = strlen(it.name) + 1;
     _ht_tpname = PyMem_Malloc(name_buf_len);
     if (_ht_tpname == NULL) {
+        PyErr_NoMemory();
         goto finally;
     }
     memcpy(_ht_tpname, it.name, name_buf_len);
@@ -5524,6 +5531,12 @@ type_from_slots_or_spec(
         }
     }
 
+    /* Calculate best base, and check that all bases are type objects */
+    PyTypeObject *base = find_best_base(bases);  // borrowed ref
+    if (base == NULL) {
+        goto finally;
+    }
+
     /* Calculate the metaclass */
 
     if (!metaclass) {
@@ -5546,11 +5559,6 @@ type_from_slots_or_spec(
         goto finally;
     }
 
-    /* Calculate best base, and check that all bases are type objects */
-    PyTypeObject *base = find_best_base(bases);  // borrowed ref
-    if (base == NULL) {
-        goto finally;
-    }
     // find_best_base() should check Py_TPFLAGS_BASETYPE & raise a proper
     // exception, here we just check its work
     assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
@@ -5772,7 +5780,7 @@ type_from_slots_or_spec(
     ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
 #endif
 
- finally:
+finally:
     if (PyErr_Occurred()) {
         Py_CLEAR(res);
     }
@@ -6129,7 +6137,7 @@ PyObject_GetItemData(PyObject *obj)
 static int
 find_name_in_mro(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    Py_hash_t hash = _PyObject_HashFast(name);
+    Py_hash_t hash = _PyObject_HashDictKey(name);
     if (hash == -1) {
         PyErr_Clear();
         return -1;
@@ -7018,7 +7026,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     if (et->ht_cached_keys) {
-        _PyDictKeys_DecRef(et->ht_cached_keys);
+        _PyDict_RemoveKeysForClass(et);
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
@@ -11327,6 +11335,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
 
     wrapper = PyObject_GC_New(PyBufferWrapper, &_PyBufferWrapper_Type);
     if (wrapper == NULL) {
+        PyBuffer_Release(buffer);
         goto fail;
     }
     wrapper->mv = ret;

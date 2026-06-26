@@ -426,6 +426,16 @@ class ParseTest(unittest.TestCase):
         with self.assertRaises(LookupError):
             parser.Parse(data, True)
 
+    @support.subTests('sample,exception', [
+        (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1</x', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1', expat.ExpatError),
+    ])
+    def test_multibyte_encoding_errors(self, sample, exception):
+        parser = expat.ParserCreate()
+        data = b'<?xml version="1.0" encoding="EUC-JP"?>\n' + sample
+        with self.assertRaises(exception):
+            parser.Parse(data, True)
 
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
@@ -866,7 +876,7 @@ class ChardataBufferTest(unittest.TestCase):
     @support.requires_resource('cpu')
     @support.requires_resource('walltime')
     @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
-    def test_large_character_data_does_not_crash(self):
+    def test_large_character_data_does_not_crash(self, size):
         # See https://github.com/python/cpython/issues/148441
         parser = expat.ParserCreate()
         parser.buffer_text = True

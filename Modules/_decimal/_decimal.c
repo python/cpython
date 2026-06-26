@@ -188,7 +188,7 @@ find_state_ternary(PyObject *left, PyObject *right, PyObject *modulus)
  *    sizeof(size_t) == sizeof(mpd_uint_t) == sizeof(mpd_ssize_t)
  */
 
-#ifdef TEST_COVERAGE
+#ifdef Py_DEBUG
   #undef Py_LOCAL_INLINE
   #define Py_LOCAL_INLINE Py_LOCAL
 #endif
