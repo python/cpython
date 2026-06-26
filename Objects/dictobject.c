@@ -7986,6 +7986,7 @@ PyObject_ClearManagedDict(PyObject *obj)
                 /* Clear the dict */
                 Py_BEGIN_CRITICAL_SECTION(dict);
                 PyDictKeysObject *oldkeys = dict->ma_keys;
+                ensure_shared_on_resize(dict);
                 set_keys(dict, Py_EMPTY_KEYS);
                 dict->ma_values = NULL;
                 dictkeys_decref(oldkeys, IS_DICT_SHARED(dict));
