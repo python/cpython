@@ -449,7 +449,6 @@ class ClassTests(unittest.TestCase):
 
     def testHasAttrString(self):
         import sys
-        from test.support import import_helper
         _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
         class A:
