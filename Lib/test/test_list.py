@@ -345,6 +345,24 @@ class ListTest(list_tests.CommonTest):
         else:
             self.assertNotEqual(rc, -int(signal.SIGSEGV))
 
+    @support.cpython_only
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    def test_list_append_nomemory_debug(self):
+        # gh-151119: LIST_APPEND must sync the eval stack before list resize
+        # can decref (debug build assert in _Py_Dealloc otherwise).
+        code = textwrap.dedent("""
+            import _testcapi
+            try:
+                _testcapi.set_nomemory(2)
+                [f'1{x}' for x in range(1)]
+            except MemoryError:
+                pass
+            finally:
+                _testcapi.set_nomemory(0)
+            """)
+        rc, _, _ = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+
     def test_deopt_from_append_list(self):
         # gh-132011: it used to crash, because
         # of `CALL_LIST_APPEND` specialization failure.

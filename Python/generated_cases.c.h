@@ -3978,7 +3978,9 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 UNLOCK_OBJECT(self_o);
                 if (err) {
                     JUMP_TO_LABEL(error);
@@ -8667,8 +8669,10 @@
             _PyStackRef v;
             v = stack_pointer[-1];
             list = stack_pointer[-2 - (oparg-1)];
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _PyList_AppendTakeRef((PyListObject *)PyStackRef_AsPyObjectBorrow(list),
                 PyStackRef_AsPyObjectSteal(v));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 JUMP_TO_LABEL(pop_1_error);
             }

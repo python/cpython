@@ -1,0 +1,3 @@
+Fix a debug-build crash in ``LIST_APPEND`` when list resize fails under
+simulated memory exhaustion. The eval stack pointer is now saved before
+``_PyList_AppendTakeRef`` runs, matching ``SET_ADD``.
