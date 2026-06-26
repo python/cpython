@@ -1,0 +1,2 @@
+Defer GC tracking in :meth:`set.union`, :meth:`set.difference` and
+:meth:`set.__sub__`. Patch by Donghee Na.
