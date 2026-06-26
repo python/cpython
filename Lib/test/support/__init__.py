@@ -1307,8 +1307,6 @@ def bigmemtest(size, memuse, dry_run=True):
 
 def nomemtest(f):
     """Check that we can use this test with `_testcapi.set_nomemory`."""
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
     from .import_helper import import_module
 
     @functools.wraps(f)
@@ -1317,6 +1315,8 @@ def nomemtest(f):
         return f(*args, **kwargs)
 
     return unittest.skipIf(
+        # Python built with Py_TRACE_REFS fail with a fatal error in
+        # _PyRefchain_Trace() on memory allocation error.
         Py_TRACE_REFS,
         'cannot test Py_TRACE_REFS build',
     )(cpython_only(internal))
