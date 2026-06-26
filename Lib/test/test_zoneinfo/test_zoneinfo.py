@@ -1145,6 +1145,12 @@ class TZStrTest(ZoneInfoTestBase):
             "+11",  # Unquoted alphanumeric
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
+            # Unquoted abbreviation with embedded or leading whitespace
+            # (accepted by the unmodified pure parser, rejected by the C
+            # implementation; both reject after the fix).
+            "AB C3",
+            " A B 3",
+            "AAA4BB B,J60/2,J300/2",  # Embedded whitespace in DST
             "PST8PDT,M3.2.0/2",  # Only one transition rule
             # Invalid offset hours
             "AAA168",
@@ -1221,6 +1227,35 @@ class TZStrTest(ZoneInfoTestBase):
                 tzstr_regex = re.escape(invalid_tzstr)
                 with self.assertRaisesRegex(ValueError, tzstr_regex):
                     self.zone_from_tzstr(invalid_tzstr)
+
+    def test_invalid_tzstr_non_ascii_abbr(self):
+        # A non-ASCII letter in an unquoted abbreviation is publicly reachable:
+        # from_file() UTF-8-decodes the footer, so b"AB\xc3\x80C3" decodes to
+        # "ABÀC3" and reaches the parser. The C implementation rejects it
+        # (Py_ISALPHA is ASCII-only); the unmodified pure parser accepted it.
+        #
+        # This case is kept out of the shared invalid_tzstrs list: the C error
+        # message embeds the bytes repr, which a re.escape() of the decoded
+        # string would not match, so each implementation is checked against
+        # its own message.
+        tzstr = "ABÀC3"
+        footer = tzstr.encode("utf-8")
+
+        def from_footer():
+            zonefile = io.BytesIO(self._tzif_header)
+            zonefile.seek(0, 2)
+            zonefile.write(b"\x0A")
+            zonefile.write(footer)
+            zonefile.write(b"\x0A")
+            zonefile.seek(0)
+            return self.klass.from_file(zonefile, key=tzstr)
+
+        if self.module is py_zoneinfo:
+            expected = re.escape(tzstr)
+        else:
+            expected = re.escape(repr(footer))
+        with self.assertRaisesRegex(ValueError, expected):
+            from_footer()
 
     @classmethod
     def _populate_test_cases(cls):

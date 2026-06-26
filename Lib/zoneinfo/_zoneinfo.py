@@ -640,11 +640,11 @@ def _parse_tz_str(tz_str):
 
     parser_re = re.compile(
         r"""
-        (?P<std>[^<0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+        (?P<std>[a-zA-Z]+|<[a-zA-Z0-9+-]+>)
         (?:
             (?P<stdoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)
             (?:
-                (?P<dst>[^0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+                (?P<dst>[a-zA-Z]+|<[a-zA-Z0-9+-]+>)
                 (?P<dstoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)?
             )? # dst
         )? # stdoff

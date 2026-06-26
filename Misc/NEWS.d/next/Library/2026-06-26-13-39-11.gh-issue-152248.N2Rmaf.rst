@@ -1,0 +1,4 @@
+Fix the pure-Python :mod:`zoneinfo` parser accepting an unquoted POSIX TZ
+abbreviation that contains characters other than ASCII letters (for example an
+embedded space), which the C implementation already rejects. Patch by
+tonghuaroot.
