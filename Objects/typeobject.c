@@ -3648,9 +3648,9 @@ find_best_base(PyObject *bases)
     for (i = 0; i < n; i++) {
         PyObject *base_proto = PyTuple_GET_ITEM(bases, i);
         if (!PyType_Check(base_proto)) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_TypeError,
-                "bases must be types");
+                "bases must be types; got '%T'", base_proto);
             return NULL;
         }
         PyTypeObject *base_i = (PyTypeObject *)base_proto;
@@ -4098,8 +4098,9 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
     for (i = 0; i < nbases; i++) {
         tmp = PyTuple_GET_ITEM(bases, i);
         tmptype = Py_TYPE(tmp);
-        if (PyType_IsSubtype(winner, tmptype))
+        if (PyType_IsSubtype(winner, tmptype)) {
             continue;
+        }
         if (PyType_IsSubtype(tmptype, winner)) {
             winner = tmptype;
             continue;
@@ -5423,6 +5424,7 @@ type_from_slots_or_spec(
     Py_ssize_t name_buf_len = strlen(it.name) + 1;
     _ht_tpname = PyMem_Malloc(name_buf_len);
     if (_ht_tpname == NULL) {
+        PyErr_NoMemory();
         goto finally;
     }
     memcpy(_ht_tpname, it.name, name_buf_len);
@@ -5460,6 +5462,12 @@ type_from_slots_or_spec(
         }
     }
 
+    /* Calculate best base, and check that all bases are type objects */
+    PyTypeObject *base = find_best_base(bases);  // borrowed ref
+    if (base == NULL) {
+        goto finally;
+    }
+
     /* Calculate the metaclass */
 
     if (!metaclass) {
@@ -5482,11 +5490,6 @@ type_from_slots_or_spec(
         goto finally;
     }
 
-    /* Calculate best base, and check that all bases are type objects */
-    PyTypeObject *base = find_best_base(bases);  // borrowed ref
-    if (base == NULL) {
-        goto finally;
-    }
     // find_best_base() should check Py_TPFLAGS_BASETYPE & raise a proper
     // exception, here we just check its work
     assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
@@ -5708,7 +5711,7 @@ type_from_slots_or_spec(
     ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
 #endif
 
- finally:
+finally:
     if (PyErr_Occurred()) {
         Py_CLEAR(res);
     }

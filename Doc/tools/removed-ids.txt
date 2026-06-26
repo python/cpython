@@ -7,7 +7,9 @@ c-api/file.html: deprecated-api
 # Removed sections
 library/asyncio-task.html: terminating-a-task-group
 deprecations/index.html: pending-removal-in-python-3-15
+deprecations/index.html: pending-removal-in-python-3-16
 deprecations/index.html: c-api-pending-removal-in-python-3-15
+deprecations/index.html: c-api-pending-removal-in-python-3-16
 
 # Removed libmpdec
 using/configure.html: cmdoption-with-system-libmpdec
@@ -29,3 +31,7 @@ reference/expressions.html: grammar-token-python-grammar-enclosure
 reference/expressions.html: grammar-token-python-grammar-list_display
 reference/expressions.html: grammar-token-python-grammar-parenth_form
 reference/expressions.html: grammar-token-python-grammar-set_display
+
+# Moved to a different page
+c-api/typeobj.html: c.Py_tp_base
+c-api/typeobj.html: c.Py_tp_bases
