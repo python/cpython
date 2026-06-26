@@ -157,6 +157,7 @@ cache_resize(PyTypeObject *type, struct type_cache *cache)
     if (new_cache == NULL) {
         return -1;
     }
+    OBJECT_STAT_INC(type_cache_resizes);
     for (uint32_t i = 0; i < old_size; i++) {
         if (cache->hashtable[i].name != NULL) {
             cache_insert(new_cache, cache->hashtable[i].name, cache->hashtable[i].value);
@@ -238,6 +239,7 @@ _PyTypeCache_Lookup(PyTypeObject *type, PyObject *name)
 void
 _PyTypeCache_Invalidate(PyTypeObject *type)
 {
+    OBJECT_STAT_INC(type_cache_invalidations);
     struct type_cache *cache = cache_get(type);
     cache_set(type, &empty_cache);
     cache_free_delayed(cache);
