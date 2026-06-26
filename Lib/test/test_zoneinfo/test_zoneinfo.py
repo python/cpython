@@ -1228,8 +1228,8 @@ class TZStrTest(ZoneInfoTestBase):
 
     def test_invalid_tzstr_non_ascii_abbr(self):
         # A non-ASCII letter reaches the parser via from_file()'s UTF-8 decode.
-        # It can't use the shared invalid_tzstrs list (encode("ascii") fails and
-        # the C message holds the bytes repr), so check each parser's message.
+        # It needs a separate test: it can't be ASCII-encoded for the shared
+        # invalid_tzstrs list, and the C error message holds the bytes repr.
         tzstr = "ABÀC3"
         footer = tzstr.encode("utf-8")
 
