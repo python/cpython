@@ -138,6 +138,11 @@ curses
   attribute value, and the corresponding ``WA_*`` attribute constants.
   (Contributed by Serhiy Storchaka in :gh:`152219`.)
 
+* Add the :mod:`curses` functions :func:`~curses.scr_dump`,
+  :func:`~curses.scr_restore`, :func:`~curses.scr_init` and
+  :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
+  (Contributed by Serhiy Storchaka in :gh:`152260`.)
+
 gzip
 ----
 
