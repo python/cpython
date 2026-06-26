@@ -2431,7 +2431,7 @@ PythonCmdDelete(ClientData clientData)
     PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
 
     ENTER_PYTHON
-    Py_XDECREF(data->self);
+    /* data->self is borrowed. */
     Py_XDECREF(data->func);
     PyMem_Free(data);
     LEAVE_PYTHON
@@ -2500,7 +2500,9 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
-    Py_INCREF(self);
+    /* Borrow the interpreter: a strong reference would form an uncollectable
+       cycle (interp -> command -> data->self -> interp) and leak the command
+       (gh-80937).  The command cannot outlive the interpreter. */
     data->self = self;
     data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
@@ -2533,6 +2535,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     }
     if (err) {
         PyErr_SetString(Tkinter_TclError, "can't create Tcl command");
+        Py_DECREF(data->func);
         PyMem_Free(data);
         return NULL;
     }
