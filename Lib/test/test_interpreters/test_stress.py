@@ -5,7 +5,7 @@ from test import support
 from test.support import import_helper
 from test.support import threading_helper
 # Raise SkipTest if subinterpreters not supported.
-import_helper.import_module('_interpreters')
+_interpreters = import_helper.import_module('_interpreters')
 from test.support import interpreters
 from test.support.interpreters import InterpreterError
 from .utils import TestBase
@@ -75,12 +75,13 @@ class StressTests(TestBase):
             start.set()
         support.gc_collect()
 
+    @support.nomemtest
     def test_create_interpreter_no_memory(self):
-        import _interpreters
-        _testcapi = import_helper.import_module("_testcapi")
+        import _testcapi
 
-        with self.assertRaises(InterpreterError):
-            _testcapi.set_nomemory(0, 1)
+        assertion = self.assertRaises(InterpreterError)
+        _testcapi.set_nomemory(0, 1)
+        with assertion:
             _interpreters.create()
 
 

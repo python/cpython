@@ -100,6 +100,5 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(os.read(r, len(expected)), expected)
         os.close(r)
 
-
 if __name__ == "__main__":
     unittest.main()
