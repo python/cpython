@@ -89,10 +89,13 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="pyproject.props" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <ExeName>$(PyExeName)$(PyDebugExt).exe</ExeName>
+    <ExeName Condition="$(DisableGil) == 'true'">$(PyExeName)$(MajorVersionNumber).$(MinorVersionNumber)t$(PyDebugExt).exe</ExeName>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>EXENAME=L"$(PyExeName)$(PyDebugExt).exe";_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EXENAME=L"$(ExeName)";_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>

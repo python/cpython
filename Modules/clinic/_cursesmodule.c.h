@@ -6,10 +6,198 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(complexchar_new__doc__,
+"complexchar(text, /, attr=0, pair=0)\n"
+"--\n"
+"\n"
+"A styled wide-character cell.\n"
+"\n"
+"  text\n"
+"    A spacing character optionally followed by combining characters.\n"
+"  attr\n"
+"    The attributes of the character cell.\n"
+"  pair\n"
+"    The color pair number of the character cell.\n"
+"\n"
+"text is a spacing character optionally followed by combining\n"
+"characters.  attr is a set of attributes (the WA_* constants) and pair\n"
+"is a color pair number.  The object is immutable; str(cc) returns its\n"
+"text, and the attr and pair attributes return its rendition.");
+
+static PyObject *
+complexchar_new_impl(PyTypeObject *type, PyObject *text, attr_t attr,
+                     int pair);
+
+static PyObject *
+complexchar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(attr), &_Py_ID(pair), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "attr", "pair", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "complexchar",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    PyObject *text;
+    attr_t attr = 0;
+    int pair = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(fastargs[0])) {
+        _PyArg_BadArgument("complexchar", "argument 1", "str", fastargs[0]);
+        goto exit;
+    }
+    text = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        if (!attr_converter(fastargs[1], &attr)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    pair = PyLong_AsInt(fastargs[2]);
+    if (pair == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = complexchar_new_impl(type, text, attr, pair);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(complexstr_new__doc__,
+"complexstr(cells, /, attr=<unrepresentable>, pair=<unrepresentable>)\n"
+"--\n"
+"\n"
+"An immutable string of styled wide-character cells.\n"
+"\n"
+"  cells\n"
+"    An iterable of cells, each a complexchar or a str.\n"
+"  attr\n"
+"    Attributes applied to every cell (only with a string).\n"
+"  pair\n"
+"    Color pair applied to every cell (only with a string).\n"
+"\n"
+"It is the counterpart of complexchar for a run of cells, and the type\n"
+"returned by window.in_wchstr().  Each cell is a complexchar or a str (a\n"
+"spacing character optionally followed by combining characters).\n"
+"\n"
+"When cells is a string it is split into character cells, and attr and\n"
+"pair (if given) style every cell.  Otherwise each item carries its own\n"
+"rendition, and attr and pair must be omitted.");
+
+static PyObject *
+complexstr_new_impl(PyTypeObject *type, PyObject *cells, PyObject *attr,
+                    PyObject *pair);
+
+static PyObject *
+complexstr_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(attr), &_Py_ID(pair), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "attr", "pair", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "complexstr",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    PyObject *cells;
+    PyObject *attr = NULL;
+    PyObject *pair = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    cells = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        attr = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    pair = fastargs[2];
+skip_optional_pos:
+    return_value = complexstr_new_impl(type, cells, attr, pair);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_addch__doc__,
-"addch([y, x,] ch, [attr=_curses.A_NORMAL])\n"
+"addch([y, x,] ch, [attr])\n"
 "Paint the character.\n"
 "\n"
 "  y\n"
@@ -43,7 +231,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = A_NORMAL;
+    long attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -228,9 +416,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_bkgd__doc__,
-"bkgd($self, ch, attr=_curses.A_NORMAL, /)\n"
-"--\n"
-"\n"
+"bkgd(ch, [attr])\n"
 "Set the background property of the window.\n"
 "\n"
 "  ch\n"
@@ -239,31 +425,37 @@ PyDoc_STRVAR(_curses_window_bkgd__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGD_METHODDEF    \
-    {"bkgd", _PyCFunction_CAST(_curses_window_bkgd), METH_FASTCALL, _curses_window_bkgd__doc__},
+    {"bkgd", (PyCFunction)_curses_window_bkgd, METH_VARARGS, _curses_window_bkgd__doc__},
 
 static PyObject *
-_curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch, long attr);
+_curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch,
+                         int group_right_1, long attr);
 
 static PyObject *
-_curses_window_bkgd(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_curses_window_bkgd(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *ch;
-    long attr = A_NORMAL;
+    int group_right_1 = 0;
+    long attr = 0;
 
-    if (!_PyArg_CheckPositional("bkgd", nargs, 1, 2)) {
-        goto exit;
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:bkgd", &ch)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "Ol:bkgd", &ch, &attr)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.bkgd requires 1 to 2 arguments");
+            goto exit;
     }
-    ch = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    attr = PyLong_AsLong(args[1]);
-    if (attr == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _curses_window_bkgd_impl((PyCursesWindowObject *)self, ch, attr);
+    return_value = _curses_window_bkgd_impl((PyCursesWindowObject *)self, ch, group_right_1, attr);
 
 exit:
     return return_value;
@@ -353,10 +545,164 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_curses_window_bkgdset__doc__,
-"bkgdset($self, ch, attr=_curses.A_NORMAL, /)\n"
+PyDoc_STRVAR(_curses_window_attr_get__doc__,
+"attr_get($self, /)\n"
 "--\n"
 "\n"
+"Return the window\'s attributes and color pair as (attrs, pair).");
+
+#define _CURSES_WINDOW_ATTR_GET_METHODDEF    \
+    {"attr_get", (PyCFunction)_curses_window_attr_get, METH_NOARGS, _curses_window_attr_get__doc__},
+
+static PyObject *
+_curses_window_attr_get_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_attr_get(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_attr_get_impl((PyCursesWindowObject *)self);
+}
+
+PyDoc_STRVAR(_curses_window_attr_set__doc__,
+"attr_set($self, attr, pair=0, /)\n"
+"--\n"
+"\n"
+"Set the window\'s attributes and color pair.");
+
+#define _CURSES_WINDOW_ATTR_SET_METHODDEF    \
+    {"attr_set", _PyCFunction_CAST(_curses_window_attr_set), METH_FASTCALL, _curses_window_attr_set__doc__},
+
+static PyObject *
+_curses_window_attr_set_impl(PyCursesWindowObject *self, attr_t attr,
+                             int pair);
+
+static PyObject *
+_curses_window_attr_set(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+    int pair = 0;
+
+    if (!_PyArg_CheckPositional("attr_set", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!attr_converter(args[0], &attr)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!pair_converter(args[1], &pair)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _curses_window_attr_set_impl((PyCursesWindowObject *)self, attr, pair);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_attr_on__doc__,
+"attr_on($self, attr, /)\n"
+"--\n"
+"\n"
+"Turn on the given attributes without affecting any others.");
+
+#define _CURSES_WINDOW_ATTR_ON_METHODDEF    \
+    {"attr_on", (PyCFunction)_curses_window_attr_on, METH_O, _curses_window_attr_on__doc__},
+
+static PyObject *
+_curses_window_attr_on_impl(PyCursesWindowObject *self, attr_t attr);
+
+static PyObject *
+_curses_window_attr_on(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+
+    if (!attr_converter(arg, &attr)) {
+        goto exit;
+    }
+    return_value = _curses_window_attr_on_impl((PyCursesWindowObject *)self, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_attr_off__doc__,
+"attr_off($self, attr, /)\n"
+"--\n"
+"\n"
+"Turn off the given attributes without affecting any others.");
+
+#define _CURSES_WINDOW_ATTR_OFF_METHODDEF    \
+    {"attr_off", (PyCFunction)_curses_window_attr_off, METH_O, _curses_window_attr_off__doc__},
+
+static PyObject *
+_curses_window_attr_off_impl(PyCursesWindowObject *self, attr_t attr);
+
+static PyObject *
+_curses_window_attr_off(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+
+    if (!attr_converter(arg, &attr)) {
+        goto exit;
+    }
+    return_value = _curses_window_attr_off_impl((PyCursesWindowObject *)self, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_color_set__doc__,
+"color_set($self, pair, /)\n"
+"--\n"
+"\n"
+"Set the window\'s color pair attribute.");
+
+#define _CURSES_WINDOW_COLOR_SET_METHODDEF    \
+    {"color_set", (PyCFunction)_curses_window_color_set, METH_O, _curses_window_color_set__doc__},
+
+static PyObject *
+_curses_window_color_set_impl(PyCursesWindowObject *self, int pair);
+
+static PyObject *
+_curses_window_color_set(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int pair;
+
+    if (!pair_converter(arg, &pair)) {
+        goto exit;
+    }
+    return_value = _curses_window_color_set_impl((PyCursesWindowObject *)self, pair);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_window_getattrs__doc__,
+"getattrs($self, /)\n"
+"--\n"
+"\n"
+"Return the window\'s current attributes.");
+
+#define _CURSES_WINDOW_GETATTRS_METHODDEF    \
+    {"getattrs", (PyCFunction)_curses_window_getattrs, METH_NOARGS, _curses_window_getattrs__doc__},
+
+static PyObject *
+_curses_window_getattrs_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_getattrs(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_getattrs_impl((PyCursesWindowObject *)self);
+}
+
+PyDoc_STRVAR(_curses_window_bkgdset__doc__,
+"bkgdset(ch, [attr])\n"
 "Set the window\'s background.\n"
 "\n"
 "  ch\n"
@@ -365,32 +711,37 @@ PyDoc_STRVAR(_curses_window_bkgdset__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGDSET_METHODDEF    \
-    {"bkgdset", _PyCFunction_CAST(_curses_window_bkgdset), METH_FASTCALL, _curses_window_bkgdset__doc__},
+    {"bkgdset", (PyCFunction)_curses_window_bkgdset, METH_VARARGS, _curses_window_bkgdset__doc__},
 
 static PyObject *
 _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
-                            long attr);
+                            int group_right_1, long attr);
 
 static PyObject *
-_curses_window_bkgdset(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_curses_window_bkgdset(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *ch;
-    long attr = A_NORMAL;
+    int group_right_1 = 0;
+    long attr = 0;
 
-    if (!_PyArg_CheckPositional("bkgdset", nargs, 1, 2)) {
-        goto exit;
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:bkgdset", &ch)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "Ol:bkgdset", &ch, &attr)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.bkgdset requires 1 to 2 arguments");
+            goto exit;
     }
-    ch = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    attr = PyLong_AsLong(args[1]);
-    if (attr == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _curses_window_bkgdset_impl((PyCursesWindowObject *)self, ch, attr);
+    return_value = _curses_window_bkgdset_impl((PyCursesWindowObject *)self, ch, group_right_1, attr);
 
 exit:
     return return_value;
@@ -422,10 +773,10 @@ PyDoc_STRVAR(_curses_window_border__doc__,
 "  br\n"
 "    Bottom-right corner.\n"
 "\n"
-"Each parameter specifies the character to use for a specific part of the\n"
-"border.  The characters can be specified as integers or as one-character\n"
-"strings.  A 0 value for any parameter will cause the default character to be\n"
-"used for that parameter.");
+"Each parameter specifies the character to use for a specific part of\n"
+"the border.  The characters can be specified as integers or as\n"
+"one-character strings.  A 0 value for any parameter will cause the\n"
+"default character to be used for that parameter.");
 
 #define _CURSES_WINDOW_BORDER_METHODDEF    \
     {"border", _PyCFunction_CAST(_curses_window_border), METH_FASTCALL, _curses_window_border__doc__},
@@ -500,8 +851,9 @@ PyDoc_STRVAR(_curses_window_box__doc__,
 "  horch\n"
 "    Top and bottom side.\n"
 "\n"
-"Similar to border(), but both ls and rs are verch and both ts and bs are\n"
-"horch.  The default corner characters are always used by this function.");
+"Similar to border(), but both ls and rs are verch and both ts and bs\n"
+"are horch.  The default corner characters are always used by this\n"
+"function.");
 
 #define _CURSES_WINDOW_BOX_METHODDEF    \
     {"box", (PyCFunction)_curses_window_box, METH_VARARGS, _curses_window_box__doc__},
@@ -539,12 +891,15 @@ exit:
 
 PyDoc_STRVAR(_curses_window_delch__doc__,
 "delch([y, x])\n"
-"Delete any character at (y, x).\n"
+"Delete the character under the cursor, or at (y, x) if specified.\n"
 "\n"
 "  y\n"
 "    Y-coordinate.\n"
 "  x\n"
-"    X-coordinate.");
+"    X-coordinate.\n"
+"\n"
+"All characters to the right on the same line are shifted one\n"
+"position left.");
 
 #define _CURSES_WINDOW_DELCH_METHODDEF    \
     {"delch", (PyCFunction)_curses_window_delch, METH_VARARGS, _curses_window_delch__doc__},
@@ -593,9 +948,9 @@ PyDoc_STRVAR(_curses_window_derwin__doc__,
 "  begin_x\n"
 "    Left side x-coordinate.\n"
 "\n"
-"derwin() is the same as calling subwin(), except that begin_y and begin_x\n"
-"are relative to the origin of the window, rather than relative to the entire\n"
-"screen.");
+"derwin() is the same as calling subwin(), except that begin_y and\n"
+"begin_x are relative to the origin of the window, rather than\n"
+"relative to the entire screen.");
 
 #define _CURSES_WINDOW_DERWIN_METHODDEF    \
     {"derwin", (PyCFunction)_curses_window_derwin, METH_VARARGS, _curses_window_derwin__doc__},
@@ -636,10 +991,30 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_curses_window_echochar__doc__,
-"echochar($self, ch, attr=_curses.A_NORMAL, /)\n"
+PyDoc_STRVAR(_curses_window_dupwin__doc__,
+"dupwin($self, /)\n"
 "--\n"
 "\n"
+"Create an exact duplicate of the window.\n"
+"\n"
+"The new window is independent of the original: it has the same size,\n"
+"position, contents and attributes, but its own cell buffer, so later\n"
+"changes to one do not affect the other.");
+
+#define _CURSES_WINDOW_DUPWIN_METHODDEF    \
+    {"dupwin", (PyCFunction)_curses_window_dupwin, METH_NOARGS, _curses_window_dupwin__doc__},
+
+static PyObject *
+_curses_window_dupwin_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_dupwin(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_dupwin_impl((PyCursesWindowObject *)self);
+}
+
+PyDoc_STRVAR(_curses_window_echochar__doc__,
+"echochar(ch, [attr])\n"
 "Add character ch with attribute attr, and refresh.\n"
 "\n"
 "  ch\n"
@@ -648,32 +1023,37 @@ PyDoc_STRVAR(_curses_window_echochar__doc__,
 "    Attributes for the character.");
 
 #define _CURSES_WINDOW_ECHOCHAR_METHODDEF    \
-    {"echochar", _PyCFunction_CAST(_curses_window_echochar), METH_FASTCALL, _curses_window_echochar__doc__},
+    {"echochar", (PyCFunction)_curses_window_echochar, METH_VARARGS, _curses_window_echochar__doc__},
 
 static PyObject *
 _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
-                             long attr);
+                             int group_right_1, long attr);
 
 static PyObject *
-_curses_window_echochar(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_curses_window_echochar(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *ch;
-    long attr = A_NORMAL;
+    int group_right_1 = 0;
+    long attr = 0;
 
-    if (!_PyArg_CheckPositional("echochar", nargs, 1, 2)) {
-        goto exit;
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:echochar", &ch)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "Ol:echochar", &ch, &attr)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.echochar requires 1 to 2 arguments");
+            goto exit;
     }
-    ch = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    attr = PyLong_AsLong(args[1]);
-    if (attr == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _curses_window_echochar_impl((PyCursesWindowObject *)self, ch, attr);
+    return_value = _curses_window_echochar_impl((PyCursesWindowObject *)self, ch, group_right_1, attr);
 
 exit:
     return return_value;
@@ -742,6 +1122,78 @@ _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_window_in_wch__doc__,
+"in_wch([y, x])\n"
+"Return the complex character at the given position in the window.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"\n"
+"The returned object is a complexchar carrying the cell\'s text,\n"
+"attributes and color pair.");
+
+#define _CURSES_WINDOW_IN_WCH_METHODDEF    \
+    {"in_wch", (PyCFunction)_curses_window_in_wch, METH_VARARGS, _curses_window_in_wch__doc__},
+
+static PyObject *
+_curses_window_in_wch_impl(PyCursesWindowObject *self, int group_right_1,
+                           int y, int x);
+
+static PyObject *
+_curses_window_in_wch(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    int y = 0;
+    int x = 0;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "ii:in_wch", &y, &x)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.in_wch requires 0 to 2 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_in_wch_impl((PyCursesWindowObject *)self, group_right_1, y, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_window_getbkgrnd__doc__,
+"getbkgrnd($self, /)\n"
+"--\n"
+"\n"
+"Return the window\'s current background complex character.");
+
+#define _CURSES_WINDOW_GETBKGRND_METHODDEF    \
+    {"getbkgrnd", (PyCFunction)_curses_window_getbkgrnd, METH_NOARGS, _curses_window_getbkgrnd__doc__},
+
+static PyObject *
+_curses_window_getbkgrnd_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_getbkgrnd(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_getbkgrnd_impl((PyCursesWindowObject *)self);
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
 "Get a character code from terminal keyboard.\n"
@@ -751,9 +1203,10 @@ PyDoc_STRVAR(_curses_window_getch__doc__,
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"The integer returned does not have to be in ASCII range: function keys,\n"
-"keypad keys and so on return numbers higher than 256.  In no-delay mode, -1\n"
-"is returned if there is no input, else getch() waits until a key is pressed.");
+"The integer returned does not have to be in ASCII range: function\n"
+"keys, keypad keys and so on return numbers higher than 256.  In\n"
+"no-delay mode, -1 is returned if there is no input, else getch()\n"
+"waits until a key is pressed.");
 
 #define _CURSES_WINDOW_GETCH_METHODDEF    \
     {"getch", (PyCFunction)_curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
@@ -798,9 +1251,10 @@ PyDoc_STRVAR(_curses_window_getkey__doc__,
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"Returning a string instead of an integer, as getch() does.  Function keys,\n"
-"keypad keys and other special keys return a multibyte string containing the\n"
-"key name.  In no-delay mode, an exception is raised if there is no input.");
+"Returning a string instead of an integer, as getch() does.  Function\n"
+"keys, keypad keys and other special keys return a multibyte string\n"
+"containing the key name.  In no-delay mode, an exception is raised\n"
+"if there is no input.");
 
 #define _CURSES_WINDOW_GETKEY_METHODDEF    \
     {"getkey", (PyCFunction)_curses_window_getkey, METH_VARARGS, _curses_window_getkey__doc__},
@@ -887,7 +1341,7 @@ exit:
 #endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_hline__doc__,
-"hline([y, x,] ch, n, [attr=_curses.A_NORMAL])\n"
+"hline([y, x,] ch, n, [attr])\n"
 "Display a horizontal line.\n"
 "\n"
 "  y\n"
@@ -919,7 +1373,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    long attr = A_NORMAL;
+    long attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -957,7 +1411,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_insch__doc__,
-"insch([y, x,] ch, [attr=_curses.A_NORMAL])\n"
+"insch([y, x,] ch, [attr])\n"
 "Insert a character before the current or specified position.\n"
 "\n"
 "  y\n"
@@ -969,8 +1423,8 @@ PyDoc_STRVAR(_curses_window_insch__doc__,
 "  attr\n"
 "    Attributes for the character.\n"
 "\n"
-"All characters to the right of the cursor are shifted one position right, with\n"
-"the rightmost characters on the line being lost.");
+"All characters to the right of the cursor are shifted one position\n"
+"right, with the rightmost characters on the line being lost.");
 
 #define _CURSES_WINDOW_INSCH_METHODDEF    \
     {"insch", (PyCFunction)_curses_window_insch, METH_VARARGS, _curses_window_insch__doc__},
@@ -989,7 +1443,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = A_NORMAL;
+    long attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1035,7 +1489,8 @@ PyDoc_STRVAR(_curses_window_inch__doc__,
 "  x\n"
 "    X-coordinate.\n"
 "\n"
-"The bottom 8 bits are the character proper, and upper bits are the attributes.");
+"The bottom 8 bits are the character proper, and upper bits are the\n"
+"attributes.");
 
 #define _CURSES_WINDOW_INCH_METHODDEF    \
     {"inch", (PyCFunction)_curses_window_inch, METH_VARARGS, _curses_window_inch__doc__},
@@ -1084,11 +1539,11 @@ PyDoc_STRVAR(_curses_window_insstr__doc__,
 "  attr\n"
 "    Attributes for characters.\n"
 "\n"
-"Insert a character string (as many characters as will fit on the line)\n"
-"before the character under the cursor.  All characters to the right of\n"
-"the cursor are shifted right, with the rightmost characters on the line\n"
-"being lost.  The cursor position does not change (after moving to y, x,\n"
-"if specified).");
+"Insert a character string (as many characters as will fit on the\n"
+"line) before the character under the cursor.  All characters to the\n"
+"right of the cursor are shifted right, with the rightmost characters\n"
+"on the line being lost.  The cursor position does not change (after\n"
+"moving to y, x, if specified).");
 
 #define _CURSES_WINDOW_INSSTR_METHODDEF    \
     {"insstr", (PyCFunction)_curses_window_insstr, METH_VARARGS, _curses_window_insstr__doc__},
@@ -1159,12 +1614,12 @@ PyDoc_STRVAR(_curses_window_insnstr__doc__,
 "  attr\n"
 "    Attributes for characters.\n"
 "\n"
-"Insert a character string (as many characters as will fit on the line)\n"
-"before the character under the cursor, up to n characters.  If n is zero\n"
-"or negative, the entire string is inserted.  All characters to the right\n"
-"of the cursor are shifted right, with the rightmost characters on the line\n"
-"being lost.  The cursor position does not change (after moving to y, x, if\n"
-"specified).");
+"Insert a character string (as many characters as will fit on the\n"
+"line) before the character under the cursor, up to n characters.  If\n"
+"n is zero or negative, the entire string is inserted.  All\n"
+"characters to the right of the cursor are shifted right, with the\n"
+"rightmost characters on the line being lost.  The cursor position\n"
+"does not change (after moving to y, x, if specified).");
 
 #define _CURSES_WINDOW_INSNSTR_METHODDEF    \
     {"insnstr", (PyCFunction)_curses_window_insnstr, METH_VARARGS, _curses_window_insnstr__doc__},
@@ -1230,7 +1685,8 @@ PyDoc_STRVAR(_curses_window_is_linetouched__doc__,
 "  line\n"
 "    Line number.\n"
 "\n"
-"Raise a curses.error exception if line is not valid for the given window.");
+"Raise a curses.error exception if line is not valid for the given\n"
+"window.");
 
 #define _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF    \
     {"is_linetouched", (PyCFunction)_curses_window_is_linetouched, METH_O, _curses_window_is_linetouched__doc__},
@@ -1260,9 +1716,9 @@ PyDoc_STRVAR(_curses_window_noutrefresh__doc__,
 "noutrefresh([pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol])\n"
 "Mark for refresh but wait.\n"
 "\n"
-"This function updates the data structure representing the desired state of the\n"
-"window, but does not force an update of the physical screen.  To accomplish\n"
-"that, call doupdate().");
+"This function updates the data structure representing the desired\n"
+"state of the window, but does not force an update of the physical\n"
+"screen.  To accomplish that, call doupdate().");
 
 #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF    \
     {"noutrefresh", (PyCFunction)_curses_window_noutrefresh, METH_VARARGS, _curses_window_noutrefresh__doc__},
@@ -1314,9 +1770,9 @@ PyDoc_STRVAR(_curses_window_noutrefresh__doc__,
 "\n"
 "Mark for refresh but wait.\n"
 "\n"
-"This function updates the data structure representing the desired state of the\n"
-"window, but does not force an update of the physical screen.  To accomplish\n"
-"that, call doupdate().");
+"This function updates the data structure representing the desired\n"
+"state of the window, but does not force an update of the physical\n"
+"screen.  To accomplish that, call doupdate().");
 
 #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF    \
     {"noutrefresh", (PyCFunction)_curses_window_noutrefresh, METH_NOARGS, _curses_window_noutrefresh__doc__},
@@ -1336,14 +1792,15 @@ PyDoc_STRVAR(_curses_window_overlay__doc__,
 "overlay(destwin, [sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol])\n"
 "Overlay the window on top of destwin.\n"
 "\n"
-"The windows need not be the same size, only the overlapping region is copied.\n"
-"This copy is non-destructive, which means that the current background\n"
-"character does not overwrite the old contents of destwin.\n"
+"The windows need not be the same size, only the overlapping region\n"
+"is copied.  This copy is non-destructive, which means that the\n"
+"current background character does not overwrite the old contents of\n"
+"destwin.\n"
 "\n"
-"To get fine-grained control over the copied region, the second form of\n"
-"overlay() can be used.  sminrow and smincol are the upper-left coordinates\n"
-"of the source window, and the other variables mark a rectangle in the\n"
-"destination window.");
+"To get fine-grained control over the copied region, the second form\n"
+"of overlay() can be used.  sminrow and smincol are the upper-left\n"
+"coordinates of the source window, and the other variables mark\n"
+"a rectangle in the destination window.");
 
 #define _CURSES_WINDOW_OVERLAY_METHODDEF    \
     {"overlay", (PyCFunction)_curses_window_overlay, METH_VARARGS, _curses_window_overlay__doc__},
@@ -1394,14 +1851,15 @@ PyDoc_STRVAR(_curses_window_overwrite__doc__,
 "          dmaxcol])\n"
 "Overwrite the window on top of destwin.\n"
 "\n"
-"The windows need not be the same size, in which case only the overlapping\n"
-"region is copied.  This copy is destructive, which means that the current\n"
-"background character overwrites the old contents of destwin.\n"
+"The windows need not be the same size, in which case only the\n"
+"overlapping region is copied.  This copy is destructive, which means\n"
+"that the current background character overwrites the old contents of\n"
+"destwin.\n"
 "\n"
-"To get fine-grained control over the copied region, the second form of\n"
-"overwrite() can be used. sminrow and smincol are the upper-left coordinates\n"
-"of the source window, the other variables mark a rectangle in the destination\n"
-"window.");
+"To get fine-grained control over the copied region, the second form\n"
+"of overwrite() can be used. sminrow and smincol are the upper-left\n"
+"coordinates of the source window, the other variables mark\n"
+"a rectangle in the destination window.");
 
 #define _CURSES_WINDOW_OVERWRITE_METHODDEF    \
     {"overwrite", (PyCFunction)_curses_window_overwrite, METH_VARARGS, _curses_window_overwrite__doc__},
@@ -1520,16 +1978,17 @@ PyDoc_STRVAR(_curses_window_refresh__doc__,
 "Update the display immediately.\n"
 "\n"
 "Synchronize actual screen with previous drawing/deleting methods.\n"
-"The 6 optional arguments can only be specified when the window is a pad\n"
-"created with newpad().  The additional parameters are needed to indicate\n"
-"what part of the pad and screen are involved.  pminrow and pmincol specify\n"
-"the upper left-hand corner of the rectangle to be displayed in the pad.\n"
-"sminrow, smincol, smaxrow, and smaxcol specify the edges of the rectangle to\n"
-"be displayed on the screen.  The lower right-hand corner of the rectangle to\n"
-"be displayed in the pad is calculated from the screen coordinates, since the\n"
-"rectangles must be the same size.  Both rectangles must be entirely contained\n"
-"within their respective structures.  Negative values of pminrow, pmincol,\n"
-"sminrow, or smincol are treated as if they were zero.");
+"The 6 optional arguments can only be specified when the window is\n"
+"a pad created with newpad().  The additional parameters are needed\n"
+"to indicate what part of the pad and screen are involved.  pminrow\n"
+"and pmincol specify the upper left-hand corner of the rectangle to\n"
+"be displayed in the pad.  sminrow, smincol, smaxrow, and smaxcol\n"
+"specify the edges of the rectangle to be displayed on the screen.\n"
+"The lower right-hand corner of the rectangle to be displayed in the\n"
+"pad is calculated from the screen coordinates, since the rectangles\n"
+"must be the same size.  Both rectangles must be entirely contained\n"
+"within their respective structures.  Negative values of pminrow,\n"
+"pmincol, sminrow, or smincol are treated as if they were zero.");
 
 #define _CURSES_WINDOW_REFRESH_METHODDEF    \
     {"refresh", (PyCFunction)_curses_window_refresh, METH_VARARGS, _curses_window_refresh__doc__},
@@ -1627,8 +2086,8 @@ PyDoc_STRVAR(_curses_window_subwin__doc__,
 "  begin_x\n"
 "    Left side x-coordinate.\n"
 "\n"
-"By default, the sub-window will extend from the specified position to the\n"
-"lower right corner of the window.");
+"By default, the sub-window will extend from the specified position\n"
+"to the lower right corner of the window.");
 
 #define _CURSES_WINDOW_SUBWIN_METHODDEF    \
     {"subwin", (PyCFunction)_curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
@@ -1676,7 +2135,8 @@ PyDoc_STRVAR(_curses_window_scroll__doc__,
 "  lines\n"
 "    Number of lines to scroll.\n"
 "\n"
-"Scroll upward if the argument is positive and downward if it is negative.");
+"Scroll upward if the argument is positive and downward if it is\n"
+"negative.");
 
 #define _CURSES_WINDOW_SCROLL_METHODDEF    \
     {"scroll", (PyCFunction)_curses_window_scroll, METH_VARARGS, _curses_window_scroll__doc__},
@@ -1715,8 +2175,9 @@ PyDoc_STRVAR(_curses_window_touchline__doc__,
 "touchline(start, count, [changed=True])\n"
 "Pretend count lines have been changed, starting with line start.\n"
 "\n"
-"If changed is supplied, it specifies whether the affected lines are marked\n"
-"as having been changed (changed=True) or unchanged (changed=False).");
+"If changed is supplied, it specifies whether the affected lines are\n"
+"marked as having been changed (changed=True) or unchanged\n"
+"(changed=False).");
 
 #define _CURSES_WINDOW_TOUCHLINE_METHODDEF    \
     {"touchline", (PyCFunction)_curses_window_touchline, METH_VARARGS, _curses_window_touchline__doc__},
@@ -1757,7 +2218,7 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_window_vline__doc__,
-"vline([y, x,] ch, n, [attr=_curses.A_NORMAL])\n"
+"vline([y, x,] ch, n, [attr])\n"
 "Display a vertical line.\n"
 "\n"
 "  y\n"
@@ -1789,7 +2250,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    long attr = A_NORMAL;
+    long attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -1831,7 +2292,13 @@ exit:
 PyDoc_STRVAR(_curses_filter__doc__,
 "filter($module, /)\n"
 "--\n"
-"\n");
+"\n"
+"Restrict screen updates to the current line.\n"
+"\n"
+"Must be called before initscr().  Afterwards curses confines the cursor\n"
+"and screen updates to a single line, which is useful for enabling\n"
+"character-at-a-time line editing without touching the rest of the\n"
+"screen.");
 
 #define _CURSES_FILTER_METHODDEF    \
     {"filter", (PyCFunction)_curses_filter, METH_NOARGS, _curses_filter__doc__},
@@ -1846,6 +2313,32 @@ _curses_filter(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* defined(HAVE_CURSES_FILTER) */
+
+#if defined(HAVE_CURSES_NOFILTER)
+
+PyDoc_STRVAR(_curses_nofilter__doc__,
+"nofilter($module, /)\n"
+"--\n"
+"\n"
+"Undo the effect of a preceding filter() call.\n"
+"\n"
+"Must be called before initscr().  It restores the normal behaviour that\n"
+"filter() disables, so that the next initscr() or newterm() uses the full\n"
+"screen rather than a single line.");
+
+#define _CURSES_NOFILTER_METHODDEF    \
+    {"nofilter", (PyCFunction)_curses_nofilter, METH_NOARGS, _curses_nofilter__doc__},
+
+static PyObject *
+_curses_nofilter_impl(PyObject *module);
+
+static PyObject *
+_curses_nofilter(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_nofilter_impl(module);
+}
+
+#endif /* defined(HAVE_CURSES_NOFILTER) */
 
 PyDoc_STRVAR(_curses_baudrate__doc__,
 "baudrate($module, /)\n"
@@ -1910,11 +2403,12 @@ PyDoc_STRVAR(_curses_cbreak__doc__,
 "  flag\n"
 "    If false, the effect is the same as calling nocbreak().\n"
 "\n"
-"In cbreak mode (sometimes called \"rare\" mode) normal tty line buffering is\n"
-"turned off and characters are available to be read one by one.  However,\n"
-"unlike raw mode, special characters (interrupt, quit, suspend, and flow\n"
-"control) retain their effects on the tty driver and calling program.\n"
-"Calling first raw() then cbreak() leaves the terminal in cbreak mode.");
+"In cbreak mode (sometimes called \"rare\" mode) normal tty line buffering\n"
+"is turned off and characters are available to be read one by one.\n"
+"However, unlike raw mode, special characters (interrupt, quit, suspend,\n"
+"and flow control) retain their effects on the tty driver and calling\n"
+"program.  Calling first raw() then cbreak() leaves the terminal in\n"
+"cbreak mode.");
 
 #define _CURSES_CBREAK_METHODDEF    \
     {"cbreak", _PyCFunction_CAST(_curses_cbreak), METH_FASTCALL, _curses_cbreak__doc__},
@@ -1945,6 +2439,94 @@ exit:
     return return_value;
 }
 
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
+
+PyDoc_STRVAR(_curses_is_cbreak__doc__,
+"is_cbreak($module, /)\n"
+"--\n"
+"\n"
+"Return True if cbreak mode is enabled, False otherwise.");
+
+#define _CURSES_IS_CBREAK_METHODDEF    \
+    {"is_cbreak", (PyCFunction)_curses_is_cbreak, METH_NOARGS, _curses_is_cbreak__doc__},
+
+static PyObject *
+_curses_is_cbreak_impl(PyObject *module);
+
+static PyObject *
+_curses_is_cbreak(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_is_cbreak_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
+
+PyDoc_STRVAR(_curses_is_echo__doc__,
+"is_echo($module, /)\n"
+"--\n"
+"\n"
+"Return True if echo mode is enabled, False otherwise.");
+
+#define _CURSES_IS_ECHO_METHODDEF    \
+    {"is_echo", (PyCFunction)_curses_is_echo, METH_NOARGS, _curses_is_echo__doc__},
+
+static PyObject *
+_curses_is_echo_impl(PyObject *module);
+
+static PyObject *
+_curses_is_echo(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_is_echo_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
+
+PyDoc_STRVAR(_curses_is_nl__doc__,
+"is_nl($module, /)\n"
+"--\n"
+"\n"
+"Return True if nl mode is enabled, False otherwise.");
+
+#define _CURSES_IS_NL_METHODDEF    \
+    {"is_nl", (PyCFunction)_curses_is_nl, METH_NOARGS, _curses_is_nl__doc__},
+
+static PyObject *
+_curses_is_nl_impl(PyObject *module);
+
+static PyObject *
+_curses_is_nl(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_is_nl_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427)
+
+PyDoc_STRVAR(_curses_is_raw__doc__,
+"is_raw($module, /)\n"
+"--\n"
+"\n"
+"Return True if raw mode is enabled, False otherwise.");
+
+#define _CURSES_IS_RAW_METHODDEF    \
+    {"is_raw", (PyCFunction)_curses_is_raw, METH_NOARGS, _curses_is_raw__doc__},
+
+static PyObject *
+_curses_is_raw_impl(PyObject *module);
+
+static PyObject *
+_curses_is_raw(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_is_raw_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) */
+
 PyDoc_STRVAR(_curses_color_content__doc__,
 "color_content($module, color_number, /)\n"
 "--\n"
@@ -1954,8 +2536,9 @@ PyDoc_STRVAR(_curses_color_content__doc__,
 "  color_number\n"
 "    The number of the color (0 - (COLORS-1)).\n"
 "\n"
-"A 3-tuple is returned, containing the R, G, B values for the given color,\n"
-"which will be between 0 (no component) and 1000 (maximum amount of component).");
+"A 3-tuple is returned, containing the R, G, B values for the given\n"
+"color, which will be between 0 (no component) and 1000 (maximum amount\n"
+"of component).");
 
 #define _CURSES_COLOR_CONTENT_METHODDEF    \
     {"color_content", (PyCFunction)_curses_color_content, METH_O, _curses_color_content__doc__},
@@ -1988,7 +2571,8 @@ PyDoc_STRVAR(_curses_color_pair__doc__,
 "    The number of the color pair.\n"
 "\n"
 "This attribute value can be combined with A_STANDOUT, A_REVERSE, and the\n"
-"other A_* attributes.  pair_number() is the counterpart to this function.");
+"other A_* attributes.  pair_number() is the counterpart to this\n"
+"function.");
 
 #define _CURSES_COLOR_PAIR_METHODDEF    \
     {"color_pair", (PyCFunction)_curses_color_pair, METH_O, _curses_color_pair__doc__},
@@ -2022,9 +2606,9 @@ PyDoc_STRVAR(_curses_curs_set__doc__,
 "    0 for invisible, 1 for normal visible, or 2 for very visible.\n"
 "\n"
 "If the terminal supports the visibility requested, the previous cursor\n"
-"state is returned; otherwise, an exception is raised.  On many terminals,\n"
-"the \"visible\" mode is an underline cursor and the \"very visible\" mode is\n"
-"a block cursor.");
+"state is returned; otherwise, an exception is raised.  On many\n"
+"terminals, the \"visible\" mode is an underline cursor and the \"very\n"
+"visible\" mode is a block cursor.");
 
 #define _CURSES_CURS_SET_METHODDEF    \
     {"curs_set", (PyCFunction)_curses_curs_set, METH_O, _curses_curs_set__doc__},
@@ -2076,7 +2660,8 @@ PyDoc_STRVAR(_curses_def_shell_mode__doc__,
 "\n"
 "Save the current terminal mode as the \"shell\" mode.\n"
 "\n"
-"The \"shell\" mode is the mode when the running program is not using curses.\n"
+"The \"shell\" mode is the mode when the running program is not using\n"
+"curses.\n"
 "\n"
 "Subsequent calls to reset_shell_mode() will restore this mode.");
 
@@ -2150,7 +2735,8 @@ PyDoc_STRVAR(_curses_echo__doc__,
 "  flag\n"
 "    If false, the effect is the same as calling noecho().\n"
 "\n"
-"In echo mode, each character input is echoed to the screen as it is entered.");
+"In echo mode, each character input is echoed to the screen as it is\n"
+"entered.");
 
 #define _CURSES_ECHO_METHODDEF    \
     {"echo", _PyCFunction_CAST(_curses_echo), METH_FASTCALL, _curses_echo__doc__},
@@ -2217,13 +2803,36 @@ _curses_erasechar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_erasechar_impl(module);
 }
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_erasewchar__doc__,
+"erasewchar($module, /)\n"
+"--\n"
+"\n"
+"Return the user\'s current wide-character erase character.");
+
+#define _CURSES_ERASEWCHAR_METHODDEF    \
+    {"erasewchar", (PyCFunction)_curses_erasewchar, METH_NOARGS, _curses_erasewchar__doc__},
+
+static PyObject *
+_curses_erasewchar_impl(PyObject *module);
+
+static PyObject *
+_curses_erasewchar(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_erasewchar_impl(module);
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_flash__doc__,
 "flash($module, /)\n"
 "--\n"
 "\n"
 "Flash the screen.\n"
 "\n"
-"That is, change it to reverse-video and then change it back in a short interval.");
+"That is, change it to reverse-video and then change it back in a short\n"
+"interval.");
 
 #define _CURSES_FLASH_METHODDEF    \
     {"flash", (PyCFunction)_curses_flash, METH_NOARGS, _curses_flash__doc__},
@@ -2243,8 +2852,8 @@ PyDoc_STRVAR(_curses_flushinp__doc__,
 "\n"
 "Flush all input buffers.\n"
 "\n"
-"This throws away any typeahead that has been typed by the user and has not\n"
-"yet been processed by the program.");
+"This throws away any typeahead that has been typed by the user and has\n"
+"not yet been processed by the program.");
 
 #define _CURSES_FLUSHINP_METHODDEF    \
     {"flushinp", (PyCFunction)_curses_flushinp, METH_NOARGS, _curses_flushinp__doc__},
@@ -2614,8 +3223,9 @@ PyDoc_STRVAR(_curses_init_pair__doc__,
 "  bg\n"
 "    Background color number (-1 - (COLORS-1)).\n"
 "\n"
-"If the color-pair was previously initialized, the screen is refreshed and\n"
-"all occurrences of that color-pair are changed to the new definition.");
+"If the color-pair was previously initialized, the screen is refreshed\n"
+"and all occurrences of that color-pair are changed to the new\n"
+"definition.");
 
 #define _CURSES_INIT_PAIR_METHODDEF    \
     {"init_pair", _PyCFunction_CAST(_curses_init_pair), METH_FASTCALL, _curses_init_pair__doc__},
@@ -2648,6 +3258,154 @@ _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
+
+#if (_NCURSES_EXTENDED_COLOR_FUNCS)
+
+PyDoc_STRVAR(_curses_alloc_pair__doc__,
+"alloc_pair($module, fg, bg, /)\n"
+"--\n"
+"\n"
+"Allocate a color pair for the given foreground and background colors.\n"
+"\n"
+"  fg\n"
+"    Foreground color number.\n"
+"  bg\n"
+"    Background color number.\n"
+"\n"
+"If a color pair for the same colors already exists, return its number.\n"
+"Otherwise allocate a new color pair and return its number.");
+
+#define _CURSES_ALLOC_PAIR_METHODDEF    \
+    {"alloc_pair", _PyCFunction_CAST(_curses_alloc_pair), METH_FASTCALL, _curses_alloc_pair__doc__},
+
+static PyObject *
+_curses_alloc_pair_impl(PyObject *module, int fg, int bg);
+
+static PyObject *
+_curses_alloc_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fg;
+    int bg;
+
+    if (!_PyArg_CheckPositional("alloc_pair", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!color_allow_default_converter(args[0], &fg)) {
+        goto exit;
+    }
+    if (!color_allow_default_converter(args[1], &bg)) {
+        goto exit;
+    }
+    return_value = _curses_alloc_pair_impl(module, fg, bg);
+
+exit:
+    return return_value;
+}
+
+#endif /* (_NCURSES_EXTENDED_COLOR_FUNCS) */
+
+#if (_NCURSES_EXTENDED_COLOR_FUNCS)
+
+PyDoc_STRVAR(_curses_find_pair__doc__,
+"find_pair($module, fg, bg, /)\n"
+"--\n"
+"\n"
+"Return the number of a color pair for the given colors, or -1.\n"
+"\n"
+"  fg\n"
+"    Foreground color number.\n"
+"  bg\n"
+"    Background color number.\n"
+"\n"
+"Return -1 if no color pair for this combination of foreground and\n"
+"background colors has been allocated.");
+
+#define _CURSES_FIND_PAIR_METHODDEF    \
+    {"find_pair", _PyCFunction_CAST(_curses_find_pair), METH_FASTCALL, _curses_find_pair__doc__},
+
+static PyObject *
+_curses_find_pair_impl(PyObject *module, int fg, int bg);
+
+static PyObject *
+_curses_find_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fg;
+    int bg;
+
+    if (!_PyArg_CheckPositional("find_pair", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!color_allow_default_converter(args[0], &fg)) {
+        goto exit;
+    }
+    if (!color_allow_default_converter(args[1], &bg)) {
+        goto exit;
+    }
+    return_value = _curses_find_pair_impl(module, fg, bg);
+
+exit:
+    return return_value;
+}
+
+#endif /* (_NCURSES_EXTENDED_COLOR_FUNCS) */
+
+#if (_NCURSES_EXTENDED_COLOR_FUNCS)
+
+PyDoc_STRVAR(_curses_free_pair__doc__,
+"free_pair($module, pair, /)\n"
+"--\n"
+"\n"
+"Free a color pair allocated by alloc_pair().\n"
+"\n"
+"  pair\n"
+"    The number of the color pair to free.");
+
+#define _CURSES_FREE_PAIR_METHODDEF    \
+    {"free_pair", (PyCFunction)_curses_free_pair, METH_O, _curses_free_pair__doc__},
+
+static PyObject *
+_curses_free_pair_impl(PyObject *module, int pair);
+
+static PyObject *
+_curses_free_pair(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int pair;
+
+    if (!pair_converter(arg, &pair)) {
+        goto exit;
+    }
+    return_value = _curses_free_pair_impl(module, pair);
+
+exit:
+    return return_value;
+}
+
+#endif /* (_NCURSES_EXTENDED_COLOR_FUNCS) */
+
+#if (_NCURSES_EXTENDED_COLOR_FUNCS)
+
+PyDoc_STRVAR(_curses_reset_color_pairs__doc__,
+"reset_color_pairs($module, /)\n"
+"--\n"
+"\n"
+"Discard all color-pair definitions.");
+
+#define _CURSES_RESET_COLOR_PAIRS_METHODDEF    \
+    {"reset_color_pairs", (PyCFunction)_curses_reset_color_pairs, METH_NOARGS, _curses_reset_color_pairs__doc__},
+
+static PyObject *
+_curses_reset_color_pairs_impl(PyObject *module);
+
+static PyObject *
+_curses_reset_color_pairs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_reset_color_pairs_impl(module);
+}
+
+#endif /* (_NCURSES_EXTENDED_COLOR_FUNCS) */
 
 PyDoc_STRVAR(_curses_initscr__doc__,
 "initscr($module, /)\n"
@@ -2766,6 +3524,112 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_curses_newterm__doc__,
+"newterm($module, type=None, fd=None, infd=None, /)\n"
+"--\n"
+"\n"
+"Return a new screen for the terminal, in addition to the initial screen.\n"
+"\n"
+"  type\n"
+"    Terminal name; if None, the TERM environment variable is used.\n"
+"  fd\n"
+"    Output file object or descriptor (default: sys.stdout).\n"
+"  infd\n"
+"    Input file object or descriptor (default: sys.stdin).\n"
+"\n"
+"This is an alternative to initscr() for programs running on more than\n"
+"one terminal.  Use set_term() to switch between the screens.");
+
+#define _CURSES_NEWTERM_METHODDEF    \
+    {"newterm", _PyCFunction_CAST(_curses_newterm), METH_FASTCALL, _curses_newterm__doc__},
+
+static PyObject *
+_curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
+                     PyObject *infd);
+
+static PyObject *
+_curses_newterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *type = NULL;
+    PyObject *fd = Py_None;
+    PyObject *infd = Py_None;
+
+    if (!_PyArg_CheckPositional("newterm", nargs, 0, 3)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (args[0] == Py_None) {
+        type = NULL;
+    }
+    else if (PyUnicode_Check(args[0])) {
+        Py_ssize_t type_length;
+        type = PyUnicode_AsUTF8AndSize(args[0], &type_length);
+        if (type == NULL) {
+            goto exit;
+        }
+        if (strlen(type) != (size_t)type_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("newterm", "argument 1", "str or None", args[0]);
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    fd = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    infd = args[2];
+skip_optional:
+    return_value = _curses_newterm_impl(module, type, fd, infd);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_set_term__doc__,
+"set_term($module, screen, /)\n"
+"--\n"
+"\n"
+"Switch to the given screen and return the previously current screen.\n"
+"\n"
+"Returns None if the previous screen was the one created by initscr().");
+
+#define _CURSES_SET_TERM_METHODDEF    \
+    {"set_term", (PyCFunction)_curses_set_term, METH_O, _curses_set_term__doc__},
+
+#if defined(HAVE_CURSES_NEW_PRESCR)
+
+PyDoc_STRVAR(_curses_new_prescr__doc__,
+"new_prescr($module, /)\n"
+"--\n"
+"\n"
+"Create a screen and return it, without initializing a terminal.\n"
+"\n"
+"The screen can be used to call functions that affect the screen before\n"
+"calling newterm() or initscr().");
+
+#define _CURSES_NEW_PRESCR_METHODDEF    \
+    {"new_prescr", (PyCFunction)_curses_new_prescr, METH_NOARGS, _curses_new_prescr__doc__},
+
+static PyObject *
+_curses_new_prescr_impl(PyObject *module);
+
+static PyObject *
+_curses_new_prescr(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_new_prescr_impl(module);
+}
+
+#endif /* defined(HAVE_CURSES_NEW_PRESCR) */
+
 #if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
 
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
@@ -2774,9 +3638,9 @@ PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "\n"
 "Gets the curses ESCDELAY setting.\n"
 "\n"
-"Gets the number of milliseconds to wait after reading an escape character,\n"
-"to distinguish between an individual escape character entered on the\n"
-"keyboard from escape sequences sent by cursor and function keys.");
+"Gets the number of milliseconds to wait after reading an escape\n"
+"character, to distinguish between an individual escape character entered\n"
+"on the keyboard from escape sequences sent by cursor and function keys.");
 
 #define _CURSES_GET_ESCDELAY_METHODDEF    \
     {"get_escdelay", (PyCFunction)_curses_get_escdelay, METH_NOARGS, _curses_get_escdelay__doc__},
@@ -2803,9 +3667,9 @@ PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "  ms\n"
 "    length of the delay in milliseconds.\n"
 "\n"
-"Sets the number of milliseconds to wait after reading an escape character,\n"
-"to distinguish between an individual escape character entered on the\n"
-"keyboard from escape sequences sent by cursor and function keys.");
+"Sets the number of milliseconds to wait after reading an escape\n"
+"character, to distinguish between an individual escape character entered\n"
+"on the keyboard from escape sequences sent by cursor and function keys.");
 
 #define _CURSES_SET_ESCDELAY_METHODDEF    \
     {"set_escdelay", (PyCFunction)_curses_set_escdelay, METH_O, _curses_set_escdelay__doc__},
@@ -2839,8 +3703,8 @@ PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "\n"
 "Gets the curses TABSIZE setting.\n"
 "\n"
-"Gets the number of columns used by the curses library when converting a tab\n"
-"character to spaces as it adds the tab to a window.");
+"Gets the number of columns used by the curses library when converting\n"
+"a tab character to spaces as it adds the tab to a window.");
 
 #define _CURSES_GET_TABSIZE_METHODDEF    \
     {"get_tabsize", (PyCFunction)_curses_get_tabsize, METH_NOARGS, _curses_get_tabsize__doc__},
@@ -2867,8 +3731,8 @@ PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "  size\n"
 "    rendered cell width of a tab character.\n"
 "\n"
-"Sets the number of columns used by the curses library when converting a tab\n"
-"character to spaces as it adds the tab to a window.");
+"Sets the number of columns used by the curses library when converting\n"
+"a tab character to spaces as it adds the tab to a window.");
 
 #define _CURSES_SET_TABSIZE_METHODDEF    \
     {"set_tabsize", (PyCFunction)_curses_set_tabsize, METH_O, _curses_set_tabsize__doc__},
@@ -2897,7 +3761,12 @@ exit:
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
 "--\n"
-"\n");
+"\n"
+"Control flushing of the output buffer when an interrupt key is pressed.\n"
+"\n"
+"If flag is true, pressing an interrupt key (interrupt, break, or quit)\n"
+"flushes all output in the terminal driver queue.  If flag is false, no\n"
+"flushing is done.");
 
 #define _CURSES_INTRFLUSH_METHODDEF    \
     {"intrflush", (PyCFunction)_curses_intrflush, METH_O, _curses_intrflush__doc__},
@@ -3033,14 +3902,36 @@ _curses_killchar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_killchar_impl(module);
 }
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_killwchar__doc__,
+"killwchar($module, /)\n"
+"--\n"
+"\n"
+"Return the user\'s current wide-character line kill character.");
+
+#define _CURSES_KILLWCHAR_METHODDEF    \
+    {"killwchar", (PyCFunction)_curses_killwchar, METH_NOARGS, _curses_killwchar__doc__},
+
+static PyObject *
+_curses_killwchar_impl(PyObject *module);
+
+static PyObject *
+_curses_killwchar(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_killwchar_impl(module);
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_longname__doc__,
 "longname($module, /)\n"
 "--\n"
 "\n"
 "Return the terminfo long name field describing the current terminal.\n"
 "\n"
-"The maximum length of a verbose description is 128 characters.  It is defined\n"
-"only after the call to initscr().");
+"The maximum length of a verbose description is 128 characters.  It is\n"
+"defined only after the call to initscr().");
 
 #define _CURSES_LONGNAME_METHODDEF    \
     {"longname", (PyCFunction)_curses_longname, METH_NOARGS, _curses_longname__doc__},
@@ -3097,8 +3988,8 @@ PyDoc_STRVAR(_curses_mouseinterval__doc__,
 "    Time in milliseconds.\n"
 "\n"
 "Set the maximum time that can elapse between press and release events in\n"
-"order for them to be recognized as a click, and return the previous interval\n"
-"value.");
+"order for them to be recognized as a click, and return the previous\n"
+"interval value.");
 
 #define _CURSES_MOUSEINTERVAL_METHODDEF    \
     {"mouseinterval", (PyCFunction)_curses_mouseinterval, METH_O, _curses_mouseinterval__doc__},
@@ -3130,12 +4021,12 @@ PyDoc_STRVAR(_curses_mousemask__doc__,
 "mousemask($module, newmask, /)\n"
 "--\n"
 "\n"
-"Set the mouse events to be reported, and return a tuple (availmask, oldmask).\n"
+"Set the mouse events to be reported, and return (availmask, oldmask).\n"
 "\n"
 "Return a tuple (availmask, oldmask).  availmask indicates which of the\n"
-"specified mouse events can be reported; on complete failure it returns 0.\n"
-"oldmask is the previous value of the given window\'s mouse event mask.\n"
-"If this function is never called, no mouse events are ever reported.");
+"specified mouse events can be reported; on complete failure it returns\n"
+"0.  oldmask is the previous value of the mouse event mask.  If this\n"
+"function is never called, no mouse events are ever reported.");
 
 #define _CURSES_MOUSEMASK_METHODDEF    \
     {"mousemask", (PyCFunction)_curses_mousemask, METH_O, _curses_mousemask__doc__},
@@ -3267,8 +4158,8 @@ PyDoc_STRVAR(_curses_newwin__doc__,
 "  begin_x\n"
 "    Left side x-coordinate.\n"
 "\n"
-"By default, the window will extend from the specified position to the lower\n"
-"right corner of the screen.");
+"By default, the window will extend from the specified position to the\n"
+"lower right corner of the screen.");
 
 #define _CURSES_NEWWIN_METHODDEF    \
     {"newwin", (PyCFunction)_curses_newwin, METH_VARARGS, _curses_newwin__doc__},
@@ -3318,8 +4209,9 @@ PyDoc_STRVAR(_curses_nl__doc__,
 "  flag\n"
 "    If false, the effect is the same as calling nonl().\n"
 "\n"
-"This mode translates the return key into newline on input, and translates\n"
-"newline into return and line-feed on output.  Newline mode is initially on.");
+"This mode translates the return key into newline on input, and\n"
+"translates newline into return and line-feed on output.  Newline mode\n"
+"is initially on.");
 
 #define _CURSES_NL_METHODDEF    \
     {"nl", _PyCFunction_CAST(_curses_nl), METH_FASTCALL, _curses_nl__doc__},
@@ -3396,8 +4288,8 @@ PyDoc_STRVAR(_curses_nonl__doc__,
 "\n"
 "Leave newline mode.\n"
 "\n"
-"Disable translation of return into newline on input, and disable low-level\n"
-"translation of newline into newline/return on output.");
+"Disable translation of return into newline on input, and disable\n"
+"low-level translation of newline into newline/return on output.");
 
 #define _CURSES_NONL_METHODDEF    \
     {"nonl", (PyCFunction)_curses_nonl, METH_NOARGS, _curses_nonl__doc__},
@@ -3587,7 +4479,10 @@ exit:
 PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 "update_lines_cols($module, /)\n"
 "--\n"
-"\n");
+"\n"
+"Update the LINES and COLS module variables.\n"
+"\n"
+"This is useful for detecting manual screen resize.");
 
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
     {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
@@ -3613,8 +4508,8 @@ PyDoc_STRVAR(_curses_raw__doc__,
 "    If false, the effect is the same as calling noraw().\n"
 "\n"
 "In raw mode, normal line buffering and processing of interrupt, quit,\n"
-"suspend, and flow control keys are turned off; characters are presented to\n"
-"curses input functions one by one.");
+"suspend, and flow control keys are turned off; characters are presented\n"
+"to curses input functions one by one.");
 
 #define _CURSES_RAW_METHODDEF    \
     {"raw", _PyCFunction_CAST(_curses_raw), METH_FASTCALL, _curses_raw__doc__},
@@ -3712,8 +4607,8 @@ PyDoc_STRVAR(_curses_resizeterm__doc__,
 "  ncols\n"
 "    Width.\n"
 "\n"
-"Adjusts other bookkeeping data used by the curses library that record the\n"
-"window dimensions (in particular the SIGWINCH handler).");
+"Adjusts other bookkeeping data used by the curses library that record\n"
+"the window dimensions (in particular the SIGWINCH handler).");
 
 #define _CURSES_RESIZETERM_METHODDEF    \
     {"resizeterm", _PyCFunction_CAST(_curses_resizeterm), METH_FASTCALL, _curses_resizeterm__doc__},
@@ -3791,10 +4686,11 @@ PyDoc_STRVAR(_curses_resize_term__doc__,
 "    Width.\n"
 "\n"
 "When resizing the windows, resize_term() blank-fills the areas that are\n"
-"extended.  The calling application should fill in these areas with appropriate\n"
-"data.  The resize_term() function attempts to resize all windows.  However,\n"
-"due to the calling convention of pads, it is not possible to resize these\n"
-"without additional interaction with the application.");
+"extended.  The calling application should fill in these areas with\n"
+"appropriate data.  The resize_term() function attempts to resize all\n"
+"windows.  However, due to the calling convention of pads, it is not\n"
+"possible to resize these without additional interaction with the\n"
+"application.");
 
 #define _CURSES_RESIZE_TERM_METHODDEF    \
     {"resize_term", _PyCFunction_CAST(_curses_resize_term), METH_FASTCALL, _curses_resize_term__doc__},
@@ -3929,12 +4825,12 @@ PyDoc_STRVAR(_curses_start_color__doc__,
 "\n"
 "Initializes eight basic colors and global variables COLORS and COLOR_PAIRS.\n"
 "\n"
-"Must be called if the programmer wants to use colors, and before any other\n"
-"color manipulation routine is called.  It is good practice to call this\n"
-"routine right after initscr().\n"
+"Must be called if the programmer wants to use colors, and before any\n"
+"other color manipulation routine is called.  It is good practice to call\n"
+"this routine right after initscr().\n"
 "\n"
-"It also restores the colors on the terminal to the values they had when the\n"
-"terminal was just turned on.");
+"It also restores the colors on the terminal to the values they had when\n"
+"the terminal was just turned on.");
 
 #define _CURSES_START_COLOR_METHODDEF    \
     {"start_color", (PyCFunction)_curses_start_color, METH_NOARGS, _curses_start_color__doc__},
@@ -4036,8 +4932,8 @@ PyDoc_STRVAR(_curses_tigetnum__doc__,
 "  capname\n"
 "    The terminfo capability name.\n"
 "\n"
-"The value -2 is returned if capname is not a numeric capability, or -1 if\n"
-"it is canceled or absent from the terminal description.");
+"The value -2 is returned if capname is not a numeric capability, or -1\n"
+"if it is canceled or absent from the terminal description.");
 
 #define _CURSES_TIGETNUM_METHODDEF    \
     {"tigetnum", (PyCFunction)_curses_tigetnum, METH_O, _curses_tigetnum__doc__},
@@ -4079,8 +4975,8 @@ PyDoc_STRVAR(_curses_tigetstr__doc__,
 "  capname\n"
 "    The terminfo capability name.\n"
 "\n"
-"None is returned if capname is not a string capability, or is canceled or\n"
-"absent from the terminal description.");
+"None is returned if capname is not a string capability, or is canceled\n"
+"or absent from the terminal description.");
 
 #define _CURSES_TIGETSTR_METHODDEF    \
     {"tigetstr", (PyCFunction)_curses_tigetstr, METH_O, _curses_tigetstr__doc__},
@@ -4204,6 +5100,22 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 #define _CURSES_UNCTRL_METHODDEF    \
     {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_wunctrl__doc__,
+"wunctrl($module, ch, /)\n"
+"--\n"
+"\n"
+"Return a printable representation of the wide character ch.\n"
+"\n"
+"Control characters are displayed as a caret followed by the character,\n"
+"for example as ^C.  Printing characters are left as they are.");
+
+#define _CURSES_WUNCTRL_METHODDEF    \
+    {"wunctrl", (PyCFunction)_curses_wunctrl, METH_O, _curses_wunctrl__doc__},
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_ungetch__doc__,
 "ungetch($module, ch, /)\n"
 "--\n"
@@ -4234,14 +5146,14 @@ PyDoc_STRVAR(_curses_use_env__doc__,
 "\n"
 "Use environment variables LINES and COLUMNS.\n"
 "\n"
-"If used, this function should be called before initscr() or newterm() are\n"
-"called.\n"
+"If used, this function should be called before initscr() or newterm()\n"
+"are called.\n"
 "\n"
-"When flag is False, the values of lines and columns specified in the terminfo\n"
-"database will be used, even if environment variables LINES and COLUMNS (used\n"
-"by default) are set, or if curses is running in a window (in which case\n"
-"default behavior would be to use the window size if LINES and COLUMNS are\n"
-"not set).");
+"When flag is False, the values of lines and columns specified in the\n"
+"terminfo database will be used, even if environment variables LINES and\n"
+"COLUMNS (used by default) are set, or if curses is running in a window\n"
+"(in which case default behavior would be to use the window size if LINES\n"
+"and COLUMNS are not set).");
 
 #define _CURSES_USE_ENV_METHODDEF    \
     {"use_env", (PyCFunction)_curses_use_env, METH_O, _curses_use_env__doc__},
@@ -4359,6 +5271,14 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
 
+#ifndef _CURSES_WINDOW_IN_WCH_METHODDEF
+    #define _CURSES_WINDOW_IN_WCH_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_IN_WCH_METHODDEF) */
+
+#ifndef _CURSES_WINDOW_GETBKGRND_METHODDEF
+    #define _CURSES_WINDOW_GETBKGRND_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_GETBKGRND_METHODDEF) */
+
 #ifndef _CURSES_WINDOW_GET_WCH_METHODDEF
     #define _CURSES_WINDOW_GET_WCH_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_GET_WCH_METHODDEF) */
@@ -4370,6 +5290,30 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_FILTER_METHODDEF
     #define _CURSES_FILTER_METHODDEF
 #endif /* !defined(_CURSES_FILTER_METHODDEF) */
+
+#ifndef _CURSES_NOFILTER_METHODDEF
+    #define _CURSES_NOFILTER_METHODDEF
+#endif /* !defined(_CURSES_NOFILTER_METHODDEF) */
+
+#ifndef _CURSES_IS_CBREAK_METHODDEF
+    #define _CURSES_IS_CBREAK_METHODDEF
+#endif /* !defined(_CURSES_IS_CBREAK_METHODDEF) */
+
+#ifndef _CURSES_IS_ECHO_METHODDEF
+    #define _CURSES_IS_ECHO_METHODDEF
+#endif /* !defined(_CURSES_IS_ECHO_METHODDEF) */
+
+#ifndef _CURSES_IS_NL_METHODDEF
+    #define _CURSES_IS_NL_METHODDEF
+#endif /* !defined(_CURSES_IS_NL_METHODDEF) */
+
+#ifndef _CURSES_IS_RAW_METHODDEF
+    #define _CURSES_IS_RAW_METHODDEF
+#endif /* !defined(_CURSES_IS_RAW_METHODDEF) */
+
+#ifndef _CURSES_ERASEWCHAR_METHODDEF
+    #define _CURSES_ERASEWCHAR_METHODDEF
+#endif /* !defined(_CURSES_ERASEWCHAR_METHODDEF) */
 
 #ifndef _CURSES_GETSYX_METHODDEF
     #define _CURSES_GETSYX_METHODDEF
@@ -4386,6 +5330,26 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_HAS_KEY_METHODDEF
     #define _CURSES_HAS_KEY_METHODDEF
 #endif /* !defined(_CURSES_HAS_KEY_METHODDEF) */
+
+#ifndef _CURSES_ALLOC_PAIR_METHODDEF
+    #define _CURSES_ALLOC_PAIR_METHODDEF
+#endif /* !defined(_CURSES_ALLOC_PAIR_METHODDEF) */
+
+#ifndef _CURSES_FIND_PAIR_METHODDEF
+    #define _CURSES_FIND_PAIR_METHODDEF
+#endif /* !defined(_CURSES_FIND_PAIR_METHODDEF) */
+
+#ifndef _CURSES_FREE_PAIR_METHODDEF
+    #define _CURSES_FREE_PAIR_METHODDEF
+#endif /* !defined(_CURSES_FREE_PAIR_METHODDEF) */
+
+#ifndef _CURSES_RESET_COLOR_PAIRS_METHODDEF
+    #define _CURSES_RESET_COLOR_PAIRS_METHODDEF
+#endif /* !defined(_CURSES_RESET_COLOR_PAIRS_METHODDEF) */
+
+#ifndef _CURSES_NEW_PRESCR_METHODDEF
+    #define _CURSES_NEW_PRESCR_METHODDEF
+#endif /* !defined(_CURSES_NEW_PRESCR_METHODDEF) */
 
 #ifndef _CURSES_GET_ESCDELAY_METHODDEF
     #define _CURSES_GET_ESCDELAY_METHODDEF
@@ -4406,6 +5370,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_IS_TERM_RESIZED_METHODDEF
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
+
+#ifndef _CURSES_KILLWCHAR_METHODDEF
+    #define _CURSES_KILLWCHAR_METHODDEF
+#endif /* !defined(_CURSES_KILLWCHAR_METHODDEF) */
 
 #ifndef _CURSES_MOUSEINTERVAL_METHODDEF
     #define _CURSES_MOUSEINTERVAL_METHODDEF
@@ -4435,6 +5403,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_TYPEAHEAD_METHODDEF
 #endif /* !defined(_CURSES_TYPEAHEAD_METHODDEF) */
 
+#ifndef _CURSES_WUNCTRL_METHODDEF
+    #define _CURSES_WUNCTRL_METHODDEF
+#endif /* !defined(_CURSES_WUNCTRL_METHODDEF) */
+
 #ifndef _CURSES_UNGET_WCH_METHODDEF
     #define _CURSES_UNGET_WCH_METHODDEF
 #endif /* !defined(_CURSES_UNGET_WCH_METHODDEF) */
@@ -4450,4 +5422,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=135246e29163510c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d7ca194927796d8 input=a9049054013a1b77]*/

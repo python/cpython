@@ -48,6 +48,7 @@ SUFFIXES_C_OR_CPP = frozenset({".c", ".h", ".cpp"})
 SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 
 ANDROID_DIRS = frozenset({"Android"})
+EMSCRIPTEN_DIRS = frozenset({Path("Platforms", "emscripten")})
 IOS_DIRS = frozenset({"Apple", "iOS"})
 MACOS_DIRS = frozenset({"Mac"})
 WASI_DIRS = frozenset({Path("Platforms", "WASI")})
@@ -68,7 +69,8 @@ LIBRARY_FUZZER_PATHS = frozenset({
     Path("Lib/encodings/"),
     Path("Modules/_codecsmodule.c"),
     Path("Modules/cjkcodecs/"),
-    Path("Modules/unicodedata*"),
+    Path("Modules/unicodedata.c"),
+    Path("Modules/unicodedata_db.h"),
     # difflib
     Path("Lib/difflib.py"),
     # email
@@ -89,7 +91,7 @@ LIBRARY_FUZZER_PATHS = frozenset({
     # tarfile
     Path("Lib/tarfile.py"),
     # tomllib
-    Path("Modules/tomllib/"),
+    Path("Lib/tomllib/"),
     # xml
     Path("Lib/xml/"),
     Path("Lib/_markupbase.py"),
@@ -97,6 +99,9 @@ LIBRARY_FUZZER_PATHS = frozenset({
     Path("Modules/pyexpat.c"),
     # zipfile
     Path("Lib/zipfile/"),
+    # zoneinfo
+    Path("Lib/zoneinfo/"),
+    Path("Modules/_zoneinfo.c"),
 })
 
 
@@ -106,6 +111,7 @@ class Outputs:
     run_ci_fuzz: bool = False
     run_ci_fuzz_stdlib: bool = False
     run_docs: bool = False
+    run_emscripten: bool = False
     run_ios: bool = False
     run_macos: bool = False
     run_tests: bool = False
@@ -116,15 +122,16 @@ class Outputs:
 
 
 def compute_changes() -> None:
-    target_branch, head_ref = git_refs()
+    target_ref, head_ref = git_refs()
     if os.environ.get("GITHUB_EVENT_NAME", "") == "pull_request":
         # Getting changed files only makes sense on a pull request
-        files = get_changed_files(target_branch, head_ref)
+        files = get_changed_files(target_ref, head_ref)
         outputs = process_changed_files(files)
     else:
         # Otherwise, just run the tests
         outputs = Outputs(
             run_android=True,
+            run_emscripten=True,
             run_ios=True,
             run_macos=True,
             run_tests=True,
@@ -132,6 +139,7 @@ def compute_changes() -> None:
             run_wasi=True,
             run_windows_tests=True,
         )
+    target_branch = target_ref.removeprefix("origin/")
     outputs = process_target_branch(outputs, target_branch)
 
     if outputs.run_tests:
@@ -194,6 +202,8 @@ def get_file_platform(file: Path) -> str | None:
         return "ios"
     if first_part in ANDROID_DIRS:
         return "android"
+    if len(file.parts) >= 2 and Path(*file.parts[:2]) in EMSCRIPTEN_DIRS:
+        return "emscripten"
     if len(file.parts) >= 2 and Path(*file.parts[:2]) in WASI_DIRS:
         return "wasi"
     return None
@@ -228,7 +238,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
                 run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = run_windows_tests = True
                 has_platform_specific_change = False
                 continue
-            if file.name == "reusable-docs.yml":
+            if file.name in ("reusable-docs.yml", "reusable-check-html-ids.yml"):
                 run_docs = True
                 continue
             if file.name == "reusable-windows.yml":
@@ -241,6 +251,10 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             if file.name == "reusable-macos.yml":
                 run_tests = True
                 platforms_changed.add("macos")
+                continue
+            if file.name == "reusable-emscripten.yml":
+                run_tests = True
+                platforms_changed.add("emscripten")
                 continue
             if file.name == "reusable-wasi.yml":
                 run_tests = True
@@ -282,18 +296,21 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     if run_tests:
         if not has_platform_specific_change or not platforms_changed:
             run_android = True
+            run_emscripten = True
             run_ios = True
             run_macos = True
             run_ubuntu = True
             run_wasi = True
         else:
             run_android = "android" in platforms_changed
+            run_emscripten = "emscripten" in platforms_changed
             run_ios = "ios" in platforms_changed
             run_macos = "macos" in platforms_changed
             run_ubuntu = False
             run_wasi = "wasi" in platforms_changed
     else:
         run_android = False
+        run_emscripten = False
         run_ios = False
         run_macos = False
         run_ubuntu = False
@@ -304,6 +321,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         run_ci_fuzz=run_ci_fuzz,
         run_ci_fuzz_stdlib=run_ci_fuzz_stdlib,
         run_docs=run_docs,
+        run_emscripten=run_emscripten,
         run_ios=run_ios,
         run_macos=run_macos,
         run_tests=run_tests,

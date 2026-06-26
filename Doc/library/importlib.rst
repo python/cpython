@@ -286,13 +286,13 @@ ABC hierarchy::
          This method can potentially yield a very large number of objects, and
          it may carry out IO operations when computing these values.
 
-         Because of this, it will generaly be desirable to compute the result
+         Because of this, it will generally be desirable to compute the result
          values on-the-fly, as they are needed. As such, the returned object is
          only guaranteed to be an :class:`iterable <collections.abc.Iterable>`,
          instead of a :class:`list` or other
          :class:`collection <collections.abc.Collection>` type.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 
 .. class:: PathEntryFinder
@@ -340,13 +340,13 @@ ABC hierarchy::
          This method can potentially yield a very large number of objects, and
          it may carry out IO operations when computing these values.
 
-         Because of this, it will generaly be desirable to compute the result
+         Because of this, it will generally be desirable to compute the result
          values on-the-fly, as they are needed. As such, the returned object is
          only guaranteed to be an :class:`iterable <collections.abc.Iterable>`,
          instead of a :class:`list` or other
          :class:`collection <collections.abc.Collection>` type.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 
 .. class:: Loader
