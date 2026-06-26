@@ -1149,6 +1149,9 @@ class TZStrTest(ZoneInfoTestBase):
             "AB C3",
             " A B 3",
             "AAA4BB B,J60/2,J300/2",  # Embedded whitespace in DST
+            # Empty quoted abbreviation
+            "<>5",
+            "AAA4<>,M3.2.0/2,M11.1.0/3",
             "PST8PDT,M3.2.0/2",  # Only one transition rule
             # Invalid offset hours
             "AAA168",
