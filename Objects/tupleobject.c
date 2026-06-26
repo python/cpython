@@ -382,6 +382,14 @@ tuple_hash(PyObject *op)
     PyObject **item = v->ob_item;
     acc = _PyTuple_HASH_XXPRIME_5;
     for (Py_ssize_t i = 0; i < len; i++) {
+        /* Guard against incompletely initialized tuples (e.g. a
+         * TYPE_REF during marshal.loads before all slots are filled).
+         * Without this, PyObject_Hash(NULL) SIGSEGVs (gh-148653). */
+        if (item[i] == NULL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "cannot hash incompletely initialized tuple");
+            return -1;
+        }
         Py_uhash_t lane = PyObject_Hash(item[i]);
         if (lane == (Py_uhash_t)-1) {
             return -1;
