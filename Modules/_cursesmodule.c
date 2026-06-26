@@ -799,6 +799,32 @@ class component_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=38e9be01d33927fb]*/
 
+static int
+attr_converter(PyObject *arg, void *ptr)
+{
+    /* attr_t is unsigned and at least as wide as chtype, so an attribute
+       value must be a non-negative integer that fits in attr_t. */
+    unsigned long attr = PyLong_AsUnsignedLong(arg);
+    if (attr == (unsigned long)-1 && PyErr_Occurred()) {
+        return 0;
+    }
+    if (attr > (unsigned long)(attr_t)-1) {
+        PyErr_Format(PyExc_OverflowError,
+                     "attribute value is greater than maximum (%lu)",
+                     (unsigned long)(attr_t)-1);
+        return 0;
+    }
+    *(attr_t *)ptr = (attr_t)attr;
+    return 1;
+}
+
+/*[python input]
+class attr_converter(CConverter):
+    type = 'attr_t'
+    converter = 'attr_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=6132d3d99d3ec25a]*/
+
 /*****************************************************************************
  The Window Object
 ******************************************************************************/
@@ -1451,6 +1477,125 @@ _curses_window_attrset_impl(PyCursesWindowObject *self, long attr)
 }
 
 /*[clinic input]
+_curses.window.attr_get
+
+Return the window's attributes and color pair as (attrs, pair).
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_attr_get_impl(PyCursesWindowObject *self)
+/*[clinic end generated code: output=74b3f805a2958fb8 input=1efd3c450a1373ef]*/
+{
+    attr_t attrs;
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    int pair;
+    short legacy_pair;
+    rtn = wattr_get(self->win, &attrs, &legacy_pair, &pair);
+#else
+    short pair;
+    rtn = wattr_get(self->win, &attrs, &pair, NULL);
+#endif
+    if (curses_window_check_err(self, rtn, "wattr_get", "attr_get") == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("(ki)", (unsigned long)attrs, (int)pair);
+}
+
+/*[clinic input]
+_curses.window.attr_set
+
+    attr: attr
+    pair: pair = 0
+    /
+
+Set the window's attributes and color pair.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_attr_set_impl(PyCursesWindowObject *self, attr_t attr,
+                             int pair)
+/*[clinic end generated code: output=756416e0d6345d4a input=b7936bd6b73eb3f2]*/
+{
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    rtn = wattr_set(self->win, attr, 0, &pair);
+#else
+    rtn = wattr_set(self->win, attr, (short)pair, NULL);
+#endif
+    return curses_window_check_err(self, rtn, "wattr_set", "attr_set");
+}
+
+/*[clinic input]
+_curses.window.attr_on
+
+    attr: attr
+    /
+
+Turn on the given attributes without affecting any others.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_attr_on_impl(PyCursesWindowObject *self, attr_t attr)
+/*[clinic end generated code: output=712f13a558c5a6cb input=6a51a3d597ddca4b]*/
+{
+    int rtn = wattr_on(self->win, attr, NULL);
+    return curses_window_check_err(self, rtn, "wattr_on", "attr_on");
+}
+
+/*[clinic input]
+_curses.window.attr_off
+
+    attr: attr
+    /
+
+Turn off the given attributes without affecting any others.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_attr_off_impl(PyCursesWindowObject *self, attr_t attr)
+/*[clinic end generated code: output=ac680aead16f74fa input=c5d778b84030d388]*/
+{
+    int rtn = wattr_off(self->win, attr, NULL);
+    return curses_window_check_err(self, rtn, "wattr_off", "attr_off");
+}
+
+/*[clinic input]
+_curses.window.color_set
+
+    pair: pair
+    /
+
+Set the window's color pair attribute.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_color_set_impl(PyCursesWindowObject *self, int pair)
+/*[clinic end generated code: output=5e9e83f02a29bf1c input=70026f6d411db130]*/
+{
+    int rtn;
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    rtn = wcolor_set(self->win, 0, &pair);
+#else
+    rtn = wcolor_set(self->win, (short)pair, NULL);
+#endif
+    return curses_window_check_err(self, rtn, "wcolor_set", "color_set");
+}
+
+/*[clinic input]
+_curses.window.getattrs
+
+Return the window's current attributes.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_getattrs_impl(PyCursesWindowObject *self)
+/*[clinic end generated code: output=835f499205204ec4 input=bf56a0af5b730bd1]*/
+{
+    return PyLong_FromUnsignedLong((unsigned long)(attr_t)getattrs(self->win));
+}
+
+/*[clinic input]
 _curses.window.bkgdset
 
     ch: object
@@ -1697,30 +1842,25 @@ PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
     int num = -1;
     short color;
     attr_t attr = A_NORMAL;
-    long lattr;
     int use_xy = FALSE;
 
     switch (PyTuple_Size(args)) {
     case 1:
-        if (!PyArg_ParseTuple(args,"l;attr", &lattr))
+        if (!PyArg_ParseTuple(args,"O&;attr", attr_converter, &attr))
             return NULL;
-        attr = lattr;
         break;
     case 2:
-        if (!PyArg_ParseTuple(args,"il;n,attr", &num, &lattr))
+        if (!PyArg_ParseTuple(args,"iO&;n,attr", &num, attr_converter, &attr))
             return NULL;
-        attr = lattr;
         break;
     case 3:
-        if (!PyArg_ParseTuple(args,"iil;y,x,attr", &y, &x, &lattr))
+        if (!PyArg_ParseTuple(args,"iiO&;y,x,attr", &y, &x, attr_converter, &attr))
             return NULL;
-        attr = lattr;
         use_xy = TRUE;
         break;
     case 4:
-        if (!PyArg_ParseTuple(args,"iiil;y,x,n,attr", &y, &x, &num, &lattr))
+        if (!PyArg_ParseTuple(args,"iiiO&;y,x,n,attr", &y, &x, &num, attr_converter, &attr))
             return NULL;
-        attr = lattr;
         use_xy = TRUE;
         break;
     default:
@@ -3377,6 +3517,12 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_ATTROFF_METHODDEF
     _CURSES_WINDOW_ATTRON_METHODDEF
     _CURSES_WINDOW_ATTRSET_METHODDEF
+    _CURSES_WINDOW_ATTR_GET_METHODDEF
+    _CURSES_WINDOW_ATTR_SET_METHODDEF
+    _CURSES_WINDOW_ATTR_ON_METHODDEF
+    _CURSES_WINDOW_ATTR_OFF_METHODDEF
+    _CURSES_WINDOW_COLOR_SET_METHODDEF
+    _CURSES_WINDOW_GETATTRS_METHODDEF
     _CURSES_WINDOW_BKGD_METHODDEF
 #ifdef HAVE_CURSES_WCHGAT
     {
@@ -6880,6 +7026,65 @@ cursesmodule_exec(PyObject *module)
     /* ncurses extension */
 #ifdef A_ITALIC
     SetDictInt("A_ITALIC",          A_ITALIC);
+#endif
+
+    /* The WA_* attributes are used by the attr_t-based functions
+       (attr_get, attr_set, ...).  ncurses defines them bit-identically to the
+       matching A_* constants, but X/Open keeps the two sets distinct, so other
+       implementations (such as NetBSD curses) may give them different values. */
+#ifdef WA_ATTRIBUTES
+    SetDictInt("WA_ATTRIBUTES",     WA_ATTRIBUTES);
+#endif
+#ifdef WA_NORMAL
+    SetDictInt("WA_NORMAL",         WA_NORMAL);
+#endif
+#ifdef WA_STANDOUT
+    SetDictInt("WA_STANDOUT",       WA_STANDOUT);
+#endif
+#ifdef WA_UNDERLINE
+    SetDictInt("WA_UNDERLINE",      WA_UNDERLINE);
+#endif
+#ifdef WA_REVERSE
+    SetDictInt("WA_REVERSE",        WA_REVERSE);
+#endif
+#ifdef WA_BLINK
+    SetDictInt("WA_BLINK",          WA_BLINK);
+#endif
+#ifdef WA_DIM
+    SetDictInt("WA_DIM",            WA_DIM);
+#endif
+#ifdef WA_BOLD
+    SetDictInt("WA_BOLD",           WA_BOLD);
+#endif
+#ifdef WA_ALTCHARSET
+    SetDictInt("WA_ALTCHARSET",     WA_ALTCHARSET);
+#endif
+#ifdef WA_INVIS
+    SetDictInt("WA_INVIS",          WA_INVIS);
+#endif
+#ifdef WA_PROTECT
+    SetDictInt("WA_PROTECT",        WA_PROTECT);
+#endif
+#ifdef WA_HORIZONTAL
+    SetDictInt("WA_HORIZONTAL",     WA_HORIZONTAL);
+#endif
+#ifdef WA_LEFT
+    SetDictInt("WA_LEFT",           WA_LEFT);
+#endif
+#ifdef WA_LOW
+    SetDictInt("WA_LOW",            WA_LOW);
+#endif
+#ifdef WA_RIGHT
+    SetDictInt("WA_RIGHT",          WA_RIGHT);
+#endif
+#ifdef WA_TOP
+    SetDictInt("WA_TOP",            WA_TOP);
+#endif
+#ifdef WA_VERTICAL
+    SetDictInt("WA_VERTICAL",       WA_VERTICAL);
+#endif
+#ifdef WA_ITALIC
+    SetDictInt("WA_ITALIC",         WA_ITALIC);
 #endif
 
     SetDictInt("COLOR_BLACK",       COLOR_BLACK);
