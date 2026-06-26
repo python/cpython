@@ -62,6 +62,7 @@ class FinderTests(abc.FinderTests):
 
     def test_abi3_extension_suffixes(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES
+        platform = sysconfig.get_config_var("SOABI_PLATFORM")
         if 'win32' in sys.platform:
             # Either "_d.pyd" or ".pyd" must be in suffixes
             self.assertTrue({"_d.pyd", ".pyd"}.intersection(suffixes))
@@ -72,20 +73,10 @@ class FinderTests(abc.FinderTests):
                 self.assertNotIn(".abi3.so", suffixes)
             else:
                 self.assertIn(".abi3.so", suffixes)
-            self.assertIn(".abi3t.so", suffixes)
-
-    @unittest.skipIf(
-        not (sysconfig.get_config_var("SOABI_PLATFORM") or "").strip('"'),
-        "Linux-only test"
-    )
-    def test_multiarch_abi3_extension_suffixes(self):
-        suffixes = self.machinery.EXTENSION_SUFFIXES
-        platform = sysconfig.get_config_var("SOABI_PLATFORM").strip('"')
-        if Py_GIL_DISABLED:
-            self.assertNotIn(f".abi3-{platform}.so", suffixes)
-        else:
-            self.assertIn(f".abi3-{platform}.so", suffixes)
-        self.assertIn(f".abi3t-{platform}.so", suffixes)
+            if platform:
+                self.assertIn(f".abi3t-{platform}.so", suffixes)
+            else:
+                self.assertIn(".abi3t.so", suffixes)
 
 
 (Frozen_FinderTests,
