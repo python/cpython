@@ -2,12 +2,14 @@ import collections.abc
 import functools
 import platform
 import sys
+import textwrap
 import unittest
 import tkinter
 from tkinter import TclError
 import enum
 from test import support
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
@@ -51,6 +53,28 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b3 = tkinter.Button(f2)
         b4 = Button2(f2)
         self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
+
+    def test_dealloc_in_wrong_thread(self):
+        # gh-83274: deallocating the interpreter in the wrong thread must not
+        # crash.
+        script = textwrap.dedent("""
+            import threading
+            import tkinter
+            root = tkinter.Tk()
+            root.destroy()
+            # Let another thread drop the last reference.
+            ready = threading.Event()
+            t = threading.Thread(target=lambda obj: ready.wait(), args=(root,))
+            t.start()
+            del root
+            ready.set()
+            t.join()
+            print('ok')
+        """)
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(out.strip(), b'ok')
+        self.assertIn(b'RuntimeWarning', err)
+        self.assertIn(b'gh-83274', err)
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):
