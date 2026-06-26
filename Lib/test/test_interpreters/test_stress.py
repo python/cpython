@@ -79,9 +79,8 @@ class StressTests(TestBase):
     def test_create_interpreter_no_memory(self):
         import _testcapi
 
-        assertion = self.assertRaises(InterpreterError)
-        _testcapi.set_nomemory(0, 1)
-        with assertion:
+        with self.assertRaises(InterpreterError):
+            _testcapi.set_nomemory(0, 1)
             _interpreters.create()
 
 
