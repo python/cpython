@@ -1991,15 +1991,11 @@
         case _LOAD_COMMON_CONSTANT: {
             JitOptRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
-            PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-            if (_Py_IsImmortal(val)) {
-                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-                value = PyJitRef_Borrow(sym_new_const(ctx, val));
-            }
-            else {
-                ADD_OP(_LOAD_CONST_INLINE, 0, (uintptr_t)val);
-                value = sym_new_const(ctx, val);
-            }
+            PyObject *val = PyStackRef_AsPyObjectBorrow(
+                _PyInterpreterState_GET()->common_consts[oparg]);
+            assert(_Py_IsImmortal(val));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            value = PyJitRef_Borrow(sym_new_const(ctx, val));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -3945,10 +3941,6 @@
             break;
         }
 
-        case _GUARD_KEYS_VERSION: {
-            break;
-        }
-
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
             JitOptRef owner;
             JitOptRef attr;
@@ -4636,12 +4628,13 @@
                         length = PyUnicode_GET_LENGTH(const_val);
                     }
                     else if (PyBytes_CheckExact(const_val)) {
-                        CHECK_STACK_BOUNDS(-2);
-                        stack_pointer[-3] = res;
-                        stack_pointer += -2;
-                        ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                         length = PyBytes_GET_SIZE(const_val);
-                        stack_pointer += 2;
+                    }
+                    else if (PyFrozenDict_CheckExact(const_val)) {
+                        length = PyDict_GET_SIZE(const_val);
+                    }
+                    else if (PyFrozenSet_CheckExact(const_val)) {
+                        length = PySet_GET_SIZE(const_val);
                     }
                 }
             }

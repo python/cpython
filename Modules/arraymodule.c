@@ -68,6 +68,7 @@ typedef struct {
     PyObject *str_write;
     PyObject *str___dict__;
     PyObject *str_iter;
+    PyObject *typecodes;
 } array_state;
 
 static array_state *
@@ -289,49 +290,6 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 
     if (i >= 0)
         ((unsigned char *)ap->ob_item)[i] = x;
-    return 0;
-}
-
-static PyObject *
-u_getitem(arrayobject *ap, Py_ssize_t i)
-{
-    return PyUnicode_FromOrdinal(((wchar_t *) ap->ob_item)[i]);
-}
-
-static int
-u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
-{
-    if (!PyUnicode_Check(v)) {
-        PyErr_Format(PyExc_TypeError,
-                     "array item must be a unicode character, not %T",
-                     v);
-        return -1;
-    }
-
-    Py_ssize_t len = PyUnicode_AsWideChar(v, NULL, 0);
-    if (len != 2) {
-        if (PyUnicode_GET_LENGTH(v) != 1) {
-            PyErr_Format(PyExc_TypeError,
-                         "array item must be a unicode character, "
-                         "not a string of length %zd",
-                         PyUnicode_GET_LENGTH(v));
-        }
-        else {
-            PyErr_Format(PyExc_TypeError,
-                         "string %A cannot be converted to "
-                         "a single wchar_t character",
-                         v);
-        }
-        return -1;
-    }
-
-    wchar_t w;
-    len = PyUnicode_AsWideChar(v, &w, 1);
-    assert(len == 1);
-
-    if (i >= 0) {
-        ((wchar_t *)ap->ob_item)[i] = w;
-    }
     return 0;
 }
 
@@ -750,7 +708,6 @@ cd_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 
 DEFINE_COMPAREITEMS(b, signed char)
 DEFINE_COMPAREITEMS(BB, unsigned char)
-DEFINE_COMPAREITEMS(u, wchar_t)
 DEFINE_COMPAREITEMS(w, Py_UCS4)
 DEFINE_COMPAREITEMS(h, short)
 DEFINE_COMPAREITEMS(HH, unsigned short)
@@ -769,7 +726,6 @@ DEFINE_COMPAREITEMS(QQ, unsigned long long)
 static const struct arraydescr descriptors[] = {
     {"b", 1, b_getitem, b_setitem, b_compareitems, 1, 1},
     {"B", 1, BB_getitem, BB_setitem, BB_compareitems, 1, 0},
-    {"u", sizeof(wchar_t), u_getitem, u_setitem, u_compareitems, 0, 0},
     {"w", sizeof(Py_UCS4), w_getitem, w_setitem, w_compareitems, 0, 0,},
     {"h", sizeof(short), h_getitem, h_setitem, h_compareitems, 1, 1},
     {"H", sizeof(short), HH_getitem, HH_setitem, HH_compareitems, 1, 0},
@@ -1534,13 +1490,13 @@ array.array.buffer_info
 
 Return a tuple (address, length) giving the current memory address and the length in items of the buffer used to hold array's contents.
 
-The length should be multiplied by the itemsize attribute to calculate
-the buffer length in bytes.
+The length should be multiplied by the itemsize attribute to
+calculate the buffer length in bytes.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_buffer_info_impl(arrayobject *self)
-/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=63d9ad83ba60cda8]*/
+/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=c2771b9f6a8e1c86]*/
 {
     PyObject* item1 = PyLong_FromVoidPtr(self->ob_item);
     if (item1 == NULL) {
@@ -1572,19 +1528,18 @@ array_array_append_impl(arrayobject *self, PyObject *v)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 array.array.byteswap
 
 Byteswap all items of the array.
 
-If the items in the array are not 1, 2, 4, 8 or 16 bytes in size, RuntimeError
-is raised.  Note, that for complex types the order of
+If the items in the array are not 1, 2, 4, 8 or 16 bytes in size,
+RuntimeError is raised.  Note, that for complex types the order of
 components (the real part, followed by imaginary part) is preserved.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self)
-/*[clinic end generated code: output=5f8236cbdf0d90b5 input=aafda275f48191d0]*/
+/*[clinic end generated code: output=5f8236cbdf0d90b5 input=8732f800e1b47bac]*/
 {
     char *p;
     Py_ssize_t i;
@@ -1967,7 +1922,6 @@ array_array_tobytes_impl(arrayobject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 array.array.fromunicode
 
     ustr: unicode
@@ -1975,89 +1929,67 @@ array.array.fromunicode
 
 Extends this array with data from the unicode string ustr.
 
-The array must be a unicode type array; otherwise a ValueError is raised.
-Use array.frombytes(ustr.encode(...)) to append Unicode data to an array of
-some other type.
+The array must be a unicode type array; otherwise a ValueError is
+raised.  Use array.frombytes(ustr.encode(...)) to append Unicode
+data to an array of some other type.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
-/*[clinic end generated code: output=24359f5e001a7f2b input=158d47c302f27ca1]*/
+/*[clinic end generated code: output=24359f5e001a7f2b input=01fa592ec7b948b6]*/
 {
     const char *typecode = self->ob_descr->typecode;
-    if (strcmp(typecode, "u") != 0 && strcmp(typecode, "w") != 0) {
+    if (strcmp(typecode, "w") != 0) {
         PyErr_SetString(PyExc_ValueError,
             "fromunicode() may only be called on "
-            "unicode type arrays ('u' or 'w')");
+            "unicode type ('w') arrays");
         return NULL;
     }
 
-    if (strcmp(typecode, "u") == 0) {
-        Py_ssize_t ustr_length = PyUnicode_AsWideChar(ustr, NULL, 0);
-        assert(ustr_length > 0);
-        if (ustr_length > 1) {
-            ustr_length--; /* trim trailing NUL character */
-            Py_ssize_t old_size = Py_SIZE(self);
-            if (array_resize(self, old_size + ustr_length) == -1) {
-                return NULL;
-            }
+    Py_ssize_t ustr_length = PyUnicode_GetLength(ustr);
+    Py_ssize_t old_size = Py_SIZE(self);
+    Py_ssize_t new_size = old_size + ustr_length;
 
-            // must not fail
-            PyUnicode_AsWideChar(
-                ustr, ((wchar_t *)self->ob_item) + old_size, ustr_length);
-        }
+    if (new_size < 0 || (size_t)new_size > PY_SSIZE_T_MAX / sizeof(Py_UCS4)) {
+        return PyErr_NoMemory();
     }
-    else { // typecode == "w"
-        Py_ssize_t ustr_length = PyUnicode_GetLength(ustr);
-        Py_ssize_t old_size = Py_SIZE(self);
-        Py_ssize_t new_size = old_size + ustr_length;
-
-        if (new_size < 0 || (size_t)new_size > PY_SSIZE_T_MAX / sizeof(Py_UCS4)) {
-            return PyErr_NoMemory();
-        }
-        if (array_resize(self, new_size) == -1) {
-            return NULL;
-        }
-
-        // must not fail
-        Py_UCS4 *u = PyUnicode_AsUCS4(ustr, ((Py_UCS4*)self->ob_item) + old_size,
-                                      ustr_length, 0);
-        assert(u != NULL);
-        (void)u; // Suppress unused_variable warning.
+    if (array_resize(self, new_size) == -1) {
+        return NULL;
     }
+
+    // must not fail
+    Py_UCS4 *u = PyUnicode_AsUCS4(ustr, ((Py_UCS4*)self->ob_item) + old_size,
+                                  ustr_length, 0);
+    assert(u != NULL);
+    (void)u; // Suppress unused_variable warning.
 
     Py_RETURN_NONE;
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 array.array.tounicode
 
 Extends this array with data from the unicode string ustr.
 
-Convert the array to a unicode string.  The array must be a unicode type array;
-otherwise a ValueError is raised.  Use array.tobytes().decode() to obtain a
-unicode string from an array of some other type.
+Convert the array to a unicode string.  The array must be a unicode
+type array; otherwise a ValueError is raised.  Use
+array.tobytes().decode() to obtain a unicode string from an array of
+some other type.
 [clinic start generated code]*/
 
 static PyObject *
 array_array_tounicode_impl(arrayobject *self)
-/*[clinic end generated code: output=08e442378336e1ef input=6690997213d219db]*/
+/*[clinic end generated code: output=08e442378336e1ef input=d4d5f398aa71a2be]*/
 {
     const char *typecode = self->ob_descr->typecode;
-    if (strcmp(typecode, "u") != 0 && strcmp(typecode, "w") != 0) {
+    if (strcmp(typecode, "w") != 0) {
         PyErr_SetString(PyExc_ValueError,
-             "tounicode() may only be called on unicode type arrays ('u' or 'w')");
+             "tounicode() may only be called on unicode type ('w') arrays");
         return NULL;
     }
-    if (strcmp(typecode, "u") == 0) {
-        return PyUnicode_FromWideChar((wchar_t *) self->ob_item, Py_SIZE(self));
-    }
-    else { // typecode == "w"
-        int byteorder = 0; // native byteorder
-        return PyUnicode_DecodeUTF32((const char *) self->ob_item, Py_SIZE(self) * 4,
-                                     NULL, &byteorder);
-    }
+    int byteorder = 0; // native byteorder
+    return PyUnicode_DecodeUTF32((const char *) self->ob_item, Py_SIZE(self) * 4,
+                                 NULL, &byteorder);
 }
 
 /*[clinic input]
@@ -2132,15 +2064,6 @@ typecode_to_mformat_code(const char *typecode)
         return SIGNED_INT8;
     case 'B':
         return UNSIGNED_INT8;
-
-    case 'u':
-        if (sizeof(wchar_t) == 2) {
-            return UTF16_LE + is_big_endian;
-        }
-        if (sizeof(wchar_t) == 4) {
-            return UTF32_LE + is_big_endian;
-        }
-        return UNKNOWN_FORMAT;
 
     case 'w':
         return UTF32_LE + is_big_endian;
@@ -2678,7 +2601,8 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_TOBYTES_METHODDEF
     ARRAY_ARRAY_TOUNICODE_METHODDEF
     ARRAY_ARRAY___SIZEOF___METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("Arrays are generic over the type of their elements")},
     {NULL, NULL}  /* sentinel */
 };
 
@@ -2696,7 +2620,7 @@ array_repr(PyObject *op)
         return PyUnicode_FromFormat("%s('%s')",
                                     _PyType_Name(Py_TYPE(a)), typecode);
     }
-    if (strcmp(typecode, "u") == 0 || strcmp(typecode, "w") == 0) {
+    if (strcmp(typecode, "w") == 0) {
         v = array_array_tounicode_impl(a);
     } else {
         v = array_array_tolist_impl(a);
@@ -2966,9 +2890,6 @@ array_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
     view->internal = NULL;
     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
         view->format = (char *)self->ob_descr->typecode;
-        if (sizeof(wchar_t) >= 4 && strcmp(self->ob_descr->typecode, "u") == 0) {
-            view->format = "w";
-        }
     }
 
     self->ob_exports++;
@@ -3003,16 +2924,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (strcmp(s, "u") == 0) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "The 'u' type code is deprecated and "
-                         "will be removed in Python 3.16",
-                         1)) {
-            return NULL;
-        }
-    }
-
-    bool is_unicode = (strcmp(s, "u") == 0 || strcmp(s, "w") == 0);
+    bool is_unicode = (strcmp(s, "w") == 0);
 
     if (initial && !is_unicode) {
         if (PyUnicode_Check(initial)) {
@@ -3022,7 +2934,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         else if (array_Check(initial, state)) {
             const char *is = ((arrayobject*)initial)->ob_descr->typecode;
-            if (strcmp(is, "u") == 0 || strcmp(is, "w") == 0) {
+            if (strcmp(is, "w") == 0) {
                 PyErr_Format(PyExc_TypeError, "cannot use a unicode array to "
                             "initialize an array with typecode '%s'", s);
                 return NULL;
@@ -3098,43 +3010,21 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(v);
             }
             else if (initial != NULL && PyUnicode_Check(initial))  {
-                if (strcmp(s, "u") == 0) {
-                    Py_ssize_t n;
-                    wchar_t *ustr = PyUnicode_AsWideCharString(initial, &n);
-                    if (ustr == NULL) {
-                        Py_DECREF(a);
-                        Py_XDECREF(it);
-                        return NULL;
-                    }
-
-                    if (n > 0) {
-                        arrayobject *self = (arrayobject *)a;
-                        // self->ob_item may be NULL but it is safe.
-                        PyMem_Free(self->ob_item);
-                        self->ob_item = (char *)ustr;
-                        Py_SET_SIZE(self, n);
-                        self->allocated = n;
-                    }
-                    else {
-                        PyMem_Free(ustr);
-                    }
+                assert(strcmp(descr->typecode, "w") == 0);
+                Py_ssize_t n = PyUnicode_GET_LENGTH(initial);
+                Py_UCS4 *ustr = PyUnicode_AsUCS4Copy(initial);
+                if (ustr == NULL) {
+                    Py_DECREF(a);
+                    Py_XDECREF(it);
+                    return NULL;
                 }
-                else { // s == "w"
-                    Py_ssize_t n = PyUnicode_GET_LENGTH(initial);
-                    Py_UCS4 *ustr = PyUnicode_AsUCS4Copy(initial);
-                    if (ustr == NULL) {
-                        Py_DECREF(a);
-                        Py_XDECREF(it);
-                        return NULL;
-                    }
 
-                    arrayobject *self = (arrayobject *)a;
-                    // self->ob_item may be NULL but it is safe.
-                    PyMem_Free(self->ob_item);
-                    self->ob_item = (char *)ustr;
-                    Py_SET_SIZE(self, n);
-                    self->allocated = n;
-                }
+                arrayobject *self = (arrayobject *)a;
+                // self->ob_item may be NULL but it is safe.
+                PyMem_Free(self->ob_item);
+                self->ob_item = (char *)ustr;
+                Py_SET_SIZE(self, n);
+                self->allocated = n;
             }
             else if (initial != NULL && array_Check(initial, state) && len > 0) {
                 arrayobject *self = (arrayobject *)a;
@@ -3153,8 +3043,18 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     Py_XDECREF(it);
-    PyErr_SetString(PyExc_ValueError,
-        "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, e, f, d, Zf or Zd)");
+
+    PyObject *sep = PyUnicode_FromString(", ");
+    if (sep == NULL) {
+        return NULL;
+    }
+    PyObject *msg = PyObject_CallMethod(sep, "join", "(O)", state->typecodes);
+    Py_DECREF(sep);
+    if (msg == NULL) {
+        return NULL;
+    }
+    PyErr_Format(PyExc_ValueError, "bad typecode (must be: %S)", msg);
+    Py_DECREF(msg);
     return NULL;
 }
 
@@ -3180,7 +3080,6 @@ The following type codes are defined:\n\
     Type code   C Type             Minimum size in bytes\n\
     'b'         signed integer     1\n\
     'B'         unsigned integer   1\n\
-    'u'         Unicode character  2 (see note)\n\
     'h'         signed integer     2\n\
     'H'         unsigned integer   2\n\
     'i'         signed integer     2\n\
@@ -3194,9 +3093,6 @@ The following type codes are defined:\n\
     'd'         floating-point     8\n\
     'Zf'        float complex      8\n\
     'Zd'        double complex     16\n\
-\n\
-NOTE: The 'u' typecode corresponds to Python's unicode character. On\n\
-narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
 \n\
 NOTE: The 'q' and 'Q' type codes are only available if the platform\n\
 C compiler used to build Python supports 'long long', or, on Windows,\n\
@@ -3439,6 +3335,7 @@ array_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->ArrayType);
     Py_VISIT(state->ArrayIterType);
     Py_VISIT(state->array_reconstructor);
+    Py_VISIT(state->typecodes);
     return 0;
 }
 
@@ -3453,6 +3350,7 @@ array_clear(PyObject *module)
     Py_CLEAR(state->str_write);
     Py_CLEAR(state->str___dict__);
     Py_CLEAR(state->str_iter);
+    Py_CLEAR(state->typecodes);
     return 0;
 }
 
@@ -3549,6 +3447,7 @@ array_modexec(PyObject *m)
     if (tuple == NULL) {
         return -1;
     }
+    state->typecodes = Py_NewRef(tuple);
     if (PyModule_Add(m, "typecodes", tuple) < 0) {
         return -1;
     }

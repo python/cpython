@@ -231,10 +231,8 @@ calling the Python callback functions from a C callback.  Other uses are also
 imaginable.
 
 Fortunately, the Python interpreter is easily called recursively, and there is a
-standard interface to call a Python function.  (I won't dwell on how to call the
-Python parser with a particular string as input --- if you're interested, have a
-look at the implementation of the :option:`-c` command line option in
-:file:`Modules/main.c` from the Python source code.)
+standard interface to call a Python function.  (If you're interested in how to call the
+Python parser with a particular string as input, see :ref:`veryhigh`.)
 
 Calling a Python function is easy.  First, the Python program must somehow pass
 you the Python function object.  You should provide a function (or some other
@@ -641,7 +639,7 @@ and the object is freed.
 
 An alternative strategy is called :dfn:`automatic garbage collection`.
 (Sometimes, reference counting is also referred to as a garbage collection
-strategy, hence my use of "automatic" to distinguish the two.)  The big
+strategy, hence the use of "automatic" to distinguish the two.)  The big
 advantage of automatic garbage collection is that the user doesn't need to call
 :c:func:`free` explicitly.  (Another claimed advantage is an improvement in speed
 or memory usage --- this is no hard fact however.)  The disadvantage is that for

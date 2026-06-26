@@ -3154,7 +3154,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_CHECK_IS_NOT_PY_CALLABLE_KW", uops)
 
-    def test_call_len_string(self):
+    def test_call_len_string_frozen_set_dict(self):
         def testfunc(n):
             for _ in range(n):
                 _ = len("abc")
@@ -3162,12 +3162,14 @@ class TestUopsOptimization(unittest.TestCase):
                 _ = len(d)
                 _ = len(b"def")
                 _ = len(b"")
+                _ = len(FROZEN_SET_CONST)
+                _ = len(FROZEN_DICT_CONST)
 
         _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_CALL_LEN", uops)
-        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 8)
+        self.assertGreaterEqual(count_ops(ex, "_LOAD_CONST_INLINE_BORROW"), 10)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
@@ -5920,6 +5922,44 @@ class TestUopsOptimization(unittest.TestCase):
 
         f1()
         """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+    def test_149335_trace_buffer_guard(self):
+        # https://github.com/python/cpython/issues/149335
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import sys
+
+        def f1():
+            for i_3178 in 0, 2, 10:
+                mv162 = 162
+
+            mv3 = mv1 = mv_165 = mv16 = \
+            mv167 = mv168 = \
+            mv169 = \
+                mv_1403_170 = \
+                169
+
+            mv_1403_170
+
+            mv_172 = mv_3 = mv_4 = mv175 = mv176 = mv17 = mv178 = mv179 = mv0 = mv1 = mv182 = (
+            mv3
+            ) = mv4 = mv185 = mv186 = mv187 = mv18 = mv189 = mv0 = mv1 = mv192 = mv3 = mv4 = (
+            mv195
+            ) = mv196 = mv197 = mv_198 = mv19 = mv0 = mv1 = mv2 = mv3 = mv4 = mv05 = mv06 = (
+            mv07
+            ) = mv08 = mv09 = mv0 = mv1 = mv2 = mv3 = mv4 = mv15 = mv16 = mv17 = mv18 = mv19 = (
+            mv0
+            ) = mv1 = mv_2 = mv3 = mv4 = mv_25 = mv_26 = mv_27 = mv_28 = mv_29 = mv0 = mv1 = (
+            mv2
+            ) = mv_1403 = mv4 = mv35 = mv36 = mv37 = mv38 = mv39 = mv0 = -sys.maxsize / 3
+
+            mv1 = mv_12 = mv3 = mv_14 = mv45 = sys.float_info.epsilon
+            mv46 = sys.float_info.epsilon
+
+        for i in range(15000):
+            f1()
+        """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
 
     def test_144068_daemon_thread_jit_cleanup(self):

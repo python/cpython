@@ -2,6 +2,7 @@
 #include "pycore_long.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
+#include "pycore_stackref.h"
 #include "pycore_typeobject.h"
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
@@ -870,15 +871,11 @@ dummy_func(void) {
 
     op(_LOAD_COMMON_CONSTANT, (-- value)) {
         assert(oparg < NUM_COMMON_CONSTANTS);
-        PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-        if (_Py_IsImmortal(val)) {
-            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-            value = PyJitRef_Borrow(sym_new_const(ctx, val));
-        }
-        else {
-            ADD_OP(_LOAD_CONST_INLINE, 0, (uintptr_t)val);
-            value = sym_new_const(ctx, val);
-        }
+        PyObject *val = PyStackRef_AsPyObjectBorrow(
+            _PyInterpreterState_GET()->common_consts[oparg]);
+        assert(_Py_IsImmortal(val));
+        ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+        value = PyJitRef_Borrow(sym_new_const(ctx, val));
     }
 
     op(_LOAD_SMALL_INT, (-- value)) {
@@ -2378,7 +2375,7 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyLong_Type);
         Py_ssize_t length = sym_tuple_length(arg);
 
-        // Not a tuple, check if it's a const string
+        // Not a tuple, check if it's another immutable const with known length
         if (length < 0 && sym_is_const(ctx, arg)) {
             PyObject *const_val = sym_get_const(ctx, arg);
             if (const_val != NULL) {
@@ -2387,6 +2384,12 @@ dummy_func(void) {
                 }
                 else if (PyBytes_CheckExact(const_val)) {
                     length = PyBytes_GET_SIZE(const_val);
+                }
+                else if (PyFrozenDict_CheckExact(const_val)) {
+                    length = PyDict_GET_SIZE(const_val);
+                }
+                else if (PyFrozenSet_CheckExact(const_val)) {
+                    length = PySet_GET_SIZE(const_val);
                 }
             }
         }

@@ -1,15 +1,17 @@
 import functools
 import inspect
 import os
+import select
 import string
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation, MISSING_C_DOCSTRINGS,
-                          gc_collect)
+                          gc_collect, SHORT_TIMEOUT)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -53,9 +55,11 @@ def requires_colors(test):
 term = os.environ.get('TERM')
 SHORT_MAX = 0x7fff
 
-# If newterm was supported we could use it instead of initscr and not exit
+# newterm() is used when available (it reports errors instead of exiting), but
+# initscr() is still the fallback, and an unusable $TERM has no terminal to
+# drive either way.
 @unittest.skipIf(not term or term == 'unknown',
-                 "$TERM=%r, calling initscr() may cause exit" % term)
+                 "$TERM=%r, no usable terminal" % term)
 @unittest.skipIf(sys.platform == "cygwin",
                  "cygwin's curses mostly just hangs")
 class TestCurses(unittest.TestCase):
@@ -110,7 +114,25 @@ class TestCurses(unittest.TestCase):
             sys.stderr.flush()
             sys.stdout.flush()
             print(file=self.output, flush=True)
-        self.stdscr = curses.initscr()
+        if hasattr(curses, 'newterm'):
+            # Use newterm() rather than initscr(): it reports errors instead of
+            # exiting, and gives each test a fresh screen, which also lets
+            # ScreenTests run newterm()/set_term() in the same process.
+            try:
+                infd = sys.__stdin__.fileno()
+            except (AttributeError, ValueError, OSError):
+                infd = stdout_fd
+            self.screen = curses.newterm(term, stdout_fd, infd)
+            self.stdscr = self.screen.stdscr
+            # Close the screen after the test to break its window<->screen
+            # reference cycle deterministically, rather than leaving it for the
+            # cyclic GC to collect during a much later test (where a window's
+            # delwin() can fail -- an unraisable error on macOS).
+            self.addCleanup(self.screen.close)
+            self.addCleanup(setattr, self, 'screen', None)
+            self.addCleanup(setattr, self, 'stdscr', None)
+        else:
+            self.stdscr = curses.initscr()
         if self.isatty:
             curses.savetty()
             self.addCleanup(curses.endwin)
@@ -119,9 +141,12 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('filter')
     def test_filter(self):
-        # TODO: Should be called before initscr() or newterm() are called.
-        # TODO: nofilter()
+        # filter() must be called before initscr()/newterm(); it confines
+        # curses to a single line.  Undo it with nofilter() afterwards so that
+        # it does not shrink the screens created by later tests.
         curses.filter()
+        if hasattr(curses, 'nofilter'):
+            self.addCleanup(curses.nofilter)
 
     @requires_curses_func('use_env')
     def test_use_env(self):
@@ -252,6 +277,85 @@ class TestCurses(unittest.TestCase):
                 self.assertIs(win.is_wintouched(), syncok)
                 self.assertIs(stdscr.is_wintouched(), syncok)
 
+    def _encodable(self, s):
+        # Wide characters are only supported in a locale that can encode them.
+        try:
+            s.encode(self.stdscr.encoding)
+        except UnicodeEncodeError:
+            return False
+        return True
+
+    @requires_curses_window_meth('get_wch')
+    def test_addch_combining(self):
+        stdscr = self.stdscr
+        stdscr.move(0, 0)
+        # A character cell may hold a spacing char plus combining marks.
+        if self._encodable('e\u0301'):
+            stdscr.addch('e\u0301')              # 'e' + COMBINING ACUTE ACCENT
+        if self._encodable('a\u0323\u0300'):
+            stdscr.addch(1, 0, 'a\u0323\u0300')  # base plus two combining marks
+        # Too many code points to fit in a single character cell.
+        self.assertRaises(TypeError, stdscr.addch, 'e' + '\u0301' * 10)
+        # Only the first code point may be a spacing character.
+        self.assertRaises(ValueError, stdscr.addch, 'ab')
+        self.assertRaises(ValueError, stdscr.addch, 'a\u0301b')
+        # A lone control character is allowed (like addch(ord('\n'))), but it
+        # cannot be combined with other characters, as base or otherwise.
+        stdscr.addch('\n')
+        self.assertRaises(ValueError, stdscr.addch, 'a\n')
+        self.assertRaises(ValueError, stdscr.addch, '\n\u0301')
+        self.assertRaises(ValueError, stdscr.addch, '\ne\u0301')
+
+    @requires_curses_window_meth('get_wch')
+    def test_addch_emoji(self):
+        # curses has no grapheme-cluster support: a cell holds one spacing
+        # character plus zero-width combining characters.  A lone emoji fits,
+        # as does an emoji with a zero-width variation selector.
+        stdscr = self.stdscr
+        if self._encodable('\U0001f600'):
+            stdscr.addch(0, 0, '\U0001f600')          # single emoji
+        if self._encodable('\u263a\ufe0f'):
+            stdscr.addch(1, 0, '\u263a\ufe0f')        # WHITE SMILING FACE + VS-16
+        # An emoji ZWJ sequence or an emoji with a modifier is more than one
+        # spacing character and cannot share a single cell.
+        self.assertRaises(ValueError, stdscr.addch,
+                          '\U0001f44d\U0001f3fd')          # thumbs up + skin tone
+        self.assertRaises(ValueError, stdscr.addch,
+                          '\U0001f468\u200d\U0001f469')    # man ZWJ woman
+
+    @requires_curses_window_meth('get_wch')
+    def test_wide_characters(self):
+        # Wide and combining characters in the character-cell methods.
+        stdscr = self.stdscr
+        combining = 'e\u0301'              # 'e' + COMBINING ACUTE ACCENT
+        vline, hline = '\u2502', '\u2500'  # box-drawing vertical/horizontal
+        stdscr.move(0, 0)
+        if self._encodable(combining):
+            stdscr.echochar(combining)
+            stdscr.insch(1, 0, combining)
+            stdscr.bkgdset(combining)
+            stdscr.bkgd(combining)
+        if self._encodable(hline):
+            stdscr.hline(2, 0, hline, 5)
+        if self._encodable(vline):
+            stdscr.vline(3, 0, vline, 3)
+        if self._encodable(vline + hline):
+            stdscr.border(vline, vline, hline, hline)
+            stdscr.box(vline, hline)
+        # border() and box() cannot mix integer and wide-string characters.
+        self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
+
+
+    @requires_curses_window_meth('in_wstr')
+    def test_in_wstr(self):
+        # The wide-character window read returns a str (instr returns bytes).
+        stdscr = self.stdscr
+        s = 'a\u00e9\u2502z'  # 'a', 'e'+acute (precomposed), box vline, 'z'
+        stdscr.addstr(0, 0, s)
+        self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
+        self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
+
+
     def test_output_character(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
@@ -280,13 +384,16 @@ class TestCurses(unittest.TestCase):
         stdscr.echochar('A')
         stdscr.echochar(b'A')
         stdscr.echochar(65)
-        with self.assertRaises((UnicodeEncodeError, OverflowError)):
-            # Unicode is not fully supported yet, but at least it does
-            # not crash.
-            # It is supposed to fail because either the character is
-            # not encodable with the current encoding, or it is encoded to
-            # a multibyte sequence.
-            stdscr.echochar('\u0114')
+        c = '\u0114'
+        try:
+            stdscr.echochar(c)
+        except UnicodeEncodeError:
+            # The character is not encodable with the current encoding.
+            self.assertRaises(UnicodeEncodeError, c.encode, encoding)
+        except OverflowError:
+            # The character is encoded to a multibyte sequence.
+            encoded = c.encode(encoding)
+            self.assertNotEqual(len(encoded), 1, repr(encoded))
         stdscr.echochar('A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), False)
 
@@ -334,6 +441,65 @@ class TestCurses(unittest.TestCase):
                 self.assertRaises(ValueError, stdscr.insstr, arg)
                 self.assertRaises(ValueError, stdscr.insnstr, arg, 1)
 
+    def test_add_string_behavior(self):
+        # addstr() advances the cursor past the written text; addnstr()
+        # writes at most n characters.
+        win = curses.newwin(1, 10, 0, 0)
+        win.addstr(0, 0, 'abc')
+        self.assertEqual(win.getyx(), (0, 3))
+        win.erase()
+        win.addnstr(0, 0, 'abcdef', 3)
+        self.assertEqual(win.instr(0, 0), b'abc       ')
+
+    def test_insert_string_behavior(self):
+        # insstr()/insnstr() insert at the cursor, shift the rest of the
+        # line right (losing characters off the edge), and leave the cursor
+        # where it was.
+        win = curses.newwin(1, 10, 0, 0)
+        win.addstr(0, 0, 'abcde')
+        win.move(0, 1)
+        win.insstr('XY')
+        self.assertEqual(win.getyx(), (0, 1))   # cursor did not advance
+        self.assertEqual(win.instr(0, 0), b'aXYbcde   ')
+
+        win.erase()
+        win.addstr(0, 0, 'ZZZZZ')
+        win.move(0, 0)
+        win.insnstr('abcdef', 3)           # at most 3 characters
+        self.assertEqual(win.instr(0, 0), b'abcZZZZZ  ')
+
+    def test_insch(self):
+        # insch() inserts a single character at the cursor (or at y, x),
+        # shifting the rest of the line right.
+        win = curses.newwin(2, 10, 0, 0)
+        win.addstr(0, 0, 'abc')
+        win.move(0, 1)
+        win.insch(ord('X'))
+        self.assertEqual(win.instr(0, 0), b'aXbc      ')
+        win.insch(1, 0, 'Y', curses.A_BOLD)
+        self.assertEqual(win.inch(1, 0), b'Y'[0] | curses.A_BOLD)
+
+    def test_pad(self):
+        pad = curses.newpad(10, 20)
+        pad.addstr(0, 0, 'PADTEXT')
+        self.assertEqual(pad.instr(0, 0, 7), b'PADTEXT')
+
+        # subpad() creates a pad within the parent pad.  Cell sharing with
+        # the parent is implementation-defined, so write to the subpad itself.
+        sub = pad.subpad(3, 5, 0, 0)
+        self.assertEqual(sub.getmaxyx(), (3, 5))
+        sub.addstr(1, 0, 'sub')
+        self.assertEqual(sub.instr(1, 0, 3), b'sub')
+
+        # A pad is refreshed onto an explicit screen rectangle; the
+        # 6-argument form is required (and rejected for ordinary windows).
+        pad.refresh(0, 0, 0, 0, 4, 10)
+        pad.noutrefresh(0, 0, 0, 0, 4, 10)
+        curses.doupdate()
+        self.assertRaises(TypeError, pad.refresh)
+        win = curses.newwin(5, 5, 0, 0)
+        self.assertRaises(TypeError, win.refresh, 0, 0, 0, 0, 4, 4)
+
     def test_read_from_window(self):
         stdscr = self.stdscr
         stdscr.addstr(0, 1, 'ABCD', curses.A_BOLD)
@@ -349,6 +515,27 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(stdscr.instr(0, 2, 4), b'BCD ')
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 0, 2, -2)
+
+    def test_coordinate_errors(self):
+        # Addressing a cell outside the window raises curses.error.
+        win = curses.newwin(5, 10, 0, 0)
+        self.assertRaises(curses.error, win.move, 100, 100)
+        self.assertRaises(curses.error, win.move, -1, -1)
+        self.assertRaises(curses.error, win.addch, 100, 100, ord('x'))
+        self.assertRaises(curses.error, win.inch, 100, 100)
+        if hasattr(win, 'chgat'):       # chgat() requires wchgat()
+            self.assertRaises(curses.error, win.chgat, 100, 0, curses.A_BOLD)
+
+    def test_argument_errors(self):
+        win = curses.newwin(5, 10, 0, 0)
+        # A character argument must be an int, a byte or a one-element string.
+        self.assertRaises(TypeError, win.addch, [])
+        self.assertRaises(OverflowError, win.addch, 2**64)
+        # A string method rejects a non-string, non-bytes argument.
+        self.assertRaises(TypeError, win.addstr, 5)
+        self.assertRaises(TypeError, win.addstr)
+        # Wrong number of positional arguments.
+        self.assertRaises(TypeError, win.instr, 0, 0, 0, 0)
 
     def test_getch(self):
         win = curses.newwin(5, 12, 5, 2)
@@ -464,7 +651,6 @@ class TestCurses(unittest.TestCase):
         win.scrollok(False)
 
     def test_attributes(self):
-        # TODO: attr_get(), attr_set(), ...
         win = curses.newwin(5, 15, 5, 2)
         win.attron(curses.A_BOLD)
         win.attroff(curses.A_BOLD)
@@ -472,6 +658,45 @@ class TestCurses(unittest.TestCase):
 
         win.standout()
         win.standend()
+
+        # The attr_*() family works on attr_t attributes paired with a color
+        # pair, unlike the chtype-based attron()/attroff()/attrset().
+        win.attr_set(curses.A_BOLD | curses.A_UNDERLINE)
+        attrs, pair = win.attr_get()
+        self.assertTrue(attrs & curses.A_BOLD)
+        self.assertTrue(attrs & curses.A_UNDERLINE)
+        self.assertEqual(pair, 0)
+        self.assertEqual(win.getattrs(), attrs)
+
+        win.attr_on(curses.A_REVERSE)
+        self.assertTrue(win.attr_get()[0] & curses.A_REVERSE)
+        win.attr_off(curses.A_REVERSE)
+        self.assertFalse(win.attr_get()[0] & curses.A_REVERSE)
+
+        # color_set() with a real pair needs start_color(); see
+        # test_attr_color_pair.  Here only the argument validation is checked,
+        # which fails before wcolor_set() is reached.
+        self.assertRaises(TypeError, win.attr_set, 'x')
+        self.assertRaises(TypeError, win.attr_set, curses.A_BOLD, 'x')
+        self.assertRaises(TypeError, win.attr_on, 'x')
+        self.assertRaises(TypeError, win.color_set, 'x')
+        self.assertRaises(ValueError, win.color_set, -1)
+        self.assertRaises(ValueError, win.attr_set, curses.A_BOLD, -1)
+        # attr_t is unsigned: a negative or too-large attribute overflows.
+        self.assertRaises(OverflowError, win.attr_set, -1)
+        self.assertRaises(OverflowError, win.attr_on, -1)
+        self.assertRaises(OverflowError, win.attr_set, 1 << 64)
+
+    @requires_colors
+    def test_attr_color_pair(self):
+        win = curses.newwin(5, 15, 5, 2)
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        win.attr_set(curses.A_BOLD, 1)
+        attrs, pair = win.attr_get()
+        self.assertTrue(attrs & curses.A_BOLD)
+        self.assertEqual(pair, 1)
+        win.color_set(0)
+        self.assertEqual(win.attr_get()[1], 0)
 
     @requires_curses_window_meth('chgat')
     def test_chgat(self):
@@ -503,6 +728,11 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.inch(3, 10), b'a'[0] | curses.A_BLINK)
         self.assertEqual(win.inch(3, 11), b'm'[0] | curses.A_UNDERLINE)
         self.assertEqual(win.inch(3, 14), b' '[0] | curses.A_UNDERLINE)
+
+        # attr_t is unsigned: a negative or too-large attribute overflows.
+        self.assertRaises(TypeError, win.chgat, 'x')
+        self.assertRaises(OverflowError, win.chgat, -1)
+        self.assertRaises(OverflowError, win.chgat, 1 << 64)
 
     def test_background(self):
         win = curses.newwin(5, 15, 5, 2)
@@ -661,7 +891,6 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.inch(3, 1), b'a'[0])
 
     def test_unctrl(self):
-        # TODO: wunctrl()
         self.assertEqual(curses.unctrl(b'A'), b'A')
         self.assertEqual(curses.unctrl('A'), b'A')
         self.assertEqual(curses.unctrl(65), b'A')
@@ -672,6 +901,21 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(TypeError, curses.unctrl, b'AB')
         self.assertRaises(TypeError, curses.unctrl, '')
         self.assertRaises(TypeError, curses.unctrl, 'AB')
+
+    @requires_curses_func('wunctrl')
+    def test_wunctrl(self):
+        # The wide-character variant of unctrl() returns a str.
+        self.assertEqual(curses.wunctrl(b'A'), 'A')
+        self.assertEqual(curses.wunctrl('A'), 'A')
+        self.assertEqual(curses.wunctrl(65), 'A')
+        self.assertEqual(curses.wunctrl('\n'), '^J')
+        self.assertEqual(curses.wunctrl(10), '^J')
+        self.assertEqual(curses.wunctrl('é'), 'é')  # printable
+        self.assertRaises(TypeError, curses.wunctrl, b'')
+        self.assertRaises(TypeError, curses.wunctrl, b'AB')
+        self.assertRaises(TypeError, curses.wunctrl, '')
+        # More than one spacing character is not a single cell.
+        self.assertRaises(ValueError, curses.wunctrl, 'AB')
         self.assertRaises(OverflowError, curses.unctrl, 2**64)
 
     def test_endwin(self):
@@ -719,7 +963,7 @@ class TestCurses(unittest.TestCase):
         curses.newpad(50, 50)
 
     def test_env_queries(self):
-        # TODO: term_attrs(), erasewchar(), killwchar()
+        # TODO: term_attrs()
         self.assertIsInstance(curses.termname(), bytes)
         self.assertIsInstance(curses.longname(), bytes)
         self.assertIsInstance(curses.baudrate(), int)
@@ -733,6 +977,24 @@ class TestCurses(unittest.TestCase):
         c = curses.erasechar()
         self.assertIsInstance(c, bytes)
         self.assertEqual(len(c), 1)
+
+        # The erase and kill characters are a property of the controlling
+        # terminal: the wide variants report ERR (raising curses.error) without
+        # one, while the narrow variants above return an unspecified byte.
+        try:
+            tty_fd = os.open(os.ctermid(), os.O_RDONLY)
+        except OSError:
+            tty_fd = None
+        if tty_fd is not None:
+            os.close(tty_fd)
+            if hasattr(curses, 'erasewchar'):
+                c = curses.erasewchar()
+                self.assertIsInstance(c, str)
+                self.assertEqual(len(c), 1)
+            if hasattr(curses, 'killwchar'):
+                c = curses.killwchar()
+                self.assertIsInstance(c, str)
+                self.assertEqual(len(c), 1)
 
     def test_output_options(self):
         stdscr = self.stdscr
@@ -809,6 +1071,75 @@ class TestCurses(unittest.TestCase):
         stdscr.timeout(0)
         stdscr.timeout(5)
 
+    @requires_curses_window_meth('is_scrollok')
+    def test_state_getters(self):
+        stdscr = self.stdscr
+        # Each is_*() getter returns the value set by the matching setter.
+        for setter, getter in [
+            ('clearok', 'is_cleared'),
+            ('idcok', 'is_idcok'),
+            ('idlok', 'is_idlok'),
+            ('keypad', 'is_keypad'),
+            ('leaveok', 'is_leaveok'),
+            ('nodelay', 'is_nodelay'),
+            ('notimeout', 'is_notimeout'),
+            ('scrollok', 'is_scrollok'),
+        ]:
+            getattr(stdscr, setter)(True)
+            self.assertIs(getattr(stdscr, getter)(), True)
+            getattr(stdscr, setter)(False)
+            self.assertIs(getattr(stdscr, getter)(), False)
+        if hasattr(stdscr, 'immedok'):
+            stdscr.immedok(True)
+            self.assertIs(stdscr.is_immedok(), True)
+            stdscr.immedok(False)
+        if hasattr(stdscr, 'syncok'):
+            stdscr.syncok(True)
+            self.assertIs(stdscr.is_syncok(), True)
+            stdscr.syncok(False)
+
+        # getdelay() reflects timeout()/nodelay().
+        stdscr.timeout(100)
+        self.assertEqual(stdscr.getdelay(), 100)
+        stdscr.nodelay(True)
+        self.assertEqual(stdscr.getdelay(), 0)
+        stdscr.timeout(-1)
+        self.assertEqual(stdscr.getdelay(), -1)
+
+        # getscrreg() reflects setscrreg().
+        stdscr.setscrreg(5, 10)
+        self.assertEqual(stdscr.getscrreg(), (5, 10))
+
+        # is_pad()/is_subwin()/getparent().
+        self.assertIs(stdscr.is_pad(), False)
+        self.assertIs(stdscr.is_subwin(), False)
+        self.assertIsNone(stdscr.getparent())
+        sub = stdscr.subwin(3, 3, 0, 0)
+        self.assertIs(sub.is_subwin(), True)
+        self.assertIs(sub.getparent(), stdscr)
+        pad = curses.newpad(5, 5)
+        self.assertIs(pad.is_pad(), True)
+
+    @requires_curses_func('is_cbreak')
+    def test_global_state_getters(self):
+        if self.isatty:
+            curses.cbreak()
+            self.assertIs(curses.is_cbreak(), True)
+            curses.nocbreak()
+            self.assertIs(curses.is_cbreak(), False)
+            curses.raw()
+            self.assertIs(curses.is_raw(), True)
+            curses.noraw()
+            self.assertIs(curses.is_raw(), False)
+        curses.echo()
+        self.assertIs(curses.is_echo(), True)
+        curses.noecho()
+        self.assertIs(curses.is_echo(), False)
+        curses.nl()
+        self.assertIs(curses.is_nl(), True)
+        curses.nonl()
+        self.assertIs(curses.is_nl(), False)
+
     @requires_curses_func('typeahead')
     def test_typeahead(self):
         curses.typeahead(sys.__stdin__.fileno())
@@ -819,6 +1150,10 @@ class TestCurses(unittest.TestCase):
             self.skipTest('requires terminal')
         curses.def_prog_mode()
         curses.reset_prog_mode()
+        # def_shell_mode()/reset_shell_mode() are intentionally not exercised
+        # here: they capture and restore curses' "shell mode" terminal state,
+        # which is only meaningful before initscr().  Calling them mid-suite
+        # corrupts the modes that endwin() restores and breaks later tests.
 
     def test_beep(self):
         if (curses.tigetstr("bel") is not None
@@ -986,6 +1321,54 @@ class TestCurses(unittest.TestCase):
             self.assertRaises(ValueError, curses.init_pair, 1, color, 0)
             self.assertRaises(ValueError, curses.init_pair, 1, 0, color)
 
+    @requires_curses_func('alloc_pair')
+    @requires_colors
+    def test_dynamic_color_pairs(self):
+        # alloc_pair()/find_pair()/free_pair() (extended-color extension).
+        fg = bg = curses.COLORS - 1
+        pair = curses.alloc_pair(fg, bg)
+        self.assertGreater(pair, 0)
+        self.assertEqual(curses.pair_content(pair), (fg, bg))
+        # The same combination of colors reuses the same pair.
+        self.assertEqual(curses.alloc_pair(fg, bg), pair)
+        self.assertEqual(curses.find_pair(fg, bg), pair)
+        # Once freed, the pair is no longer found.
+        self.assertIsNone(curses.free_pair(pair))
+        self.assertEqual(curses.find_pair(fg, bg), -1)
+
+        # Error paths.
+        for color in self.bad_colors2():
+            self.assertRaises(ValueError, curses.alloc_pair, color, 0)
+            self.assertRaises(ValueError, curses.alloc_pair, 0, color)
+            self.assertRaises(ValueError, curses.find_pair, color, 0)
+            self.assertRaises(ValueError, curses.find_pair, 0, color)
+        for pair in self.bad_pairs():
+            self.assertRaises(ValueError, curses.free_pair, pair)
+        # Color pair 0 is reserved and cannot be freed.
+        self.assertRaises(curses.error, curses.free_pair, 0)
+
+        # Invalid number or type of arguments.
+        self.assertRaises(TypeError, curses.alloc_pair)
+        self.assertRaises(TypeError, curses.alloc_pair, 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 0, 0, 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 'red', 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 0, 'red')
+        self.assertRaises(TypeError, curses.alloc_pair, fg=0, bg=0)
+        self.assertRaises(TypeError, curses.find_pair)
+        self.assertRaises(TypeError, curses.find_pair, 0)
+        self.assertRaises(TypeError, curses.find_pair, 0, 0, 0)
+        self.assertRaises(TypeError, curses.find_pair, 'red', 0)
+        self.assertRaises(TypeError, curses.find_pair, 0, 'red')
+        self.assertRaises(TypeError, curses.free_pair)
+        self.assertRaises(TypeError, curses.free_pair, 1, 2)
+        self.assertRaises(TypeError, curses.free_pair, 'red')
+
+    @requires_curses_func('reset_color_pairs')
+    @requires_colors
+    def test_reset_color_pairs(self):
+        self.assertIsNone(curses.reset_color_pairs())
+        self.assertRaises(TypeError, curses.reset_color_pairs, 0)
+
     @requires_colors
     def test_color_attrs(self):
         for pair in 0, 1, 255:
@@ -1003,6 +1386,22 @@ class TestCurses(unittest.TestCase):
         except curses.error:
             self.skipTest('cannot change color (use_default_colors() failed)')
         self.assertEqual(curses.pair_content(0), (-1, -1))
+
+    @requires_curses_window_meth('use')
+    def test_use_window(self):
+        win = self.stdscr
+        self.assertEqual(win.use(lambda w, a, b: (w is win, a, b), 5, b=6),
+                         (True, 5, 6))
+        with self.assertRaises(ZeroDivisionError):
+            win.use(lambda w: 1 / 0)
+
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires screen.use()')
+    def test_use_screen(self):
+        screen = self.screen
+        self.assertEqual(
+            screen.use(lambda sc, flag: (sc is screen, flag), flag=True),
+            (True, True))
 
     @requires_curses_func('assume_default_colors')
     @requires_colors
@@ -1031,7 +1430,8 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('has_key')
     def test_has_key(self):
-        curses.has_key(13)
+        self.assertIsInstance(curses.has_key(13), bool)
+        self.assertIsInstance(curses.has_key(curses.KEY_LEFT), bool)
 
     @requires_curses_func('getmouse')
     def test_getmouse(self):
@@ -1069,6 +1469,10 @@ class TestCurses(unittest.TestCase):
     def test_userptr_segfault(self):
         w = curses.newwin(10, 10)
         panel = curses.panel.new_panel(w)
+        # set_userptr(A()) makes a panel<->userptr reference cycle (A.__del__
+        # closes over panel); clean it up so the panel and its window do not
+        # linger until a later test collects them.
+        self.addCleanup(self._delete_panels, panel)
         class A:
             def __del__(self):
                 panel.set_userptr(None)
@@ -1082,6 +1486,200 @@ class TestCurses(unittest.TestCase):
         w = curses.newwin(10, 10)
         panel = curses.panel.new_panel(w)
         check_disallow_instantiation(self, type(panel))
+
+    @requires_curses_func('panel')
+    def test_panel_stack(self):
+        panel = curses.panel
+        # new_panel() puts the panel on top of the stack, so the three
+        # panels end up ordered bottom -> top as p1, p2, p3.
+        p1 = panel.new_panel(curses.newwin(3, 6, 0, 0))
+        p2 = panel.new_panel(curses.newwin(3, 6, 1, 1))
+        p3 = panel.new_panel(curses.newwin(3, 6, 2, 2))
+        self.addCleanup(self._delete_panels, p1, p2, p3)
+
+        # The most recently created panel is on top.
+        self.assertIs(panel.top_panel(), p3)
+        # window() returns the wrapped window.
+        self.assertEqual(p2.window().getbegyx(), (1, 1))
+
+        # above()/below() walk the stack one step at a time.
+        self.assertIs(p1.above(), p2)
+        self.assertIs(p2.above(), p3)
+        self.assertIsNone(p3.above())     # nothing above the top panel
+        self.assertIs(p3.below(), p2)
+        self.assertIs(p2.below(), p1)
+
+        # top() raises a panel to the top, bottom() lowers it to the bottom.
+        p1.top()
+        self.assertIs(panel.top_panel(), p1)
+        self.assertIsNone(p1.above())
+        p1.bottom()
+        self.assertIs(panel.bottom_panel(), p1)
+        self.assertIsNone(p1.below())
+
+        # update_panels() refreshes the virtual screen from the stack.
+        panel.update_panels()
+
+    @requires_curses_func('panel')
+    def test_panel_hide_show(self):
+        p = curses.panel.new_panel(curses.newwin(3, 6, 0, 0))
+        self.addCleanup(self._delete_panels, p)
+        self.assertIs(p.hidden(), False)
+        p.hide()
+        self.assertIs(p.hidden(), True)
+        p.show()
+        self.assertIs(p.hidden(), False)
+
+    @requires_curses_func('panel')
+    def test_panel_move(self):
+        win = curses.newwin(3, 6, 1, 2)
+        p = curses.panel.new_panel(win)
+        self.addCleanup(self._delete_panels, p)
+        self.assertEqual(win.getbegyx(), (1, 2))
+        p.move(4, 5)
+        self.assertEqual(win.getbegyx(), (4, 5))
+
+    @requires_curses_func('panel')
+    def test_panel_replace(self):
+        win1 = curses.newwin(3, 6, 0, 0)
+        win2 = curses.newwin(4, 8, 1, 1)
+        p = curses.panel.new_panel(win1)
+        self.addCleanup(self._delete_panels, p)
+        self.assertIs(p.window(), win1)
+        p.replace(win2)
+        self.assertIs(p.window(), win2)
+
+    @requires_curses_func('panel')
+    def test_panel_userptr(self):
+        p = curses.panel.new_panel(curses.newwin(3, 6, 0, 0))
+        self.addCleanup(self._delete_panels, p)
+        obj = ['userptr']
+        p.set_userptr(obj)
+        self.assertIs(p.userptr(), obj)
+
+    def _delete_panels(self, *panels):
+        # Drop the panels from the global stack so they do not leak into
+        # later tests that inspect top_panel()/bottom_panel().
+        for p in panels:
+            try:
+                p.bottom()
+            except curses.panel.error:
+                pass
+        del panels
+        gc_collect()
+
+    def _make_textbox(self, nlines, ncols, *, insert_mode=False, stripspaces=1):
+        win = curses.newwin(nlines, ncols, 0, 0)
+        box = curses.textpad.Textbox(win, insert_mode=insert_mode)
+        box.stripspaces = stripspaces
+        return box, win
+
+    def _type(self, box, text):
+        for ch in text:
+            box.do_command(ch if isinstance(ch, int) else ord(ch))
+
+    def test_textbox_gather(self):
+        # Typed text is read back by gather().  With stripspaces on (the
+        # default) gather() keeps a single trailing blank on a line and
+        # drops trailing empty lines.
+        box, win = self._make_textbox(3, 10)
+        self._type(box, 'Hello')
+        self.assertEqual(box.gather(), 'Hello \n')
+
+    def test_textbox_gather_multiline(self):
+        box, win = self._make_textbox(3, 10)
+        self._type(box, 'ab')
+        box.do_command(curses.ascii.NL)    # ^j -> start of next line
+        self._type(box, 'cd')
+        self.assertEqual(box.gather(), 'ab \ncd \n')
+
+    def test_textbox_stripspaces(self):
+        box, win = self._make_textbox(1, 8, stripspaces=1)
+        self._type(box, 'hi')
+        self.assertEqual(box.gather(), 'hi ')
+
+        box, win = self._make_textbox(1, 8, stripspaces=0)
+        self._type(box, 'hi')
+        self.assertEqual(box.gather(), 'hi      ')
+
+    def test_textbox_insert_mode(self):
+        # In insert mode a typed character shifts the rest of the line right.
+        box, win = self._make_textbox(1, 10, insert_mode=True)
+        self._type(box, 'aXc')
+        win.move(0, 1)
+        self._type(box, 'b')
+        self.assertEqual(box.gather(), 'abXc ')
+
+    def test_textbox_movement(self):
+        box, win = self._make_textbox(3, 10)
+        self._type(box, 'abc')
+        box.do_command(curses.ascii.SOH)   # ^a -> left edge
+        self.assertEqual(win.getyx(), (0, 0))
+        box.do_command(curses.ascii.ENQ)   # ^e -> end of line
+        self.assertEqual(win.getyx(), (0, 3))
+
+    def test_textbox_kill_to_eol(self):
+        box, win = self._make_textbox(1, 10)
+        self._type(box, 'abcdef')
+        win.move(0, 3)
+        box.do_command(curses.ascii.VT)    # ^k -> clear to end of line
+        self.assertEqual(box.gather(), 'abc ')
+
+    def test_textbox_backspace(self):
+        box, win = self._make_textbox(1, 10)
+        self._type(box, 'abc')
+        box.do_command(curses.ascii.BS)    # ^h -> delete backward
+        self.assertEqual(box.gather(), 'ab ')
+
+    def test_textbox_edit(self):
+        # edit() reads characters until Ctrl-G and returns the contents.
+        box, win = self._make_textbox(1, 10)
+        for ch in reversed('Hi' + chr(curses.ascii.BEL)):
+            curses.ungetch(ch)
+        self.assertEqual(box.edit(), 'Hi ')
+
+    def test_textbox_edit_validate(self):
+        # The validate hook can rewrite an incoming keystroke.
+        box, win = self._make_textbox(1, 10)
+        for ch in reversed('abc' + chr(curses.ascii.BEL)):
+            curses.ungetch(ch)
+        box.edit(lambda ch: ord('X') if ch == ord('b') else ch)
+        self.assertEqual(box.gather(), 'aXc ')
+
+    def test_textpad_rectangle(self):
+        # rectangle() draws a box with ACS line/corner characters.
+        win = curses.newwin(6, 12, 0, 0)
+        curses.textpad.rectangle(win, 0, 0, 4, 8)
+        chartext = curses.A_CHARTEXT
+        self.assertEqual(win.inch(0, 0) & chartext,
+                         curses.ACS_ULCORNER & chartext)
+        self.assertEqual(win.inch(0, 8) & chartext,
+                         curses.ACS_URCORNER & chartext)
+        self.assertEqual(win.inch(4, 0) & chartext,
+                         curses.ACS_LLCORNER & chartext)
+        self.assertEqual(win.inch(4, 8) & chartext,
+                         curses.ACS_LRCORNER & chartext)
+        self.assertEqual(win.inch(0, 1) & chartext,
+                         curses.ACS_HLINE & chartext)
+        self.assertEqual(win.inch(1, 0) & chartext,
+                         curses.ACS_VLINE & chartext)
+
+    def test_wrapper(self):
+        # wrapper() sets up curses, passes the screen to the callable along
+        # with extra arguments, returns its result and restores the terminal.
+        if not self.isatty:
+            self.skipTest('requires terminal')
+
+        def body(stdscr, a, b):
+            self.assertIsInstance(stdscr, type(self.stdscr))
+            self.assertIs(curses.isendwin(), False)
+            return a + b
+
+        self.assertEqual(curses.wrapper(body, 2, 3), 5)
+        self.assertIs(curses.isendwin(), True)
+        # wrapper() left the screen ended; revive it so the per-test
+        # endwin() cleanup does not fail with ERR.
+        curses.doupdate()
 
     @requires_curses_func('is_term_resized')
     def test_is_term_resized(self):
@@ -1107,9 +1705,11 @@ class TestCurses(unittest.TestCase):
             curses.resize_term(35000, 1)
         with self.assertRaises(OverflowError):
             curses.resize_term(1, 35000)
-        # GH-120378: Overflow failure in resize_term() causes refresh to fail
-        tmp = curses.initscr()
-        tmp.erase()
+        # GH-120378: a failed resize can leave refresh broken; restore the
+        # original size to recover.  Avoid initscr(), which would switch away
+        # from the shared newterm() screen and corrupt later tests.
+        curses.resize_term(lines, cols)
+        self.stdscr.erase()
 
     @requires_curses_func('resizeterm')
     def test_resizeterm(self):
@@ -1129,9 +1729,11 @@ class TestCurses(unittest.TestCase):
             curses.resizeterm(35000, 1)
         with self.assertRaises(OverflowError):
             curses.resizeterm(1, 35000)
-        # GH-120378: Overflow failure in resizeterm() causes refresh to fail
-        tmp = curses.initscr()
-        tmp.erase()
+        # GH-120378: a failed resize can leave refresh broken; restore the
+        # original size to recover.  Avoid initscr(), which would switch away
+        # from the shared newterm() screen and corrupt later tests.
+        curses.resizeterm(lines, cols)
+        self.stdscr.erase()
 
     def test_ungetch(self):
         curses.ungetch(b'A')
@@ -1435,6 +2037,142 @@ class TextboxTest(unittest.TestCase):
         self.textbox.do_command(curses.KEY_DOWN)
         self.mock_win.move.assert_called_with(2, 1)
         self.mock_win.reset_mock()
+
+
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 "$TERM=%r, newterm() may not work" % term)
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class ScreenTests(unittest.TestCase):
+    # newterm()/set_term() mutate global curses state, but each test drives its
+    # own pseudo-terminal(s) and never touches the screen shared by TestCurses,
+    # whose setUp() makes that screen current again.  So these can run in this
+    # process, without a real terminal and without a subprocess.
+
+    def setUp(self):
+        # newterm() may install signal handlers; restore them afterwards.
+        self.save_signals = SaveSignals()
+        self.save_signals.save()
+        self.addCleanup(self.save_signals.restore)
+
+    def tearDown(self):
+        # Leave visual mode and reclaim the test's screens while their
+        # pseudo-terminals are still open (make_pty() closes them later).
+        try:
+            curses.endwin()
+        except curses.error:
+            pass
+        gc_collect()
+
+    @staticmethod
+    def _drain_pty(master, stop):
+        # Read and discard whatever curses writes to the screen, until asked to
+        # stop and nothing more is pending.  poll() rather than a blocking
+        # read() so we can stop without closing the fd (closing it while this
+        # thread is blocked in read() hangs on macOS).
+        poller = select.poll()
+        poller.register(master, select.POLLIN)
+        while True:
+            if poller.poll(100):
+                try:
+                    if not os.read(master, 1024):
+                        break  # EOF
+                except OSError:
+                    break
+            elif stop.is_set():
+                break
+
+    def make_pty(self):
+        master, slave = os.openpty()
+        # Nothing reads the master end, so writing to the slave and the
+        # tcdrain() in endwin() can block on macOS once the pty buffer fills;
+        # drain it from a background thread (endwin() releases the GIL).
+        stop = threading.Event()
+        reader = threading.Thread(target=self._drain_pty, args=(master, stop),
+                                  daemon=True)
+        reader.start()
+        # Stop and join the reader before closing the fds: on macOS, closing
+        # either end while the reader is blocked in read() hangs.
+        def stop_reader():
+            stop.set()
+            reader.join(SHORT_TIMEOUT)
+        self.addCleanup(os.close, master)
+        self.addCleanup(os.close, slave)
+        self.addCleanup(stop_reader)
+        return slave
+
+    def test_newterm(self):
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        self.assertIsInstance(screen, curses.screen)
+        win = screen.stdscr
+        self.assertIsInstance(win, curses.window)
+        self.assertEqual(win.getmaxyx(), (24, 80))
+        win.addstr(0, 0, 'hello')
+        win.refresh()
+
+    def test_newterm_file_object(self):
+        # type=None uses $TERM; the file arguments accept file objects too.
+        s = self.make_pty()
+        out = os.fdopen(os.dup(s), 'wb', buffering=0)
+        self.addCleanup(out.close)
+        screen = curses.newterm(None, out, s)
+        self.assertIsInstance(screen, curses.screen)
+
+    def test_set_term(self):
+        s = self.make_pty()
+        s2 = self.make_pty()
+        a = curses.newterm('xterm', s, s)     # current screen is a
+        b = curses.newterm('xterm', s2, s2)   # current screen is b
+        self.assertIs(curses.set_term(a), b)  # returns the previous one
+        self.assertIs(curses.set_term(b), a)
+
+    def test_window_keeps_screen_alive(self):
+        # The standard window keeps its screen alive; dropping every other
+        # reference and collecting must not invalidate the window.
+        s = self.make_pty()
+        win = curses.newterm('xterm', s, s).stdscr
+        gc_collect()
+        win.addstr(0, 0, 'still alive')
+        win.refresh()
+
+    def test_screen_freed(self):
+        # Dropping all references to a (non-current) screen and its windows
+        # frees it without error.
+        s = self.make_pty()
+        s2 = self.make_pty()
+        a = curses.newterm('xterm', s, s)
+        b = curses.newterm('xterm', s2, s2)   # a is no longer current
+        del a
+        gc_collect()
+
+    def test_close(self):
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        win = screen.stdscr
+        self.assertIsInstance(win, curses.window)
+        screen.close()
+        # After close() the standard window is detached and unusable, and
+        # stdscr is None.  No reference cycle remains.
+        self.assertIsNone(screen.stdscr)
+        self.assertRaises(curses.error, win.addstr, 0, 0, 'x')
+        # close() is idempotent.
+        screen.close()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_new_prescr(self):
+        screen = curses.new_prescr()
+        self.assertIsInstance(screen, curses.screen)
+        self.assertIsNone(screen.stdscr)
+        del screen
+        gc_collect()
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # The screen type cannot be instantiated directly (bpo-43916).
+        check_disallow_instantiation(self, curses.screen)
 
 
 if __name__ == '__main__':
