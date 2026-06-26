@@ -1861,7 +1861,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         state->must_advance = 0;
         while (status == 0) {
             /* skip to the next linebreak ... */
-            while (ptr < end && !SRE_IS_LINEBREAK((int) *ptr))
+            while (ptr < end && !SRE_IS_LINEBREAK(*ptr))
                 ptr++;
             if (ptr >= end)
                 return 0;
