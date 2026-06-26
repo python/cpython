@@ -1483,7 +1483,11 @@ frozenset_vectorcall(PyObject *type, PyObject * const*args,
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    return make_new_set(type, NULL);
+    /* Leave GC-untracked until set_init() finishes filling (gh-152235).
+     * The vectorcall path uses make_new_set() and tracks at the end; the
+     * classic tp_new/tp_init path must do the same so a half-built set is
+     * never visible to gc.get_objects() / another thread during __init__. */
+    return make_new_set_untracked(type, NULL);
 }
 
 #ifdef Py_GIL_DISABLED
@@ -2750,6 +2754,7 @@ set_init(PyObject *so, PyObject *args, PyObject *kwds)
 {
     PySetObject *self = _PySet_CAST(so);
     PyObject *iterable = NULL;
+    int rv;
 
     if (!_PyArg_NoKeywords("set", kwds))
         return -1;
@@ -2759,19 +2764,30 @@ set_init(PyObject *so, PyObject *args, PyObject *kwds)
     if (_PyObject_IsUniquelyReferenced((PyObject *)self) && self->fill == 0) {
         self->hash = -1;
         if (iterable == NULL) {
-            return 0;
+            rv = 0;
         }
-        return set_update_local(self, iterable);
+        else {
+            rv = set_update_local(self, iterable);
+        }
     }
-    Py_BEGIN_CRITICAL_SECTION(self);
-    if (self->fill)
-        set_clear_internal((PyObject*)self);
-    self->hash = -1;
-    Py_END_CRITICAL_SECTION();
+    else {
+        Py_BEGIN_CRITICAL_SECTION(self);
+        if (self->fill)
+            set_clear_internal((PyObject*)self);
+        self->hash = -1;
+        Py_END_CRITICAL_SECTION();
 
-    if (iterable == NULL)
-        return 0;
-    return set_update_internal(self, iterable);
+        if (iterable == NULL)
+            rv = 0;
+        else
+            rv = set_update_internal(self, iterable);
+    }
+
+    /* Track only once fully built (pairs with set_new leaving it untracked). */
+    if (rv == 0 && !_PyObject_GC_IS_TRACKED(so)) {
+        _PyObject_GC_TRACK(so);
+    }
+    return rv;
 }
 
 static PyObject*
