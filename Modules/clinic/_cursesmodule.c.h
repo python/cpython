@@ -105,6 +105,97 @@ exit:
 
 #endif /* defined(HAVE_NCURSESW) */
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(complexstr_new__doc__,
+"complexstr(cells, /, attr=<unrepresentable>, pair=<unrepresentable>)\n"
+"--\n"
+"\n"
+"An immutable string of styled wide-character cells.\n"
+"\n"
+"  cells\n"
+"    An iterable of cells, each a complexchar or a str.\n"
+"  attr\n"
+"    Attributes applied to every cell (only with a string).\n"
+"  pair\n"
+"    Color pair applied to every cell (only with a string).\n"
+"\n"
+"It is the counterpart of complexchar for a run of cells, and the type\n"
+"returned by window.in_wchstr().  Each cell is a complexchar or a str (a\n"
+"spacing character optionally followed by combining characters).\n"
+"\n"
+"When cells is a string it is split into character cells, and attr and\n"
+"pair (if given) style every cell.  Otherwise each item carries its own\n"
+"rendition, and attr and pair must be omitted.");
+
+static PyObject *
+complexstr_new_impl(PyTypeObject *type, PyObject *cells, PyObject *attr,
+                    PyObject *pair);
+
+static PyObject *
+complexstr_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(attr), &_Py_ID(pair), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "attr", "pair", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "complexstr",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    PyObject *cells;
+    PyObject *attr = NULL;
+    PyObject *pair = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    cells = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        attr = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    pair = fastargs[2];
+skip_optional_pos:
+    return_value = complexstr_new_impl(type, cells, attr, pair);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr])\n"
 "Paint the character.\n"
@@ -5309,4 +5400,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=081cc398989ca202 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7940d7d4775b58fd input=a9049054013a1b77]*/
