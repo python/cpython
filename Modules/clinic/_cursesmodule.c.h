@@ -4921,6 +4921,27 @@ _curses_termattrs(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_termattrs_impl(module);
 }
 
+PyDoc_STRVAR(_curses_term_attrs__doc__,
+"term_attrs($module, /)\n"
+"--\n"
+"\n"
+"Return a logical OR of all video attributes supported by the terminal.\n"
+"\n"
+"The attributes are WA_* values, the extended-attribute counterparts of\n"
+"the A_* values returned by termattrs().");
+
+#define _CURSES_TERM_ATTRS_METHODDEF    \
+    {"term_attrs", (PyCFunction)_curses_term_attrs, METH_NOARGS, _curses_term_attrs__doc__},
+
+static PyObject *
+_curses_term_attrs_impl(PyObject *module);
+
+static PyObject *
+_curses_term_attrs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_term_attrs_impl(module);
+}
+
 PyDoc_STRVAR(_curses_termname__doc__,
 "termname($module, /)\n"
 "--\n"
@@ -5481,4 +5502,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=864fa5c0f22fcad3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb5a451ae2b2e8d7 input=a9049054013a1b77]*/

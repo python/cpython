@@ -165,6 +165,11 @@ curses
   :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
   (Contributed by Serhiy Storchaka in :gh:`152260`.)
 
+* Add the :func:`curses.term_attrs` function, which returns the supported
+  video attributes as :ref:`WA_* <curses-wa-constants>` values, the
+  counterpart of :func:`curses.termattrs`.
+  (Contributed by Serhiy Storchaka in :gh:`152332`.)
+
 gzip
 ----
 

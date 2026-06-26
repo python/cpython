@@ -807,6 +807,14 @@ The module :mod:`!curses` defines the following functions:
    appearance of the screen.
 
 
+.. function:: term_attrs()
+
+   Like :func:`termattrs`, but return the attributes as :ref:`WA_*
+   <curses-wa-constants>` values rather than ``A_*`` values.
+
+   .. versionadded:: next
+
+
 .. function:: termname()
 
    Return the value of the environment variable :envvar:`TERM`, as a bytes object,
