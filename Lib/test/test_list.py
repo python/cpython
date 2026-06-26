@@ -327,6 +327,7 @@ class ListTest(list_tests.CommonTest):
             self.assertEqual(list(it), [])
 
     @support.cpython_only
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_no_memory(self):
         # gh-118331: Make sure we don't crash if list allocation fails
         import_module("_testcapi")

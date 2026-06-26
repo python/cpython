@@ -1025,9 +1025,11 @@ class ReferencesTestCase(TestBase):
         support.gc_collect()
 
     @support.cpython_only
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_no_memory_when_clearing(self):
         # gh-118331: Make sure we do not raise an exception from the destructor
         # when clearing weakrefs if allocating the intermediate tuple fails.
+        import_helper.import_module('_testcapi')
         code = textwrap.dedent("""
         import _testcapi
         import weakref
