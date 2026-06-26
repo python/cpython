@@ -1013,12 +1013,8 @@ class TestInlineValues(unittest.TestCase):
         C.a = X()
         C.a = X()
 
-    @cpython_only
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.nomemtest
     def test_detach_materialized_dict_no_memory(self):
-        # Skip test if _testcapi is not available:
-        import_helper.import_module('_testcapi')
-
         code = """if 1:
             import test.support
             import _testcapi

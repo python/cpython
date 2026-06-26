@@ -5,7 +5,7 @@ from test import support
 from test.support import import_helper
 from test.support import threading_helper
 # Raise SkipTest if subinterpreters not supported.
-import_helper.import_module('_interpreters')
+_interpreters = import_helper.import_module('_interpreters')
 from concurrent import interpreters
 from concurrent.interpreters import InterpreterError
 from .utils import TestBase
@@ -75,11 +75,9 @@ class StressTests(TestBase):
             start.set()
         support.gc_collect()
 
-    @support.cpython_only
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.nomemtest
     def test_create_interpreter_no_memory(self):
-        import _interpreters
-        _testcapi = import_helper.import_module("_testcapi")
+        import _testcapi
 
         assertion = self.assertRaises(InterpreterError)
         _testcapi.set_nomemory(0, 1)
