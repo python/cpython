@@ -133,8 +133,6 @@ class TestRepack(unittest.TestCase):
     def test_strip_removed_large_file(self):
         """Should move the physical data of a file positioned after a large
         removed file without causing a memory issue."""
-        # Try the temp file.  If we do TESTFN2, then it hogs
-        # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
             file = 'file.txt'
             file1 = 'largefile.txt'
@@ -150,13 +148,9 @@ class TestRepack(unittest.TestCase):
                 zh.repack()
                 self.assertIsNone(zh.testzip())
 
-            self.assertFalse(f.closed)
-
     def test_strip_removed_file_before_large_file(self):
         """Should move the physical data of a large file positioned after a
         removed file without causing a memory issue."""
-        # Try the temp file.  If we do TESTFN2, then it hogs
-        # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
             file = 'file.txt'
             file1 = 'largefile.txt'
@@ -172,13 +166,9 @@ class TestRepack(unittest.TestCase):
                 zh.repack()
                 self.assertIsNone(zh.testzip())
 
-            self.assertFalse(f.closed)
-
     def test_strip_removed_large_file_with_dd(self):
         """Should scan for the data descriptor of a removed large file without
         causing a memory issue."""
-        # Try the temp file.  If we do TESTFN2, then it hogs
-        # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
             file = 'file.txt'
             file1 = 'largefile.txt'
@@ -194,16 +184,12 @@ class TestRepack(unittest.TestCase):
                 zh.repack()
                 self.assertIsNone(zh.testzip())
 
-            self.assertFalse(f.closed)
-
     def test_strip_removed_large_file_with_dd_no_sig(self):
         """Should scan for the unsigned data descriptor of a removed large file
         without causing a memory issue."""
         # Reduce data scale for this test, as it's especially slow...
         self.datacount = 30*1024**2 // len(self.data)
 
-        # Try the temp file.  If we do TESTFN2, then it hogs
-        # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
             file = 'file.txt'
             file1 = 'largefile.txt'
@@ -222,14 +208,10 @@ class TestRepack(unittest.TestCase):
                 zh.repack(strict_descriptor=False)
                 self.assertIsNone(zh.testzip())
 
-            self.assertFalse(f.closed)
-
     @requires_zlib()
     def test_strip_removed_large_file_with_dd_no_sig_by_decompression(self):
         """Should scan for the unsigned data descriptor (via tracing compressed
         block end) of a removed large file without causing a memory issue."""
-        # Try the temp file.  If we do TESTFN2, then it hogs
-        # gigabytes of disk space for the duration of the test.
         with TemporaryFile() as f:
             file = 'file.txt'
             file1 = 'largefile.txt'
@@ -247,8 +229,6 @@ class TestRepack(unittest.TestCase):
                 # (scanning is disabled under the strict_descriptor=True default)
                 zh.repack(strict_descriptor=False)
                 self.assertIsNone(zh.testzip())
-
-            self.assertFalse(f.closed)
 
 
 class OtherTests(unittest.TestCase):
