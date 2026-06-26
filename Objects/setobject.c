@@ -2067,7 +2067,7 @@ set_difference_update_impl(PySetObject *so, PyObject * const *others,
 }
 
 static PyObject *
-set_copy_and_difference(PySetObject *so, PyObject *other)
+set_copy_and_difference_untracked(PySetObject *so, PyObject *other)
 {
     PyObject *result;
 
@@ -2081,7 +2081,7 @@ set_copy_and_difference(PySetObject *so, PyObject *other)
 }
 
 static PyObject *
-set_difference(PySetObject *so, PyObject *other)
+set_difference_untracked(PySetObject *so, PyObject *other)
 {
     PyObject *result;
     PyObject *key;
@@ -2097,13 +2097,13 @@ set_difference(PySetObject *so, PyObject *other)
         other_size = PyDict_GET_SIZE(other);
     }
     else {
-        return set_copy_and_difference(so, other);
+        return set_copy_and_difference_untracked(so, other);
     }
 
     /* If len(so) much more than len(other), it's more efficient to simply copy
      * so and then iterate other looking for common elements. */
     if ((PySet_GET_SIZE(so) >> 2) > other_size) {
-        return set_copy_and_difference(so, other);
+        return set_copy_and_difference_untracked(so, other);
     }
 
     result = make_new_set_basetype_untracked(Py_TYPE(so), NULL);
@@ -2179,7 +2179,7 @@ set_difference_multi_impl(PySetObject *so, PyObject * const *others,
 
     other = others[0];
     Py_BEGIN_CRITICAL_SECTION2(so, other);
-    result = set_difference(so, other);
+    result = set_difference_untracked(so, other);
     Py_END_CRITICAL_SECTION2();
     if (result == NULL)
         return NULL;
@@ -2208,7 +2208,7 @@ set_sub(PyObject *self, PyObject *other)
 
     PyObject *rv;
     Py_BEGIN_CRITICAL_SECTION2(so, other);
-    rv = set_difference(so, other);
+    rv = set_difference_untracked(so, other);
     Py_END_CRITICAL_SECTION2();
     if (rv != NULL) {
         _PyObject_GC_TRACK(rv);
