@@ -827,7 +827,10 @@ class Misc:
         the focus."""
         name = self.tk.call('focus')
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def focus_displayof(self):
         """Return the widget which has currently the focus on the
@@ -836,14 +839,20 @@ class Misc:
         Return None if the application does not have the focus."""
         name = self.tk.call('focus', '-displayof', self._w)
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def focus_lastfor(self):
         """Return the widget which would have the focus if top level
         for this widget gets the focus from the window manager."""
         name = self.tk.call('focus', '-lastfor', self._w)
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def tk_focusFollowsMouse(self):
         """The widget under mouse will get automatically focus. Can not
@@ -1246,7 +1255,10 @@ class Misc:
                + self._displayof(displayof) + (rootX, rootY)
         name = self.tk.call(args)
         if not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def winfo_depth(self):
         """Return the number of bits per pixel."""
