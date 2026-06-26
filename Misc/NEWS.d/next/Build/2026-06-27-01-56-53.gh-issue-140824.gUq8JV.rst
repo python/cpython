@@ -1,0 +1,9 @@
+The :mod:`math` module is now built as an extension *package*:
+``math/__init__`` and ``math/integer``.  :mod:`math.integer` is therefore a
+real extension submodule instead of the ``_math_integer`` extension module
+disguised as one.  :file:`Modules/makesetup` now accepts dotted module names
+(a package initializer is written with an explicit ``__init__`` leaf, e.g.
+``math.__init__``) and maps each to a sub-directory path and the matching
+``PyInit_`` symbol.  This works both for the usual shared build and for
+builds where ``math`` is compiled into the interpreter as a builtin module
+(Windows and WebAssembly).

@@ -147,6 +147,18 @@ class ModuleState(enum.Enum):
         return self.value in {"builtin", "shared"}
 
 
+def registration_name(setup_token: str) -> str:
+    """Map a Setup module token to its import/registration name.
+
+    Submodules use dotted names (math.integer); an extension package's
+    initializer is written with an explicit __init__ leaf (math.__init__),
+    whose registration name is the package itself (math).
+    """
+    if setup_token.endswith(".__init__"):
+        return setup_token[: -len(".__init__")]
+    return setup_token
+
+
 class ModuleInfo(NamedTuple):
     name: str
     state: ModuleState
@@ -380,6 +392,14 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
         else:
             modbuiltin = set(sys.builtin_module_names)
 
+        # MODULE_<NAME>_STATE keys flatten dotted registration names to
+        # underscores (math.integer -> MODULE_MATH_INTEGER_STATE).  Recover
+        # the real, possibly dotted, name from the MOD*_NAMES lists.
+        realnames = {}
+        for var in ("MODBUILT_NAMES", "MODSHARED_NAMES", "MODDISABLED_NAMES"):
+            for name in (sysconfig.get_config_var(var) or "").split():
+                realnames[name.replace(".", "_")] = name
+
         for key, value in sysconfig.get_config_vars().items():
             if not key.startswith("MODULE_") or not key.endswith("_STATE"):
                 continue
@@ -387,6 +407,7 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
                 raise ValueError(f"Unsupported value '{value}' for {key}")
 
             modname = key[7:-6].lower()
+            modname = realnames.get(modname, modname)
             if modname in moddisabled:
                 # Setup "*disabled*" rule
                 state = ModuleState.DISABLED_SETUP
@@ -427,12 +448,12 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
                         if state == ModuleState.DISABLED:
                             # *disabled* can disable multiple modules per line
                             for item in items:
-                                modinfo = ModuleInfo(item, state)
+                                modinfo = ModuleInfo(registration_name(item), state)
                                 logger.debug("Found %s in %s", modinfo, setup_file)
                                 yield modinfo
                         elif state in {ModuleState.SHARED, ModuleState.BUILTIN}:
                             # *shared* and *static*, first item is the name of the module.
-                            modinfo = ModuleInfo(items[0], state)
+                            modinfo = ModuleInfo(registration_name(items[0]), state)
                             logger.debug("Found %s in %s", modinfo, setup_file)
                             yield modinfo
 
@@ -456,7 +477,16 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
     def get_location(self, modinfo: ModuleInfo) -> pathlib.Path | None:
         """Get shared library location in build directory"""
         if modinfo.state == ModuleState.SHARED:
-            return self.builddir / f"{modinfo.name}{self.ext_suffix}"
+            # Dotted submodule names map onto sub-directories
+            # (math.integer -> math/integer.so).  An extension *package* is
+            # registered under its bare name but lives in <name>/__init__.so.
+            stem = modinfo.name.replace(".", "/")
+            location = self.builddir / f"{stem}{self.ext_suffix}"
+            if not location.exists():
+                pkg_init = self.builddir / stem / f"__init__{self.ext_suffix}"
+                if pkg_init.exists():
+                    return pkg_init
+            return location
         else:
             return None
 
