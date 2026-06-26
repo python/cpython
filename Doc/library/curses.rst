@@ -827,8 +827,8 @@ labels.
 
 .. function:: slk_refresh()
 
-   Update the soft labels on the physical screen, like :func:`refresh` for a
-   window.
+   Update the soft labels on the physical screen, like
+   :meth:`~curses.window.refresh` for a window.
 
    .. versionadded:: next
 
