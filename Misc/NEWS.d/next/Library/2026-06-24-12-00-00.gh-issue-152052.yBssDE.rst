@@ -1,3 +1,2 @@
-The C accelerator of :mod:`json` now agrees with the pure-Python decoder and
-raises ``Unterminated string starting at`` instead of ``Invalid \uXXXX
-escape`` for a valid ``\uXXXX`` escape at the very end of the input.
+The :mod:`json` C accelerator now correctly reports an unterminated string for a
+``\uXXXX`` escape at the end of the input.
