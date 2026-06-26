@@ -1528,7 +1528,6 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
 
-    @unittest.skipUnless(os.name == "nt", "only relevant for Windows")
     def test_winreg_proxy_bypass(self):
         proxy_override = "www.example.com;*.example.net; 192.168.0.1"
         proxy_bypass = _proxy_bypass_winreg_override
@@ -1551,6 +1550,27 @@ class HandlerTests(unittest.TestCase):
             self.assertTrue(proxy_bypass(host, proxy_override),
                             "expect <local> to bypass intranet address '%s'"
                             % host)
+
+    def test_winreg_proxy_bypass_trailing_semicolon(self):
+        proxy_bypass = _proxy_bypass_winreg_override
+
+        proxy_override = "example.com;"
+        self.assertTrue(proxy_bypass("example.com", proxy_override))
+        self.assertFalse(proxy_bypass("notmatching.com", proxy_override))
+
+        proxy_override = ";example.com"
+        self.assertTrue(proxy_bypass("example.com", proxy_override))
+        self.assertFalse(proxy_bypass("notmatching.com", proxy_override))
+
+        proxy_override = "example.com;;*.example.net;"
+        self.assertTrue(proxy_bypass("example.com", proxy_override))
+        self.assertTrue(proxy_bypass("sub.example.net", proxy_override))
+        self.assertFalse(proxy_bypass("notmatching.com", proxy_override))
+
+        proxy_override = "example.com; <local>;"
+        self.assertTrue(proxy_bypass("example.com", proxy_override))
+        self.assertTrue(proxy_bypass("localhost", proxy_override))
+        self.assertFalse(proxy_bypass("notmatching.com", proxy_override))
 
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):

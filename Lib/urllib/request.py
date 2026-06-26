@@ -2024,6 +2024,8 @@ def _proxy_bypass_winreg_override(host, override):
     proxy_override = override.split(';')
     for test in proxy_override:
         test = test.strip()
+        if not test:
+            continue
         # "<local>" should bypass the proxy server for all intranet addresses
         if test == '<local>':
             if '.' not in host:
