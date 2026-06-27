@@ -551,8 +551,8 @@ PyErr_Clear(void)
 static PyObject*
 get_exc_type(PyObject *exc_value)  /* returns a strong ref */
 {
-    if (exc_value == NULL || exc_value == Py_None) {
-        return Py_None;
+    if (exc_value == NULL || Py_IsNone(exc_value)) {
+        return Py_NewRef(Py_None);
     }
     else {
         assert(PyExceptionInstance_Check(exc_value));
@@ -565,13 +565,13 @@ get_exc_type(PyObject *exc_value)  /* returns a strong ref */
 static PyObject*
 get_exc_traceback(PyObject *exc_value)  /* returns a strong ref */
 {
-    if (exc_value == NULL || exc_value == Py_None) {
-        return Py_None;
+    if (exc_value == NULL || Py_IsNone(exc_value)) {
+        return Py_NewRef(Py_None);
     }
     else {
         assert(PyExceptionInstance_Check(exc_value));
         PyObject *tb = PyException_GetTraceback(exc_value);
-        return tb ? tb : Py_None;
+        return tb ? tb : Py_NewRef(Py_None);
     }
 }
 

@@ -439,10 +439,10 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (defaults == Py_None)
+    if (Py_IsNone(defaults))
         defaults = NULL;
     else if (defaults && PyTuple_Check(defaults)) {
-        Py_INCREF(defaults);
+        defaults = Py_NewRef(defaults);
     }
     else {
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
@@ -480,10 +480,10 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (defaults == Py_None)
+    if (Py_IsNone(defaults))
         defaults = NULL;
     else if (defaults && PyDict_Check(defaults)) {
-        Py_INCREF(defaults);
+        defaults = Py_NewRef(defaults);
     }
     else {
         PyErr_SetString(PyExc_SystemError,
@@ -514,10 +514,10 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (closure == Py_None)
+    if (Py_IsNone(closure))
         closure = NULL;
     else if (PyTuple_Check(closure)) {
-        Py_INCREF(closure);
+        closure = Py_NewRef(closure);
     }
     else {
         PyErr_Format(PyExc_SystemError,
@@ -594,10 +594,10 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (annotations == Py_None)
+    if (Py_IsNone(annotations))
         annotations = NULL;
     else if (annotations && PyDict_Check(annotations)) {
-        Py_INCREF(annotations);
+        annotations = Py_NewRef(annotations);
     }
     else {
         PyErr_SetString(PyExc_SystemError,
