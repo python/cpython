@@ -3535,10 +3535,11 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
         return NULL;
 
     for (j = 0; j < nhooks; j++) {
-        PyObject *hook = PyList_GetItem(path_hooks, j);
+        PyObject *hook = PyList_GetItemRef(path_hooks, j);
         if (hook == NULL)
             return NULL;
         importer = PyObject_CallOneArg(hook, p);
+        Py_DECREF(hook);
         if (importer != NULL)
             break;
 
