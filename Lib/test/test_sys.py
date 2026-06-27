@@ -2086,6 +2086,19 @@ sock.close()
                 proc.terminate()
                 proc.wait(timeout=SHORT_TIMEOUT)
 
+    def _run_remote_exec_with_deleted_mapping(self, deleted_path, **kwargs):
+        def delete_loaded_mapping(proc):
+            os_helper.unlink(deleted_path)
+            with open(f'/proc/{proc.pid}/maps', encoding='utf-8') as maps:
+                self.assertIn(f'{deleted_path} (deleted)', maps.read())
+
+        script = 'print("Remote script executed successfully!")'
+        returncode, stdout, stderr = self._run_remote_exec_test(
+            script, after_ready=delete_loaded_mapping, **kwargs)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
+
     def test_remote_exec(self):
         """Test basic remote exec functionality"""
         script = 'print("Remote script executed successfully!")'
@@ -2239,18 +2252,8 @@ this is invalid python code
             env['LD_LIBRARY_PATH'] = lib_dir if not ld_library_path else (
                 lib_dir + os.pathsep + ld_library_path)
 
-            def delete_loaded_libpython(proc):
-                os_helper.unlink(copied_libpython)
-                with open(f'/proc/{proc.pid}/maps', encoding='utf-8') as maps:
-                    self.assertIn(f'{copied_libpython} (deleted)',
-                                  maps.read())
-
-            script = 'print("Remote script executed successfully!")'
-            returncode, stdout, stderr = self._run_remote_exec_test(
-                script, env=env, after_ready=delete_loaded_libpython)
-            self.assertEqual(returncode, 0)
-            self.assertIn(b"Remote script executed successfully!", stdout)
-            self.assertEqual(stderr, b"")
+            self._run_remote_exec_with_deleted_mapping(copied_libpython,
+                                                       env=env)
 
     @unittest.skipUnless(sys.platform == 'linux', 'Linux-only regression test')
     @unittest.skipUnless(
@@ -2287,19 +2290,9 @@ this is invalid python code
                                          os.path.basename(sys.executable))
             shutil.copy2(sys.executable, copied_python)
 
-            def delete_loaded_executable(proc):
-                os_helper.unlink(copied_python)
-                with open(f'/proc/{proc.pid}/maps', encoding='utf-8') as maps:
-                    self.assertIn(f'{copied_python} (deleted)',
-                                  maps.read())
-
-            script = 'print("Remote script executed successfully!")'
-            returncode, stdout, stderr = self._run_remote_exec_test(
-                script, python_args=['-S'], python_executable=copied_python,
-                after_ready=delete_loaded_executable)
-            self.assertEqual(returncode, 0)
-            self.assertIn(b"Remote script executed successfully!", stdout)
-            self.assertEqual(stderr, b"")
+            self._run_remote_exec_with_deleted_mapping(
+                copied_python, python_args=['-S'],
+                python_executable=copied_python)
 
     def test_remote_exec_in_process_without_debug_fails_envvar(self):
         """Test remote exec in a process without remote debugging enabled"""

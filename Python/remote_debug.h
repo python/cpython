@@ -857,6 +857,9 @@ scan_linux_mapping_for_pyruntime_cookie(
             if (_Py_RemoteDebug_HasPermissionError()) {
                 goto exit;
             }
+            // A candidate mapping can disappear or contain unreadable holes while
+            // the target process keeps running. Treat those as non-matches and
+            // keep scanning other candidate mappings.
             PyErr_Clear();
         }
         else {
