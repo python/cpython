@@ -1017,12 +1017,17 @@ _overlapped.Overlapped.getresultex
     alertable: BOOL
     /
 
+Retrieve result of operation, waiting up to milliseconds.
+
+If the operation does not finish within milliseconds, a
+WAIT_TIMEOUT error is raised.  If alertable is true the wait can
+also be interrupted to run queued APCs.
 [clinic start generated code]*/
 
 static PyObject *
 _overlapped_Overlapped_getresultex_impl(OverlappedObject *self,
                                         DWORD milliseconds, BOOL alertable)
-/*[clinic end generated code: output=ce0eb6ffb9618e54 input=ef4f4cab49ac1d80]*/
+/*[clinic end generated code: output=ce0eb6ffb9618e54 input=9891d8ae4afe2b00]*/
 {
     DWORD transferred = 0;
     BOOL ret;

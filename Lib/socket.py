@@ -551,10 +551,10 @@ class socket(_socket.socket):
         """sendfile(file[, offset[, count]]) -> sent
 
         Send a file until EOF is reached by using high-performance
-        os.sendfile() and return the total number of bytes which
-        were sent.
+        os.sendfile() or TransmitFile() and return the total number of
+        bytes which were sent.
         *file* must be a regular file object opened in binary mode.
-        If os.sendfile() is not available (e.g. Windows) or file is
+        If os.sendfile() or TransmitFile() is not available or file is
         not a regular file socket.send() will be used instead.
         *offset* tells from where to start reading the file.
         If specified, *count* is the total number of bytes to transmit

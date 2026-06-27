@@ -565,7 +565,12 @@ exit:
 PyDoc_STRVAR(_overlapped_Overlapped_getresultex__doc__,
 "getresultex($self, milliseconds, alertable, /)\n"
 "--\n"
-"\n");
+"\n"
+"Retrieve result of operation, waiting up to milliseconds.\n"
+"\n"
+"If the operation does not finish within milliseconds, a\n"
+"WAIT_TIMEOUT error is raised.  If alertable is true the wait can\n"
+"also be interrupted to run queued APCs.");
 
 #define _OVERLAPPED_OVERLAPPED_GETRESULTEX_METHODDEF    \
     {"getresultex", _PyCFunction_CAST(_overlapped_Overlapped_getresultex), METH_FASTCALL, _overlapped_Overlapped_getresultex__doc__},
@@ -1278,4 +1283,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=90125ab16e16d8be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05e84dc50eddda53 input=a9049054013a1b77]*/
