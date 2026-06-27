@@ -1,4 +1,10 @@
+
 #include "Python.h"
+
+#ifndef NDEBUG
+#undef assert
+#define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
+#endif
 
 #include "pycore_backoff.h"
 #include "pycore_call.h"
@@ -12,9 +18,11 @@
 #include "pycore_frame.h"
 #include "pycore_function.h"
 #include "pycore_genobject.h"
+#include "pycore_import.h"
 #include "pycore_interpframe.h"
 #include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
+#include "pycore_lazyimportobject.h"
 #include "pycore_jit.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
@@ -34,6 +42,10 @@
 
 #include "jit.h"
 
+#ifndef NDEBUG
+#undef assert
+#define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
+#endif
 
 #undef CURRENT_OPERAND0_64
 #define CURRENT_OPERAND0_64() (_operand0_64)
@@ -76,7 +88,7 @@ do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
     _PyExecutorObject *_executor = (EXECUTOR);                             \
     jit_func_preserve_none jitted = _executor->jit_code;                   \
-    __attribute__((musttail)) return jitted(frame, stack_pointer, tstate,  \
+    __attribute__((musttail)) return jitted(_executor, frame, stack_pointer, tstate,  \
     _tos_cache0, _tos_cache1, _tos_cache2); \
 } while (0)
 
@@ -100,7 +112,7 @@ do {                                                                       \
 #define PATCH_JUMP(ALIAS)                                                 \
 do {                                                                      \
     DECLARE_TARGET(ALIAS);                                                \
-    __attribute__((musttail)) return ALIAS(frame, stack_pointer, tstate,  \
+    __attribute__((musttail)) return ALIAS(current_executor, frame, stack_pointer, tstate,  \
     _tos_cache0, _tos_cache1, _tos_cache2); \
 } while (0)
 
@@ -113,18 +125,18 @@ do {                                                                      \
 #define TIER_TWO 2
 
 #ifdef Py_DEBUG
-#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_assert_within_stack_bounds(frame, stack_pointer, (F), (L))
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_jit_assert_within_stack_bounds(frame, stack_pointer, (L))
 #else
 #define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
 #endif
 
 __attribute__((preserve_none)) _Py_CODEUNIT *
 _JIT_ENTRY(
-    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
-     _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2
+    _PyExecutorObject *executor, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
+    _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2
 ) {
     // Locals that the instruction implementations expect to exist:
-    PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
+    _PyExecutorObject *current_executor = executor;
     int oparg;
     int uopcode = _JIT_OPCODE;
     _Py_CODEUNIT *next_instr;

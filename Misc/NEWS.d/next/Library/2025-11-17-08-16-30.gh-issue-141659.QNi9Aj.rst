@@ -1,1 +1,0 @@
-Fix bad file descriptor errors from ``_posixsubprocess`` on AIX.

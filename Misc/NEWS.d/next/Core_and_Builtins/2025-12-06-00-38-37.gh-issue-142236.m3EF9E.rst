@@ -1,3 +1,0 @@
-Improve the "Perhaps you forgot a comma?" syntax error for multi-line string
-concatenations to point to the last string instead of the first, making it
-easier to locate where the comma is missing. Patch by Pablo Galindo.

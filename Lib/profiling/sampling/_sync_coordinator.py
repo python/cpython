@@ -73,8 +73,8 @@ def _validate_arguments(args: List[str]) -> tuple[int, str, List[str]]:
 
 # Constants for socket communication
 _MAX_RETRIES = 3
-_INITIAL_RETRY_DELAY = 0.1
-_SOCKET_TIMEOUT = 2.0
+_INITIAL_RETRY_DELAY_SEC = 0.1
+_SOCKET_TIMEOUT_SEC = 2.0
 _READY_MESSAGE = b"ready"
 
 
@@ -93,14 +93,14 @@ def _signal_readiness(sync_port: int) -> None:
     for attempt in range(_MAX_RETRIES):
         try:
             # Use context manager for automatic cleanup
-            with socket.create_connection(("127.0.0.1", sync_port), timeout=_SOCKET_TIMEOUT) as sock:
+            with socket.create_connection(("127.0.0.1", sync_port), timeout=_SOCKET_TIMEOUT_SEC) as sock:
                 sock.send(_READY_MESSAGE)
                 return
         except (socket.error, OSError) as e:
             last_error = e
             if attempt < _MAX_RETRIES - 1:
                 # Exponential backoff before retry
-                time.sleep(_INITIAL_RETRY_DELAY * (2 ** attempt))
+                time.sleep(_INITIAL_RETRY_DELAY_SEC * (2 ** attempt))
 
     # If we get here, all retries failed
     raise SyncError(f"Failed to signal readiness after {_MAX_RETRIES} attempts: {last_error}") from last_error
@@ -135,7 +135,7 @@ def _execute_module(module_name: str, module_args: List[str]) -> None:
         module_args: Arguments to pass to the module
 
     Raises:
-        TargetError: If module execution fails
+        TargetError: If module cannot be found
     """
     # Replace sys.argv to match how Python normally runs modules
     # When running 'python -m module args', sys.argv is ["__main__.py", "args"]
@@ -145,11 +145,8 @@ def _execute_module(module_name: str, module_args: List[str]) -> None:
         runpy.run_module(module_name, run_name="__main__", alter_sys=True)
     except ImportError as e:
         raise TargetError(f"Module '{module_name}' not found: {e}") from e
-    except SystemExit:
-        # SystemExit is normal for modules
-        pass
-    except Exception as e:
-        raise TargetError(f"Error executing module '{module_name}': {e}") from e
+    # Let other exceptions (including SystemExit) propagate naturally
+    # so Python prints the full traceback to stderr
 
 
 def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
@@ -183,22 +180,20 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
     except PermissionError as e:
         raise TargetError(f"Permission denied reading script: {script_path}") from e
 
-    try:
-        main_module = types.ModuleType("__main__")
-        main_module.__file__ = script_path
-        main_module.__builtins__ = __builtins__
-        # gh-140729: Create a __mp_main__ module to allow pickling
-        sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
+    main_module = types.ModuleType("__main__")
+    main_module.__file__ = script_path
+    main_module.__builtins__ = __builtins__
+    # gh-140729: Create a __mp_main__ module to allow pickling
+    sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
 
+    try:
         code = compile(source_code, script_path, 'exec', module='__main__')
-        exec(code, main_module.__dict__)
     except SyntaxError as e:
         raise TargetError(f"Syntax error in script {script_path}: {e}") from e
-    except SystemExit:
-        # SystemExit is normal for scripts
-        pass
-    except Exception as e:
-        raise TargetError(f"Error executing script '{script_path}': {e}") from e
+
+    # Execute the script - let exceptions propagate naturally so Python
+    # prints the full traceback to stderr
+    exec(code, main_module.__dict__)
 
 
 def main() -> NoReturn:
@@ -209,6 +204,8 @@ def main() -> NoReturn:
     with the sample profiler by signaling when the process is ready
     to be profiled.
     """
+    # Phase 1: Parse arguments and set up environment
+    # Errors here are coordinator errors, not script errors
     try:
         # Parse and validate arguments
         sync_port, cwd, target_args = _validate_arguments(sys.argv)
@@ -237,21 +234,19 @@ def main() -> NoReturn:
         # Signal readiness to profiler
         _signal_readiness(sync_port)
 
-        # Execute the target
-        if is_module:
-            _execute_module(module_name, module_args)
-        else:
-            _execute_script(script_path, script_args, cwd)
-
     except CoordinatorError as e:
         print(f"Profiler coordinator error: {e}", file=sys.stderr)
         sys.exit(1)
     except KeyboardInterrupt:
         print("Interrupted", file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
-        print(f"Unexpected error in profiler coordinator: {e}", file=sys.stderr)
-        sys.exit(1)
+
+    # Phase 2: Execute the target script/module
+    # Let exceptions propagate naturally so Python prints full tracebacks
+    if is_module:
+        _execute_module(module_name, module_args)
+    else:
+        _execute_script(script_path, script_args, cwd)
 
     # Normal exit
     sys.exit(0)

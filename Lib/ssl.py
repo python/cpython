@@ -150,7 +150,8 @@ _IntEnum._convert_(
     source=_ssl)
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
-_PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
+_PROTOCOL_NAMES = frozendict({
+    value: name for name, value in _SSLMethod.__members__.items()})
 
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 
@@ -720,10 +721,9 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
-            context.keylog_filename = keylogfile
+    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if keylogfile and not sys.flags.ignore_environment:
+        context.keylog_filename = keylogfile
     return context
 
 def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
@@ -774,10 +774,9 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
-            context.keylog_filename = keylogfile
+    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if keylogfile and not sys.flags.ignore_environment:
+        context.keylog_filename = keylogfile
     return context
 
 # Used by http.client if no context is explicitly passed.
@@ -1054,7 +1053,12 @@ class SSLSocket(socket):
                     notconn_pre_handshake_data = self.recv(1)
                 except OSError as e:
                     # EINVAL occurs for recv(1) on non-connected on unix sockets.
-                    if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                    if e.errno in (errno.ENOTCONN, errno.EINVAL):
+                        pass
+                    elif sys.platform == 'cygwin' and e.errno == errno.EAGAIN:
+                        # EAGAIN occurs on Cygwin.
+                        pass
+                    else:
                         raise
                     notconn_pre_handshake_data = b''
                 self.setblocking(blocking)
@@ -1534,11 +1538,8 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
     """Takes a certificate in binary DER format and returns the
     PEM version of it as a string."""
 
-    f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
-    ss = [PEM_HEADER]
-    ss += [f[i:i+64] for i in range(0, len(f), 64)]
-    ss.append(PEM_FOOTER + '\n')
-    return '\n'.join(ss)
+    f = str(base64.b64encode(der_cert_bytes, wrapcol=64), 'ASCII')
+    return f'{PEM_HEADER}\n{f}\n{PEM_FOOTER}\n'
 
 def PEM_cert_to_DER_cert(pem_cert_string):
     """Takes a certificate in ASCII PEM format and returns the

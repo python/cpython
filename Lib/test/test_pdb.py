@@ -6,6 +6,7 @@ import gc
 import io
 import os
 import pdb
+import re
 import sys
 import types
 import codecs
@@ -16,7 +17,7 @@ import linecache
 import zipapp
 import zipfile
 
-from asyncio.events import _set_event_loop_policy
+from asyncio import set_event_loop
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
@@ -3478,6 +3479,49 @@ def test_pdb_issue_gh_65052():
     (Pdb) continue
     """
 
+def test_pdb_commands_last_breakpoint():
+    """See GH-142834
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     foo = 1
+    ...     bar = 2
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 4',
+    ...     'break 3',
+    ...     'clear 2',
+    ...     'commands',
+    ...     'p "success"',
+    ...     'end',
+    ...     'continue',
+    ...     'clear 1',
+    ...     'commands',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 4
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
+    (Pdb) break 3
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:3
+    (Pdb) clear 2
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:3
+    (Pdb) commands
+    (com) p "success"
+    (com) end
+    (Pdb) continue
+    'success'
+    > <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>(4)test_function()
+    -> bar = 2
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
+    (Pdb) commands
+    *** cannot set commands: no existing breakpoint
+    (Pdb) continue
+    """
+
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
@@ -3563,10 +3607,22 @@ class PdbTestCase(unittest.TestCase):
 
     def _fd_dir_for_pipe_targets(self):
         """Return a directory exposing live file descriptors, if any."""
+        return self._proc_fd_dir() or self._dev_fd_dir()
+
+    def _proc_fd_dir(self):
+        """Return /proc-backed fd dir when it can be used for pipes."""
+        # GH-142836: Opening /proc/self/fd entries for pipes raises EACCES on
+        # Solaris, so prefer other mechanisms there.
+        if sys.platform.startswith("sunos"):
+            return None
+
         proc_fd = "/proc/self/fd"
         if os.path.isdir(proc_fd) and os.path.exists(os.path.join(proc_fd, '0')):
             return proc_fd
+        return None
 
+    def _dev_fd_dir(self):
+        """Return /dev-backed fd dir when usable."""
         dev_fd = "/dev/fd"
         if os.path.isdir(dev_fd) and os.path.exists(os.path.join(dev_fd, '0')):
             if sys.platform.startswith("freebsd"):
@@ -3576,7 +3632,6 @@ class PdbTestCase(unittest.TestCase):
                 except FileNotFoundError:
                     return None
             return dev_fd
-
         return None
 
     def test_find_function_empty_file(self):
@@ -4038,6 +4093,23 @@ def bœr():
                 with open(rc_path, "w") as f:
                     f.write("invalid")
                 self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
+
+    def test_readrc_current_dir(self):
+        with os_helper.temp_cwd() as cwd:
+            rc_path = os.path.join(cwd, ".pdbrc")
+            with open(rc_path, "w") as f:
+                f.write("invalid")
+            self.assertEqual(pdb.Pdb().rcLines[-1], "invalid")
+
+    def test_readrc_cwd_is_home(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.unset("HOME")
+            with os_helper.temp_cwd() as cwd, patch("os.path.expanduser"):
+                rc_path = os.path.join(cwd, ".pdbrc")
+                os.path.expanduser.return_value = rc_path
+                with open(rc_path, "w") as f:
+                    f.write("invalid")
+                self.assertEqual(pdb.Pdb().rcLines, ["invalid"])
 
     def test_header(self):
         stdout = StringIO()
@@ -4646,6 +4718,27 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    def test_end_of_options_separator(self):
+        # gh-148615: Test parsing when '--' separator is used
+        script = "import sys; print(f'ARGS: {sys.argv[1:]}')"
+        with open(os_helper.TESTFN, 'w', encoding='utf-8') as f:
+            f.write(script)
+        stdout, _ = self._run_pdb(['--', os_helper.TESTFN, '-foo'], 'c\nq')
+        self.assertIn("ARGS: ['-foo']", stdout)
+        stdout, _ = self._run_pdb(['-c', 'continue', '--', os_helper.TESTFN, '-c', 'foo'], 'q')
+        self.assertIn("ARGS: ['-c', 'foo']", stdout)
+        stdout, stderr = self._run_pdb(['--'], 'q', expected_returncode=2)
+        self.assertIn("missing script or module to run", stderr)
+        stdout, stderr = self._run_pdb(['-x', '--', os_helper.TESTFN], 'q', expected_returncode=2)
+        self.assertIn("unrecognized arguments: -x", stderr)
+        stdout, _ = self._run_pdb([os_helper.TESTFN, '--', 'arg'], 'c\nq')
+        self.assertIn("ARGS: ['--', 'arg']", stdout)
+        with os_helper.temp_cwd():
+            with open('mymod.py', 'w', encoding='utf-8') as f:
+                f.write(script)
+            stdout, _ = self._run_pdb(['-m', 'mymod', '--', 'arg'], 'c\nq')
+            self.assertIn("ARGS: ['--', 'arg']", stdout)
+
     @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
     def test_async_break(self):
         script = """
@@ -4680,6 +4773,16 @@ def bœr():
         """
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn("The specified object 'C.foo' is not a function", stdout)
+
+    def test_pyrepl_available(self):
+        with patch.dict(os.environ, {"PYTHON_BASIC_REPL": "1"}):
+            self.assertFalse(pdb._pyrepl_available())
+
+        with patch.dict(os.environ, {}, clear=True):
+            mod = types.ModuleType("_pyrepl.main")
+            mod.CAN_USE_PYREPL = True
+            with patch.dict("sys.modules", {"_pyrepl.main": mod}):
+                self.assertTrue(pdb._pyrepl_available())
 
 
 class ChecklineTests(unittest.TestCase):
@@ -4899,6 +5002,29 @@ class PdbTestColorize(unittest.TestCase):
         p.set_trace(commands=['w', 'c'])
         self.assertIn("\x1b", output.getvalue())
 
+    @unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
+    def test_gen_colors(self):
+        p = pdb.Pdb()
+        gen_colors = p.pyrepl_input.gen_colors
+
+        test_cases = [
+            ("longlist", [((0, 7), "soft_keyword")]),
+            ("!longlist", [((0, 0), "op")]),
+            ("list", [((0, 3), "soft_keyword")]),
+            ("list(", [((0, 3), "builtin"), ((4, 4), "op")]),
+            ("a = 1", [
+                ((0, 0), "soft_keyword"),
+                ((2, 2), "op"),
+                ((4, 4), "number"),
+            ])
+        ]
+
+        for buffer, expected in test_cases:
+            for color_span, ((start, end), tag) in zip(gen_colors(buffer), expected, strict=True):
+                self.assertEqual(color_span.span.start, start)
+                self.assertEqual(color_span.span.end, end)
+                self.assertEqual(color_span.tag, tag)
+
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
@@ -4935,6 +5061,20 @@ class PdbTestReadline(unittest.TestCase):
         if readline.backend == "editline":
             raise unittest.SkipTest("libedit readline is not supported for pdb")
 
+    def _run_pty(self, script, input, env=None):
+        if env is None:
+            # By default, we use basic repl for the test.
+            # Subclass can overwrite this method and set env to use advanced REPL
+            env = os.environ | {'PYTHON_BASIC_REPL': '1'}
+        output = run_pty(script, input, env=env)
+        # filter all control characters
+        # Strip ANSI CSI sequences (good enough for most REPL/prompt output)
+        output = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", output.decode("utf-8"))
+        return output
+
+    def _pyrepl_available(self):
+        return pdb._pyrepl_available()
+
     def test_basic_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -4946,12 +5086,12 @@ class PdbTestReadline(unittest.TestCase):
         # then add ntin and complete 'contin' to 'continue'
         input = b"co\t\tntin\t\n"
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b'commands', output)
-        self.assertIn(b'condition', output)
-        self.assertIn(b'continue', output)
-        self.assertIn(b'hello!', output)
+        self.assertIn('commands', output)
+        self.assertIn('condition', output)
+        self.assertIn('continue', output)
+        self.assertIn('hello!', output)
 
     def test_expression_completion(self):
         script = textwrap.dedent("""
@@ -4968,11 +5108,11 @@ class PdbTestReadline(unittest.TestCase):
         # Continue
         input += b"c\n"
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b'special', output)
-        self.assertIn(b'species', output)
-        self.assertIn(b'$_frame', output)
+        self.assertIn('special', output)
+        self.assertIn('species', output)
+        self.assertIn('$_frame', output)
 
     def test_builtin_completion(self):
         script = textwrap.dedent("""
@@ -4986,9 +5126,9 @@ class PdbTestReadline(unittest.TestCase):
         # Continue
         input += b"c\n"
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b'special', output)
+        self.assertIn('special', output)
 
     def test_convvar_completion(self):
         script = textwrap.dedent("""
@@ -5004,10 +5144,10 @@ class PdbTestReadline(unittest.TestCase):
         # Continue
         input += b"c\n"
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b'<frame at 0x', output)
-        self.assertIn(b'102', output)
+        self.assertIn('<frame at 0x', output)
+        self.assertIn('102', output)
 
     def test_local_namespace(self):
         script = textwrap.dedent("""
@@ -5023,9 +5163,9 @@ class PdbTestReadline(unittest.TestCase):
         # Continue
         input += b"c\n"
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b'I love Python', output)
+        self.assertIn('I love Python', output)
 
     @unittest.skipIf(sys.platform.startswith('freebsd'),
                      '\\x08 is not interpreted as backspace on FreeBSD')
@@ -5045,9 +5185,9 @@ class PdbTestReadline(unittest.TestCase):
         input += b"f(-21-21)\n"
         input += b"c\n"
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b'42', output)
+        self.assertIn('42', output)
 
     def test_multiline_completion(self):
         script = textwrap.dedent("""
@@ -5063,9 +5203,9 @@ class PdbTestReadline(unittest.TestCase):
         input += b"fun\t()\n"
         input += b"c\n"
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b'42', output)
+        self.assertIn('42', output)
 
     @unittest.skipIf(sys.platform.startswith('freebsd'),
                      '\\x08 is not interpreted as backspace on FreeBSD')
@@ -5091,10 +5231,10 @@ class PdbTestReadline(unittest.TestCase):
             c
         """).encode()
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b'5', output)
-        self.assertNotIn(b'Error', output)
+        self.assertIn('5', output)
+        self.assertNotIn('Error', output)
 
     def test_interact_completion(self):
         script = textwrap.dedent("""
@@ -5118,11 +5258,45 @@ class PdbTestReadline(unittest.TestCase):
         # continue
         input += b"c\n"
 
-        output = run_pty(script, input)
+        output = self._run_pty(script, input)
 
-        self.assertIn(b"'disp' is not defined", output)
-        self.assertIn(b'special', output)
-        self.assertIn(b'84', output)
+        self.assertIn("'disp' is not defined", output)
+        self.assertIn('special', output)
+        self.assertIn('84', output)
+
+
+@unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
+class PdbTestReadlinePyREPL(PdbTestReadline):
+    def _run_pty(self, script, input):
+        # Override the env to make sure pyrepl is used in this test class
+        return super()._run_pty(script, input, env={**os.environ})
+
+    def test_pyrepl_used(self):
+        script = textwrap.dedent("""
+            import pdb
+            db = pdb.Pdb()
+            print(db.pyrepl_input)
+        """)
+        input = b""
+        output = self._run_pty(script, input)
+        self.assertIn('PdbPyReplInput', output)
+
+    def test_pyrepl_multiline_change(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        input = b"def f():\n"
+        # Auto-indent should work here
+        input += b"return x"
+        # The following command tries to add the argument x in f()
+        # up, left, left (in the parenthesis now), "x", down, down (at the end)
+        input += b"\x1bOA\x1bOD\x1bODx\x1bOB\x1bOB\n\n"
+        input += b"f(40 + 2)\n"
+        input += b"c\n"
+
+        output = self._run_pty(script, input)
+        self.assertIn('42', output)
 
 
 def load_tests(loader, tests, pattern):
@@ -5138,7 +5312,7 @@ def load_tests(loader, tests, pattern):
         # Ensure that asyncio state has been cleared at the end of the test.
         # This prevents a "test altered the execution environment" warning if
         # asyncio features are used.
-        _set_event_loop_policy(None)
+        set_event_loop(None)
 
         # A doctest of pdb could have residues. For example, pdb could still
         # be running, or breakpoints might be left uncleared. These residues

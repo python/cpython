@@ -155,8 +155,8 @@ that takes an iterable is :func:`sum`::
     6
 
 Later we will see more functions that return iterables and take iterables as
-arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail about
-:func:`list`.
+arguments.  In chapter :ref:`tut-structures`, we will discuss :func:`list` in more
+detail.
 
 .. _tut-break:
 
@@ -441,7 +441,7 @@ Several other key features of this statement:
   ``False`` and ``None`` are compared by identity.
 
 - Patterns may use named constants.  These must be dotted names
-  to prevent them from being interpreted as capture variable::
+  to prevent them from being interpreted as capture variables::
 
       from enum import Enum
       class Color(Enum):
@@ -1068,7 +1068,6 @@ Here is an example of a multi-line docstring::
 Function Annotations
 --------------------
 
-.. sectionauthor:: Zachary Ware <zachary.ware@gmail.com>
 .. index::
    pair: function; annotations
    single: ->; function annotations
@@ -1102,12 +1101,11 @@ value annotated::
 Intermezzo: Coding Style
 ========================
 
-.. sectionauthor:: Georg Brandl <georg@python.org>
 .. index:: pair: coding; style
 
 Now that you are about to write longer, more complex pieces of Python, it is a
 good time to talk about *coding style*.  Most languages can be written (or more
-concise, *formatted*) in different styles; some are more readable than others.
+concisely, *formatted*) in different styles; some are more readable than others.
 Making it easy for others to read your code is always a good idea, and adopting
 a nice coding style helps tremendously for that.
 

@@ -290,6 +290,7 @@ floating-point numbers.  The same caveats apply as for floating-point numbers.
 The real and imaginary parts of a complex number ``z`` can be retrieved through
 the read-only attributes ``z.real`` and ``z.imag``.
 
+.. _datamodel-sequences:
 
 Sequences
 ---------
@@ -309,12 +310,25 @@ including built-in sequences, interpret negative subscripts by adding the
 sequence length. For example, ``a[-2]`` equals ``a[n-2]``, the second to last
 item of sequence a with length ``n``.
 
-.. index:: single: slicing
+The resulting value must be a nonnegative integer less than the number of items
+in the sequence. If it is not, an :exc:`IndexError` is raised.
 
-Sequences also support slicing: ``a[i:j]`` selects all items with index *k* such
-that *i* ``<=`` *k* ``<`` *j*.  When used as an expression, a slice is a
-sequence of the same type. The comment above about negative indexes also applies
+.. index::
+   single: slicing
+   single: start (slice object attribute)
+   single: stop (slice object attribute)
+   single: step (slice object attribute)
+
+Sequences also support slicing: ``a[start:stop]`` selects all items with index *k* such
+that *start* ``<=`` *k* ``<`` *stop*.  When used as an expression, a slice is a
+sequence of the same type. The comment above about negative subscripts also applies
 to negative slice positions.
+Note that no error is raised if a slice position is less than zero or larger
+than the length of the sequence.
+
+If *start* is missing or :data:`None`, slicing behaves as if *start* was zero.
+If *stop* is missing or ``None``, slicing behaves as if *stop* was equal to
+the length of the sequence.
 
 Some sequences also support "extended slicing" with a third "step" parameter:
 ``a[i:j:k]`` selects all items of *a* with index *x* where ``x = i + n*k``, *n*
@@ -345,17 +359,22 @@ Strings
       pair: built-in function; chr
       pair: built-in function; ord
       single: character
-      single: integer
+      pair: string; item
       single: Unicode
 
-   A string is a sequence of values that represent Unicode code points.
-   All the code points in the range ``U+0000 - U+10FFFF`` can be
-   represented in a string.  Python doesn't have a :c:expr:`char` type;
-   instead, every code point in the string is represented as a string
-   object with length ``1``.  The built-in function :func:`ord`
+   A string (:class:`str`) is a sequence of values that represent
+   :dfn:`characters`, or more formally, *Unicode code points*.
+   All the code points in the range ``0`` to ``0x10FFFF`` can be
+   represented in a string.
+
+   Python doesn't have a dedicated *character* type.
+   Instead, every code point in the string is represented as a string
+   object with length ``1``.
+
+   The built-in function :func:`ord`
    converts a code point from its string form to an integer in the
-   range ``0 - 10FFFF``; :func:`chr` converts an integer in the range
-   ``0 - 10FFFF`` to the corresponding length ``1`` string object.
+   range ``0`` to ``0x10FFFF``; :func:`chr` converts an integer in the range
+   ``0`` to ``0x10FFFF`` to the corresponding length ``1`` string object.
    :meth:`str.encode` can be used to convert a :class:`str` to
    :class:`bytes` using the given text encoding, and
    :meth:`bytes.decode` can be used to achieve the opposite.
@@ -366,7 +385,7 @@ Tuples
       pair: singleton; tuple
       pair: empty; tuple
 
-   The items of a tuple are arbitrary Python objects. Tuples of two or
+   The items of a :class:`tuple` are arbitrary Python objects. Tuples of two or
    more items are formed by comma-separated lists of expressions.  A tuple
    of one item (a 'singleton') can be formed by affixing a comma to an
    expression (an expression by itself does not create a tuple, since
@@ -376,7 +395,7 @@ Tuples
 Bytes
    .. index:: bytes, byte
 
-   A bytes object is an immutable array.  The items are 8-bit bytes,
+   A :class:`bytes` object is an immutable array.  The items are 8-bit bytes,
    represented by integers in the range 0 <= x < 256.  Bytes literals
    (like ``b'abc'``) and the built-in :func:`bytes` constructor
    can be used to create bytes objects.  Also, bytes objects can be
@@ -461,6 +480,8 @@ Frozen sets
    a dictionary key.
 
 
+.. _datamodel-mappings:
+
 Mappings
 --------
 
@@ -475,7 +496,7 @@ subscript notation ``a[k]`` selects the item indexed by ``k`` from the mapping
 :keyword:`del` statements. The built-in function :func:`len` returns the number
 of items in a mapping.
 
-There is currently a single intrinsic mapping type:
+There are two intrinsic mapping types:
 
 
 Dictionaries
@@ -514,6 +535,20 @@ module.
    an implementation detail at that time rather than a language guarantee.
 
 
+Frozen dictionaries
+^^^^^^^^^^^^^^^^^^^
+
+.. index:: pair: object; frozendict
+
+These represent an immutable dictionary.  They are created by the built-in
+:func:`frozendict` constructor.  A frozendict is :term:`hashable` if all of
+its keys and values are hashable, in which case it can be used as an element
+of a set, or as a key in another mapping.  :class:`!frozendict` is not a
+subclass of :class:`dict`; it inherits directly from :class:`object`.
+
+.. versionadded:: 3.15
+
+
 Callable types
 --------------
 
@@ -546,6 +581,7 @@ Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
+   single: __builtins__ (function attribute)
    single: __closure__ (function attribute)
    single: __globals__ (function attribute)
    pair: global; namespace
@@ -555,6 +591,12 @@ Special read-only attributes
 
    * - Attribute
      - Meaning
+
+   * - .. attribute:: function.__builtins__
+     - A reference to the :class:`dictionary <dict>` that holds the function's
+       builtins namespace.
+
+       .. versionadded:: 3.10
 
    * - .. attribute:: function.__globals__
      - A reference to the :class:`dictionary <dict>` that holds the function's
@@ -898,6 +940,7 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
    single: __doc__ (module attribute)
    single: __annotations__ (module attribute)
    single: __annotate__ (module attribute)
+   single: __lazy_modules__ (module attribute)
    pair: module; namespace
 
 .. _import-mod-attrs:
@@ -999,7 +1042,7 @@ this approach.
       Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning` when
       falling back to :attr:`!__package__` during import resolution.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
       :attr:`!__package__` will cease to be set or taken into consideration
       by the import system or standard library.
 
@@ -1092,6 +1135,20 @@ the following writable attributes:
    no annotations. See also: :attr:`~object.__annotate__` attributes.
 
    .. versionadded:: 3.14
+
+.. attribute:: module.__lazy_modules__
+
+   A container (an object implementing :meth:`~object.__contains__`) of fully
+   qualified module name strings.  When defined
+   at module scope, any regular :keyword:`import` statement in that module whose
+   target module name appears in this container is treated as a
+   :ref:`lazy import <lazy-imports>`, as if the :keyword:`lazy` keyword had
+   been used.  Imports inside functions, class bodies, or
+   :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks are unaffected.
+
+   See :ref:`lazy-modules-compat` for details and examples.
+
+   .. versionadded:: 3.15
 
 Module dictionaries
 ^^^^^^^^^^^^^^^^^^^
@@ -1373,11 +1430,27 @@ also :func:`os.popen`, :func:`os.fdopen`, and the
 :meth:`~socket.socket.makefile` method of socket objects (and perhaps by
 other functions or methods provided by extension modules).
 
+File objects implement common methods, listed below, to simplify usage in
+generic code. They are expected to be :ref:`context-managers`.
+
 The objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are
 initialized to file objects corresponding to the interpreter's standard
 input, output and error streams; they are all open in text mode and
 therefore follow the interface defined by the :class:`io.TextIOBase`
 abstract class.
+
+.. method:: file.read(size=-1, /)
+
+   Retrieve up to *size* data from the file. As a convenience if *size* is
+   unspecified or -1 retrieve all data available.
+
+.. method:: file.write(data, /)
+
+   Store *data* to the file.
+
+.. method:: file.close()
+
+   Flush any buffers and close the underlying file.
 
 
 Internal types
@@ -1417,7 +1490,6 @@ indirectly) to mutable objects.
    single: co_filename (code object attribute)
    single: co_firstlineno (code object attribute)
    single: co_flags (code object attribute)
-   single: co_lnotab (code object attribute)
    single: co_name (code object attribute)
    single: co_names (code object attribute)
    single: co_nlocals (code object attribute)
@@ -1489,14 +1561,6 @@ Special read-only attributes
 
    * - .. attribute:: codeobject.co_firstlineno
      - The line number of the first line of the function
-
-   * - .. attribute:: codeobject.co_lnotab
-     - A string encoding the mapping from :term:`bytecode` offsets to line
-       numbers. For details, see the source code of the interpreter.
-
-       .. deprecated:: 3.12
-          This attribute of code objects is deprecated, and may be removed in
-          Python 3.15.
 
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object
@@ -1819,6 +1883,12 @@ Slice objects are used to represent slices for
 :meth:`~object.__getitem__`
 methods.  They are also created by the built-in :func:`slice` function.
 
+.. versionadded:: 3.15
+
+   The :func:`slice` type now supports :ref:`subscription <subscriptions>`. For
+   example, ``slice[float]`` may be used in type annotations to indicate a slice
+   containing :type:`float` objects.
+
 .. index::
    single: start (slice object attribute)
    single: stop (slice object attribute)
@@ -2127,7 +2197,7 @@ Basic customization
    :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
-   operations from a single root operation, see :func:`functools.total_ordering`.
+   operations from a single root operation, see :deco:`functools.total_ordering`.
 
    By default, the :class:`object` class provides implementations consistent
    with :ref:`expressions-value-comparisons`: equality compares according to
@@ -2160,12 +2230,12 @@ Basic customization
       pair: built-in function; hash
 
    Called by built-in function :func:`hash` and for operations on members of
-   hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  The ``__hash__()`` method should return an integer. The only required
-   property is that objects which compare equal have the same hash value; it is
-   advised to mix together the hash values of the components of the object that
-   also play a part in comparison of objects by packing them into a tuple and
-   hashing the tuple. Example::
+   hashed collections including :class:`set`, :class:`frozenset`, :class:`dict`,
+   and :class:`frozendict`. The ``__hash__()`` method should return an integer.
+   The only required property is that objects which compare equal have the same
+   hash value; it is advised to mix together the hash values of the components
+   of the object that also play a part in comparison of objects by packing them
+   into a tuple and hashing the tuple. Example::
 
        def __hash__(self):
            return hash((self.name, self.nick, self.color))
@@ -2222,7 +2292,7 @@ Basic customization
       This is intended to provide protection against a denial-of-service caused
       by carefully chosen inputs that exploit the worst case performance of a
       dict insertion, *O*\ (*n*\ :sup:`2`) complexity.  See
-      http://ocert.org/advisories/ocert-2011-003.html for details.
+      https://ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
       Python has never made guarantees about this ordering
@@ -2551,7 +2621,7 @@ implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
 
-The :func:`property` function is implemented as a data descriptor. Accordingly,
+The :deco:`property` decorator is implemented as a data descriptor. Accordingly,
 instances cannot override the behavior of a property.
 
 
@@ -2617,7 +2687,7 @@ Notes on using *__slots__*:
 * :exc:`TypeError` will be raised if *__slots__* other than *__dict__* and
   *__weakref__* are defined for a class derived from a
   :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
-  :class:`int`, :class:`bytes`, and :class:`tuple`.
+  :class:`int`, :class:`bytes`, and :class:`type`, except :class:`tuple`.
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 
@@ -2640,8 +2710,9 @@ Notes on using *__slots__*:
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
+   Allowed defining any *__slots__* for a class derived from :class:`tuple`.
 
 
 .. _class-customization:
@@ -3188,43 +3259,55 @@ through the object's keys; for sequences, it should iterate through the values.
    .. versionadded:: 3.4
 
 
-.. index:: pair: object; slice
+.. method:: object.__getitem__(self, subscript)
 
-.. note::
+   Called to implement *subscription*, that is, ``self[subscript]``.
+   See :ref:`subscriptions` for details on the syntax.
 
-   Slicing is done exclusively with the following three methods.  A call like ::
+   There are two types of built-in objects that support subscription
+   via :meth:`!__getitem__`:
 
-      a[1:2] = b
+   - **sequences**, where *subscript* (also called
+     :term:`index`) should be an integer or a :class:`slice` object.
+     See the :ref:`sequence documentation <datamodel-sequences>` for the expected
+     behavior, including handling :class:`slice` objects and negative indices.
+   - **mappings**, where *subscript* is also called the :term:`key`.
+     See :ref:`mapping documentation <datamodel-mappings>` for the expected
+     behavior.
 
-   is translated to ::
+   If *subscript* is of an inappropriate type, :meth:`!__getitem__`
+   should raise :exc:`TypeError`.
+   If *subscript* has an inappropriate value, :meth:`!__getitem__`
+   should raise an :exc:`LookupError` or one of its subclasses
+   (:exc:`IndexError` for sequences; :exc:`KeyError` for mappings).
 
-      a[slice(1, 2, None)] = b
-
-   and so forth.  Missing slice items are always filled in with ``None``.
-
-
-.. method:: object.__getitem__(self, key)
-
-   Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
-   the accepted keys should be integers. Optionally, they may support
-   :class:`slice` objects as well.  Negative index support is also optional.
-   If *key* is
-   of an inappropriate type, :exc:`TypeError` may be raised; if *key* is a value
-   outside the set of indexes for the sequence (after any special
-   interpretation of negative values), :exc:`IndexError` should be raised. For
-   :term:`mapping` types, if *key* is missing (not in the container),
-   :exc:`KeyError` should be raised.
+   .. index:: pair: object; slice
 
    .. note::
 
-      :keyword:`for` loops expect that an :exc:`IndexError` will be raised for
-      illegal indexes to allow proper detection of the end of the sequence.
+      Slicing is handled by :meth:`!__getitem__`, :meth:`~object.__setitem__`,
+      and :meth:`~object.__delitem__`.
+      A call like ::
+
+         a[1:2] = b
+
+      is translated to ::
+
+         a[slice(1, 2, None)] = b
+
+      and so forth. Missing slice items are always filled in with ``None``.
 
    .. note::
 
-      When :ref:`subscripting<subscriptions>` a *class*, the special
+      The sequence iteration protocol (used, for example, in :keyword:`for`
+      loops), expects that an :exc:`IndexError` will be raised for illegal
+      indexes to allow proper detection of the end of a sequence.
+
+   .. note::
+
+      When :ref:`subscripting <subscriptions>` a *class*, the special
       class method :meth:`~object.__class_getitem__` may be called instead of
-      ``__getitem__()``. See :ref:`classgetitem-versus-getitem` for more
+      :meth:`!__getitem__`. See :ref:`classgetitem-versus-getitem` for more
       details.
 
 
@@ -3574,12 +3657,25 @@ implement the protocol in Python.
    provides a convenient way to interpret the flags. The method must return
    a :class:`memoryview` object.
 
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   implementations must manage any internal export counter using atomic
+   operations. The method must be safe to call concurrently from multiple
+   threads, and the returned buffer's underlying data must remain valid
+   until the corresponding :meth:`~object.__release_buffer__` call
+   completes. See :ref:`thread-safety-memoryview` for details.
+
 .. method:: object.__release_buffer__(self, buffer)
 
    Called when a buffer is no longer needed. The *buffer* argument is a
    :class:`memoryview` object that was previously returned by
    :meth:`~object.__buffer__`. The method must release any resources associated
    with the buffer. This method should return ``None``.
+
+   **Thread safety:** In :term:`free-threaded <free threading>` Python,
+   any export counter decrement must use atomic operations. Resource
+   cleanup must be thread-safe, as the final release may race with
+   concurrent releases from other threads.
+
    Buffer objects that do not need to perform any cleanup are not required
    to implement this method.
 
@@ -3771,6 +3867,9 @@ should not directly raise unhandled :exc:`StopIteration` exceptions.
 Coroutines also have the methods listed below, which are analogous to
 those of generators (see :ref:`generator-methods`).  However, unlike
 generators, coroutines do not directly support iteration.
+
+Coroutines are :ref:`generic <generics>` over the types of their yield, send,
+and return values, respectively.
 
 .. versionchanged:: 3.5.2
    It is a :exc:`RuntimeError` to await on a coroutine more than once.

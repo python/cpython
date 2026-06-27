@@ -1,11 +1,15 @@
 import collections
 import marshal
+import pstats
+lazy from _colorize import ANSIColors
 
-from _colorize import ANSIColors
 from .collector import Collector, extract_lineno
+from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 
 
 class PstatsCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
@@ -18,7 +22,7 @@ class PstatsCollector(Collector):
         self.skip_idle = skip_idle
         self._seen_locations = set()
 
-    def _process_frames(self, frames):
+    def _process_frames(self, frames, weight=1):
         """Process a single thread's frame stack."""
         if not frames:
             return
@@ -32,12 +36,12 @@ class PstatsCollector(Collector):
             location = (frame.filename, lineno, frame.funcname)
             if location not in self._seen_locations:
                 self._seen_locations.add(location)
-                self.result[location]["cumulative_calls"] += 1
+                self.result[location]["cumulative_calls"] += weight
 
         # The top frame gets counted as an inline call (directly executing)
         top_lineno = extract_lineno(frames[0].location)
         top_location = (frames[0].filename, top_lineno, frames[0].funcname)
-        self.result[top_location]["direct_calls"] += 1
+        self.result[top_location]["direct_calls"] += weight
 
         # Track caller-callee relationships for call graph
         for i in range(1, len(frames)):
@@ -49,21 +53,17 @@ class PstatsCollector(Collector):
             callee = (callee_frame.filename, callee_lineno, callee_frame.funcname)
             caller = (caller_frame.filename, caller_lineno, caller_frame.funcname)
 
-            self.callers[callee][caller] += 1
+            self.callers[callee][caller] += weight
 
-    def collect(self, stack_frames):
-        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
-            # Async frame processing
-            for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
-                self._process_frames(frames)
-        else:
-            # Regular frame processing
-            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
-                self._process_frames(frames)
+    def collect(self, stack_frames, timestamps_us=None):
+        weight = len(timestamps_us) if timestamps_us else 1
+        for frames, _ in self._iter_stacks(stack_frames, skip_idle=self.skip_idle):
+            self._process_frames(frames, weight=weight)
 
     def export(self, filename):
         self.create_stats()
         self._dump_stats(filename)
+        return True
 
     def _dump_stats(self, file):
         stats_with_marker = dict(self.stats)
@@ -73,7 +73,7 @@ class PstatsCollector(Collector):
 
     # Needed for compatibility with pstats.Stats
     def create_stats(self):
-        sample_interval_sec = self.sample_interval_usec / 1_000_000
+        sample_interval_sec = self.sample_interval_usec / MICROSECONDS_PER_SECOND
         callers = {}
         for fname, call_counts in self.result.items():
             total = call_counts["direct_calls"] * sample_interval_sec
@@ -90,9 +90,6 @@ class PstatsCollector(Collector):
 
     def print_stats(self, sort=-1, limit=None, show_summary=True, mode=None):
         """Print formatted statistics to stdout."""
-        import pstats
-        from .constants import PROFILING_MODE_CPU
-
         # Create stats object
         stats = pstats.SampledStats(self).strip_dirs()
         if not stats.stats:
@@ -268,7 +265,7 @@ class PstatsCollector(Collector):
         elif max_value >= 0.001:
             return "ms", 1000.0
         else:
-            return "μs", 1000000.0
+            return "μs", float(MICROSECONDS_PER_SECOND)
 
     def _print_summary(self, stats_list, total_samples):
         """Print summary of interesting functions."""

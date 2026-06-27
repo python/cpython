@@ -19,12 +19,20 @@ extern "C" {
 #ifdef _Py_JIT
 
 typedef _Py_CODEUNIT *(*jit_func)(
-    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
+    _PyExecutorObject *executor, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
     _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2
+);
+
+_Py_CODEUNIT *_PyJIT_Entry(
+    _PyExecutorObject *executor, _PyInterpreterFrame *frame,
+    _PyStackRef *stack_pointer, PyThreadState *tstate
 );
 
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
 void _PyJIT_Free(_PyExecutorObject *executor);
+PyAPI_FUNC(int) _PyJIT_AddressInJitCode(PyInterpreterState *interp, uintptr_t addr);
+PyAPI_FUNC(void) _Py_jit_assert_within_stack_bounds(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, int lineno);
+PyAPI_FUNC(int) _Py_jit_assertion_failure(int line);
 
 #endif  // _Py_JIT
 

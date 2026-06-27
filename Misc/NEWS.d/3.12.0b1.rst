@@ -44,7 +44,7 @@ response to :cve:`2023-24329`. Patch by Illia Volochii.
 .. date: 2023-05-20-23-08-48
 .. gh-issue: 102856
 .. nonce: Knv9WT
-.. section: Core and Builtins
+.. section: Library
 
 Implement PEP 701 changes in the :mod:`tokenize` module. Patch by Marta
 Gómez Macías and Pablo Galindo Salgado
@@ -312,7 +312,7 @@ Patch by Eric Traut, Larry Hastings, and Jelle Zijlstra.
 .. date: 2023-04-24-21-47-38
 .. gh-issue: 103801
 .. nonce: WaBanq
-.. section: Core and Builtins
+.. section: Library
 
 Adds three minor linting fixes to the wasm module caught that were caught by
 ruff.
@@ -322,7 +322,7 @@ ruff.
 .. date: 2023-04-24-14-38-16
 .. gh-issue: 103793
 .. nonce: kqoH6Q
-.. section: Core and Builtins
+.. section: Library
 
 Optimized asyncio Task creation by deferring expensive string formatting
 (task name generation) from Task creation to the first time ``get_name`` is
@@ -573,7 +573,7 @@ raising an :exc:`IndexError`.
 .. bpo: 31821
 .. date: 2019-12-01-12-58-31
 .. nonce: 1FNmwk
-.. section: Core and Builtins
+.. section: Library
 
 Fix :func:`!pause_reading` to work when called from :func:`!connection_made`
 in :mod:`asyncio`.

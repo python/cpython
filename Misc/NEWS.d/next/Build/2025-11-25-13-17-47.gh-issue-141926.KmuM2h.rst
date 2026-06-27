@@ -1,4 +1,0 @@
-``RUNSHARED`` is no longer cleared when cross-compiling. Previously,
-``RUNSHARED`` was cleared when cross-compiling, which breaks PGO when using
-``--enabled-shared`` on systems where the cross-compiled CPython is otherwise
-executable (e.g., via transparent emulation).

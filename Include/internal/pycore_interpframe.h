@@ -27,7 +27,7 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
 // Similar to _PyFrame_GetCode(), but return NULL if the frame is invalid or
 // freed. Used by dump_frame() in Python/traceback.c. The function uses
 // heuristics to detect freed memory, it's not 100% reliable.
-static inline PyCodeObject*
+static inline PyCodeObject* _Py_NO_SANITIZE_THREAD
 _PyFrame_SafeGetCode(_PyInterpreterFrame *f)
 {
     // globals and builtins may be NULL on a legit frame, but it's unlikely.
@@ -70,7 +70,7 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 // Similar to PyUnstable_InterpreterFrame_GetLasti(), but return NULL if the
 // frame is invalid or freed. Used by dump_frame() in Python/traceback.c. The
 // function uses heuristics to detect freed memory, it's not 100% reliable.
-static inline int
+static inline int _Py_NO_SANITIZE_THREAD
 _PyFrame_SafeGetLasti(struct _PyInterpreterFrame *f)
 {
     // Code based on _PyFrame_GetBytecode() but replace _PyFrame_GetCode()
@@ -102,10 +102,10 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }
 
-static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
+static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f, int depth) {
     assert(f->stackpointer > _PyFrame_Stackbase(f));
-    assert(!PyStackRef_IsNull(f->stackpointer[-1]));
-    return f->stackpointer[-1];
+    assert(!PyStackRef_IsNull(f->stackpointer[-depth]));
+    return f->stackpointer[-depth];
 }
 
 static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
@@ -149,6 +149,12 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= 0);
     dest->stackpointer = dest->localsplus + stacktop;
+    // visited is GC bookkeeping for the current stack walk, not frame state.
+    dest->visited = 0;
+#ifdef Py_DEBUG
+    dest->stackpointer_valid =  src->stackpointer_valid;
+    dest->lltrace = src->lltrace;
+#endif
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
     }
@@ -202,6 +208,7 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
 #ifdef Py_DEBUG
+    frame->stackpointer_valid = 1;
     frame->lltrace = 0;
 #endif
 
@@ -225,20 +232,50 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 static inline _PyStackRef*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    assert(frame->stackpointer != NULL);
-    _PyStackRef *sp = frame->stackpointer;
-#ifndef NDEBUG
-    frame->stackpointer = NULL;
-#endif
-    return sp;
+    return frame->stackpointer;
 }
 
 static inline void
 _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
-    assert(frame->stackpointer == NULL);
     frame->stackpointer = stack_pointer;
 }
+
+static inline void
+_PyFrame_StackPointerValidate(_PyInterpreterFrame *frame)
+{
+#ifdef Py_DEBUG
+/* Avoid bloating the JIT code */
+#ifndef _Py_JIT
+    assert(frame->stackpointer_valid == 0);
+#endif
+    frame->stackpointer_valid = 1;
+#endif
+}
+
+static inline void
+_PyFrame_StackPointerInvalidate(_PyInterpreterFrame *frame)
+{
+#ifdef Py_DEBUG
+/* Avoid bloating the JIT code */
+#ifndef _Py_JIT
+    assert(frame->stackpointer_valid == 1);
+#endif
+    frame->stackpointer_valid = 0;
+#endif
+}
+
+static inline void
+_PyFrame_StackAssertInvalid(_PyInterpreterFrame *frame)
+{
+#ifdef Py_DEBUG
+/* Avoid bloating the JIT code */
+#ifndef _Py_JIT
+    assert(frame->stackpointer_valid == 0);
+#endif
+#endif
+}
+
 
 /* Determine whether a frame is incomplete.
  * A frame is incomplete if it is part way through
@@ -277,9 +314,26 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
     return _PyFrame_GetFirstComplete(tstate->current_frame);
 }
 
+// Update last_profiled_frame for remote profiler frame caching.
+// Only update if we're removing the exact frame that was last profiled.
+// This avoids corrupting the cache when transient frames (called and returned
+// between profiler samples) update last_profiled_frame to addresses the
+// profiler never saw.
+// The sequence distinguishes this anchor from a later frame that reuses the
+// same _PyInterpreterFrame address.
+#define _PyThreadState_UpdateLastProfiledFrame(tstate, frame, previous) \
+    do { \
+        PyThreadState *tstate_ = (tstate); \
+        _PyInterpreterFrame *frame_ = (frame); \
+        if (tstate_->last_profiled_frame == frame_) { \
+            tstate_->last_profiled_frame = (previous); \
+            tstate_->last_profiled_frame_seq++; \
+        } \
+    } while (0)
+
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
-PyFrameObject *
+PyAPI_FUNC(PyFrameObject *)
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
@@ -297,7 +351,8 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
     return _PyFrame_MakeAndSetFrameObject(frame);
 }
 
-void
+// Exported for external JIT support
+PyAPI_FUNC(void)
 _PyFrame_ClearLocals(_PyInterpreterFrame *frame);
 
 /* Clears all references in the frame.
@@ -308,8 +363,10 @@ _PyFrame_ClearLocals(_PyInterpreterFrame *frame);
  * in the frame.
  * take should  be set to 1 for heap allocated
  * frames like the ones in generators and coroutines.
+ *
+ * Exported for external JIT support
  */
-void
+ PyAPI_FUNC(void)
 _PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 
 int
@@ -333,7 +390,8 @@ _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
         size < tstate->datastack_limit - tstate->datastack_top;
 }
 
-extern _PyInterpreterFrame *
+// Exported for external JIT support
+PyAPI_FUNC(_PyInterpreterFrame *)
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
 PyAPI_FUNC(void) _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
@@ -383,6 +441,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
 #ifdef Py_DEBUG
+    frame->stackpointer_valid = 1;
     frame->lltrace = 0;
 #endif
     frame->return_offset = 0;
@@ -394,6 +453,10 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
                         PyObject *locals, _PyStackRef const *args,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
+
+PyAPI_FUNC(_PyInterpreterFrame *)
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs, _PyInterpreterFrame *previous);
 
 #ifdef __cplusplus
 }

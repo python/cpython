@@ -11,6 +11,7 @@ import sys
 import traceback
 import types
 import unittest
+import inspect
 from unittest import mock
 from types import GenericAlias
 
@@ -20,11 +21,10 @@ from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
-from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 async def coroutine_function():
@@ -1940,30 +1940,11 @@ class BaseTaskTests:
         self.assertFalse(task.cancelled())
         self.assertIs(task.exception(), base_exc)
 
-    @ignore_warnings(category=DeprecationWarning)
-    def test_iscoroutinefunction(self):
-        def fn():
-            pass
-
-        self.assertFalse(asyncio.iscoroutinefunction(fn))
-
-        def fn1():
-            yield
-        self.assertFalse(asyncio.iscoroutinefunction(fn1))
-
-        async def fn2():
-            pass
-        self.assertTrue(asyncio.iscoroutinefunction(fn2))
-
-        self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
-        self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
-
-    @ignore_warnings(category=DeprecationWarning)
     def test_coroutine_non_gen_function(self):
         async def func():
             return 'test'
 
-        self.assertTrue(asyncio.iscoroutinefunction(func))
+        self.assertTrue(inspect.iscoroutinefunction(func))
 
         coro = func()
         self.assertTrue(asyncio.iscoroutine(coro))
@@ -2776,28 +2757,17 @@ class BaseTaskTests:
         finally:
             loop.close()
 
-    def test_proper_refcounts(self):
-        # see: https://github.com/python/cpython/issues/126083
-        class Break:
-            def __str__(self):
-                raise RuntimeError("break")
+    def test_task_disallow_multiple_initialization(self):
+        async def foo():
+            pass
 
-        obj = object()
-        initial_refcount = sys.getrefcount(obj)
+        coro = foo()
+        self.addCleanup(coro.close)
+        task = self.new_task(self.loop, coro)
+        task._log_destroy_pending = False
 
-        coro = coroutine_function()
-        with contextlib.closing(asyncio.EventLoop()) as loop:
-            task = asyncio.Task.__new__(asyncio.Task)
-            for _ in range(5):
-                with self.assertRaisesRegex(RuntimeError, 'break'):
-                    task.__init__(coro, loop=loop, context=obj, name=Break())
-
-            coro.close()
-            task._log_destroy_pending = False
-            del task
-
-            self.assertEqual(sys.getrefcount(obj), initial_refcount)
-
+        with self.assertRaises(RuntimeError, msg="is already initialized"):
+            task.__init__(coro, loop=self.loop)
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
@@ -2920,19 +2890,6 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
     Future = getattr(futures, '_CFuture', None)
     all_tasks = getattr(tasks, '_c_all_tasks', None)
     current_task = staticmethod(getattr(tasks, '_c_current_task', None))
-
-    @support.refcount_test
-    def test_refleaks_in_task___init__(self):
-        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        async def coro():
-            pass
-        task = self.new_task(self.loop, coro())
-        self.loop.run_until_complete(task)
-        refs_before = gettotalrefcount()
-        for i in range(100):
-            task.__init__(coro(), loop=self.loop)
-            self.loop.run_until_complete(task)
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     def test_del__log_destroy_pending_segfault(self):
         async def coro():

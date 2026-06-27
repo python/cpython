@@ -19,7 +19,7 @@ from collections import namedtuple
 # import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
-from types import GenericAlias, MethodType, MappingProxyType, UnionType
+from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
 
 ################################################################################
@@ -170,7 +170,7 @@ def _lt_from_ge(self, other):
         return op_result
     return not op_result
 
-_convert = {
+_convert = frozendict({
     '__lt__': [('__gt__', _gt_from_lt),
                ('__le__', _le_from_lt),
                ('__ge__', _ge_from_lt)],
@@ -183,7 +183,7 @@ _convert = {
     '__ge__': [('__le__', _le_from_ge),
                ('__gt__', _gt_from_ge),
                ('__lt__', _lt_from_ge)]
-}
+})
 
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""
@@ -232,9 +232,9 @@ except ImportError:
 ### reduce() sequence to a single item
 ################################################################################
 
-_initial_missing = object()
+_initial_missing = sentinel('_initial_missing')
 
-def reduce(function, sequence, initial=_initial_missing):
+def reduce(function, sequence, /, initial=_initial_missing):
     """
     reduce(function, iterable, /[, initial]) -> value
 
@@ -263,6 +263,11 @@ def reduce(function, sequence, initial=_initial_missing):
         value = function(value, element)
 
     return value
+
+try:
+    from _functools import reduce
+except ImportError:
+    pass
 
 
 ################################################################################
@@ -517,7 +522,7 @@ def _unwrap_partialmethod(func):
 ### LRU Cache function decorator
 ################################################################################
 
-_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+_CacheInfo = namedtuple("CacheInfo", ("hits", "misses", "maxsize", "currsize"))
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
@@ -539,13 +544,15 @@ def _make_key(args, kwds, typed,
     # distinct call from f(y=2, x=1) which will be cached separately.
     key = args
     if kwds:
+        key = list(key)
         key += kwd_mark
         for item in kwds.items():
             key += item
+        key = tuple(key)
     if typed:
-        key += tuple(type(v) for v in args)
+        key += tuple([type(v) for v in args])
         if kwds:
-            key += tuple(type(v) for v in kwds.values())
+            key += tuple([type(v) for v in kwds.values()])
     elif len(key) == 1 and type(key[0]) in fasttypes:
         return key[0]
     return key
@@ -556,16 +563,16 @@ def lru_cache(maxsize=128, typed=False):
     If *maxsize* is set to None, the LRU features are disabled and the cache
     can grow without bound.
 
-    If *typed* is True, arguments of different types will be cached separately.
-    For example, f(decimal.Decimal("3.0")) and f(3.0) will be treated as
-    distinct calls with distinct results. Some types such as str and int may
-    be cached separately even when typed is false.
+    If *typed* is True, arguments of different types will be cached
+    separately.  For example, f(decimal.Decimal("3.0")) and f(3.0) will be
+    treated as distinct calls with distinct results.  Some types such as
+    str and int may be cached separately even when typed is false.
 
     Arguments to the cached function must be hashable.
 
     View the cache statistics named tuple (hits, misses, maxsize, currsize)
-    with f.cache_info().  Clear the cache and statistics with f.cache_clear().
-    Access the underlying function with f.__wrapped__.
+    with f.cache_info().  Clear the cache and statistics with
+    f.cache_clear().  Access the underlying function with f.__wrapped__.
 
     See:  https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
 
@@ -600,6 +607,9 @@ def lru_cache(maxsize=128, typed=False):
     return decorating_function
 
 def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
+    if not callable(user_function):
+        raise TypeError("the first argument must be callable")
+
     # Constants shared by all lru cache instances:
     sentinel = object()          # unique object used to signal cache misses
     make_key = _make_key         # build a key from the function arguments
@@ -1055,6 +1065,11 @@ class _singledispatchmethod_get:
         # Set instance attributes which cannot be handled in __getattr__()
         # because they conflict with type descriptors.
         func = unbound.func
+
+        # Dispatch on the second argument if a generic method turns into
+        # a bound method on instance-level access. See GH-143535.
+        self._dispatch_arg_index = 1 if obj is None and isinstance(func, FunctionType) else 0
+
         try:
             self.__module__ = func.__module__
         except AttributeError:
@@ -1083,9 +1098,22 @@ class _singledispatchmethod_get:
                                'singledispatchmethod method')
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        method = self._dispatch(args[0].__class__)
+        method = self._dispatch(args[self._dispatch_arg_index].__class__)
+
         if hasattr(method, "__get__"):
+            # If the method is a descriptor, it might be necessary
+            # to drop the first argument before calling
+            # as it can be no longer expected after descriptor access.
+            skip_bound_arg = False
+            if isinstance(method, staticmethod):
+                skip_bound_arg = self._dispatch_arg_index == 1
+
             method = method.__get__(self._obj, self._cls)
+            if isinstance(method, MethodType):
+                skip_bound_arg = self._dispatch_arg_index == 1
+
+            if skip_bound_arg:
+                return method(*args[1:], **kwargs)
         return method(*args, **kwargs)
 
     def __getattr__(self, name):
@@ -1155,31 +1183,3 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
-
-def _warn_python_reduce_kwargs(py_reduce):
-    @wraps(py_reduce)
-    def wrapper(*args, **kwargs):
-        if 'function' in kwargs or 'sequence' in kwargs:
-            import os
-            import warnings
-            warnings.warn(
-                'Calling functools.reduce with keyword arguments '
-                '"function" or "sequence" '
-                'is deprecated in Python 3.14 and will be '
-                'forbidden in Python 3.16.',
-                DeprecationWarning,
-                skip_file_prefixes=(os.path.dirname(__file__),))
-        return py_reduce(*args, **kwargs)
-    return wrapper
-
-reduce = _warn_python_reduce_kwargs(reduce)
-del _warn_python_reduce_kwargs
-
-# The import of the C accelerated version of reduce() has been moved
-# here due to gh-121676. In Python 3.16, _warn_python_reduce_kwargs()
-# should be removed and the import block should be moved back right
-# after the definition of reduce().
-try:
-    from _functools import reduce
-except ImportError:
-    pass

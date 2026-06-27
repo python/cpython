@@ -1,1 +1,0 @@
-Add ``__all__`` to :mod:`tkinter.simpledialog`.
