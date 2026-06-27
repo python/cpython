@@ -5293,7 +5293,7 @@ class PanedWindow(Widget):
         return self.tk.call(
             (self._w, 'panecget') + (child, '-'+option))
 
-    def paneconfigure(self, tagOrId, cnf=None, **kw):
+    def paneconfigure(self, child=None, cnf=None, **kw):
         """Query or modify the configuration options for a child window.
 
         Similar to configure() except that it applies to the specified
@@ -5355,12 +5355,26 @@ class PanedWindow(Widget):
             Tk_GetPixels.
 
         """
+        if 'tagOrId' in kw:
+            if child is not None:
+                raise TypeError("paneconfigure() got values for both 'child' "
+                                "and its deprecated alias 'tagOrId'")
+            import warnings
+            warnings.warn(
+                    "The 'tagOrId' parameter of PanedWindow.paneconfigure() "
+                    "is deprecated and will be removed in Python 3.18; "
+                    "use 'child' instead.",
+                    DeprecationWarning, stacklevel=2)
+            child = kw.pop('tagOrId')
+        if child is None:
+            raise TypeError("paneconfigure() missing 1 required positional "
+                            "argument: 'child'")
         if cnf is None and not kw:
-            return self._getconfigure(self._w, 'paneconfigure', tagOrId)
+            return self._getconfigure(self._w, 'paneconfigure', child)
         if isinstance(cnf, str) and not kw:
             return self._getconfigure1(
-                self._w, 'paneconfigure', tagOrId, '-'+cnf)
-        self.tk.call((self._w, 'paneconfigure', tagOrId) +
+                self._w, 'paneconfigure', child, '-'+cnf)
+        self.tk.call((self._w, 'paneconfigure', child) +
                  self._options(cnf, kw))
 
     paneconfig = paneconfigure
