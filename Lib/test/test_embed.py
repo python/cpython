@@ -417,6 +417,28 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, "Py_RunMain(): sys.argv=['-c', 'arg2']\n" * nloop)
         self.assertEqual(err, '')
 
+    def test_run_main_system_exit_command(self):
+        # gh-152132: Py_RunMain() must return the SystemExit code to the
+        # embedding application, not call exit() directly.
+        out, err = self.run_embedded_interpreter(
+            "test_run_main_system_exit_command")
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
+
+    def test_run_main_system_exit_file(self):
+        # gh-152132: same as above, but for the run_filename code path.
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
+                                         delete=False) as f:
+            f.write("import sys; sys.exit(42)\n")
+            filename = f.name
+        try:
+            out, err = self.run_embedded_interpreter(
+                "test_run_main_system_exit_file", filename)
+            self.assertEqual(out, '')
+            self.assertEqual(err, '')
+        finally:
+            os.unlink(filename)
+
     def test_finalize_structseq(self):
         # bpo-46417: Py_Finalize() clears structseq static types. Check that
         # sys attributes using struct types still work when

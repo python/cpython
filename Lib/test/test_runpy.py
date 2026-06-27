@@ -917,6 +917,8 @@ class TestExit(unittest.TestCase):
         self.assertSigInt(["-m", ham.stem], cwd=ham.parent)
 
     # Tests for sys.exit() handling (gh-152132)
+    # These only exercise the standard command-line path; the embedding API
+    # path is tested in Lib/test/test_embed.py.
     @requires_subprocess()
     def test_sys_exit_run_command(self):
         cmd = [sys.executable, '-c', 'import sys; sys.exit(42)']

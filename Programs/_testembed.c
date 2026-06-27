@@ -2057,6 +2057,61 @@ static int test_run_main_loop(void)
 }
 
 
+static int test_run_main_system_exit_command(void)
+{
+    // gh-152132: Py_RunMain() must return the SystemExit code instead of
+    // calling exit() directly.
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    wchar_t *argv[] = {L"python3", L"-c", L"import sys; sys.exit(42)"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+    init_from_config_clear(&config);
+
+    int exitcode = Py_RunMain();
+    if (exitcode != 42) {
+        fprintf(stderr, "expected exit code 42, got %d\n", exitcode);
+        return 1;
+    }
+    return 0;
+}
+
+
+static int test_run_main_system_exit_file(void)
+{
+    // gh-152132: Py_RunMain() must return the SystemExit code instead of
+    // calling exit() directly.
+    if (main_argc < 3) {
+        fprintf(stderr, "usage: %s test_run_main_system_exit_file SCRIPT\n",
+                PROGRAM);
+        return 1;
+    }
+    const char *filename = main_argv[2];
+    wchar_t *wfilename = Py_DecodeLocale(filename, NULL);
+    if (wfilename == NULL) {
+        fprintf(stderr, "unable to decode filename\n");
+        return 1;
+    }
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    wchar_t *argv[] = {L"python3", wfilename};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+    init_from_config_clear(&config);
+
+    int exitcode = Py_RunMain();
+    PyMem_RawFree(wfilename);
+    if (exitcode != 42) {
+        fprintf(stderr, "expected exit code 42, got %d\n", exitcode);
+        return 1;
+    }
+    return 0;
+}
+
+
 static int test_get_argc_argv(void)
 {
     PyConfig config;
@@ -2951,6 +3006,8 @@ static struct TestCase TestCases[] = {
     {"test_initconfig_module", test_initconfig_module},
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
+    {"test_run_main_system_exit_command", test_run_main_system_exit_command},
+    {"test_run_main_system_exit_file", test_run_main_system_exit_file},
     {"test_get_argc_argv", test_get_argc_argv},
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},

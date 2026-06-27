@@ -409,9 +409,18 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+
+    if (_Py_FdIsInteractive(fp, filename)) {
+        // Preserve the interactive REPL behavior for TTY inputs
+        // (e.g., "python3 /dev/stdin" when stdin is a terminal).
+        int run = _PyRun_InteractiveLoopObject(fp, filename, &cf);
+        fclose(fp);
+        return (run != 0);
+    }
+
     /* Use _PyRun_SimpleFileObjectNoPrint which returns PyObject* without calling
        PyErr_Print(), so we can handle SystemExit properly via pymain_exit_err_print. */
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
     PyObject *result = _PyRun_SimpleFileObjectNoPrint(fp, filename, 1, &cf);
     if (result == NULL) {
         return pymain_exit_err_print();
