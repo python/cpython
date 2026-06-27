@@ -932,12 +932,12 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         self.assertIs(None, A().method_with_self(1, kwarg=2))
 
     def test_too_many_positional_but_missing_self(self):
-        msg = "A.missing_self() takes 1 positional argument but 2 were given. Did you forget to declare 'self' as the first parameter?"
+        msg = "A.missing_self() takes 1 positional argument but 2 were given. Did you forget the 'self' parameter in the function definition?"
         with self.check_raises_type_error(msg):
             A().missing_self("another_arg")
 
     def test_too_many_positional_but_missing_self_no_args(self):
-        msg = "A.missing_self_no_args() takes 0 positional arguments but 1 was given. Did you forget to declare 'self' as the first parameter?"
+        msg = "A.missing_self_no_args() takes 0 positional arguments but 1 was given. Did you forget the 'self' parameter in the function definition?"
         with self.check_raises_type_error(msg):
             A().missing_self_no_args()
 
