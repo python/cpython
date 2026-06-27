@@ -2628,12 +2628,12 @@ New deprecations
     and will be removed in Python 3.16.
     In particular, the following classes and functions are deprecated:
 
-    * :class:`asyncio.AbstractEventLoopPolicy`
-    * :class:`asyncio.DefaultEventLoopPolicy`
-    * :class:`asyncio.WindowsSelectorEventLoopPolicy`
-    * :class:`asyncio.WindowsProactorEventLoopPolicy`
-    * :func:`asyncio.get_event_loop_policy`
-    * :func:`asyncio.set_event_loop_policy`
+    * :class:`!asyncio.AbstractEventLoopPolicy`
+    * :class:`!asyncio.DefaultEventLoopPolicy`
+    * :class:`!asyncio.WindowsSelectorEventLoopPolicy`
+    * :class:`!asyncio.WindowsProactorEventLoopPolicy`
+    * :func:`!asyncio.get_event_loop_policy`
+    * :func:`!asyncio.set_event_loop_policy`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     the *loop_factory* argument to use the desired event loop implementation.

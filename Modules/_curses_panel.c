@@ -687,7 +687,7 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesPanel_Type_spec = {
-    .name = "_curses_panel.panel",
+    .name = "curses.panel.panel",
     .basicsize = sizeof(PyCursesPanelObject),
     .flags = (
         Py_TPFLAGS_DEFAULT
@@ -826,9 +826,9 @@ _curses_panel_exec(PyObject *mod)
         return -1;
     }
 
-    /* For exception _curses_panel.error */
+    /* For exception curses.panel.error */
     state->error = PyErr_NewExceptionWithDoc(
-        "_curses_panel.error",
+        "curses.panel.error",
         "Exception raised when a curses panel library function returns an error.",
         NULL, NULL);
 

@@ -4,6 +4,7 @@ import platform
 import sys
 import textwrap
 import unittest
+import weakref
 import tkinter
 from tkinter import TclError
 import enum
@@ -379,6 +380,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.deletecommand(name)
         self.assertRaises(TclError, self.root.tk.call, name)
 
+    def test_createcommand_no_leak(self):
+        # gh-80937: dropping the interpreter must release a command's callback,
+        # even without an explicit deletecommand().
+        interp = tkinter.Tcl()
+        callback = lambda: ''
+        ref = weakref.ref(callback)
+        interp.tk.createcommand('cb', callback)
+        del callback, interp
+        support.gc_collect()
+        self.assertIsNone(ref())
+
     def test_option(self):
         self.addCleanup(self.root.option_clear)
         self.root.option_add('*Button.background', 'red')
@@ -407,6 +419,32 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertIs(self.root.nametowidget(str(b)), b)
         self.assertRaises(KeyError, self.root.nametowidget, '.nonexistent')
 
+    def test_nametowidget_menu_clone(self):
+        # A menu used as a menubar or cascade is cloned by Tk under an
+        # auto-generated name (each path component is the original name
+        # prefixed with one or more '#' clone markers).  nametowidget()
+        # maps such a name back to the original widget (gh-38464).
+        menubar = tkinter.Menu(self.root)
+        filemenu = tkinter.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label='File', menu=filemenu)
+        submenu = tkinter.Menu(filemenu, tearoff=0)
+        filemenu.add_cascade(label='More', menu=submenu)
+        self.root['menu'] = menubar
+        self.root.update_idletasks()
+
+        originals = {menubar, filemenu, submenu}
+        clones = []
+        def collect(parent):
+            for name in self.root.tk.splitlist(
+                    self.root.tk.call('winfo', 'children', parent)):
+                clones.append(name)
+                collect(name)
+        collect('.')
+        # Every menu (originals and clones) resolves to an original widget.
+        self.assertTrue(any('#' in name for name in clones))
+        for name in clones:
+            self.assertIn(self.root.nametowidget(name), originals)
+
     def test_focus_methods(self):
         f = tkinter.Frame(self.root, width=150, height=100)
         f.pack()
@@ -423,6 +461,22 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b.focus_set()
         self.root.update()
         self.assertIs(self.root.focus_get(), b)
+
+    def test_focus_methods_unresolvable(self):
+        # The focus may be on a widget that tkinter did not create and so
+        # cannot map to an instance (e.g. a torn-off menu).  The focus
+        # methods return None instead of raising KeyError (gh-88758).
+        menu = tkinter.Menu(self.root, tearoff=1)
+        menu.add_command(label='Hello')
+        tearoff = self.root.tk.call('tk::TearOffMenu', str(menu), 0, 0)
+        self.addCleanup(self.root.tk.call, 'destroy', tearoff)
+        self.root.update()
+        self.assertRaises(KeyError, self.root.nametowidget, tearoff)
+
+        self.root.tk.call('focus', '-force', tearoff)
+        self.root.update()
+        self.assertIsNone(self.root.focus_get())
+        self.assertIsNone(self.root.focus_displayof())
 
     def test_grab(self):
         f = tkinter.Frame(self.root)
