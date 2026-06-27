@@ -4019,7 +4019,7 @@ class OtherTests(unittest.TestCase):
             with zipfile.ZipFile(TESTFN, "r") as zf:
                 zip_info = zf.getinfo("test_no_source_date_epoch.txt")
                 self.assertTimestampAlmostEqual(time.localtime(), zip_info.date_time, tolerance=2)
-    
+
     def test_writestr_strict_timestamps_false_with_pre1980_source_date_epoch(self):
         # gh-152445: writestr() with strict_timestamps=False should clamp
         # SOURCE_DATE_EPOCH before 1980 to 1980-01-01, not raise.
