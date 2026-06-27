@@ -887,6 +887,20 @@ they are denoted in Tk, which can be useful when referring to the Tk man pages.
 | %d | detail              | %D | delta               |
 +----+---------------------+----+---------------------+
 
+The ``add`` parameter above only affects the bindings you make yourself.
+Every widget also inherits *class bindings*
+that implement its standard behavior --
+for example a :class:`Text` widget binds :kbd:`Control-t`
+to transpose two characters.
+These are described in the bindings section of the widget's Tk man page
+(such as :manpage:`text(3tk)` or :manpage:`entry(3tk)`).
+
+Class bindings are processed separately from your own,
+so binding an event yourself does not replace the default; both run.
+To suppress an unwanted default binding,
+bind the event on the widget
+and return the string ``"break"`` from your callback.
+
 
 The index parameter
 ^^^^^^^^^^^^^^^^^^^
