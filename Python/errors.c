@@ -33,7 +33,7 @@ _PyErr_CreateException(PyObject *exception_type, PyObject *value)
 {
     PyObject *exc;
 
-    if (value == NULL || value == Py_None) {
+    if (value == NULL || Py_IsNone(value)) {
         exc = _PyObject_CallNoArgs(exception_type);
     }
     else if (PyTuple_Check(value)) {
@@ -52,6 +52,47 @@ _PyErr_CreateException(PyObject *exception_type, PyObject *value)
     }
 
     return exc;
+}
+
+
+/* Walk the __context__ chain of 'head' and clear any link that points at
+ * 'target', so setting target.__context__ = head cannot create a cycle.
+ * Also tolerates pre-existing cycles via Floyd's algorithm.
+ *
+ * Takes ownership of one strong reference to 'head' (always consumed).
+ * 'target' is borrowed. */
+static void
+_PyErr_SetContextNoCycle(PyObject *target, PyObject *head)
+{
+    assert(target != NULL);
+    assert(head != NULL);
+    if (head == target) {
+        Py_DECREF(head);
+        return;
+    }
+
+    PyObject *o = head;
+    PyObject *slow_o = head;  /* Floyd's cycle detection */
+    int slow_update_toggle = 0;
+    PyObject *context;
+    while ((context = PyException_GetContext(o))) {
+        Py_DECREF(context);
+        if (context == target) {
+            PyException_SetContext(o, NULL);
+            break;
+        }
+        o = context;
+        if (o == slow_o) {
+            /* Pre-existing cycle: every node on the path was visited. */
+            break;
+        }
+        if (slow_update_toggle) {
+            slow_o = PyException_GetContext(slow_o);
+            Py_DECREF(slow_o);
+        }
+        slow_update_toggle = !slow_update_toggle;
+    }
+    PyException_SetContext(target, head);
 }
 
 void
@@ -196,46 +237,14 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
     }
 
     exc_value = _PyErr_GetTopmostException(tstate)->exc_value;
-    if (exc_value != NULL && exc_value != Py_None) {
-        /* Implicit exception chaining */
-        Py_INCREF(exc_value);
-        /* Avoid creating new reference cycles through the
-           context chain, while taking care not to hang on
-           pre-existing ones.
-           This is O(chain length) but context chains are
-           usually very short. Sensitive readers may try
-           to inline the call to PyException_GetContext. */
-        if (exc_value != value) {
-            PyObject *o = exc_value, *context;
-            PyObject *slow_o = o;  /* Floyd's cycle detection algo */
-            int slow_update_toggle = 0;
-            while ((context = PyException_GetContext(o))) {
-                Py_DECREF(context);
-                if (context == value) {
-                    PyException_SetContext(o, NULL);
-                    break;
-                }
-                o = context;
-                if (o == slow_o) {
-                    /* pre-existing cycle - all exceptions on the
-                       path were visited and checked.  */
-                    break;
-                }
-                if (slow_update_toggle) {
-                    slow_o = PyException_GetContext(slow_o);
-                    Py_DECREF(slow_o);
-                }
-                slow_update_toggle = !slow_update_toggle;
-            }
-            PyException_SetContext(value, exc_value);
-        }
-        else {
-            Py_DECREF(exc_value);
-        }
+    if (exc_value != NULL && !Py_IsNone(exc_value)) {
+        /* Implicit exception chaining.  Steals one reference to exc_value. */
+        _PyErr_SetContextNoCycle(value, Py_NewRef(exc_value));
     }
     assert(value != NULL);
-    if (PyExceptionInstance_Check(value))
+    if (PyExceptionInstance_Check(value)) {
         tb = PyException_GetTraceback(value);
+    }
     _PyErr_Restore(tstate, Py_NewRef(Py_TYPE(value)), value, tb);
 }
 
@@ -551,28 +560,27 @@ PyErr_Clear(void)
 static PyObject*
 get_exc_type(PyObject *exc_value)  /* returns a strong ref */
 {
-    if (exc_value == NULL || exc_value == Py_None) {
-        return Py_None;
+    if (exc_value == NULL || Py_IsNone(exc_value)) {
+        return Py_NewRef(Py_None);
     }
-    else {
-        assert(PyExceptionInstance_Check(exc_value));
-        PyObject *type = PyExceptionInstance_Class(exc_value);
-        assert(type != NULL);
-        return Py_NewRef(type);
-    }
+    assert(PyExceptionInstance_Check(exc_value));
+    PyObject *type = PyExceptionInstance_Class(exc_value);
+    assert(type != NULL);
+    return Py_NewRef(type);
 }
 
 static PyObject*
 get_exc_traceback(PyObject *exc_value)  /* returns a strong ref */
 {
-    if (exc_value == NULL || exc_value == Py_None) {
-        return Py_None;
+    if (exc_value == NULL || Py_IsNone(exc_value)) {
+        return Py_NewRef(Py_None);
     }
-    else {
-        assert(PyExceptionInstance_Check(exc_value));
-        PyObject *tb = PyException_GetTraceback(exc_value);
-        return tb ? tb : Py_None;
+    assert(PyExceptionInstance_Check(exc_value));
+    PyObject *tb = PyException_GetTraceback(exc_value);
+    if (tb == NULL) {
+        return Py_NewRef(Py_None);
     }
+    return tb;
 }
 
 void
@@ -591,7 +599,7 @@ _PyErr_GetHandledException(PyThreadState *tstate)
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     PyObject *exc = exc_info->exc_value;
-    if (exc == NULL || exc == Py_None) {
+    if (exc == NULL || Py_IsNone(exc)) {
         return NULL;
     }
     return Py_NewRef(exc);
@@ -607,7 +615,8 @@ PyErr_GetHandledException(void)
 void
 _PyErr_SetHandledException(PyThreadState *tstate, PyObject *exc)
 {
-    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc == Py_None ? NULL : exc));
+    Py_XSETREF(tstate->exc_info->exc_value,
+               Py_XNewRef(exc != NULL && Py_IsNone(exc) ? NULL : exc));
 }
 
 void
@@ -641,7 +650,7 @@ _PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
     PyObject *exc_value = err_info->exc_value;
 
     assert(exc_value == NULL ||
-           exc_value == Py_None ||
+           Py_IsNone(exc_value) ||
            PyExceptionInstance_Check(exc_value));
 
     PyObject *ret = PyTuple_New(3);
@@ -649,12 +658,11 @@ _PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
         return NULL;
     }
 
-    PyObject *exc_type = get_exc_type(exc_value);
-    PyObject *exc_traceback = get_exc_traceback(exc_value);
-
-    PyTuple_SET_ITEM(ret, 0, exc_type ? exc_type : Py_None);
-    PyTuple_SET_ITEM(ret, 1, exc_value ? Py_NewRef(exc_value) : Py_None);
-    PyTuple_SET_ITEM(ret, 2, exc_traceback ? exc_traceback : Py_None);
+    /* get_exc_* always return a strong reference (including to Py_None). */
+    PyTuple_SET_ITEM(ret, 0, get_exc_type(exc_value));
+    PyTuple_SET_ITEM(ret, 1, exc_value != NULL ? Py_NewRef(exc_value)
+                                               : Py_NewRef(Py_None));
+    PyTuple_SET_ITEM(ret, 2, get_exc_traceback(exc_value));
 
     return ret;
 }
@@ -738,7 +746,7 @@ _PyErr_ChainStackItem(void)
     assert(_PyErr_Occurred(tstate));
 
     _PyErr_StackItem *exc_info = tstate->exc_info;
-    if (exc_info->exc_value == NULL || exc_info->exc_value == Py_None) {
+    if (exc_info->exc_value == NULL || Py_IsNone(exc_info->exc_value)) {
         return;
     }
 
@@ -1464,8 +1472,8 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     assert(file != NULL);
     assert(!Py_IsNone(file));
 
-    if (obj != NULL && obj != Py_None) {
-        if (err_msg != NULL && err_msg != Py_None) {
+    if (obj != NULL && !Py_IsNone(obj)) {
+        if (err_msg != NULL && !Py_IsNone(err_msg)) {
             if (PyFile_WriteObject(err_msg, file, Py_PRINT_RAW) < 0) {
                 return -1;
             }
@@ -1489,7 +1497,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
             return -1;
         }
     }
-    else if (err_msg != NULL && err_msg != Py_None) {
+    else if (err_msg != NULL && !Py_IsNone(err_msg)) {
         if (PyFile_WriteObject(err_msg, file, Py_PRINT_RAW) < 0) {
             return -1;
         }
@@ -1519,14 +1527,14 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     // traceback module failed, fall back to pure C
     _PyErr_Clear(tstate);
 
-    if (exc_tb != NULL && exc_tb != Py_None) {
+    if (exc_tb != NULL && !Py_IsNone(exc_tb)) {
         if (PyTraceBack_Print(exc_tb, file) < 0) {
             /* continue even if writing the traceback failed */
             _PyErr_Clear(tstate);
         }
     }
 
-    if (exc_type == NULL || exc_type == Py_None) {
+    if (exc_type == NULL || Py_IsNone(exc_type)) {
         return -1;
     }
 
@@ -1573,7 +1581,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         Py_DECREF(qualname);
     }
 
-    if (exc_value && exc_value != Py_None) {
+    if (exc_value != NULL && !Py_IsNone(exc_value)) {
         if (PyFile_WriteString(": ", file) < 0) {
             return -1;
         }
@@ -1607,7 +1615,7 @@ write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
     if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         return -1;
     }
-    if (file == NULL || file == Py_None) {
+    if (file == NULL || Py_IsNone(file)) {
         Py_XDECREF(file);
         return 0;
     }
@@ -1690,7 +1698,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
 
     _PyErr_NormalizeException(tstate, &exc_type, &exc_value, &exc_tb);
 
-    if (exc_tb != NULL && exc_tb != Py_None && PyTraceBack_Check(exc_tb)) {
+    if (exc_tb != NULL && !Py_IsNone(exc_tb) && PyTraceBack_Check(exc_tb)) {
         if (PyException_SetTraceback(exc_value, exc_tb) < 0) {
             _PyErr_Clear(tstate);
         }
@@ -1729,7 +1737,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
         goto error;
     }
 
-    if (hook == Py_None) {
+    if (Py_IsNone(hook)) {
         Py_DECREF(hook_args);
         goto default_hook;
     }
