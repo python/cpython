@@ -1,3 +1,10 @@
+"""Data classes and related helper functions.
+
+Data classes are user-defined classes whose fields are defined with type
+annotations. This module provides the @dataclass decorator to add generated
+special methods, and helper functions for working with dataclass objects.
+"""
+
 import sys
 import types
 import keyword
