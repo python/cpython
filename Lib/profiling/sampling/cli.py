@@ -875,13 +875,15 @@ def _validate_args(args, parser):
         if hasattr(args, 'live') and args.live:
             parser.error("--subprocesses is incompatible with --live mode.")
 
-    # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
+    # Async-aware mode is incompatible with options that need thread data.
     if getattr(args, 'async_aware', False):
         issues = []
         if getattr(args, 'native', False):
             issues.append("--native")
         if not getattr(args, 'gc', True):
             issues.append("--no-gc")
+        if getattr(args, 'format', None) == "binary":
+            issues.append("--binary")
         if hasattr(args, 'mode') and args.mode != "wall":
             issues.append(f"--mode={args.mode}")
         if hasattr(args, 'all_threads') and args.all_threads:
