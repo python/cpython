@@ -439,6 +439,25 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         finally:
             os.unlink(filename)
 
+    def test_run_main_system_exit_module(self):
+        # gh-152132: same as above, but for the run_module code path.
+        with tempfile.TemporaryDirectory() as tmpdir:
+            mod = os.path.join(tmpdir, "exit_mod.py")
+            with open(mod, "w", encoding="utf-8") as f:
+                f.write("import sys; sys.exit(42)\n")
+            env = dict(os.environ, PYTHONPATH=tmpdir)
+            out, err = self.run_embedded_interpreter(
+                "test_run_main_system_exit_module", env=env)
+            self.assertEqual(out, '')
+            self.assertEqual(err, '')
+
+    def test_run_main_system_exit_command_message(self):
+        # gh-152132: same as above, but with a string exit message.
+        out, err = self.run_embedded_interpreter(
+            "test_run_main_system_exit_command_message")
+        self.assertEqual(out, '')
+        self.assertIn('error message', err)
+
     def test_finalize_structseq(self):
         # bpo-46417: Py_Finalize() clears structseq static types. Check that
         # sys attributes using struct types still work when
