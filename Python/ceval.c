@@ -1620,11 +1620,11 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     }
     if (suggest_missing_self) {
         self_hint = PyUnicode_FromString(
-            ". Did you forget to declare 'self' as the first parameter?");
+            ". Did you forget the 'self' parameter in the function definition?");
         if (self_hint == NULL) {
+            self_hint = Py_GetConstant(Py_CONSTANT_EMPTY_STR)
             Py_DECREF(sig);
             Py_DECREF(kwonly_sig);
-            return;
         }
     }
     _PyErr_Format(tstate, PyExc_TypeError,
@@ -1653,7 +1653,7 @@ suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
 
     PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
     if (self == NULL) {
-        // When first arg is NULL, its not really about self
+        // When first arg is NULL, it's not really about self
         return 0;
     }
 
