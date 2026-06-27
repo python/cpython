@@ -1,2 +1,2 @@
-Fix a possible crash in :func:`concurrent.interpreters.create` under limited
+Fix a possible crash in :func:`!_interpreters.create` under limited
 memory conditions.
