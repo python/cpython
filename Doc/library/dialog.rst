@@ -171,7 +171,7 @@ specific value.
    :func:`askopenfile` returns the opened file object, or ``None`` if the
    dialog is cancelled.
    :func:`askopenfiles` returns a list of the opened file objects, or an empty
-   list if cancelled.
+   tuple if cancelled.
    The files are opened in mode *mode* (read-only ``'r'`` by default).
 
 .. function:: asksaveasfile(mode="w", **options)
