@@ -3560,8 +3560,8 @@ dummy_func(
                 next_instr->op.code != ENTER_EXECUTOR) {
                 /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
                 _Py_CODEUNIT *insert_exec_at = this_instr;
-                while (oparg > 255) {
-                    oparg >>= 8;
+                // gh-152192: count with a temporary. oparg must stay intact, it's passed to the tracer below
+                for (int tmp = oparg; tmp > 255; tmp >>= 8) {
                     insert_exec_at--;
                 }
                 int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
