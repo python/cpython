@@ -9234,6 +9234,7 @@ socket_exec(PyObject *m)
 #if defined(USE_GETHOSTBYNAME_LOCK)
     netdb_lock = PyThread_allocate_lock();
     if (netdb_lock == NULL) {
+        PyErr_NoMemory();
         goto error;
     }
 #endif
