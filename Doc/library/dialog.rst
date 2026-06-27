@@ -159,7 +159,7 @@ listed below:
 The below functions when called create a modal, native look-and-feel dialog,
 wait for the user's selection, and return it.
 The exact return value depends on the function (see below); when the dialog is
-cancelled it is an empty string, an empty tuple, an empty list or ``None``.
+cancelled it is an empty string, an empty tuple or ``None``.
 The precise type of this empty value may vary between platforms and Tk
 versions, so test the result for truth rather than comparing it with a
 specific value.
