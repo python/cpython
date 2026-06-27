@@ -3213,6 +3213,161 @@ exit:
 
 #endif /* defined(HAVE_CURSES_HAS_KEY) */
 
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+
+PyDoc_STRVAR(_curses_define_key__doc__,
+"define_key($module, definition, keycode, /)\n"
+"--\n"
+"\n"
+"Define an escape sequence for a key code.\n"
+"\n"
+"  definition\n"
+"    Escape sequence to bind, or None to remove a binding.\n"
+"  keycode\n"
+"    Key code to generate.\n"
+"\n"
+"If definition is None, any existing binding for keycode is removed.\n"
+"If keycode is zero or negative, the binding for definition is removed.");
+
+#define _CURSES_DEFINE_KEY_METHODDEF    \
+    {"define_key", _PyCFunction_CAST(_curses_define_key), METH_FASTCALL, _curses_define_key__doc__},
+
+static PyObject *
+_curses_define_key_impl(PyObject *module, const char *definition,
+                        int keycode);
+
+static PyObject *
+_curses_define_key(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *definition;
+    int keycode;
+
+    if (!_PyArg_CheckPositional("define_key", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (args[0] == Py_None) {
+        definition = NULL;
+    }
+    else if (PyUnicode_Check(args[0])) {
+        Py_ssize_t definition_length;
+        definition = PyUnicode_AsUTF8AndSize(args[0], &definition_length);
+        if (definition == NULL) {
+            goto exit;
+        }
+        if (strlen(definition) != (size_t)definition_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("define_key", "argument 1", "str or None", args[0]);
+        goto exit;
+    }
+    keycode = PyLong_AsInt(args[1]);
+    if (keycode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_define_key_impl(module, definition, keycode);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+
+PyDoc_STRVAR(_curses_key_defined__doc__,
+"key_defined($module, definition, /)\n"
+"--\n"
+"\n"
+"Return the key code bound to an escape sequence.\n"
+"\n"
+"  definition\n"
+"    Escape sequence.\n"
+"\n"
+"Return 0 if no key code is bound to the escape sequence, or -1 if the\n"
+"escape sequence is a prefix of another bound sequence (so ambiguous).");
+
+#define _CURSES_KEY_DEFINED_METHODDEF    \
+    {"key_defined", (PyCFunction)_curses_key_defined, METH_O, _curses_key_defined__doc__},
+
+static PyObject *
+_curses_key_defined_impl(PyObject *module, const char *definition);
+
+static PyObject *
+_curses_key_defined(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *definition;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("key_defined", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t definition_length;
+    definition = PyUnicode_AsUTF8AndSize(arg, &definition_length);
+    if (definition == NULL) {
+        goto exit;
+    }
+    if (strlen(definition) != (size_t)definition_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = _curses_key_defined_impl(module, definition);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+
+PyDoc_STRVAR(_curses_keyok__doc__,
+"keyok($module, keycode, enable, /)\n"
+"--\n"
+"\n"
+"Enable or disable interpretation of an individual key code.\n"
+"\n"
+"  keycode\n"
+"    Key code.\n"
+"  enable\n"
+"    Whether the key code is interpreted.");
+
+#define _CURSES_KEYOK_METHODDEF    \
+    {"keyok", _PyCFunction_CAST(_curses_keyok), METH_FASTCALL, _curses_keyok__doc__},
+
+static PyObject *
+_curses_keyok_impl(PyObject *module, int keycode, int enable);
+
+static PyObject *
+_curses_keyok(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int keycode;
+    int enable;
+
+    if (!_PyArg_CheckPositional("keyok", nargs, 2, 2)) {
+        goto exit;
+    }
+    keycode = PyLong_AsInt(args[0]);
+    if (keycode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    enable = PyObject_IsTrue(args[1]);
+    if (enable < 0) {
+        goto exit;
+    }
+    return_value = _curses_keyok_impl(module, keycode, enable);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+
 PyDoc_STRVAR(_curses_init_color__doc__,
 "init_color($module, color_number, r, g, b, /)\n"
 "--\n"
@@ -5831,6 +5986,18 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_HAS_KEY_METHODDEF
 #endif /* !defined(_CURSES_HAS_KEY_METHODDEF) */
 
+#ifndef _CURSES_DEFINE_KEY_METHODDEF
+    #define _CURSES_DEFINE_KEY_METHODDEF
+#endif /* !defined(_CURSES_DEFINE_KEY_METHODDEF) */
+
+#ifndef _CURSES_KEY_DEFINED_METHODDEF
+    #define _CURSES_KEY_DEFINED_METHODDEF
+#endif /* !defined(_CURSES_KEY_DEFINED_METHODDEF) */
+
+#ifndef _CURSES_KEYOK_METHODDEF
+    #define _CURSES_KEYOK_METHODDEF
+#endif /* !defined(_CURSES_KEYOK_METHODDEF) */
+
 #ifndef _CURSES_ALLOC_PAIR_METHODDEF
     #define _CURSES_ALLOC_PAIR_METHODDEF
 #endif /* !defined(_CURSES_ALLOC_PAIR_METHODDEF) */
@@ -5926,4 +6093,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=5bc1806939dac9f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4df910fd0ebe669b input=a9049054013a1b77]*/

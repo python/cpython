@@ -442,7 +442,8 @@ class TestCurses(unittest.TestCase):
                             curses.complexchar('A', curses.A_BOLD))
         self.assertNotEqual(curses.complexchar('A'), curses.complexchar('B'))
         # repr() shows only a non-default attr/pair, and is a constructor call.
-        ns = {'_curses': sys.modules[type(cc).__module__]}
+        modname = type(cc).__module__
+        ns = {modname: sys.modules[modname]}
         self.assertNotIn('attr=', repr(curses.complexchar('z')))
         self.assertNotIn('pair=', repr(curses.complexchar('z')))
         r = repr(curses.complexchar('A', curses.A_BOLD))
@@ -1129,21 +1130,27 @@ class TestCurses(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             dump = os.path.join(d, 'dump')
             self.assertIsNone(curses.scr_dump(dump))
-            # Dumping the same screen again is deterministic.
+            with open(dump, 'rb') as f:
+                image = f.read()
+            self.assertTrue(image)
+            # The dump format embeds raw pointers on some platforms (such as
+            # macOS), so two dumps of the same screen are not always identical.
+            # Only compare dump files when the format proves deterministic.
             dump2 = os.path.join(d, 'dump2')
             curses.scr_dump(dump2)
-            with open(dump, 'rb') as f1, open(dump2, 'rb') as f2:
-                self.assertEqual(f1.read(), f2.read())
+            with open(dump2, 'rb') as f:
+                deterministic = f.read() == image
             # scr_restore() reloads that virtual screen, so dumping it again
             # reproduces the original file even after the screen has changed.
             stdscr.erase()
             stdscr.addstr(0, 0, 'something else')
             stdscr.refresh()
             self.assertIsNone(curses.scr_restore(dump))
-            restored = os.path.join(d, 'restored')
-            curses.scr_dump(restored)
-            with open(dump, 'rb') as f1, open(restored, 'rb') as f2:
-                self.assertEqual(f1.read(), f2.read())
+            if deterministic:
+                restored = os.path.join(d, 'restored')
+                curses.scr_dump(restored)
+                with open(restored, 'rb') as f:
+                    self.assertEqual(f.read(), image)
             # scr_init() and scr_set() accept a dump file and return None.
             self.assertIsNone(curses.scr_init(dump))
             self.assertIsNone(curses.scr_set(dump))
@@ -1314,6 +1321,21 @@ class TestCurses(unittest.TestCase):
                 c = curses.killwchar()
                 self.assertIsInstance(c, str)
                 self.assertEqual(len(c), 1)
+
+    @requires_curses_func('define_key')
+    def test_key_management(self):
+        # Bind a custom escape sequence to a free key code and read it back.
+        seq = '\x1bspam'
+        keycode = 0o600
+        curses.define_key(seq, keycode)
+        self.assertEqual(curses.key_defined(seq), keycode)
+        # keyok enables or disables interpretation of a single key code.
+        # Use the key code just defined, which is guaranteed to be known.
+        self.assertIsNone(curses.keyok(keycode, False))
+        self.assertIsNone(curses.keyok(keycode, True))
+        # Passing None removes the binding for the key code.
+        curses.define_key(None, keycode)
+        self.assertEqual(curses.key_defined(seq), 0)
 
     def test_output_options(self):
         stdscr = self.stdscr
@@ -1940,6 +1962,35 @@ class TestCurses(unittest.TestCase):
         self._type(box, 'b')
         self.assertEqual(box.gather(), 'abXc ')
 
+    def test_textbox_fill_last_cell(self):
+        # The lower-right cell can be written, even though addch() there
+        # cannot advance the cursor past the end of the window.
+        box, win = self._make_textbox(1, 4, stripspaces=0)
+        self._type(box, 'abcd')
+        self.assertEqual(box.gather(), 'abcd')
+
+    def test_textbox_fill_last_cell_multiline(self):
+        box, win = self._make_textbox(2, 3, stripspaces=0)
+        self._type(box, 'abc')
+        box.do_command(curses.ascii.NL)    # ^j -> start of next line
+        self._type(box, 'def')             # 'f' lands in the lower-right cell
+        self.assertEqual(box.gather(), 'abc\ndef\n')
+
+    def test_textbox_fill_last_cell_insert_mode(self):
+        box, win = self._make_textbox(1, 4, insert_mode=True, stripspaces=0)
+        self._type(box, 'abcd')
+        self.assertEqual(box.gather(), 'abcd')
+
+    def test_textbox_fill_last_cell_scrollok(self):
+        # Writing the lower-right cell must not scroll the window even if it
+        # has scrolling enabled.
+        box, win = self._make_textbox(2, 3, stripspaces=0)
+        win.scrollok(True)
+        self._type(box, 'abc')
+        box.do_command(curses.ascii.NL)
+        self._type(box, 'def')
+        self.assertEqual(box.gather(), 'abc\ndef\n')
+
     def test_textbox_movement(self):
         box, win = self._make_textbox(3, 10)
         self._type(box, 'abc')
@@ -2186,6 +2237,24 @@ class MiscTests(unittest.TestCase):
     def test_has_extended_color_support(self):
         r = curses.has_extended_color_support()
         self.assertIsInstance(r, bool)
+
+    def test_type_names(self):
+        # The curses types report their public module rather than the
+        # underscore extension that implements them.
+        for name in 'window', 'complexchar', 'complexstr', 'screen', 'error':
+            tp = getattr(curses, name)
+            self.assertEqual(tp.__module__, 'curses')
+            self.assertEqual(tp.__qualname__, name)
+            self.assertEqual(tp.__name__, name)
+
+    @requires_curses_func('panel')
+    def test_panel_type_names(self):
+        import curses.panel
+        for name in 'panel', 'error':
+            tp = getattr(curses.panel, name)
+            self.assertEqual(tp.__module__, 'curses.panel')
+            self.assertEqual(tp.__qualname__, name)
+            self.assertEqual(tp.__name__, name)
 
 
 class TestAscii(unittest.TestCase):
