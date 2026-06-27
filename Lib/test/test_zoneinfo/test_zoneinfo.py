@@ -1142,6 +1142,11 @@ class TZStrTest(ZoneInfoTestBase):
     def test_invalid_tzstr(self):
         invalid_tzstrs = [
             "PST8PDT",  # DST but no transition specified
+            # gh-152212: the std offset is required (POSIX TZ grammar)
+            "AAA",
+            "A",
+            "AA",
+            "B",
             "+11",  # Unquoted alphanumeric
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
