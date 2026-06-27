@@ -192,6 +192,11 @@ curses
   against an ncurses with ``NCURSES_EXT_FUNCS``.
   (Contributed by Serhiy Storchaka in :gh:`152334`.)
 
+* :class:`curses.textpad.Textbox` now supports entering and reading back the
+  full Unicode range, including combining characters, when curses is built with
+  wide-character support.
+  (Contributed by Serhiy Storchaka in :gh:`133031`.)
+
 gzip
 ----
 

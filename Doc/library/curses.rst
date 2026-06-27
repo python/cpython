@@ -2645,6 +2645,11 @@ You can instantiate a :class:`Textbox` object as follows:
    upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
 
+   .. versionchanged:: next
+      Entering and reading back the full Unicode range, including combining
+      characters, is now supported when curses is built with wide-character
+      support.
+
    :class:`Textbox` objects have the following methods:
 
 
@@ -2658,6 +2663,10 @@ You can instantiate a :class:`Textbox` object as follows:
       ignored.  This method returns the window contents as a
       string; whether blanks in the window are included is affected by the
       :attr:`stripspaces` attribute.
+
+      .. versionchanged:: next
+         *validate* is now called with a non-ASCII character as a string;
+         other keystrokes are still passed as an integer.
 
 
    .. method:: do_command(ch)
