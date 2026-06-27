@@ -1641,9 +1641,15 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
 }
 
 static int
-suggest_missing_self(PyCodeObject *co, Py_ssize_t argcount)
+suggest_missing_self(PyFunctionObject *func, PyCodeObject *co, _PyStackRef const *args, Py_ssize_t argcount)
 {
-    return (co->co_argcount + 1) == argcount
+    if ((co->co_argcount + 1) != argcount || argcount == 0) {
+        return 0;
+    }
+    PyObject *first_argument = PyStackRef_AsPyObjectBorrow(args[0]);
+    PyTypeObject *self_cls = Py_TYPE(first_argument);
+    PyFunctionObject *possibly_current_function = (PyFunctionObject *) _PyType_Lookup(self_cls, co->co_name);
+    return possibly_current_function == func;
 }
 
 static int
@@ -1738,7 +1744,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
     /* Copy all positional arguments into local variables */
     Py_ssize_t j, n;
-    int missing_self_hint = suggest_missing_self(co, argcount);
+    int missing_self_hint = suggest_missing_self(func, co, args, argcount);
     if (argcount > co->co_argcount) {
         n = co->co_argcount;
     }
