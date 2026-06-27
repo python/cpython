@@ -1622,7 +1622,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
         self_hint = PyUnicode_FromString(
             ". Did you forget the 'self' parameter in the function definition?");
         if (self_hint == NULL) {
-            self_hint = Py_GetConstant(Py_CONSTANT_EMPTY_STR)
+            self_hint = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         }
     }
     _PyErr_Format(tstate, PyExc_TypeError,
