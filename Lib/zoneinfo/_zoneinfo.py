@@ -672,6 +672,7 @@ def _parse_tz_str(tz_str):
         except ValueError as e:
             raise ValueError(f"Invalid STD offset in {tz_str}") from e
     else:
+        # The STD offset is required
         raise ValueError(f"Invalid STD offset in {tz_str}")
 
     if dst_abbr is not None:

@@ -1,6 +1,3 @@
-Fixed a parity bug in the pure-Python :mod:`zoneinfo` implementation, which
-accepted a POSIX TZ footer whose ``std`` field had no offset (for example
-``AAA``), silently building a fixed offset-0 zone. Such a string is invalid per
-POSIX (the offset following ``std`` is required), and the C accelerator already
-rejects it; the pure-Python parser now raises :exc:`ValueError` to match.
-Patch by tonghuaroot.
+Fix the pure-Python :mod:`zoneinfo` parser accepting a POSIX TZ string with a
+``std`` abbreviation but no offset. This is invalid per POSIX and now
+raises :exc:`ValueError`, matching the C accelerator. Patch by tonghuaroot.
