@@ -770,6 +770,8 @@ cursor
    The standard X cursor names from :file:`cursorfont.h` can be used, without the
    ``XC_`` prefix.  For example to get a hand cursor (``XC_hand2``), use the
    string ``"hand2"``.  You can also specify a bitmap and mask file of your own.
+   On Windows a cursor file (:file:`.cur` or :file:`.ani`) may be used directly,
+   giving its path preceded with an ``@``, as in ``"@C:/cursors/bart.ani"``.
    See page 179 of Ousterhout's book.
 
 distance
