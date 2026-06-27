@@ -2061,6 +2061,30 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
 
+>>> with item,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item as x,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1, item2,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1 as x, item2,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1 as x, item2 as y,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
+>>> with item1, item2 as y,: pass
+Traceback (most recent call last):
+SyntaxError: the last 'with' item has a trailing comma
+
 >>> import a from b
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
@@ -2344,6 +2368,12 @@ Invalid pattern matching constructs:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case Foo(y=1, x=2, y=3):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: attribute name repeated in class pattern: y
 
     >>> match ...:
     ...   case C(a=b, c, d=e, f, g=h, i, j=k, ...):
@@ -3474,6 +3504,50 @@ while 1:
             ("continue", "import ast")
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
+
+    def test_double_ampersand(self):
+        self._check_error(
+            "a && b",
+            r"Maybe you meant 'and' or '&' instead of '&&'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+        self._check_error(
+            "a & & b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=5,
+            end_offset=6,
+        )
+        self._check_error(
+            "(a &\n    & b)",
+            "invalid syntax",
+            lineno=2,
+            end_lineno=2,
+            offset=5,
+            end_offset=6,
+        )
+
+    def test_double_pipe(self):
+        self._check_error(
+            "a || b",
+            r"Maybe you meant 'or' or '|' instead of '||'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+        self._check_error(
+            "a | | b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=5,
+            end_offset=6,
+        )
 
 
 class LazyImportRestrictionTestCase(SyntaxErrorTestCase):

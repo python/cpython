@@ -92,6 +92,8 @@ import sys as _sys
 from gettext import gettext as _
 from gettext import ngettext
 
+lazy import _colorize
+
 SUPPRESS = '==SUPPRESS=='
 
 OPTIONAL = '?'
@@ -148,9 +150,24 @@ def _copy_items(items):
     return copy.copy(items)
 
 
+def _identity(value):
+    return value
+
+
 # ===============
 # Formatting Help
 # ===============
+
+class _ColorlessTheme:
+    # A 'fake' theme for no colors
+    def __getattr__(self, name):
+        # _colorize's no_color themes are just all empty strings
+        # by directly using empty strings the import is avoided
+        if name.startswith("_"):
+            raise AttributeError(name)
+        return ""
+
+_colorless_theme = _ColorlessTheme()
 
 
 class HelpFormatter(object):
@@ -192,14 +209,32 @@ class HelpFormatter(object):
         self._set_color(False)
 
     def _set_color(self, color, *, file=None):
-        from _colorize import can_colorize, decolor, get_theme
+        # Set a new color setting and file, clear caches for theme and decolor
+        self._theme_color = color
+        self._theme_file = file
+        self._cached_theme = None
+        self._cached_decolor = None
 
-        if color and can_colorize(file=file):
-            self._theme = get_theme(force_color=True).argparse
-            self._decolor = decolor
+    def _get_theme_and_decolor(self):
+        # If self._theme_color is false, this prevents _colorize from importing
+        if self._theme_color and _colorize.can_colorize(file=self._theme_file):
+            self._cached_theme = _colorize.get_theme(force_color=True).argparse
+            self._cached_decolor = _colorize.decolor
         else:
-            self._theme = get_theme(force_no_color=True).argparse
-            self._decolor = lambda text: text
+            self._cached_theme = _colorless_theme
+            self._cached_decolor = _identity
+
+    @property
+    def _theme(self):
+        if self._cached_theme is None:
+            self._get_theme_and_decolor()
+        return self._cached_theme
+
+    @property
+    def _decolor(self):
+        if self._cached_decolor is None:
+            self._get_theme_and_decolor()
+        return self._cached_decolor
 
     # ===============================
     # Section and indentation methods
@@ -525,7 +560,7 @@ class HelpFormatter(object):
         """Apply color markup to text.
 
         Supported markup:
-          `...` - inline code (rendered with prog_extra color)
+          `...` or ``...`` - inline code (rendered with prog_extra color)
 
         When colors are disabled, backticks are preserved as-is.
         """
@@ -533,8 +568,8 @@ class HelpFormatter(object):
         if not t.reset:
             return text
         text = _re.sub(
-            r'`([^`]+)`',
-            rf'{t.prog_extra}\1{t.reset}',
+            r'(`{1,2})([^`]+)\1',
+            rf'{t.prog_extra}\2{t.reset}',
             text,
         )
         return text
@@ -678,7 +713,7 @@ class HelpFormatter(object):
     def _expand_help(self, action):
         help_string = self._get_help_string(action)
         if '%' not in help_string:
-            return help_string
+            return self._apply_text_markup(help_string)
         params = dict(vars(action), prog=self._prog)
         for name in list(params):
             value = params[name]
@@ -722,7 +757,9 @@ class HelpFormatter(object):
             # bare %s etc. - format with full params dict, no colorization
             return spec % params
 
-        return _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
+        return self._apply_text_markup(
+            _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
+        )
 
     def _iter_indented_subactions(self, action):
         try:
@@ -1981,9 +2018,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._subparsers = None
 
         # register types
-        def identity(string):
-            return string
-        self.register('type', None, identity)
+        self.register('type', None, _identity)
 
         # add help argument if necessary
         # (using explicit default to override global argument_default)
@@ -2621,7 +2656,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # allow any number of options or arguments
         elif nargs == REMAINDER:
-            nargs_pattern = '([AO]*)' if option else '(.*)'
+            nargs_pattern = '(.*)'
 
         # allow one argument followed by any number of options or arguments
         elif nargs == PARSER:
@@ -2756,7 +2791,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         if value not in choices:
             args = {'value': str(value),
-                    'choices': ', '.join(map(str, action.choices))}
+                    'choices': ', '.join(repr(str(choice)) for choice in action.choices)}
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
 
             if self.suggest_on_error and isinstance(value, str):
@@ -2813,8 +2848,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _get_validation_formatter(self):
         # Return cached formatter for read-only validation operations
         # (_expand_help and _format_args). Avoids repeated slow _set_color calls.
+        # Validation never renders output, so force color off to avoid
+        # importing _colorize during add_argument.
         if self._cached_formatter is None:
-            self._cached_formatter = self._get_formatter()
+            formatter = self.formatter_class(prog=self.prog)
+            formatter._set_color(False)
+            self._cached_formatter = formatter
         return self._cached_formatter
 
     # =====================
@@ -2854,12 +2893,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 pass
 
     def _get_theme(self, file=None):
-        from _colorize import can_colorize, get_theme
-
-        if self.color and can_colorize(file=file):
-            return get_theme(force_color=True).argparse
+        # If self.color is False, _colorize is not imported
+        if self.color and _colorize.can_colorize(file=file):
+            return _colorize.get_theme(force_color=True).argparse
         else:
-            return get_theme(force_no_color=True).argparse
+            return _colorless_theme
 
     # ===============
     # Exiting methods

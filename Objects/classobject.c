@@ -52,54 +52,7 @@ method_vectorcall(PyObject *method, PyObject *const *args,
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *self = PyMethod_GET_SELF(method);
     PyObject *func = PyMethod_GET_FUNCTION(method);
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs == 0 || args[nargs-1]);
-
-    PyObject *result;
-    if (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET) {
-        /* PY_VECTORCALL_ARGUMENTS_OFFSET is set, so we are allowed to mutate the vector */
-        PyObject **newargs = (PyObject**)args - 1;
-        nargs += 1;
-        PyObject *tmp = newargs[0];
-        newargs[0] = self;
-        assert(newargs[nargs-1]);
-        result = _PyObject_VectorcallTstate(tstate, func, newargs,
-                                            nargs, kwnames);
-        newargs[0] = tmp;
-    }
-    else {
-        Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-        Py_ssize_t totalargs = nargs + nkwargs;
-        if (totalargs == 0) {
-            return _PyObject_VectorcallTstate(tstate, func, &self, 1, NULL);
-        }
-
-        PyObject *newargs_stack[_PY_FASTCALL_SMALL_STACK];
-        PyObject **newargs;
-        if (totalargs <= (Py_ssize_t)Py_ARRAY_LENGTH(newargs_stack) - 1) {
-            newargs = newargs_stack;
-        }
-        else {
-            newargs = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
-            if (newargs == NULL) {
-                _PyErr_NoMemory(tstate);
-                return NULL;
-            }
-        }
-        /* use borrowed references */
-        newargs[0] = self;
-        /* bpo-37138: since totalargs > 0, it's impossible that args is NULL.
-         * We need this, since calling memcpy() with a NULL pointer is
-         * undefined behaviour. */
-        assert(args != NULL);
-        memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
-        result = _PyObject_VectorcallTstate(tstate, func,
-                                            newargs, nargs+1, kwnames);
-        if (newargs != newargs_stack) {
-            PyMem_Free(newargs);
-        }
-    }
-    return result;
+    return _PyObject_VectorcallPrepend(tstate, func, self, args, nargsf, kwnames);
 }
 
 

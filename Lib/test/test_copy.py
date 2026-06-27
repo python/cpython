@@ -133,6 +133,12 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(y, x)
         self.assertIsNot(y, x)
 
+    def test_copy_frozendict(self):
+        x = frozendict(x=1, y=2)
+        self.assertIs(copy.copy(x), x)
+        x = frozendict()
+        self.assertIs(copy.copy(x), x)
+
     def test_copy_set(self):
         x = {1, 2, 3}
         y = copy.copy(x)
@@ -418,6 +424,30 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(y, x)
         self.assertIsNot(x, y)
         self.assertIsNot(x["foo"], y["foo"])
+
+    def test_deepcopy_frozendict(self):
+        x = frozendict({"foo": [1, 2], "bar": 3})
+        y = copy.deepcopy(x)
+        self.assertEqual(y, x)
+        self.assertIsNot(x, y)
+        self.assertIsNot(x["foo"], y["foo"])
+
+        # recursive frozendict
+        x = frozendict(foo=[])
+        x['foo'].append(x)
+        y = copy.deepcopy(x)
+        self.assertEqual(y.keys(), x.keys())
+        self.assertIsNot(x, y)
+        self.assertIsNot(x["foo"], y["foo"])
+        self.assertIs(y['foo'][0], y)
+
+        x = frozendict(foo=[])
+        x['foo'].append(x)
+        x = x['foo']
+        y = copy.deepcopy(x)
+        self.assertIsNot(x, y)
+        self.assertIsNot(x[0], y[0])
+        self.assertIs(y[0]['foo'], y)
 
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()

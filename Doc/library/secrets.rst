@@ -4,8 +4,6 @@
 .. module:: secrets
    :synopsis: Generate secure random numbers for managing secrets.
 
-.. moduleauthor:: Steven D'Aprano <steve+python@pearwood.info>
-.. sectionauthor:: Steven D'Aprano <steve+python@pearwood.info>
 .. versionadded:: 3.6
 
 .. testsetup::

@@ -265,9 +265,17 @@ The constructors :func:`int`, :func:`float`, and
    pair: operator; % (percent)
    pair: operator; **
 
+.. _stdtypes-mixed-arithmetic:
+
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
-operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where integer is narrower than floating point.
+operands of different built-in numeric types, the operand with the "narrower"
+type is widened to that of the other:
+
+* If both arguments are complex numbers, no conversion is performed;
+* if either argument is a complex or a floating-point number, the other is
+  converted to a floating-point number;
+* otherwise, both must be integers and no conversion is necessary.
+
 Arithmetic with complex and real operands is defined by the usual mathematical
 formula, for example::
 
@@ -1155,13 +1163,13 @@ Sequence types also support the following methods:
 
    Return the total number of occurrences of *value* in *sequence*.
 
-.. method:: list.index(value[, start[, stop])
-            range.index(value[, start[, stop])
-            tuple.index(value[, start[, stop])
+.. method:: list.index(value[, start[, stop]])
+            range.index(value[, start[, stop]])
+            tuple.index(value[, start[, stop]])
    :no-contents-entry:
    :no-index-entry:
    :no-typesetting:
-.. method:: sequence.index(value[, start[, stop])
+.. method:: sequence.index(value[, start[, stop]])
 
    Return the index of the first occurrence of *value* in *sequence*.
 
@@ -1278,7 +1286,7 @@ Mutable sequence types also support the following methods:
    :no-typesetting:
 .. method:: sequence.append(value, /)
 
-   Append *value* to the end of the sequence
+   Append *value* to the end of the sequence.
    This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
 
 .. method:: bytearray.clear()
@@ -1395,6 +1403,8 @@ application).
    Many other operations also produce lists, including the :func:`sorted`
    built-in.
 
+   Lists are :ref:`generic <generics>` over the types of their items.
+
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
@@ -1441,111 +1451,10 @@ application).
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
 
-.. _thread-safety-list:
+.. seealso::
 
-.. rubric:: Thread safety for list objects
-
-Reading a single element from a :class:`list` is
-:term:`atomic <atomic operation>`:
-
-.. code-block::
-   :class: green
-
-   lst[i]   # list.__getitem__
-
-The following methods traverse the list and use :term:`atomic <atomic operation>`
-reads of each item to perform their function. That means that they may
-return results affected by concurrent modifications:
-
-.. code-block::
-   :class: maybe
-
-   item in lst
-   lst.index(item)
-   lst.count(item)
-
-All of the above operations avoid acquiring :term:`per-object locks
-<per-object lock>`. They do not block concurrent modifications. Other
-operations that hold a lock will not block these from observing intermediate
-states.
-
-All other operations from here on block using the :term:`per-object lock`.
-
-Writing a single item via ``lst[i] = x`` is safe to call from multiple
-threads and will not corrupt the list.
-
-The following operations return new objects and appear
-:term:`atomic <atomic operation>` to other threads:
-
-.. code-block::
-   :class: good
-
-   lst1 + lst2    # concatenates two lists into a new list
-   x * lst        # repeats lst x times into a new list
-   lst.copy()     # returns a shallow copy of the list
-
-The following methods that only operate on a single element with no shifting
-required are :term:`atomic <atomic operation>`:
-
-.. code-block::
-   :class: good
-
-   lst.append(x)  # append to the end of the list, no shifting required
-   lst.pop()      # pop element from the end of the list, no shifting required
-
-The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
-Other threads cannot observe elements being removed.
-
-The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
-Other threads cannot observe intermediate states during sorting, but the
-list appears empty for the duration of the sort.
-
-The following operations may allow :term:`lock-free` operations to observe
-intermediate states since they modify multiple elements in place:
-
-.. code-block::
-   :class: maybe
-
-   lst.insert(idx, item)  # shifts elements
-   lst.pop(idx)           # idx not at the end of the list, shifts elements
-   lst *= x               # copies elements in place
-
-The :meth:`~list.remove` method may allow concurrent modifications since
-element comparison may execute arbitrary Python code (via
-:meth:`~object.__eq__`).
-
-:meth:`~list.extend` is safe to call from multiple threads.  However, its
-guarantees depend on the iterable passed to it. If it is a :class:`list`, a
-:class:`tuple`, a :class:`set`, a :class:`frozenset`, a :class:`dict` or a
-:ref:`dictionary view object <dict-views>` (but not their subclasses), the
-``extend`` operation is safe from concurrent modifications to the iterable.
-Otherwise, an iterator is created which can be concurrently modified by
-another thread.  The same applies to inplace concatenation of a list with
-other iterables when using ``lst += iterable``.
-
-Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
-to call from multiple threads, but ``iterable`` is only locked when it is
-also a :class:`list` (but not its subclasses).
-
-Operations that involve multiple accesses, as well as iteration, are never
-atomic. For example:
-
-.. code-block::
-   :class: bad
-
-   # NOT atomic: read-modify-write
-   lst[i] = lst[i] + 1
-
-   # NOT atomic: check-then-act
-   if lst:
-         item = lst.pop()
-
-   # NOT thread-safe: iteration while modifying
-   for item in lst:
-         process(item)  # another thread may modify lst
-
-Consider external synchronization when sharing :class:`list` instances
-across threads.  See :ref:`freethreading-python-howto` for more information.
+   For detailed information on thread-safety guarantees for :class:`list`
+   objects, see :ref:`thread-safety-list`.
 
 
 .. _typesseq-tuple:
@@ -1586,6 +1495,10 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
 
    Tuples implement all of the :ref:`common <typesseq-common>` sequence
    operations.
+
+   Tuples are :ref:`generic <generics>` over the types of their contents.
+   For more information, refer to
+   :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
 
 For heterogeneous collections of data where access by name is clearer than
 access by index, :func:`collections.namedtuple` may be a more appropriate
@@ -2261,8 +2174,24 @@ expression support in the :mod:`re` module).
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
-   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   like the `Kharosthi numbers <https://en.wikipedia.org/wiki/Kharosthi#Numerals>`__.
+   Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-Indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`.
 
 
 .. method:: str.isidentifier()
@@ -2304,15 +2233,14 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-Indic digits zero to nine
       True
       >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
-   a superset of decimal numbers.
+   See also :meth:`isdecimal` and :meth:`isdigit`.
 
 
 .. method:: str.isprintable()
@@ -2340,16 +2268,33 @@ expression support in the :mod:`re` module).
       >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
 
+   See also :meth:`isspace`.
+
 
 .. method:: str.isspace()
 
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      True
+
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
    ``B``, or ``S``.
+
+   See also :meth:`isprintable`.
 
 
 .. method:: str.istitle()
@@ -2446,7 +2391,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a prefix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.lstrip()
@@ -2477,6 +2423,10 @@ expression support in the :mod:`re` module).
    resulting dictionary, each character in *from* will be mapped to the character at
    the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
+
+   .. versionchanged:: 3.15
+
+      *dict* can now be a :class:`frozendict`.
 
 
 .. method:: str.partition(sep, /)
@@ -2597,6 +2547,19 @@ expression support in the :mod:`re` module).
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.rjust(10)
+      '    Python'
+      >>> 'Python'.rjust(10, '.')
+      '....Python'
+      >>> 'Monty Python'.rjust(10, '.')
+      'Monty Python'
+
+   See also :meth:`ljust` and :meth:`zfill`.
+
 
 .. method:: str.rpartition(sep, /)
 
@@ -2632,7 +2595,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a suffix; rather, all combinations of its values are stripped.
    For example:
 
@@ -2669,7 +2633,9 @@ expression support in the :mod:`re` module).
    :func:`re.split`). Splitting an empty string with a specified separator
    returns ``['']``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1,2,3'.split(',')
       ['1', '2', '3']
@@ -2687,7 +2653,9 @@ expression support in the :mod:`re` module).
    string or a string consisting of just whitespace with a ``None`` separator
    returns ``[]``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1 2 3'.split()
       ['1', '2', '3']
@@ -2699,7 +2667,9 @@ expression support in the :mod:`re` module).
    If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
    leading runs of consecutive whitespace are considered.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "".split(None, 0)
       []
@@ -2708,7 +2678,7 @@ expression support in the :mod:`re` module).
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
 
-   See also :meth:`join`.
+   See also :meth:`join` and :meth:`rsplit`.
 
 
 .. index::
@@ -2802,9 +2772,9 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
-   If omitted or ``None``, the *chars* argument defaults to removing whitespace.
-   The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped.
+   If omitted or ``None``, the *chars* argument defaults to removing whitespace,
+   that is characters for which :meth:`str.isspace` is true.  The *chars* argument
+   is not a prefix or suffix; rather, all combinations of its values are stripped.
 
    For example:
 
@@ -2834,8 +2804,22 @@ expression support in the :mod:`re` module).
 .. method:: str.swapcase()
 
    Return a copy of the string with uppercase characters converted to lowercase and
-   vice versa. Note that it is not necessarily true that
-   ``s.swapcase().swapcase() == s``.
+   vice versa. For example:
+
+   .. doctest::
+
+      >>> 'Hello World'.swapcase()
+      'hELLO wORLD'
+
+   Note that it is not necessarily true that ``s.swapcase().swapcase() == s``.
+   For example:
+
+   .. doctest::
+
+      >>> 'straße'.swapcase().swapcase()
+      'strasse'
+
+   See also :meth:`str.lower` and :meth:`str.upper`.
 
 
 .. method:: str.title()
@@ -2921,12 +2905,16 @@ expression support in the :mod:`re` module).
    than before. The original string is returned if *width* is less than
    or equal to ``len(s)``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "42".zfill(5)
       '00042'
       >>> "-42".zfill(5)
       '-0042'
+
+   See also :meth:`rjust`.
 
 
 .. index::
@@ -3257,6 +3245,10 @@ The conversion types are:
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
 
+For floating-point formats, the result should be correctly rounded to a given
+precision ``p`` of digits after the decimal point.  The rounding mode matches
+that of the :func:`round` builtin.
+
 Notes:
 
 (1)
@@ -3565,6 +3557,11 @@ The representation of bytearray objects uses the bytes literal format
 ``bytearray([46, 46, 46])``.  You can always convert a bytearray object into
 a list of integers using ``list(b)``.
 
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`bytearray`
+   objects, see :ref:`thread-safety-bytearray`.
+
 
 .. _bytes-methods:
 
@@ -3781,12 +3778,13 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.replace(old, new, count=-1, /)
-            bytearray.replace(old, new, count=-1, /)
+.. method:: bytes.replace(old, new, /, count=-1)
+            bytearray.replace(old, new, /, count=-1)
 
    Return a copy of the sequence with all occurrences of subsequence *old*
-   replaced by *new*.  If the optional argument *count* is given, only the
-   first *count* occurrences are replaced.
+   replaced by *new*.  If *count* is given, only the first *count* occurrences
+   are replaced.  If *count* is not specified or ``-1``, then all occurrences
+   are replaced.
 
    The subsequence to search for and its replacement may be any
    :term:`bytes-like object`.
@@ -3795,6 +3793,9 @@ arbitrary binary data.
 
       The bytearray version of this method does *not* operate in place - it
       always produces a new object, even if no changes were made.
+
+   .. versionchanged:: 3.15
+      *count* is now supported as a keyword argument.
 
 
 .. method:: bytes.rfind(sub[, start[, end]])
@@ -4612,7 +4613,10 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
+   :class:`!memoryview`\s are :ref:`generic <generics>` over the type of their
+   underlying data.
+
+   ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
 
@@ -5091,6 +5095,9 @@ copying.
 
       .. versionadded:: 3.3
 
+For information on the thread safety of :class:`memoryview` objects in
+the :term:`free-threaded build`, see :ref:`thread-safety-memoryview`.
+
 
 .. _types-set:
 
@@ -5302,11 +5309,18 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
+
+.. seealso::
+
+   For detailed information on thread-safety guarantees for :class:`set`
+   objects, see :ref:`thread-safety-set`.
+
 
 .. _typesmapping:
 
-Mapping Types --- :class:`dict`
-===============================
+Mapping types --- :class:`!dict`, :class:`!frozendict`
+======================================================
 
 .. index::
    pair: object; mapping
@@ -5317,8 +5331,9 @@ Mapping Types --- :class:`dict`
    pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
-Mappings are mutable objects.  There is currently only one standard mapping
-type, the :dfn:`dictionary`.  (For other containers see the built-in
+There are currently two standard mapping types, the :dfn:`dictionary` and
+:class:`frozendict`.
+(For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
 
@@ -5398,6 +5413,9 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
+
+   Dictionaries are :ref:`generic <generics>` over two types, signifying
+   (respectively) the types of the dictionary's keys and values.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -5588,149 +5606,14 @@ can be used interchangeably to index the same dictionary entry.
       Dictionaries are now reversible.
 
 
+   .. seealso::
+      :class:`frozendict` and :class:`types.MappingProxyType` can be used to
+      create a read-only view of a :class:`dict`.
+
 .. seealso::
-   :class:`types.MappingProxyType` can be used to create a read-only view
-   of a :class:`dict`.
 
-
-.. _thread-safety-dict:
-
-.. rubric:: Thread safety for dict objects
-
-Creating a dictionary with the :class:`dict` constructor is atomic when the
-argument to it is a :class:`dict` or a :class:`tuple`. When using the
-:meth:`dict.fromkeys` method, dictionary creation is atomic when the
-argument is a :class:`dict`, :class:`tuple`, :class:`set` or
-:class:`frozenset`.
-
-The following operations and functions are :term:`lock-free` and
-:term:`atomic <atomic operation>`.
-
-.. code-block::
-   :class: good
-
-   d[key]       # dict.__getitem__
-   d.get(key)   # dict.get
-   key in d     # dict.__contains__
-   len(d)       # dict.__len__
-
-All other operations from here on hold the :term:`per-object lock`.
-
-Writing or removing a single item is safe to call from multiple threads
-and will not corrupt the dictionary:
-
-.. code-block::
-   :class: good
-
-   d[key] = value        # write
-   del d[key]            # delete
-   d.pop(key)            # remove and return
-   d.popitem()           # remove and return last item
-   d.setdefault(key, v)  # insert if missing
-
-These operations may compare keys using :meth:`~object.__eq__`, which can
-execute arbitrary Python code. During such comparisons, the dictionary may
-be modified by another thread. For built-in types like :class:`str`,
-:class:`int`, and :class:`float`, that implement :meth:`~object.__eq__` in C,
-the underlying lock is not released during comparisons and this is not a
-concern.
-
-The following operations return new objects and hold the :term:`per-object lock`
-for the duration of the operation:
-
-.. code-block::
-   :class: good
-
-   d.copy()      # returns a shallow copy of the dictionary
-   d | other     # merges two dicts into a new dict
-   d.keys()      # returns a new dict_keys view object
-   d.values()    # returns a new dict_values view object
-   d.items()     # returns a new dict_items view object
-
-The :meth:`~dict.clear` method holds the lock for its duration. Other
-threads cannot observe elements being removed.
-
-The following operations lock both dictionaries. For :meth:`~dict.update`
-and ``|=``, this applies only when the other operand is a :class:`dict`
-that uses the standard dict iterator (but not subclasses that override
-iteration). For equality comparison, this applies to :class:`dict` and
-its subclasses:
-
-.. code-block::
-   :class: good
-
-   d.update(other_dict)  # both locked when other_dict is a dict
-   d |= other_dict       # both locked when other_dict is a dict
-   d == other_dict       # both locked for dict and subclasses
-
-All comparison operations also compare values using :meth:`~object.__eq__`,
-so for non-built-in types the lock may be released during comparison.
-
-:meth:`~dict.fromkeys` locks both the new dictionary and the iterable
-when the iterable is exactly a :class:`dict`, :class:`set`, or
-:class:`frozenset` (not subclasses):
-
-.. code-block::
-   :class: good
-
-   dict.fromkeys(a_dict)      # locks both
-   dict.fromkeys(a_set)       # locks both
-   dict.fromkeys(a_frozenset) # locks both
-
-When updating from a non-dict iterable, only the target dictionary is
-locked. The iterable may be concurrently modified by another thread:
-
-.. code-block::
-   :class: maybe
-
-   d.update(iterable)        # iterable is not a dict: only d locked
-   d |= iterable             # iterable is not a dict: only d locked
-   dict.fromkeys(iterable)   # iterable is not a dict/set/frozenset: only result locked
-
-Operations that involve multiple accesses, as well as iteration, are never
-atomic:
-
-.. code-block::
-   :class: bad
-
-   # NOT atomic: read-modify-write
-   d[key] = d[key] + 1
-
-   # NOT atomic: check-then-act (TOCTOU)
-   if key in d:
-         del d[key]
-
-   # NOT thread-safe: iteration while modifying
-   for key, value in d.items():
-         process(key)  # another thread may modify d
-
-To avoid time-of-check to time-of-use (TOCTOU) issues, use atomic
-operations or handle exceptions:
-
-.. code-block::
-   :class: good
-
-   # Use pop() with default instead of check-then-delete
-   d.pop(key, None)
-
-   # Or handle the exception
-   try:
-         del d[key]
-   except KeyError:
-         pass
-
-To safely iterate over a dictionary that may be modified by another
-thread, iterate over a copy:
-
-.. code-block::
-   :class: good
-
-   # Make a copy to iterate safely
-   for key, value in d.copy().items():
-         process(key)
-
-Consider external synchronization when sharing :class:`dict` instances
-across threads. See :ref:`freethreading-python-howto` for more information.
+   For detailed information on thread-safety guarantees for :class:`dict`
+   objects, see :ref:`thread-safety-dict`.
 
 
 .. _dict-views:
@@ -5837,6 +5720,51 @@ An example of dictionary view usage::
    mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
+
+
+Frozen dictionaries
+-------------------
+
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+
+   Return a new frozen dictionary initialized from an optional positional
+   argument and a possibly empty set of keyword arguments.
+
+   A :class:`!frozendict` has a similar API to the :class:`dict` API, with the
+   following differences:
+
+   * :class:`!dict` has more methods than :class:`!frozendict`:
+
+      * :meth:`!__delitem__`
+      * :meth:`!__setitem__`
+      * :meth:`~dict.clear`
+      * :meth:`~dict.pop`
+      * :meth:`~dict.popitem`
+      * :meth:`~dict.setdefault`
+      * :meth:`~dict.update`
+
+   * A :class:`!frozendict` can be hashed with ``hash(frozendict)`` if all keys and
+     values can be hashed.
+
+   * ``frozendict |= other`` does not modify the :class:`!frozendict` in-place but
+     creates a new frozen dictionary.
+
+   :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
+   from ``object``.
+
+   Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
+   signifying (respectively) the types of the frozendict's keys and values.
+
+   .. classmethod:: fromkeys(iterable, value=None, /)
+
+      Similar to :meth:`dict.fromkeys`, but call again the type constructor
+      with an initialized :class:`frozendict` if the type is a
+      :class:`frozendict` subclass or if the constructor returned a
+      :class:`frozendict`.
+
+   .. versionadded:: 3.15
 
 
 .. _typecontextmanager:
@@ -5977,7 +5905,8 @@ type and the :class:`bytes` data type:
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
-objects directly.
+objects directly. Specializations of user-defined :ref:`generic classes <generic-classes>`
+may not be instances of :class:`types.GenericAlias`, but they provide similar functionality.
 
 .. describe:: T[X, Y, ...]
 
@@ -6026,6 +5955,15 @@ creation::
    >>> type(l)
    <class 'list'>
 
+
+Instances of ``GenericAlias`` are not classes at runtime, even though they behave like classes (they can be instantiated and subclassed)::
+
+   >>> import inspect
+   >>> inspect.isclass(list[int])
+   False
+
+This is true for :ref:`user-defined generics <user-defined-generics>` also.
+
 Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
 
    >>> repr(list[int])
@@ -6062,6 +6000,7 @@ list is non-exhaustive.
 * :class:`list`
 * :class:`dict`
 * :class:`set`
+* :class:`frozendict`
 * :class:`frozenset`
 * :class:`type`
 * :class:`asyncio.Future`

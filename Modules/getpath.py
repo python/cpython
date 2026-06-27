@@ -129,8 +129,7 @@
 # checked by looking for the BUILDDIR_TXT file, which contains the
 # relative path to the platlib dir. The executable_dir value is
 # derived from joining the VPATH preprocessor variable to the
-# directory containing pybuilddir.txt. If it is not found, the
-# BUILD_LANDMARK file is found, which is part of the source tree.
+# directory containing pybuilddir.txt.
 # prefix is then found by searching up for a file that should only
 # exist in the source tree, and the stdlib dir is set to prefix/Lib.
 
@@ -177,7 +176,6 @@ ABI_THREAD = ABI_THREAD or ''
 
 if os_name == 'posix' or os_name == 'darwin':
     BUILDDIR_TXT = 'pybuilddir.txt'
-    BUILD_LANDMARK = 'Modules/Setup.local'
     DEFAULT_PROGRAM_NAME = f'python{VERSION_MAJOR}'
     STDLIB_SUBDIR = f'{platlibdir}/python{VERSION_MAJOR}.{VERSION_MINOR}{ABI_THREAD}'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}/os.py', f'{STDLIB_SUBDIR}/os.pyc']
@@ -190,7 +188,6 @@ if os_name == 'posix' or os_name == 'darwin':
 
 elif os_name == 'nt':
     BUILDDIR_TXT = 'pybuilddir.txt'
-    BUILD_LANDMARK = f'{VPATH}\\Modules\\Setup.local'
     DEFAULT_PROGRAM_NAME = f'python'
     STDLIB_SUBDIR = 'Lib'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}\\os.py', f'{STDLIB_SUBDIR}\\os.pyc']
@@ -236,6 +233,7 @@ stdlib_dir_was_set_in_config = bool(stdlib_dir)
 
 real_executable_dir = None
 platstdlib_dir = None
+stdlib_zip = None
 
 # ******************************************************************************
 # CALCULATE program_name
@@ -512,13 +510,9 @@ if ((not home_was_set and real_executable_dir and not py_setpath)
         platstdlib_dir = real_executable_dir
         build_prefix = joinpath(real_executable_dir, VPATH)
     except (FileNotFoundError, PermissionError):
-        if isfile(joinpath(real_executable_dir, BUILD_LANDMARK)):
-            build_prefix = joinpath(real_executable_dir, VPATH)
-            if os_name == 'nt':
-                # QUIRK: Windows builds need platstdlib_dir to be the executable
-                # dir. Normally the builddir marker handles this, but in this
-                # case we need to correct manually.
-                platstdlib_dir = real_executable_dir
+        # We used to check for an alternate landmark here, but now we require
+        # BUILDDIR_TXT to exist. (gh-151544; CVE-2026-12003)
+        pass
 
     if build_prefix:
         if os_name == 'nt':
@@ -697,12 +691,13 @@ elif not pythonpath_was_set:
             library_dir = dirname(library)
         else:
             library_dir = executable_dir
-        pythonpath.append(joinpath(library_dir, ZIP_LANDMARK))
+        stdlib_zip = joinpath(library_dir, ZIP_LANDMARK)
     elif build_prefix:
         # QUIRK: POSIX uses the default prefix when in the build directory
-        pythonpath.append(joinpath(PREFIX, ZIP_LANDMARK))
+        stdlib_zip = joinpath(PREFIX, ZIP_LANDMARK)
     else:
-        pythonpath.append(joinpath(base_prefix, ZIP_LANDMARK))
+        stdlib_zip = joinpath(base_prefix, ZIP_LANDMARK)
+    pythonpath.append(stdlib_zip)
 
     if os_name == 'nt' and use_environment and winreg:
         # QUIRK: Windows also lists paths in the registry. Paths are stored
@@ -765,6 +760,23 @@ elif not pythonpath_was_set:
 
     config['module_search_paths'] = pythonpath
     config['module_search_paths_set'] = 1
+
+
+# ******************************************************************************
+# SANITY CHECKS
+# ******************************************************************************
+
+# Warn if the standard library is missing, unless pythonpath_was_set was set, as
+# that skips parts of the stdlib directories calculation — assume the provided
+# pythonpath is correct. This is how subinterpreters initialize the path for eg.
+if not py_setpath and not pythonpath_was_set:
+    home_hint = f"The Python 'home' directory was set to {home!r}, is this correct?"
+    if (not stdlib_zip or not isfile(stdlib_zip)) and (not stdlib_dir or not isdir(stdlib_dir)):
+        hint = home_hint if home else f'sys.prefix is set to {prefix}, is this correct?'
+        warn('WARN: Could not find the standard library directory! ' + hint)
+    elif not platstdlib_dir or not isdir(platstdlib_dir):
+        hint = home_hint if home else f'sys.exec_prefix is set to {exec_prefix}, is this correct?'
+        warn('WARN: Could not find the platform standard library directory! ' + hint)
 
 
 # ******************************************************************************

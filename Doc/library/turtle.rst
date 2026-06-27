@@ -5,8 +5,6 @@
 .. module:: turtle
    :synopsis: An educational framework for simple graphics applications
 
-.. sectionauthor:: Gregor Lingl <gregor.lingl@aon.at>
-
 **Source code:** :source:`Lib/turtle.py`
 
 .. testsetup:: default
@@ -18,6 +16,9 @@
 
    import os
    os.remove("my_drawing.ps")
+   # Destroy the turtle window after tests are complete
+   # Imported via star import in testsetup
+   bye()
 
 --------------
 

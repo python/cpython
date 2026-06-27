@@ -3,8 +3,6 @@
 
 .. module:: uuid
    :synopsis: UUID objects (universally unique identifiers) according to RFC 9562
-.. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
-.. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
 **Source code:** :source:`Lib/uuid.py`
 

@@ -1068,7 +1068,6 @@ Here is an example of a multi-line docstring::
 Function Annotations
 --------------------
 
-.. sectionauthor:: Zachary Ware <zachary.ware@gmail.com>
 .. index::
    pair: function; annotations
    single: ->; function annotations
@@ -1102,7 +1101,6 @@ value annotated::
 Intermezzo: Coding Style
 ========================
 
-.. sectionauthor:: Georg Brandl <georg@python.org>
 .. index:: pair: coding; style
 
 Now that you are about to write longer, more complex pieces of Python, it is a

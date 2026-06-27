@@ -352,6 +352,7 @@ class PyObjectPtr(object):
                     'frame': PyFrameObjectPtr,
                     'set' : PySetObjectPtr,
                     'frozenset' : PySetObjectPtr,
+                    'frozendict' : PyDictObjectPtr,
                     'builtin_function_or_method' : PyCFunctionObjectPtr,
                     'method-wrapper': wrapperobject,
                     }
@@ -815,12 +816,20 @@ class PyDictObjectPtr(PyObjectPtr):
         return result
 
     def write_repr(self, out, visited):
+        tp_name = self.safe_tp_name()
+        is_frozendict = (tp_name == "frozendict")
+
         # Guard against infinite loops:
         if self.as_address() in visited:
-            out.write('{...}')
+            if is_frozendict:
+                out.write(tp_name + '({...})')
+            else:
+                out.write('{...}')
             return
         visited.add(self.as_address())
 
+        if is_frozendict:
+            out.write(tp_name + '(')
         out.write('{')
         first = True
         for pyop_key, pyop_value in self.iteritems():
@@ -831,6 +840,8 @@ class PyDictObjectPtr(PyObjectPtr):
             out.write(': ')
             pyop_value.write_repr(out, visited)
         out.write('}')
+        if is_frozendict:
+            out.write(')')
 
     @staticmethod
     def _get_entries(keys):

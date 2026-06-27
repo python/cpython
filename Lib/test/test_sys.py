@@ -6,6 +6,7 @@ import locale
 import operator
 import os
 import random
+import shutil
 import socket
 import struct
 import subprocess
@@ -858,23 +859,34 @@ class SysModuleTest(unittest.TestCase):
                     '''))
                 self.assertTrue(sys._is_interned(s))
 
-    def test_sys_flags(self):
+    def test_sys_flags_indexable_attributes(self):
         self.assertTrue(sys.flags)
-        attrs = ("debug",
+        # We've stopped assigning sequence indices to new sys.flags attributes:
+        # https://github.com/python/cpython/issues/122575#issuecomment-2416497086
+        indexable_attrs = ("debug",
                  "inspect", "interactive", "optimize",
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
-                 "warn_default_encoding", "safe_path", "int_max_str_digits",
-                 "lazy_imports")
-        for attr in attrs:
+                 "warn_default_encoding", "safe_path", "int_max_str_digits")
+        for attr_idx, attr in enumerate(indexable_attrs):
             self.assertHasAttr(sys.flags, attr)
             attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
+            attr_value = getattr(sys.flags, attr)
+            self.assertEqual(sys.flags[attr_idx], attr_value,
+                             msg=f"sys.flags .{attr} vs [{attr_idx}]")
         self.assertTrue(repr(sys.flags))
-        self.assertEqual(len(sys.flags), len(attrs))
+        self.assertEqual(len(sys.flags), 18, msg="Do not increase, see GH-122575")
 
         self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
+
+    def test_sys_flags_name_only_attributes(self):
+        # non-tuple sequence fields (name only sys.flags attributes)
+        self.assertIsInstance(sys.flags.gil, int|type(None))
+        self.assertIsInstance(sys.flags.thread_inherit_context, int|type(None))
+        self.assertIsInstance(sys.flags.context_aware_warnings, int|type(None))
+        self.assertIsInstance(sys.flags.lazy_imports, int|type(None))
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
@@ -1272,16 +1284,6 @@ class SysModuleTest(unittest.TestCase):
     def test_no_duplicates_in_meta_path(self):
         self.assertEqual(len(sys.meta_path), len(set(sys.meta_path)))
 
-    @unittest.skipUnless(hasattr(sys, "_enablelegacywindowsfsencoding"),
-                         'needs sys._enablelegacywindowsfsencoding()')
-    def test__enablelegacywindowsfsencoding(self):
-        code = ('import sys',
-                'sys._enablelegacywindowsfsencoding()',
-                'print(sys.getfilesystemencoding(), sys.getfilesystemencodeerrors())')
-        rc, out, err = assert_python_ok('-c', '; '.join(code))
-        out = out.decode('ascii', 'replace').rstrip()
-        self.assertEqual(out, 'mbcs replace')
-
     @support.requires_subprocess()
     def test_orig_argv(self):
         code = textwrap.dedent('''
@@ -1347,6 +1349,26 @@ class SysModuleTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
     def test_disable_gil_abi(self):
         self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
+
+    def test_int_max_str_digits(self):
+        old_limit = sys.get_int_max_str_digits()
+        self.assertIsInstance(old_limit, int)
+        self.assertGreaterEqual(old_limit, 0)
+        self.addCleanup(sys.set_int_max_str_digits, old_limit)
+
+        sys.set_int_max_str_digits(0)
+        self.assertEqual(sys.get_int_max_str_digits(), 0)
+
+        sys.set_int_max_str_digits(2_048)
+        self.assertEqual(sys.get_int_max_str_digits(), 2_048)
+
+        with self.assertRaises(ValueError):
+            # the minimum is 640 digits
+            sys.set_int_max_str_digits(5)
+        with self.assertRaises(ValueError):
+            sys.set_int_max_str_digits(-2)
+        with self.assertRaises(TypeError):
+            sys.set_int_max_str_digits(2_048.0)
 
 
 @test.support.cpython_only
@@ -1787,7 +1809,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
+        fmt = 'P2nPI13Pl4Pn9Pn12PI2Pc'
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
@@ -1897,7 +1919,7 @@ class SizeofTest(unittest.TestCase):
         check = self.check_sizeof
         # _ast.AST
         import _ast
-        check(_ast.AST(), size('P'))
+        check(_ast.Module(), size('3P'))
         try:
             raise TypeError
         except TypeError as e:
@@ -1908,10 +1930,16 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
-        # 'context_aware_warnings' flags and will not be necessary once
-        # gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P + self.P * (3 + len(sys.flags)))
+        # FIXME: The non_sequence_fields adjustment is for these flags:
+        # - 'gil'
+        # - 'thread_inherit_context'
+        # - 'context_aware_warnings'
+        # - 'lazy_imports'
+        # Not needing to increment this every time we add a new field
+        # per GH-122575 would be nice...
+        # Q: What is the actual point of this sys.flags C size derived from PyStructSequence_Field array assertion?
+        non_sequence_fields = 4
+        check(sys.flags, vsize('') + self.P + self.P * (non_sequence_fields + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
@@ -1976,7 +2004,8 @@ class TestRemoteExec(unittest.TestCase):
         test.support.reap_children()
 
     def _run_remote_exec_test(self, script_code, python_args=None, env=None,
-                              prologue='',
+                              python_executable=None, prologue='',
+                              after_ready=None,
                               script_path=os_helper.TESTFN + '_remote.py'):
         # Create the script that will be remotely executed
         self.addCleanup(os_helper.unlink, script_path)
@@ -2024,7 +2053,10 @@ sock.close()
 ''')
 
         # Start the target process and capture its output
-        cmd = [sys.executable]
+        if python_executable is None:
+            python_executable = sys.executable
+
+        cmd = [python_executable]
         if python_args:
             cmd.extend(python_args)
         cmd.append(target)
@@ -2049,6 +2081,9 @@ sock.close()
                 response = client_socket.recv(1024)
                 self.assertEqual(response, b"ready")
 
+                if after_ready is not None:
+                    after_ready(proc)
+
                 # Try remote exec on the target process
                 sys.remote_exec(proc.pid, script_path)
 
@@ -2070,6 +2105,19 @@ sock.close()
                 proc.kill()
                 proc.terminate()
                 proc.wait(timeout=SHORT_TIMEOUT)
+
+    def _run_remote_exec_with_deleted_mapping(self, deleted_path, **kwargs):
+        def delete_loaded_mapping(proc):
+            os_helper.unlink(deleted_path)
+            with open(f'/proc/{proc.pid}/maps', encoding='utf-8') as maps:
+                self.assertIn(f'{deleted_path} (deleted)', maps.read())
+
+        script = 'print("Remote script executed successfully!")'
+        returncode, stdout, stderr = self._run_remote_exec_test(
+            script, after_ready=delete_loaded_mapping, **kwargs)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
 
     def test_remote_exec(self):
         """Test basic remote exec functionality"""
@@ -2196,6 +2244,75 @@ this is invalid python code
         """Test remote exec with invalid script path"""
         with self.assertRaises(OSError):
             sys.remote_exec(os.getpid(), "invalid_script_path")
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-only regression test')
+    @unittest.skipUnless(
+        sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+        'requires a shared libpython build')
+    def test_remote_exec_deleted_libpython(self):
+        """Test remote exec when the target libpython was deleted."""
+        build_dir = sysconfig.get_config_var('abs_builddir')
+        ldlibrary = sysconfig.get_config_var('LDLIBRARY')
+        instsoname = sysconfig.get_config_var('INSTSONAME')
+        if not build_dir or not ldlibrary or not instsoname:
+            self.skipTest('cannot determine shared libpython location')
+
+        source_libpython = os.path.join(build_dir, instsoname)
+        if not os.path.exists(source_libpython):
+            self.skipTest(f'{source_libpython!r} does not exist')
+
+        with os_helper.temp_dir() as lib_dir:
+            copied_libpython = os.path.join(lib_dir, instsoname)
+            shutil.copy2(source_libpython, copied_libpython)
+            if ldlibrary != instsoname:
+                os.symlink(instsoname, os.path.join(lib_dir, ldlibrary))
+
+            env = os.environ.copy()
+            ld_library_path = env.get('LD_LIBRARY_PATH')
+            env['LD_LIBRARY_PATH'] = lib_dir if not ld_library_path else (
+                lib_dir + os.pathsep + ld_library_path)
+
+            self._run_remote_exec_with_deleted_mapping(copied_libpython,
+                                                       env=env)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-only regression test')
+    @unittest.skipUnless(
+        sysconfig.get_config_var('Py_ENABLE_SHARED') == 0,
+        'requires a static Python build')
+    def test_remote_exec_deleted_static_executable(self):
+        """Test remote exec when the target static executable was deleted."""
+        build_dir = sysconfig.get_config_var('abs_builddir')
+        srcdir = sysconfig.get_config_var('srcdir')
+        if not build_dir or not srcdir:
+            self.skipTest('cannot determine build-tree locations')
+
+        pybuilddir_txt = os.path.join(build_dir, 'pybuilddir.txt')
+        if not os.path.exists(pybuilddir_txt):
+            self.skipTest(f'{pybuilddir_txt!r} does not exist')
+
+        with open(pybuilddir_txt, encoding='utf-8') as pybuilddir_file:
+            pybuilddir = pybuilddir_file.read().strip()
+        source_ext_dir = os.path.join(build_dir, pybuilddir)
+        if not os.path.isdir(source_ext_dir):
+            self.skipTest(f'{source_ext_dir!r} does not exist')
+
+        with os_helper.temp_dir() as copied_root:
+            copied_build_dir = os.path.join(copied_root, 'build')
+            copied_pybuilddir = os.path.join(copied_build_dir, pybuilddir)
+            os.makedirs(os.path.dirname(copied_pybuilddir))
+            os.symlink(os.path.join(srcdir, 'Lib'),
+                       os.path.join(copied_root, 'Lib'))
+            os.symlink(source_ext_dir, copied_pybuilddir)
+            shutil.copy2(pybuilddir_txt,
+                         os.path.join(copied_build_dir, 'pybuilddir.txt'))
+
+            copied_python = os.path.join(copied_build_dir,
+                                         os.path.basename(sys.executable))
+            shutil.copy2(sys.executable, copied_python)
+
+            self._run_remote_exec_with_deleted_mapping(
+                copied_python, python_args=['-S'],
+                python_executable=copied_python)
 
     def test_remote_exec_in_process_without_debug_fails_envvar(self):
         """Test remote exec in a process without remote debugging enabled"""

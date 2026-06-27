@@ -4,9 +4,6 @@
 .. module:: atexit
    :synopsis: Register and execute cleanup functions.
 
-.. moduleauthor:: Skip Montanaro <skip.montanaro@gmail.com>
-.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
-
 --------------
 
 The :mod:`!atexit` module defines functions to register and unregister cleanup

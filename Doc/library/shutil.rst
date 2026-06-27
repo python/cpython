@@ -4,9 +4,6 @@
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. partly based on the docstrings
-
 **Source code:** :source:`Lib/shutil.py`
 
 .. index::
@@ -388,10 +385,14 @@ Directory and files operations
    If *dst* already exists but is not a directory, it may be overwritten
    depending on :func:`os.rename` semantics.
 
-   If the destination is on the current filesystem, then :func:`os.rename` is
-   used. Otherwise, *src* is copied to the destination using *copy_function*
-   and then removed.  In case of symlinks, a new symlink pointing to the target
-   of *src* will be created as the destination and *src* will be removed.
+   :func:`os.rename` is preferably used internally when *src* and the destination are on
+   the same filesystem. In case :func:`os.rename` fails due to :exc:`OSError`
+   (e.g. the user has write permission to the destination file but not to its parent
+   directory), this method falls back to using *copy_function*, in which case
+   *src* is copied to the destination using *copy_function* and then removed.
+
+   In case of symlinks, a new symlink pointing to the target of *src* will be
+   created in or as the destination, and *src* will be removed.
 
    If *copy_function* is given, it must be a callable that takes two arguments,
    *src* and the destination, and will be used to copy *src* to the destination
@@ -621,8 +622,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Create an archive file (such as zip or tar) and return its name.
 
-   *base_name* is the name of the file to create, including the path, minus
-   any format-specific extension.
+   *base_name* is a string or :term:`path-like object` specifying the name of
+   the file to create, including the path, minus any format-specific extension.
 
    *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
@@ -630,13 +631,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), "xztar" (if the :mod:`lzma` module is available), or "zstdtar"
    (if the :mod:`compression.zstd` module is available).
 
-   *root_dir* is a directory that will be the root directory of the
-   archive, all paths in the archive will be relative to it; for example,
-   we typically chdir into *root_dir* before creating the archive.
+   *root_dir* is a string or :term:`path-like object` specifying a directory
+   that will be the root directory of the archive, all paths in the archive
+   will be relative to it; for example, we typically chdir into *root_dir*
+   before creating the archive.
 
-   *base_dir* is the directory where we start archiving from;
-   i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.  *base_dir* must be given relative
+   *base_dir* is a string or :term:`path-like object` specifying a directory
+   where we start archiving from; i.e. *base_dir* will be the common prefix of
+   all files and directories in the archive.  *base_dir* must be given relative
    to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
    use *base_dir* and *root_dir* together.
 
@@ -671,6 +673,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       This function is now made thread-safe during creation of standard
       ``.zip`` and tar archives.
 
+   .. versionchanged:: 3.15
+      Accepts a :term:`path-like object` for *base_name*, *root_dir* and
+      *base_dir*.
+
 .. function:: get_archive_formats()
 
    Return a list of supported formats for archiving.
@@ -694,7 +700,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    Register an archiver for the format *name*.
 
-   *function* is the callable that will be used to unpack archives. The callable
+   *function* is the callable that will be used to create archives. The callable
    will receive the *base_name* of the file to create, followed by the
    *base_dir* (which defaults to :data:`os.curdir`) to start archiving from.
    Further arguments are passed as keyword arguments: *owner*, *group*,
@@ -747,8 +753,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
       Never extract archives from untrusted sources without prior inspection.
       It is possible that files are created outside of the path specified in
-      the *extract_dir* argument, e.g. members that have absolute filenames
-      starting with "/" or filenames with two dots "..".
+      the *extract_dir* argument, for example, members that have absolute filenames
+      or filenames with ".." components.
 
       Since Python 3.14, the defaults for both built-in formats (zip and tar
       files) will prevent the most dangerous of such security issues,

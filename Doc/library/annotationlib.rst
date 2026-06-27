@@ -510,6 +510,81 @@ annotations from the class and puts them in a separate attribute:
          return typ
 
 
+Creating a custom callable annotate function
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Custom :term:`annotate functions <annotate function>` may be literal functions like those
+automatically generated for functions, classes, and modules. Or, they may wish to utilise
+the encapsulation provided by classes, in which case any :term:`callable` can be used as
+an :term:`annotate function`.
+
+To provide the :attr:`~Format.VALUE`, :attr:`~Format.STRING`, or
+:attr:`~Format.FORWARDREF` formats directly, an :term:`annotate function` must provide
+the following attribute:
+
+* A callable ``__call__`` with signature ``__call__(format, /) -> dict``, that does not
+  raise a :exc:`NotImplementedError` when called with a supported format.
+
+To provide the :attr:`~Format.VALUE_WITH_FAKE_GLOBALS` format, which is used to
+automatically generate :attr:`~Format.STRING` or :attr:`~Format.FORWARDREF` if they are
+not supported directly, :term:`annotate functions <annotate function>` must provide the
+following attributes:
+
+* A callable ``__call__`` with signature ``__call__(format, /) -> dict``, that does not
+  raise a :exc:`NotImplementedError` when called with
+  :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`.
+* A :ref:`code object <code-objects>` ``__code__`` containing the compiled code for the
+  annotate function.
+* Optional: A tuple of the function's positional defaults ``__kwdefaults__``, if the
+  function represented by ``__code__`` uses any positional defaults.
+* Optional: A dict of the function's keyword defaults ``__defaults__``, if the function
+  represented by ``__code__`` uses any keyword defaults.
+* Optional: All other :ref:`function attributes <inspect-types>`.
+
+.. code-block:: python
+
+   class Annotate:
+       called_formats = []
+
+       def __call__(self, format=None, /, *, _self=None):
+           # When called with fake globals, `_self` will be the
+           # actual self value, and `self` will be the format.
+           if _self is not None:
+               self, format = _self, self
+
+           self.called_formats.append(format)
+           if format <= 2:  # VALUE or VALUE_WITH_FAKE_GLOBALS
+               return {"x": MyType}
+           raise NotImplementedError
+
+       __code__ = __call__.__code__
+       __defaults__ = (None,)
+       __kwdefaults__ = property(lambda self: dict(_self=self))
+
+       __globals__ = {}
+       __builtins__ = {}
+       __closure__ = None
+
+This can then be called with:
+
+.. code-block:: pycon
+
+   >>> from annotationlib import call_annotate_function, Format
+   >>> call_annotate_function(Annotate(), format=Format.STRING)
+   {'x': 'MyType'}
+
+Or used as the annotate function for an object:
+
+.. code-block:: pycon
+
+   >>> from annotationlib import get_annotations, Format
+   >>> class C:
+   ...   pass
+   >>> C.__annotate__ = Annotate()
+   >>> get_annotations(Annotate(), format=Format.STRING)
+   {'x': 'MyType'}
+
+
 Limitations of the ``STRING`` format
 ------------------------------------
 
