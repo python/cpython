@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 try:
@@ -26,6 +27,7 @@ from profiling.sampling.cli import (
     FORMAT_EXTENSIONS,
     _create_collector,
     _generate_output_filename,
+    _handle_output,
     main,
 )
 from profiling.sampling.constants import (
@@ -726,6 +728,26 @@ class TestSampleProfilerCLI(unittest.TestCase):
             # Verify async_aware was passed with default "running" mode
             call_kwargs = mock_sample.call_args[1]
             self.assertEqual(call_kwargs.get("async_aware"), "running")
+
+    def test_handle_output_browser_not_opened_when_export_fails(self):
+        for format_type in ("flamegraph", "diff_flamegraph", "heatmap"):
+            with self.subTest(format=format_type):
+                collector = mock.MagicMock()
+                collector.export.return_value = False
+                args = SimpleNamespace(
+                    format=format_type,
+                    outfile="profile.html",
+                    browser=True,
+                )
+
+                with (
+                    mock.patch("profiling.sampling.cli.os.path.isdir", return_value=False),
+                    mock.patch("profiling.sampling.cli._open_in_browser") as mock_open,
+                ):
+                    _handle_output(collector, args, pid=12345, mode=0)
+
+                collector.export.assert_called_once_with("profile.html")
+                mock_open.assert_not_called()
 
     def test_async_aware_with_async_mode_all(self):
         """Test --async-aware with --async-mode all."""
