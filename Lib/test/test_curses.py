@@ -1961,6 +1961,35 @@ class TestCurses(unittest.TestCase):
         self._type(box, 'b')
         self.assertEqual(box.gather(), 'abXc ')
 
+    def test_textbox_fill_last_cell(self):
+        # The lower-right cell can be written, even though addch() there
+        # cannot advance the cursor past the end of the window.
+        box, win = self._make_textbox(1, 4, stripspaces=0)
+        self._type(box, 'abcd')
+        self.assertEqual(box.gather(), 'abcd')
+
+    def test_textbox_fill_last_cell_multiline(self):
+        box, win = self._make_textbox(2, 3, stripspaces=0)
+        self._type(box, 'abc')
+        box.do_command(curses.ascii.NL)    # ^j -> start of next line
+        self._type(box, 'def')             # 'f' lands in the lower-right cell
+        self.assertEqual(box.gather(), 'abc\ndef\n')
+
+    def test_textbox_fill_last_cell_insert_mode(self):
+        box, win = self._make_textbox(1, 4, insert_mode=True, stripspaces=0)
+        self._type(box, 'abcd')
+        self.assertEqual(box.gather(), 'abcd')
+
+    def test_textbox_fill_last_cell_scrollok(self):
+        # Writing the lower-right cell must not scroll the window even if it
+        # has scrolling enabled.
+        box, win = self._make_textbox(2, 3, stripspaces=0)
+        win.scrollok(True)
+        self._type(box, 'abc')
+        box.do_command(curses.ascii.NL)
+        self._type(box, 'def')
+        self.assertEqual(box.gather(), 'abc\ndef\n')
+
     def test_textbox_movement(self):
         box, win = self._make_textbox(3, 10)
         self._type(box, 'abc')
