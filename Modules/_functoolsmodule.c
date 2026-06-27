@@ -359,7 +359,7 @@ partial_dealloc(PyObject *self)
 static PyObject *
 partial_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-    if (obj == Py_None || obj == NULL) {
+    if (Py_IsNone(obj) || obj == NULL) {
         return Py_NewRef(self);
     }
     return PyMethod_New(self, obj);
@@ -804,8 +804,8 @@ partial_setstate(PyObject *self, PyObject *state)
     if (!PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
         !PyCallable_Check(fn) ||
         !PyTuple_Check(fnargs) ||
-        (kw != Py_None && !PyDict_Check(kw)) ||
-        (dict != Py_None && !PyDict_Check(dict)))
+        (!Py_IsNone(kw) && !PyDict_Check(kw)) ||
+        (!Py_IsNone(dict) && !PyDict_Check(dict)))
     {
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
@@ -832,7 +832,7 @@ partial_setstate(PyObject *self, PyObject *state)
     if (fnargs == NULL)
         return NULL;
 
-    if (kw == Py_None)
+    if (Py_IsNone(kw))
         kw = PyDict_New();
     else if(!PyDict_CheckExact(kw))
         kw = PyDict_Copy(kw);
@@ -843,7 +843,7 @@ partial_setstate(PyObject *self, PyObject *state)
         return NULL;
     }
 
-    if (dict == Py_None)
+    if (Py_IsNone(dict))
         dict = NULL;
     else
         Py_INCREF(dict);
@@ -1640,7 +1640,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     /* select the caching function, and make/inc maxsize_O */
-    if (maxsize_O == Py_None) {
+    if (Py_IsNone(maxsize_O)) {
         wrapper = infinite_lru_cache_wrapper;
         /* use this only to initialize lru_cache_object attribute maxsize */
         maxsize = -1;
@@ -1747,7 +1747,7 @@ lru_cache_call(PyObject *op, PyObject *args, PyObject *kwds)
 static PyObject *
 lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-    if (obj == Py_None || obj == NULL) {
+    if (Py_IsNone(obj) || obj == NULL) {
         return Py_NewRef(self);
     }
     return PyMethod_New(self, obj);

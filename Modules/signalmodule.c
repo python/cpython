@@ -1320,7 +1320,7 @@ signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
 /*[clinic end generated code: output=2d59f04a75d9cbdf input=2a6543a1f4ac2000]*/
 
 {
-    if (siginfo != Py_None) {
+    if (!Py_IsNone(siginfo)) {
         PyErr_SetString(PyExc_TypeError, "siginfo must be None");
         return NULL;
     }
@@ -1738,7 +1738,7 @@ _PySignal_Fini(void)
         _Py_atomic_store_int_relaxed(&Handlers[signum].tripped, 0);
         set_handler(signum, NULL);
         if (func != NULL
-            && func != Py_None
+            && !Py_IsNone(func)
             && !compare_handler(func, state->default_handler)
             && !compare_handler(func, state->ignore_handler))
         {
@@ -1836,7 +1836,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
          * (see bpo-43406).
          */
         PyObject *func = get_handler(i);
-        if (func == NULL || func == Py_None ||
+        if (func == NULL || Py_IsNone(func) ||
             compare_handler(func, state->ignore_handler) ||
             compare_handler(func, state->default_handler)) {
             /* No Python signal handler due to aforementioned race condition.

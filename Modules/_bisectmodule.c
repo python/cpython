@@ -83,7 +83,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
         if (litem == NULL) {
             goto error;
         }
-        if (key != Py_None) {
+        if (!Py_IsNone(key)) {
             PyObject *newitem = PyObject_CallOneArg(key, litem);
             if (newitem == NULL) {
                 goto error;
@@ -202,7 +202,7 @@ _bisect_insort_right_impl(PyObject *module, PyObject *a, PyObject *x,
     PyObject *result, *key_x;
     Py_ssize_t index;
 
-    if (key == Py_None) {
+    if (Py_IsNone(key)) {
         index = internal_bisect_right(a, x, lo, hi, key);
     } else {
         key_x = PyObject_CallOneArg(key, x);
@@ -263,7 +263,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
         if (litem == NULL) {
             goto error;
         }
-        if (key != Py_None) {
+        if (!Py_IsNone(key)) {
             PyObject *newitem = PyObject_CallOneArg(key, litem);
             if (newitem == NULL) {
                 goto error;
@@ -384,7 +384,7 @@ _bisect_insort_left_impl(PyObject *module, PyObject *a, PyObject *x,
     PyObject *result, *key_x;
     Py_ssize_t index;
 
-    if (key == Py_None) {
+    if (Py_IsNone(key)) {
         index = internal_bisect_left(a, x, lo, hi, key);
     } else {
         key_x = PyObject_CallOneArg(key, x);

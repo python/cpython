@@ -234,7 +234,7 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
     if (file_path == NULL) {
         return NULL;
     }
-    else if (file_path == Py_None) {
+    else if (Py_IsNone(file_path)) {
         PyObject *meth = state->_common_mod;
         file_obj = PyObject_CallMethod(meth, "load_tzdata", "O", key);
         if (file_obj == NULL) {
@@ -331,7 +331,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
         return NULL;
     }
 
-    if (instance == Py_None) {
+    if (Py_IsNone(instance)) {
         Py_DECREF(instance);
         PyObject *tmp = zoneinfo_new_instance(state, type, key);
         if (tmp == NULL) {
@@ -514,7 +514,7 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
         return NULL;
     }
 
-    if (only_keys == NULL || only_keys == Py_None) {
+    if (only_keys == NULL || Py_IsNone(only_keys)) {
         PyObject *rv = PyObject_CallMethod(weak_cache, "clear", NULL);
         if (rv != NULL) {
             Py_DECREF(rv);
@@ -766,7 +766,7 @@ static PyObject *
 zoneinfo_repr(PyObject *op)
 {
     PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(op);
-    if (self->key != Py_None) {
+    if (!Py_IsNone(self->key)) {
         return PyUnicode_FromFormat("%T(key=%R)", self, self->key);
     }
     assert(PyUnicode_Check(self->file_repr));
@@ -777,7 +777,7 @@ static PyObject *
 zoneinfo_str(PyObject *op)
 {
     PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(op);
-    if (self->key != Py_None) {
+    if (!Py_IsNone(self->key)) {
         return Py_NewRef(self->key);
     }
     return zoneinfo_repr(op);
@@ -1181,7 +1181,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         self->ttinfo_before = &(self->_ttinfos[0]);
     }
 
-    if (tz_str != Py_None && PyObject_IsTrue(tz_str)) {
+    if (!Py_IsNone(tz_str) && PyObject_IsTrue(tz_str)) {
         if (parse_tz_str(state, tz_str, &(self->tzrule_after))) {
             goto error;
         }
@@ -1702,7 +1702,7 @@ complete:
     return 0;
 error:
     Py_XDECREF(std_abbr);
-    if (dst_abbr != NULL && dst_abbr != Py_None) {
+    if (dst_abbr != NULL && !Py_IsNone(dst_abbr)) {
         Py_DECREF(dst_abbr);
     }
 
@@ -2213,7 +2213,7 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
 {
     // datetime.time has a .tzinfo attribute that passes None as the dt
     // argument; it only really has meaning for fixed-offset zones.
-    if (dt == Py_None) {
+    if (Py_IsNone(dt)) {
         if (self->fixed_offset) {
             return &(self->tzrule_after.std);
         }

@@ -255,7 +255,7 @@ _set_char_or_none(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt
     if (src == NULL) {
         *target = dflt;
     }
-    else if (src == Py_None) {
+    else if (Py_IsNone(src)) {
         *target = NOT_SET;
     }
     else {
@@ -537,7 +537,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     /* validate options */
     if (dialect_check_quoting(self->quoting))
         goto err;
-    if (quotechar == Py_None && quoting == NULL)
+    if (Py_IsNone(quotechar) && quoting == NULL)
         self->quoting = QUOTE_NONE;
     if (self->quoting != QUOTE_NONE && self->quotechar == NOT_SET) {
         PyErr_SetString(PyExc_TypeError,
@@ -1359,14 +1359,14 @@ csv_writerow_lock_held(PyObject *op, PyObject *seq)
             quoted = PyUnicode_Check(field);
             break;
         case QUOTE_NOTNULL:
-            quoted = field != Py_None;
+            quoted = !Py_IsNone(field);
             break;
         default:
             quoted = 0;
             break;
         }
 
-        null_field = (field == Py_None);
+        null_field = (Py_IsNone(field));
         if (PyUnicode_Check(field)) {
             append_ok = join_append(self, field, quoted);
             Py_DECREF(field);

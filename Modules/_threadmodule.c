@@ -695,7 +695,7 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
     }
 
     PyTime_t timeout_ns = -1;
-    if (timeout_obj != NULL && timeout_obj != Py_None) {
+    if (timeout_obj != NULL && !Py_IsNone(timeout_obj)) {
         if (_PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
                                       _PyTime_ROUND_TIMEOUT) < 0) {
             return NULL;
@@ -2015,7 +2015,7 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
     if (hobj == NULL) {
         hobj = Py_None;
     }
-    else if (hobj != Py_None && !Py_IS_TYPE(hobj, state->thread_handle_type)) {
+    else if (!Py_IsNone(hobj) && !Py_IS_TYPE(hobj, state->thread_handle_type)) {
         PyErr_SetString(PyExc_TypeError, "'handle' must be a _ThreadHandle");
         return NULL;
     }
@@ -2025,7 +2025,7 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
         return NULL;
     }
 
-    if (hobj == Py_None) {
+    if (Py_IsNone(hobj)) {
         hobj = (PyObject *)PyThreadHandleObject_new(state->thread_handle_type);
         if (hobj == NULL) {
             return NULL;
@@ -2255,7 +2255,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     }
 
     PyObject *name = NULL;
-    if (thread != Py_None) {
+    if (!Py_IsNone(thread)) {
         if (PyObject_GetOptionalAttr(thread, &_Py_ID(name), &name) < 0) {
             return -1;
         }
@@ -2351,9 +2351,9 @@ thread_excepthook(PyObject *module, PyObject *args)
     if (PySys_GetOptionalAttr( &_Py_ID(stderr), &file) < 0) {
         return NULL;
     }
-    if (file == NULL || file == Py_None) {
+    if (file == NULL || Py_IsNone(file)) {
         Py_XDECREF(file);
-        if (thread == Py_None) {
+        if (Py_IsNone(thread)) {
             /* do nothing if sys.stderr is None and thread is None */
             Py_RETURN_NONE;
         }
@@ -2362,7 +2362,7 @@ thread_excepthook(PyObject *module, PyObject *args)
         if (file == NULL) {
             return NULL;
         }
-        if (file == Py_None) {
+        if (Py_IsNone(file)) {
             Py_DECREF(file);
             /* do nothing if sys.stderr is None and sys.stderr was None
                when the thread was created */

@@ -103,12 +103,12 @@ faulthandler_get_fileno(PyObject **file_ptr)
     PyObject *result;
     PyObject *file = *file_ptr;
 
-    if (file == NULL || file == Py_None) {
+    if (file == NULL || Py_IsNone(file)) {
         file = PySys_GetAttr(&_Py_ID(stderr));
         if (file == NULL) {
             return -1;
         }
-        if (file == Py_None) {
+        if (Py_IsNone(file)) {
             PyErr_SetString(PyExc_RuntimeError, "sys.stderr is None");
             Py_DECREF(file);
             return -1;

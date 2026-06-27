@@ -756,7 +756,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
     Py_ssize_t end_idx;
     PyObject *rval = NULL;
     PyObject *key = NULL;
-    int has_pairs_hook = (s->object_pairs_hook != Py_None);
+    int has_pairs_hook = (!Py_IsNone(s->object_pairs_hook));
     Py_ssize_t next_idx;
     Py_ssize_t comma_idx;
 
@@ -861,7 +861,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
     }
 
     /* if object_hook is not None: rval = object_hook(rval) */
-    if (s->object_hook != Py_None) {
+    if (!Py_IsNone(s->object_hook)) {
         PyObject *res = PyObject_CallOneArg(s->object_hook, rval);
         Py_DECREF(rval);
         return res;
@@ -1322,7 +1322,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         &sort_keys, &skipkeys, &allow_nan))
         return NULL;
 
-    if (markers != Py_None && !PyDict_Check(markers)) {
+    if (!Py_IsNone(markers) && !PyDict_Check(markers)) {
         PyErr_Format(PyExc_TypeError,
                      "make_encoder() argument 1 must be dict or None, "
                      "not %.200s", Py_TYPE(markers)->tp_name);
@@ -1462,7 +1462,7 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
     }
 
     PyObject *indent_cache = NULL;
-    if (self->indent != Py_None) {
+    if (!Py_IsNone(self->indent)) {
         indent_cache = create_indent_cache(self, indent_level);
         if (indent_cache == NULL) {
             PyUnicodeWriter_Discard(writer);
@@ -1490,7 +1490,7 @@ static PyObject *
 _encoded_const(PyObject *obj)
 {
     /* Return the JSON string representation of None, True, False */
-    if (obj == Py_None) {
+    if (Py_IsNone(obj)) {
         return &_Py_ID(null);
     }
     else if (obj == Py_True) {
@@ -1573,7 +1573,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *newobj;
     int rv;
 
-    if (obj == Py_None) {
+    if (Py_IsNone(obj)) {
       return PyUnicodeWriter_WriteASCII(writer, "null", 4);
     }
     else if (obj == Py_True) {
@@ -1617,7 +1617,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
     else {
         PyObject *ident = NULL;
-        if (s->markers != Py_None) {
+        if (!Py_IsNone(s->markers)) {
             int has_key;
             ident = PyLong_FromVoidPtr(obj);
             if (ident == NULL)
@@ -1680,7 +1680,7 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
     else if (PyFloat_Check(key)) {
         keystr = encoder_encode_float(s, key);
     }
-    else if (key == Py_True || key == Py_False || key == Py_None) {
+    else if (key == Py_True || key == Py_False || Py_IsNone(key)) {
                     /* This must come before the PyLong_Check because
                        True and False are also 1 and 0.*/
         keystr = _encoded_const(key);
@@ -1704,7 +1704,7 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
 
     if (*first) {
         *first = false;
-        if (s->indent != Py_None) {
+        if (!Py_IsNone(s->indent)) {
             if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
                 Py_DECREF(keystr);
                 return -1;
@@ -1807,7 +1807,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
         return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
     }
 
-    if (s->markers != Py_None) {
+    if (!Py_IsNone(s->markers)) {
         int has_key;
         ident = PyLong_FromVoidPtr(dct);
         if (ident == NULL)
@@ -1828,7 +1828,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     PyObject *separator = s->item_separator; // borrowed reference
-    if (s->indent != Py_None) {
+    if (!Py_IsNone(s->indent)) {
         indent_level++;
         separator = get_item_separator(s, indent_level, indent_cache);
         if (separator == NULL)
@@ -1868,7 +1868,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         Py_CLEAR(ident);
     }
-    if (s->indent != Py_None && !first) {
+    if (!Py_IsNone(s->indent) && !first) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
             goto bail;
@@ -1927,7 +1927,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         return PyUnicodeWriter_WriteASCII(writer, "[]", 2);
     }
 
-    if (s->markers != Py_None) {
+    if (!Py_IsNone(s->markers)) {
         int has_key;
         ident = PyLong_FromVoidPtr(seq);
         if (ident == NULL)
@@ -1948,7 +1948,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     PyObject *separator = s->item_separator; // borrowed reference
-    if (s->indent != Py_None) {
+    if (!Py_IsNone(s->indent)) {
         indent_level++;
         separator = get_item_separator(s, indent_level, indent_cache);
         if (separator == NULL ||
@@ -1971,7 +1971,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         Py_CLEAR(ident);
     }
 
-    if (s->indent != Py_None) {
+    if (!Py_IsNone(s->indent)) {
         indent_level--;
         if (write_newline_indent(writer, indent_level, indent_cache) < 0) {
             goto bail;

@@ -41,14 +41,14 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
     int oparg_int = 0;
     int jump_int;
 
-    if (oparg != Py_None) {
+    if (!Py_IsNone(oparg)) {
         oparg_int = (int)PyLong_AsLong(oparg);
         if ((oparg_int == -1) && PyErr_Occurred()) {
             return -1;
         }
     }
 
-    if (jump == Py_None) {
+    if (Py_IsNone(jump)) {
         jump_int = -1;
     }
     else if (jump == Py_True) {

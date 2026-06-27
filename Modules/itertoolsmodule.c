@@ -511,7 +511,7 @@ groupby_step(groupbyobject *gbo)
     if (newvalue == NULL)
         return -1;
 
-    if (gbo->keyfunc == Py_None) {
+    if (Py_IsNone(gbo->keyfunc)) {
         newkey = Py_NewRef(newvalue);
     } else {
         newkey = PyObject_CallOneArg(gbo->keyfunc, newvalue);
@@ -888,14 +888,14 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
     tdo->numread = Py_SAFE_DOWNCAST(len, Py_ssize_t, int);
 
     if (len == LINKCELLS) {
-        if (next != Py_None) {
+        if (!Py_IsNone(next)) {
             if (!Py_IS_TYPE(next, state->teedataobject_type))
                 goto err;
             assert(tdo->nextlink == NULL);
             tdo->nextlink = Py_NewRef(next);
         }
     } else {
-        if (next != Py_None)
+        if (!Py_IsNone(next))
             goto err; /* shouldn't have a next if we are not full */
     }
     return (PyObject*)tdo;
@@ -1538,7 +1538,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     numargs = PyTuple_Size(args);
     if (numargs == 2) {
-        if (a1 != Py_None) {
+        if (!Py_IsNone(a1)) {
             stop = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
@@ -1550,11 +1550,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
         }
     } else {
-        if (a1 != Py_None)
+        if (!Py_IsNone(a1))
             start = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
         if (start == -1 && PyErr_Occurred())
             PyErr_Clear();
-        if (a2 != Py_None) {
+        if (!Py_IsNone(a2)) {
             stop = PyNumber_AsSsize_t(a2, PyExc_OverflowError);
             if (stop == -1) {
                 if (PyErr_Occurred())
@@ -1574,7 +1574,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     if (a3 != NULL) {
-        if (a3 != Py_None)
+        if (!Py_IsNone(a3))
             step = PyNumber_AsSsize_t(a3, PyExc_OverflowError);
         if (step == -1 && PyErr_Occurred())
             PyErr_Clear();
@@ -2791,7 +2791,7 @@ itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
     n = PyTuple_GET_SIZE(pool);
 
     r = n;
-    if (robj != Py_None) {
+    if (!Py_IsNone(robj)) {
         if (!PyLong_Check(robj)) {
             PyErr_SetString(PyExc_TypeError, "Expected int as r");
             goto error;
@@ -3045,7 +3045,7 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
         return NULL;
     }
 
-    if (binop != Py_None) {
+    if (!Py_IsNone(binop)) {
         lz->binop = Py_XNewRef(binop);
     }
     lz->total = NULL;
@@ -3087,7 +3087,7 @@ accumulate_next_lock_held(PyObject *op)
     accumulateobject *lz = accumulateobject_CAST(op);
     PyObject *val, *newtotal;
 
-    if (lz->initial != Py_None) {
+    if (!Py_IsNone(lz->initial)) {
         lz->total = lz->initial;
         lz->initial = Py_NewRef(Py_None);
         return Py_NewRef(lz->total);
@@ -3363,7 +3363,7 @@ filterfalse_next(PyObject *op)
         if (item == NULL)
             return NULL;
 
-        if (lz->func == Py_None || lz->func == (PyObject *)&PyBool_Type) {
+        if (Py_IsNone(lz->func) || lz->func == (PyObject *)&PyBool_Type) {
             ok = PyObject_IsTrue(item);
         } else {
             PyObject *good;

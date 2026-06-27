@@ -1757,7 +1757,7 @@ deque_init_impl(dequeobject *deque, PyObject *iterable, PyObject *maxlenobj)
 /*[clinic end generated code: output=7084a39d71218dcd input=2b9e37af1fd73143]*/
 {
     Py_ssize_t maxlen = -1;
-    if (maxlenobj != NULL && maxlenobj != Py_None) {
+    if (maxlenobj != NULL && !Py_IsNone(maxlenobj)) {
         maxlen = PyLong_AsSsize_t(maxlenobj);
         if (maxlen == -1 && PyErr_Occurred())
             return -1;
@@ -2237,7 +2237,7 @@ defdict_missing(PyObject *op, PyObject *key)
     defdictobject *dd = defdictobject_CAST(op);
     PyObject *factory = dd->default_factory;
     PyObject *value;
-    if (factory == NULL || factory == Py_None) {
+    if (factory == NULL || Py_IsNone(factory)) {
         /* XXX Call dict.__missing__(key) */
         PyObject *tup;
         tup = PyTuple_Pack(1, key);
@@ -2307,7 +2307,7 @@ defdict_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
     PyObject *result;
     defdictobject *dd = defdictobject_CAST(op);
 
-    if (dd->default_factory == NULL || dd->default_factory == Py_None)
+    if (dd->default_factory == NULL || Py_IsNone(dd->default_factory))
         args = PyTuple_New(0);
     else
         args = PyTuple_Pack(1, dd->default_factory);
@@ -2475,7 +2475,7 @@ defdict_init(PyObject *self, PyObject *args, PyObject *kwds)
         Py_ssize_t n = PyTuple_GET_SIZE(args);
         if (n > 0) {
             newdefault = PyTuple_GET_ITEM(args, 0);
-            if (!PyCallable_Check(newdefault) && newdefault != Py_None) {
+            if (!PyCallable_Check(newdefault) && !Py_IsNone(newdefault)) {
                 PyErr_SetString(PyExc_TypeError,
                     "first argument must be callable or None");
                 return -1;
@@ -2700,7 +2700,7 @@ tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         return Py_NewRef(self);
     }
     if (!PyTuple_Check(obj)) {
-        if (obj == Py_None) {
+        if (Py_IsNone(obj)) {
             return Py_NewRef(self);
         }
         PyErr_Format(PyExc_TypeError,

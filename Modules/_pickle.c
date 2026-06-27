@@ -1181,7 +1181,7 @@ _Pickler_SetProtocol(PicklerObject *self, PyObject *protocol, int fix_imports)
 {
     long proto;
 
-    if (protocol == Py_None) {
+    if (Py_IsNone(protocol)) {
         proto = DEFAULT_PROTOCOL;
     }
     else {
@@ -1224,7 +1224,7 @@ _Pickler_SetOutputStream(PicklerObject *self, PyObject *file)
 static int
 _Pickler_SetBufferCallback(PicklerObject *self, PyObject *buffer_callback)
 {
-    if (buffer_callback == Py_None) {
+    if (Py_IsNone(buffer_callback)) {
         buffer_callback = NULL;
     }
     if (buffer_callback != NULL && self->proto < 5) {
@@ -1811,7 +1811,7 @@ _Unpickler_SetInputEncoding(UnpicklerObject *self,
 static int
 _Unpickler_SetBuffers(UnpicklerObject *self, PyObject *buffers)
 {
-    if (buffers == NULL || buffers == Py_None) {
+    if (buffers == NULL || Py_IsNone(buffers)) {
         self->buffers = NULL;
     }
     else {
@@ -2008,7 +2008,7 @@ static int
 _checkmodule(PyObject *module_name, PyObject *module,
              PyObject *global, PyObject *dotted_path)
 {
-    if (module == Py_None) {
+    if (Py_IsNone(module)) {
         return -1;
     }
     if (PyUnicode_Check(module_name) &&
@@ -2046,7 +2046,7 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
     if (PyObject_GetOptionalAttr(global, &_Py_ID(__module__), &module_name) < 0) {
         return NULL;
     }
-    if (module_name == NULL || module_name == Py_None) {
+    if (module_name == NULL || Py_IsNone(module_name)) {
         /* In some rare cases (e.g., bound methods of extension types),
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
@@ -4137,7 +4137,7 @@ save_pers(PickleState *state, PicklerObject *self, PyObject *obj)
     if (pid == NULL)
         return -1;
 
-    if (pid != Py_None) {
+    if (!Py_IsNone(pid)) {
         if (self->bin) {
             if (save(state, self, pid, 1) < 0 ||
                 _Pickler_Write(self, &binpersid_op, 1) < 0)
@@ -4239,10 +4239,10 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
         return -1;
     }
 
-    if (state == Py_None)
+    if (Py_IsNone(state))
         state = NULL;
 
-    if (listitems == Py_None)
+    if (Py_IsNone(listitems))
         listitems = NULL;
     else if (!PyIter_Check(listitems)) {
         PyErr_Format(st->PicklingError,
@@ -4251,7 +4251,7 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
         return -1;
     }
 
-    if (dictitems == Py_None)
+    if (Py_IsNone(dictitems))
         dictitems = NULL;
     else if (!PyIter_Check(dictitems)) {
         PyErr_Format(st->PicklingError,
@@ -4260,7 +4260,7 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
         return -1;
     }
 
-    if (state_setter == Py_None)
+    if (Py_IsNone(state_setter))
         state_setter = NULL;
     else if (!PyCallable_Check(state_setter)) {
         PyErr_Format(st->PicklingError,
@@ -4580,7 +4580,7 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
 
     /* Atom types; these aren't memoized, so don't check the memo. */
 
-    if (obj == Py_None) {
+    if (Py_IsNone(obj)) {
         return save_none(self, obj);
     }
     else if (obj == Py_False || obj == Py_True) {
@@ -6937,7 +6937,7 @@ load_build(PickleState *st, UnpicklerObject *self)
         slotstate = NULL;
 
     /* Set inst.__dict__ from the state dict (if any). */
-    if (state != Py_None) {
+    if (!Py_IsNone(state)) {
         PyObject *dict;
         PyObject *d_key, *d_value;
         Py_ssize_t i;

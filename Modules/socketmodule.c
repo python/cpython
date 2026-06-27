@@ -3216,7 +3216,7 @@ socket_parse_timeout(PyTime_t *timeout, PyObject *timeout_obj)
 #endif
     int overflow = 0;
 
-    if (timeout_obj == Py_None) {
+    if (Py_IsNone(timeout_obj)) {
         *timeout = _PyTime_FromSeconds(-1);
         return 0;
     }
@@ -3363,12 +3363,12 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
 
     arglen = PyTuple_Size(args);
-    if (arglen == 3 && optval == Py_None) {
+    if (arglen == 3 && Py_IsNone(optval)) {
         PyErr_Format(PyExc_TypeError,
                      "setsockopt() requires 4 arguments when the third argument is None");
         return NULL;
     }
-    if (arglen == 4 && optval != Py_None) {
+    if (arglen == 4 && !Py_IsNone(optval)) {
         PyErr_Format(PyExc_TypeError,
                      "setsockopt() only takes 4 arguments when the third argument is None (got %T)",
                      optval);
@@ -3416,7 +3416,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
 
     /* setsockopt(level, opt, None, optlen) */
-    if (optval == Py_None) {
+    if (Py_IsNone(optval)) {
         assert(sizeof(socklen_t) >= sizeof(unsigned int));
         res = setsockopt(get_sock_fd(s), level, optname,
                          NULL, (socklen_t)optlen);
@@ -4966,7 +4966,7 @@ _socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
     memset(&msg, 0, sizeof(msg));
 
     /* Parse destination address. */
-    if (addr_arg != NULL && addr_arg != Py_None) {
+    if (addr_arg != NULL && !Py_IsNone(addr_arg)) {
         if (!getsockaddrarg(s, addr_arg, &addrbuf, &addrlen,
                             "sendmsg"))
         {
@@ -5654,7 +5654,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
 #ifdef MS_WINDOWS
     /* In this case, we don't use the family, type and proto args */
-    if (fdobj == NULL || fdobj == Py_None)
+    if (fdobj == NULL || Py_IsNone(fdobj))
 #endif
     {
         if (PySys_Audit("socket.__new__", "Oiii",
@@ -5663,7 +5663,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
         }
     }
 
-    if (fdobj != NULL && fdobj != Py_None) {
+    if (fdobj != NULL && !Py_IsNone(fdobj)) {
 #ifdef MS_WINDOWS
         /* recreate a socket that was duplicated */
         if (PyBytes_Check(fdobj)) {
@@ -6937,7 +6937,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
                           &protocol, &flags)) {
         return NULL;
     }
-    if (hobj == Py_None) {
+    if (Py_IsNone(hobj)) {
         hptr = NULL;
     } else if (PyUnicode_Check(hobj)) {
         idna = PyUnicode_AsEncodedString(hobj, "idna", NULL);
@@ -6970,7 +6970,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
             goto err;
     } else if (PyBytes_Check(pobj)) {
         pptr = PyBytes_AS_STRING(pobj);
-    } else if (pobj == Py_None) {
+    } else if (Py_IsNone(pobj)) {
         pptr = (char *)NULL;
     } else {
         PyErr_SetString(PyExc_OSError, "Int or String expected");

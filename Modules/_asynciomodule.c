@@ -504,7 +504,7 @@ future_init(FutureObj *fut, PyObject *loop)
     fut->fut_awaited_by_is_set = 0;
     fut->fut_is_task = 0;
 
-    if (loop == Py_None) {
+    if (Py_IsNone(loop)) {
         asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
         loop = get_event_loop(state);
         if (loop == NULL) {
@@ -722,7 +722,7 @@ create_cancelled_error(asyncio_state *state, FutureObj *fut)
         return exc;
     }
     PyObject *msg = fut->fut_cancel_msg;
-    if (msg == NULL || msg == Py_None) {
+    if (msg == NULL || Py_IsNone(msg)) {
         exc = PyObject_CallNoArgs(state->asyncio_CancelledError);
     } else {
         exc = PyObject_CallOneArg(state->asyncio_CancelledError, msg);
@@ -1922,10 +1922,10 @@ FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
         val = args[1];
     }
 
-    if (val == Py_None) {
+    if (Py_IsNone(val)) {
         val = NULL;
     }
-    if (tb == Py_None ) {
+    if (Py_IsNone(tb) ) {
         tb = NULL;
     } else if (tb != NULL && !PyTraceBack_Check(tb)) {
         PyErr_SetString(PyExc_TypeError, "throw() third argument must be a traceback");
@@ -2270,7 +2270,7 @@ swap_current_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
 
     /* transfer ownership to avoid redundant ref counting */
     PyObject *prev_task = ts->asyncio_running_task;
-    if (task != Py_None) {
+    if (!Py_IsNone(task)) {
         ts->asyncio_running_task = Py_NewRef(task);
     } else {
         ts->asyncio_running_task = NULL;
@@ -2320,7 +2320,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
 
-    if (context == Py_None) {
+    if (Py_IsNone(context)) {
         Py_XSETREF(self->task_context, PyContext_CopyCurrent());
         if (self->task_context == NULL) {
             return -1;
@@ -2338,7 +2338,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     self->task_num_cancels_requested = 0;
     set_task_coro(self, coro);
 
-    if (name == Py_None) {
+    if (Py_IsNone(name)) {
         // optimization: defer task name formatting
         // store the task counter as PyLong in the name
         // for deferred formatting in get_name
@@ -3056,7 +3056,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     }
 
     if (task->task_must_cancel) {
-        assert(exc != Py_None);
+        assert(!Py_IsNone(exc));
 
         if (!exc || !PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError)) {
             /* exc was not a CancelledError */
@@ -3144,7 +3144,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
             Py_DECREF(exc);
             goto fail;
         }
-        assert(o == Py_None);
+        assert(Py_IsNone(o));
         Py_DECREF(o);
 
         if (PyErr_GivenExceptionMatches(exc, PyExc_KeyboardInterrupt) ||
@@ -3254,7 +3254,7 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
     }
 
     /* Check if `result` is None */
-    if (result == Py_None) {
+    if (Py_IsNone(result)) {
         /* Bare yield relinquishes control for one event loop iteration. */
         if (task_call_step_soon(state, task, NULL)) {
             goto fail;
@@ -3266,7 +3266,7 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
     if (PyObject_GetOptionalAttr(result, &_Py_ID(_asyncio_future_blocking), &o) < 0) {
         goto fail;
     }
-    if (o != NULL && o != Py_None) {
+    if (o != NULL && !Py_IsNone(o)) {
         /* `result` is a Future-compatible object */
         PyObject *wrapper;
         PyObject *tmp;
@@ -3613,7 +3613,7 @@ _asyncio__set_running_loop(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=ae56bf7a28ca189a input=4c9720233d606604]*/
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (loop == Py_None) {
+    if (Py_IsNone(loop)) {
         loop = NULL;
     }
     Py_XSETREF(ts->asyncio_running_loop, Py_XNewRef(loop));
@@ -3875,7 +3875,7 @@ static PyObject *
 _asyncio_current_task_impl(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=fe15ac331a7f981a input=58910f61a5627112]*/
 {
-    if (loop == Py_None) {
+    if (Py_IsNone(loop)) {
         loop = _asyncio_get_running_loop_impl(module);
         if (loop == NULL) {
             return NULL;
@@ -4025,7 +4025,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=0e107cbb7f72aa7b input=43a1b423c2d95bfa]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (loop == Py_None) {
+    if (Py_IsNone(loop)) {
         loop = _asyncio_get_running_loop_impl(module);
         if (loop == NULL) {
             return NULL;
