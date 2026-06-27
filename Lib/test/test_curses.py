@@ -306,6 +306,14 @@ class TestCurses(unittest.TestCase):
                 self.assertIs(win.is_wintouched(), syncok)
                 self.assertIs(stdscr.is_wintouched(), syncok)
 
+    # Many tests below use a common set of non-ASCII cases, each applied only
+    # when the window encoding can represent it -- so the whole suite is meant to
+    # be run under several locales (e.g. ISO-8859-1, ISO-8859-15, KOI8-U):
+    #   'A'/'a'      ASCII
+    #   'é'          common to the Latin encodings
+    #   '¤'/'€'/'є'  byte 0xA4 in ISO-8859-1 / ISO-8859-15 / KOI8-U
+    # Precomposed characters are used so a round-trip does not depend on the form.
+
     def _encodable(self, s):
         # Wide characters are only supported in a locale that can encode them.
         try:
@@ -313,6 +321,17 @@ class TestCurses(unittest.TestCase):
         except UnicodeEncodeError:
             return False
         return True
+
+    def _read_char(self, y, x):
+        # The character written to a cell, read back for output checks.  inch()
+        # is unusable here: on a wide build it returns the low 8 bits of the
+        # character's code point rather than its locale-encoded byte, mangling
+        # anything outside Latin-1.  in_wch() reads the wide cell directly;
+        # without it, instr() re-encodes the cell to the window encoding.
+        stdscr = self.stdscr
+        if hasattr(stdscr, 'in_wch'):
+            return str(stdscr.in_wch(y, x))
+        return stdscr.instr(y, x, 1).decode(stdscr.encoding)
 
     @requires_curses_window_meth('get_wch')
     def test_addch_combining(self):
@@ -408,11 +427,19 @@ class TestCurses(unittest.TestCase):
     @requires_curses_window_meth('in_wstr')
     def test_in_wstr(self):
         # The wide-character window read returns a str (instr returns bytes).
+        # See _encodable for the character set.
         stdscr = self.stdscr
-        s = 'a\u00e9\u2502z'  # 'a', 'e'+acute (precomposed), box vline, 'z'
-        stdscr.addstr(0, 0, s)
-        self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
-        self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
+        for s in ['abz',                    # ASCII
+                  'a\u00e9\u2502z',         # acute e (precomposed), box vline
+                  'na\u00efve',             # common to the Latin encodings
+                  'na\u00efve \u00a4',      # ISO-8859-1
+                  'soup\u00e7on \u20ac',    # ISO-8859-15
+                  '\u0434\u044f\u043a']:    # KOI8-U
+            if self._encodable(s):
+                with self.subTest(s=s):
+                    stdscr.addstr(0, 0, s)
+                    self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
+                    self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
 
     @requires_curses_func('complexchar')
     def test_complexchar(self):
@@ -467,9 +494,12 @@ class TestCurses(unittest.TestCase):
         cc = stdscr.in_wch(0, 0)
         self.assertEqual(str(cc), 'A')
         self.assertTrue(cc.attr & curses.A_UNDERLINE)
-        if self._encodable('\u00e9'):  # precomposed, for a portable round-trip
-            stdscr.addch(3, 0, curses.complexchar('\u00e9'))
-            self.assertEqual(str(stdscr.in_wch(3, 0)), '\u00e9')
+        # A character round-trips through the cell.  See _encodable for the set.
+        for ch in ('A', '\u00e9', '\u00a4', '\u20ac', '\u0454'):
+            if self._encodable(ch):
+                with self.subTest(ch=ch):
+                    stdscr.addch(3, 0, curses.complexchar(ch))
+                    self.assertEqual(str(stdscr.in_wch(3, 0)), ch)
         # in_wch() without coordinates reads at the cursor position.
         stdscr.move(0, 0)
         self.assertEqual(str(stdscr.in_wch()), 'A')
@@ -498,6 +528,13 @@ class TestCurses(unittest.TestCase):
         cc = stdscr.getbkgrnd()
         self.assertEqual(str(cc), ' ')
         self.assertTrue(cc.attr & curses.A_BOLD)
+        # A non-ASCII background round-trips as a complexchar.  See _encodable.
+        for ch in ('é', '¤', '€', 'є'):
+            if self._encodable(ch):
+                with self.subTest(ch=ch):
+                    stdscr.bkgd(curses.complexchar(ch))
+                    self.assertEqual(str(stdscr.getbkgrnd()), ch)
+        stdscr.bkgd(' ')
 
     @requires_curses_func('complexstr')
     def test_complexstr(self):
@@ -648,18 +685,72 @@ class TestCurses(unittest.TestCase):
         stdscr.addch('A')
         stdscr.addch(b'A')
         stdscr.addch(65)
-        c = '\u20ac'
-        try:
-            stdscr.addch(c)
-        except UnicodeEncodeError:
-            self.assertRaises(UnicodeEncodeError, c.encode, encoding)
-        except OverflowError:
-            encoded = c.encode(encoding)
-            self.assertNotEqual(len(encoded), 1, repr(encoded))
+        # See _encodable for the character set.  Each is either written (mapped
+        # to a single byte), or raises UnicodeEncodeError (not in the encoding)
+        # or OverflowError (a multibyte sequence, e.g. in UTF-8).
+        for c in ('A', '\u00e9', '\u00a4', '\u20ac', '\u0454'):
+            try:
+                stdscr.addch(c)
+            except UnicodeEncodeError:
+                self.assertRaises(UnicodeEncodeError, c.encode, encoding)
+            except OverflowError:
+                encoded = c.encode(encoding)
+                self.assertNotEqual(len(encoded), 1, repr(encoded))
         stdscr.addch('A', curses.A_BOLD)
         stdscr.addch(1, 2, 'A')
         stdscr.addch(2, 3, 'A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), True)
+
+        # The same characters supplied as an int chtype (a byte > 127).  The
+        # cell is read back with _read_char(), not inch(): on a wide build the
+        # int is stored through the locale as a wide character that inch()
+        # cannot represent for a character outside Latin-1.
+        for c in ('é', '¤', '€', 'є'):
+            try:
+                b = c.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            v = b[0]
+            with self.subTest(c=c):
+                stdscr.addch(0, 0, v)
+                self.assertEqual(self._read_char(0, 0), c)
+                stdscr.addch(0, 1, v, curses.A_BOLD)
+                self.assertEqual(self._read_char(0, 1), c)
+                self.assertTrue(stdscr.inch(0, 1) & curses.A_BOLD)
+                stdscr.move(2, 0)
+                stdscr.echochar(v)
+                self.assertEqual(self._read_char(2, 0), c)
+                # insch() round-trips a byte only where its code point equals
+                # the byte value (Latin-1): on a wide build ncurses winsch
+                # stores a printable byte directly as a code point instead of
+                # decoding it through the locale.
+                if ord(c) < 0x100:
+                    stdscr.insch(1, 0, v)
+                    self.assertEqual(self._read_char(1, 0), c)
+
+        # The same characters supplied as a str.  Unlike the int path above, a
+        # str is stored as a wide-character cell on a wide build, so every
+        # encodable character round-trips, insch() included.  A multibyte
+        # character does not fit a cell on a narrow build and is skipped.
+        wide = hasattr(stdscr, 'in_wch')
+        for c in ('é', '¤', '€', 'є'):
+            if not self._encodable(c):
+                continue
+            if not wide and len(c.encode(encoding)) != 1:
+                continue
+            with self.subTest(c=c):
+                stdscr.addch(0, 0, c)
+                self.assertEqual(self._read_char(0, 0), c)
+                stdscr.addch(0, 1, c, curses.A_BOLD)
+                self.assertEqual(self._read_char(0, 1), c)
+                self.assertTrue(stdscr.inch(0, 1) & curses.A_BOLD)
+                stdscr.insch(1, 0, c)
+                self.assertEqual(self._read_char(1, 0), c)
+                stdscr.move(2, 0)
+                stdscr.echochar(c)
+                self.assertEqual(self._read_char(2, 0), c)
 
         # echochar()
         stdscr.refresh()
@@ -667,16 +758,17 @@ class TestCurses(unittest.TestCase):
         stdscr.echochar('A')
         stdscr.echochar(b'A')
         stdscr.echochar(65)
-        c = '\u0114'
-        try:
-            stdscr.echochar(c)
-        except UnicodeEncodeError:
-            # The character is not encodable with the current encoding.
-            self.assertRaises(UnicodeEncodeError, c.encode, encoding)
-        except OverflowError:
-            # The character is encoded to a multibyte sequence.
-            encoded = c.encode(encoding)
-            self.assertNotEqual(len(encoded), 1, repr(encoded))
+        # See _encodable for the character set; as in the addch() loop above.
+        for c in ('A', '\u00e9', '\u00a4', '\u20ac', '\u0454'):
+            try:
+                stdscr.echochar(c)
+            except UnicodeEncodeError:
+                # The character is not encodable with the current encoding.
+                self.assertRaises(UnicodeEncodeError, c.encode, encoding)
+            except OverflowError:
+                # The character is encoded to a multibyte sequence.
+                encoded = c.encode(encoding)
+                self.assertNotEqual(len(encoded), 1, repr(encoded))
         stdscr.echochar('A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), False)
 
@@ -686,14 +778,18 @@ class TestCurses(unittest.TestCase):
         # addstr()/insstr()
         for func in [stdscr.addstr, stdscr.insstr]:
             with self.subTest(func.__qualname__):
-                stdscr.move(0, 0)
                 func('abcd')
                 func(b'abcd')
-                s = 'àßçđ'
-                try:
-                    func(s)
-                except UnicodeEncodeError:
-                    self.assertRaises(UnicodeEncodeError, s.encode, encoding)
+                # Common and encoding-distinctive strings (see _encodable for the
+                # 0xA4 set); 'àßçđ' is UTF-8-only.  Each is written if the
+                # encoding allows, else raises UnicodeEncodeError.
+                for s in ('soupçon', 'àßçđ', 'soupçon ¤', 'soupçon €', 'дякую'):
+                    stdscr.move(0, 0)
+                    try:
+                        func(s)
+                    except UnicodeEncodeError:
+                        self.assertRaises(UnicodeEncodeError, s.encode, encoding)
+                stdscr.move(0, 0)
                 func('abcd', curses.A_BOLD)
                 func(1, 2, 'abcd')
                 func(2, 3, 'abcd', curses.A_BOLD)
@@ -704,11 +800,14 @@ class TestCurses(unittest.TestCase):
                 stdscr.move(0, 0)
                 func('1234', 3)
                 func(b'1234', 3)
-                s = '\u0661\u0662\u0663\u0664'
-                try:
-                    func(s, 3)
-                except UnicodeEncodeError:
-                    self.assertRaises(UnicodeEncodeError, s.encode, encoding)
+                # As above (see _encodable); Arabic-Indic digits are UTF-8-only.
+                for s in ('caf\u00e9', '\u0661\u0662\u0663\u0664', 'caf\u00e9 \u00a4', 'caf\u00e9 \u20ac', '\u0434\u044f\u043a\u0443\u044e'):
+                    stdscr.move(0, 0)
+                    try:
+                        func(s, 3)
+                    except UnicodeEncodeError:
+                        self.assertRaises(UnicodeEncodeError, s.encode, encoding)
+                stdscr.move(0, 0)
                 func('1234', 5)
                 func('1234', 3, curses.A_BOLD)
                 func(1, 2, '1234', 3)
@@ -798,6 +897,24 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(stdscr.instr(0, 2, 4), b'BCD ')
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 0, 2, -2)
+        # A non-ASCII character of an 8-bit locale reads back as its encoded
+        # byte (see _encodable for the set).  instr() returns the locale bytes
+        # for any single-byte character; inch() packs the text into a chtype, so
+        # on a wide build it only round-trips a Latin-1 codepoint (byte ==
+        # codepoint).
+        encoding = stdscr.encoding
+        for ch in ('A', 'é', '¤', '€', 'є'):
+            try:
+                b = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            with self.subTest(ch=ch):
+                stdscr.addstr(2, 0, ch)
+                self.assertEqual(stdscr.instr(2, 0, 1), b)
+                if ord(ch) < 0x100:
+                    self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
@@ -839,6 +956,10 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.getch(), b'm'[0])
         self.assertEqual(win.getch(), b'\n'[0])
 
+        # A key value > 127 is delivered unchanged (it is not locale text).
+        curses.ungetch(0xE9)
+        self.assertEqual(win.getch(), 0xE9)
+
     def test_getstr(self):
         win = curses.newwin(5, 12, 5, 2)
         curses.echo()
@@ -860,6 +981,25 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.instr(1, 0), b'si   dolor  ')
         self.assertEqual(win.getstr(), b'amet')
         self.assertEqual(win.instr(1, 0), b'amet dolor  ')
+
+    @requires_curses_window_meth('get_wstr')
+    def test_get_wstr(self):
+        # get_wstr() reads input as a str (getstr() returns bytes); feed it with
+        # unget_wch().  See _encodable for the character set.
+        win = curses.newwin(5, 12, 5, 2)
+        curses.echo()
+        self.addCleanup(curses.noecho)
+        for s in ['Lorem',                 # ASCII
+                  'naïve',            # common to the Latin encodings
+                  'naïve ¤',     # ISO-8859-1
+                  'soupçon €',   # ISO-8859-15
+                  'дяк']:   # KOI8-U
+            if self._encodable(s):
+                with self.subTest(s=s):
+                    win.erase()
+                    for ch in reversed(s + '\n'):
+                        curses.unget_wch(ch)
+                    self.assertEqual(win.get_wstr(0, 0), s)
 
     def test_clear(self):
         win = curses.newwin(5, 15, 5, 2)
@@ -1059,6 +1199,29 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.inch(0, 0), b'L'[0] | curses.A_REVERSE)
         self.assertEqual(win.inch(0, 5), b'#'[0] | curses.A_REVERSE)
 
+        # A non-ASCII background character of an 8-bit locale reads back as its
+        # encoded byte.  See _encodable for the character set.
+        win.bkgd(' ')
+        encoding = win.encoding
+        for ch in ('é', '¤', '€', 'є'):
+            try:
+                b = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            with self.subTest(ch=ch):
+                win.bkgd(ch)
+                self.assertEqual(win.getbkgd(), b[0])
+                if ord(ch) < 0x100:
+                    # The same byte given as an int.  A wide build stores it
+                    # through the locale, so only a Latin-1 byte round-trips.
+                    win.bkgd(' ')
+                    win.bkgdset(b[0])
+                    self.assertEqual(win.getbkgd(), b[0])
+                    win.bkgd(b[0])
+                    self.assertEqual(win.getbkgd(), b[0])
+
     def test_overlay(self):
         srcwin = curses.newwin(5, 18, 3, 4)
         lorem_ipsum(srcwin)
@@ -1182,6 +1345,16 @@ class TestCurses(unittest.TestCase):
         win.border(65, 66)
         win.border(65)
         win.border()
+        # With no arguments, border() fills the edges with ACS line and corner
+        # characters.
+        chartext = curses.A_CHARTEXT
+        maxy, maxx = win.getmaxyx()
+        self.assertEqual(win.inch(0, 0) & chartext, curses.ACS_ULCORNER & chartext)
+        self.assertEqual(win.inch(0, maxx-1) & chartext, curses.ACS_URCORNER & chartext)
+        self.assertEqual(win.inch(maxy-1, 0) & chartext, curses.ACS_LLCORNER & chartext)
+        self.assertEqual(win.inch(maxy-1, maxx-1) & chartext, curses.ACS_LRCORNER & chartext)
+        self.assertEqual(win.inch(0, 1) & chartext, curses.ACS_HLINE & chartext)
+        self.assertEqual(win.inch(1, 0) & chartext, curses.ACS_VLINE & chartext)
 
         win.box(':', '~')
         self.assertEqual(win.instr(0, 1, 8), b'~~~~~~~~')
@@ -1192,6 +1365,11 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(TypeError, win.box, 65, 66, 67)
         self.assertRaises(TypeError, win.box, 65)
         win.box()
+        # With no arguments, box() likewise draws ACS corners and lines.
+        self.assertEqual(win.inch(0, 0) & chartext, curses.ACS_ULCORNER & chartext)
+        self.assertEqual(win.inch(0, maxx-1) & chartext, curses.ACS_URCORNER & chartext)
+        self.assertEqual(win.inch(0, 1) & chartext, curses.ACS_HLINE & chartext)
+        self.assertEqual(win.inch(1, 0) & chartext, curses.ACS_VLINE & chartext)
 
         win.move(1, 2)
         win.hline('-', 5)
@@ -1213,6 +1391,39 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.inch(2, 1), b';'[0] | curses.A_STANDOUT)
         self.assertEqual(win.inch(3, 1), b'a'[0])
 
+        # A border or line character of an 8-bit locale round-trips as its
+        # encoded byte.  See _encodable for the character set.
+        encoding = win.encoding
+        for ch in ('é', '¤', '€', 'є'):
+            try:
+                b = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            with self.subTest(ch=ch):
+                win.erase()
+                win.hline(2, 0, ch, 5)
+                self.assertEqual(win.instr(2, 0, 5), b * 5)
+                win.vline(0, 0, ch, 3)
+                self.assertEqual(win.instr(0, 0, 1), b)
+                self.assertEqual(win.instr(1, 0, 1), b)
+                win.border(ch, ch, ch, ch, ch, ch, ch, ch)
+                self.assertEqual(win.instr(0, 0), b * maxx)
+                if ord(ch) < 0x100:
+                    # The same byte given as an int.  A wide build stores it
+                    # through the locale, so only a Latin-1 byte round-trips.
+                    v = b[0]
+                    win.erase()
+                    win.hline(2, 0, v, 5)
+                    self.assertEqual(win.instr(2, 0, 5), b * 5)
+                    win.vline(0, 0, v, 3)
+                    self.assertEqual(win.instr(1, 0, 1), b)
+                    win.border(v, v, v, v, v, v, v, v)
+                    self.assertEqual(win.instr(0, 0), b * maxx)
+                    win.box(v, v)
+                    self.assertEqual(win.instr(0, 1, 1), b)
+
     def test_unctrl(self):
         self.assertEqual(curses.unctrl(b'A'), b'A')
         self.assertEqual(curses.unctrl('A'), b'A')
@@ -1220,6 +1431,19 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(curses.unctrl(b'\n'), b'^J')
         self.assertEqual(curses.unctrl('\n'), b'^J')
         self.assertEqual(curses.unctrl(10), b'^J')
+        # A printable non-ASCII byte of an 8-bit locale is returned unchanged.
+        # See _encodable for the character set.
+        encoding = self.stdscr.encoding
+        for ch in ('é', '¤', '€', 'є'):
+            try:
+                b = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            with self.subTest(ch=ch):
+                self.assertEqual(curses.unctrl(ch), b)
+                self.assertEqual(curses.unctrl(b[0]), b)   # the byte as an int
         self.assertRaises(TypeError, curses.unctrl, b'')
         self.assertRaises(TypeError, curses.unctrl, b'AB')
         self.assertRaises(TypeError, curses.unctrl, '')
@@ -1233,7 +1457,9 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(curses.wunctrl(65), 'A')
         self.assertEqual(curses.wunctrl('\n'), '^J')
         self.assertEqual(curses.wunctrl(10), '^J')
-        self.assertEqual(curses.wunctrl('é'), 'é')  # printable
+        # See _encodable for the character set (all printable here).
+        for c in ('A', 'é', '¤', '€', 'є'):
+            self.assertEqual(curses.wunctrl(c), c)
         self.assertRaises(TypeError, curses.wunctrl, b'')
         self.assertRaises(TypeError, curses.wunctrl, b'AB')
         self.assertRaises(TypeError, curses.wunctrl, '')
@@ -2136,7 +2362,8 @@ class TestCurses(unittest.TestCase):
     def test_unget_wch(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
-        for ch in ('a', '\xe9', '\u20ac', '\U0010FFFF'):
+        # See _encodable for the character set, plus a non-BMP character.
+        for ch in ('a', '\xe9', '\xa4', '\u20ac', '\u0454', '\U0010FFFF'):
             try:
                 ch.encode(encoding)
             except UnicodeEncodeError:
