@@ -1099,7 +1099,7 @@ _copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
         PyErr_NoMemory();
         return NULL;
     }
-    strcpy(copied, str);
+    memcpy(copied, str, (size_t)size + 1);
     if (p_size != NULL) {
         *p_size = size;
     }

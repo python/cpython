@@ -419,14 +419,18 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         goto error;
     }
     for (i = 0; i < npath; i++) {
-        v = PyList_GetItem(syspath, i);
+        /* Strong ref: safer under free-threading if sys.path mutates. */
+        v = PyList_GetItemRef(syspath, i);
         if (v == NULL) {
             PyErr_Clear();
             break;
         }
-        if (!PyUnicode_Check(v))
+        if (!PyUnicode_Check(v)) {
+            Py_DECREF(v);
             continue;
+        }
         path = PyUnicode_EncodeFSDefault(v);
+        Py_DECREF(v);
         if (path == NULL) {
             PyErr_Clear();
             continue;
@@ -436,13 +440,17 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             Py_DECREF(path);
             continue; /* Too long */
         }
-        strcpy(namebuf, PyBytes_AS_STRING(path));
+        /* Length is known; use memcpy instead of strcpy. */
+        memcpy(namebuf, PyBytes_AS_STRING(path), (size_t)len);
+        namebuf[len] = '\0';
         Py_DECREF(path);
-        if (strlen(namebuf) != (size_t)len)
-            continue; /* v contains '\0' */
-        if (len > 0 && namebuf[len-1] != SEP)
+        if (memchr(namebuf, '\0', (size_t)len) != NULL) {
+            continue; /* v contains embedded '\0' */
+        }
+        if (len > 0 && namebuf[len-1] != SEP) {
             namebuf[len++] = SEP;
-        strcpy(namebuf+len, tail);
+        }
+        memcpy(namebuf + len, tail, taillen + 1);
 
         binary = _PyObject_CallMethodFormat(tstate, open, "ss", namebuf, "rb");
         if (binary != NULL) {

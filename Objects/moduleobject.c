@@ -998,7 +998,7 @@ _PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, Py_ssize_t maxlen)
             PyErr_SetString(PyExc_ValueError, "__file__ too long");
         }
         else {
-            (void)strcpy(buffer, filename);
+            memcpy(buffer, filename, (size_t)size + 1);
         }
     }
     Py_DECREF(filenameobj);
