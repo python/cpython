@@ -691,14 +691,15 @@ class TestSampleProfilerComponents(unittest.TestCase):
             awaited_by=[MockCoroInfo(task_name=1, call_stack=[])],
         )
 
-        collector.collect([
-            MockAwaitedInfo(thread_id=100, awaited_by=[parent, child])
-        ])
+        collector.collect(
+            [MockAwaitedInfo(thread_id=100, awaited_by=[parent, child])],
+            timestamps_us=[1000, 2000],
+        )
         profile_data = export_gecko_profile(self, collector)
 
         self.assertEqual(len(profile_data["threads"]), 1)
         thread_data = profile_data["threads"][0]
-        self.assertEqual(thread_data["samples"]["length"], 1)
+        self.assertEqual(thread_data["samples"]["length"], 2)
 
         string_array = profile_data["shared"]["stringArray"]
         self.assertIn("parent_fn", string_array)
