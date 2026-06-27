@@ -157,7 +157,7 @@ static int
 validate_constant(PyObject *value)
 {
     assert(!PyErr_Occurred());
-    if (value == Py_None || value == Py_Ellipsis)
+    if (Py_IsNone(value) || value == Py_Ellipsis)
         return 1;
 
     if (PyLong_CheckExact(value)
@@ -560,7 +560,7 @@ validate_pattern(pattern_ty p, int star_ok)
             ret = validate_pattern_match_value(p->v.MatchValue.value);
             break;
         case MatchSingleton_kind:
-            ret = p->v.MatchSingleton.value == Py_None || PyBool_Check(p->v.MatchSingleton.value);
+            ret = Py_IsNone(p->v.MatchSingleton.value) || PyBool_Check(p->v.MatchSingleton.value);
             if (!ret) {
                 PyErr_SetString(PyExc_ValueError,
                                 "MatchSingleton can only contain True, False and None");
@@ -587,7 +587,7 @@ validate_pattern(pattern_ty p, int star_ok)
                 expr_ty key = asdl_seq_GET(keys, i);
                 if (key->kind == Constant_kind) {
                     PyObject *literal = key->v.Constant.value;
-                    if (literal == Py_None || PyBool_Check(literal)) {
+                    if (Py_IsNone(literal) || PyBool_Check(literal)) {
                         /* validate_pattern_match_value will ensure the key
                            doesn't contain True, False and None but it is
                            syntactically valid, so we will pass those on in

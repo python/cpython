@@ -340,7 +340,7 @@ PyImport_GetModule(PyObject *name)
     PyObject *mod;
 
     mod = import_get_module(tstate, name);
-    if (mod != NULL && mod != Py_None) {
+    if (mod != NULL && !Py_IsNone(mod)) {
         if (import_ensure_initialized(tstate->interp, mod, name) < 0) {
             goto error;
         }
@@ -570,7 +570,7 @@ _modules_by_index_get(PyInterpreterState *interp, Py_ssize_t index)
         return NULL;
     }
     PyObject *res = PyList_GET_ITEM(MODULES_BY_INDEX(interp), index);
-    return res==Py_None ? NULL : res;
+    return Py_IsNone(res) ? NULL : res;
 }
 
 static int
@@ -3168,7 +3168,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         memset(info, 0, sizeof(*info));
     }
 
-    if (nameobj == NULL || nameobj == Py_None) {
+    if (nameobj == NULL || Py_IsNone(nameobj)) {
         return FROZEN_BAD_NAME;
     }
     const char *name = _PyUnicode_AsUTF8NoNUL(nameobj);
@@ -3364,7 +3364,7 @@ bootstrap_imp(PyThreadState *tstate)
     if (mod == NULL) {
         goto error;
     }
-    assert(mod != Py_None);  // not found
+    assert(!Py_IsNone(mod));  // not found
 
     // Execute the _imp module: call imp_module_exec().
     if (exec_builtin_or_dynamic(mod) < 0) {
@@ -3745,7 +3745,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     if (PyDict_GetItemRef(globals, &_Py_ID(__package__), &package) < 0) {
         goto error;
     }
-    if (package == Py_None) {
+    if (Py_IsNone(package)) {
         Py_DECREF(package);
         package = NULL;
     }
@@ -3759,7 +3759,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                              "package must be a string");
             goto error;
         }
-        else if (spec != NULL && spec != Py_None) {
+        else if (spec != NULL && !Py_IsNone(spec)) {
             int equal;
             PyObject *parent = PyObject_GetAttr(spec, &_Py_ID(parent));
             if (parent == NULL) {
@@ -3779,7 +3779,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             }
         }
     }
-    else if (spec != NULL && spec != Py_None) {
+    else if (spec != NULL && !Py_IsNone(spec)) {
         package = PyObject_GetAttr(spec, &_Py_ID(parent));
         if (package == NULL) {
             goto error;
@@ -4218,7 +4218,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         goto error;
     }
 
-    if (mod != NULL && mod != Py_None) {
+    if (mod != NULL && !Py_IsNone(mod)) {
         if (import_ensure_initialized(tstate->interp, mod, abs_name) < 0) {
             goto error;
         }
@@ -4253,7 +4253,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     has_from = 0;
-    if (fromlist != NULL && fromlist != Py_None) {
+    if (fromlist != NULL && !Py_IsNone(fromlist)) {
         has_from = PyObject_IsTrue(fromlist);
         if (has_from < 0)
             goto error;
@@ -4956,7 +4956,7 @@ PyImport_ImportModuleAttrString(const char *modname, const char *attrname)
 int
 PyImport_SetLazyImportsFilter(PyObject *filter)
 {
-    if (filter == Py_None) {
+    if (Py_IsNone(filter)) {
         filter = NULL;
     }
     if (filter != NULL && !PyCallable_Check(filter)) {
@@ -5281,7 +5281,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
         info.data = (const char *)buf.buf;
         info.size = buf.len;
     }
-    else if (dataobj != Py_None) {
+    else if (!Py_IsNone(dataobj)) {
         _PyArg_BadArgument("get_frozen_object", "argument 2", "bytes", dataobj);
         return NULL;
     }
@@ -5304,7 +5304,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *codeobj = unmarshal_frozen_code(interp, &info);
-    if (dataobj != Py_None) {
+    if (!Py_IsNone(dataobj)) {
         PyBuffer_Release(&buf);
     }
     return codeobj;

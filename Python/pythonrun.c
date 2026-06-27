@@ -209,7 +209,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
         if (PySys_GetOptionalAttr(&_Py_ID(stdin), &attr) < 0) {
             PyErr_Clear();
         }
-        else if (attr != NULL && attr != Py_None) {
+        else if (attr != NULL && !Py_IsNone(attr)) {
             if (PyObject_GetOptionalAttr(attr, &_Py_ID(encoding), &encoding_obj) < 0) {
                 PyErr_Clear();
             }
@@ -606,7 +606,7 @@ parse_exit_code(PyObject *code, int *exitcode_p)
         *exitcode_p = exitcode;
         return 1;
     }
-    else if (code == Py_None) {
+    else if (Py_IsNone(code)) {
         *exitcode_p = 0;
         return 1;
     }
@@ -656,7 +656,7 @@ _Py_HandleSystemExitAndKeyboardInterrupt(int *exitcode_p)
     if (PySys_GetOptionalAttr(&_Py_ID(stderr), &sys_stderr) < 0) {
         PyErr_Clear();
     }
-    else if (sys_stderr != NULL && sys_stderr != Py_None) {
+    else if (sys_stderr != NULL && !Py_IsNone(sys_stderr)) {
         if (PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW) < 0) {
             PyErr_Clear();
         }
@@ -810,7 +810,7 @@ print_exception_traceback(struct exception_print_context *ctx, PyObject *value)
     int err = 0;
 
     PyObject *tb = PyException_GetTraceback(value);
-    if (tb && tb != Py_None) {
+    if (tb && !Py_IsNone(tb)) {
         const char *header = EXCEPTION_TB_HEADER;
         err = _PyTraceBack_Print(tb, header, f);
     }
@@ -840,7 +840,7 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     if (!v) {
         return -1;
     }
-    if (v == Py_None) {
+    if (Py_IsNone(v)) {
         Py_DECREF(v);
         _Py_DECLARE_STR(anon_string, "<string>");
         filename = Py_NewRef(&_Py_STR(anon_string));
@@ -1127,7 +1127,7 @@ void
 _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
 {
     assert(value != NULL);
-    assert(file != NULL && file != Py_None);
+    assert(file != NULL && !Py_IsNone(file));
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
         /* Put the traceback on the exception, otherwise it won't get
@@ -1206,7 +1206,7 @@ PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
         fprintf(stderr, "lost sys.stderr\n");
         return;
     }
-    if (file == Py_None) {
+    if (Py_IsNone(file)) {
         Py_DECREF(file);
         return;
     }

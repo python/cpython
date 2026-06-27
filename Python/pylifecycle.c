@@ -2027,7 +2027,7 @@ flush_std_files(void)
     if (PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
         status = -1;
     }
-    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+    else if (file != NULL && !Py_IsNone(file) && !file_is_closed(file)) {
         if (_PyFile_Flush(file) < 0) {
             status = -1;
         }
@@ -2041,7 +2041,7 @@ flush_std_files(void)
         PyErr_Clear();
         status = -1;
     }
-    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+    else if (file != NULL && !Py_IsNone(file) && !file_is_closed(file)) {
         if (_PyFile_Flush(file) < 0) {
             PyErr_Clear();
             status = -1;
@@ -2947,7 +2947,7 @@ add_main_module(PyInterpreterState *interp)
     if (PyDict_GetItemStringRef(d, "__loader__", &loader) < 0) {
         return _PyStatus_ERR("Failed to test __main__.__loader__");
     }
-    int has_loader = !(loader == NULL || loader == Py_None);
+    int has_loader = !(loader == NULL || Py_IsNone(loader));
     Py_XDECREF(loader);
     if (!has_loader) {
         PyObject *loader = _PyImport_GetImportlibLoader(interp,
@@ -3416,7 +3416,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     if (PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
         _PyErr_Clear(tstate);
     }
-    if (ferr == NULL || ferr == Py_None) {
+    if (ferr == NULL || Py_IsNone(ferr)) {
         /* sys.stderr is not set yet or set to None,
            no need to try to display the exception */
         Py_XDECREF(ferr);
@@ -3427,7 +3427,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     PyErr_DisplayException(exc);
 
     PyObject *tb = PyException_GetTraceback(exc);
-    int has_tb = (tb != NULL) && (tb != Py_None);
+    int has_tb = (tb != NULL) && (!Py_IsNone(tb));
     Py_XDECREF(tb);
     Py_DECREF(exc);
 

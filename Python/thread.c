@@ -172,7 +172,7 @@ int
 PyThread_ParseTimeoutArg(PyObject *arg, int blocking, PY_TIMEOUT_T *timeout_p)
 {
     assert(_PyTime_FromSeconds(-1) == PyThread_UNSET_TIMEOUT);
-    if (arg == NULL || arg == Py_None) {
+    if (arg == NULL || Py_IsNone(arg)) {
         *timeout_p = blocking ? PyThread_UNSET_TIMEOUT : 0;
         return 0;
     }

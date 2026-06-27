@@ -178,7 +178,7 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg, PyObject
     int rc;
 
     /* A 'None' filter always matches */
-    if (obj == Py_None)
+    if (Py_IsNone(obj))
         return 1;
 
     /* An internal plain text default filter must match exactly */
@@ -298,7 +298,7 @@ get_warnings_context_filters(PyInterpreterState *interp)
     if (ctx == NULL) {
         return NULL;
     }
-    if (ctx == Py_None) {
+    if (Py_IsNone(ctx)) {
         Py_RETURN_NONE;
     }
     PyObject *context_filters = PyObject_GetAttr(ctx, &_Py_ID(_filters));
@@ -531,7 +531,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         return NULL;
     }
     bool use_global_filters = false;
-    if (context_filters == Py_None) {
+    if (Py_IsNone(context_filters)) {
         use_global_filters = true;
     } else {
         PyObject *context_action = NULL;
@@ -785,10 +785,10 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
        In this case, the Python warnings module was probably unloaded, filters
        are no more available to choose as action. It is safer to ignore the
        warning and do nothing. */
-    if (module == Py_None)
+    if (Py_IsNone(module))
         Py_RETURN_NONE;
 
-    if (registry && !PyDict_Check(registry) && (registry != Py_None)) {
+    if (registry && !PyDict_Check(registry) && (!Py_IsNone(registry))) {
         PyErr_SetString(PyExc_TypeError, "'registry' must be a dict or None");
         return NULL;
     }
@@ -812,7 +812,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     if (lineno_obj == NULL)
         goto cleanup;
 
-    if (source == Py_None) {
+    if (Py_IsNone(source)) {
         source = NULL;
     }
 
@@ -821,7 +821,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     if (key == NULL)
         goto cleanup;
 
-    if ((registry != NULL) && (registry != Py_None)) {
+    if ((registry != NULL) && (!Py_IsNone(registry))) {
         rc = already_warned(interp, registry, key, 0);
         if (rc == -1)
             goto cleanup;
@@ -847,14 +847,14 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
        is "always" or "all". */
     rc = 0;
     if (!_PyUnicode_EqualToASCIIString(action, "always") && !_PyUnicode_EqualToASCIIString(action, "all")) {
-        if (registry != NULL && registry != Py_None &&
+        if (registry != NULL && !Py_IsNone(registry) &&
             PyDict_SetItem(registry, key, Py_True) < 0)
         {
             goto cleanup;
         }
 
         if (_PyUnicode_EqualToASCIIString(action, "once")) {
-            if (registry == NULL || registry == Py_None) {
+            if (registry == NULL || Py_IsNone(registry)) {
                 registry = get_once_registry(interp);
                 if (registry == NULL)
                     goto cleanup;
@@ -864,7 +864,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         }
         else if (_PyUnicode_EqualToASCIIString(action, "module")) {
             /* registry[(text, category, 0)] = 1 */
-            if (registry != NULL && registry != Py_None)
+            if (registry != NULL && !Py_IsNone(registry))
                 rc = update_registry(interp, registry, text, category, 0);
         }
         else if (!_PyUnicode_EqualToASCIIString(action, "default")) {
@@ -1095,7 +1095,7 @@ get_category(PyObject *message, PyObject *category)
         /* Ignore the category argument. */
         return (PyObject*)Py_TYPE(message);
     }
-    if (category == NULL || category == Py_None) {
+    if (category == NULL || Py_IsNone(category)) {
         return PyExc_UserWarning;
     }
 
@@ -1221,7 +1221,7 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     if (!source) {
         return NULL;
     }
-    if (source == Py_None) {
+    if (Py_IsNone(source)) {
         Py_DECREF(source);
         return NULL;
     }
@@ -1270,7 +1270,7 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
         return NULL;
     }
 
-    if (module_globals && module_globals != Py_None) {
+    if (module_globals && !Py_IsNone(module_globals)) {
         if (!PyAnyDict_Check(module_globals)) {
             PyErr_Format(PyExc_TypeError,
                          "module_globals must be a dict or a frozendict, "

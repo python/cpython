@@ -649,7 +649,7 @@ check_missing___main___attr(PyObject *exc)
 
     // Get the error message.
     PyObject *args = PyException_GetArgs(exc);
-    if (args == NULL || args == Py_None || PyObject_Size(args) < 1) {
+    if (args == NULL || Py_IsNone(args) || PyObject_Size(args) < 1) {
         Py_XDECREF(args);
         assert(!PyErr_Occurred());
         return 0;
@@ -1683,7 +1683,7 @@ _PyXI_excinfo *
 _PyXI_NewExcInfo(PyObject *exc)
 {
     assert(!PyErr_Occurred());
-    if (exc == NULL || exc == Py_None) {
+    if (exc == NULL || Py_IsNone(exc)) {
         PyErr_SetString(PyExc_ValueError, "missing exc");
         return NULL;
     }

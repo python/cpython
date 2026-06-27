@@ -2305,7 +2305,7 @@ monitoring_register_callback_impl(PyObject *module, int tool_id, int event,
     if (PySys_Audit("sys.monitoring.register_callback", "O", func) < 0) {
         return NULL;
     }
-    if (func == Py_None) {
+    if (Py_IsNone(func)) {
         func = NULL;
     }
     func = _PyMonitoring_RegisterCallback(tool_id, event_id, func);

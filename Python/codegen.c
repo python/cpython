@@ -1867,7 +1867,7 @@ check_is_arg(expr_ty e)
         return true;
     }
     PyObject *value = e->v.Constant.value;
-    return (value == Py_None
+    return (Py_IsNone(value)
          || value == Py_False
          || value == Py_True
          || value == Py_Ellipsis);
@@ -3769,7 +3769,7 @@ check_subscripter(compiler *c, expr_ty e)
     switch (e->kind) {
     case Constant_kind:
         v = e->v.Constant.value;
-        if (!(v == Py_None || v == Py_Ellipsis ||
+        if (!(Py_IsNone(v) || v == Py_Ellipsis ||
               PyLong_Check(v) || PyFloat_Check(v) || PyComplex_Check(v) ||
               PyAnySet_Check(v)))
         {

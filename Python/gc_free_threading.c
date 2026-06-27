@@ -1571,7 +1571,7 @@ find_weakref_callbacks(struct collection_state *state)
                 // callback pointer intact.  Obscure: it also changes *wrlist.
                 _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
                 _PyWeakref_ClearRef(wr);
-                _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+                _PyObject_ASSERT((PyObject *)wr, Py_IsNone(wr->wr_object));
             }
 
             // We do not invoke callbacks for weakrefs that are themselves
@@ -1621,7 +1621,7 @@ clear_weakrefs(struct collection_state *state)
             // changes *wrlist.
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+            _PyObject_ASSERT((PyObject *)wr, Py_IsNone(wr->wr_object));
         }
     }
 }

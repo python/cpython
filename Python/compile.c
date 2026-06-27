@@ -340,7 +340,7 @@ const_cache_insert(PyObject *const_cache, PyObject *o, bool recursive)
     assert(PyDict_CheckExact(const_cache));
     // None and Ellipsis are immortal objects, and key is the singleton.
     // No need to merge object and key.
-    if (o == Py_None || o == Py_Ellipsis) {
+    if (Py_IsNone(o) || o == Py_Ellipsis) {
         return o;
     }
 

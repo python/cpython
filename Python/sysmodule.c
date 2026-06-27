@@ -769,7 +769,7 @@ sys_displayhook(PyObject *module, PyObject *o)
     /* Print value except if None */
     /* After printing, also assign to '_' */
     /* Before, set '_' to None to avoid recursion */
-    if (o == Py_None) {
+    if (Py_IsNone(o)) {
         Py_RETURN_NONE;
     }
     if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), Py_None) != 0)
@@ -778,7 +778,7 @@ sys_displayhook(PyObject *module, PyObject *o)
     if (outf == NULL) {
         return NULL;
     }
-    if (outf == Py_None) {
+    if (Py_IsNone(outf)) {
         _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.stdout");
         Py_DECREF(outf);
         return NULL;
@@ -1121,7 +1121,7 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
         return -1;
     }
 
-    if (result != Py_None) {
+    if (!Py_IsNone(result)) {
         Py_XSETREF(frame->f_trace, result);
     }
     else {
@@ -1147,7 +1147,7 @@ sys_settrace(PyObject *module, PyObject *function)
 /*[clinic end generated code: output=999d12e9d6ec4678 input=8107feb01c5f1c4e]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (function == Py_None) {
+    if (Py_IsNone(function)) {
         if (_PyEval_SetTrace(tstate, NULL, NULL) < 0) {
             return NULL;
         }
@@ -1180,7 +1180,7 @@ sys__settraceallthreads(PyObject *module, PyObject *arg)
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
 
-    if (arg != Py_None) {
+    if (!Py_IsNone(arg)) {
         func = trace_trampoline;
         argument = arg;
     }
@@ -1229,7 +1229,7 @@ sys_setprofile(PyObject *module, PyObject *function)
 /*[clinic end generated code: output=1c3503105939db9c input=055d0d7961413a62]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (function == Py_None) {
+    if (Py_IsNone(function)) {
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
             return NULL;
         }
@@ -1262,7 +1262,7 @@ sys__setprofileallthreads(PyObject *module, PyObject *arg)
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
 
-    if (arg != Py_None) {
+    if (!Py_IsNone(arg)) {
         func = profile_trampoline;
         argument = arg;
     }
@@ -1448,7 +1448,7 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    if (finalizer && finalizer != Py_None) {
+    if (finalizer && !Py_IsNone(finalizer)) {
         if (!PyCallable_Check(finalizer)) {
             PyErr_Format(PyExc_TypeError,
                          "callable finalizer expected, got %.50s",
@@ -1457,7 +1457,7 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
         }
     }
 
-    if (firstiter && firstiter != Py_None) {
+    if (firstiter && !Py_IsNone(firstiter)) {
         if (!PyCallable_Check(firstiter)) {
             PyErr_Format(PyExc_TypeError,
                          "callable firstiter expected, got %.50s",
@@ -1468,21 +1468,21 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 
     PyObject *cur_finalizer = _PyEval_GetAsyncGenFinalizer();
 
-    if (finalizer && finalizer != Py_None) {
+    if (finalizer && !Py_IsNone(finalizer)) {
         if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
             return NULL;
         }
     }
-    else if (finalizer == Py_None && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
+    else if (Py_IsNone(finalizer) && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
         return NULL;
     }
 
-    if (firstiter && firstiter != Py_None) {
+    if (firstiter && !Py_IsNone(firstiter)) {
         if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
             goto error;
         }
     }
-    else if (firstiter == Py_None && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
+    else if (Py_IsNone(firstiter) && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
         goto error;
     }
 

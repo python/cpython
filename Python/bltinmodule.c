@@ -656,7 +656,7 @@ filter_next(PyObject *self)
     PyObject *it = lz->it;
     long ok;
     PyObject *(*iternext)(PyObject *);
-    int checktrue = lz->func == Py_None || lz->func == (PyObject *)&PyBool_Type;
+    int checktrue = Py_IsNone(lz->func) || lz->func == (PyObject *)&PyBool_Type;
 
     iternext = *Py_TYPE(it)->tp_iternext;
     for (;;) {
@@ -873,7 +873,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                         "compile(): invalid optimize value");
         goto error;
     }
-    if (modname == Py_None) {
+    if (Py_IsNone(modname)) {
         modname = NULL;
     }
     else if (!PyUnicode_Check(modname)) {
@@ -1046,11 +1046,11 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     PyObject *result = NULL, *source_copy;
     const char *str;
 
-    if (locals != Py_None && !PyMapping_Check(locals)) {
+    if (!Py_IsNone(locals) && !PyMapping_Check(locals)) {
         PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
         return NULL;
     }
-    if (globals != Py_None && !PyAnyDict_Check(globals)) {
+    if (!Py_IsNone(globals) && !PyAnyDict_Check(globals)) {
         PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ?
             "globals must be a real dict or a frozendict; "
             "try eval(expr, {}, mapping)"
@@ -1059,7 +1059,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     }
 
     int fromframe = 0;
-    if (globals != Py_None) {
+    if (!Py_IsNone(globals)) {
         Py_INCREF(globals);
     }
     else if (_PyEval_GetFrame() != NULL) {
@@ -1081,7 +1081,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_INCREF(globals);
     }
 
-    if (locals != Py_None) {
+    if (!Py_IsNone(locals)) {
         Py_INCREF(locals);
     }
     else if (fromframe) {
@@ -1172,7 +1172,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     PyObject *v;
 
     int fromframe = 0;
-    if (globals != Py_None) {
+    if (!Py_IsNone(globals)) {
         Py_INCREF(globals);
     }
     else if (_PyEval_GetFrame() != NULL) {
@@ -1193,7 +1193,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_INCREF(globals);
     }
 
-    if (locals != Py_None) {
+    if (!Py_IsNone(locals)) {
         Py_INCREF(locals);
     }
     else if (fromframe) {
@@ -1225,7 +1225,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         goto error;
     }
 
-    if (closure == Py_None) {
+    if (Py_IsNone(closure)) {
         closure = NULL;
     }
 
@@ -2078,7 +2078,7 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
         }
     }
 
-    if (keyfunc == Py_None) {
+    if (Py_IsNone(keyfunc)) {
         keyfunc = NULL;
     }
 
@@ -2320,14 +2320,14 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
 {
     int i, err;
 
-    if (file == Py_None) {
+    if (Py_IsNone(file)) {
         file = PySys_GetAttr(&_Py_ID(stdout));
         if (file == NULL) {
             return NULL;
         }
 
         /* sys.stdout may be None when FILE* stdout isn't connected */
-        if (file == Py_None) {
+        if (Py_IsNone(file)) {
             Py_DECREF(file);
             Py_RETURN_NONE;
         }
@@ -2336,7 +2336,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         Py_INCREF(file);
     }
 
-    if (sep == Py_None) {
+    if (Py_IsNone(sep)) {
         sep = NULL;
     }
     else if (sep && !PyUnicode_Check(sep)) {
@@ -2346,7 +2346,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         Py_DECREF(file);
         return NULL;
     }
-    if (end == Py_None) {
+    if (Py_IsNone(end)) {
         end = NULL;
     }
     else if (end && !PyUnicode_Check(end)) {
@@ -2432,7 +2432,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     if (fin == NULL) {
         goto error;
     }
-    if (fin == Py_None) {
+    if (Py_IsNone(fin)) {
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
         goto error;
     }
@@ -2440,7 +2440,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     if (fout == NULL) {
         goto error;
     }
-    if (fout == Py_None) {
+    if (Py_IsNone(fout)) {
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
         goto error;
     }
@@ -2448,7 +2448,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     if (ferr == NULL) {
         goto error;
     }
-    if (ferr == Py_None) {
+    if (Py_IsNone(ferr)) {
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stderr");
         goto error;
     }
@@ -2696,7 +2696,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 /*[clinic end generated code: output=ff0d9dd176c02ede input=bdcb7c67bf4a4320]*/
 {
     PyObject *result;
-    if (ndigits == Py_None) {
+    if (Py_IsNone(ndigits)) {
         result = _PyObject_MaybeCallSpecialNoArgs(number, &_Py_ID(__round__));
     }
     else {

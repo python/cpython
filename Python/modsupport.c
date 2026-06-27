@@ -15,7 +15,7 @@ int
 _Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
 {
     Py_ssize_t limit;
-    if (obj == Py_None) {
+    if (Py_IsNone(obj)) {
         return 1;
     }
     else if (_PyIndex_Check(obj)) {
@@ -40,7 +40,7 @@ _Py_convert_optional_to_non_negative_ssize_t(PyObject *obj, void *result)
     if (!_Py_convert_optional_to_ssize_t(obj, result)) {
         return 0;
     }
-    if (obj != Py_None && *((Py_ssize_t *)result) < 0) {
+    if (!Py_IsNone(obj) && *((Py_ssize_t *)result) < 0) {
         PyErr_SetString(PyExc_ValueError, "argument cannot be negative");
         return 0;
     }

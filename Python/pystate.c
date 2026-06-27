@@ -1231,7 +1231,7 @@ _Py_GetMainModule(PyThreadState *tstate)
 {
     // We return None to indicate "not found" or "bogus".
     PyObject *modules = _PyImport_GetModulesRef(tstate->interp);
-    if (modules == Py_None) {
+    if (Py_IsNone(modules)) {
         return modules;
     }
     PyObject *module = NULL;
@@ -1246,7 +1246,7 @@ _Py_GetMainModule(PyThreadState *tstate)
 int
 _Py_CheckMainModule(PyObject *module)
 {
-    if (module == NULL || module == Py_None) {
+    if (module == NULL || Py_IsNone(module)) {
         if (!PyErr_Occurred()) {
             (void)_PyErr_SetModuleNotFoundError(&_Py_ID(__main__));
         }
@@ -2812,7 +2812,7 @@ _PyThread_CurrentExceptions(void)
             }
             PyObject *exc = err_info->exc_value;
             assert(exc == NULL ||
-                   exc == Py_None ||
+                   Py_IsNone(exc) ||
                    PyExceptionInstance_Check(exc));
 
             int stat = PyDict_SetItem(result, id, exc == NULL ? Py_None : exc);

@@ -856,7 +856,7 @@ handle_weakref_callbacks(PyGC_Head *unreachable, PyGC_Head *old)
             // callback pointer intact.  Obscure: it also changes *wrlist.
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+            _PyObject_ASSERT((PyObject *)wr, Py_IsNone(wr->wr_object));
 
             /* Headache time.  `op` is going away, and is weakly referenced by
              * `wr`, which has a callback.  Should the callback be invoked?  If wr
@@ -996,7 +996,7 @@ clear_weakrefs(PyGC_Head *unreachable)
              */
             _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
             _PyWeakref_ClearRef(wr);
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+            _PyObject_ASSERT((PyObject *)wr, Py_IsNone(wr->wr_object));
         }
     }
 }

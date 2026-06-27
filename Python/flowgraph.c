@@ -1456,7 +1456,7 @@ static int
 maybe_instr_make_load_common_const(cfg_instr *instr, PyObject *newconst)
 {
     int oparg;
-    if (newconst == Py_None) {
+    if (Py_IsNone(newconst)) {
         oparg = CONSTANT_NONE;
     }
     else if (newconst == Py_True) {

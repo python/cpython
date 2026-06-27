@@ -882,7 +882,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
     }
     PyObject *value = sym->value.value;
     /* Only handle a few known safe types */
-    if (value == Py_None) {
+    if (Py_IsNone(value)) {
         return 0;
     }
     PyTypeObject *tp = Py_TYPE(value);

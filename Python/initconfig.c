@@ -1498,7 +1498,7 @@ config_dict_get_wstr(PyObject *dict, const char *name, PyConfig *config,
     }
 
     PyStatus status;
-    if (item == Py_None) {
+    if (Py_IsNone(item)) {
         status = PyConfig_SetString(config, result, NULL);
     }
     else if (!PyUnicode_Check(item)) {
@@ -1547,7 +1547,7 @@ config_dict_get_wstrlist(PyObject *dict, const char *name, PyConfig *config,
     for (Py_ssize_t i=0; i < len; i++) {
         PyObject *item = is_list ? PyList_GET_ITEM(list, i) : PyTuple_GET_ITEM(list, i);
 
-        if (item == Py_None) {
+        if (Py_IsNone(item)) {
             config_dict_invalid_value(name);
             goto error;
         }
@@ -4941,7 +4941,7 @@ PyConfig_Set(const char *name, PyObject *value)
         break;
 
     case PyConfig_MEMBER_WSTR_OPT:
-        if (value != Py_None && !PyUnicode_CheckExact(value)) {
+        if (!Py_IsNone(value) && !PyUnicode_CheckExact(value)) {
             PyErr_Format(PyExc_TypeError, "expected str or None, got %T", value);
             return -1;
         }
