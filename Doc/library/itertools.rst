@@ -208,6 +208,17 @@ loops that truncate the stream.
           for iterable in iterables:
               yield from iterable
 
+   .. note::
+      In Python 3.15+, the inline unpacking form ``(*it for it in iterables)``
+      (added by :pep:`798`) provides a more readable alternative for simple
+      flattening::
+
+          # equivalent to chain.from_iterable(iterables)
+          (*it for it in iterables)
+
+      ``chain.from_iterable`` remains useful as a first-class callable and
+      for compatibility with earlier Python versions.
+
 
 .. function:: combinations(iterable, r)
 
