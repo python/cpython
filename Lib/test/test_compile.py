@@ -912,7 +912,6 @@ class TestSpecifics(unittest.TestCase):
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     # gh-150001: Test that this code does not raise SystemError
-    @support.cpython_only
     def test_parser_stack_overflow_no_crash(self):
         string = (
             b'(*h(((h(h(h(' +
