@@ -3505,6 +3505,50 @@ while 1:
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
 
+    def test_double_ampersand(self):
+        self._check_error(
+            "a && b",
+            r"Maybe you meant 'and' or '&' instead of '&&'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+        self._check_error(
+            "a & & b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=5,
+            end_offset=6,
+        )
+        self._check_error(
+            "(a &\n    & b)",
+            "invalid syntax",
+            lineno=2,
+            end_lineno=2,
+            offset=5,
+            end_offset=6,
+        )
+
+    def test_double_pipe(self):
+        self._check_error(
+            "a || b",
+            r"Maybe you meant 'or' or '|' instead of '||'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+        self._check_error(
+            "a | | b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=5,
+            end_offset=6,
+        )
+
 
 class LazyImportRestrictionTestCase(SyntaxErrorTestCase):
     """Test syntax restrictions for lazy imports."""

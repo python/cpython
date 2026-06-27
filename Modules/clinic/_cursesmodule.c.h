@@ -220,7 +220,7 @@ PyDoc_STRVAR(_curses_window_addch__doc__,
 static PyObject *
 _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int group_right_1,
-                          long attr);
+                          attr_t attr);
 
 static PyObject *
 _curses_window_addch(PyObject *self, PyObject *args)
@@ -231,7 +231,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -240,7 +240,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:addch", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:addch", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -252,7 +252,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:addch", &y, &x, &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOO&:addch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -292,7 +292,7 @@ PyDoc_STRVAR(_curses_window_addstr__doc__,
 static PyObject *
 _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
                            int y, int x, PyObject *str, int group_right_1,
-                           long attr);
+                           attr_t attr);
 
 static PyObject *
 _curses_window_addstr(PyObject *self, PyObject *args)
@@ -303,7 +303,7 @@ _curses_window_addstr(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *str;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -312,7 +312,7 @@ _curses_window_addstr(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:addstr", &str, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:addstr", &str, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -324,7 +324,7 @@ _curses_window_addstr(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:addstr", &y, &x, &str, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOO&:addstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -366,7 +366,7 @@ PyDoc_STRVAR(_curses_window_addnstr__doc__,
 static PyObject *
 _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
                             int y, int x, PyObject *str, int n,
-                            int group_right_1, long attr);
+                            int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_addnstr(PyObject *self, PyObject *args)
@@ -378,7 +378,7 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
     PyObject *str;
     int n;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -387,7 +387,7 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "Oil:addnstr", &str, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "OiO&:addnstr", &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -399,7 +399,7 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 5:
-            if (!PyArg_ParseTuple(args, "iiOil:addnstr", &y, &x, &str, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOiO&:addnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -429,7 +429,7 @@ PyDoc_STRVAR(_curses_window_bkgd__doc__,
 
 static PyObject *
 _curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch,
-                         int group_right_1, long attr);
+                         int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_bkgd(PyObject *self, PyObject *args)
@@ -437,7 +437,7 @@ _curses_window_bkgd(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -446,7 +446,7 @@ _curses_window_bkgd(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:bkgd", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:bkgd", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -471,16 +471,15 @@ PyDoc_STRVAR(_curses_window_attroff__doc__,
     {"attroff", (PyCFunction)_curses_window_attroff, METH_O, _curses_window_attroff__doc__},
 
 static PyObject *
-_curses_window_attroff_impl(PyCursesWindowObject *self, long attr);
+_curses_window_attroff_impl(PyCursesWindowObject *self, attr_t attr);
 
 static PyObject *
 _curses_window_attroff(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_window_attroff_impl((PyCursesWindowObject *)self, attr);
@@ -499,16 +498,15 @@ PyDoc_STRVAR(_curses_window_attron__doc__,
     {"attron", (PyCFunction)_curses_window_attron, METH_O, _curses_window_attron__doc__},
 
 static PyObject *
-_curses_window_attron_impl(PyCursesWindowObject *self, long attr);
+_curses_window_attron_impl(PyCursesWindowObject *self, attr_t attr);
 
 static PyObject *
 _curses_window_attron(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_window_attron_impl((PyCursesWindowObject *)self, attr);
@@ -527,16 +525,15 @@ PyDoc_STRVAR(_curses_window_attrset__doc__,
     {"attrset", (PyCFunction)_curses_window_attrset, METH_O, _curses_window_attrset__doc__},
 
 static PyObject *
-_curses_window_attrset_impl(PyCursesWindowObject *self, long attr);
+_curses_window_attrset_impl(PyCursesWindowObject *self, attr_t attr);
 
 static PyObject *
 _curses_window_attrset(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_window_attrset_impl((PyCursesWindowObject *)self, attr);
@@ -715,7 +712,7 @@ PyDoc_STRVAR(_curses_window_bkgdset__doc__,
 
 static PyObject *
 _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
-                            int group_right_1, long attr);
+                            int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_bkgdset(PyObject *self, PyObject *args)
@@ -723,7 +720,7 @@ _curses_window_bkgdset(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -732,7 +729,7 @@ _curses_window_bkgdset(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:bkgdset", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:bkgdset", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1027,7 +1024,7 @@ PyDoc_STRVAR(_curses_window_echochar__doc__,
 
 static PyObject *
 _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
-                             int group_right_1, long attr);
+                             int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_echochar(PyObject *self, PyObject *args)
@@ -1035,7 +1032,7 @@ _curses_window_echochar(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1044,7 +1041,7 @@ _curses_window_echochar(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:echochar", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:echochar", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1361,7 +1358,7 @@ PyDoc_STRVAR(_curses_window_hline__doc__,
 static PyObject *
 _curses_window_hline_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int n,
-                          int group_right_1, long attr);
+                          int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_hline(PyObject *self, PyObject *args)
@@ -1373,7 +1370,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -1382,7 +1379,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "Oil:hline", &ch, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "OiO&:hline", &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1394,7 +1391,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 5:
-            if (!PyArg_ParseTuple(args, "iiOil:hline", &y, &x, &ch, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOiO&:hline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1432,7 +1429,7 @@ PyDoc_STRVAR(_curses_window_insch__doc__,
 static PyObject *
 _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int group_right_1,
-                          long attr);
+                          attr_t attr);
 
 static PyObject *
 _curses_window_insch(PyObject *self, PyObject *args)
@@ -1443,7 +1440,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1452,7 +1449,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:insch", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:insch", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1464,7 +1461,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:insch", &y, &x, &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOO&:insch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1551,7 +1548,7 @@ PyDoc_STRVAR(_curses_window_insstr__doc__,
 static PyObject *
 _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
                            int y, int x, PyObject *str, int group_right_1,
-                           long attr);
+                           attr_t attr);
 
 static PyObject *
 _curses_window_insstr(PyObject *self, PyObject *args)
@@ -1562,7 +1559,7 @@ _curses_window_insstr(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *str;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1571,7 +1568,7 @@ _curses_window_insstr(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:insstr", &str, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:insstr", &str, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1583,7 +1580,7 @@ _curses_window_insstr(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:insstr", &y, &x, &str, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOO&:insstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1627,7 +1624,7 @@ PyDoc_STRVAR(_curses_window_insnstr__doc__,
 static PyObject *
 _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
                             int y, int x, PyObject *str, int n,
-                            int group_right_1, long attr);
+                            int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_insnstr(PyObject *self, PyObject *args)
@@ -1639,7 +1636,7 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
     PyObject *str;
     int n;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -1648,7 +1645,7 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "Oil:insnstr", &str, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "OiO&:insnstr", &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1660,7 +1657,7 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 5:
-            if (!PyArg_ParseTuple(args, "iiOil:insnstr", &y, &x, &str, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOiO&:insnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -2238,7 +2235,7 @@ PyDoc_STRVAR(_curses_window_vline__doc__,
 static PyObject *
 _curses_window_vline_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int n,
-                          int group_right_1, long attr);
+                          int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_vline(PyObject *self, PyObject *args)
@@ -2250,7 +2247,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -2259,7 +2256,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "Oil:vline", &ch, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "OiO&:vline", &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -2271,7 +2268,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 5:
-            if (!PyArg_ParseTuple(args, "iiOil:vline", &y, &x, &ch, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOiO&:vline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -6093,4 +6090,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=4df910fd0ebe669b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=94e7fb564239d793 input=a9049054013a1b77]*/
