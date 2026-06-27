@@ -322,6 +322,17 @@ class TestCurses(unittest.TestCase):
             return False
         return True
 
+    def _read_char(self, y, x):
+        # The character written to a cell, read back for output checks.  inch()
+        # is unusable here: on a wide build it returns the low 8 bits of the
+        # character's code point rather than its locale-encoded byte, mangling
+        # anything outside Latin-1.  in_wch() reads the wide cell directly;
+        # without it, instr() re-encodes the cell to the window encoding.
+        stdscr = self.stdscr
+        if hasattr(stdscr, 'in_wch'):
+            return str(stdscr.in_wch(y, x))
+        return stdscr.instr(y, x, 1).decode(stdscr.encoding)
+
     @requires_curses_window_meth('get_wch')
     def test_addch_combining(self):
         stdscr = self.stdscr
@@ -690,28 +701,56 @@ class TestCurses(unittest.TestCase):
         stdscr.addch(2, 3, 'A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), True)
 
-        # The same characters given as int chtype values (a byte > 127).  A wide
-        # build stores an int through the locale, so only a byte that is itself
-        # the codepoint (Latin-1) round-trips; '€'/'є' are covered as text above.
-        chartext = curses.A_CHARTEXT
+        # The same characters supplied as an int chtype (a byte > 127).  The
+        # cell is read back with _read_char(), not inch(): on a wide build the
+        # int is stored through the locale as a wide character that inch()
+        # cannot represent for a character outside Latin-1.
         for c in ('é', '¤', '€', 'є'):
             try:
                 b = c.encode(encoding)
             except UnicodeEncodeError:
                 continue
-            if len(b) != 1 or ord(c) >= 0x100:
+            if len(b) != 1:
                 continue
             v = b[0]
             with self.subTest(c=c):
                 stdscr.addch(0, 0, v)
-                self.assertEqual(stdscr.inch(0, 0) & chartext, v)
+                self.assertEqual(self._read_char(0, 0), c)
                 stdscr.addch(0, 1, v, curses.A_BOLD)
-                self.assertEqual(stdscr.inch(0, 1), v | curses.A_BOLD)
-                stdscr.insch(1, 0, v)
-                self.assertEqual(stdscr.inch(1, 0) & chartext, v)
+                self.assertEqual(self._read_char(0, 1), c)
+                self.assertTrue(stdscr.inch(0, 1) & curses.A_BOLD)
                 stdscr.move(2, 0)
                 stdscr.echochar(v)
-                self.assertEqual(stdscr.inch(2, 0) & chartext, v)
+                self.assertEqual(self._read_char(2, 0), c)
+                # insch() round-trips a byte only where its code point equals
+                # the byte value (Latin-1): on a wide build ncurses winsch
+                # stores a printable byte directly as a code point instead of
+                # decoding it through the locale.
+                if ord(c) < 0x100:
+                    stdscr.insch(1, 0, v)
+                    self.assertEqual(self._read_char(1, 0), c)
+
+        # The same characters supplied as a str.  Unlike the int path above, a
+        # str is stored as a wide-character cell on a wide build, so every
+        # encodable character round-trips, insch() included.  A multibyte
+        # character does not fit a cell on a narrow build and is skipped.
+        wide = hasattr(stdscr, 'in_wch')
+        for c in ('é', '¤', '€', 'є'):
+            if not self._encodable(c):
+                continue
+            if not wide and len(c.encode(encoding)) != 1:
+                continue
+            with self.subTest(c=c):
+                stdscr.addch(0, 0, c)
+                self.assertEqual(self._read_char(0, 0), c)
+                stdscr.addch(0, 1, c, curses.A_BOLD)
+                self.assertEqual(self._read_char(0, 1), c)
+                self.assertTrue(stdscr.inch(0, 1) & curses.A_BOLD)
+                stdscr.insch(1, 0, c)
+                self.assertEqual(self._read_char(1, 0), c)
+                stdscr.move(2, 0)
+                stdscr.echochar(c)
+                self.assertEqual(self._read_char(2, 0), c)
 
         # echochar()
         stdscr.refresh()
