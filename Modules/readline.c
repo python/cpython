@@ -1323,10 +1323,10 @@ setup_readline(readlinestate *mod_state)
     /* The name must be defined before initialization */
     rl_readline_name = "python";
 
-#if !defined(__APPLE__)
-    /* Prevent readline from changing environment variables such as LINES and
-     * COLUMNS.
-     */
+#ifdef HAVE_RL_CHANGE_ENVIRONMENT
+    /* Prevent readline from setting the LINES and COLUMNS environment
+     * variables: ncurses prefers them over an ioctl() query, so a stale value
+     * left after a resize breaks SIGWINCH / KEY_RESIZE handling (gh-46927). */
     rl_change_environment = 0;
 #endif
 
