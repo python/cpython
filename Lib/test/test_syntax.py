@@ -356,7 +356,7 @@ SyntaxError: invalid syntax. Perhaps you forgot a comma?
 >>> match x:
 ...     y = 3
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: expected 'case' statement inside 'match' statement
 
 >>> match x:
 ...     case y:
@@ -418,6 +418,16 @@ SyntaxError: case statement must be inside match statement
 >>> (mat x)
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+# Make sure syntax error after match block doesn't raise a specialized
+# 'expected case statement' error.
+
+>>> match 1:
+...     case 1:
+...         pass
+... 1 2
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 From compiler_complex_args():
 
@@ -3465,6 +3475,38 @@ while 1:
             offset=15,
             end_offset=15 + len("obj.attr"),
         )
+
+    def test_match_stmt_contains_invalid_stmt(self):
+        for stmt in [
+            "a",
+            "a = 1",
+            "if a:",
+            "else:",
+            "match 1:",
+            "pass",
+            "return",
+            "return 2",
+            "raise Exception('a')",
+            "del a",
+            "yield 2",
+            "assert False",
+            "break",
+            "continue",
+            "import",
+            "import ast",
+            "from",
+            "from ast import *"
+        ]:
+            self._check_error(
+                textwrap.dedent(
+                    f"""
+                    match 1:
+                        {stmt}
+                    """
+                ),
+                errtext="expected 'case' statement inside 'match' statement",
+                lineno=3,
+            )
 
     def test_ifexp_else_stmt(self):
         msg = "expected expression after 'else', but statement is given"
