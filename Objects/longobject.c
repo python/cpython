@@ -4992,7 +4992,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     if (PyLong_Check(x)) {
         c = (PyLongObject *)Py_NewRef(x);
     }
-    else if (x == Py_None)
+    else if (Py_IsNone(x))
         c = NULL;
     else {
         Py_DECREF(a);
@@ -6216,7 +6216,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
      *
      *   m - divmod_near(m, 10**n)[1].
      */
-    if (o_ndigits == Py_None)
+    if (Py_IsNone(o_ndigits))
         return long_long(self);
 
     PyObject *ndigits = _PyNumber_Index(o_ndigits);

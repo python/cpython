@@ -243,7 +243,7 @@ unionbuilder_add_tuple(unionbuilder *ub, PyObject *tuple)
 static int
 is_unionable(PyObject *obj)
 {
-    if (obj == Py_None ||
+    if (Py_IsNone(obj) ||
         PyType_Check(obj) ||
         PySentinel_Check(obj) ||
         _PyGenericAlias_Check(obj) ||

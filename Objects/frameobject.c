@@ -1828,9 +1828,9 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
             PyObject *exc = PyStackRef_AsPyObjectBorrow(popped);
-            assert(PyExceptionInstance_Check(exc) || exc == Py_None);
+            assert(PyExceptionInstance_Check(exc) || Py_IsNone(exc));
             PyThreadState *tstate = _PyThreadState_GET();
-            Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
+            Py_XSETREF(tstate->exc_info->exc_value, Py_IsNone(exc) ? NULL : exc);
         }
         else {
             PyStackRef_XCLOSE(popped);
@@ -1874,7 +1874,7 @@ static int
 frame_trace_set_impl(PyFrameObject *self, PyObject *value)
 /*[clinic end generated code: output=d6fe08335cf76ae4 input=e57380734815dac5]*/
 {
-    if (value == Py_None) {
+    if (Py_IsNone(value)) {
         value = NULL;
     }
     if (value != self->f_trace) {

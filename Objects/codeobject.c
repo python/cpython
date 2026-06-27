@@ -2136,7 +2136,7 @@ code_returns_only_none(PyCodeObject *co)
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
     int none_index = 0;
     for (; none_index < nconsts; none_index++) {
-        if (PyTuple_GET_ITEM(co->co_consts, none_index) == Py_None) {
+        if (Py_IsNone(PyTuple_GET_ITEM(co->co_consts, none_index))) {
             break;
         }
     }
@@ -2936,7 +2936,7 @@ _PyCode_ConstantKey(PyObject *op)
     PyObject *key;
 
     /* Py_None and Py_Ellipsis are singletons. */
-    if (op == Py_None || op == Py_Ellipsis
+    if (Py_IsNone(op) || op == Py_Ellipsis
        || PyLong_CheckExact(op)
        || PyUnicode_CheckExact(op)
           /* code_richcompare() uses _PyCode_ConstantKey() internally */

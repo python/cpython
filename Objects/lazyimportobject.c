@@ -18,7 +18,7 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
         PyErr_SetString(PyExc_TypeError, "expected str for name");
         return NULL;
     }
-    if (fromlist == Py_None || fromlist == NULL) {
+    if (Py_IsNone(fromlist) || fromlist == NULL) {
         fromlist = NULL;
     }
     else if (!PyUnicode_Check(fromlist) && !PyTuple_Check(fromlist)) {

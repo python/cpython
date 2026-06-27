@@ -78,7 +78,7 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
 static void
 clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
 {
-    if (self->wr_object != Py_None) {
+    if (!Py_IsNone(self->wr_object)) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
         if (*list == self) {
             /* If 'self' is the end of the list (and thus self->wr_next ==
@@ -416,7 +416,7 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
-    if (callback == Py_None) {
+    if (Py_IsNone(callback)) {
         callback = NULL;
     }
     if (callback != NULL && !PyCallable_Check(callback)) {

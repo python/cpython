@@ -76,7 +76,7 @@ static PyObject *
 sentinel_new_impl(PyTypeObject *type, PyObject *name, PyObject *repr)
 /*[clinic end generated code: output=1eb7fab52e57d8c8 input=28cab6c468997b35]*/
 {
-    if (repr == Py_None) {
+    if (Py_IsNone(repr)) {
         repr = NULL;
     }
     else if (!PyUnicode_Check(repr)) {

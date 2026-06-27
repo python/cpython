@@ -8,7 +8,7 @@
 static int
 _conversion_converter(PyObject *arg, PyObject **conversion)
 {
-    if (arg == Py_None) {
+    if (Py_IsNone(arg)) {
         return 1;
     }
 

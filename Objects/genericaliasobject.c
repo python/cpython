@@ -351,7 +351,7 @@ _unpacked_tuple_args(PyObject *arg)
     }
 
     if (PyObject_GetOptionalAttr(arg, &_Py_ID(__typing_unpacked_tuple_args__), &result) > 0) {
-        if (result == Py_None) {
+        if (Py_IsNone(result)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -422,7 +422,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             Py_DECREF(item);
             return NULL;
         }
-        if (prepare && prepare != Py_None) {
+        if (prepare && !Py_IsNone(prepare)) {
             if (PyTuple_Check(item)) {
                 tmp = PyObject_CallFunction(prepare, "OO", self, item);
             }

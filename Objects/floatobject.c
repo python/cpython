@@ -689,7 +689,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
     double iv, iw, ix;
     int negate_result = 0;
 
-    if ((PyObject *)z != Py_None) {
+    if ((PyObject *)!Py_IsNone(z)) {
         PyErr_SetString(PyExc_TypeError, "pow() 3rd argument not "
             "allowed unless all arguments are integers");
         return NULL;
@@ -1028,7 +1028,7 @@ float___round___impl(PyObject *self, PyObject *o_ndigits)
     Py_ssize_t ndigits;
 
     x = PyFloat_AsDouble(self);
-    if (o_ndigits == Py_None) {
+    if (Py_IsNone(o_ndigits)) {
         /* single-argument round or with None ndigits:
          * round to nearest integer */
         rounded = round(x);

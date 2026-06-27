@@ -2957,7 +2957,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
 
     assert(self != NULL);
     assert(PyList_Check(self));
-    if (keyfunc == Py_None)
+    if (Py_IsNone(keyfunc))
         keyfunc = NULL;
 
     /* The list is temporarily made empty, so that mutations performed

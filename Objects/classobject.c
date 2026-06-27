@@ -200,7 +200,7 @@ method_new_impl(PyTypeObject *type, PyObject *function, PyObject *instance)
                         "first argument must be callable");
         return NULL;
     }
-    if (instance == NULL || instance == Py_None) {
+    if (instance == NULL || Py_IsNone(instance)) {
         PyErr_SetString(PyExc_TypeError,
             "instance must not be None");
         return NULL;

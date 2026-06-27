@@ -439,7 +439,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (defaults == Py_None)
+    if (Py_IsNone(defaults))
         defaults = NULL;
     else if (defaults && PyTuple_Check(defaults)) {
         Py_INCREF(defaults);
@@ -480,7 +480,7 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (defaults == Py_None)
+    if (Py_IsNone(defaults))
         defaults = NULL;
     else if (defaults && PyDict_Check(defaults)) {
         Py_INCREF(defaults);
@@ -514,7 +514,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (closure == Py_None)
+    if (Py_IsNone(closure))
         closure = NULL;
     else if (PyTuple_Check(closure)) {
         Py_INCREF(closure);
@@ -594,7 +594,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (annotations == Py_None)
+    if (Py_IsNone(annotations))
         annotations = NULL;
     else if (annotations && PyDict_Check(annotations)) {
         Py_INCREF(annotations);
@@ -754,7 +754,7 @@ func_set_defaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     /* Legal to del f.func_defaults.
      * Can only set func_defaults to NULL or a tuple. */
     PyFunctionObject *op = _PyFunction_CAST(self);
-    if (value == Py_None)
+    if (Py_IsNone(value))
         value = NULL;
     if (value != NULL && !PyTuple_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
@@ -795,7 +795,7 @@ static int
 func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    if (value == Py_None)
+    if (Py_IsNone(value))
         value = NULL;
     /* Legal to del f.func_kwdefaults.
      * Can only set func_kwdefaults to NULL or a dict. */
@@ -902,7 +902,7 @@ static int
 function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
 /*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
 {
-    if (value == Py_None)
+    if (Py_IsNone(value))
         value = NULL;
     /* Legal to del f.func_annotations.
      * Can only set func_annotations to NULL (through C api)
@@ -1020,36 +1020,36 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     PyFunctionObject *newfunc;
     Py_ssize_t nclosure;
 
-    if (name != Py_None && !PyUnicode_Check(name)) {
+    if (!Py_IsNone(name) && !PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
                         "arg 3 (name) must be None or string");
         return NULL;
     }
-    if (defaults != Py_None && !PyTuple_Check(defaults)) {
+    if (!Py_IsNone(defaults) && !PyTuple_Check(defaults)) {
         PyErr_SetString(PyExc_TypeError,
                         "arg 4 (defaults) must be None or tuple");
         return NULL;
     }
     if (!PyTuple_Check(closure)) {
-        if (code->co_nfreevars && closure == Py_None) {
+        if (code->co_nfreevars && Py_IsNone(closure)) {
             PyErr_SetString(PyExc_TypeError,
                             "arg 5 (closure) must be tuple");
             return NULL;
         }
-        else if (closure != Py_None) {
+        else if (!Py_IsNone(closure)) {
             PyErr_SetString(PyExc_TypeError,
                 "arg 5 (closure) must be None or tuple");
             return NULL;
         }
     }
-    if (kwdefaults != Py_None && !PyDict_Check(kwdefaults)) {
+    if (!Py_IsNone(kwdefaults) && !PyDict_Check(kwdefaults)) {
         PyErr_SetString(PyExc_TypeError,
                         "arg 6 (kwdefaults) must be None or dict");
         return NULL;
     }
 
     /* check that the closure is well-formed */
-    nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
+    nclosure = Py_IsNone(closure) ? 0 : PyTuple_GET_SIZE(closure);
     if (code->co_nfreevars != nclosure)
         return PyErr_Format(PyExc_ValueError,
                             "%U requires closure of length %d, not %zd",
@@ -1074,16 +1074,16 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     if (newfunc == NULL) {
         return NULL;
     }
-    if (name != Py_None) {
+    if (!Py_IsNone(name)) {
         Py_SETREF(newfunc->func_name, Py_NewRef(name));
     }
-    if (defaults != Py_None) {
+    if (!Py_IsNone(defaults)) {
         newfunc->func_defaults = Py_NewRef(defaults);
     }
-    if (closure != Py_None) {
+    if (!Py_IsNone(closure)) {
         newfunc->func_closure = Py_NewRef(closure);
     }
-    if (kwdefaults != Py_None) {
+    if (!Py_IsNone(kwdefaults)) {
         newfunc->func_kwdefaults = Py_NewRef(kwdefaults);
     }
 
@@ -1176,7 +1176,7 @@ func_traverse(PyObject *self, visitproc visit, void *arg)
 static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
-    if (obj == Py_None || obj == NULL) {
+    if (Py_IsNone(obj) || obj == NULL) {
         return Py_NewRef(func);
     }
     return PyMethod_New(func, obj);

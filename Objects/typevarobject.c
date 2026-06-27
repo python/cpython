@@ -301,7 +301,7 @@ _Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
     if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
         goto exit;
     }
-    if (module == NULL || module == Py_None) {
+    if (module == NULL || Py_IsNone(module)) {
         goto use_repr;
     }
 
@@ -2167,7 +2167,7 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         return NULL;
     }
 
-    if (qualname == NULL || qualname == Py_None) {
+    if (qualname == NULL || Py_IsNone(qualname)) {
         // If qualname was not set directly, we use name instead.
         qualname = name;
     } else {

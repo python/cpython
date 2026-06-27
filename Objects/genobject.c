@@ -308,8 +308,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
     if (result) {
-        assert(result == Py_None || !PyAsyncGen_CheckExact(gen));
-        if (result == Py_None && !PyAsyncGen_CheckExact(gen) && !arg) {
+        assert(Py_IsNone(result) || !PyAsyncGen_CheckExact(gen));
+        if (Py_IsNone(result) && !PyAsyncGen_CheckExact(gen) && !arg) {
             /* Return NULL if called by gen_iternext() */
             Py_CLEAR(result);
         }
@@ -332,7 +332,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, PyObject **presult)
     *presult = NULL;
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
     do {
-        if (frame_state == FRAME_CREATED && arg && arg != Py_None) {
+        if (frame_state == FRAME_CREATED && arg && !Py_IsNone(arg)) {
             const char *msg = "can't send non-None value to a "
                                 "just-started generator";
             if (PyCoro_CheckExact(gen)) {
@@ -385,10 +385,10 @@ static PyObject *
 gen_set_stop_iteration(PyGenObject *gen, PyObject *result)
 {
     if (PyAsyncGen_CheckExact(gen)) {
-        assert(result == Py_None);
+        assert(Py_IsNone(result));
         PyErr_SetNone(PyExc_StopAsyncIteration);
     }
-    else if (result == Py_None) {
+    else if (Py_IsNone(result)) {
         PyErr_SetNone(PyExc_StopIteration);
     }
     else {
@@ -547,7 +547,7 @@ gen_set_exception(PyObject *typ, PyObject *val, PyObject *tb)
 {
     /* First, check the traceback argument, replacing None with
        NULL. */
-    if (tb == Py_None) {
+    if (Py_IsNone(tb)) {
         tb = NULL;
     }
     else if (tb != NULL && !PyTraceBack_Check(tb)) {
@@ -565,7 +565,7 @@ gen_set_exception(PyObject *typ, PyObject *val, PyObject *tb)
     }
     else if (PyExceptionInstance_Check(typ)) {
         /* Raising an instance.  The value should be a dummy. */
-        if (val && val != Py_None) {
+        if (val && !Py_IsNone(val)) {
             PyErr_SetString(PyExc_TypeError,
               "instance exception may not have a separate value");
             goto failed_throw;
@@ -765,7 +765,7 @@ gen_iternext(PyObject *self)
 
     PyObject *result;
     if (gen_send_ex(gen, NULL, &result) == PYGEN_RETURN) {
-        if (result != Py_None) {
+        if (!Py_IsNone(result)) {
             _PyGen_SetStopIterationValue(result);
         }
         Py_CLEAR(result);
@@ -1990,7 +1990,7 @@ async_gen_asend_send(PyObject *self, PyObject *arg)
             return NULL;
         }
 
-        if (arg == NULL || arg == Py_None) {
+        if (arg == NULL || Py_IsNone(arg)) {
             arg = o->ags_sendval;
         }
         o->ags_state = AWAITABLE_STATE_ITER;
@@ -2339,7 +2339,7 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
             return NULL;
         }
 
-        if (arg != Py_None) {
+        if (!Py_IsNone(arg)) {
             PyErr_SetString(PyExc_RuntimeError, NON_INIT_CORO_MSG);
             return NULL;
         }

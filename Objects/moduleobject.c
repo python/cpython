@@ -954,7 +954,7 @@ PyModule_GetFilenameObject(PyObject *mod)
     if (fileobj == NULL) {
         return NULL;
     }
-    if (fileobj == Py_None) {
+    if (Py_IsNone(fileobj)) {
         PyErr_SetString(PyExc_SystemError, "module filename missing");
         return NULL;
     }
@@ -985,7 +985,7 @@ _PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, Py_ssize_t maxlen)
     if (filenameobj == NULL) {
         return -1;
     }
-    if (filenameobj == Py_None) {
+    if (Py_IsNone(filenameobj)) {
         // It is missing or invalid.
         buffer[0] = '\0';
         size = 0;
@@ -1060,7 +1060,7 @@ _PyModule_ClearDict(PyObject *d)
     /* First, clear only names starting with a single underscore */
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
-        if (value != Py_None && PyUnicode_Check(key)) {
+        if (!Py_IsNone(value) && PyUnicode_Check(key)) {
             if (PyUnicode_READ_CHAR(key, 0) == '_' &&
                 PyUnicode_READ_CHAR(key, 1) != '_') {
                 if (verbose > 1) {
@@ -1081,7 +1081,7 @@ _PyModule_ClearDict(PyObject *d)
     /* Next, clear all names except for __builtins__ */
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
-        if (value != Py_None && PyUnicode_Check(key)) {
+        if (!Py_IsNone(value) && PyUnicode_Check(key)) {
             if (PyUnicode_READ_CHAR(key, 0) != '_' ||
                 !_PyUnicode_EqualToASCIIString(key, "__builtins__"))
             {
