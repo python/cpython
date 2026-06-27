@@ -1,3 +1,2 @@
-Fix :meth:`datetime.time.strftime` raising :exc:`AttributeError` for the
-``%Y``, ``%G``, ``%C`` and ``%F`` directives in the pure-Python
-implementation. Patch by tonghuaroot.
+Fix the pure-Python :meth:`datetime.time.strftime` implementation raising :exc:`AttributeError` for the
+year directives. Patch by tonghuaroot.
