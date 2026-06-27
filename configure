@@ -12105,6 +12105,12 @@ then :
   printf "%s\n" "#define HAVE_SYS_SYSCALL_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "sys/sysctl.h" "ac_cv_header_sys_sysctl_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_sysctl_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYS_SYSCTL_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "sys/sysmacros.h" "ac_cv_header_sys_sysmacros_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_sysmacros_h" = xyes
 then :
@@ -21048,6 +21054,12 @@ ac_fn_c_check_func "$LINENO" "sysconf" "ac_cv_func_sysconf"
 if test "x$ac_cv_func_sysconf" = xyes
 then :
   printf "%s\n" "#define HAVE_SYSCONF 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "sysctlbyname" "ac_cv_func_sysctlbyname"
+if test "x$ac_cv_func_sysctlbyname" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYSCTLBYNAME 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "tcgetpgrp" "ac_cv_func_tcgetpgrp"

@@ -139,10 +139,13 @@ The module :mod:`!curses` defines the following functions:
 .. function:: color_pair(pair_number)
 
    Return the attribute value for displaying text in the specified color pair.
-   Only the first 256 color pairs are supported. This
-   attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
-   and the other :const:`!A_\*` attributes.  :func:`pair_number` is the counterpart
-   to this function.
+   Only color pairs that fit in the color-pair field of the returned value can
+   be represented (usually the first 256); a larger *pair_number* raises
+   :exc:`OverflowError` rather than being silently masked to a different pair.
+   Use :meth:`~window.color_set` or :meth:`~window.attr_set` to display higher
+   pairs.  This attribute value can be combined with :const:`A_STANDOUT`,
+   :const:`A_REVERSE`, and the other :const:`!A_\*` attributes.
+   :func:`pair_number` is the counterpart to this function.
 
 
 .. function:: curs_set(visibility)
@@ -343,6 +346,37 @@ The module :mod:`!curses` defines the following functions:
 
    Take a key value *ch*, and return ``True`` if the current terminal type recognizes
    a key with that value.
+
+
+.. function:: define_key(definition, keycode)
+
+   Define an escape sequence *definition*, a string, as a key that generates
+   the key code *keycode*, so that :mod:`curses` interprets it like one of the
+   keys predefined in the terminal database.
+
+   If *definition* is ``None``, any existing binding for *keycode* is removed.
+   If *keycode* is zero or negative, any existing binding for *definition* is
+   removed.
+
+   .. versionadded:: next
+
+
+.. function:: key_defined(definition)
+
+   Return the key code bound to the escape sequence *definition*, a string,
+   ``0`` if no key code is bound to it, or ``-1`` if *definition* is a prefix
+   of a longer bound sequence (and so is ambiguous).
+
+   .. versionadded:: next
+
+
+.. function:: keyok(keycode, enable)
+
+   Enable (if *enable* is true) or disable (otherwise) interpretation of the
+   key code *keycode*.  Unlike :meth:`window.keypad`, this affects a single
+   key code rather than all of them.
+
+   .. versionadded:: next
 
 
 .. function:: halfdelay(tenths)
@@ -696,6 +730,40 @@ The module :mod:`!curses` defines the following functions:
    Save the current state of the terminal modes in a buffer, usable by
    :func:`resetty`.
 
+.. function:: scr_dump(filename)
+
+   Write the current contents of the virtual screen to *filename*, which may be
+   a string or a :term:`path-like object`.  The file can later be read by
+   :func:`scr_restore`, :func:`scr_init` or :func:`scr_set`.  This is the
+   whole-screen counterpart of :meth:`window.putwin`.
+
+   .. versionadded:: next
+
+.. function:: scr_restore(filename)
+
+   Set the virtual screen to the contents of *filename*, which must have been
+   written by :func:`scr_dump`.  The next call to :func:`doupdate` or
+   :meth:`window.refresh` restores the screen to those contents.
+
+   .. versionadded:: next
+
+.. function:: scr_init(filename)
+
+   Initialize the assumed contents of the terminal from *filename*, which must
+   have been written by :func:`scr_dump`.  Use it when the terminal already
+   displays those contents, for example after another program has drawn the
+   screen, so that curses does not redraw what is already there.
+
+   .. versionadded:: next
+
+.. function:: scr_set(filename)
+
+   Use *filename*, which must have been written by :func:`scr_dump`, as both
+   the virtual screen and the assumed terminal contents.  This combines the
+   effects of :func:`scr_restore` and :func:`scr_init`.
+
+   .. versionadded:: next
+
 .. function:: get_escdelay()
 
    Retrieves the value set by :func:`set_escdelay`.
@@ -941,7 +1009,8 @@ Window objects
 
    .. versionchanged:: next
       A character may now be given as a string of a base character followed
-      by combining characters, instead of only a single character.
+      by combining characters, instead of only a single character, or as a
+      :class:`complexchar` cell.
 
 
 .. method:: window.addnstr(str, n[, attr])
@@ -951,12 +1020,20 @@ Window objects
    ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
 
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`; see :meth:`addstr`.
+
 
 .. method:: window.addstr(str[, attr])
             window.addstr(y, x, str[, attr])
 
    Paint the character string *str* at ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
+
+   *str* may also be a :class:`complexstr`, in which case each cell carries its
+   own attributes and color pair, so *attr* must not be given.  A
+   :class:`complexstr` obtained from :meth:`in_wchstr` is written back
+   unchanged.
 
    .. note::
 
@@ -969,6 +1046,9 @@ Window objects
         If you are stuck with an earlier ncurses, you can avoid triggering it by
         not calling :meth:`!addstr` with a *str* that has embedded newlines;
         instead, call :meth:`!addstr` separately for each line.
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`, as described above.
 
 
 .. method:: window.attroff(attr)
@@ -989,6 +1069,55 @@ Window objects
    ``0`` (no attributes).
 
 
+.. method:: window.attr_get()
+
+   Return the window's current rendition as a ``(attrs, pair)`` tuple,
+   where *attrs* is the set of attributes and *pair* is the color pair number.
+
+   Unlike :meth:`attron` and friends, which take packed ``A_*`` attributes,
+   this method and the other ``attr_*`` methods work with the
+   :ref:`WA_* attributes <curses-wa-constants>` and keep the color pair as a
+   separate number, which lets them use color pairs that do not fit alongside
+   the attributes in a single value.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_set(attr, pair=0)
+
+   Set the window's rendition to the attributes *attr* and the color pair *pair*.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_on(attr)
+
+   Turn on the attributes *attr* without affecting any others.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_off(attr)
+
+   Turn off the attributes *attr* without affecting any others.
+
+   .. versionadded:: next
+
+
+.. method:: window.color_set(pair)
+
+   Set the window's color pair to *pair*, leaving the other attributes unchanged.
+
+   .. versionadded:: next
+
+
+.. method:: window.getattrs()
+
+   Return the window's current attributes.
+
+   .. versionadded:: next
+
+
 .. method:: window.bkgd(ch[, attr])
 
    Set the background property of the window to the character *ch*, with
@@ -1002,7 +1131,8 @@ Window objects
      background character.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.bkgdset(ch[, attr])
@@ -1015,7 +1145,8 @@ Window objects
    the character through any scrolling and insert/delete line/character operations.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.border([ls[, rs[, ts[, bs[, tl[, tr[, bl[, br]]]]]]]])
@@ -1051,7 +1182,8 @@ Window objects
    +-----------+---------------------+-----------------------+
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.  A single call cannot mix
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.  A single call cannot mix
       them with integer or byte characters.
 
 
@@ -1061,7 +1193,8 @@ Window objects
    *bs* are *horch*.  The default corner characters are always used by this function.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.  A single call cannot mix
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.  A single call cannot mix
       them with integer or byte characters.
 
 
@@ -1127,13 +1260,25 @@ Window objects
    object for the derived window.
 
 
+.. method:: window.dupwin()
+
+   Return a new window that is an exact duplicate of the window: it has the same
+   size, position, contents and attributes.  Unlike a window created by
+   :meth:`subwin` or :meth:`derwin`, the duplicate is independent of the
+   original -- it has its own cell buffer, so later changes to one do not affect
+   the other.
+
+   .. versionadded:: next
+
+
 .. method:: window.echochar(ch[, attr])
 
    Add character *ch* with attribute *attr*, and immediately  call :meth:`refresh`
    on the window.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.enclose(y, x)
@@ -1170,6 +1315,20 @@ Window objects
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+
+
+.. method:: window.getbkgrnd()
+
+   Return the given window's current background as a :class:`complexchar`.
+   This is the wide-character variant of :meth:`getbkgd`: the returned object
+   carries the background character together with its attributes and color pair,
+   and the color pair is not limited to the value that fits in a
+   :func:`color_pair`.
+
+   This method is only available if Python was built against a wide-character
+   version of the underlying curses library.
+
+   .. versionadded:: next
 
 
 .. method:: window.getch([y, x])
@@ -1276,7 +1435,8 @@ Window objects
    of the window if fewer than *n* cells are available.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.idcok(flag)
@@ -1307,6 +1467,20 @@ Window objects
    the character proper, and upper bits are the attributes.
 
 
+.. method:: window.in_wch([y, x])
+
+   Return the complex character at the given position in the window as a
+   :class:`complexchar`.  This is the wide-character variant of :meth:`inch`:
+   the returned object carries the cell's text (a spacing character optionally
+   followed by combining characters) together with its attributes and color
+   pair, none of which :meth:`inch` can represent.
+
+   This method is only available if Python was built against a wide-character
+   version of the underlying curses library.
+
+   .. versionadded:: next
+
+
 .. method:: window.insch(ch[, attr])
             window.insch(y, x, ch[, attr])
 
@@ -1316,7 +1490,8 @@ Window objects
    line being lost.  The cursor position does not change.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.insdelln(nlines)
@@ -1343,6 +1518,9 @@ Window objects
    cursor are shifted right, with the rightmost characters on the line being lost.
    The cursor position does not change (after moving to *y*, *x*, if specified).
 
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`; see :meth:`insstr`.
+
 
 .. method:: window.insstr(str[, attr])
             window.insstr(y, x, str[, attr])
@@ -1351,6 +1529,12 @@ Window objects
    the character under the cursor.  All characters to the right of the cursor are
    shifted right, with the rightmost characters on the line being lost.  The cursor
    position does not change (after moving to *y*, *x*, if specified).
+
+   *str* may also be a :class:`complexstr`, in which case each cell carries its
+   own attributes and color pair, so *attr* must not be given.
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`, as described above.
 
 
 .. method:: window.instr([n])
@@ -1376,6 +1560,25 @@ Window objects
    than a :class:`bytes` object, so it can return characters that are not
    representable in the window's encoding.  Attributes and color information
    are stripped from the characters.  The maximum value for *n* is 2047.
+
+   .. versionadded:: next
+
+
+.. method:: window.in_wchstr([n])
+            window.in_wchstr(y, x[, n])
+
+   Return a :class:`complexstr` of the styled cells extracted from the window
+   starting at the current cursor position, or at *y*, *x* if specified, and
+   stopping at the end of the line.  This is the variant of :meth:`instr` and
+   :meth:`in_wstr` that *keeps* each cell's attributes and color pair (those
+   methods strip the rendition).  If *n* is specified, at most *n* cells are
+   returned.  The maximum value for *n* is 2047.
+
+   The result can be written back unchanged with :meth:`addstr` (a read and a
+   re-write is a round-trip that preserves every cell's rendition).
+
+   This method is only available if Python was built against a wide-character
+   version of the underlying curses library.
 
    .. versionadded:: next
 
@@ -1727,7 +1930,8 @@ Window objects
    character *ch* with attributes *attr*.
 
    .. versionchanged:: next
-      Wide and combining characters are now accepted.
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. _curses-screen-objects:
@@ -1780,6 +1984,86 @@ Screen objects
    against concurrent access from another thread.
 
    Availability: if the underlying curses library provides ``use_screen()``.
+
+   .. versionadded:: next
+
+
+.. _curses-complexchar-objects:
+
+Complex character objects
+-------------------------
+
+.. class:: complexchar(text, /, attr=0, pair=0)
+
+   A *complex character* (or *complexchar*) is an immutable styled
+   wide-character cell: a spacing character optionally followed by combining
+   characters, together with a set of attributes and a color pair.
+
+   *text* is the cell's text, *attr* a combination of the
+   :ref:`WA_* attributes <curses-wa-constants>` (equivalent to the matching
+   ``A_*`` constants), and *pair* a color pair number.  Unlike the packed
+   :class:`chtype <int>` used by :meth:`~window.inch` and the ``A_*`` methods,
+   the color pair is stored separately and is not limited to the value that
+   fits in a :func:`color_pair`.
+
+   Complex characters are returned by :meth:`window.in_wch` and
+   :meth:`window.getbkgrnd`, and are accepted (along with an integer, a byte
+   or a string) by the character-cell methods such as :meth:`window.addch`,
+   :meth:`window.insch`, :meth:`window.bkgd`, :meth:`window.border`,
+   :meth:`window.hline` and :meth:`window.vline`.  A complex character already
+   carries its own rendition, so it cannot be combined with an explicit *attr*
+   argument.
+
+   :func:`str` returns the cell's text; two complex characters are equal when
+   their text, attributes and color pair all match.
+
+   This type is only available if Python was built against a wide-character
+   version of the underlying curses library.
+
+   .. attribute:: attr
+
+      The attributes of the character cell (read-only).
+
+   .. attribute:: pair
+
+      The color pair number of the character cell (read-only).
+
+   .. versionadded:: next
+
+
+.. class:: complexstr(cells[, attr[, pair]])
+
+   A *complex character string* (or *complexstr*) is an immutable sequence of
+   styled wide-character cells -- the string counterpart of
+   :class:`complexchar` (as :class:`str` is to a single character).
+
+   If *cells* is a string, it is split into character cells (each a spacing
+   character optionally followed by combining characters), and *attr* (a
+   combination of the :ref:`WA_* attributes <curses-wa-constants>`) and *pair*
+   (a color pair number), if given, are applied to every cell.
+
+   Otherwise *cells* is an iterable whose items are themselves cells, each a
+   :class:`complexchar` or a string; each item then carries its own rendition,
+   and *attr* and *pair* must be omitted.
+
+   It is returned by :meth:`window.in_wchstr`, and accepted by
+   :meth:`window.addstr`, :meth:`~window.addnstr`, :meth:`~window.insstr` and
+   :meth:`~window.insnstr`, so a run read from a window can be written back
+   unchanged.
+
+   It behaves like an immutable sequence: ``len(s)`` is the number of cells,
+   ``s[i]`` is the *i*-th cell as a :class:`complexchar`, slicing and
+   concatenation produce new :class:`!complexstr` instances, and iterating
+   yields the cells.  :func:`str` returns the cells' text joined together, and
+   two complex character strings are equal when their cells all match.  It is
+   hashable.
+
+   To build or edit a run of cells, use an ordinary :class:`list` of
+   :class:`complexchar` (or strings); a :class:`!complexstr` is the immutable
+   form returned by a read.
+
+   This type is only available if Python was built against a wide-character
+   version of the underlying curses library.
 
    .. versionadded:: next
 
@@ -1887,6 +2171,24 @@ The exact constants available are system dependent.
 
 .. versionadded:: 3.7
    ``A_ITALIC`` was added.
+
+.. _curses-wa-constants:
+
+The :meth:`~window.attr_get`, :meth:`~window.attr_set`, :meth:`~window.attr_on`
+and :meth:`~window.attr_off` methods use a parallel set of ``WA_*`` constants.
+These have the same meaning as the corresponding ``A_*`` attributes above
+(``WA_BOLD`` like :const:`A_BOLD`, and so on), but belong to the ``attr_t`` type
+rather than being packed into a character.  In ncurses the two sets share the
+same values, but other curses implementations may give them different ones, so
+use the ``WA_*`` constants with the ``attr_*`` methods.  The available names are
+``WA_ATTRIBUTES``, ``WA_NORMAL``, ``WA_STANDOUT``, ``WA_UNDERLINE``,
+``WA_REVERSE``, ``WA_BLINK``, ``WA_DIM``, ``WA_BOLD``, ``WA_ALTCHARSET``,
+``WA_INVIS``, ``WA_PROTECT``, ``WA_HORIZONTAL``, ``WA_LEFT``, ``WA_LOW``,
+``WA_RIGHT``, ``WA_TOP``, ``WA_VERTICAL`` and ``WA_ITALIC`` (each available only
+where the platform defines it).
+
+.. versionadded:: next
+   The ``WA_*`` constants were added.
 
 Several constants are available to extract corresponding attributes returned
 by some methods.

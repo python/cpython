@@ -505,12 +505,14 @@ class Variable:
         Return the name of the callback.
 
         This deprecated method wraps a deprecated Tcl method removed
-        in Tcl 9.0.  Use trace_add() instead.
+        in Tcl 9.0 and will be removed in Python 3.17.  Use trace_add()
+        instead.
         """
         import warnings
         warnings.warn(
-                "trace_variable() is deprecated and not supported with Tcl 9; "
-                "use trace_add() instead.",
+                "trace_variable() is deprecated and will be removed in Python "
+                "3.17; use trace_add() instead.  It is not supported with "
+                "Tcl 9.",
                 DeprecationWarning, stacklevel=2)
         cbname = self._register(callback)
         self._tk.call("trace", "variable", self._name, mode, cbname)
@@ -525,12 +527,14 @@ class Variable:
         CBNAME is the name of the callback returned from trace_variable or trace.
 
         This deprecated method wraps a deprecated Tcl method removed
-        in Tcl 9.0.  Use trace_remove() instead.
+        in Tcl 9.0 and will be removed in Python 3.17.  Use trace_remove()
+        instead.
         """
         import warnings
         warnings.warn(
-                "trace_vdelete() is deprecated and not supported with Tcl 9; "
-                "use trace_remove() instead.",
+                "trace_vdelete() is deprecated and will be removed in Python "
+                "3.17; use trace_remove() instead.  It is not supported with "
+                "Tcl 9.",
                 DeprecationWarning, stacklevel=2)
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
         cbname = self._tk.splitlist(cbname)[0]
@@ -548,12 +552,14 @@ class Variable:
         """Return all trace callback information.
 
         This deprecated method wraps a deprecated Tcl method removed
-        in Tcl 9.0.  Use trace_info() instead.
+        in Tcl 9.0 and will be removed in Python 3.17.  Use trace_info()
+        instead.
         """
         import warnings
         warnings.warn(
-                "trace_vinfo() is deprecated and not supported with Tcl 9; "
-                "use trace_info() instead.",
+                "trace_vinfo() is deprecated and will be removed in Python "
+                "3.17; use trace_info() instead.  It is not supported with "
+                "Tcl 9.",
                 DeprecationWarning, stacklevel=2)
         return [self._tk.splitlist(x) for x in self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name))]
@@ -888,7 +894,10 @@ class Misc:
         the focus."""
         name = self.tk.call('focus')
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def focus_displayof(self):
         """Return the widget which has currently the focus on the
@@ -897,14 +906,20 @@ class Misc:
         Return None if the application does not have the focus."""
         name = self.tk.call('focus', '-displayof', self._w)
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def focus_lastfor(self):
         """Return the widget which would have the focus if top level
         for this widget gets the focus from the window manager."""
         name = self.tk.call('focus', '-lastfor', self._w)
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def tk_focusFollowsMouse(self):
         """The widget under mouse will get automatically focus. Can not
@@ -1307,7 +1322,10 @@ class Misc:
                + self._displayof(displayof) + (rootX, rootY)
         name = self.tk.call(args)
         if not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def winfo_depth(self):
         """Return the number of bits per pixel."""
@@ -1782,7 +1800,16 @@ class Misc:
         for n in name:
             if not n:
                 break
-            w = w.children[n]
+            try:
+                w = w.children[n]
+            except KeyError:
+                # Menu clones (a menu used as a menubar or a cascade) get
+                # auto-generated names where each path component is the
+                # original name prefixed with one or more '#' clone markers.
+                # Map such a name back to the original widget.
+                if not n.startswith('#'):
+                    raise
+                w = w.children[n.rsplit('#', 1)[-1]]
 
         return w
 
