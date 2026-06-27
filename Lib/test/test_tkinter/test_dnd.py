@@ -40,10 +40,12 @@ class Source:
 
 
 class FakeEvent:
-    def __init__(self, widget, num=1):
+    def __init__(self, widget, num=1, x_root=0, y_root=0):
         self.num = num
         self.widget = widget
-        self.x = self.y = self.x_root = self.y_root = 0
+        self.x = self.y = 0
+        self.x_root = x_root
+        self.y_root = y_root
 
 
 class DndTest(AbstractTkTest, unittest.TestCase):
@@ -93,6 +95,19 @@ class DndTest(AbstractTkTest, unittest.TestCase):
     def test_high_button_number_ignored(self):
         self.assertIsNone(dnd.dnd_start(self.source, FakeEvent(self.canvas, num=6)))
 
+    def test_cursor_deferred_until_motion(self):
+        # The drag cursor is not shown on the initial press, only once the
+        # pointer moves past the threshold, so a plain click does not flash
+        # it (gh-43699).
+        self.canvas['cursor'] = 'arrow'
+        handler = dnd.dnd_start(self.source, FakeEvent(self.canvas))
+        self.assertEqual(str(self.canvas['cursor']), 'arrow')
+        handler.on_motion(FakeEvent(self.canvas, x_root=2))  # below threshold
+        self.assertEqual(str(self.canvas['cursor']), 'arrow')
+        handler.on_motion(FakeEvent(self.canvas, x_root=20))  # past threshold
+        self.assertEqual(str(self.canvas['cursor']), 'hand2')
+        handler.cancel()
+        self.assertEqual(str(self.canvas['cursor']), 'arrow')  # restored
 
 if __name__ == "__main__":
     unittest.main()
