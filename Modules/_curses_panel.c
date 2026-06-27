@@ -380,11 +380,13 @@ _curses_panel_panel_hide_impl(PyCursesPanelObject *self)
 _curses_panel.panel.show
 
 Display the panel (which might have been hidden).
+
+The panel is placed on top of the panel stack.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_panel_show_impl(PyCursesPanelObject *self)
-/*[clinic end generated code: output=6b4553ab45c97769 input=57b167bbefaa3755]*/
+/*[clinic end generated code: output=6b4553ab45c97769 input=9997cf364ca71422]*/
 {
     int rtn = show_panel(self->pan);
     return curses_panel_panel_check_err(self, rtn, "show_panel", "show");
@@ -670,7 +672,13 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 
 /* -------------------------------------------------------*/
 
+PyDoc_STRVAR(PyCursesPanel_Type_doc,
+"A curses panel.\n"
+"\n"
+"Panel objects are returned by new_panel().");
+
 static PyType_Slot PyCursesPanel_Type_slots[] = {
+    {Py_tp_doc, (void *)PyCursesPanel_Type_doc},
     {Py_tp_clear, PyCursesPanel_Clear},
     {Py_tp_dealloc, PyCursesPanel_Dealloc},
     {Py_tp_traverse, PyCursesPanel_Traverse},
@@ -679,7 +687,7 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesPanel_Type_spec = {
-    .name = "_curses_panel.panel",
+    .name = "curses.panel.panel",
     .basicsize = sizeof(PyCursesPanelObject),
     .flags = (
         Py_TPFLAGS_DEFAULT
@@ -724,11 +732,13 @@ _curses_panel.new_panel
     /
 
 Return a panel object, associating it with the given window win.
+
+The new panel is placed on top of the panel stack.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_panel_new_panel_impl(PyObject *module, PyCursesWindowObject *win)
-/*[clinic end generated code: output=45e948e0176a9bd2 input=74d4754e0ebe4800]*/
+/*[clinic end generated code: output=45e948e0176a9bd2 input=3b6fea647b808fd7]*/
 {
     PANEL *pan = new_panel(win->win);
     if (pan == NULL) {
@@ -816,9 +826,11 @@ _curses_panel_exec(PyObject *mod)
         return -1;
     }
 
-    /* For exception _curses_panel.error */
-    state->error = PyErr_NewException(
-        "_curses_panel.error", NULL, NULL);
+    /* For exception curses.panel.error */
+    state->error = PyErr_NewExceptionWithDoc(
+        "curses.panel.error",
+        "Exception raised when a curses panel library function returns an error.",
+        NULL, NULL);
 
     if (PyModule_AddObjectRef(mod, "error", state->error) < 0) {
         return -1;

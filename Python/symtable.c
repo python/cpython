@@ -834,17 +834,22 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
             return 0;
         }
         // __class__, __classdict__ and __conditional_annotations__ are
-        // never allowed to be free through a class scope (see
-        // drop_class_free)
+        // not allowed to be free through a class scope (see
+        // drop_class_free) unless children scopes need it
         if (scope == FREE && ste->ste_type == ClassBlock &&
                 (_PyUnicode_EqualToASCIIString(k, "__class__") ||
                  _PyUnicode_EqualToASCIIString(k, "__classdict__") ||
                  _PyUnicode_EqualToASCIIString(k, "__conditional_annotations__"))) {
             scope = GLOBAL_IMPLICIT;
-            if (PySet_Discard(comp_free, k) < 0) {
+            int child_needs_free = is_free_in_any_child(comp, k);
+            if (child_needs_free < 0) {
                 return 0;
             }
-
+            if (!child_needs_free) {
+                if (PySet_Discard(comp_free, k) < 0) {
+                    return 0;
+                }
+            }
             if (_PyUnicode_EqualToASCIIString(k, "__class__")) {
                 remove_dunder_class = 1;
             }

@@ -233,7 +233,7 @@ gc_get_count_impl(PyObject *module)
                          gcstate->generations[2].count);
 #else
     return Py_BuildValue("(iii)",
-                         gcstate->young.count,
+                         _Py_atomic_load_int_relaxed(&gcstate->young.count),
                          gcstate->old[0].count,
                          gcstate->old[1].count);
 #endif

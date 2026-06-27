@@ -327,6 +327,12 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.assertEqual(stdout, b'')
         self.assertEqual(stderr, b'')
 
+    def test_bad_syntax_stderr_ends_with_newline(self):
+        with open(self.source_path, 'w') as file:
+            file.write('  print("hello world")\n')
+        rc, stdout, stderr = self.pycompilecmd_failure(self.source_path)
+        self.assertTrue(stderr.endswith(b'\n'))
+
     def test_file_not_exists(self):
         should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
         rc, stdout, stderr = self.pycompilecmd_failure(self.source_path, should_not_exists)

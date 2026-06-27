@@ -35,12 +35,11 @@ __all__ = [
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
-    "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
+    "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
     "has_socket_support", "requires_working_socket",
-    "has_st_birthtime",
     "has_remote_subprocess_debugging", "requires_remote_subprocess_debugging",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
@@ -620,10 +619,6 @@ has_fork_support = hasattr(os, "fork") and not (
     # all Android apps are multi-threaded.
     or is_android
 )
-
-# At the moment, st_birthtime attribute is only supported on Windows,
-# MacOS and FreeBSD.
-has_st_birthtime = sys.platform.startswith(("win", "freebsd", "darwin"))
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
@@ -1309,6 +1304,22 @@ def bigmemtest(size, memuse, dry_run=True):
         wrapper.memuse = memuse
         return wrapper
     return decorator
+
+def nomemtest(f):
+    """Check that we can use this test with `_testcapi.set_nomemory`."""
+    from .import_helper import import_module
+
+    @functools.wraps(f)
+    def internal(*args, **kwargs):
+        import_module('_testcapi')
+        return f(*args, **kwargs)
+
+    return unittest.skipIf(
+        # Python built with Py_TRACE_REFS fail with a fatal error in
+        # _PyRefchain_Trace() on memory allocation error.
+        Py_TRACE_REFS,
+        'cannot test Py_TRACE_REFS build',
+    )(cpython_only(internal))
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -2278,10 +2289,10 @@ class _SMALLEST:
 
 SMALLEST = _SMALLEST()
 
-def maybe_get_event_loop_policy():
-    """Return the global event loop policy if one is set, else return None."""
+def maybe_get_event_loop():
+    """Return the event loop set for the current thread, else return None."""
     import asyncio.events
-    return asyncio.events._event_loop_policy
+    return asyncio.events._local._loop
 
 # Helpers for testing hashing.
 NHASHBITS = sys.hash_info.width # number of bits in hash() result
@@ -3164,7 +3175,7 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
         with open("/run/systemd/container", "rb") as fp:
             if fp.read().rstrip() != b"systemd-nspawn":
                 return False
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError):
         return False
 
     # If systemd-nspawn is used, O_SYNC flag will immediately
