@@ -345,6 +345,37 @@ The module :mod:`!curses` defines the following functions:
    a key with that value.
 
 
+.. function:: define_key(definition, keycode)
+
+   Define an escape sequence *definition*, a string, as a key that generates
+   the key code *keycode*, so that :mod:`curses` interprets it like one of the
+   keys predefined in the terminal database.
+
+   If *definition* is ``None``, any existing binding for *keycode* is removed.
+   If *keycode* is zero or negative, any existing binding for *definition* is
+   removed.
+
+   .. versionadded:: next
+
+
+.. function:: key_defined(definition)
+
+   Return the key code bound to the escape sequence *definition*, a string,
+   ``0`` if no key code is bound to it, or ``-1`` if *definition* is a prefix
+   of a longer bound sequence (and so is ambiguous).
+
+   .. versionadded:: next
+
+
+.. function:: keyok(keycode, enable)
+
+   Enable (if *enable* is true) or disable (otherwise) interpretation of the
+   key code *keycode*.  Unlike :meth:`window.keypad`, this affects a single
+   key code rather than all of them.
+
+   .. versionadded:: next
+
+
 .. function:: halfdelay(tenths)
 
    Used for half-delay mode, which is similar to cbreak mode in that characters

@@ -894,7 +894,10 @@ class Misc:
         the focus."""
         name = self.tk.call('focus')
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def focus_displayof(self):
         """Return the widget which has currently the focus on the
@@ -903,14 +906,20 @@ class Misc:
         Return None if the application does not have the focus."""
         name = self.tk.call('focus', '-displayof', self._w)
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def focus_lastfor(self):
         """Return the widget which would have the focus if top level
         for this widget gets the focus from the window manager."""
         name = self.tk.call('focus', '-lastfor', self._w)
         if name == 'none' or not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def tk_focusFollowsMouse(self):
         """The widget under mouse will get automatically focus. Can not
@@ -1313,7 +1322,10 @@ class Misc:
                + self._displayof(displayof) + (rootX, rootY)
         name = self.tk.call(args)
         if not name: return None
-        return self._nametowidget(name)
+        try:
+            return self._nametowidget(name)
+        except KeyError:
+            return None
 
     def winfo_depth(self):
         """Return the number of bits per pixel."""
@@ -1788,7 +1800,16 @@ class Misc:
         for n in name:
             if not n:
                 break
-            w = w.children[n]
+            try:
+                w = w.children[n]
+            except KeyError:
+                # Menu clones (a menu used as a menubar or a cascade) get
+                # auto-generated names where each path component is the
+                # original name prefixed with one or more '#' clone markers.
+                # Map such a name back to the original widget.
+                if not n.startswith('#'):
+                    raise
+                w = w.children[n.rsplit('#', 1)[-1]]
 
         return w
 
