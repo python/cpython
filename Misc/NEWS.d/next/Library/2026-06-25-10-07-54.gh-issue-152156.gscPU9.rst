@@ -1,0 +1,2 @@
+Fix a possible crash in :func:`!_interpreters.create` under limited
+memory conditions.
