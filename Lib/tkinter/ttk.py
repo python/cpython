@@ -708,7 +708,7 @@ class Combobox(Entry):
             if res == '':
                 return -1
             return self.tk.getint(res)
-        return self.tk.call(self._w, "current", newindex)
+        self.tk.call(self._w, "current", newindex)
 
 
     def set(self, value):
@@ -881,7 +881,9 @@ class Notebook(Widget):
         previously-selected window (if different) is unmapped. If tab_id
         is omitted, returns the widget name of the currently selected
         pane."""
-        return self.tk.call(self._w, "select", tab_id)
+        if tab_id is None:
+            return self.tk.call(self._w, "select")
+        self.tk.call(self._w, "select", tab_id)
 
 
     def tab(self, tab_id, option=None, **kw):
@@ -1263,7 +1265,9 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
     def focus(self, item=None):  # overrides Misc.focus
         """If item is specified, sets the focus item to item. Otherwise,
         returns the current focus item, or '' if there is none."""
-        return self.tk.call(self._w, "focus", item)
+        if item is None:
+            return self.tk.call(self._w, "focus")
+        self.tk.call(self._w, "focus", item)
 
 
     def heading(self, column, option=None, **kw):
@@ -1617,7 +1621,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         * Availability: Tk 9.1"""
         if cell is None:
             return self.tk.splitlist(self.tk.call(self._w, "cellfocus"))
-        return self.tk.call(self._w, "cellfocus", cell)
+        self.tk.call(self._w, "cellfocus", cell)
 
 
     def sort(self, parent, *, column=None, command=None, dictionary=False,
@@ -1883,7 +1887,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         if cell is None:
             return self.tk.splitlist(
                 self.tk.call(self._w, "cellselection", "anchor"))
-        return self.tk.call(self._w, "cellselection", "anchor", cell)
+        self.tk.call(self._w, "cellselection", "anchor", cell)
 
 
     def cellselection_includes(self, *cells):

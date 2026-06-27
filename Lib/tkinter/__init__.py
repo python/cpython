@@ -2392,7 +2392,7 @@ class Wm:
     def wm_deiconify(self):
         """Deiconify this widget. If it was never mapped it will not be mapped.
         On Windows it will raise this widget and give it the focus."""
-        return self.tk.call('wm', 'deiconify', self._w)
+        self.tk.call('wm', 'deiconify', self._w)
 
     deiconify = wm_deiconify
 
@@ -2459,7 +2459,7 @@ class Wm:
         (Windows) or app panel (X11). On X11, the variable
         ::tk::icons::base_icon(WINDOW) must be set to the image used for the
         window icon for this command to work."""
-        return self.tk.call('wm', 'iconbadge', self._w, badge)
+        self.tk.call('wm', 'iconbadge', self._w, badge)
 
     iconbadge = wm_iconbadge
 
@@ -2481,7 +2481,7 @@ class Wm:
 
     def wm_iconify(self):
         """Display widget as icon."""
-        return self.tk.call('wm', 'iconify', self._w)
+        self.tk.call('wm', 'iconify', self._w)
 
     iconify = wm_iconify
 
@@ -2654,7 +2654,7 @@ class Wm:
     def wm_withdraw(self):
         """Withdraw this widget from the screen such that it is unmapped
         and forgotten by the window manager. Re-draw it with wm_deiconify."""
-        return self.tk.call('wm', 'withdraw', self._w)
+        self.tk.call('wm', 'withdraw', self._w)
 
     withdraw = wm_withdraw
 
@@ -4189,19 +4189,19 @@ class Text(Widget, XView, YView):
         then. Generates an error when the redo stack is empty.
         Does nothing when the undo option is false.
         """
-        return self.edit("redo")
+        self.edit("redo")
 
     def edit_reset(self):
         """Clears the undo and redo stacks
         """
-        return self.edit("reset")
+        self.edit("reset")
 
     def edit_separator(self):
         """Inserts a separator (boundary) on the undo stack.
 
         Does nothing when the undo option is false
         """
-        return self.edit("separator")
+        self.edit("separator")
 
     def edit_undo(self):
         """Undoes the last edit action
@@ -4212,7 +4212,7 @@ class Text(Widget, XView, YView):
         an error when the undo stack is empty. Does nothing
         when the undo option is false
         """
-        return self.edit("undo")
+        self.edit("undo")
 
     def get(self, index1, index2=None):
         """Return the text from INDEX1 to INDEX2 (not included)."""
@@ -4411,7 +4411,7 @@ class Text(Widget, XView, YView):
     def tag_unbind(self, tagName, sequence, funcid=None):
         """Unbind for all characters with TAGNAME for event SEQUENCE  the
         function identified with FUNCID."""
-        return self._unbind((self._w, 'tag', 'bind', tagName, sequence), funcid)
+        self._unbind((self._w, 'tag', 'bind', tagName, sequence), funcid)
 
     def tag_bind(self, tagName, sequence, func, add=None):
         """Bind to all characters with TAGNAME at event SEQUENCE a call to function FUNC.
@@ -5032,7 +5032,7 @@ class Spinbox(Widget, XView):
         defaults to first+1, i.e. a single character is
         deleted.  This command returns an empty string.
         """
-        return self.tk.call(self._w, 'delete', first, last)
+        self.tk.call(self._w, 'delete', first, last)
 
     def get(self):
         """Returns the spinbox's string"""
@@ -5044,7 +5044,7 @@ class Spinbox(Widget, XView):
         The insertion cursor will be displayed just before
         the character given by index. Returns an empty string
         """
-        return self.tk.call(self._w, 'icursor', index)
+        self.tk.call(self._w, 'icursor', index)
 
     def identify(self, x, y):
         """Returns the name of the widget at position x, y
@@ -5063,7 +5063,7 @@ class Spinbox(Widget, XView):
 
          Returns an empty string.
         """
-        return self.tk.call(self._w, 'insert', index, s)
+        self.tk.call(self._w, 'insert', index, s)
 
     def invoke(self, element):
         """Causes the specified element to be invoked
@@ -5071,7 +5071,7 @@ class Spinbox(Widget, XView):
         The element could be buttondown or buttonup
         triggering the action associated with it.
         """
-        return self.tk.call(self._w, 'invoke', element)
+        self.tk.call(self._w, 'invoke', element)
 
     def scan(self, *args):
         """Internal function."""
@@ -5116,7 +5116,7 @@ class Spinbox(Widget, XView):
         the characters between index and the most recent selection
         anchor point, inclusive.
         """
-        return self.selection("adjust", index)
+        self.selection("adjust", index)
 
     def selection_clear(self):  # overrides Misc.selection_clear
         """Clear the selection
@@ -5124,7 +5124,7 @@ class Spinbox(Widget, XView):
         If the selection isn't in this widget then the
         command has no effect.
         """
-        return self.selection("clear")
+        self.selection("clear")
 
     def selection_element(self, element=None):
         """Sets or gets the currently selected element.
@@ -5132,7 +5132,9 @@ class Spinbox(Widget, XView):
         If a spinbutton element is specified, it will be
         displayed depressed.
         """
-        return self.tk.call(self._w, 'selection', 'element', element)
+        if element is None:
+            return self.tk.call(self._w, 'selection', 'element')
+        self.tk.call(self._w, 'selection', 'element', element)
 
     def selection_from(self, index):
         """Set the fixed end of a selection to INDEX."""
@@ -5250,12 +5252,12 @@ class PanedWindow(Widget):
     def proxy_forget(self):
         """Remove the proxy from the display.
         """
-        return self.proxy("forget")
+        self.proxy("forget")
 
     def proxy_place(self, x, y):
         """Place the proxy at the given x and y coordinates.
         """
-        return self.proxy("place", x, y)
+        self.proxy("place", x, y)
 
     def sash(self, *args):
         """Internal function."""
