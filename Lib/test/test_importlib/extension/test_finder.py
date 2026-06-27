@@ -69,14 +69,16 @@ class FinderTests(abc.FinderTests):
         elif 'cygwin' in sys.platform:
             pass
         else:
-            if Py_GIL_DISABLED:
-                self.assertNotIn(".abi3.so", suffixes)
-            else:
-                self.assertIn(".abi3.so", suffixes)
             if platform:
+                abi3_suffix = f".abi3-{platform}.so"
                 self.assertIn(f".abi3t-{platform}.so", suffixes)
             else:
+                abi3_suffix = ".abi3.so"
                 self.assertIn(".abi3t.so", suffixes)
+            if Py_GIL_DISABLED:
+                self.assertNotIn(abi3_suffix, suffixes)
+            else:
+                self.assertIn(abi3_suffix, suffixes)
 
 
 (Frozen_FinderTests,
