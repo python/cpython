@@ -497,40 +497,42 @@ class socket(_socket.socket):
             max_count = 0xffff_ffff
             total_sent = 0
             remaining = count
-            while True:
-                chunk_offset = offset + total_sent
-                offset_low = chunk_offset & 0xffff_ffff
-                offset_high = (chunk_offset >> 32) & 0xffff_ffff
-                if remaining is None:
-                    chunk_count = 0
-                else:
-                    chunk_count = min(remaining, max_count)
-                    if chunk_count <= 0:
-                        break
+            try:
+                while True:
+                    chunk_offset = offset + total_sent
+                    offset_low = chunk_offset & 0xffff_ffff
+                    offset_high = (chunk_offset >> 32) & 0xffff_ffff
+                    if remaining is None:
+                        chunk_count = 0
+                    else:
+                        chunk_count = min(remaining, max_count)
+                        if chunk_count <= 0:
+                            break
 
-                ov = _overlapped.Overlapped()
-                ov.TransmitFile(sock_fileno, file_handle, offset_low,
-                                offset_high, chunk_count, 0, 0)
-                try:
-                    sent = ov.getresultex(timeout_ms, False)
-                except WindowsError as e:
-                    if e.winerror == 258:
-                        raise TimeoutError('timed out')
-                    raise
+                    ov = _overlapped.Overlapped()
+                    ov.TransmitFile(sock_fileno, file_handle, offset_low,
+                                    offset_high, chunk_count, 0, 0)
+                    try:
+                        sent = ov.getresultex(timeout_ms, False)
+                    except WindowsError as e:
+                        if e.winerror == 258:
+                            raise TimeoutError('timed out')
+                        raise
 
-                total_sent += sent
+                    total_sent += sent
 
-                if remaining is None:
-                    if sent == 0:
-                        break
-                else:
-                    remaining -= sent
-                    if sent < chunk_count:
-                        break
+                    if remaining is None:
+                        if sent == 0:
+                            break
+                    else:
+                        remaining -= sent
+                        if sent < chunk_count:
+                            break
 
-            if total_sent > 0 and hasattr(file, 'seek'):
-                file.seek(offset + total_sent)
-            return total_sent
+                return total_sent
+            finally:
+                if total_sent > 0 and hasattr(file, 'seek'):
+                    file.seek(offset + total_sent)
 
     def _check_sendfile_params(self, file, offset, count):
         if 'b' not in getattr(file, 'mode', 'b'):
@@ -565,9 +567,9 @@ class socket(_socket.socket):
         """
         try:
             if sys.platform == "win32":
-                sendfile_use_transmitfile = getattr(self,
-                                                    "_sendfile_use_transmitfile")
-                if sendfile_use_transmitfile:
+                sendfile_use_transmitfile = getattr(
+                    self, "_sendfile_use_transmitfile", None)
+                if sendfile_use_transmitfile is not None:
                     return sendfile_use_transmitfile(file, offset, count)
             return self._sendfile_use_sendfile(file, offset, count)
         except _GiveupOnSendfile:
