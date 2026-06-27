@@ -4373,6 +4373,22 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(errorlevel='boo!'), filtererror_filter):
             self.expect_exception(TypeError)  # errorlevel is not int
 
+    @support.subTests('format', [tarfile.GNU_FORMAT, tarfile.PAX_FORMAT])
+    def test_getmembers_big_size(self, format):
+        # gh-151981: A loop in seek() for streaming files tried to read the
+        # declared number of blocks even at EOF
+        tinfo = tarfile.TarInfo("huge-file")
+        tinfo.size = 1 << 64
+        bio = io.BytesIO()
+        # Write header without data
+        bio.write(tinfo.tobuf(format))
+
+        # Reset & try to get contents
+        bio.seek(0)
+        with tarfile.open(fileobj=bio, mode="r|") as tar:
+            with self.assertRaises(tarfile.ReadError):
+                tar.getmembers()
+
 
 class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
     testdir = os.path.join(TEMPDIR, "testoverwrite")
