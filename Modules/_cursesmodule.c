@@ -4390,7 +4390,7 @@ static PyType_Slot PyCursesComplexChar_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesComplexChar_Type_spec = {
-    .name = "_curses.complexchar",
+    .name = "curses.complexchar",
     .basicsize = sizeof(PyCursesComplexCharObject),
     .flags = Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_IMMUTABLETYPE
@@ -4415,7 +4415,7 @@ static PyType_Slot PyCursesComplexStr_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesComplexStr_Type_spec = {
-    .name = "_curses.complexstr",
+    .name = "curses.complexstr",
     .basicsize = offsetof(PyCursesComplexStrObject, cells),
     .itemsize = sizeof(cchar_t),
     .flags = Py_TPFLAGS_DEFAULT
@@ -4778,7 +4778,7 @@ static PyType_Slot PyCursesWindow_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesWindow_Type_spec = {
-    .name = "_curses.window",
+    .name = "curses.window",
     .basicsize =  sizeof(PyCursesWindowObject),
     .flags = Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
@@ -4954,7 +4954,7 @@ static PyType_Slot PyCursesScreen_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesScreen_Type_spec = {
-    .name = "_curses.screen",
+    .name = "curses.screen",
     .basicsize = sizeof(PyCursesScreenObject),
     .flags = Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
@@ -8116,7 +8116,7 @@ cursesmodule_exec(PyObject *module)
 
     /* For exception curses.error */
     state->error = PyErr_NewExceptionWithDoc(
-        "_curses.error",
+        "curses.error",
         "Exception raised when a curses library function returns an error.",
         NULL, NULL);
     if (state->error == NULL) {
