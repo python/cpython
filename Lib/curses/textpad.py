@@ -23,22 +23,25 @@ class Textbox:
     Ctrl-A      Go to left edge of window.
     Ctrl-B      Cursor left, wrapping to previous line if appropriate.
     Ctrl-D      Delete character under cursor.
-    Ctrl-E      Go to right edge (stripspaces off) or end of line (stripspaces on).
+    Ctrl-E      Go to right edge (stripspaces off) or end of line
+                (stripspaces on).
     Ctrl-F      Cursor right, wrapping to next line when appropriate.
     Ctrl-G      Terminate, returning the window contents.
     Ctrl-H      Delete character backward.
-    Ctrl-J      Terminate if the window is 1 line, otherwise insert newline.
+    Ctrl-J      Terminate if the window is 1 line, otherwise move to start
+                of next line.
     Ctrl-K      If line is blank, delete it, otherwise clear to end of line.
     Ctrl-L      Refresh screen.
     Ctrl-N      Cursor down; move down one line.
     Ctrl-O      Insert a blank line at cursor location.
     Ctrl-P      Cursor up; move up one line.
 
-    Move operations do nothing if the cursor is at an edge where the movement
-    is not possible.  The following synonyms are supported where possible:
+    Move operations do nothing if the cursor is at an edge where the
+    movement is not possible.  The following synonyms are supported where
+    possible:
 
-    KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P, KEY_DOWN = Ctrl-N
-    KEY_BACKSPACE = Ctrl-h
+    KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P,
+    KEY_DOWN = Ctrl-N, KEY_BACKSPACE = Ctrl-h
     """
     def __init__(self, win, insert_mode=False):
         self.win = win
@@ -71,16 +74,16 @@ class Textbox:
         self._update_max_yx()
         (y, x) = self.win.getyx()
         backyx = None
-        while y < self.maxy or x < self.maxx:
+        while True:
             if self.insert_mode:
                 oldch = self.win.inch()
-            # The try-catch ignores the error we trigger from some curses
-            # versions by trying to write into the lowest-rightmost spot
-            # in the window.
-            try:
-                self.win.addch(ch)
-            except curses.error:
-                pass
+            if y >= self.maxy and x >= self.maxx:
+                # Use insch() in the lower-right cell: addch() there would move
+                # the cursor out of the window, raising an error and scrolling
+                # a scrollable window.
+                self.win.insch(ch)
+                break
+            self.win.addch(ch)
             if not self.insert_mode or not curses.ascii.isprint(oldch):
                 break
             ch = oldch
@@ -98,8 +101,7 @@ class Textbox:
         (y, x) = self.win.getyx()
         self.lastcmd = ch
         if curses.ascii.isprint(ch):
-            if y < self.maxy or x < self.maxx:
-                self._insert_printable_char(ch)
+            self._insert_printable_char(ch)
         elif ch == curses.ascii.SOH:                           # ^a
             self.win.move(y, 0)
         elif ch in (curses.ascii.STX,curses.KEY_LEFT,

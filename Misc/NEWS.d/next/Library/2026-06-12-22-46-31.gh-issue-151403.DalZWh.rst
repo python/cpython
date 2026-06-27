@@ -1,0 +1,3 @@
+Fixed a crash in :class:`subprocess.Popen` (and ``_posixsubprocess.fork_exec``)
+when an ``argv`` item's :meth:`~os.PathLike.__fspath__` concurrently mutates the
+``args`` sequence being converted.

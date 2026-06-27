@@ -32,7 +32,7 @@ from .reader import Reader
 # types
 Command = commands.Command
 if TYPE_CHECKING:
-    from .types import CommandName, CompletionAction, Keymap, KeySpec
+    from .types import CompletionAction, Keymap
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:

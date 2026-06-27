@@ -1008,6 +1008,8 @@ class ElementTreeTest(unittest.TestCase):
         check("iso-8859-15", '\u20ac')
         check("cp437", '\u221a')
         check("mac-roman", '\u02da')
+        check('shift-jis-2004', '\u203e\u3406\uff66')
+        check('euc-jis-2004', '\u3406\uff66')
 
         def xml(encoding, body=''):
             return "<?xml version='1.0' encoding='%s'?><xml>%s</xml>" % (encoding, body)
@@ -1026,6 +1028,12 @@ class ElementTreeTest(unittest.TestCase):
             'mac-cyrillic', 'mac-greek', 'mac-iceland', 'mac-latin2',
             'mac-roman', 'mac-turkish',
             'koi8-r', 'koi8-t', 'koi8-u', 'kz1048', 'ptcp154',
+            'big5', 'big5hkscs',
+            'cp932', 'cp949', 'cp950',
+            'euc-jp', 'euc-jis-2004', 'euc-jisx0213',
+            'gb2312', 'gbk', 'johab',
+            'shift-jis', 'shift-jis-2004', 'shift-jisx0213',
+            'utf-8-sig', 'utf8',
         ]
         for encoding in supported_encodings:
             with self.subTest(encoding=encoding):
@@ -1035,12 +1043,10 @@ class ElementTreeTest(unittest.TestCase):
                                  ('<xml>&#%d;</xml>' % ord(c)).encode())
 
         unsupported_ascii_compatible_encodings = [
-            'big5', 'big5hkscs',
-            'cp932', 'cp949', 'cp950',
-            'euc-jp', 'euc-jis-2004', 'euc-jisx0213', 'euc-kr',
-            'gb2312', 'gbk', 'gb18030',
-            'iso2022-kr', 'johab',
-            'shift-jis', 'shift-jis-2004', 'shift-jisx0213',
+            'euc-kr', 'gb18030',
+            'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
+            'iso2022-jp-3', 'iso2022-jp-ext',
+            'iso2022-kr', 'hz',
             'utf-7',
         ]
         for encoding in unsupported_ascii_compatible_encodings:
@@ -1057,6 +1063,17 @@ class ElementTreeTest(unittest.TestCase):
 
         self.assertRaises(ValueError, ET.XML, xml('undefined').encode('ascii'))
         self.assertRaises(LookupError, ET.XML, xml('xxx').encode('ascii'))
+
+    @support.subTests('sample,exception', [
+        (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1</x', UnicodeDecodeError),  # crashed
+        (b'<x> \xa1', None), # ET.ParseError
+    ])
+    def test_multibyte_encoding_errors(self, sample, exception):
+        exception = exception or ET.ParseError
+        data = b'<?xml version="1.0" encoding="EUC-JP"?>\n' + sample
+        with self.assertRaises(exception):
+            ET.XML(data)
 
     def test_methods(self):
         # Test serialization methods.
@@ -1281,7 +1298,15 @@ class ElementTreeTest(unittest.TestCase):
               {'': 'http://www.w3.org/2001/XMLSchema',
                'ns': 'http://www.w3.org/2001/XMLSchema'})
 
-    def test_processinginstruction(self):
+    def test_comment_serialization(self):
+        comm = ET.Comment('<spam> & ham')
+        # comments are not escaped
+        self.assertEqual(ET.tostring(comm), b'<!--<spam> & ham-->')
+        self.assertEqual(ET.tostring(comm, method='html'), b'<!--<spam> & ham-->')
+        # no comments in text serialization
+        self.assertEqual(ET.tostring(comm, method='text'), b'')
+
+    def test_processinginstruction_serialization(self):
         # Test ProcessingInstruction directly
 
         self.assertEqual(ET.tostring(ET.ProcessingInstruction('test', 'instruction')),
@@ -1290,12 +1315,32 @@ class ElementTreeTest(unittest.TestCase):
                 b'<?test instruction?>')
 
         # Issue #2746
-
+        # processing instructions are not escaped
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>')),
                 b'<?test <testing&>?>')
         self.assertEqual(ET.tostring(ET.PI('test', '<testing&>\xe3'), 'latin-1'),
                 b"<?xml version='1.0' encoding='latin-1'?>\n"
                 b"<?test <testing&>\xe3?>")
+        pi = ET.PI('test', 'ham & eggs < spam')
+        self.assertEqual(ET.tostring(pi), b'<?test ham & eggs < spam?>')
+        self.assertEqual(ET.tostring(pi, method='html'), b'<?test ham & eggs < spam?>')
+        # no processing instructions in text serialization
+        self.assertEqual(ET.tostring(pi, method='text'), b'')
+
+    def test_empty_attribute_serialization(self):
+        # empty attrs only work in html
+        elem = ET.Element('tag', attrib={'attr': None})
+        self.assertRaises(TypeError, ET.tostring, elem)
+        self.assertEqual(ET.tostring(elem, method='html'), b'<tag attr></tag>')
+
+    @support.subTests('tag', ("script", "style", "xmp", "iframe", "noembed", "noframes"))
+    def test_html_cdata_elems_serialization(self, tag):
+        # content of raw text elements is not escaped in html
+        tag = tag.title()
+        elem = ET.Element(tag)
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         ('<%s><spam>&ham</%s>' % (tag, tag)).encode())
 
     def test_html_empty_elems_serialization(self):
         # issue 15970
@@ -1310,6 +1355,14 @@ class ElementTreeTest(unittest.TestCase):
                 serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
                                        method='html')
                 self.assertEqual(serialized, expected)
+
+    def test_html_plaintext_serialization(self):
+        # content of plaintext is not escaped in html
+        # no end tag for plaintext
+        elem = ET.Element('PlainText')
+        elem.text = '<spam>&ham'
+        self.assertEqual(ET.tostring(elem, method='html'),
+                         b'<PlainText><spam>&ham')
 
     def test_dump_attribute_order(self):
         # See BPO 34160
@@ -3656,6 +3709,32 @@ class ElementIterTest(unittest.TestCase):
         # Issue #16913
         doc = ET.XML("<root>a&amp;<sub>b&amp;</sub>c&amp;</root>")
         self.assertEqual(''.join(doc.itertext()), 'a&b&c&')
+
+    def test_comment(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        comment = ET.Comment('comment')
+        self.assertEqual(comment.text, 'comment')
+        comment.tail = 'after'
+        e.append(comment)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, comment])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(comment.itertext()), '')
+        self.assertEqual(list(comment.iter()), [comment])
+
+    def test_processinginstruction(self):
+        e = ET.Element('root')
+        e.text = 'before'
+        pi = ET.PI('test', 'instruction')
+        self.assertEqual(pi.text, 'test instruction')
+        pi.tail = 'after'
+        e.append(pi)
+        self.assertEqual(''.join(e.itertext()), 'beforeafter')
+        self.assertEqual(list(e.iter()), [e, pi])
+        self.assertEqual(list(e.iter('root')), [e])
+        self.assertEqual(''.join(pi.itertext()), '')
+        self.assertEqual(list(pi.iter()), [pi])
 
     def test_corners(self):
         # single root, no subelements

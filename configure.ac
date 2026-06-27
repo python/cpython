@@ -334,7 +334,7 @@ then
 		ac_sys_system=Linux
 		;;
 	*-*-cygwin*)
-		ac_sys_system=Cygwin
+		ac_sys_system=CYGWIN
 		;;
 	*-apple-ios*)
 		ac_sys_system=iOS
@@ -1650,7 +1650,7 @@ else # shared is disabled
   case $ac_sys_system in
     CYGWIN*)
       BLDLIBRARY='$(LIBRARY)'
-      LDLIBRARY='libpython$(LDVERSION).dll.a'
+      LDLIBRARY='libpython$(LDVERSION).a'
       ;;
   esac
 fi
@@ -2255,7 +2255,7 @@ then
      -reorder-blocks=ext-tsp
      -reorder-functions=cdsort
      -split-functions
-     -icf=1
+     -icf=0
      -inline-all
      -split-eh
      -reorder-functions-use-hot-size
@@ -2411,6 +2411,10 @@ AS_CASE([$ac_sys_system],
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
 
+    dnl Workaround for a bug in Emscipten libc's getentropy. See
+    dnl __wrap_getentropy in Python/emscripten_syscalls.c.
+    AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--wrap=getentropy"])
+
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
@@ -2507,6 +2511,9 @@ EOF
 
     if test "$ac_cv_thread_stack_size" != "default" -a "$ac_cv_thread_stack_size" != "unknown"; then
         LDFLAGS="$LDFLAGS -Wl,-z,stack-size=$ac_cv_thread_stack_size"
+        # Stack size used by Python/ceval.c to set Py_C_STACK_SIZE
+        AC_DEFINE_UNQUOTED([_Py_LINKER_THREAD_STACK_SIZE], [$ac_cv_thread_stack_size],
+                  [Thread stack size set by the linker (in bytes).])
     fi
 fi
 
@@ -3156,7 +3163,8 @@ AC_CHECK_HEADERS([ \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
-  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysctl.h \
+  sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
   termios.h util.h utime.h utmp.h \
 ])
@@ -3694,8 +3702,8 @@ then
 			dnl not implemented yet
 		]);;
 	CYGWIN*)
-		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
-		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+		LDSHARED='$(CC) -shared -Wl,--enable-auto-image-base'
+		LDCXXSHARED='$(CXX) -shared -Wl,--enable-auto-image-base';;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -4380,16 +4388,19 @@ PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBMPDEC_CFLAGS"
     LIBS="$LIBS $LIBMPDEC_LIBS"
-
-    AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([
-        #include <mpdecimal.h>
-        #if MPD_VERSION_HEX < 0x02050000
-        #  error "mpdecimal 2.5.0 or higher required"
-        #endif
-      ], [const char *x = mpd_version();])],
-      [have_mpdec=yes],
-      [have_mpdec=no])
+    AC_CHECK_HEADER([mpdecimal.h], [
+      AC_CHECK_LIB([mpdec], [mpd_version], [
+        AC_COMPILE_IFELSE([
+          AC_LANG_PROGRAM([
+            #include <mpdecimal.h>
+            #if MPD_VERSION_HEX < 0x02050000
+            #  error "mpdecimal 2.5.0 or higher required"
+            #endif
+          ], [])],
+          [have_mpdec=yes],
+          [have_mpdec=no])
+      ], [have_mpdec=no])
+    ], [have_mpdec=no])
 
     AS_VAR_IF([have_mpdec], [yes], [
      LIBMPDEC_CFLAGS=${LIBMPDEC_CFLAGS-""}
@@ -4397,11 +4408,6 @@ PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
     ])
   ])
 ])
-
-# Disable forced inlining in debug builds, see GH-94847
-AS_VAR_IF(
-  [with_pydebug], [yes],
-  [AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])])
 
 # Check whether _decimal should use a coroutine-local or thread-local context
 AC_MSG_CHECKING([for --with-decimal-contextvar])
@@ -5402,7 +5408,7 @@ fi
 AC_CHECK_FUNCS([ \
   accept4 alarm bind_textdomain_codeset chmod chown clearenv \
   clock closefrom close_range confstr \
-  copy_file_range ctermid dladdr dup dup3 execv explicit_bzero explicit_memset \
+  copy_file_range ctermid dladdr dup execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
@@ -5412,7 +5418,7 @@ AC_CHECK_FUNCS([ \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
-  pipe2 plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
+  plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
@@ -5426,7 +5432,7 @@ AC_CHECK_FUNCS([ \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
-  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  sysconf sysctlbyname tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
@@ -5449,7 +5455,7 @@ fi
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
 if test "$ac_sys_system" != "iOS" ; then
-  AC_CHECK_FUNCS([getentropy getgroups system])
+  AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
 fi
 
 AC_CHECK_DECL([dirfd],
@@ -6369,6 +6375,8 @@ AC_CHECK_FUNCS(
   [],
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
+
+AC_CHECK_FUNCS_ONCE(acospi asinpi atanpi atan2pi cospi sinpi tanpi)
 LIBS=$LIBS_SAVE
 
 dnl For multiprocessing module, check that sem_open
@@ -7185,9 +7193,13 @@ PY_CHECK_CURSES_FUNC([immedok])
 PY_CHECK_CURSES_FUNC([syncok])
 PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
+PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
+PY_CHECK_CURSES_FUNC([new_prescr])
+PY_CHECK_CURSES_FUNC([use_screen])
+PY_CHECK_CURSES_FUNC([use_window])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env
@@ -7840,6 +7852,40 @@ AC_ARG_ENABLE([test-modules],
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
+# Check for --with-build-details-suffix
+BUILD_DETAILS=build-details.json
+AC_ARG_WITH([build-details-suffix],
+  [AS_HELP_STRING(
+    [--with-build-details-suffix=],
+    [rename build-details.json to permit multiple colocated Python installs; optionally specify a custom suffix (default: no)]
+  )],
+  [
+    AC_MSG_CHECKING([for --with-build-details-suffix])
+    AS_VAR_IF(
+      [with_build_details_suffix], [no],
+      [AC_MSG_ERROR([invalid --with-build-details-suffix option: expected custom suffix or "yes", not "no"])]
+    )
+    AS_VAR_IF(
+      [with_build_details_suffix], [yes], [
+        colocated_install=yes
+        threading_suffix=""
+        if [[ "$ABI_THREAD" = "t" ]]; then
+          threading_suffix=-free-threading
+        fi
+        debug_suffix=""
+        if [[ "$Py_DEBUG" = "true" ]]; then
+          debug_suffix=-debug
+        fi
+        BUILD_DETAILS=build-details.$MULTIARCH$threading_suffix$debug_suffix.json
+      ], [
+        BUILD_DETAILS=build-details.$with_build_details_suffix.json
+      ]
+    )
+  ]
+)
+AC_MSG_RESULT([$with_build_details_suffix])
+AC_SUBST([BUILD_DETAILS], [$BUILD_DETAILS])
+
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked
 # explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
@@ -8394,10 +8440,15 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
+AS_CASE([$ac_sys_system],
+  # On FreeBSD, _testcapi.get_process_memory_usage() calls kvm_openfiles()
+  # and so needs libkvm.
+  [FreeBSD*], [LIBKVM="-lkvm"]
+)
 PY_STDLIB_MOD([_testcapi],
     [test "$TEST_MODULES" = yes],
     dnl Modules/_testcapi needs -latomic for 32bit AIX build
-    [], [], [$LIBATOMIC])
+    [], [], [$LIBATOMIC $LIBKVM])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testlimitedcapi], [test "$TEST_MODULES" = yes])
@@ -8408,9 +8459,11 @@ PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_fun
 PY_STDLIB_MOD([_testsinglephase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
+dnl Check have_libffi so _ctypes_test is only built if _ctypes is built.
+dnl _ctypes_test doesn't use libffi directly.
 PY_STDLIB_MOD([_ctypes_test],
   [test "$TEST_MODULES" = yes], [test "$have_libffi" = yes -a "$ac_cv_func_dlopen" = yes],
-  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS $LIBM])
+  [], [$LIBM])
 
 dnl Limited API template modules.
 dnl Emscripten does not support shared libraries yet.

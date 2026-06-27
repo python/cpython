@@ -2988,7 +2988,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        asyncio.events._set_event_loop_policy(None)
+        asyncio.set_event_loop(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)

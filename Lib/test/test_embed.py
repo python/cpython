@@ -74,6 +74,27 @@ def debug_build(program):
     return name.casefold().endswith("_d".casefold())
 
 
+def getpath_which(program_name):
+    if sys.platform != 'cygwin':
+        return shutil.which(program_name)
+
+    # shutil.which() checks for os.access(fn, os.F_OK | os.X_OK), whereas
+    # getpath.isxfile() doesn't. The difference matters on Cygwin.
+    import stat
+    def isxfile(fn):
+        try:
+            st = os.stat(fn)
+        except OSError:
+            return False
+        return stat.S_ISREG(st.st_mode)
+
+    for p in os.environ['PATH'].split(':'):
+        p = os.path.join(p, program_name)
+        if isxfile(p):
+            return p
+    return None
+
+
 def remove_python_envvars():
     env = dict(os.environ)
     # Remove PYTHON* environment variables to get deterministic environment
@@ -92,6 +113,8 @@ class EmbeddingTestsMixin:
             exename += ext
             exepath = builddir
         else:
+            if sys.platform == 'cygwin':
+                exename += '.exe'
             exepath = os.path.join(builddir, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
         if not os.path.exists(exe):
@@ -328,6 +351,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_path = self.test_exe
         else:
             expected_path = os.path.join(os.getcwd(), "_testembed")
+            if sys.platform == 'cygwin':
+                expected_path += '.exe'
         expected_output = f"sys.executable: {expected_path}\n"
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')
@@ -872,12 +897,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             default_executable = os.path.abspath(expected['program_name'])
         else:
             default_executable = os.path.join(os.getcwd(), '_testembed')
+            if sys.platform == 'cygwin':
+                default_executable += '.exe'
         if expected['executable'] is self.GET_DEFAULT_CONFIG:
             expected['executable'] = default_executable
         if expected['base_executable'] is self.GET_DEFAULT_CONFIG:
             expected['base_executable'] = default_executable
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
+            if sys.platform == 'cygwin':
+                expected['program_name'] += '.exe'
 
         config = configs['config']
         for key, value in expected.items():
@@ -1370,7 +1399,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if MACOS:
                 executable = self.test_exe
             else:
-                executable = shutil.which(program_name) or ''
+                executable = getpath_which(program_name) or ''
         config.update({
             'program_name': program_name,
             'base_executable': executable,
@@ -1468,6 +1497,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             shutil.copyfile(self.test_exe, exec_copy)
             shutil.copystat(self.test_exe, exec_copy)
             self.test_exe = exec_copy
+
+            if sys.platform == "cygwin":
+                # Copy libpython DLL
+                exe_path = os.path.dirname(sys.executable)
+                libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+                shutil.copy2(os.path.join(exe_path, libpython_dll),
+                             os.path.join(tmpdir, libpython_dll))
 
             yield tmpdir
 

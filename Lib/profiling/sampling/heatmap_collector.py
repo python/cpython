@@ -5,11 +5,9 @@ import collections
 import html
 import importlib.resources
 import json
-import locale
 import math
 import os
 import platform
-import site
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path

@@ -263,6 +263,18 @@ _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 }
 #define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
 
+static inline _PyStackRef
+_PyStackRef_DupImmortal(_PyStackRef ref, const char *filename, int linenumber)
+{
+    assert(!PyStackRef_IsError(ref));
+    assert(!PyStackRef_IsTaggedInt(ref));
+    assert(!PyStackRef_RefcountOnObject(ref));
+    PyObject *obj = _Py_stackref_get_object(ref);
+    assert(_Py_IsImmortal(obj));
+    return _Py_stackref_create(obj, Py_TAG_REFCNT, filename, linenumber);
+}
+#define PyStackRef_DupImmortal(REF) _PyStackRef_DupImmortal((REF), __FILE__, __LINE__)
+
 static inline void
 _PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *filename, int linenumber)
 {
@@ -632,6 +644,15 @@ PyStackRef_DUP(_PyStackRef ref)
     return ref;
 }
 #endif
+
+static inline _PyStackRef
+PyStackRef_DupImmortal(_PyStackRef ref)
+{
+    assert(!PyStackRef_IsNull(ref));
+    assert(!PyStackRef_RefcountOnObject(ref));
+    assert(_Py_IsImmortal(BITS_TO_PTR_MASKED(ref)));
+    return ref;
+}
 
 static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
