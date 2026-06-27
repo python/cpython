@@ -436,13 +436,14 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             Py_DECREF(path);
             continue; /* Too long */
         }
-        strcpy(namebuf, PyBytes_AS_STRING(path));
+        memcpy(namebuf, PyBytes_AS_STRING(path), (size_t)len);
+        namebuf[len] = '\0';
         Py_DECREF(path);
         if (strlen(namebuf) != (size_t)len)
             continue; /* v contains '\0' */
         if (len > 0 && namebuf[len-1] != SEP)
             namebuf[len++] = SEP;
-        strcpy(namebuf+len, tail);
+        memcpy(namebuf + len, tail, taillen + 1);
 
         binary = _PyObject_CallMethodFormat(tstate, open, "ss", namebuf, "rb");
         if (binary != NULL) {
