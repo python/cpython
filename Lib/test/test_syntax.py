@@ -2206,6 +2206,25 @@ SyntaxError: cannot assign to None
 Traceback (most recent call last):
 SyntaxError: cannot assign to None
 
+# Check that we don't raise a "cannot use name as import target" error
+# when there's a syntax error after the import target.
+
+>>> import a as b(-)
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> import a as b None
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> import a as b as c
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> from x import a as b None
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
 
@@ -2224,6 +2243,58 @@ SyntaxError: Expected one or more names after 'import'
 >>> import
 Traceback (most recent call last):
 SyntaxError: Expected one or more names after 'import'
+
+# Missing comma between import clauses
+
+>>> import a b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> import a, b c
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> import a.a as a b.b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> import a.a as a b.b as b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> from x import a b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> from x import a as a b
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> from x import (a
+...                b)
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> from x import (a as a
+...                b)
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+>>> from x import (a,
+...                b as b
+...                c)
+Traceback (most recent call last):
+SyntaxError: expected comma between import clauses
+
+# Check that we don't raise the "missing comma" error for invalid import targets.
+
+>>> import a b()
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> from x import a b[c]
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 >>> (): int
 Traceback (most recent call last):
@@ -3504,6 +3575,40 @@ while 1:
             ("continue", "import ast")
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
+
+    def test_import_missing_comma(self):
+        self._check_error("import a.a b.b",
+                          "expected comma between import clauses",
+                          offset=8, end_offset=8 + len("a.a b.b"))
+        self._check_error(
+            """if 1:
+            from x import (
+                a,
+                b
+                c,
+            )
+            """,
+            errtext="expected comma between import clauses",
+            lineno=4,
+            end_lineno=5,
+            offset=17,
+            end_offset=18,
+        )
+        self._check_error(
+            """if 1:
+            from x import (
+                a,
+                b as b
+                c as c,
+            )
+            """,
+            errtext="expected comma between import clauses",
+            lineno=4,
+            end_lineno=5,
+            offset=22,
+            end_offset=18,
+        )
+
 
 
 class LazyImportRestrictionTestCase(SyntaxErrorTestCase):
