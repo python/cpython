@@ -3935,6 +3935,11 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
         self.assertEqual(t.strftime('\0%I%p%Z\0%X'), f'\0{s1}\0{s2}')
         self.assertEqual(t.strftime('%I%p%Z\0%X\0'), f'{s1}\0{s2}\0')
+        # gh-152305: the year directives must not raise on a time.
+        for directive, expected in (('%Y', '1900'), ('%G', '1900'),
+                                    ('%C', '19'), ('%F', '1900-01-01')):
+            with self.subTest(directive=directive):
+                self.assertEqual(t.strftime(directive), expected)
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
