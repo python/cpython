@@ -7348,6 +7348,24 @@ _curses_termattrs_impl(PyObject *module)
 NoArgReturnIntFunctionBody(termattrs)
 
 /*[clinic input]
+_curses.term_attrs
+
+Return a logical OR of all video attributes supported by the terminal.
+
+The attributes are WA_* values, the extended-attribute counterparts of
+the A_* values returned by termattrs().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_term_attrs_impl(PyObject *module)
+/*[clinic end generated code: output=c559daa1370948d6 input=963136fd17ab797a]*/
+{
+    PyCursesStatefulInitialised(module);
+
+    return PyLong_FromUnsignedLong(term_attrs());
+}
+
+/*[clinic input]
 @permit_long_summary
 _curses.termname
 
@@ -7905,6 +7923,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_SETUPTERM_METHODDEF
     _CURSES_START_COLOR_METHODDEF
     _CURSES_TERMATTRS_METHODDEF
+    _CURSES_TERM_ATTRS_METHODDEF
     _CURSES_TERMNAME_METHODDEF
     _CURSES_TIGETFLAG_METHODDEF
     _CURSES_TIGETNUM_METHODDEF

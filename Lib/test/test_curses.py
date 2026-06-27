@@ -1512,13 +1512,13 @@ class TestCurses(unittest.TestCase):
         curses.newpad(50, 50)
 
     def test_env_queries(self):
-        # TODO: term_attrs()
         self.assertIsInstance(curses.termname(), bytes)
         self.assertIsInstance(curses.longname(), bytes)
         self.assertIsInstance(curses.baudrate(), int)
         self.assertIsInstance(curses.has_ic(), bool)
         self.assertIsInstance(curses.has_il(), bool)
         self.assertIsInstance(curses.termattrs(), int)
+        self.assertIsInstance(curses.term_attrs(), int)
 
         c = curses.killchar()
         self.assertIsInstance(c, bytes)
