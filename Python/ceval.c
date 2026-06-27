@@ -1575,7 +1575,7 @@ static void
 too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                     Py_ssize_t given, PyObject *defaults,
                     _PyStackRef *localsplus, PyObject *qualname,
-                    int suggest_missing_self)
+                    int should_suggest_missing_self)
 {
     int plural;
     Py_ssize_t kwonly_given = 0;
@@ -1618,7 +1618,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
         kwonly_sig = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         assert(kwonly_sig != NULL);
     }
-    if (suggest_missing_self) {
+    if (should_suggest_missing_self) {
         self_hint = PyUnicode_FromString(
             ". Did you forget the 'self' parameter in the function definition?");
         if (self_hint == NULL) {
@@ -1641,44 +1641,9 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
 }
 
 static int
-suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
-                     _PyStackRef const *args, Py_ssize_t argcount)
+suggest_missing_self(PyCodeObject *co, Py_ssize_t argcount)
 {
-    if (co->co_argcount >= argcount) {
-        // When declared count is more than provided, there is nothing to add
-        return 0;
-    }
-
-    PyObject *self = PyStackRef_AsPyObjectBorrow(args[0]);
-    if (self == NULL) {
-        // When first arg is NULL, it's not really about self
-        return 0;
-    }
-
-    Py_ssize_t qualname_len;
-    const char *qualname = PyUnicode_AsUTF8AndSize(
-        func->func_qualname, &qualname_len);
-    if (qualname == NULL) {
-        PyErr_Clear();
-        return 0;
-    }
-
-    const char *method_dot = strrchr(qualname, '.');
-    if (method_dot == NULL) {
-        return 0;
-    }
-
-    const char *class_start = qualname;
-    for (const char *p = qualname; p < method_dot; p++) {
-        if (*p == '.') {
-            class_start = p + 1;
-        }
-    }
-    Py_ssize_t class_len = method_dot - class_start;
-    const char *type_name = Py_TYPE(self)->tp_name;
-
-    return (strlen(type_name) == (size_t)class_len
-            && strncmp(type_name, class_start, (size_t)class_len) == 0);
+    return (co->co_argcount + 1) == argcount
 }
 
 static int
@@ -1773,7 +1738,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
     /* Copy all positional arguments into local variables */
     Py_ssize_t j, n;
-    int missing_self_hint = suggest_missing_self(func, co, args, argcount);
+    int missing_self_hint = suggest_missing_self(co, argcount);
     if (argcount > co->co_argcount) {
         n = co->co_argcount;
     }

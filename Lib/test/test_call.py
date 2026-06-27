@@ -921,7 +921,6 @@ class A:
 
 @cpython_only
 class TestErrorMessagesUseQualifiedName(unittest.TestCase):
-
     @contextlib.contextmanager
     def check_raises_type_error(self, message):
         with self.assertRaises(TypeError) as cm:
