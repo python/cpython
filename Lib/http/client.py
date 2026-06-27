@@ -941,12 +941,21 @@ class HTTPConnection:
         return ip
 
     def _tunnel(self):
+        if _contains_disallowed_url_pchar_re.search(self._tunnel_host):
+            raise ValueError('Tunnel host can\'t contain control characters %r'
+                             % (self._tunnel_host,))
         connect = b"CONNECT %s:%d HTTP/1.0\r\n" % (
             self._wrap_ipv6(self._tunnel_host.encode("ascii")),
             self._tunnel_port)
         headers = [connect]
         for header, value in self._tunnel_headers.items():
-            headers.append(f"{header}: {value}\r\n".encode("latin-1"))
+            header_bytes = header.encode("latin-1")
+            value_bytes = value.encode("latin-1")
+            if not _is_legal_header_name(header_bytes):
+                raise ValueError('Invalid header name %r' % (header_bytes,))
+            if _is_illegal_header_value(value_bytes):
+                raise ValueError('Invalid header value %r' % (value_bytes,))
+            headers.append(b"%s: %s\r\n" % (header_bytes, value_bytes))
         headers.append(b"\r\n")
         # Making a single send() call instead of one per line encourages
         # the host OS to use a more optimal packet size instead of
