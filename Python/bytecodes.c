@@ -2191,22 +2191,19 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
             if (PyStackRef_IsNull(v)) {
-                err = PyDict_Pop(GLOBALS(), name, NULL);
                 DEAD(v);
-                if (err < 0) {
-                    ERROR_NO_POP();
-                }
+                err = PyDict_Pop(GLOBALS(), name, NULL);
                 if (err == 0) {
+                    err = -1;
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                             NAME_ERROR_MSG, name);
-                    ERROR_NO_POP();
                 }
             }
             else {
                 err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
                 PyStackRef_CLOSE(v);
-                ERROR_IF(err);
             }
+            ERROR_IF(err < 0);
         }
 
         inst(LOAD_LOCALS, ( -- locals)) {

@@ -12543,22 +12543,19 @@
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
             if (PyStackRef_IsNull(v)) {
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 err = PyDict_Pop(GLOBALS(), name, NULL);
                 _PyFrame_StackPointerInvalidate(frame);
-                if (err < 0) {
-                    JUMP_TO_LABEL(error);
-                }
                 if (err == 0) {
-                    stack_pointer += -1;
-                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    err = -1;
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                     _PyFrame_StackPointerValidate(frame);
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                         NAME_ERROR_MSG, name);
                     _PyFrame_StackPointerInvalidate(frame);
-                    JUMP_TO_LABEL(error);
                 }
             }
             else {
@@ -12572,13 +12569,10 @@
                 _PyFrame_StackPointerValidate(frame);
                 PyStackRef_CLOSE(v);
                 _PyFrame_StackPointerInvalidate(frame);
-                if (err) {
-                    JUMP_TO_LABEL(error);
-                }
-                stack_pointer += 1;
             }
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            if (err < 0) {
+                JUMP_TO_LABEL(error);
+            }
             DISPATCH();
         }
 
