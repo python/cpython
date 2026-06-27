@@ -1,0 +1,4 @@
+Prevent ``mappingproxy`` operator dispatch from exposing the underlying mapping
+during rich comparison and union operations. This fixes a case where reflected
+operator methods could access and mutate internal dictionaries, including those
+of built-in types.

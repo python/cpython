@@ -1061,16 +1061,50 @@ static PyMappingMethods mappingproxy_as_mapping = {
     0,                                          /* mp_ass_subscript */
 };
 
+/* Use a copy of proxied mappings for operator dispatch, so reflected
+   methods cannot access the underlying mapping. */
+static PyObject *
+mappingproxy_copy_mapping(PyObject *mapping)
+{
+    PyObject *copy_method;
+    int res = PyObject_GetOptionalAttr(mapping, &_Py_ID(copy), &copy_method);
+    if (res < 0) {
+        return NULL;
+    }
+    if (res == 0) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    PyObject *copy = PyObject_CallNoArgs(copy_method);
+    Py_DECREF(copy_method);
+    return copy;
+}
+
+static PyObject *
+mappingproxy_as_operand(PyObject *operand)
+{
+    if (PyObject_TypeCheck(operand, &PyDictProxy_Type)) {
+        return mappingproxy_copy_mapping(((mappingproxyobject *)operand)->mapping);
+    }
+    return Py_NewRef(operand);
+}
+
 static PyObject *
 mappingproxy_or(PyObject *left, PyObject *right)
 {
-    if (PyObject_TypeCheck(left, &PyDictProxy_Type)) {
-        left = ((mappingproxyobject*)left)->mapping;
+    left = mappingproxy_as_operand(left);
+    if (left == NULL || left == Py_NotImplemented) {
+        return left;
     }
-    if (PyObject_TypeCheck(right, &PyDictProxy_Type)) {
-        right = ((mappingproxyobject*)right)->mapping;
+    right = mappingproxy_as_operand(right);
+    if (right == NULL || right == Py_NotImplemented) {
+        Py_DECREF(left);
+        return right;
     }
-    return PyNumber_Or(left, right);
+    PyObject *result = PyNumber_Or(left, right);
+    Py_DECREF(left);
+    Py_DECREF(right);
+    return result;
 }
 
 static PyObject *
@@ -1234,7 +1268,13 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
     mappingproxyobject *v = (mappingproxyobject *)self;
     if (op == Py_EQ || op == Py_NE) {
-        return PyObject_RichCompare(v->mapping, w, op);
+        PyObject *mapping = mappingproxy_copy_mapping(v->mapping);
+        if (mapping == NULL || mapping == Py_NotImplemented) {
+            return mapping;
+        }
+        PyObject *result = PyObject_RichCompare(mapping, w, op);
+        Py_DECREF(mapping);
+        return result;
     }
     Py_RETURN_NOTIMPLEMENTED;
 }

@@ -1180,6 +1180,28 @@ class UnionTests(unittest.TestCase):
 class MappingProxyTests(unittest.TestCase):
     mappingproxy = types.MappingProxyType
 
+    class MappingWithoutCopy(collections.abc.Mapping):
+        def __init__(self, mapping):
+            self.mapping = mapping
+
+        def __getitem__(self, key):
+            return self.mapping[key]
+
+        def __iter__(self):
+            return iter(self.mapping)
+
+        def __len__(self):
+            return len(self.mapping)
+
+    class RecordingOperand:
+        def __eq__(self, other):
+            self.other = other
+            return None
+
+        def __ror__(self, other):
+            self.other = other
+            return None
+
     def test_constructor(self):
         class userdict(dict):
             pass
@@ -1380,6 +1402,70 @@ class MappingProxyTests(unittest.TestCase):
         self.assertEqual(view, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(mapping, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(other, {'c': 3, 'p': 0})
+
+    def test_richcompare_does_not_expose_mapping(self):
+        mapping = {}
+        view = self.mappingproxy(mapping)
+
+        class Sneaky:
+            def __eq__(self, other):
+                other['x'] = 42
+                return None
+
+        self.assertIsNone(view == Sneaky())
+        self.assertEqual(mapping, {})
+
+        other = self.RecordingOperand()
+        view = self.mappingproxy(self.MappingWithoutCopy(mapping))
+        self.assertIsNone(view == other)
+        self.assertIs(type(other.other), self.mappingproxy)
+
+    def test_union_does_not_expose_mapping(self):
+        mapping = {}
+        view = self.mappingproxy(mapping)
+        mappingproxy = self.mappingproxy
+
+        class SneakyRor:
+            def __ror__(self, other):
+                other['x'] = 42
+                return None
+
+        class SneakyOr:
+            def __or__(self, other):
+                if type(other) is mappingproxy:
+                    return NotImplemented
+                other['y'] = 42
+                return None
+
+        self.assertIsNone(view | SneakyRor())
+        self.assertEqual(mapping, {})
+        self.assertIsNone(SneakyOr() | view)
+        self.assertEqual(mapping, {})
+
+        other = self.RecordingOperand()
+        view = self.mappingproxy(self.MappingWithoutCopy(mapping))
+        self.assertIsNone(view | other)
+        self.assertIs(type(other.other), self.mappingproxy)
+
+    def test_operator_dispatch_does_not_expose_type_dict(self):
+        code = textwrap.dedent("""
+            class SneakyEq:
+                def __eq__(self, other):
+                    other['__mappingproxy_test_eq__'] = lambda self: None
+                    return None
+
+            class SneakyRor:
+                def __ror__(self, other):
+                    other['__mappingproxy_test_or__'] = lambda self: None
+                    return None
+
+            vars(list) == SneakyEq()
+            vars(dict) | SneakyRor()
+
+            assert not hasattr(list, '__mappingproxy_test_eq__')
+            assert not hasattr(dict, '__mappingproxy_test_or__')
+        """)
+        assert_python_ok("-c", code)
 
     def test_hash(self):
         class HashableDict(dict):
