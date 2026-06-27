@@ -411,6 +411,17 @@ asyncio
   which has been deprecated since Python 3.14.
   Use :func:`inspect.iscoroutinefunction` instead.
 
+* The event loop policy system, including the
+  :class:`!asyncio.AbstractEventLoopPolicy`,
+  :class:`!asyncio.DefaultEventLoopPolicy`,
+  :class:`!asyncio.WindowsSelectorEventLoopPolicy` and
+  :class:`!asyncio.WindowsProactorEventLoopPolicy` classes and the
+  :func:`!asyncio.get_event_loop_policy` and
+  :func:`!asyncio.set_event_loop_policy` functions,
+  which have been deprecated since Python 3.14.
+  Use :func:`asyncio.run` or :class:`asyncio.Runner` with a custom
+  *loop_factory* instead.
+
 functools
 ---------
 
