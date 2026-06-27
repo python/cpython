@@ -78,20 +78,41 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-from _pyrepl.pager import (get_pager, pipe_pager,
-                           plain_pager, tempfile_pager, tty_pager)
+try:
+    from _pyrepl.pager import (get_pager, pipe_pager,
+                               plain_pager, tempfile_pager, tty_pager)
 
-# Expose plain() as pydoc.plain()
-from _pyrepl.pager import plain  # noqa: F401
+    # Expose plain() as pydoc.plain()
+    from _pyrepl.pager import plain  # noqa: F401
 
+    # --------------------------------------------------------- old names
+    getpager = get_pager
+    pipepager = pipe_pager
+    plainpager = plain_pager
+    tempfilepager = tempfile_pager
+    ttypager = tty_pager
 
-# --------------------------------------------------------- old names
+except ModuleNotFoundError:
+    # Minimal alternatives for cases where _pyrepl is absent.
 
-getpager = get_pager
-pipepager = pipe_pager
-plainpager = plain_pager
-tempfilepager = tempfile_pager
-ttypager = tty_pager
+    def plain(text: str) -> str:
+        """Remove boldface formatting from text."""
+        return re.sub('.\b', '', text)
+
+    def plain_pager(text: str, title: str = '') -> None:
+        """Simply print unformatted text.  This is the ultimate fallback."""
+        encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+        text = text.encode(encoding, 'backslashreplace').decode(encoding)
+        text = plain(text)
+        sys.stdout.write(text)
+
+    def get_pager():
+        """Unconditionally return the plain pager, since _pyrepl is absent."""
+        return plain_pager
+
+    # --------------------------------------------------------- old names
+    getpager = get_pager
+    plainpager = plain_pager
 
 
 # --------------------------------------------------------- common routines
@@ -450,6 +471,7 @@ class Doc:
     PYTHONDOCS = os.environ.get("PYTHONDOCS",
                                 "https://docs.python.org/%d.%d/library"
                                 % sys.version_info[:2])
+    STDLIB_DIR = sysconfig.get_path('stdlib')
 
     def document(self, object, name=None, *args):
         """Generate documentation for an object."""
@@ -475,31 +497,60 @@ class Doc:
 
     docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
-    def getdocloc(self, object, basedir=sysconfig.get_path('stdlib')):
+    def getdocloc(self, object, basedir=None):
         """Return the location of module docs or None"""
+        basedir = self.STDLIB_DIR if basedir is None else basedir
+        docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
+
+        if (self._is_stdlib_module(object, basedir) and
+            object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
+
+            try:
+                from pydoc_data import module_docs
+            except ImportError:
+                module_docs = None
+
+            if module_docs and object.__name__ in module_docs.module_docs:
+                doc_name = module_docs.module_docs[object.__name__]
+                if docloc.startswith(("http://", "https://")):
+                    docloc = "{}/{}".format(docloc.rstrip("/"), doc_name)
+                else:
+                    docloc = os.path.join(docloc, doc_name)
+            else:
+                docloc = None
+        else:
+            docloc = None
+        return docloc
+
+    def _get_version(self, object):
+        if self._is_stdlib_module(object):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                version = getattr(object, '__version__', None)
+        else:
+            version = getattr(object, '__version__', None)
+        return '' if version is None else str(version)
+
+    def _is_stdlib_module(self, object, basedir=None):
+        basedir = self.STDLIB_DIR if basedir is None else basedir
 
         try:
             file = inspect.getabsfile(object)
         except TypeError:
             file = '(built-in)'
 
-        docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
+        if sysconfig.is_python_build():
+            srcdir = sysconfig.get_config_var('srcdir')
+            if srcdir:
+                basedir = os.path.join(srcdir, 'Lib')
 
         basedir = os.path.normcase(basedir)
-        if (isinstance(object, type(os)) and
-            (object.__name__ in ('errno', 'exceptions', 'gc',
-                                 'marshal', 'posix', 'signal', 'sys',
-                                 '_thread', 'zipimport') or
-             (file.startswith(basedir) and
-              not file.startswith(os.path.join(basedir, 'site-packages')))) and
-            object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
-            if docloc.startswith(("http://", "https://")):
-                docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
-            else:
-                docloc = os.path.join(docloc, object.__name__.lower() + ".html")
-        else:
-            docloc = None
-        return docloc
+        return (isinstance(object, type(os)) and
+                (object.__name__ in ('errno', 'exceptions', 'gc',
+                                     'marshal', 'posix', 'signal', 'sys',
+                                     '_thread', 'zipimport')
+                or (file.startswith(basedir) and
+                 not file.startswith(os.path.join(basedir, 'site-packages')))))
 
 # -------------------------------------------- HTML documentation generator
 
@@ -760,8 +811,8 @@ class HTMLDoc(Doc):
         except TypeError:
             filelink = '(built-in)'
         info = []
-        if hasattr(object, '__version__'):
-            version = str(object.__version__)
+
+        if version := self._get_version(object):
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             info.append('version %s' % self.escape(version))
@@ -1189,6 +1240,17 @@ class TextDoc(Doc):
         lines = [(prefix + line).rstrip() for line in text.split('\n')]
         return '\n'.join(lines)
 
+    def _format_doc(self, text, width=68):
+        """Wraps the single-line summary if it is too long."""
+        if not text: return ''
+        lines = text.split('\n', 2)
+        if len(lines) > 1 and lines[1]:
+            return text
+        lines[:1] = textwrap.wrap(lines[0], width,
+                                  break_long_words=False,
+                                  break_on_hyphens=False)
+        return '\n'.join(lines)
+
     def section(self, title, contents):
         """Format a section with a given heading."""
         clean_contents = self.indent(contents).rstrip()
@@ -1293,11 +1355,10 @@ location listed above.
         if data:
             contents = []
             for key, value in data:
-                contents.append(self.docother(value, key, name, maxlen=70))
+                contents.append(self.docother(value, key, name, maxlen=76))
             result = result + self.section('DATA', '\n'.join(contents))
 
-        if hasattr(object, '__version__'):
-            version = str(object.__version__)
+        if version := self._get_version(object):
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             result = result + self.section('VERSION', version)
@@ -1340,6 +1401,7 @@ location listed above.
 
         doc = getdoc(object)
         if doc:
+            doc = self._format_doc(doc)
             push(doc + '\n')
 
         # List the mro, if non-trivial.
@@ -1416,7 +1478,7 @@ location listed above.
                         obj = getattr(object, name)
                     except AttributeError:
                         obj = homecls.__dict__[name]
-                    push(self.docother(obj, name, mod, maxlen=70, doc=doc) +
+                    push(self.docother(obj, name, mod, maxlen=72, doc=doc) +
                          '\n')
             return attrs
 
@@ -1540,6 +1602,7 @@ location listed above.
             return decl + '\n'
         else:
             doc = getdoc(object) or ''
+            doc = self._format_doc(doc)
             return decl + '\n' + (doc and self.indent(doc).rstrip() + '\n')
 
     def docdata(self, object, name=None, mod=None, cl=None, *ignored):
@@ -1552,6 +1615,7 @@ location listed above.
             push('\n')
         doc = getdoc(object) or ''
         if doc:
+            doc = self._format_doc(doc)
             push(self.indent(doc))
             push('\n')
         return ''.join(results)
@@ -1565,12 +1629,13 @@ location listed above.
         if maxlen:
             line = (name and name + ' = ' or '') + repr
             chop = maxlen - len(line)
-            if chop < 0: repr = repr[:chop] + '...'
+            if chop < 0: repr = repr[:chop-3] + '...'
         line = (name and self.bold(name) + ' = ' or '') + repr
         if not doc:
             doc = getdoc(object)
         if doc:
-            line += '\n' + self.indent(str(doc)) + '\n'
+            doc = self._format_doc(str(doc))
+            line += '\n' + self.indent(doc) + '\n'
         return line
 
 class _PlainTextDoc(TextDoc):
@@ -1779,6 +1844,7 @@ class Helper:
         'async': ('async', ''),
         'await': ('await', ''),
         'break': ('break', 'while for'),
+        'case': 'match',
         'class': ('class', 'CLASSES SPECIALMETHODS'),
         'continue': ('continue', 'while for'),
         'def': ('function', ''),
@@ -1790,11 +1856,13 @@ class Helper:
         'for': ('for', 'break continue while'),
         'from': 'import',
         'global': ('global', 'nonlocal NAMESPACES'),
-        'if': ('if', 'TRUTHVALUE'),
+        'if': ('if', 'TRUTHVALUE match'),
         'import': ('import', 'MODULES'),
         'in': ('in', 'SEQUENCEMETHODS'),
         'is': 'COMPARISON',
         'lambda': ('lambda', 'FUNCTIONS'),
+        'lazy': ('lazy', 'MODULES'),
+        'match': ('match', 'if'),
         'nonlocal': ('nonlocal', 'global NAMESPACES'),
         'not': 'BOOLEAN',
         'or': 'BOOLEAN',
@@ -1975,10 +2043,11 @@ has the same effect as typing a particular string at the help> prompt.
         while True:
             try:
                 request = self.getline('help> ')
-                if not request: break
             except (KeyboardInterrupt, EOFError):
                 break
             request = request.strip()
+            if not request:
+                continue  # back to the prompt
 
             # Make sure significant trailing quoting marks of literals don't
             # get deleted while cleaning input

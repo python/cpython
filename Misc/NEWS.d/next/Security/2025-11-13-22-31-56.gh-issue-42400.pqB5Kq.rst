@@ -1,3 +1,0 @@
-Fix buffer overflow in ``_Py_wrealpath()`` for paths exceeding ``MAXPATHLEN`` bytes
-by using dynamic memory allocation instead of fixed-size buffer.
-Patch by Shamil Abdulaev.

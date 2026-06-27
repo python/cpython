@@ -1,5 +1,0 @@
-The ``profiling.sampling`` flamegraph profiler now displays thread status
-statistics showing the percentage of time threads spend holding the GIL,
-running without the GIL, waiting for the GIL, and performing garbage
-collection. These statistics help identify GIL contention and thread behavior
-patterns. When filtering by thread, the display shows per-thread metrics.

@@ -1,0 +1,5 @@
+Add the :mod:`curses` functions :func:`curses.alloc_pair`,
+:func:`curses.find_pair`, :func:`curses.free_pair` and
+:func:`curses.reset_color_pairs` for dynamic color-pair management.  They are
+only available when Python is built against a wide-character version of the
+underlying curses library with extended-color support.

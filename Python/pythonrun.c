@@ -567,6 +567,7 @@ _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompil
         PyObject* the_name = PyUnicode_FromString(name);
         if (!the_name) {
             PyErr_Print();
+            Py_DECREF(main_module);
             return -1;
         }
         res = _PyRun_StringFlagsWithName(command, the_name, Py_file_input, dict, dict, flags, 0);
@@ -1145,6 +1146,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         "traceback",
         "_print_exception_bltin");
     if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
+        Py_XDECREF(print_exception_fn);
         goto fallback;
     }
 
@@ -1175,7 +1177,7 @@ fallback:
     }
     if (print_exception_recursive(&ctx, value) < 0) {
         PyErr_Clear();
-        PyUnstable_Object_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
     }
     Py_XDECREF(ctx.seen);
@@ -1193,14 +1195,14 @@ PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
     PyObject *file;
     if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
-        PyUnstable_Object_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
-        PyUnstable_Object_Dump(exc);
+        PyObject_Dump(exc);
         Py_DECREF(exc);
         return;
     }
     if (file == NULL) {
-        PyUnstable_Object_Dump(value);
+        PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
         return;
     }
@@ -1347,8 +1349,9 @@ static PyObject *
 run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, PyObject *locals)
 {
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (!globals || !PyDict_Check(globals)) {
-        PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
+    if (!globals || !PyAnyDict_Check(globals)) {
+        PyErr_SetString(PyExc_SystemError,
+                        "globals must be a real dict or a real frozendict");
         return NULL;
     }
     int has_builtins = PyDict_ContainsString(globals, "__builtins__");
@@ -1379,11 +1382,11 @@ get_interactive_filename(PyObject *filename, Py_ssize_t count)
         if (middle == NULL) {
             return NULL;
         }
-        result = PyUnicode_FromFormat("<%U-%d>", middle, count);
+        result = PyUnicode_FromFormat("<%U-%zd>", middle, count);
         Py_DECREF(middle);
     } else {
         result = PyUnicode_FromFormat(
-            "%U-%d", filename, count);
+            "%U-%zd", filename, count);
     }
     return result;
 

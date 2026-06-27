@@ -1,5 +1,0 @@
-:c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
-:c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
-3.20. Instead, use :c:func:`PyUnicode_FromString()` and cache the result in
-the module state, then call :c:func:`PyObject_CallMethod` or
-:c:func:`PyObject_GetAttr`. Patch by Victor Stinner.

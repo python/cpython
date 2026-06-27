@@ -1,4 +1,0 @@
-Fixed :func:`subprocess.Popen.communicate` ``input=`` handling of :class:`memoryview`
-instances that were non-byte shaped on POSIX platforms. Those are now properly
-cast to a byte shaped view instead of truncating the input.  Windows platforms
-did not have this bug.

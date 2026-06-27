@@ -4,9 +4,6 @@
 .. module:: email.contentmanager
    :synopsis: Storing and Retrieving Content from MIME Parts
 
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
-
 **Source code:** :source:`Lib/email/contentmanager.py`
 
 ------------

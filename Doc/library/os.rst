@@ -25,7 +25,7 @@ Notes on the availability of these functions:
   with the POSIX interface).
 
 * Extensions peculiar to a particular operating system are also available
-  through the :mod:`os` module, but using them is of course a threat to
+  through the :mod:`!os` module, but using them is of course a threat to
   portability.
 
 * All functions accepting path or file names accept both bytes and string
@@ -34,7 +34,7 @@ Notes on the availability of these functions:
 
 * On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
-* On WebAssembly platforms, Android and iOS, large parts of the :mod:`os` module are
+* On WebAssembly platforms, Android and iOS, large parts of the :mod:`!os` module are
   not available or behave differently. APIs related to processes (e.g.
   :func:`~os.fork`, :func:`~os.execve`) and resources (e.g. :func:`~os.nice`)
   are not available. Others like :func:`~os.getuid` and :func:`~os.getpid` are
@@ -111,7 +111,7 @@ Python UTF-8 Mode
 .. versionchanged:: 3.15
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
-   It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
+   It may be disabled by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
    an environment variable or by using the :option:`-X utf8=0 <-X>` command line option.
 
 The Python UTF-8 Mode ignores the :term:`locale encoding` and forces the usage
@@ -185,7 +185,7 @@ process and user.
    of your home directory (on some platforms), and is equivalent to
    ``getenv("HOME")`` in C.
 
-   This mapping is captured the first time the :mod:`os` module is imported,
+   This mapping is captured the first time the :mod:`!os` module is imported,
    typically during Python startup as part of processing :file:`site.py`.  Changes
    to the environment made after this time are not reflected in :data:`os.environ`,
    except for changes made by modifying :data:`os.environ` directly.
@@ -219,12 +219,24 @@ process and user.
    :data:`os.environ`, and when one of the :meth:`~dict.pop` or
    :meth:`~dict.clear` methods is called.
 
+   If the :manpage:`clearenv(3)` function is available, the :meth:`~dict.clear` method
+   uses it and emits a single ``os._clearenv`` audit event. Otherwise, it emits
+   an ``os.unsetenv`` event on each deleted variable.
+
+   .. audit-event:: os.unsetenv key os.unsetenv
+
+   .. audit-event:: os._clearenv "" os._clearenv
+
    .. seealso::
 
       The :func:`os.reload_environ` function.
 
    .. versionchanged:: 3.9
       Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
+   .. versionchanged:: 3.15
+      The :meth:`~dict.clear` method can now emit an ``os._clearenv`` audit
+      event.
 
 
 .. data:: environb
@@ -254,7 +266,7 @@ process and user.
 
    .. warning::
       This function is not thread-safe. Calling it while the environment is
-      being modified in an other thread is an undefined behavior. Reading from
+      being modified in another thread is an undefined behavior. Reading from
       :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
       while reloading, may return an empty result.
 
@@ -529,7 +541,7 @@ process and user.
    Return a tuple (ruid, euid, suid) denoting the current process's
    real, effective, and saved user ids.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -539,7 +551,7 @@ process and user.
    Return a tuple (rgid, egid, sgid) denoting the current process's
    real, effective, and saved group ids.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -713,7 +725,7 @@ process and user.
 
    Set the current process's real, effective, and saved group ids.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI, not Android, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -722,7 +734,7 @@ process and user.
 
    Set the current process's real, effective, and saved user ids.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI, not Android, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -788,34 +800,59 @@ process and user.
       single: gethostbyaddr() (in module socket)
 
    Returns information identifying the current operating system.
-   The return value is an object with five attributes:
-
-   * :attr:`sysname` - operating system name
-   * :attr:`nodename` - name of machine on network (implementation-defined)
-   * :attr:`release` - operating system release
-   * :attr:`version` - operating system version
-   * :attr:`machine` - hardware identifier
-
-   For backwards compatibility, this object is also iterable, behaving
-   like a five-tuple containing :attr:`sysname`, :attr:`nodename`,
-   :attr:`release`, :attr:`version`, and :attr:`machine`
-   in that order.
-
-   Some systems truncate :attr:`nodename` to 8 characters or to the
-   leading component; a better way to get the hostname is
-   :func:`socket.gethostname`  or even
-   ``socket.gethostbyaddr(socket.gethostname())``.
+   The return value is a :class:`uname_result`.
 
    On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
    ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname`
    can be used to get the user-facing operating system name and version on iOS and
    Android.
 
+   .. seealso::
+      :data:`sys.platform` which has finer granularity.
+
+      The :mod:`platform` module provides detailed checks for the
+      system's identity.
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.3
       Return type changed from a tuple to a tuple-like object
       with named attributes.
+
+
+.. class:: uname_result
+
+   Name and information about the system returned by :func:`os.uname`.
+   These attributes correspond to the members described in :manpage:`uname(2)`.
+
+   For backwards compatibility, this object is also iterable, behaving
+   like a five-tuple containing :attr:`~uname_result.sysname`,
+   :attr:`~uname_result.nodename`, :attr:`~uname_result.release`,
+   :attr:`~uname_result.version`, and :attr:`~uname_result.machine`
+   in that order.
+
+   .. attribute:: sysname
+
+      Operating system name.
+
+   .. attribute:: nodename
+
+      Name of machine on network. Some systems truncate
+      :attr:`~uname_result.nodename` to 8 characters or to the leading
+      component; a better way to get the hostname is :func:`socket.gethostname`
+      or even ``socket.gethostbyaddr(socket.gethostname())``.
+
+   .. attribute:: release
+
+      Operating system release.
+
+   .. attribute:: version
+
+      Operating system version.
+
+   .. attribute:: machine
+
+      Hardware identifier.
 
 
 .. function:: unsetenv(key, /)
@@ -1059,10 +1096,7 @@ as internal buffering of data.
    Force write of file with filedescriptor *fd* to disk. Does not force update of
    metadata.
 
-   .. availability:: Unix.
-
-   .. note::
-      This function is not available on MacOS.
+   .. availability:: Unix, not macOS, not iOS.
 
 
 .. function:: fpathconf(fd, name, /)
@@ -1100,8 +1134,8 @@ as internal buffering of data.
 .. function:: fstatvfs(fd, /)
 
    Return information about the filesystem containing the file associated with
-   file descriptor *fd*, like :func:`statvfs`.  As of Python 3.3, this is
-   equivalent to ``os.statvfs(fd)``.
+   file descriptor *fd* in a :class:`statvfs_result`, like :func:`statvfs`.
+   As of Python 3.3, this is equivalent to ``os.statvfs(fd)``.
 
    .. availability:: Unix.
 
@@ -1279,7 +1313,7 @@ as internal buffering of data.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
-   the :mod:`os` module.  In particular, on Windows adding
+   the :mod:`!os` module.  In particular, on Windows adding
    :const:`O_BINARY` is needed to open files in binary mode.
 
    This function can support :ref:`paths relative to directory descriptors
@@ -1294,8 +1328,8 @@ as internal buffering of data.
 
       This function is intended for low-level I/O.  For normal usage, use the
       built-in function :func:`open`, which returns a :term:`file object` with
-      :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
-      wrap a file descriptor in a file object, use :func:`fdopen`.
+      :meth:`~io.BufferedIOBase.read` and :meth:`~io.BufferedIOBase.write` methods.
+      To wrap a file descriptor in a file object, use :func:`fdopen`.
 
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
@@ -1414,7 +1448,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: Unix, not WASI.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.3
 
@@ -1424,7 +1458,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Ensures that enough disk space is allocated for the file specified by *fd*
    starting from *offset* and continuing for *len* bytes.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not macOS, not iOS.
 
    .. versionadded:: 3.3
 
@@ -1439,7 +1473,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    :data:`POSIX_FADV_RANDOM`, :data:`POSIX_FADV_NOREUSE`,
    :data:`POSIX_FADV_WILLNEED` or :data:`POSIX_FADV_DONTNEED`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not macOS, not iOS.
 
    .. versionadded:: 3.3
 
@@ -1556,6 +1590,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.15
 
 
+.. data:: RWF_ATOMIC
+
+   Write data atomically. Requires alignment to the device's atomic write unit.
+
+   .. availability:: Linux >= 6.11
+
+   .. versionadded:: 3.15
+
+
 .. function:: ptsname(fd, /)
 
    Return the name of the slave pseudo-terminal device associated with the
@@ -1598,6 +1641,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
    - :data:`RWF_DONTCACHE`
+   - :data:`RWF_ATOMIC`
 
    Return the total number of bytes actually written.
 
@@ -1660,7 +1704,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a
       "file object" returned by the built-in function :func:`open` or by
       :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
-      :meth:`~file.read` or :meth:`~file.readline` methods.
+      :meth:`~io.TextIOBase.read` or :meth:`~io.IOBase.readline` methods.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1895,7 +1939,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To write a "file
       object" returned by the built-in function :func:`open` or by :func:`popen` or
       :func:`fdopen`, or :data:`sys.stdout` or :data:`sys.stderr`, use its
-      :meth:`~file.write` method.
+      :meth:`~io.TextIOBase.write` method.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1969,7 +2013,8 @@ can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
-execution of a new program, other file descriptors are inherited.
+execution of a new program, other file descriptors are inherited. Note that
+non-inheritable file descriptors are still *inherited* by child processes on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
@@ -2013,7 +2058,7 @@ features:
 .. _path_fd:
 
 * **specifying a file descriptor:**
-  Normally the *path* argument provided to functions in the :mod:`os` module
+  Normally the *path* argument provided to functions in the :mod:`!os` module
   must be a string specifying a file path.  However, some functions now
   alternatively accept an open file descriptor for their *path* argument.
   The function will then operate on the file referred to by the descriptor.
@@ -2398,6 +2443,10 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.15
+      ``os.listdir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
+
 
 .. function:: listdrives()
 
@@ -2534,7 +2583,8 @@ features:
       Windows now handles a *mode* of ``0o700``.
 
 
-.. function:: makedirs(name, mode=0o777, exist_ok=False)
+.. function:: makedirs(name, mode=0o777, exist_ok=False, *, \
+                       parent_mode=None)
 
    .. index::
       single: directory; creating
@@ -2551,6 +2601,12 @@ features:
 
    If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
+
+   If *parent_mode* is not ``None``, it is used as the mode for any
+   newly-created, intermediate-level directories.  Like *mode*, it is
+   combined with the process's umask value; see :ref:`the mkdir()
+   description <mkdir_modebits>`.  Otherwise, intermediate directories are
+   created with the default mode, which is also subject to the umask.
 
    .. note::
 
@@ -2577,6 +2633,11 @@ features:
    .. versionchanged:: 3.7
       The *mode* argument no longer affects the file permission bits of
       newly created intermediate-level directories.
+
+   .. versionadded:: 3.15
+      The *parent_mode* parameter. To match the behavior from Python 3.6 and
+      earlier (where *mode* was applied to all created directories), pass
+      ``parent_mode=mode``.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2928,6 +2989,10 @@ features:
    .. versionchanged:: 3.7
       Added support for :ref:`file descriptors <path_fd>` on Unix.
 
+   .. versionchanged:: 3.15
+      ``os.scandir(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing the current directory.
+
 
 .. class:: DirEntry
 
@@ -2950,6 +3015,9 @@ features:
 
    To be directly usable as a :term:`path-like object`, ``os.DirEntry``
    implements the :class:`PathLike` interface.
+
+   :class:`!DirEntry` objects are :ref:`generic <generics>` over the type of the
+   path (:class:`str` or :class:`bytes`).
 
    Attributes and methods on a ``os.DirEntry`` instance are as follows:
 
@@ -3738,53 +3806,179 @@ features:
 
 .. function:: statvfs(path)
 
-   Perform a :c:func:`!statvfs` system call on the given path.  The return value is
-   an object whose attributes describe the filesystem on the given path, and
-   correspond to the members of the :c:struct:`statvfs` structure, namely:
-   :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
-   :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
-   :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
-
-   Two module-level constants are defined for the :attr:`f_flag` attribute's
-   bit-flags: if :const:`ST_RDONLY` is set, the filesystem is mounted
-   read-only, and if :const:`ST_NOSUID` is set, the semantics of
-   setuid/setgid bits are disabled or not supported.
-
-   Additional module-level constants are defined for GNU/glibc based systems.
-   These are :const:`ST_NODEV` (disallow access to device special files),
-   :const:`ST_NOEXEC` (disallow program execution), :const:`ST_SYNCHRONOUS`
-   (writes are synced at once), :const:`ST_MANDLOCK` (allow mandatory locks on an FS),
-   :const:`ST_WRITE` (write on file/directory/symlink), :const:`ST_APPEND`
-   (append-only file), :const:`ST_IMMUTABLE` (immutable file), :const:`ST_NOATIME`
-   (do not update access times), :const:`ST_NODIRATIME` (do not update directory access
-   times), :const:`ST_RELATIME` (update atime relative to mtime/ctime).
+   Perform a :manpage:`statvfs(3)` system call on the given path.  The return value
+   is a :class:`statvfs_result` whose attributes describe the filesystem
+   on the given path and correspond to the members of the :c:struct:`statvfs`
+   structure.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
    .. availability:: Unix.
 
-   .. versionchanged:: 3.2
-      The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
-
    .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
-
-   .. versionchanged:: 3.4
-      The :const:`ST_NODEV`, :const:`ST_NOEXEC`, :const:`ST_SYNCHRONOUS`,
-      :const:`ST_MANDLOCK`, :const:`ST_WRITE`, :const:`ST_APPEND`,
-      :const:`ST_IMMUTABLE`, :const:`ST_NOATIME`, :const:`ST_NODIRATIME`,
-      and :const:`ST_RELATIME` constants were added.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.7
-      Added the :attr:`f_fsid` attribute.
+
+.. class:: statvfs_result
+
+   Filesystem statistics returned by :func:`os.statvfs` and :func:`os.fstatvfs`.
+   See :manpage:`statvfs(3)` for more details.
+
+   .. attribute:: f_bsize
+
+      Block size.
+
+   .. attribute:: f_frsize
+
+      Fragment size.
+
+   .. attribute:: f_blocks
+
+      Number of :attr:`~statvfs_result.f_frsize` sized blocks the filesystem
+      can contain.
+
+   .. attribute:: f_bfree
+
+      Number of free blocks.
+
+   .. attribute:: f_bavail
+
+      Number of free blocks for unprivileged users.
+
+   .. attribute:: f_files
+
+      Number of file entries, inodes, the filesystem can contain.
+
+   .. attribute:: f_ffree
+
+      Number of free files entries.
+
+   .. attribute:: f_favail
+
+      Number of free file entries for unprivileged users.
+
+   .. attribute:: f_flag
+
+      Bit-mask of mount flags.  The following flags are defined:
+      :data:`ST_RDONLY`, :data:`ST_NOSUID`, :data:`ST_NODEV`,
+      :data:`ST_NOEXEC`, :data:`ST_SYNCHRONOUS`, :data:`ST_MANDLOCK`,
+      :data:`ST_WRITE`, :data:`ST_APPEND`, :data:`ST_IMMUTABLE`,
+      :data:`ST_NOATIME`, :data:`ST_NODIRATIME`, and :data:`ST_RELATIME`.
+
+   .. attribute:: f_namemax
+
+      Filesystem max filename length. OS specific limitations such as
+      :ref:`Windows MAX_PATH <max-path>` and those described in Linux
+      :manpage:`pathname(7)` may exist.
+
+   .. attribute:: f_fsid
+
+      Filesystem ID.
+
+      .. versionadded:: 3.7
+
+
+The following flags are used in :attr:`statvfs_result.f_flag`.
+
+.. data:: ST_RDONLY
+
+   Read-only filesystem.
+
+   .. versionadded:: 3.2
+
+.. data:: ST_NOSUID
+
+   Setuid/setgid bits are disabled or not supported.
+
+   .. versionadded:: 3.2
+
+.. data:: ST_NODEV
+
+   Disallow access to device special files.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_NOEXEC
+
+   Disallow program execution.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_SYNCHRONOUS
+
+   Writes are synced at once.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_MANDLOCK
+
+   Allow mandatory locks on an FS.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_WRITE
+
+   Write on file/directory/symlink.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_APPEND
+
+   Append-only file.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_IMMUTABLE
+
+   Immutable file.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_NOATIME
+
+   Do not update access times.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_NODIRATIME
+
+   Do not update directory access times.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
+
+.. data:: ST_RELATIME
+
+   Update atime relative to mtime/ctime.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.4
 
 
 .. data:: supports_dir_fd
 
-   A :class:`set` object indicating which functions in the :mod:`os`
+   A :class:`set` object indicating which functions in the :mod:`!os`
    module accept an open file descriptor for their *dir_fd* parameter.
    Different platforms provide different features, and the underlying
    functionality Python uses to implement the *dir_fd* parameter is not
@@ -3829,7 +4023,7 @@ features:
 .. data:: supports_fd
 
    A :class:`set` object indicating which functions in the
-   :mod:`os` module permit specifying their *path* parameter as an open file
+   :mod:`!os` module permit specifying their *path* parameter as an open file
    descriptor on the local platform.  Different platforms provide different
    features, and the underlying functionality Python uses to accept open file
    descriptors as *path* arguments is not available on all platforms Python
@@ -3848,7 +4042,7 @@ features:
 
 .. data:: supports_follow_symlinks
 
-   A :class:`set` object indicating which functions in the :mod:`os` module
+   A :class:`set` object indicating which functions in the :mod:`!os` module
    accept ``False`` for their *follow_symlinks* parameter on the local platform.
    Different platforms provide different features, and the underlying
    functionality Python uses to implement *follow_symlinks* is not available
@@ -4251,7 +4445,7 @@ features:
        import os
 
        # semaphore with start value '1'
-       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFD_CLOEXEC)
        try:
            # acquire semaphore
            v = os.eventfd_read(fd)
@@ -4360,7 +4554,7 @@ Naturally, they are all only available on Linux.
    except it includes any time that the system is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_NONBLOCK`
@@ -4392,7 +4586,7 @@ Naturally, they are all only available on Linux.
    *fd* must be a valid timer file descriptor.
 
    The timer's behaviour can be modified by specifying a *flags* value.
-   Any of the following variables may used, combined using bitwise OR
+   Any of the following variables may be used, combined using bitwise OR
    (the ``|`` operator):
 
    - :const:`TFD_TIMER_ABSTIME`
@@ -4461,7 +4655,7 @@ Naturally, they are all only available on Linux.
 
    Return a two-item tuple of floats (``next_expiration``, ``interval``).
 
-   ``next_expiration`` denotes the relative time until next the timer next fires,
+   ``next_expiration`` denotes the relative time until the timer next fires,
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
 
    ``interval`` denotes the timer's interval.
@@ -4562,6 +4756,10 @@ These functions are all available on Linux only.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.15
+      ``os.listxattr(-1)`` now fails with ``OSError(errno.EBADF)`` rather than
+      listing extended attributes of the current directory.
 
 
 .. function:: removexattr(path, attribute, *, follow_symlinks=True)
@@ -4697,7 +4895,7 @@ to be ignored.
    The current process is replaced immediately. Open file objects and
    descriptors are not flushed, so if there may be data buffered
    on these open files, you should flush them using
-   :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
+   :func:`~io.IOBase.flush` or :func:`os.fsync` before calling an
    :func:`exec\* <execl>` function.
 
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
@@ -5039,13 +5237,25 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Linux >= 5.10
    .. versionadded:: 3.12
 
+.. function:: pidfd_getfd(pidfd, targetfd, *, flags=0)
+
+   Duplicate *targetfd* from the process referred to by the process file
+   descriptor *pidfd*, into the calling process.  The returned file descriptor
+   is :ref:`non-inheritable <fd_inheritance>`.
+
+   *flags* is reserved, and currently must be ``0``.
+
+   See the :manpage:`pidfd_getfd(2)` man page for more details.
+
+   .. availability:: Linux >= 5.6, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
+   .. versionadded:: next
 
 .. function:: plock(op, /)
 
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
 
-   .. availability:: Unix, not WASI, not iOS.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
 
 .. function:: popen(cmd, mode='r', buffering=-1)
@@ -5087,9 +5297,8 @@ written in Python, such as a mail server's external command delivery program.
       Use :class:`subprocess.Popen` or :func:`subprocess.run` to
       control options like encodings.
 
-   .. deprecated:: 3.14
-      The function is :term:`soft deprecated` and should no longer be used to
-      write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
@@ -5317,9 +5526,8 @@ written in Python, such as a mail server's external command delivery program.
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. deprecated:: 3.14
-      These functions are :term:`soft deprecated` and should no longer be used
-      to write new code. The :mod:`subprocess` module is recommended instead.
+   .. soft-deprecated:: 3.14
+      The :mod:`subprocess` module is recommended instead.
 
 
 .. data:: P_NOWAIT
@@ -5993,7 +6201,7 @@ Miscellaneous System Information
 
    .. versionchanged:: 3.13
       If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-      :func:`cpu_count` returns the overridden value *n*.
+      :func:`cpu_count` returns the override value *n*.
 
 
 .. function:: getloadavg()
@@ -6015,7 +6223,7 @@ Miscellaneous System Information
    in the **system**.
 
    If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
-   :func:`process_cpu_count` returns the overridden value *n*.
+   :func:`process_cpu_count` returns the override value *n*.
 
    See also the :func:`sched_getaffinity` function.
 

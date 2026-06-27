@@ -4,11 +4,14 @@ Tests for MockDisplay, curses integration, display methods,
 edge cases, update display, and display helpers.
 """
 
+import functools
+import io
 import sys
+import tempfile
 import time
 import unittest
 from unittest import mock
-from test.support import requires
+from test.support import requires, requires_remote_subprocess_debugging
 from test.support.import_helper import import_module
 
 # Only run these tests if curses is available
@@ -16,10 +19,12 @@ requires("curses")
 curses = import_module("curses")
 
 from profiling.sampling.live_collector import LiveStatsCollector, MockDisplay
+from profiling.sampling.cli import main
 from ._live_collector_helpers import (
     MockThreadInfo,
     MockInterpreterInfo,
 )
+from .helpers import close_and_unlink
 
 
 class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
@@ -814,6 +819,87 @@ class TestLiveCollectorWithMockDisplayHelpers(unittest.TestCase):
 
         # Should have header content
         self.assertTrue(any("PID" in line for line in lines))
+
+
+@requires_remote_subprocess_debugging()
+class TestLiveModeErrors(unittest.TestCase):
+    """Tests running error commands in the live mode fails gracefully."""
+
+    class QuitWhenFinishedDisplay(MockDisplay):
+        def __init__(self, collector):
+            super().__init__()
+            self.collector = collector
+
+        def get_input(self):
+            ch = super().get_input()
+            if ch != -1:
+                return ch
+            # Sampling only stops once the target process has exited, at
+            # which point the collector is marked finished. Quit then so the
+            # run can surface the target's stderr. We must not rely on the
+            # target's pid still being signalable: once it exits it lingers
+            # as a zombie (it is reaped after sample_live returns), so a
+            # liveness check would never observe it gone and would hang.
+            if self.collector.finished:
+                return ord('q')
+            return -1
+
+    def mock_curses_wrapper(self, func):
+        func(mock.MagicMock())
+
+    def mock_init_curses_side_effect(self, n_times, mock_self, stdscr):
+        mock_self.display = self.QuitWhenFinishedDisplay(mock_self)
+        # Feed non-input events so live mode keeps polling while the target
+        # process is still running; once it exits the display quits on its own.
+        for _ in range(n_times):
+            mock_self.display.simulate_input(-1)
+
+    def test_run_failed_module_live(self):
+        """Test that running a existing module that fails exits with clean error."""
+
+        args = [
+            "profiling.sampling.cli", "run", "--live", "-m", "test",
+            "test_asdasd"
+        ]
+
+        with (
+            mock.patch(
+                'profiling.sampling.live_collector.collector.LiveStatsCollector.init_curses',
+                autospec=True,
+                side_effect=functools.partial(self.mock_init_curses_side_effect, 1000)
+            ),
+            mock.patch('curses.wrapper', side_effect=self.mock_curses_wrapper),
+            mock.patch("sys.argv", args),
+            mock.patch('sys.stderr', new=io.StringIO()) as fake_stderr
+        ):
+            main()
+            self.assertIn(
+                'test test_asdasd crashed -- Traceback (most recent call last):',
+                fake_stderr.getvalue()
+            )
+
+    def test_run_failed_script_live(self):
+        """Test that running a failing script exits with clean error."""
+        script = tempfile.NamedTemporaryFile(suffix=".py")
+        self.addCleanup(close_and_unlink, script)
+        script.write(b'1/0\n')
+        script.seek(0)
+
+        args = ["profiling.sampling.cli", "run", "--live", script.name]
+
+        with (
+            mock.patch(
+                'profiling.sampling.live_collector.collector.LiveStatsCollector.init_curses',
+                autospec=True,
+                side_effect=functools.partial(self.mock_init_curses_side_effect, 200)
+            ),
+            mock.patch('curses.wrapper', side_effect=self.mock_curses_wrapper),
+            mock.patch("sys.argv", args),
+            mock.patch('sys.stderr', new=io.StringIO()) as fake_stderr
+        ):
+            main()
+            stderr = fake_stderr.getvalue()
+            self.assertIn('ZeroDivisionError', stderr)
 
 
 if __name__ == "__main__":
