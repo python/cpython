@@ -866,6 +866,23 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("--all-threads", error_msg)
         self.assertIn("incompatible with --async-aware", error_msg)
 
+    def test_async_aware_incompatible_with_binary(self):
+        """Test --async-aware is incompatible with --binary."""
+        test_args = ["profiling.sampling.cli", "attach", "12345",
+                     "--async-aware", "--binary"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--binary", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
     @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_run_nonexistent_script_exits_cleanly(self):
         """Test that running a non-existent script exits with a clean error."""
