@@ -910,6 +910,9 @@ class A:
     def positional_only(arg, /):
         pass
 
+    def method_with_self(self, arg, kwarg=1):
+        pass
+
     def missing_self(another_arg):
         pass
 
@@ -924,6 +927,9 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             yield
         self.assertEqual(str(cm.exception), message)
+
+    def test_happy_path(self):
+        self.assertIs(None, A().method_with_self(1, kwarg=2))
 
     def test_too_many_positional_but_missing_self(self):
         msg = "A.missing_self() takes 1 positional argument but 2 were given. Did you forget to declare 'self' as the first parameter?"
