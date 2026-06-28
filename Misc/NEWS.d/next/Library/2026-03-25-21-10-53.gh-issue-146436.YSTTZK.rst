@@ -1,0 +1,4 @@
+Support precision format specifier (.) for integer fields in string formatting.
+Support two's complement format specifier (z) for integer fields formatted
+with precision and binary, octal, or hexadecimal presentation type.
+Patch by Jay Berry.

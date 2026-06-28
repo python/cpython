@@ -676,6 +676,16 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(123456789, ','), '123,456,789')
         self.assertEqual(format(123456789, '_'), '123_456_789')
 
+        ## precision
+        self.assertEqual(format(0, '.0'), '0')
+        self.assertEqual(format(67, '2.3'), '067')
+        self.assertEqual(format(67, '8.3'), '     067')
+        self.assertEqual(format(67, ' .3'), ' 067')
+
+        with self.assertRaises(ValueError):
+            format(123, ".2147483648")
+        # too large
+
         # sign and aligning are interdependent
         self.assertEqual(format(1, "-"), '1')
         self.assertEqual(format(-1, "-"), '-1')
@@ -707,6 +717,23 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(1234567890, '_x'), '4996_02d2')
         self.assertEqual(format(1234567890, '_X'), '4996_02D2')
 
+        ## precision
+        self.assertEqual(format(10, '#.2x'), '0x0a')
+        self.assertEqual(format(21, '#.4x'), '0x0015')
+        self.assertEqual(format(8086, '#.4x'), '0x1f96')
+        self.assertEqual(format(314159, '#.4x'), '0x4cb2f')
+        self.assertEqual(format(-21, '#.4x'), '-0x0015')
+        self.assertEqual(format(-8086, '#.4x'), '-0x1f96')
+        self.assertEqual(format(-314159, '#.4x'), '-0x4cb2f')
+
+        ## modulo / two's complement wrap
+        self.assertEqual(format(-129, 'z#.2x'), '0x7f')
+        self.assertEqual(format(127,  'z#.2x'), '0x7f')
+        self.assertEqual(format(383,  'z#.2x'), '0x7f')
+        self.assertEqual(format(-1,  'z#.2x'), '0xff')
+        self.assertEqual(format(255, 'z#.2x'), '0xff')
+        self.assertEqual(format(10,  'z#.2x'), '0x0a')
+
         # octal
         self.assertEqual(format(3, "o"), "3")
         self.assertEqual(format(-3, "o"), "-3")
@@ -720,6 +747,18 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(-1234, "+o"), "-2322")
         self.assertRaises(ValueError, format, 1234567890, ',o')
         self.assertEqual(format(1234567890, '_o'), '111_4540_1322')
+
+        ## precision
+        self.assertEqual(format(18, '#.3o'), '0o022')
+        self.assertEqual(format(256, 'z.3o'), '400')
+        self.assertEqual(format(64, 'z.2o'), '00')
+        self.assertEqual(format(-257, 'z.3o'), '377')
+
+        self.assertEqual(format(-1, 'z.3o'), '777')
+        # different from C `printf("%hho\n", -1);` which is '377'
+        # because hh is 8 bits, not divisible by 3, the number of
+        # bits per octal digit, whereas Python has unlimited precision
+        # and we request 9 bits (3 bits per octal digit * 3 digits)
 
         # binary
         self.assertEqual(format(3, "b"), "11")
@@ -735,12 +774,36 @@ class LongTest(unittest.TestCase):
         self.assertRaises(ValueError, format, 1234567890, ',b')
         self.assertEqual(format(12345, '_b'), '11_0000_0011_1001')
 
-        # make sure these are errors
-        self.assertRaises(ValueError, format, 3, "1.3")  # precision disallowed
+        ## precision
+        self.assertEqual(format( 1,  '#.8b'),  "0b00000001")
+        self.assertEqual(format(-1,  '#.8b'), "-0b00000001")
+        self.assertEqual(format(127, '#.8b'),  "0b01111111")
+        self.assertEqual(format(128, '#.8b'),  "0b10000000")
+        self.assertEqual(format(129, '#.8b'),  "0b10000001")
+        self.assertEqual(format(301, '#.8b'),  "0b100101101")
+        self.assertEqual(format( 15, ' #.8b'),  " 0b00001111")
+        self.assertEqual(format( 15, '+#.8b'),  "+0b00001111")
+        self.assertEqual(format(-15, ' #.8b'),  "-0b00001111")
+
+        ## modulo / two's complement wrap
+        self.assertEqual(format(-129, 'z#.8b'), '0b01111111')
+        self.assertEqual(format(127,  'z#.8b'), '0b01111111')
+        self.assertEqual(format(383,  'z#.8b'), '0b01111111')
+        self.assertEqual(format(-1,   'z#.8b'), '0b11111111')
+        self.assertEqual(format(255,  'z#.8b'), '0b11111111')
+        self.assertEqual(format(10,   'z#.8b'), '0b00001010')
+        self.assertEqual(format(600, ' z#8.8b'), ' 0b01011000')
+        self.assertEqual(format(600, ' z#12.8b'), '  0b01011000')
+
+        # make sure these are errors for 'c' presentation type
+        self.assertRaises(ValueError, format, 3, ".3c")  # precision,
+        self.assertRaises(ValueError, format, 3, "zc")   # two's complement,
+        self.assertRaises(ValueError, format, 3, "#c")   # alternate,
         self.assertRaises(ValueError, format, 3, "_c")   # underscore,
-        self.assertRaises(ValueError, format, 3, ",c")   # comma, and
-        self.assertRaises(ValueError, format, 3, "+c")   # sign not allowed
-                                                         # with 'c'
+        self.assertRaises(ValueError, format, 3, ",c")   # comma,
+        self.assertRaises(ValueError, format, 3, "+c")   # + sign
+        self.assertRaises(ValueError, format, 3, "-c")   # - sign
+        self.assertRaises(ValueError, format, 3, " c")   # ' ' sign
 
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_')

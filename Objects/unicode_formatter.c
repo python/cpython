@@ -1214,34 +1214,34 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
        from a hard-code pseudo-locale */
     LocaleInfo locale = LocaleInfo_STATIC_INIT;
 
-    /* no precision allowed on integers */
-    if (format->precision != -1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Precision not allowed in integer format specifier");
-        goto done;
-    }
-    /* no negative zero coercion on integers */
-    if (format->no_neg_0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Negative zero coercion (z) not allowed in integer"
-                        " format specifier");
-        goto done;
-    }
-
     /* special case for character formatting */
     if (format->type == 'c') {
         /* error to specify a sign */
         if (format->sign != '\0') {
             PyErr_SetString(PyExc_ValueError,
                             "Sign not allowed with integer"
-                            " format specifier 'c'");
+                            " presentation type 'c'");
             goto done;
         }
         /* error to request alternate format */
         if (format->alternate) {
             PyErr_SetString(PyExc_ValueError,
                             "Alternate form (#) not allowed with integer"
-                            " format specifier 'c'");
+                            " presentation type 'c'");
+            goto done;
+        }
+        /* error to request precision */
+        if (format->precision != -1) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Precision (.) not allowed with integer"
+                            " presentation type 'c'");
+            goto done;
+        }
+        /* error to request two's complement */
+        if (format->no_neg_0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Two's complement (z) not allowed with integer"
+                            " presentation type 'c'");
             goto done;
         }
 
@@ -1269,35 +1269,80 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
     }
     else {
         int base;
-        int leading_chars_to_skip = 0;  /* Number of characters added by
-                                           PyNumber_ToBase that we want to
-                                           skip over. */
+        int log2_base;
+        int leading_chars_to_skip;  /* Number of characters added by
+                                       PyNumber_ToBase that we want to
+                                       skip over. */
+
+        if (format->precision == -1) {
+            /* precision not requested */
+
+            if (format->no_neg_0) {
+                /* two's complement format only allowed with precision */
+                PyErr_SetString(PyExc_ValueError,
+                                "Two's complement (z) requires precision (.)"
+                                " format specifier");
+                goto done;
+            }
+        } else {
+            /* precision requested */
+
+            if (format->no_neg_0 && !(format->type == 'b' || format->type == 'o'
+                || format->type == 'x' || format->type == 'X'))
+            {
+                /* two's complement format only allowed for bases that
+                   are powers of two */
+
+                /* It is easier to specify which bases are allowed than
+                to single out 'c', 'd', 'n', and '' as forbidden,
+                because with '' (which is implemented the same as 'n')
+                the error message would have to take into account
+                whether the user literally specified 'n' or '' */
+                PyErr_SetString(PyExc_ValueError,
+                                "Two's complement (z) only allowed"
+                                " with integer presentation types"
+                                " 'b', 'o', 'x', and 'X'");
+                goto done;
+            }
+
+            /* finally check the precision length is sane */
+            if (format->precision > INT_MAX) {
+                PyErr_SetString(PyExc_ValueError, "precision too big");
+                goto done;
+            }
+        }
 
         /* Compute the base and how many characters will be added by
            PyNumber_ToBase */
         switch (format->type) {
         case 'b':
             base = 2;
+            log2_base = 1;
             leading_chars_to_skip = 2; /* 0b */
             break;
         case 'o':
             base = 8;
+            log2_base = 3;
             leading_chars_to_skip = 2; /* 0o */
             break;
         case 'x':
         case 'X':
             base = 16;
+            log2_base = 4;
             leading_chars_to_skip = 2; /* 0x */
             break;
         default:  /* shouldn't be needed, but stops a compiler warning */
         case 'd':
         case 'n':
             base = 10;
+            log2_base = -1; /* unused */
+            leading_chars_to_skip = 0;
             break;
         }
 
         if (format->sign != '+' && format->sign != ' '
             && format->width == -1
+            && format->precision == -1
             && format->type != 'X' && format->type != 'n'
             && !format->thousands_separators
             && PyLong_CheckExact(value))
@@ -1311,8 +1356,40 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
         if (format->alternate)
             n_prefix = leading_chars_to_skip;
 
-        /* Do the hard part, converting to a string in a given base */
-        tmp = _PyLong_Format(value, base);
+        if (format->no_neg_0) {
+            /* perform the reduction of value modulo (base ** precision) */
+            int64_t shift_by;
+            PyObject *one;
+            PyObject *modulus;
+            PyObject *reduced_value;
+
+            shift_by = log2_base * format->precision;
+
+            one = PyLong_FromLong(1);
+            if (one == NULL) {
+                goto done;
+            }
+
+            modulus = _PyLong_Lshift(one, shift_by);
+            Py_DECREF(one);
+            if (modulus == NULL) {
+                goto done;
+            }
+
+            reduced_value = PyNumber_Remainder(value, modulus);
+            Py_DECREF(modulus);
+            if (reduced_value == NULL) {
+                goto done;
+            }
+
+            /* Do the hard part, converting to a string in a given base */
+            tmp = _PyLong_Format(reduced_value, base);
+            Py_DECREF(reduced_value);
+        } else {
+            /* Do the hard part, converting to a string in a given base */
+            tmp = _PyLong_Format(value, base);
+        }
+
         if (tmp == NULL)
             goto done;
 
@@ -1332,6 +1409,41 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
         /* Skip over the leading chars (0x, 0b, etc.) */
         n_digits -= leading_chars_to_skip;
         inumeric_chars += leading_chars_to_skip;
+
+        if (format->precision != -1 && n_digits < format->precision) {
+            /* prepend leading zeros (after sign and prefix if they exist) */
+            PyObject *tmp2;
+
+            Py_ssize_t zeros_needed = format->precision - n_digits;
+            Py_ssize_t tmp2_len = leading_chars_to_skip + format->precision;
+
+            tmp2 = PyUnicode_New(tmp2_len, 127);
+            if (tmp2 == NULL)
+                goto done;
+
+            if (PyUnicode_CopyCharacters(tmp2, 0, tmp, 0,
+                                         leading_chars_to_skip) < 0)
+            {
+                Py_DECREF(tmp2);
+                goto done;
+            }
+            if (PyUnicode_Fill(tmp2, leading_chars_to_skip,
+                               zeros_needed, '0') < 0)
+            {
+                Py_DECREF(tmp2);
+                goto done;
+            }
+            if (PyUnicode_CopyCharacters(tmp2,
+                                         leading_chars_to_skip + zeros_needed,
+                                         tmp, leading_chars_to_skip, n_digits
+                                         ) < 0)
+            {
+                Py_DECREF(tmp2);
+                goto done;
+            }
+            Py_SETREF(tmp, tmp2);
+            n_digits = format->precision;
+        }
     }
 
     /* Determine the grouping, separator, and decimal point, if any. */
