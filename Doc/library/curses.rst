@@ -1318,7 +1318,7 @@ Window objects
 
 .. method:: window.mouse_trafo(y, x, to_screen)
 
-   Convert between window-relative and screen-relative (:data:`stdscr`-relative) character-cell coordinates.
+   Convert between window-relative and screen-relative (``stdscr``-relative) character-cell coordinates.
    If *to_screen* is true, convert the window-relative coordinates *y*, *x* to screen-relative coordinates;
    otherwise convert in the opposite direction.
    The two coordinate systems differ when lines are reserved on the screen, for example for soft labels.
