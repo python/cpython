@@ -1240,7 +1240,6 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
             || PyODict_CheckExact(w)
             || Py_TYPE(w) == &PyDictProxy_Type
         ) {
-            fprintf(stderr, "optimized %s richcompare\n", Py_TYPE(w)->tp_name);
             return PyObject_RichCompare(v->mapping, w, op);
         }
         // We can't expose the `v->mapping` itself, so we create a dict copy:
