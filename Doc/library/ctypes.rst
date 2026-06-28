@@ -2564,10 +2564,13 @@ Fundamental data types
 
    .. attribute:: value
 
-      This attribute contains the actual value of the instance. For integer and
-      pointer types, it is an integer, for character types, it is a single
-      character bytes object or string, for character pointer types it is a
-      Python bytes object or string.
+      This attribute contains the actual value of the instance. For integer
+      types, it is an integer. For pointer types other than character pointers,
+      it is an integer or ``None``. For :class:`c_char`, it is a
+      :class:`bytes` object of length 1. For :class:`c_char_p`, it is a
+      :class:`bytes` object or ``None``. For :class:`c_wchar`, it is a
+      :class:`str` object of length 1. For :class:`c_wchar_p`, it is a
+      :class:`str` object or ``None``.
 
       When the ``value`` attribute is retrieved from a ctypes instance, usually
       a new object is returned each time.  :mod:`!ctypes` does *not* implement
@@ -2600,10 +2603,10 @@ Fundamental data types
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
 converted to native Python types.  In other words, if a foreign function has a
-:attr:`~_CFuncPtr.restype` of :class:`c_char_p`, you will always receive a Python bytes
-object, *not* a :class:`c_char_p` instance.
-
-.. XXX above is false, it actually returns a Unicode string
+:attr:`~_CFuncPtr.restype` of :class:`c_char_p`, you will receive a
+:class:`bytes` object or ``None``, *not* a :class:`c_char_p` instance.
+Similarly, a :class:`c_wchar_p` result is converted to a :class:`str` object or
+``None``.
 
 Subclasses of fundamental data types do *not* inherit this behavior. So, if a
 foreign functions :attr:`!restype` is a subclass of :class:`c_void_p`, you will
@@ -2622,8 +2625,9 @@ These are the fundamental ctypes data types:
 .. class:: c_char
 
    Represents the C :c:expr:`char` datatype, and interprets the value as a single
-   character.  The constructor accepts an optional string initializer, the
-   length of the string must be exactly one character.
+   byte.  The constructor accepts an optional :class:`bytes` object,
+   :class:`bytearray`, or integer initializer; the length of a bytes object or
+   bytearray must be exactly one.
 
 
 .. class:: c_char_p
@@ -2631,7 +2635,8 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`char *` datatype when it points to a zero-terminated
    string.  For a general character pointer that may also point to binary data,
    ``POINTER(c_char)`` must be used.  The constructor accepts an integer
-   address, or a bytes object.
+   address, or a :class:`bytes` object.  Its value is a :class:`bytes` object or
+   ``None``.
 
 
 .. class:: c_double
@@ -2818,15 +2823,17 @@ These are the fundamental ctypes data types:
 .. class:: c_wchar
 
    Represents the C :c:type:`wchar_t` datatype, and interprets the value as a
-   single character unicode string.  The constructor accepts an optional string
-   initializer, the length of the string must be exactly one character.
+   single character :class:`str` object.  The constructor accepts an optional
+   :class:`str` initializer, the length of the string must be exactly one
+   character.
 
 
 .. class:: c_wchar_p
 
    Represents the C :c:expr:`wchar_t *` datatype, which must be a pointer to a
    zero-terminated wide character string.  The constructor accepts an integer
-   address, or a string.
+   address, or a :class:`str` object.  Its value is a :class:`str` object or
+   ``None``.
 
 
 .. class:: c_bool
