@@ -1530,6 +1530,68 @@ class TestCurses(unittest.TestCase):
         self._type(box, 'def')
         self.assertEqual(box.gather(), 'abc\ndef\n')
 
+    def test_textbox_8bit(self):
+        # A character of an 8-bit locale encoding is entered and read back
+        # through the byte API.  The byte path also runs on a wide build, so the
+        # test is not skipped there.  Run the suite under an 8-bit locale
+        # (ISO-8859-1, ISO-8859-15 or KOI8-U) to reach the non-ASCII cases; each
+        # string is used only if the encoding maps it to single bytes.  'abc' is
+        # ASCII, 'café' is common to the Latin encodings, and the rest are
+        # distinctive (byte 0xA4 is '¤'/'€'/'є' in ISO-8859-1/-15/KOI8-U).
+        encoding = self.stdscr.encoding
+        for text in ['abc', 'café', 'naïve ¤¦', 'café €Šž', 'дякую єі']:
+            try:
+                data = text.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != len(text):
+                continue       # a multibyte encoding is not the 8-bit byte path
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 16)
+                for byte in data:
+                    box.do_command(byte)
+                self.assertEqual(box.gather(), text + ' ')
+
+    def test_textbox_8bit_insert(self):
+        # Insert mode shifts the rest of the line right by reading each cell back
+        # and rewriting it; a non-ASCII 8-bit-locale character must survive the
+        # shift, even on a wide build where inch() mangles it.  See
+        # test_textbox_8bit for the character choices.
+        encoding = self.stdscr.encoding
+        for ch in ['é', '¤', '€', 'є']:
+            try:
+                data = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != 1:
+                continue
+            with self.subTest(ch=ch):
+                box, win = self._make_textbox(1, 10, insert_mode=True)
+                for byte in ('a' + ch + 'c').encode(encoding):
+                    box.do_command(byte)
+                win.move(0, 1)
+                box.do_command(ord('b'))   # insert 'b', shifting ch and 'c' right
+                self.assertEqual(box.gather(), 'ab' + ch + 'c ')
+
+    def test_textbox_8bit_fill_last_cell(self):
+        # A non-ASCII 8-bit-locale character must survive being written to the
+        # lower-right cell, which uses insch() rather than addch().  See
+        # test_textbox_8bit for the character choices.
+        encoding = self.stdscr.encoding
+        for ch in ['é', '¤', '€', 'є']:
+            try:
+                data = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != 1:
+                continue
+            with self.subTest(ch=ch):
+                text = 'ab' + ch         # the last character fills the corner
+                box, win = self._make_textbox(1, len(text), stripspaces=0)
+                for byte in text.encode(encoding):
+                    box.do_command(byte)
+                self.assertEqual(box.gather(), text)
+
     def test_textbox_movement(self):
         box, win = self._make_textbox(3, 10)
         self._type(box, 'abc')
@@ -1885,6 +1947,11 @@ class TextboxTest(unittest.TestCase):
         self.mock_win = MagicMock(spec=curses.window)
         self.mock_win.getyx.return_value = (1, 1)
         self.mock_win.getmaxyx.return_value = (10, 20)
+        self.mock_win.encoding = 'utf-8'
+        # A non-blank cell so that _end_of_line() reports a full line: instr()
+        # backs the text reads, inch() the insert-mode shift.
+        self.mock_win.instr.return_value = b'x'
+        self.mock_win.inch.return_value = ord('x')
         self.textbox = curses.textpad.Textbox(self.mock_win)
 
     def test_init(self):
