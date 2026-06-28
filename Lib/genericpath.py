@@ -32,7 +32,7 @@ def lexists(path):
         return False
     return True
 
-# This follows symbolic links, so both islink() and isdir() can be true
+# This follows symbolic links, so both islink() and isfile() can be true
 # for the same path on systems that support symlinks
 def isfile(path):
     """Test whether a path is a regular file"""
