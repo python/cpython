@@ -1222,6 +1222,11 @@ class TZStrTest(ZoneInfoTestBase):
             "AAA4BBB,J60/2:00:100,J300/2",
             "AAA4BBB,J60/2,J300/2:00:0",
             "AAA4BBB,J60/2,J300/2:00:100",
+            # gh-152248: unquoted abbreviation must be ASCII letters only
+            "A A4BBB,J60/2,J300/2",        # space in std abbreviation
+            "AAA4B B,J60/2,J300/2",         # space in dst abbreviation
+            "ÄAA4BBB,J60/2,J300/2",        # non-ASCII letter in std
+            "AAA4ÄBB,J60/2,J300/2",         # non-ASCII letter in dst
         ]
 
         for invalid_tzstr in invalid_tzstrs:

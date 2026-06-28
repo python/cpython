@@ -1,0 +1,3 @@
+Fix the pure-Python :func:`zoneinfo._parse_tz_str` to reject unquoted
+POSIX TZ string abbreviations containing non-ASCII characters or
+whitespace, matching the C implementation's behavior.
