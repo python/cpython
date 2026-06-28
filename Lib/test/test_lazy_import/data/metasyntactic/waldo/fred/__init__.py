@@ -1,1 +1,0 @@
-Fred = "Fred"

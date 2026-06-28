@@ -1,3 +1,0 @@
-<foo>
- <b:bar xmlns:b="http://b" att2="val" b:att1="val"></b:bar>
-</foo>

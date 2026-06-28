@@ -1,1 +1,0 @@
-lazy from foo import *

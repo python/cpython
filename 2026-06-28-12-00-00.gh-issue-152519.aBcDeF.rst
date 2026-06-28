@@ -1,0 +1,5 @@
+Fix :mod:`email` parser corruption when an RFC 2047 encoded-word appears
+in an addr-spec local-part.  The modern parser now correctly rejects
+encoded-words in this position per :rfc:`2047` §5 instead of decoding
+them, which could corrupt the parsed address when the decoded text
+contains address-special characters.

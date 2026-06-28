@@ -1,2 +1,0 @@
-def main():
-    return 'example'

@@ -1,5 +1,0 @@
-# https://docs.wasmtime.dev/cli-options.html#cli-options-using-toml-file
-
-[wasm]
-# 32 MiB; big enough for the test suite to pass under a debug build.
-max-wasm-stack = 33_554_432

@@ -1,4 +1,0 @@
-Name: Tool Command Language
-Version: 8.5.12
-Libs: -ltcl8.5 -ltclstub8.5
-# Libs.private: -ldl -lz -lpthread -lm

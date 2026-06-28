@@ -1,5 +1,0 @@
-probe begin
-{
-  println("probe: success")
-  exit ()
-}

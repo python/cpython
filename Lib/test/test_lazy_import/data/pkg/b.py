@@ -1,2 +1,0 @@
-def foo():
-    return 'foo'

@@ -1,3 +1,0 @@
-<foo xmlns="http://z0" xml:id="23">
-  <bar xsi:type="xsd:string" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">data</bar>
-</foo>

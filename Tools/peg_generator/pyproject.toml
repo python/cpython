@@ -1,8 +1,0 @@
-[tool.black]
-line-length = 99
-target_version = ['py311']
-exclude = '''
-(
-          /pegen/grammar_parser.py   # generated file
-)
-'''

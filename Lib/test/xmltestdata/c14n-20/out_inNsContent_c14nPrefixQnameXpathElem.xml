@@ -1,4 +1,0 @@
-<n0:foo xmlns:n0="http://a">
- <n0:bar xmlns:n1="http://www.w3.org/2001/XMLSchema">n1:string</n0:bar>
- <n4:IncludedXPath xmlns:n2="http://b" xmlns:n3="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:n4="http://www.w3.org/2010/xmldsig2#">/n3:body/child::n2:foo[@att1 != "c:val" and @att2 != 'xsd:string']</n4:IncludedXPath>
-</n0:foo>

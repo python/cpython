@@ -1,4 +1,0 @@
-<foo xmlns="http://z0" xmlns:a="http://z0" xmlns:b="http://z0" a:att1="val1" b:att2="val2"> 
- <c:bar xmlns:c="http://z0" c:att3="val3"></c:bar>
- <d:bar xmlns:d="http://z0"></d:bar>
-</foo>

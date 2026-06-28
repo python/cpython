@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
-  <String Id="CRTDescription">C Runtime Update (KB2999226)</String>
-  <String Id="CompileAllDescription">Precompiling standard library</String>
-  <String Id="CompileAllODescription">Precompiling standard library (-O)</String>
-  <String Id="CompileAllOODescription">Precompiling standard library (-OO)</String>
-</WixLocalization>

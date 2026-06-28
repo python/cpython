@@ -1,3 +1,0 @@
-<foo xmlns:a="http://z3" xmlns:b="http://z2" a:att1="val1" b:att2="val2"> 
- <bar xmlns="http://z0" xmlns:a="http://z2" a:att1="val1" b:att2="val2" xmlns:b="http://z3" />
-</foo>
