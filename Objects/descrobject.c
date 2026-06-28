@@ -1234,7 +1234,7 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
     if (op == Py_EQ || op == Py_NE) {
         mappingproxyobject *v = (mappingproxyobject *)self;
-        if (Py_TYPE(w) == Py_TYPE(self)) {
+        if (PyObject_TypeCheck(w, &PyDictProxy_Type)) {
             w = ((mappingproxyobject *)w)->mapping;
         }
 
