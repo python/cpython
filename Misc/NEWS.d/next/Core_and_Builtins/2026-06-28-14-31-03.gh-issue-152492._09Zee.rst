@@ -1,0 +1,1 @@
+:func:`collections.OrderedDict.update` can now accept :type:`frozendict` as an argument.
