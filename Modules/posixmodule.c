@@ -8230,9 +8230,14 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
         if (!fsconvert_strdup(item, &argvlist[i])) {
             Py_DECREF(item);
             free_string_array(argvlist, i);
-            PyErr_SetString(
-                PyExc_TypeError,
-                "spawnv() arg 2 must contain only strings");
+            // Add argument context to the converter's terse TypeError, but
+            // let MemoryError, codec errors, embedded-null ValueError, etc.
+            // propagate unmasked.
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_SetString(
+                    PyExc_TypeError,
+                    "spawnv() arg 2 must contain only strings");
+            }
             return NULL;
         }
         Py_DECREF(item);
