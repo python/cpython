@@ -199,6 +199,10 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
 
 class OptionMenuTest(test_widgets.MenubuttonTest, unittest.TestCase):
 
+    # OptionMenu documents only its own options, not the inherited
+    # Menubutton options (like the classic tkinter.OptionMenu).
+    test_options_in_docstring = None
+
     def setUp(self):
         super().setUp()
         self.textvar = tkinter.StringVar(self.root)
