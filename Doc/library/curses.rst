@@ -1333,9 +1333,6 @@ Window objects
    and the color pair is not limited to the value that fits in a
    :func:`color_pair`.
 
-   This method is only available if Python was built against a wide-character
-   version of the underlying curses library.
-
    .. versionadded:: next
 
 
@@ -1483,9 +1480,6 @@ Window objects
    followed by combining characters) together with its attributes and color
    pair, none of which :meth:`inch` can represent.
 
-   This method is only available if Python was built against a wide-character
-   version of the underlying curses library.
-
    .. versionadded:: next
 
 
@@ -1584,9 +1578,6 @@ Window objects
 
    The result can be written back unchanged with :meth:`addstr` (a read and a
    re-write is a round-trip that preserves every cell's rendition).
-
-   This method is only available if Python was built against a wide-character
-   version of the underlying curses library.
 
    .. versionadded:: next
 
@@ -2004,7 +1995,7 @@ Complex character objects
 .. class:: complexchar(text, /, attr=0, pair=0)
 
    A *complex character* (or *complexchar*) is an immutable styled
-   wide-character cell: a spacing character optionally followed by combining
+   character cell: a spacing character optionally followed by combining
    characters, together with a set of attributes and a color pair.
 
    *text* is the cell's text, *attr* a combination of the
@@ -2025,8 +2016,10 @@ Complex character objects
    :func:`str` returns the cell's text; two complex characters are equal when
    their text, attributes and color pair all match.
 
-   This type is only available if Python was built against a wide-character
-   version of the underlying curses library.
+   The same code works on both wide- and narrow-character builds.  On a narrow
+   build a cell holds a single character (no combining marks) that must encode to
+   one byte in the window's encoding (8-bit locales only), and *pair* is limited
+   to the value that fits in a :func:`color_pair`.
 
    .. attribute:: attr
 
@@ -2042,7 +2035,7 @@ Complex character objects
 .. class:: complexstr(cells[, attr[, pair]])
 
    A *complex character string* (or *complexstr*) is an immutable sequence of
-   styled wide-character cells -- the string counterpart of
+   styled character cells -- the string counterpart of
    :class:`complexchar` (as :class:`str` is to a single character).
 
    If *cells* is a string, it is split into character cells (each a spacing
@@ -2070,8 +2063,8 @@ Complex character objects
    :class:`complexchar` (or strings); a :class:`!complexstr` is the immutable
    form returned by a read.
 
-   This type is only available if Python was built against a wide-character
-   version of the underlying curses library.
+   Like :class:`complexchar`, this type works on both wide- and narrow-character
+   builds, with the same per-cell limitations on a narrow build.
 
    .. versionadded:: next
 

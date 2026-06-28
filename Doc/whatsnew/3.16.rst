@@ -111,8 +111,12 @@ curses
   and the module functions :func:`curses.erasewchar`, :func:`curses.killwchar`
   and :func:`curses.wunctrl`, the wide-character counterparts of
   :func:`curses.erasechar`, :func:`curses.killchar` and :func:`curses.unctrl`.
-  These features are only available when built against the wide-character
-  ncursesw library.
+  On a narrow (non-ncursesw) build the character cell holds a single character
+  without combining marks, representable as one byte in the window's encoding,
+  and :meth:`~curses.window.in_wstr` returns its decoded text;
+  :meth:`~curses.window.get_wstr` and the :func:`curses.erasewchar`,
+  :func:`curses.killwchar` and :func:`curses.wunctrl` functions require the
+  wide-character ncursesw library.
   (Contributed by Serhiy Storchaka in :gh:`151757`.)
 
 * Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
@@ -139,13 +143,16 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`152219`.)
 
 * Add the :class:`curses.complexchar` type, representing a styled
-  wide-character cell (its text, attributes and color pair), and the window
+  character cell (its text, attributes and color pair), and the window
   methods :meth:`~curses.window.in_wch` and :meth:`~curses.window.getbkgrnd`
-  that return one --- the wide-character counterparts of
+  that return one --- the counterparts of
   :meth:`~curses.window.inch` and :meth:`~curses.window.getbkgd`.  The
   character-cell methods, such as :meth:`~curses.window.addch` and
   :meth:`~curses.window.border`, now also accept a
-  :class:`~curses.complexchar`.
+  :class:`~curses.complexchar`.  These work whether or not Python was built
+  against a wide-character-aware curses library; on a narrow build a cell holds a
+  single character representable as one byte in the window's encoding (so only
+  8-bit locales are supported).
   (Contributed by Serhiy Storchaka in :gh:`152233`.)
 
 * Add the :class:`curses.complexstr` type, an immutable run of styled cells
@@ -153,7 +160,9 @@ curses
   method :meth:`~curses.window.in_wchstr` that returns one.  The string-cell
   methods :meth:`~curses.window.addstr`, :meth:`~curses.window.addnstr`,
   :meth:`~curses.window.insstr` and :meth:`~curses.window.insnstr` now also
-  accept a :class:`~curses.complexstr`.
+  accept a :class:`~curses.complexstr`.  Like :class:`~curses.complexchar`, it
+  works whether or not Python was built against a wide-character-aware curses
+  library.
   (Contributed by Serhiy Storchaka in :gh:`152233`.)
 
 * Add the :mod:`curses` window method :meth:`~curses.window.dupwin`, which
