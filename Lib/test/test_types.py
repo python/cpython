@@ -8,7 +8,7 @@ from test.support.script_helper import assert_python_ok
 from test.support.import_helper import import_fresh_module
 
 import collections.abc
-from collections import namedtuple, UserDict
+from collections import namedtuple, UserDict, OrderedDict
 import copy
 import _datetime
 import gc
@@ -1461,18 +1461,43 @@ class MappingProxyTests(unittest.TestCase):
         leaked = mp1 == Evil()
         self.assertIs(type(leaked), dict)
 
+    def test_richcompare_odict(self):
+        od1 = OrderedDict(x=1, y=2)
+        od1_2 = OrderedDict(x=1, y=2)
+        od2 = OrderedDict(y=2, x=1)
+        self.assertNotEqual(od1, od2)
+        self.assertEqual(od1, od1_2)
+
+        self.assertEqual(self.mappingproxy(od1), self.mappingproxy(od1_2))
+        self.assertEqual(self.mappingproxy(od1), od1_2)
+        self.assertNotEqual(self.mappingproxy(od1), self.mappingproxy(od2))
+        self.assertNotEqual(self.mappingproxy(od1), od2)
+        self.assertEqual(
+            self.mappingproxy(od1),
+            self.mappingproxy({'x': 1, 'y': 2}),
+        )
+        self.assertEqual(
+            self.mappingproxy(od1),
+            {'x': 1, 'y': 2},
+        )
+
     def test_richcompare_evil(self):
         # https://github.com/python/cpython/issues/152405
+        key = "__mappingproxy_crash_key__"
+
         class Evil:
             def __eq__(self, other):
+                other[key] = 1
                 return other
 
         # exposes the internals of `MappingProxyType` via richcompare:
         leaked = vars(list) == Evil()
         self.assertIs(type(leaked), dict)
+        self.assertIn(key, leaked)
         name = "__mappingproxy_crash_probe__"
         leaked[name] = lambda self: "probe"
         self.assertIn(name, leaked)
+        self.assertNotHasAttr(list, key)
         self.assertNotHasAttr(list, name)  # it used to return `True`
         del leaked[name]
         self.assertNotIn(name, leaked)

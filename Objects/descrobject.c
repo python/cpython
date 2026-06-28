@@ -1234,8 +1234,13 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
     if (op == Py_EQ || op == Py_NE) {
         mappingproxyobject *v = (mappingproxyobject *)self;
-        // Common path optimization:
-        if (PyDict_CheckExact(w)) {
+        // Common path optimizations, where we can expose the real mapping:
+        if (
+            PyAnyDict_CheckExact(w)
+            || PyODict_CheckExact(w)
+            || Py_TYPE(w) == &PyDictProxy_Type
+        ) {
+            fprintf(stderr, "optimized %s richcompare\n", Py_TYPE(w)->tp_name);
             return PyObject_RichCompare(v->mapping, w, op);
         }
         // We can't expose the `v->mapping` itself, so we create a dict copy:
