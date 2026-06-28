@@ -989,8 +989,8 @@ class TurtleScreen(TurtleScreenBase):
             # the Turtle window will show behind the Terminal window when you
             # start the demo from the command line.
             rootwindow = cv.winfo_toplevel()
-            rootwindow.call('wm', 'attributes', '.', '-topmost', '1')
-            rootwindow.call('wm', 'attributes', '.', '-topmost', '0')
+            rootwindow.wm_attributes(topmost=True)
+            rootwindow.wm_attributes(topmost=False)
 
     def clear(self):
         """Delete all drawings and all turtles from the TurtleScreen.
