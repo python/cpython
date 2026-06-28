@@ -583,9 +583,19 @@ class TracebackCases(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'required positional argument'):
             traceback.format_exception(exc=e)
 
-    def test_format_exception_only_exc(self):
+    def test_format_syntax_error(self):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
+
+        exc = SyntaxError(NotImplemented)
+        lines = traceback.format_exception_only(type(exc), exc)
+        self.assertIsInstance("".join(lines), str)
+
+        exc = SyntaxError("invalid syntax")
+        lines = traceback.format_exception_only(type(exc), exc)
+        result = "".join(lines)
+        self.assertIn("SyntaxError", result)
+        self.assertIn("invalid syntax", result)
 
     def test_exception_is_None(self):
         NONE_EXC_STRING = 'NoneType: None\n'
@@ -624,11 +634,6 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
             '(exc, /, value=<implicit>, *, show_group=False, **kwargs)')
-
-    def test_syntax_error_with_not_implemented_msg(self):
-        exc = SyntaxError(NotImplemented)
-        lines = traceback.format_exception_only(type(exc), exc)
-        self.assertIsInstance("".join(lines), str)
 
 
 class PurePythonExceptionFormattingMixin:
