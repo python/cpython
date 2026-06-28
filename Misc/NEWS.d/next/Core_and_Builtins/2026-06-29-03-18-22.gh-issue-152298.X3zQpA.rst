@@ -1,0 +1,2 @@
+Fix :meth:`!types.LazyImportType.resolve` so resolving a module-level lazy
+import replaces the original lazy proxy in the module globals.
