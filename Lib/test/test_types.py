@@ -1392,7 +1392,8 @@ class MappingProxyTests(unittest.TestCase):
         self.assertEqual(hash(view), hash(mapping))
 
     def test_richcompare(self):
-        mp1 = self.mappingproxy({'a': 1})
+        dt1 = {'a': 1}
+        mp1 = self.mappingproxy(dt1)
         mp1_2 = self.mappingproxy({'a': 1})
         mp2 = self.mappingproxy({'a': 2})
 
@@ -1400,6 +1401,10 @@ class MappingProxyTests(unittest.TestCase):
         self.assertFalse(mp1 != mp1_2)
         self.assertFalse(mp1 == mp2)
         self.assertTrue(mp1 != mp2)
+        self.assertTrue(mp1 == dt1)
+        self.assertTrue(mp1_2 == dt1)
+        self.assertFalse(mp2 == dt1)
+        self.assertTrue(mp2 != dt1)
 
         msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
 
@@ -1411,6 +1416,67 @@ class MappingProxyTests(unittest.TestCase):
             mp2 >= mp2
         with self.assertRaisesRegex(TypeError, msg):
             mp1_2 <= mp1
+        with self.assertRaisesRegex(
+            TypeError,
+            "not supported between instances of 'mappingproxy' and 'dict'",
+        ):
+            mp1_2 <= dt1
+
+    def test_richcompare_mapping(self):
+        class CustomMapping(collections.abc.Mapping):
+            def __init__(self, data):
+                self._data = data
+
+            def __getitem__(self, key):
+                return self._data[key]
+
+            def __iter__(self):
+                return iter(self._data)
+
+            def __len__(self):
+                return len(self._data)
+
+            def __contains__(self, item):
+                return item in self._data
+
+        dt1 = {'a': 1}
+        mp1 = self.mappingproxy(CustomMapping(dt1))
+        mp1_2 = self.mappingproxy(dt1)
+        mp2 = self.mappingproxy({'a': 2})
+
+        self.assertTrue(mp1 == mp1_2)
+        self.assertTrue(mp1 == dt1)
+        self.assertTrue(mp1_2 == dt1)
+        self.assertTrue(dt1 == mp1)
+        self.assertTrue(dt1 == mp1_2)
+        self.assertFalse(mp2 == dt1)
+        self.assertFalse(dt1 == mp2)
+        self.assertFalse(mp1 != dt1)
+        self.assertFalse(dt1 != mp1)
+
+        class Evil:
+            def __eq__(self, other):
+                return other
+
+        leaked = mp1 == Evil()
+        self.assertIs(type(leaked), dict)
+
+    def test_richcompare_evil(self):
+        # https://github.com/python/cpython/issues/152405
+        class Evil:
+            def __eq__(self, other):
+                return other
+
+        # exposes the internals of `MappingProxyType` via richcompare:
+        leaked = vars(list) == Evil()
+        self.assertIs(type(leaked), dict)
+        name = "__mappingproxy_crash_probe__"
+        leaked[name] = lambda self: "probe"
+        self.assertIn(name, leaked)
+        self.assertNotHasAttr(list, name)  # it used to return `True`
+        del leaked[name]
+        self.assertNotIn(name, leaked)
+        self.assertNotHasAttr(list, name)  # it used to crash
 
 
 class ClassCreationTests(unittest.TestCase):

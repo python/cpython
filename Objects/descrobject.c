@@ -1232,9 +1232,22 @@ mappingproxy_traverse(PyObject *self, visitproc visit, void *arg)
 static PyObject *
 mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
-    mappingproxyobject *v = (mappingproxyobject *)self;
     if (op == Py_EQ || op == Py_NE) {
-        return PyObject_RichCompare(v->mapping, w, op);
+        mappingproxyobject *v = (mappingproxyobject *)self;
+        // We can't expose the `v->mapping` itself, so we create a dict copy:
+        // it was possible to mutate `v->mapping` in rich-compare methods.
+        // See gh-152405 on the details.
+        PyObject *copy = PyDict_New();
+        if (copy == NULL) {
+            return NULL;
+        }
+        if (PyDict_Update(copy, v->mapping)) {
+            Py_DECREF(copy);
+            return NULL;
+        }
+        PyObject *res = PyObject_RichCompare(copy, w, op);
+        Py_DECREF(copy);
+        return res;
     }
     Py_RETURN_NOTIMPLEMENTED;
 }
