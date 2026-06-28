@@ -197,7 +197,7 @@ loops that truncate the stream.
           for iterable in iterables:
               yield from iterable
 
-   In Python 3.15 and later, the syntax for :ref:`unpacking in comprehensions
+   The syntax for :ref:`unpacking in comprehensions
    <unpacking-in-comprehensions>` provides similar functionality so that
    ``list(chain(p, q))`` could be written as ``[*s for s in (p, q)]``.
 
