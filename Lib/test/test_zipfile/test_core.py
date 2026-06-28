@@ -1243,6 +1243,22 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         self.assertEqual(len(zinfos), 1)
         self.assertGreaterEqual(zinfos[0].extract_version, zipfile.ZIP64_VERSION)  # requires zip64 to extract
 
+    def test_force_zip64_central(self):
+        """Test that force_zip64 is honored when writing to central directory"""
+        fh = io.BytesIO()
+        with zipfile.ZipFile(fh, 'w') as zh:
+            with zh.open('strfile', 'w', force_zip64=True) as zi:
+                pass
+
+        fh.seek(0)
+        with zipfile.ZipFile(fh, 'r') as zh:
+            zinfo = zh.getinfo('strfile')
+            self.assertEqual(zinfo.extra, (
+                b'\x01\x00\x10\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            ))
+
     def test_unseekable_zip_unknown_filesize(self):
         """Test that creating a zip with/without seeking will raise a RuntimeError if zip64 was required but not used"""
 
@@ -1447,6 +1463,11 @@ def comparable_zinfo(zinfo):
     # can be encoded with ascii or cp437. Skip checking this bit by
     # pretending it's always set.
     attrs['flag_bits'] |= 0x800
+
+    # Check decoded data (file size, compressed size) and ignore zip64 subfield
+    # in extra data since is may be inconsistent for a ZipInfo before writing
+    # and one read from a file.
+    attrs['extra'] = zipfile._Extra.strip(attrs['extra'], (1,))
 
     return attrs
 

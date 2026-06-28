@@ -453,6 +453,7 @@ class ZipInfo:
         'file_size',
         '_raw_time',
         '_end_offset',
+        '_force_zip64',
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
@@ -488,6 +489,7 @@ class ZipInfo:
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
         self._end_offset = None         # Start of the next local header or central directory
+        self._force_zip64 = None        # Whether zip64 extension is forced
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
@@ -2202,6 +2204,7 @@ class ZipFile:
             zinfo = self.getinfo(name)
 
         if mode == 'w':
+            zinfo._force_zip64 = force_zip64
             return self._open_to_write(zinfo, force_zip64=force_zip64)
 
         if self._writing:
@@ -2646,8 +2649,10 @@ class ZipFile:
             dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
             dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
             extra = []
-            if zinfo.file_size > ZIP64_LIMIT \
-               or zinfo.compress_size > ZIP64_LIMIT:
+            if (zinfo._force_zip64
+                or zinfo.file_size > ZIP64_LIMIT
+                or zinfo.compress_size > ZIP64_LIMIT
+            ):
                 extra.append(zinfo.file_size)
                 extra.append(zinfo.compress_size)
                 file_size = 0xffffffff
