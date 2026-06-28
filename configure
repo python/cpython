@@ -29818,6 +29818,8 @@ fi
 
 
 
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_pad" >&5
 printf %s "checking for curses function is_pad... " >&6; }
 if test ${ac_cv_lib_curses_is_pad+y}
