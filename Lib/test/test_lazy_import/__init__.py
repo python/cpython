@@ -40,6 +40,67 @@ class LazyImportTestCase(unittest.TestCase):
 class LazyImportTests(LazyImportTestCase):
     """Tests for basic lazy import functionality."""
 
+    def check_dotted_import_calls_full_name_import_hook(
+        self, package, import_stmt, access_expr
+    ):
+        code = textwrap.dedent(f"""
+            import atexit
+            import builtins
+            import shutil
+            import sys
+            import tempfile
+            import types
+            from pathlib import Path
+
+            PKG = {package!r}
+            SUBMOD = PKG + ".sub"
+
+            real_import = builtins.__import__
+            full_name_calls = []
+            calls = []
+
+            tmpdir = tempfile.mkdtemp()
+            atexit.register(shutil.rmtree, tmpdir, ignore_errors=True)
+
+            package_dir = Path(tmpdir, PKG)
+            package_dir.mkdir()
+            (package_dir / "__init__.py").touch()
+            (package_dir / "sub.py").write_text(
+                "VALUE = 'real-submodule'\\n", encoding="utf-8")
+
+            sys.path.insert(0, tmpdir)
+            atexit.register(setattr, builtins, "__import__", real_import)
+
+            def custom_import(name, globals=None, locals=None, fromlist=(),
+                              level=0):
+                caller = (
+                    globals.get("__name__")
+                    if isinstance(globals, dict) else None
+                )
+                call = (name, caller, tuple(fromlist or ()))
+                calls.append(call)
+
+                if name == SUBMOD:
+                    full_name_calls.append(call)
+                    package = real_import(PKG, globals, locals, (), level)
+                    module = types.ModuleType(SUBMOD)
+                    module.VALUE = "hooked-submodule"
+                    package.sub = module
+                    sys.modules[SUBMOD] = module
+                    return package
+
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+
+            {import_stmt}
+
+            assert not full_name_calls, calls
+            assert {access_expr}.VALUE == "hooked-submodule", calls
+            assert full_name_calls == [(SUBMOD, "__main__", ())], calls
+        """)
+        assert_python_ok("-c", code)
+
     def test_basic_unused(self):
         """Lazy imported module should not be loaded if never accessed."""
         import test.test_lazy_import.data.basic_unused
@@ -170,63 +231,20 @@ class LazyImportTests(LazyImportTestCase):
     @support.requires_subprocess()
     def test_dotted_import_calls_full_name_import_hook(self):
         """Dotted lazy imports should call __import__ with the full name."""
-        code = textwrap.dedent(r"""
-            import atexit
-            import builtins
-            import shutil
-            import sys
-            import tempfile
-            import types
-            from pathlib import Path
+        self.check_dotted_import_calls_full_name_import_hook(
+            "lazy_import_hook_pkg",
+            "lazy import lazy_import_hook_pkg.sub",
+            "lazy_import_hook_pkg.sub",
+        )
 
-            PKG = "hookpkg_gh_152297"
-            SUBMOD = f"{PKG}.sub"
-
-            real_import = builtins.__import__
-            full_name_calls = []
-            calls = []
-
-            tmpdir = tempfile.mkdtemp()
-            atexit.register(shutil.rmtree, tmpdir, ignore_errors=True)
-
-            package_dir = Path(tmpdir, PKG)
-            package_dir.mkdir()
-            (package_dir / "__init__.py").touch()
-            (package_dir / "sub.py").write_text(
-                "VALUE = 'real-submodule'\n", encoding="utf-8")
-
-            sys.path.insert(0, tmpdir)
-            atexit.register(setattr, builtins, "__import__", real_import)
-
-            def custom_import(name, globals=None, locals=None, fromlist=(),
-                              level=0):
-                caller = (
-                    globals.get("__name__")
-                    if isinstance(globals, dict) else None
-                )
-                call = (name, caller, tuple(fromlist or ()))
-                calls.append(call)
-
-                if name == SUBMOD:
-                    full_name_calls.append(call)
-                    package = real_import(PKG, globals, locals, (), level)
-                    module = types.ModuleType(SUBMOD)
-                    module.VALUE = "hooked-submodule"
-                    package.sub = module
-                    sys.modules[SUBMOD] = module
-                    return package
-
-                return real_import(name, globals, locals, fromlist, level)
-
-            builtins.__import__ = custom_import
-
-            lazy import hookpkg_gh_152297.sub
-
-            assert not full_name_calls, calls
-            assert hookpkg_gh_152297.sub.VALUE == "hooked-submodule", calls
-            assert full_name_calls == [(SUBMOD, "__main__", ())], calls
-        """)
-        assert_python_ok("-c", code)
+    @support.requires_subprocess()
+    def test_dotted_import_as_calls_full_name_import_hook(self):
+        """Dotted lazy import-as should call __import__ with the full name."""
+        self.check_dotted_import_calls_full_name_import_hook(
+            "lazy_import_as_hook_pkg",
+            "lazy import lazy_import_as_hook_pkg.sub as alias",
+            "alias",
+        )
 
     @support.requires_subprocess()
     def test_dotted_import_first_use_loads_full_target(self):

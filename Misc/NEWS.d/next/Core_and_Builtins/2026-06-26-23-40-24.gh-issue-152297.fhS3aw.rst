@@ -1,2 +1,3 @@
-Fix ``lazy import pkg.sub`` so reification calls ``__import__`` with
-``pkg.sub``, matching eager imports.
+Fix dotted lazy imports such as ``lazy import pkg.sub`` and ``lazy import
+pkg.sub as alias`` so reification calls ``__import__`` with the full dotted
+name, matching eager imports.

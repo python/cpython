@@ -3940,7 +3940,13 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    if (lz->lz_attr != NULL) {
+    if (lz->lz_import_as) {
+        fromlist = PyTuple_New(0);
+        if (fromlist == NULL) {
+            goto error;
+        }
+    }
+    else if (lz->lz_attr != NULL) {
         if (PyUnicode_Check(lz->lz_attr)) {
             fromlist = PyTuple_New(1);
             if (fromlist == NULL) {
@@ -3973,7 +3979,35 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
 
-    if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
+    if (lz->lz_import_as) {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(lz->lz_from);
+        Py_ssize_t dot = PyUnicode_FindChar(lz->lz_from, '.', 0, len, 1);
+        if (dot == -2) {
+            goto error;
+        }
+        while (dot >= 0) {
+            Py_ssize_t start = dot + 1;
+            Py_ssize_t next_dot = PyUnicode_FindChar(
+                lz->lz_from, '.', start, len, 1);
+            if (next_dot == -2) {
+                goto error;
+            }
+            PyObject *attr = PyUnicode_Substring(
+                lz->lz_from, start, next_dot >= 0 ? next_dot : len);
+            if (attr == NULL) {
+                goto error;
+            }
+            PyObject *from = obj;
+            obj = _PyEval_ImportFrom(tstate, from, attr);
+            Py_DECREF(attr);
+            Py_DECREF(from);
+            if (obj == NULL) {
+                goto error;
+            }
+            dot = next_dot;
+        }
+    }
+    else if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
         PyObject *from = obj;
         obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
         Py_DECREF(from);

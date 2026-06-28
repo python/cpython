@@ -3290,6 +3290,19 @@ done:
     return NULL;
 }
 
+static PyObject *
+lazy_import_as_from(_PyInterpreterFrame *frame, PyObject *builtins,
+                    PyObject *from, PyObject *name)
+{
+    PyObject *full = PyUnicode_FromFormat("%U.%U", from, name);
+    if (full == NULL) {
+        return NULL;
+    }
+    PyObject *ret = _PyLazyImport_NewImportAs(frame, builtins, full);
+    Py_DECREF(full);
+    return ret;
+}
+
 PyObject *
 _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *v, PyObject *name)
 {
@@ -3298,6 +3311,25 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     assert(PyUnicode_Check(name));
     PyObject *ret;
     PyLazyImportObject *d = (PyLazyImportObject *)v;
+
+    if (d->lz_import_as) {
+        return lazy_import_as_from(frame, d->lz_builtins, d->lz_from, name);
+    }
+    else if (d->lz_attr == NULL) {
+        Py_ssize_t dot = PyUnicode_FindChar(
+            d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1
+        );
+        if (dot >= 0) {
+            PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
+            if (from == NULL) {
+                return NULL;
+            }
+            ret = lazy_import_as_from(frame, d->lz_builtins, from, name);
+            Py_DECREF(from);
+            return ret;
+        }
+    }
+
     PyObject *mod = PyImport_GetModule(d->lz_from);
     if (mod != NULL) {
         // Check if the module already has the attribute, if so, resolve it
@@ -3322,20 +3354,6 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
         if (PyUnicode_Check(d->lz_attr)) {
             PyObject *from = PyUnicode_FromFormat(
                 "%U.%U", d->lz_from, d->lz_attr);
-            if (from == NULL) {
-                return NULL;
-            }
-            ret = _PyLazyImport_New(frame, d->lz_builtins, from, name);
-            Py_DECREF(from);
-            return ret;
-        }
-    }
-    else {
-        Py_ssize_t dot = PyUnicode_FindChar(
-            d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1
-        );
-        if (dot >= 0) {
-            PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
             if (from == NULL) {
                 return NULL;
             }

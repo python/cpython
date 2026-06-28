@@ -22,12 +22,15 @@ typedef struct {
     // Frame information for the original import location.
     PyCodeObject *lz_code;     // Code object where the lazy import was created.
     int lz_instr_offset;       // Instruction offset where the lazy import was created.
+    int lz_import_as;          // Whether to reify using import-as semantics.
 } PyLazyImportObject;
 
 
 PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
     struct _PyInterpreterFrame *frame, PyObject *import_func, PyObject *from, PyObject *attr);
+PyAPI_FUNC(PyObject *) _PyLazyImport_NewImportAs(
+    struct _PyInterpreterFrame *frame, PyObject *import_func, PyObject *from);
 
 #ifdef __cplusplus
 }
