@@ -1232,11 +1232,21 @@ mappingproxy_traverse(PyObject *self, visitproc visit, void *arg)
 static PyObject *
 mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
-    mappingproxyobject *v = (mappingproxyobject *)self;
     if (op == Py_EQ || op == Py_NE) {
-        return PyObject_RichCompare(v->mapping, w, op);
+        mappingproxyobject *v = (mappingproxyobject *)self;
+        if (Py_TYPE(w) == Py_TYPE(self)) {
+            w = ((mappingproxyobject *)w)->mapping;
+        }
+
+        if (PyAnyDict_CheckExact(w) || (PyAnyDict_Check(w) && Py_TYPE(w)->tp_richcompare == PyDict_Type.tp_richcompare)) {
+            return PyObject_RichCompare(v->mapping, w, op);
+        }
+        if (PyFrozenDict_CheckExact(v->mapping)) {
+            // immutable - safe to foward.
+            return PyObject_RichCompare(v->mapping, w, op);
+        }
     }
-    Py_RETURN_NOTIMPLEMENTED;
+    Py_RETURN_NOTIMPLEMENTED;  // Defer to w's richcompare    
 }
 
 static int
