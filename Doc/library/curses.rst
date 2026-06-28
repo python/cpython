@@ -346,6 +346,13 @@ The module :mod:`!curses` defines the following functions:
    a key with that value.
 
 
+.. function:: has_mouse()
+
+   Return ``True`` if the mouse driver has been successfully initialized.
+
+   .. versionadded:: next
+
+
 .. function:: define_key(definition, keycode)
 
    Define an escape sequence *definition*, a string, as a key that generates
@@ -1307,6 +1314,18 @@ Window objects
 
    .. versionchanged:: 3.10
       Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
+
+
+.. method:: window.mouse_trafo(y, x, to_screen)
+
+   Convert between window-relative and screen-relative (``stdscr``-relative) character-cell coordinates.
+   If *to_screen* is true, convert the window-relative coordinates *y*, *x* to screen-relative coordinates;
+   otherwise convert in the opposite direction.
+   The two coordinate systems differ when lines are reserved on the screen, for example for soft labels.
+
+   Return the converted coordinates as a ``(y, x)`` tuple, or ``None`` if they lie outside the window.
+
+   .. versionadded:: next
 
 
 .. attribute:: window.encoding
