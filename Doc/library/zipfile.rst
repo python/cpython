@@ -204,10 +204,12 @@ ZipFile objects
    (:mod:`zlib`, :mod:`bz2`, :mod:`lzma`, or :mod:`compression.zstd`) is not
    available, :exc:`RuntimeError` is raised. The default is :const:`ZIP_STORED`.
 
-   If *allowZip64* is ``True`` (the default) zipfile will create ZIP files that
-   use the ZIP64 extensions when the zipfile is larger than 4 GiB. If it is
-   ``false`` :mod:`!zipfile` will raise an exception when the ZIP file would
-   require ZIP64 extensions.
+   If *allowZip64* is ``True`` (the default), ZIP64 extensions will be used
+   on demand when the archive is written, such as when the total archive or a
+   member file is larger than 2 GiB (for compatibility with legacy tools even
+   though the official hard limit is 4 GiB), or when there are more than 65535
+   members in the archive.  If it is ``False``, an exception will be raised in
+   such cases.
 
    The *compresslevel* parameter controls the compression level to use when
    writing files to the archive.
