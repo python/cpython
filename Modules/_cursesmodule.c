@@ -43,7 +43,7 @@
   del_curterm mcprint mvcur restartterm
   ripoffline set_curterm setterm
   tgetent tgetflag tgetnum tgetstr tgoto tputs
-  vidattr vidputs wmouse_trafo
+  vidattr vidputs
 
   Low-priority:
   slk_attr slk_attr_off slk_attr_on slk_attr_set slk_attroff
@@ -3007,6 +3007,36 @@ _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
 {
     return PyBool_FromLong(wenclose(self->win, y, x));
 }
+
+/*[clinic input]
+_curses.window.mouse_trafo
+
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    to_screen: bool
+        If True, convert window-relative coordinates to
+        stdscr-relative ones; otherwise convert the other way.
+    /
+
+Convert coordinates between window-relative and screen-relative.
+
+Return the converted (y, x) coordinates, or None if they are
+outside the window.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_mouse_trafo_impl(PyCursesWindowObject *self, int y, int x,
+                                int to_screen)
+/*[clinic end generated code: output=b21572fa3524c15d input=c51fd793af7f6965]*/
+{
+    int ry = y, rx = x;
+    if (!wmouse_trafo(self->win, &ry, &rx, to_screen)) {
+        Py_RETURN_NONE;
+    }
+    return Py_BuildValue("(ii)", ry, rx);
+}
 #endif
 
 /*[clinic input]
@@ -4836,6 +4866,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_DUPWIN_METHODDEF
     _CURSES_WINDOW_ECHOCHAR_METHODDEF
     _CURSES_WINDOW_ENCLOSE_METHODDEF
+    _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF
     {"erase", PyCursesWindow_werase, METH_NOARGS,
      "erase($self, /)\n--\n\n"
      "Clear the window."},
@@ -7008,6 +7039,21 @@ _curses_meta_impl(PyObject *module, int yes)
 
 #ifdef NCURSES_MOUSE_VERSION
 /*[clinic input]
+_curses.has_mouse
+
+Return True if the mouse driver has been successfully initialized.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_has_mouse_impl(PyObject *module)
+/*[clinic end generated code: output=7901cc34069e4f57 input=94682101a11c4f30]*/
+{
+    PyCursesStatefulInitialised(module);
+
+    return PyBool_FromLong(has_mouse());
+}
+
+/*[clinic input]
 _curses.mouseinterval
 
     interval: int
@@ -8218,6 +8264,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_HAS_IC_METHODDEF
     _CURSES_HAS_IL_METHODDEF
     _CURSES_HAS_KEY_METHODDEF
+    _CURSES_HAS_MOUSE_METHODDEF
     _CURSES_DEFINE_KEY_METHODDEF
     _CURSES_KEY_DEFINED_METHODDEF
     _CURSES_KEYOK_METHODDEF

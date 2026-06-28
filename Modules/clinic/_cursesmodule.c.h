@@ -1093,6 +1093,63 @@ exit:
 
 #endif /* defined(NCURSES_MOUSE_VERSION) */
 
+#if defined(NCURSES_MOUSE_VERSION)
+
+PyDoc_STRVAR(_curses_window_mouse_trafo__doc__,
+"mouse_trafo($self, y, x, to_screen, /)\n"
+"--\n"
+"\n"
+"Convert coordinates between window-relative and screen-relative.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  to_screen\n"
+"    If True, convert window-relative coordinates to\n"
+"    stdscr-relative ones; otherwise convert the other way.\n"
+"\n"
+"Return the converted (y, x) coordinates, or None if they are\n"
+"outside the window.");
+
+#define _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF    \
+    {"mouse_trafo", _PyCFunction_CAST(_curses_window_mouse_trafo), METH_FASTCALL, _curses_window_mouse_trafo__doc__},
+
+static PyObject *
+_curses_window_mouse_trafo_impl(PyCursesWindowObject *self, int y, int x,
+                                int to_screen);
+
+static PyObject *
+_curses_window_mouse_trafo(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int y;
+    int x;
+    int to_screen;
+
+    if (!_PyArg_CheckPositional("mouse_trafo", nargs, 3, 3)) {
+        goto exit;
+    }
+    y = PyLong_AsInt(args[0]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    x = PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    to_screen = PyObject_IsTrue(args[2]);
+    if (to_screen < 0) {
+        goto exit;
+    }
+    return_value = _curses_window_mouse_trafo_impl((PyCursesWindowObject *)self, y, x, to_screen);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(NCURSES_MOUSE_VERSION) */
+
 PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 "getbkgd($self, /)\n"
 "--\n"
@@ -4177,6 +4234,28 @@ exit:
 
 #if defined(NCURSES_MOUSE_VERSION)
 
+PyDoc_STRVAR(_curses_has_mouse__doc__,
+"has_mouse($module, /)\n"
+"--\n"
+"\n"
+"Return True if the mouse driver has been successfully initialized.");
+
+#define _CURSES_HAS_MOUSE_METHODDEF    \
+    {"has_mouse", (PyCFunction)_curses_has_mouse, METH_NOARGS, _curses_has_mouse__doc__},
+
+static PyObject *
+_curses_has_mouse_impl(PyObject *module);
+
+static PyObject *
+_curses_has_mouse(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_has_mouse_impl(module);
+}
+
+#endif /* defined(NCURSES_MOUSE_VERSION) */
+
+#if defined(NCURSES_MOUSE_VERSION)
+
 PyDoc_STRVAR(_curses_mouseinterval__doc__,
 "mouseinterval($module, interval, /)\n"
 "--\n"
@@ -5487,6 +5566,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
 
+#ifndef _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF
+    #define _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_MOUSE_TRAFO_METHODDEF) */
+
 #ifndef _CURSES_WINDOW_NOUTREFRESH_METHODDEF
     #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_NOUTREFRESH_METHODDEF) */
@@ -5599,6 +5682,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
 
+#ifndef _CURSES_HAS_MOUSE_METHODDEF
+    #define _CURSES_HAS_MOUSE_METHODDEF
+#endif /* !defined(_CURSES_HAS_MOUSE_METHODDEF) */
+
 #ifndef _CURSES_MOUSEINTERVAL_METHODDEF
     #define _CURSES_MOUSEINTERVAL_METHODDEF
 #endif /* !defined(_CURSES_MOUSEINTERVAL_METHODDEF) */
@@ -5642,4 +5729,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=14942a1a0dbc6e38 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0cf212f804ab3d85 input=a9049054013a1b77]*/
