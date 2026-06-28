@@ -1238,7 +1238,12 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
             w = ((mappingproxyobject *)w)->mapping;
         }
 
-        if (PyAnyDict_CheckExact(w) || (PyAnyDict_Check(w) && Py_TYPE(w)->tp_richcompare == PyDict_Type.tp_richcompare)) {
+        if (PyAnyDict_CheckExact(w) ||
+                (PyAnyDict_Check(w) && Py_TYPE(w)->tp_richcompare == PyDict_Type.tp_richcompare)) {
+            return PyObject_RichCompare(v->mapping, w, op);
+        }
+        if (PyODict_CheckExact(w) ||
+                (PyODict_Check(w) && Py_TYPE(w)->tp_richcompare == PyODict_Type.tp_richcompare)) {
             return PyObject_RichCompare(v->mapping, w, op);
         }
         if (PyFrozenDict_CheckExact(v->mapping)) {
