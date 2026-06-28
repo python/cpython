@@ -1251,7 +1251,7 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
             return PyObject_RichCompare(v->mapping, w, op);
         }
     }
-    Py_RETURN_NOTIMPLEMENTED;  // Defer to w's richcompare    
+    Py_RETURN_NOTIMPLEMENTED;  // Defer to w's richcompare 
 }
 
 static int
