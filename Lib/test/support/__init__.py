@@ -560,7 +560,7 @@ def requires_zstd(reason='requires zstd'):
         from compression import zstd
     except ImportError:
         zstd = None
-    return unittest.skipUnless(zstd, reason)
+    return skipUnless(zstd, reason, label='requires_zstd')
 
 def has_no_debug_ranges():
     try:
