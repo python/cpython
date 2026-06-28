@@ -13,6 +13,8 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/prim.h"
 #include <stdio.h>   // fputs, stderr
 
+#include <psapi.h>
+#include <bcrypt.h>
 
 //---------------------------------------------
 // Dynamically bind Windows API points for portability
@@ -121,7 +123,11 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config )
   if (si.dwAllocationGranularity > 0) { config->alloc_granularity = si.dwAllocationGranularity; }
   // get the VirtualAlloc2 function
   HINSTANCE  hDll;
+#ifndef MS_WINDOWS_DESKTOP
+  hDll = LoadPackagedLibrary(L"kernelbase", 0);
+#else
   hDll = LoadLibrary(TEXT("kernelbase.dll"));
+#endif
   if (hDll != NULL) {
     // use VirtualAlloc2FromApp if possible as it is available to Windows store apps
     pVirtualAlloc2 = (PVirtualAlloc2)(void (*)(void))GetProcAddress(hDll, "VirtualAlloc2FromApp");
@@ -129,13 +135,21 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config )
     FreeLibrary(hDll);
   }
   // NtAllocateVirtualMemoryEx is used for huge page allocation
+#ifndef MS_WINDOWS_DESKTOP
+  hDll = LoadPackagedLibrary(L"ntdll", 0);
+#else
   hDll = LoadLibrary(TEXT("ntdll.dll"));
+#endif
   if (hDll != NULL) {
     pNtAllocateVirtualMemoryEx = (PNtAllocateVirtualMemoryEx)(void (*)(void))GetProcAddress(hDll, "NtAllocateVirtualMemoryEx");
     FreeLibrary(hDll);
   }
   // Try to use Win7+ numa API
+#ifndef MS_WINDOWS_DESKTOP
+  hDll = LoadPackagedLibrary(L"kernel32", 0);
+#else
   hDll = LoadLibrary(TEXT("kernel32.dll"));
+#endif
   if (hDll != NULL) {
     pGetCurrentProcessorNumberEx = (PGetCurrentProcessorNumberEx)(void (*)(void))GetProcAddress(hDll, "GetCurrentProcessorNumberEx");
     pGetNumaProcessorNodeEx = (PGetNumaProcessorNodeEx)(void (*)(void))GetProcAddress(hDll, "GetNumaProcessorNodeEx");
@@ -377,6 +391,9 @@ size_t _mi_prim_numa_node(void) {
 }
 
 size_t _mi_prim_numa_node_count(void) {
+#ifndef MS_WINDOWS_DESKTOP
+    return ((size_t)1);
+#else
   ULONG numa_max = 0;
   GetNumaHighestNodeNumber(&numa_max);
   // find the highest node number that has actual processors assigned to it. Issue #282
@@ -399,6 +416,7 @@ size_t _mi_prim_numa_node_count(void) {
     numa_max--;
   }
   return ((size_t)numa_max + 1);
+#endif
 }
 
 
@@ -439,9 +457,6 @@ static mi_msecs_t filetime_msecs(const FILETIME* ftime) {
   return msecs;
 }
 
-typedef BOOL (WINAPI *PGetProcessMemoryInfo)(HANDLE, PPROCESS_MEMORY_COUNTERS, DWORD);
-static PGetProcessMemoryInfo pGetProcessMemoryInfo = NULL;
-
 void _mi_prim_process_info(mi_process_info_t* pinfo)
 {
   FILETIME ct;
@@ -452,20 +467,11 @@ void _mi_prim_process_info(mi_process_info_t* pinfo)
   pinfo->utime = filetime_msecs(&ut);
   pinfo->stime = filetime_msecs(&st);
 
-  // load psapi on demand
-  if (pGetProcessMemoryInfo == NULL) {
-    HINSTANCE hDll = LoadLibrary(TEXT("psapi.dll"));
-    if (hDll != NULL) {
-      pGetProcessMemoryInfo = (PGetProcessMemoryInfo)(void (*)(void))GetProcAddress(hDll, "GetProcessMemoryInfo");
-    }
-  }
-
   // get process info
   PROCESS_MEMORY_COUNTERS info;
   memset(&info, 0, sizeof(info));
-  if (pGetProcessMemoryInfo != NULL) {
-    pGetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info));
-  }
+  GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info));
+
   pinfo->current_rss    = (size_t)info.WorkingSetSize;
   pinfo->peak_rss       = (size_t)info.PeakWorkingSetSize;
   pinfo->current_commit = (size_t)info.PagefileUsage;
@@ -549,18 +555,8 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
 #define BCRYPT_USE_SYSTEM_PREFERRED_RNG 0x00000002
 #endif
 
-typedef LONG (NTAPI *PBCryptGenRandom)(HANDLE, PUCHAR, ULONG, ULONG);
-static  PBCryptGenRandom pBCryptGenRandom = NULL;
-
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
-  if (pBCryptGenRandom == NULL) {
-    HINSTANCE hDll = LoadLibrary(TEXT("bcrypt.dll"));
-    if (hDll != NULL) {
-      pBCryptGenRandom = (PBCryptGenRandom)(void (*)(void))GetProcAddress(hDll, "BCryptGenRandom");
-    }
-    if (pBCryptGenRandom == NULL) return false;
-  }
-  return (pBCryptGenRandom(NULL, (PUCHAR)buf, (ULONG)buf_len, BCRYPT_USE_SYSTEM_PREFERRED_RNG) >= 0);
+  return (BCryptGenRandom(NULL, (PUCHAR)buf, (ULONG)buf_len, BCRYPT_USE_SYSTEM_PREFERRED_RNG) >= 0);
 }
 
 #endif  // MI_USE_RTLGENRANDOM
