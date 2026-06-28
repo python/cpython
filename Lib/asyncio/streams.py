@@ -218,7 +218,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         reader = self._stream_reader
         if reader is not None:
-            reader._transport = transport
+            reader.set_transport(transport)
 
     def connection_made(self, transport):
         if self._reject_connection:
@@ -475,7 +475,9 @@ class StreamReader:
                 waiter.set_result(None)
 
     def set_transport(self, transport):
-        assert self._transport is None, 'Transport already set'
+        assert self._transport is None or self._transport is transport, (
+            'Transport already set'
+        )
         self._transport = transport
 
     def _maybe_resume_transport(self):
