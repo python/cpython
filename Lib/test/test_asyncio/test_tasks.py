@@ -100,6 +100,8 @@ class BaseTaskTests:
         self.loop = self.new_test_loop()
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
+        self.loop.set_settings(asyncio.EventLoopSettings(eager_timeout=0,
+                                                         eager_bunch_size=0))
 
     def test_generic_alias(self):
         task = self.__class__.Task[str]

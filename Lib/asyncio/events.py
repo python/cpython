@@ -7,6 +7,7 @@
 __all__ = (
     "AbstractEventLoop",
     "AbstractServer",
+    "EventLoopSettings",
     "Handle",
     "TimerHandle",
     "get_event_loop",
@@ -18,6 +19,7 @@ __all__ = (
 )
 
 import contextvars
+import dataclasses
 import os
 import signal
 import socket
@@ -246,6 +248,12 @@ class AbstractServer:
     async def __aexit__(self, *exc):
         self.close()
         await self.wait_closed()
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class EventLoopSettings:
+    eager_timeout: float
+    eager_bunch_size: int
 
 
 class AbstractEventLoop:
@@ -659,6 +667,14 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     def set_debug(self, enabled):
+        raise NotImplementedError
+
+    # Settings management.
+
+    def get_settings(self):
+        raise NotImplementedError
+
+    def set_settings(self, settings):
         raise NotImplementedError
 
 
