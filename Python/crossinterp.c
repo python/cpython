@@ -1648,6 +1648,7 @@ _PyXI_NewExcInfo(PyObject *exc)
     }
     _PyXI_excinfo *info = PyMem_RawCalloc(1, sizeof(_PyXI_excinfo));
     if (info == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     const char *failure;
@@ -1668,6 +1669,7 @@ _PyXI_NewExcInfo(PyObject *exc)
 void
 _PyXI_FreeExcInfo(_PyXI_excinfo *info)
 {
+    assert(info != NULL);
     _PyXI_excinfo_clear(info);
     PyMem_RawFree(info);
 }

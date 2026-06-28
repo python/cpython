@@ -86,12 +86,12 @@ jobs:
       run: >-
         ./python -m test
         ${{ inputs.sanitizer == 'TSan' && '--tsan' || '' }}
-        -j4
+        -j4 -W --timeout=900 --slowest
     - name: Parallel tests
       if: >-
         inputs.sanitizer == 'TSan'
         && fromJSON(inputs.free-threading)
-      run: ./python -m test --tsan-parallel --parallel-threads=4 -j4
+      run: ./python -m test --tsan-parallel --parallel-threads=4 -j4 -W --timeout=600 --slowest
     - name: Display logs
       if: always()
       run: find "${GITHUB_WORKSPACE}" -name 'san_log.*' | xargs head -n 1000

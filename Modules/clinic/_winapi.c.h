@@ -2161,4 +2161,22 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6cd07628af447d0a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_GetTickCount64__doc__,
+"GetTickCount64($module, /)\n"
+"--\n"
+"\n"
+"Number of milliseconds that have elapsed since the system was started.");
+
+#define _WINAPI_GETTICKCOUNT64_METHODDEF    \
+    {"GetTickCount64", (PyCFunction)_winapi_GetTickCount64, METH_NOARGS, _winapi_GetTickCount64__doc__},
+
+static PyObject *
+_winapi_GetTickCount64_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetTickCount64(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetTickCount64_impl(module);
+}
+/*[clinic end generated code: output=4a408e816118d0a6 input=a9049054013a1b77]*/

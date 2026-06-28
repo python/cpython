@@ -143,7 +143,7 @@ If you instantiate any of these types, note that signatures may vary between Pyt
 
 Standard names are defined for the following types:
 
-.. data:: NoneType
+.. class:: NoneType
 
    The type of :data:`None`.
 
@@ -233,7 +233,7 @@ Standard names are defined for the following types:
    .. versionadded:: 3.7
 
 
-.. data:: NotImplementedType
+.. class:: NotImplementedType
 
    The type of :data:`NotImplemented`.
 
@@ -273,7 +273,7 @@ Standard names are defined for the following types:
          creating :class:`!ModuleType` instances which ensures the various
          attributes are set appropriately.
 
-.. data:: EllipsisType
+.. class:: EllipsisType
 
    The type of :data:`Ellipsis`.
 
@@ -363,6 +363,10 @@ Standard names are defined for the following types:
    Read-only proxy of a mapping. It provides a dynamic view on the mapping's
    entries, which means that when the mapping changes, the view reflects these
    changes.
+
+   :class:`!MappingProxyType`\s are :ref:`generic <generics>` over two types,
+   signifying (respectively) the types of the underlying mapping's keys and
+   values.
 
    .. versionadded:: 3.3
 

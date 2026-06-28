@@ -457,6 +457,12 @@ customization.
        Python runtimes, or false to prevent it.
        By default, true.
 
+   * - ``shebang_templates``
+     - (none)
+     - Mapping from shebang line template to alternative command, such as
+       ``py -V:<tag>`` or a substitute string.
+       See :ref:`pymanager-shebang` for more details.
+
    * - ``log_level``
      - ``PYMANAGER_VERBOSE``, ``PYMANAGER_DEBUG``
      - Set the default level of output (0-50).
@@ -569,6 +575,30 @@ shells. These paths may be quoted, and may include multiple arguments, after
 which the path to the script and any additional arguments will be appended.
 This functionality may be disabled by the ``shebang_can_run_anything``
 configuration option.
+
+Since version 26.3 of the Python install manager, custom shebang templates may
+be added to your configuration file. Add the ``shebang_templates`` object with
+one member for each template (the string to match) and the command to use when
+the template is matched. Most commands should be ``py -V:<tag>`` (or ``pyw``) to
+launch one of your installed runtimes. The ``py -3.<version>`` form is also
+allowed, as is a plain ``py`` to launch the default. No other arguments are
+supported.
+
+.. code:: json5
+
+   {
+       "shebang_templates": {
+           "/usr/bin/python": "py",
+           "/usr/bin/my_custom_python": "py -V:MyCustomPython/3"
+       }
+   }
+
+If the substitute command is not ``py`` or ``pyw``, it will be written back into
+the shebang and regular handling continues. If launching arbitrary executables
+is permitted, then providing a full path will allow you to redirect from Python
+to any executable. The template should match either the entire line (ignoring
+leading and trailing whitespace), or up to the first space in the shebang line.
+
 
 .. note::
 

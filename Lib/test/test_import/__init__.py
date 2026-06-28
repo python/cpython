@@ -360,6 +360,15 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ModuleNotFoundError):
             import something_that_should_not_exist_anywhere
 
+    def test_import_null_byte_in_name_raises_ModuleNotFoundError(self):
+        # gh-150633: module names containing null bytes should not
+        # lead to duplicates in sys.modules
+        before = set(sys.modules.keys())
+        with self.assertRaises(ModuleNotFoundError):
+            __import__('zipimport\x00junk')
+
+        self.assertEqual(set(sys.modules.keys()), before)
+
     def test_from_import_missing_module_raises_ModuleNotFoundError(self):
         with self.assertRaises(ModuleNotFoundError):
             from something_that_should_not_exist_anywhere import blah

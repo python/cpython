@@ -749,9 +749,9 @@ fix: paste zero-width in default repl width is wrong.
 
 Add :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
 and :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
-to :ref:`xmlparser <xmlparser-objects>` objects to prevent use of
-disproportional amounts of dynamic memory from within an Expat parser. Patch
-by Bénédikt Tran.
+to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+disproportional amounts of dynamic memory usage from within an Expat parser.
+Patch by Bénédikt Tran.
 
 ..
 

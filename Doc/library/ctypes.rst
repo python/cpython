@@ -3167,6 +3167,8 @@ Arrays and pointers
    subscript and slice accesses; for slice reads, the resulting object is
    *not* itself an :class:`Array`.
 
+   Arrays are :ref:`generic <generics>` over the type of their elements.
+
 
    .. attribute:: _length_
 

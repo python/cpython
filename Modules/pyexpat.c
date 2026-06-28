@@ -1188,7 +1188,7 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 }
 #endif
 
-#if XML_COMBINED_VERSION >= 20702
+#if XML_COMBINED_VERSION >= 20400
 static PyObject *
 set_activation_threshold(xmlparseobject *self,
                          PyTypeObject *cls,
@@ -1232,6 +1232,76 @@ set_maximum_amplification(xmlparseobject *self,
 }
 #endif
 
+#if XML_COMBINED_VERSION >= 20400
+/*[clinic input]
+pyexpat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold
+
+    cls: defining_class
+    threshold: unsigned_long_long
+    /
+
+Sets the number of output bytes needed to activate protection against billion laughs attacks.
+
+The number of output bytes includes amplification from entity expansion
+and reading DTD files.
+
+Parser objects usually have a protection activation threshold of 8 MiB,
+but the actual default value depends on the underlying Expat library.
+
+Activation thresholds below 4 MiB are known to break support for DITA 1.3
+payload and are hence not recommended.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold_impl(xmlparseobject *self,
+                                                                           PyTypeObject *cls,
+                                                                           unsigned long long threshold)
+/*[clinic end generated code: output=0c082342f1c78114 input=5a51695a481def92]*/
+{
+    return set_activation_threshold(
+        self, cls, threshold,
+        XML_SetBillionLaughsAttackProtectionActivationThreshold
+    );
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20400
+/*[clinic input]
+pyexpat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification
+
+    cls: defining_class
+    max_factor: float
+    /
+
+Sets the maximum tolerated amplification factor for protection against billion laughs attacks.
+
+The amplification factor is calculated as "(direct + indirect) / direct"
+while parsing, where "direct" is the number of bytes read from the primary
+document in parsing and "indirect" is the number of bytes added by expanding
+entities and reading external DTD files, combined.
+
+The 'max_factor' value must be a non-NaN floating point value greater than
+or equal to 1.0. Amplification factors greater than 30,000 can be observed
+in the middle of parsing even with benign files in practice. In particular,
+the activation threshold should be carefully chosen to avoid false positives.
+
+Parser objects usually have a maximum amplification factor of 100,
+but the actual default value depends on the underlying Expat library.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification_impl(xmlparseobject *self,
+                                                                            PyTypeObject *cls,
+                                                                            float max_factor)
+/*[clinic end generated code: output=c590439eadf463fa input=5de7c6dd7169b3b0]*/
+{
+    return set_maximum_amplification(
+        self, cls, max_factor,
+        XML_SetBillionLaughsAttackProtectionMaximumAmplification
+    );
+}
+#endif
+
 #if XML_COMBINED_VERSION >= 20702
 /*[clinic input]
 pyexpat.xmlparser.SetAllocTrackerActivationThreshold
@@ -1242,15 +1312,15 @@ pyexpat.xmlparser.SetAllocTrackerActivationThreshold
 
 Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.
 
-By default, parser objects have an allocation activation threshold of
-64 MiB.
+Parser objects usually have an allocation activation threshold of 64 MiB,
+but the actual default value depends on the underlying Expat library.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
                                                           PyTypeObject *cls,
                                                           unsigned long long threshold)
-/*[clinic end generated code: output=bed7e93207ba08c5 input=a96541ba5ea46747]*/
+/*[clinic end generated code: output=bed7e93207ba08c5 input=b74171709a77f2d9]*/
 {
     return set_activation_threshold(
         self, cls, threshold,
@@ -1280,14 +1350,15 @@ greater than or equal to 1.0.  Amplification factors greater than
 files in practice.  In particular, the activation threshold should
 be carefully chosen to avoid false positives.
 
-By default, parser objects have a maximum amplification factor of 100.
+Parser objects usually have a maximum amplification factor of 100,
+but the actual default value depends on the underlying Expat library.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            PyTypeObject *cls,
                                                            float max_factor)
-/*[clinic end generated code: output=6e44bd48c9b112a0 input=9cd13e3ea845dbb4]*/
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=db40271991462073]*/
 {
     return set_maximum_amplification(
         self, cls, max_factor,
@@ -1305,6 +1376,8 @@ static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF
     PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF
     PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
+    PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONACTIVATIONTHRESHOLD_METHODDEF
+    PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONMAXIMUMAMPLIFICATION_METHODDEF
     PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
     PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF
@@ -1420,7 +1493,10 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
         Py_DECREF(self);
         return NULL;
     }
-#if XML_COMBINED_VERSION >= 20100
+#if XML_COMBINED_VERSION >= 20800
+    /* This feature was added upstream in libexpat 2.8.0. */
+    XML_SetHashSalt16Bytes(self->itself, _Py_HashSecret.expat.hashsalt16);
+#elif XML_COMBINED_VERSION >= 20100
     /* This feature was added upstream in libexpat 2.1.0. */
     XML_SetHashSalt(self->itself,
                     (unsigned long)_Py_HashSecret.expat.hashsalt);
@@ -2314,6 +2390,11 @@ pyexpat_exec(PyObject *mod)
 #else
     capi->SetHashSalt = NULL;
 #endif
+#if XML_COMBINED_VERSION >= 20800
+    capi->SetHashSalt16Bytes = XML_SetHashSalt16Bytes;
+#else
+    capi->SetHashSalt16Bytes = NULL;
+#endif
 #if XML_COMBINED_VERSION >= 20600
     capi->SetReparseDeferralEnabled = XML_SetReparseDeferralEnabled;
 #else
@@ -2325,6 +2406,13 @@ pyexpat_exec(PyObject *mod)
 #else
     capi->SetAllocTrackerActivationThreshold = NULL;
     capi->SetAllocTrackerMaximumAmplification = NULL;
+#endif
+#if XML_COMBINED_VERSION >= 20400
+    capi->SetBillionLaughsAttackProtectionActivationThreshold = XML_SetBillionLaughsAttackProtectionActivationThreshold;
+    capi->SetBillionLaughsAttackProtectionMaximumAmplification = XML_SetBillionLaughsAttackProtectionMaximumAmplification;
+#else
+    capi->SetBillionLaughsAttackProtectionActivationThreshold = NULL;
+    capi->SetBillionLaughsAttackProtectionMaximumAmplification = NULL;
 #endif
 
     /* export using capsule */

@@ -1248,6 +1248,9 @@ Task object
    blocks. If the coroutine returns or raises without blocking, the task
    will be finished eagerly and will skip scheduling to the event loop.
 
+   Tasks are :ref:`generic <generics>` over the return type of their wrapped
+   coroutines.
+
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
 
