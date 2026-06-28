@@ -1296,7 +1296,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _sendfile_fallback(self, transp, file, offset, count):
         if hasattr(file, 'seek'):
             file.seek(offset)
-        blocksize = min(count, 16384) if count else 16384
+        blocksize = (
+            min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
+            if count else constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        )
         buf = bytearray(blocksize)
         total_sent = 0
         proto = _SendfileFallbackProtocol(transp)
