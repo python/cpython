@@ -197,9 +197,9 @@ loops that truncate the stream.
           for iterable in iterables:
               yield from iterable
 
-   Note that :pep:`798` unpacking syntax provides similar functionality
-   so that ``list(chain(p, q))`` could be written as
-   ``[*s for s in (p, q)]``.
+   In Python 3.15 and later, the syntax for :ref:`unpacking in comprehensions
+   <unpacking-in-comprehensions>` provides similar functionality so that
+   ``list(chain(p, q))`` could be written as ``[*s for s in (p, q)]``.
 
 
 .. classmethod:: chain.from_iterable(iterable)
