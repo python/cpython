@@ -625,6 +625,11 @@ class TracebackCases(unittest.TestCase):
             str(inspect.signature(traceback.format_exception_only)),
             '(exc, /, value=<implicit>, *, show_group=False, **kwargs)')
 
+    def test_syntax_error_with_not_implemented_msg(self):
+        exc = SyntaxError(NotImplemented)
+        lines = traceback.format_exception_only(type(exc), exc)
+        self.assertIsInstance("".join(lines), str)
+
 
 class PurePythonExceptionFormattingMixin:
     def get_exception(self, callable, slice_start=0, slice_end=-1):
