@@ -1061,16 +1061,33 @@ static PyMappingMethods mappingproxy_as_mapping = {
     0,                                          /* mp_ass_subscript */
 };
 
+static int is_known_dict_subclass_or(PyObject *o) {
+    return (PyAnyDict_CheckExact(o) || PyODict_CheckExact(o) ||
+        (PyAnyDict_Check(o) && Py_TYPE(o)->tp_as_number->nb_or == PyDict_Type.tp_as_number->nb_or)) ||
+        (PyODict_Check(o) && Py_TYPE(o)->tp_as_number->nb_or == PyODict_Type.tp_as_number->nb_or);
+}
+
 static PyObject *
 mappingproxy_or(PyObject *left, PyObject *right)
 {
     if (PyObject_TypeCheck(left, &PyDictProxy_Type)) {
-        left = ((mappingproxyobject*)left)->mapping;
+        if (PyObject_TypeCheck(right, &PyDictProxy_Type)) {
+            right = ((mappingproxyobject*)right)->mapping; 
+        }
+        PyObject *left_mapping = ((mappingproxyobject*)left)->mapping;
+        if (is_known_dict_subclass_or(right) || PyFrozenDict_CheckExact(left_mapping)) {
+            return PyNumber_Or(left_mapping, right);
+        }
+    } else {
+        assert(PyObject_TypeCheck(right, &PyDictProxy_Type));
+        PyObject *right_mapping = ((mappingproxyobject*)right)->mapping;
+        if (is_known_dict_subclass_or(left) || PyFrozenDict_CheckExact(right_mapping)) {
+            return PyNumber_Or(left, right_mapping);
+        }
     }
-    if (PyObject_TypeCheck(right, &PyDictProxy_Type)) {
-        right = ((mappingproxyobject*)right)->mapping;
-    }
-    return PyNumber_Or(left, right);
+
+    // The non-mappingproxy "or" will have to deal with a mappingproxy.
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyObject *
