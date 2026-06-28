@@ -8,6 +8,16 @@ import test.support
 
 _sentinel = object()
 
+# Abbreviated option names accepted by Tk in addition to the full names.
+_OPTION_ALIASES = {
+    'bd': 'borderwidth',
+    'bg': 'background',
+    'bgimg': 'backgroundimage',
+    'fg': 'foreground',
+    'invcmd': 'invalidcommand',
+    'vcmd': 'validatecommand',
+}
+
 # Options which accept all values allowed by Tk_GetPixels
 # borderwidth = bd
 
@@ -214,22 +224,43 @@ class AbstractWidgetTest(AbstractTkTest):
             widget[k]
         # Test if OPTIONS contains all keys
         if test.support.verbose:
-            aliases = {
-                'bd': 'borderwidth',
-                'bg': 'background',
-                'bgimg': 'backgroundimage',
-                'fg': 'foreground',
-                'invcmd': 'invalidcommand',
-                'vcmd': 'validatecommand',
-            }
             keys = set(keys)
             expected = set(self.OPTIONS)
             for k in sorted(keys - expected):
-                if not (k in aliases and
-                        aliases[k] in keys and
-                        aliases[k] in expected):
+                if not (k in _OPTION_ALIASES and
+                        _OPTION_ALIASES[k] in keys and
+                        _OPTION_ALIASES[k] in expected):
                     print('%s.OPTIONS doesn\'t contain "%s"' %
                           (self.__class__.__name__, k))
+
+    def test_options_in_docstring(self):
+        # Every option in OPTIONS must be listed in the docstring of the
+        # __init__ method (see gh-78335).  Options reported by keys() but
+        # missing from the docstring are only printed in verbose mode, as
+        # some of them depend on the Tk version.
+        widget = self.create()
+        doc = type(widget).__init__.__doc__
+        if doc is None:
+            self.skipTest('docstrings are not available (run with -OO)')
+        # Look at the option list only, not the leading description.
+        start = doc.find('Valid option names')
+        if start < 0:
+            start = doc.find('OPTIONS')
+        if start < 0:
+            self.skipTest('the __init__ docstring does not list options')
+        documented = set(re.findall(r'[a-z][a-z0-9]+', doc[start:]))
+        def is_documented(option):
+            return (option in documented or
+                    _OPTION_ALIASES.get(option) in documented)
+        missing = sorted(o for o in self.OPTIONS if not is_documented(o))
+        self.assertEqual(missing, [],
+                         '%s options missing from the __init__ docstring: %s'
+                         % (type(widget).__name__, missing))
+        if test.support.verbose:
+            for key in sorted(set(widget.keys())):
+                if not is_documented(key):
+                    print('%s.__init__ docstring doesn\'t contain "%s"'
+                          % (type(widget).__name__, key))
 
 class PixelOptionsTests:
     """Standard options that accept all formats acceptable to Tk_GetPixels.
