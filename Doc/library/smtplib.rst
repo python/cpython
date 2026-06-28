@@ -168,7 +168,7 @@ A nice selection of exceptions is defined as well:
 
    .. attribute:: smtp_error
 
-      The error message.
+      The error message as a :class:`bytes` object.
 
 
 .. exception:: SMTPSenderRefused
@@ -323,9 +323,11 @@ An :class:`SMTP` instance has the following methods:
 .. method:: SMTP.verify(address)
 
    Check the validity of an address on this server using SMTP ``VRFY``. Returns a
-   tuple consisting of code 250 and a full :rfc:`822` address (including human
-   name) if the user address is valid. Otherwise returns an SMTP error code of 400
-   or greater and an error string.
+   ``(code, message)`` tuple, where *message* is the server response as a
+   :class:`bytes` object.  If the user address is valid, *code* is 250 and
+   *message* contains a full :rfc:`822` address (including human name).
+   Otherwise *code* is an SMTP error code of 400 or greater and *message*
+   contains the error response.
 
    .. note::
 
@@ -485,8 +487,9 @@ An :class:`SMTP` instance has the following methods:
    recipient. Otherwise it will raise an exception.  That is, if this method does
    not raise an exception, then someone should get your mail. If this method does
    not raise an exception, it returns a dictionary, with one entry for each
-   recipient that was refused.  Each entry contains a tuple of the SMTP error code
-   and the accompanying error message sent by the server.
+   recipient that was refused.  Each entry contains a ``(code, response)`` tuple,
+   where *code* is the SMTP error code and *response* is the accompanying server
+   error response as a :class:`bytes` object.
 
    If ``SMTPUTF8`` is included in *mail_options*, and the server supports it,
    *from_addr* and *to_addrs* may contain non-ASCII characters.
