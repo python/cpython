@@ -1,0 +1,2 @@
+:class:`http.client.HTTPConnection` now waits for a ``100 Continue`` response
+before sending body content if the ``Expect: 100-Continue`` header is set.
