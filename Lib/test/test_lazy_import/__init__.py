@@ -957,6 +957,81 @@ class GlobalsAndDictTests(LazyImportTestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
+    def test_add_lazy_to_exec_globals_after_specialization(self):
+        code = textwrap.dedent("""
+            source = '''
+            import sys
+            import types
+
+            lazy from test.test_lazy_import.data import basic2
+
+            assert 'test.test_lazy_import.data.basic2' not in sys.modules
+
+            class C: pass
+            sneaky = C()
+            sneaky.x = 1
+
+            def f():
+                t = 0
+                for _ in range(5):
+                    t += sneaky.x
+                return t
+
+            f()
+            globals()["sneaky"] = globals()["basic2"]
+            assert f() == 210
+            print("OK")
+            '''
+            ns = {"__name__": "lazy_exec_globals"}
+            exec(source, ns)
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_add_lazy_to_exec_builtins_after_specialization(self):
+        code = textwrap.dedent("""
+            import builtins
+            source = '''
+            import sys
+            import types
+
+            lazy from test.test_lazy_import.data import basic2
+
+            assert 'test.test_lazy_import.data.basic2' not in sys.modules
+
+            class C: pass
+            sneaky = C()
+            sneaky.x = 1
+            __builtins__["sneaky"] = sneaky
+            del sneaky
+
+            def f():
+                t = 0
+                for _ in range(5):
+                    t += sneaky.x
+                return t
+
+            f()
+            __builtins__["sneaky"] = globals()["basic2"]
+            assert f() == 210
+            print("OK")
+            '''
+            ns = {"__name__": "lazy_exec_builtins", "__builtins__": builtins.__dict__.copy()}
+            exec(source, ns)
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
 
 @support.requires_subprocess()
 class MultipleNameFromImportTests(LazyImportTestCase):
