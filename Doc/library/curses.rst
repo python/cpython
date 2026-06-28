@@ -978,6 +978,7 @@ Window objects
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+   Its components can be extracted like those of :meth:`inch`.
 
 
 .. method:: window.getch([y, x])
@@ -1068,8 +1069,10 @@ Window objects
 
 .. method:: window.inch([y, x])
 
-   Return the character at the given position in the window. The bottom 8 bits are
-   the character proper, and upper bits are the attributes.
+   Return the character at the given position in the window.
+   The bottom 8 bits are the character proper and the upper bits are the attributes;
+   extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
+   and the color pair with :func:`pair_number`.
 
 
 .. method:: window.insch(ch[, attr])
