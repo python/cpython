@@ -1,1 +1,1 @@
-Emit DeprecationWarning when a file path is passed to :func:`mimetypes.guess_type`. Use :func:`mimetypes.guess_file_type` instead.
+Deprecate passing a file path to :func:`mimetypes.guess_type`. Use :func:`mimetypes.guess_file_type` instead.

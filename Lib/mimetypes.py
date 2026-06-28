@@ -108,10 +108,6 @@ class MimeTypes:
     def guess_type(self, url, strict=True):
         """Guess the type of a file based on its URL.
 
-        .. deprecated:: 3.16
-           Passing a file path (or path-like object) is deprecated.
-           Use :meth:`guess_file_type` instead.
-
         Return value is a tuple (type, encoding) where type is None if
         the type can't be guessed (no or unknown suffix) or a string
         of the form type/subtype, usable for a MIME Content-type
@@ -139,7 +135,6 @@ class MimeTypes:
             scheme = p.scheme
             url = p.path
         else:
-            # Input has no URL scheme — it is a file path, not a URL.
             warnings.warn(
                 "Passing a file path to guess_type() is deprecated and will be "
                 "removed in a future version. Use guess_file_type() instead.",
