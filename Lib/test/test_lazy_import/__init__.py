@@ -167,6 +167,103 @@ class LazyImportTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    @support.requires_subprocess()
+    def test_dotted_import_calls_full_name_import_hook(self):
+        """Dotted lazy imports should call __import__ with the full name."""
+        code = textwrap.dedent(r"""
+            import atexit
+            import builtins
+            import shutil
+            import sys
+            import tempfile
+            import types
+            from pathlib import Path
+
+            PKG = "hookpkg_gh_152297"
+            SUBMOD = f"{PKG}.sub"
+
+            real_import = builtins.__import__
+            full_name_calls = []
+            calls = []
+
+            tmpdir = tempfile.mkdtemp()
+            atexit.register(shutil.rmtree, tmpdir, ignore_errors=True)
+
+            package_dir = Path(tmpdir, PKG)
+            package_dir.mkdir()
+            (package_dir / "__init__.py").touch()
+            (package_dir / "sub.py").write_text(
+                "VALUE = 'real-submodule'\n", encoding="utf-8")
+
+            sys.path.insert(0, tmpdir)
+            atexit.register(setattr, builtins, "__import__", real_import)
+
+            def custom_import(name, globals=None, locals=None, fromlist=(),
+                              level=0):
+                caller = (
+                    globals.get("__name__")
+                    if isinstance(globals, dict) else None
+                )
+                call = (name, caller, tuple(fromlist or ()))
+                calls.append(call)
+
+                if name == SUBMOD:
+                    full_name_calls.append(call)
+                    package = real_import(PKG, globals, locals, (), level)
+                    module = types.ModuleType(SUBMOD)
+                    module.VALUE = "hooked-submodule"
+                    package.sub = module
+                    sys.modules[SUBMOD] = module
+                    return package
+
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+
+            lazy import hookpkg_gh_152297.sub
+
+            assert not full_name_calls, calls
+            assert hookpkg_gh_152297.sub.VALUE == "hooked-submodule", calls
+            assert full_name_calls == [(SUBMOD, "__main__", ())], calls
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_dotted_import_first_use_loads_full_target(self):
+        """First use of a dotted lazy import should load the submodule."""
+        code = textwrap.dedent(r"""
+            import atexit
+            import shutil
+            import sys
+            import tempfile
+            from pathlib import Path
+
+            PKG = "hookpkg_gh_152297_default"
+            SUBMOD = f"{PKG}.sub"
+
+            tmpdir = tempfile.mkdtemp()
+            atexit.register(shutil.rmtree, tmpdir, ignore_errors=True)
+
+            package_dir = Path(tmpdir, PKG)
+            package_dir.mkdir()
+            (package_dir / "__init__.py").touch()
+            (package_dir / "sub.py").write_text(
+                "VALUE = 42\n", encoding="utf-8")
+
+            sys.path.insert(0, tmpdir)
+
+            lazy import hookpkg_gh_152297_default.sub
+
+            assert SUBMOD not in sys.modules
+
+            _ = hookpkg_gh_152297_default
+
+            assert PKG in sys.modules
+            assert SUBMOD in sys.modules
+            assert hookpkg_gh_152297_default.sub.VALUE == 42
+        """)
+        assert_python_ok("-c", code)
+
 
 class GlobalLazyImportModeTests(LazyImportTestCase):
     """Tests for sys.set_lazy_imports() global mode control."""
@@ -658,14 +755,15 @@ class ErrorHandlingTests(LazyImportTestCase):
     """
 
     def test_import_error_shows_chained_traceback(self):
-        """Accessing a nonexistent lazy submodule via parent attr raises AttributeError."""
+        """A failed dotted lazy import should preserve the import failure."""
         code = textwrap.dedent("""
             import sys
             lazy import test.test_lazy_import.data.nonexistent_module
 
             try:
                 x = test.test_lazy_import.data.nonexistent_module
-            except AttributeError as e:
+            except ModuleNotFoundError as e:
+                assert e.__cause__ is not None, "Expected chained exception"
                 print("OK")
         """)
         result = subprocess.run(
@@ -710,20 +808,22 @@ class ErrorHandlingTests(LazyImportTestCase):
 
             lazy import test.test_lazy_import.data.broken_module
 
+            def lazy_proxy():
+                return globals()['test']
+
             # First access - should fail
             try:
                 x = test.test_lazy_import.data.broken_module
-            except AttributeError:
+            except ValueError:
                 pass
 
-            # The lazy object should still be a lazy proxy (not reified)
-            g = globals()
-            lazy_obj = g['test']
-            # The root 'test' binding should still allow retry
+            assert type(lazy_proxy()) is types.LazyImportType
+
             # Second access - should also fail (retry the import)
             try:
                 x = test.test_lazy_import.data.broken_module
-            except AttributeError:
+            except ValueError:
+                assert type(lazy_proxy()) is types.LazyImportType
                 print("OK - retry worked")
         """)
         result = subprocess.run(
@@ -743,7 +843,8 @@ class ErrorHandlingTests(LazyImportTestCase):
             try:
                 _ = test.test_lazy_import.data.broken_module
                 print("FAIL - should have raised")
-            except AttributeError:
+            except ValueError as e:
+                assert str(e) == "This module always fails to import"
                 print("OK")
         """)
         result = subprocess.run(

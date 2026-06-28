@@ -1,0 +1,2 @@
+Fix ``lazy import pkg.sub`` so reification calls ``__import__`` with
+``pkg.sub``, matching eager imports.
