@@ -572,6 +572,31 @@ class DunderLazyImportTests(LazyImportTestCase):
         import test.test_lazy_import.data.dunder_lazy_import_used
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
+    @support.requires_subprocess()
+    def test_dunder_lazy_import_fromlist_resolves_to_module(self):
+        for fromlist in ["basic2", ("basic2",)]:
+            with self.subTest(fromlist=fromlist):
+                code = textwrap.dedent(f"""
+                    import sys
+                    import types
+
+                    lazy = __lazy_import__("test.test_lazy_import.data", fromlist={fromlist!r})
+
+                    def check():
+                        lazy_obj = globals()["lazy"]
+                        assert type(lazy_obj) is types.LazyImportType, lazy_obj
+                        assert "test.test_lazy_import.data.basic2" not in sys.modules
+
+                        resolved = lazy_obj.resolve()
+                        assert type(resolved) is types.ModuleType, resolved
+                        assert "test.test_lazy_import.data.basic2" in sys.modules
+                        assert resolved.__name__ == "test.test_lazy_import.data"
+                        assert resolved.basic2.x == 42
+
+                    check()
+                """)
+                assert_python_ok("-c", code)
+
     def test_dunder_lazy_import_invalid_arguments(self):
         """__lazy_import__ should reject invalid arguments."""
         for invalid_name in (b"", 123, None):
