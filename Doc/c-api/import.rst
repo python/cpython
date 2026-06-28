@@ -304,6 +304,11 @@ Importing Modules
 
       Initialization function for a module built into the interpreter.
 
+      Note that the inittab uses "``PyInit``"
+      :ref:`initialization functions <extension-pyinit>`;
+      there is currently no way to include "``PyModExport_``"
+      :ref:`export hooks <extension-export-hook>`.
+
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
