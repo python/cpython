@@ -1737,6 +1737,36 @@ class TestSSL(test_utils.TestCase):
             loop.run_until_complete(client(srv.addr))
 
 
+    async def test_start_tls_updates_stream_reader_transport(self):
+        # gh-152431: after start_tls, the StreamReader must use the new
+        # transport, not the old one.
+        srv_ctx = test_utils.simple_server_sslcontext()
+        cli_ctx = test_utils.simple_client_sslcontext()
+
+        async def handler(reader, writer):
+            writer.close()
+
+        srv = await asyncio.start_server(handler, '127.0.0.1', 0)
+        addr = srv.sockets[0].getsockname()
+
+        reader, writer = await asyncio.open_connection(*addr)
+
+        old_transport = reader._transport
+        self.assertIsNotNone(old_transport)
+
+        new_transport = await self.loop.start_tls(
+            writer.transport, writer._protocol, srv_ctx,
+            server_side=False, ssl_handshake_timeout=self.TIMEOUT)
+
+        # The reader should now reference the TLS transport
+        self.assertIs(reader._transport, new_transport)
+        self.assertIsNot(reader._transport, old_transport)
+
+        writer.close()
+        srv.close()
+        await srv.wait_closed()
+
+
 ###############################################################################
 # Socket Testing Utilities
 ###############################################################################

@@ -1,0 +1,2 @@
+Fix :meth:`asyncio.StreamWriter.start_tls` to update the linked
+:class:`~asyncio.StreamReader` transport after the TLS handshake.
