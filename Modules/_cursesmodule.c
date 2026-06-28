@@ -40,16 +40,10 @@
 
   Here's a list of currently unsupported functions:
 
-  addchnstr addchstr color_set define_key
-  del_curterm inchnstr inchstr innstr keyok
-  mcprint mvaddchnstr mvaddchstr mvcur mvinchnstr
-  mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr
-  mvwinchnstr mvwinchstr mvwinnstr
-  restartterm ripoffline
-  scrl set_curterm setterm
-  tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
-  vidattr vidputs waddchnstr waddchstr
-  wcolor_set winchnstr winchstr winnstr wmouse_trafo wscrl
+  del_curterm mcprint mvcur restartterm
+  ripoffline set_curterm setterm
+  tgetent tgetflag tgetnum tgetstr tgoto tputs
+  vidattr vidputs wmouse_trafo
 
   Low-priority:
   slk_attr slk_attr_off slk_attr_on slk_attr_set slk_attroff
