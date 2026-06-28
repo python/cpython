@@ -1,0 +1,2 @@
+Fix a possible crash during the interpreter startup under a memory pressure
+with ``Py_STACKREF_DEBUG`` enabled.
