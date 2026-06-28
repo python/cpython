@@ -698,6 +698,7 @@ class OrderedDictTests:
         d |= list(b.items())
         expected = OrderedDict({0: 0, 1: 1, 2: 2, 3: 3})
         self.assertEqual(a | dict(b), expected)
+        self.assertEqual(a | frozendict(b), expected)
         self.assertEqual(a | b, expected)
         self.assertEqual(c, expected)
         self.assertEqual(d, expected)
@@ -706,12 +707,17 @@ class OrderedDictTests:
         c |= a
         expected = OrderedDict({1: 1, 2: 1, 3: 3, 0: 0})
         self.assertEqual(dict(b) | a, expected)
+        self.assertEqual(frozendict(b) | a, expected)
+        self.assertEqual(a.__ror__(frozendict(b)), expected)
         self.assertEqual(b | a, expected)
         self.assertEqual(c, expected)
 
         self.assertIs(type(a | b), OrderedDict)
         self.assertIs(type(dict(a) | b), OrderedDict)
+        self.assertIs(type(frozendict(a) | b), frozendict)
+        self.assertIs(type(b.__ror__(frozendict(a))), OrderedDict)
         self.assertIs(type(a | dict(b)), OrderedDict)
+        self.assertIs(type(a | frozendict(b)), OrderedDict)
 
         expected = a.copy()
         a |= ()

@@ -176,6 +176,11 @@ CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, 
             goto exit;
         }
         offset = ival;
+        if (offset < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "offset cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_posonly:
     return_value = CDataType_from_buffer_impl(type, cls, obj, offset);
@@ -242,6 +247,11 @@ CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *a
             goto exit;
         }
         offset = ival;
+        if (offset < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "offset cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_posonly:
     return_value = CDataType_from_buffer_copy_impl(type, cls, &buffer, offset);
@@ -1042,4 +1052,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=536c9bcf4e05913e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22105663d71237ca input=a9049054013a1b77]*/

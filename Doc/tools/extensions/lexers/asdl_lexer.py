@@ -22,7 +22,7 @@ class ASDLLexer(RegexLexer):
                 bygroups(Keyword, Text, Name.Tag),
             ),
             (
-                r"(\w+)(\*\s|\?\s|\s)(\w+)",
+                r"(\w+)([\?\*]*\s)(\w+)",
                 bygroups(Name.Builtin.Pseudo, Operator, Name),
             ),
             # Keep in line with ``builtin_types`` from Parser/asdl.py.

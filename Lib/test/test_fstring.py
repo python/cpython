@@ -593,6 +593,17 @@ x = (
                              r"""b'' f''""",
                              ])
 
+    def test_concat_decode_failure_does_not_crash(self):
+        script = r'''
+import builtins
+builtins.__import__ = builtins  # Breaks warning machinery so _get_resized_exprs returns NULL
+try:
+    compile('"x"f"\]"b""', '<test>', 'exec')
+except Exception:
+    pass
+'''
+        assert_python_ok('-c', script)
+
     def test_literal(self):
         self.assertEqual(f'', '')
         self.assertEqual(f'a', 'a')
@@ -1651,6 +1662,18 @@ x = (
         self.assertEqual(f"{1+2 = # my comment
   }", '1+2 = \n  3')
 
+        self.assertEqual(f'{""" # booo
+  """=}', '""" # booo\n  """=\' # booo\\n  \'')
+
+        self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
+        self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
+
+        self.assertEqual(f'{ # some comment goes here
+  """hello"""=}',  ' \n  """hello"""=\'hello\'')
+        self.assertEqual(f'{"""# this is not a comment
+        a""" # this is a comment
+        }', '# this is not a comment\n        a')
+
         # These next lines contains tabs.  Backslash escapes don't
         # work in f-strings.
         # patchcheck doesn't like these tabs.  So the only way to test
@@ -1818,6 +1841,41 @@ print(f'''{{
 
         for case in valid_cases:
             compile(case, "<string>", "exec")
+
+    def test_raw_fstring_format_spec(self):
+        # Test raw f-string format spec behavior (Issue #137314).
+        #
+        # Raw f-strings should preserve literal backslashes in format specifications,
+        # not interpret them as escape sequences.
+        class UnchangedFormat:
+            """Test helper that returns the format spec unchanged."""
+            def __format__(self, format):
+                return format
+
+        # Test basic escape sequences
+        self.assertEqual(f"{UnchangedFormat():\xFF}", 'ÿ')
+        self.assertEqual(rf"{UnchangedFormat():\xFF}", '\\xFF')
+
+        # Test nested expressions with raw/non-raw combinations
+        self.assertEqual(rf"{UnchangedFormat():{'\xFF'}}", 'ÿ')
+        self.assertEqual(f"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+        self.assertEqual(rf"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+
+        # Test continuation character in format specs
+        self.assertEqual(f"""{UnchangedFormat():{'a'\
+                        'b'}}""", 'ab')
+        self.assertEqual(rf"""{UnchangedFormat():{'a'\
+                         'b'}}""", 'ab')
+
+        # Test multiple format specs in same raw f-string
+        self.assertEqual(rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}", '\\xFF \\n')
+
+    def test_gh139516(self):
+        with temp_cwd():
+            script = 'script.py'
+            with open(script, 'wb') as f:
+                f.write('''def f(a): pass\nf"{f(a=lambda: 'à'\n)}"'''.encode())
+            assert_python_ok(script)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,0 @@
-Add :c:func:`PyUnicodeWriter_WriteASCII` function to write an ASCII string
-into a :c:type:`PyUnicodeWriter`. The function is faster than
-:c:func:`PyUnicodeWriter_WriteUTF8`, but has an undefined behavior if the
-input string contains non-ASCII characters. Patch by Victor Stinner.

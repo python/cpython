@@ -4,14 +4,6 @@
 .. module:: io
    :synopsis: Core tools for working with streams.
 
-.. moduleauthor:: Guido van Rossum <guido@python.org>
-.. moduleauthor:: Mike Verdone <mike.verdone@gmail.com>
-.. moduleauthor:: Mark Russell <mark.russell@zen.co.uk>
-.. moduleauthor:: Antoine Pitrou <solipsis@pitrou.net>
-.. moduleauthor:: Amaury Forgeot d'Arc <amauryfa@gmail.com>
-.. moduleauthor:: Benjamin Peterson <benjamin@python.org>
-.. sectionauthor:: Benjamin Peterson <benjamin@python.org>
-
 **Source code:** :source:`Lib/io.py`
 
 --------------
@@ -24,7 +16,7 @@ Overview
 .. index::
    single: file object; io module
 
-The :mod:`io` module provides Python's main facilities for dealing with various
+The :mod:`!io` module provides Python's main facilities for dealing with various
 types of I/O.  There are three main types of I/O: *text I/O*, *binary I/O*
 and *raw I/O*.  These are generic categories, and various backing stores can
 be used for each of them.  A concrete object belonging to any of these
@@ -46,6 +38,7 @@ will raise a :exc:`TypeError`.  So will giving a :class:`bytes` object to the
    Operations that used to raise :exc:`IOError` now raise :exc:`OSError`, since
    :exc:`IOError` is now an alias of :exc:`OSError`.
 
+.. _text-io:
 
 Text I/O
 ^^^^^^^^
@@ -73,6 +66,7 @@ In-memory text streams are also available as :class:`StringIO` objects::
 The text stream API is described in detail in the documentation of
 :class:`TextIOBase`.
 
+.. _binary-io:
 
 Binary I/O
 ^^^^^^^^^^
@@ -111,6 +105,13 @@ stream by opening a file in binary mode with buffering disabled::
 
 The raw stream API is described in detail in the docs of :class:`RawIOBase`.
 
+.. warning::
+   Raw I/O is a low-level interface and methods generally must have their return
+   values checked and be explicitly retried to ensure an operation completes.
+   For instance :meth:`~RawIOBase.write` returns the number of bytes written
+   which may be less than the number of bytes provided (a partial write).
+   High-level I/O objects like :ref:`binary-io` and :ref:`text-io` implement
+   retry behavior.
 
 .. _io-text-encoding:
 
@@ -292,7 +293,7 @@ interface to a buffered raw stream (:class:`BufferedIOBase`).  Finally,
 Argument names are not part of the specification, and only the arguments of
 :func:`open` are intended to be used as keyword arguments.
 
-The following table summarizes the ABCs provided by the :mod:`io` module:
+The following table summarizes the ABCs provided by the :mod:`!io` module:
 
 .. tabularcolumns:: |l|l|L|L|
 
@@ -486,8 +487,11 @@ I/O Base Classes
 
       Read up to *size* bytes from the object and return them.  As a convenience,
       if *size* is unspecified or -1, all bytes until EOF are returned.
-      Otherwise, only one system call is ever made.  Fewer than *size* bytes may
-      be returned if the operating system call returns fewer than *size* bytes.
+
+      Attempts to make only one system call but will retry if interrupted and
+      the signal handler does not raise an exception (see :pep:`475` for the
+      rationale). This means fewer than *size* bytes may be returned if the
+      operating system call returns fewer than *size* bytes.
 
       If 0 bytes are returned, and *size* was not 0, this indicates end of file.
       If the object is in non-blocking mode and no bytes are available,
@@ -501,13 +505,19 @@ I/O Base Classes
       Read and return all the bytes from the stream until EOF, using multiple
       calls to the stream if necessary.
 
+      If ``0`` bytes are returned this indicates end of file. If the object is in
+      non-blocking mode and the underlying :meth:`read` returns ``None``
+      indicating no bytes are available, ``None`` is returned.
+
    .. method:: readinto(b, /)
 
       Read bytes into a pre-allocated, writable
       :term:`bytes-like object` *b*, and return the
       number of bytes read.  For example, *b* might be a :class:`bytearray`.
-      If the object is in non-blocking mode and no bytes
-      are available, ``None`` is returned.
+
+      If ``0`` is returned and ``len(b)`` is not ``0``, this indicates end of file. If
+      the object is in non-blocking mode and no bytes are available, ``None`` is
+      returned.
 
    .. method:: write(b, /)
 
@@ -521,6 +531,13 @@ I/O Base Classes
       this method returns, so the implementation should only access *b*
       during the method call.
 
+      .. warning::
+
+         This function does not ensure all bytes are written or an exception is
+         thrown. Callers may implement that behavior by checking the return
+         value and, if it is less than the length of *b*, looping with additional
+         write calls until all unwritten bytes are written. High-level I/O
+         objects like :ref:`binary-io` and :ref:`text-io` implement retry behavior.
 
 .. class:: BufferedIOBase
 
@@ -587,7 +604,7 @@ I/O Base Classes
 
          When the underlying raw stream is non-blocking, implementations may
          either raise :exc:`BlockingIOError` or return ``None`` if no data is
-         available. :mod:`io` implementations return ``None``.
+         available. :mod:`!io` implementations return ``None``.
 
    .. method:: read1(size=-1, /)
 
@@ -600,7 +617,7 @@ I/O Base Classes
 
          When the underlying raw stream is non-blocking, implementations may
          either raise :exc:`BlockingIOError` or return ``None`` if no data is
-         available. :mod:`io` implementations return ``None``.
+         available. :mod:`!io` implementations return ``None``.
 
    .. method:: readinto(b, /)
 
@@ -649,7 +666,11 @@ Raw File I/O
 .. class:: FileIO(name, mode='r', closefd=True, opener=None)
 
    A raw binary stream representing an OS-level file containing bytes data.  It
-   inherits from :class:`RawIOBase`.
+   inherits from :class:`RawIOBase` and implements its low-level access design.
+   This means :meth:`~RawIOBase.write` does not guarantee all bytes are written
+   and :meth:`~RawIOBase.read` may read less bytes than requested even when more
+   bytes may be present in the underlying file. To get "write all" and
+   "read at least" behavior, use :ref:`binary-io`.
 
    The *name* can be one of two things:
 
@@ -669,10 +690,6 @@ Raw File I/O
    implies writing, so this mode behaves in a similar way to ``'w'``. Add a
    ``'+'`` to the mode to allow simultaneous reading and writing.
 
-   The :meth:`~RawIOBase.read` (when called with a positive argument),
-   :meth:`~RawIOBase.readinto` and :meth:`~RawIOBase.write` methods on this
-   class will only make one system call.
-
    A custom opener can be used by passing a callable as *opener*. The underlying
    file descriptor for the file object is then obtained by calling *opener* with
    (*name*, *flags*). *opener* must return an open file descriptor (passing
@@ -683,6 +700,13 @@ Raw File I/O
 
    See the :func:`open` built-in function for examples on using the *opener*
    parameter.
+
+   .. warning::
+      :class:`FileIO` is a low-level I/O object and members, such as
+      :meth:`~RawIOBase.read` and :meth:`~RawIOBase.write`, need to have their
+      return values checked explicitly in a retry loop to implement "write all"
+      and "read at least" behavior. High-level I/O objects :ref:`binary-io` and
+      :ref:`text-io` implement retry behavior.
 
    .. versionchanged:: 3.3
       The *opener* parameter was added.
@@ -719,6 +743,9 @@ than raw I/O does.
    The optional argument *initial_bytes* is a :term:`bytes-like object` that
    contains initial data.
 
+   Methods may be used from multiple threads without external locking in
+   :term:`free-threaded builds <free-threaded build>`.
+
    :class:`BytesIO` provides or overrides these methods in addition to those
    from :class:`BufferedIOBase` and :class:`IOBase`:
 
@@ -744,6 +771,17 @@ than raw I/O does.
 
       Return :class:`bytes` containing the entire contents of the buffer.
 
+   .. method:: peek(size=0, /)
+
+      Return a copy of the buffer from the current position onwards without
+      advancing the position.
+
+      If *size* is less than one or omitted, at most
+      :data:`DEFAULT_BUFFER_SIZE` bytes are returned.
+      Otherwise, at most *size* bytes are returned.
+      Return an empty :class:`bytes` object at EOF.
+
+      .. versionadded:: next
 
    .. method:: read1(size=-1, /)
 
@@ -829,9 +867,9 @@ than raw I/O does.
 
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
-   A buffered binary stream providing higher-level access to a seekable
-   :class:`RawIOBase` raw binary stream.  It inherits from :class:`BufferedReader`
-   and :class:`BufferedWriter`.
+   A buffered binary stream implementing :class:`BufferedIOBase` interfaces
+   providing higher-level access to a seekable :class:`RawIOBase` raw binary
+   stream.
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to

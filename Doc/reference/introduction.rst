@@ -145,15 +145,23 @@ The definition to the right of the colon uses the following syntax elements:
 * ``e?``: A question mark has exactly the same meaning as square brackets:
   the preceding item is optional.
 * ``(e)``: Parentheses are used for grouping.
+
+The following notation is only used in
+:ref:`lexical definitions <notation-lexical-vs-syntactic>`.
+
 * ``"a"..."z"``: Two literal characters separated by three dots mean a choice
   of any single character in the given (inclusive) range of ASCII characters.
-  This notation is only used in
-  :ref:`lexical definitions <notation-lexical-vs-syntactic>`.
 * ``<...>``: A phrase between angular brackets gives an informal description
   of the matched symbol (for example, ``<any ASCII character except "\">``),
   or an abbreviation that is defined in nearby text (for example, ``<Lu>``).
-  This notation is only used in
-  :ref:`lexical definitions <notation-lexical-vs-syntactic>`.
+
+.. _lexical-lookaheads:
+
+Some definitions also use *lookaheads*, which indicate that an element
+must (or must not) match at a given position, but without consuming any input:
+
+* ``&e``: a positive lookahead (that is, ``e`` is required to match)
+* ``!e``: a negative lookahead (that is, ``e`` is required *not* to match)
 
 The unary operators (``*``, ``+``, ``?``) bind as tightly as possible;
 the vertical bar (``|``) binds most loosely.

@@ -1,1 +1,0 @@
-Fix crash when iterating over lines in a text file on the :term:`free threaded <free threading>` build.

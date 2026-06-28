@@ -47,7 +47,11 @@ class ZoneInfo(tzinfo):
         cls._strong_cache[key] = cls._strong_cache.pop(key, instance)
 
         if len(cls._strong_cache) > cls._strong_cache_size:
-            cls._strong_cache.popitem(last=False)
+            try:
+                cls._strong_cache.popitem(last=False)
+            except KeyError:
+                # another thread may have already emptied the cache
+                pass
 
         return instance
 
@@ -334,7 +338,7 @@ class ZoneInfo(tzinfo):
             if not isdsts[comp_idx]:
                 dstoff = utcoff - utcoffsets[comp_idx]
 
-            if not dstoff and idx < (typecnt - 1):
+            if not dstoff and idx < (typecnt - 1) and i + 1 < len(trans_idx):
                 comp_idx = trans_idx[i + 1]
 
                 # If the following transition is also DST and we couldn't
@@ -668,7 +672,8 @@ def _parse_tz_str(tz_str):
         except ValueError as e:
             raise ValueError(f"Invalid STD offset in {tz_str}") from e
     else:
-        std_offset = 0
+        # The STD offset is required
+        raise ValueError(f"Invalid STD offset in {tz_str}")
 
     if dst_abbr is not None:
         if dst_offset := m.group("dstoff"):
@@ -703,7 +708,7 @@ def _parse_dst_start_end(dststr):
     type = date[:1]
     if type == "M":
         n_is_julian = False
-        m = re.fullmatch(r"M(\d{1,2})\.(\d).(\d)", date, re.ASCII)
+        m = re.fullmatch(r"M(\d{1,2})\.(\d)\.(\d)", date, re.ASCII)
         if m is None:
             raise ValueError(f"Invalid dst start/end date: {dststr}")
         date_offset = tuple(map(int, m.groups()))

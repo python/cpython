@@ -105,12 +105,8 @@ class _ChannelEnd:
         return other._id == self._id
 
     # for pickling:
-    def __getnewargs__(self):
-        return (int(self._id),)
-
-    # for pickling:
-    def __getstate__(self):
-        return None
+    def __reduce__(self):
+        return (type(self), (int(self._id),))
 
     @property
     def id(self):

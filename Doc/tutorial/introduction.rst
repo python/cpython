@@ -49,7 +49,7 @@ primary prompt, ``>>>``.  (It shouldn't take long.)
 Numbers
 -------
 
-The interpreter acts as a simple calculator: you can type an expression at it
+The interpreter acts as a simple calculator: you can type an expression into it
 and it will write the value.  Expression syntax is straightforward: the
 operators ``+``, ``-``, ``*`` and ``/`` can be used to perform
 arithmetic; parentheses (``()``) can be used for grouping.
@@ -184,11 +184,11 @@ If you don't want characters prefaced by ``\`` to be interpreted as
 special characters, you can use *raw strings* by adding an ``r`` before
 the first quote::
 
-   >>> print('C:\some\name')  # here \n means newline!
-   C:\some
+   >>> print('C:\this\name')  # here \t means tab, \n means newline
+   C:      his
    ame
-   >>> print(r'C:\some\name')  # note the r before the quote
-   C:\some\name
+   >>> print(r'C:\this\name')  # note the r before the quote
+   C:\this\name
 
 There is one subtle aspect to raw strings: a raw string may not end in
 an odd number of ``\`` characters; see
@@ -420,7 +420,7 @@ type, i.e. it is possible to change their content::
     [1, 8, 27, 64, 125]
 
 You can also add new items at the end of the list, by using
-the :meth:`!list.append` *method* (we will see more about methods later)::
+the :meth:`list.append` *method* (we will see more about methods later)::
 
    >>> cubes.append(216)  # add the cube of 6
    >>> cubes.append(7 ** 3)  # and the cube of 7
