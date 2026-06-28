@@ -1234,6 +1234,10 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
     if (op == Py_EQ || op == Py_NE) {
         mappingproxyobject *v = (mappingproxyobject *)self;
+        // Common path optimization:
+        if (PyDict_CheckExact(w)) {
+            return PyObject_RichCompare(v->mapping, w, op);
+        }
         // We can't expose the `v->mapping` itself, so we create a dict copy:
         // it was possible to mutate `v->mapping` in rich-compare methods.
         // See gh-152405 on the details.
