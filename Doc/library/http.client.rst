@@ -433,6 +433,7 @@ HTTPConnection Objects
 
    The maximum number of allowed response headers to help prevent denial-of-service
    attacks. By default, the maximum number of allowed headers is set to 100.
+   The same limit applies to the trailer section of a chunked response.
 
    .. versionadded:: 3.15
 
