@@ -72,7 +72,7 @@ of the new API.
 
 .. function:: formataddr(pair, charset='utf-8')
 
-   The inverse of :meth:`parseaddr`, this takes a 2-tuple of the form ``(realname,
+   The inverse of :func:`parseaddr`, this takes a 2-tuple of the form ``(realname,
    email_address)`` and returns the string value suitable for a :mailheader:`To` or
    :mailheader:`Cc` header.  If the first element of *pair* is false, then the
    second element is returned unmodified.
@@ -88,9 +88,9 @@ of the new API.
 
 .. function:: getaddresses(fieldvalues, *, strict=True)
 
-   This method returns a list of 2-tuples of the form returned by ``parseaddr()``.
+   This function returns a list of 2-tuples of the form returned by :func:`parseaddr`.
    *fieldvalues* is a sequence of header field values as might be returned by
-   :meth:`Message.get_all <email.message.Message.get_all>`.
+   :meth:`Message.get_all() <email.message.Message.get_all>`.
 
    If *strict* is true, use a strict parser which rejects malformed inputs.
 
@@ -110,8 +110,8 @@ of the new API.
 
 .. function:: parsedate(date)
 
-   Attempts to parse a date according to the rules in :rfc:`2822`. however, some
-   mailers don't follow that format as specified, so :func:`parsedate` tries to
+   Attempts to parse a date according to the rules in :rfc:`2822#section-3.3`. However,
+   some mailers don't follow that format as specified, so :func:`parsedate` tries to
    guess correctly in such cases.  *date* is a string containing an :rfc:`2822`
    date, such as  ``"Mon, 20 Nov 1995 19:12:08 -0500"``.  If it succeeds in parsing
    the date, :func:`parsedate` returns a 9-tuple that can be passed directly to
@@ -132,15 +132,16 @@ of the new API.
 .. function:: parsedate_to_datetime(date)
 
    The inverse of :func:`format_datetime`.  Performs the same function as
-   :func:`parsedate`, but on success returns a :mod:`~datetime.datetime`;
-   otherwise ``ValueError`` is raised if *date* contains an invalid value such
+   :func:`parsedate`, but on success returns a :class:`~datetime.datetime`;
+   otherwise :exc:`ValueError` is raised if *date* contains an invalid value such
    as an hour greater than 23 or a timezone offset not between -24 and 24 hours.
    If the input date has a timezone of ``-0000``, the ``datetime`` will be a naive
    ``datetime``, and if the date is conforming to the RFCs it will represent a
    time in UTC but with no indication of the actual source timezone of the
    message the date comes from.  If the input date has any other valid timezone
-   offset, the ``datetime`` will be an aware ``datetime`` with the
-   corresponding a :class:`~datetime.timezone` :class:`~datetime.tzinfo`.
+   offset, the ``datetime`` will be an aware ``datetime`` whose corresponding
+   :attr:`~datetime.datetime.tzinfo` attribute is a :class:`~datetime.timezone`
+   object.
 
    .. versionadded:: 3.3
 
@@ -175,8 +176,8 @@ of the new API.
 
 .. function:: format_datetime(dt, usegmt=False)
 
-   Like ``formatdate``, but the input is a :mod:`datetime` instance.  If it is
-   a naive datetime, it is assumed to be "UTC with no information about the
+   Like :func:`formatdate`, but the input is a :class:`~datetime.datetime` instance.
+   If it is a naive datetime, it is assumed to be "UTC with no information about the
    source timezone", and the conventional ``-0000`` is used for the timezone.
    If it is an aware ``datetime``, then the numeric timezone offset is used.
    If it is an aware timezone with offset zero, then *usegmt* may be set to
@@ -203,11 +204,11 @@ of the new API.
 .. function:: collapse_rfc2231_value(value, errors='replace', fallback_charset='us-ascii')
 
    When a header parameter is encoded in :rfc:`2231` format,
-   :meth:`Message.get_param <email.message.Message.get_param>` may return a
+   :meth:`Message.get_param() <email.message.Message.get_param>` may return a
    3-tuple containing the character set,
    language, and value.  :func:`collapse_rfc2231_value` turns this into a unicode
    string.  Optional *errors* is passed to the *errors* argument of :class:`str`'s
-   :func:`~str.encode` method; it defaults to ``'replace'``.  Optional
+   :meth:`~str.encode` method; it defaults to ``'replace'``.  Optional
    *fallback_charset* specifies the character set to use if the one in the
    :rfc:`2231` header is not known by Python; it defaults to ``'us-ascii'``.
 
@@ -224,5 +225,5 @@ of the new API.
 .. rubric:: Footnotes
 
 .. [#] Note that the sign of the timezone offset is the opposite of the sign of the
-   ``time.timezone`` variable for the same timezone; the latter variable follows
+   :data:`time.timezone` variable for the same timezone; the latter variable follows
    the POSIX standard while this module follows :rfc:`2822`.
