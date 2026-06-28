@@ -1,12 +1,12 @@
 import io
 import mimetypes
 import os
-import pathlib
+
 import shlex
 import sys
 import unittest
 import unittest.mock
-import warnings
+
 from platform import win32_edition
 from test import support
 from test.support import cpython_only, force_not_colorized, os_helper, requires_subprocess
