@@ -762,7 +762,7 @@ APIs:
    The string must not have been “used” yet.
    See :c:func:`PyUnicode_New` for details.
 
-   Return the number of written character, or return ``-1`` and raise an
+   Return the number of written characters, or return ``-1`` and raise an
    exception on error.
 
    .. versionadded:: 3.3
@@ -1174,7 +1174,7 @@ These are the UTF-8 codec APIs:
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      The return type is now ``const char *`` rather of ``char *``.
+      The return type is now ``const char *`` rather than ``char *``.
 
    .. versionchanged:: 3.10
       This function is a part of the :ref:`limited API <limited-c-api>`.
@@ -1196,7 +1196,7 @@ These are the UTF-8 codec APIs:
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      The return type is now ``const char *`` rather of ``char *``.
+      The return type is now ``const char *`` rather than ``char *``.
 
 
 UTF-32 Codecs
@@ -1855,8 +1855,6 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-   .. versionadded:: 3.14
-
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
    Write the wide string *str* into *writer*.
@@ -1883,6 +1881,10 @@ object.
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
+   To write a :class:`str` subclass which overrides the :meth:`~object.__str__`
+   method, :c:func:`PyUnicode_FromObject` can be used to get the original
+   string.
+
 .. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
 
    Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
@@ -1891,6 +1893,10 @@ object.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   .. versionchanged:: 3.14.4
+
+      Added support for ``NULL``.
 
 .. c:function:: int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, PyObject *str, Py_ssize_t start, Py_ssize_t end)
 
@@ -1947,7 +1953,7 @@ The following API is deprecated.
       whether you selected a "narrow" or "wide" Unicode version of Python at
       build time.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
 
 
 .. c:function:: int PyUnicode_READY(PyObject *unicode)

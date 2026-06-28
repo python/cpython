@@ -52,7 +52,7 @@ fine-tuning parameters.
 
 .. _re-syntax:
 
-Regular Expression Syntax
+Regular expression syntax
 -------------------------
 
 A regular expression (or RE) specifies a set of strings that matches it; the
@@ -205,7 +205,7 @@ The special characters are:
    *without* establishing any backtracking points.
    This is the possessive version of the quantifier above.
    For example, on the 6-character string ``'aaaaaa'``, ``a{3,5}+aa``
-   attempt to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
+   attempts to match 5 ``'a'`` characters, then, requiring 2 more ``'a'``\ s,
    will need more characters than available and thus fail, while
    ``a{3,5}aa`` will match with ``a{3,5}`` capturing 5, then 4 ``'a'``\ s
    by backtracking and then the final 2 ``'a'``\ s are matched by the final
@@ -279,24 +279,46 @@ The special characters are:
      ``[]()[{}]`` will match a right bracket, as well as left bracket, braces,
      and parentheses.
 
-   .. .. index:: single: --; in regular expressions
-   .. .. index:: single: &&; in regular expressions
-   .. .. index:: single: ~~; in regular expressions
-   .. .. index:: single: ||; in regular expressions
+   .. index::
+      single: --; in regular expressions
+      single: &&; in regular expressions
+      single: ||; in regular expressions
 
-   * Support of nested sets and set operations as in `Unicode Technical
-     Standard #18`_ might be added in the future.  This would change the
-     syntax, so to facilitate this change a :exc:`FutureWarning` will be raised
-     in ambiguous cases for the time being.
-     That includes sets starting with a literal ``'['`` or containing literal
-     character sequences ``'--'``, ``'&&'``, ``'~~'``, and ``'||'``.  To
-     avoid a warning escape them with a backslash.
+   * A character set may contain a nested set written in square brackets, and
+     two sets may be combined with a set operator, as in `Unicode Technical
+     Standard #18`_:
+
+     * ``[A--B]`` (*difference*) matches a character that is in *A* but not
+       in *B*; for example ``[a-z--[aeiou]]`` matches an ASCII lowercase
+       consonant.
+     * ``[A&&B]`` (*intersection*) matches a character that is in both *A*
+       and *B*; for example ``[\w&&[a-z]]`` matches an ASCII lowercase letter.
+     * ``[A||B]`` (*union*) matches a character that is in *A* or in *B*; this
+       is the same as listing the members of both sets in a single set, but
+       allows combining nested sets.
+
+     Operators have no precedence and are applied from left to right.  To
+     group, write a nested set as the operand after an operator, as in
+     ``[a-z--[aeiou]]``.  A leading ``'^'`` complements the whole result.
+     A ``'['`` begins a nested set only immediately after a set operator;
+     anywhere else -- including at the start of a character set -- it is an
+     ordinary character, so existing patterns keep their meaning.  Escape it
+     as ``'\['`` to include a literal ``'['`` right after an operator.
 
    .. _Unicode Technical Standard #18: https://unicode.org/reports/tr18/
+
+   .. note::
+
+      Symmetric difference (``A~~B``) is not yet supported; a literal ``'~~'``
+      in a character set still raises a :exc:`FutureWarning`.
 
    .. versionchanged:: 3.7
       :exc:`FutureWarning` is raised if a character set contains constructs
       that will change semantically in the future.
+
+   .. versionchanged:: next
+      Added support for nested sets and the set operators ``--``, ``&&``
+      and ``||``.
 
 .. index:: single: | (vertical bar); in regular expressions
 
@@ -591,7 +613,7 @@ character ``'$'``.
 
       Matches ``[0-9]`` if the :py:const:`~re.ASCII` flag is used.
 
-      __ https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G134153
+      __ https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G124142
 
    For 8-bit (bytes) patterns:
       Matches any decimal digit in the ASCII character set;
@@ -658,6 +680,51 @@ character ``'$'``.
    matches characters which are neither alphanumeric in the current locale
    nor the underscore.
 
+.. index:: single: \p; in regular expressions
+           single: \P; in regular expressions
+
+``\p{property=value}``, ``\p{value}``
+   Matches any character with the given Unicode property
+   (see `Unicode Technical Standard #18
+   <https://unicode.org/reports/tr18/>`_, requirement RL1.2 "Properties").
+   Property and value names are matched loosely:
+   case, whitespace, ``'-'`` and ``'_'`` are ignored.
+   The following properties are supported:
+
+   * The ``General_Category`` property (short name ``gc``),
+     spelled ``\p{Lu}``, ``\p{gc=Lu}`` or, for a one-letter group, ``\p{L}``.
+     The supported values are the groups ``L``, ``N``, ``Z`` and ``C`` and the
+     values ``Lu``, ``Lt``, ``Lm``, ``Nd``, ``Nl``, ``No``, ``Zs``, ``Zl``,
+     ``Zp``, ``Cc``, ``Cf``, ``Cs``, ``Co`` and ``Cn``.
+   * The binary properties ``XID_Start``, ``XID_Continue``, ``Alphabetic``,
+     ``Lowercase``, ``Uppercase``, ``Numeric``, ``Printable``, ``Cased`` and
+     ``Case_Ignorable``.  A binary property may also be spelled
+     ``\p{name=yes}`` or ``\p{name=no}``.
+   * The POSIX compatibility classes ``alpha``, ``alnum``, ``blank``,
+     ``cntrl``, ``digit``, ``graph``, ``lower``, ``print``, ``space``,
+     ``upper``, ``word`` and ``xdigit``.
+   * The properties ``ASCII``, ``Any``, ``Assigned``,
+     ``Noncharacter_Code_Point``, ``Join_Control``, ``Regional_Indicator``,
+     ``ASCII_Hex_Digit``, ``Hex_Digit``, ``Pattern_Syntax`` and
+     ``Pattern_White_Space``.
+
+   Where a supported property corresponds to a :mod:`unicodedata` accessor or
+   :class:`str` method, the set of characters it matches is exactly the one
+   they report.  For consistency with these, ``space`` follows
+   :py:meth:`str.isspace` (like ``\s``) and ``xdigit`` matches only the ASCII
+   hexadecimal digits.
+
+   This is only recognized in Unicode (str) patterns.
+   In bytes patterns it is an error.
+
+   .. versionadded:: next
+
+``\P{...}``
+   Matches any character which does *not* have the given Unicode property.
+   This is the opposite of ``\p``.
+
+   .. versionadded:: next
+
 .. index:: single: \z; in regular expressions
            single: \Z; in regular expressions
 
@@ -717,7 +784,7 @@ three digits in length.
 
 .. _contents-of-module-re:
 
-Module Contents
+Module contents
 ---------------
 
 The module defines several functions, constants, and an exception. Some of the
@@ -833,8 +900,8 @@ Flags
    will be conditionally ORed with other flags.  Example of use as a default
    value::
 
-      def myfunc(text, flag=re.NOFLAG):
-          return re.search(text, flag)
+      def myfunc(pattern, text, flag=re.NOFLAG):
+          return re.search(pattern, text, flag)
 
    .. versionadded:: 3.11
 
@@ -931,7 +998,6 @@ Functions
 
 
 .. function:: prefixmatch(pattern, string, flags=0)
-.. function:: match(pattern, string, flags=0)
 
    If zero or more characters at the beginning of *string* match the regular
    expression *pattern*, return a corresponding :class:`~re.Match`.  Return
@@ -954,9 +1020,14 @@ Functions
    :func:`~re.match`.  Use that name when you need to retain compatibility with
    older Python versions.
 
-   .. versionchanged:: 3.15
-      The alternate :func:`~re.prefixmatch` name of this API was added as a
-      more explicitly descriptive name than :func:`~re.match`. Use it to better
+   .. versionadded:: 3.15
+
+.. function:: match(pattern, string, flags=0)
+
+   .. soft-deprecated:: 3.15
+      :func:`~re.match` has been :term:`soft deprecated` in favor of
+      the alternate :func:`~re.prefixmatch` name of this API which is
+      more explicitly descriptive. Use it to better
       express intent. The norm in other languages and regular expression
       implementations is to use the term *match* to refer to the behavior of
       what Python has always called :func:`~re.search`.
@@ -1246,12 +1317,15 @@ Exceptions
 
 .. _re-objects:
 
-Regular Expression Objects
+Regular expression objects
 --------------------------
 
 .. class:: Pattern
 
    Compiled regular expression object returned by :func:`re.compile`.
+
+   Patterns are :ref:`generic <generics>` over the type of string they handle
+   (:class:`str` or :class:`bytes`).
 
    .. versionchanged:: 3.9
       :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
@@ -1284,7 +1358,6 @@ Regular Expression Objects
 
 
 .. method:: Pattern.prefixmatch(string[, pos[, endpos]])
-.. method:: Pattern.match(string[, pos[, endpos]])
 
    If zero or more characters at the *beginning* of *string* match this regular
    expression, return a corresponding :class:`~re.Match`. Return ``None`` if the
@@ -1309,9 +1382,14 @@ Regular Expression Objects
    :meth:`~Pattern.match`.  Use that name when you need to retain compatibility
    with older Python versions.
 
-   .. versionchanged:: 3.15
-      The alternate :meth:`~Pattern.prefixmatch` name of this API was added as
-      a more explicitly descriptive name than :meth:`~Pattern.match`. Use it to
+   .. versionadded:: 3.15
+
+.. method:: Pattern.match(string[, pos[, endpos]])
+
+   .. soft-deprecated:: 3.15
+      :meth:`~Pattern.match` has been :term:`soft deprecated` in favor of
+      the alternate :meth:`~Pattern.prefixmatch` name of this API which is
+      more explicitly descriptive. Use it to
       better express intent. The norm in other languages and regular expression
       implementations is to use the term *match* to refer to the behavior of
       what Python has always called :meth:`~Pattern.search`.
@@ -1396,7 +1474,7 @@ Regular Expression Objects
 
 .. _match-objects:
 
-Match Objects
+Match objects
 -------------
 
 Match objects always have a boolean value of ``True``.
@@ -1410,6 +1488,9 @@ when there is no match, you can test whether there was a match with a simple
 .. class:: Match
 
    Match object returned by successful ``match``\ es and ``search``\ es.
+
+   Matches are :ref:`generic <generics>` over the type of string which was
+   matched (:class:`str` or :class:`bytes`).
 
    .. versionchanged:: 3.9
       :py:class:`re.Match` supports ``[]`` to indicate a Unicode (str) or bytes match.
@@ -1615,11 +1696,11 @@ when there is no match, you can test whether there was a match with a simple
 
 .. _re-examples:
 
-Regular Expression Examples
+Regular expression examples
 ---------------------------
 
 
-Checking for a Pair
+Checking for a pair
 ^^^^^^^^^^^^^^^^^^^
 
 In this example, we'll use the following helper function to display match
@@ -1705,15 +1786,21 @@ expressions.
 | ``%x``, ``%X``                 | ``[-+]?(0[xX])?[\dA-Fa-f]+``                |
 +--------------------------------+---------------------------------------------+
 
-To extract the filename and numbers from a string like ::
+To extract the filename and numbers from a string like:
+
+.. code-block:: text
 
    /usr/sbin/sendmail - 0 errors, 4 warnings
 
-you would use a :c:func:`!scanf` format like ::
+you would use a :c:func:`!scanf` format like:
+
+.. code-block:: text
 
    %s - %d errors, %d warnings
 
-The equivalent regular expression would be ::
+The equivalent regular expression would be:
+
+.. code-block:: text
 
    (\S+) - (\d+) errors, (\d+) warnings
 
@@ -1772,18 +1859,24 @@ not familiar with the Python API's divergence from what otherwise become the
 industry norm.
 
 Quoting from the Zen Of Python (``python3 -m this``): *"Explicit is better than
-implicit"*. Anyone reading the name :func:`~re.prefixmatch` is likely to
-understand the intended semantics. When reading :func:`~re.match` there remains
+implicit"*. Anyone reading the name :func:`!prefixmatch` is likely to
+understand the intended semantics. When reading :func:`!match` there remains
 a seed of doubt about the intended behavior to anyone not already familiar with
 this old Python gotcha.
 
-We **do not** plan to deprecate and remove the older *match* name,
+We **do not** plan to remove the older :func:`!match` name,
 as it has been used in code for over 30 years.
-Code supporting older versions of Python should continue to use *match*.
+It has been :term:`soft deprecated`:
+code supporting older versions of Python should continue to use :func:`!match`,
+while new code should prefer :func:`!prefixmatch`.
 
 .. versionadded:: 3.15
+   :func:`!prefixmatch`
 
-Making a Phonebook
+.. soft-deprecated:: 3.15
+   :func:`!match`
+
+Making a phonebook
 ^^^^^^^^^^^^^^^^^^
 
 :func:`split` splits a string into a list delimited by the passed pattern.  The
@@ -1844,7 +1937,7 @@ house number from the street name:
    ['Heather', 'Albrecht', '548.326.4584', '919', 'Park Place']]
 
 
-Text Munging
+Text munging
 ^^^^^^^^^^^^
 
 :func:`sub` replaces every occurrence of a pattern with a string or the
@@ -1864,7 +1957,7 @@ in each word of a sentence except for the first and last characters::
    'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
 
 
-Finding all Adverbs
+Finding all adverbs
 ^^^^^^^^^^^^^^^^^^^
 
 :func:`findall` matches *all* occurrences of a pattern, not just the first
@@ -1877,7 +1970,7 @@ the following manner::
    ['carefully', 'quickly']
 
 
-Finding all Adverbs and their Positions
+Finding all adverbs and their positions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If one wants more information about all matches of a pattern than the matched
@@ -1893,7 +1986,7 @@ to find all of the adverbs *and their positions* in some text, they would use
    40-47: quickly
 
 
-Raw String Notation
+Raw string notation
 ^^^^^^^^^^^^^^^^^^^
 
 Raw string notation (``r"text"``) keeps regular expressions sane.  Without it,
@@ -1917,7 +2010,7 @@ functionally identical::
    <re.Match object; span=(0, 1), match='\\'>
 
 
-Writing a Tokenizer
+Writing a tokenizer
 ^^^^^^^^^^^^^^^^^^^
 
 A `tokenizer or scanner <https://en.wikipedia.org/wiki/Lexical_analysis>`_
@@ -1933,7 +2026,7 @@ successive matches::
 
     class Token(NamedTuple):
         type: str
-        value: str
+        value: int | float | str
         line: int
         column: int
 

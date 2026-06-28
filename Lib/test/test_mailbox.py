@@ -11,6 +11,7 @@ from test import support
 from test.support import import_helper, warnings_helper
 from test.support import os_helper
 from test.support import refleak_helper
+from test.support import requires_root_user
 from test.support import socket_helper
 import unittest
 import textwrap
@@ -1086,6 +1087,7 @@ class _TestSingleFile(TestMailbox):
 
         self.assertEqual(os.stat(self._path).st_mode, mode)
 
+    @requires_root_user
     @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
     def test_ownership_after_flush(self):
         # See issue gh-117467
@@ -1108,10 +1110,7 @@ class _TestSingleFile(TestMailbox):
         else:
             self.skipTest("test needs more than one group")
 
-        try:
-            os.chown(self._path, other_uid, other_gid)
-        except OSError:
-            self.skipTest('test needs root privilege')
+        os.chown(self._path, other_uid, other_gid)
         # Change permissions as in test_permissions_after_flush.
         mode = st.st_mode | 0o666
         os.chmod(self._path, mode)

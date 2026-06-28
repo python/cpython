@@ -368,6 +368,7 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
     if (!buffer) {
         Py_DECREF(r);
         fclose(fp);
+        PyErr_NoMemory();
         return NULL;
     }
 

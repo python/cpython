@@ -16,6 +16,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <float.h>                // DBL_MAX
 #include <stdlib.h>               // strtol()
@@ -1539,8 +1540,9 @@ float_as_integer_ratio_impl(PyObject *self)
         if (denominator == NULL)
             goto error;
     }
+    Py_DECREF(py_exponent);
 
-    result_pair = PyTuple_Pack(2, numerator, denominator);
+    return _PyTuple_FromPairSteal(numerator, denominator);
 
 error:
     Py_XDECREF(py_exponent);
@@ -1668,7 +1670,6 @@ float___getnewargs___impl(PyObject *self)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 float.__getformat__
 
@@ -1681,13 +1682,13 @@ You probably don't want to use this function.
 It exists mainly to be used in Python's test suite.
 
 This function returns whichever of 'IEEE, big-endian' or 'IEEE,
-little-endian' best describes the format of floating-point numbers used by the
-C type named by typestr.
+little-endian' best describes the format of floating-point numbers
+used by the C type named by typestr.
 [clinic start generated code]*/
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=0ae1ba35d192f704]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=eb1cf45e9bddab72]*/
 {
     if (strcmp(typestr, "double") != 0 && strcmp(typestr, "float") != 0) {
         PyErr_SetString(PyExc_ValueError,

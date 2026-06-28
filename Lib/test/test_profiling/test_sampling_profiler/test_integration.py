@@ -686,8 +686,6 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 "-m",
                 "profiling.sampling.cli",
                 "run",
-                "-d",
-                "1",
                 script_file.name,
             ],
             capture_output=True,
