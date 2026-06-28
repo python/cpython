@@ -2464,7 +2464,7 @@ PythonCmdDelete(ClientData clientData)
     PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
 
     ENTER_PYTHON
-    Py_XDECREF(data->self);
+    /* data->self is borrowed. */
     Py_XDECREF(data->func);
     PyMem_Free(data);
     LEAVE_PYTHON
@@ -2533,7 +2533,9 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
-    Py_INCREF(self);
+    /* Borrow the interpreter: a strong reference would form an uncollectable
+       cycle (interp -> command -> data->self -> interp) and leak the command
+       (gh-80937).  The command cannot outlive the interpreter. */
     data->self = self;
     data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
@@ -2566,6 +2568,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     }
     if (err) {
         PyErr_SetString(Tkinter_TclError, "can't create Tcl command");
+        Py_DECREF(data->func);
         PyMem_Free(data);
         return NULL;
     }
@@ -3129,10 +3132,24 @@ Tkapp_Dealloc(PyObject *op)
 {
     TkappObject *self = TkappObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    /*CHECK_TCL_APPARTMENT;*/
-    ENTER_TCL
-    Tcl_DeleteInterp(Tkapp_Interp(self));
-    LEAVE_TCL
+    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+        /* Deleting the interpreter from another thread aborts the process
+           ("Tcl_AsyncDelete: async handler deleted by the wrong thread").
+           Leak it instead (gh-83274). */
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "the Tcl interpreter is leaked because it was "
+                         "deallocated in a thread other than the one it was "
+                         "created in (see gh-83274)", 1) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while finalizing "
+                                   "a Tcl interpreter");
+        }
+    }
+    else {
+        ENTER_TCL
+        Tcl_DeleteInterp(Tkapp_Interp(self));
+        LEAVE_TCL
+    }
     Py_XDECREF(self->trace);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -3433,7 +3450,13 @@ static int stdin_ready = 0;
 static void
 MyFileProc(void *clientData, int mask)
 {
+    int tfile = (int)(Py_intptr_t)clientData;
     stdin_ready = 1;
+    /* Stop watching stdin now that input is available.  Doing it here rather
+       than after the loop below ensures that a nested event loop (e.g. the one
+       started by wait_variable) does not keep waking up on the same unread
+       input, spinning at 100% CPU. */
+    Tcl_DeleteFileHandler(tfile);
 }
 #endif
 
@@ -3450,9 +3473,10 @@ EventHook(void)
     errorInCmd = 0;
 #ifndef MS_WINDOWS
     tfile = fileno(stdin);
-    Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
+    Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc,
+                          (void *)(Py_intptr_t)tfile);
 #endif
-    while (!errorInCmd && !stdin_ready) {
+    while (!stdin_ready) {
         int result;
 #ifdef MS_WINDOWS
         if (_kbhit()) {
@@ -3472,18 +3496,23 @@ EventHook(void)
             Sleep(Tkinter_busywaitinterval);
         Py_END_ALLOW_THREADS
 
+        /* Report an exception raised in a callback, but keep pumping events
+           instead of returning to the prompt: without readline there is no
+           input waiting on stdin yet, so returning here would block in fgets
+           until the user hits enter, freezing later callbacks. */
+        if (errorInCmd) {
+            errorInCmd = 0;
+            PyErr_SetRaisedException(excInCmd);
+            excInCmd = NULL;
+            PyErr_Print();
+        }
         if (result < 0)
             break;
     }
 #ifndef MS_WINDOWS
-    Tcl_DeleteFileHandler(tfile);
+    if (!stdin_ready)
+        Tcl_DeleteFileHandler(tfile);
 #endif
-    if (errorInCmd) {
-        errorInCmd = 0;
-        PyErr_SetRaisedException(excInCmd);
-        excInCmd = NULL;
-        PyErr_Print();
-    }
     PyEval_SaveThread();
     return 0;
 }
@@ -3559,7 +3588,7 @@ PyInit__tkinter(void)
 
     tcl_lock = PyThread_allocate_lock();
     if (tcl_lock == NULL)
-        return NULL;
+        return PyErr_NoMemory();
 
     m = PyModule_Create(&_tkintermodule);
     if (m == NULL)
