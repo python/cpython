@@ -1,2 +1,1 @@
-Fix :exc:`TypeError` when formatting a :exc:`SyntaxError` raised with :data:`NotImplemented` as its argument, which caused IDLE Shell to restart
-unexpectedly.
+Fix :exc:`TypeError` when formatting a :exc:`SyntaxError` raised with :data:`NotImplemented` as its argument, which caused IDLE Shell to restart unexpectedly.
