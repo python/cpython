@@ -1332,6 +1332,7 @@ Window objects
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+   Its components can be extracted like those of :meth:`inch`.
    It cannot represent a background set with a wide character or with a color
    pair outside the :func:`color_pair` range; use :meth:`getbkgrnd` for those.
 
@@ -1486,11 +1487,13 @@ Window objects
 
 .. method:: window.inch([y, x])
 
-   Return the character at the given position in the window. The bottom 8 bits are
-   the character proper, and upper bits are the attributes.
+   Return the character at the given position in the window.
+   The bottom 8 bits are the character proper and the upper bits are the attributes;
+   extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
+   and the color pair with :func:`pair_number`.
    It cannot represent a cell holding combining characters, a character that does
    not fit in a single byte, or a color pair outside the :func:`color_pair`
-   range; use :meth:`in_wch` for those.
+   range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
 
 
 .. method:: window.in_wch([y, x])
