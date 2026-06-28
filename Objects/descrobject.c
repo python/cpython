@@ -1235,9 +1235,13 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
     if (op == Py_EQ || op == Py_NE) {
         mappingproxyobject *v = (mappingproxyobject *)self;
         // We have to guard the mutable `dict` instances, because it can
-        // otherwise mutate the type's `__dict__` entries and cause crashes:
+        // otherwise mutate the type's `__dict__` entries and cause crashes.
+        // But, do not create copies on known types for memory optimization.
         // See gh-152405 on the details.
-        if (PyDict_CheckExact(v->mapping)) {
+        if (
+            PyDict_CheckExact(v->mapping) &&
+            !(PyAnyDict_CheckExact(w) || PyODict_CheckExact(w))
+        ) {
             // So, instead we send a copy:
             PyObject *copy = PyDict_Copy(v->mapping);
             if (copy == NULL) {

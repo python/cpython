@@ -1506,7 +1506,14 @@ class MappingProxyTests(unittest.TestCase):
                 other[key] = 1
                 return other
 
-        # exposes the internals of `MappingProxyType` via richcompare:
+        # Checks that it does not mutate the internals of `MappingProxyType`:
+        dc = {}
+        leaked = self.mappingproxy(dc) == Evil()
+        self.assertIs(type(leaked), dict)
+        self.assertIn(key, leaked)
+        self.assertNotIn(key, dc)
+
+        # Exposes the internals of `MappingProxyType` via richcompare:
         leaked = vars(list) == Evil()
         self.assertIs(type(leaked), dict)
         self.assertIn(key, leaked)
