@@ -8,8 +8,6 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(complexchar_new__doc__,
 "complexchar(text, /, attr=0, pair=0)\n"
 "--\n"
@@ -103,10 +101,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(complexstr_new__doc__,
 "complexstr(cells, /, attr=<unrepresentable>, pair=<unrepresentable>)\n"
 "--\n"
@@ -193,8 +187,6 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr])\n"
@@ -1119,8 +1111,6 @@ _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_in_wch__doc__,
 "in_wch([y, x])\n"
 "Return the complex character at the given position in the window.\n"
@@ -1167,10 +1157,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_getbkgrnd__doc__,
 "getbkgrnd($self, /)\n"
 "--\n"
@@ -1188,8 +1174,6 @@ _curses_window_getbkgrnd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _curses_window_getbkgrnd_impl((PyCursesWindowObject *)self);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
@@ -5503,14 +5487,6 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
 
-#ifndef _CURSES_WINDOW_IN_WCH_METHODDEF
-    #define _CURSES_WINDOW_IN_WCH_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_IN_WCH_METHODDEF) */
-
-#ifndef _CURSES_WINDOW_GETBKGRND_METHODDEF
-    #define _CURSES_WINDOW_GETBKGRND_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_GETBKGRND_METHODDEF) */
-
 #ifndef _CURSES_WINDOW_GET_WCH_METHODDEF
     #define _CURSES_WINDOW_GET_WCH_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_GET_WCH_METHODDEF) */
@@ -5666,4 +5642,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=976a6629bfe58a3d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bbf6d77a5813b1e1 input=a9049054013a1b77]*/
