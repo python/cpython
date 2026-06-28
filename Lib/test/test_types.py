@@ -1463,8 +1463,19 @@ class MappingProxyTests(unittest.TestCase):
                 return other
 
         leaked = mp1 == Evil()
-        self.assertIs(type(leaked), dict)
+        self.assertIs(type(leaked), CustomMapping)
+        self.assertEqual(leaked, mp1)
         self.assertEqual(leaked, dt1)
+
+        class CustomMapping2(CustomMapping):
+            def __eq__(self, other):
+                return (
+                    isinstance(other, CustomMapping)
+                    and self._data == other._data
+                )
+
+        self.assertEqual(mp1, CustomMapping2({'a': 1}))
+        self.assertNotEqual(CustomMapping2({'a': 1}), mp1)
 
     def test_richcompare_odict(self):
         od1 = OrderedDict(x=1, y=2)

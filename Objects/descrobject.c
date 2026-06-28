@@ -1234,28 +1234,21 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
     if (op == Py_EQ || op == Py_NE) {
         mappingproxyobject *v = (mappingproxyobject *)self;
-        // Common path optimizations, where we can expose the real mapping:
-        if (
-            PyAnyDict_CheckExact(w)
-            || PyODict_CheckExact(w)
-            || Py_TYPE(w) == &PyDictProxy_Type
-        ) {
-            return PyObject_RichCompare(v->mapping, w, op);
-        }
-        // We can't expose the `v->mapping` itself, so we create a dict copy:
-        // it was possible to mutate `v->mapping` in rich-compare methods.
+        // We have to guard the mutable `dict` instances, because it can
+        // otherwise mutate the type's `__dict__` entries and cause crashes:
         // See gh-152405 on the details.
-        PyObject *copy = PyDict_New();
-        if (copy == NULL) {
-            return NULL;
-        }
-        if (PyDict_Update(copy, v->mapping)) {
+        if (PyDict_CheckExact(v->mapping)) {
+            // So, instead we send a copy:
+            PyObject *copy = PyDict_Copy(v->mapping);
+            if (copy == NULL) {
+                return NULL;
+            }
+            PyObject *res = PyObject_RichCompare(copy, w, op);
             Py_DECREF(copy);
-            return NULL;
+            return res;
         }
-        PyObject *res = PyObject_RichCompare(copy, w, op);
-        Py_DECREF(copy);
-        return res;
+        // Otherwise we are free to share the mapping directly:
+        return PyObject_RichCompare(v->mapping, w, op);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }

@@ -2,6 +2,4 @@ Fixes a crash, when modifing :class:`types.MappingProxyType` exposed via a
 rich-compare operation with :func:`vars` function. It was possible to mutate
 the internals of builtins types via this technique.
 
-It changes the object that is passed to custom rich-compare methods
-from the original internal mapping type to be always a new :class:`dict` copy
-with all the keys and values from the original mapping.
+Now we pass not the original :class:`dict` instance, but its copy.
