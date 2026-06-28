@@ -10021,10 +10021,12 @@
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
+            PyObject *source = PyStackRef_AsPyObjectBorrow(mod_or_class_dict);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyObject *v_o = _PyMapping_GetOptionalItem2(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &err);
+            PyObject *v_o = _PyMapping_GetOptionalItem2(source, name, &err);
             _PyFrame_StackPointerInvalidate(frame);
+            int commit_source = (v_o != NULL && source == GLOBALS());
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10059,13 +10061,33 @@
                         _PyFrame_StackPointerValidate(frame);
                         PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
                         _PyFrame_StackPointerInvalidate(frame);
+                        if (l_v == NULL) {
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            Py_DECREF(v_o);
+                            _PyFrame_StackPointerInvalidate(frame);
+                            JUMP_TO_LABEL(error);
+                        }
+                        assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                        _PyFrame_StackPointerValidate(frame);
+                        err = _PyLazyImport_CommitIfCurrent(
+                            tstate, v_o, GLOBALS(), name, l_v);
+                        _PyFrame_StackPointerInvalidate(frame);
+                        if (err < 0) {
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            Py_DECREF(v_o);
+                            _PyFrame_StackPointerInvalidate(frame);
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            Py_DECREF(l_v);
+                            _PyFrame_StackPointerInvalidate(frame);
+                            JUMP_TO_LABEL(error);
+                        }
                         assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                         _PyFrame_StackPointerValidate(frame);
                         Py_SETREF(v_o, l_v);
                         _PyFrame_StackPointerInvalidate(frame);
-                        if (v_o == NULL) {
-                            JUMP_TO_LABEL(error);
-                        }
                     }
                 }
                 else {
@@ -10099,15 +10121,68 @@
                         _PyFrame_StackPointerValidate(frame);
                         PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
                         _PyFrame_StackPointerInvalidate(frame);
+                        if (l_v == NULL) {
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            Py_DECREF(v_o);
+                            _PyFrame_StackPointerInvalidate(frame);
+                            JUMP_TO_LABEL(error);
+                        }
+                        assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                        _PyFrame_StackPointerValidate(frame);
+                        err = _PyLazyImport_CommitIfCurrent(
+                            tstate, v_o, GLOBALS(), name, l_v);
+                        _PyFrame_StackPointerInvalidate(frame);
+                        if (err < 0) {
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            Py_DECREF(v_o);
+                            _PyFrame_StackPointerInvalidate(frame);
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            Py_DECREF(l_v);
+                            _PyFrame_StackPointerInvalidate(frame);
+                            JUMP_TO_LABEL(error);
+                        }
                         assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                         _PyFrame_StackPointerValidate(frame);
                         Py_SETREF(v_o, l_v);
                         _PyFrame_StackPointerInvalidate(frame);
-                        if (v_o == NULL) {
-                            JUMP_TO_LABEL(error);
-                        }
                     }
                 }
+            }
+            else if (commit_source && PyLazyImport_CheckExact(v_o)) {
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                _PyFrame_StackPointerInvalidate(frame);
+                if (l_v == NULL) {
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    Py_DECREF(v_o);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    JUMP_TO_LABEL(error);
+                }
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                err = _PyLazyImport_CommitIfCurrent(
+                    tstate, v_o, source, name, l_v);
+                _PyFrame_StackPointerInvalidate(frame);
+                if (err < 0) {
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    Py_DECREF(v_o);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    Py_DECREF(l_v);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    JUMP_TO_LABEL(error);
+                }
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                Py_SETREF(v_o, l_v);
+                _PyFrame_StackPointerInvalidate(frame);
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[0] = v;
@@ -10377,7 +10452,8 @@
                 }
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = PyDict_SetItem(GLOBALS(), name, l_v);
+                int err = _PyLazyImport_CommitIfCurrent(
+                    tstate, v_o, GLOBALS(), name, l_v);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err < 0) {
                     assert(stack_pointer == _PyFrame_GetStackPointer(frame));
@@ -12546,10 +12622,25 @@
             _PyStackRef v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+            int bound = 0;
+            if (PyLazyImport_CheckExact(value)) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                bound = _PyLazyImport_BindGlobal(tstate, value, GLOBALS(), name);
+                _PyFrame_StackPointerInvalidate(frame);
+            }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            int err = PyDict_SetItem(GLOBALS(), name, value);
             _PyFrame_StackPointerInvalidate(frame);
+            if (bound) {
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                _PyLazyImport_FinishGlobalBinding(
+                    tstate, value, GLOBALS(), name, err == 0);
+                _PyFrame_StackPointerInvalidate(frame);
+            }
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -12590,10 +12681,25 @@
                 JUMP_TO_LABEL(error);
             }
             if (PyDict_CheckExact(ns)) {
+                PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+                int bound = 0;
+                if (ns == GLOBALS() && PyLazyImport_CheckExact(value)) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    bound = _PyLazyImport_BindGlobal(tstate, value, ns, name);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                err = PyDict_SetItem(ns, name, value);
                 _PyFrame_StackPointerInvalidate(frame);
+                if (bound) {
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    _PyLazyImport_FinishGlobalBinding(
+                        tstate, value, ns, name, err == 0);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
             }
             else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);

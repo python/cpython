@@ -1,0 +1,3 @@
+Make ``types.LazyImportType.resolve()`` cache successful resolutions and
+replace the original module global only when it still references the same lazy
+import proxy.

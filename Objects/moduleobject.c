@@ -1353,8 +1353,9 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                 }
                 PyErr_Clear();
             }
+            PyThreadState *tstate = PyThreadState_GET();
             PyObject *new_value = _PyImport_LoadLazyImportTstate(
-                PyThreadState_GET(), attr);
+                tstate, attr);
             if (new_value == NULL) {
                 if (suppress &&
                     PyErr_ExceptionMatches(PyExc_ImportCycleError)) {
@@ -1368,7 +1369,9 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                 return NULL;
             }
 
-            if (PyDict_SetItem(m->md_dict, name, new_value) < 0) {
+            if (_PyLazyImport_CommitIfCurrent(
+                    tstate, attr, m->md_dict, name, new_value) < 0)
+            {
                 Py_CLEAR(new_value);
             }
             Py_DECREF(attr);

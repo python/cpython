@@ -9587,13 +9587,32 @@
                 JUMP_TO_ERROR();
             }
             if (PyDict_CheckExact(ns)) {
+                PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+                int bound = 0;
+                if (ns == GLOBALS() && PyLazyImport_CheckExact(value)) {
+                    stack_pointer[0] = v;
+                    stack_pointer += 1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    bound = _PyLazyImport_BindGlobal(tstate, value, ns, name);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    stack_pointer += -1;
+                }
                 stack_pointer[0] = v;
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                err = PyDict_SetItem(ns, name, value);
                 _PyFrame_StackPointerInvalidate(frame);
+                if (bound) {
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    _PyLazyImport_FinishGlobalBinding(
+                        tstate, value, ns, name, err == 0);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
             }
             else {
                 stack_pointer[0] = v;
@@ -10076,13 +10095,32 @@
             oparg = CURRENT_OPARG();
             v = _stack_item_0;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+            int bound = 0;
+            if (PyLazyImport_CheckExact(value)) {
+                stack_pointer[0] = v;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                bound = _PyLazyImport_BindGlobal(tstate, value, GLOBALS(), name);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -1;
+            }
             stack_pointer[0] = v;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            int err = PyDict_SetItem(GLOBALS(), name, value);
             _PyFrame_StackPointerInvalidate(frame);
+            if (bound) {
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                _PyLazyImport_FinishGlobalBinding(
+                    tstate, value, GLOBALS(), name, err == 0);
+                _PyFrame_StackPointerInvalidate(frame);
+            }
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10238,7 +10276,8 @@
                 }
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = PyDict_SetItem(GLOBALS(), name, l_v);
+                int err = _PyLazyImport_CommitIfCurrent(
+                    tstate, v_o, GLOBALS(), name, l_v);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err < 0) {
                     assert(stack_pointer == _PyFrame_GetStackPointer(frame));

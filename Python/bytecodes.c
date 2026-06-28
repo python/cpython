@@ -2005,7 +2005,16 @@ dummy_func(
                 ERROR_IF(true);
             }
             if (PyDict_CheckExact(ns)) {
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+                int bound = 0;
+                if (ns == GLOBALS() && PyLazyImport_CheckExact(value)) {
+                    bound = _PyLazyImport_BindGlobal(tstate, value, ns, name);
+                }
+                err = PyDict_SetItem(ns, name, value);
+                if (bound) {
+                    _PyLazyImport_FinishGlobalBinding(
+                        tstate, value, ns, name, err == 0);
+                }
             }
             else {
                 err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
@@ -2189,7 +2198,16 @@ dummy_func(
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+            int bound = 0;
+            if (PyLazyImport_CheckExact(value)) {
+                bound = _PyLazyImport_BindGlobal(tstate, value, GLOBALS(), name);
+            }
+            int err = PyDict_SetItem(GLOBALS(), name, value);
+            if (bound) {
+                _PyLazyImport_FinishGlobalBinding(
+                    tstate, value, GLOBALS(), name, err == 0);
+            }
             PyStackRef_CLOSE(v);
             ERROR_IF(err);
         }
@@ -2221,7 +2239,9 @@ dummy_func(
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            PyObject *v_o = _PyMapping_GetOptionalItem2(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &err);
+            PyObject *source = PyStackRef_AsPyObjectBorrow(mod_or_class_dict);
+            PyObject *v_o = _PyMapping_GetOptionalItem2(source, name, &err);
+            int commit_source = (v_o != NULL && source == GLOBALS());
 
             PyStackRef_CLOSE(mod_or_class_dict);
             ERROR_IF(err < 0);
@@ -2244,8 +2264,18 @@ dummy_func(
 
                     if (PyLazyImport_CheckExact(v_o)) {
                         PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                        if (l_v == NULL) {
+                            Py_DECREF(v_o);
+                            ERROR_IF(true);
+                        }
+                        err = _PyLazyImport_CommitIfCurrent(
+                            tstate, v_o, GLOBALS(), name, l_v);
+                        if (err < 0) {
+                            Py_DECREF(v_o);
+                            Py_DECREF(l_v);
+                            ERROR_IF(true);
+                        }
                         Py_SETREF(v_o, l_v);
-                        ERROR_IF(v_o == NULL);
                     }
                 }
                 else {
@@ -2266,10 +2296,35 @@ dummy_func(
                     }
                     if (PyLazyImport_CheckExact(v_o)) {
                         PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                        if (l_v == NULL) {
+                            Py_DECREF(v_o);
+                            ERROR_IF(true);
+                        }
+                        err = _PyLazyImport_CommitIfCurrent(
+                            tstate, v_o, GLOBALS(), name, l_v);
+                        if (err < 0) {
+                            Py_DECREF(v_o);
+                            Py_DECREF(l_v);
+                            ERROR_IF(true);
+                        }
                         Py_SETREF(v_o, l_v);
-                        ERROR_IF(v_o == NULL);
                     }
                 }
+            }
+            else if (commit_source && PyLazyImport_CheckExact(v_o)) {
+                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                if (l_v == NULL) {
+                    Py_DECREF(v_o);
+                    ERROR_IF(true);
+                }
+                err = _PyLazyImport_CommitIfCurrent(
+                    tstate, v_o, source, name, l_v);
+                if (err < 0) {
+                    Py_DECREF(v_o);
+                    Py_DECREF(l_v);
+                    ERROR_IF(true);
+                }
+                Py_SETREF(v_o, l_v);
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
         }
@@ -2285,7 +2340,8 @@ dummy_func(
                     Py_DECREF(v_o);
                     ERROR_IF(true);
                 }
-                int err = PyDict_SetItem(GLOBALS(), name, l_v);
+                int err = _PyLazyImport_CommitIfCurrent(
+                    tstate, v_o, GLOBALS(), name, l_v);
                 if (err < 0) {
                     Py_DECREF(v_o);
                     Py_DECREF(l_v);

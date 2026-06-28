@@ -277,6 +277,538 @@ class LazyImportTypeTests(LazyImportTestCase):
         proc = assert_python_ok("-c", code)
         self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)
 
+    @support.requires_subprocess()
+    def test_resolve_replaces_original_global(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    index = len(calls) + 1
+                    calls.append((index, name, globals.get("__name__"), fromlist))
+                    module = types.ModuleType(name)
+                    module.VALUE = f"value-{index}"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                def resolve_from_dict():
+                    lazy_obj = globals()["target"]
+                    resolved = lazy_obj.resolve()
+                    assert resolved.VALUE == "value-1"
+                    assert globals()["target"] is resolved
+                    assert target.VALUE == "value-1"
+
+                resolve_from_dict()
+                assert len(calls) == 1, calls
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_resolve_is_cached_on_stale_proxy(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    module = types.ModuleType(name)
+                    module.VALUE = len(calls)
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                def resolve_twice():
+                    lazy_obj = globals()["target"]
+                    first = lazy_obj.resolve()
+                    second = lazy_obj.resolve()
+                    assert first is second
+                    assert globals()["target"] is first
+
+                resolve_twice()
+                assert len(calls) == 1, calls
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_resolve_after_automatic_reification_uses_cache(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as target
+            holder = [globals()["target"]]
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    module = types.ModuleType(name)
+                    module.VALUE = f"value-{len(calls)}"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                first = target.VALUE
+                second = holder[0].resolve()
+                assert second.VALUE == first == "value-1"
+                assert globals()["target"] is second
+                assert len(calls) == 1, calls
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_resolve_uses_actual_alias_binding(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as target
+            lazy from target_module import VALUE as alias
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    index = len(calls) + 1
+                    calls.append((name, fromlist))
+                    module = types.ModuleType(name)
+                    module.VALUE = f"value-{index}"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                def resolve_aliases():
+                    target_lazy = globals()["target"]
+                    target_resolved = target_lazy.resolve()
+                    assert globals()["target"] is target_resolved
+                    assert globals().get("target_module") is not target_resolved
+
+                    alias_lazy = globals()["alias"]
+                    alias_resolved = alias_lazy.resolve()
+                    assert globals()["alias"] is alias_resolved
+                    assert alias_resolved == "value-2"
+
+                resolve_aliases()
+                assert len(calls) == 2, calls
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_resolve_does_not_clobber_rebound_or_deleted_global(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as rebound
+            lazy import target_module as deleted
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    module = types.ModuleType(name)
+                    module.VALUE = len(calls)
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                def resolve_after_changes():
+                    rebound_lazy = globals()["rebound"]
+                    deleted_lazy = globals()["deleted"]
+                    sentinel = object()
+                    globals()["rebound"] = sentinel
+                    del globals()["deleted"]
+
+                    rebound_resolved = rebound_lazy.resolve()
+                    deleted_resolved = deleted_lazy.resolve()
+
+                    assert globals()["rebound"] is sentinel
+                    assert "deleted" not in globals()
+                    assert rebound_resolved.VALUE == 1
+                    assert deleted_resolved.VALUE == 2
+
+                resolve_after_changes()
+                assert len(calls) == 2, calls
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_resolve_failure_preserves_lazy_global_for_retry(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            attempts = 0
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                global attempts
+                if name == "target_module":
+                    attempts += 1
+                    if attempts == 1:
+                        raise ImportError("not yet")
+                    module = types.ModuleType(name)
+                    module.VALUE = "ok"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                def retry_resolve():
+                    lazy_obj = globals()["target"]
+                    try:
+                        lazy_obj.resolve()
+                    except ImportError:
+                        pass
+                    else:
+                        raise AssertionError("first resolve should fail")
+                    assert globals()["target"] is lazy_obj
+
+                    resolved = lazy_obj.resolve()
+                    assert globals()["target"] is resolved
+                    assert resolved.VALUE == "ok"
+
+                retry_resolve()
+                assert attempts == 2, attempts
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_automatic_reification_does_not_clobber_changed_global(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    globals["target"] = "user value"
+                    module = types.ModuleType(name)
+                    module.VALUE = "resolved"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                assert target.VALUE == "resolved"
+                assert globals()["target"] == "user value"
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_module_attribute_reification_does_not_clobber_changed_global(self):
+        code = textwrap.dedent("""
+            import builtins
+            import sys
+            import types
+
+            real_import = builtins.__import__
+            module = sys.modules[__name__]
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    module.__dict__["target"] = "user value"
+                    resolved = types.ModuleType(name)
+                    resolved.VALUE = "resolved"
+                    return resolved
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                assert module.target.VALUE == "resolved"
+                assert module.__dict__["target"] == "user value"
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_module_attr_dynamic_equal_name_clears_owner(self):
+        code = textwrap.dedent("""
+            import builtins
+            import sys
+            import types
+
+            real_import = builtins.__import__
+            module = sys.modules[__name__]
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    resolved = types.ModuleType(name)
+                    resolved.VALUE = "resolved"
+                    return resolved
+                return real_import(name, globals, locals, fromlist, level)
+
+            def check():
+                proxy = globals()["target"]
+                stored_name = next(name for name in globals()
+                                   if name == "target")
+                dynamic_name = bytearray(b"target").decode()
+                assert dynamic_name == stored_name
+                assert dynamic_name is not stored_name
+
+                resolved = getattr(module, dynamic_name)
+                assert resolved.VALUE == "resolved"
+                assert module.__dict__["target"] is resolved
+
+                module.__dict__["target"] = proxy
+                again = proxy.resolve()
+                assert again is resolved
+                assert module.__dict__["target"] is proxy
+
+            builtins.__import__ = custom_import
+            try:
+                check()
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_rebound_back_to_same_proxy_after_stale_resolve_does_not_replace(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    resolved = types.ModuleType(name)
+                    resolved.VALUE = "resolved"
+                    return resolved
+                return real_import(name, globals, locals, fromlist, level)
+
+            def check():
+                proxy = globals()["target"]
+                sentinel = object()
+                globals()["target"] = sentinel
+                resolved = proxy.resolve()
+                assert globals()["target"] is sentinel
+
+                globals()["target"] = proxy
+                again = proxy.resolve()
+                assert again is resolved
+                assert globals()["target"] is proxy
+
+            builtins.__import__ = custom_import
+            try:
+                check()
+                assert len(calls) == 1, calls
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_resolve_replaces_unaliased_import_global(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+
+            lazy import target_module
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    resolved = types.ModuleType(name)
+                    resolved.VALUE = "resolved"
+                    return resolved
+                return real_import(name, globals, locals, fromlist, level)
+
+            def check():
+                proxy = globals()["target_module"]
+                resolved = proxy.resolve()
+                assert resolved.VALUE == "resolved"
+                assert globals()["target_module"] is resolved
+
+            builtins.__import__ = custom_import
+            try:
+                check()
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_resolve_replaces_unaliased_dotted_import_binding(self):
+        code = textwrap.dedent("""
+            import types
+
+            lazy import test.test_lazy_import.data.pkg.bar
+
+            def check():
+                proxy = globals()["test"]
+                resolved = proxy.resolve()
+                assert isinstance(resolved, types.ModuleType)
+                assert resolved.__name__ == "test"
+                assert globals()["test"] is resolved
+                assert "test.test_lazy_import.data.pkg" not in globals()
+
+            check()
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_copying_lazy_proxy_to_second_global_keeps_first_owner(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as primary
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    resolved = types.ModuleType(name)
+                    resolved.VALUE = "resolved"
+                    return resolved
+                return real_import(name, globals, locals, fromlist, level)
+
+            def check():
+                exec('secondary = globals()["primary"]', globals())
+                proxy = globals()["secondary"]
+
+                resolved = proxy.resolve()
+                assert globals()["primary"] is resolved
+                assert globals()["secondary"] is proxy
+
+                again = globals()["secondary"].resolve()
+                assert again is resolved
+                assert globals()["secondary"] is proxy
+
+            builtins.__import__ = custom_import
+            try:
+                check()
+                assert len(calls) == 1, calls
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
+    @support.requires_subprocess()
+    def test_reentrant_store_resolution_waits_for_store_finish(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+            errors = []
+            proxies = []
+
+            def custom_import(name, globals=None, locals=None, fromlist=None,
+                              level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    resolved = types.ModuleType(name)
+                    resolved.VALUE = "resolved"
+                    return resolved
+                return real_import(name, globals, locals, fromlist, level)
+
+            class Reenter:
+                def __del__(self):
+                    try:
+                        proxy = globals().copy()["target"]
+                        proxies.append(proxy)
+                        resolved = target
+                        assert resolved.VALUE == "resolved"
+                        assert globals()["target"] is proxy
+                    except BaseException as exc:
+                        errors.append((type(exc).__name__, str(exc)))
+
+            builtins.__import__ = custom_import
+            target = Reenter()
+            lazy import target_module as target
+
+            def check_after_store():
+                assert not errors, errors
+                assert len(proxies) == 1, proxies
+                proxy = proxies[0]
+                assert globals()["target"] is proxy
+
+                resolved = proxy.resolve()
+                assert resolved.VALUE == "resolved"
+                assert globals()["target"] is resolved
+
+                globals()["target"] = proxy
+                assert proxy.resolve() is resolved
+                assert globals()["target"] is proxy
+
+            try:
+                check_after_store()
+                assert len(calls) == 1, calls
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
 
 class SyntaxRestrictionTests(LazyImportTestCase):
     """Tests for syntax restrictions on lazy imports."""
@@ -658,14 +1190,15 @@ class ErrorHandlingTests(LazyImportTestCase):
     """
 
     def test_import_error_shows_chained_traceback(self):
-        """Accessing a nonexistent lazy submodule via parent attr raises AttributeError."""
+        """A failed dotted lazy import should preserve the import failure."""
         code = textwrap.dedent("""
             import sys
             lazy import test.test_lazy_import.data.nonexistent_module
 
             try:
                 x = test.test_lazy_import.data.nonexistent_module
-            except AttributeError as e:
+            except ModuleNotFoundError as e:
+                assert e.__cause__ is not None, "Expected chained exception"
                 print("OK")
         """)
         result = subprocess.run(
@@ -710,20 +1243,22 @@ class ErrorHandlingTests(LazyImportTestCase):
 
             lazy import test.test_lazy_import.data.broken_module
 
+            def lazy_proxy():
+                return globals()['test']
+
             # First access - should fail
             try:
                 x = test.test_lazy_import.data.broken_module
-            except AttributeError:
+            except ValueError:
                 pass
 
-            # The lazy object should still be a lazy proxy (not reified)
-            g = globals()
-            lazy_obj = g['test']
-            # The root 'test' binding should still allow retry
+            assert type(lazy_proxy()) is types.LazyImportType
+
             # Second access - should also fail (retry the import)
             try:
                 x = test.test_lazy_import.data.broken_module
-            except AttributeError:
+            except ValueError:
+                assert type(lazy_proxy()) is types.LazyImportType
                 print("OK - retry worked")
         """)
         result = subprocess.run(
@@ -743,7 +1278,8 @@ class ErrorHandlingTests(LazyImportTestCase):
             try:
                 _ = test.test_lazy_import.data.broken_module
                 print("FAIL - should have raised")
-            except AttributeError:
+            except ValueError as e:
+                assert str(e) == "This module always fails to import"
                 print("OK")
         """)
         result = subprocess.run(

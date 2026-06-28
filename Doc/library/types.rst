@@ -350,6 +350,16 @@ Standard names are defined for the following types:
    actually accessed. This type can be used to detect lazy imports
    programmatically.
 
+   .. method:: resolve()
+
+      Resolve the lazy import and return the imported object. Successful
+      resolutions are cached.
+
+      For a module-level lazy import, ``resolve()`` also updates the original
+      module global if that name still refers to this proxy. If the name was
+      deleted or rebound, it is left unchanged; later ``resolve()`` calls return
+      the cached object without updating that name.
+
    .. versionadded:: 3.15
 
    .. seealso:: :pep:`810`
