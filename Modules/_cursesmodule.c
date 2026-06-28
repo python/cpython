@@ -40,16 +40,10 @@
 
   Here's a list of currently unsupported functions:
 
-  addchnstr addchstr color_set define_key
-  del_curterm inchnstr inchstr innstr keyok
-  mcprint mvaddchnstr mvaddchstr mvcur mvinchnstr
-  mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr
-  mvwinchnstr mvwinchstr mvwinnstr
-  restartterm ripoffline
-  scrl set_curterm setterm
-  tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
-  vidattr vidputs waddchnstr waddchstr
-  wcolor_set winchnstr winchstr winnstr wmouse_trafo wscrl
+  del_curterm mcprint mvcur restartterm
+  ripoffline set_curterm setterm
+  tgetent tgetflag tgetnum tgetstr tgoto tputs
+  vidattr vidputs
 
   Low-priority:
   slk_attr slk_attr_off slk_attr_on slk_attr_set slk_attroff
@@ -3013,6 +3007,36 @@ _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
 {
     return PyBool_FromLong(wenclose(self->win, y, x));
 }
+
+/*[clinic input]
+_curses.window.mouse_trafo
+
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    to_screen: bool
+        If True, convert window-relative coordinates to
+        stdscr-relative ones; otherwise convert the other way.
+    /
+
+Convert coordinates between window-relative and screen-relative.
+
+Return the converted (y, x) coordinates, or None if they are
+outside the window.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_mouse_trafo_impl(PyCursesWindowObject *self, int y, int x,
+                                int to_screen)
+/*[clinic end generated code: output=b21572fa3524c15d input=c51fd793af7f6965]*/
+{
+    int ry = y, rx = x;
+    if (!wmouse_trafo(self->win, &ry, &rx, to_screen)) {
+        Py_RETURN_NONE;
+    }
+    return Py_BuildValue("(ii)", ry, rx);
+}
 #endif
 
 /*[clinic input]
@@ -3238,7 +3262,6 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
     }
 }
 
-#ifdef HAVE_NCURSESW
 /*[clinic input]
 _curses.window.get_wch
 
@@ -3261,6 +3284,7 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
                             int y, int x)
 /*[clinic end generated code: output=9f4f86e91fe50ef3 input=dd7e5367fb49dc48]*/
 {
+#ifdef HAVE_NCURSESW
     int ct;
     wint_t rtn;
 
@@ -3282,8 +3306,31 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
         return PyLong_FromLong(rtn);
     else
         return PyUnicode_FromOrdinal(rtn);
-}
+#else
+    /* Without the wide library, read one key with wgetch(): a value above 255
+       is a function key (returned as an int); a byte is decoded with the
+       window's encoding (8-bit locales). */
+    int rtn;
+    Py_BEGIN_ALLOW_THREADS
+    if (!group_right_1) {
+        rtn = wgetch(self->win);
+    }
+    else {
+        rtn = mvwgetch(self->win, y, x);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (rtn == ERR) {
+        const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
+        return curses_check_signals_on_input_error(self, funcname, "get_wch");
+    }
+    if (rtn > 255) {
+        return PyLong_FromLong(rtn);
+    }
+    char ch = (char)rtn;
+    return PyUnicode_Decode(&ch, 1, self->encoding, NULL);
 #endif
+}
 
 /*
  * Helper function for parsing parameters from getstr() and instr().
@@ -3336,16 +3383,17 @@ PyDoc_STRVAR(_curses_window_getstr__doc__,
 "  n\n"
 "    Maximal number of characters.");
 
+/* Read user input into a new bytes object (empty on ERR), with primitive line
+   editing.  Shared by getstr() and, without the wide library, by get_wstr(). */
 static PyObject *
-PyCursesWindow_getstr(PyObject *op, PyObject *args)
+curses_window_getstr_bytes(PyCursesWindowObject *self, PyObject *args,
+                           const char *funcname)
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
 
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.instr"))
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy, funcname))
     {
         return NULL;
     }
@@ -3379,6 +3427,13 @@ PyCursesWindow_getstr(PyObject *op, PyObject *args)
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
     return PyBytesWriter_FinishWithSize(writer, strlen(buf));
+}
+
+static PyObject *
+PyCursesWindow_getstr(PyObject *op, PyObject *args)
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    return curses_window_getstr_bytes(self, args, "_curses.window.getstr");
 }
 
 /*[clinic input]
@@ -3566,16 +3621,18 @@ PyDoc_STRVAR(_curses_window_instr__doc__,
 "instr() returns a string at most n characters long (exclusive of\n"
 "the trailing NUL).");
 
+/* Extract characters from the window into a new bytes object (empty on ERR),
+   with attributes and color stripped.  Shared by instr() and, without the wide
+   library, by in_wstr(). */
 static PyObject *
-PyCursesWindow_instr(PyObject *op, PyObject *args)
+curses_window_instr_bytes(PyCursesWindowObject *self, PyObject *args,
+                          const char *funcname)
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
 
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.instr"))
+    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy, funcname))
     {
         return NULL;
     }
@@ -3601,7 +3658,13 @@ PyCursesWindow_instr(PyObject *op, PyObject *args)
     return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
-#ifdef HAVE_NCURSESW
+static PyObject *
+PyCursesWindow_instr(PyObject *op, PyObject *args)
+{
+    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+    return curses_window_instr_bytes(self, args, "_curses.window.instr");
+}
+
 PyDoc_STRVAR(_curses_window_get_wstr__doc__,
 "get_wstr([[y, x,] n=2047])\n"
 "Read a string from the user, with primitive line editing capacity.\n"
@@ -3619,6 +3682,7 @@ static PyObject *
 PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+#ifdef HAVE_NCURSESW
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
@@ -3668,8 +3732,21 @@ PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
     PyMem_Free(wbuf);
     PyMem_Free(buf);
     return res;
-}
+#else
+    /* Without the wide library, read the bytes as getstr() does and decode them
+       with the window's encoding. */
+    PyObject *bytes = curses_window_getstr_bytes(self, args,
+                                                 "_curses.window.get_wstr");
+    if (bytes == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyUnicode_Decode(PyBytes_AS_STRING(bytes),
+                                     PyBytes_GET_SIZE(bytes),
+                                     self->encoding, NULL);
+    Py_DECREF(bytes);
+    return res;
 #endif /* HAVE_NCURSESW */
+}
 
 PyDoc_STRVAR(_curses_window_in_wstr__doc__,
 "in_wstr([y, x,] n=2047)\n"
@@ -3688,6 +3765,7 @@ static PyObject *
 PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+#ifdef HAVE_NCURSESW
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
     unsigned int n = max_buf_size - 1;
@@ -3699,7 +3777,6 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
     }
 
     n = Py_MIN(n, max_buf_size - 1);
-#ifdef HAVE_NCURSESW
     wchar_t *buf = PyMem_New(wchar_t, n + 1);
     if (buf == NULL) {
         return PyErr_NoMemory();
@@ -3720,26 +3797,17 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
     PyMem_Free(buf);
     return res;
 #else
-    /* Without the wide library, read the locale-encoded bytes and decode them
+    /* Without the wide library, read the bytes as instr() does and decode them
        with the window's encoding. */
-    char *buf = PyMem_New(char, n + 1);
-    if (buf == NULL) {
-        return PyErr_NoMemory();
+    PyObject *bytes = curses_window_instr_bytes(self, args,
+                                                "_curses.window.in_wstr");
+    if (bytes == NULL) {
+        return NULL;
     }
-
-    if (use_xy) {
-        rtn = mvwinnstr(self->win, y, x, buf, n);
-    }
-    else {
-        rtn = winnstr(self->win, buf, n);
-    }
-
-    if (rtn == ERR) {
-        PyMem_Free(buf);
-        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
-    }
-    PyObject *res = PyUnicode_Decode(buf, strlen(buf), self->encoding, NULL);
-    PyMem_Free(buf);
+    PyObject *res = PyUnicode_Decode(PyBytes_AS_STRING(bytes),
+                                     PyBytes_GET_SIZE(bytes),
+                                     self->encoding, NULL);
+    Py_DECREF(bytes);
     return res;
 #endif
 }
@@ -4798,6 +4866,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_DUPWIN_METHODDEF
     _CURSES_WINDOW_ECHOCHAR_METHODDEF
     _CURSES_WINDOW_ENCLOSE_METHODDEF
+    _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF
     {"erase", PyCursesWindow_werase, METH_NOARGS,
      "erase($self, /)\n--\n\n"
      "Clear the window."},
@@ -4835,12 +4904,10 @@ static PyMethodDef PyCursesWindow_methods[] = {
         "getstr", PyCursesWindow_getstr, METH_VARARGS,
         _curses_window_getstr__doc__
     },
-#ifdef HAVE_NCURSESW
     {
         "get_wstr", PyCursesWindow_get_wstr, METH_VARARGS,
         _curses_window_get_wstr__doc__
     },
-#endif
     {"getyx", PyCursesWindow_getyx, METH_NOARGS,
      "getyx($self, /)\n--\n\n"
      "Return a tuple (y, x) of the current cursor position."},
@@ -5686,7 +5753,6 @@ _curses_erasechar_impl(PyObject *module)
     return PyBytes_FromStringAndSize(&ch, 1);
 }
 
-#ifdef HAVE_NCURSESW
 /*[clinic input]
 _curses.erasewchar
 
@@ -5697,17 +5763,24 @@ static PyObject *
 _curses_erasewchar_impl(PyObject *module)
 /*[clinic end generated code: output=7f3bd8c9097ac456 input=f7e9a3893b4df2f8]*/
 {
-    wchar_t ch;
-
     PyCursesStatefulInitialised(module);
+
+#ifdef HAVE_NCURSESW
+    wchar_t ch;
 
     if (erasewchar(&ch) == ERR) {
         curses_set_error(module, "erasewchar", NULL);
         return NULL;
     }
     return PyUnicode_FromWideChar(&ch, 1);
+#else
+    /* Without the wide library, decode the single-byte erase character
+       with the screen's encoding. */
+    char ch = erasechar();
+
+    return PyUnicode_Decode(&ch, 1, curses_screen_encoding, NULL);
+#endif
 }
-#endif /* HAVE_NCURSESW */
 
 /*[clinic input]
 _curses.flash
@@ -6890,7 +6963,6 @@ _curses_killchar_impl(PyObject *module)
     return PyBytes_FromStringAndSize(&ch, 1);
 }
 
-#ifdef HAVE_NCURSESW
 /*[clinic input]
 _curses.killwchar
 
@@ -6901,6 +6973,7 @@ static PyObject *
 _curses_killwchar_impl(PyObject *module)
 /*[clinic end generated code: output=eac1fd72a0c88d42 input=5c2d7d1ab2f24eb7]*/
 {
+#ifdef HAVE_NCURSESW
     wchar_t ch;
 
     if (killwchar(&ch) == ERR) {
@@ -6908,8 +6981,14 @@ _curses_killwchar_impl(PyObject *module)
         return NULL;
     }
     return PyUnicode_FromWideChar(&ch, 1);
+#else
+    /* Without the wide library, decode the single-byte kill character
+       with the screen's encoding. */
+    char ch = killchar();
+
+    return PyUnicode_Decode(&ch, 1, curses_screen_encoding, NULL);
+#endif
 }
-#endif /* HAVE_NCURSESW */
 
 /*[clinic input]
 _curses.longname
@@ -6947,6 +7026,21 @@ _curses_meta_impl(PyObject *module, int yes)
 }
 
 #ifdef NCURSES_MOUSE_VERSION
+/*[clinic input]
+_curses.has_mouse
+
+Return True if the mouse driver has been successfully initialized.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_has_mouse_impl(PyObject *module)
+/*[clinic end generated code: output=7901cc34069e4f57 input=94682101a11c4f30]*/
+{
+    PyCursesStatefulInitialised(module);
+
+    return PyBool_FromLong(has_mouse());
+}
+
 /*[clinic input]
 _curses.mouseinterval
 
@@ -7783,7 +7877,6 @@ _curses_unctrl(PyObject *module, PyObject *ch)
     return PyBytes_FromString(res);
 }
 
-#ifdef HAVE_NCURSESW
 /*[clinic input]
 _curses.wunctrl
 
@@ -7800,11 +7893,12 @@ static PyObject *
 _curses_wunctrl(PyObject *module, PyObject *ch)
 /*[clinic end generated code: output=7b16d5534ff05728 input=9ceb6749118bd07c]*/
 {
+    PyCursesStatefulInitialised(module);
+
+#ifdef HAVE_NCURSESW
     chtype ch_;
     wchar_t wstr[CCHARW_MAX + 1];
     cchar_t wcval;
-
-    PyCursesStatefulInitialised(module);
 
     int type = PyCurses_ConvertToCchar_t(NULL, ch, &ch_, wstr);
     if (type == 0) {
@@ -7826,33 +7920,24 @@ _curses_wunctrl(PyObject *module, PyObject *ch)
         return NULL;
     }
     return PyUnicode_FromWideChar(res, -1);
-}
-#endif /* HAVE_NCURSESW */
-
-/*[clinic input]
-_curses.ungetch
-
-    ch: object
-    /
-
-Push ch so the next getch() will return it.
-[clinic start generated code]*/
-
-static PyObject *
-_curses_ungetch(PyObject *module, PyObject *ch)
-/*[clinic end generated code: output=9b19d8268376d887 input=6681e6ae4c42e5eb]*/
-{
+#else
+    /* Without the wide library, fall back to the single-byte unctrl() and
+       decode its result with the screen's encoding. */
     chtype ch_;
 
-    PyCursesStatefulInitialised(module);
-
-    if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
+    if (!PyCurses_ConvertToChtype(NULL, ch, &ch_)) {
         return NULL;
+    }
 
-    return curses_check_err(module, ungetch(ch_), "ungetch", NULL);
+    const char *res = unctrl(ch_);
+    if (res == NULL) {
+        curses_set_null_error(module, "unctrl", "wunctrl");
+        return NULL;
+    }
+    return PyUnicode_Decode(res, strlen(res), curses_screen_encoding, NULL);
+#endif
 }
 
-#ifdef HAVE_NCURSESW
 /* Convert an object to a character (wchar_t):
 
     - int
@@ -7901,6 +7986,40 @@ PyCurses_ConvertToWchar_t(PyObject *obj,
 }
 
 /*[clinic input]
+_curses.ungetch
+
+    ch: object
+    /
+
+Push ch so the next getch() will return it.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_ungetch(PyObject *module, PyObject *ch)
+/*[clinic end generated code: output=9b19d8268376d887 input=6681e6ae4c42e5eb]*/
+{
+    PyCursesStatefulInitialised(module);
+
+#ifdef HAVE_NCURSESW
+    /* Push a str through the wide queue, so a character that does not fit in a
+       single byte round-trips to get_wch().  An int stays a raw value (a keycode
+       or a byte) for getch(); use unget_wch() to push it as a character. */
+    if (PyUnicode_Check(ch)) {
+        wchar_t wch;
+        if (!PyCurses_ConvertToWchar_t(ch, &wch))
+            return NULL;
+        return curses_check_err(module, unget_wch(wch), "unget_wch", "ungetch");
+    }
+#endif
+
+    chtype ch_;
+    if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
+        return NULL;
+
+    return curses_check_err(module, ungetch(ch_), "ungetch", NULL);
+}
+
+/*[clinic input]
 _curses.unget_wch
 
     ch: object
@@ -7919,9 +8038,33 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
 
     if (!PyCurses_ConvertToWchar_t(ch, &wch))
         return NULL;
+#ifdef HAVE_NCURSESW
     return curses_check_err(module, unget_wch(wch), "unget_wch", NULL);
-}
+#else
+    /* Without the wide library there is no unget_wch(): encode the character as
+       a single screen-encoding byte and push that.  Narrow builds support only
+       8-bit locales, so a character that does not fit in one byte is rejected. */
+    PyObject *str = PyUnicode_FromWideChar(&wch, 1);
+    if (str == NULL) {
+        return NULL;
+    }
+    PyObject *bytes = PyUnicode_AsEncodedString(str, curses_screen_encoding,
+                                                NULL);
+    Py_DECREF(str);
+    if (bytes == NULL) {
+        return NULL;
+    }
+    if (PyBytes_GET_SIZE(bytes) != 1) {
+        Py_DECREF(bytes);
+        PyErr_SetString(PyExc_OverflowError,
+                        "character does not fit in a single byte");
+        return NULL;
+    }
+    int b = (unsigned char)PyBytes_AS_STRING(bytes)[0];
+    Py_DECREF(bytes);
+    return curses_check_err(module, ungetch(b), "ungetch", "unget_wch");
 #endif
+}
 
 #ifdef HAVE_CURSES_USE_ENV
 /*[clinic input]
@@ -8107,6 +8250,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_HAS_IC_METHODDEF
     _CURSES_HAS_IL_METHODDEF
     _CURSES_HAS_KEY_METHODDEF
+    _CURSES_HAS_MOUSE_METHODDEF
     _CURSES_DEFINE_KEY_METHODDEF
     _CURSES_KEY_DEFINED_METHODDEF
     _CURSES_KEYOK_METHODDEF
