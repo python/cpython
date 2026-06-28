@@ -9,6 +9,9 @@ _test_matchers = ()
 _test_patterns = ()
 _match_labels = ()
 
+# Sentinel returned by _get_label() when the test has no such label.
+_no_label = object()
+
 
 def match_test(test):
     # Function used by support.run_unittest() and regrtest --list-cases
@@ -23,27 +26,35 @@ def match_test_id(test):
 
 def match_test_label(test):
     result = False
-    for label, result in reversed(_match_labels):
-        if _has_label(test, label):
+    for name, value, result in reversed(_match_labels):
+        actual = _get_label(test, name)
+        if actual is _no_label:
+            continue
+        # value is None for a plain "--label name" (match any value).
+        if value is None or value == str(actual):
             return result
     return not result
 
-def _has_label(test, label):
+def _get_label(test, label):
     attrname = f'_label_{label}'
-    if hasattr(test, attrname):
-        return True
+    value = getattr(test, attrname, _no_label)
+    if value is not _no_label:
+        return value
     testMethod = getattr(test, test._testMethodName)
     while testMethod is not None:
-        if hasattr(testMethod, attrname):
-            return True
+        value = getattr(testMethod, attrname, _no_label)
+        if value is not _no_label:
+            return value
         testMethod = getattr(testMethod, '__wrapped__', None)
     try:
         module = sys.modules[test.__class__.__module__]
-        if hasattr(module, attrname):
-            return True
     except KeyError:
         pass
-    return False
+    else:
+        value = getattr(module, attrname, _no_label)
+        if value is not _no_label:
+            return value
+    return _no_label
 
 
 def _is_full_match_test(pattern):
@@ -80,7 +91,13 @@ def set_match_tests(patterns=None, match_labels=None):
     if not match_labels:
         _match_labels = ()
     else:
-        _match_labels = tuple(match_labels)
+        # "name" matches a label with any value, "name=value" matches only
+        # the specified value.
+        _match_labels = tuple(
+            (name, value if sep else None, result)
+            for label, result in match_labels
+            for name, sep, value in [label.partition('=')]
+        )
 
 
 def _compile_match_function(patterns):

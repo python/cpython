@@ -300,12 +300,14 @@ def _create_parser():
     group.add_argument('-i', '--ignore', metavar='PAT',
                        dest='match_tests', action=FilterAction, const=False,
                        help='ignore test cases and methods with glob pattern `PAT`')
-    group.add_argument('--label', metavar='NAME',
+    group.add_argument('--label', metavar='NAME[=VALUE]',
                        dest='match_labels', action=FilterAction, const=True,
-                       help='match test cases and methods with label `NAME`')
-    group.add_argument('--no-label', metavar='NAME',
+                       help='match test cases and methods with label `NAME` '
+                            '(optionally only if its value is `VALUE`)')
+    group.add_argument('--no-label', metavar='NAME[=VALUE]',
                        dest='match_labels', action=FilterAction, const=False,
-                       help='ignore test cases and methods with label `NAME`')
+                       help='ignore test cases and methods with label `NAME` '
+                            '(optionally only if its value is `VALUE`)')
     group.add_argument('--matchfile', metavar='FILENAME',
                        dest='match_tests',
                        action=FromFileFilterAction, const=True,

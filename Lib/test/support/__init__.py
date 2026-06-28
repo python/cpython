@@ -1352,18 +1352,21 @@ def bigaddrspacetest(f):
 #=======================================================================
 # unittest integration.
 
-def mark(label, *, globals=None):
+def mark(label, value=True, *, globals=None):
     """Add a label to test.
 
     To add a label to method or class, use it as a decorator.
 
     To add a label to module, pass the globals() dict as the globals argument.
+
+    The optional value (``True`` by default) can be matched on the command
+    line with ``--label name=value``.
     """
     if globals is not None:
-        globals[f'_label_{label}'] = True
+        globals[f'_label_{label}'] = value
         return
     def decorator(test):
-        setattr(test, f'_label_{label}', True)
+        setattr(test, f'_label_{label}', value)
         return test
     return decorator
 
