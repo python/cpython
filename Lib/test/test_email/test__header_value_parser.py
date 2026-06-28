@@ -30,7 +30,8 @@ class TestParserMixin:
 
     def _test_get_x(self, method, source, string, value, defects,
                           remainder, comments=None):
-        tl, rest = method(source)
+        tl, pos = method(source, 0)
+        rest = source[pos:]
         self._assert_results(tl, rest, string, value, defects, remainder,
                              comments=None)
         return tl
@@ -44,24 +45,10 @@ class TestParserMixin:
 
 class TestParser(TestParserMixin, TestEmailBase):
 
-    # _wsp_splitter
-
     rfc_printable_ascii = bytes(range(33, 127)).decode('ascii')
     rfc_atext_chars = (string.ascii_letters + string.digits +
                         "!#$%&\'*+-/=?^_`{}|~")
     rfc_dtext_chars = rfc_printable_ascii.translate(str.maketrans('','',r'\[]'))
-
-    def test__wsp_splitter_one_word(self):
-        self.assertEqual(parser._wsp_splitter('foo', 1), ['foo'])
-
-    def test__wsp_splitter_two_words(self):
-        self.assertEqual(parser._wsp_splitter('foo def', 1),
-                                               ['foo', ' ', 'def'])
-
-    def test__wsp_splitter_ws_runs(self):
-        self.assertEqual(parser._wsp_splitter('foo \t def jik', 1),
-                                              ['foo', ' \t ', 'def jik'])
-
 
     # get_fws
 
@@ -172,9 +159,9 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_unstructured
 
-    def _get_unst(self, value):
-        token = parser.get_unstructured(value)
-        return token, ''
+    def _get_unst(self, value, pos=0):
+        token = parser.get_unstructured(value, pos)
+        return token, len(value)
 
     def test_get_unstructured_null(self):
         self._test_get_x(self._get_unst, '', '', '', [], '')
