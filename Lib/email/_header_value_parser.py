@@ -1374,7 +1374,7 @@ def get_dot_atom_text(value):
             "but found '{}'".format('.'+value))
     return dot_atom_text, value
 
-def get_dot_atom(value):
+def get_dot_atom(value, *, ew_allowed=True):
     """ dot-atom = [CFWS] dot-atom-text [CFWS]
 
     Any place we can have a dot atom, we could instead have an rfc2047 encoded
@@ -1384,7 +1384,7 @@ def get_dot_atom(value):
     if value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         dot_atom.append(token)
-    if value.startswith('=?'):
+    if ew_allowed and value.startswith('=?'):
         try:
             token, value = get_encoded_word(value)
         except errors.HeaderParseError:
@@ -1493,7 +1493,7 @@ def get_local_part(value):
         raise errors.HeaderParseError(
             "expected local-part but found '{}'".format(value))
     try:
-        token, value = get_dot_atom(value)
+        token, value = get_dot_atom(value, ew_allowed=False)
     except errors.HeaderParseError:
         try:
             token, value = get_word(value)
