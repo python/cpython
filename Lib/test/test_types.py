@@ -1402,9 +1402,11 @@ class MappingProxyTests(unittest.TestCase):
         self.assertFalse(mp1 == mp2)
         self.assertTrue(mp1 != mp2)
         self.assertTrue(mp1 == dt1)
+        self.assertTrue(dt1 == mp1)
         self.assertTrue(mp1_2 == dt1)
         self.assertFalse(mp2 == dt1)
         self.assertTrue(mp2 != dt1)
+        self.assertTrue(dt1 != mp2)
 
         msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
 
@@ -1444,11 +1446,13 @@ class MappingProxyTests(unittest.TestCase):
         mp1_2 = self.mappingproxy(dt1)
         mp2 = self.mappingproxy({'a': 2})
 
+        self.assertTrue(mp1 == mp1)
         self.assertTrue(mp1 == mp1_2)
         self.assertTrue(mp1 == dt1)
         self.assertTrue(mp1_2 == dt1)
         self.assertTrue(dt1 == mp1)
         self.assertTrue(dt1 == mp1_2)
+        self.assertFalse(mp1 != mp1)
         self.assertFalse(mp2 == dt1)
         self.assertFalse(dt1 == mp2)
         self.assertFalse(mp1 != dt1)
@@ -1460,6 +1464,7 @@ class MappingProxyTests(unittest.TestCase):
 
         leaked = mp1 == Evil()
         self.assertIs(type(leaked), dict)
+        self.assertEqual(leaked, dt1)
 
     def test_richcompare_odict(self):
         od1 = OrderedDict(x=1, y=2)
