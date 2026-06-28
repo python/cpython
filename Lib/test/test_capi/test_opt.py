@@ -4288,11 +4288,17 @@ class TestUopsOptimization(unittest.TestCase):
     def test_pop_iter(self):
         def testfunc(n):
             for _ in range(n):
-                pass
+                for _ in range(5):
+                    pass
 
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, None)
-        self.assertEqual(count_ops(ex, "_POP_TOP"), 1)
+        self._run_with_optimizer(testfunc, TIER2_THRESHOLD*2)
+        all_ex = get_all_executors(testfunc)
+
+        self.assertEqual(len(all_ex), 3)
+        pop_iter_ex = all_ex[1]
+
+        self.assertEqual(count_ops(pop_iter_ex, "_POP_TOP"), 1)
+        self.assertEqual(count_ops(pop_iter_ex, "_POP_TOP_NOP"), 1)
 
 def global_identity(x):
     return x
