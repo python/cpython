@@ -8,8 +8,6 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(complexchar_new__doc__,
 "complexchar(text, /, attr=0, pair=0)\n"
 "--\n"
@@ -103,10 +101,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(complexstr_new__doc__,
 "complexstr(cells, /, attr=<unrepresentable>, pair=<unrepresentable>)\n"
 "--\n"
@@ -194,8 +188,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr])\n"
 "Paint the character.\n"
@@ -220,7 +212,7 @@ PyDoc_STRVAR(_curses_window_addch__doc__,
 static PyObject *
 _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int group_right_1,
-                          long attr);
+                          attr_t attr);
 
 static PyObject *
 _curses_window_addch(PyObject *self, PyObject *args)
@@ -231,7 +223,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -240,7 +232,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:addch", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:addch", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -252,7 +244,7 @@ _curses_window_addch(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:addch", &y, &x, &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOO&:addch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -292,7 +284,7 @@ PyDoc_STRVAR(_curses_window_addstr__doc__,
 static PyObject *
 _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
                            int y, int x, PyObject *str, int group_right_1,
-                           long attr);
+                           attr_t attr);
 
 static PyObject *
 _curses_window_addstr(PyObject *self, PyObject *args)
@@ -303,7 +295,7 @@ _curses_window_addstr(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *str;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -312,7 +304,7 @@ _curses_window_addstr(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:addstr", &str, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:addstr", &str, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -324,7 +316,7 @@ _curses_window_addstr(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:addstr", &y, &x, &str, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOO&:addstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -366,7 +358,7 @@ PyDoc_STRVAR(_curses_window_addnstr__doc__,
 static PyObject *
 _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
                             int y, int x, PyObject *str, int n,
-                            int group_right_1, long attr);
+                            int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_addnstr(PyObject *self, PyObject *args)
@@ -378,7 +370,7 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
     PyObject *str;
     int n;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -387,7 +379,7 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "Oil:addnstr", &str, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "OiO&:addnstr", &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -399,7 +391,7 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 5:
-            if (!PyArg_ParseTuple(args, "iiOil:addnstr", &y, &x, &str, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOiO&:addnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -429,7 +421,7 @@ PyDoc_STRVAR(_curses_window_bkgd__doc__,
 
 static PyObject *
 _curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch,
-                         int group_right_1, long attr);
+                         int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_bkgd(PyObject *self, PyObject *args)
@@ -437,7 +429,7 @@ _curses_window_bkgd(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -446,7 +438,7 @@ _curses_window_bkgd(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:bkgd", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:bkgd", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -471,16 +463,15 @@ PyDoc_STRVAR(_curses_window_attroff__doc__,
     {"attroff", (PyCFunction)_curses_window_attroff, METH_O, _curses_window_attroff__doc__},
 
 static PyObject *
-_curses_window_attroff_impl(PyCursesWindowObject *self, long attr);
+_curses_window_attroff_impl(PyCursesWindowObject *self, attr_t attr);
 
 static PyObject *
 _curses_window_attroff(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_window_attroff_impl((PyCursesWindowObject *)self, attr);
@@ -499,16 +490,15 @@ PyDoc_STRVAR(_curses_window_attron__doc__,
     {"attron", (PyCFunction)_curses_window_attron, METH_O, _curses_window_attron__doc__},
 
 static PyObject *
-_curses_window_attron_impl(PyCursesWindowObject *self, long attr);
+_curses_window_attron_impl(PyCursesWindowObject *self, attr_t attr);
 
 static PyObject *
 _curses_window_attron(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_window_attron_impl((PyCursesWindowObject *)self, attr);
@@ -527,16 +517,15 @@ PyDoc_STRVAR(_curses_window_attrset__doc__,
     {"attrset", (PyCFunction)_curses_window_attrset, METH_O, _curses_window_attrset__doc__},
 
 static PyObject *
-_curses_window_attrset_impl(PyCursesWindowObject *self, long attr);
+_curses_window_attrset_impl(PyCursesWindowObject *self, attr_t attr);
 
 static PyObject *
 _curses_window_attrset(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_window_attrset_impl((PyCursesWindowObject *)self, attr);
@@ -715,7 +704,7 @@ PyDoc_STRVAR(_curses_window_bkgdset__doc__,
 
 static PyObject *
 _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
-                            int group_right_1, long attr);
+                            int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_bkgdset(PyObject *self, PyObject *args)
@@ -723,7 +712,7 @@ _curses_window_bkgdset(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -732,7 +721,7 @@ _curses_window_bkgdset(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:bkgdset", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:bkgdset", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1027,7 +1016,7 @@ PyDoc_STRVAR(_curses_window_echochar__doc__,
 
 static PyObject *
 _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
-                             int group_right_1, long attr);
+                             int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_echochar(PyObject *self, PyObject *args)
@@ -1035,7 +1024,7 @@ _curses_window_echochar(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1044,7 +1033,7 @@ _curses_window_echochar(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:echochar", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:echochar", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1122,8 +1111,6 @@ _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_in_wch__doc__,
 "in_wch([y, x])\n"
 "Return the complex character at the given position in the window.\n"
@@ -1170,10 +1157,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_getbkgrnd__doc__,
 "getbkgrnd($self, /)\n"
 "--\n"
@@ -1191,8 +1174,6 @@ _curses_window_getbkgrnd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _curses_window_getbkgrnd_impl((PyCursesWindowObject *)self);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
@@ -1290,8 +1271,6 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_get_wch__doc__,
 "get_wch([y, x])\n"
 "Get a wide character from terminal keyboard.\n"
@@ -1338,8 +1317,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
 PyDoc_STRVAR(_curses_window_hline__doc__,
 "hline([y, x,] ch, n, [attr])\n"
 "Display a horizontal line.\n"
@@ -1361,7 +1338,7 @@ PyDoc_STRVAR(_curses_window_hline__doc__,
 static PyObject *
 _curses_window_hline_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int n,
-                          int group_right_1, long attr);
+                          int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_hline(PyObject *self, PyObject *args)
@@ -1373,7 +1350,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -1382,7 +1359,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "Oil:hline", &ch, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "OiO&:hline", &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1394,7 +1371,7 @@ _curses_window_hline(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 5:
-            if (!PyArg_ParseTuple(args, "iiOil:hline", &y, &x, &ch, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOiO&:hline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1432,7 +1409,7 @@ PyDoc_STRVAR(_curses_window_insch__doc__,
 static PyObject *
 _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int group_right_1,
-                          long attr);
+                          attr_t attr);
 
 static PyObject *
 _curses_window_insch(PyObject *self, PyObject *args)
@@ -1443,7 +1420,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *ch;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1452,7 +1429,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:insch", &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:insch", &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1464,7 +1441,7 @@ _curses_window_insch(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:insch", &y, &x, &ch, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOO&:insch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1551,7 +1528,7 @@ PyDoc_STRVAR(_curses_window_insstr__doc__,
 static PyObject *
 _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
                            int y, int x, PyObject *str, int group_right_1,
-                           long attr);
+                           attr_t attr);
 
 static PyObject *
 _curses_window_insstr(PyObject *self, PyObject *args)
@@ -1562,7 +1539,7 @@ _curses_window_insstr(PyObject *self, PyObject *args)
     int x = 0;
     PyObject *str;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
@@ -1571,7 +1548,7 @@ _curses_window_insstr(PyObject *self, PyObject *args)
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:insstr", &str, &attr)) {
+            if (!PyArg_ParseTuple(args, "OO&:insstr", &str, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1583,7 +1560,7 @@ _curses_window_insstr(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:insstr", &y, &x, &str, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOO&:insstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1627,7 +1604,7 @@ PyDoc_STRVAR(_curses_window_insnstr__doc__,
 static PyObject *
 _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
                             int y, int x, PyObject *str, int n,
-                            int group_right_1, long attr);
+                            int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_insnstr(PyObject *self, PyObject *args)
@@ -1639,7 +1616,7 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
     PyObject *str;
     int n;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -1648,7 +1625,7 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "Oil:insnstr", &str, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "OiO&:insnstr", &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1660,7 +1637,7 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 5:
-            if (!PyArg_ParseTuple(args, "iiOil:insnstr", &y, &x, &str, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOiO&:insnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -2238,7 +2215,7 @@ PyDoc_STRVAR(_curses_window_vline__doc__,
 static PyObject *
 _curses_window_vline_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int n,
-                          int group_right_1, long attr);
+                          int group_right_1, attr_t attr);
 
 static PyObject *
 _curses_window_vline(PyObject *self, PyObject *args)
@@ -2250,7 +2227,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
     PyObject *ch;
     int n;
     int group_right_1 = 0;
-    long attr = 0;
+    attr_t attr = 0;
 
     switch (PyTuple_GET_SIZE(args)) {
         case 2:
@@ -2259,7 +2236,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "Oil:vline", &ch, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "OiO&:vline", &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -2271,7 +2248,7 @@ _curses_window_vline(PyObject *self, PyObject *args)
             group_left_1 = 1;
             break;
         case 5:
-            if (!PyArg_ParseTuple(args, "iiOil:vline", &y, &x, &ch, &n, &attr)) {
+            if (!PyArg_ParseTuple(args, "iiOiO&:vline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -2803,8 +2780,6 @@ _curses_erasechar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_erasechar_impl(module);
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_erasewchar__doc__,
 "erasewchar($module, /)\n"
 "--\n"
@@ -2822,8 +2797,6 @@ _curses_erasewchar(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_erasewchar_impl(module);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_flash__doc__,
 "flash($module, /)\n"
@@ -3017,6 +2990,65 @@ PyDoc_STRVAR(_curses_getwin__doc__,
 #define _CURSES_GETWIN_METHODDEF    \
     {"getwin", (PyCFunction)_curses_getwin, METH_O, _curses_getwin__doc__},
 
+PyDoc_STRVAR(_curses_scr_dump__doc__,
+"scr_dump($module, filename, /)\n"
+"--\n"
+"\n"
+"Write the current contents of the virtual screen to a file.\n"
+"\n"
+"  filename\n"
+"    The file to write to.\n"
+"\n"
+"The file can later be used to restore the screen with scr_restore(),\n"
+"scr_init() or scr_set().");
+
+#define _CURSES_SCR_DUMP_METHODDEF    \
+    {"scr_dump", (PyCFunction)_curses_scr_dump, METH_O, _curses_scr_dump__doc__},
+
+PyDoc_STRVAR(_curses_scr_restore__doc__,
+"scr_restore($module, filename, /)\n"
+"--\n"
+"\n"
+"Set the virtual screen to the contents of a file made by scr_dump().\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"The next call to doupdate() or refresh() restores the screen to those\n"
+"contents.");
+
+#define _CURSES_SCR_RESTORE_METHODDEF    \
+    {"scr_restore", (PyCFunction)_curses_scr_restore, METH_O, _curses_scr_restore__doc__},
+
+PyDoc_STRVAR(_curses_scr_init__doc__,
+"scr_init($module, filename, /)\n"
+"--\n"
+"\n"
+"Initialize the assumed terminal contents from a scr_dump() file.\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"Use it as what the terminal currently displays, for example after\n"
+"another program has drawn the screen.");
+
+#define _CURSES_SCR_INIT_METHODDEF    \
+    {"scr_init", (PyCFunction)_curses_scr_init, METH_O, _curses_scr_init__doc__},
+
+PyDoc_STRVAR(_curses_scr_set__doc__,
+"scr_set($module, filename, /)\n"
+"--\n"
+"\n"
+"Use a scr_dump() file as both the virtual screen and the terminal.\n"
+"\n"
+"  filename\n"
+"    The file to read from.\n"
+"\n"
+"This combines the effects of scr_restore() and scr_init().");
+
+#define _CURSES_SCR_SET_METHODDEF    \
+    {"scr_set", (PyCFunction)_curses_scr_set, METH_O, _curses_scr_set__doc__},
+
 PyDoc_STRVAR(_curses_halfdelay__doc__,
 "halfdelay($module, tenths, /)\n"
 "--\n"
@@ -3153,6 +3185,161 @@ exit:
 }
 
 #endif /* defined(HAVE_CURSES_HAS_KEY) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+
+PyDoc_STRVAR(_curses_define_key__doc__,
+"define_key($module, definition, keycode, /)\n"
+"--\n"
+"\n"
+"Define an escape sequence for a key code.\n"
+"\n"
+"  definition\n"
+"    Escape sequence to bind, or None to remove a binding.\n"
+"  keycode\n"
+"    Key code to generate.\n"
+"\n"
+"If definition is None, any existing binding for keycode is removed.\n"
+"If keycode is zero or negative, the binding for definition is removed.");
+
+#define _CURSES_DEFINE_KEY_METHODDEF    \
+    {"define_key", _PyCFunction_CAST(_curses_define_key), METH_FASTCALL, _curses_define_key__doc__},
+
+static PyObject *
+_curses_define_key_impl(PyObject *module, const char *definition,
+                        int keycode);
+
+static PyObject *
+_curses_define_key(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *definition;
+    int keycode;
+
+    if (!_PyArg_CheckPositional("define_key", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (args[0] == Py_None) {
+        definition = NULL;
+    }
+    else if (PyUnicode_Check(args[0])) {
+        Py_ssize_t definition_length;
+        definition = PyUnicode_AsUTF8AndSize(args[0], &definition_length);
+        if (definition == NULL) {
+            goto exit;
+        }
+        if (strlen(definition) != (size_t)definition_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("define_key", "argument 1", "str or None", args[0]);
+        goto exit;
+    }
+    keycode = PyLong_AsInt(args[1]);
+    if (keycode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_define_key_impl(module, definition, keycode);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+
+PyDoc_STRVAR(_curses_key_defined__doc__,
+"key_defined($module, definition, /)\n"
+"--\n"
+"\n"
+"Return the key code bound to an escape sequence.\n"
+"\n"
+"  definition\n"
+"    Escape sequence.\n"
+"\n"
+"Return 0 if no key code is bound to the escape sequence, or -1 if the\n"
+"escape sequence is a prefix of another bound sequence (so ambiguous).");
+
+#define _CURSES_KEY_DEFINED_METHODDEF    \
+    {"key_defined", (PyCFunction)_curses_key_defined, METH_O, _curses_key_defined__doc__},
+
+static PyObject *
+_curses_key_defined_impl(PyObject *module, const char *definition);
+
+static PyObject *
+_curses_key_defined(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *definition;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("key_defined", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t definition_length;
+    definition = PyUnicode_AsUTF8AndSize(arg, &definition_length);
+    if (definition == NULL) {
+        goto exit;
+    }
+    if (strlen(definition) != (size_t)definition_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = _curses_key_defined_impl(module, definition);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+
+PyDoc_STRVAR(_curses_keyok__doc__,
+"keyok($module, keycode, enable, /)\n"
+"--\n"
+"\n"
+"Enable or disable interpretation of an individual key code.\n"
+"\n"
+"  keycode\n"
+"    Key code.\n"
+"  enable\n"
+"    Whether the key code is interpreted.");
+
+#define _CURSES_KEYOK_METHODDEF    \
+    {"keyok", _PyCFunction_CAST(_curses_keyok), METH_FASTCALL, _curses_keyok__doc__},
+
+static PyObject *
+_curses_keyok_impl(PyObject *module, int keycode, int enable);
+
+static PyObject *
+_curses_keyok(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int keycode;
+    int enable;
+
+    if (!_PyArg_CheckPositional("keyok", nargs, 2, 2)) {
+        goto exit;
+    }
+    keycode = PyLong_AsInt(args[0]);
+    if (keycode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    enable = PyObject_IsTrue(args[1]);
+    if (enable < 0) {
+        goto exit;
+    }
+    return_value = _curses_keyok_impl(module, keycode, enable);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
 
 PyDoc_STRVAR(_curses_init_color__doc__,
 "init_color($module, color_number, r, g, b, /)\n"
@@ -3902,8 +4089,6 @@ _curses_killchar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_killchar_impl(module);
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_killwchar__doc__,
 "killwchar($module, /)\n"
 "--\n"
@@ -3921,8 +4106,6 @@ _curses_killwchar(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_killwchar_impl(module);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_longname__doc__,
 "longname($module, /)\n"
@@ -4862,6 +5045,27 @@ _curses_termattrs(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_termattrs_impl(module);
 }
 
+PyDoc_STRVAR(_curses_term_attrs__doc__,
+"term_attrs($module, /)\n"
+"--\n"
+"\n"
+"Return a logical OR of all video attributes supported by the terminal.\n"
+"\n"
+"The attributes are WA_* values, the extended-attribute counterparts of\n"
+"the A_* values returned by termattrs().");
+
+#define _CURSES_TERM_ATTRS_METHODDEF    \
+    {"term_attrs", (PyCFunction)_curses_term_attrs, METH_NOARGS, _curses_term_attrs__doc__},
+
+static PyObject *
+_curses_term_attrs_impl(PyObject *module);
+
+static PyObject *
+_curses_term_attrs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_term_attrs_impl(module);
+}
+
 PyDoc_STRVAR(_curses_termname__doc__,
 "termname($module, /)\n"
 "--\n"
@@ -5100,8 +5304,6 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 #define _CURSES_UNCTRL_METHODDEF    \
     {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_wunctrl__doc__,
 "wunctrl($module, ch, /)\n"
 "--\n"
@@ -5114,8 +5316,6 @@ PyDoc_STRVAR(_curses_wunctrl__doc__,
 #define _CURSES_WUNCTRL_METHODDEF    \
     {"wunctrl", (PyCFunction)_curses_wunctrl, METH_O, _curses_wunctrl__doc__},
 
-#endif /* defined(HAVE_NCURSESW) */
-
 PyDoc_STRVAR(_curses_ungetch__doc__,
 "ungetch($module, ch, /)\n"
 "--\n"
@@ -5125,8 +5325,6 @@ PyDoc_STRVAR(_curses_ungetch__doc__,
 #define _CURSES_UNGETCH_METHODDEF    \
     {"ungetch", (PyCFunction)_curses_ungetch, METH_O, _curses_ungetch__doc__},
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_unget_wch__doc__,
 "unget_wch($module, ch, /)\n"
 "--\n"
@@ -5135,8 +5333,6 @@ PyDoc_STRVAR(_curses_unget_wch__doc__,
 
 #define _CURSES_UNGET_WCH_METHODDEF    \
     {"unget_wch", (PyCFunction)_curses_unget_wch, METH_O, _curses_unget_wch__doc__},
-
-#endif /* defined(HAVE_NCURSESW) */
 
 #if defined(HAVE_CURSES_USE_ENV)
 
@@ -5271,18 +5467,6 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
 
-#ifndef _CURSES_WINDOW_IN_WCH_METHODDEF
-    #define _CURSES_WINDOW_IN_WCH_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_IN_WCH_METHODDEF) */
-
-#ifndef _CURSES_WINDOW_GETBKGRND_METHODDEF
-    #define _CURSES_WINDOW_GETBKGRND_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_GETBKGRND_METHODDEF) */
-
-#ifndef _CURSES_WINDOW_GET_WCH_METHODDEF
-    #define _CURSES_WINDOW_GET_WCH_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_GET_WCH_METHODDEF) */
-
 #ifndef _CURSES_WINDOW_NOUTREFRESH_METHODDEF
     #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_NOUTREFRESH_METHODDEF) */
@@ -5311,10 +5495,6 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_IS_RAW_METHODDEF
 #endif /* !defined(_CURSES_IS_RAW_METHODDEF) */
 
-#ifndef _CURSES_ERASEWCHAR_METHODDEF
-    #define _CURSES_ERASEWCHAR_METHODDEF
-#endif /* !defined(_CURSES_ERASEWCHAR_METHODDEF) */
-
 #ifndef _CURSES_GETSYX_METHODDEF
     #define _CURSES_GETSYX_METHODDEF
 #endif /* !defined(_CURSES_GETSYX_METHODDEF) */
@@ -5330,6 +5510,18 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_HAS_KEY_METHODDEF
     #define _CURSES_HAS_KEY_METHODDEF
 #endif /* !defined(_CURSES_HAS_KEY_METHODDEF) */
+
+#ifndef _CURSES_DEFINE_KEY_METHODDEF
+    #define _CURSES_DEFINE_KEY_METHODDEF
+#endif /* !defined(_CURSES_DEFINE_KEY_METHODDEF) */
+
+#ifndef _CURSES_KEY_DEFINED_METHODDEF
+    #define _CURSES_KEY_DEFINED_METHODDEF
+#endif /* !defined(_CURSES_KEY_DEFINED_METHODDEF) */
+
+#ifndef _CURSES_KEYOK_METHODDEF
+    #define _CURSES_KEYOK_METHODDEF
+#endif /* !defined(_CURSES_KEYOK_METHODDEF) */
 
 #ifndef _CURSES_ALLOC_PAIR_METHODDEF
     #define _CURSES_ALLOC_PAIR_METHODDEF
@@ -5371,10 +5563,6 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
 
-#ifndef _CURSES_KILLWCHAR_METHODDEF
-    #define _CURSES_KILLWCHAR_METHODDEF
-#endif /* !defined(_CURSES_KILLWCHAR_METHODDEF) */
-
 #ifndef _CURSES_MOUSEINTERVAL_METHODDEF
     #define _CURSES_MOUSEINTERVAL_METHODDEF
 #endif /* !defined(_CURSES_MOUSEINTERVAL_METHODDEF) */
@@ -5403,14 +5591,6 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_TYPEAHEAD_METHODDEF
 #endif /* !defined(_CURSES_TYPEAHEAD_METHODDEF) */
 
-#ifndef _CURSES_WUNCTRL_METHODDEF
-    #define _CURSES_WUNCTRL_METHODDEF
-#endif /* !defined(_CURSES_WUNCTRL_METHODDEF) */
-
-#ifndef _CURSES_UNGET_WCH_METHODDEF
-    #define _CURSES_UNGET_WCH_METHODDEF
-#endif /* !defined(_CURSES_UNGET_WCH_METHODDEF) */
-
 #ifndef _CURSES_USE_ENV_METHODDEF
     #define _CURSES_USE_ENV_METHODDEF
 #endif /* !defined(_CURSES_USE_ENV_METHODDEF) */
@@ -5422,4 +5602,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=9d7ca194927796d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f48f8e3554b30b86 input=a9049054013a1b77]*/

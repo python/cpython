@@ -139,10 +139,13 @@ The module :mod:`!curses` defines the following functions:
 .. function:: color_pair(pair_number)
 
    Return the attribute value for displaying text in the specified color pair.
-   Only the first 256 color pairs are supported. This
-   attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
-   and the other :const:`!A_\*` attributes.  :func:`pair_number` is the counterpart
-   to this function.
+   Only color pairs that fit in the color-pair field of the returned value can
+   be represented (usually the first 256); a larger *pair_number* raises
+   :exc:`OverflowError` rather than being silently masked to a different pair.
+   Use :meth:`~window.color_set` or :meth:`~window.attr_set` to display higher
+   pairs.  This attribute value can be combined with :const:`A_STANDOUT`,
+   :const:`A_REVERSE`, and the other :const:`!A_\*` attributes.
+   :func:`pair_number` is the counterpart to this function.
 
 
 .. function:: curs_set(visibility)
@@ -203,17 +206,15 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: erasechar()
 
-   Return the user's current erase character as a one-byte bytes object.  Under Unix operating systems this
-   is a property of the controlling tty of the curses program, and is not set by
-   the curses library itself.
+   Return the user's current erase character as a raw byte, a :class:`bytes`
+   object of length 1.  See also :func:`erasewchar`.
 
 
 .. function:: erasewchar()
 
-   Return the user's current erase character as a one-character string.
-   This is the wide-character variant of :func:`erasechar`.  Availability
-   depends on building Python against a wide-character-aware version of the
-   underlying curses library.
+   Return the user's current erase character as a one-character :class:`str`.
+   Under Unix operating systems this is a property of the controlling tty of the
+   curses program, and is not set by the curses library itself.
 
    .. versionadded:: next
 
@@ -345,6 +346,37 @@ The module :mod:`!curses` defines the following functions:
    a key with that value.
 
 
+.. function:: define_key(definition, keycode)
+
+   Define an escape sequence *definition*, a string, as a key that generates
+   the key code *keycode*, so that :mod:`curses` interprets it like one of the
+   keys predefined in the terminal database.
+
+   If *definition* is ``None``, any existing binding for *keycode* is removed.
+   If *keycode* is zero or negative, any existing binding for *definition* is
+   removed.
+
+   .. versionadded:: next
+
+
+.. function:: key_defined(definition)
+
+   Return the key code bound to the escape sequence *definition*, a string,
+   ``0`` if no key code is bound to it, or ``-1`` if *definition* is a prefix
+   of a longer bound sequence (and so is ambiguous).
+
+   .. versionadded:: next
+
+
+.. function:: keyok(keycode, enable)
+
+   Enable (if *enable* is true) or disable (otherwise) interpretation of the
+   key code *keycode*.  Unlike :meth:`window.keypad`, this affects a single
+   key code rather than all of them.
+
+   .. versionadded:: next
+
+
 .. function:: halfdelay(tenths)
 
    Used for half-delay mode, which is similar to cbreak mode in that characters
@@ -459,17 +491,15 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: killchar()
 
-   Return the user's current line kill character as a one-byte bytes object. Under Unix operating systems
-   this is a property of the controlling tty of the curses program, and is not set
-   by the curses library itself.
+   Return the user's current line kill character as a raw byte, a :class:`bytes`
+   object of length 1.  See also :func:`killwchar`.
 
 
 .. function:: killwchar()
 
-   Return the user's current line kill character as a one-character string.
-   This is the wide-character variant of :func:`killchar`.  Availability
-   depends on building Python against a wide-character-aware version of the
-   underlying curses library.
+   Return the user's current line kill character as a one-character :class:`str`.
+   Under Unix operating systems this is a property of the controlling tty of the
+   curses program, and is not set by the curses library itself.
 
    .. versionadded:: next
 
@@ -696,6 +726,40 @@ The module :mod:`!curses` defines the following functions:
    Save the current state of the terminal modes in a buffer, usable by
    :func:`resetty`.
 
+.. function:: scr_dump(filename)
+
+   Write the current contents of the virtual screen to *filename*, which may be
+   a string or a :term:`path-like object`.  The file can later be read by
+   :func:`scr_restore`, :func:`scr_init` or :func:`scr_set`.  This is the
+   whole-screen counterpart of :meth:`window.putwin`.
+
+   .. versionadded:: next
+
+.. function:: scr_restore(filename)
+
+   Set the virtual screen to the contents of *filename*, which must have been
+   written by :func:`scr_dump`.  The next call to :func:`doupdate` or
+   :meth:`window.refresh` restores the screen to those contents.
+
+   .. versionadded:: next
+
+.. function:: scr_init(filename)
+
+   Initialize the assumed contents of the terminal from *filename*, which must
+   have been written by :func:`scr_dump`.  Use it when the terminal already
+   displays those contents, for example after another program has drawn the
+   screen, so that curses does not redraw what is already there.
+
+   .. versionadded:: next
+
+.. function:: scr_set(filename)
+
+   Use *filename*, which must have been written by :func:`scr_dump`, as both
+   the virtual screen and the assumed terminal contents.  This combines the
+   effects of :func:`scr_restore` and :func:`scr_init`.
+
+   .. versionadded:: next
+
 .. function:: get_escdelay()
 
    Retrieves the value set by :func:`set_escdelay`.
@@ -773,6 +837,14 @@ The module :mod:`!curses` defines the following functions:
    appearance of the screen.
 
 
+.. function:: term_attrs()
+
+   Like :func:`termattrs`, but return the attributes as :ref:`WA_*
+   <curses-wa-constants>` values rather than ``A_*`` values.
+
+   .. versionadded:: next
+
+
 .. function:: termname()
 
    Return the value of the environment variable :envvar:`TERM`, as a bytes object,
@@ -834,29 +906,38 @@ The module :mod:`!curses` defines the following functions:
 .. function:: unctrl(ch)
 
    Return a bytes object which is a printable representation of the character *ch*.
-   Control characters are represented as a caret followed by the character, for
-   example as ``b'^C'``. Printing characters are left as they are.
+   *ch* cannot be a character that does not fit in a single byte; use
+   :func:`wunctrl` for those.
 
 
 .. function:: wunctrl(ch)
 
-   Return a string which is a printable representation of the wide character *ch*.
-   Control characters are represented as a caret followed by the character, for
-   example as ``'^C'``.  Printing characters are left as they are.  This is the
-   wide-character variant of :func:`unctrl`, returning a :class:`str` rather than
-   :class:`bytes`.  Availability depends on building Python against a
-   wide-character-aware version of the underlying curses library.
+   Return a string which is a printable representation of the character *ch*;
+   any attributes and color pair are ignored.
+   ASCII control characters are represented as a caret followed by a character,
+   for example as ``'^C'``.  Printing characters, including non-ASCII characters
+   printable in the locale, are left as they are.  The representation of other
+   characters is defined by the underlying curses library.
 
    .. versionadded:: next
 
 
 .. function:: ungetch(ch)
 
-   Push *ch* so the next :meth:`~window.getch` will return it.
+   Push *ch* so the next :meth:`~window.getch` or :meth:`~window.get_wch` will
+   return it.
+
+   *ch* may be an integer (a key code or character code), a byte, or a string of
+   length 1.  A one-character string is pushed like :func:`unget_wch`; on a
+   narrow build it must encode to a single byte.
 
    .. note::
 
       Only one *ch* can be pushed before :meth:`!getch` is called.
+
+   .. versionchanged:: next
+      A one-character string argument is no longer required to encode to a single
+      byte, except on a narrow build.
 
 
 .. function:: update_lines_cols()
@@ -876,6 +957,10 @@ The module :mod:`!curses` defines the following functions:
       Only one *ch* can be pushed before :meth:`!get_wch` is called.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      Also available on a narrow build, where *ch* must encode to a single byte
+      (an 8-bit locale).
 
 
 .. function:: ungetmouse(id, x, y, z, bstate)
@@ -1247,18 +1332,16 @@ Window objects
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+   It cannot represent a background set with a wide character or with a color
+   pair outside the :func:`color_pair` range; use :meth:`getbkgrnd` for those.
 
 
 .. method:: window.getbkgrnd()
 
    Return the given window's current background as a :class:`complexchar`.
-   This is the wide-character variant of :meth:`getbkgd`: the returned object
-   carries the background character together with its attributes and color pair,
-   and the color pair is not limited to the value that fits in a
-   :func:`color_pair`.
-
-   This method is only available if Python was built against a wide-character
-   version of the underlying curses library.
+   Unlike :meth:`getbkgd`, the returned object carries the background character
+   together with its attributes and color pair, and the color pair is not limited
+   to the value that fits in a :func:`color_pair`.
 
    .. versionadded:: next
 
@@ -1269,15 +1352,22 @@ Window objects
    range: function keys, keypad keys and so on are represented by numbers higher
    than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
    wait until a key is pressed.
+   A multibyte character is returned as its encoded bytes one at a time; use
+   :meth:`get_wch` to read it as a single character.
 
 
 .. method:: window.get_wch([y, x])
 
    Get a wide character. Return a character for most keys, or an integer for
-   function keys, keypad keys, and other special keys.
+   function keys, keypad keys, and other special keys.  Unlike :meth:`getch`, an
+   ordinary key is returned as a one-character :class:`str`.
    In no-delay mode, raise an exception if there is no input.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      Also available on a narrow build, where only a character representable as a
+      single byte (an 8-bit locale) can be returned.
 
 
 .. method:: window.getdelay()
@@ -1334,6 +1424,8 @@ Window objects
    Read a bytes object from the user, with primitive line editing capacity.
    At most *n* characters are read;
    *n* defaults to and cannot exceed 2047.
+   A multibyte character is returned as its encoded bytes; use :meth:`get_wstr`
+   to read the input as a :class:`str`.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
@@ -1345,9 +1437,8 @@ Window objects
             window.get_wstr(y, x, n)
 
    Read a string from the user, with primitive line editing capacity.
-   This is the wide-character variant of :meth:`getstr`: it returns a
-   :class:`str` rather than a :class:`bytes` object, so it can return
-   characters that are not representable in the window's encoding.
+   Unlike :meth:`getstr`, it can return characters that are not representable in
+   the window's encoding.
    At most *n* characters are read; *n* defaults to and cannot exceed 2047.
 
    .. versionadded:: next
@@ -1397,18 +1488,17 @@ Window objects
 
    Return the character at the given position in the window. The bottom 8 bits are
    the character proper, and upper bits are the attributes.
+   It cannot represent a cell holding combining characters, a character that does
+   not fit in a single byte, or a color pair outside the :func:`color_pair`
+   range; use :meth:`in_wch` for those.
 
 
 .. method:: window.in_wch([y, x])
 
    Return the complex character at the given position in the window as a
-   :class:`complexchar`.  This is the wide-character variant of :meth:`inch`:
-   the returned object carries the cell's text (a spacing character optionally
-   followed by combining characters) together with its attributes and color
-   pair, none of which :meth:`inch` can represent.
-
-   This method is only available if Python was built against a wide-character
-   version of the underlying curses library.
+   :class:`complexchar`.  Unlike :meth:`inch`, the returned object carries the
+   cell's text (a spacing character optionally followed by combining characters)
+   together with its attributes and color pair.
 
    .. versionadded:: next
 
@@ -1478,6 +1568,8 @@ Window objects
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
    The maximum value for *n* is 2047.
+   A character not representable in the window's encoding cannot be returned;
+   use :meth:`in_wstr` for those.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
@@ -1487,11 +1579,10 @@ Window objects
             window.in_wstr(y, x[, n])
 
    Return a string of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified.  This is the
-   wide-character variant of :meth:`instr`: it returns a :class:`str` rather
-   than a :class:`bytes` object, so it can return characters that are not
-   representable in the window's encoding.  Attributes and color information
-   are stripped from the characters.  The maximum value for *n* is 2047.
+   current cursor position, or at *y*, *x* if specified.  Unlike :meth:`instr`,
+   it can return characters that are not representable in the window's encoding.
+   Attributes and color information are stripped from the characters.  The
+   maximum value for *n* is 2047.
 
    .. versionadded:: next
 
@@ -1508,9 +1599,6 @@ Window objects
 
    The result can be written back unchanged with :meth:`addstr` (a read and a
    re-write is a round-trip that preserves every cell's rendition).
-
-   This method is only available if Python was built against a wide-character
-   version of the underlying curses library.
 
    .. versionadded:: next
 
@@ -1928,7 +2016,7 @@ Complex character objects
 .. class:: complexchar(text, /, attr=0, pair=0)
 
    A *complex character* (or *complexchar*) is an immutable styled
-   wide-character cell: a spacing character optionally followed by combining
+   character cell: a spacing character optionally followed by combining
    characters, together with a set of attributes and a color pair.
 
    *text* is the cell's text, *attr* a combination of the
@@ -1949,8 +2037,10 @@ Complex character objects
    :func:`str` returns the cell's text; two complex characters are equal when
    their text, attributes and color pair all match.
 
-   This type is only available if Python was built against a wide-character
-   version of the underlying curses library.
+   The same code works on both wide- and narrow-character builds.  On a narrow
+   build a cell holds a single character (no combining marks) that must encode to
+   one byte in the window's encoding (8-bit locales only), and *pair* is limited
+   to the value that fits in a :func:`color_pair`.
 
    .. attribute:: attr
 
@@ -1966,7 +2056,7 @@ Complex character objects
 .. class:: complexstr(cells[, attr[, pair]])
 
    A *complex character string* (or *complexstr*) is an immutable sequence of
-   styled wide-character cells -- the string counterpart of
+   styled character cells -- the string counterpart of
    :class:`complexchar` (as :class:`str` is to a single character).
 
    If *cells* is a string, it is split into character cells (each a spacing
@@ -1994,8 +2084,8 @@ Complex character objects
    :class:`complexchar` (or strings); a :class:`!complexstr` is the immutable
    form returned by a read.
 
-   This type is only available if Python was built against a wide-character
-   version of the underlying curses library.
+   Like :class:`complexchar`, this type works on both wide- and narrow-character
+   builds, with the same per-cell limitations on a narrow build.
 
    .. versionadded:: next
 
@@ -2555,6 +2645,11 @@ You can instantiate a :class:`Textbox` object as follows:
    upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
 
+   .. versionchanged:: next
+      Entering and reading back the full Unicode range, including combining
+      characters, is now supported when curses is built with wide-character
+      support.
+
    :class:`Textbox` objects have the following methods:
 
 
@@ -2568,6 +2663,10 @@ You can instantiate a :class:`Textbox` object as follows:
       ignored.  This method returns the window contents as a
       string; whether blanks in the window are included is affected by the
       :attr:`stripspaces` attribute.
+
+      .. versionchanged:: next
+         *validate* is now called with a non-ASCII character as a string;
+         other keystrokes are still passed as an integer.
 
 
    .. method:: do_command(ch)

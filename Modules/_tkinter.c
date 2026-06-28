@@ -2464,7 +2464,7 @@ PythonCmdDelete(ClientData clientData)
     PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
 
     ENTER_PYTHON
-    Py_XDECREF(data->self);
+    /* data->self is borrowed. */
     Py_XDECREF(data->func);
     PyMem_Free(data);
     LEAVE_PYTHON
@@ -2533,7 +2533,9 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
-    Py_INCREF(self);
+    /* Borrow the interpreter: a strong reference would form an uncollectable
+       cycle (interp -> command -> data->self -> interp) and leak the command
+       (gh-80937).  The command cannot outlive the interpreter. */
     data->self = self;
     data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
@@ -2566,6 +2568,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     }
     if (err) {
         PyErr_SetString(Tkinter_TclError, "can't create Tcl command");
+        Py_DECREF(data->func);
         PyMem_Free(data);
         return NULL;
     }
@@ -3129,10 +3132,24 @@ Tkapp_Dealloc(PyObject *op)
 {
     TkappObject *self = TkappObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    /*CHECK_TCL_APPARTMENT;*/
-    ENTER_TCL
-    Tcl_DeleteInterp(Tkapp_Interp(self));
-    LEAVE_TCL
+    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+        /* Deleting the interpreter from another thread aborts the process
+           ("Tcl_AsyncDelete: async handler deleted by the wrong thread").
+           Leak it instead (gh-83274). */
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "the Tcl interpreter is leaked because it was "
+                         "deallocated in a thread other than the one it was "
+                         "created in (see gh-83274)", 1) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while finalizing "
+                                   "a Tcl interpreter");
+        }
+    }
+    else {
+        ENTER_TCL
+        Tcl_DeleteInterp(Tkapp_Interp(self));
+        LEAVE_TCL
+    }
     Py_XDECREF(self->trace);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -3571,7 +3588,7 @@ PyInit__tkinter(void)
 
     tcl_lock = PyThread_allocate_lock();
     if (tcl_lock == NULL)
-        return NULL;
+        return PyErr_NoMemory();
 
     m = PyModule_Create(&_tkintermodule);
     if (m == NULL)
