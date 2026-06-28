@@ -550,8 +550,13 @@ class ZipInfo:
             zip64 = file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT
         if zip64:
             fmt = '<HHQQ'
-            extra = extra + struct.pack(fmt,
-                                        1, struct.calcsize(fmt)-4, file_size, compress_size)
+
+            # Prepend a ZIP64 field to extra data
+            extra = struct.pack(
+                fmt, 1, struct.calcsize(fmt)-4,
+                file_size, compress_size
+            ) + _Extra.strip(extra, (1,))
+
             file_size = 0xffffffff
             compress_size = 0xffffffff
             min_version = ZIP64_VERSION

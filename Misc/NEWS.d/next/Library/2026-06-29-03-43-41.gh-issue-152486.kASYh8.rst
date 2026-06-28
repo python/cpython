@@ -1,0 +1,1 @@
+Fix an issue where duplicated Zip64 extra fields were written if :attr:`ZipInfo.extra <zipfile.ZipInfo.extra>` already contained a Zip64 field.
