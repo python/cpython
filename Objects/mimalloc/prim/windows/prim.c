@@ -13,6 +13,10 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/prim.h"
 #include <stdio.h>   // fputs, stderr
 
+// Xbox has no console IO and cannot use LoadLibrary
+#if !defined(WINAPI_FAMILY_PARTITION) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
+#define MI_WIN_DESKTOP  1
+#endif
 
 //---------------------------------------------
 // Dynamically bind Windows API points for portability
@@ -62,6 +66,15 @@ static PGetCurrentProcessorNumberEx pGetCurrentProcessorNumberEx = NULL;
 static PGetNumaProcessorNodeEx      pGetNumaProcessorNodeEx = NULL;
 static PGetNumaNodeProcessorMaskEx  pGetNumaNodeProcessorMaskEx = NULL;
 static PGetNumaProcessorNode        pGetNumaProcessorNode = NULL;
+
+// Load a library
+static HMODULE mi_win_loadlibrary(const TCHAR* library) {
+#if MI_WIN_DESKTOP
+    return LoadLibrary(library);
+#else
+    return LoadPackagedLibrary(library, 0);
+#endif
+}
 
 //---------------------------------------------
 // Enable large page support dynamically (if possible)
@@ -121,7 +134,7 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config )
   if (si.dwAllocationGranularity > 0) { config->alloc_granularity = si.dwAllocationGranularity; }
   // get the VirtualAlloc2 function
   HINSTANCE  hDll;
-  hDll = LoadLibrary(TEXT("kernelbase.dll"));
+  hDll = mi_win_loadlibrary(TEXT("kernelbase.dll"));
   if (hDll != NULL) {
     // use VirtualAlloc2FromApp if possible as it is available to Windows store apps
     pVirtualAlloc2 = (PVirtualAlloc2)(void (*)(void))GetProcAddress(hDll, "VirtualAlloc2FromApp");
@@ -129,13 +142,13 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config )
     FreeLibrary(hDll);
   }
   // NtAllocateVirtualMemoryEx is used for huge page allocation
-  hDll = LoadLibrary(TEXT("ntdll.dll"));
+  hDll = mi_win_loadlibrary(TEXT("ntdll.dll"));
   if (hDll != NULL) {
     pNtAllocateVirtualMemoryEx = (PNtAllocateVirtualMemoryEx)(void (*)(void))GetProcAddress(hDll, "NtAllocateVirtualMemoryEx");
     FreeLibrary(hDll);
   }
   // Try to use Win7+ numa API
-  hDll = LoadLibrary(TEXT("kernel32.dll"));
+  hDll = mi_win_loadlibrary(TEXT("kernel32.dll"));
   if (hDll != NULL) {
     pGetCurrentProcessorNumberEx = (PGetCurrentProcessorNumberEx)(void (*)(void))GetProcAddress(hDll, "GetCurrentProcessorNumberEx");
     pGetNumaProcessorNodeEx = (PGetNumaProcessorNodeEx)(void (*)(void))GetProcAddress(hDll, "GetNumaProcessorNodeEx");
@@ -377,6 +390,7 @@ size_t _mi_prim_numa_node(void) {
 }
 
 size_t _mi_prim_numa_node_count(void) {
+#if MI_WIN_DESKTOP
   ULONG numa_max = 0;
   GetNumaHighestNodeNumber(&numa_max);
   // find the highest node number that has actual processors assigned to it. Issue #282
@@ -399,6 +413,9 @@ size_t _mi_prim_numa_node_count(void) {
     numa_max--;
   }
   return ((size_t)numa_max + 1);
+#else
+  return ((size_t)1);
+#endif
 }
 
 
@@ -454,7 +471,7 @@ void _mi_prim_process_info(mi_process_info_t* pinfo)
 
   // load psapi on demand
   if (pGetProcessMemoryInfo == NULL) {
-    HINSTANCE hDll = LoadLibrary(TEXT("psapi.dll"));
+    HINSTANCE hDll = mi_win_loadlibrary(TEXT("psapi.dll"));
     if (hDll != NULL) {
       pGetProcessMemoryInfo = (PGetProcessMemoryInfo)(void (*)(void))GetProcAddress(hDll, "GetProcessMemoryInfo");
     }
@@ -554,7 +571,7 @@ static  PBCryptGenRandom pBCryptGenRandom = NULL;
 
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
   if (pBCryptGenRandom == NULL) {
-    HINSTANCE hDll = LoadLibrary(TEXT("bcrypt.dll"));
+    HINSTANCE hDll = mi_win_loadlibrary(TEXT("bcrypt.dll"));
     if (hDll != NULL) {
       pBCryptGenRandom = (PBCryptGenRandom)(void (*)(void))GetProcAddress(hDll, "BCryptGenRandom");
     }
