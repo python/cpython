@@ -2699,7 +2699,8 @@ Base and mixin classes
       Make *widget* a stand-alone top-level window, decorated by the window
       manager with a title bar and so on.
       Only :class:`Frame`, :class:`LabelFrame` and :class:`Toplevel` widgets
-      may be used; passing any other widget type raises an error.
+      may be used (the :mod:`tkinter.ttk` versions are **not** accepted);
+      passing any other widget type raises an error.
       :meth:`wm_manage` is an alias of :meth:`!manage`.
 
       .. versionadded:: 3.3
