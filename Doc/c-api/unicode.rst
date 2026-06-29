@@ -1067,7 +1067,7 @@ Built-in Codecs
 Python provides a set of built-in codecs which are written in C for speed. All of
 these codecs are directly usable via the following functions.
 
-Many of the following APIs take two arguments encoding and errors, and they
+Many of the following APIs take two arguments, encoding and errors, and they
 have the same semantics as the ones of the built-in :func:`str` string object
 constructor.
 
@@ -1668,9 +1668,9 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
 .. c:function:: int PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *string, Py_ssize_t size)
 
-   Compare a Unicode object with a char buffer which is interpreted as
-   being UTF-8 or ASCII encoded and return true (``1``) if they are equal,
-   or false (``0``) otherwise.
+   Compare a Unicode object, *unicode*, with a char buffer *string* of length *size*,
+   which is interpreted as being UTF-8 or ASCII encoded and return true (``1``) if they
+   are equal, or false (``0``) otherwise.
    If the Unicode object contains surrogate code points
    (``U+D800`` - ``U+DFFF``) or the C string is not valid UTF-8,
    false (``0``) is returned.
