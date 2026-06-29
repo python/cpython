@@ -654,6 +654,71 @@ dummy_func(void) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res,
                                             _POP_TOP, _NOP);
         if (!already_bool) {
+            PyTypeObject *tp = sym_get_type(value);
+            int emitted_guard = 0;
+            // If the static type isn't known, fall back to the type recorded
+            // by _RECORD_TOS_TYPE during JIT trace recording and emit a
+            // speculative type guard so the trace deopts cleanly if the
+            // observed type doesn't reproduce.
+            if (tp == NULL) {
+                PyTypeObject *probable = sym_get_probable_type(value);
+                int guard_op = 0;
+                if (probable == &PyDict_Type) {
+                    guard_op = _GUARD_TOS_DICT;
+                }
+                else if (probable == &PyFrozenDict_Type) {
+                    guard_op = _GUARD_TOS_FROZENDICT;
+                }
+                else if (probable == &PyTuple_Type) {
+                    guard_op = _GUARD_TOS_TUPLE;
+                }
+                else if (probable == &PyBytes_Type) {
+                    guard_op = _GUARD_TOS_BYTES;
+                }
+                else if (probable == &PyByteArray_Type) {
+                    guard_op = _GUARD_TOS_BYTEARRAY;
+                }
+                else if (probable == &PySet_Type) {
+                    guard_op = _GUARD_TOS_SET;
+                }
+                else if (probable == &PyFrozenSet_Type) {
+                    guard_op = _GUARD_TOS_FROZENSET;
+                }
+                if (guard_op) {
+                    ADD_OP(guard_op, 0, 0);
+                    sym_set_type(value, probable);
+                    tp = probable;
+                    emitted_guard = 1;
+                }
+            }
+            uintptr_t size_offset = 0;
+            if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
+                size_offset = offsetof(PyDictObject, ma_used);
+            }
+            else if (tp == &PyTuple_Type ||
+                     tp == &PyBytes_Type ||
+                     tp == &PyByteArray_Type) {
+                size_offset = offsetof(PyVarObject, ob_size);
+            }
+            else if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
+                size_offset = offsetof(PySetObject, used);
+            }
+            if (size_offset) {
+                if (emitted_guard) {
+                    // We already called ADD_OP for the type guard, so the
+                    // optimizer loop will not auto-emit the original
+                    // _TO_BOOL — explicitly emit _TO_BOOL_SIZED ourselves.
+                    ADD_OP(_TO_BOOL_SIZED, 0, size_offset);
+                }
+                else {
+                    REPLACE_OP(this_instr, _TO_BOOL_SIZED, 0, size_offset);
+                }
+            }
+            else {
+                // Every type that sets emitted_guard above is also in the
+                // size_offset table, so we never reach here with a guard.
+                assert(!emitted_guard);
+            }
             res = sym_new_truthiness(ctx, value, true);
         }
     }
@@ -2261,6 +2326,24 @@ dummy_func(void) {
         }
         else {
             sym_set_type(tos, &PyDict_Type);
+        }
+    }
+
+    op(_GUARD_TOS_BYTES, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyBytes_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(tos, &PyBytes_Type);
+        }
+    }
+
+    op(_GUARD_TOS_BYTEARRAY, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyByteArray_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        else {
+            sym_set_type(tos, &PyByteArray_Type);
         }
     }
 

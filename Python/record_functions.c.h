@@ -201,6 +201,7 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
 };
 
 const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
+        [TO_BOOL] = {1, 0, {0}},
         [TO_BOOL_ALWAYS_TRUE] = {1, 0, {0}},
         [BINARY_OP_SUBSCR_DICT] = {1, 1, {0}},
         [BINARY_OP_SUBSCR_GETITEM] = {1, 0, {0}},

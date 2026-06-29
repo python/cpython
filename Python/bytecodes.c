@@ -510,7 +510,7 @@ dummy_func(
             res = err ? PyStackRef_True : PyStackRef_False;
         }
 
-        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + unused/2 + _TO_BOOL;
+        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + _RECORD_TOS_TYPE + unused/2 + _TO_BOOL;
 
         inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
             EXIT_IF(!PyStackRef_BoolCheck(value));
@@ -601,6 +601,18 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _REPLACE_WITH_TRUE +
             POP_TOP;
+
+        tier2 op(_TO_BOOL_SIZED, (size_offset/1, value -- res)) {
+            /* Covers any type whose truthiness is a Py_ssize_t size field at a
+               known offset: dict/frozendict (ma_used), tuple/bytes/bytearray
+               (ob_size), set/frozenset (used). */
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            STAT_INC(TO_BOOL, hit);
+            Py_ssize_t size = FT_ATOMIC_LOAD_SSIZE_RELAXED(
+                *(Py_ssize_t *)((char *)value_o + size_offset));
+            res = size ? PyStackRef_True : PyStackRef_False;
+            PyStackRef_CLOSE(value);
+        }
 
         macro(UNARY_INVERT) = _UNARY_INVERT + POP_TOP;
 
@@ -1304,6 +1316,16 @@ dummy_func(
         op(_GUARD_TOS_FROZENDICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             EXIT_IF(!PyFrozenDict_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_BYTES, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyBytes_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_BYTEARRAY, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyByteArray_CheckExact(o));
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =

@@ -4885,6 +4885,94 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_REPLACE_WITH_TRUE", uops)
 
+    def test_to_bool_static_type(self):
+        # *args is tuple and **kwargs is dict in tier2, so TO_BOOL on those
+        # locals specializes to _TO_BOOL_SIZED without a runtime guard.
+        # `va_kw_regular` also covers the non-zero slot-offset case.
+        def kw(**kwargs):
+            cnt = 0
+            for _ in range(TIER2_THRESHOLD):
+                if kwargs:
+                    cnt += 1
+            return cnt
+
+        def va(*args):
+            cnt = 0
+            for _ in range(TIER2_THRESHOLD):
+                if args:
+                    cnt += 1
+            return cnt
+
+        def va_kw_regular(x, y, *args, key=None, **kwargs):
+            cnt = 0
+            for _ in range(TIER2_THRESHOLD):
+                if args and kwargs:
+                    cnt += 1
+            return cnt
+
+        # (inner, args, kwargs, min _TO_BOOL_SIZED count)
+        cases = [
+            (kw,             (),           {"a": 1, "b": 2},         1),
+            (va,             (1, 2, 3),    {},                       1),
+            (va_kw_regular,  (1, 2, 3, 4), {"key": "v", "extra": 5}, 2),
+        ]
+        for inner, args, kwargs, expected in cases:
+            with self.subTest(case=inner.__name__):
+                inner(*args, **kwargs)
+                ex_inner = get_first_executor(inner)
+                self.assertIsNotNone(ex_inner)
+                uops = get_opnames(ex_inner)
+                self.assertGreaterEqual(
+                    count_ops(ex_inner, "_TO_BOOL_SIZED"), expected)
+                self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_recorded_type(self):
+        # A value whose static type is unknown but whose runtime type is
+        # recorded gets a `_GUARD_TOS_<TYPE>` followed by _TO_BOOL_SIZED.
+        # A fresh `inner` is compiled per case so each gets its own executor.
+        src = (
+            "def inner(v):\n"
+            "    cnt = 0\n"
+            "    for _ in range(T):\n"
+            "        if v:\n"
+            "            cnt += 1\n"
+            "    return cnt\n"
+        )
+        cases = [
+            (b"hello",                 "_GUARD_TOS_BYTES"),
+            (bytearray(b"hello"),      "_GUARD_TOS_BYTEARRAY"),
+            (frozenset({1, 2, 3}),     "_GUARD_TOS_FROZENSET"),
+            (frozendict({1: 1, 2: 2}), "_GUARD_TOS_FROZENDICT"),
+        ]
+        for value, guard_op in cases:
+            with self.subTest(case=type(value).__name__):
+                ns = {"T": TIER2_THRESHOLD}
+                exec(src, ns)
+                inner = ns["inner"]
+                self.assertEqual(inner(value), TIER2_THRESHOLD)
+                ex_inner = get_first_executor(inner)
+                self.assertIsNotNone(ex_inner)
+                uops = get_opnames(ex_inner)
+                self.assertIn(guard_op, uops)
+                self.assertIn("_TO_BOOL_SIZED", uops)
+                self.assertNotIn("_TO_BOOL", uops)
+
+    def test_to_bool_set_with_dummy_entries(self):
+        # PySetObject does not use PyObject_VAR_HEAD; reading ob_size at that
+        # offset accidentally reads `fill`, which counts both live *and* dummy
+        # (deleted) entries.  A set whose items have all been discarded must
+        # still be falsy even after the JIT specialises TO_BOOL.
+        def f(n):
+            result = []
+            for _ in range(n):
+                s = {1}
+                s.discard(1)   # leaves a dummy entry; fill == 1, used == 0
+                result.append(bool(s))
+            return result
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertTrue(all(r is False for r in res))
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.
