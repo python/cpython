@@ -3001,10 +3001,18 @@ class SLKTests(NewtermTestBase):
 
     def test_init_reserves_a_line(self):
         # Every layout takes the bottom line for the labels; the index-line
-        # layout (3) takes a second line for the index.
+        # layout (3) takes a second line for the index.  Layouts 0 and 1 are
+        # standard; 2 and 3 are ncurses extensions that other curses
+        # implementations reject (slk_init() then returns an error).
+        ncurses = hasattr(curses, 'ncurses_version')
         for fmt, lines in [(0, 23), (1, 23), (2, 23), (3, 22)]:
             with self.subTest(fmt=fmt):
-                screen = self.make_slk_screen(fmt)
+                try:
+                    screen = self.make_slk_screen(fmt)
+                except curses.error:
+                    if ncurses or fmt < 2:
+                        raise
+                    continue
                 self.assertEqual(screen.stdscr.getmaxyx()[0], lines)
                 curses.endwin()
 
