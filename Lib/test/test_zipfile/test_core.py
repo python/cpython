@@ -1197,6 +1197,9 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # sizes to 0xFFFFFFFF to indicate to the extractor that the zip64
         # record should be read. Additionally, it would not set the required
         # version to indicate that zip64 extensions are required to extract it.
+        # GH-152486 describes another issue where force_zip64 was honored only
+        # by the local file entry but not by the central directory for a small
+        # file.
         # This test replicates the situation and reads the raw data to specifically ensure:
         #  - The required extract version is always >= ZIP64_VERSION
         #  - The compressed and uncompressed size in the file headers are both
