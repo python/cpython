@@ -1,0 +1,1 @@
+Fix an issue where :meth:`~zipfile.ZipFile.open` with ``force_zip64=True`` would write the Zip64 extra field to the local file header but fail to do so in the central directory for small files.
