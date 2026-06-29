@@ -253,7 +253,11 @@ _set_seq_context(Parser *p, asdl_expr_seq *seq, expr_context_ty ctx)
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty e = asdl_seq_GET(seq, i);
-        asdl_seq_SET(new_seq, i, _PyPegen_set_expr_context(p, e, ctx));
+        expr_ty new_e = _PyPegen_set_expr_context(p, e, ctx);
+        if (!new_e) {
+            return NULL;
+        }
+        asdl_seq_SET(new_seq, i, new_e);
     }
     return new_seq;
 }
@@ -267,19 +271,21 @@ _set_name_context(Parser *p, expr_ty e, expr_context_ty ctx)
 static expr_ty
 _set_tuple_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_Tuple(
-            _set_seq_context(p, e->v.Tuple.elts, ctx),
-            ctx,
-            EXTRA_EXPR(e, e));
+    asdl_expr_seq *seq = _set_seq_context(p, e->v.Tuple.elts, ctx);
+    if (!seq && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyAST_Tuple(seq, ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
 _set_list_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_List(
-            _set_seq_context(p, e->v.List.elts, ctx),
-            ctx,
-            EXTRA_EXPR(e, e));
+    asdl_expr_seq *seq = _set_seq_context(p, e->v.List.elts, ctx);
+    if (!seq && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyAST_List(seq, ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
@@ -299,8 +305,11 @@ _set_attribute_context(Parser *p, expr_ty e, expr_context_ty ctx)
 static expr_ty
 _set_starred_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_Starred(_PyPegen_set_expr_context(p, e->v.Starred.value, ctx),
-                          ctx, EXTRA_EXPR(e, e));
+    expr_ty inner = _PyPegen_set_expr_context(p, e->v.Starred.value, ctx);
+    if (!inner) {
+        return NULL;
+    }
+    return _PyAST_Starred(inner, ctx, EXTRA_EXPR(e, e));
 }
 
 /* Creates an `expr_ty` equivalent to `expr` but with `ctx` as context */
@@ -1115,7 +1124,14 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
     }
 
     asdl_expr_seq *starreds = _PyPegen_seq_extract_starred_exprs(p, b);
+    if (!starreds && PyErr_Occurred()) {
+        return NULL;
+    }
+
     asdl_keyword_seq *keywords = _PyPegen_seq_delete_starred_exprs(p, b);
+    if (!keywords && PyErr_Occurred()) {
+        return NULL;
+    }
 
     if (starreds) {
         total_len += asdl_seq_LEN(starreds);
@@ -1466,6 +1482,9 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
         end_col_offset, arena
     );
 
+    if (!formatted_value) {
+        return NULL;
+    }
     if (debug) {
         /* Find the non whitespace token after the "=" */
         int debug_end_line, debug_end_offset;
