@@ -894,7 +894,7 @@ def _quartic_invcdf_estimate(p):
 
 @register('quartic', 'biweight')
 def quartic_kernel():
-    pdf = lambda t: 15/16 * (1.0 - t * t) ** 2
+    pdf = lambda t: 15/16 * (u := 1.0 - t * t) * u
     cdf = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
                             (t**5, t**3, t, 1.0))
     invcdf = _newton_raphson(_quartic_invcdf_estimate, f=cdf, f_prime=pdf)
