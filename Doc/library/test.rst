@@ -961,6 +961,8 @@ The :mod:`!test.support` module defines the following functions:
    :mod:`tracemalloc` is enabled.
 
 
+.. currentmodule:: test.support.isolation
+
 .. decorator:: isolated()
 
    Decorator that runs the decorated test in isolation, in a fresh interpreter
@@ -973,10 +975,11 @@ The :mod:`!test.support` module defines the following functions:
    individually.  A reported failure or error shows the original subprocess
    traceback as the cause of the exception.
 
-   When a **method** is decorated, only that method runs in a subprocess;
-   :meth:`~unittest.TestCase.setUp` and :meth:`~unittest.TestCase.tearDown`
-   run both in the parent process (as usual) and in the subprocess around the
-   method.
+   When a **method** is decorated, only that method runs in a subprocess; all
+   fixtures (:meth:`~unittest.TestCase.setUp` / :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass` / :meth:`~unittest.TestCase.tearDownClass`
+   and ``setUpModule()`` / ``tearDownModule()``) run both in the parent process
+   (as usual) and in the subprocess around the method.
 
    When a **class** is decorated, the whole class runs in a single subprocess,
    and :meth:`~unittest.TestCase.setUpClass`,
@@ -988,13 +991,11 @@ The :mod:`!test.support` module defines the following functions:
    so it still runs in the parent process too; test it with
    :data:`running_isolated` if needed.
 
-   Fixtures can test :data:`running_isolated` to decide what to run in each
-   process.
-
    The subprocess inherits the enabled resources (``-u``), memory limit
    (``-M``) and verbosity (``-v``) of the parent test run, so that
-   :func:`requires_resource`, :func:`requires`, :func:`bigmemtest` and the like
-   behave consistently in both processes.
+   :func:`~test.support.requires_resource`, :func:`~test.support.requires`,
+   :func:`~test.support.bigmemtest` and the like behave consistently in both
+   processes.
 
    The test is skipped on platforms without subprocess support.
 
@@ -1008,6 +1009,9 @@ The :mod:`!test.support` module defines the following functions:
    :meth:`~unittest.TestCase.setUpClass`, :meth:`~unittest.TestCase.tearDownClass`,
    ``setUpModule()`` and ``tearDownModule()`` can test it to choose which code
    to run in the subprocess.
+
+
+.. currentmodule:: test.support
 
 
 .. function:: check_free_after_iterating(test, iter, cls, args=())

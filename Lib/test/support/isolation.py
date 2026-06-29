@@ -1,4 +1,4 @@
-"""Run tests in isolated subprocesses (the test.support.isolated decorator).
+"""Run tests in isolated subprocesses (the test.support.isolation.isolated decorator).
 
 A failure, error or skip that happens in the subprocess is replayed in the
 parent process so that the test runner records it.  The original (subprocess)
@@ -78,7 +78,7 @@ class _SubprocessTestError(Exception):
 def _remote(detail):
     # Wrap the subprocess traceback the way concurrent.futures does, so it is
     # clearly delimited when shown as the cause.
-    return _RemoteTraceback('\n"""\n%s"""' % detail)
+    return _RemoteTraceback(f'\n"""\n{detail}"""')
 
 
 def _check_subprocess_support():
@@ -92,9 +92,9 @@ def _check_subprocess_support():
 def _run_in_subprocess(module, qualname):
     """Run module.qualname (a test method or class) in a fresh subprocess.
 
-    Return ``(outcomes, output, returncode)``, where *outcomes* is the list of
-    test outcomes decoded from the subprocess, or ``None`` if it did not run to
-    completion (crash, import error, ...).
+    Return ``(payload, output, returncode)``, where *payload* is the decoded
+    ``{'outcomes': ..., 'durations': ...}`` mapping from the subprocess, or
+    ``None`` if it did not run to completion (crash, import error, ...).
     """
     import json
     import subprocess
@@ -110,15 +110,15 @@ def _run_in_subprocess(module, qualname):
         proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
         try:
             with open(result_path, encoding='utf-8') as f:
-                outcomes = json.load(f)
+                payload = json.load(f)
         except (OSError, ValueError):
-            outcomes = None
+            payload = None
     finally:
         try:
             os.unlink(result_path)
         except OSError:
             pass
-    return outcomes, (proc.stdout or '') + (proc.stderr or ''), proc.returncode
+    return payload, (proc.stdout or '') + (proc.stderr or ''), proc.returncode
 
 
 def _replay_outcome(test, outcome):
@@ -126,12 +126,15 @@ def _replay_outcome(test, outcome):
     detail = outcome['detail']
     if kind == 'skipped':
         test.skipTest(detail)  # the detail is the skip reason, not a traceback
-    elif kind == 'failure':
-        raise test.failureException('test failed in the subprocess') \
-            from _remote(detail)
+    elif kind in ('failure', 'expected_failure'):
+        # An expected failure is replayed like a failure: the wrapper carries
+        # the @expectedFailure marker (copied by functools.wraps), so the parent
+        # records the raised exception as an expectedFailure, not a failure.
+        exc = test.failureException('test failed in the subprocess')
+        raise exc from _remote(detail)
     else:  # 'error'
-        raise _SubprocessTestError('test failed in the subprocess') \
-            from _remote(detail)
+        exc = _SubprocessTestError('test failed in the subprocess')
+        raise exc from _remote(detail)
 
 
 def _replay_outcomes(test, outcomes):
@@ -153,8 +156,8 @@ def _raise_fixture_outcome(outcome):
     # subprocess in a parent-process fixture, so it applies to every test.
     if outcome['kind'] == 'skipped':
         raise unittest.SkipTest(outcome['detail'])
-    raise _SubprocessTestError('class failed in the subprocess') \
-        from _remote(outcome['detail'])
+    exc = _SubprocessTestError('class failed in the subprocess')
+    raise exc from _remote(outcome['detail'])
 
 
 def _isolate_method(func):
@@ -166,21 +169,27 @@ def _isolate_method(func):
         _check_subprocess_support()
         cls = type(self)
         qualname = f'{cls.__qualname__}.{func.__name__}'
-        outcomes, output, returncode = _run_in_subprocess(cls.__module__,
-                                                          qualname)
-        if outcomes is None:
-            raise _SubprocessTestError(
-                f'test did not complete in a subprocess (exit code '
-                f'{returncode})') from _remote(output)
-        _replay_outcomes(self, outcomes)
+        payload, output, returncode = _run_in_subprocess(cls.__module__,
+                                                         qualname)
+        if payload is None:
+            exc = _SubprocessTestError(
+                f'test did not complete in a subprocess (exit code {returncode})')
+            raise exc from _remote(output)
+        # The parent measures this method's own duration (the real cost of the
+        # isolated run, subprocess startup included), so nothing to forward here.
+        _replay_outcomes(self, payload['outcomes'])
     return wrapper
 
 
 def _isolate_class(cls):
+    # Unwrap to the plain functions: the replacements below call them with the
+    # runtime cls, so a subclass of an isolated class runs the fixtures bound to
+    # itself (a bound classmethod would freeze the decoration-time class).
     orig_setUpClass = cls.setUpClass.__func__
     orig_tearDownClass = cls.tearDownClass.__func__
     orig_setUp = cls.setUp
     orig_tearDown = cls.tearDown
+    orig_addDuration = getattr(cls, '_addDuration', None)
 
     def setUpClass(cls):
         if running_isolated:
@@ -189,26 +198,28 @@ def _isolate_class(cls):
         _check_subprocess_support()
         # Run the whole class in a single subprocess and stash the outcomes
         # for the wrapped test methods to replay.
-        outcomes, output, returncode = _run_in_subprocess(cls.__module__,
-                                                          cls.__qualname__)
-        if outcomes is None:
-            raise _SubprocessTestError(
-                f'class did not complete in a subprocess (exit code '
-                f'{returncode})') from _remote(output)
+        payload, output, returncode = _run_in_subprocess(cls.__module__,
+                                                         cls.__qualname__)
+        if payload is None:
+            exc = _SubprocessTestError(
+                f'class did not complete in a subprocess (exit code {returncode})')
+            raise exc from _remote(output)
         by_id = {}
-        for outcome in outcomes:
+        for outcome in payload['outcomes']:
             if outcome['fixture']:
                 # A setUpClass()/setUpModule() failure or skip: apply it to the
                 # whole class by raising it here, in the parent's setUpClass().
                 _raise_fixture_outcome(outcome)
             by_id.setdefault(outcome['id'], []).append(outcome)
         cls._isolated_outcomes = by_id
+        cls._isolated_durations = dict(payload.get('durations', ()))
 
     def tearDownClass(cls):
         if running_isolated:
             orig_tearDownClass(cls)
         else:
             cls._isolated_outcomes = None
+            cls._isolated_durations = None
 
     def setUp(self):
         # In the parent the real test does not run, so neither should setUp().
@@ -219,6 +230,15 @@ def _isolate_class(cls):
         if running_isolated:
             orig_tearDown(self)
 
+    def _addDuration(self, result, elapsed):
+        # In the parent, report the per-test duration measured in the subprocess
+        # rather than the replay time (subprocess startup is paid once, in
+        # setUpClass).
+        if not running_isolated:
+            durations = getattr(type(self), '_isolated_durations', None) or {}
+            elapsed = durations.get(self.id(), elapsed)
+        orig_addDuration(self, result, elapsed)
+
     def replay(self):
         by_id = getattr(type(self), '_isolated_outcomes', None) or {}
         _replay_outcomes(self, by_id.get(self.id(), []))
@@ -227,6 +247,8 @@ def _isolate_class(cls):
     cls.tearDownClass = classmethod(tearDownClass)
     cls.setUp = setUp
     cls.tearDown = tearDown
+    if orig_addDuration is not None:
+        cls._addDuration = _addDuration
     for name in unittest.TestLoader().getTestCaseNames(cls):
         method = getattr(cls, name)
         @functools.wraps(method)
@@ -254,10 +276,11 @@ def isolated():
     shown as the cause of a reported failure or error.  Use
     :data:`running_isolated` in fixtures to choose what to run in the subprocess.
 
-    The test is skipped on platforms without subprocess support.
+    The test is skipped on platforms without subprocess support, since it must
+    spawn one.
     """
     def decorator(obj):
-        if isinstance(obj, type):
+        if isinstance(obj, type) and issubclass(obj, unittest.TestCase):
             return _isolate_class(obj)
         return _isolate_method(obj)
     return decorator

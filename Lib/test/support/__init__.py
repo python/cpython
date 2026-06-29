@@ -24,7 +24,6 @@ import warnings
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
-    "running_isolated",
     # exceptions
     "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # io
@@ -37,7 +36,6 @@ __all__ = [
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
     "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
-    "isolated",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
@@ -1090,12 +1088,6 @@ def subTests(arg_names, arg_values, /, *, _do_cleanups=False):
                     self.doCleanups()
         return wrapper
     return decorator
-
-# Run a test method or class in an isolated subprocess.  Implemented in a
-# dedicated module so that its frames carry the __unittest marker and are
-# stripped from reported tracebacks.
-from test.support._isolation import isolated, running_isolated
-
 
 #=======================================================================
 # Decorator/context manager for running a code in a different locale,
