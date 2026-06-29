@@ -3477,13 +3477,13 @@ EventHook(void)
 #ifdef MS_WINDOWS
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     type = GetFileType(hStdin);
-    while (!errorInCmd) {
+    while (1) {
 #else
     tfile = fileno(stdin);
     Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc,
                           (void *)(Py_intptr_t)tfile);
-#endif
     while (!stdin_ready) {
+#endif
         int result;
 #ifdef MS_WINDOWS
         if (type == FILE_TYPE_CHAR) {
