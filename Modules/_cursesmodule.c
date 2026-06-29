@@ -7693,7 +7693,7 @@ _curses.slk_set
     label: unicode
         The text to display.
     justify: int = 0
-        0 = left, 1 = centre, 2 = right.
+        0 = left, 1 = center, 2 = right.
     /
 
 Set the text of a soft label.

@@ -2502,7 +2502,7 @@ class NewtermTestBase(unittest.TestCase):
 
 @unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
 @unittest.skipIf(not term or term == 'unknown',
-                 "$TERM=%r, newterm() may not work" % term)
+                 f"$TERM={term!r}, newterm() may not work")
 @unittest.skipIf(sys.platform == "cygwin",
                  "cygwin's curses mostly just hangs")
 class ScreenTests(NewtermTestBase):
@@ -2583,7 +2583,7 @@ class ScreenTests(NewtermTestBase):
 @unittest.skipUnless(hasattr(curses, 'slk_init'), 'requires curses.slk_init()')
 @unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
 @unittest.skipIf(not term or term == 'unknown',
-                 "$TERM=%r, newterm() may not work" % term)
+                 f"$TERM={term!r}, newterm() may not work")
 @unittest.skipIf(sys.platform == "cygwin",
                  "cygwin's curses mostly just hangs")
 class SLKTests(NewtermTestBase):

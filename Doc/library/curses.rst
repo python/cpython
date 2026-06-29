@@ -846,7 +846,7 @@ labels.
 
    Set the text of soft label number *labnum*, in the range ``1`` through ``8``
    (or ``12`` in a twelve-label layout).  *justify* controls how *label* is
-   placed within the label: ``0`` for left, ``1`` for centred, ``2`` for right.
+   placed within the label: ``0`` for left, ``1`` for centered, ``2`` for right.
 
    .. versionadded:: next
 
