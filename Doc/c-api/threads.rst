@@ -249,7 +249,7 @@ Reusing a thread state across repeated calls
 
 Creating and destroying a :c:type:`PyThreadState` is not free, and is more
 expensive on a :term:`free-threaded build`.  A foreign thread that calls into
-the interpreter many times -- for example a worker thread in a native thread
+the interpreter many times -- for example, a worker thread in a native thread
 pool -- should avoid creating a fresh thread state on every entry and
 destroying it on every exit.  Instead, set up one thread state when the thread
 starts (or lazily on its first call into Python), attach and detach it around
