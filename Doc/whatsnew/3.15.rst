@@ -1189,6 +1189,15 @@ http.client
   (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
 
 
+http.cookies
+------------
+
+* Cookie parsing now allows any characters except semicolon (``';'``)
+  and control characters in non-quoted cookie values.
+  The ``';'`` separator is now mandatory between name-value pairs.
+  (Contributed by Serhiy Storchaka in :gh:`149028`.)
+
+
 http.server
 -----------
 
