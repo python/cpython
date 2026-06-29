@@ -1,5 +1,15 @@
 import functools
+import time
 import tkinter
+import unittest
+from test import support
+
+
+def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
 
 class AbstractTkTest:
 
@@ -10,6 +20,8 @@ class AbstractTkTest:
         tkinter.NoDefaultRoot()
         cls.root = tkinter.Tk()
         cls.wantobjects = cls.root.wantobjects()
+        if support.is_resource_enabled('wantobjects'):
+            assert cls.wantobjects == int(support.get_resource_value('wantobjects'))
         # De-maximize main window.
         # Some window managers can maximize new windows.
         cls.root.wm_state('normal')
@@ -33,6 +45,20 @@ class AbstractTkTest:
         for w in self.root.winfo_children():
             w.destroy()
         self.root.withdraw()
+
+    def require_mapped(self, widget, timeout=None):
+        """Realize *widget*, or skip the test if the window manager will
+        not map it (e.g. a tiling WM or a headless/contended display).
+
+        Use this instead of a bare update() before querying realized
+        geometry (winfo_width(), identify(), coords(), place_info(), ...).
+        See gh-69134, gh-74941 and bpo-40722.
+        """
+        if timeout is None:
+            timeout = support.LOOPBACK_TIMEOUT
+        if not wait_until_mapped(widget, timeout):
+            self.skipTest('widget was not mapped by the window manager '
+                          f'(timed out after {timeout:g}s)')
 
 
 class AbstractDefaultRootTest:
@@ -66,6 +92,32 @@ def destroy_default_root():
         tkinter._default_root.update_idletasks()
         tkinter._default_root.destroy()
         tkinter._default_root = None
+
+def wait_until_mapped(widget, timeout=None):
+    """Wait until *widget* is actually mapped and laid out by the window
+    manager, so that realized-geometry queries (winfo_width(), identify(),
+    coords(), ...) return meaningful values.
+
+    Return True once the widget is mapped with a non-trivial size, or False
+    if that has not happened within *timeout* seconds (default:
+    ``support.LOOPBACK_TIMEOUT``).  Unlike Misc.wait_visibility(), this
+    never blocks indefinitely, so it is safe under a window manager that
+    never maps the window (see gh-69134, gh-74941, bpo-40722).
+    """
+    if timeout is None:
+        timeout = support.LOOPBACK_TIMEOUT
+    deadline = time.monotonic() + timeout
+    widget.update_idletasks()
+    while True:
+        widget.update()  # drain pending Map/Configure events
+        if (widget.winfo_ismapped()
+                and widget.winfo_width() > 1
+                and widget.winfo_height() > 1):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.01)
+
 
 def simulate_mouse_click(widget, x, y):
     """Generate proper events to click at the x, y position (tries to act

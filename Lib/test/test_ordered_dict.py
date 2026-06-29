@@ -698,6 +698,7 @@ class OrderedDictTests:
         d |= list(b.items())
         expected = OrderedDict({0: 0, 1: 1, 2: 2, 3: 3})
         self.assertEqual(a | dict(b), expected)
+        self.assertEqual(a | frozendict(b), expected)
         self.assertEqual(a | b, expected)
         self.assertEqual(c, expected)
         self.assertEqual(d, expected)
@@ -706,12 +707,17 @@ class OrderedDictTests:
         c |= a
         expected = OrderedDict({1: 1, 2: 1, 3: 3, 0: 0})
         self.assertEqual(dict(b) | a, expected)
+        self.assertEqual(frozendict(b) | a, expected)
+        self.assertEqual(a.__ror__(frozendict(b)), expected)
         self.assertEqual(b | a, expected)
         self.assertEqual(c, expected)
 
         self.assertIs(type(a | b), OrderedDict)
         self.assertIs(type(dict(a) | b), OrderedDict)
+        self.assertIs(type(frozendict(a) | b), frozendict)
+        self.assertIs(type(b.__ror__(frozendict(a))), OrderedDict)
         self.assertIs(type(a | dict(b)), OrderedDict)
+        self.assertIs(type(a | frozendict(b)), OrderedDict)
 
         expected = a.copy()
         a |= ()
@@ -872,6 +878,39 @@ class CPythonOrderedDictSideEffects:
         self.assertEqual(Key.count, 2)
         self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
         self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
+
+    def test_issue148660_copy_clear_in_key_eq(self):
+        # gh-148660: od.copy() must not crash when a key's __eq__ clears od
+        # while copy() is inserting into the new dict.
+        armed = False
+        calls = 0
+        class Key:
+            def __hash__(self):
+                return 1
+            def __eq__(self, other):
+                nonlocal calls
+                if armed:
+                    calls += 1
+                    if calls == 2:
+                        od.clear()
+                return self is other
+        od = self.OrderedDict()
+        od[Key()] = "v1"
+        od[Key()] = "v2"
+        armed = True
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
+    def test_issue148660_copy_clear_in_subclass_getitem(self):
+        # gh-148660: od.copy() must not crash when a subclass __getitem__
+        # clears od.
+        class OD(self.OrderedDict):
+            def __getitem__(self, key):
+                od.clear()
+                return "v"
+        od = OD([(1, "v1"), (2, "v2")])
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
 
 
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')

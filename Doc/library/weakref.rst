@@ -1,21 +1,16 @@
 .. _mod-weakref:
 
-:mod:`weakref` --- Weak references
-==================================
+:mod:`!weakref` --- Weak references
+===================================
 
 .. module:: weakref
    :synopsis: Support for weak references and weak dictionaries.
-
-.. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-.. moduleauthor:: Neil Schemenauer <nas@arctrix.com>
-.. moduleauthor:: Martin von Löwis <martin@loewis.home.cs.tu-berlin.de>
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 **Source code:** :source:`Lib/weakref.py`
 
 --------------
 
-The :mod:`weakref` module allows the Python programmer to create :dfn:`weak
+The :mod:`!weakref` module allows the Python programmer to create :dfn:`weak
 references` to objects.
 
 .. When making changes to the examples in this file, be sure to update
@@ -39,7 +34,7 @@ associate a name with each.  If you used a Python dictionary to map names to
 images, or images to names, the image objects would remain alive just because
 they appeared as values or keys in the dictionaries.  The
 :class:`WeakKeyDictionary` and :class:`WeakValueDictionary` classes supplied by
-the :mod:`weakref` module are an alternative, using weak references to construct
+the :mod:`!weakref` module are an alternative, using weak references to construct
 mappings that don't keep objects alive solely because they appear in the mapping
 objects.  If, for example, an image object is a value in a
 :class:`WeakValueDictionary`, then when the last remaining references to that
@@ -63,7 +58,7 @@ remains alive until the object is collected.
 Most programs should find that using one of these weak container types
 or :class:`finalize` is all they need -- it's not usually necessary to
 create your own weak references directly.  The low-level machinery is
-exposed by the :mod:`weakref` module for the benefit of advanced uses.
+exposed by the :mod:`!weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced. Objects which support weak references
 include class instances, functions written in Python (but not in C), instance methods,
@@ -125,6 +120,9 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    This is a subclassable type rather than a factory function.
 
+   Weak references are :ref:`generic <generics>` over the type of the object they
+   reference.
+
    .. attribute:: __callback__
 
       This read-only attribute returns the callback currently associated to the
@@ -133,6 +131,9 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    .. versionchanged:: 3.4
       Added the :attr:`__callback__` attribute.
+
+   .. versionchanged:: next
+      Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
 .. function:: proxy(object[, callback])
@@ -152,6 +153,9 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
+
+   .. versionchanged:: next
+      Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
 .. function:: getweakrefcount(object)
@@ -329,17 +333,17 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    .. versionadded:: 3.4
 
 
-.. data:: ReferenceType
+.. class:: ReferenceType
 
    The type object for weak references objects.
 
 
-.. data:: ProxyType
+.. class:: ProxyType
 
    The type object for proxies of objects which are not callable.
 
 
-.. data:: CallableProxyType
+.. class:: CallableProxyType
 
    The type object for proxies of callable objects.
 

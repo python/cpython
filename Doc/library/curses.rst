@@ -4,16 +4,12 @@
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable
               terminal handling.
-   :platform: Unix
-
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-.. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
 **Source code:** :source:`Lib/curses`
 
 --------------
 
-The :mod:`curses` module provides an interface to the curses library, the
+The :mod:`!curses` module provides an interface to the curses library, the
 de-facto standard for portable advanced terminal handling.
 
 While curses is most widely used in the Unix environment, versions are available
@@ -22,6 +18,10 @@ designed to match the API of ncurses, an open-source curses library hosted on
 Linux and the BSD variants of Unix.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
+
+.. include:: ../includes/optional-module.rst
+
+.. availability:: Unix.
 
 .. note::
 
@@ -52,7 +52,7 @@ Linux and the BSD variants of Unix.
 Functions
 ---------
 
-The module :mod:`curses` defines the following exception:
+The module :mod:`!curses` defines the following exception:
 
 
 .. exception:: error
@@ -65,7 +65,7 @@ The module :mod:`curses` defines the following exception:
    default to the current cursor location. Whenever *attr* is optional, it defaults
    to :const:`A_NORMAL`.
 
-The module :mod:`curses` defines the following functions:
+The module :mod:`!curses` defines the following functions:
 
 
 .. function:: assume_default_colors(fg, bg, /)
@@ -80,7 +80,23 @@ The module :mod:`curses` defines the following functions:
 
    * Change the definition of the color-pair ``0`` to ``(fg, bg)``.
 
+   This is an ncurses extension.
+
    .. versionadded:: 3.14
+
+
+.. function:: alloc_pair(fg, bg)
+
+   Allocate a color pair for foreground color *fg* and background color *bg*,
+   and return its number.  If a color pair for the same combination of colors
+   already exists, return its number.  Otherwise allocate a new color pair and
+   return its number.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: baudrate()
@@ -116,16 +132,20 @@ The module :mod:`curses` defines the following functions:
    Return the intensity of the red, green, and blue (RGB) components in the color
    *color_number*, which must be between ``0`` and ``COLORS - 1``.  Return a 3-tuple,
    containing the R,G,B values for the given color, which will be between
-   ``0`` (no component) and ``1000`` (maximum amount of component).
+   ``0`` (no component) and ``1000`` (maximum amount of component).  Raise an
+   exception if the color is not supported.
 
 
 .. function:: color_pair(pair_number)
 
    Return the attribute value for displaying text in the specified color pair.
-   Only the first 256 color pairs are supported. This
-   attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
-   and the other :const:`!A_\*` attributes.  :func:`pair_number` is the counterpart
-   to this function.
+   Only color pairs that fit in the color-pair field of the returned value can
+   be represented (usually the first 256); a larger *pair_number* raises
+   :exc:`OverflowError` rather than being silently masked to a different pair.
+   Use :meth:`~window.color_set` or :meth:`~window.attr_set` to display higher
+   pairs.  This attribute value can be combined with :const:`A_STANDOUT`,
+   :const:`A_REVERSE`, and the other :const:`!A_\*` attributes.
+   :func:`pair_number` is the counterpart to this function.
 
 
 .. function:: curs_set(visibility)
@@ -162,7 +182,7 @@ The module :mod:`curses` defines the following functions:
 
    Update the physical screen.  The curses library keeps two data structures, one
    representing the current physical screen contents and a virtual screen
-   representing the desired next state.  The :func:`doupdate` ground updates the
+   representing the desired next state.  The :func:`doupdate` function updates the
    physical screen to match the virtual screen.
 
    The virtual screen may be updated by a :meth:`~window.noutrefresh` call after write
@@ -186,19 +206,52 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: erasechar()
 
-   Return the user's current erase character as a one-byte bytes object.  Under Unix operating systems this
-   is a property of the controlling tty of the curses program, and is not set by
-   the curses library itself.
+   Return the user's current erase character as a raw byte, a :class:`bytes`
+   object of length 1.  See also :func:`erasewchar`.
+
+
+.. function:: erasewchar()
+
+   Return the user's current erase character as a one-character :class:`str`.
+   Under Unix operating systems this is a property of the controlling tty of the
+   curses program, and is not set by the curses library itself.
+
+   .. versionadded:: next
 
 
 .. function:: filter()
 
    The :func:`.filter` routine, if used, must be called before :func:`initscr` is
-   called.  The effect is that, during those calls, :envvar:`LINES` is set to ``1``; the
+   called.  The effect is that, during the initialization, :envvar:`LINES` is set to ``1``; the
    capabilities ``clear``, ``cup``, ``cud``, ``cud1``, ``cuu1``, ``cuu``, ``vpa`` are disabled; and the ``home``
    string is set to the value of ``cr``. The effect is that the cursor is confined to
    the current line, and so are screen updates.  This may be used for enabling
    character-at-a-time  line editing without touching the rest of the screen.
+
+
+.. function:: nofilter()
+
+   Undo the effect of a previous :func:`.filter` call.
+   Like :func:`.filter`, it must be called before :func:`initscr` (or
+   :func:`newterm`) so that the next initialization uses the full screen
+   again.
+
+   Availability: if the underlying curses library provides ``nofilter()``.
+
+   .. versionadded:: next
+
+
+.. function:: find_pair(fg, bg)
+
+   Return the number of a color pair for foreground color *fg* and background
+   color *bg*, or ``-1`` if no color pair for this combination of colors has
+   been allocated.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: flash()
@@ -212,6 +265,18 @@ The module :mod:`curses` defines the following functions:
 
    Flush all input buffers.  This throws away any  typeahead  that  has been typed
    by the user and has not yet been processed by the program.
+
+
+.. function:: free_pair(pair_number)
+
+   Free the color pair *pair_number*, which must have been allocated by
+   :func:`alloc_pair`.  The pair must not be in use.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: getmouse()
@@ -240,9 +305,10 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: getwin(file)
 
-   Read window related data stored in the file by an earlier :func:`window.putwin` call.
+   Read window-related data stored in the file by an earlier :meth:`window.putwin` call.
    The routine then creates and initializes a new window using that data, returning
-   the new window object.
+   the new window object.  The *file* argument must be a file object opened for
+   reading in binary mode.
 
 
 .. function:: has_colors()
@@ -253,7 +319,7 @@ The module :mod:`curses` defines the following functions:
 
    Return ``True`` if the module supports extended colors; otherwise, return
    ``False``. Extended color support allows more than 256 color pairs for
-   terminals that support more than 16 colors (e.g. xterm-256color).
+   terminals that support more than 16 colors (for example, xterm-256color).
 
    Extended color support requires ncurses version 6.1 or later.
 
@@ -278,6 +344,44 @@ The module :mod:`curses` defines the following functions:
 
    Take a key value *ch*, and return ``True`` if the current terminal type recognizes
    a key with that value.
+
+
+.. function:: has_mouse()
+
+   Return ``True`` if the mouse driver has been successfully initialized.
+
+   .. versionadded:: next
+
+
+.. function:: define_key(definition, keycode)
+
+   Define an escape sequence *definition*, a string, as a key that generates
+   the key code *keycode*, so that :mod:`curses` interprets it like one of the
+   keys predefined in the terminal database.
+
+   If *definition* is ``None``, any existing binding for *keycode* is removed.
+   If *keycode* is zero or negative, any existing binding for *definition* is
+   removed.
+
+   .. versionadded:: next
+
+
+.. function:: key_defined(definition)
+
+   Return the key code bound to the escape sequence *definition*, a string,
+   ``0`` if no key code is bound to it, or ``-1`` if *definition* is a prefix
+   of a longer bound sequence (and so is ambiguous).
+
+   .. versionadded:: next
+
+
+.. function:: keyok(keycode, enable)
+
+   Enable (if *enable* is true) or disable (otherwise) interpretation of the
+   key code *keycode*.  Unlike :meth:`window.keypad`, this affects a single
+   key code rather than all of them.
+
+   .. versionadded:: next
 
 
 .. function:: halfdelay(tenths)
@@ -326,6 +430,48 @@ The module :mod:`curses` defines the following functions:
       cause the interpreter to exit.
 
 
+.. function:: intrflush(flag)
+
+   If *flag* is ``True``, pressing an interrupt key (interrupt, break, or quit)
+   will flush all output in the terminal driver queue.  If *flag* is ``False``,
+   no flushing is done.
+
+
+.. function:: is_cbreak()
+
+   Return ``True`` if cbreak mode (see :func:`cbreak`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_echo()
+
+   Return ``True`` if echo mode (see :func:`echo`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_nl()
+
+   Return ``True`` if nl mode (see :func:`nl`) is enabled, ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
+.. function:: is_raw()
+
+   Return ``True`` if raw mode (see :func:`raw`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+
 .. function:: is_term_resized(nlines, ncols)
 
    Return ``True`` if :func:`resize_term` would modify the window structure,
@@ -347,12 +493,22 @@ The module :mod:`curses` defines the following functions:
    bytes object consisting of the prefix ``b'M-'`` followed by the name of the corresponding
    ASCII character.
 
+   Raise a :exc:`ValueError` if *k* is negative.
+
 
 .. function:: killchar()
 
-   Return the user's current line kill character as a one-byte bytes object. Under Unix operating systems
-   this is a property of the controlling tty of the curses program, and is not set
-   by the curses library itself.
+   Return the user's current line kill character as a raw byte, a :class:`bytes`
+   object of length 1.  See also :func:`killwchar`.
+
+
+.. function:: killwchar()
+
+   Return the user's current line kill character as a one-character :class:`str`.
+   Under Unix operating systems this is a property of the controlling tty of the
+   curses program, and is not set by the curses library itself.
+
+   .. versionadded:: next
 
 
 .. function:: longname()
@@ -372,7 +528,8 @@ The module :mod:`curses` defines the following functions:
 
    Set the maximum time in milliseconds that can elapse between press and release
    events in order for them to be recognized as a click, and return the previous
-   interval value.  The default value is 200 milliseconds, or one fifth of a second.
+   interval value.  The default value is 166 milliseconds, or one sixth of a second.
+   Use a negative *interval* to obtain the interval value without changing it.
 
 
 .. function:: mousemask(mousemask)
@@ -380,7 +537,7 @@ The module :mod:`curses` defines the following functions:
    Set the mouse events to be reported, and return a tuple ``(availmask,
    oldmask)``.   *availmask* indicates which of the specified mouse events can be
    reported; on complete failure it returns ``0``.  *oldmask* is the previous value of
-   the given window's mouse event mask.  If this function is never called, no mouse
+   the mouse event mask.  If this function is never called, no mouse
    events are ever reported.
 
 
@@ -402,7 +559,7 @@ The module :mod:`curses` defines the following functions:
    methods of a pad require 6 arguments to specify the part of the pad to be
    displayed and the location on the screen to be used for the display. The
    arguments are *pminrow*, *pmincol*, *sminrow*, *smincol*, *smaxrow*, *smaxcol*; the *p*
-   arguments refer to the upper left corner of the pad region to be displayed and
+   arguments refer to the upper-left corner of the pad region to be displayed and
    the *s* arguments define a clipping box on the screen within which the pad region
    is to be displayed.
 
@@ -417,11 +574,43 @@ The module :mod:`curses` defines the following functions:
    right corner of the screen.
 
 
-.. function:: nl()
+.. function:: newterm(type=None, fd=None, infd=None, /)
+
+   Initialize a new terminal in addition to the one initialized by
+   :func:`initscr`,
+   and return a :ref:`screen <curses-screen-objects>` for it.
+   This allows a program to drive more than one terminal.
+
+   *type* is the terminal name, as in :func:`setupterm`;
+   if ``None``, the value of the :envvar:`TERM` environment variable is used.
+   *fd* and *infd* are the output and input files for the terminal:
+   either a file object or a file descriptor.
+   They default to :data:`sys.stdout` and :data:`sys.stdin`.
+
+   The new screen becomes the current one.
+   Use :func:`set_term` to switch between screens.
+
+   .. versionadded:: next
+
+
+.. function:: new_prescr()
+
+   Return a new :ref:`screen <curses-screen-objects>`
+   that can be used to call functions that affect global state
+   before :func:`initscr` or :func:`newterm` is called.
+
+   Availability: if the underlying curses library provides ``new_prescr()``.
+
+   .. versionadded:: next
+
+
+.. function:: nl(flag=True)
 
    Enter newline mode.  This mode translates the return key into newline on input,
    and translates newline into return and line-feed on output. Newline mode is
    initially on.
+
+   If *flag* is ``False``, the effect is the same as calling :func:`nonl`.
 
 
 .. function:: nocbreak()
@@ -475,6 +664,8 @@ The module :mod:`curses` defines the following functions:
    terminfo capability for the current terminal.  Note that the output of :func:`putp`
    always goes to standard output.
 
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
 
 .. function:: qiflush([flag])
 
@@ -488,6 +679,18 @@ The module :mod:`curses` defines the following functions:
    Enter raw mode.  In raw mode, normal line buffering and  processing of
    interrupt, quit, suspend, and flow control keys are turned off; characters are
    presented to curses input functions one by one.
+
+
+.. function:: reset_color_pairs()
+
+   Discard all color-pair definitions, releasing the color pairs allocated by
+   :func:`init_pair` and :func:`alloc_pair`.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
 
 
 .. function:: reset_prog_mode()
@@ -530,6 +733,40 @@ The module :mod:`curses` defines the following functions:
    Save the current state of the terminal modes in a buffer, usable by
    :func:`resetty`.
 
+.. function:: scr_dump(filename)
+
+   Write the current contents of the virtual screen to *filename*, which may be
+   a string or a :term:`path-like object`.  The file can later be read by
+   :func:`scr_restore`, :func:`scr_init` or :func:`scr_set`.  This is the
+   whole-screen counterpart of :meth:`window.putwin`.
+
+   .. versionadded:: next
+
+.. function:: scr_restore(filename)
+
+   Set the virtual screen to the contents of *filename*, which must have been
+   written by :func:`scr_dump`.  The next call to :func:`doupdate` or
+   :meth:`window.refresh` restores the screen to those contents.
+
+   .. versionadded:: next
+
+.. function:: scr_init(filename)
+
+   Initialize the assumed contents of the terminal from *filename*, which must
+   have been written by :func:`scr_dump`.  Use it when the terminal already
+   displays those contents, for example after another program has drawn the
+   screen, so that curses does not redraw what is already there.
+
+   .. versionadded:: next
+
+.. function:: scr_set(filename)
+
+   Use *filename*, which must have been written by :func:`scr_dump`, as both
+   the virtual screen and the assumed terminal contents.  This combines the
+   effects of :func:`scr_restore` and :func:`scr_init`.
+
+   .. versionadded:: next
+
 .. function:: get_escdelay()
 
    Retrieves the value set by :func:`set_escdelay`.
@@ -557,6 +794,17 @@ The module :mod:`curses` defines the following functions:
 
    .. versionadded:: 3.9
 
+
+.. function:: set_term(screen, /)
+
+   Make *screen*, a :ref:`screen <curses-screen-objects>` returned by
+   :func:`newterm`, the current terminal,
+   and return the previously current screen.
+   Returns ``None`` if the previous screen was the one created by
+   :func:`initscr`.
+
+   .. versionadded:: next
+
 .. function:: setsyx(y, x)
 
    Set the virtual screen cursor to *y*, *x*. If *y* and *x* are both ``-1``, then
@@ -571,6 +819,10 @@ The module :mod:`curses` defines the following functions:
    file descriptor to which any initialization sequences will be sent; if not
    supplied or ``-1``, the file descriptor for ``sys.stdout`` will be used.
 
+   Raise a :exc:`curses.error` if the terminal could not be found or its
+   terminfo database entry could not be read.  If the terminal has already
+   been initialized, this function has no effect.
+
 
 .. function:: start_color()
 
@@ -579,7 +831,7 @@ The module :mod:`curses` defines the following functions:
    after :func:`initscr`.
 
    :func:`start_color` initializes eight basic colors (black, red,  green, yellow,
-   blue, magenta, cyan, and white), and two global variables in the :mod:`curses`
+   blue, magenta, cyan, and white), and two global variables in the :mod:`!curses`
    module, :const:`COLORS` and :const:`COLOR_PAIRS`, containing the maximum number
    of colors and color-pairs the terminal can support.  It also restores the colors
    on the terminal to the values they had when the terminal was just turned on.
@@ -590,6 +842,14 @@ The module :mod:`curses` defines the following functions:
    Return a logical OR of all video attributes supported by the terminal.  This
    information is useful when a curses program needs complete control over the
    appearance of the screen.
+
+
+.. function:: term_attrs()
+
+   Like :func:`termattrs`, but return the attributes as :ref:`WA_*
+   <curses-wa-constants>` values rather than ``A_*`` values.
+
+   .. versionadded:: next
 
 
 .. function:: termname()
@@ -605,6 +865,8 @@ The module :mod:`curses` defines the following functions:
    Boolean capability, or ``0`` if it is canceled or absent from the terminal
    description.
 
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
 
 .. function:: tigetnum(capname)
 
@@ -612,6 +874,8 @@ The module :mod:`curses` defines the following functions:
    capability name *capname* as an integer.  Return the value ``-2`` if *capname* is not a
    numeric capability, or ``-1`` if it is canceled or absent from the terminal
    description.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
 
 
 .. function:: tigetstr(capname)
@@ -621,13 +885,17 @@ The module :mod:`curses` defines the following functions:
    is not a terminfo "string capability", or is canceled or absent from the
    terminal description.
 
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
 
 .. function:: tparm(str[, ...])
 
    Instantiate the bytes object *str* with the supplied parameters, where *str* should
-   be a parameterized string obtained from the terminfo database.  E.g.
+   be a parameterized string obtained from the terminfo database.  For example,
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
-   result depending on terminal type.
+   result depending on terminal type.  Up to nine integer parameters may be supplied.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
 
 
 .. function:: typeahead(fd)
@@ -645,17 +913,38 @@ The module :mod:`curses` defines the following functions:
 .. function:: unctrl(ch)
 
    Return a bytes object which is a printable representation of the character *ch*.
-   Control characters are represented as a caret followed by the character, for
-   example as ``b'^C'``. Printing characters are left as they are.
+   *ch* cannot be a character that does not fit in a single byte; use
+   :func:`wunctrl` for those.
+
+
+.. function:: wunctrl(ch)
+
+   Return a string which is a printable representation of the character *ch*;
+   any attributes and color pair are ignored.
+   ASCII control characters are represented as a caret followed by a character,
+   for example as ``'^C'``.  Printing characters, including non-ASCII characters
+   printable in the locale, are left as they are.  The representation of other
+   characters is defined by the underlying curses library.
+
+   .. versionadded:: next
 
 
 .. function:: ungetch(ch)
 
-   Push *ch* so the next :meth:`~window.getch` will return it.
+   Push *ch* so the next :meth:`~window.getch` or :meth:`~window.get_wch` will
+   return it.
+
+   *ch* may be an integer (a key code or character code), a byte, or a string of
+   length 1.  A one-character string is pushed like :func:`unget_wch`; on a
+   narrow build it must encode to a single byte.
 
    .. note::
 
       Only one *ch* can be pushed before :meth:`!getch` is called.
+
+   .. versionchanged:: next
+      A one-character string argument is no longer required to encode to a single
+      byte, except on a narrow build.
 
 
 .. function:: update_lines_cols()
@@ -675,6 +964,10 @@ The module :mod:`curses` defines the following functions:
       Only one *ch* can be pushed before :meth:`!get_wch` is called.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      Also available on a narrow build, where *ch* must encode to a single byte
+      (an 8-bit locale).
 
 
 .. function:: ungetmouse(id, x, y, z, bstate)
@@ -713,11 +1006,13 @@ The module :mod:`curses` defines the following functions:
 
 .. _curses-window-objects:
 
-Window Objects
+Window objects
 --------------
 
-Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
-the following methods and attributes:
+.. class:: window
+
+   Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
+   the following methods and attributes:
 
 
 .. method:: window.addch(ch[, attr])
@@ -727,11 +1022,19 @@ the following methods and attributes:
    character previously painted at that location.  By default, the character
    position and attributes are the current settings for the window object.
 
+   *ch* may be a single character, optionally followed by combining
+   characters, that together occupy one character cell.
+
    .. note::
 
       Writing outside the window, subwindow, or pad raises a :exc:`curses.error`.
-      Attempting to write to the lower right corner of a window, subwindow,
+      Attempting to write to the lower-right corner of a window, subwindow,
       or pad will cause an exception to be raised after the character is printed.
+
+   .. versionchanged:: next
+      A character may now be given as a string of a base character followed
+      by combining characters, instead of only a single character, or as a
+      :class:`complexchar` cell.
 
 
 .. method:: window.addnstr(str, n[, attr])
@@ -741,6 +1044,9 @@ the following methods and attributes:
    ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
 
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`; see :meth:`addstr`.
+
 
 .. method:: window.addstr(str[, attr])
             window.addstr(y, x, str[, attr])
@@ -748,18 +1054,25 @@ the following methods and attributes:
    Paint the character string *str* at ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
 
+   *str* may also be a :class:`complexstr`, in which case each cell carries its
+   own attributes and color pair, so *attr* must not be given.  A
+   :class:`complexstr` obtained from :meth:`in_wchstr` is written back
+   unchanged.
+
    .. note::
 
       * Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
-        Attempting to write to the lower right corner of a window, subwindow,
+        Attempting to write to the lower-right corner of a window, subwindow,
         or pad will cause an exception to be raised after the string is printed.
 
-      * A `bug in ncurses <https://bugs.python.org/issue35924>`_, the backend
-        for this Python module, can cause SegFaults when resizing windows. This
-        is fixed in ncurses-6.1-20190511.  If you are stuck with an earlier
-        ncurses, you can avoid triggering this if you do not call :func:`addstr`
-        with a *str* that has embedded newlines.  Instead, call :func:`addstr`
-        separately for each line.
+      * A bug in ncurses, the backend for this Python module, could cause
+        segfaults when resizing windows.  This was fixed in ncurses-6.1-20190511.
+        If you are stuck with an earlier ncurses, you can avoid triggering it by
+        not calling :meth:`!addstr` with a *str* that has embedded newlines;
+        instead, call :meth:`!addstr` separately for each line.
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`, as described above.
 
 
 .. method:: window.attroff(attr)
@@ -770,7 +1083,7 @@ the following methods and attributes:
 
 .. method:: window.attron(attr)
 
-   Add attribute *attr* from the "background" set applied to all writes to the
+   Add attribute *attr* to the "background" set applied to all writes to the
    current window.
 
 
@@ -778,6 +1091,55 @@ the following methods and attributes:
 
    Set the "background" set of attributes to *attr*.  This set is initially
    ``0`` (no attributes).
+
+
+.. method:: window.attr_get()
+
+   Return the window's current rendition as a ``(attrs, pair)`` tuple,
+   where *attrs* is the set of attributes and *pair* is the color pair number.
+
+   Unlike :meth:`attron` and friends, which take packed ``A_*`` attributes,
+   this method and the other ``attr_*`` methods work with the
+   :ref:`WA_* attributes <curses-wa-constants>` and keep the color pair as a
+   separate number, which lets them use color pairs that do not fit alongside
+   the attributes in a single value.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_set(attr, pair=0)
+
+   Set the window's rendition to the attributes *attr* and the color pair *pair*.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_on(attr)
+
+   Turn on the attributes *attr* without affecting any others.
+
+   .. versionadded:: next
+
+
+.. method:: window.attr_off(attr)
+
+   Turn off the attributes *attr* without affecting any others.
+
+   .. versionadded:: next
+
+
+.. method:: window.color_set(pair)
+
+   Set the window's color pair to *pair*, leaving the other attributes unchanged.
+
+   .. versionadded:: next
+
+
+.. method:: window.getattrs()
+
+   Return the window's current attributes.
+
+   .. versionadded:: next
 
 
 .. method:: window.bkgd(ch[, attr])
@@ -792,6 +1154,10 @@ the following methods and attributes:
    * Wherever  the  former background character appears, it is changed to the new
      background character.
 
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
+
 
 .. method:: window.bkgdset(ch[, attr])
 
@@ -801,6 +1167,10 @@ the following methods and attributes:
    the character and attribute parts of the background are combined with the blank
    characters.  The background becomes a property of the character and moves with
    the character through any scrolling and insert/delete line/character operations.
+
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.border([ls[, rs[, ts[, bs[, tl[, tr[, bl[, br]]]]]]]])
@@ -835,11 +1205,21 @@ the following methods and attributes:
    | *br*      | Bottom-right corner | :const:`ACS_LRCORNER` |
    +-----------+---------------------+-----------------------+
 
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.  A single call cannot mix
+      them with integer or byte characters.
+
 
 .. method:: window.box([vertch, horch])
 
    Similar to :meth:`border`, but both *ls* and *rs* are *vertch* and both *ts* and
    *bs* are *horch*.  The default corner characters are always used by this function.
+
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.  A single call cannot mix
+      them with integer or byte characters.
 
 
 .. method:: window.chgat(attr)
@@ -886,7 +1266,8 @@ the following methods and attributes:
 
 .. method:: window.delch([y, x])
 
-   Delete any character at ``(y, x)``.
+   Delete the character under the cursor, or at ``(y, x)`` if specified.  All
+   characters to the right on the same line are shifted one position left.
 
 
 .. method:: window.deleteln()
@@ -903,10 +1284,25 @@ the following methods and attributes:
    object for the derived window.
 
 
+.. method:: window.dupwin()
+
+   Return a new window that is an exact duplicate of the window: it has the same
+   size, position, contents and attributes.  Unlike a window created by
+   :meth:`subwin` or :meth:`derwin`, the duplicate is independent of the
+   original -- it has its own cell buffer, so later changes to one do not affect
+   the other.
+
+   .. versionadded:: next
+
+
 .. method:: window.echochar(ch[, attr])
 
    Add character *ch* with attribute *attr*, and immediately  call :meth:`refresh`
    on the window.
+
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.enclose(y, x)
@@ -918,6 +1314,18 @@ the following methods and attributes:
 
    .. versionchanged:: 3.10
       Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
+
+
+.. method:: window.mouse_trafo(y, x, to_screen)
+
+   Convert between window-relative and screen-relative (``stdscr``-relative) character-cell coordinates.
+   If *to_screen* is true, convert the window-relative coordinates *y*, *x* to screen-relative coordinates;
+   otherwise convert in the opposite direction.
+   The two coordinate systems differ when lines are reserved on the screen, for example for soft labels.
+
+   Return the converted coordinates as a ``(y, x)`` tuple, or ``None`` if they lie outside the window.
+
+   .. versionadded:: next
 
 
 .. attribute:: window.encoding
@@ -943,6 +1351,19 @@ the following methods and attributes:
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+   Its components can be extracted like those of :meth:`inch`.
+   It cannot represent a background set with a wide character or with a color
+   pair outside the :func:`color_pair` range; use :meth:`getbkgrnd` for those.
+
+
+.. method:: window.getbkgrnd()
+
+   Return the given window's current background as a :class:`complexchar`.
+   Unlike :meth:`getbkgd`, the returned object carries the background character
+   together with its attributes and color pair, and the color pair is not limited
+   to the value that fits in a :func:`color_pair`.
+
+   .. versionadded:: next
 
 
 .. method:: window.getch([y, x])
@@ -951,15 +1372,32 @@ the following methods and attributes:
    range: function keys, keypad keys and so on are represented by numbers higher
    than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
    wait until a key is pressed.
+   A multibyte character is returned as its encoded bytes one at a time; use
+   :meth:`get_wch` to read it as a single character.
 
 
 .. method:: window.get_wch([y, x])
 
    Get a wide character. Return a character for most keys, or an integer for
-   function keys, keypad keys, and other special keys.
+   function keys, keypad keys, and other special keys.  Unlike :meth:`getch`, an
+   ordinary key is returned as a one-character :class:`str`.
    In no-delay mode, raise an exception if there is no input.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      Also available on a narrow build, where only a character representable as a
+      single byte (an 8-bit locale) can be returned.
+
+
+.. method:: window.getdelay()
+
+   Return the window's read timeout in milliseconds,
+   as set by :meth:`nodelay` or :meth:`timeout`:
+   ``-1`` for blocking, ``0`` for non-blocking,
+   or a positive number of milliseconds.
+
+   .. versionadded:: next
 
 
 .. method:: window.getkey([y, x])
@@ -975,11 +1413,27 @@ the following methods and attributes:
    Return a tuple ``(y, x)`` of the height and width of the window.
 
 
+.. method:: window.getparent()
+
+   Return the parent window of this subwindow,
+   or ``None`` if this window is not a subwindow.
+
+   .. versionadded:: next
+
+
 .. method:: window.getparyx()
 
    Return the beginning coordinates of this window relative to its parent window
    as a tuple ``(y, x)``.  Return ``(-1, -1)`` if this window has no
    parent.
+
+
+.. method:: window.getscrreg()
+
+   Return a tuple ``(top, bottom)`` of the window's current scrolling region,
+   as set by :meth:`setscrreg`.
+
+   .. versionadded:: next
 
 
 .. method:: window.getstr()
@@ -988,10 +1442,26 @@ the following methods and attributes:
             window.getstr(y, x, n)
 
    Read a bytes object from the user, with primitive line editing capacity.
-   The maximum value for *n* is 2047.
+   At most *n* characters are read;
+   *n* defaults to and cannot exceed 2047.
+   A multibyte character is returned as its encoded bytes; use :meth:`get_wstr`
+   to read the input as a :class:`str`.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
+
+
+.. method:: window.get_wstr()
+            window.get_wstr(n)
+            window.get_wstr(y, x)
+            window.get_wstr(y, x, n)
+
+   Read a string from the user, with primitive line editing capacity.
+   Unlike :meth:`getstr`, it can return characters that are not representable in
+   the window's encoding.
+   At most *n* characters are read; *n* defaults to and cannot exceed 2047.
+
+   .. versionadded:: next
 
 
 .. method:: window.getyx()
@@ -1000,11 +1470,16 @@ the following methods and attributes:
    upper-left corner.
 
 
-.. method:: window.hline(ch, n)
-            window.hline(y, x, ch, n)
+.. method:: window.hline(ch, n[, attr])
+            window.hline(y, x, ch, n[, attr])
 
    Display a horizontal line starting at ``(y, x)`` with length *n* consisting of
-   the character *ch*.
+   the character *ch* with attributes *attr*.  The line stops at the right edge
+   of the window if fewer than *n* cells are available.
+
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.idcok(flag)
@@ -1017,8 +1492,8 @@ the following methods and attributes:
 
 .. method:: window.idlok(flag)
 
-   If *flag* is ``True``, :mod:`curses` will try and use hardware line
-   editing facilities. Otherwise, line insertion/deletion are disabled.
+   If *flag* is ``True``, :mod:`!curses` will try to use hardware line
+   editing facilities.  Otherwise, curses will not use them.
 
 
 .. method:: window.immedok(flag)
@@ -1031,15 +1506,36 @@ the following methods and attributes:
 
 .. method:: window.inch([y, x])
 
-   Return the character at the given position in the window. The bottom 8 bits are
-   the character proper, and upper bits are the attributes.
+   Return the character at the given position in the window.
+   The bottom 8 bits are the character proper and the upper bits are the attributes;
+   extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
+   and the color pair with :func:`pair_number`.
+   It cannot represent a cell holding combining characters, a character that does
+   not fit in a single byte, or a color pair outside the :func:`color_pair`
+   range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
+
+
+.. method:: window.in_wch([y, x])
+
+   Return the complex character at the given position in the window as a
+   :class:`complexchar`.  Unlike :meth:`inch`, the returned object carries the
+   cell's text (a spacing character optionally followed by combining characters)
+   together with its attributes and color pair.
+
+   .. versionadded:: next
 
 
 .. method:: window.insch(ch[, attr])
             window.insch(y, x, ch[, attr])
 
-   Paint character *ch* at ``(y, x)`` with attributes *attr*, moving the line from
-   position *x* right by one character.
+   Insert character *ch* with attributes *attr* before the character under the
+   cursor, or at ``(y, x)`` if specified.  All characters to the right of the
+   cursor are shifted one position right, with the rightmost character on the
+   line being lost.  The cursor position does not change.
+
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
 
 
 .. method:: window.insdelln(nlines)
@@ -1066,6 +1562,9 @@ the following methods and attributes:
    cursor are shifted right, with the rightmost characters on the line being lost.
    The cursor position does not change (after moving to *y*, *x*, if specified).
 
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`; see :meth:`insstr`.
+
 
 .. method:: window.insstr(str[, attr])
             window.insstr(y, x, str[, attr])
@@ -1075,18 +1574,97 @@ the following methods and attributes:
    shifted right, with the rightmost characters on the line being lost.  The cursor
    position does not change (after moving to *y*, *x*, if specified).
 
+   *str* may also be a :class:`complexstr`, in which case each cell carries its
+   own attributes and color pair, so *attr* must not be given.
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`, as described above.
+
 
 .. method:: window.instr([n])
             window.instr(y, x[, n])
 
    Return a bytes object of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified. Attributes are stripped
+   current cursor position, or at *y*, *x* if specified, and stopping at the end
+   of the line. Attributes and color information are stripped
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
    The maximum value for *n* is 2047.
+   A character not representable in the window's encoding cannot be returned;
+   use :meth:`in_wstr` for those.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
+
+
+.. method:: window.in_wstr([n])
+            window.in_wstr(y, x[, n])
+
+   Return a string of characters, extracted from the window starting at the
+   current cursor position, or at *y*, *x* if specified.  Unlike :meth:`instr`,
+   it can return characters that are not representable in the window's encoding.
+   Attributes and color information are stripped from the characters.  The
+   maximum value for *n* is 2047.
+
+   .. versionadded:: next
+
+
+.. method:: window.in_wchstr([n])
+            window.in_wchstr(y, x[, n])
+
+   Return a :class:`complexstr` of the styled cells extracted from the window
+   starting at the current cursor position, or at *y*, *x* if specified, and
+   stopping at the end of the line.  This is the variant of :meth:`instr` and
+   :meth:`in_wstr` that *keeps* each cell's attributes and color pair (those
+   methods strip the rendition).  If *n* is specified, at most *n* cells are
+   returned.  The maximum value for *n* is 2047.
+
+   The result can be written back unchanged with :meth:`addstr` (a read and a
+   re-write is a round-trip that preserves every cell's rendition).
+
+   .. versionadded:: next
+
+
+.. method:: window.is_cleared()
+
+   Return the current value set by :meth:`clearok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_idcok()
+
+   Return the current value set by :meth:`idcok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_idlok()
+
+   Return the current value set by :meth:`idlok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_immedok()
+
+   Return the current value set by :meth:`immedok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_keypad()
+
+   Return the current value set by :meth:`keypad`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_leaveok()
+
+   Return the current value set by :meth:`leaveok`.
+
+   .. versionadded:: next
 
 
 .. method:: window.is_linetouched(line)
@@ -1094,6 +1672,49 @@ the following methods and attributes:
    Return ``True`` if the specified line was modified since the last call to
    :meth:`refresh`; otherwise return ``False``.  Raise a :exc:`curses.error`
    exception if *line* is not valid for the given window.
+
+
+.. method:: window.is_nodelay()
+
+   Return the current value set by :meth:`nodelay`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_notimeout()
+
+   Return the current value set by :meth:`notimeout`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_pad()
+
+   Return ``True`` if the window is a pad created by :func:`newpad`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_scrollok()
+
+   Return the current value set by :meth:`scrollok`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_subwin()
+
+   Return ``True`` if the window is a subwindow created by :meth:`subwin`
+   or :meth:`derwin`.
+
+   .. versionadded:: next
+
+
+.. method:: window.is_syncok()
+
+   Return the current value set by :meth:`syncok`.
+
+   .. versionadded:: next
 
 
 .. method:: window.is_wintouched()
@@ -1105,15 +1726,14 @@ the following methods and attributes:
 .. method:: window.keypad(flag)
 
    If *flag* is ``True``, escape sequences generated by some keys (keypad,  function keys)
-   will be interpreted by :mod:`curses`. If *flag* is ``False``, escape sequences will be
+   will be interpreted by :mod:`!curses`. If *flag* is ``False``, escape sequences will be
    left as is in the input stream.
 
 
 .. method:: window.leaveok(flag)
 
    If *flag* is ``True``, cursor is left where it is on update, instead of being at "cursor
-   position."  This reduces cursor movement where possible. If possible the cursor
-   will be made invisible.
+   position."  This reduces cursor movement where possible.
 
    If *flag* is ``False``, cursor will always be at "cursor position" after an update.
 
@@ -1134,6 +1754,9 @@ the following methods and attributes:
 
    Move the window so its upper-left corner is at ``(new_y, new_x)``.
 
+   Moving the window so that any part of it would be off the screen is an error:
+   the window is not moved and :exc:`curses.error` is raised.
+
 
 .. method:: window.nodelay(flag)
 
@@ -1149,10 +1772,15 @@ the following methods and attributes:
 
 
 .. method:: window.noutrefresh()
+            window.noutrefresh(pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol)
 
    Mark for refresh but wait.  This function updates the data structure
    representing the desired state of the window, but does not force an update of
    the physical screen.  To accomplish that, call  :func:`doupdate`.
+
+   The 6 arguments can only be specified, and are then required, when the window
+   is a pad created with :func:`newpad`; they have the same meaning as for
+   :meth:`refresh`.
 
 
 .. method:: window.overlay(destwin[, sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol])
@@ -1204,12 +1832,12 @@ the following methods and attributes:
    Update the display immediately (sync actual screen with previous
    drawing/deleting methods).
 
-   The 6 optional arguments can only be specified when the window is a pad created
-   with :func:`newpad`.  The additional parameters are needed to indicate what part
-   of the pad and screen are involved. *pminrow* and *pmincol* specify the upper
-   left-hand corner of the rectangle to be displayed in the pad.  *sminrow*,
+   The 6 arguments can only be specified, and are then required, when the window
+   is a pad created with :func:`newpad`.  The additional parameters are needed to indicate what part
+   of the pad and screen are involved. *pminrow* and *pmincol* specify the
+   upper-left corner of the rectangle to be displayed in the pad.  *sminrow*,
    *smincol*, *smaxrow*, and *smaxcol* specify the edges of the rectangle to be
-   displayed on the screen.  The lower right-hand corner of the rectangle to be
+   displayed on the screen.  The lower-right corner of the rectangle to be
    displayed in the pad is calculated from the screen coordinates, since the
    rectangles must be the same size.  Both rectangles must be entirely contained
    within their respective structures.  Negative values of *pminrow*, *pmincol*,
@@ -1226,7 +1854,9 @@ the following methods and attributes:
 
 .. method:: window.scroll([lines=1])
 
-   Scroll the screen or scrolling region upward by *lines* lines.
+   Scroll the screen or scrolling region.  Scroll upward by *lines* lines if
+   *lines* is positive, or downward if it is negative.  Scrolling has no effect
+   unless it has been enabled for the window with :meth:`scrollok`.
 
 
 .. method:: window.scrollok(flag)
@@ -1259,15 +1889,17 @@ the following methods and attributes:
 .. method:: window.subpad(begin_y, begin_x)
             window.subpad(nlines, ncols, begin_y, begin_x)
 
-   Return a sub-window, whose upper-left corner is at ``(begin_y, begin_x)``, and
-   whose width/height is *ncols*/*nlines*.
+   Return a sub-pad, whose upper-left corner is at ``(begin_y, begin_x)``, and
+   whose width/height is *ncols*/*nlines*.  The coordinates are relative to the
+   parent pad (unlike :meth:`subwin`, which uses screen coordinates).  This
+   method is only available for pads created with :func:`newpad`.
 
 
 .. method:: window.subwin(begin_y, begin_x)
             window.subwin(nlines, ncols, begin_y, begin_x)
 
-   Return a sub-window, whose upper-left corner is at ``(begin_y, begin_x)``, and
-   whose width/height is *ncols*/*nlines*.
+   Return a sub-window, whose upper-left corner is at the screen-relative
+   coordinates ``(begin_y, begin_x)``, and whose width/height is *ncols*/*nlines*.
 
    By default, the sub-window will extend from the specified position to the lower
    right corner of the window.
@@ -1321,17 +1953,169 @@ the following methods and attributes:
    :meth:`refresh`.
 
 
+.. method:: window.use(func, /, *args, **kwargs)
+
+   Call ``func(window, *args, **kwargs)`` with the lock of the window held,
+   and return its result.
+   This provides automatic protection for the window
+   against concurrent access from another thread.
+
+   Availability: if the underlying curses library provides ``use_window()``.
+
+   .. versionadded:: next
+
+
 .. method:: window.vline(ch, n[, attr])
             window.vline(y, x, ch, n[, attr])
 
    Display a vertical line starting at ``(y, x)`` with length *n* consisting of the
    character *ch* with attributes *attr*.
 
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
+
+
+.. _curses-screen-objects:
+
+Screen objects
+--------------
+
+.. class:: screen
+
+   A *screen* object represents a terminal initialized by :func:`newterm`
+   (or :func:`new_prescr`),
+   in addition to the default screen created by :func:`initscr`.
+   Screen objects are returned by those functions;
+   they cannot be instantiated directly.
+
+   A screen is freed automatically once it is no longer referenced,
+   either directly or through one of its windows.
+   Each window keeps its screen alive,
+   so a screen remains valid as long as any of its windows does.
+
+   .. versionadded:: next
+
+
+.. method:: screen.close()
+
+   Detach the screen's standard window,
+   breaking the reference cycle between them
+   so the screen can be reclaimed promptly instead of waiting for a
+   garbage collection.
+   Afterwards :attr:`~screen.stdscr` is ``None``
+   and the window it returned earlier can no longer be used.
+   The screen's resources are released
+   once it and all its windows are no longer referenced.
+
+   .. versionadded:: next
+
+
+.. attribute:: screen.stdscr
+
+   The standard :ref:`window <curses-window-objects>` of the screen,
+   covering the whole terminal,
+   or ``None`` for a screen created by :func:`new_prescr`.
+
+
+.. method:: screen.use(func, /, *args, **kwargs)
+
+   Call ``func(screen, *args, **kwargs)`` with the lock of the screen held,
+   and return its result.
+   This provides automatic protection for the screen
+   against concurrent access from another thread.
+
+   Availability: if the underlying curses library provides ``use_screen()``.
+
+   .. versionadded:: next
+
+
+.. _curses-complexchar-objects:
+
+Complex character objects
+-------------------------
+
+.. class:: complexchar(text, /, attr=0, pair=0)
+
+   A *complex character* (or *complexchar*) is an immutable styled
+   character cell: a spacing character optionally followed by combining
+   characters, together with a set of attributes and a color pair.
+
+   *text* is the cell's text, *attr* a combination of the
+   :ref:`WA_* attributes <curses-wa-constants>` (equivalent to the matching
+   ``A_*`` constants), and *pair* a color pair number.  Unlike the packed
+   :class:`chtype <int>` used by :meth:`~window.inch` and the ``A_*`` methods,
+   the color pair is stored separately and is not limited to the value that
+   fits in a :func:`color_pair`.
+
+   Complex characters are returned by :meth:`window.in_wch` and
+   :meth:`window.getbkgrnd`, and are accepted (along with an integer, a byte
+   or a string) by the character-cell methods such as :meth:`window.addch`,
+   :meth:`window.insch`, :meth:`window.bkgd`, :meth:`window.border`,
+   :meth:`window.hline` and :meth:`window.vline`.  A complex character already
+   carries its own rendition, so it cannot be combined with an explicit *attr*
+   argument.
+
+   :func:`str` returns the cell's text; two complex characters are equal when
+   their text, attributes and color pair all match.
+
+   The same code works on both wide- and narrow-character builds.  On a narrow
+   build a cell holds a single character (no combining marks) that must encode to
+   one byte in the window's encoding (8-bit locales only), and *pair* is limited
+   to the value that fits in a :func:`color_pair`.
+
+   .. attribute:: attr
+
+      The attributes of the character cell (read-only).
+
+   .. attribute:: pair
+
+      The color pair number of the character cell (read-only).
+
+   .. versionadded:: next
+
+
+.. class:: complexstr(cells[, attr[, pair]])
+
+   A *complex character string* (or *complexstr*) is an immutable sequence of
+   styled character cells -- the string counterpart of
+   :class:`complexchar` (as :class:`str` is to a single character).
+
+   If *cells* is a string, it is split into character cells (each a spacing
+   character optionally followed by combining characters), and *attr* (a
+   combination of the :ref:`WA_* attributes <curses-wa-constants>`) and *pair*
+   (a color pair number), if given, are applied to every cell.
+
+   Otherwise *cells* is an iterable whose items are themselves cells, each a
+   :class:`complexchar` or a string; each item then carries its own rendition,
+   and *attr* and *pair* must be omitted.
+
+   It is returned by :meth:`window.in_wchstr`, and accepted by
+   :meth:`window.addstr`, :meth:`~window.addnstr`, :meth:`~window.insstr` and
+   :meth:`~window.insnstr`, so a run read from a window can be written back
+   unchanged.
+
+   It behaves like an immutable sequence: ``len(s)`` is the number of cells,
+   ``s[i]`` is the *i*-th cell as a :class:`complexchar`, slicing and
+   concatenation produce new :class:`!complexstr` instances, and iterating
+   yields the cells.  :func:`str` returns the cells' text joined together, and
+   two complex character strings are equal when their cells all match.  It is
+   hashable.
+
+   To build or edit a run of cells, use an ordinary :class:`list` of
+   :class:`complexchar` (or strings); a :class:`!complexstr` is the immutable
+   form returned by a read.
+
+   Like :class:`complexchar`, this type works on both wide- and narrow-character
+   builds, with the same per-cell limitations on a narrow build.
+
+   .. versionadded:: next
+
 
 Constants
 ---------
 
-The :mod:`curses` module defines the following data members:
+The :mod:`!curses` module defines the following data members:
 
 
 .. data:: ERR
@@ -1347,7 +2131,6 @@ The :mod:`curses` module defines the following data members:
 
 
 .. data:: version
-.. data:: __version__
 
    A bytes object representing the current version of the module.
 
@@ -1375,14 +2158,14 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: COLS
 
-   The width of the screen, i.e., the number of columns.
+   The width of the screen, that is, the number of columns.
    It is defined only after the call to :func:`initscr`.
    Updated by :func:`update_lines_cols`, :func:`resizeterm` and
    :func:`resize_term`.
 
 .. data:: LINES
 
-   The height of the screen, i.e., the number of lines.
+   The height of the screen, that is, the number of lines.
    It is defined only after the call to :func:`initscr`.
    Updated by :func:`update_lines_cols`, :func:`resizeterm` and
    :func:`resize_term`.
@@ -1432,6 +2215,24 @@ The exact constants available are system dependent.
 
 .. versionadded:: 3.7
    ``A_ITALIC`` was added.
+
+.. _curses-wa-constants:
+
+The :meth:`~window.attr_get`, :meth:`~window.attr_set`, :meth:`~window.attr_on`
+and :meth:`~window.attr_off` methods use a parallel set of ``WA_*`` constants.
+These have the same meaning as the corresponding ``A_*`` attributes above
+(``WA_BOLD`` like :const:`A_BOLD`, and so on), but belong to the ``attr_t`` type
+rather than being packed into a character.  In ncurses the two sets share the
+same values, but other curses implementations may give them different ones, so
+use the ``WA_*`` constants with the ``attr_*`` methods.  The available names are
+``WA_ATTRIBUTES``, ``WA_NORMAL``, ``WA_STANDOUT``, ``WA_UNDERLINE``,
+``WA_REVERSE``, ``WA_BLINK``, ``WA_DIM``, ``WA_BOLD``, ``WA_ALTCHARSET``,
+``WA_INVIS``, ``WA_PROTECT``, ``WA_HORIZONTAL``, ``WA_LEFT``, ``WA_LOW``,
+``WA_RIGHT``, ``WA_TOP``, ``WA_VERTICAL`` and ``WA_ITALIC`` (each available only
+where the platform defines it).
+
+.. versionadded:: next
+   The ``WA_*`` constants were added.
 
 Several constants are available to extract corresponding attributes returned
 by some methods.
@@ -1685,7 +2486,7 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | ACS code               | Meaning                                  |
 +========================+==========================================+
-| .. data:: ACS_BBSS     | alternate name for upper right corner    |
+| .. data:: ACS_BBSS     | alternate name for upper-right corner    |
 +------------------------+------------------------------------------+
 | .. data:: ACS_BLOCK    | solid square block                       |
 +------------------------+------------------------------------------+
@@ -1693,7 +2494,7 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_BSBS     | alternate name for horizontal line       |
 +------------------------+------------------------------------------+
-| .. data:: ACS_BSSB     | alternate name for upper left corner     |
+| .. data:: ACS_BSSB     | alternate name for upper-left corner     |
 +------------------------+------------------------------------------+
 | .. data:: ACS_BSSS     | alternate name for top tee               |
 +------------------------+------------------------------------------+
@@ -1719,9 +2520,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_LEQUAL   | less-than-or-equal-to                    |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LLCORNER | lower left-hand corner                   |
+| .. data:: ACS_LLCORNER | lower-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_LRCORNER | lower right-hand corner                  |
+| .. data:: ACS_LRCORNER | lower-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_LTEE     | left tee                                 |
 +------------------------+------------------------------------------+
@@ -1745,13 +2546,13 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_S9       | scan line 9                              |
 +------------------------+------------------------------------------+
-| .. data:: ACS_SBBS     | alternate name for lower right corner    |
+| .. data:: ACS_SBBS     | alternate name for lower-right corner    |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SBSB     | alternate name for vertical line         |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SBSS     | alternate name for right tee             |
 +------------------------+------------------------------------------+
-| .. data:: ACS_SSBB     | alternate name for lower left corner     |
+| .. data:: ACS_SSBB     | alternate name for lower-left corner     |
 +------------------------+------------------------------------------+
 | .. data:: ACS_SSBS     | alternate name for bottom tee            |
 +------------------------+------------------------------------------+
@@ -1765,9 +2566,9 @@ falls back on a crude printable ASCII approximation.
 +------------------------+------------------------------------------+
 | .. data:: ACS_UARROW   | up arrow                                 |
 +------------------------+------------------------------------------+
-| .. data:: ACS_ULCORNER | upper left corner                        |
+| .. data:: ACS_ULCORNER | upper-left corner                        |
 +------------------------+------------------------------------------+
-| .. data:: ACS_URCORNER | upper right corner                       |
+| .. data:: ACS_URCORNER | upper-right corner                       |
 +------------------------+------------------------------------------+
 | .. data:: ACS_VLINE    | vertical line                            |
 +------------------------+------------------------------------------+
@@ -1791,7 +2592,7 @@ The following table lists mouse button constants used by :meth:`getmouse`:
 +----------------------------------+---------------------------------------------+
 | .. data:: BUTTON_CTRL            | Control was down during button state change |
 +----------------------------------+---------------------------------------------+
-| .. data:: BUTTON_ALT             | Control was down during button state change |
+| .. data:: BUTTON_ALT             | Alt was down during button state change     |
 +----------------------------------+---------------------------------------------+
 
 .. versionchanged:: 3.10
@@ -1821,31 +2622,28 @@ The following table lists the predefined colors:
 +-------------------------+----------------------------+
 
 
-:mod:`curses.textpad` --- Text input widget for curses programs
-===============================================================
+:mod:`!curses.textpad` --- Text input widget for curses programs
+================================================================
 
 .. module:: curses.textpad
    :synopsis: Emacs-like input editing in a curses window.
-.. moduleauthor:: Eric Raymond <esr@thyrsus.com>
-.. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
-
-The :mod:`curses.textpad` module provides a :class:`Textbox` class that handles
+The :mod:`!curses.textpad` module provides a :class:`Textbox` class that handles
 elementary text editing in a curses window, supporting a set of keybindings
 resembling those of Emacs (thus, also of Netscape Navigator, BBedit 6.x,
 FrameMaker, and many other programs).  The module also provides a
 rectangle-drawing function useful for framing text boxes or for other purposes.
 
-The module :mod:`curses.textpad` defines the following function:
+The module :mod:`!curses.textpad` defines the following function:
 
 
 .. function:: rectangle(win, uly, ulx, lry, lrx)
 
    Draw a rectangle.  The first argument must be a window object; the remaining
    arguments are coordinates relative to that window.  The second and third
-   arguments are the y and x coordinates of the upper left hand corner of the
+   arguments are the y and x coordinates of the upper-left corner of the
    rectangle to be drawn; the fourth and fifth arguments are the y and x
-   coordinates of the lower right hand corner. The rectangle will be drawn using
+   coordinates of the lower-right corner. The rectangle will be drawn using
    VT100/IBM PC forms characters on terminals that make this possible (including
    xterm and most other software terminal emulators).  Otherwise it will be drawn
    with ASCII  dashes, vertical bars, and plus signs.
@@ -1859,32 +2657,45 @@ Textbox objects
 You can instantiate a :class:`Textbox` object as follows:
 
 
-.. class:: Textbox(win)
+.. class:: Textbox(win, insert_mode=False)
 
    Return a textbox widget object.  The *win* argument should be a curses
    :ref:`window <curses-window-objects>` object in which the textbox is to
-   be contained. The edit cursor of the textbox is initially located at the
-   upper left hand corner of the containing window, with coordinates ``(0, 0)``.
+   be contained.  If *insert_mode* is true, the textbox inserts typed
+   characters, shifting existing text to the right, rather than overwriting it.
+   The edit cursor of the textbox is initially located at the
+   upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
+
+   .. versionchanged:: next
+      Entering and reading back the full Unicode range, including combining
+      characters, is now supported when curses is built with wide-character
+      support.
 
    :class:`Textbox` objects have the following methods:
 
 
-   .. method:: edit([validator])
+   .. method:: edit(validate=None)
 
       This is the entry point you will normally use.  It accepts editing
       keystrokes until one of the termination keystrokes is entered.  If
-      *validator* is supplied, it must be a function.  It will be called for
+      *validate* is supplied, it must be a function.  It will be called for
       each keystroke entered with the keystroke as a parameter; command dispatch
-      is done on the result. This method returns the window contents as a
+      is done on the result.  If it returns a false value, the keystroke is
+      ignored.  This method returns the window contents as a
       string; whether blanks in the window are included is affected by the
       :attr:`stripspaces` attribute.
+
+      .. versionchanged:: next
+         *validate* is now called with a non-ASCII character as a string;
+         other keystrokes are still passed as an integer.
 
 
    .. method:: do_command(ch)
 
-      Process a single command keystroke.  Here are the supported special
-      keystrokes:
+      Process a single command keystroke.  Returns ``1`` to continue editing,
+      or ``0`` if a termination keystroke was processed.  Here are the supported
+      special keystrokes:
 
       +------------------+-------------------------------------------+
       | Keystroke        | Action                                    |
@@ -1907,7 +2718,8 @@ You can instantiate a :class:`Textbox` object as follows:
       | :kbd:`Control-H` | Delete character backward.                |
       +------------------+-------------------------------------------+
       | :kbd:`Control-J` | Terminate if the window is 1 line,        |
-      |                  | otherwise insert newline.                 |
+      |                  | otherwise move to the start of the next   |
+      |                  | line.                                     |
       +------------------+-------------------------------------------+
       | :kbd:`Control-K` | If line is blank, delete it, otherwise    |
       |                  | clear to end of line.                     |

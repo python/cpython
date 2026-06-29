@@ -9,23 +9,23 @@
 #include "structmember.h"
 
 /* Type specs */
-extern PyType_Spec bufferediobase_spec;
-extern PyType_Spec bufferedrandom_spec;
-extern PyType_Spec bufferedreader_spec;
-extern PyType_Spec bufferedrwpair_spec;
-extern PyType_Spec bufferedwriter_spec;
-extern PyType_Spec bytesio_spec;
-extern PyType_Spec bytesiobuf_spec;
-extern PyType_Spec fileio_spec;
-extern PyType_Spec iobase_spec;
-extern PyType_Spec nldecoder_spec;
-extern PyType_Spec rawiobase_spec;
-extern PyType_Spec stringio_spec;
-extern PyType_Spec textiobase_spec;
-extern PyType_Spec textiowrapper_spec;
+extern PyType_Spec _Py_bufferediobase_spec;
+extern PyType_Spec _Py_bufferedrandom_spec;
+extern PyType_Spec _Py_bufferedreader_spec;
+extern PyType_Spec _Py_bufferedrwpair_spec;
+extern PyType_Spec _Py_bufferedwriter_spec;
+extern PyType_Spec _Py_bytesio_spec;
+extern PyType_Spec _Py_bytesiobuf_spec;
+extern PyType_Spec _Py_fileio_spec;
+extern PyType_Spec _Py_iobase_spec;
+extern PyType_Spec _Py_nldecoder_spec;
+extern PyType_Spec _Py_rawiobase_spec;
+extern PyType_Spec _Py_stringio_spec;
+extern PyType_Spec _Py_textiobase_spec;
+extern PyType_Spec _Py_textiowrapper_spec;
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
-extern PyType_Spec winconsoleio_spec;
+extern PyType_Spec _Py_winconsoleio_spec;
 #endif
 
 /* These functions are used as METH_NOARGS methods, are normally called

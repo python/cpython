@@ -22,7 +22,6 @@ import itertools
 import linecache
 import os
 import os.path
-from platform import python_version
 import re
 import socket
 import subprocess
@@ -243,12 +242,13 @@ class PyShellEditorWindow(EditorWindow):
         breaks = self.breakpoints
         filename = self.io.filename
         try:
-            with open(self.breakpointPath) as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
         except OSError:
             lines = []
         try:
-            with open(self.breakpointPath, "w") as new_file:
+            with open(self.breakpointPath, "w", encoding='utf-8') as new_file:
                 for line in lines:
                     if not line.startswith(filename + '='):
                         new_file.write(line)
@@ -273,7 +273,8 @@ class PyShellEditorWindow(EditorWindow):
         if filename is None:
             return
         if os.path.isfile(self.breakpointPath):
-            with open(self.breakpointPath) as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
             for line in lines:
                 if line.startswith(filename + '='):
@@ -499,7 +500,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.close()
         self.terminate_subprocess()
         console = self.tkconsole
-        was_executing = console.executing
         console.executing = False
         self.spawn_subprocess()
         try:
@@ -841,7 +841,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 class PyShell(OutputWindow):
     from idlelib.squeezer import Squeezer
 
-    shell_title = "IDLE Shell " + python_version()
+    shell_title = "IDLE Shell"
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator

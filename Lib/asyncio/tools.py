@@ -1,9 +1,8 @@
 """Tools to analyze tasks running in asyncio programs."""
 
 from collections import defaultdict
-import csv
 from itertools import count
-from enum import Enum, StrEnum, auto
+from enum import Enum
 import sys
 from _remote_debugging import RemoteUnwinder, FrameInfo
 
@@ -28,10 +27,10 @@ class CycleFoundException(Exception):
 # ─── indexing helpers ───────────────────────────────────────────
 def _format_stack_entry(elem: str|FrameInfo) -> str:
     if not isinstance(elem, str):
-        if elem.lineno == 0 and elem.filename == "":
+        if elem.location.lineno == 0 and elem.filename == "":
             return f"{elem.funcname}"
         else:
-            return f"{elem.funcname} {elem.filename}:{elem.lineno}"
+            return f"{elem.funcname} {elem.filename}:{elem.location.lineno}"
     return elem
 
 
@@ -223,72 +222,61 @@ def _print_cycle_exception(exception: CycleFoundException):
         print(f"cycle: {inames}", file=sys.stderr)
 
 
-def _get_awaited_by_tasks(pid: int) -> list:
-    try:
-        return get_all_awaited_by(pid)
-    except RuntimeError as e:
-        while e.__context__ is not None:
-            e = e.__context__
-        print(f"Error retrieving tasks: {e}")
-        sys.exit(1)
+def exit_with_permission_help_text():
+    """
+    Prints a message pointing to platform-specific permission help text and exits the program.
+    This function is called when a PermissionError is encountered while trying
+    to attach to a process.
+    """
+    print(
+        "Error: The specified process cannot be attached to due to insufficient permissions.\n"
+        "See the Python documentation for details on required privileges and troubleshooting:\n"
+        "https://docs.python.org/3/howto/remote_debugging.html#permission-requirements\n",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 
-class TaskTableOutputFormat(StrEnum):
-    table = auto()
-    csv = auto()
-    bsv = auto()
-    # 🍌SV is not just a format. It's a lifestyle. A philosophy.
-    # https://www.youtube.com/watch?v=RrsVi1P6n0w
+_TRANSIENT_ERRORS = (RuntimeError, OSError, UnicodeDecodeError, MemoryError)
 
 
-def display_awaited_by_tasks_table(pid, *, format=TaskTableOutputFormat.table):
+def _get_awaited_by_tasks(pid: int, retries: int = 3) -> list:
+    for attempt in range(retries + 1):
+        try:
+            return get_all_awaited_by(pid)
+        except PermissionError:
+            exit_with_permission_help_text()
+        except ProcessLookupError:
+            print(f"Error: process {pid} not found.", file=sys.stderr)
+            sys.exit(1)
+        except _TRANSIENT_ERRORS as e:
+            if attempt < retries:
+                continue
+            if isinstance(e, RuntimeError):
+                while e.__context__ is not None:
+                    e = e.__context__
+            print(f"Error retrieving tasks: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+def display_awaited_by_tasks_table(pid: int, retries: int = 3) -> None:
     """Build and print a table of all pending tasks under `pid`."""
 
-    tasks = _get_awaited_by_tasks(pid)
+    tasks = _get_awaited_by_tasks(pid, retries=retries)
     table = build_task_table(tasks)
-    format = TaskTableOutputFormat(format)
-    if format == TaskTableOutputFormat.table:
-        _display_awaited_by_tasks_table(table)
-    else:
-        _display_awaited_by_tasks_csv(table, format=format)
-
-
-_row_header = ('tid', 'task id', 'task name', 'coroutine stack',
-               'awaiter chain', 'awaiter name', 'awaiter id')
-
-
-def _display_awaited_by_tasks_table(table):
-    """Print the table in a simple tabular format."""
-    print(_fmt_table_row(*_row_header))
-    print('-' * 180)
+    # Print the table in a simple tabular format
+    print(
+        f"{'tid':<10} {'task id':<20} {'task name':<20} {'coroutine stack':<50} {'awaiter chain':<50} {'awaiter name':<15} {'awaiter id':<15}"
+    )
+    print("-" * 180)
     for row in table:
-        print(_fmt_table_row(*row))
+        print(f"{row[0]:<10} {row[1]:<20} {row[2]:<20} {row[3]:<50} {row[4]:<50} {row[5]:<15} {row[6]:<15}")
 
 
-def _fmt_table_row(tid, task_id, task_name, coro_stack,
-                   awaiter_chain, awaiter_name, awaiter_id):
-    # Format a single row for the table format
-    return (f'{tid:<10} {task_id:<20} {task_name:<20} {coro_stack:<50} '
-            f'{awaiter_chain:<50} {awaiter_name:<15} {awaiter_id:<15}')
-
-
-def _display_awaited_by_tasks_csv(table, *, format):
-    """Print the table in CSV format"""
-    if format == TaskTableOutputFormat.csv:
-        delimiter = ','
-    elif format == TaskTableOutputFormat.bsv:
-        delimiter = '\N{BANANA}'
-    else:
-        raise ValueError(f"Unknown output format: {format}")
-    csv_writer = csv.writer(sys.stdout, delimiter=delimiter)
-    csv_writer.writerow(_row_header)
-    csv_writer.writerows(table)
-
-
-def display_awaited_by_tasks_tree(pid: int) -> None:
+def display_awaited_by_tasks_tree(pid: int, retries: int = 3) -> None:
     """Build and print a tree of all pending tasks under `pid`."""
 
-    tasks = _get_awaited_by_tasks(pid)
+    tasks = _get_awaited_by_tasks(pid, retries=retries)
     try:
         result = build_async_tree(tasks)
     except CycleFoundException as e:

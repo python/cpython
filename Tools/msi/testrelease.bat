@@ -88,9 +88,7 @@ exit /B 0
 )
 @if not errorlevel 1 (
     @echo Testing Tcl/tk
-    @set TCL_LIBRARY=%~2\Python\tcl\tcl8.6
     "%~2\Python\python.exe" -m test -uall -v test_ttk_guionly test_tk test_idle > "%~2\tcltk.txt" 2>&1
-    @set TCL_LIBRARY=
 )
 
 @set EXITCODE=%ERRORLEVEL%

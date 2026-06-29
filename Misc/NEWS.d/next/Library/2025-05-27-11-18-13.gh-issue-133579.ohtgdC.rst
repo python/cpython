@@ -1,3 +1,0 @@
-:meth:`curses.window.refresh` and :meth:`curses.window.noutrefresh` now raise
-a :exc:`TypeError` instead of :exc:`curses.error` when called with an incorrect
-number of arguments for :ref:`pads <windows-and-pads>`. Patch by Bénédikt Tran.

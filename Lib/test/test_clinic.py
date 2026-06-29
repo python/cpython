@@ -4,6 +4,7 @@
 
 from functools import partial
 from test import support, test_tools
+from test.support import force_not_colorized_test_class
 from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
@@ -356,6 +357,32 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=6)
+
+    def test_double_star_after_var_keyword(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **kwds: dict
+                **
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
+
+    def test_var_keyword_after_star(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration: '**'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **
+                **kwds: dict
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
 
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
@@ -748,6 +775,16 @@ class ClinicWholeFileTest(TestCase):
             """)
             self.clinic.parse(raw)
 
+    def test_var_keyword_non_dict(self):
+        err = "'var_keyword_object' is not a valid converter"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                **kwds: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=4)
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -1043,6 +1080,187 @@ class ClinicParserTest(TestCase):
         """)
         p = function.parameters['follow_symlinks']
         self.assertEqual(True, p.default)
+
+    def test_param_default_none(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                obj: object = None
+                str: str(accept={str, NoneType}) = None
+                buf: Py_buffer(accept={str, buffer, NoneType}) = None
+            """)
+        p = function.parameters['obj']
+        self.assertIs(p.default, None)
+        self.assertEqual(p.converter.py_default, 'None')
+        self.assertEqual(p.converter.c_default, 'Py_None')
+
+        p = function.parameters['str']
+        self.assertIs(p.default, None)
+        self.assertEqual(p.converter.py_default, 'None')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+        p = function.parameters['buf']
+        self.assertIs(p.default, None)
+        self.assertEqual(p.converter.py_default, 'None')
+        self.assertEqual(p.converter.c_default, '{NULL, NULL}')
+
+    def test_param_default_null(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                obj: object = NULL
+                str: str = NULL
+                buf: Py_buffer = NULL
+                fsencoded: unicode_fs_encoded = NULL
+                fsdecoded: unicode_fs_decoded = NULL
+            """)
+        p = function.parameters['obj']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+        p = function.parameters['str']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+        p = function.parameters['buf']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, '{NULL, NULL}')
+
+        p = function.parameters['fsencoded']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+        p = function.parameters['fsdecoded']
+        self.assertIs(p.default, NULL)
+        self.assertEqual(p.converter.py_default, '<unrepresentable>')
+        self.assertEqual(p.converter.c_default, 'NULL')
+
+    def test_param_default_str_literal(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                str: str = ' \t\n\r\v\f\xa0'
+                buf: Py_buffer(accept={str, buffer}) = ' \t\n\r\v\f\xa0'
+            """)
+        p = function.parameters['str']
+        self.assertEqual(p.default, ' \t\n\r\v\f\xa0')
+        self.assertEqual(p.converter.py_default, r"' \t\n\r\x0b\x0c\xa0'")
+        self.assertEqual(p.converter.c_default, r'" \t\n\r\v\f\u00a0"')
+
+        p = function.parameters['buf']
+        self.assertEqual(p.default, ' \t\n\r\v\f\xa0')
+        self.assertEqual(p.converter.py_default, r"' \t\n\r\x0b\x0c\xa0'")
+        self.assertEqual(p.converter.c_default,
+                         r'{.buf = " \t\n\r\v\f\302\240", .obj = NULL, .len = 8}')
+
+    def test_param_default_bytes_literal(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                str: str(accept={robuffer}) = b' \t\n\r\v\f\xa0'
+                buf: Py_buffer = b' \t\n\r\v\f\xa0'
+            """)
+        p = function.parameters['str']
+        self.assertEqual(p.default, b' \t\n\r\v\f\xa0')
+        self.assertEqual(p.converter.py_default, r"b' \t\n\r\x0b\x0c\xa0'")
+        self.assertEqual(p.converter.c_default, r'" \t\n\r\v\f\240"')
+
+        p = function.parameters['buf']
+        self.assertEqual(p.default, b' \t\n\r\v\f\xa0')
+        self.assertEqual(p.converter.py_default, r"b' \t\n\r\x0b\x0c\xa0'")
+        self.assertEqual(p.converter.c_default,
+                         r'{.buf = " \t\n\r\v\f\240", .obj = NULL, .len = 7}')
+
+    def test_param_default_byte_literal(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                zero: char = b'\0'
+                one: char = b'\1'
+                lf: char = b'\n'
+                nbsp: char = b'\xa0'
+            """)
+        p = function.parameters['zero']
+        self.assertEqual(p.default, b'\0')
+        self.assertEqual(p.converter.py_default, r"b'\x00'")
+        self.assertEqual(p.converter.c_default, r"'\0'")
+
+        p = function.parameters['one']
+        self.assertEqual(p.default, b'\1')
+        self.assertEqual(p.converter.py_default, r"b'\x01'")
+        self.assertEqual(p.converter.c_default, r"'\001'")
+
+        p = function.parameters['lf']
+        self.assertEqual(p.default, b'\n')
+        self.assertEqual(p.converter.py_default, r"b'\n'")
+        self.assertEqual(p.converter.c_default, r"'\n'")
+
+        p = function.parameters['nbsp']
+        self.assertEqual(p.default, b'\xa0')
+        self.assertEqual(p.converter.py_default, r"b'\xa0'")
+        self.assertEqual(p.converter.c_default, r"'\240'")
+
+    def test_param_default_unicode_char(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                zero: int(accept={str}) = '\0'
+                one: int(accept={str}) = '\1'
+                lf: int(accept={str}) = '\n'
+                nbsp: int(accept={str}) = '\xa0'
+                snake: int(accept={str}) = '\U0001f40d'
+            """)
+        p = function.parameters['zero']
+        self.assertEqual(p.default, '\0')
+        self.assertEqual(p.converter.py_default, r"'\x00'")
+        self.assertEqual(p.converter.c_default, '0')
+
+        p = function.parameters['one']
+        self.assertEqual(p.default, '\1')
+        self.assertEqual(p.converter.py_default, r"'\x01'")
+        self.assertEqual(p.converter.c_default, '0x01')
+
+        p = function.parameters['lf']
+        self.assertEqual(p.default, '\n')
+        self.assertEqual(p.converter.py_default, r"'\n'")
+        self.assertEqual(p.converter.c_default, r"'\n'")
+
+        p = function.parameters['nbsp']
+        self.assertEqual(p.default, '\xa0')
+        self.assertEqual(p.converter.py_default, r"'\xa0'")
+        self.assertEqual(p.converter.c_default, '0xa0')
+
+        p = function.parameters['snake']
+        self.assertEqual(p.default, '\U0001f40d')
+        self.assertEqual(p.converter.py_default, "'\U0001f40d'")
+        self.assertEqual(p.converter.c_default, '0x1f40d')
+
+    def test_param_default_bool(self):
+        function = self.parse_function(r"""
+            module test
+            test.func
+                bool: bool = True
+                intbool: bool(accept={int}) = True
+                intbool2: bool(accept={int}) = 2
+            """)
+        p = function.parameters['bool']
+        self.assertIs(p.default, True)
+        self.assertEqual(p.converter.py_default, 'True')
+        self.assertEqual(p.converter.c_default, '1')
+
+        p = function.parameters['intbool']
+        self.assertIs(p.default, True)
+        self.assertEqual(p.converter.py_default, 'True')
+        self.assertEqual(p.converter.c_default, '1')
+
+        p = function.parameters['intbool2']
+        self.assertEqual(p.default, 2)
+        self.assertEqual(p.converter.py_default, '2')
+        self.assertEqual(p.converter.c_default, '2')
 
     def test_param_default_expr_named_constant(self):
         function = self.parse_function("""
@@ -1608,6 +1826,11 @@ class ClinicParserTest(TestCase):
                 [
                 a: object
                 ]
+        """, """
+            with_kwds
+                [
+                **kwds: dict
+                ]
         """)
         err = (
             "You cannot use optional groups ('[' and ']') unless all "
@@ -1991,6 +2214,44 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '/' must precede '*'"
         self.expect_failure(block, err)
 
+    def test_slash_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+               /
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_star_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+               *
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_parameter_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
     def test_depr_star_must_come_after_slash(self):
         block = """
             module foo
@@ -2076,6 +2337,16 @@ class ClinicParserTest(TestCase):
             foo.bar
                *vararg1: tuple
                *vararg2: tuple
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_parameters_no_more_than_one_var_keyword(self):
+        err = "Encountered parameter line when not expecting parameters: **var_keyword_2: dict"
+        block = """
+            module foo
+            foo.bar
+               **var_keyword_1: dict
+               **var_keyword_2: dict
         """
         self.expect_failure(block, err, lineno=3)
 
@@ -2513,6 +2784,14 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=1)
 
+    def test_var_keyword_cannot_take_default_value(self):
+        err = "Function 'fn' has an invalid parameter declaration:"
+        block = """
+            fn
+                **kwds: dict = None
+        """
+        self.expect_failure(block, err, lineno=1)
+
     def test_default_is_not_of_correct_type(self):
         err = ("int_converter: default value 2.5 for field 'a' "
                "is not of type 'int'")
@@ -2610,7 +2889,58 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_var_keyword_with_pos_or_kw(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
 
+    def test_var_keyword_with_kw_only(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               /
+               *
+               y: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_var_keyword_with_pos_or_kw_and_kw_only(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               /
+               y: int
+               *
+               z: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):
+        errmsg = re.escape("converter_init() got an unexpected keyword argument 'allow_negative'")
+        unsupported_converters = [converter_name for converter_name in converters.keys()
+                                  if converter_name != "Py_ssize_t"]
+        for converter in unsupported_converters:
+            with self.subTest(converter=converter):
+                block = f"""
+                    module m
+                    m.func
+                        a: {converter}(allow_negative=True)
+                """
+                with self.assertRaisesRegex((AssertionError, TypeError), errmsg):
+                    self.parse_function(block)
+
+@force_not_colorized_test_class
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
@@ -2833,6 +3163,8 @@ class ClinicExternalTest(TestCase):
             "uint64",
             "uint8",
             "unicode",
+            "unicode_fs_decoded",
+            "unicode_fs_encoded",
             "unsigned_char",
             "unsigned_int",
             "unsigned_long",
@@ -3194,8 +3526,12 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.py_ssize_t_converter(PY_SSIZE_T_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.py_ssize_t_converter([])
-        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None), (1, 2, 56))
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, -1)
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, 78, -1)
+        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56, 78, 90, -12, -34))
+        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None, 3, None, 4, None), (1, 2, 56, 3, 90, 4, -34))
 
     def test_slice_index_converter(self):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
@@ -3937,6 +4273,49 @@ class ClinicFunctionalTest(unittest.TestCase):
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
 
+    def test_lone_kwds(self):
+        with self.assertRaises(TypeError):
+            ac_tester.lone_kwds(1, 2)
+        self.assertEqual(ac_tester.lone_kwds(), ({},))
+        self.assertEqual(ac_tester.lone_kwds(y='y'), ({'y': 'y'},))
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.lone_kwds(y='y', z='z'), (kwds,))
+        self.assertEqual(ac_tester.lone_kwds(**kwds), (kwds,))
+
+    def test_kwds_with_pos_only(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only(y='y')
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only(1, y='y')
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2), (1, 2, {}))
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y'), (1, 2, {'y': 'y'}))
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y', z='z'), (1, 2, kwds))
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, **kwds), (1, 2, kwds))
+
+    def test_kwds_with_stararg(self):
+        self.assertEqual(ac_tester.kwds_with_stararg(), ((), {}))
+        self.assertEqual(ac_tester.kwds_with_stararg(1, 2), ((1, 2), {}))
+        self.assertEqual(ac_tester.kwds_with_stararg(y='y'), ((), {'y': 'y'}))
+        args = (1, 2)
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_stararg(1, 2, y='y', z='z'), (args, kwds))
+        self.assertEqual(ac_tester.kwds_with_stararg(*args, **kwds), (args, kwds))
+
+    def test_kwds_with_pos_only_and_stararg(self):
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only_and_stararg()
+        with self.assertRaises(TypeError):
+            ac_tester.kwds_with_pos_only_and_stararg(y='y')
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2), (1, 2, (), {}))
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, y='y'), (1, 2, (), {'y': 'y'}))
+        args = ('lobster', 'thermidor')
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, 'lobster', 'thermidor', y='y', z='z'), (1, 2, args, kwds))
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, *args, **kwds), (1, 2, args, kwds))
+
 
 class LimitedCAPIOutputTests(unittest.TestCase):
 
@@ -4233,6 +4612,56 @@ class FormatHelperTests(unittest.TestCase):
         expected = "{{}}, {{a}}"
         out = libclinic.format_escape(line)
         self.assertEqual(out, expected)
+
+    def test_c_bytes_repr(self):
+        c_bytes_repr = libclinic.c_bytes_repr
+        self.assertEqual(c_bytes_repr(b''), '""')
+        self.assertEqual(c_bytes_repr(b'abc'), '"abc"')
+        self.assertEqual(c_bytes_repr(b'\a\b\f\n\r\t\v'), r'"\a\b\f\n\r\t\v"')
+        self.assertEqual(c_bytes_repr(b' \0\x7f'), r'" \000\177"')
+        self.assertEqual(c_bytes_repr(b'"'), r'"\""')
+        self.assertEqual(c_bytes_repr(b"'"), r'''"'"''')
+        self.assertEqual(c_bytes_repr(b'\\'), r'"\\"')
+        self.assertEqual(c_bytes_repr(b'??/'), r'"?\?/"')
+        self.assertEqual(c_bytes_repr(b'???/'), r'"?\?\?/"')
+        self.assertEqual(c_bytes_repr(b'/*****/ /*/ */*'), r'"/\*****\/ /\*\/ *\/\*"')
+        self.assertEqual(c_bytes_repr(b'\xa0'), r'"\240"')
+        self.assertEqual(c_bytes_repr(b'\xff'), r'"\377"')
+
+    def test_c_str_repr(self):
+        c_str_repr = libclinic.c_str_repr
+        self.assertEqual(c_str_repr(''), '""')
+        self.assertEqual(c_str_repr('abc'), '"abc"')
+        self.assertEqual(c_str_repr('\a\b\f\n\r\t\v'), r'"\a\b\f\n\r\t\v"')
+        self.assertEqual(c_str_repr(' \0\x7f'), r'" \000\177"')
+        self.assertEqual(c_str_repr('"'), r'"\""')
+        self.assertEqual(c_str_repr("'"), r'''"'"''')
+        self.assertEqual(c_str_repr('\\'), r'"\\"')
+        self.assertEqual(c_str_repr('??/'), r'"?\?/"')
+        self.assertEqual(c_str_repr('???/'), r'"?\?\?/"')
+        self.assertEqual(c_str_repr('/*****/ /*/ */*'), r'"/\*****\/ /\*\/ *\/\*"')
+        self.assertEqual(c_str_repr('\xa0'), r'"\u00a0"')
+        self.assertEqual(c_str_repr('\xff'), r'"\u00ff"')
+        self.assertEqual(c_str_repr('\u20ac'), r'"\u20ac"')
+        self.assertEqual(c_str_repr('\U0001f40d'), r'"\U0001f40d"')
+
+    def test_c_unichar_repr(self):
+        c_unichar_repr = libclinic.c_unichar_repr
+        self.assertEqual(c_unichar_repr('a'), "'a'")
+        self.assertEqual(c_unichar_repr('\n'), r"'\n'")
+        self.assertEqual(c_unichar_repr('\b'), r"'\b'")
+        self.assertEqual(c_unichar_repr('\0'), '0')
+        self.assertEqual(c_unichar_repr('\1'), '0x01')
+        self.assertEqual(c_unichar_repr('\x7f'), '0x7f')
+        self.assertEqual(c_unichar_repr(' '), "' '")
+        self.assertEqual(c_unichar_repr('"'), """'"'""")
+        self.assertEqual(c_unichar_repr("'"), r"'\''")
+        self.assertEqual(c_unichar_repr('\\'), r"'\\'")
+        self.assertEqual(c_unichar_repr('?'), "'?'")
+        self.assertEqual(c_unichar_repr('\xa0'), '0xa0')
+        self.assertEqual(c_unichar_repr('\xff'), '0xff')
+        self.assertEqual(c_unichar_repr('\u20ac'), '0x20ac')
+        self.assertEqual(c_unichar_repr('\U0001f40d'), '0x1f40d')
 
     def test_indent_all_lines(self):
         # Blank lines are expected to be unchanged.

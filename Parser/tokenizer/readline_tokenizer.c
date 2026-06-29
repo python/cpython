@@ -97,7 +97,7 @@ tok_underflow_readline(struct tok_state* tok) {
     ADVANCE_LINENO();
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
-    if (!tok->encoding && !_PyTokenizer_ensure_utf8(tok->cur, tok)) {
+    if (!tok->encoding && !_PyTokenizer_ensure_utf8(tok->cur, tok, tok->lineno)) {
         _PyTokenizer_error_ret(tok);
         return 0;
     }
@@ -114,6 +114,7 @@ _PyTokenizer_FromReadline(PyObject* readline, const char* enc,
         return NULL;
     if ((tok->buf = (char *)PyMem_Malloc(BUFSIZ)) == NULL) {
         _PyTokenizer_Free(tok);
+        PyErr_NoMemory();
         return NULL;
     }
     tok->cur = tok->inp = tok->buf;

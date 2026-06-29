@@ -36,7 +36,8 @@ PyDoc_STRVAR(_socket_socket_send__doc__,
 "Send a data string to the socket.\n"
 "\n"
 "For the optional flags argument, see the Unix manual.\n"
-"Return the number of bytes sent; this may be less than len(data) if the network is busy.");
+"Return the number of bytes sent; this may be less than len(data) if\n"
+"the network is busy.");
 
 #define _SOCKET_SOCKET_SEND_METHODDEF    \
     {"send", _PyCFunction_CAST(_socket_socket_send), METH_FASTCALL, _socket_socket_send__doc__},
@@ -84,7 +85,8 @@ PyDoc_STRVAR(_socket_socket_sendall__doc__,
 "\n"
 "For the optional flags argument, see the Unix manual.\n"
 "This calls send() repeatedly until all data is sent.\n"
-"If an error occurs, it\'s impossible to tell how much data has been sent.");
+"If an error occurs, it\'s impossible to tell how much data has been\n"
+"sent.");
 
 #define _SOCKET_SOCKET_SENDALL_METHODDEF    \
     {"sendall", _PyCFunction_CAST(_socket_socket_sendall), METH_FASTCALL, _socket_socket_sendall__doc__},
@@ -140,13 +142,13 @@ PyDoc_STRVAR(_socket_socket_sendmsg__doc__,
 "data as an iterable of bytes-like objects (e.g. bytes objects).\n"
 "The ancdata argument specifies the ancillary data (control messages)\n"
 "as an iterable of zero or more tuples (cmsg_level, cmsg_type,\n"
-"cmsg_data), where cmsg_level and cmsg_type are integers specifying the\n"
-"protocol level and protocol-specific type respectively, and cmsg_data\n"
-"is a bytes-like object holding the associated data.  The flags\n"
-"argument defaults to 0 and has the same meaning as for send().  If\n"
-"address is supplied and not None, it sets a destination address for\n"
-"the message.  The return value is the number of bytes of non-ancillary\n"
-"data sent.");
+"cmsg_data), where cmsg_level and cmsg_type are integers specifying\n"
+"the protocol level and protocol-specific type respectively, and\n"
+"cmsg_data is a bytes-like object holding the associated data.  The\n"
+"flags argument defaults to 0 and has the same meaning as for send().\n"
+"If address is supplied and not None, it sets a destination address\n"
+"for the message.  The return value is the number of bytes of\n"
+"non-ancillary data sent.");
 
 #define _SOCKET_SOCKET_SENDMSG_METHODDEF    \
     {"sendmsg", _PyCFunction_CAST(_socket_socket_sendmsg), METH_FASTCALL, _socket_socket_sendmsg__doc__},
@@ -479,7 +481,7 @@ static PyObject *
 _socket_if_nametoindex(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *oname;
+    PyObject *oname = NULL;
 
     if (!PyUnicode_FSConverter(arg, &oname)) {
         goto exit;
@@ -487,6 +489,9 @@ _socket_if_nametoindex(PyObject *module, PyObject *arg)
     return_value = _socket_if_nametoindex_impl(module, oname);
 
 exit:
+    /* Cleanup for oname */
+    Py_XDECREF(oname);
+
     return return_value;
 }
 
@@ -538,4 +543,4 @@ exit:
 #ifndef _SOCKET_IF_INDEXTONAME_METHODDEF
     #define _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif /* !defined(_SOCKET_IF_INDEXTONAME_METHODDEF) */
-/*[clinic end generated code: output=0376c46b76ae2bce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0b1fa78ac6589353 input=a9049054013a1b77]*/

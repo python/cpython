@@ -1,10 +1,11 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, linked_to_musl,
-                          warnings_helper, SHORT_TIMEOUT, Stopwatch, requires_resource)
+                          SHORT_TIMEOUT, Stopwatch, requires_resource)
 import locale
 import re
 import string
+import sys
 import unittest
 import warnings
 from re import Scanner
@@ -89,10 +90,13 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search('x+', 'axx').span(), (1, 3))
         self.assertIsNone(re.search('x', 'aaa'))
         self.assertEqual(re.match('a*', 'xxx').span(0), (0, 0))
+        self.assertEqual(re.prefixmatch('a*', 'xxx').span(0), (0, 0))
         self.assertEqual(re.match('a*', 'xxx').span(), (0, 0))
         self.assertEqual(re.match('x*', 'xxxa').span(0), (0, 3))
+        self.assertEqual(re.prefixmatch('x*', 'xxxa').span(0), (0, 3))
         self.assertEqual(re.match('x*', 'xxxa').span(), (0, 3))
         self.assertIsNone(re.match('a+', 'xxx'))
+        self.assertIsNone(re.prefixmatch('a+', 'xxx'))
 
     def test_branching(self):
         """Test Branching
@@ -179,6 +183,7 @@ class ReTests(unittest.TestCase):
     def test_bug_1661(self):
         # Verify that flags do not get silently ignored with compiled patterns
         pattern = re.compile('.')
+        self.assertRaises(ValueError, re.prefixmatch, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.match, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.search, pattern, 'A', re.I)
         self.assertRaises(ValueError, re.findall, pattern, 'A', re.I)
@@ -516,6 +521,8 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.match(b'(a)', string).group(0), b'a')
             self.assertEqual(re.match(b'(a)', string).group(1), b'a')
             self.assertEqual(re.match(b'(a)', string).group(1, 1), (b'a', b'a'))
+            self.assertEqual(re.prefixmatch(b'(a)', string).group(1, 1),
+                             (b'a', b'a'))
         for a in ("\xe0", "\u0430", "\U0001d49c"):
             self.assertEqual(re.match(a, a).groups(), ())
             self.assertEqual(re.match('(%s)' % a, a).groups(), (a,))
@@ -557,10 +564,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(m.group(2, 1), ('b', 'a'))
         self.assertEqual(m.group(Index(2), Index(1)), ('b', 'a'))
 
-    def test_match_getitem(self):
-        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
-
-        m = pat.match('a')
+    def do_test_match_getitem(self, match_fn):
+        m = match_fn('a')
         self.assertEqual(m['a1'], 'a')
         self.assertEqual(m['b2'], None)
         self.assertEqual(m['c3'], None)
@@ -584,7 +589,7 @@ class ReTests(unittest.TestCase):
         with self.assertRaisesRegex(IndexError, 'no such group'):
             'a1={a2}'.format_map(m)
 
-        m = pat.match('ac')
+        m = match_fn('ac')
         self.assertEqual(m['a1'], 'a')
         self.assertEqual(m['b2'], None)
         self.assertEqual(m['c3'], 'c')
@@ -600,6 +605,14 @@ class ReTests(unittest.TestCase):
 
         # No len().
         self.assertRaises(TypeError, len, m)
+
+    def test_match_getitem(self):
+        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+        self.do_test_match_getitem(pat.match)
+
+    def test_prefixmatch_getitem(self):
+        pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+        self.do_test_match_getitem(pat.prefixmatch)
 
     def test_re_fullmatch(self):
         # Issue 16203: Proposal: add re.fullmatch() method.
@@ -886,6 +899,192 @@ class ReTests(unittest.TestCase):
                             "undefined character name 'KEYCAP NUMBER SIGN'", 1)
         self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
         self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
+
+    def test_property_escapes(self):
+        import unicodedata
+        # Properties that reuse the engine categories behave exactly like
+        # \d, \s and \w, and honour the ASCII/UNICODE flags.
+        self.assertTrue(re.fullmatch(r'\p{digit}+', '0123456789'))
+        self.assertTrue(re.fullmatch(r'\p{word}+', 'foo_bar123'))
+        self.assertTrue(re.fullmatch(r'\p{space}+', ' \t\n\r\f\v'))
+        self.assertTrue(re.fullmatch(r'\p{whitespace}+', ' \t\n'))
+        self.assertTrue(re.match(r'\P{digit}', 'a'))
+        self.assertIsNone(re.match(r'\P{digit}', '5'))
+        # Arabic-Indic digit five is a digit only in Unicode mode.
+        self.assertTrue(re.fullmatch(r'\p{digit}', '٥'))
+        self.assertIsNone(re.fullmatch(r'(?a)\p{digit}', '٥'))
+        for prop, esc in [('digit', r'\d'), ('space', r'\s'), ('word', r'\w')]:
+            with self.subTest(prop=prop):
+                self.assertEqual(re.fullmatch(r'\p{%s}' % prop, '٥') is None,
+                                 re.fullmatch(esc, '٥') is None)
+
+        # General_Category values; L, Lu, Nd are engine categories.
+        self.assertTrue(re.fullmatch(r'\p{Lu}+', 'ABC'))
+        self.assertIsNone(re.fullmatch(r'\p{Lu}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{L}+', 'fo\xf6Д日'))
+        self.assertTrue(re.fullmatch(r'\p{Nd}+', '12٥'))
+        self.assertTrue(re.fullmatch(r'\P{L}+', '123 .,'))
+        # gc=<value> spelling and loose matching of names.
+        self.assertTrue(re.fullmatch(r'\p{gc=Lu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{General_Category=Lu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{ lu }+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{LU}+', 'ABC'))
+        # An initial "is" prefix is ignored (UAX44-LM3), on the property name
+        # and on a gc value; "is" alone is not a prefix (cf. lb=IS).
+        self.assertTrue(re.fullmatch(r'\p{isLu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{Is_Lu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{gc=isLu}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{isUppercase}+', 'ABC'))
+        # Engine categories L, Lt, Nd, Lu, N, Lm, Nl, No, Cf, Z, Zs and the
+        # fixed ranges Cc, Cs, Co, Zl, Zp.
+        self.assertTrue(re.fullmatch(r'\p{Lt}+', 'ǅǈǋ'))
+        self.assertIsNone(re.fullmatch(r'\p{Lt}', 'A'))
+        self.assertTrue(re.fullmatch(r'\p{Cc}+', '\x00\x1f\x7f\x9f'))
+        self.assertTrue(re.fullmatch(r'\p{Co}+', '\U0010fffd'))
+        # Cn (unassigned) and the C group are also engine categories.
+        self.assertTrue(re.fullmatch(r'\p{Cn}+', '\U00040000\U000e0fff'))
+        self.assertIsNone(re.fullmatch(r'\p{Cn}', 'a'))
+        self.assertTrue(re.fullmatch(r'\p{C}+', '\x00\u200b\U00040000'))  # Cc Cf Cn
+        self.assertTrue(re.fullmatch(r'\p{assigned}+', 'a\u0410!'))
+        self.assertIsNone(re.fullmatch(r'\p{assigned}', '\U00040000'))
+        self.assertTrue(re.fullmatch(r'[\P{Lt}]+', 'aA1'))      # category negation
+        self.assertTrue(re.fullmatch(r'\p{Lu}+', 'ABC\xc0'))
+        self.assertIsNone(re.fullmatch(r'\p{Lu}', 'a'))
+        # N includes Nd, Nl (Roman numerals) and No (superscripts/fractions).
+        self.assertTrue(re.fullmatch(r'\p{N}+', '12\u0665\u2167\u216b\u00b2\u00bd'))
+        self.assertIsNone(re.fullmatch(r'\p{N}', 'A'))
+        self.assertTrue(re.fullmatch(r'[\P{Lu}\p{N}]+', 'ab12'))
+        # More compound/analytic categories: Lm, Nl, No, Cf, Z, Zs, Zl, Zp.
+        self.assertTrue(re.fullmatch(r'\p{Lm}+', '\u02b0\u02b1\u02c6'))  # modifiers
+        self.assertTrue(re.fullmatch(r'\p{Nl}+', '\u2167\u216b'))         # Roman
+        self.assertTrue(re.fullmatch(r'\p{No}+', '\u00b2\u00bd\u00be'))  # super/frac
+        self.assertTrue(re.fullmatch(r'\p{Cf}+', '\u200b\u00ad\u2060'))  # format
+        self.assertIsNone(re.fullmatch(r'\p{Cf}', 'a'))
+        self.assertTrue(re.fullmatch(r'\p{Z}+', '  \xa0\u2028\u2029'))
+        self.assertTrue(re.fullmatch(r'\p{Zs}+', ' \xa0 '))
+        self.assertIsNone(re.fullmatch(r'\p{Zs}', '\u2028'))
+        self.assertTrue(re.fullmatch(r'\p{Zl}', '\u2028'))
+        self.assertTrue(re.fullmatch(r'\p{Zp}', '\u2029'))
+        self.assertTrue(re.fullmatch(r'[\P{Cf}\p{Lm}\p{No}]+', 'a\u02b0\u00bd'))
+        # \p{Nd} reuses the \d category and so follows the ASCII flag,
+        # while \p{L} stays a Unicode property.
+        self.assertIsNone(re.fullmatch(r'(?a)\p{Nd}', '٥'))
+        self.assertTrue(re.fullmatch(r'(?a)\p{L}+', 'abД'))
+
+        # Properties inside a character class.
+        self.assertTrue(re.fullmatch(r'[\p{digit}x]+', '12x34'))
+        self.assertTrue(re.fullmatch(r'[\P{digit}]+', 'abc'))
+        self.assertTrue(re.fullmatch(r'[\p{Lu}\p{Nd}]+', 'AB12'))
+        self.assertIsNone(re.fullmatch(r'[\p{Lu}\p{Nd}]+', 'ab'))
+
+        # XID_Start and XID_Continue.
+        self.assertTrue(re.fullmatch(r'\p{XID_Start}+', 'fo\xf6Д'))
+        self.assertIsNone(re.fullmatch(r'\p{XID_Start}', '1'))
+        self.assertTrue(re.fullmatch(r'\p{XID_Continue}+', 'foo_123'))
+        self.assertTrue(re.fullmatch(r'\p{XIDS}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{XID_Start=Yes}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{XID_Start=No}+', '123 '))
+        self.assertTrue(re.fullmatch(r'\P{XID_Start}+', '123 '))
+
+        # Binary properties from str predicates.
+        self.assertTrue(re.fullmatch(r'\p{Alphabetic}+', 'fo\xf6Д日'))
+        self.assertTrue(re.fullmatch(r'\p{Lowercase}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{Uppercase}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{Numeric}+', '12½'))   # ½
+        self.assertTrue(re.fullmatch(r'\p{Printable}+', 'a b!'))
+        self.assertIsNone(re.fullmatch(r'\p{Printable}', '\n'))
+        # Cased == Lowercase | Uppercase | Lt (via _PyUnicode_IsCased).
+        self.assertTrue(re.fullmatch(r'\p{Cased}+', 'aAǅ'))
+        self.assertTrue(re.fullmatch(r'\P{Cased}+', '123 .'))
+        # Case_Ignorable == gc in {Mn,Me,Cf,Lm,Sk} plus the Word_Break
+        # MidLetter/MidNumLet/Single_Quote characters (via
+        # _PyUnicode_IsCaseIgnorable).
+        word_break = {'\u0027', '\u002e', '\u003a', '\u00b7', '\u0387',
+                      '\u055f', '\u05f4', '\u2018', '\u2019', '\u2024',
+                      '\u2027', '\ufe13', '\ufe52', '\ufe55', '\uff07',
+                      '\uff0e', '\uff1a'}
+        ci = re.compile(r'\p{Case_Ignorable}')
+        for c in [chr(i) for i in range(0x100)] + ['\u02b0', '\u0301']:
+            expect = (unicodedata.category(c) in ('Mn','Me','Cf','Lm','Sk')
+                      or c in word_break)
+            with self.subTest(char=c):
+                self.assertEqual(bool(ci.fullmatch(c)), expect)
+        self.assertTrue(re.fullmatch(r'\p{Alphabetic=No}+', '123 '))
+        # These are engine categories, so (unlike \P of a multi-range
+        # property) they can be negated inside a character class.
+        self.assertTrue(re.fullmatch(r'[\P{Alphabetic}]+', '123 .'))
+        self.assertTrue(re.fullmatch(r'[\p{XID_Start}_]+', 'foo_bar'))
+
+        # POSIX / UTS #18 Annex C compatibility classes.
+        self.assertTrue(re.fullmatch(r'\p{alpha}+', 'abcД'))
+        self.assertTrue(re.fullmatch(r'\p{alnum}+', 'abc123'))
+        self.assertTrue(re.fullmatch(r'\p{upper}+', 'ABC'))
+        self.assertTrue(re.fullmatch(r'\p{lower}+', 'abc'))
+        self.assertTrue(re.fullmatch(r'\p{blank}+', ' \t'))
+        self.assertIsNone(re.fullmatch(r'\p{blank}', '\n'))
+        self.assertTrue(re.fullmatch(r'\p{cntrl}+', '\x00\x1f\x7f'))
+        self.assertTrue(re.fullmatch(r'\p{graph}+', 'a!~'))
+        self.assertIsNone(re.fullmatch(r'\p{graph}', ' '))
+        self.assertTrue(re.fullmatch(r'\p{print}+', 'a b!'))
+        self.assertTrue(re.fullmatch(r'\p{xdigit}+', '0123456789abcdefABCDEF'))
+        self.assertIsNone(re.fullmatch(r'\p{xdigit}', 'g'))
+
+        # Pattern_Syntax and Pattern_White_Space (immutable, fixed ranges).
+        self.assertTrue(re.fullmatch(r'\p{Pattern_Syntax}+', '+-*/=<>!@#~'))
+        self.assertIsNone(re.fullmatch(r'\p{Pattern_Syntax}', 'a'))
+        self.assertTrue(re.fullmatch(r'\p{Pat_Syn}+', '()[]{}'))
+        self.assertTrue(re.fullmatch(r'\p{Pattern_White_Space}+',
+                                     ' \t\n\r\x0b\x0c\x85\u200e\u2028'))
+        self.assertTrue(re.fullmatch(r'\p{Pat_WS}+', '\u200f\u2029'))
+        self.assertIsNone(re.fullmatch(r'\p{Pattern_White_Space}', '\xa0'))
+        self.assertTrue(re.fullmatch(r'\P{Pattern_Syntax}+', 'abc123'))
+
+        # Properties derivable from the code point alone.
+        self.assertTrue(re.fullmatch(r'\p{ASCII}+', 'AZ09~\x7f'))
+        self.assertIsNone(re.fullmatch(r'\p{ASCII}', '\x80'))
+        self.assertTrue(re.fullmatch(r'\P{ASCII}+', 'Дé日'))
+        self.assertTrue(re.fullmatch(r'\p{Any}', '\U0010ffff'))
+        self.assertTrue(re.fullmatch(r'\p{Assigned}+', 'Aд'))
+        self.assertIsNone(re.fullmatch(r'\p{Assigned}', '\U000e0fff'))
+        self.assertTrue(re.fullmatch(r'\p{Noncharacter_Code_Point}+',
+                                     '\uFDD0\uFFFE\U0010FFFF'))
+        self.assertTrue(re.fullmatch(r'\p{Join_Control}+', '\u200C\u200D'))
+        self.assertTrue(re.fullmatch(r'\p{Regional_Indicator}+',
+                                     '\U0001F1E6\U0001F1FF'))
+        self.assertTrue(re.fullmatch(r'\p{RI}', '\U0001F1FA'))   # symbol U
+        self.assertIsNone(re.fullmatch(r'\p{RI}', 'U'))
+        # Hex_Digit (ASCII hex plus fullwidth) and ASCII_Hex_Digit (= xdigit).
+        self.assertTrue(re.fullmatch(r'\p{Hex_Digit}+', '0123456789abcdefABCDEF'))
+        self.assertTrue(re.fullmatch(r'\p{Hex}+', '０Ａｆ'))  # fullwidth
+        self.assertTrue(re.fullmatch(r'\p{ASCII_Hex_Digit}+', '0aF'))
+        self.assertTrue(re.fullmatch(r'\p{AHex}+', '0aF'))
+        self.assertIsNone(re.fullmatch(r'\p{ASCII_Hex_Digit}', '０'))
+        self.assertIsNone(re.fullmatch(r'\p{Hex_Digit}', 'g'))
+
+        # A negated multi-range property (not backed by an engine category) can
+        # be a set member; it is alternated in with the other members.
+        self.assertIsNone(re.fullmatch(r'[\P{ASCII}]', 'a'))
+        self.assertTrue(re.fullmatch(r'[\P{ASCII}]', 'ä'))
+        self.assertTrue(re.fullmatch(r'[\P{ASCII}abc]+', 'abäc日'))
+        self.assertIsNone(re.fullmatch(r'[\P{ASCII}abc]', 'd'))
+        self.assertTrue(re.fullmatch(r'[abc\P{ASCII}]+', 'abäc日'))
+        self.assertTrue(re.fullmatch(r'[^\P{ASCII}]+', 'AZ09~'))   # = ASCII
+        self.assertIsNone(re.fullmatch(r'[^\P{ASCII}]', 'ä'))
+        # Composes with set operations.
+        self.assertTrue(re.fullmatch(r'[\w--\P{ASCII}]+', 'AZ09_'))  # \w and ASCII
+        self.assertIsNone(re.fullmatch(r'[\w--\P{ASCII}]', 'д'))
+
+        # Errors.
+        self.checkPatternError(r'\p', 'missing {, expected property name', 2)
+        self.checkPatternError(r'[\p]', 'missing {, expected property name', 3)
+        self.checkPatternError(r'\p{}', 'missing property name', 3)
+        self.checkPatternError(r'\p{Spam}', "unknown property name 'Spam'", 0)
+        # "is" by itself is not an ignorable prefix, so it stays unknown.
+        self.checkPatternError(r'\p{is}', "unknown property name 'is'", 0)
+        self.checkPatternError(r'\p{Lu', 'missing }, unterminated name', 3)
+        # \p is not special in bytes patterns.
+        self.checkPatternError(br'\p{Lu}', r'bad escape \p', 0)
+        self.checkPatternError(br'\P{Lu}', r'bad escape \P', 0)
 
     def test_word_boundaries(self):
         # See http://bugs.python.org/issue10713
@@ -1275,79 +1474,89 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\s([^a])", " b").group(1), "b")
         self.assertEqual(re.search(r"\s([^a]*)", " bb").group(1), "bb")
 
-    def test_possible_set_operations(self):
+    def test_set_operations(self):
+        # UTS #18 RL1.3 set operations in character classes: '--' (difference),
+        # '&&' (intersection) and '||' (union) are operators on the matched
+        # character; '~~' (symmetric difference) is still reserved
+        # (FutureWarning).
         s = bytes(range(128)).decode()
-        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
-            p = re.compile(r'[0-9--1]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('-./0123456789'))
-        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
-            self.assertEqual(re.findall(r'[0-9--2]', s), list('-./0123456789'))
-        self.assertEqual(w.filename, __file__)
 
+        # Set difference  A--B == A and not B.
+        self.assertEqual(re.findall(r'[0-9--1]', s), list('023456789'))
+        self.assertEqual(re.findall(r'[0-9--2]', s), list('013456789'))
+        self.assertEqual(re.findall(r'[%--1]', s), list('%'))
+        # A leading '-' is a literal, so this stays a range.
         self.assertEqual(re.findall(r'[--1]', s), list('-./01'))
+        # A dangling operator (empty operand) is an error.
+        self.assertRaises(re.PatternError, re.compile, r'[%--]')
 
-        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
-            p = re.compile(r'[%--1]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list("%&'()*+,-1"))
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible set difference ') as w:
-            p = re.compile(r'[%--]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list("%&'()*+,-"))
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
-            p = re.compile(r'[0-9&&1]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('&0123456789'))
-        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
-            self.assertEqual(re.findall(r'[0-8&&1]', s), list('&012345678'))
-        self.assertEqual(w.filename, __file__)
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
-            p = re.compile(r'[\d&&1]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('&0123456789'))
-
+        # Set intersection  A&&B == A and B.
+        self.assertEqual(re.findall(r'[0-9&&1]', s), list('1'))
+        self.assertEqual(re.findall(r'[0-8&&1]', s), list('1'))
+        self.assertEqual(re.findall(r'[\d&&1]', s), list('1'))
+        # A leading '&' is a literal.
         self.assertEqual(re.findall(r'[&&1]', s), list('&1'))
 
-        with self.assertWarnsRegex(FutureWarning, 'Possible set union ') as w:
-            p = re.compile(r'[0-9||a]')
+        # Nested sets and lookbehind-mapped operands.
+        self.assertEqual(re.findall(r'[a-z--[aeiou]]', s),
+                         list('bcdfghjklmnpqrstvwxyz'))
+        self.assertEqual(re.findall(r'[\w&&[a-z]]', s),
+                         list('abcdefghijklmnopqrstuvwxyz'))
+        # Operators chain and mix left-to-right.
+        self.assertEqual(re.findall(r'[a-z--[aeiou]--[xyz]]', s),
+                         list('bcdfghjklmnpqrstvw'))
+        self.assertEqual(re.findall(r'[\w&&[a-z]&&[m-z]]', s),
+                         list('mnopqrstuvwxyz'))
+        # A negated set operation: [^A--B] == complement of (A minus B).
+        self.assertEqual(re.findall(r'[^a-z--aeiou]', s),
+                         [c for c in s if not ('a' <= c <= 'z' and c not in 'aeiou')])
+        # A nested operand may be complemented or itself a set operation; it is
+        # used directly as the assertion body.
+        self.assertEqual(re.findall(r'[a-z--[^m]]', s), list('m'))
+        self.assertEqual(re.findall(r'[\w&&[a-c--b]]', s), list('ac'))
+        self.assertEqual(re.findall(r'[a-f&&[^bc]]', s), list('adef'))
+        # A nested set is the whole operand; it cannot be mixed with loose
+        # members (write the members in the set instead).
+        self.assertEqual(re.findall(r'[a-c--[ab]]', s), list('c'))
+        self.assertRaises(re.PatternError, re.compile, r'[a-c--[ab]d]')
+        self.assertRaises(re.PatternError, re.compile, r'[a-c--[ab][c]]')
+        # A '[' is a nested set only immediately after a set operator;
+        # elsewhere it is a literal, so these stay backward compatible.
+        self.assertEqual(re.findall(r'[*?[]', s), list('*?['))
+        self.assertEqual(re.findall(r'[a[b]', s), list('[ab'))
+        self.assertEqual(re.findall(r'[^[]', 'a[b'), list('ab'))
+        # A '[' at the start of a class also stays a literal (the position is
+        # reserved, so it still warns) and keeps its historical meaning.
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
+            p = re.compile(r'[[a-z]]')
         self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('0123456789a|'))
+        self.assertEqual(p.findall('a]b[c'), ['a]'])  # {[, a-z} then a literal ']'
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set '):
+            re.compile(r'[[:digit:]]')
+        # A nested set after an operator does not warn.
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', FutureWarning)
+            re.compile(r'[a-z--[aeiou]]')
 
-        with self.assertWarnsRegex(FutureWarning, 'Possible set union ') as w:
-            p = re.compile(r'[\d||a]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('0123456789a|'))
-
+        # Set union  A||B == A or B (an explicit form of [AB]); flat operands
+        # merge into one charset, otherwise the operations are alternated.
+        self.assertEqual(re.findall(r'[0-9||a]', s), list('0123456789a'))
+        self.assertEqual(re.findall(r'[\d||a]', s), list('0123456789a'))
+        self.assertEqual(re.findall(r'[a-z--m||0-9]', s),
+                         list('0123456789abcdefghijklnopqrstuvwxyz'))
+        # A leading '|' is a literal.
         self.assertEqual(re.findall(r'[||1]', s), list('1|'))
+
+        # '~~' remains reserved.
 
         with self.assertWarnsRegex(FutureWarning, 'Possible set symmetric difference ') as w:
             p = re.compile(r'[0-9~~1]')
         self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789~'))
-
         with self.assertWarnsRegex(FutureWarning, 'Possible set symmetric difference ') as w:
-            p = re.compile(r'[\d~~1]')
+            self.assertEqual(re.findall(r'[\d~~1]', s), list('0123456789~'))
         self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('0123456789~'))
-
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
-            p = re.compile(r'[[0-9]|]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list('0123456789[]'))
-        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
-            self.assertEqual(re.findall(r'[[0-8]|]', s), list('012345678[]'))
-        self.assertEqual(w.filename, __file__)
-
-        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
-            p = re.compile(r'[[:digit:]|]')
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(p.findall(s), list(':[]dgit'))
 
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
@@ -1638,6 +1847,24 @@ class ReTests(unittest.TestCase):
                          (['sum', 'op=', 3, 'op*', 'foo', 'op+', 312.5,
                            'op+', 'bar'], ''))
 
+    def test_bug_gh140797(self):
+        # gh140797: Capturing groups are not allowed in re.Scanner
+
+        msg = r"Cannot use capturing groups in re\.Scanner"
+        # Capturing group throws an error
+        with self.assertRaisesRegex(ValueError, msg):
+            Scanner([("(a)b", None)])
+
+        # Named Group
+        with self.assertRaisesRegex(ValueError, msg):
+            Scanner([("(?P<name>a)", None)])
+
+        # Non-capturing groups should pass normally
+        s = Scanner([("(?:a)b", lambda scanner, token: token)])
+        result, rem = s.scan("ab")
+        self.assertEqual(result,['ab'])
+        self.assertEqual(rem,'')
+
     def test_bug_448951(self):
         # bug 448951 (similar to 429357, but with single char match)
         # (Also test greedy matches.)
@@ -1749,11 +1976,10 @@ class ReTests(unittest.TestCase):
         for x in not_decimal_digits:
             self.assertIsNone(re.match(r'^\d$', x))
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
     def test_empty_array(self):
         # SF buf 1647541
         import array
-        for typecode in 'bBhuwHiIlLfd':
+        for typecode in array.typecodes:
             a = array.array(typecode)
             self.assertIsNone(re.compile(b"bla").match(a))
             self.assertEqual(re.compile(b"").match(a).groups(), ())
@@ -2177,6 +2403,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -2214,6 +2442,8 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
@@ -2781,6 +3011,12 @@ ATOMIC_GROUP
 17: SUCCESS
 ''')
 
+    def test_debug_charset_bitmap(self):
+        # gh-152100: disassembling a charset that compiles to a CHARSET/
+        # BIGCHARSET bitmap must not fail (the disassembler needs _CODEBITS).
+        out = get_debug_out(r'[aeiou]')
+        self.assertIn('CHARSET', out)
+
     def test_possesive_repeat_one(self):
         self.assertEqual(get_debug_out(r'a?+'), '''\
 POSSESSIVE_REPEAT 0 1
@@ -2906,7 +3142,7 @@ class ImplementationTest(unittest.TestCase):
             tp.foo = 1
 
     def test_overlap_table(self):
-        f = re._compiler._generate_overlap_table
+        f = re._optimizer._generate_overlap_table
         self.assertEqual(f(""), [])
         self.assertEqual(f("a"), [0])
         self.assertEqual(f("abcd"), [0, 0, 0, 0])
@@ -3109,6 +3345,16 @@ class ExternalTests(unittest.TestCase):
                 with self.subTest('unicode-sensitive match'):
                     obj = re.compile(pattern, re.UNICODE)
                     self.assertTrue(obj.search(s))
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(re, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

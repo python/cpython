@@ -80,7 +80,9 @@ The following warnings category classes are currently defined:
 |                                  | unless triggered by code in ``__main__``).    |
 +----------------------------------+-----------------------------------------------+
 | :exc:`SyntaxWarning`             | Base category for warnings about dubious      |
-|                                  | syntactic features.                           |
+|                                  | syntactic features (typically emitted when    |
+|                                  | compiling Python source code, and hence       |
+|                                  | may not be suppressed by runtime filters)     |
 +----------------------------------+-----------------------------------------------+
 | :exc:`RuntimeWarning`            | Base category for warnings about dubious      |
 |                                  | runtime features.                             |
@@ -157,8 +159,10 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 
 * *message* is a string containing a regular expression that the start of
   the warning message must match, case-insensitively.  In :option:`-W` and
-  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
-  warning message must contain (case-insensitively), ignoring any whitespace at
+  :envvar:`PYTHONWARNINGS`, if *message* starts and ends with a forward slash
+  (``/``), it specifies a regular expression as above;
+  otherwise it is a literal string that the start of the
+  warning message must match (case-insensitively), ignoring any whitespace at
   the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
@@ -166,7 +170,9 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 
 * *module* is a string containing a regular expression that the start of the
   fully qualified module name must match, case-sensitively.  In :option:`-W` and
-  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  :envvar:`PYTHONWARNINGS`, if *module* starts and ends with a forward slash
+  (``/``), it specifies a regular expression as above;
+  otherwise it is a literal string that the
   fully qualified module name must be equal to (case-sensitively), ignoring any
   whitespace at the start or end of *module*.
 
@@ -201,7 +207,7 @@ Describing Warning Filters
 The warnings filter is initialized by :option:`-W` options passed to the Python
 interpreter command line and the :envvar:`PYTHONWARNINGS` environment variable.
 The interpreter saves the arguments for all supplied entries without
-interpretation in :data:`sys.warnoptions`; the :mod:`warnings` module parses these
+interpretation in :data:`sys.warnoptions`; the :mod:`!warnings` module parses these
 when it is first imported (invalid options are ignored, after printing a
 message to :data:`sys.stderr`).
 
@@ -474,13 +480,27 @@ Available Functions
 .. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None, source=None)
 
    This is a low-level interface to the functionality of :func:`warn`, passing in
-   explicitly the message, category, filename and line number, and optionally the
-   module name and the registry (which should be the ``__warningregistry__``
-   dictionary of the module).  The module name defaults to the filename with
-   ``.py`` stripped; if no registry is passed, the warning is never suppressed.
+   explicitly the message, category, filename and line number, and optionally
+   other arguments.
    *message* must be a string and *category* a subclass of :exc:`Warning` or
    *message* may be a :exc:`Warning` instance, in which case *category* will be
    ignored.
+
+   *module*, if supplied, should be the module name.
+   If no module is passed, the module regular expression in
+   :ref:`warnings filter <warning-filter>` will be tested against the module
+   names constructed from the path components starting from all parent
+   directories (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw``
+   stripped) and against the filename with ``.py`` stripped.
+   For example, when the filename is ``'/path/to/package/module.py'``, it will
+   be tested against  ``'path.to.package.module'``, ``'to.package.module'``
+   ``'package.module'``, ``'module'``, and ``'/path/to/package/module'``.
+
+   *registry*, if supplied, should be the ``__warningregistry__`` dictionary
+   of the module.
+   If no registry is passed, each warning is treated as the first occurrence,
+   that is, filter actions ``"default"``, ``"module"`` and ``"once"`` are
+   handled as ``"always"``.
 
    *module_globals*, if supplied, should be the global namespace in use by the code
    for which the warning is issued.  (This argument is used to support displaying
@@ -492,6 +512,10 @@ Available Functions
 
    .. versionchanged:: 3.6
       Add the *source* parameter.
+
+   .. versionchanged:: 3.15
+      If no module is passed, test the filter regular expression against
+      module names created from the path, not only the path itself.
 
 
 .. function:: showwarning(message, category, filename, lineno, file=None, line=None)
@@ -584,7 +608,7 @@ Available Functions
    The deprecation message passed to the decorator is saved in the
    ``__deprecated__`` attribute on the decorated object.
    If applied to an overload, the decorator
-   must be after the :func:`@overload <typing.overload>` decorator
+   must be after the :deco:`~typing.overload` decorator
    for the attribute to exist on the overload as returned by
    :func:`typing.get_overloads`.
 
@@ -602,13 +626,32 @@ Available Context Managers
     If the *record* argument is :const:`False` (the default) the context manager
     returns :class:`None` on entry. If *record* is :const:`True`, a list is
     returned that is progressively populated with objects as seen by a custom
-    :func:`showwarning` function (which also suppresses output to ``sys.stdout``).
-    Each object in the list has attributes with the same names as the arguments to
-    :func:`showwarning`.
+    :func:`showwarning` function (which also suppresses output to ``sys.stderr``).
+    Each object in the list is guaranteed to have the following attributes:
+
+      - ``message``: the warning message (an instance of :exc:`Warning`)
+      - ``category``: the warning category (a subclass of :exc:`Warning`)
+      - ``filename``: the file name where the warning occurred (:class:`str`)
+      - ``lineno``: the line number in the file (:class:`int`)
+      - ``file``: the file object used for output (if any), or ``None``
+      - ``line``: the line of source code (if available), or ``None``
+      - ``source``: the original object that generated the warning (if
+        available), or ``None``
+      - ``module``: the module name where the warning occurred
+        (:class:`str`), or ``None``
+
+    .. versionchanged:: 3.6
+      The ``source`` attribute was added.
+
+    .. versionchanged:: 3.15
+      The ``module`` attribute was added.
+
+    The type of these objects is not specified and may change; only the
+    presence of these attributes is guaranteed.
 
     The *module* argument takes a module that will be used instead of the
-    module returned when you import :mod:`warnings` whose filter will be
-    protected. This argument exists primarily for testing the :mod:`warnings`
+    module returned when you import :mod:`!warnings` whose filter will be
+    protected. This argument exists primarily for testing the :mod:`!warnings`
     module itself.
 
     If the *action* argument is not ``None``, the remaining arguments are
@@ -645,7 +688,7 @@ to true for free-threaded builds and false otherwise.
 
 If the :data:`~sys.flags.context_aware_warnings` flag is false, then
 :class:`catch_warnings` will modify the global attributes of the
-:mod:`warnings` module.  This is not safe if used within a concurrent program
+:mod:`!warnings` module.  This is not safe if used within a concurrent program
 (using multiple threads or using asyncio coroutines).  For example, if two
 or more threads use the :class:`catch_warnings` class at the same time, the
 behavior is undefined.
