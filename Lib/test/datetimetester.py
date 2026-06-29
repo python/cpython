@@ -3757,6 +3757,7 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45+00:00:90', # Time zone field out from range
             '2009-04-19T12:30:45-00:90:00', # Time zone field out from range
             '2009-04-19T12:30:45-00:00:90', # Time zone field out from range
+            '2020-2020',                    # Ambiguous 9-char date portion
         ]
 
         for bad_str in bad_strs:
@@ -3773,6 +3774,7 @@ class TestDateTime(TestDate):
             "2009-04-01T12:30:90",          # Second out of range
             "2009-04-01T12:90:45",          # Minute out of range
             "2009-04-01T25:30:45",          # Hour out of range
+            "2009-00-01T24:00:00",          # Month below range
             "2009-13-01T24:00:00",          # Month out of range
             "9999-12-31T24:00:00",          # Year out of range
         ]
@@ -3800,6 +3802,32 @@ class TestDateTime(TestDate):
         dt = self.theclass.fromisoformat(dt_str)
 
         self.assertIs(dt.tzinfo, timezone.utc)
+
+    def test_fromisoformat_utc_subsecond_offset(self):
+        # A UTC offset whose whole-second part is zero but with a non-zero
+        # microsecond part must be preserved, not collapsed to UTC.
+        for us in (1, -1, 999999, -999999):
+            with self.subTest(microseconds=us):
+                tz = timezone(timedelta(microseconds=us))
+                dt = self.theclass(2020, 6, 15, 12, 34, 56, tzinfo=tz)
+                rt = self.theclass.fromisoformat(dt.isoformat())
+                self.assertEqual(rt.utcoffset(), timedelta(microseconds=us))
+                self.assertEqual(rt, dt)
+                self.assertIsNot(rt.tzinfo, timezone.utc)
+
+        tz = timezone(timedelta(hours=5, minutes=30, seconds=15,
+                                microseconds=123456))
+        dt = self.theclass(2020, 6, 15, 12, 34, 56, tzinfo=tz)
+        rt = self.theclass.fromisoformat(dt.isoformat())
+        self.assertEqual(rt.utcoffset(), tz.utcoffset(None))
+        self.assertEqual(rt, dt)
+
+        for tstr in ('2020-06-15T12:34:56+00:00',
+                     '2020-06-15T12:34:56+00:00:00.000000',
+                     '2020-06-15T12:34:56Z'):
+            with self.subTest(tstr=tstr):
+                self.assertIs(self.theclass.fromisoformat(tstr).tzinfo,
+                              timezone.utc)
 
     def test_fromisoformat_subclass(self):
         class DateTimeSubclass(self.theclass):
@@ -4091,6 +4119,11 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
         self.assertEqual(t.strftime('\0%I%p%Z\0%X'), f'\0{s1}\0{s2}')
         self.assertEqual(t.strftime('%I%p%Z\0%X\0'), f'{s1}\0{s2}\0')
+        # gh-152305: the year directives must not raise on a time.
+        for directive, expected in (('%Y', '1900'), ('%G', '1900'),
+                                    ('%C', '19'), ('%F', '1900-01-01')):
+            with self.subTest(directive=directive):
+                self.assertEqual(t.strftime(directive), expected)
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)

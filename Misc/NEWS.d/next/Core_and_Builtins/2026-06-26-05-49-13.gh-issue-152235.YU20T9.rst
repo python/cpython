@@ -1,0 +1,2 @@
+Defer GC tracking of a :class:`set` or :class:`frozenset` to the end of its
+construction from iterable. Patch by Donghee Na.

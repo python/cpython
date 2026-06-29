@@ -4,6 +4,11 @@ Released on 2026-10-01
 =========================
 
 
+gh-85320: IDLE now reads and writes its configuration files and the
+breakpoints file using UTF-8 instead of the locale encoding.
+Files with non-ASCII characters and non-UTF-8 encoding may need
+to be opened in an editor and resaved with UTF-8 encoding.
+
 gh-143774: Better explain the operation of Format / Format Paragraph.
 Patch by Terry J. Reedy.
 

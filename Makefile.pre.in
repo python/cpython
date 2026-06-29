@@ -2675,6 +2675,20 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lazy_import/data \
 		test/test_lazy_import/data/pkg \
 		test/test_lazy_import/data/badsyntax \
+		test/test_lazy_import/data/circular_import_pkg \
+		test/test_lazy_import/data/metasyntactic \
+		test/test_lazy_import/data/metasyntactic/foo \
+		test/test_lazy_import/data/metasyntactic/foo/ack \
+		test/test_lazy_import/data/metasyntactic/foo/bar \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz/qux \
+		test/test_lazy_import/data/metasyntactic/foo/bar/thud \
+		test/test_lazy_import/data/metasyntactic/plugh \
+		test/test_lazy_import/data/metasyntactic/waldo \
+		test/test_lazy_import/data/metasyntactic/waldo/fred \
+		test/test_lazy_import/data/module_same_name_var_order1 \
+		test/test_lazy_import/data/module_same_name_var_order2 \
+		test/test_lazy_import/data/versioned \
 		test/test_module \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \

@@ -1,6 +1,7 @@
 import dis
 import os.path
 import re
+import signal
 import subprocess
 import sys
 import sysconfig
@@ -13,6 +14,10 @@ from test.support import findfile, MS_WINDOWS
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
+if not sysconfig.get_config_var('WITH_DTRACE'):
+    raise unittest.SkipTest(
+        "CPython must be configured with the --with-dtrace option."
+    )
 
 
 def abspath(filename):
@@ -50,16 +55,37 @@ def normalize_trace_output(output):
         )
 
 
+USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+
+def create_process_group(*args, **kwargs):
+    if USE_PROCESS_GROUP:
+        kwargs['start_new_session'] = True
+    return subprocess.Popen(*args, **kwargs)
+
+def kill_process_group(proc):
+    if USE_PROCESS_GROUP:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    else:
+        proc.kill()
+    proc.communicate()  # Clean up
+
+
 class TraceBackend:
     EXTENSION = None
     COMMAND = None
     COMMAND_ARGS = []
 
     def run_case(self, name, optimize_python=None):
-        actual_output = normalize_trace_output(self.trace_python(
-            script_file=abspath(name + self.EXTENSION),
-            python_file=abspath(name + ".py"),
-            optimize_python=optimize_python))
+        try:
+            actual_output = normalize_trace_output(self.trace_python(
+                script_file=abspath(name + self.EXTENSION),
+                python_file=abspath(name + ".py"),
+                optimize_python=optimize_python))
+        except subprocess.TimeoutExpired:
+            raise AssertionError(f"{self.COMMAND[0]} timed out")
 
         with open(abspath(name + self.EXTENSION + ".expected")) as f:
             expected_output = f.read().rstrip()
@@ -72,12 +98,17 @@ class TraceBackend:
             command += ["-c", subcommand]
         return command
 
-    def trace(self, script_file, subcommand=None):
+    def trace(self, script_file, subcommand=None, *, timeout=None):
         command = self.generate_trace_command(script_file, subcommand)
-        stdout, _ = subprocess.Popen(command,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT,
-                                     universal_newlines=True).communicate()
+        proc = create_process_group(command,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    universal_newlines=True)
+        try:
+            stdout, _ = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            kill_process_group(proc)
+            raise
         return stdout
 
     def trace_python(self, script_file, python_file, optimize_python=None):
@@ -85,12 +116,17 @@ class TraceBackend:
         if optimize_python:
             python_flags.extend(["-O"] * optimize_python)
         subcommand = " ".join([sys.executable] + python_flags + [python_file])
-        return self.trace(script_file, subcommand)
+        return self.trace(script_file, subcommand, timeout=60)
 
     def assert_usable(self):
         try:
-            output = self.trace(abspath("assert_usable" + self.EXTENSION))
+            output = self.trace(abspath("assert_usable" + self.EXTENSION),
+                                timeout=10)
             output = output.strip()
+        except subprocess.TimeoutExpired:
+            raise unittest.SkipTest(
+                f"{self.COMMAND[0]} timed out during usability check"
+            )
         except (FileNotFoundError, NotADirectoryError, PermissionError) as fnfe:
             output = str(fnfe)
         if output != "probe: success":
@@ -205,7 +241,7 @@ gc__done:1""",
         program = self.PROGRAMS[name].format(python=sys.executable)
 
         try:
-            proc = subprocess.Popen(
+            proc = create_process_group(
                 ["bpftrace", "-e", program, "-c", " ".join(subcommand)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -213,7 +249,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=60)
         except subprocess.TimeoutExpired:
-            proc.kill()
+            kill_process_group(proc)
             raise AssertionError("bpftrace timed out")
         except (FileNotFoundError, PermissionError) as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -243,7 +279,7 @@ gc__done:1""",
         # Check if bpftrace is available and can attach to USDT probes
         program = f'usdt:{sys.executable}:python:function__entry {{ printf("probe: success\\n"); exit(); }}'
         try:
-            proc = subprocess.Popen(
+            proc = create_process_group(
                 ["bpftrace", "-e", program, "-c", f"{sys.executable} -c pass"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -251,8 +287,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.communicate()  # Clean up
+            kill_process_group(proc)
             raise unittest.SkipTest("bpftrace timed out during usability check")
         except OSError as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -366,12 +401,9 @@ class BPFTraceOptimizedTests(TraceTests, unittest.TestCase):
 class CheckDtraceProbes(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        if sysconfig.get_config_var('WITH_DTRACE'):
-            readelf_major_version, readelf_minor_version = cls.get_readelf_version()
-            if support.verbose:
-                print(f"readelf version: {readelf_major_version}.{readelf_minor_version}")
-        else:
-            raise unittest.SkipTest("CPython must be configured with the --with-dtrace option.")
+        readelf_major_version, readelf_minor_version = cls.get_readelf_version()
+        if support.verbose:
+            print(f"readelf version: {readelf_major_version}.{readelf_minor_version}")
 
 
     @staticmethod

@@ -117,6 +117,9 @@ COLLECTOR_MAP = {
     "binary": BinaryCollector,
 }
 
+BROWSER_COMPATIBLE_FORMATS = ("flamegraph", "diff_flamegraph", "heatmap")
+
+
 def _setup_child_monitor(args, parent_pid):
     # Build CLI args for child profilers (excluding --subprocesses to avoid recursion)
     child_cli_args = _build_child_profiler_args(args)
@@ -528,8 +531,12 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
     output_group.add_argument(
         "--browser",
         action="store_true",
-        help="Automatically open HTML output (flamegraph, heatmap) in browser. "
-        "When using `--subprocesses`, only the main process opens the browser",
+        help=(
+            "Automatically open HTML output "
+            f"({', '.join('--' + f.replace('_', '-') for f in BROWSER_COMPATIBLE_FORMATS)}) "
+            "in browser. "
+            "When using `--subprocesses`, only the main process opens the browser"
+        ),
     )
 
 
@@ -789,13 +796,12 @@ def _replay_with_reader(args, reader):
             args.outfile
             or _generate_output_filename(args.format, os.getpid())
         )
-        collector.export(filename)
+        export_ok = collector.export(filename)
 
         # Auto-open browser for HTML output if --browser flag is set
         if (
-            args.format in (
-                'flamegraph', 'diff_flamegraph', 'heatmap'
-            )
+            export_ok
+            and args.format in BROWSER_COMPATIBLE_FORMATS
             and getattr(args, 'browser', False)
         ):
             _open_in_browser(filename)
@@ -840,10 +846,14 @@ def _handle_output(collector, args, pid, mode):
             filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
         else:
             filename = args.outfile or _generate_output_filename(args.format, pid)
-        collector.export(filename)
+        export_ok = collector.export(filename)
 
         # Auto-open browser for HTML output if --browser flag is set
-        if args.format in ('flamegraph', 'diff_flamegraph', 'heatmap') and getattr(args, 'browser', False):
+        if (
+            export_ok
+            and args.format in BROWSER_COMPATIBLE_FORMATS
+            and getattr(args, 'browser', False)
+        ):
             _open_in_browser(filename)
 
 
@@ -875,13 +885,15 @@ def _validate_args(args, parser):
         if hasattr(args, 'live') and args.live:
             parser.error("--subprocesses is incompatible with --live mode.")
 
-    # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
+    # Async-aware mode is incompatible with options that need thread data.
     if getattr(args, 'async_aware', False):
         issues = []
         if getattr(args, 'native', False):
             issues.append("--native")
         if not getattr(args, 'gc', True):
             issues.append("--no-gc")
+        if getattr(args, 'format', None) == "binary":
+            issues.append("--binary")
         if hasattr(args, 'mode') and args.mode != "wall":
             issues.append(f"--mode={args.mode}")
         if hasattr(args, 'all_threads') and args.all_threads:

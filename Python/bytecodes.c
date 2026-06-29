@@ -250,6 +250,7 @@ dummy_func(
         op(_MONITOR_RESUME, (--)) {
             int err = _Py_call_instrumentation(
                     tstate, oparg == 0 ? PY_MONITORING_EVENT_PY_START : PY_MONITORING_EVENT_PY_RESUME, frame, this_instr);
+            RELOAD_STACK();
             ERROR_IF(err);
             if (frame->instr_ptr != this_instr) {
                 /* Instrumentation has jumped */
@@ -1548,6 +1549,7 @@ dummy_func(
             _PyStackRef executor = frame->localsplus[0];
             assert(tstate->current_executor == NULL);
             if (!PyStackRef_IsNull(executor)) {
+                assert(PyStackRef_TYPE(executor) == &_PyUOpExecutor_Type);
                 tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
                 PyStackRef_CLOSE(executor);
             }
@@ -1860,6 +1862,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
+            _PyThreadState_UpdateLastProfiledFrame(tstate, gen_frame, gen_frame->previous);
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
@@ -1889,9 +1892,11 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
             if (err) {
+                RELOAD_STACK();
                 ERROR_NO_POP();
             }
             if (frame->instr_ptr != this_instr) {
+                RELOAD_STACK();
                 next_instr = frame->instr_ptr;
                 DISPATCH();
             }
@@ -4265,6 +4270,13 @@ dummy_func(
             EXIT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid));
         }
 
+        op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
+            PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+            PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
+            EXIT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version);
+        }
+
         op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             /* Cached method object */
@@ -4281,7 +4293,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
-            unused/2 +
+            _GUARD_KEYS_VERSION +
             _LOAD_ATTR_METHOD_WITH_VALUES;
 
         op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
@@ -4315,7 +4327,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
-            unused/2 +
+            _GUARD_KEYS_VERSION +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 
         op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
@@ -4655,14 +4667,16 @@ dummy_func(
             assert(!IS_PEP523_HOOKED(tstate));
             _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
             DEAD(new_frame);
-            SYNC_SP();
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            SAVE_STACK();
             assert(temp->previous == frame || temp->previous->previous == frame);
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = temp;
             tstate->py_recursion_remaining--;
-            LOAD_SP();
+            RELOAD_STACK();
             LOAD_IP(0);
+            #ifdef Py_DEBUG
+            assert(frame->previous->stackpointer_valid == 1);
+            #endif
             DTRACE_FUNCTION_ENTRY();
             LLTRACE_RESUME_FRAME();
         }
@@ -5874,6 +5888,7 @@ dummy_func(
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *prev = frame->previous;
+            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             LOAD_IP(frame->return_offset);
@@ -5978,13 +5993,13 @@ dummy_func(
             } else {
                 original_opcode = _Py_call_instrumentation_line(
                         tstate, frame, this_instr, prev_instr);
+                RELOAD_STACK();
                 if (original_opcode < 0) {
                     next_instr = this_instr+1;
                     goto error;
                 }
                 next_instr = frame->instr_ptr;
                 if (next_instr != this_instr) {
-                    SYNC_SP();
                     DISPATCH();
                 }
             }
@@ -5995,6 +6010,7 @@ dummy_func(
                 PAUSE_ADAPTIVE_COUNTER(cache->counter);
             }
             opcode = original_opcode;
+            PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
         }
 
@@ -6475,6 +6491,7 @@ dummy_func(
         }
 
         label(error) {
+            _PyFrame_StackAssertInvalid(frame);
             /* Double-check exception status. */
 #ifdef NDEBUG
             if (!_PyErr_Occurred(tstate)) {
@@ -6501,9 +6518,7 @@ dummy_func(
         }
 
         spilled label(exception_unwind) {
-            SAVE_STACK();
             STOP_TRACING();
-            RELOAD_STACK();
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
@@ -6595,6 +6610,9 @@ dummy_func(
         }
 
         spilled label(start_frame) {
+            #ifdef Py_DEBUG
+            assert(frame->stackpointer_valid == 1);
+            #endif
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
                 goto exit_unwind_notrace;

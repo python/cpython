@@ -53,6 +53,10 @@ Copyright (C) 1994 Steen Lumholt.
 #  include <tk.h>
 #endif
 
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+#  include <tkPlatDecls.h>
+#endif
+
 #include "tkinter.h"
 
 #if TK_HEX_VERSION < 0x0805020c
@@ -174,6 +178,57 @@ _get_tcl_lib_path(void)
     return tcl_library_path;
 }
 #endif /* MS_WINDOWS */
+
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+static void
+mount_tk_dll_zip(void)
+{
+    HINSTANCE tk_module = Tk_GetHINSTANCE();
+    wchar_t *tk_path = NULL;
+    DWORD path_len = 0;
+    for (DWORD buffer_len = 256;
+         tk_path == NULL && buffer_len < (1024 * 1024);
+         buffer_len *= 2)
+    {
+        tk_path = (wchar_t *)PyMem_RawMalloc(
+            buffer_len * sizeof(*tk_path));
+        if (tk_path != NULL) {
+            path_len = GetModuleFileNameW(tk_module, tk_path, buffer_len);
+            if (path_len == buffer_len) {
+                PyMem_RawFree(tk_path);
+                tk_path = NULL;
+            }
+        }
+    }
+
+    if (tk_path == NULL || path_len == 0) {
+        PyMem_RawFree(tk_path);
+        return;
+    }
+
+    Tcl_DString utf8_path;
+
+    Tcl_DStringInit(&utf8_path);
+    Tcl_WCharToUtfDString(tk_path, path_len, &utf8_path);
+    /* Failure is harmless if the DLL has no embedded ZIP or if another
+       interpreter has already mounted it. */
+    (void) TclZipfs_Mount(NULL, Tcl_DStringValue(&utf8_path),
+                          "//zipfs:/lib/tk", NULL);
+    Tcl_DStringFree(&utf8_path);
+    PyMem_RawFree(tk_path);
+}
+#endif
+
+int
+Tkinter_TkInit(Tcl_Interp *interp)
+{
+#if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
+    /* Tcl/Tk 9 may embed the tk_library in the Tk DLL which tcl_findLibrary
+       does not search. Mount the DLL using Zipfs if possible.  */
+    mount_tk_dll_zip();
+#endif
+    return Tk_Init(interp);
+}
 
 /* The threading situation is complicated.  Tcl is not thread-safe, except
    when configured with --enable-threads.
@@ -544,7 +599,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-    if (Tk_Init(interp) == TCL_ERROR) {
+    if (Tkinter_TkInit(interp) == TCL_ERROR) {
         PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
         return TCL_ERROR;
     }
@@ -2409,7 +2464,7 @@ PythonCmdDelete(ClientData clientData)
     PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
 
     ENTER_PYTHON
-    Py_XDECREF(data->self);
+    /* data->self is borrowed. */
     Py_XDECREF(data->func);
     PyMem_Free(data);
     LEAVE_PYTHON
@@ -2478,7 +2533,9 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
-    Py_INCREF(self);
+    /* Borrow the interpreter: a strong reference would form an uncollectable
+       cycle (interp -> command -> data->self -> interp) and leak the command
+       (gh-80937).  The command cannot outlive the interpreter. */
     data->self = self;
     data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
@@ -2511,6 +2568,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     }
     if (err) {
         PyErr_SetString(Tkinter_TclError, "can't create Tcl command");
+        Py_DECREF(data->func);
         PyMem_Free(data);
         return NULL;
     }
@@ -2988,7 +3046,7 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
         return NULL;
     }
     if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)     {
-        if (Tk_Init(interp)             == TCL_ERROR) {
+        if (Tkinter_TkInit(interp)      == TCL_ERROR) {
             Tkinter_Error(self);
             return NULL;
         }
@@ -3074,10 +3132,24 @@ Tkapp_Dealloc(PyObject *op)
 {
     TkappObject *self = TkappObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    /*CHECK_TCL_APPARTMENT;*/
-    ENTER_TCL
-    Tcl_DeleteInterp(Tkapp_Interp(self));
-    LEAVE_TCL
+    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+        /* Deleting the interpreter from another thread aborts the process
+           ("Tcl_AsyncDelete: async handler deleted by the wrong thread").
+           Leak it instead (gh-83274). */
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "the Tcl interpreter is leaked because it was "
+                         "deallocated in a thread other than the one it was "
+                         "created in (see gh-83274)", 1) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while finalizing "
+                                   "a Tcl interpreter");
+        }
+    }
+    else {
+        ENTER_TCL
+        Tcl_DeleteInterp(Tkapp_Interp(self));
+        LEAVE_TCL
+    }
     Py_XDECREF(self->trace);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -3216,6 +3288,20 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
     CHECK_STRING_LENGTH(baseName);
     CHECK_STRING_LENGTH(className);
     CHECK_STRING_LENGTH(use);
+
+#if TCL_MAJOR_VERSION < 9
+    /* className is title-cased during Tk initialization.  Tcl 8.x does not
+     * support non-BMP characters (encoded as 4-byte UTF-8 sequences) there
+     * and crashes in Tcl_UtfToTitle (see gh-126219).  Reject them up front. */
+    for (const unsigned char *p = (const unsigned char *)className; *p; p++) {
+        if (*p >= 0xF0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "className must not contain non-BMP characters "
+                            "with this version of Tcl/Tk");
+            return NULL;
+        }
+    }
+#endif
 
     return (PyObject *) Tkapp_New(screenName, className,
                                   interactive, wantobjects, wantTk,
@@ -3357,14 +3443,20 @@ static PyMethodDef moduleMethods[] =
 };
 
 #ifdef WAIT_FOR_STDIN
+#ifndef MS_WINDOWS
 
 static int stdin_ready = 0;
 
-#ifndef MS_WINDOWS
 static void
 MyFileProc(void *clientData, int mask)
 {
+    int tfile = (int)(Py_intptr_t)clientData;
     stdin_ready = 1;
+    /* Stop watching stdin now that input is available.  Doing it here rather
+       than after the loop below ensures that a nested event loop (e.g. the one
+       started by wait_variable) does not keep waking up on the same unread
+       input, spinning at 100% CPU. */
+    Tcl_DeleteFileHandler(tfile);
 }
 #endif
 
@@ -3373,21 +3465,40 @@ static PyThreadState *event_tstate = NULL;
 static int
 EventHook(void)
 {
-#ifndef MS_WINDOWS
+#ifdef MS_WINDOWS
+    HANDLE hStdin;
+    DWORD type;
+#else
     int tfile;
+    stdin_ready = 0;
 #endif
     PyEval_RestoreThread(event_tstate);
-    stdin_ready = 0;
     errorInCmd = 0;
-#ifndef MS_WINDOWS
+#ifdef MS_WINDOWS
+    hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    type = GetFileType(hStdin);
+    while (1) {
+#else
     tfile = fileno(stdin);
-    Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
+    Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc,
+                          (void *)(Py_intptr_t)tfile);
+    while (!stdin_ready) {
 #endif
-    while (!errorInCmd && !stdin_ready) {
         int result;
 #ifdef MS_WINDOWS
-        if (_kbhit()) {
-            stdin_ready = 1;
+        if (type == FILE_TYPE_CHAR) {
+            if (_kbhit()) break;
+        }
+        else if (type == FILE_TYPE_PIPE) {
+            DWORD available;
+            if (PeekNamedPipe(hStdin, NULL, 0, NULL, &available, NULL)) {
+                if (available > 0) break;
+            }
+            else {
+                if (GetLastError() == ERROR_BROKEN_PIPE) break;
+            }
+        }
+        else if (type == FILE_TYPE_DISK) {
             break;
         }
 #endif
@@ -3403,18 +3514,23 @@ EventHook(void)
             Sleep(Tkinter_busywaitinterval);
         Py_END_ALLOW_THREADS
 
+        /* Report an exception raised in a callback, but keep pumping events
+           instead of returning to the prompt: without readline there is no
+           input waiting on stdin yet, so returning here would block in fgets
+           until the user hits enter, freezing later callbacks. */
+        if (errorInCmd) {
+            errorInCmd = 0;
+            PyErr_SetRaisedException(excInCmd);
+            excInCmd = NULL;
+            PyErr_Print();
+        }
         if (result < 0)
             break;
     }
 #ifndef MS_WINDOWS
-    Tcl_DeleteFileHandler(tfile);
+    if (!stdin_ready)
+        Tcl_DeleteFileHandler(tfile);
 #endif
-    if (errorInCmd) {
-        errorInCmd = 0;
-        PyErr_SetRaisedException(excInCmd);
-        excInCmd = NULL;
-        PyErr_Print();
-    }
     PyEval_SaveThread();
     return 0;
 }
@@ -3490,7 +3606,7 @@ PyInit__tkinter(void)
 
     tcl_lock = PyThread_allocate_lock();
     if (tcl_lock == NULL)
-        return NULL;
+        return PyErr_NoMemory();
 
     m = PyModule_Create(&_tkintermodule);
     if (m == NULL)

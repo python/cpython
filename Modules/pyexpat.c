@@ -2549,8 +2549,8 @@ pyexpat_exec(PyObject *mod)
     capi->SetBillionLaughsAttackProtectionActivationThreshold = XML_SetBillionLaughsAttackProtectionActivationThreshold;
     capi->SetBillionLaughsAttackProtectionMaximumAmplification = XML_SetBillionLaughsAttackProtectionMaximumAmplification;
 #else
-    capi->SetAllocTrackerActivationThreshold = NULL;
-    capi->SetAllocTrackerMaximumAmplification = NULL;
+    capi->SetBillionLaughsAttackProtectionActivationThreshold = NULL;
+    capi->SetBillionLaughsAttackProtectionMaximumAmplification = NULL;
 #endif
 
     /* export using capsule */
