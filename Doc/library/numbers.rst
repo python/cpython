@@ -90,8 +90,7 @@ Notes for type implementers
 
 Implementers should be careful to make equal numbers equal and hash
 them to the same values. This may be subtle if there are two different
-extensions of the real numbers.  For a hashing scheme that is consistent
-across numeric types, see :ref:`numeric-hash`.
+extensions of the real numbers. See also :ref:`numeric-hash`.
 
 
 Adding More Numeric ABCs
