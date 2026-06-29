@@ -4486,4 +4486,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=11ab7c93cbc13e75 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7835b44ce9413f7f input=a9049054013a1b77]*/
