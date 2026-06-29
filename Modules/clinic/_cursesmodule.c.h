@@ -8,8 +8,6 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(complexchar_new__doc__,
 "complexchar(text, /, attr=0, pair=0)\n"
 "--\n"
@@ -103,10 +101,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(complexstr_new__doc__,
 "complexstr(cells, /, attr=<unrepresentable>, pair=<unrepresentable>)\n"
 "--\n"
@@ -193,8 +187,6 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr])\n"
@@ -1101,6 +1093,63 @@ exit:
 
 #endif /* defined(NCURSES_MOUSE_VERSION) */
 
+#if defined(NCURSES_MOUSE_VERSION)
+
+PyDoc_STRVAR(_curses_window_mouse_trafo__doc__,
+"mouse_trafo($self, y, x, to_screen, /)\n"
+"--\n"
+"\n"
+"Convert coordinates between window-relative and screen-relative.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  to_screen\n"
+"    If True, convert window-relative coordinates to\n"
+"    stdscr-relative ones; otherwise convert the other way.\n"
+"\n"
+"Return the converted (y, x) coordinates, or None if they are\n"
+"outside the window.");
+
+#define _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF    \
+    {"mouse_trafo", _PyCFunction_CAST(_curses_window_mouse_trafo), METH_FASTCALL, _curses_window_mouse_trafo__doc__},
+
+static PyObject *
+_curses_window_mouse_trafo_impl(PyCursesWindowObject *self, int y, int x,
+                                int to_screen);
+
+static PyObject *
+_curses_window_mouse_trafo(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int y;
+    int x;
+    int to_screen;
+
+    if (!_PyArg_CheckPositional("mouse_trafo", nargs, 3, 3)) {
+        goto exit;
+    }
+    y = PyLong_AsInt(args[0]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    x = PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    to_screen = PyObject_IsTrue(args[2]);
+    if (to_screen < 0) {
+        goto exit;
+    }
+    return_value = _curses_window_mouse_trafo_impl((PyCursesWindowObject *)self, y, x, to_screen);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(NCURSES_MOUSE_VERSION) */
+
 PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 "getbkgd($self, /)\n"
 "--\n"
@@ -1118,8 +1167,6 @@ _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
-
-#if defined(HAVE_NCURSESW)
 
 PyDoc_STRVAR(_curses_window_in_wch__doc__,
 "in_wch([y, x])\n"
@@ -1167,10 +1214,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_getbkgrnd__doc__,
 "getbkgrnd($self, /)\n"
 "--\n"
@@ -1188,8 +1231,6 @@ _curses_window_getbkgrnd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _curses_window_getbkgrnd_impl((PyCursesWindowObject *)self);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
@@ -1287,8 +1328,6 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_get_wch__doc__,
 "get_wch([y, x])\n"
 "Get a wide character from terminal keyboard.\n"
@@ -1334,8 +1373,6 @@ _curses_window_get_wch(PyObject *self, PyObject *args)
 exit:
     return return_value;
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_hline__doc__,
 "hline([y, x,] ch, n, [attr])\n"
@@ -2800,8 +2837,6 @@ _curses_erasechar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_erasechar_impl(module);
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_erasewchar__doc__,
 "erasewchar($module, /)\n"
 "--\n"
@@ -2819,8 +2854,6 @@ _curses_erasewchar(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_erasewchar_impl(module);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_flash__doc__,
 "flash($module, /)\n"
@@ -3014,6 +3047,8 @@ PyDoc_STRVAR(_curses_getwin__doc__,
 #define _CURSES_GETWIN_METHODDEF    \
     {"getwin", (PyCFunction)_curses_getwin, METH_O, _curses_getwin__doc__},
 
+#if defined(HAVE_CURSES_SCR_DUMP)
+
 PyDoc_STRVAR(_curses_scr_dump__doc__,
 "scr_dump($module, filename, /)\n"
 "--\n"
@@ -3028,6 +3063,10 @@ PyDoc_STRVAR(_curses_scr_dump__doc__,
 
 #define _CURSES_SCR_DUMP_METHODDEF    \
     {"scr_dump", (PyCFunction)_curses_scr_dump, METH_O, _curses_scr_dump__doc__},
+
+#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+
+#if defined(HAVE_CURSES_SCR_DUMP)
 
 PyDoc_STRVAR(_curses_scr_restore__doc__,
 "scr_restore($module, filename, /)\n"
@@ -3044,6 +3083,10 @@ PyDoc_STRVAR(_curses_scr_restore__doc__,
 #define _CURSES_SCR_RESTORE_METHODDEF    \
     {"scr_restore", (PyCFunction)_curses_scr_restore, METH_O, _curses_scr_restore__doc__},
 
+#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+
+#if defined(HAVE_CURSES_SCR_DUMP)
+
 PyDoc_STRVAR(_curses_scr_init__doc__,
 "scr_init($module, filename, /)\n"
 "--\n"
@@ -3059,6 +3102,10 @@ PyDoc_STRVAR(_curses_scr_init__doc__,
 #define _CURSES_SCR_INIT_METHODDEF    \
     {"scr_init", (PyCFunction)_curses_scr_init, METH_O, _curses_scr_init__doc__},
 
+#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+
+#if defined(HAVE_CURSES_SCR_DUMP)
+
 PyDoc_STRVAR(_curses_scr_set__doc__,
 "scr_set($module, filename, /)\n"
 "--\n"
@@ -3072,6 +3119,8 @@ PyDoc_STRVAR(_curses_scr_set__doc__,
 
 #define _CURSES_SCR_SET_METHODDEF    \
     {"scr_set", (PyCFunction)_curses_scr_set, METH_O, _curses_scr_set__doc__},
+
+#endif /* defined(HAVE_CURSES_SCR_DUMP) */
 
 PyDoc_STRVAR(_curses_halfdelay__doc__,
 "halfdelay($module, tenths, /)\n"
@@ -3210,7 +3259,7 @@ exit:
 
 #endif /* defined(HAVE_CURSES_HAS_KEY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+#if defined(HAVE_CURSES_DEFINE_KEY)
 
 PyDoc_STRVAR(_curses_define_key__doc__,
 "define_key($module, definition, keycode, /)\n"
@@ -3271,9 +3320,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+#endif /* defined(HAVE_CURSES_DEFINE_KEY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+#if defined(HAVE_CURSES_KEY_DEFINED)
 
 PyDoc_STRVAR(_curses_key_defined__doc__,
 "key_defined($module, definition, /)\n"
@@ -3318,9 +3367,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+#endif /* defined(HAVE_CURSES_KEY_DEFINED) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+#if defined(HAVE_CURSES_KEYOK)
 
 PyDoc_STRVAR(_curses_keyok__doc__,
 "keyok($module, keycode, enable, /)\n"
@@ -3363,7 +3412,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+#endif /* defined(HAVE_CURSES_KEYOK) */
 
 PyDoc_STRVAR(_curses_init_color__doc__,
 "init_color($module, color_number, r, g, b, /)\n"
@@ -3841,7 +3890,7 @@ _curses_new_prescr(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_CURSES_NEW_PRESCR) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_ESCDELAY)
 
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
@@ -3865,9 +3914,9 @@ _curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_escdelay_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_ESCDELAY)
 
 PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "set_escdelay($module, ms, /)\n"
@@ -3904,9 +3953,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_TABSIZE)
 
 PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "get_tabsize($module, /)\n"
@@ -3929,9 +3978,9 @@ _curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_tabsize_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_TABSIZE) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_TABSIZE)
 
 PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "set_tabsize($module, size, /)\n"
@@ -3967,7 +4016,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_TABSIZE) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
@@ -4113,8 +4162,6 @@ _curses_killchar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_killchar_impl(module);
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_killwchar__doc__,
 "killwchar($module, /)\n"
 "--\n"
@@ -4132,8 +4179,6 @@ _curses_killwchar(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_killwchar_impl(module);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_longname__doc__,
 "longname($module, /)\n"
@@ -4186,6 +4231,28 @@ _curses_meta(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#if defined(NCURSES_MOUSE_VERSION)
+
+PyDoc_STRVAR(_curses_has_mouse__doc__,
+"has_mouse($module, /)\n"
+"--\n"
+"\n"
+"Return True if the mouse driver has been successfully initialized.");
+
+#define _CURSES_HAS_MOUSE_METHODDEF    \
+    {"has_mouse", (PyCFunction)_curses_has_mouse, METH_NOARGS, _curses_has_mouse__doc__},
+
+static PyObject *
+_curses_has_mouse_impl(PyObject *module);
+
+static PyObject *
+_curses_has_mouse(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_has_mouse_impl(module);
+}
+
+#endif /* defined(NCURSES_MOUSE_VERSION) */
 
 #if defined(NCURSES_MOUSE_VERSION)
 
@@ -5073,6 +5140,31 @@ _curses_termattrs(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_termattrs_impl(module);
 }
 
+#if defined(HAVE_CURSES_TERM_ATTRS)
+
+PyDoc_STRVAR(_curses_term_attrs__doc__,
+"term_attrs($module, /)\n"
+"--\n"
+"\n"
+"Return a logical OR of all video attributes supported by the terminal.\n"
+"\n"
+"The attributes are WA_* values, the extended-attribute counterparts of\n"
+"the A_* values returned by termattrs().");
+
+#define _CURSES_TERM_ATTRS_METHODDEF    \
+    {"term_attrs", (PyCFunction)_curses_term_attrs, METH_NOARGS, _curses_term_attrs__doc__},
+
+static PyObject *
+_curses_term_attrs_impl(PyObject *module);
+
+static PyObject *
+_curses_term_attrs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_term_attrs_impl(module);
+}
+
+#endif /* defined(HAVE_CURSES_TERM_ATTRS) */
+
 PyDoc_STRVAR(_curses_termname__doc__,
 "termname($module, /)\n"
 "--\n"
@@ -5311,8 +5403,6 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 #define _CURSES_UNCTRL_METHODDEF    \
     {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_wunctrl__doc__,
 "wunctrl($module, ch, /)\n"
 "--\n"
@@ -5325,8 +5415,6 @@ PyDoc_STRVAR(_curses_wunctrl__doc__,
 #define _CURSES_WUNCTRL_METHODDEF    \
     {"wunctrl", (PyCFunction)_curses_wunctrl, METH_O, _curses_wunctrl__doc__},
 
-#endif /* defined(HAVE_NCURSESW) */
-
 PyDoc_STRVAR(_curses_ungetch__doc__,
 "ungetch($module, ch, /)\n"
 "--\n"
@@ -5336,8 +5424,6 @@ PyDoc_STRVAR(_curses_ungetch__doc__,
 #define _CURSES_UNGETCH_METHODDEF    \
     {"ungetch", (PyCFunction)_curses_ungetch, METH_O, _curses_ungetch__doc__},
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_unget_wch__doc__,
 "unget_wch($module, ch, /)\n"
 "--\n"
@@ -5346,8 +5432,6 @@ PyDoc_STRVAR(_curses_unget_wch__doc__,
 
 #define _CURSES_UNGET_WCH_METHODDEF    \
     {"unget_wch", (PyCFunction)_curses_unget_wch, METH_O, _curses_unget_wch__doc__},
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_slk_init__doc__,
 "slk_init($module, fmt=0, /)\n"
@@ -5401,7 +5485,7 @@ PyDoc_STRVAR(_curses_slk_set__doc__,
 "  label\n"
 "    The text to display.\n"
 "  justify\n"
-"    0 = left, 1 = centre, 2 = right.");
+"    0 = left, 1 = center, 2 = right.");
 
 #define _CURSES_SLK_SET_METHODDEF    \
     {"slk_set", _PyCFunction_CAST(_curses_slk_set), METH_FASTCALL, _curses_slk_set__doc__},
@@ -5923,17 +6007,9 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
 
-#ifndef _CURSES_WINDOW_IN_WCH_METHODDEF
-    #define _CURSES_WINDOW_IN_WCH_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_IN_WCH_METHODDEF) */
-
-#ifndef _CURSES_WINDOW_GETBKGRND_METHODDEF
-    #define _CURSES_WINDOW_GETBKGRND_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_GETBKGRND_METHODDEF) */
-
-#ifndef _CURSES_WINDOW_GET_WCH_METHODDEF
-    #define _CURSES_WINDOW_GET_WCH_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_GET_WCH_METHODDEF) */
+#ifndef _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF
+    #define _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_MOUSE_TRAFO_METHODDEF) */
 
 #ifndef _CURSES_WINDOW_NOUTREFRESH_METHODDEF
     #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF
@@ -5963,10 +6039,6 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_IS_RAW_METHODDEF
 #endif /* !defined(_CURSES_IS_RAW_METHODDEF) */
 
-#ifndef _CURSES_ERASEWCHAR_METHODDEF
-    #define _CURSES_ERASEWCHAR_METHODDEF
-#endif /* !defined(_CURSES_ERASEWCHAR_METHODDEF) */
-
 #ifndef _CURSES_GETSYX_METHODDEF
     #define _CURSES_GETSYX_METHODDEF
 #endif /* !defined(_CURSES_GETSYX_METHODDEF) */
@@ -5978,6 +6050,22 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_UNGETMOUSE_METHODDEF
     #define _CURSES_UNGETMOUSE_METHODDEF
 #endif /* !defined(_CURSES_UNGETMOUSE_METHODDEF) */
+
+#ifndef _CURSES_SCR_DUMP_METHODDEF
+    #define _CURSES_SCR_DUMP_METHODDEF
+#endif /* !defined(_CURSES_SCR_DUMP_METHODDEF) */
+
+#ifndef _CURSES_SCR_RESTORE_METHODDEF
+    #define _CURSES_SCR_RESTORE_METHODDEF
+#endif /* !defined(_CURSES_SCR_RESTORE_METHODDEF) */
+
+#ifndef _CURSES_SCR_INIT_METHODDEF
+    #define _CURSES_SCR_INIT_METHODDEF
+#endif /* !defined(_CURSES_SCR_INIT_METHODDEF) */
+
+#ifndef _CURSES_SCR_SET_METHODDEF
+    #define _CURSES_SCR_SET_METHODDEF
+#endif /* !defined(_CURSES_SCR_SET_METHODDEF) */
 
 #ifndef _CURSES_HAS_KEY_METHODDEF
     #define _CURSES_HAS_KEY_METHODDEF
@@ -6035,9 +6123,9 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
 
-#ifndef _CURSES_KILLWCHAR_METHODDEF
-    #define _CURSES_KILLWCHAR_METHODDEF
-#endif /* !defined(_CURSES_KILLWCHAR_METHODDEF) */
+#ifndef _CURSES_HAS_MOUSE_METHODDEF
+    #define _CURSES_HAS_MOUSE_METHODDEF
+#endif /* !defined(_CURSES_HAS_MOUSE_METHODDEF) */
 
 #ifndef _CURSES_MOUSEINTERVAL_METHODDEF
     #define _CURSES_MOUSEINTERVAL_METHODDEF
@@ -6063,17 +6151,13 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_SETSYX_METHODDEF
 #endif /* !defined(_CURSES_SETSYX_METHODDEF) */
 
+#ifndef _CURSES_TERM_ATTRS_METHODDEF
+    #define _CURSES_TERM_ATTRS_METHODDEF
+#endif /* !defined(_CURSES_TERM_ATTRS_METHODDEF) */
+
 #ifndef _CURSES_TYPEAHEAD_METHODDEF
     #define _CURSES_TYPEAHEAD_METHODDEF
 #endif /* !defined(_CURSES_TYPEAHEAD_METHODDEF) */
-
-#ifndef _CURSES_WUNCTRL_METHODDEF
-    #define _CURSES_WUNCTRL_METHODDEF
-#endif /* !defined(_CURSES_WUNCTRL_METHODDEF) */
-
-#ifndef _CURSES_UNGET_WCH_METHODDEF
-    #define _CURSES_UNGET_WCH_METHODDEF
-#endif /* !defined(_CURSES_UNGET_WCH_METHODDEF) */
 
 #ifndef _CURSES_SLK_ATTR_METHODDEF
     #define _CURSES_SLK_ATTR_METHODDEF
@@ -6090,4 +6174,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=94e7fb564239d793 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=55829d2ef2b559a0 input=a9049054013a1b77]*/
