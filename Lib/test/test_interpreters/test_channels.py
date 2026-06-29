@@ -38,9 +38,9 @@ class LowLevelTests(TestBase):
         import _testcapi
 
         cid = None
-        _testcapi.set_nomemory(0, 1)
         try:
             with self.assertRaises(MemoryError):
+                _testcapi.set_nomemory(0, 1)
                 cid = _channels.create()
         finally:
             _testcapi.remove_mem_hooks()
