@@ -94,6 +94,7 @@ class BinaryCollector(Collector):
             filename: Ignored (binary files are written incrementally)
         """
         self._writer.finalize()
+        return True
 
     @property
     def total_samples(self):

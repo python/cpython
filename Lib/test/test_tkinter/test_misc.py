@@ -2,15 +2,19 @@ import collections.abc
 import functools
 import platform
 import sys
+import textwrap
 import unittest
+import weakref
 import tkinter
 from tkinter import TclError
 import enum
 from test import support
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
-                                       requires_tk, get_tk_patchlevel)
+                                       requires_tk, get_tk_patchlevel,
+                                       tcl_version)
 
 support.requires('gui')
 
@@ -50,6 +54,33 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b3 = tkinter.Button(f2)
         b4 = Button2(f2)
         self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
+
+    def test_dealloc_in_wrong_thread(self):
+        # gh-83274: deallocating the interpreter in the wrong thread must not
+        # crash.
+        script = textwrap.dedent("""
+            import threading
+            import tkinter
+            root = tkinter.Tk()
+            root.destroy()
+            # Let another thread drop the last reference.
+            ready = threading.Event()
+            t = threading.Thread(target=lambda obj: ready.wait(), args=(root,))
+            t.start()
+            del root
+            ready.set()
+            t.join()
+            print('ok')
+        """)
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(out.strip(), b'ok')
+        if not support.Py_GIL_DISABLED:
+            # On the free-threaded build the interpreter may instead be
+            # deallocated in its own thread (deferred reference counting), so
+            # the warning is not necessarily emitted.  The crucial guarantee --
+            # no crash -- is already checked by assert_python_ok() above.
+            self.assertIn(b'RuntimeWarning', err)
+            self.assertIn(b'gh-83274', err)
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):
@@ -349,6 +380,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.deletecommand(name)
         self.assertRaises(TclError, self.root.tk.call, name)
 
+    def test_createcommand_no_leak(self):
+        # gh-80937: dropping the interpreter must release a command's callback,
+        # even without an explicit deletecommand().
+        interp = tkinter.Tcl()
+        callback = lambda: ''
+        ref = weakref.ref(callback)
+        interp.tk.createcommand('cb', callback)
+        del callback, interp
+        support.gc_collect()
+        self.assertIsNone(ref())
+
     def test_option(self):
         self.addCleanup(self.root.option_clear)
         self.root.option_add('*Button.background', 'red')
@@ -377,6 +419,32 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertIs(self.root.nametowidget(str(b)), b)
         self.assertRaises(KeyError, self.root.nametowidget, '.nonexistent')
 
+    def test_nametowidget_menu_clone(self):
+        # A menu used as a menubar or cascade is cloned by Tk under an
+        # auto-generated name (each path component is the original name
+        # prefixed with one or more '#' clone markers).  nametowidget()
+        # maps such a name back to the original widget (gh-38464).
+        menubar = tkinter.Menu(self.root)
+        filemenu = tkinter.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label='File', menu=filemenu)
+        submenu = tkinter.Menu(filemenu, tearoff=0)
+        filemenu.add_cascade(label='More', menu=submenu)
+        self.root['menu'] = menubar
+        self.root.update_idletasks()
+
+        originals = {menubar, filemenu, submenu}
+        clones = []
+        def collect(parent):
+            for name in self.root.tk.splitlist(
+                    self.root.tk.call('winfo', 'children', parent)):
+                clones.append(name)
+                collect(name)
+        collect('.')
+        # Every menu (originals and clones) resolves to an original widget.
+        self.assertTrue(any('#' in name for name in clones))
+        for name in clones:
+            self.assertIn(self.root.nametowidget(name), originals)
+
     def test_focus_methods(self):
         f = tkinter.Frame(self.root, width=150, height=100)
         f.pack()
@@ -393,6 +461,22 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b.focus_set()
         self.root.update()
         self.assertIs(self.root.focus_get(), b)
+
+    def test_focus_methods_unresolvable(self):
+        # The focus may be on a widget that tkinter did not create and so
+        # cannot map to an instance (e.g. a torn-off menu).  The focus
+        # methods return None instead of raising KeyError (gh-88758).
+        menu = tkinter.Menu(self.root, tearoff=1)
+        menu.add_command(label='Hello')
+        tearoff = self.root.tk.call('tk::TearOffMenu', str(menu), 0, 0)
+        self.addCleanup(self.root.tk.call, 'destroy', tearoff)
+        self.root.update()
+        self.assertRaises(KeyError, self.root.nametowidget, tearoff)
+
+        self.root.tk.call('focus', '-force', tearoff)
+        self.root.update()
+        self.assertIsNone(self.root.focus_get())
+        self.assertIsNone(self.root.focus_displayof())
 
     def test_grab(self):
         f = tkinter.Frame(self.root)
@@ -484,7 +568,11 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_tk_caret(self):
         self.assertIsNone(self.root.tk_caret(x=5, y=10, height=20))
         caret = self.root.tk_caret()
-        self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
+        if self.root._windowingsystem == 'aqua':
+            # macOS records the caret only for the key window.
+            self.assertEqual(set(caret), {'x', 'y', 'height'})
+        else:
+            self.assertEqual(caret, {'x': 5, 'y': 10, 'height': 20})
 
     def test_tk_scaling(self):
         old = self.root.tk_scaling()
@@ -708,6 +796,30 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             iter(widget)
         with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
             widget in widget
+
+
+class TkTest(AbstractTkTest, unittest.TestCase):
+
+    def test_className(self):
+        # The className argument sets the class of the root window.  Tk
+        # title-cases it: the first letter is upper-cased, the rest lower-cased.
+        cases = [
+            ('fooBAR', 'Foobar'),
+            ('éÉ', 'Éé'),  # small and capital E WITH ACUTE
+        ]
+        if tcl_version >= (9, 0):
+            # small and capital DESERET LETTER LONG I (a non-BMP script)
+            cases.append(('\U00010428\U00010400', '\U00010400\U00010428'))
+        for className, klass in cases:
+            root = tkinter.Tk(className=className)
+            try:
+                self.assertEqual(root.winfo_class(), klass)
+            finally:
+                root.destroy()
+        if tcl_version < (9, 0):
+            # gh-126219: title-casing a non-BMP first letter crashed Tcl 8.x;
+            # such a class name is now rejected.
+            self.assertRaises(ValueError, tkinter.Tk, className='\U00010428')
 
 
 class WinfoTest(AbstractTkTest, unittest.TestCase):

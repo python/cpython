@@ -16,7 +16,6 @@ jobs:
     timeout-minutes: 60
     env:
       WASMTIME_VERSION: 38.0.3
-      CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -54,14 +53,16 @@ jobs:
       run: python3 Platforms/WASI configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
       run: python3 Platforms/WASI make-build-python
-    - name: "Configure host"
+    - name: "Display build info of the build Python"
+      run: python3 Platforms/WASI pythoninfo-build
+    - name: "Configure host/WASI Python"
       # `--with-pydebug` inferred from configure-build-python
       run: python3 Platforms/WASI configure-host -- --config-cache
       env:
         WASI_SDK_PATH: ${{ steps.install-wasi-sdk.outputs.wasi-sdk-path }}
-    - name: "Make host"
+    - name: "Make host/WASI Python"
       run: python3 Platforms/WASI make-host
-    - name: "Display build info"
-      run: make --directory "${CROSS_BUILD_WASI}" pythoninfo
+    - name: "Display build info of the host/WASI Python"
+      run: python3 Platforms/WASI pythoninfo-host
     - name: "Test"
       run: make --directory "${CROSS_BUILD_WASI}" test

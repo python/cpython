@@ -8,7 +8,7 @@ from test.test_ttk_textonly import MockTclObj
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (
     AbstractTkTest, requires_tk, tk_version, get_tk_patchlevel,
-    simulate_mouse_click, AbstractDefaultRootTest)
+    simulate_mouse_click, wait_until_mapped, AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (add_configure_tests,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
@@ -78,11 +78,13 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
         self.widget.pack()
 
     def test_identify(self):
-        self.widget.update()
-        self.assertEqual(self.widget.identify(
-            int(self.widget.winfo_width() / 2),
-            int(self.widget.winfo_height() / 2)
-            ), "label")
+        # Identifying the element under a point requires the widget to be
+        # mapped with a real size; the rest of the checks do not.
+        if wait_until_mapped(self.widget):
+            self.assertEqual(self.widget.identify(
+                int(self.widget.winfo_width() / 2),
+                int(self.widget.winfo_height() / 2)
+                ), "label")
         self.assertEqual(self.widget.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.widget.identify, None, 5)
@@ -385,9 +387,11 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
             self.skipTest('Test does not work on macOS Tk 9.')
             # https://core.tcl-lang.org/tk/tktview/8b49e9cfa6
         self.entry.pack()
-        self.root.update()
 
-        self.assertIn(self.entry.identify(5, 5), self.IDENTIFY_AS)
+        # Identifying the element under a point requires the widget to be
+        # mapped with a real size; the rest of the checks do not.
+        if wait_until_mapped(self.entry):
+            self.assertIn(self.entry.identify(5, 5), self.IDENTIFY_AS)
         self.assertEqual(self.entry.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.entry.identify, None, 5)
@@ -506,7 +510,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.bind('<<ComboboxSelected>>',
             lambda evt: success.append(True))
         self.combo.pack()
-        self.combo.update()
+        self.require_mapped(self.combo)
 
         height = self.combo.winfo_height()
         self._show_drop_down_listbox()
@@ -525,7 +529,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
 
         self.combo['postcommand'] = lambda: success.append(True)
         self.combo.pack()
-        self.combo.update()
+        self.require_mapped(self.combo)
 
         self._show_drop_down_listbox()
         self.assertTrue(success)
@@ -875,8 +879,10 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         else:
             conv = float
 
-        scale_width = self.scale.winfo_width()
-        self.assertEqual(self.scale.get(scale_width, 0), self.scale['to'])
+        # Reading the value at the far edge needs the realized width.
+        if wait_until_mapped(self.scale):
+            scale_width = self.scale.winfo_width()
+            self.assertEqual(self.scale.get(scale_width, 0), self.scale['to'])
 
         self.assertEqual(conv(self.scale.get(0, 0)), conv(self.scale['from']))
         self.assertEqual(self.scale.get(), self.scale['value'])
@@ -918,7 +924,10 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         # nevertheless, note that the max/min values we can get specifying
         # x, y coords are the ones according to the current range
         self.assertEqual(conv(self.scale.get(0, 0)), min)
-        self.assertEqual(conv(self.scale.get(self.scale.winfo_width(), 0)), max)
+        # Reading the value at the far edge needs the realized width.
+        if wait_until_mapped(self.scale):
+            self.assertEqual(
+                conv(self.scale.get(self.scale.winfo_width(), 0)), max)
 
         self.assertRaises(tkinter.TclError, self.scale.set, None)
 
@@ -1269,6 +1278,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         return ttk.Spinbox(self.root, **kwargs)
 
     def _click_increment_arrow(self):
+        self.require_mapped(self.spin)
         width = self.spin.winfo_width()
         height = self.spin.winfo_height()
         x = width - 5
@@ -1279,6 +1289,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         self.spin.update_idletasks()
 
     def _click_decrement_arrow(self):
+        self.require_mapped(self.spin)
         width = self.spin.winfo_width()
         height = self.spin.winfo_height()
         x = width - 5
