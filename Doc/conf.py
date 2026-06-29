@@ -21,6 +21,7 @@ from patchlevel import get_header_version_info, get_version_info
 
 # Our custom Sphinx extensions are found in Doc/Tools/extensions/
 extensions = [
+    'anchor_redirects',
     'audit_events',
     'availability',
     'c_annotations',

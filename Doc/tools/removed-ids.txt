@@ -12,9 +12,6 @@ deprecations/index.html: pending-removal-in-python-3-16
 deprecations/index.html: c-api-pending-removal-in-python-3-15
 deprecations/index.html: c-api-pending-removal-in-python-3-16
 
-# Removed libmpdec
-using/configure.html: cmdoption-with-system-libmpdec
-
 # Removed APIs
 library/symtable.html: symtable.Class.get_methods
 library/sys.html: sys._enablelegacywindowsfsencoding

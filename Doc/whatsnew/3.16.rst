@@ -563,6 +563,8 @@ that may require changes to your code.
 Build changes
 =============
 
+  .. _rem-bundled-libmpdec:
+
 * Remove the bundled copy of the libmpdec_ decimal library from the CPython source tree
   to simplify maintenance and updates. The :mod:`decimal` module will now
   unconditionally use the system's libmpdec decimal library. Also remove the

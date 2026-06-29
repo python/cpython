@@ -23,12 +23,29 @@ class IDGatherer(html.parser.HTMLParser):
     def __init__(self, ids):
         super().__init__()
         self.__ids = ids
+        self.__in_anchor_redirects_script = False
+        self.__anchor_redirects_chunks = []
 
     def handle_starttag(self, tag, attrs):
-        for name, value in attrs:
-            if name == 'id':
-                if not IGNORED_ID_RE.fullmatch(value):
-                    self.__ids.add(value)
+        element_id = dict(attrs).get('id')
+        if tag == 'script' and element_id == 'python-docs-anchor-redirects':
+            self.__in_anchor_redirects_script = True
+            self.__anchor_redirects_chunks = []
+        elif element_id and not IGNORED_ID_RE.fullmatch(element_id):
+            self.__ids.add(element_id)
+
+    def handle_data(self, data):
+        if self.__in_anchor_redirects_script:
+            self.__anchor_redirects_chunks.append(data)
+
+    def handle_endtag(self, tag):
+        if tag != 'script' or not self.__in_anchor_redirects_script:
+            return
+
+        redirects = json.loads(''.join(self.__anchor_redirects_chunks))
+        self.__ids.update(redirects)
+        self.__in_anchor_redirects_script = False
+        self.__anchor_redirects_chunks = []
 
 
 def get_ids_from_file(path):
