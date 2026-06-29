@@ -765,6 +765,9 @@ static int
 curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
 {
     short spair = 0;
+    /* getcchar() is not guaranteed to write the text of an empty cell, so make
+       the output an empty string by default. */
+    wstr[0] = L'\0';
 #if _NCURSES_EXTENDED_COLOR_FUNCS
     int rtn = getcchar(wcval, wstr, attrs, &spair, pair);
 #else
@@ -3079,7 +3082,8 @@ _curses_window_in_wch_impl(PyCursesWindowObject *self, int group_right_1,
                            int y, int x)
 /*[clinic end generated code: output=846ca8a82f2ecab4 input=a55dd215367dfbb1]*/
 {
-    curses_cell_t wcval;
+    /* Zeroed so getcchar() sees a NUL-terminated text array on read. */
+    curses_cell_t wcval = {0};
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
 #ifdef HAVE_NCURSESW
     int rtn;
@@ -3126,7 +3130,8 @@ static PyObject *
 _curses_window_getbkgrnd_impl(PyCursesWindowObject *self)
 /*[clinic end generated code: output=afec19cad00eff71 input=e06bf3d6bf90d2ec]*/
 {
-    curses_cell_t wcval;
+    /* Zeroed so getcchar() sees a NUL-terminated text array on read. */
+    curses_cell_t wcval = {0};
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
 #ifdef HAVE_NCURSESW
     if (wgetbkgrnd(self->win, &wcval) == ERR) {
@@ -3842,7 +3847,10 @@ PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
 
     n = Py_MIN(n, max_buf_size - 1);
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-    curses_cell_t *buf = PyMem_New(curses_cell_t, n + 1);
+    /* Zero the cells: reading a cell back through getcchar() relies on the
+       cchar_t text array being NUL-terminated, which some curses libraries
+       only guarantee for the characters they actually write. */
+    curses_cell_t *buf = PyMem_Calloc(n + 1, sizeof(curses_cell_t));
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
