@@ -9,6 +9,8 @@ import sys
 from _ctypes import CField, buffer_info
 import ctypes
 
+lazy import warnings
+
 def round_down(n, multiple):
     assert n >= 0
     assert multiple > 0
@@ -66,9 +68,26 @@ def get_layout(cls, input_fields, is_struct, base):
 
     # For clarity, variables that count bits have `bit` in their names.
 
+    pack = getattr(cls, '_pack_', None)
+
     layout = getattr(cls, '_layout_', None)
     if layout is None:
-        if sys.platform == 'win32' or getattr(cls, '_pack_', None):
+        if sys.platform == 'win32':
+            gcc_layout = False
+        elif pack:
+            if is_struct:
+                base_type_name = 'Structure'
+            else:
+                base_type_name = 'Union'
+            warnings._deprecated(
+                '_pack_ without _layout_',
+                f"Due to '_pack_', the '{cls.__name__}' {base_type_name} will "
+                + "use memory layout compatible with MSVC (Windows). "
+                + "If this is intended, set _layout_ to 'ms'. "
+                + "The implicit default is deprecated and slated to become "
+                + "an error in Python {remove}.",
+                remove=(3, 19),
+            )
             gcc_layout = False
         else:
             gcc_layout = True
@@ -95,7 +114,6 @@ def get_layout(cls, input_fields, is_struct, base):
     else:
         big_endian = sys.byteorder == 'big'
 
-    pack = getattr(cls, '_pack_', None)
     if pack is not None:
         try:
             pack = int(pack)

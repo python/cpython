@@ -33,6 +33,11 @@ CURRENT_THREAD_ID = fr'Current thread 0x[0-9a-f]+{THREAD_NAME}'
 CURRENT_THREAD_HEADER = fr'{CURRENT_THREAD_ID} \(most recent call first\):'
 
 
+def skip_if_sanitizer_signal(signame):
+    return support.skip_if_sanitizer(f"TSAN/UBSan itercepts {signame}",
+                                     thread=True, ub=True)
+
+
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
     regex += '  File "<string>", line %s in func\n' % lineno1
@@ -166,29 +171,6 @@ class FaultHandlerTests(unittest.TestCase):
         fatal_error = 'Windows fatal exception: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
 
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     "the first page of memory is a mapped read-only on AIX")
-    def test_read_null(self):
-        if not MS_WINDOWS:
-            self.check_fatal_error("""
-                import faulthandler
-                faulthandler.enable()
-                faulthandler._read_null()
-                """,
-                3,
-                # Issue #12700: Read NULL raises SIGILL on Mac OS X Lion
-                '(?:Segmentation fault'
-                    '|Bus error'
-                    '|Illegal instruction)')
-        else:
-            self.check_windows_exception("""
-                import faulthandler
-                faulthandler.enable()
-                faulthandler._read_null()
-                """,
-                3,
-                'access violation')
-
     @skip_segfault_on_android
     def test_sigsegv(self):
         self.check_fatal_error("""
@@ -247,7 +229,7 @@ class FaultHandlerTests(unittest.TestCase):
             func='faulthandler_fatal_error_thread',
             py_fatal_error=True)
 
-    @support.skip_if_sanitizer("TSAN itercepts SIGABRT", thread=True)
+    @skip_if_sanitizer_signal("SIGABRT")
     def test_sigabrt(self):
         self.check_fatal_error("""
             import faulthandler
@@ -259,7 +241,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == 'win32',
                      "SIGFPE cannot be caught on Windows")
-    @support.skip_if_sanitizer("TSAN itercepts SIGFPE", thread=True)
+    @skip_if_sanitizer_signal("SIGFPE")
     def test_sigfpe(self):
         self.check_fatal_error("""
             import faulthandler
@@ -271,7 +253,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')
-    @support.skip_if_sanitizer("TSAN itercepts SIGBUS", thread=True)
+    @skip_if_sanitizer_signal("SIGBUS")
     @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
@@ -286,7 +268,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGILL'), 'need signal.SIGILL')
-    @support.skip_if_sanitizer("TSAN itercepts SIGILL", thread=True)
+    @skip_if_sanitizer_signal("SIGILL")
     @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""
@@ -384,6 +366,17 @@ class FaultHandlerTests(unittest.TestCase):
             all_threads=False)
 
     @skip_segfault_on_android
+    def test_enable_without_c_stack(self):
+        self.check_fatal_error("""
+            import faulthandler
+            faulthandler.enable(c_stack=False)
+            faulthandler._sigsegv()
+            """,
+            3,
+            'Segmentation fault',
+            c_stack=False)
+
+    @skip_segfault_on_android
     def test_disable(self):
         code = """
             import faulthandler
@@ -400,10 +393,11 @@ class FaultHandlerTests(unittest.TestCase):
 
     @skip_segfault_on_android
     def test_dump_ext_modules(self):
+        # Don't filter stdlib module names: disable sys.stdlib_module_names
         code = """
             import faulthandler
             import sys
-            # Don't filter stdlib module names
+            import math
             sys.stdlib_module_names = frozenset()
             faulthandler.enable()
             faulthandler._sigsegv()
@@ -415,8 +409,20 @@ class FaultHandlerTests(unittest.TestCase):
         if not match:
             self.fail(f"Cannot find 'Extension modules:' in {stderr!r}")
         modules = set(match.group(1).strip().split(', '))
-        for name in ('sys', 'faulthandler'):
+        for name in ('sys', 'faulthandler', 'math'):
             self.assertIn(name, modules)
+
+        # Ignore "math.integer" sub-module if "math" package is
+        # in sys.stdlib_module_names
+        code = """
+            import faulthandler
+            import math.integer
+            faulthandler.enable()
+            faulthandler._sigsegv()
+            """
+        stderr, exitcode = self.get_output(code)
+        stderr = '\n'.join(stderr)
+        self.assertNotIn('Extension modules:', stderr)
 
     def test_is_enabled(self):
         orig_stderr = sys.stderr
@@ -718,6 +724,76 @@ class FaultHandlerTests(unittest.TestCase):
     def test_dump_traceback_later_twice(self):
         self.check_dump_traceback_later(loops=2)
 
+    def test_dump_traceback_max_threads(self):
+        # max_threads caps the dump and writes "...\n" when truncated.
+        # Spawn N worker threads, dump with cap < N, and verify the
+        # marker is present and exactly CAP thread headers are written.
+        code = dedent("""
+            import faulthandler
+            import sys
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            threads = [threading.Thread(target=worker) for _ in range(NTHREADS)]
+            for t in threads:
+                t.start()
+            ready.wait()
+            try:
+                faulthandler.dump_traceback(file=sys.stderr, max_threads=CAP)
+            finally:
+                stop.set()
+                for t in threads:
+                    t.join()
+        """).strip()
+        proc = script_helper.assert_python_ok('-c', code)
+        output = proc.err
+        # Truncation marker is written on its own line when the cap is hit.
+        self.assertIn(b"\n...\n", output)
+        # Cap of 3 means exactly 3 thread headers in the dump.
+        self.assertEqual(output.count(b"Thread 0x"), 3)
+
+    @skip_segfault_on_android
+    @unittest.skipIf(support.Py_GIL_DISABLED,
+                     "fatal-signal handler only dumps the current thread "
+                     "when the GIL is disabled")
+    def test_enable_max_threads(self):
+        # enable(max_threads=N) caps the thread dump produced when a
+        # fatal signal fires.
+        code = dedent("""
+            import faulthandler
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            for _ in range(NTHREADS):
+                threading.Thread(target=worker, daemon=True).start()
+            ready.wait()
+            faulthandler.enable(max_threads=CAP)
+            faulthandler._sigsegv()
+        """).strip()
+        output, exitcode = self.get_output(code)
+        output = '\n'.join(output)
+        # Cap of 3 means the dump is truncated with "..." on its own line.
+        self.assertIn("\n...\n", output)
+        self.assertNotEqual(exitcode, 0)
+
     @unittest.skipIf(not hasattr(faulthandler, "register"),
                      "need faulthandler.register")
     def check_register(self, filename=False, all_threads=False,
@@ -823,6 +899,46 @@ class FaultHandlerTests(unittest.TestCase):
     @support.skip_if_sanitizer("gh-129825: hangs under TSAN", thread=True)
     def test_register_chain(self):
         self.check_register(chain=True)
+
+    @unittest.skipIf(not hasattr(faulthandler, "register"),
+                     "need faulthandler.register")
+    def test_register_max_threads(self):
+        # register(max_threads=N) caps the thread dump produced when
+        # the registered signal fires.
+        code = dedent("""
+            import faulthandler
+            import signal
+            import threading
+
+            NTHREADS = 6
+            CAP = 3
+
+            ready = threading.Barrier(NTHREADS + 1)
+            stop = threading.Event()
+
+            def worker():
+                ready.wait()
+                stop.wait()
+
+            threads = [threading.Thread(target=worker) for _ in range(NTHREADS)]
+            for t in threads:
+                t.start()
+            ready.wait()
+            try:
+                faulthandler.register(signal.SIGUSR1, all_threads=True,
+                                      max_threads=CAP)
+                signal.raise_signal(signal.SIGUSR1)
+            finally:
+                stop.set()
+                for t in threads:
+                    t.join()
+        """).strip()
+        proc = script_helper.assert_python_ok('-c', code)
+        output = proc.err
+        # Cap of 3 means the dump is truncated with "..." on its own line.
+        self.assertIn(b"\n...\n", output)
+        # Cap of 3 means exactly 3 thread headers in the dump.
+        self.assertEqual(output.count(b"Thread 0x"), 3)
 
     @contextmanager
     def check_stderr_none(self):

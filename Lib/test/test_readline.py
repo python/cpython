@@ -1,6 +1,7 @@
 """
 Very minimal unittests for parts of the readline module.
 """
+import codecs
 import locale
 import os
 import sys
@@ -231,6 +232,13 @@ print("History length:", readline.get_current_history_length())
             # writing and reading non-ASCII bytes into/from a TTY works, but
             # readline or ncurses ignores non-ASCII bytes on read.
             self.skipTest(f"the LC_CTYPE locale is {loc!r}")
+        if sys.flags.utf8_mode:
+            encoding = locale.getencoding()
+            encoding = codecs.lookup(encoding).name  # normalize the name
+            if encoding != "utf-8":
+                # gh-133711: The Python UTF-8 Mode ignores the LC_CTYPE locale
+                # and always use the UTF-8 encoding.
+                self.skipTest(f"the LC_CTYPE encoding is {encoding!r}")
 
         try:
             readline.add_history("\xEB\xEF")
@@ -404,6 +412,24 @@ readline.write_history_file(history_file)
         # possible deduplication with arbitrary previous content).
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
+
+    @unittest.skipUnless(hasattr(readline, "get_pre_input_hook"),
+                         "get_pre_input_hook not available")
+    def test_get_pre_input_hook(self):
+        # Save and restore the original hook to avoid side effects
+        original_hook = readline.get_pre_input_hook()
+        self.addCleanup(readline.set_pre_input_hook, original_hook)
+
+        # Test that get_pre_input_hook returns None when no hook is set
+        readline.set_pre_input_hook(None)
+        self.assertIsNone(readline.get_pre_input_hook())
+
+        # Set a hook and verify we can retrieve it
+        def my_hook():
+            pass
+
+        readline.set_pre_input_hook(my_hook)
+        self.assertIs(readline.get_pre_input_hook(), my_hook)
 
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')

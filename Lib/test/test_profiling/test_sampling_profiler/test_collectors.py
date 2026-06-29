@@ -1,0 +1,3206 @@
+"""Tests for sampling profiler collector components."""
+
+import json
+import marshal
+import opcode
+import os
+import tempfile
+import unittest
+
+from test.support import is_emscripten
+
+try:
+    import _remote_debugging  # noqa: F401
+    from profiling.sampling import gecko_collector
+    from profiling.sampling.pstats_collector import PstatsCollector
+    from profiling.sampling.stack_collector import (
+        CollapsedStackCollector,
+        FlamegraphCollector,
+    )
+    from profiling.sampling.jsonl_collector import JsonlCollector
+    from profiling.sampling.gecko_collector import GeckoCollector
+    from profiling.sampling.heatmap_collector import _TemplateLoader
+    from profiling.sampling.collector import extract_lineno, normalize_location
+    from profiling.sampling.opcode_utils import get_opcode_info, format_opcode
+    from profiling.sampling.constants import (
+        PROFILING_MODE_WALL,
+        PROFILING_MODE_CPU,
+        DEFAULT_LOCATION,
+    )
+    from _remote_debugging import (
+        THREAD_STATUS_HAS_GIL,
+        THREAD_STATUS_ON_CPU,
+        THREAD_STATUS_GIL_REQUESTED,
+        THREAD_STATUS_MAIN_THREAD,
+    )
+except ImportError:
+    raise unittest.SkipTest(
+        "Test only runs when _remote_debugging is available"
+    )
+
+from test.support import captured_stdout, captured_stderr
+
+from .mocks import (
+    MockAwaitedInfo,
+    MockCoroInfo,
+    MockFrameInfo,
+    MockInterpreterInfo,
+    MockTaskInfo,
+    MockThreadInfo,
+    LocationInfo,
+    make_diff_collector_with_mock_baseline,
+)
+from .helpers import close_and_unlink, jsonl_tables
+
+
+def resolve_name(node, strings):
+    """Resolve a flamegraph node's name from the string table."""
+    idx = node.get("name", 0)
+    if isinstance(idx, int) and 0 <= idx < len(strings):
+        return strings[idx]
+    return str(idx)
+
+
+def find_child_by_name(children, strings, substr):
+    """Find a child node whose resolved name contains substr."""
+    for child in children:
+        if substr in resolve_name(child, strings):
+            return child
+    return None
+
+
+def export_gecko_profile(testcase, collector):
+    gecko_out = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+    testcase.addCleanup(close_and_unlink, gecko_out)
+    # We cannot overwrite an open file on Windows.
+    gecko_out.close()
+
+    with captured_stdout(), captured_stderr():
+        collector.export(gecko_out.name)
+
+    testcase.assertGreater(os.path.getsize(gecko_out.name), 0)
+    with open(gecko_out.name, encoding="utf-8") as file:
+        return json.load(file)
+
+
+def assert_gecko_column_lengths(testcase, table, columns):
+    expected = table["length"]
+    for column in columns:
+        testcase.assertEqual(
+            len(table[column]), expected,
+            f"{column!r} has wrong length",
+        )
+
+
+def gecko_marker_names(profile, markers):
+    string_array = profile["shared"]["stringArray"]
+    return [string_array[idx] for idx in markers["name"]]
+
+
+def gecko_opcode_marker_data(profile):
+    markers = profile["threads"][0]["markers"]
+    return [
+        data for data in markers["data"]
+        if data.get("type") == "Opcode"
+    ]
+
+
+class TestSampleProfilerComponents(unittest.TestCase):
+    """Unit tests for individual profiler components."""
+
+    def test_mock_frame_info_with_empty_and_unicode_values(self):
+        """Test MockFrameInfo handles empty strings, unicode characters, and very long names correctly."""
+        # Test with empty strings
+        frame = MockFrameInfo("", 0, "")
+        self.assertEqual(frame.filename, "")
+        self.assertEqual(frame.location.lineno, 0)
+        self.assertEqual(frame.funcname, "")
+
+        # Test with unicode characters
+        frame = MockFrameInfo("文件.py", 42, "函数名")
+        self.assertEqual(frame.filename, "文件.py")
+        self.assertEqual(frame.funcname, "函数名")
+
+        # Test with very long names
+        long_filename = "x" * 1000 + ".py"
+        long_funcname = "func_" + "x" * 1000
+        frame = MockFrameInfo(long_filename, 999999, long_funcname)
+        self.assertEqual(frame.filename, long_filename)
+        self.assertEqual(frame.location.lineno, 999999)
+        self.assertEqual(frame.funcname, long_funcname)
+
+    def test_heatmap_navigation_restarts_line_highlight(self):
+        """Test heatmap navigation can replay target line highlights."""
+        loader = _TemplateLoader()
+
+        self.assertIn(".code-line:target", loader.file_css)
+        self.assertIn("function restartLineHighlight(target)", loader.file_js)
+        self.assertIn("target.style.animation = 'none'", loader.file_js)
+        self.assertIn("void target.offsetWidth", loader.file_js)
+        self.assertIn("url.href === window.location.href", loader.file_js)
+        self.assertIn("navigateToLine(JSON.parse(navData).link)", loader.file_js)
+        self.assertIn("navigateToLine(linkData.link)", loader.file_js)
+
+    def test_pstats_collector_with_extreme_intervals_and_empty_data(self):
+        """Test PstatsCollector handles zero/large intervals, empty frames, None thread IDs, and duplicate frames."""
+        # Test with zero interval
+        collector = PstatsCollector(sample_interval_usec=0)
+        self.assertEqual(collector.sample_interval_usec, 0)
+
+        # Test with very large interval
+        collector = PstatsCollector(sample_interval_usec=1000000000)
+        self.assertEqual(collector.sample_interval_usec, 1000000000)
+
+        # Test collecting empty frames list
+        collector = PstatsCollector(sample_interval_usec=1000)
+        collector.collect([])
+        self.assertEqual(len(collector.result), 0)
+
+        # Test collecting frames with None thread id
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(None, [MockFrameInfo("file.py", 10, "func", None)])],
+            )
+        ]
+        collector.collect(test_frames)
+        # Should still process the frames
+        self.assertEqual(len(collector.result), 1)
+
+        # Test collecting duplicate frames in same sample (recursive function)
+        test_frames = [
+            MockInterpreterInfo(
+                0,  # interpreter_id
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 10, "func1"),  # Duplicate (recursion)
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector = PstatsCollector(sample_interval_usec=1000)
+        collector.collect(test_frames)
+        # Should count only once per sample to avoid over-counting recursive functions
+        self.assertEqual(
+            collector.result[("file.py", 10, "func1")]["cumulative_calls"], 1
+        )
+
+    def test_pstats_collector_single_frame_stacks(self):
+        """Test PstatsCollector with single-frame call stacks to trigger len(frames) <= 1 branch."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Test with exactly one frame (should trigger the <= 1 condition)
+        single_frame = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("single.py", 10, "single_func")]
+                    )
+                ],
+            )
+        ]
+        collector.collect(single_frame)
+
+        # Should record the single frame with inline call
+        self.assertEqual(len(collector.result), 1)
+        single_key = ("single.py", 10, "single_func")
+        self.assertIn(single_key, collector.result)
+        self.assertEqual(collector.result[single_key]["direct_calls"], 1)
+        self.assertEqual(collector.result[single_key]["cumulative_calls"], 1)
+
+        # Test with empty frames (should also trigger <= 1 condition)
+        empty_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, [])])]
+        collector.collect(empty_frames)
+
+        # Should not add any new entries
+        self.assertEqual(
+            len(collector.result), 1
+        )  # Still just the single frame
+
+        # Test mixed single and multi-frame stacks
+        mixed_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("single2.py", 20, "single_func2")],
+                    ),  # Single frame
+                    MockThreadInfo(
+                        2,
+                        [  # Multi-frame stack
+                            MockFrameInfo("multi.py", 30, "multi_func1"),
+                            MockFrameInfo("multi.py", 40, "multi_func2"),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+        collector.collect(mixed_frames)
+
+        # Should have recorded all functions
+        self.assertEqual(
+            len(collector.result), 4
+        )  # single + single2 + multi1 + multi2
+
+        # Verify single frame handling
+        single2_key = ("single2.py", 20, "single_func2")
+        self.assertIn(single2_key, collector.result)
+        self.assertEqual(collector.result[single2_key]["direct_calls"], 1)
+        self.assertEqual(collector.result[single2_key]["cumulative_calls"], 1)
+
+        # Verify multi-frame handling still works
+        multi1_key = ("multi.py", 30, "multi_func1")
+        multi2_key = ("multi.py", 40, "multi_func2")
+        self.assertIn(multi1_key, collector.result)
+        self.assertIn(multi2_key, collector.result)
+        self.assertEqual(collector.result[multi1_key]["direct_calls"], 1)
+        self.assertEqual(
+            collector.result[multi2_key]["cumulative_calls"], 1
+        )  # Called from multi1
+
+    def test_collapsed_stack_collector_with_empty_and_deep_stacks(self):
+        """Test CollapsedStackCollector handles empty frames, single-frame stacks, and very deep call stacks."""
+        collector = CollapsedStackCollector(1000)
+
+        # Test with empty frames
+        collector.collect([])
+        self.assertEqual(len(collector.stack_counter), 0)
+
+        # Test with single frame stack
+        test_frames = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func")])]
+            )
+        ]
+        collector.collect(test_frames)
+        self.assertEqual(len(collector.stack_counter), 1)
+        (((path, thread_id), count),) = collector.stack_counter.items()
+        self.assertEqual(path, (("file.py", 10, "func"),))
+        self.assertEqual(thread_id, 1)
+        self.assertEqual(count, 1)
+
+        # Test with very deep stack
+        deep_stack = [MockFrameInfo(f"file{i}.py", i, f"func{i}") for i in range(100)]
+        test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, deep_stack)])]
+        collector = CollapsedStackCollector(1000)
+        collector.collect(test_frames)
+        # One aggregated path with 100 frames (reversed)
+        (((path_tuple, thread_id),),) = (collector.stack_counter.keys(),)
+        self.assertEqual(len(path_tuple), 100)
+        self.assertEqual(path_tuple[0], ("file99.py", 99, "func99"))
+        self.assertEqual(path_tuple[-1], ("file0.py", 0, "func0"))
+        self.assertEqual(thread_id, 1)
+
+    def test_pstats_collector_basic(self):
+        """Test basic PstatsCollector functionality."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Test empty state
+        self.assertEqual(len(collector.result), 0)
+        self.assertEqual(len(collector.stats), 0)
+
+        # Test collecting sample data
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+
+        # Should have recorded calls for both functions
+        self.assertEqual(len(collector.result), 2)
+        self.assertIn(("file.py", 10, "func1"), collector.result)
+        self.assertIn(("file.py", 20, "func2"), collector.result)
+
+        # Top-level function should have direct call
+        self.assertEqual(
+            collector.result[("file.py", 10, "func1")]["direct_calls"], 1
+        )
+        self.assertEqual(
+            collector.result[("file.py", 10, "func1")]["cumulative_calls"], 1
+        )
+
+        # Calling function should have cumulative call but no direct calls
+        self.assertEqual(
+            collector.result[("file.py", 20, "func2")]["cumulative_calls"], 1
+        )
+        self.assertEqual(
+            collector.result[("file.py", 20, "func2")]["direct_calls"], 0
+        )
+
+    def test_pstats_collector_create_stats(self):
+        """Test PstatsCollector stats creation."""
+        collector = PstatsCollector(
+            sample_interval_usec=1000000
+        )  # 1 second intervals
+
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+        collector.collect(test_frames)  # Collect twice
+
+        collector.create_stats()
+
+        # Check stats format: (direct_calls, cumulative_calls, tt, ct, callers)
+        func1_stats = collector.stats[("file.py", 10, "func1")]
+        self.assertEqual(func1_stats[0], 2)  # direct_calls (top of stack)
+        self.assertEqual(func1_stats[1], 2)  # cumulative_calls
+        self.assertEqual(
+            func1_stats[2], 2.0
+        )  # tt (total time - 2 samples * 1 sec)
+        self.assertEqual(func1_stats[3], 2.0)  # ct (cumulative time)
+
+        func2_stats = collector.stats[("file.py", 20, "func2")]
+        self.assertEqual(
+            func2_stats[0], 0
+        )  # direct_calls (never top of stack)
+        self.assertEqual(
+            func2_stats[1], 2
+        )  # cumulative_calls (appears in stack)
+        self.assertEqual(func2_stats[2], 0.0)  # tt (no direct calls)
+        self.assertEqual(func2_stats[3], 2.0)  # ct (cumulative time)
+
+    def test_collapsed_stack_collector_basic(self):
+        collector = CollapsedStackCollector(1000)
+
+        # Test empty state
+        self.assertEqual(len(collector.stack_counter), 0)
+
+        # Test collecting sample data
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+
+        # Should store one reversed path
+        self.assertEqual(len(collector.stack_counter), 1)
+        (((path, thread_id), count),) = collector.stack_counter.items()
+        expected_tree = (("file.py", 20, "func2"), ("file.py", 10, "func1"))
+        self.assertEqual(path, expected_tree)
+        self.assertEqual(thread_id, 1)
+        self.assertEqual(count, 1)
+
+    def test_collapsed_stack_collector_export(self):
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        collector = CollapsedStackCollector(1000)
+
+        test_frames1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]  # Same stack
+        test_frames3 = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])]
+            )
+        ]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        with captured_stdout(), captured_stderr():
+            collector.export(collapsed_out.name)
+        # Check file contents
+        with open(collapsed_out.name, "r") as f:
+            content = f.read()
+
+        lines = content.strip().split("\n")
+        self.assertEqual(len(lines), 2)  # Two unique stacks
+
+        # Check collapsed format: tid:X;file:func:line;file:func:line count
+        stack1_expected = "tid:1;file.py:func2:20;file.py:func1:10 2"
+        stack2_expected = "tid:1;other.py:other_func:5 1"
+
+        self.assertIn(stack1_expected, lines)
+        self.assertIn(stack2_expected, lines)
+
+    def test_flamegraph_collector_basic(self):
+        """Test basic FlamegraphCollector functionality."""
+        collector = FlamegraphCollector(1000)
+
+        # Empty collector should produce 'No Data'
+        data = collector._convert_to_flamegraph_format()
+        # With string table, name is now an index - resolve it using the strings array
+        strings = data.get("strings", [])
+        self.assertIn(resolve_name(data, strings), ("No Data", "No significant data"))
+
+        # Test collecting sample data
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+
+        # Convert and verify structure: func2 -> func1 with counts = 1
+        data = collector._convert_to_flamegraph_format()
+        # Expect promotion: root is the single child (func2), with func1 as its only child
+        strings = data.get("strings", [])
+        name = resolve_name(data, strings)
+        self.assertTrue(name.startswith("Program Root: "))
+        self.assertIn("func2 (file.py:20)", name)
+        label = strings[data["label"]]
+        self.assertTrue(label.startswith("Program Root: "))
+        self.assertEqual(data["self"], 0)  # non-leaf: no self time
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        self.assertIn("func1 (file.py:10)", resolve_name(child, strings))
+        self.assertEqual(child["value"], 1)
+        self.assertEqual(child["self"], 1)  # leaf: all time is self
+
+    def test_flamegraph_collector_export(self):
+        """Test flamegraph HTML export functionality."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+
+        # Create some test data (use Interpreter/Thread objects like runtime)
+        test_frames1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]  # Same stack
+        test_frames3 = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])]
+            )
+        ]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        # Export flamegraph
+        with captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+
+        # Verify file was created and contains valid data
+        self.assertTrue(export_ok)
+        self.assertTrue(os.path.exists(flamegraph_out.name))
+        self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
+
+        # Check file contains HTML content
+        with open(flamegraph_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Should be valid HTML
+        self.assertIn("<!doctype html>", content.lower())
+        self.assertIn("<html", content)
+        self.assertIn("Tachyon Profiler - Flamegraph", content)
+        self.assertIn("d3-flame-graph", content)
+
+        # Should contain the data
+        self.assertIn('"name":', content)
+        self.assertIn('"value":', content)
+        self.assertIn('"children":', content)
+
+    def test_flamegraph_collector_empty_export_fails(self):
+        """Test empty flamegraph export reports no output."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+
+        with captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+
+        self.assertFalse(export_ok)
+        self.assertEqual(os.path.getsize(flamegraph_out.name), 0)
+
+    def test_gecko_collector_basic(self):
+        """Test basic GeckoCollector functionality."""
+        collector = GeckoCollector(1000)
+
+        # Test empty state
+        self.assertEqual(len(collector.threads), 0)
+        self.assertEqual(collector.sample_count, 0)
+        self.assertEqual(len(collector.global_strings), 1)  # "(root)"
+
+        # Test collecting sample data
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")],
+                        status=THREAD_STATUS_MAIN_THREAD,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+
+        # Should have recorded one thread and one sample
+        self.assertEqual(len(collector.threads), 1)
+        self.assertEqual(collector.sample_count, 1)
+        self.assertIn(1, collector.threads)
+
+        profile_data = collector._build_profile()
+
+        # Verify profile structure
+        self.assertIn("meta", profile_data)
+        self.assertIn("threads", profile_data)
+        self.assertIn("shared", profile_data)
+
+        # Check shared string table
+        shared = profile_data["shared"]
+        self.assertIn("stringArray", shared)
+        string_array = shared["stringArray"]
+        self.assertGreater(len(string_array), 0)
+
+        # Should contain our functions in the string array
+        self.assertIn("func1", string_array)
+        self.assertIn("func2", string_array)
+
+        # Check thread data structure
+        threads = profile_data["threads"]
+        self.assertEqual(len(threads), 1)
+        thread_data = threads[0]
+        self.assertTrue(thread_data["isMainThread"])
+
+        # Verify thread structure
+        self.assertIn("samples", thread_data)
+        self.assertIn("funcTable", thread_data)
+        self.assertIn("frameTable", thread_data)
+        self.assertIn("stackTable", thread_data)
+
+        # Verify samples
+        samples = thread_data["samples"]
+        self.assertEqual(samples["length"], 1)
+        assert_gecko_column_lengths(
+            self, samples, ("stack", "time", "eventDelay")
+        )
+
+        # Verify function table structure and content
+        func_table = thread_data["funcTable"]
+        self.assertIn("name", func_table)
+        self.assertIn("fileName", func_table)
+        self.assertIn("lineNumber", func_table)
+        self.assertEqual(func_table["length"], 2)  # Should have 2 functions
+
+        # Verify actual function content through string array indices
+        func_names = []
+        for idx in func_table["name"]:
+            func_name = (
+                string_array[idx]
+                if isinstance(idx, int) and 0 <= idx < len(string_array)
+                else str(idx)
+            )
+            func_names.append(func_name)
+
+        self.assertIn("func1", func_names, f"func1 not found in {func_names}")
+        self.assertIn("func2", func_names, f"func2 not found in {func_names}")
+
+        # Verify frame table
+        frame_table = thread_data["frameTable"]
+        self.assertEqual(
+            frame_table["length"], 2
+        )  # Should have frames for both functions
+        self.assertEqual(len(frame_table["func"]), 2)
+
+        # Verify stack structure
+        stack_table = thread_data["stackTable"]
+        self.assertGreater(stack_table["length"], 0)
+        self.assertGreater(len(stack_table["frame"]), 0)
+
+    def test_gecko_collector_async_aware(self):
+        collector = GeckoCollector(1000)
+
+        parent = MockTaskInfo(
+            task_id=1,
+            task_name="Parent",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="Parent",
+                    call_stack=[MockFrameInfo("parent.py", 10, "parent_fn")],
+                )
+            ],
+        )
+        child = MockTaskInfo(
+            task_id=2,
+            task_name="Child",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="Child",
+                    call_stack=[MockFrameInfo("child.py", 20, "child_fn")],
+                )
+            ],
+            awaited_by=[MockCoroInfo(task_name=1, call_stack=[])],
+        )
+
+        collector.collect(
+            [MockAwaitedInfo(thread_id=100, awaited_by=[parent, child])],
+            timestamps_us=[1000, 2000],
+        )
+        profile_data = collector._build_profile()
+
+        self.assertEqual(len(profile_data["threads"]), 1)
+        thread_data = profile_data["threads"][0]
+        self.assertEqual(thread_data["samples"]["length"], 2)
+
+        string_array = profile_data["shared"]["stringArray"]
+        self.assertIn("parent_fn", string_array)
+        self.assertIn("child_fn", string_array)
+        self.assertIn("Parent", string_array)
+        self.assertIn("Child", string_array)
+        self.assertEqual(thread_data["markers"]["length"], 0)
+
+    @unittest.skipIf(is_emscripten, "threads not available")
+    def test_gecko_collector_export(self):
+        """Test Gecko profile export functionality."""
+        collector = GeckoCollector(1000)
+
+        test_frames1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
+                    )
+                ],
+            )
+        ]  # Same stack
+        test_frames3 = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])]
+            )
+        ]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        profile_data = export_gecko_profile(self, collector)
+
+        # Should be valid Gecko profile format
+        self.assertIn("meta", profile_data)
+        self.assertIn("threads", profile_data)
+        self.assertIn("shared", profile_data)
+
+        # Check meta information
+        self.assertIn("categories", profile_data["meta"])
+        self.assertIn("interval", profile_data["meta"])
+
+        # Check shared string table
+        self.assertIn("stringArray", profile_data["shared"])
+        self.assertGreater(len(profile_data["shared"]["stringArray"]), 0)
+
+        # Should contain our functions
+        string_array = profile_data["shared"]["stringArray"]
+        self.assertIn("func1", string_array)
+        self.assertIn("func2", string_array)
+        self.assertIn("other_func", string_array)
+
+        thread_data = profile_data["threads"][0]
+        assert_gecko_column_lengths(
+            self, thread_data["samples"], ("stack", "time", "eventDelay")
+        )
+
+    @unittest.skipIf(is_emscripten, "threads not available")
+    def test_gecko_collector_export_after_spill_flush(self):
+        """Test Gecko profile export after spill buffers flush to disk."""
+        old_buffer_bytes = gecko_collector.DEFAULT_SPILL_BUFFER_BYTES
+        gecko_collector.DEFAULT_SPILL_BUFFER_BYTES = 1
+        self.addCleanup(
+            setattr, gecko_collector, "DEFAULT_SPILL_BUFFER_BYTES",
+            old_buffer_bytes
+        )
+
+        collector = GeckoCollector(1000)
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("file.py", 10, "func")],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames, timestamps_us=[1000, 2000, 3000])
+
+        profile_data = export_gecko_profile(self, collector)
+        samples = profile_data["threads"][0]["samples"]
+        self.assertEqual(samples["length"], 3)
+        assert_gecko_column_lengths(
+            self, samples, ("stack", "time", "eventDelay")
+        )
+
+    @unittest.skipIf(is_emscripten, "threads not available")
+    def test_gecko_collector_rejects_collect_after_export(self):
+        collector = GeckoCollector(1000)
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("file.py", 10, "func")],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+        export_gecko_profile(self, collector)
+
+        with self.assertRaisesRegex(RuntimeError, "after export"):
+            collector.collect(test_frames)
+
+    @unittest.skipIf(is_emscripten, "threads not available")
+    def test_gecko_collector_export_failure_keeps_existing_file(self):
+        collector = GeckoCollector(1000)
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("file.py", 10, "func")],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            filename = os.path.join(temp_dir, "profile.json")
+            with open(filename, "w", encoding="utf-8") as file:
+                file.write("existing")
+
+            before = set(os.listdir(temp_dir))
+
+            def fail(file):
+                raise OSError("boom")
+
+            collector._stream_profile = fail
+            with captured_stdout(), captured_stderr():
+                with self.assertRaisesRegex(OSError, "boom"):
+                    collector.export(filename)
+
+            with open(filename, encoding="utf-8") as file:
+                self.assertEqual(file.read(), "existing")
+            self.assertEqual(set(os.listdir(temp_dir)), before)
+
+    def test_gecko_collector_markers(self):
+        """Test Gecko profile markers for GIL and CPU state tracking."""
+        collector = GeckoCollector(1000)
+
+        # Status combinations for different thread states
+        HAS_GIL_ON_CPU = (
+            THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU
+        )  # Running Python code
+        NO_GIL_ON_CPU = THREAD_STATUS_ON_CPU  # Running native code
+        WAITING_FOR_GIL = THREAD_STATUS_GIL_REQUESTED  # Waiting for GIL
+
+        # Simulate thread state transitions
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [MockFrameInfo("test.py", 10, "python_func")],
+                            status=HAS_GIL_ON_CPU,
+                        )
+                    ],
+                )
+            ]
+        )
+
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [MockFrameInfo("test.py", 15, "wait_func")],
+                            status=WAITING_FOR_GIL,
+                        )
+                    ],
+                )
+            ]
+        )
+
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [MockFrameInfo("test.py", 20, "python_func2")],
+                            status=HAS_GIL_ON_CPU,
+                        )
+                    ],
+                )
+            ]
+        )
+
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [MockFrameInfo("native.c", 100, "native_func")],
+                            status=NO_GIL_ON_CPU,
+                        )
+                    ],
+                )
+            ]
+        )
+
+        profile_data = collector._build_profile()
+
+        # Verify we have threads with markers
+        self.assertIn("threads", profile_data)
+        self.assertEqual(len(profile_data["threads"]), 1)
+        thread_data = profile_data["threads"][0]
+
+        # Check markers exist
+        self.assertIn("markers", thread_data)
+        markers = thread_data["markers"]
+
+        self.assertGreater(
+            markers["length"], 0, "Should have generated markers"
+        )
+        assert_gecko_column_lengths(
+            self, markers,
+            ("data", "name", "startTime", "endTime", "phase", "category"),
+        )
+
+        # Verify we have different marker types
+        marker_name_set = set(gecko_marker_names(profile_data, markers))
+
+        # Should have "Has GIL" markers (when thread had GIL)
+        self.assertIn(
+            "Has GIL", marker_name_set, "Should have 'Has GIL' markers"
+        )
+
+        # Should have "No GIL" markers (when thread didn't have GIL)
+        self.assertIn(
+            "No GIL", marker_name_set, "Should have 'No GIL' markers"
+        )
+
+        # Should have "On CPU" markers (when thread was on CPU)
+        self.assertIn(
+            "On CPU", marker_name_set, "Should have 'On CPU' markers"
+        )
+
+        # Should have "Waiting for GIL" markers (when thread was waiting)
+        self.assertIn(
+            "Waiting for GIL",
+            marker_name_set,
+            "Should have 'Waiting for GIL' markers",
+        )
+
+        # Verify marker structure
+        for i in range(markers["length"]):
+            # All markers should be interval markers (phase = 1)
+            self.assertEqual(
+                markers["phase"][i], 1, f"Marker {i} should be interval marker"
+            )
+
+            # All markers should have valid time range
+            start_time = markers["startTime"][i]
+            end_time = markers["endTime"][i]
+            self.assertLessEqual(
+                start_time,
+                end_time,
+                f"Marker {i} should have valid time range",
+            )
+
+            # All markers should have valid category
+            self.assertGreaterEqual(
+                markers["category"][i],
+                0,
+                f"Marker {i} should have valid category",
+            )
+
+    def test_pstats_collector_export(self):
+        collector = PstatsCollector(
+            sample_interval_usec=1000000
+        )  # 1 second intervals
+
+        test_frames1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
+                    )
+                ],
+            )
+        ]  # Same stack
+        test_frames3 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("other.py", 5, "other_func")]
+                    )
+                ],
+            )
+        ]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        pstats_out = tempfile.NamedTemporaryFile(
+            suffix=".pstats", delete=False
+        )
+        self.addCleanup(close_and_unlink, pstats_out)
+        collector.export(pstats_out.name)
+
+        # Check file can be loaded with marshal
+        with open(pstats_out.name, "rb") as f:
+            stats_data = marshal.load(f)
+
+        # Should be a dictionary with the sampled marker
+        self.assertIsInstance(stats_data, dict)
+        self.assertIn(("__sampled__",), stats_data)
+        self.assertTrue(stats_data[("__sampled__",)])
+
+        # Should have function data
+        function_entries = [
+            k for k in stats_data.keys() if k != ("__sampled__",)
+        ]
+        self.assertGreater(len(function_entries), 0)
+
+        # Check specific function stats format: (cc, nc, tt, ct, callers)
+        func1_key = ("file.py", 10, "func1")
+        func2_key = ("file.py", 20, "func2")
+        other_key = ("other.py", 5, "other_func")
+
+        self.assertIn(func1_key, stats_data)
+        self.assertIn(func2_key, stats_data)
+        self.assertIn(other_key, stats_data)
+
+        # Check func1 stats (should have 2 samples)
+        func1_stats = stats_data[func1_key]
+        self.assertEqual(func1_stats[0], 2)  # total_calls
+        self.assertEqual(func1_stats[1], 2)  # nc (non-recursive calls)
+        self.assertEqual(func1_stats[2], 2.0)  # tt (total time)
+        self.assertEqual(func1_stats[3], 2.0)  # ct (cumulative time)
+
+    def test_flamegraph_collector_stats_accumulation(self):
+        """Test that FlamegraphCollector accumulates stats across samples."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # First sample
+        stack_frames_1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                ],
+            )
+        ]
+        collector.collect(stack_frames_1)
+        self.assertEqual(collector.thread_status_counts["has_gil"], 1)
+        self.assertEqual(collector.thread_status_counts["on_cpu"], 1)
+        self.assertEqual(collector.thread_status_counts["total"], 2)
+
+        # Second sample
+        stack_frames_2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_GIL_REQUESTED),
+                    MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(3, [MockFrameInfo("c.py", 3, "func_c")], status=THREAD_STATUS_ON_CPU),
+                ],
+            )
+        ]
+        collector.collect(stack_frames_2)
+
+        # Should accumulate
+        self.assertEqual(collector.thread_status_counts["has_gil"], 2)  # 1 + 1
+        self.assertEqual(collector.thread_status_counts["on_cpu"], 2)   # 1 + 1
+        self.assertEqual(collector.thread_status_counts["gil_requested"], 1)  # 0 + 1
+        self.assertEqual(collector.thread_status_counts["total"], 5)  # 2 + 3
+
+        # Test GC sample tracking
+        stack_frames_gc = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [MockFrameInfo("~", 0, "<GC>")], status=THREAD_STATUS_HAS_GIL),
+                ],
+            )
+        ]
+        collector.collect(stack_frames_gc)
+        self.assertEqual(collector.samples_with_gc_frames, 1)
+
+        # Another sample without GC
+        collector.collect(stack_frames_1)
+        self.assertEqual(collector.samples_with_gc_frames, 1)  # Still 1
+
+        # Another GC sample
+        collector.collect(stack_frames_gc)
+        self.assertEqual(collector.samples_with_gc_frames, 2)
+
+    def test_flamegraph_collector_per_thread_stats(self):
+        """Test per-thread statistics tracking in FlamegraphCollector."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Multiple threads with different states
+        stack_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                    MockThreadInfo(3, [MockFrameInfo("c.py", 3, "func_c")], status=THREAD_STATUS_GIL_REQUESTED),
+                ],
+            )
+        ]
+        collector.collect(stack_frames)
+
+        # Check per-thread stats
+        self.assertIn(1, collector.per_thread_stats)
+        self.assertIn(2, collector.per_thread_stats)
+        self.assertIn(3, collector.per_thread_stats)
+
+        # Thread 1: has GIL
+        self.assertEqual(collector.per_thread_stats[1]["has_gil"], 1)
+        self.assertEqual(collector.per_thread_stats[1]["on_cpu"], 0)
+        self.assertEqual(collector.per_thread_stats[1]["total"], 1)
+
+        # Thread 2: on CPU
+        self.assertEqual(collector.per_thread_stats[2]["has_gil"], 0)
+        self.assertEqual(collector.per_thread_stats[2]["on_cpu"], 1)
+        self.assertEqual(collector.per_thread_stats[2]["total"], 1)
+
+        # Thread 3: waiting
+        self.assertEqual(collector.per_thread_stats[3]["gil_requested"], 1)
+        self.assertEqual(collector.per_thread_stats[3]["total"], 1)
+
+        # Test accumulation across samples
+        stack_frames_2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                ],
+            )
+        ]
+        collector.collect(stack_frames_2)
+
+        self.assertEqual(collector.per_thread_stats[1]["has_gil"], 1)
+        self.assertEqual(collector.per_thread_stats[1]["on_cpu"], 1)
+        self.assertEqual(collector.per_thread_stats[1]["total"], 2)
+
+    def test_flamegraph_collector_percentage_calculations(self):
+        """Test that percentage calculations are correct in exported data."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Create scenario: 60% GIL held, 40% not held
+        for i in range(6):
+            stack_frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func")], status=THREAD_STATUS_HAS_GIL),
+                    ],
+                )
+            ]
+            collector.collect(stack_frames)
+
+        for i in range(4):
+            stack_frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func")], status=THREAD_STATUS_ON_CPU),
+                    ],
+                )
+            ]
+            collector.collect(stack_frames)
+
+        # Export to get calculated percentages
+        data = collector._convert_to_flamegraph_format()
+        thread_stats = data["stats"]["thread_stats"]
+
+        self.assertAlmostEqual(thread_stats["has_gil_pct"], 60.0, places=1)
+        self.assertAlmostEqual(thread_stats["on_cpu_pct"], 40.0, places=1)
+        self.assertEqual(thread_stats["total"], 10)
+
+    def test_flamegraph_collector_mode_handling(self):
+        """Test that profiling mode is correctly passed through to exported data."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Collect some data
+        stack_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func")], status=THREAD_STATUS_HAS_GIL),
+                ],
+            )
+        ]
+        collector.collect(stack_frames)
+
+        # Set stats with mode
+        collector.set_stats(
+            sample_interval_usec=1000,
+            duration_sec=1.0,
+            sample_rate=1000.0,
+            mode=PROFILING_MODE_CPU
+        )
+
+        data = collector._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["mode"], PROFILING_MODE_CPU)
+
+    def test_flamegraph_collector_zero_samples_edge_case(self):
+        """Test that collector handles zero samples gracefully."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Export without collecting any samples
+        data = collector._convert_to_flamegraph_format()
+
+        # Should return a valid structure with no data
+        self.assertIn("name", data)
+        self.assertEqual(data["value"], 0)
+        self.assertIn("children", data)
+        self.assertEqual(len(data["children"]), 0)
+
+    def test_flamegraph_collector_json_structure_includes_stats(self):
+        """Test that exported JSON includes thread_stats and per_thread_stats."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Collect some data with multiple threads
+        stack_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                ],
+            )
+        ]
+        collector.collect(stack_frames)
+
+        # Set stats
+        collector.set_stats(
+            sample_interval_usec=1000,
+            duration_sec=1.0,
+            sample_rate=1000.0,
+            mode=PROFILING_MODE_WALL
+        )
+
+        # Export and verify structure
+        data = collector._convert_to_flamegraph_format()
+
+        # Check that stats object exists and contains expected fields
+        self.assertIn("stats", data)
+        stats = data["stats"]
+
+        # Verify thread_stats exists and has expected structure
+        self.assertIn("thread_stats", stats)
+        thread_stats = stats["thread_stats"]
+        self.assertIn("has_gil_pct", thread_stats)
+        self.assertIn("on_cpu_pct", thread_stats)
+        self.assertIn("gil_requested_pct", thread_stats)
+        self.assertIn("gc_pct", thread_stats)
+        self.assertIn("total", thread_stats)
+
+        # Verify per_thread_stats exists and has data for both threads
+        self.assertIn("per_thread_stats", stats)
+        per_thread_stats = stats["per_thread_stats"]
+        self.assertIn(1, per_thread_stats)
+        self.assertIn(2, per_thread_stats)
+
+        # Check per-thread structure
+        for thread_id in [1, 2]:
+            thread_data = per_thread_stats[thread_id]
+            self.assertIn("has_gil_pct", thread_data)
+            self.assertIn("on_cpu_pct", thread_data)
+            self.assertIn("gil_requested_pct", thread_data)
+            self.assertIn("gc_pct", thread_data)
+            self.assertIn("total", thread_data)
+
+    def test_flamegraph_collector_per_thread_gc_percentage(self):
+        """Test that per-thread GC percentage uses total samples as denominator."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Create 10 samples total:
+        # - Thread 1 appears in all 10 samples, has GC in 2 of them
+        # - Thread 2 appears in only 5 samples, has GC in 1 of them
+
+        # First 5 samples: both threads, thread 1 has GC in 2
+        for i in range(5):
+            has_gc = i < 2  # First 2 samples have GC for thread 1
+            frames_1 = [MockFrameInfo("~", 0, "<GC>")] if has_gc else [MockFrameInfo("a.py", 1, "func_a")]
+            stack_frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(1, frames_1, status=THREAD_STATUS_HAS_GIL),
+                        MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                    ],
+                )
+            ]
+            collector.collect(stack_frames)
+
+        # Next 5 samples: only thread 1, thread 2 appears in first of these with GC
+        for i in range(5):
+            if i == 0:
+                # Thread 2 appears in this sample with GC
+                stack_frames = [
+                    MockInterpreterInfo(
+                        0,
+                        [
+                            MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                            MockThreadInfo(2, [MockFrameInfo("~", 0, "<GC>")], status=THREAD_STATUS_ON_CPU),
+                        ],
+                    )
+                ]
+            else:
+                # Only thread 1
+                stack_frames = [
+                    MockInterpreterInfo(
+                        0,
+                        [
+                            MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                        ],
+                    )
+                ]
+            collector.collect(stack_frames)
+
+        # Set stats and export
+        collector.set_stats(
+            sample_interval_usec=1000,
+            duration_sec=1.0,
+            sample_rate=1000.0,
+            mode=PROFILING_MODE_WALL
+        )
+
+        data = collector._convert_to_flamegraph_format()
+        per_thread_stats = data["stats"]["per_thread_stats"]
+
+        # Thread 1: appeared in 10 samples, had GC in 2
+        # GC percentage should be 2/10 = 20% (using total samples, not thread appearances)
+        self.assertEqual(collector.per_thread_stats[1]["gc_samples"], 2)
+        self.assertEqual(collector.per_thread_stats[1]["total"], 10)
+        self.assertAlmostEqual(per_thread_stats[1]["gc_pct"], 20.0, places=1)
+
+        # Thread 2: appeared in 6 samples, had GC in 1
+        # GC percentage should be 1/10 = 10% (using total samples, not thread appearances)
+        self.assertEqual(collector.per_thread_stats[2]["gc_samples"], 1)
+        self.assertEqual(collector.per_thread_stats[2]["total"], 6)
+        self.assertAlmostEqual(per_thread_stats[2]["gc_pct"], 10.0, places=1)
+
+    def test_diff_flamegraph_identical_profiles(self):
+        """When baseline and current are identical, diff should be ~0."""
+        test_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([test_frames] * 3)
+        for _ in range(3):
+            diff.collect(test_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        self.assertTrue(data["stats"]["is_differential"])
+        self.assertEqual(data["stats"]["baseline_samples"], 3)
+        self.assertEqual(data["stats"]["current_samples"], 3)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        self.assertIn("func1", resolve_name(child, strings))
+        self.assertEqual(child["self_time"], 3)
+        self.assertAlmostEqual(child["baseline"], 3.0)
+        self.assertAlmostEqual(child["diff"], 0.0, places=1)
+        self.assertAlmostEqual(child["diff_pct"], 0.0, places=1)
+
+        self.assertEqual(data["stats"]["elided_count"], 0)
+        self.assertNotIn("elided_flamegraph", data["stats"])
+
+    def test_diff_flamegraph_new_function(self):
+        """A function only in current should have diff_pct=100 and baseline=0."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        diff.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "new_func"),
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ])
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        func1_node = children[0]
+        self.assertIn("func1", resolve_name(func1_node, strings))
+
+        func1_children = func1_node.get("children", [])
+        self.assertEqual(len(func1_children), 1)
+        new_func_node = func1_children[0]
+        self.assertIn("new_func", resolve_name(new_func_node, strings))
+        self.assertEqual(new_func_node["baseline"], 0)
+        self.assertGreater(new_func_node["self_time"], 0)
+        self.assertEqual(new_func_node["diff"], new_func_node["self_time"])
+        self.assertAlmostEqual(new_func_node["diff_pct"], 100.0)
+
+    def test_diff_flamegraph_changed_functions(self):
+        """Functions with different sample counts should have correct diff and diff_pct."""
+        hot_leaf_sample = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "hot_leaf"),
+                    MockFrameInfo("file.py", 20, "caller"),
+                ])
+            ])
+        ]
+        cold_leaf_sample = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "cold_leaf"),
+                    MockFrameInfo("file.py", 20, "caller"),
+                ])
+            ])
+        ]
+
+        # Baseline: 2 samples, current: 4, scale = 2.0
+        diff = make_diff_collector_with_mock_baseline(
+            [hot_leaf_sample, cold_leaf_sample]
+        )
+        for _ in range(3):
+            diff.collect(hot_leaf_sample)
+        diff.collect(cold_leaf_sample)
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 2.0)
+
+        children = data.get("children", [])
+        hot_node = find_child_by_name(children, strings, "hot_leaf")
+        cold_node = find_child_by_name(children, strings, "cold_leaf")
+        self.assertIsNotNone(hot_node)
+        self.assertIsNotNone(cold_node)
+
+        # hot_leaf regressed (+50%)
+        self.assertAlmostEqual(hot_node["baseline"], 2.0)
+        self.assertEqual(hot_node["self_time"], 3)
+        self.assertAlmostEqual(hot_node["diff"], 1.0)
+        self.assertAlmostEqual(hot_node["diff_pct"], 50.0)
+
+        # cold_leaf improved (-50%)
+        self.assertAlmostEqual(cold_node["baseline"], 2.0)
+        self.assertEqual(cold_node["self_time"], 1)
+        self.assertAlmostEqual(cold_node["diff"], -1.0)
+        self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
+
+    def test_diff_flamegraph_scale_factor(self):
+        """Scale factor adjusts when sample counts differ."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        for _ in range(4):
+            diff.collect(baseline_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 4.0)
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        func1_node = children[0]
+        self.assertEqual(func1_node["self_time"], 4)
+        self.assertAlmostEqual(func1_node["baseline"], 4.0)
+        self.assertAlmostEqual(func1_node["diff"], 0.0)
+        self.assertAlmostEqual(func1_node["diff_pct"], 0.0)
+
+    def test_diff_flamegraph_elided_stacks(self):
+        """Paths in baseline but not current produce elided stacks."""
+        baseline_frames_1 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+        baseline_frames_2 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_func"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames_1, baseline_frames_2])
+        for _ in range(2):
+            diff.collect(baseline_frames_1)
+
+        data = diff._convert_to_flamegraph_format()
+
+        self.assertGreater(data["stats"]["elided_count"], 0)
+        self.assertIn("elided_flamegraph", data["stats"])
+        elided = data["stats"]["elided_flamegraph"]
+        self.assertTrue(elided["stats"]["is_differential"])
+        self.assertIn("strings", elided)
+
+        elided_strings = elided.get("strings", [])
+        children = elided.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        self.assertIn("old_func", resolve_name(child, elided_strings))
+        self.assertEqual(child["self_time"], 0)
+        self.assertAlmostEqual(child["diff_pct"], -100.0)
+        self.assertGreater(child["baseline"], 0)
+        self.assertAlmostEqual(child["diff"], -child["baseline"])
+
+    def test_diff_flamegraph_elided_top_level_root(self):
+        """Elided top-level roots do not crash metadata generation."""
+        baseline_frames_1 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "kept_leaf"),
+                    MockFrameInfo("file.py", 20, "kept_root"),
+                ])
+            ])
+        ]
+        baseline_frames_2 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_leaf"),
+                    MockFrameInfo("file.py", 40, "old_root"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([
+            baseline_frames_1,
+            baseline_frames_2,
+        ])
+        diff.collect(baseline_frames_1)
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+        elided_strings = elided.get("strings", [])
+        children = elided.get("children", [])
+
+        self.assertEqual(len(children), 1)
+        self.assertIn("old_root", resolve_name(children[0], elided_strings))
+
+    def test_diff_flamegraph_function_matched_despite_line_change(self):
+        """Functions match by (filename, funcname), ignoring lineno."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        # Same functions but different line numbers
+        diff.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 99, "func1"),
+                    MockFrameInfo("file.py", 55, "func2"),
+                ])
+            ])
+        ])
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        self.assertIn("func1", resolve_name(child, strings))
+        self.assertGreater(child["baseline"], 0)
+        self.assertGreater(child["self_time"], 0)
+        self.assertAlmostEqual(child["diff"], 0.0, places=1)
+        self.assertAlmostEqual(child["diff_pct"], 0.0, places=1)
+
+    def test_diff_flamegraph_empty_current(self):
+        """Empty current profile still produces differential metadata and elided paths."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func1")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        # Don't collect anything in current
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertIn("name", data)
+        self.assertEqual(data["value"], 0)
+        # Differential metadata should still be populated
+        self.assertTrue(data["stats"]["is_differential"])
+        # All baseline paths should be elided since current is empty
+        self.assertGreater(data["stats"]["elided_count"], 0)
+
+    def test_diff_flamegraph_empty_baseline(self):
+        """Empty baseline with non-empty current uses scale=1.0 fallback."""
+        diff = make_diff_collector_with_mock_baseline([])
+        diff.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ])
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        self.assertTrue(data["stats"]["is_differential"])
+        self.assertEqual(data["stats"]["baseline_samples"], 0)
+        self.assertEqual(data["stats"]["current_samples"], 1)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
+        self.assertEqual(data["stats"]["elided_count"], 0)
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        self.assertIn("func1", resolve_name(child, strings))
+        self.assertEqual(child["self_time"], 1)
+        self.assertAlmostEqual(child["baseline"], 0.0)
+        self.assertAlmostEqual(child["diff"], 1.0)
+        self.assertAlmostEqual(child["diff_pct"], 100.0)
+
+    def test_diff_flamegraph_export(self):
+        """DiffFlamegraphCollector export produces differential HTML."""
+        test_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1"),
+                    MockFrameInfo("file.py", 20, "func2"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([test_frames])
+        diff.collect(test_frames)
+
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        with captured_stdout(), captured_stderr():
+            export_ok = diff.export(flamegraph_out.name)
+
+        self.assertTrue(export_ok)
+        self.assertTrue(os.path.exists(flamegraph_out.name))
+        self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
+
+        with open(flamegraph_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn("<!doctype html>", content.lower())
+        self.assertIn("Differential Flamegraph", content)
+        self.assertIn('"is_differential": true', content)
+        self.assertIn("d3-flame-graph", content)
+        self.assertIn('id="diff-legend-section"', content)
+        self.assertIn("Differential Colors", content)
+
+    def test_diff_flamegraph_preserves_metadata(self):
+        """Differential mode preserves threads and opcodes metadata."""
+        test_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("a.py", 10, "func_a", opcode=100)]),
+                MockThreadInfo(2, [MockFrameInfo("b.py", 20, "func_b", opcode=200)]),
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([test_frames])
+        diff.collect(test_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        self.assertTrue(data["stats"]["is_differential"])
+
+        self.assertIn("threads", data)
+        self.assertEqual(len(data["threads"]), 2)
+
+        children = data.get("children", [])
+        self.assertEqual(len(children), 2)
+
+        opcodes_found = set()
+        for child in children:
+            self.assertIn("diff", child)
+            self.assertIn("diff_pct", child)
+            self.assertIn("baseline", child)
+            self.assertIn("self_time", child)
+            self.assertIn("threads", child)
+
+            if "opcodes" in child:
+                opcodes_found.update(child["opcodes"].keys())
+
+        self.assertIn(100, opcodes_found)
+        self.assertIn(200, opcodes_found)
+
+        self.assertIn("per_thread_stats", data["stats"])
+        per_thread_stats = data["stats"]["per_thread_stats"]
+        self.assertIn(1, per_thread_stats)
+        self.assertIn(2, per_thread_stats)
+
+    def test_diff_flamegraph_elided_preserves_metadata(self):
+        """Elided flamegraph preserves thread_stats, per_thread_stats, and opcodes."""
+        baseline_frames_1 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "func1", opcode=100),
+                    MockFrameInfo("file.py", 20, "func2", opcode=101),
+                ], status=THREAD_STATUS_HAS_GIL)
+            ])
+        ]
+        baseline_frames_2 = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 30, "old_func", opcode=200),
+                    MockFrameInfo("file.py", 20, "func2", opcode=101),
+                ], status=THREAD_STATUS_HAS_GIL)
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames_1, baseline_frames_2])
+        for _ in range(2):
+            diff.collect(baseline_frames_1)
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+
+        self.assertTrue(elided["stats"]["is_differential"])
+        self.assertIn("thread_stats", elided["stats"])
+        self.assertIn("per_thread_stats", elided["stats"])
+        self.assertIn("baseline_samples", elided["stats"])
+        self.assertIn("current_samples", elided["stats"])
+        self.assertIn("strings", elided)
+
+        elided_strings = elided.get("strings", [])
+        children = elided.get("children", [])
+        self.assertEqual(len(children), 1)
+        old_func_node = children[0]
+        if "opcodes" in old_func_node:
+            self.assertIn(200, old_func_node["opcodes"])
+        self.assertEqual(old_func_node["self_time"], 0)
+        self.assertAlmostEqual(old_func_node["diff_pct"], -100.0)
+
+    def test_diff_flamegraph_load_baseline(self):
+        """Diff annotations work when baseline is loaded from a binary file."""
+        from profiling.sampling.binary_collector import BinaryCollector
+        from profiling.sampling.stack_collector import DiffFlamegraphCollector
+        from .test_binary_format import make_frame, make_thread, make_interpreter
+
+        hot_sample = [make_interpreter(0, [make_thread(1, [
+            make_frame("file.py", 10, "hot_leaf"),
+            make_frame("file.py", 20, "caller"),
+        ])])]
+        cold_sample = [make_interpreter(0, [make_thread(1, [
+            make_frame("file.py", 30, "cold_leaf"),
+            make_frame("file.py", 20, "caller"),
+        ])])]
+
+        # Baseline: 2 samples, current: 4, scale = 2.0
+        bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
+        self.addCleanup(close_and_unlink, bin_file)
+
+        writer = BinaryCollector(
+            bin_file.name, sample_interval_usec=1000, compression='none'
+        )
+        writer.collect(hot_sample)
+        writer.collect(cold_sample)
+        writer.export(None)
+
+        diff = DiffFlamegraphCollector(
+            1000, baseline_binary_path=bin_file.name
+        )
+        hot_mock = [MockInterpreterInfo(0, [MockThreadInfo(1, [
+            MockFrameInfo("file.py", 10, "hot_leaf"),
+            MockFrameInfo("file.py", 20, "caller"),
+        ])])]
+        cold_mock = [MockInterpreterInfo(0, [MockThreadInfo(1, [
+            MockFrameInfo("file.py", 30, "cold_leaf"),
+            MockFrameInfo("file.py", 20, "caller"),
+        ])])]
+        for _ in range(3):
+            diff.collect(hot_mock)
+        diff.collect(cold_mock)
+
+        data = diff._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        self.assertTrue(data["stats"]["is_differential"])
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 2.0)
+
+        children = data.get("children", [])
+        hot_node = find_child_by_name(children, strings, "hot_leaf")
+        cold_node = find_child_by_name(children, strings, "cold_leaf")
+        self.assertIsNotNone(hot_node)
+        self.assertIsNotNone(cold_node)
+
+        # hot_leaf regressed (+50%)
+        self.assertAlmostEqual(hot_node["baseline"], 2.0)
+        self.assertEqual(hot_node["self_time"], 3)
+        self.assertAlmostEqual(hot_node["diff"], 1.0)
+        self.assertAlmostEqual(hot_node["diff_pct"], 50.0)
+
+        # cold_leaf improved (-50%)
+        self.assertAlmostEqual(cold_node["baseline"], 2.0)
+        self.assertEqual(cold_node["self_time"], 1)
+        self.assertAlmostEqual(cold_node["diff"], -1.0)
+        self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
+
+    def test_jsonl_collector_export_exact_output(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        collector.run_id = "run-123"
+
+        test_frames1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("file.py", 10, "func1"),
+                            MockFrameInfo("file.py", 20, "func2"),
+                        ],
+                    )
+                ],
+            )
+        ]  # Same stack
+        test_frames3 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1, [MockFrameInfo("other.py", 5, "other_func")]
+                    )
+                ],
+            )
+        ]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertEqual(
+            content,
+            (
+                '{"type":"meta","v":0,"run_id":"run-123","sample_interval_usec":1000}\n'
+                '{"type":"string_table","v":0,"run_id":"run-123","strings":[{"str_id":0,"value":"func1"},{"str_id":1,"value":"file.py"},{"str_id":2,"value":"func2"},{"str_id":3,"value":"other_func"},{"str_id":4,"value":"other.py"}]}\n'
+                '{"type":"frame_table","v":0,"run_id":"run-123","frames":[{"frame_id":0,"path_str_id":1,"func_str_id":0,"line":10,"end_line":10},{"frame_id":1,"path_str_id":1,"func_str_id":2,"line":20,"end_line":20},{"frame_id":2,"path_str_id":4,"func_str_id":3,"line":5,"end_line":5}]}\n'
+                '{"type":"agg","v":0,"run_id":"run-123","kind":"frame","scope":"final","samples_total":3,"entries":[{"frame_id":0,"self":2,"cumulative":2},{"frame_id":1,"self":0,"cumulative":2},{"frame_id":2,"self":1,"cumulative":1}]}\n'
+                '{"type":"end","v":0,"run_id":"run-123","samples_total":3}\n'
+            ),
+        )
+
+    def test_jsonl_collector_export_includes_mode_in_meta(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000, mode=PROFILING_MODE_CPU)
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1, [MockFrameInfo("file.py", 10, "func")]
+                        )
+                    ],
+                )
+            ]
+        )
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        meta_record = next(
+            record for record in records if record["type"] == "meta"
+        )
+        self.assertEqual(meta_record["mode"], "cpu")
+
+    def test_jsonl_collector_export_empty_profile(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        collector.run_id = "run-123"
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        self.assertEqual(
+            [record["type"] for record in records], ["meta", "end"]
+        )
+        self.assertEqual(records[0]["sample_interval_usec"], 1000)
+        self.assertEqual(records[0]["run_id"], "run-123")
+        self.assertEqual(records[1]["samples_total"], 0)
+        self.assertEqual(records[1]["run_id"], "run-123")
+
+    def test_jsonl_collector_recursive_frames_counted_once_per_sample(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        collector.collect(
+            [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
+                                MockFrameInfo(
+                                    "recursive.py", 10, "recursive_func"
+                                ),
+                            ],
+                        )
+                    ],
+                )
+            ]
+        )
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, _, frame_defs, agg_record, end_record = jsonl_tables(records)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(
+            agg_record["entries"],
+            [
+                {
+                    "frame_id": frame_defs[0]["frame_id"],
+                    "self": 1,
+                    "cumulative": 1,
+                }
+            ],
+        )
+        self.assertEqual(agg_record["samples_total"], 1)
+        self.assertEqual(end_record["samples_total"], 1)
+
+    def test_jsonl_collector_skip_idle_filters_threads(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        active_status = THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("active1.py", 10, "active_func1")],
+                        status=active_status,
+                    ),
+                    MockThreadInfo(
+                        2,
+                        [MockFrameInfo("idle.py", 20, "idle_func")],
+                        status=0,
+                    ),
+                    MockThreadInfo(
+                        3,
+                        [MockFrameInfo("active2.py", 30, "active_func2")],
+                        status=active_status,
+                    ),
+                ],
+            )
+        ]
+
+        def export_summary(skip_idle):
+            collector = JsonlCollector(1000, skip_idle=skip_idle)
+            collector.collect(frames)
+            collector.export(jsonl_out.name)
+
+            with open(jsonl_out.name, "r", encoding="utf-8") as f:
+                records = [json.loads(line) for line in f]
+
+            _, str_defs, frame_defs, agg_record, _ = jsonl_tables(records)
+            paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+            funcs = {str_defs[item["func_str_id"]] for item in frame_defs}
+            return paths, funcs, agg_record["samples_total"]
+
+        paths, funcs, samples_total = export_summary(skip_idle=True)
+        self.assertEqual(paths, {"active1.py", "active2.py"})
+        self.assertEqual(funcs, {"active_func1", "active_func2"})
+        self.assertEqual(samples_total, 2)
+
+        paths, funcs, samples_total = export_summary(skip_idle=False)
+        self.assertEqual(paths, {"active1.py", "idle.py", "active2.py"})
+        self.assertEqual(funcs, {"active_func1", "idle_func", "active_func2"})
+        self.assertEqual(samples_total, 3)
+
+    def test_jsonl_collector_splits_large_exports_into_chunks(self):
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+
+        for i in range(257):
+            collector.collect(
+                [
+                    MockInterpreterInfo(
+                        0,
+                        [
+                            MockThreadInfo(
+                                1,
+                                [
+                                    MockFrameInfo(
+                                        f"file{i}.py", i + 1, f"func{i}"
+                                    )
+                                ],
+                            )
+                        ],
+                    )
+                ]
+            )
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        run_ids = {record["run_id"] for record in records}
+        self.assertEqual(len(run_ids), 1)
+        self.assertRegex(next(iter(run_ids)), r"^[0-9a-f]{32}$")
+
+        _, str_defs, frame_defs, agg_record, end_record = jsonl_tables(
+            records
+        )
+        str_chunks = [
+            record for record in records if record["type"] == "string_table"
+        ]
+        frame_chunks = [
+            record for record in records if record["type"] == "frame_table"
+        ]
+        agg_chunks = [record for record in records if record["type"] == "agg"]
+
+        self.assertEqual(
+            [len(record["strings"]) for record in str_chunks],
+            [256, 256, 2],
+        )
+        self.assertEqual(
+            [len(record["frames"]) for record in frame_chunks], [256, 1]
+        )
+        self.assertEqual(
+            [len(record["entries"]) for record in agg_chunks], [256, 1]
+        )
+        self.assertEqual(len(str_defs), 514)
+        self.assertEqual(len(frame_defs), 257)
+        self.assertEqual(agg_record["samples_total"], 257)
+        self.assertEqual(end_record["samples_total"], 257)
+
+    def test_jsonl_collector_respects_weight_for_rle_batched_samples(self):
+        """weight>1 (from binary replay RLE) is honored in self/cumulative."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        leaf = MockFrameInfo("file.py", 10, "leaf")
+        non_leaf = MockFrameInfo("file.py", 20, "non_leaf")
+
+        collector.process_frames([leaf, non_leaf], _thread_id=1, weight=5)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, str_defs, frame_defs, agg, end = jsonl_tables(records)
+        self.assertEqual(end["samples_total"], 5)
+        self.assertEqual(agg["samples_total"], 5)
+        self.assertEqual(
+            {str_defs[fd["func_str_id"]]: fd["frame_id"] for fd in frame_defs},
+            {"leaf": 0, "non_leaf": 1},
+        )
+        self.assertEqual(agg["entries"], [
+            {"frame_id": 0, "self": 5, "cumulative": 5},
+            {"frame_id": 1, "self": 0, "cumulative": 5},
+        ])
+
+    def test_jsonl_collector_recursion_with_weight(self):
+        """Recursion dedup respects weight, not occurrence count."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        recursive = MockFrameInfo("rec.py", 10, "f")
+
+        collector.process_frames([recursive] * 3, _thread_id=1, weight=3)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, _, frame_defs, agg, _ = jsonl_tables(records)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(agg["entries"], [
+            {"frame_id": 0, "self": 3, "cumulative": 3},
+        ])
+
+    def test_jsonl_collector_emits_col_and_end_col_when_present(self):
+        """All four location fields are emitted when col/end_col are >= 0."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(1000)
+        frame = MockFrameInfo("test.py", 0, "f")
+        frame.location = LocationInfo(42, 45, 4, 12)
+        frames = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
+        self.assertEqual(frame_defs, [
+            {
+                "frame_id": 0,
+                "path_str_id": 1,
+                "func_str_id": 0,
+                "line": 42,
+                "end_line": 45,
+                "col": 4,
+                "end_col": 12,
+            },
+        ])
+        self.assertEqual(str_defs, {0: "f", 1: "test.py"})
+
+    def test_jsonl_collector_partial_location_elision(self):
+        """Negative col/end_col/end_line fields are individually elided."""
+        # _get_or_create_frame_id interns funcname before filename, so
+        # func_str_id=0 ("f") and path_str_id=1 ("test.py").
+        common = {"frame_id": 0, "path_str_id": 1, "func_str_id": 0}
+        cases = [
+            (LocationInfo(42, 45, -1, 12),
+             {**common, "line": 42, "end_line": 45, "end_col": 12}),
+            (LocationInfo(42, 45, 4, -1),
+             {**common, "line": 42, "end_line": 45, "col": 4}),
+            (LocationInfo(42, 0, 4, 8),
+             {**common, "line": 42, "col": 4, "end_col": 8}),
+        ]
+        for loc, expected_frame_def in cases:
+            with self.subTest(location=loc):
+                jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+                self.addCleanup(close_and_unlink, jsonl_out)
+
+                collector = JsonlCollector(1000)
+                frame = MockFrameInfo("test.py", 0, "f")
+                frame.location = loc
+                frames = [
+                    MockInterpreterInfo(
+                        0,
+                        [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)],
+                    )
+                ]
+                collector.collect(frames)
+                collector.export(jsonl_out.name)
+
+                with open(jsonl_out.name, "r", encoding="utf-8") as f:
+                    records = [json.loads(line) for line in f]
+
+                _, _, frame_defs, _, _ = jsonl_tables(records)
+                self.assertEqual(frame_defs, [expected_frame_def])
+
+
+class TestRecursiveFunctionHandling(unittest.TestCase):
+    """Tests for correct handling of recursive functions in cumulative stats."""
+
+    def test_pstats_collector_recursive_function_single_sample(self):
+        """Test that recursive functions are counted once per sample, not per occurrence."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Simulate a recursive function appearing 5 times in one sample
+        recursive_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(recursive_frames)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 1 cumulative call (present in 1 sample), not 5
+        self.assertEqual(collector.result[location]["cumulative_calls"], 1)
+        # Direct calls should be 1 (top of stack)
+        self.assertEqual(collector.result[location]["direct_calls"], 1)
+
+    def test_pstats_collector_recursive_function_multiple_samples(self):
+        """Test cumulative counting across multiple samples with recursion."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Sample 1: recursive function at depth 3
+        sample1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        # Sample 2: recursive function at depth 2
+        sample2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        # Sample 3: recursive function at depth 4
+        sample3 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+
+        collector.collect(sample1)
+        collector.collect(sample2)
+        collector.collect(sample3)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 3 cumulative calls (present in 3 samples)
+        # Not 3+2+4=9 which would be the buggy behavior
+        self.assertEqual(collector.result[location]["cumulative_calls"], 3)
+        self.assertEqual(collector.result[location]["direct_calls"], 3)
+
+    def test_pstats_collector_mixed_recursive_and_nonrecursive(self):
+        """Test a call stack with both recursive and non-recursive functions."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Stack: main -> foo (recursive x3) -> bar
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 50, "bar"),       # top of stack
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 10, "main"),     # bottom
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # bar: 1 cumulative (in stack), 1 direct (top)
+        self.assertEqual(collector.result[("test.py", 50, "bar")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 50, "bar")]["direct_calls"], 1)
+
+        # foo: 1 cumulative (counted once despite 3 occurrences), 0 direct
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["direct_calls"], 0)
+
+        # main: 1 cumulative, 0 direct
+        self.assertEqual(collector.result[("test.py", 10, "main")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 10, "main")]["direct_calls"], 0)
+
+    def test_pstats_collector_cumulative_percentage_cannot_exceed_100(self):
+        """Test that cumulative percentage stays <= 100% even with deep recursion."""
+        collector = PstatsCollector(sample_interval_usec=1000000)  # 1 second for easy math
+
+        # Collect 10 samples, each with recursive function at depth 100
+        for _ in range(10):
+            frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [MockFrameInfo("test.py", 10, "deep_recursive")] * 100,
+                        )
+                    ],
+                )
+            ]
+            collector.collect(frames)
+
+        location = ("test.py", 10, "deep_recursive")
+        # Cumulative calls should be 10 (number of samples), not 1000
+        self.assertEqual(collector.result[location]["cumulative_calls"], 10)
+
+        # Verify stats calculation gives correct percentage
+        collector.create_stats()
+        stats = collector.stats[location]
+        # stats format: (direct_calls, cumulative_calls, total_time, cumulative_time, callers)
+        cumulative_calls = stats[1]
+        self.assertEqual(cumulative_calls, 10)
+
+    def test_pstats_collector_different_lines_same_function_counted_separately(self):
+        """Test that different line numbers in same function are tracked separately."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Function with multiple line numbers (e.g., different call sites within recursion)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 15, "func"),  # line 15
+                            MockFrameInfo("test.py", 12, "func"),  # line 12
+                            MockFrameInfo("test.py", 15, "func"),  # line 15 again
+                            MockFrameInfo("test.py", 10, "func"),  # line 10
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # Each unique (file, line, func) should be counted once
+        self.assertEqual(collector.result[("test.py", 15, "func")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 12, "func")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 10, "func")]["cumulative_calls"], 1)
+
+
+class TestLocationHelpers(unittest.TestCase):
+    """Tests for location handling helper functions."""
+
+    def test_extract_lineno_from_location_info(self):
+        """Test extracting lineno from LocationInfo namedtuple."""
+        loc = LocationInfo(42, 45, 0, 10)
+        self.assertEqual(extract_lineno(loc), 42)
+
+    def test_extract_lineno_from_tuple(self):
+        """Test extracting lineno from plain tuple."""
+        loc = (100, 105, 5, 20)
+        self.assertEqual(extract_lineno(loc), 100)
+
+    def test_extract_lineno_from_none(self):
+        """Test extracting lineno from None (synthetic frames)."""
+        self.assertEqual(extract_lineno(None), 0)
+
+    def test_extract_lineno_from_int(self):
+        """Test extracting lineno from a bare integer line number.
+
+        Mirrors normalize_location's int contract so callers like the
+        collapsed/flamegraph collectors do not crash on a bare-int location.
+        """
+        self.assertEqual(extract_lineno(42), 42)
+        self.assertEqual(extract_lineno(0), 0)
+
+    def test_normalize_location_with_int(self):
+        """Test normalize_location expands a legacy integer line number."""
+        result = normalize_location(42)
+        self.assertEqual(result, (42, 42, -1, -1))
+
+    def test_normalize_location_with_location_info(self):
+        """Test normalize_location passes through LocationInfo."""
+        loc = LocationInfo(10, 15, 0, 5)
+        result = normalize_location(loc)
+        self.assertEqual(result, loc)
+
+    def test_normalize_location_with_tuple(self):
+        """Test normalize_location passes through tuple."""
+        loc = (10, 15, 0, 5)
+        result = normalize_location(loc)
+        self.assertEqual(result, loc)
+
+    def test_normalize_location_with_none(self):
+        """Test normalize_location returns DEFAULT_LOCATION for None."""
+        result = normalize_location(None)
+        self.assertEqual(result, DEFAULT_LOCATION)
+        self.assertEqual(result, (0, 0, -1, -1))
+
+
+class TestOpcodeFormatting(unittest.TestCase):
+    """Tests for opcode formatting utilities."""
+
+    def test_get_opcode_info_standard_opcode(self):
+        """Test get_opcode_info for a standard opcode."""
+        # LOAD_CONST is a standard opcode
+        load_const = opcode.opmap.get('LOAD_CONST')
+        if load_const is not None:
+            info = get_opcode_info(load_const)
+            self.assertEqual(info['opname'], 'LOAD_CONST')
+            self.assertEqual(info['base_opname'], 'LOAD_CONST')
+            self.assertFalse(info['is_specialized'])
+
+    def test_get_opcode_info_unknown_opcode(self):
+        """Test get_opcode_info for an unknown opcode."""
+        info = get_opcode_info(999)
+        self.assertEqual(info['opname'], '<999>')
+        self.assertEqual(info['base_opname'], '<999>')
+        self.assertFalse(info['is_specialized'])
+
+    def test_format_opcode_standard(self):
+        """Test format_opcode for a standard opcode."""
+        load_const = opcode.opmap.get('LOAD_CONST')
+        if load_const is not None:
+            formatted = format_opcode(load_const)
+            self.assertEqual(formatted, 'LOAD_CONST')
+
+    def test_format_opcode_specialized(self):
+        """Test format_opcode for a specialized opcode shows base in parens."""
+        if not hasattr(opcode, '_specialized_opmap'):
+            self.skipTest("No specialized opcodes in this Python version")
+        if not hasattr(opcode, '_specializations'):
+            self.skipTest("No specialization info in this Python version")
+
+        # Find any specialized opcode to test
+        for base_name, variants in opcode._specializations.items():
+            if not variants:
+                continue
+            variant_name = variants[0]
+            variant_opcode = opcode._specialized_opmap.get(variant_name)
+            if variant_opcode is None:
+                continue
+            formatted = format_opcode(variant_opcode)
+            # Should show: VARIANT_NAME (BASE_NAME)
+            self.assertIn(variant_name, formatted)
+            self.assertIn(f'({base_name})', formatted)
+            return
+
+        self.skipTest("No specialized opcodes found")
+
+    def test_format_opcode_unknown(self):
+        """Test format_opcode for an unknown opcode."""
+        formatted = format_opcode(999)
+        self.assertEqual(formatted, '<999>')
+
+
+class TestLocationInCollectors(unittest.TestCase):
+    """Tests for location tuple handling in each collector."""
+
+    def _make_frames_with_location(self, location, opcode=None):
+        """Create test frames with a specific location."""
+        frame = MockFrameInfo("test.py", 0, "test_func", opcode)
+        # Override the location
+        frame.location = location
+        return [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+
+    def test_pstats_collector_with_location_info(self):
+        """Test PstatsCollector handles LocationInfo properly."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Frame with LocationInfo
+        frame = MockFrameInfo("test.py", 42, "my_function")
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        # Should extract lineno from location
+        key = ("test.py", 42, "my_function")
+        self.assertIn(key, collector.result)
+        self.assertEqual(collector.result[key]["direct_calls"], 1)
+
+    def test_pstats_collector_with_none_location(self):
+        """Test PstatsCollector handles None location (synthetic frames)."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Create frame with None location (like GC frame)
+        frame = MockFrameInfo("~", 0, "<GC>")
+        frame.location = None  # Synthetic frame has no location
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        # Should use lineno=0 for None location
+        key = ("~", 0, "<GC>")
+        self.assertIn(key, collector.result)
+
+    def test_collapsed_stack_with_location_info(self):
+        """Test CollapsedStackCollector handles LocationInfo properly."""
+        collector = CollapsedStackCollector(1000)
+
+        frame1 = MockFrameInfo("main.py", 10, "main")
+        frame2 = MockFrameInfo("utils.py", 25, "helper")
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1, frame2], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        # Check that linenos were extracted correctly
+        self.assertEqual(len(collector.stack_counter), 1)
+        (path, _), count = list(collector.stack_counter.items())[0]
+        # Reversed order: helper at top, main at bottom
+        self.assertEqual(path[0], ("utils.py", 25, "helper"))
+        self.assertEqual(path[1], ("main.py", 10, "main"))
+
+    def test_flamegraph_collector_with_location_info(self):
+        """Test FlamegraphCollector handles LocationInfo properly."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        frame = MockFrameInfo("app.py", 100, "process_data")
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        data = collector._convert_to_flamegraph_format()
+        # Verify the function name includes lineno from location
+        strings = data.get("strings", [])
+        name_found = any("process_data" in s and "100" in s for s in strings if isinstance(s, str))
+        self.assertTrue(name_found, f"Expected to find 'process_data' with line 100 in {strings}")
+
+    def test_gecko_collector_with_location_info(self):
+        """Test GeckoCollector handles LocationInfo properly."""
+        collector = GeckoCollector(sample_interval_usec=1000)
+
+        frame = MockFrameInfo("server.py", 50, "handle_request")
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        profile = collector._build_profile()
+        # Check that the function was recorded
+        self.assertEqual(len(profile["threads"]), 1)
+        thread_data = profile["threads"][0]
+        string_array = profile["shared"]["stringArray"]
+
+        # Verify function name is in string table
+        self.assertIn("handle_request", string_array)
+
+    def test_jsonl_collector_with_location_info(self):
+        """Test JsonlCollector handles LocationInfo properly."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(sample_interval_usec=1000)
+
+        # Frame with LocationInfo
+        frame = MockFrameInfo("test.py", 42, "my_function")
+        frames = [
+            MockInterpreterInfo(
+                0, [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        meta, str_defs, frame_defs, agg, end = jsonl_tables(records)
+        self.assertEqual(meta["sample_interval_usec"], 1000)
+        self.assertEqual(agg["samples_total"], 1)
+        self.assertEqual(end["samples_total"], 1)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(str_defs[frame_defs[0]["path_str_id"]], "test.py")
+        self.assertEqual(str_defs[frame_defs[0]["func_str_id"]], "my_function")
+        self.assertEqual(
+            frame_defs[0],
+            {
+                "frame_id": 0,
+                "path_str_id": frame_defs[0]["path_str_id"],
+                "func_str_id": frame_defs[0]["func_str_id"],
+                "line": 42,
+                "end_line": 42,
+            },
+        )
+
+    def test_jsonl_collector_with_none_location(self):
+        """Test JsonlCollector handles None location (synthetic frames)."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        collector = JsonlCollector(sample_interval_usec=1000)
+
+        # Create frame with None location (like GC frame)
+        frame = MockFrameInfo("~", 0, "<GC>")
+        frame.location = None  # Synthetic frame has no location
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        meta, str_defs, frame_defs, agg, end = jsonl_tables(records)
+        self.assertEqual(meta["sample_interval_usec"], 1000)
+        self.assertEqual(agg["samples_total"], 1)
+        self.assertEqual(end["samples_total"], 1)
+        self.assertEqual(len(frame_defs), 1)
+        self.assertEqual(str_defs[frame_defs[0]["path_str_id"]], "~")
+        self.assertEqual(str_defs[frame_defs[0]["func_str_id"]], "<GC>")
+        self.assertEqual(
+            frame_defs[0],
+            {
+                "frame_id": 0,
+                "path_str_id": frame_defs[0]["path_str_id"],
+                "func_str_id": frame_defs[0]["func_str_id"],
+                "line": 0,
+            },
+        )
+
+
+class TestOpcodeHandling(unittest.TestCase):
+    """Tests for opcode field handling in collectors."""
+
+    def test_frame_with_opcode(self):
+        """Test MockFrameInfo properly stores opcode."""
+        frame = MockFrameInfo("test.py", 10, "my_func", opcode=90)
+        self.assertEqual(frame.opcode, 90)
+        # Verify tuple representation includes opcode
+        self.assertEqual(frame[3], 90)
+        self.assertEqual(len(frame), 4)
+
+    def test_frame_without_opcode(self):
+        """Test MockFrameInfo with no opcode defaults to None."""
+        frame = MockFrameInfo("test.py", 10, "my_func")
+        self.assertIsNone(frame.opcode)
+        self.assertIsNone(frame[3])
+
+    def test_collectors_ignore_opcode_for_key_generation(self):
+        """Test that collectors use (filename, lineno, funcname) as key, not opcode."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Same function, different opcodes
+        frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
+        frame2 = MockFrameInfo("test.py", 10, "func", opcode=100)
+
+        frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        frames2 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame2], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+
+        collector.collect(frames1)
+        collector.collect(frames2)
+
+        # Should be counted as same function (opcode not in key)
+        key = ("test.py", 10, "func")
+        self.assertIn(key, collector.result)
+        self.assertEqual(collector.result[key]["direct_calls"], 2)
+
+
+class TestGeckoOpcodeMarkers(unittest.TestCase):
+    """Tests for GeckoCollector opcode interval markers."""
+
+    def test_gecko_collector_opcodes_disabled_by_default(self):
+        """Test that opcode tracking is disabled by default."""
+        collector = GeckoCollector(sample_interval_usec=1000)
+        self.assertFalse(collector.opcodes_enabled)
+
+    def test_gecko_collector_opcodes_enabled(self):
+        """Test that opcode tracking can be enabled."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+        self.assertTrue(collector.opcodes_enabled)
+
+    def test_gecko_opcode_state_tracking(self):
+        """Test that GeckoCollector tracks opcode state changes."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+        self.addCleanup(collector._cleanup_spills)
+
+        # First sample with opcode 90 (RAISE_VARARGS)
+        frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
+        frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames1)
+
+        # Should start tracking this opcode state
+        self.assertIn(1, collector.opcode_state)
+        state = collector.opcode_state[1]
+        self.assertEqual(state[0], 90)  # opcode
+        self.assertEqual(state[1], 10)  # lineno
+        self.assertEqual(state[3], "func")  # funcname
+
+    def test_gecko_opcode_state_change_emits_marker(self):
+        """Test that opcode state change emits an interval marker."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+
+        # First sample: opcode 90
+        frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
+        frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames1)
+
+        # Second sample: different opcode 100
+        frame2 = MockFrameInfo("test.py", 10, "func", opcode=100)
+        frames2 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame2], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames2)
+
+        # Should have emitted a marker for the first opcode
+        profile = collector._build_profile()
+        markers = profile["threads"][0]["markers"]
+        assert_gecko_column_lengths(
+            self, markers,
+            ("data", "name", "startTime", "endTime", "phase", "category"),
+        )
+        opcode_markers = gecko_opcode_marker_data(profile)
+        self.assertIn(
+            {
+                "opcode": 90,
+                "line": 10,
+                "function": "func",
+            },
+            [
+                {
+                    "opcode": marker["opcode"],
+                    "line": marker["line"],
+                    "function": marker["function"],
+                }
+                for marker in opcode_markers
+            ],
+        )
+
+    def test_gecko_opcode_markers_not_emitted_when_disabled(self):
+        """Test that no opcode markers when opcodes=False."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=False)
+
+        frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
+        frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames1)
+
+        frame2 = MockFrameInfo("test.py", 10, "func", opcode=100)
+        frames2 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame2], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames2)
+
+        profile = collector._build_profile()
+        self.assertEqual(gecko_opcode_marker_data(profile), [])
+        self.assertEqual(profile["meta"]["markerSchema"], [])
+
+    def test_gecko_opcode_with_none_opcode(self):
+        """Test that None opcode doesn't cause issues."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+
+        # Frame with no opcode (None)
+        frame = MockFrameInfo("test.py", 10, "func", opcode=None)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        profile = collector._build_profile()
+        self.assertEqual(gecko_opcode_marker_data(profile), [])
+
+
+class TestCollectorFrameFormat(unittest.TestCase):
+    """Tests verifying all collectors handle the 4-element frame format."""
+
+    def _make_sample_frames(self):
+        """Create sample frames with full format: (filename, location, funcname, opcode)."""
+        return [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 100, "main", opcode=90),
+                            MockFrameInfo("utils.py", 50, "helper", opcode=100),
+                            MockFrameInfo("lib.py", 25, "process", opcode=None),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+
+    def test_pstats_collector_frame_format(self):
+        """Test PstatsCollector with 4-element frame format."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        # All three functions should be recorded
+        self.assertEqual(len(collector.result), 3)
+        self.assertIn(("app.py", 100, "main"), collector.result)
+        self.assertIn(("utils.py", 50, "helper"), collector.result)
+        self.assertIn(("lib.py", 25, "process"), collector.result)
+
+    def test_collapsed_stack_frame_format(self):
+        """Test CollapsedStackCollector with 4-element frame format."""
+        collector = CollapsedStackCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        self.assertEqual(len(collector.stack_counter), 1)
+        (path, _), _ = list(collector.stack_counter.items())[0]
+        # 3 frames in the path (reversed order)
+        self.assertEqual(len(path), 3)
+
+    def test_flamegraph_collector_frame_format(self):
+        """Test FlamegraphCollector with 4-element frame format."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        data = collector._convert_to_flamegraph_format()
+        # Should have processed the frames
+        self.assertIn("children", data)
+
+    def test_gecko_collector_frame_format(self):
+        """Test GeckoCollector with 4-element frame format."""
+        collector = GeckoCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        profile = collector._build_profile()
+        # Should have one thread with the frames
+        self.assertEqual(len(profile["threads"]), 1)
+        thread = profile["threads"][0]
+        # Should have recorded 3 functions
+        self.assertEqual(thread["funcTable"]["length"], 3)
+
+    def test_jsonl_collector_frame_format(self):
+        """Test JsonlCollector with 4-element frame format."""
+        collector = JsonlCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.addClassCleanup(close_and_unlink, f)
+            collector.export(f.name)
+
+        with open(f.name, "r", encoding="utf-8") as fp:
+            records = [json.loads(line) for line in fp]
+
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
+
+        self.assertEqual(len(frame_defs), 3)
+
+        paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+        funcs = {str_defs[item["func_str_id"]] for item in frame_defs}
+
+        self.assertEqual(paths, {"app.py", "utils.py", "lib.py"})
+        self.assertEqual(funcs, {"main", "helper", "process"})
+
+
+class TestInternalFrameFiltering(unittest.TestCase):
+    """Tests for filtering internal profiler frames from output."""
+
+    def test_filter_internal_frames(self):
+        """Test that _sync_coordinator frames are filtered from anywhere in stack."""
+        from profiling.sampling.collector import filter_internal_frames
+
+        # Stack with _sync_coordinator in the middle (realistic scenario)
+        frames = [
+            MockFrameInfo("user_script.py", 10, "user_func"),
+            MockFrameInfo("/path/to/_sync_coordinator.py", 100, "main"),
+            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+        ]
+
+        filtered = filter_internal_frames(frames)
+        self.assertEqual(len(filtered), 2)
+        self.assertEqual(filtered[0].filename, "user_script.py")
+        self.assertEqual(filtered[1].filename, "<frozen runpy>")
+
+    def test_pstats_collector_filters_internal_frames(self):
+        """Test that PstatsCollector filters out internal frames."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("user_script.py", 10, "user_func"),
+                            MockFrameInfo("/path/to/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        self.assertEqual(len(collector.result), 2)
+        self.assertIn(("user_script.py", 10, "user_func"), collector.result)
+        self.assertIn(("<frozen runpy>", 87, "_run_code"), collector.result)
+
+    def test_gecko_collector_filters_internal_frames(self):
+        """Test that GeckoCollector filters out internal frames."""
+        collector = GeckoCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        profile = collector._build_profile()
+        string_array = profile["shared"]["stringArray"]
+
+        # Should not contain _sync_coordinator functions
+        for s in string_array:
+            self.assertNotIn("_sync_coordinator", s)
+
+    def test_flamegraph_collector_filters_internal_frames(self):
+        """Test that FlamegraphCollector filters out internal frames."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        data = collector._convert_to_flamegraph_format()
+        strings = data.get("strings", [])
+
+        for s in strings:
+            self.assertNotIn("_sync_coordinator", s)
+
+    def test_collapsed_stack_collector_filters_internal_frames(self):
+        """Test that CollapsedStackCollector filters out internal frames."""
+        collector = CollapsedStackCollector(sample_interval_usec=1000)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # Check that no stack contains _sync_coordinator
+        for (call_tree, _), _ in collector.stack_counter.items():
+            for filename, _, _ in call_tree:
+                self.assertNotIn("_sync_coordinator", filename)
+
+    def test_jsonl_collector_filters_internal_frames(self):
+        """Test that JsonlCollector filters out internal frames."""
+        jsonl_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, jsonl_out)
+
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 50, "run"),
+                            MockFrameInfo("/lib/_sync_coordinator.py", 100, "main"),
+                            MockFrameInfo("<frozen runpy>", 87, "_run_code"),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+
+        collector = JsonlCollector(sample_interval_usec=1000)
+        collector.collect(frames)
+        collector.export(jsonl_out.name)
+
+        with open(jsonl_out.name, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+
+        _, str_defs, frame_defs, _, _ = jsonl_tables(records)
+
+        paths = {str_defs[item["path_str_id"]] for item in frame_defs}
+
+        self.assertIn("app.py", paths)
+        self.assertIn("<frozen runpy>", paths)
+
+        for path in paths:
+            self.assertNotIn("_sync_coordinator", path)

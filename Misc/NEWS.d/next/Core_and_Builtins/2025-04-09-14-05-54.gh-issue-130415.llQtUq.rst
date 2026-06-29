@@ -1,3 +1,0 @@
-Improve the JIT's ability to remove unused constant and local variable
-loads, and fix an issue where deallocating unused values could cause JIT
-code to crash or behave incorrectly.

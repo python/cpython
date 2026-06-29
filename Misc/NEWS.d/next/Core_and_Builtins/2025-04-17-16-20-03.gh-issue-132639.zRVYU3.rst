@@ -1,2 +1,0 @@
-Added :c:func:`PyLong_AsNativeBytes`, :c:func:`PyLong_FromNativeBytes` and
-:c:func:`PyLong_FromUnsignedNativeBytes` to the limited C API.

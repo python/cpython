@@ -411,6 +411,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitem(dct2, 'a'), 1)
         self.assertEqual(getitem(dct2, 'b'), KeyError)
 
+        frozendct = frozendict(dct)
+        self.assertEqual(getitem(frozendct, 'a'), 1)
+        self.assertEqual(getitem(frozendct, 'b'), KeyError)
+        self.assertEqual(getitem(frozendct, '\U0001f40d'), 2)
+
         self.assertEqual(getitem(['a', 'b', 'c'], 1), 'b')
 
         self.assertRaises(TypeError, getitem, 42, 'a')
@@ -430,6 +435,11 @@ class CAPITest(unittest.TestCase):
         dct2 = ProxyGetItem(dct)
         self.assertEqual(getitemstring(dct2, b'a'), 1)
         self.assertEqual(getitemstring(dct2, b'b'), KeyError)
+
+        frozendct = frozendict(dct)
+        self.assertEqual(getitemstring(frozendct, 'a'), 1)
+        self.assertEqual(getitemstring(frozendct, 'b'), KeyError)
+        self.assertEqual(getitemstring(frozendct, '\U0001f40d'.encode()), 2)
 
         self.assertRaises(TypeError, getitemstring, 42, b'a')
         self.assertRaises(UnicodeDecodeError, getitemstring, {}, b'\xff')
@@ -677,8 +687,10 @@ class CAPITest(unittest.TestCase):
         dict_obj = {'foo': 1, 'bar': 2, 'spam': 3}
 
         for mapping in [{}, OrderedDict(), Mapping1(), Mapping2(),
+                        frozendict(),
                         dict_obj, OrderedDict(dict_obj),
-                        Mapping1(dict_obj), Mapping2(dict_obj)]:
+                        Mapping1(dict_obj), Mapping2(dict_obj),
+                        frozendict(dict_obj)]:
             self.assertListEqual(_testlimitedcapi.mapping_keys(mapping),
                                  list(mapping.keys()))
             self.assertListEqual(_testlimitedcapi.mapping_values(mapping),
@@ -1076,6 +1088,31 @@ class CAPITest(unittest.TestCase):
         regex = "expected.*iterator.*got.*'int'"
         with self.assertRaisesRegex(TypeError, regex):
             PyIter_NextItem(10)
+
+    def test_object_setattr_null_exc(self):
+        class Obj:
+            pass
+        obj = Obj()
+        obj.attr = 123
+
+        exc = ValueError("error")
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattr_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            _testcapi.object_setattrstring_null_exc(obj, 'attr', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertHasAttr(obj, 'attr')
+
+        with self.assertRaises(SystemError) as cm:
+            # undecodable name
+            _testcapi.object_setattrstring_null_exc(obj, b'\xff', exc)
+        self.assertIs(cm.exception.__context__, exc)
+        self.assertIsNone(cm.exception.__cause__)
 
 
 if __name__ == "__main__":

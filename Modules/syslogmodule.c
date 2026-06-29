@@ -56,7 +56,6 @@ Revision history:
 
 #include "Python.h"
 #include "osdefs.h"               // SEP
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
 #include <syslog.h>
 
@@ -92,7 +91,7 @@ syslog_get_argv(void)
     Py_ssize_t slash;
     PyObject *argv;
 
-    if (_PySys_GetOptionalAttrString("argv", &argv) <= 0) {
+    if (PySys_GetOptionalAttrString("argv", &argv) <= 0) {
         return NULL;
     }
 
@@ -299,7 +298,13 @@ syslog_setlogmask_impl(PyObject *module, long maskpri)
         return -1;
     }
 
-    return setlogmask(maskpri);
+    static PyMutex setlogmask_mutex = {0};
+    PyMutex_Lock(&setlogmask_mutex);
+    // Linux man page (3): setlogmask() is MT-Unsafe race:LogMask.
+    long previous_mask = setlogmask(maskpri);
+    PyMutex_Unlock(&setlogmask_mutex);
+
+    return previous_mask;
 }
 
 /*[clinic input]
@@ -446,6 +451,7 @@ syslog_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot syslog_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, syslog_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

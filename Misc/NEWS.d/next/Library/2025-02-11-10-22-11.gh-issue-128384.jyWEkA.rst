@@ -1,7 +1,0 @@
-Make :class:`warnings.catch_warnings` use a context variable for holding
-the warning filtering state if the :data:`sys.flags.context_aware_warnings`
-flag is set to true.  This makes using the context manager thread-safe in
-multi-threaded programs.  The flag is true by default in free-threaded builds
-and is otherwise false.  The value of the flag can be overridden by the
-the :option:`-X context_aware_warnings <-X>` command-line option or by the
-:envvar:`PYTHON_CONTEXT_AWARE_WARNINGS` environment variable.

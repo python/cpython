@@ -34,9 +34,13 @@ typedef struct {
     char *entries[1];
 } _PyCodeArray;
 
+#define _PyCode_DEF_UNIQUE_ID() \
+    Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */
+
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE() \
     _PyCodeArray *co_tlbc;
 #else
+#define _PyCode_DEF_UNIQUE_ID()
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE()
 #endif
 
@@ -101,7 +105,7 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     struct _PyCoMonitoringData *_co_monitoring; /* Monitoring data */          \
-    Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */   \
+    _PyCode_DEF_UNIQUE_ID()                                                    \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
@@ -281,15 +285,6 @@ typedef struct _line_offsets {
    same line as lasti.  Return the number of that line.
 */
 PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds);
-
-/* Create a comparable key used to compare constants taking in account the
- * object type. It is used to make sure types are not coerced (e.g., float and
- * complex) _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms
- *
- * Return (type(obj), obj, ...): a tuple with variable size (at least 2 items)
- * depending on the type and the value. The type is the first item to not
- * compare bytes and str which can raise a BytesWarning exception. */
-PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);

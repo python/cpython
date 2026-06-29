@@ -18,6 +18,10 @@
  */
 #ifdef AF_BTH
 # include <ws2bth.h>
+# ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wpragma-pack"
+# endif
 # include <pshpack1.h>
 
 /*
@@ -51,7 +55,10 @@ struct SOCKADDR_BTH_REDEF {
 
 };
 # include <poppack.h>
-#endif
+# ifdef __clang__
+#  pragma clang diagnostic pop
+# endif
+#endif /* AF_BTH */
 
 /* Windows 'supports' CMSG_LEN, but does not follow the POSIX standard
  * interface at all, so there is no point including the code that
@@ -158,6 +165,10 @@ typedef int socklen_t;
 #include <linux/can/bcm.h>
 #endif
 
+#ifdef HAVE_LINUX_CAN_ISOTP_H
+#include <linux/can/isotp.h>
+#endif
+
 #ifdef HAVE_LINUX_CAN_J1939_H
 #include <linux/can/j1939.h>
 #endif
@@ -259,7 +270,7 @@ typedef int SOCKET_T;
 #endif
 
 // AF_HYPERV is only supported on Windows
-#if defined(AF_HYPERV) && defined(MS_WINDOWS)
+#if defined(AF_HYPERV) && (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 #  define HAVE_AF_HYPERV
 #endif
 

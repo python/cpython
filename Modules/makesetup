@@ -90,6 +90,7 @@ NL='\
 # Main loop
 for i in ${*-Setup}
 do
+	echo ''  # Add a linebreak so we don't choke on files missing EOL.
 	case $i in
 	-n)	echo '*noobjects*';;
 	*)	echo '*doconfig*'; cat "$i";;

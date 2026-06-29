@@ -10,14 +10,15 @@ __all__ = [
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
-        'pickle_by_global_name', 'pickle_by_enum_name',
+        'pickle_by_global_name', 'pickle_by_enum_name', 'show_flag_values',
+        'bin',
         ]
 
 
 # Dummy value for Enum and Flag as there are explicit checks for them
 # before they have been created.
 # This is also why there are checks in EnumType like `if Enum is not None`
-Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
+Enum = Flag = EJECT = ReprEnum = None
 
 class nonmember(object):
     """
@@ -129,7 +130,7 @@ def show_flag_values(value):
 def bin(num, max_bits=None):
     """
     Like built-in bin(), except negative values are represented in
-    twos-compliment, and the leading bit always indicates sign
+    twos-complement, and the leading bit always indicates sign
     (0=positive, 1=negative).
 
     >>> bin(10)
@@ -138,6 +139,7 @@ def bin(num, max_bits=None):
     '0b1 0101'
     """
 
+    num = num.__index__()
     ceiling = 2 ** (num).bit_length()
     if num >= 0:
         s = bltns.bin(num + ceiling).replace('1', '0', 1)
@@ -535,7 +537,7 @@ class EnumType(type):
         # now set the __repr__ for the value
         classdict['_value_repr_'] = metacls._find_data_repr_(cls, bases)
         #
-        # Flag structures (will be removed if final class is not a Flag
+        # Flag structures (will be removed if final class is not a Flag)
         classdict['_boundary_'] = (
                 boundary
                 or getattr(first_enum, '_boundary_', None)
@@ -544,6 +546,29 @@ class EnumType(type):
         classdict['_singles_mask_'] = 0
         classdict['_all_bits_'] = 0
         classdict['_inverted_'] = None
+        # check for negative flag values and invert if found (using _proto_members)
+        if Flag is not None and bases and issubclass(bases[-1], Flag):
+            bits = 0
+            inverted = []
+            for n in member_names:
+                p = classdict[n]
+                if isinstance(p.value, int):
+                    if p.value < 0:
+                        inverted.append(p)
+                    else:
+                        bits |= p.value
+                elif p.value is None:
+                    pass
+                elif isinstance(p.value, tuple) and p.value and isinstance(p.value[0], int):
+                    if p.value[0] < 0:
+                        inverted.append(p)
+                    else:
+                        bits |= p.value[0]
+            for p in inverted:
+                if isinstance(p.value, int):
+                    p.value = bits & p.value
+                else:
+                    p.value = (bits & p.value[0], ) + p.value[1:]
         try:
             classdict['_%s__in_progress' % cls] = True
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
@@ -677,9 +702,9 @@ class EnumType(type):
         """
         Either returns an existing member, or creates a new enum class.
 
-        This method is used both when an enum class is given a value to match
-        to an enumeration member (i.e. Color(3)) and for the functional API
-        (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
+        This method is used both when an enum class is given a value to
+        match to an enumeration member (i.e. Color(3)) and for the
+        functional API (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
 
         The value lookup branch is chosen if the enum is final.
 
@@ -687,16 +712,17 @@ class EnumType(type):
 
         `value` will be the name of the new class.
 
-        `names` should be either a string of white-space/comma delimited names
-        (values will start at `start`), or an iterator/mapping of name, value pairs.
+        `names` should be either a string of white-space/comma delimited
+        names (values will start at `start`), or an iterator/mapping of
+        name, value pairs.
 
         `module` should be set to the module this class is being created in;
-        if it is not set, an attempt to find that module will be made, but if
-        it fails the class will not be picklable.
+        if it is not set, an attempt to find that module will be made, but
+        if it fails the class will not be picklable.
 
-        `qualname` should be set to the actual location this class can be found
-        at in its module; by default it is set to the global scope.  If this is
-        not correct, unpickling will fail in some circumstances.
+        `qualname` should be set to the actual location this class can be
+        found at in its module; by default it is set to the global scope.
+        If this is not correct, unpickling will fail in some circumstances.
 
         `type`, if set, will be mixed in as the first base class.
         """
@@ -750,12 +776,18 @@ class EnumType(type):
         super().__delattr__(attr)
 
     def __dir__(cls):
+        if issubclass(cls, Flag):
+            members = list(cls._member_map_.keys())
+        else:
+            members = cls._member_names_
         interesting = set([
                 '__class__', '__contains__', '__doc__', '__getitem__',
                 '__iter__', '__len__', '__members__', '__module__',
                 '__name__', '__qualname__',
+                # Supported sunder names of Enum class
+                '_generate_next_value_', '_missing_',
                 ]
-                + cls._member_names_
+                + members
                 )
         if cls._new_member_ is not object.__new__:
             interesting.add('__new__')
@@ -790,8 +822,8 @@ class EnumType(type):
         """
         Returns a mapping of member name->value.
 
-        This mapping lists all enum members, including aliases. Note that this
-        is a read-only view of the internal mapping.
+        This mapping lists all enum members, including aliases.  Note that
+        this is a read-only view of the internal mapping.
         """
         return MappingProxyType(cls._member_map_)
 
@@ -1267,7 +1299,8 @@ class Enum(metaclass=EnumType):
         """
         Returns public methods and other interesting attributes.
         """
-        interesting = set()
+        # Initialize with supported sunder names
+        interesting = set(('_generate_next_value_', '_missing_', '_add_alias_', '_add_value_alias_'))
         if self.__class__._member_type_ is not object:
             interesting = set(object.__dir__(self))
         for name in getattr(self, '__dict__', []):
@@ -1487,7 +1520,10 @@ class Flag(Enum, boundary=STRICT):
                         )
         if value < 0:
             neg_value = value
-            value = all_bits + 1 + value
+            if cls._boundary_ in (EJECT, KEEP):
+                value = all_bits + 1 + value
+            else:
+                value = singles_mask & value
         # get members and unknown
         unknown = value & ~flag_mask
         aliases = value & ~singles_mask
@@ -1584,10 +1620,14 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with |")
         value = self._value_
+        # _get_value(self) is self._value_ and _get_value(other) is
+        # other_value, so only walk the operands (to raise on the offending
+        # flag) when one of those values is actually None.
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with |")
         return self.__class__(value | other_value)
 
     def __and__(self, other):
@@ -1595,10 +1635,11 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with &")
         value = self._value_
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with &")
         return self.__class__(value & other_value)
 
     def __xor__(self, other):
@@ -1606,10 +1647,11 @@ class Flag(Enum, boundary=STRICT):
         if other_value is NotImplemented:
             return NotImplemented
 
-        for flag in self, other:
-            if self._get_value(flag) is None:
-                raise TypeError(f"'{flag}' cannot be combined with other flags with ^")
         value = self._value_
+        if value is None or other_value is None:
+            for flag in self, other:
+                if self._get_value(flag) is None:
+                    raise TypeError(f"'{flag}' cannot be combined with other flags with ^")
         return self.__class__(value ^ other_value)
 
     def __invert__(self):
@@ -1965,7 +2007,7 @@ class verify:
                         if 2**i not in values:
                             missing.append(2**i)
                 elif enum_type == 'enum':
-                    # check for powers of one
+                    # check for missing consecutive integers
                     for i in range(low+1, high):
                         if i not in values:
                             missing.append(i)
@@ -2163,5 +2205,3 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
         members.sort(key=lambda t: t[0])
     cls = etype(name, members, module=module, boundary=boundary or KEEP)
     return cls
-
-_stdlib_enums = IntEnum, StrEnum, IntFlag

@@ -4,15 +4,11 @@
 .. module:: urllib.request
    :synopsis: Extensible library for opening URLs.
 
-.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
-.. sectionauthor:: Moshe Zadka <moshez@users.sourceforge.net>
-.. sectionauthor:: Senthil Kumaran <senthil@uthcode.com>
-
 **Source code:** :source:`Lib/urllib/request.py`
 
 --------------
 
-The :mod:`urllib.request` module defines functions and classes which help in
+The :mod:`!urllib.request` module defines functions and classes which help in
 opening URLs (mostly HTTP) in a complex world --- basic and digest
 authentication, redirections, cookies and more.
 
@@ -31,7 +27,7 @@ authentication, redirections, cookies and more.
 
 .. include:: ../includes/wasm-notavail.rst
 
-The :mod:`urllib.request` module defines the following functions:
+The :mod:`!urllib.request` module defines the following functions:
 
 
 .. function:: urlopen(url, data=None[, timeout], *, context=None)
@@ -171,11 +167,11 @@ The :mod:`urllib.request` module defines the following functions:
       sections. For example, the path ``/etc/hosts`` is converted to
       the URL ``///etc/hosts``.
 
-   .. versionchanged:: next
-      The *add_scheme* argument was added.
+   .. versionchanged:: 3.14
+      The *add_scheme* parameter was added.
 
 
-.. function:: url2pathname(url, *, require_scheme=False)
+.. function:: url2pathname(url, *, require_scheme=False, resolve_host=False)
 
    Convert the given ``file:`` URL to a local path. This function uses
    :func:`~urllib.parse.unquote` to decode the URL.
@@ -184,6 +180,13 @@ The :mod:`urllib.request` module defines the following functions:
    ``file:`` scheme prefix. If *require_scheme* is set to true, the given
    value should include the prefix; a :exc:`~urllib.error.URLError` is raised
    if it doesn't.
+
+   The URL authority is discarded if it is empty, ``localhost``, or the local
+   hostname. Otherwise, if *resolve_host* is set to true, the authority is
+   resolved using :func:`socket.gethostbyname` and discarded if it matches a
+   local IP address (as per :rfc:`RFC 8089 §3 <8089#section-3>`). If the
+   authority is still unhandled, then on Windows a UNC path is returned, and
+   on other platforms a :exc:`~urllib.error.URLError` is raised.
 
    This example shows the function being used on Windows::
 
@@ -197,15 +200,17 @@ The :mod:`urllib.request` module defines the following functions:
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
 
-   .. versionchanged:: next
-      This function calls :func:`socket.gethostbyname` if the URL authority
-      isn't empty, ``localhost``, or the machine hostname. If the authority
-      resolves to a local IP address then it is discarded; otherwise, on
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
       Windows a UNC path is returned (as before), and on other platforms a
       :exc:`~urllib.error.URLError` is raised.
 
-   .. versionchanged:: next
-      The *require_scheme* argument was added.
+   .. versionchanged:: 3.14
+      The URL query and fragment components are discarded if present.
+
+   .. versionchanged:: 3.14
+      The *require_scheme* and *resolve_host* parameters were added.
 
 
 .. function:: getproxies()
@@ -823,10 +828,13 @@ The following attribute and methods should only be used by classes derived from
    errors.  It will be called automatically by the  :class:`OpenerDirector` getting
    the error, and should not normally be called in other circumstances.
 
-   *req* will be a :class:`Request` object, *fp* will be a file-like object with
-   the HTTP error body, *code* will be the three-digit code of the error, *msg*
-   will be the user-visible explanation of the code and *hdrs* will be a mapping
-   object with the headers of the error.
+   :class:`OpenerDirector` will call this method with five positional arguments:
+
+   1. a :class:`Request` object,
+   #. a file-like object with the HTTP error body,
+   #. the three-digit code of the error, as a string,
+   #. the user-visible explanation of the code, as a string, and
+   #. the headers of the error, as a mapping object.
 
    Return values and exceptions raised should be the same as those of
    :func:`urlopen`.
@@ -1043,7 +1051,7 @@ AbstractBasicAuthHandler Objects
    *headers* should be the error headers.
 
    *host* is either an authority (e.g. ``"python.org"``) or a URL containing an
-   authority component (e.g. ``"http://python.org/"``). In either case, the
+   authority component (e.g. ``"https://python.org/"``). In either case, the
    authority must not contain a userinfo component (so, ``"python.org"`` and
    ``"python.org:80"`` are fine, ``"joe:password@python.org"`` is not).
 
@@ -1115,7 +1123,7 @@ HTTPHandler Objects
 .. method:: HTTPHandler.http_open(req)
 
    Send an HTTP request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _https-handler-objects:
@@ -1127,7 +1135,7 @@ HTTPSHandler Objects
 .. method:: HTTPSHandler.https_open(req)
 
    Send an HTTPS request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _file-handler-objects:
@@ -1239,10 +1247,14 @@ This example gets the python.org main page and displays the first 300 bytes of
 it::
 
    >>> import urllib.request
-   >>> with urllib.request.urlopen('http://www.python.org/') as f:
-   ...     print(f.read(300))
-   ...
-   b'<!doctype html>\n<!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->\n<!--[if IE 7]>      <html class="no-js ie7 lt-ie8 lt-ie9">          <![endif]-->\n<!--[if IE 8]>      <html class="no-js ie8 lt-ie9">
+   >>> with urllib.request.urlopen('https://www.python.org/') as f:
+   ...     # The response may be compressed (for example, 'gzip').
+   ...     print(f.headers.get('Content-Encoding'))
+   ...     data = f.read()
+   ...     if f.headers.get('Content-Encoding') == 'gzip':
+   ...         import gzip
+   ...         data = gzip.decompress(data)
+   ...     print(data[:300].decode('utf-8', errors='replace'))
 
 Note that urlopen returns a bytes object.  This is because there is no way
 for urlopen to automatically determine the encoding of the byte stream
@@ -1259,26 +1271,30 @@ For additional information, see the W3C document: https://www.w3.org/Internation
 As the python.org website uses *utf-8* encoding as specified in its meta tag, we
 will use the same for decoding the bytes object::
 
-   >>> with urllib.request.urlopen('http://www.python.org/') as f:
-   ...     print(f.read(100).decode('utf-8'))
+   >>> with urllib.request.urlopen('https://www.python.org/') as f:
+   ...     # Check for compression and decode appropriately.
+   ...     enc = f.headers.get('Content-Encoding')
+   ...     data = f.read()
+   ...     if enc == 'gzip':
+   ...         import gzip
+   ...         data = gzip.decompress(data)
+   ...     print(data[:100].decode('utf-8', errors='replace'))
    ...
-   <!doctype html>
-   <!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->
-   <!-
 
 It is also possible to achieve the same result without using the
 :term:`context manager` approach::
 
    >>> import urllib.request
-   >>> f = urllib.request.urlopen('http://www.python.org/')
+   >>> f = urllib.request.urlopen('https://www.python.org/')
    >>> try:
-   ...     print(f.read(100).decode('utf-8'))
+   ...     enc = f.headers.get('Content-Encoding')
+   ...     data = f.read()
+   ...     if enc == 'gzip':
+   ...         import gzip
+   ...         data = gzip.decompress(data)
+   ...     print(data[:100].decode('utf-8', errors='replace'))
    ... finally:
    ...     f.close()
-   ...
-   <!doctype html>
-   <!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->
-   <!--
 
 In the following example, we are sending a data-stream to the stdin of a CGI
 and reading the data it returns to us. Note that this example will only work
@@ -1349,7 +1365,7 @@ Use the *headers* argument to the :class:`Request` constructor, or::
 
    import urllib.request
    req = urllib.request.Request('http://www.example.com/')
-   req.add_header('Referer', 'http://www.python.org/')
+   req.add_header('Referer', 'https://www.python.org/')
    # Customize the default User-Agent header value:
    req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
    with urllib.request.urlopen(req) as f:
@@ -1378,7 +1394,7 @@ containing parameters::
    >>> import urllib.request
    >>> import urllib.parse
    >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
-   >>> url = "http://www.musi-cal.com/cgi-bin/query?%s" % params
+   >>> url = "https://www.python.org/?%s" % params
    >>> with urllib.request.urlopen(url) as f:
    ...     print(f.read().decode('utf-8'))
    ...
@@ -1390,7 +1406,7 @@ from urlencode is encoded to bytes before it is sent to urlopen as data::
    >>> import urllib.parse
    >>> data = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> data = data.encode('ascii')
-   >>> with urllib.request.urlopen("http://requestb.in/xrbl82xr", data) as f:
+   >>> with urllib.request.urlopen("https://httpbin.org/post", data) as f:
    ...     print(f.read().decode('utf-8'))
    ...
 
@@ -1400,15 +1416,15 @@ environment settings::
    >>> import urllib.request
    >>> proxies = {'http': 'http://proxy.example.com:8080/'}
    >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
-   >>> with opener.open("http://www.python.org") as f:
+   >>> with opener.open("https://www.python.org") as f:
    ...     f.read().decode('utf-8')
    ...
 
 The following example uses no proxies at all, overriding environment settings::
 
    >>> import urllib.request
-   >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler({}}))
-   >>> with opener.open("http://www.python.org/") as f:
+   >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+   >>> with opener.open("https://www.python.org/") as f:
    ...     f.read().decode('utf-8')
    ...
 
@@ -1441,7 +1457,7 @@ some point in the future.
    The following example illustrates the most common usage scenario::
 
       >>> import urllib.request
-      >>> local_filename, headers = urllib.request.urlretrieve('http://python.org/')
+      >>> local_filename, headers = urllib.request.urlretrieve('https://python.org/')
       >>> html = open(local_filename)
       >>> html.close()
 
@@ -1473,8 +1489,8 @@ some point in the future.
    calls to :func:`urlretrieve`.
 
 
-:mod:`urllib.request` Restrictions
-----------------------------------
+:mod:`!urllib.request` Restrictions
+-----------------------------------
 
 .. index::
    pair: HTTP; protocol
@@ -1527,15 +1543,15 @@ some point in the future.
 
 
 
-:mod:`urllib.response` --- Response classes used by urllib
-==========================================================
+:mod:`!urllib.response` --- Response classes used by urllib
+===========================================================
 
 .. module:: urllib.response
    :synopsis: Response classes used by urllib.
 
-The :mod:`urllib.response` module defines functions and classes which define a
+The :mod:`!urllib.response` module defines functions and classes which define a
 minimal file-like interface, including ``read()`` and ``readline()``.
-Functions defined by this module are used internally by the :mod:`urllib.request` module.
+Functions defined by this module are used internally by the :mod:`!urllib.request` module.
 The typical response object is a :class:`urllib.response.addinfourl` instance:
 
 .. class:: addinfourl

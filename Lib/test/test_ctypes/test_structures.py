@@ -25,6 +25,7 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 1
+            _layout_ = 'ms'
         self.check_struct(X)
 
         self.assertEqual(sizeof(X), 9)
@@ -34,6 +35,7 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 2
+            _layout_ = 'ms'
         self.check_struct(X)
         self.assertEqual(sizeof(X), 10)
         self.assertEqual(X.b.offset, 2)
@@ -45,6 +47,7 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 4
+            _layout_ = 'ms'
         self.check_struct(X)
         self.assertEqual(sizeof(X), min(4, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(4, longlong_align))
@@ -53,27 +56,33 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 8
+            _layout_ = 'ms'
         self.check_struct(X)
 
         self.assertEqual(sizeof(X), min(8, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(8, longlong_align))
 
-
-        d = {"_fields_": [("a", "b"),
-                          ("b", "q")],
-             "_pack_": -1}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", "b"), ("b", "q")]
+                _pack_ = -1
+                _layout_ = "ms"
 
     @support.cpython_only
     def test_packed_c_limits(self):
         # Issue 15989
         import _testcapi
-        d = {"_fields_": [("a", c_byte)],
-             "_pack_": _testcapi.INT_MAX + 1}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
-        d = {"_fields_": [("a", c_byte)],
-             "_pack_": _testcapi.UINT_MAX + 2}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", c_byte)]
+                _pack_ = _testcapi.INT_MAX + 1
+                _layout_ = "ms"
+
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", c_byte)]
+                _pack_ = _testcapi.UINT_MAX + 2
+                _layout_ = "ms"
 
     def test_initializers(self):
         class Person(Structure):
@@ -290,8 +299,15 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
+    @unittest.skipIf(support.is_wasm32, "wasm ABI is incompatible with test expectations")
     def _test_issue18060(self, Vector):
         # Regression tests for gh-62260
+
+        # This test passes a struct of two doubles by value to atan2(), whose C
+        # signature is atan2(double, double), so it only works on platforms
+        # where the abi of a function that takes a struct with two doubles
+        # matches the abi of a function that takes two doubles. The wasm32 ABI
+        # does not satisfy this condition and the test breaks.
 
         # The call to atan2() should succeed if the
         # class fields were correctly cloned in the

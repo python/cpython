@@ -224,7 +224,7 @@ class InteractiveConsole(InteractiveInterpreter):
             sys.ps1 = ">>> "
             delete_ps1_after = True
         try:
-            _ps2 = sys.ps2
+            sys.ps2
             delete_ps2_after = False
         except AttributeError:
             sys.ps2 = "... "

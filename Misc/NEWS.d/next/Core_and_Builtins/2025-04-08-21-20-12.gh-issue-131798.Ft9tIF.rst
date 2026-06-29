@@ -1,2 +1,0 @@
-Allow the JIT to remove an extra ``_TO_BOOL_BOOL`` instruction after
-``_CONTAINS_OP_DICT`` by setting the return type to bool.

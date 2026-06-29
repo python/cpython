@@ -49,6 +49,13 @@
 #include <crtdbg.h>
 #include "winreparse.h"
 
+// PSAPI_VERSION=2 redirects GetProcessMemoryInfo() to
+// K32GetProcessMemoryInfo() in kernel32.dll, so we don't need to link
+// psapi.lib. See:
+// https://learn.microsoft.com/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo
+#define PSAPI_VERSION 2
+#include <psapi.h>                // GetProcessMemoryInfo()
+
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #define HANDLE_TO_PYNUM(handle) \
     PyLong_FromUnsignedLong((unsigned long) handle)
@@ -1187,8 +1194,10 @@ gethandlelist(PyObject *mapping, const char *name, Py_ssize_t *size)
     }
 
     ret = PyMem_Malloc(*size);
-    if (ret == NULL)
+    if (ret == NULL) {
+        PyErr_NoMemory();
         goto cleanup;
+    }
 
     for (i = 0; i < PySequence_Fast_GET_SIZE(value_fast); i++) {
         ret[i] = PYNUM_TO_HANDLE(PySequence_Fast_GET_ITEM(value_fast, i));
@@ -1271,6 +1280,7 @@ getattributelist(PyObject *obj, const char *name, AttributeList *attribute_list)
     attribute_list->attribute_list = PyMem_Malloc(attribute_list_size);
     if (attribute_list->attribute_list == NULL) {
         ret = -1;
+        PyErr_NoMemory();
         goto cleanup;
     }
 
@@ -1573,6 +1583,7 @@ static PyObject *
 _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
 /*[clinic end generated code: output=c4774b080275a2d0 input=9872e211e3a4a88f]*/
 {
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     DWORD cchBuffer;
     PyObject *result = NULL;
 
@@ -1596,6 +1607,9 @@ _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
         PyErr_SetFromWindowsErr(0);
     }
     return result;
+#else
+    return PyUnicode_FromWideChar(path, -1);
+#endif
 }
 
 /*[clinic input]
@@ -1629,8 +1643,10 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
     if (! result)
         return PyErr_SetFromWindowsErr(GetLastError());
 
-    return PyUnicode_FromWideChar(filename, wcslen(filename));
+    return PyUnicode_FromWideChar(filename, -1);
 }
+
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 _winapi.GetShortPathName
@@ -1668,11 +1684,16 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
             }
             PyMem_Free((void *)buffer);
         }
+        else {
+            PyErr_NoMemory();
+        }
     } else {
         PyErr_SetFromWindowsErr(0);
     }
     return result;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 _winapi.GetStdHandle -> HANDLE
@@ -1912,7 +1933,6 @@ static PyObject *
 _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 /*[clinic end generated code: output=d0c3e29e49d323dd input=c7aa53bfbce69d70]*/
 {
-    PyObject *buf = NULL;
     DWORD nread, navail, nleft;
     BOOL ret;
 
@@ -1922,20 +1942,26 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
     }
 
     if (size) {
-        buf = PyBytes_FromStringAndSize(NULL, size);
-        if (!buf)
+        PyBytesWriter *writer = PyBytesWriter_Create(size);
+        if (writer == NULL) {
             return NULL;
+        }
+        char *buf = PyBytesWriter_GetData(writer);
+
         Py_BEGIN_ALLOW_THREADS
-        ret = PeekNamedPipe(handle, PyBytes_AS_STRING(buf), size, &nread,
+        ret = PeekNamedPipe(handle, buf, size, &nread,
                             &navail, &nleft);
         Py_END_ALLOW_THREADS
         if (!ret) {
-            Py_DECREF(buf);
+            PyBytesWriter_Discard(writer);
             return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
         }
-        if (_PyBytes_Resize(&buf, nread))
+
+        PyObject *res = PyBytesWriter_FinishWithSize(writer, nread);
+        if (res == NULL) {
             return NULL;
-        return Py_BuildValue("NII", buf, navail, nleft);
+        }
+        return Py_BuildValue("NII", res, navail, nleft);
     }
     else {
         Py_BEGIN_ALLOW_THREADS
@@ -2371,6 +2397,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
     while (i < nhandles) {
         BatchedWaitData *data = (BatchedWaitData*)PyMem_Malloc(sizeof(BatchedWaitData));
         if (!data) {
+            PyErr_NoMemory();
             goto error;
         }
         thread_data[thread_count++] = data;
@@ -2740,6 +2767,19 @@ _winapi_GetACP_impl(PyObject *module)
 }
 
 /*[clinic input]
+_winapi.GetOEMCP
+
+Get the current Windows ANSI code page identifier.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetOEMCP_impl(PyObject *module)
+/*[clinic end generated code: output=4def5b07a8be1b3b input=e8caf4353a28e28e]*/
+{
+    return PyLong_FromUnsignedLong(GetOEMCP());
+}
+
+/*[clinic input]
 _winapi.GetFileType -> DWORD
 
     handle: HANDLE
@@ -2883,6 +2923,7 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
                                             LPCWSTR exe_name)
 /*[clinic end generated code: output=a65ec879502b58fc input=972aac88a1ec2f00]*/
 {
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     BOOL result;
 
     Py_BEGIN_ALLOW_THREADS
@@ -2890,6 +2931,9 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
     Py_END_ALLOW_THREADS
 
     return result;
+#else
+    return TRUE;
+#endif
 }
 
 
@@ -2952,6 +2996,173 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_winapi.RegisterEventSource -> HANDLE
+
+    unc_server_name: LPCWSTR(accept={str, NoneType})
+        The UNC name of the server on which the event source should be registered.
+        If None, registers the event source on the local computer.
+    source_name: LPCWSTR
+        The name of the event source to register.
+    /
+
+Retrieves a registered handle to the specified event log.
+[clinic start generated code]*/
+
+static HANDLE
+_winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
+                                 LPCWSTR source_name)
+/*[clinic end generated code: output=e376c8950a89ae8f input=9d01059ac2156d0c]*/
+{
+    HANDLE handle;
+
+    Py_BEGIN_ALLOW_THREADS
+    handle = RegisterEventSourceW(unc_server_name, source_name);
+    Py_END_ALLOW_THREADS
+
+    if (handle == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    return handle;
+}
+
+/*[clinic input]
+_winapi.DeregisterEventSource
+
+    handle: HANDLE
+        The handle to the event log to be deregistered.
+    /
+
+Closes the specified event log.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_DeregisterEventSource_impl(PyObject *module, HANDLE handle)
+/*[clinic end generated code: output=7387ff34c7358bce input=947593cf67641f16]*/
+{
+    BOOL success;
+
+    Py_BEGIN_ALLOW_THREADS
+    success = DeregisterEventSource(handle);
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_winapi.ReportEvent
+
+    handle: HANDLE
+        The handle to the event log.
+    type: unsigned_short(bitwise=False)
+        The type of event being reported.
+    category: unsigned_short(bitwise=False)
+        The event category.
+    event_id: unsigned_int(bitwise=False)
+        The event identifier.
+    string: LPCWSTR
+        A string to be inserted into the event message.
+    /
+
+Writes an entry at the end of the specified event log.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
+                         unsigned short type, unsigned short category,
+                         unsigned int event_id, LPCWSTR string)
+/*[clinic end generated code: output=4281230b70a2470a input=8fb3385b8e7a6d3d]*/
+{
+    BOOL success;
+
+    Py_BEGIN_ALLOW_THREADS
+    success = ReportEventW(handle, type, category, event_id, NULL, 1, 0,
+                           &string, NULL);
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+_winapi.GetProcessMemoryInfo
+    handle: HANDLE
+    /
+
+Return the memory usage of the given process handle as a dict.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetProcessMemoryInfo_impl(PyObject *module, HANDLE handle)
+/*[clinic end generated code: output=00a5d09732e84120 input=5b90ad61cdc68d2a]*/
+{
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (!GetProcessMemoryInfo(handle, &pmc, sizeof(pmc))) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
+        return NULL;
+    }
+
+#define ADD(ATTR) \
+    do { \
+        PyObject *obj = PyLong_FromSize_t(pmc.ATTR); \
+        if (obj == NULL) { \
+            goto error; \
+        } \
+        if (PyDict_SetItemString(result, #ATTR, obj) < 0) { \
+            Py_DECREF(obj); \
+            goto error; \
+        } \
+        Py_DECREF(obj); \
+    } while (0)
+
+    ADD(PageFaultCount);
+    ADD(PeakWorkingSetSize);
+    ADD(WorkingSetSize);
+    ADD(QuotaPeakPagedPoolUsage);
+    ADD(QuotaPagedPoolUsage);
+    ADD(QuotaPeakNonPagedPoolUsage);
+    ADD(QuotaNonPagedPoolUsage);
+    ADD(PagefileUsage);
+    ADD(PeakPagefileUsage);
+
+#undef ADD
+
+    return result;
+
+error:
+    Py_DECREF(result);
+    return NULL;
+}
+
+
+/*[clinic input]
+_winapi.GetTickCount64
+
+Number of milliseconds that have elapsed since the system was started.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetTickCount64_impl(PyObject *module)
+/*[clinic end generated code: output=cb33c0568f0b3ed1 input=77ed6539ac7d6590]*/
+{
+    ULONGLONG ticks = GetTickCount64();
+    return PyLong_FromUnsignedLongLong(ticks);
+}
+
 
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
@@ -2964,6 +3175,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_CREATEPIPE_METHODDEF
     _WINAPI_CREATEPROCESS_METHODDEF
     _WINAPI_CREATEJUNCTION_METHODDEF
+    _WINAPI_DEREGISTEREVENTSOURCE_METHODDEF
     _WINAPI_DUPLICATEHANDLE_METHODDEF
     _WINAPI_EXITPROCESS_METHODDEF
     _WINAPI_GETCURRENTPROCESS_METHODDEF
@@ -2980,6 +3192,8 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_OPENMUTEXW_METHODDEF
     _WINAPI_OPENPROCESS_METHODDEF
     _WINAPI_PEEKNAMEDPIPE_METHODDEF
+    _WINAPI_REGISTEREVENTSOURCE_METHODDEF
+    _WINAPI_REPORTEVENT_METHODDEF
     _WINAPI_LCMAPSTRINGEX_METHODDEF
     _WINAPI_READFILE_METHODDEF
     _WINAPI_RELEASEMUTEX_METHODDEF
@@ -2995,10 +3209,13 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_WAITFORSINGLEOBJECT_METHODDEF
     _WINAPI_WRITEFILE_METHODDEF
     _WINAPI_GETACP_METHODDEF
+    _WINAPI_GETOEMCP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
     _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF
     _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF
     _WINAPI_COPYFILE2_METHODDEF
+    _WINAPI_GETPROCESSMEMORYINFO_METHODDEF
+    _WINAPI_GETTICKCOUNT64_METHODDEF
     {NULL, NULL}
 };
 
@@ -3042,15 +3259,18 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, ERROR_MORE_DATA);
     WINAPI_CONSTANT(F_DWORD, ERROR_NETNAME_DELETED);
     WINAPI_CONSTANT(F_DWORD, ERROR_NO_SYSTEM_RESOURCES);
-    WINAPI_CONSTANT(F_DWORD, ERROR_MORE_DATA);
-    WINAPI_CONSTANT(F_DWORD, ERROR_NETNAME_DELETED);
     WINAPI_CONSTANT(F_DWORD, ERROR_NO_DATA);
-    WINAPI_CONSTANT(F_DWORD, ERROR_NO_SYSTEM_RESOURCES);
     WINAPI_CONSTANT(F_DWORD, ERROR_OPERATION_ABORTED);
     WINAPI_CONSTANT(F_DWORD, ERROR_PIPE_BUSY);
     WINAPI_CONSTANT(F_DWORD, ERROR_PIPE_CONNECTED);
     WINAPI_CONSTANT(F_DWORD, ERROR_PRIVILEGE_NOT_HELD);
     WINAPI_CONSTANT(F_DWORD, ERROR_SEM_TIMEOUT);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_SUCCESS);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_AUDIT_FAILURE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_AUDIT_SUCCESS);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_ERROR_TYPE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_INFORMATION_TYPE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_WARNING_TYPE);
     WINAPI_CONSTANT(F_DWORD, FILE_FLAG_FIRST_PIPE_INSTANCE);
     WINAPI_CONSTANT(F_DWORD, FILE_FLAG_OVERLAPPED);
     WINAPI_CONSTANT(F_DWORD, FILE_GENERIC_READ);
@@ -3092,6 +3312,7 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, PROCESS_ALL_ACCESS);
     WINAPI_CONSTANT(F_DWORD, SYNCHRONIZE);
     WINAPI_CONSTANT(F_DWORD, PROCESS_DUP_HANDLE);
+    WINAPI_CONSTANT(F_DWORD, PROCESS_QUERY_LIMITED_INFORMATION);
     WINAPI_CONSTANT(F_DWORD, SEC_COMMIT);
     WINAPI_CONSTANT(F_DWORD, SEC_IMAGE);
     WINAPI_CONSTANT(F_DWORD, SEC_LARGE_PAGES);
@@ -3194,6 +3415,7 @@ static int winapi_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot winapi_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, winapi_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

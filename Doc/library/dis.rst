@@ -14,7 +14,7 @@
 
 --------------
 
-The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
+The :mod:`!dis` module supports the analysis of CPython :term:`bytecode` by
 disassembling it. The CPython bytecode which this module takes as an input is
 defined in the file :file:`Include/opcode.h` and used by the compiler and the
 interpreter.
@@ -38,7 +38,7 @@ interpreter.
       Some instructions are accompanied by one or more inline cache entries,
       which take the form of :opcode:`CACHE` instructions. These instructions
       are hidden by default, but can be shown by passing ``show_caches=True`` to
-      any :mod:`dis` utility. Furthermore, the interpreter now adapts the
+      any :mod:`!dis` utility. Furthermore, the interpreter now adapts the
       bytecode to specialize it for different runtime conditions. The
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
@@ -87,7 +87,7 @@ the following command can be used to display the disassembly of
 Command-line interface
 ----------------------
 
-The :mod:`dis` module can be invoked as a script from the command line:
+The :mod:`!dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
@@ -139,7 +139,7 @@ code.
 
 .. class:: Bytecode(x, *, first_line=None, current_offset=None,\
                     show_caches=False, adaptive=False, show_offsets=False,\
-                    show_positions=False)
+                    show_positions=False, show_jit=False)
 
    Analyse the bytecode corresponding to a function, generator, asynchronous
    generator, coroutine, method, string of source code, or a code object (as
@@ -169,6 +169,9 @@ code.
 
    If *show_positions* is ``True``, :meth:`.dis` will include instruction
    source code positions in the output.
+
+   If *show_jit* is ``True``, :meth:`.dis` will show ``ENTER_EXECUTOR``
+   instructions, which mark JIT entry points and are hidden by default.
 
    .. classmethod:: from_traceback(tb, *, show_caches=False)
 
@@ -205,6 +208,9 @@ code.
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
+   .. versionchanged:: next
+      Added the *show_jit* parameter.
+
 Example:
 
 .. doctest::
@@ -223,7 +229,7 @@ Example:
 Analysis functions
 ------------------
 
-The :mod:`dis` module also defines the following analysis functions that convert
+The :mod:`!dis` module also defines the following analysis functions that convert
 the input directly to the desired output. They can be useful if only a single
 operation is being performed, so the intermediate analysis object isn't useful:
 
@@ -259,7 +265,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 
 .. function:: dis(x=None, *, file=None, depth=None, show_caches=False,\
-                  adaptive=False, show_offsets=False, show_positions=False)
+                  adaptive=False, show_offsets=False, show_positions=False,\
+                  show_jit=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, an asynchronous generator, a coroutine,
@@ -286,6 +293,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    If *adaptive* is ``True``, this function will display specialized bytecode
    that may be different from the original bytecode.
 
+   If *show_jit* is ``True``, this function will show ``ENTER_EXECUTOR``
+   instructions, which mark JIT entry points and are hidden by default.
+
    .. versionchanged:: 3.4
       Added *file* parameter.
 
@@ -304,8 +314,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
+   .. versionchanged:: next
+      Added the *show_jit* parameter.
+
 .. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,\
-                    show_offset=False, show_positions=False)
+                    show_offsets=False, show_positions=False, show_jit=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
    traceback if none was passed.  The instruction causing the exception is
@@ -326,10 +339,14 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
+   .. versionchanged:: next
+      Added the *show_jit* parameter.
+
 .. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
-                          adaptive=False, show_offsets=False, show_positions=False)
+                          adaptive=False, show_offsets=False, show_positions=False,\
+                          show_jit=False)
               disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
-                    show_offsets=False, show_positions=False)
+                    show_offsets=False, show_positions=False, show_jit=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
@@ -362,7 +379,10 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-.. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False)
+   .. versionchanged:: next
+      Added the *show_jit* parameter.
+
+.. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False, show_jit=False)
 
    Return an iterator over the instructions in the supplied function, method,
    source code string or code object.
@@ -377,6 +397,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
    The *adaptive* parameter works as it does in :func:`dis`.
 
+   The *show_jit* parameter works as it does in :func:`dis`.
+
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.11
@@ -387,6 +409,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
       generates the :class:`Instruction` instances with the *cache_info*
       field populated (regardless of the value of *show_caches*) and it no longer
       generates separate items for the cache entries.
+
+   .. versionchanged:: next
+      Added the *show_jit* parameter.
 
 .. function:: findlinestarts(code)
 
@@ -400,7 +425,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
    .. versionchanged:: 3.10
       The :pep:`626` :meth:`~codeobject.co_lines` method is used instead of the
-      :attr:`~codeobject.co_firstlineno` and :attr:`~codeobject.co_lnotab`
+      :attr:`~codeobject.co_firstlineno` and :attr:`!codeobject.co_lnotab`
       attributes of the :ref:`code object <code-objects>`.
 
    .. versionchanged:: 3.13
@@ -585,6 +610,22 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    generate line tracing events.
 
 
+.. opcode:: NOT_TAKEN
+
+   Do nothing code.
+   Used by the interpreter to record :monitoring-event:`BRANCH_LEFT`
+   and :monitoring-event:`BRANCH_RIGHT` events for :mod:`sys.monitoring`.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: POP_ITER
+
+   Removes the iterator from the top of the stack.
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: POP_TOP
 
    Removes the top-of-stack item::
@@ -752,7 +793,7 @@ not have to be) the original ``STACK[-2]``.
       end = STACK.pop()
       start = STACK.pop()
       container = STACK.pop()
-      values = STACK.pop()
+      value = STACK.pop()
       container[start:end] = value
 
    .. versionadded:: 3.12
@@ -1094,14 +1135,6 @@ iterations of the loop.
    .. versionadded:: 3.14
 
 
-.. opcode:: LOAD_CONST_IMMORTAL (consti)
-
-   Pushes ``co_consts[consti]`` onto the stack.
-   Can be used when the constant value is known to be immortal.
-
-   .. versionadded:: 3.14
-
-
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
@@ -1126,6 +1159,48 @@ iterations of the loop.
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
    .. versionadded:: 3.12
+
+
+.. opcode:: BUILD_TEMPLATE
+
+   Constructs a new :class:`~string.templatelib.Template` instance from a tuple
+   of strings and a tuple of interpolations and pushes the resulting object
+   onto the stack::
+
+      interpolations = STACK.pop()
+      strings = STACK.pop()
+      STACK.append(_build_template(strings, interpolations))
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: BUILD_INTERPOLATION (format)
+
+   Constructs a new :class:`~string.templatelib.Interpolation` instance from a
+   value and its source expression and pushes the resulting object onto the
+   stack.
+
+   If no conversion or format specification is present, ``format`` is set to
+   ``2``.
+
+   If the low bit of ``format`` is set, it indicates that the interpolation
+   contains a format specification.
+
+   If ``format >> 2`` is non-zero, it indicates that the interpolation
+   contains a conversion. The value of ``format >> 2`` is the conversion type
+   (``0`` for no conversion, ``1`` for ``!s``, ``2`` for ``!r``, and
+   ``3`` for ``!a``)::
+
+      conversion = format >> 2
+      if format & 1:
+          format_spec = STACK.pop()
+      else:
+          format_spec = None
+      expression = STACK.pop()
+      value = STACK.pop()
+      STACK.append(_build_interpolation(value, expression, conversion, format_spec))
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: BUILD_TUPLE (count)
@@ -1592,7 +1667,7 @@ iterations of the loop.
 
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
-   :opcode:`LOAD_METHOD` for non-method calls.
+   :opcode:`LOAD_ATTR` for non-method calls.
 
    .. versionadded:: 3.11
 
@@ -1623,8 +1698,12 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
+   * ``0x10`` the :term:`annotate function` for the function object
 
    .. versionadded:: 3.13
+
+   .. versionchanged:: 3.14
+      Added ``0x10`` to indicate the annotate function for the function object.
 
 
 .. opcode:: BUILD_SLICE (argc)
@@ -1773,7 +1852,7 @@ iterations of the loop.
       ignore it. Before, only opcodes ``>= HAVE_ARGUMENT`` had an argument.
 
    .. versionchanged:: 3.12
-      Pseudo instructions were added to the :mod:`dis` module, and for them
+      Pseudo instructions were added to the :mod:`!dis` module, and for them
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
 
@@ -1913,14 +1992,15 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Marks the end of the code block associated with the last ``SETUP_FINALLY``,
    ``SETUP_CLEANUP`` or ``SETUP_WITH``.
 
+
 .. opcode:: JUMP
-.. opcode:: JUMP_NO_INTERRUPT
+            JUMP_NO_INTERRUPT
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
 .. opcode:: JUMP_IF_TRUE
-.. opcode:: JUMP_IF_FALSE
+            JUMP_IF_FALSE
 
    Conditional jumps which do not impact the stack. Replaced by the sequence
    ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
@@ -1934,12 +2014,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
-
-
-.. opcode:: LOAD_METHOD
-
-   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
-   with a flag set in the arg.
 
 
 .. _opcode_collections:

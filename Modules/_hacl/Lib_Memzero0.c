@@ -11,18 +11,18 @@
 #if defined(__APPLE__) && defined(__MACH__)
 #include <AvailabilityMacros.h>
 // memset_s is available from macOS 10.9, iOS 7, watchOS 2, and on all tvOS and visionOS versions.
-#  if (defined(MAC_OS_X_VERSION_MIN_REQUIRED) && (MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_9))
-#    define APPLE_HAS_MEMSET_S 1
-#  elif (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && (__IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_7_0))
-#    define APPLE_HAS_MEMSET_S 1
+#  if (defined(MAC_OS_X_VERSION_MIN_REQUIRED) && defined(MAC_OS_X_VERSION_10_9) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9))
+#    define APPLE_HAS_MEMSET_S
+#  elif (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && defined(__IPHONE_7_0) && (__IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_7_0))
+#    define APPLE_HAS_MEMSET_S
 #  elif (defined(TARGET_OS_TV) && TARGET_OS_TV)
-#    define APPLE_HAS_MEMSET_S 1
-#  elif (defined(__WATCH_OS_VERSION_MIN_REQUIRED) && (__WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_2_0))
-#    define APPLE_HAS_MEMSET_S 1
+#    define APPLE_HAS_MEMSET_S
+#  elif (defined(__WATCH_OS_VERSION_MIN_REQUIRED) && defined(__WATCHOS_2_0) && (__WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_2_0))
+#    define APPLE_HAS_MEMSET_S
 #  elif (defined(TARGET_OS_VISION) && TARGET_OS_VISION)
-#    define APPLE_HAS_MEMSET_S 1
+#    define APPLE_HAS_MEMSET_S
 #  else
-#    define APPLE_HAS_MEMSET_S 0
+#    undef APPLE_HAS_MEMSET_S
 #  endif
 #endif
 
@@ -31,7 +31,7 @@
 #include <string.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__NetBSD__)
+#if defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <strings.h>
 #endif
 
@@ -55,9 +55,9 @@ void Lib_Memzero0_memzero0(void *dst, uint64_t len) {
 
   #ifdef _WIN32
     SecureZeroMemory(dst, len_);
-  #elif defined(__APPLE__) && defined(__MACH__) && APPLE_HAS_MEMSET_S
+  #elif defined(__APPLE__) && defined(__MACH__) && defined(APPLE_HAS_MEMSET_S)
     memset_s(dst, len_, 0, len_);
-  #elif (defined(__linux__) && !defined(LINUX_NO_EXPLICIT_BZERO)) || defined(__FreeBSD__) || defined(__OpenBSD__)
+  #elif (defined(__linux__) && !defined(LINUX_NO_EXPLICIT_BZERO)) || defined(__CYGWIN__) || defined(__FreeBSD__) || defined(__OpenBSD__)
     explicit_bzero(dst, len_);
   #elif defined(__NetBSD__)
     explicit_memset(dst, 0, len_);

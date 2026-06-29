@@ -1,1 +1,0 @@
-Make :func:`functools.lru_cache` call the cached function unlocked to allow concurrency.

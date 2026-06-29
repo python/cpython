@@ -190,13 +190,13 @@ def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', '-o', default=None,
             help="The name of the output archive. "
-                 "Required if SOURCE is an archive.")
+                 "Required if `SOURCE` is an archive.")
     parser.add_argument('--python', '-p', default=None,
             help="The name of the Python interpreter to use "
                  "(default: no shebang line).")
     parser.add_argument('--main', '-m', default=None,
             help="The main function of the application "
-                 "(default: use an existing __main__.py).")
+                 "(default: use an existing `__main__.py`).")
     parser.add_argument('--compress', '-c', action='store_true',
             help="Compress files with the deflate method. "
                  "Files are stored uncompressed by default.")

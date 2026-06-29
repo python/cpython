@@ -4,6 +4,7 @@ import tkinter
 from tkinter import TclError
 from test.support import requires
 
+from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import pixels_conv
 from test.test_tkinter.widget_tests import AbstractWidgetTest
 
@@ -18,6 +19,7 @@ EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "
 class PackTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def create2(self):
         pack = tkinter.Toplevel(self.root, name='pack')
@@ -39,11 +41,11 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         b.pack_configure(side='top')
         c.pack_configure(side='top')
         d.pack_configure(side='top')
-        self.assertEqual(pack.pack_slaves(), [a, b, c, d])
+        self.assertEqual(pack.pack_content(), [a, b, c, d])
         a.pack_configure(after=b)
-        self.assertEqual(pack.pack_slaves(), [b, a, c, d])
+        self.assertEqual(pack.pack_content(), [b, a, c, d])
         a.pack_configure(after=a)
-        self.assertEqual(pack.pack_slaves(), [b, a, c, d])
+        self.assertEqual(pack.pack_content(), [b, a, c, d])
 
     def test_pack_configure_anchor(self):
         pack, a, b, c, d = self.create2()
@@ -72,11 +74,11 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         b.pack_configure(side='top')
         c.pack_configure(side='top')
         d.pack_configure(side='top')
-        self.assertEqual(pack.pack_slaves(), [a, b, c, d])
+        self.assertEqual(pack.pack_content(), [a, b, c, d])
         a.pack_configure(before=d)
-        self.assertEqual(pack.pack_slaves(), [b, c, a, d])
+        self.assertEqual(pack.pack_content(), [b, c, a, d])
         a.pack_configure(before=a)
-        self.assertEqual(pack.pack_slaves(), [b, c, a, d])
+        self.assertEqual(pack.pack_content(), [b, c, a, d])
 
     def test_pack_configure_expand(self):
         pack, a, b, c, d = self.create2()
@@ -109,10 +111,10 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         c.pack_configure(side='top')
         d.pack_configure(side='top')
         a.pack_configure(in_=pack)
-        self.assertEqual(pack.pack_slaves(), [b, c, d, a])
+        self.assertEqual(pack.pack_content(), [b, c, d, a])
         a.pack_configure(in_=c)
-        self.assertEqual(pack.pack_slaves(), [b, c, d])
-        self.assertEqual(c.pack_slaves(), [a])
+        self.assertEqual(pack.pack_content(), [b, c, d])
+        self.assertEqual(c.pack_content(), [a])
         with self.assertRaisesRegex(
                 TclError, """can't pack "?%s"? inside itself""" % (a,)):
             a.pack_configure(in_=a)
@@ -222,11 +224,11 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         a.pack_configure()
         b.pack_configure()
         c.pack_configure()
-        self.assertEqual(pack.pack_slaves(), [a, b, c])
+        self.assertEqual(pack.pack_content(), [a, b, c])
         b.pack_forget()
-        self.assertEqual(pack.pack_slaves(), [a, c])
+        self.assertEqual(pack.pack_content(), [a, c])
         b.pack_forget()
-        self.assertEqual(pack.pack_slaves(), [a, c])
+        self.assertEqual(pack.pack_content(), [a, c])
         d.pack_forget()
 
     def test_pack_info(self):
@@ -272,6 +274,14 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(pack.winfo_reqwidth(), 20)
         self.assertEqual(pack.winfo_reqheight(), 40)
 
+    def test_pack_content(self):
+        pack, a, b, c, d = self.create2()
+        self.assertEqual(pack.pack_content(), [])
+        a.pack_configure()
+        self.assertEqual(pack.pack_content(), [a])
+        b.pack_configure()
+        self.assertEqual(pack.pack_content(), [a, b])
+
     def test_pack_slaves(self):
         pack, a, b, c, d = self.create2()
         self.assertEqual(pack.pack_slaves(), [])
@@ -280,10 +290,30 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         b.pack_configure()
         self.assertEqual(pack.pack_slaves(), [a, b])
 
+    def test_pack_short_aliases(self):
+        # slaves, content and propagate are aliases of the pack_* methods
+        # (Misc precedes Pack, Place and Grid in the method resolution order).
+        pack, a, b, c, d = self.create2()
+        self.assertEqual(pack.slaves, pack.pack_slaves)
+        self.assertEqual(pack.content, pack.pack_content)
+        self.assertEqual(pack.propagate, pack.pack_propagate)
+
+        self.assertEqual(pack.slaves(), [])
+        a.pack_configure()
+        self.assertEqual(pack.slaves(), [a])
+        self.assertEqual(pack.content(), [a])
+
+        pack.configure(width=300, height=200)
+        pack.propagate(False)
+        self.root.update()
+        self.assertEqual(pack.winfo_reqwidth(), 300)
+        self.assertEqual(pack.winfo_reqheight(), 200)
+
 
 class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def create2(self):
         t = tkinter.Toplevel(self.root, width=300, height=200, bd=0)
@@ -476,6 +506,15 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         with self.assertRaises(TypeError):
             f2.place_info(0)
 
+    def test_place_content(self):
+        foo = tkinter.Frame(self.root)
+        bar = tkinter.Frame(self.root)
+        self.assertEqual(foo.place_content(), [])
+        bar.place_configure(in_=foo)
+        self.assertEqual(foo.place_content(), [bar])
+        with self.assertRaises(TypeError):
+            foo.place_content(0)
+
     def test_place_slaves(self):
         foo = tkinter.Frame(self.root)
         bar = tkinter.Frame(self.root)
@@ -485,10 +524,23 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
         with self.assertRaises(TypeError):
             foo.place_slaves(0)
 
+    def test_place_method_aliases(self):
+        # The Place manager defines configure, info, forget, slaves and
+        # content as aliases of its place_* methods.  On a real widget the
+        # short names are provided by Misc and Pack (earlier in the method
+        # resolution order), so the aliases are checked on the class itself.
+        self.assertIs(tkinter.Place.configure, tkinter.Place.place_configure)
+        self.assertIs(tkinter.Place.config, tkinter.Place.place_configure)
+        self.assertIs(tkinter.Place.info, tkinter.Place.place_info)
+        self.assertIs(tkinter.Place.forget, tkinter.Place.place_forget)
+        self.assertIs(tkinter.Place.slaves, tkinter.Misc.place_slaves)
+        self.assertIs(tkinter.Place.content, tkinter.Misc.place_content)
+
 
 class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def tearDown(self):
         cols, rows = self.root.grid_size()
@@ -728,10 +780,10 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         c = tkinter.Button(self.root)
         b.grid_configure(row=2, column=2, rowspan=2, columnspan=2,
                          padx=3, pady=4, sticky='ns')
-        self.assertEqual(self.root.grid_slaves(), [b])
+        self.assertEqual(self.root.grid_content(), [b])
         b.grid_forget()
         c.grid_forget()
-        self.assertEqual(self.root.grid_slaves(), [])
+        self.assertEqual(self.root.grid_content(), [])
         self.assertEqual(b.grid_info(), {})
         b.grid_configure(row=0, column=0)
         info = b.grid_info()
@@ -748,10 +800,10 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         c = tkinter.Button(self.root)
         b.grid_configure(row=2, column=2, rowspan=2, columnspan=2,
                          padx=3, pady=4, sticky='ns')
-        self.assertEqual(self.root.grid_slaves(), [b])
+        self.assertEqual(self.root.grid_content(), [b])
         b.grid_remove()
         c.grid_remove()
-        self.assertEqual(self.root.grid_slaves(), [])
+        self.assertEqual(self.root.grid_content(), [])
         self.assertEqual(b.grid_info(), {})
         b.grid_configure(row=0, column=0)
         info = b.grid_info()
@@ -886,6 +938,23 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         f.grid_configure(row=4, column=5)
         self.assertEqual(self.root.grid_size(), (6, 5))
 
+    def test_grid_content(self):
+        self.assertEqual(self.root.grid_content(), [])
+        a = tkinter.Label(self.root)
+        a.grid_configure(row=0, column=1)
+        b = tkinter.Label(self.root)
+        b.grid_configure(row=1, column=0)
+        c = tkinter.Label(self.root)
+        c.grid_configure(row=1, column=1)
+        d = tkinter.Label(self.root)
+        d.grid_configure(row=1, column=1)
+        self.assertEqual(self.root.grid_content(), [d, c, b, a])
+        self.assertEqual(self.root.grid_content(row=0), [a])
+        self.assertEqual(self.root.grid_content(row=1), [d, c, b])
+        self.assertEqual(self.root.grid_content(column=0), [b])
+        self.assertEqual(self.root.grid_content(column=1), [d, c, a])
+        self.assertEqual(self.root.grid_content(row=1, column=1), [d, c])
+
     def test_grid_slaves(self):
         self.assertEqual(self.root.grid_slaves(), [])
         a = tkinter.Label(self.root)
@@ -902,6 +971,30 @@ class GridTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.root.grid_slaves(column=0), [b])
         self.assertEqual(self.root.grid_slaves(column=1), [d, c, a])
         self.assertEqual(self.root.grid_slaves(row=1, column=1), [d, c])
+
+    def test_grid_short_aliases(self):
+        # columnconfigure, rowconfigure, size, anchor and bbox are aliases of
+        # the corresponding grid_* methods (Misc precedes Pack, Place and Grid
+        # in the method resolution order).
+        root = self.root
+        self.assertEqual(root.columnconfigure, root.grid_columnconfigure)
+        self.assertEqual(root.rowconfigure, root.grid_rowconfigure)
+        self.assertEqual(root.size, root.grid_size)
+        self.assertEqual(root.anchor, root.grid_anchor)
+        self.assertEqual(root.bbox, root.grid_bbox)
+
+        self.assertEqual(root.size(), (0, 0))
+        b = tkinter.Button(root)
+        b.grid_configure(column=2, row=3)
+        self.assertEqual(root.size(), (3, 4))
+
+        root.columnconfigure(0, weight=2)
+        self.assertEqual(root.grid_columnconfigure(0, 'weight'), 2)
+        root.rowconfigure(0, weight=3)
+        self.assertEqual(root.grid_rowconfigure(0, 'weight'), 3)
+
+        root.anchor('se')
+        self.assertEqual(root.tk.call('grid', 'anchor', root), 'se')
 
 
 if __name__ == '__main__':
