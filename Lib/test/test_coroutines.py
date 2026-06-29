@@ -2321,7 +2321,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             pass
         finally:
             loop.close()
-            asyncio.events._set_event_loop_policy(None)
+            asyncio.set_event_loop(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 

@@ -1,0 +1,7 @@
+:mod:`http.client` now limits the number of chunked-response trailer lines
+it will read to :attr:`~http.client.HTTPConnection.max_response_headers`
+(100 by default), and the number of interim (1xx) responses it will skip
+to 100.  A malicious or broken server could previously stream trailer
+lines or ``100 Continue`` responses forever, hanging the client even when
+a socket timeout was in use.
+Reported by ``@YLChen-007`` via GHSA-w4q2-g22w-6fr4.

@@ -564,6 +564,31 @@ class DunderLazyImportTests(LazyImportTestCase):
         import test.test_lazy_import.data.dunder_lazy_import_used
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
+    @support.requires_subprocess()
+    def test_dunder_lazy_import_fromlist_resolves_to_module(self):
+        for fromlist in ["basic2", ("basic2",)]:
+            with self.subTest(fromlist=fromlist):
+                code = textwrap.dedent(f"""
+                    import sys
+                    import types
+
+                    lazy = __lazy_import__("test.test_lazy_import.data", fromlist={fromlist!r})
+
+                    def check():
+                        lazy_obj = globals()["lazy"]
+                        assert type(lazy_obj) is types.LazyImportType, lazy_obj
+                        assert "test.test_lazy_import.data.basic2" not in sys.modules
+
+                        resolved = lazy_obj.resolve()
+                        assert type(resolved) is types.ModuleType, resolved
+                        assert "test.test_lazy_import.data.basic2" in sys.modules
+                        assert resolved.__name__ == "test.test_lazy_import.data"
+                        assert resolved.basic2.x == 42
+
+                    check()
+                """)
+                assert_python_ok("-c", code)
+
     def test_dunder_lazy_import_invalid_arguments(self):
         """__lazy_import__ should reject invalid arguments."""
         for invalid_name in (b"", 123, None):
@@ -940,6 +965,81 @@ class GlobalsAndDictTests(LazyImportTestCase):
             globals()["sneaky"] = globals()["basic2"]
             assert f() == 210
             print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_add_lazy_to_exec_globals_after_specialization(self):
+        code = textwrap.dedent("""
+            source = '''
+            import sys
+            import types
+
+            lazy from test.test_lazy_import.data import basic2
+
+            assert 'test.test_lazy_import.data.basic2' not in sys.modules
+
+            class C: pass
+            sneaky = C()
+            sneaky.x = 1
+
+            def f():
+                t = 0
+                for _ in range(5):
+                    t += sneaky.x
+                return t
+
+            f()
+            globals()["sneaky"] = globals()["basic2"]
+            assert f() == 210
+            print("OK")
+            '''
+            ns = {"__name__": "lazy_exec_globals"}
+            exec(source, ns)
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_add_lazy_to_exec_builtins_after_specialization(self):
+        code = textwrap.dedent("""
+            import builtins
+            source = '''
+            import sys
+            import types
+
+            lazy from test.test_lazy_import.data import basic2
+
+            assert 'test.test_lazy_import.data.basic2' not in sys.modules
+
+            class C: pass
+            sneaky = C()
+            sneaky.x = 1
+            __builtins__["sneaky"] = sneaky
+            del sneaky
+
+            def f():
+                t = 0
+                for _ in range(5):
+                    t += sneaky.x
+                return t
+
+            f()
+            __builtins__["sneaky"] = globals()["basic2"]
+            assert f() == 210
+            print("OK")
+            '''
+            ns = {"__name__": "lazy_exec_builtins", "__builtins__": builtins.__dict__.copy()}
+            exec(source, ns)
         """)
         result = subprocess.run(
             [sys.executable, "-c", code],
