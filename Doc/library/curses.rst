@@ -76,6 +76,8 @@ Initialization and termination
    Initialize the library. Return a :ref:`window <curses-window-objects>` object
    which represents the whole screen.
 
+   See :func:`setupterm` for a caveat about calling it before this function.
+
    .. note::
 
       If there is an error opening the terminal, the underlying curses library may
@@ -105,6 +107,8 @@ Initialization and termination
 
    The new screen becomes the current one.
    Use :func:`set_term` to switch between screens.
+
+   See :func:`setupterm` for a caveat about calling it before this function.
 
    .. versionadded:: next
 
@@ -956,6 +960,13 @@ Terminfo database
    Raise a :exc:`curses.error` if the terminal could not be found or its
    terminfo database entry could not be read.  If the terminal has already
    been initialized, this function has no effect.
+
+   .. note::
+
+      Calling :func:`initscr` or :func:`newterm` after :func:`setupterm`
+      leaks the terminal that :func:`setupterm` allocated:
+      the curses library keeps only a single current terminal
+      and does not free the previously allocated one.
 
 .. function:: tigetflag(capname)
 
