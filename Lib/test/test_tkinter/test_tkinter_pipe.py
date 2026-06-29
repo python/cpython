@@ -46,7 +46,7 @@ class TkinterPipeTest(unittest.TestCase):
 
         proc.stdin.write(b"print('goodbye')\n")
         proc.stdin.write(b"quit()\n")
-        stdout, stderr = proc.communicate()
+        stdout, stderr = proc.communicate(timeout=support.SHORT_TIMEOUT)
         stdout = stdout.decode()
         self.assertEqual(stdout.strip(), 'goodbye')
 
