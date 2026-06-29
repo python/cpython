@@ -3498,6 +3498,9 @@ EventHook(void)
                 if (GetLastError() == ERROR_BROKEN_PIPE) break;
             }
         }
+        else if (type == FILE_TYPE_DISK) {
+            break;
+        }
 #endif
         Py_BEGIN_ALLOW_THREADS
         if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
