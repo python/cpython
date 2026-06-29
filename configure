@@ -26970,6 +26970,8 @@ fi
 
 
 
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_pad" >&5
 printf %s "checking for curses function is_pad... " >&6; }
 if test ${ac_cv_lib_curses_is_pad+y}
@@ -27601,6 +27603,234 @@ printf "%s\n" "$ac_cv_lib_curses_use_env" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_USE_ENV 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function set_escdelay" >&5
+printf %s "checking for curses function set_escdelay... " >&6; }
+if test ${ac_cv_lib_curses_set_escdelay+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef set_escdelay
+        void *x=set_escdelay
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_set_escdelay=yes
+else $as_nop
+  ac_cv_lib_curses_set_escdelay=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_set_escdelay" >&5
+printf "%s\n" "$ac_cv_lib_curses_set_escdelay" >&6; }
+  if test "x$ac_cv_lib_curses_set_escdelay" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SET_ESCDELAY 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function set_tabsize" >&5
+printf %s "checking for curses function set_tabsize... " >&6; }
+if test ${ac_cv_lib_curses_set_tabsize+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef set_tabsize
+        void *x=set_tabsize
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_set_tabsize=yes
+else $as_nop
+  ac_cv_lib_curses_set_tabsize=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_set_tabsize" >&5
+printf "%s\n" "$ac_cv_lib_curses_set_tabsize" >&6; }
+  if test "x$ac_cv_lib_curses_set_tabsize" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SET_TABSIZE 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses variable ESCDELAY" >&5
+printf %s "checking for curses variable ESCDELAY... " >&6; }
+if test ${ac_cv_lib_curses_ESCDELAY+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        int x = ESCDELAY; (void)x;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_ESCDELAY=yes
+else $as_nop
+  ac_cv_lib_curses_ESCDELAY=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_ESCDELAY" >&5
+printf "%s\n" "$ac_cv_lib_curses_ESCDELAY" >&6; }
+  if test "x$ac_cv_lib_curses_ESCDELAY" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_ESCDELAY 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses variable TABSIZE" >&5
+printf %s "checking for curses variable TABSIZE... " >&6; }
+if test ${ac_cv_lib_curses_TABSIZE+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        int x = TABSIZE; (void)x;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_TABSIZE=yes
+else $as_nop
+  ac_cv_lib_curses_TABSIZE=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_TABSIZE" >&5
+printf "%s\n" "$ac_cv_lib_curses_TABSIZE" >&6; }
+  if test "x$ac_cv_lib_curses_TABSIZE" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_TABSIZE 1" >>confdefs.h
 
 fi
 
