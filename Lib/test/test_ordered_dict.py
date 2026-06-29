@@ -879,6 +879,39 @@ class CPythonOrderedDictSideEffects:
         self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
         self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
 
+    def test_issue148660_copy_clear_in_key_eq(self):
+        # gh-148660: od.copy() must not crash when a key's __eq__ clears od
+        # while copy() is inserting into the new dict.
+        armed = False
+        calls = 0
+        class Key:
+            def __hash__(self):
+                return 1
+            def __eq__(self, other):
+                nonlocal calls
+                if armed:
+                    calls += 1
+                    if calls == 2:
+                        od.clear()
+                return self is other
+        od = self.OrderedDict()
+        od[Key()] = "v1"
+        od[Key()] = "v2"
+        armed = True
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
+    def test_issue148660_copy_clear_in_subclass_getitem(self):
+        # gh-148660: od.copy() must not crash when a subclass __getitem__
+        # clears od.
+        class OD(self.OrderedDict):
+            def __getitem__(self, key):
+                od.clear()
+                return "v"
+        od = OD([(1, "v1"), (2, "v2")])
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
 
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')
 class CPythonOrderedDictTests(OrderedDictTests,
