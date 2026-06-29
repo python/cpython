@@ -6,6 +6,7 @@ import pickle
 import sys
 import threading
 import time
+import tracemalloc
 import unittest
 import warnings
 import weakref
@@ -1521,6 +1522,21 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         t.write("ghi")
         t.write("x"*chunk_size)
         self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
+
+    def test_write_empty_no_memory_growth(self):
+        # gh-151814: Writing empty string should have stable memory usage.
+        t = self.TextIOWrapper(self.BytesIO())
+        nwrites = 200_000
+        tracemalloc.start()
+        try:
+            for _ in range(nwrites):
+                t.write("")
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        # No longer leaks several bytes per write.
+        self.assertLess(peak, nwrites)
 
     def test_issue119506(self):
         chunk_size = 8192
