@@ -390,6 +390,13 @@ Standard names are defined for the following types:
    signifying (respectively) the types of the underlying mapping's keys and
    values.
 
+   .. warning::
+
+      ``MappingProxyType`` can expose its internal mapping
+      in some rare cases on some versions of Python.
+      Starting from Python 3.15 it is recommeneded
+      to use truly immutable :class:`frozendict` instead.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.9
