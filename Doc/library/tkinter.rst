@@ -3236,6 +3236,14 @@ Toplevel widgets
    profile files is the :envvar:`HOME` environment variable or, if that
    isn't defined, then :data:`os.curdir`.
 
+   .. note::
+
+      On Windows, creating a Tcl interpreter (by instantiating :class:`Tk` or
+      calling :func:`Tcl`) sets the :envvar:`HOME` environment variable for
+      the process, if it is not already set, to ``%HOMEDRIVE%%HOMEPATH%`` (or
+      :envvar:`USERPROFILE`, or ``c:\``).  This is done by Tcl and can affect
+      other code that reads :envvar:`HOME`.
+
    .. attribute:: tk
 
       The Tk application object created by instantiating :class:`Tk`.  This
