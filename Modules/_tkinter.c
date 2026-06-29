@@ -2859,7 +2859,7 @@ Tktt_Dealloc(PyObject *op)
         Tcl_DeleteTimerHandler(self->token);
         self->token = NULL;
     }
-    Py_XDECREF(self->func);
+    (void)Tktt_Clear(op);
     tp->tp_free(op);
     Py_DECREF(tp);
 }
