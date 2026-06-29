@@ -834,14 +834,49 @@ class Misc:
             window = self
         self.tk.call('tkwait', 'window', window._w)
 
-    def wait_visibility(self, window=None):
+    def wait_visibility(self, window=None, *, timeout=None):
         """Wait until the visibility of a WIDGET changes
         (e.g. it appears).
 
-        If no parameter is given self is used."""
+        If no parameter is given self is used.
+
+        If timeout is given, it specifies the maximum time to wait in
+        seconds.  Return True once the widget is viewable, or False if the
+        timeout elapsed before that (or the widget was destroyed while
+        waiting).  Without a timeout the call blocks until the visibility of
+        the widget changes and always returns True."""
         if window is None:
             window = self
-        self.tk.call('tkwait', 'visibility', window._w)
+        if timeout is None:
+            self.tk.call('tkwait', 'visibility', window._w)
+            return True
+
+        if not window.winfo_exists():
+            return False
+        if window.winfo_viewable():
+            return True
+        timed_out = []
+        # A one-shot timer guarantees that dooneevent() wakes up at the
+        # deadline even if no other event arrives.
+        timer = self.after(max(int(timeout * 1000), 1),
+                           lambda: timed_out.append(True))
+        try:
+            while not timed_out:
+                self.tk.dooneevent(_tkinter.ALL_EVENTS)
+                if not window.winfo_exists():
+                    return False
+                if window.winfo_viewable():
+                    return True
+            return False
+        except TclError:
+            # the widget or application was torn down
+            return False
+        finally:
+            # Cleanup may fail if the application was torn down.
+            try:
+                self.after_cancel(timer)
+            except TclError:
+                pass
 
     def setvar(self, name, value):
         """Set Tcl variable NAME to VALUE."""

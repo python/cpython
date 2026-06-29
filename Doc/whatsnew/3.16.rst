@@ -371,6 +371,11 @@ tkinter
   ttk version, and accepts mappings of button options as *buttons* entries.
   (Contributed by Serhiy Storchaka in :gh:`59396`.)
 
+* The :meth:`!tkinter.Misc.wait_visibility` method now accepts an optional
+  keyword-only *timeout* argument that bounds how long it waits, instead of
+  blocking indefinitely.
+  (Contributed by Serhiy Storchaka in :gh:`86657`.)
+
 xml
 ---
 

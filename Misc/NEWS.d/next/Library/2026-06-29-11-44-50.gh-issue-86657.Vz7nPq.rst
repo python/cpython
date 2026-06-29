@@ -1,0 +1,3 @@
+Add an optional *timeout* parameter to :meth:`tkinter.Misc.wait_visibility`.
+If the widget does not become viewable within the given time, the call
+returns ``False`` instead of blocking indefinitely.
