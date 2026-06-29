@@ -56,13 +56,42 @@ class Textbox:
         self.maxy = maxy - 1
         self.maxx = maxx - 1
 
+    def _decode(self, ch):
+        # The text of a chtype cell or input byte, decoded with the window's
+        # encoding.  A_CHARTEXT keeps the character byte, dropping the attributes.
+        return bytes([ch & curses.A_CHARTEXT]).decode(self.win.encoding, 'replace')
+
+    def _char_at(self, *yx):
+        # The text of the cell at the given position (default: the cursor).
+        # instr() re-encodes it to the window's encoding; inch() cannot
+        # represent a non-ASCII 8-bit-locale character on a wide build.
+        return self.win.instr(*yx, 1).decode(self.win.encoding, 'replace')
+
+    def _cell_at(self, *yx):
+        # The cell at the given position (default: the cursor) as a chtype
+        # addch() can write back with its rendition.  inch() mangles a non-ASCII
+        # character on a wide build, so take the byte from instr() and the
+        # attributes from inch().
+        return self.win.instr(*yx, 1)[0] | self.win.inch(*yx) & curses.A_ATTRIBUTES
+
+    def _isprint(self, cell):
+        # Whether a chtype cell holds a printable character; _decode() drops the
+        # attribute bits.
+        return self._decode(cell).isprintable()
+
+    def _printable_key(self, ch):
+        # Whether the integer keystroke is a printable character, not a key
+        # code.  0..255 are character bytes (decoded with the window's encoding);
+        # larger values are function and navigation keys.
+        return ch <= 0xff and self._decode(ch).isprintable()
+
     def _end_of_line(self, y):
         """Go to the location of the first blank on the given line,
         returning the index of the last non-blank character."""
         self._update_max_yx()
         last = self.maxx
         while True:
-            if curses.ascii.ascii(self.win.inch(y, last)) != curses.ascii.SP:
+            if self._char_at(y, last) != ' ':
                 last = min(self.maxx, last+1)
                 break
             elif last == 0:
@@ -76,15 +105,16 @@ class Textbox:
         backyx = None
         while True:
             if self.insert_mode:
-                oldch = self.win.inch()
+                oldch = self._cell_at()
             if y >= self.maxy and x >= self.maxx:
                 # Use insch() in the lower-right cell: addch() there would move
                 # the cursor out of the window, raising an error and scrolling
-                # a scrollable window.
-                self.win.insch(ch)
+                # a scrollable window.  Pass it as text: insch() does not decode
+                # an int byte through the locale on a wide build.
+                self.win.insch(self._decode(ch), ch & curses.A_ATTRIBUTES)
                 break
             self.win.addch(ch)
-            if not self.insert_mode or not curses.ascii.isprint(oldch):
+            if not self.insert_mode or not self._isprint(oldch):
                 break
             ch = oldch
             (y, x) = self.win.getyx()
@@ -100,7 +130,7 @@ class Textbox:
         self._update_max_yx()
         (y, x) = self.win.getyx()
         self.lastcmd = ch
-        if curses.ascii.isprint(ch):
+        if self._printable_key(ch):
             self._insert_printable_char(ch)
         elif ch == curses.ascii.SOH:                           # ^a
             self.win.move(y, 0)
@@ -174,7 +204,7 @@ class Textbox:
             for x in range(self.maxx+1):
                 if self.stripspaces and x > stop:
                     break
-                result = result + chr(curses.ascii.ascii(self.win.inch(y, x)))
+                result = result + self._char_at(y, x)
             if self.maxy > 0:
                 result = result + "\n"
         return result
