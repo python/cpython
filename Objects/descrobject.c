@@ -1241,7 +1241,9 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
         // for memory optimization. See gh-152405 for the details.
         if (
             PyDict_CheckExact(v->mapping) &&
-            !(PyAnyDict_CheckExact(w) || PyODict_CheckExact(w))
+            !(PyAnyDict_CheckExact(w) ||
+                Py_TYPE(w) == &PyDictProxy_Type ||
+                PyODict_CheckExact(w))
         ) {
             // So, instead we send a copy:
             PyObject *copy = PyDict_Copy(v->mapping);
