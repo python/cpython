@@ -1,0 +1,3 @@
+Add the :func:`test.support.isolated` decorator to run a test method or
+``TestCase`` subclass in a fresh interpreter subprocess, isolated from the rest
+of the test run.

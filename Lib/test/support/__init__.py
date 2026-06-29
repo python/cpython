@@ -1089,6 +1089,12 @@ def subTests(arg_names, arg_values, /, *, _do_cleanups=False):
         return wrapper
     return decorator
 
+# Run a test method or class in an isolated subprocess.  Implemented in a
+# dedicated module so that its frames carry the __unittest marker and are
+# stripped from reported tracebacks.
+from test.support._isolation import isolated, running_isolated
+
+
 #=======================================================================
 # Decorator/context manager for running a code in a different locale,
 # correctly resetting it afterwards.

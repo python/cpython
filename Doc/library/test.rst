@@ -961,6 +961,53 @@ The :mod:`!test.support` module defines the following functions:
    :mod:`tracemalloc` is enabled.
 
 
+.. decorator:: isolated()
+
+   Decorator that runs the decorated test in isolation, in a fresh interpreter
+   subprocess, so that it does not share global or interpreter state with the
+   rest of the test run.  It can decorate a test method or a whole
+   :class:`~unittest.TestCase` subclass.  Decorated methods must take no extra
+   arguments.  A failure, error or skip in the subprocess is reported for the
+   corresponding test, and individual :meth:`subtests
+   <unittest.TestCase.subTest>` that fail or are skipped are reported
+   individually.  A reported failure or error shows the original subprocess
+   traceback as the cause of the exception.
+
+   When a **method** is decorated, only that method runs in a subprocess;
+   :meth:`~unittest.TestCase.setUp` and :meth:`~unittest.TestCase.tearDown`
+   run both in the parent process (as usual) and in the subprocess around the
+   method.
+
+   When a **class** is decorated, the whole class runs in a single subprocess,
+   and :meth:`~unittest.TestCase.setUpClass`,
+   :meth:`~unittest.TestCase.tearDownClass`, :meth:`~unittest.TestCase.setUp`
+   and :meth:`~unittest.TestCase.tearDown` run once each in the subprocess and
+   are skipped in the parent process.  A failure or skip of
+   :meth:`~unittest.TestCase.setUpClass` in the subprocess is reported for the
+   whole class.  ``setUpModule()`` cannot be controlled by a class decorator,
+   so it still runs in the parent process too; test it with
+   :data:`running_isolated` if needed.
+
+   Fixtures can test :data:`running_isolated` to decide what to run in each
+   process.
+
+   The subprocess inherits the enabled resources (``-u``), memory limit
+   (``-M``) and verbosity (``-v``) of the parent test run, so that
+   :func:`requires_resource`, :func:`requires`, :func:`bigmemtest` and the like
+   behave consistently in both processes.
+
+
+.. data:: running_isolated
+
+   ``True`` while the code runs in the isolated subprocess spawned by
+   :func:`isolated`, and ``False`` otherwise (including in the parent process
+   and in a normal, non-isolated test run).  Fixtures such as
+   :meth:`~unittest.TestCase.setUp`, :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass`, :meth:`~unittest.TestCase.tearDownClass`,
+   ``setUpModule()`` and ``tearDownModule()`` can test it to choose which code
+   to run in the subprocess.
+
+
 .. function:: check_free_after_iterating(test, iter, cls, args=())
 
    Assert instances of *cls* are deallocated after iterating.
