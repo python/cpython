@@ -1230,9 +1230,6 @@ class TZStrTest(ZoneInfoTestBase):
                     self.zone_from_tzstr(invalid_tzstr)
 
     def test_invalid_tzstr_non_ascii_abbr(self):
-        # A non-ASCII letter reaches the parser via from_file()'s UTF-8 decode.
-        # It needs a separate test: it can't be ASCII-encoded for the shared
-        # invalid_tzstrs list, and the C error message holds the bytes repr.
         tzstr = "ABÀC3"
         if self.module is py_zoneinfo:
             expected = re.escape(tzstr)
