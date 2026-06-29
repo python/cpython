@@ -1056,11 +1056,11 @@ Base and mixin classes
       :class:`int`.
       Raise :exc:`ValueError` if *s* is not a valid integer.
 
-   .. method:: getvar(name='PY_VAR')
+   .. method:: getvar(name)
 
       Return the value of the Tcl global variable named *name*.
 
-   .. method:: setvar(name='PY_VAR', value='1')
+   .. method:: setvar(name, value)
 
       Set the Tcl global variable named *name* to *value*.
 
@@ -1524,10 +1524,10 @@ Base and mixin classes
       This updates the display of windows, for example after geometry changes,
       but does not process events caused by the user.
 
-   .. method:: waitvar(name='PY_VAR')
+   .. method:: waitvar(name)
       :no-typesetting:
 
-   .. method:: wait_variable(name='PY_VAR')
+   .. method:: wait_variable(name)
 
       Wait until the Tcl variable *name* is modified, continuing to process
       events in the meantime so that the application stays responsive.
@@ -3393,6 +3393,14 @@ Toplevel widgets
    :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
    profile files is the :envvar:`HOME` environment variable or, if that
    isn't defined, then :data:`os.curdir`.
+
+   .. note::
+
+      On Windows, creating a Tcl interpreter (by instantiating :class:`Tk` or
+      calling :func:`Tcl`) sets the :envvar:`HOME` environment variable for
+      the process, if it is not already set, to ``%HOMEDRIVE%%HOMEPATH%`` (or
+      :envvar:`USERPROFILE`, or ``c:\``).  This is done by Tcl and can affect
+      other code that reads :envvar:`HOME`.
 
    .. attribute:: tk
 

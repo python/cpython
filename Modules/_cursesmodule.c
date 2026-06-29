@@ -765,6 +765,9 @@ static int
 curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
 {
     short spair = 0;
+    /* getcchar() is not guaranteed to write the text of an empty cell, so make
+       the output an empty string by default. */
+    wstr[0] = L'\0';
 #if _NCURSES_EXTENDED_COLOR_FUNCS
     int rtn = getcchar(wcval, wstr, attrs, &spair, pair);
 #else
@@ -3079,7 +3082,8 @@ _curses_window_in_wch_impl(PyCursesWindowObject *self, int group_right_1,
                            int y, int x)
 /*[clinic end generated code: output=846ca8a82f2ecab4 input=a55dd215367dfbb1]*/
 {
-    curses_cell_t wcval;
+    /* Zeroed so getcchar() sees a NUL-terminated text array on read. */
+    curses_cell_t wcval = {0};
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
 #ifdef HAVE_NCURSESW
     int rtn;
@@ -3126,7 +3130,8 @@ static PyObject *
 _curses_window_getbkgrnd_impl(PyCursesWindowObject *self)
 /*[clinic end generated code: output=afec19cad00eff71 input=e06bf3d6bf90d2ec]*/
 {
-    curses_cell_t wcval;
+    /* Zeroed so getcchar() sees a NUL-terminated text array on read. */
+    curses_cell_t wcval = {0};
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
 #ifdef HAVE_NCURSESW
     if (wgetbkgrnd(self->win, &wcval) == ERR) {
@@ -3842,7 +3847,10 @@ PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
 
     n = Py_MIN(n, max_buf_size - 1);
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-    curses_cell_t *buf = PyMem_New(curses_cell_t, n + 1);
+    /* Zero the cells: reading a cell back through getcchar() relies on the
+       cchar_t text array being NUL-terminated, which some curses libraries
+       only guarantee for the characters they actually write. */
+    curses_cell_t *buf = PyMem_Calloc(n + 1, sizeof(curses_cell_t));
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
@@ -5960,6 +5968,7 @@ error:
     return res;
 }
 
+#ifdef HAVE_CURSES_SCR_DUMP
 /*[clinic input]
 _curses.scr_dump
 
@@ -6030,6 +6039,7 @@ static PyObject *
 _curses_scr_set(PyObject *module, PyObject *filename)
 /*[clinic end generated code: output=6056fdec12c5935f input=d248c20543cc289b]*/
 ScreenDumpFunctionBody(scr_set)
+#endif /* HAVE_CURSES_SCR_DUMP */
 
 /*[clinic input]
 _curses.halfdelay
@@ -6108,7 +6118,7 @@ _curses_has_key_impl(PyObject *module, int key)
 }
 #endif
 
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS
+#ifdef HAVE_CURSES_DEFINE_KEY
 /*[clinic input]
 _curses.define_key
 
@@ -6134,7 +6144,9 @@ _curses_define_key_impl(PyObject *module, const char *definition,
     return curses_check_err(module, define_key(definition, keycode),
                             "define_key", NULL);
 }
+#endif /* HAVE_CURSES_DEFINE_KEY */
 
+#ifdef HAVE_CURSES_KEY_DEFINED
 /*[clinic input]
 _curses.key_defined
 
@@ -6156,7 +6168,9 @@ _curses_key_defined_impl(PyObject *module, const char *definition)
 
     return PyLong_FromLong(key_defined(definition));
 }
+#endif /* HAVE_CURSES_KEY_DEFINED */
 
+#ifdef HAVE_CURSES_KEYOK
 /*[clinic input]
 _curses.keyok
 
@@ -6177,7 +6191,7 @@ _curses_keyok_impl(PyObject *module, int keycode, int enable)
 
     return curses_check_err(module, keyok(keycode, enable), "keyok", NULL);
 }
-#endif
+#endif /* HAVE_CURSES_KEYOK */
 
 /*[clinic input]
 _curses.init_color
@@ -6778,9 +6792,7 @@ _curses_new_prescr_impl(PyObject *module)
 }
 #endif /* HAVE_CURSES_NEW_PRESCR */
 
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
-// https://invisible-island.net/ncurses/NEWS.html#index-t20080119
-
+#ifdef HAVE_CURSES_ESCDELAY
 /*[clinic input]
 _curses.get_escdelay
 
@@ -6797,6 +6809,9 @@ _curses_get_escdelay_impl(PyObject *module)
 {
     return PyLong_FromLong(ESCDELAY);
 }
+#endif /* HAVE_CURSES_ESCDELAY */
+
+#ifdef HAVE_CURSES_SET_ESCDELAY
 /*[clinic input]
 _curses.set_escdelay
     ms: int
@@ -6821,7 +6836,9 @@ _curses_set_escdelay_impl(PyObject *module, int ms)
 
     return curses_check_err(module, set_escdelay(ms), "set_escdelay", NULL);
 }
+#endif /* HAVE_CURSES_SET_ESCDELAY */
 
+#ifdef HAVE_CURSES_TABSIZE
 /*[clinic input]
 _curses.get_tabsize
 
@@ -6837,6 +6854,9 @@ _curses_get_tabsize_impl(PyObject *module)
 {
     return PyLong_FromLong(TABSIZE);
 }
+#endif /* HAVE_CURSES_TABSIZE */
+
+#ifdef HAVE_CURSES_SET_TABSIZE
 /*[clinic input]
 _curses.set_tabsize
     size: int
@@ -6860,7 +6880,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 
     return curses_check_err(module, set_tabsize(size), "set_tabsize", NULL);
 }
-#endif
+#endif /* HAVE_CURSES_SET_TABSIZE */
 
 /*[clinic input]
 _curses.intrflush
@@ -7686,6 +7706,7 @@ _curses_termattrs_impl(PyObject *module)
 /*[clinic end generated code: output=b06f437fce1b6fc4 input=0559882a04f84d1d]*/
 NoArgReturnIntFunctionBody(termattrs)
 
+#ifdef HAVE_CURSES_TERM_ATTRS
 /*[clinic input]
 _curses.term_attrs
 
@@ -7703,6 +7724,7 @@ _curses_term_attrs_impl(PyObject *module)
 
     return PyLong_FromUnsignedLong(term_attrs());
 }
+#endif /* HAVE_CURSES_TERM_ATTRS */
 
 /*[clinic input]
 @permit_long_summary
@@ -8301,10 +8323,8 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_SCR_INIT_METHODDEF
     _CURSES_SCR_RESTORE_METHODDEF
     _CURSES_SCR_SET_METHODDEF
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
     _CURSES_GET_ESCDELAY_METHODDEF
     _CURSES_SET_ESCDELAY_METHODDEF
-#endif
     _CURSES_GET_TABSIZE_METHODDEF
     _CURSES_SET_TABSIZE_METHODDEF
     _CURSES_SET_TERM_METHODDEF

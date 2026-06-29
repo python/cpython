@@ -1563,7 +1563,8 @@ class TestCurses(unittest.TestCase):
         self.assertIsInstance(curses.has_ic(), bool)
         self.assertIsInstance(curses.has_il(), bool)
         self.assertIsInstance(curses.termattrs(), int)
-        self.assertIsInstance(curses.term_attrs(), int)
+        if hasattr(curses, 'term_attrs'):
+            self.assertIsInstance(curses.term_attrs(), int)
 
         c = curses.killchar()
         self.assertIsInstance(c, bytes)
@@ -2365,15 +2366,19 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(box.gather(), text + ' ')
 
     def test_textbox_edit_wide(self):
-        # edit() reads characters through get_wch().  Each is used only if
-        # encodable in the current locale.
+        # edit() reads characters through get_wch().  Each character is pushed
+        # with unget_wch(), which on a narrow build requires it to encode to a
+        # single byte, so a non-ASCII case needs a wide build or an 8-bit locale.
         for ch in ['A', 'é', '¤', '€', 'д']:
-            if self._encodable(ch):
-                with self.subTest(ch=ch):
-                    box, win = self._make_textbox(1, 10)
-                    for c in reversed(['a', ch, chr(curses.ascii.BEL)]):
-                        curses.unget_wch(c)
-                    self.assertEqual(box.edit(), 'a' + ch + ' ')
+            if not self._encodable(ch):
+                continue
+            if not WIDE_BUILD and len(ch.encode(self.stdscr.encoding)) != 1:
+                continue
+            with self.subTest(ch=ch):
+                box, win = self._make_textbox(1, 10)
+                for c in reversed(['a', ch, chr(curses.ascii.BEL)]):
+                    curses.unget_wch(c)
+                self.assertEqual(box.edit(), 'a' + ch + ' ')
 
     def test_textbox_movement(self):
         box, win = self._make_textbox(3, 10)

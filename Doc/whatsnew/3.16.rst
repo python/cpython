@@ -559,6 +559,14 @@ Porting to Python 3.16
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+* In :mod:`tkinter`, the *name* parameter of the
+  :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
+  :meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
+  :meth:`!setvar` are now required.  Calling these methods without
+  them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
+  :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka in :gh:`152587`.)
+
 
 Build changes
 =============

@@ -1,0 +1,2 @@
+Fix C stack unwinding tests on Linux LoongArch builds by teaching the manual
+frame pointer unwinder to recognize the LoongArch frame layout.
