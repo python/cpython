@@ -463,7 +463,7 @@ exit:
 
 #endif /* defined(HAVE_INET_NTOA) */
 
-#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS))
+#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_nametoindex__doc__,
 "if_nametoindex($module, oname, /)\n"
@@ -495,9 +495,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)) */
 
-#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS))
+#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP))
 
 PyDoc_STRVAR(_socket_if_indextoname__doc__,
 "if_indextoname($module, if_index, /)\n"
@@ -526,7 +526,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)) */
 
 #ifndef _SOCKET_SOCKET_SENDMSG_METHODDEF
     #define _SOCKET_SOCKET_SENDMSG_METHODDEF
@@ -543,4 +543,4 @@ exit:
 #ifndef _SOCKET_IF_INDEXTONAME_METHODDEF
     #define _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif /* !defined(_SOCKET_IF_INDEXTONAME_METHODDEF) */
-/*[clinic end generated code: output=0b1fa78ac6589353 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=914eb6392666f00a input=a9049054013a1b77]*/

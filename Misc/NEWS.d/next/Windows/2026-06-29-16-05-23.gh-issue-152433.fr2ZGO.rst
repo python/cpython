@@ -1,0 +1,1 @@
+socketmodule: allow build for Windows UWP.
