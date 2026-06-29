@@ -11,6 +11,7 @@ _channels = import_helper.import_module('_interpchannels')
 from concurrent import interpreters
 from test.support import channels
 from .utils import _run_output, TestBase
+import _testcapi
 
 
 class LowLevelTests(TestBase):
@@ -29,6 +30,22 @@ class LowLevelTests(TestBase):
     def test_highlevel_reloaded(self):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
         importlib.reload(channels)
+
+    def test_lock_allocation_failure(self):
+        # see gh-152635 (https://github.com/python/cpython/issues/152635)
+        # The first allocation to happen is the lock, which
+        # historically triggered an assert if alloc failed.
+        cid = None
+        _testcapi.set_nomemory(0, 1)
+        try:
+            cid = _channels.create()
+        except MemoryError:
+            pass  # MemoryError is expected behavior
+        finally:
+            _testcapi.remove_mem_hooks()
+            if cid is not None:
+                _channels.close(cid, force=True)
+                _channels.destroy(cid)
 
 
 class TestChannels(TestBase):
