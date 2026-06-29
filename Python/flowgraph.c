@@ -1147,21 +1147,16 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                 prev_instr = instr;
                 instr = &b->b_instr[i];
                 int prev_opcode = prev_instr ? prev_instr->i_opcode : 0;
-                int prev_oparg = prev_instr ? prev_instr->i_oparg : 0;
                 int opcode = instr->i_opcode;
-                bool is_redundant_pair = false;
                 if (opcode == POP_TOP) {
-                   if (loads_const(prev_opcode)) {
-                       is_redundant_pair = true;
+                   if (loads_const(prev_opcode)
+                       || prev_opcode == COPY
+                       || prev_opcode == LOAD_FAST)
+                   {
+                        INSTR_SET_OP0(prev_instr, NOP);
+                        INSTR_SET_OP0(instr, NOP);
+                        done = false;
                    }
-                   else if (prev_opcode == COPY && prev_oparg == 1) {
-                       is_redundant_pair = true;
-                   }
-                }
-                if (is_redundant_pair) {
-                    INSTR_SET_OP0(prev_instr, NOP);
-                    INSTR_SET_OP0(instr, NOP);
-                    done = false;
                 }
             }
             if ((instr && is_jump(instr)) || !BB_HAS_FALLTHROUGH(b)) {
@@ -3790,6 +3785,10 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
         }
     }
 
+    RETURN_IF_ERROR(
+        add_checks_for_loads_of_uninitialized_variables(
+            g->g_entryblock, nlocals, nparams));
+
     int ret = optimize_cfg(g, consts, const_cache, consts_index, firstlineno);
 
     _Py_hashtable_destroy(consts_index);
@@ -3797,9 +3796,6 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(ret);
 
     RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
-    RETURN_IF_ERROR(
-        add_checks_for_loads_of_uninitialized_variables(
-            g->g_entryblock, nlocals, nparams));
     RETURN_IF_ERROR(insert_superinstructions(g));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
