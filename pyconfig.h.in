@@ -186,6 +186,9 @@
 /* Define if you have the 'ctermid_r' function. */
 #undef HAVE_CTERMID_R
 
+/* Define if you have the 'ESCDELAY' variable. */
+#undef HAVE_CURSES_ESCDELAY
+
 /* Define if you have the 'filter' function. */
 #undef HAVE_CURSES_FILTER
 
@@ -210,8 +213,17 @@
 /* Define if you have the 'resize_term' function. */
 #undef HAVE_CURSES_RESIZE_TERM
 
+/* Define if you have the 'set_escdelay' function. */
+#undef HAVE_CURSES_SET_ESCDELAY
+
+/* Define if you have the 'set_tabsize' function. */
+#undef HAVE_CURSES_SET_TABSIZE
+
 /* Define if you have the 'syncok' function. */
 #undef HAVE_CURSES_SYNCOK
+
+/* Define if you have the 'TABSIZE' variable. */
+#undef HAVE_CURSES_TABSIZE
 
 /* Define if you have the 'typeahead' function. */
 #undef HAVE_CURSES_TYPEAHEAD

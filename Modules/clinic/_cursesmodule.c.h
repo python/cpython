@@ -2792,7 +2792,7 @@ exit:
     return return_value;
 }
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_ESCDELAY)
 
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
@@ -2816,9 +2816,9 @@ _curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_escdelay_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_ESCDELAY)
 
 PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "set_escdelay($module, ms, /)\n"
@@ -2855,9 +2855,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_TABSIZE)
 
 PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "get_tabsize($module, /)\n"
@@ -2880,9 +2880,9 @@ _curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_tabsize_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_TABSIZE) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_TABSIZE)
 
 PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "set_tabsize($module, size, /)\n"
@@ -2918,7 +2918,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_TABSIZE) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
@@ -4471,4 +4471,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=e0fb3129157f3af8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=728a704064bc8b85 input=a9049054013a1b77]*/
