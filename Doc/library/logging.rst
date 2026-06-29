@@ -690,7 +690,7 @@ Formatter Objects
    :param defaults: A dictionary with default values to use in custom fields.
        For example,
        ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
-   :type defaults: dict[str, Any]
+   :type defaults: dict[str, typing.Any]
 
    .. versionchanged:: 3.2
       Added the *style* parameter.

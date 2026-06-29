@@ -22,7 +22,7 @@ from .runtests import RunTests, WorkerRunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
     StrPath, TestName,
-    format_duration, print_warning, count, plural)
+    format_duration, print_warning, count, plural, get_process_memory_usage)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if MS_WINDOWS:
@@ -452,6 +452,12 @@ class WorkerThread(threading.Thread):
                 print_warning(f"Failed to join {self} in {format_duration(dt)}")
                 break
 
+    def get_mem_usage(self):
+        popen = self._popen
+        if popen is None:
+            return
+        return get_process_memory_usage(popen.pid)
+
 
 def get_running(workers: list[WorkerThread]) -> str | None:
     running: list[str] = []
@@ -473,6 +479,7 @@ class RunWorkers:
                  logger: Logger, results: TestResults) -> None:
         self.num_workers = num_workers
         self.runtests = runtests
+        self.logger = logger
         self.log = logger.log
         self.display_progress = logger.display_progress
         self.results: TestResults = results
@@ -598,9 +605,21 @@ class RunWorkers:
 
         return result
 
+    def get_mem_usage(self):
+        usage = 0
+        main_mem = get_process_memory_usage(os.getpid())
+        if main_mem:
+            usage += main_mem
+        for worker in self.workers:
+            worker_mem = worker.get_mem_usage()
+            if worker_mem:
+                usage += worker_mem
+        return usage
+
     def run(self) -> None:
         fail_fast = self.runtests.fail_fast
         fail_env_changed = self.runtests.fail_env_changed
+        self.logger.get_mem_usage = self.get_mem_usage
 
         self.start_workers()
 
@@ -625,3 +644,4 @@ class RunWorkers:
             # worker when we exit this function
             self.pending.stop()
             self.stop_workers()
+            self.logger.get_mem_usage = None

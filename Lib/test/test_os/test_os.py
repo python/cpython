@@ -92,7 +92,7 @@ requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -1867,7 +1867,9 @@ class WalkTests(unittest.TestCase):
 
         walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
         if self.is_fwalk:
-            self.assertRaises(NotADirectoryError, next, walk_it)
+            with self.assertRaises(OSError) as cm:
+                next(walk_it)
+            self.assertIn(cm.exception.errno, (errno.ENOTDIR, errno.EINVAL))
         self.assertRaises(StopIteration, next, walk_it)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
@@ -2138,6 +2140,94 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
     @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_mode_with_parent_mode(self):
+        # Test the parent_mode parameter
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o002):
+            # Specify mode for both leaf and parent directories
+            os.makedirs(path, 0o770, parent_mode=0o750)
+            self.assertTrue(os.path.exists(path))
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                # Leaf directory gets the mode parameter
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o770)
+                # Parent directory gets the parent_mode parameter
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o750)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_deep_hierarchy(self):
+        # Test parent_mode with deep directory hierarchy
+        base = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3')
+        with os_helper.temp_umask(0o002):
+            os.makedirs(base, 0o755, parent_mode=0o700)
+            self.assertTrue(os.path.exists(base))
+            if os.name != 'nt':
+                # Check that all parent directories have parent_mode
+                level1 = os.path.join(os_helper.TESTFN, 'dir1')
+                level2 = os.path.join(level1, 'dir2')
+                self.assertEqual(os.stat(level1).st_mode & 0o777, 0o700)
+                self.assertEqual(os.stat(level2).st_mode & 0o777, 0o700)
+                # Leaf directory has the regular mode
+                self.assertEqual(os.stat(base).st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_same_as_mode(self):
+        # Test emulating Python 3.6 behavior by setting parent_mode=mode
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o002):
+            os.makedirs(path, 0o705, parent_mode=0o705)
+            self.assertTrue(os.path.exists(path))
+            if os.name != 'nt':
+                # Both directories should have the same mode
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o705)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o705)
+
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
+    def test_parent_mode_combined_with_umask(self):
+        # parent_mode, like mode, is combined with the process umask; it does
+        # not bypass it.
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o022):
+            os.makedirs(path, 0o777, parent_mode=0o777)
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                # 0o777 is masked down to 0o755 by the 0o022 umask, for both
+                # the leaf (mode) and the parent (parent_mode).
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o755)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
         support.is_wasi,
         "WASI's umask is a stub."
     )
@@ -2210,15 +2300,9 @@ class MakedirTests(unittest.TestCase):
         )
 
     def tearDown(self):
-        path = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3',
-                            'dir4', 'dir5', 'dir6')
-        # If the tests failed, the bottom-most directory ('../dir6')
-        # may not have been created, so we look for the outermost directory
-        # that exists.
-        while not os.path.exists(path) and path != os_helper.TESTFN:
-            path = os.path.dirname(path)
-
-        os.removedirs(path)
+        # Remove the whole tree regardless of which sub-directories a test
+        # created and regardless of their permission bits.
+        os_helper.rmtree(os_helper.TESTFN)
 
 
 @unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
@@ -2269,6 +2353,8 @@ class ChownFileTests(unittest.TestCase):
 
     @requires_non_root_user
     @unittest.skipUnless(len(all_users) > 1, "test needs and more than one user")
+    @unittest.skipIf(sys.platform == 'cygwin',
+                         'chown() can set any uid on Cygwin')
     def test_chown_without_permission(self):
         uid_1, uid_2 = all_users[:2]
         gid = os.stat(os_helper.TESTFN).st_gid
@@ -3707,7 +3793,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     @requires_headers_trailers
     @requires_32b
     async def test_headers_overflow_32bits(self):
-        self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, 0, 0,
                                       headers=[b"x" * 2**16] * 2**15)
@@ -3716,7 +3801,6 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
     @requires_headers_trailers
     @requires_32b
     async def test_trailers_overflow_32bits(self):
-        self.server.handler_instance.accumulate = False
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, 0, 0,
                                       trailers=[b"x" * 2**16] * 2**15)
@@ -4051,10 +4135,11 @@ class TimerfdTests(unittest.TestCase):
         initial_expiration = 0.1
         os.timerfd_settime(fd, initial=initial_expiration, interval=0)
 
-        # read() raises OSError with errno is EAGAIN for non-blocking timer.
-        with self.assertRaises(OSError) as ctx:
-            self.read_count_signaled(fd)
-        self.assertEqual(ctx.exception.errno, errno.EAGAIN)
+        if sys.platform != 'cygwin':
+            # read() raises OSError with errno is EAGAIN for non-blocking timer.
+            with self.assertRaises(OSError) as ctx:
+                self.read_count_signaled(fd)
+            self.assertEqual(ctx.exception.errno, errno.EAGAIN)
 
         # Wait more than 0.1 seconds
         time.sleep(initial_expiration + 0.1)
@@ -4235,12 +4320,19 @@ class TimerfdTests(unittest.TestCase):
 
         # 2nd call
         next_expiration_ns, interval_ns2 = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
-        self.assertEqual(interval_ns2, interval_ns)
+        CYGWIN = (sys.platform == 'cygwin')
+        if not CYGWIN:
+            self.assertEqual(interval_ns2, interval_ns)
+        else:
+            self.assertEqual(interval_ns2, 0)
         self.assertEqual(next_expiration_ns, initial_expiration_ns)
 
         # timerfd_gettime
         next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
-        self.assertEqual(interval_ns2, interval_ns)
+        if not CYGWIN:
+            self.assertEqual(interval_ns2, interval_ns)
+        else:
+            self.assertEqual(interval_ns2, 0)
         self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
 
         self.assertAlmostEqual(next_expiration_ns, initial_expiration_ns, delta=limit_error)

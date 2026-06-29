@@ -13,8 +13,8 @@ PyABIInfo_VAR(abi_info);
 static PyObject *
 module_from_slots_empty(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {0},
+    PySlot slots[] = {
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -22,9 +22,9 @@ module_from_slots_empty(PyObject *self, PyObject *spec)
 static PyObject *
 module_from_slots_minimal(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -38,12 +38,12 @@ module_from_slots_null(PyObject *self, PyObject *spec)
 static PyObject *
 module_from_slots_name(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_name, "currently ignored..."},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_DATA(Py_mod_name, "currently ignored..."),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -51,12 +51,12 @@ module_from_slots_name(PyObject *self, PyObject *spec)
 static PyObject *
 module_from_slots_doc(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_doc, "the docstring"},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_DATA(Py_mod_doc, "the docstring"),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -64,12 +64,12 @@ module_from_slots_doc(PyObject *self, PyObject *spec)
 static PyObject *
 module_from_slots_size(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_state_size, (void*)123},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_SIZE(Py_mod_state_size, (void*)123),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
     if (!mod) {
@@ -92,12 +92,12 @@ static PyMethodDef a_methoddef_array[] = {
 static PyObject *
 module_from_slots_methods(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_methods, a_methoddef_array},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_STATIC_DATA(Py_mod_methods, a_methoddef_array),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -111,14 +111,14 @@ static void noop_free(void *self) { }
 static PyObject *
 module_from_slots_gc(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_state_traverse, noop_traverse},
-        {Py_mod_state_clear, noop_clear},
-        {Py_mod_state_free, noop_free},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_FUNC(Py_mod_state_traverse, noop_traverse),
+        PySlot_FUNC(Py_mod_state_clear, noop_clear),
+        PySlot_FUNC(Py_mod_state_free, noop_free),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
     if (!mod) {
@@ -144,12 +144,12 @@ static const char test_token;
 static PyObject *
 module_from_slots_token(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_token, (void*)&test_token},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_DATA(Py_mod_token, (void*)&test_token),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
     if (!mod) {
@@ -175,12 +175,12 @@ simple_exec(PyObject *module)
 static PyObject *
 module_from_slots_exec(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_exec, simple_exec},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_FUNC(Py_mod_exec, simple_exec),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
     if (!mod) {
@@ -209,12 +209,12 @@ create_attr_from_spec(PyObject *spec, PyModuleDef *def)
 static PyObject *
 module_from_slots_create(PyObject *self, PyObject *spec)
 {
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_create, create_attr_from_spec},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    const PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_FUNC(Py_mod_create, create_attr_from_spec),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -241,13 +241,13 @@ module_from_slots_repeat_slot(PyObject *self, PyObject *spec)
     if (slot_id < 0) {
         return NULL;
     }
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {slot_id, "anything"},
-        {slot_id, "anything else"},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    const PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_PTR_STATIC(slot_id, "anything"),
+        PySlot_PTR_STATIC(slot_id, "anything_else"),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -259,12 +259,12 @@ module_from_slots_null_slot(PyObject *self, PyObject *spec)
     if (slot_id < 0) {
         return NULL;
     }
-    PyModuleDef_Slot slots[] = {
-        {slot_id, NULL},
-        {Py_mod_abi, &abi_info},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    const PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_PTR_STATIC(slot_id, NULL),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -347,12 +347,12 @@ module_from_bad_abiinfo(PyObject *self, PyObject *spec)
         1, 0,
         .abi_version=0x02080000,
     };
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_abi, &bad_abi_info},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_DATA(Py_mod_abi, &bad_abi_info),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -365,14 +365,14 @@ module_from_multiple_abiinfo(PyObject *self, PyObject *spec)
         .flags=PyABIInfo_STABLE | PyABIInfo_FREETHREADING_AGNOSTIC,
         .abi_version=0x03040000,
     };
-    PyModuleDef_Slot slots[] = {
-        {Py_mod_abi, &abi_info},
-        {Py_mod_abi, &abi_info},
-        {Py_mod_abi, &extra_abi_info},
-        {Py_mod_abi, &extra_abi_info},
-        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-        {0},
+    PySlot slots[] = {
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_DATA(Py_mod_abi, &abi_info),
+        PySlot_DATA(Py_mod_abi, &extra_abi_info),
+        PySlot_DATA(Py_mod_abi, &extra_abi_info),
+        PySlot_DATA(Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+        PySlot_END,
     };
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
@@ -466,6 +466,53 @@ pymodule_get_state_size(PyObject *self, PyObject *module)
     return PyLong_FromSsize_t(size);
 }
 
+static PyObject *
+module_from_null_def_slot(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    long slot_number;
+    PyObject *spec;
+    if (!PyArg_ParseTuple(args, "lO", &slot_number, &spec)) {
+        return NULL;
+    }
+    static PyModuleDef_Slot slots[] = {
+        {0, NULL},
+        {0},
+    };
+    static PyModuleDef def = {
+        PyModuleDef_HEAD_INIT,
+        .m_name = "mymod",
+        .m_slots = slots,
+    };
+    // hack: def is supposed to be constant.
+    // Don't do this at home; use PyModule_FromSlotsAndSpec throwaway
+    // definitions!
+    slots[0].slot = slot_number;
+    return PyModule_FromDefAndSpec(&def, spec);
+}
+
+static PyObject *
+module_from_def_nonstatic_nested(PyObject* Py_UNUSED(module), PyObject *spec)
+{
+    static PyModuleDef_Slot subsubslots[] = {
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0},
+    };
+    static PySlot subslots[] = {
+        PySlot_DATA(Py_mod_slots, subsubslots),
+        PySlot_END,
+    };
+    static PyModuleDef_Slot slots[] = {
+        {Py_slot_subslots, subslots},
+        {0},
+    };
+    static PyModuleDef def = {
+        PyModuleDef_HEAD_INIT,
+        .m_name = "mymod",
+        .m_slots = slots,
+    };
+    return PyModule_FromDefAndSpec(&def, spec);
+}
+
 static PyMethodDef test_methods[] = {
     {"module_from_slots_empty", module_from_slots_empty, METH_O},
     {"module_from_slots_minimal", module_from_slots_minimal, METH_O},
@@ -489,6 +536,8 @@ static PyMethodDef test_methods[] = {
     {"pymodule_get_def", pymodule_get_def, METH_O},
     {"pymodule_get_state_size", pymodule_get_state_size, METH_O},
     {"pymodule_exec", pymodule_exec, METH_O},
+    {"module_from_null_def_slot", module_from_null_def_slot, METH_VARARGS},
+    {"module_from_def_nonstatic_nested", module_from_def_nonstatic_nested, METH_O},
     {NULL},
 };
 

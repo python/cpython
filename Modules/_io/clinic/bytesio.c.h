@@ -254,8 +254,8 @@ PyDoc_STRVAR(_io_BytesIO_read1__doc__,
 "\n"
 "Read at most size bytes, returned as a bytes object.\n"
 "\n"
-"If the size argument is negative or omitted, read until EOF is reached.\n"
-"Return an empty bytes object at EOF.");
+"If the size argument is negative or omitted, read until EOF is\n"
+"reached.  Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ1_METHODDEF    \
     {"read1", _PyCFunction_CAST(_io_BytesIO_read1), METH_FASTCALL, _io_BytesIO_read1__doc__},
@@ -281,6 +281,53 @@ _io_BytesIO_read1(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BytesIO_read1_impl((bytesio *)self, size);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BytesIO_peek__doc__,
+"peek($self, size=0, /)\n"
+"--\n"
+"\n"
+"Return bytes from the stream without advancing the position.\n"
+"\n"
+"Return an empty bytes object at EOF.");
+
+#define _IO_BYTESIO_PEEK_METHODDEF    \
+    {"peek", _PyCFunction_CAST(_io_BytesIO_peek), METH_FASTCALL, _io_BytesIO_peek__doc__},
+
+static PyObject *
+_io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size);
+
+static PyObject *
+_io_BytesIO_peek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size = 0;
+
+    if (!_PyArg_CheckPositional("peek", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_BytesIO_peek_impl((bytesio *)self, size);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -529,8 +576,8 @@ PyDoc_STRVAR(_io_BytesIO_writelines__doc__,
 "Write lines to the file.\n"
 "\n"
 "Note that newlines are not added.  lines can be any iterable object\n"
-"producing bytes-like objects. This is equivalent to calling write() for\n"
-"each element.");
+"producing bytes-like objects.  This is equivalent to calling write()\n"
+"for each element.");
 
 #define _IO_BYTESIO_WRITELINES_METHODDEF    \
     {"writelines", (PyCFunction)_io_BytesIO_writelines, METH_O, _io_BytesIO_writelines__doc__},
@@ -637,4 +684,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=daa81dfdae5ccc57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5e625e31b2a82f0 input=a9049054013a1b77]*/

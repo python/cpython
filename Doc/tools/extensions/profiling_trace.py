@@ -154,10 +154,15 @@ def inject_trace(app, exception):
         )
 
 
+def add_assets(app, pagename, templatename, context, doctree):
+    if pagename == 'library/profiling.sampling':
+        app.add_js_file('profiling-sampling-visualization.js')
+        app.add_css_file('profiling-sampling-visualization.css')
+
+
 def setup(app):
     app.connect('build-finished', inject_trace)
-    app.add_js_file('profiling-sampling-visualization.js')
-    app.add_css_file('profiling-sampling-visualization.css')
+    app.connect('html-page-context', add_assets)
 
     return {
         'version': '1.0',

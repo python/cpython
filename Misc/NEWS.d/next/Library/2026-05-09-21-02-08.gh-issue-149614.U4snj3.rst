@@ -1,0 +1,1 @@
+Fix a regression that broke the ability to deepcopy :class:`argparse.ArgumentParser` instances.
