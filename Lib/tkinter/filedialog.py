@@ -423,12 +423,7 @@ def askopenfiles(mode = "r", **options):
     """
 
     files = askopenfilenames(**options)
-    if files:
-        ofiles=[]
-        for filename in files:
-            ofiles.append(open(filename, mode))
-        files=ofiles
-    return files
+    return [open(filename, mode) for filename in files]
 
 
 def asksaveasfile(mode = "w", **options):

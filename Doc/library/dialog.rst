@@ -159,10 +159,8 @@ listed below:
 The below functions when called create a modal, native look-and-feel dialog,
 wait for the user's selection, and return it.
 The exact return value depends on the function (see below); when the dialog is
-cancelled it is an empty string, an empty tuple or ``None``.
-The precise type of this empty value may vary between platforms and Tk
-versions, so test the result for truth rather than comparing it with a
-specific value.
+cancelled it is the empty value documented for that function -- an empty
+string, an empty tuple, an empty list or ``None``.
 
 .. function:: askopenfile(mode="r", **options)
               askopenfiles(mode="r", **options)
@@ -171,7 +169,7 @@ specific value.
    :func:`askopenfile` returns the opened file object, or ``None`` if the
    dialog is cancelled.
    :func:`askopenfiles` returns a list of the opened file objects, or an empty
-   tuple if cancelled.
+   list if cancelled.
    The files are opened in mode *mode* (read-only ``'r'`` by default).
 
 .. function:: asksaveasfile(mode="w", **options)
