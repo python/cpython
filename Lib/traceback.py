@@ -1611,7 +1611,7 @@ class TracebackException:
                     )
                 else:
                     yield '    {}\n'.format(ltext)
-        if self.msg is None:
+        if self.msg is None or self.msg == '':
             msg = "<no detail available>"
         else:
             msg = str(self.msg)
