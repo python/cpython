@@ -7248,6 +7248,30 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_CURSES_VAR(VARIABLE)
+dnl Like PY_CHECK_CURSES_FUNC, but for an integer variable (or macro), such as
+dnl ESCDELAY, which a function probe cannot detect.
+AC_DEFUN([PY_CHECK_CURSES_VAR],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
+  AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AC_CACHE_CHECK(
+    [for curses variable $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
+        int x = $1; (void)x;
+      ])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' variable.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
+
 PY_CHECK_CURSES_FUNC([is_pad])
 PY_CHECK_CURSES_FUNC([is_term_resized])
 PY_CHECK_CURSES_FUNC([resize_term])
@@ -7259,6 +7283,10 @@ PY_CHECK_CURSES_FUNC([filter])
 PY_CHECK_CURSES_FUNC([has_key])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
+PY_CHECK_CURSES_FUNC([set_escdelay])
+PY_CHECK_CURSES_FUNC([set_tabsize])
+PY_CHECK_CURSES_VAR([ESCDELAY])
+PY_CHECK_CURSES_VAR([TABSIZE])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

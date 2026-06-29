@@ -2792,7 +2792,7 @@ exit:
     return return_value;
 }
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_ESCDELAY)
 
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
@@ -2816,9 +2816,9 @@ _curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_escdelay_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_ESCDELAY)
 
 PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "set_escdelay($module, ms, /)\n"
@@ -2855,9 +2855,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_TABSIZE)
 
 PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "get_tabsize($module, /)\n"
@@ -2880,9 +2880,9 @@ _curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_tabsize_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_TABSIZE) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_TABSIZE)
 
 PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "set_tabsize($module, size, /)\n"
@@ -2918,7 +2918,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_TABSIZE) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"

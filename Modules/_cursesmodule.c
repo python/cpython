@@ -4027,9 +4027,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     Py_RETURN_NONE;
 }
 
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
-// https://invisible-island.net/ncurses/NEWS.html#index-t20080119
-
+#ifdef HAVE_CURSES_ESCDELAY
 /*[clinic input]
 _curses.get_escdelay
 
@@ -4046,6 +4044,9 @@ _curses_get_escdelay_impl(PyObject *module)
 {
     return PyLong_FromLong(ESCDELAY);
 }
+#endif /* HAVE_CURSES_ESCDELAY */
+
+#ifdef HAVE_CURSES_SET_ESCDELAY
 /*[clinic input]
 _curses.set_escdelay
     ms: int
@@ -4070,7 +4071,9 @@ _curses_set_escdelay_impl(PyObject *module, int ms)
 
     return curses_check_err(module, set_escdelay(ms), "set_escdelay", NULL);
 }
+#endif /* HAVE_CURSES_SET_ESCDELAY */
 
+#ifdef HAVE_CURSES_TABSIZE
 /*[clinic input]
 _curses.get_tabsize
 
@@ -4086,6 +4089,9 @@ _curses_get_tabsize_impl(PyObject *module)
 {
     return PyLong_FromLong(TABSIZE);
 }
+#endif /* HAVE_CURSES_TABSIZE */
+
+#ifdef HAVE_CURSES_SET_TABSIZE
 /*[clinic input]
 _curses.set_tabsize
     size: int
@@ -4109,7 +4115,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 
     return curses_check_err(module, set_tabsize(size), "set_tabsize", NULL);
 }
-#endif
+#endif /* HAVE_CURSES_SET_TABSIZE */
 
 /*[clinic input]
 _curses.intrflush
@@ -5372,10 +5378,8 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
     _CURSES_SAVETTY_METHODDEF
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
     _CURSES_GET_ESCDELAY_METHODDEF
     _CURSES_SET_ESCDELAY_METHODDEF
-#endif
     _CURSES_GET_TABSIZE_METHODDEF
     _CURSES_SET_TABSIZE_METHODDEF
     _CURSES_SETSYX_METHODDEF
