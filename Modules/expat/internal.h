@@ -28,7 +28,7 @@
    Copyright (c) 2002-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2003      Greg Stein <gstein@users.sourceforge.net>
-   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2026 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2018      Yury Gribov <tetra2005@gmail.com>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
    Copyright (c) 2023-2024 Sony Corporation / Snild Dolkow <snild@sony.com>
@@ -113,6 +113,7 @@
 #if defined(_WIN32)                                                            \
     && (! defined(__USE_MINGW_ANSI_STDIO)                                      \
         || (1 - __USE_MINGW_ANSI_STDIO - 1 == 0))
+#  define EXPAT_FMT_LLX(midpart) "%" midpart "I64x"
 #  define EXPAT_FMT_ULL(midpart) "%" midpart "I64u"
 #  if defined(_WIN64) // Note: modifiers "td" and "zu" do not work for MinGW
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "I64d"
@@ -122,6 +123,7 @@
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "u"
 #  endif
 #else
+#  define EXPAT_FMT_LLX(midpart) "%" midpart "llx"
 #  define EXPAT_FMT_ULL(midpart) "%" midpart "llu"
 #  if ! defined(ULONG_MAX)
 #    error Compiler did not define ULONG_MAX for us
