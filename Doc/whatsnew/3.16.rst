@@ -550,6 +550,15 @@ New deprecations
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
+* :mod:`tkinter`:
+
+  * :func:`tkinter.filedialog.askopenfiles` is deprecated and slated for
+    removal in Python 3.18.  Opening several files at once is error-prone, and
+    the returned list cannot be used in a :keyword:`with` statement.  Iterate
+    over the names returned by :func:`~tkinter.filedialog.askopenfilenames` and
+    open them one by one instead.
+    (Contributed by Serhiy Storchaka in :gh:`152638`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst

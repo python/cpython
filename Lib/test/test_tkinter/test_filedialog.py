@@ -69,5 +69,13 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
                 self.assertEqual(d.top.title(), cls.title)
 
 
+class DeprecationTest(unittest.TestCase):
+
+    def test_askopenfiles_deprecated(self):
+        with swap_attr(filedialog, 'askopenfilenames', lambda **kw: ()):
+            with self.assertWarns(DeprecationWarning):
+                filedialog.askopenfiles()
+
+
 if __name__ == "__main__":
     unittest.main()
