@@ -2874,9 +2874,10 @@ class SyntaxWarningTest(unittest.TestCase):
 
     def check_no_warning(self, code, filename="<testcase>", mode="exec"):
         """Check that compiling code does not raise any warnings."""
+        import warnings
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            compile(source, filename, mode)
+            compile(code, filename, mode)
         self.assertEqual(caught, [])
 
     def test_return_in_finally(self):
@@ -2949,73 +2950,74 @@ class SyntaxWarningTest(unittest.TestCase):
                 """)
             self.check_warning(source, f"'{kw}' in a 'finally' block")
 
-        def test_from_lazy_imports(self):
-            # gh-150459
-            self.check_warning(
-                "from . lazy import x",
-                "did you mean 'lazy from . import'?",
-            )
-            self.check_warning(
-                "from . lazy import x as y",
-                "did you mean 'lazy from . import'?",
-            )
-            self.check_warning(
-                "from . lazy import *",
-                "did you mean 'lazy from . import'?",
-            )
-            self.check_warning(
-                "from .. lazy import x",
-                "did you mean 'lazy from .. import'?",
-            )
-            self.check_warning(
-                "from ... lazy import x",
-                "did you mean 'lazy from ... import'?",
-            )
-            self.check_warning(
-                "from .... lazy import x",
-                "did you mean 'lazy from .... import'?",
-            )
-            self.check_warning(
-                "from . \\\n    lazy import x",
-                "did you mean 'lazy from . import'?",
-            )
-            self.check_warning(
-                "from .\\\nlazy import x",
-                "did you mean 'lazy from . import'?",
-            )
-            self.check_warning(
-                "from .\tlazy import x",
-                "did you mean 'lazy from . import'?",
-            )
+    def test_from_lazy_imports(self):
+        # gh-150459
+        self.check_warning(
+            "from . lazy import x",
+            "did you mean 'lazy from . import'?",
+        )
+        self.check_warning(
+            "from . lazy import x as y",
+            "did you mean 'lazy from . import'?",
+        )
+        self.check_warning(
+            "from . lazy import *",
+            "did you mean 'lazy from . import'?",
+        )
+        self.check_warning(
+            "from .. lazy import x",
+            "did you mean 'lazy from .. import'?",
+        )
+        self.check_warning(
+            "from ... lazy import x",
+            "did you mean 'lazy from ... import'?",
+        )
+        self.check_warning(
+            "from .... lazy import x",
+            "did you mean 'lazy from .... import'?",
+        )
+        self.check_warning(
+            "from . \\\n    lazy import x",
+            "did you mean 'lazy from . import'?",
+        )
+        self.check_warning(
+            "from .\\\nlazy import x",
+            "did you mean 'lazy from . import'?",
+        )
+        self.check_warning(
+            "from .\tlazy import x",
+            "did you mean 'lazy from . import'?",
+        )
 
-        def test_not_from_lazy_imports(self):
-            self.check_no_warning("from .lazy import x")
-            self.check_no_warning("from .lazy import *")
-            self.check_no_warning("from ..lazy import x")
-            self.check_no_warning("from ...lazy import x")
-            self.check_no_warning("from .lazy.sub import x")
-            self.check_no_warning("from ..lazy.sub import x")
-            self.check_no_warning("from ...lazy.sub import x")
-            self.check_no_warning("from . lazier import x")
-            self.check_no_warning("from . lazy_module import x")
-            self.check_no_warning("from . lazy.sub import x")
-            self.check_no_warning("from . sub.lazy import x")
-            self.check_no_warning("from lazy import x")
-            self.check_no_warning("from lazy.sub import x")
-            self.check_no_warning("lazy from . lazy import x")
-            self.check_no_warning("from . import lazy")
+    def test_not_from_lazy_imports(self):
+        self.check_no_warning("from .lazy import x")
+        self.check_no_warning("from .lazy import *")
+        self.check_no_warning("from ..lazy import x")
+        self.check_no_warning("from ...lazy import x")
+        self.check_no_warning("from .lazy.sub import x")
+        self.check_no_warning("from ..lazy.sub import x")
+        self.check_no_warning("from ...lazy.sub import x")
+        self.check_no_warning("from . lazier import x")
+        self.check_no_warning("from . lazy_module import x")
+        self.check_no_warning("from . lazy.sub import x")
+        self.check_no_warning("from . sub.lazy import x")
+        self.check_no_warning("from lazy import x")
+        self.check_no_warning("from lazy.sub import x")
+        self.check_no_warning("lazy from . lazy import x")
+        self.check_no_warning("from . import lazy")
 
-        def test_from_lazy_imports_as_error(self):
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", SyntaxWarning)
-                with self.assertRaisesRegex(
-                    SyntaxError,
-                    re.escape("did you mean 'lazy from . import'?"),
-                ) as cm:
-                    compile("from . lazy import x", "<test>", "exec")
-            self.assertEqual(cm.exception.lineno, 1)
-            self.assertEqual(cm.exception.offset, 8)
-            self.assertEqual(cm.exception.end_offset, 12)
+    def test_from_lazy_imports_as_error(self):
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", SyntaxWarning)
+            with self.assertRaisesRegex(
+                SyntaxError,
+                re.escape("did you mean 'lazy from . import'?"),
+            ) as cm:
+                compile("from . lazy import x", "<test>", "exec")
+        self.assertEqual(cm.exception.lineno, 1)
+        self.assertEqual(cm.exception.offset, 8)
+        self.assertEqual(cm.exception.end_offset, 12)
 
 
 class SyntaxErrorTestCase(unittest.TestCase):

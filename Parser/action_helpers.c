@@ -2002,27 +2002,32 @@ _warn_relative_import_of_lazy(Parser *p, asdl_seq *dots, expr_ty module)
     }
 
     int count = _PyPegen_seq_count_dots(dots);
-    char *buf = PyMem_RawMalloc(sizeof(char *) * (count + 1));
+    char *buf = PyMem_RawMalloc(count + 1);
     if (buf == NULL) {
         PyErr_NoMemory();
         return -1;
     }
-    memset(buf, '.', sizeof(char *) * count);
+    memset(buf, '.', count);
     buf[count] = '\0';
 
     PyObject *msg = PyUnicode_FromFormat(
         "'from %s lazy import' is the same as 'from %slazy import'; "
         "did you mean 'lazy from %s import'?",
         buf, buf, buf);
-    free(buf);
+    PyMem_RawFree(buf);
     if (msg == NULL) {
         return -1;
     }
 
-    return _PyErr_EmitSyntaxWarning(msg, p->tok->filename,
-                                    module->lineno, module->col_offset,
-                                    module->end_lineno, module->end_col_offset,
-                                    p->tok->module);
+    int res = _PyErr_EmitSyntaxWarning(msg,
+                                       p->tok->filename,
+                                       module->lineno,
+                                       module->col_offset + 1,
+                                       module->end_lineno,
+                                       module->end_col_offset + 1,
+                                       p->tok->module);
+    Py_DECREF(msg);
+    return res;
 }
 
 stmt_ty
