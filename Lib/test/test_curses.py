@@ -2843,16 +2843,12 @@ class TextboxTest(unittest.TestCase):
         self.mock_win.reset_mock()
 
 
-@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
-@unittest.skipIf(not term or term == 'unknown',
-                 "$TERM=%r, newterm() may not work" % term)
-@unittest.skipIf(sys.platform == "cygwin",
-                 "cygwin's curses mostly just hangs")
-class ScreenTests(unittest.TestCase):
-    # newterm()/set_term() mutate global curses state, but each test drives its
-    # own pseudo-terminal(s) and never touches the screen shared by TestCurses,
-    # whose setUp() makes that screen current again.  So these can run in this
-    # process, without a real terminal and without a subprocess.
+class NewtermTestBase(unittest.TestCase):
+    # Shared plumbing for tests that drive newterm() over their own
+    # pseudo-terminal(s).  newterm()/set_term() mutate global curses state, but
+    # each test never touches the screen shared by TestCurses, whose setUp()
+    # makes that screen current again.  So these can run in this process,
+    # without a real terminal and without a subprocess.
 
     def setUp(self):
         # newterm() may install signal handlers; restore them afterwards.
@@ -2905,6 +2901,14 @@ class ScreenTests(unittest.TestCase):
         self.addCleanup(os.close, slave)
         self.addCleanup(stop_reader)
         return slave
+
+
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 f"$TERM={term!r}, newterm() may not work")
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class ScreenTests(NewtermTestBase):
 
     def test_newterm(self):
         s = self.make_pty()
@@ -2977,6 +2981,101 @@ class ScreenTests(unittest.TestCase):
     def test_disallow_instantiation(self):
         # The screen type cannot be instantiated directly (bpo-43916).
         check_disallow_instantiation(self, curses.screen)
+
+
+@unittest.skipUnless(hasattr(curses, 'slk_init'), 'requires curses.slk_init()')
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 f"$TERM={term!r}, newterm() may not work")
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class SLKTests(NewtermTestBase):
+    # Soft-label keys reserve the bottom screen line for a row of labels.
+    # slk_init() must run before newterm()/initscr(), so each test sets up its
+    # own screen rather than reusing the one TestCurses builds in setUp().
+
+    def make_slk_screen(self, fmt=0):
+        s = self.make_pty()
+        curses.slk_init(fmt)
+        return curses.newterm('xterm', s, s)
+
+    def test_init_reserves_a_line(self):
+        # Every layout takes the bottom line for the labels; the index-line
+        # layout (3) takes a second line for the index.  Layouts 0 and 1 are
+        # standard; 2 and 3 are ncurses extensions that other curses
+        # implementations reject (slk_init() then returns an error).
+        ncurses = hasattr(curses, 'ncurses_version')
+        for fmt, lines in [(0, 23), (1, 23), (2, 23), (3, 22)]:
+            with self.subTest(fmt=fmt):
+                try:
+                    screen = self.make_slk_screen(fmt)
+                except curses.error:
+                    if ncurses or fmt < 2:
+                        raise
+                    continue
+                self.assertEqual(screen.stdscr.getmaxyx()[0], lines)
+                curses.endwin()
+
+    def test_init_bad_format(self):
+        for fmt in (-1, 4):
+            self.assertRaises(ValueError, curses.slk_init, fmt)
+
+    def test_set_and_label(self):
+        self.make_slk_screen()
+        curses.slk_set(1, 'Help', 0)
+        curses.slk_set(2, 'Save', 1)
+        curses.slk_set(3, 'Quit', 2)
+        self.assertEqual(curses.slk_label(1), 'Help')
+        self.assertEqual(curses.slk_label(2), 'Save')
+        self.assertEqual(curses.slk_label(3), 'Quit')
+
+    def test_set_wide(self):
+        screen = self.make_slk_screen()
+        label = 'Ångström'
+        try:
+            label.encode(screen.stdscr.encoding)
+        except UnicodeEncodeError:
+            self.skipTest('the locale cannot encode %r' % label)
+        curses.slk_set(1, label, 0)
+        self.assertEqual(curses.slk_label(1), label)
+
+    def test_set_bad_justify(self):
+        self.make_slk_screen()
+        for justify in (-1, 3):
+            self.assertRaises(ValueError, curses.slk_set, 1, 'x', justify)
+
+    def test_refresh(self):
+        self.make_slk_screen()
+        curses.slk_set(1, 'Help', 0)
+        curses.slk_noutrefresh()
+        curses.slk_refresh()
+        curses.slk_clear()
+        curses.slk_restore()
+        curses.slk_touch()
+
+    def test_attributes(self):
+        self.make_slk_screen()
+        curses.slk_attron(curses.A_BOLD)
+        curses.slk_attrset(curses.A_UNDERLINE)
+        curses.slk_attroff(curses.A_BOLD)
+        if hasattr(curses, 'slk_attr'):
+            self.assertIsInstance(curses.slk_attr(), int)
+
+    def test_attr_on_off(self):
+        self.make_slk_screen()
+        curses.slk_attr_on(curses.A_BOLD)
+        curses.slk_attr_off(curses.A_BOLD)
+
+    def test_color(self):
+        # slk_attr_set() and slk_color() act on a color pair, so the color
+        # subsystem must be started first.
+        self.make_slk_screen()
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        curses.slk_attr_set(curses.A_BOLD)
+        curses.slk_attr_set(curses.A_BOLD, 0)
+        curses.slk_color(0)
 
 
 if __name__ == '__main__':
