@@ -3429,10 +3429,10 @@ static PyMethodDef moduleMethods[] =
 };
 
 #ifdef WAIT_FOR_STDIN
+#ifndef MS_WINDOWS
 
 static int stdin_ready = 0;
 
-#ifndef MS_WINDOWS
 static void
 MyFileProc(void *clientData, int mask)
 {
@@ -3451,22 +3451,40 @@ static PyThreadState *event_tstate = NULL;
 static int
 EventHook(void)
 {
-#ifndef MS_WINDOWS
+#ifdef MS_WINDOWS
+    HANDLE hStdin;
+    DWORD type;
+#else
     int tfile;
+    stdin_ready = 0;
 #endif
     PyEval_RestoreThread(event_tstate);
-    stdin_ready = 0;
     errorInCmd = 0;
-#ifndef MS_WINDOWS
+#ifdef MS_WINDOWS
+    hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    type = GetFileType(hStdin);
+    while (1) {
+#else
     tfile = fileno(stdin);
     Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc,
                           (void *)(Py_intptr_t)tfile);
-#endif
     while (!stdin_ready) {
+#endif
         int result;
 #ifdef MS_WINDOWS
-        if (_kbhit()) {
-            stdin_ready = 1;
+        if (type == FILE_TYPE_CHAR) {
+            if (_kbhit()) break;
+        }
+        else if (type == FILE_TYPE_PIPE) {
+            DWORD available;
+            if (PeekNamedPipe(hStdin, NULL, 0, NULL, &available, NULL)) {
+                if (available > 0) break;
+            }
+            else {
+                if (GetLastError() == ERROR_BROKEN_PIPE) break;
+            }
+        }
+        else if (type == FILE_TYPE_DISK) {
             break;
         }
 #endif
