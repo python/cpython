@@ -996,6 +996,8 @@ The :mod:`!test.support` module defines the following functions:
    :func:`requires_resource`, :func:`requires`, :func:`bigmemtest` and the like
    behave consistently in both processes.
 
+   The test is skipped on platforms without subprocess support.
+
 
 .. data:: running_isolated
 

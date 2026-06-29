@@ -81,6 +81,14 @@ def _remote(detail):
     return _RemoteTraceback('\n"""\n%s"""' % detail)
 
 
+def _check_subprocess_support():
+    # isolated() always runs the test in a subprocess, so skip (in the parent)
+    # on platforms that do not support spawning one.
+    import test.support as support
+    if not support.has_subprocess_support:
+        raise unittest.SkipTest('requires subprocess support')
+
+
 def _run_in_subprocess(module, qualname):
     """Run module.qualname (a test method or class) in a fresh subprocess.
 
@@ -155,6 +163,7 @@ def _isolate_method(func):
         if running_isolated:
             # Already running in the subprocess: run the real test.
             return func(self, *args, **kwargs)
+        _check_subprocess_support()
         cls = type(self)
         qualname = f'{cls.__qualname__}.{func.__name__}'
         outcomes, output, returncode = _run_in_subprocess(cls.__module__,
@@ -177,6 +186,7 @@ def _isolate_class(cls):
         if running_isolated:
             orig_setUpClass(cls)
             return
+        _check_subprocess_support()
         # Run the whole class in a single subprocess and stash the outcomes
         # for the wrapped test methods to replay.
         outcomes, output, returncode = _run_in_subprocess(cls.__module__,
@@ -243,6 +253,8 @@ def isolated():
     skipped are reported individually.  The original subprocess traceback is
     shown as the cause of a reported failure or error.  Use
     :data:`running_isolated` in fixtures to choose what to run in the subprocess.
+
+    The test is skipped on platforms without subprocess support.
     """
     def decorator(obj):
         if isinstance(obj, type):
