@@ -1524,17 +1524,24 @@ Base and mixin classes
       This updates the display of windows, for example after geometry changes,
       but does not process events caused by the user.
 
-   .. method:: waitvar(name)
+   .. method:: waitvar(name, *, timeout=None)
       :no-typesetting:
 
-   .. method:: wait_variable(name)
+   .. method:: wait_variable(name, *, timeout=None)
 
       Wait until the Tcl variable *name* is modified, continuing to process
       events in the meantime so that the application stays responsive.
       *name* is usually a :class:`Variable` instance, such as an
       :class:`IntVar` or :class:`StringVar`.
 
+      If *timeout* is given, it is the maximum time to wait in seconds.
+      Return ``True`` if the variable was modified, or ``False`` if the timeout elapsed before that (or the application was destroyed while waiting).
+      Without a *timeout* the call blocks until the variable is modified and always returns ``True``.
+
       :meth:`waitvar` is an alias of :meth:`!wait_variable`.
+
+      .. versionchanged:: next
+         Added the *timeout* parameter and the return value.
 
    .. method:: wait_window(window=None)
 
