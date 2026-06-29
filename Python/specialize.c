@@ -113,7 +113,8 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
     }
     #else
     for (Py_ssize_t i = 0; i < size-1; i++) {
-        if (instructions[i].op.code == GET_ITER) {
+        int opcode = instructions[i].op.code;
+        if (opcode == GET_ITER) {
             fixup_getiter(&instructions[i], flags);
         }
         i += _PyOpcode_Caches[opcode];
@@ -1285,6 +1286,7 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
         }
+        write_u32(cache->keys_version, shared_keys_version);
         specialize(instr, is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
     }
     else {
@@ -1386,6 +1388,7 @@ specialize_load_global_lock_held(
             SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
+        PyDict_Watch(MODULE_WATCHER_ID, globals);
 #ifdef Py_GIL_DISABLED
         maybe_enable_deferred_ref_count(value);
 #endif
@@ -1403,9 +1406,13 @@ specialize_load_global_lock_held(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-    index = _PyDictKeys_StringLookup(builtin_keys, name);
+    index = _PyDict_LookupIndexAndValue((PyDictObject *)builtins, name, &value);
     if (index == DKIX_ERROR) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
+        goto fail;
+    }
+    if (value != NULL && PyLazyImport_CheckExact(value)) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
         goto fail;
     }
     if (index != (uint16_t)index) {
@@ -1422,6 +1429,7 @@ specialize_load_global_lock_held(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
+    PyDict_Watch(MODULE_WATCHER_ID, globals);
     uint32_t builtins_version = _PyDict_GetKeysVersionForCurrentState(
             interp, (PyDictObject*) builtins);
     if (builtins_version == 0) {
@@ -1432,6 +1440,7 @@ specialize_load_global_lock_held(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
+    PyDict_Watch(MODULE_WATCHER_ID, builtins);
     cache->index = (uint16_t)index;
     cache->module_keys_version = (uint16_t)globals_version;
     cache->builtin_keys_version = (uint16_t)builtins_version;
