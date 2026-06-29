@@ -180,7 +180,7 @@ class TimeoutExpired(SubprocessError):
         self.stderr = stderr
 
     def __str__(self):
-        return ("Command '%s' timed out after %s seconds" %
+        return ("Command %r timed out after %s seconds" %
                 (self.cmd, self.timeout))
 
     @property
