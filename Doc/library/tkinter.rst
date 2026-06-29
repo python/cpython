@@ -1536,13 +1536,20 @@ Base and mixin classes
 
       :meth:`waitvar` is an alias of :meth:`!wait_variable`.
 
-   .. method:: wait_window(window=None)
+   .. method:: wait_window(window=None, *, timeout=None)
 
       Wait until *window* is destroyed, continuing to process events in the
       meantime.
       If *window* is omitted, this widget is used.
       This is typically used to wait for the user to finish interacting with a
       dialog box.
+
+      If *timeout* is given, it is the maximum time to wait in seconds.
+      Return ``True`` if the widget was destroyed, or ``False`` if the timeout elapsed before that.
+      Without a *timeout* the call blocks until the widget is destroyed and always returns ``True``.
+
+      .. versionchanged:: next
+         Added the *timeout* parameter and the return value.
 
    .. method:: wait_visibility(window=None)
 

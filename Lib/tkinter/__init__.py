@@ -826,13 +826,43 @@ class Misc:
         self.tk.call('tkwait', 'variable', name)
     waitvar = wait_variable # XXX b/w compat
 
-    def wait_window(self, window=None):
+    def wait_window(self, window=None, *, timeout=None):
         """Wait until a WIDGET is destroyed.
 
-        If no parameter is given self is used."""
+        If no parameter is given self is used.
+
+        If timeout is given, it specifies the maximum time to wait in
+        seconds.  Return True if the widget was destroyed, or False if the
+        timeout elapsed before that.  Without a timeout the call blocks
+        until the widget is destroyed and always returns True."""
         if window is None:
             window = self
-        self.tk.call('tkwait', 'window', window._w)
+        if timeout is None:
+            self.tk.call('tkwait', 'window', window._w)
+            return True
+
+        if not window.winfo_exists():
+            return True
+        timed_out = []
+        # A one-shot timer guarantees that dooneevent() wakes up at the
+        # deadline even if no other event arrives.
+        timer = self.after(max(int(timeout * 1000), 1),
+                           lambda: timed_out.append(True))
+        try:
+            while not timed_out:
+                self.tk.dooneevent(_tkinter.ALL_EVENTS)
+                if not window.winfo_exists():
+                    return True
+            return False
+        except TclError:
+            # the widget or application was torn down
+            return True
+        finally:
+            # Cleanup may fail if the application was torn down.
+            try:
+                self.after_cancel(timer)
+            except TclError:
+                pass
 
     def wait_visibility(self, window=None):
         """Wait until the visibility of a WIDGET changes
