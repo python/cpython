@@ -3163,7 +3163,8 @@ AC_CHECK_HEADERS([ \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
-  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysctl.h \
+  sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
   termios.h util.h utime.h utmp.h \
 ])
@@ -5431,7 +5432,7 @@ AC_CHECK_FUNCS([ \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
-  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  sysconf sysctlbyname tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
@@ -7184,6 +7185,30 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_CURSES_VAR(VARIABLE)
+dnl Like PY_CHECK_CURSES_FUNC, but for an integer variable (or macro), such as
+dnl ESCDELAY, which a function probe cannot detect.
+AC_DEFUN([PY_CHECK_CURSES_VAR],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
+  AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AC_CACHE_CHECK(
+    [for curses variable $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
+        int x = $1; (void)x;
+      ])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' variable.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
+
 PY_CHECK_CURSES_FUNC([is_pad])
 PY_CHECK_CURSES_FUNC([is_term_resized])
 PY_CHECK_CURSES_FUNC([resize_term])
@@ -7199,6 +7224,17 @@ PY_CHECK_CURSES_FUNC([use_env])
 PY_CHECK_CURSES_FUNC([new_prescr])
 PY_CHECK_CURSES_FUNC([use_screen])
 PY_CHECK_CURSES_FUNC([use_window])
+PY_CHECK_CURSES_FUNC([key_defined])
+PY_CHECK_CURSES_FUNC([term_attrs])
+PY_CHECK_CURSES_FUNC([define_key])
+PY_CHECK_CURSES_FUNC([keyok])
+PY_CHECK_CURSES_FUNC([set_escdelay])
+PY_CHECK_CURSES_FUNC([set_tabsize])
+PY_CHECK_CURSES_VAR([ESCDELAY])
+PY_CHECK_CURSES_VAR([TABSIZE])
+dnl scr_dump and its companions scr_restore/scr_init/scr_set are an inseparable
+dnl group; probing scr_dump alone gates the whole family.
+PY_CHECK_CURSES_FUNC([scr_dump])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

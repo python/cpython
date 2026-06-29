@@ -86,13 +86,22 @@ def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
 
+# On platforms without a native spawnv(), os.py provides a Python fallback
+# built on fork()+exec*() that reports argument conversion failures from the
+# child as exit status 127 instead of raising, so tests of the C
+# implementation's error paths cannot run against it.
+requires_native_spawnv = unittest.skipUnless(
+    isinstance(getattr(os, 'spawnv', None), types.BuiltinFunctionType),
+    'requires the native C os.spawnv')
+
+
 # bpo-41625: On AIX, splice() only works with a socket, not with a pipe.
 requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
                                        'on AIX, splice() only accepts sockets')
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -3501,6 +3510,25 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [], {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, ('',), {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [''], {})
+
+    @requires_native_spawnv
+    def test_spawnv_arg_conversion_errors(self):
+        # A non-path argv item gets a TypeError naming the argument...
+        with self.assertRaisesRegex(TypeError, 'must contain only strings'):
+            os.spawnv(os.P_NOWAIT, sys.executable, [sys.executable, 123])
+        # ...but other conversion errors must not be masked as TypeError
+        # (gh-151416).
+        with self.assertRaises(ValueError):
+            os.spawnv(os.P_NOWAIT, sys.executable,
+                      [sys.executable, 'embedded\0null'])
+
+        class RaisingPath:
+            def __fspath__(self):
+                raise RuntimeError('gotcha')
+
+        with self.assertRaisesRegex(RuntimeError, 'gotcha'):
+            os.spawnv(os.P_NOWAIT, sys.executable,
+                      [sys.executable, RaisingPath()])
 
     def _test_invalid_env(self, spawn):
         program = sys.executable
