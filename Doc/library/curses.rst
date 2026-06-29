@@ -346,6 +346,13 @@ The module :mod:`!curses` defines the following functions:
    a key with that value.
 
 
+.. function:: has_mouse()
+
+   Return ``True`` if the mouse driver has been successfully initialized.
+
+   .. versionadded:: next
+
+
 .. function:: define_key(definition, keycode)
 
    Define an escape sequence *definition*, a string, as a key that generates
@@ -1309,6 +1316,18 @@ Window objects
       Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
 
 
+.. method:: window.mouse_trafo(y, x, to_screen)
+
+   Convert between window-relative and screen-relative (``stdscr``-relative) character-cell coordinates.
+   If *to_screen* is true, convert the window-relative coordinates *y*, *x* to screen-relative coordinates;
+   otherwise convert in the opposite direction.
+   The two coordinate systems differ when lines are reserved on the screen, for example for soft labels.
+
+   Return the converted coordinates as a ``(y, x)`` tuple, or ``None`` if they lie outside the window.
+
+   .. versionadded:: next
+
+
 .. attribute:: window.encoding
 
    Encoding used to encode method arguments (Unicode strings and characters).
@@ -1332,6 +1351,7 @@ Window objects
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+   Its components can be extracted like those of :meth:`inch`.
    It cannot represent a background set with a wide character or with a color
    pair outside the :func:`color_pair` range; use :meth:`getbkgrnd` for those.
 
@@ -1486,11 +1506,13 @@ Window objects
 
 .. method:: window.inch([y, x])
 
-   Return the character at the given position in the window. The bottom 8 bits are
-   the character proper, and upper bits are the attributes.
+   Return the character at the given position in the window.
+   The bottom 8 bits are the character proper and the upper bits are the attributes;
+   extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
+   and the color pair with :func:`pair_number`.
    It cannot represent a cell holding combining characters, a character that does
    not fit in a single byte, or a color pair outside the :func:`color_pair`
-   range; use :meth:`in_wch` for those.
+   range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
 
 
 .. method:: window.in_wch([y, x])

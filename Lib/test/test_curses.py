@@ -1305,6 +1305,22 @@ class TestCurses(unittest.TestCase):
         self.assertIs(win.enclose(7, 19), False)
         self.assertIs(win.enclose(6, 20), False)
 
+    @requires_curses_window_meth('mouse_trafo')
+    def test_mouse_trafo(self):
+        win = curses.newwin(5, 15, 2, 5)
+        # to_screen=True: window-relative -> stdscr-relative.
+        self.assertEqual(win.mouse_trafo(0, 0, True), (2, 5))
+        self.assertEqual(win.mouse_trafo(3, 10, True), (5, 15))
+        self.assertEqual(win.mouse_trafo(4, 14, True), (6, 19))
+        # A coordinate outside the window has no counterpart.
+        self.assertIsNone(win.mouse_trafo(5, 0, True))
+        self.assertIsNone(win.mouse_trafo(0, 15, True))
+        # to_screen=False is the inverse: stdscr-relative -> window-relative.
+        self.assertEqual(win.mouse_trafo(2, 5, False), (0, 0))
+        self.assertEqual(win.mouse_trafo(6, 19, False), (4, 14))
+        self.assertIsNone(win.mouse_trafo(1, 5, False))
+        self.assertIsNone(win.mouse_trafo(7, 19, False))
+
     def test_putwin(self):
         win = curses.newwin(5, 12, 1, 2)
         win.addstr(2, 1, 'Lorem ipsum')
@@ -1823,6 +1839,11 @@ class TestCurses(unittest.TestCase):
     def test_has_colors(self):
         self.assertIsInstance(curses.has_colors(), bool)
         self.assertIsInstance(curses.can_change_color(), bool)
+
+    @requires_curses_func('has_mouse')
+    def test_has_mouse(self):
+        # Whether a mouse is available depends on the terminal.
+        self.assertIsInstance(curses.has_mouse(), bool)
 
     def test_start_color(self):
         if not curses.has_colors():
