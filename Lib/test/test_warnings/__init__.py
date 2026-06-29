@@ -2176,7 +2176,7 @@ class DeprecatedTests(PyPublicAPITests):
 
         with self.assertRaisesRegex(
             TypeError,
-            "Expected an object of type str for 'message', not 'function'"
+            "Expected an object of type str for 'message', not 'FunctionType'"
         ):
             @deprecated
             def foo(): ...

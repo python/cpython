@@ -71,6 +71,14 @@ def py_encode_basestring_ascii(s):
 encode_basestring_ascii = (
     c_encode_basestring_ascii or py_encode_basestring_ascii)
 
+def _T(obj):
+    cls = type(obj)
+    module = cls.__module__
+    if module in (None, 'builtins', '__main__'):
+        return cls.__qualname__
+    return f'{module}.{cls.__qualname__}'
+
+
 class JSONEncoder(object):
     """Extensible JSON <https://json.org> encoder for Python data structures.
 
@@ -316,7 +324,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             except GeneratorExit:
                 raise
             except BaseException as exc:
-                exc.add_note(f'when serializing {type(lst).__name__} item {i}')
+                exc.add_note(f'when serializing {_T(lst)} item {i}')
                 raise
         if newline_indent is not None:
             _current_indent_level -= 1
@@ -403,7 +411,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             except GeneratorExit:
                 raise
             except BaseException as exc:
-                exc.add_note(f'when serializing {type(dct).__name__} item {key!r}')
+                exc.add_note(f'when serializing {_T(dct)} item {key!r}')
                 raise
         if not first and newline_indent is not None:
             _current_indent_level -= 1
@@ -443,7 +451,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             except GeneratorExit:
                 raise
             except BaseException as exc:
-                exc.add_note(f'when serializing {type(o).__name__} object')
+                exc.add_note(f'when serializing {_T(o)} object')
                 raise
             if markers is not None:
                 del markers[markerid]

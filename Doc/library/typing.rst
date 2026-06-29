@@ -1484,9 +1484,9 @@ These can be used as types in annotations. They all support subscription using
         >>> def func(x: Annotated[int, "metadata"]) -> None: pass
         ...
         >>> get_type_hints(func)
-        {'x': <class 'int'>, 'return': <class 'NoneType'>}
+        {'x': <class 'int'>, 'return': <class 'types.NoneType'>}
         >>> get_type_hints(func, include_extras=True)
-        {'x': typing.Annotated[int, 'metadata'], 'return': <class 'NoneType'>}
+        {'x': typing.Annotated[int, 'metadata'], 'return': <class 'types.NoneType'>}
 
    At runtime, the metadata associated with an ``Annotated`` type can be
    retrieved via the :attr:`!__metadata__` attribute:

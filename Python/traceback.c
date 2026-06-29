@@ -61,9 +61,10 @@
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 /*[clinic input]
-class traceback "PyTracebackObject *" "&PyTraceback_Type"
+module types
+class types.TracebackType "PyTracebackObject *" "&PyTraceback_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf96294b2bebc811]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f8bd29fca0613108]*/
 
 #define _PyTracebackObject_CAST(op)   ((PyTracebackObject *)(op))
 
@@ -99,7 +100,7 @@ tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
 
 /*[clinic input]
 @classmethod
-traceback.__new__ as tb_new
+types.TracebackType.__new__ as tb_new
 
   tb_next: object
   tb_frame: object(type='PyFrameObject *', subclass_of='&PyFrame_Type')
@@ -112,7 +113,7 @@ Create a new traceback object.
 static PyObject *
 tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
             int tb_lasti, int tb_lineno)
-/*[clinic end generated code: output=fa077debd72d861a input=b88143145454cb59]*/
+/*[clinic end generated code: output=fa077debd72d861a input=3afe6e1d938a4ad5]*/
 {
     if (tb_next == Py_None) {
         tb_next = NULL;
@@ -136,12 +137,12 @@ tb_dir(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 /*[clinic input]
 @critical_section
 @getter
-traceback.tb_next
+types.TracebackType.tb_next
 [clinic start generated code]*/
 
 static PyObject *
-traceback_tb_next_get_impl(PyTracebackObject *self)
-/*[clinic end generated code: output=963634df7d5fc837 input=8f6345f2b73cb965]*/
+types_TracebackType_tb_next_get_impl(PyTracebackObject *self)
+/*[clinic end generated code: output=144e5e6ca59c9394 input=5381427dd747d546]*/
 {
     PyObject* ret = (PyObject*)self->tb_next;
     if (!ret) {
@@ -176,12 +177,13 @@ tb_lineno_get(PyObject *op, void *Py_UNUSED(_))
 /*[clinic input]
 @critical_section
 @setter
-traceback.tb_next
+types.TracebackType.tb_next
 [clinic start generated code]*/
 
 static int
-traceback_tb_next_set_impl(PyTracebackObject *self, PyObject *value)
-/*[clinic end generated code: output=d4868cbc48f2adac input=ce66367f85e3c443]*/
+types_TracebackType_tb_next_set_impl(PyTracebackObject *self,
+                                     PyObject *value)
+/*[clinic end generated code: output=6d1d30b3c14d59da input=7ead5a9edf8cfd30]*/
 {
     if (!value) {
         PyErr_Format(PyExc_TypeError, "can't delete tb_next attribute");
@@ -232,7 +234,7 @@ static PyMemberDef tb_memberlist[] = {
 };
 
 static PyGetSetDef tb_getsetters[] = {
-    TRACEBACK_TB_NEXT_GETSETDEF
+    TYPES_TRACEBACKTYPE_TB_NEXT_GETSETDEF
     {"tb_lineno", tb_lineno_get, NULL, NULL, NULL},
     {NULL}      /* Sentinel */
 };
@@ -267,7 +269,7 @@ tb_clear(PyObject *op)
 
 PyTypeObject PyTraceBack_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "traceback",
+    "types.TracebackType",
     sizeof(PyTracebackObject),
     0,
     tb_dealloc,         /*tp_dealloc*/

@@ -784,7 +784,7 @@ class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         dict1 = self.OrderedDict(dict.fromkeys((0, TODEL, 4.2)))
         dict2 = self.OrderedDict(dict.fromkeys((0, Key(), 4.2)))
         # This causes an AttributeError due to the linked list being changed
-        msg = re.escape("'NoneType' object has no attribute 'key'")
+        msg = re.escape("'types.NoneType' object has no attribute 'key'")
         self.assertRaisesRegex(AttributeError, msg, operator.eq, dict1, dict2)
         self.assertEqual(Key.count, 2)
         self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))

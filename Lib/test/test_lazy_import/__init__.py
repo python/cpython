@@ -261,7 +261,7 @@ class LazyImportTypeTests(LazyImportTestCase):
     def test_lazy_import_type_exposed(self):
         """LazyImportType should be exposed in types module."""
         self.assertHasAttr(types, 'LazyImportType')
-        self.assertEqual(types.LazyImportType.__name__, 'lazy_import')
+        self.assertEqual(types.LazyImportType.__name__, 'LazyImportType')
 
     def test_lazy_import_type_cant_construct(self):
         """LazyImportType should not be directly constructible."""
@@ -275,7 +275,7 @@ class LazyImportTypeTests(LazyImportTestCase):
             print(globals()["json"].resolve)
         """)
         proc = assert_python_ok("-c", code)
-        self.assertIn(b"<built-in method resolve of lazy_import object at", proc.out)
+        self.assertIn(b"<built-in method resolve of types.LazyImportType object at", proc.out)
 
 
 class SyntaxRestrictionTests(LazyImportTestCase):
@@ -1839,7 +1839,7 @@ class ThreadSafetyTests(LazyImportTestCase):
 
             assert not errors, f"Errors: {errors}"
             for idx, mods in results.items():
-                assert all(m == 'module' for m in mods), f"Thread {idx} got: {mods}"
+                assert all(m == 'ModuleType' for m in mods), f"Thread {idx} got: {mods}"
 
             print("OK")
         """)
@@ -1994,7 +1994,7 @@ class ThreadSafetyTests(LazyImportTestCase):
 
             assert not errors, f"Errors: {errors}"
             for idx, types_tuple in results.items():
-                assert all(t == 'module' for t in types_tuple), f"Thread {idx}: {types_tuple}"
+                assert all(t == 'ModuleType' for t in types_tuple), f"Thread {idx}: {types_tuple}"
             print("OK")
         """)
 

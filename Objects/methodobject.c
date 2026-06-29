@@ -355,7 +355,7 @@ meth_hash(PyObject *self)
 
 PyTypeObject PyCFunction_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "builtin_function_or_method",
+    "types.BuiltinFunctionType",
     sizeof(PyCFunctionObject),
     0,
     meth_dealloc,                               /* tp_dealloc */

@@ -1041,7 +1041,7 @@ static PyAsyncMethods gen_as_async = {
 
 PyTypeObject PyGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "generator",                                /* tp_name */
+    "types.GeneratorType",                      /* tp_name */
     offsetof(PyGenObject, gi_iframe.localsplus), /* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */
@@ -1392,7 +1392,7 @@ static PyAsyncMethods coro_as_async = {
 
 PyTypeObject PyCoro_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "coroutine",                                /* tp_name */
+    "types.CoroutineType",                      /* tp_name */
     offsetof(PyCoroObject, cr_iframe.localsplus),/* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */
@@ -1840,7 +1840,7 @@ static PyAsyncMethods async_gen_as_async = {
 
 PyTypeObject PyAsyncGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "async_generator",                          /* tp_name */
+    "types.AsyncGeneratorType",                 /* tp_name */
     offsetof(PyAsyncGenObject, ag_iframe.localsplus), /* tp_basicsize */
     sizeof(PyObject *),                         /* tp_itemsize */
     /* methods */

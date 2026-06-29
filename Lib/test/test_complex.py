@@ -554,7 +554,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             "argument must be a string or a number, not dict",
             complex, {})
         self.assertRaisesRegex(TypeError,
-            "argument must be a string or a number, not NoneType",
+            "argument must be a string or a number, not types.NoneType",
             complex, None)
         self.assertRaisesRegex(TypeError,
             "argument 'real' must be a real number, not dict",

@@ -1215,7 +1215,7 @@ class TestDialectValidity(unittest.TestCase):
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"delimiter" must be a unicode character, not NoneType')
+                         '"delimiter" must be a unicode character, not types.NoneType')
 
     def test_escapechar(self):
         class mydialect(csv.Dialect):
@@ -1281,7 +1281,7 @@ class TestDialectValidity(unittest.TestCase):
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"lineterminator" must be a string, not NoneType')
+                         '"lineterminator" must be a string, not types.NoneType')
 
     def test_invalid_chars(self):
         def create_invalid(field_name, value, **kwargs):

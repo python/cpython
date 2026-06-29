@@ -21,9 +21,9 @@ class TestDefault:
         with self.assertRaises(ValueError) as cm:
             self.dumps(type, default=default)
         self.assertEqual(cm.exception.__notes__,
-                         ['when serializing ellipsis object',
+                         ['when serializing types.EllipsisType object',
                           'when serializing list item 0',
-                          'when serializing module object',
+                          'when serializing types.ModuleType object',
                           'when serializing type object'])
 
     def test_ordereddict(self):

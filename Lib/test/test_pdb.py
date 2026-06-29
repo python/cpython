@@ -3282,7 +3282,7 @@ def test_pdb_issue_gh_80731():
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) import sys
     (Pdb) sys.exc_info()
-    (<class 'ValueError'>, ValueError('Correct'), <traceback object at ...>)
+    (<class 'ValueError'>, ValueError('Correct'), <types.TracebackType object at ...>)
     (Pdb) continue
     """
 

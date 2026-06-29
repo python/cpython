@@ -95,7 +95,7 @@ class StackNavigationTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
-#[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
+#[0-9]+ <built-in method pyobject_vectorcall of types\.ModuleType object at remote 0x[0-9a-f]+>
 $''')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
@@ -124,7 +124,7 @@ $''')
         self.assertMultilineMatches(bt,
                                     r'''^.*
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
-#[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
+#[0-9]+ <built-in method pyobject_vectorcall of types\.ModuleType object at remote 0x[0-9a-f]+>
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
 $''')
 
@@ -161,7 +161,7 @@ class PyPrintTests(DebuggerTests):
         bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-up', 'py-print len'])
         self.assertMultilineMatches(bt,
-                                    r".*\nbuiltin 'len' = <built-in method len of module object at remote 0x-?[0-9a-f]+>\n.*")
+                                    r".*\nbuiltin 'len' = <built-in method len of types\.ModuleType object at remote 0x-?[0-9a-f]+>\n.*")
 
 class PyLocalsTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),

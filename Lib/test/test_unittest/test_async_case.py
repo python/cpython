@@ -321,7 +321,7 @@ class TestAsyncCase(unittest.TestCase):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
         self.assertEqual(w.filename, __file__)
-        self.assertIn("returned 'async_generator'", str(w.warning))
+        self.assertIn("returned 'AsyncGeneratorType'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Test('test3').run()

@@ -4,25 +4,25 @@ preserve
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
-PyDoc_STRVAR(method___reduce____doc__,
+PyDoc_STRVAR(MethodType___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n");
 
-#define METHOD___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)method___reduce__, METH_NOARGS, method___reduce____doc__},
+#define METHODTYPE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)MethodType___reduce__, METH_NOARGS, MethodType___reduce____doc__},
 
 static PyObject *
-method___reduce___impl(PyMethodObject *self);
+MethodType___reduce___impl(PyMethodObject *self);
 
 static PyObject *
-method___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
+MethodType___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return method___reduce___impl((PyMethodObject *)self);
+    return MethodType___reduce___impl((PyMethodObject *)self);
 }
 
 PyDoc_STRVAR(method_new__doc__,
-"method(function, instance, /)\n"
+"MethodType(function, instance, /)\n"
 "--\n"
 "\n"
 "Create a bound instance method object.");
@@ -39,10 +39,10 @@ method_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *instance;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("method", kwargs)) {
+        !_PyArg_NoKeywords("MethodType", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("method", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (!_PyArg_CheckPositional("MethodType", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     function = PyTuple_GET_ITEM(args, 0);
@@ -82,4 +82,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ab546abf90aac94e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e044d6a54d44b473 input=a9049054013a1b77]*/

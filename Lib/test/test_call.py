@@ -227,29 +227,29 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, object())
 
     def test_module_not_callable_no_suggestion_0(self):
-        msg = r"^'module' object is not callable$"
+        msg = r"^'types\.ModuleType' object is not callable$"
         self.assertRaisesRegex(TypeError, msg, types.ModuleType("mod"))
 
     def test_module_not_callable_no_suggestion_1(self):
-        msg = r"^'module' object is not callable$"
+        msg = r"^'types\.ModuleType' object is not callable$"
         mod = types.ModuleType("mod")
         mod.mod = 42
         self.assertRaisesRegex(TypeError, msg, mod)
 
     def test_module_not_callable_no_suggestion_2(self):
-        msg = r"^'module' object is not callable$"
+        msg = r"^'types\.ModuleType' object is not callable$"
         mod = types.ModuleType("mod")
         del mod.__name__
         self.assertRaisesRegex(TypeError, msg, mod)
 
     def test_module_not_callable_no_suggestion_3(self):
-        msg = r"^'module' object is not callable$"
+        msg = r"^'types\.ModuleType' object is not callable$"
         mod = types.ModuleType("mod")
         mod.__name__ = 42
         self.assertRaisesRegex(TypeError, msg, mod)
 
     def test_module_not_callable_suggestion(self):
-        msg = r"^'module' object is not callable\. Did you mean: 'mod\.mod\(\.\.\.\)'\?$"
+        msg = r"^'types\.ModuleType' object is not callable\. Did you mean: 'mod\.mod\(\.\.\.\)'\?$"
         mod = types.ModuleType("mod")
         mod.mod = lambda: ...
         self.assertRaisesRegex(TypeError, msg, mod)

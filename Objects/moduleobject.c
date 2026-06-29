@@ -1107,16 +1107,17 @@ _PyModule_ClearDict(PyObject *d)
 }
 
 /*[clinic input]
-class module "PyModuleObject *" "&PyModule_Type"
+module types
+class types.ModuleType "PyModuleObject *" "&PyModule_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3e35d4f708ecb6af]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f7714cd5eea95264]*/
 
 #include "clinic/moduleobject.c.h"
 
 /* Methods */
 
 /*[clinic input]
-module.__init__
+types.ModuleType.__init__ as module___init__
     name: unicode
     doc: object = None
 
@@ -1127,7 +1128,7 @@ The name must be a string; the optional doc argument can have any type.
 
 static int
 module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
-/*[clinic end generated code: output=e7e721c26ce7aad7 input=57f9e177401e5e1e]*/
+/*[clinic end generated code: output=e7e721c26ce7aad7 input=d0de878d04b93f9d]*/
 {
     return module_init_dict(self, self->md_dict, name, doc);
 }
@@ -1795,7 +1796,7 @@ static PyGetSetDef module_getsets[] = {
 
 PyTypeObject PyModule_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "module",                                   /* tp_name */
+    "types.ModuleType",                         /* tp_name */
     sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     module_dealloc,                             /* tp_dealloc */

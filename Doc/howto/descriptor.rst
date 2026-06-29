@@ -1376,7 +1376,7 @@ and :attr:`~function.__doc__`.
     'StaticMethod'
     >>> f = E_sim.f
     >>> type(f).__name__
-    'function'
+    'FunctionType'
     >>> sm.__name__
     'f'
     >>> f.__name__
@@ -1520,7 +1520,7 @@ Using the non-data descriptor protocol, a pure Python version of
     # Verify that __wrapped__ was added and works correctly
     >>> f = vars(T)['cm'].__wrapped__
     >>> type(f).__name__
-    'function'
+    'FunctionType'
     >>> f.__name__
     'cm'
     >>> f(T, 11, 22)

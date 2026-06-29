@@ -14,10 +14,11 @@
 
 
 /*[clinic input]
-class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
+module types
+class types.MappingProxyType "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4c16626dfaee9098]*/
 
 static void
 descr_dealloc(PyObject *self)
@@ -716,7 +717,7 @@ descr_traverse(PyObject *self, visitproc visit, void *arg)
 
 PyTypeObject PyMethodDescr_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "method_descriptor",
+    "types.MethodDescriptorType",
     sizeof(PyMethodDescrObject),
     0,
     descr_dealloc,                              /* tp_dealloc */
@@ -756,7 +757,7 @@ PyTypeObject PyMethodDescr_Type = {
 /* This is for METH_CLASS in C, not for "f = classmethod(f)" in Python! */
 PyTypeObject PyClassMethodDescr_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "classmethod_descriptor",
+    "types.ClassMethodDescriptorType",
     sizeof(PyMethodDescrObject),
     0,
     descr_dealloc,                              /* tp_dealloc */
@@ -793,7 +794,7 @@ PyTypeObject PyClassMethodDescr_Type = {
 
 PyTypeObject PyMemberDescr_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "member_descriptor",
+    "types.MemberDescriptorType",
     sizeof(PyMemberDescrObject),
     0,
     descr_dealloc,                              /* tp_dealloc */
@@ -830,7 +831,7 @@ PyTypeObject PyMemberDescr_Type = {
 
 PyTypeObject PyGetSetDescr_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "getset_descriptor",
+    "types.GetSetDescriptorType",
     sizeof(PyGetSetDescrObject),
     0,
     descr_dealloc,                              /* tp_dealloc */
@@ -867,7 +868,7 @@ PyTypeObject PyGetSetDescr_Type = {
 
 PyTypeObject PyWrapperDescr_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "wrapper_descriptor",
+    "types.WrapperDescriptorType",
     sizeof(PyWrapperDescrObject),
     0,
     descr_dealloc,                              /* tp_dealloc */
@@ -1255,7 +1256,7 @@ mappingproxy_check_mapping(PyObject *mapping)
 
 /*[clinic input]
 @classmethod
-mappingproxy.__new__ as mappingproxy_new
+types.MappingProxyType.__new__ as mappingproxy_new
 
     mapping: object
 
@@ -1264,7 +1265,7 @@ Read-only proxy of a mapping.
 
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
-/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=29b80727762902b3]*/
 {
     mappingproxyobject *mappingproxy;
 
@@ -1451,7 +1452,7 @@ wrapper_traverse(PyObject *self, visitproc visit, void *arg)
 
 PyTypeObject _PyMethodWrapper_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "method-wrapper",                           /* tp_name */
+    "types.MethodWrapperType",                  /* tp_name */
     sizeof(wrapperobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
@@ -1999,7 +2000,7 @@ property_clear(PyObject *self)
 
 PyTypeObject PyDictProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "mappingproxy",                             /* tp_name */
+    "types.MappingProxyType",                   /* tp_name */
     sizeof(mappingproxyobject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */

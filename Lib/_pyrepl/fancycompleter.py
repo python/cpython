@@ -8,6 +8,7 @@ from __future__ import annotations
 from _colorize import ANSIColors, get_colors, get_theme
 import rlcompleter
 import keyword
+import re
 import types
 
 TYPE_CHECKING = False
@@ -43,6 +44,12 @@ def _color_for_obj(name: str, value: Any, theme: Theme) -> str:
 
 def _color_by_type(t, theme):
     typename = t.__name__
+    if t.__module__ == 'types' and typename.endswith('Type'):
+        # MethodWrapperType -> method_wrapper
+        # 1. Remove the "Type" suffix.
+        # 2. Insert "_" before each upper letter in the middle.
+        # 3. Convert to lower case.
+        typename = re.sub(r'(?<!\A)(?=[A-Z])', '_', typename[:-4]).lower()
     # this is needed e.g. to turn method-wrapper into method_wrapper,
     # because if we want _colorize.FancyCompleter to be "dataclassable"
     # our keys need to be valid identifiers.

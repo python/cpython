@@ -1340,7 +1340,7 @@ class AbstractUnpickleTests:
                 r"Can't resolve path 'log\.spam' on module 'math'") as cm:
             unpickler4.find_class('math', 'log.spam')
         self.assertEqual(str(cm.exception.__context__),
-            "'builtin_function_or_method' object has no attribute 'spam'")
+            "'types.BuiltinFunctionType' object has no attribute 'spam'")
         with self.assertRaisesRegex(AttributeError,
                 r"module 'math' has no attribute 'log\.<locals>\.spam'"):
             unpickler.find_class('math', 'log.<locals>.spam')
@@ -1348,7 +1348,7 @@ class AbstractUnpickleTests:
                 r"Can't resolve path 'log\.<locals>\.spam' on module 'math'") as cm:
             unpickler4.find_class('math', 'log.<locals>.spam')
         self.assertEqual(str(cm.exception.__context__),
-            "'builtin_function_or_method' object has no attribute '<locals>'")
+            "'types.BuiltinFunctionType' object has no attribute '<locals>'")
         with self.assertRaisesRegex(AttributeError,
                 "module 'math' has no attribute ''"):
             unpickler.find_class('math', '')
@@ -3294,6 +3294,35 @@ class AbstractPickleTests:
         for t in builtins.__dict__.values():
             if isinstance(t, type) and not issubclass(t, BaseException):
                 if t.__name__ in new_names and self.py_version < new_names[t.__name__]:
+                    continue
+                for proto in protocols:
+                    with self.subTest(name=t.__name__, proto=proto):
+                        s = self.dumps(t, proto)
+                        self.assertIs(self.loads(s), t)
+
+    def test_types_types(self):
+        if self.py_version < (3, 8):
+            self.skipTest('not supported in Python < 3.8')
+        # types with __module__ == 'types' added before 3.16
+        old_names = {
+            'EllipsisType': (3, 8),
+            'GenericAlias': (3, 9),
+            'NoneType': (3, 8),
+            'NotImplementedType': (3, 8),
+            'SimpleNamespace': (3, 8),
+            'Union': (3, 8),
+            'DynamicClassAttribute': (3, 8),
+            '_GeneratorWrapper': (3, 8),
+        }
+        # new types added after 3.16
+        new_names = {
+        }
+        for t in types.__dict__.values():
+            if isinstance(t, type):
+                if self.py_version < (3, 16):
+                    if t.__name__ not in old_names or self.py_version < old_names[t.__name__]:
+                        continue
+                elif t.__name__ in new_names and self.py_version < new_names[t.__name__]:
                     continue
                 for proto in protocols:
                     with self.subTest(name=t.__name__, proto=proto):

@@ -61,6 +61,7 @@ BUILTIN_EXCEPTIONS = [
 
 METHOD = defs.SpamOkay().okay
 BUILTIN_METHOD = [].append
+MEMBER_DESCRIPTOR = types.FunctionType.__globals__
 METHOD_DESCRIPTOR_WRAPPER = str.join
 METHOD_WRAPPER = object().__str__
 WRAPPER_DESCRIPTOR = object.__init__
@@ -69,7 +70,7 @@ BUILTIN_WRAPPERS = {
     BUILTIN_METHOD: types.BuiltinMethodType,
     dict.__dict__['fromkeys']: types.ClassMethodDescriptorType,
     types.FunctionType.__code__: types.GetSetDescriptorType,
-    types.FunctionType.__globals__: types.MemberDescriptorType,
+    MEMBER_DESCRIPTOR: types.MemberDescriptorType,
     METHOD_DESCRIPTOR_WRAPPER: types.MethodDescriptorType,
     METHOD_WRAPPER: types.MethodWrapperType,
     WRAPPER_DESCRIPTOR: types.WrapperDescriptorType,
@@ -278,16 +279,11 @@ PICKLEABLE = [
     *defs.TOP_CLASSES,
     *USER_TOP_INSTANCES,
     *USER_EXCEPTIONS,
-    # from OTHER_TYPES
-    types.NoneType,
-    types.EllipsisType,
-    types.NotImplementedType,
-    types.GenericAlias,
-    types.UnionType,
-    types.SimpleNamespace,
+    *OTHER_TYPES,
     # from BUILTIN_WRAPPERS
     METHOD,
     BUILTIN_METHOD,
+    MEMBER_DESCRIPTOR,
     METHOD_DESCRIPTOR_WRAPPER,
     METHOD_WRAPPER,
     WRAPPER_DESCRIPTOR,

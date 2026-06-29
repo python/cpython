@@ -1748,7 +1748,7 @@ To find out what card the pair consists of, one could use the
    Traceback (most recent call last):
      File "<pyshell#23>", line 1, in <module>
        pair_re.prefixmatch("718ak").group(1)
-   AttributeError: 'NoneType' object has no attribute 'group'
+   AttributeError: 'types.NoneType' object has no attribute 'group'
 
    >>> pair_re.prefixmatch("354aa").group(1)
    'a'

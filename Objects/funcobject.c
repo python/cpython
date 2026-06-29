@@ -624,9 +624,10 @@ static PyMemberDef func_memberlist[] = {
 };
 
 /*[clinic input]
-class function "PyFunctionObject *" "&PyFunction_Type"
+module types
+class types.FunctionType "PyFunctionObject *" "&PyFunction_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70af9c90aa2e71b0]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c7191e310373bee1]*/
 
 #include "clinic/funcobject.c.h"
 
@@ -823,14 +824,14 @@ func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 /*[clinic input]
 @critical_section
 @getter
-function.__annotate__
+types.FunctionType.__annotate__
 
 Get the code object for a function.
 [clinic start generated code]*/
 
 static PyObject *
-function___annotate___get_impl(PyFunctionObject *self)
-/*[clinic end generated code: output=5ec7219ff2bda9e6 input=7f3db11e3c3329f3]*/
+types_FunctionType___annotate___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=cc991cda9d527374 input=b12fd98f735b071f]*/
 {
     if (self->func_annotate == NULL) {
         Py_RETURN_NONE;
@@ -841,12 +842,13 @@ function___annotate___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-function.__annotate__
+types.FunctionType.__annotate__
 [clinic start generated code]*/
 
 static int
-function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
+types_FunctionType___annotate___set_impl(PyFunctionObject *self,
+                                         PyObject *value)
+/*[clinic end generated code: output=63c2c7ffdfa92852 input=79303a27161b8993]*/
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -872,14 +874,14 @@ function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
 /*[clinic input]
 @critical_section
 @getter
-function.__annotations__
+types.FunctionType.__annotations__
 
 Dict of annotations in a function object.
 [clinic start generated code]*/
 
 static PyObject *
-function___annotations___get_impl(PyFunctionObject *self)
-/*[clinic end generated code: output=a4cf4c884c934cbb input=92643d7186c1ad0c]*/
+types_FunctionType___annotations___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=f54d706d12797627 input=b6c92ce89a027bbb]*/
 {
     PyObject *d = NULL;
     if (self->func_annotations == NULL &&
@@ -895,12 +897,13 @@ function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-function.__annotations__
+types.FunctionType.__annotations__
 [clinic start generated code]*/
 
 static int
-function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
+types_FunctionType___annotations___set_impl(PyFunctionObject *self,
+                                            PyObject *value)
+/*[clinic end generated code: output=8d9aee4699ea6a1f input=04ab3312a4c0709f]*/
 {
     if (value == Py_None)
         value = NULL;
@@ -920,14 +923,14 @@ function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
 /*[clinic input]
 @critical_section
 @getter
-function.__type_params__
+types.FunctionType.__type_params__
 
 Get the declared type parameters for a function.
 [clinic start generated code]*/
 
 static PyObject *
-function___type_params___get_impl(PyFunctionObject *self)
-/*[clinic end generated code: output=eb844d7ffca517a8 input=0864721484293724]*/
+types_FunctionType___type_params___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=d22a65506ec044c7 input=fd73aeba7df53e55]*/
 {
     if (self->func_typeparams == NULL) {
         return PyTuple_New(0);
@@ -940,12 +943,13 @@ function___type_params___get_impl(PyFunctionObject *self)
 /*[clinic input]
 @critical_section
 @setter
-function.__type_params__
+types.FunctionType.__type_params__
 [clinic start generated code]*/
 
 static int
-function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=038b4cda220e56fb input=3862fbd4db2b70e8]*/
+types_FunctionType___type_params___set_impl(PyFunctionObject *self,
+                                            PyObject *value)
+/*[clinic end generated code: output=ef5e4d629aa710e1 input=3b696413aaed18a9]*/
 {
     /* Not legal to del f.__type_params__ or to set it to anything
      * other than a tuple object. */
@@ -973,12 +977,12 @@ static PyGetSetDef func_getsetlist[] = {
     {"__code__", func_get_code, func_set_code},
     {"__defaults__", func_get_defaults, func_set_defaults},
     {"__kwdefaults__", func_get_kwdefaults, func_set_kwdefaults},
-    FUNCTION___ANNOTATIONS___GETSETDEF
-    FUNCTION___ANNOTATE___GETSETDEF
+    TYPES_FUNCTIONTYPE___ANNOTATIONS___GETSETDEF
+    TYPES_FUNCTIONTYPE___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", func_get_name, func_set_name},
     {"__qualname__", func_get_qualname, func_set_qualname},
-    FUNCTION___TYPE_PARAMS___GETSETDEF
+    TYPES_FUNCTIONTYPE___TYPE_PARAMS___GETSETDEF
     {NULL} /* Sentinel */
 };
 
@@ -994,7 +998,7 @@ static PyGetSetDef func_getsetlist[] = {
 
 /*[clinic input]
 @classmethod
-function.__new__ as func_new
+types.FunctionType.__new__ as func_new
     code: object(type="PyCodeObject *", subclass_of="&PyCode_Type")
         a code object
     globals: object(subclass_of="&PyDict_Type")
@@ -1015,7 +1019,7 @@ static PyObject *
 func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
               PyObject *name, PyObject *defaults, PyObject *closure,
               PyObject *kwdefaults)
-/*[clinic end generated code: output=de72f4c22ac57144 input=20c9c9f04ad2d3f2]*/
+/*[clinic end generated code: output=de72f4c22ac57144 input=5aac05886273aa5d]*/
 {
     PyFunctionObject *newfunc;
     Py_ssize_t nclosure;
@@ -1184,7 +1188,7 @@ func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 
 PyTypeObject PyFunction_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "function",
+    "types.FunctionType",
     sizeof(PyFunctionObject),
     0,
     func_dealloc,                               /* tp_dealloc */

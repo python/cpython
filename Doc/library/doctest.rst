@@ -554,7 +554,7 @@ Some details you should read once, but won't need to remember:
        File "<stdin>", line 1
          1 + None
          ~~^~~~~~
-     TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
+     TypeError: unsupported operand type(s) for +: 'int' and 'types.NoneType'
 
   Since the lines showing the position of the error come before the exception type
   and detail, they are not checked by doctest.  For example, the following test
@@ -564,7 +564,7 @@ Some details you should read once, but won't need to remember:
        File "<stdin>", line 1
          1 + None
          ^~~~~~~~
-     TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
+     TypeError: unsupported operand type(s) for +: 'int' and 'types.NoneType'
 
 
 .. _option-flags-and-directives:

@@ -1,0 +1,4 @@
+All builtin types exposed in the :mod:`types` module now have attributes
+``__module__``, ``__qualname__`` and ``__name__`` which allow to resolve
+them in the corresponding module.  As result, all these types (but not
+neccessary their instances) are now pickleable.

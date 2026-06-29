@@ -63,13 +63,13 @@ static PyMethodDef ellipsis_methods[] = {
 };
 
 PyDoc_STRVAR(ellipsis_doc,
-"ellipsis()\n"
+"EllipsisType()\n"
 "--\n\n"
 "The type of the Ellipsis singleton.");
 
 PyTypeObject PyEllipsis_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "ellipsis",                         /* tp_name */
+    "types.EllipsisType",                         /* tp_name */
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     ellipsis_dealloc,                   /* tp_dealloc */

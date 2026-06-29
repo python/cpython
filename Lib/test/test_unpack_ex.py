@@ -364,7 +364,7 @@ Error messages for specific failure modes of unpacking
     >>> def f(arg):
     ...     print(type(arg), list(arg), list(arg))
     >>> f(*x for x in [[1,2,3]])
-    <class 'generator'> [1, 2, 3] []
+    <class 'types.GeneratorType'> [1, 2, 3] []
 
 Iterable argument unpacking
 
