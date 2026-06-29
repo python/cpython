@@ -182,6 +182,18 @@ curses
   :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
   (Contributed by Serhiy Storchaka in :gh:`152260`.)
 
+* Add the soft-label-key functions to the :mod:`curses` module, which manage a
+  row of labels along the bottom line of the screen:
+  :func:`~curses.slk_init`, :func:`~curses.slk_set`, :func:`~curses.slk_label`,
+  :func:`~curses.slk_refresh`, :func:`~curses.slk_noutrefresh`,
+  :func:`~curses.slk_clear`, :func:`~curses.slk_restore`,
+  :func:`~curses.slk_touch`, the attribute functions
+  :func:`~curses.slk_attron`, :func:`~curses.slk_attroff`,
+  :func:`~curses.slk_attrset`, :func:`~curses.slk_attr`,
+  :func:`~curses.slk_attr_on`, :func:`~curses.slk_attr_off`,
+  :func:`~curses.slk_attr_set`, and :func:`~curses.slk_color`.
+  (Contributed by Serhiy Storchaka in :gh:`152263`.)
+
 * Add the :func:`curses.term_attrs` function, which returns the supported
   video attributes as :ref:`WA_* <curses-wa-constants>` values, the
   counterpart of :func:`curses.termattrs`.

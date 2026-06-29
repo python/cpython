@@ -74,6 +74,9 @@ class OrderedDictTests:
         od.update(dict(pairs))
         self.assertEqual(sorted(od.items()), pairs)                                 # dict input
         od = OrderedDict()
+        od.update(frozendict(pairs))
+        self.assertEqual(sorted(od.items()), pairs)                                 # frozendict input
+        od = OrderedDict()
         od.update(**dict(pairs))
         self.assertEqual(sorted(od.items()), pairs)                                 # kwds input
         od = OrderedDict()
@@ -288,9 +291,11 @@ class OrderedDictTests:
         pairs = pairs[2:] + pairs[:2]
         od2 = OrderedDict(pairs)
         self.assertNotEqual(od1, od2)       # different order implies inequality
-        # comparison to regular dict is not order sensitive
+        # comparison to regular (frozen)dict is not order sensitive
         self.assertEqual(od1, dict(od2))
         self.assertEqual(dict(od2), od1)
+        self.assertEqual(od1, frozendict(od2))
+        self.assertEqual(frozendict(od1), od2)
         # different length implied inequality
         self.assertNotEqual(od1, OrderedDict(pairs[:-1]))
 
