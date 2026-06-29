@@ -1391,40 +1391,62 @@ class MappingProxyTests(unittest.TestCase):
         view = self.mappingproxy(mapping)
         self.assertEqual(hash(view), hash(mapping))
 
-    def test_richcompare(self):
-        dt1 = {'a': 1}
-        mp1 = self.mappingproxy(dt1)
-        mp1_2 = self.mappingproxy({'a': 1})
-        mp2 = self.mappingproxy({'a': 2})
+    def check_richcompare(self, mapping_type):
+        data1 = mapping_type({'a': 1})
+        data2 = mapping_type({'a': 2})
+        mp1 = self.mappingproxy(data1)
+        copy1 = self.mappingproxy(data1)
+        mp2 = self.mappingproxy(data2)
 
-        self.assertTrue(mp1 == mp1_2)
-        self.assertFalse(mp1 != mp1_2)
+        self.assertTrue(mp1 == data1)
+        self.assertTrue(data1 == mp1)
+        self.assertTrue(copy1 == data1)
+
+        self.assertTrue(mp1 == copy1)
+        self.assertFalse(mp1 != copy1)
+
         self.assertFalse(mp1 == mp2)
         self.assertTrue(mp1 != mp2)
-        self.assertTrue(mp1 == dt1)
-        self.assertTrue(dt1 == mp1)
-        self.assertTrue(mp1_2 == dt1)
-        self.assertFalse(mp2 == dt1)
-        self.assertTrue(mp2 != dt1)
-        self.assertTrue(dt1 != mp2)
+        self.assertFalse(mp2 == data1)
+        self.assertTrue(mp2 != data1)
+        self.assertTrue(data1 != mp2)
 
         msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
-
         with self.assertRaisesRegex(TypeError, msg):
             mp1 > mp2
         with self.assertRaisesRegex(TypeError, msg):
-            mp1 < mp1_2
+            mp1 < copy1
         with self.assertRaisesRegex(TypeError, msg):
             mp2 >= mp2
         with self.assertRaisesRegex(TypeError, msg):
-            mp1_2 <= mp1
+            copy1 <= mp1
+
+        if mapping_type.__module__ == 'collections':
+            mapping_name = f'{mapping_type.__module__}.{mapping_type.__name__}'
+        else:
+            mapping_name = mapping_type.__name__
         with self.assertRaisesRegex(
             TypeError,
-            "not supported between instances of 'mappingproxy' and 'dict'",
+            f"not supported between instances of 'mappingproxy' and '{mapping_name}'",
         ):
-            mp1_2 <= dt1
+            copy1 <= data1
 
-    def test_richcompare_mapping(self):
+        class Evil:
+            def __eq__(self, other):
+                return other
+
+        result = (mp1 == Evil())
+        self.assertIs(type(result), mapping_type)
+        if mapping_type == dict:
+            # Evil.__eq__() gets a copy of the mapping
+            self.assertEqual(result, data1)
+        else:
+            self.assertIs(result, data1)
+
+    def test_richcompare_dict(self):
+        self.check_richcompare(dict)
+
+    def test_richcompare_custom_mapping(self):
         class CustomMapping(collections.abc.Mapping):
             def __init__(self, data):
                 self._data = data
@@ -1441,31 +1463,7 @@ class MappingProxyTests(unittest.TestCase):
             def __contains__(self, item):
                 return item in self._data
 
-        dt1 = {'a': 1}
-        mp1 = self.mappingproxy(CustomMapping(dt1))
-        mp1_2 = self.mappingproxy(dt1)
-        mp2 = self.mappingproxy({'a': 2})
-
-        self.assertTrue(mp1 == mp1)
-        self.assertTrue(mp1 == mp1_2)
-        self.assertTrue(mp1 == dt1)
-        self.assertTrue(mp1_2 == dt1)
-        self.assertTrue(dt1 == mp1)
-        self.assertTrue(dt1 == mp1_2)
-        self.assertFalse(mp1 != mp1)
-        self.assertFalse(mp2 == dt1)
-        self.assertFalse(dt1 == mp2)
-        self.assertFalse(mp1 != dt1)
-        self.assertFalse(dt1 != mp1)
-
-        class Evil:
-            def __eq__(self, other):
-                return other
-
-        leaked = mp1 == Evil()
-        self.assertIs(type(leaked), CustomMapping)
-        self.assertEqual(leaked, mp1)
-        self.assertEqual(leaked, dt1)
+        self.check_richcompare(CustomMapping)
 
         class CustomMapping2(CustomMapping):
             def __eq__(self, other):
@@ -1474,28 +1472,12 @@ class MappingProxyTests(unittest.TestCase):
                     and self._data == other._data
                 )
 
+        mp1 = self.mappingproxy(CustomMapping({'a': 1}))
         self.assertEqual(mp1, CustomMapping2({'a': 1}))
         self.assertNotEqual(CustomMapping2({'a': 1}), mp1)
 
     def test_richcompare_odict(self):
-        od1 = OrderedDict(x=1, y=2)
-        od1_2 = OrderedDict(x=1, y=2)
-        od2 = OrderedDict(y=2, x=1)
-        self.assertNotEqual(od1, od2)
-        self.assertEqual(od1, od1_2)
-
-        self.assertEqual(self.mappingproxy(od1), self.mappingproxy(od1_2))
-        self.assertEqual(self.mappingproxy(od1), od1_2)
-        self.assertNotEqual(self.mappingproxy(od1), self.mappingproxy(od2))
-        self.assertNotEqual(self.mappingproxy(od1), od2)
-        self.assertEqual(
-            self.mappingproxy(od1),
-            self.mappingproxy({'x': 1, 'y': 2}),
-        )
-        self.assertEqual(
-            self.mappingproxy(od1),
-            {'x': 1, 'y': 2},
-        )
+        self.check_richcompare(OrderedDict)
 
     def test_richcompare_evil(self):
         # https://github.com/python/cpython/issues/152405
