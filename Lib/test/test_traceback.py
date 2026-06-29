@@ -583,13 +583,15 @@ class TracebackCases(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'required positional argument'):
             traceback.format_exception(exc=e)
 
-    def test_format_syntax_error(self):
+    def test_format_exception_only_exc(self):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
 
+    def test_format_syntax_error_msg(self):
         exc = SyntaxError(NotImplemented)
         lines = traceback.format_exception_only(type(exc), exc)
-        self.assertIsInstance("".join(lines), str)
+        result = "".join(lines)
+        self.assertIn("NotImplemented", result)
 
         exc = SyntaxError("invalid syntax")
         lines = traceback.format_exception_only(type(exc), exc)
