@@ -1207,8 +1207,9 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # bytes are checked to ensure that they line up with the zip spec.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
         # The relevant sections for this test are:
-        #  - 4.3.7 for local file header
-        #  - 4.5.3 for zip64 extra field
+        #  - 4.3.7  for local file header
+        #  - 4.3.12 for central directory
+        #  - 4.5.3  for zip64 extra field
 
         data = io.BytesIO()
         with zipfile.ZipFile(data, mode="w", allowZip64=True) as zf:
@@ -1217,11 +1218,11 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
 
         zipdata = data.getvalue()
 
-        # pull out and check zip information
+        # check the local file entry
         (
             header, vers, os, flags, comp, csize, usize, fn_len,
-            ex_total_len, filename, ex_id, ex_len, ex_usize, ex_csize, cd_sig
-        ) = struct.unpack("<4sBBHH8xIIHH8shhQQx4s", zipdata[:63])
+            ex_total_len, filename, ex_id, ex_len, ex_usize, ex_csize
+        ) = struct.unpack("<4sBBHH8xIIHH8sHHQQx", zipdata[:59])
 
         self.assertEqual(header, b"PK\x03\x04")  # local file header
         self.assertGreaterEqual(vers, zipfile.ZIP64_VERSION)  # requires zip64 to extract
@@ -1236,28 +1237,45 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         self.assertEqual(ex_len, 16)  # 16 bytes of data
         self.assertEqual(ex_usize, 1)  # uncompressed size
         self.assertEqual(ex_csize, 1)  # compressed size
-        self.assertEqual(cd_sig, b"PK\x01\x02") # ensure the central directory header is next
 
-        z = zipfile.ZipFile(io.BytesIO(zipdata))
-        zinfos = z.infolist()
+        # check the entry in central directory,
+        # which should immedially follow the local file entry
+        (
+            header, v_made, v_ext, os, flags, comp, csize, usize, fn_len,
+            ex_total_len, comment_len, in_attr, local_offset, filename,
+            ex_id, ex_len, ex_usize, ex_csize
+        ) = struct.unpack("<4sBxBBHH8xIIHHH2xH4xI8sHHQQ", zipdata[59:133])
+
+        self.assertEqual(header, b"PK\x01\x02")  # central directory file header
+        self.assertGreaterEqual(v_made, zipfile.ZIP64_VERSION)
+        self.assertGreaterEqual(v_ext, zipfile.ZIP64_VERSION)
+        self.assertEqual(os, 0)
+        self.assertEqual(flags, 0)
+        self.assertEqual(comp, 0)
+        self.assertEqual(csize, 0xFFFFFFFF)
+        self.assertEqual(usize, 0xFFFFFFFF)
+        self.assertEqual(fn_len, 8)
+        self.assertEqual(ex_total_len, 20)
+        self.assertEqual(comment_len, 0)  # no file comment
+        self.assertEqual(local_offset, 0)
+        self.assertEqual(ex_id, 1)
+        self.assertEqual(ex_len, 16)
+        self.assertEqual(ex_usize, 1)
+        self.assertEqual(ex_csize, 1)
+
+        # check the ZipInfo object
+        with zipfile.ZipFile(data) as zf:
+            zinfos = zf.infolist()
+            zinfo = zf.getinfo('text.txt')
+
         self.assertEqual(len(zinfos), 1)
-        self.assertGreaterEqual(zinfos[0].extract_version, zipfile.ZIP64_VERSION)  # requires zip64 to extract
-
-    def test_force_zip64_central(self):
-        """Test that force_zip64 is honored when writing to central directory"""
-        fh = io.BytesIO()
-        with zipfile.ZipFile(fh, 'w') as zh:
-            with zh.open('strfile', 'w', force_zip64=True) as zi:
-                pass
-
-        fh.seek(0)
-        with zipfile.ZipFile(fh, 'r') as zh:
-            zinfo = zh.getinfo('strfile')
-            self.assertEqual(zinfo.extra, (
-                b'\x01\x00\x10\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-            ))
+        self.assertGreaterEqual(zinfo.extract_version, zipfile.ZIP64_VERSION)  # requires zip64 to extract
+        self.assertEqual(zinfo.extra, (
+            b'\x01\x00'
+            b'\x10\x00'
+            b'\x01\x00\x00\x00\x00\x00\x00\x00'
+            b'\x01\x00\x00\x00\x00\x00\x00\x00'
+        ))
 
     def test_unseekable_zip_unknown_filesize(self):
         """Test that creating a zip with/without seeking will raise a RuntimeError if zip64 was required but not used"""

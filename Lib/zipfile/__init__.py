@@ -489,7 +489,7 @@ class ZipInfo:
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
         self._end_offset = None         # Start of the next local header or central directory
-        self._force_zip64 = None        # Whether zip64 extension is forced
+        self._force_zip64 = None        # Whether zip64 extension is enforced
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
