@@ -176,6 +176,31 @@ statement executed in the first suite skips the rest of the suite and continues
 with the next item, or with the :keyword:`!else` clause if there is no next
 item.
 
+The following code::
+
+    for TARGET in ITER:
+        SUITE
+    else:
+        SUITE2
+
+Is semantically equivalent to::
+
+    it = (ITER).__iter__()
+    running = True
+
+    while running:
+        try:
+            TARGET = iter.__next__()
+        except StopIteration:
+            running = False
+        else:
+            SUITE
+    else:
+        SUITE2
+
+except that implicit :ref:`special method lookup <special-lookup>` is used
+for :meth:`~object.__iter__` and :meth:`~iterator.__next__`.
+
 The for-loop makes assignments to the variables in the target list.
 This overwrites all previous assignments to those variables including
 those made in the suite of the for-loop::
