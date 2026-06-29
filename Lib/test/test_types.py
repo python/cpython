@@ -1479,6 +1479,9 @@ class MappingProxyTests(unittest.TestCase):
     def test_richcompare_odict(self):
         self.check_richcompare(OrderedDict)
 
+    def test_richcompare_frozendict(self):
+        self.check_richcompare(frozendict)
+
     def test_richcompare_evil(self):
         # https://github.com/python/cpython/issues/152405
         key = "__mappingproxy_crash_key__"
