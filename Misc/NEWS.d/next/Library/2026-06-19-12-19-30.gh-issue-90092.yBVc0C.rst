@@ -1,0 +1,4 @@
+Add support for multiple terminals to the :mod:`curses` module: the new
+functions :func:`curses.newterm`, :func:`curses.set_term` and
+:func:`curses.new_prescr`, the corresponding :ref:`screen
+<curses-screen-objects>` object, and the :meth:`curses.window.use` method.

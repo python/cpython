@@ -215,6 +215,8 @@ MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 # the build, and is only listed here so it will be included in sysconfigdata.
 IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
+BUILD_DETAILS=@BUILD_DETAILS@
+
 # Option to install to strip binaries
 STRIPFLAG=-s
 
@@ -774,11 +776,11 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil build-details.json
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil $(BUILD_DETAILS)
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
-		python-config checksharedmods build-details.json
+		python-config checksharedmods $(BUILD_DETAILS)
 
 .PHONY: build_emscripten
 build_emscripten: build_wasm web_example web_example_pyrepl_jspi
@@ -795,7 +797,7 @@ check-clean-src:
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
 		echo "Build artifacts such as .o files, executables, and Python/frozen_modules/*.h must not exist within $(srcdir)." ; \
 		echo "Try to run:" ; \
-		echo "  (cd \"$(srcdir)\" && make clean || git clean -fdx -e Doc/venv)" ; \
+		echo "  (cd \"$(srcdir)\" && make distclean || git clean -fdx -e Doc/venv)" ; \
 		exit 1; \
 	fi
 
@@ -979,8 +981,8 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		exit 1 ; \
 	fi
 
-build-details.json: pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/build-details.json
+$(BUILD_DETAILS): pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/$(BUILD_DETAILS)
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -1614,6 +1616,8 @@ Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) 
 _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+	# Dummy pybuilddir.txt  is needed for _bootstrap_python to be runnable
+	@echo "none" > ./pybuilddir.txt
 
 
 ############################################################################
@@ -2349,7 +2353,7 @@ multissltest: all
 # Only the main install gets a build-details.json.
 .PHONY: install
 install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
-	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/$(BUILD_DETAILS) $(DESTDIR)$(LIBDEST); \
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
 			upgrade) ensurepip="--upgrade" ;; \
@@ -2671,6 +2675,20 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lazy_import/data \
 		test/test_lazy_import/data/pkg \
 		test/test_lazy_import/data/badsyntax \
+		test/test_lazy_import/data/circular_import_pkg \
+		test/test_lazy_import/data/metasyntactic \
+		test/test_lazy_import/data/metasyntactic/foo \
+		test/test_lazy_import/data/metasyntactic/foo/ack \
+		test/test_lazy_import/data/metasyntactic/foo/bar \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz/qux \
+		test/test_lazy_import/data/metasyntactic/foo/bar/thud \
+		test/test_lazy_import/data/metasyntactic/plugh \
+		test/test_lazy_import/data/metasyntactic/waldo \
+		test/test_lazy_import/data/metasyntactic/waldo/fred \
+		test/test_lazy_import/data/module_same_name_var_order1 \
+		test/test_lazy_import/data/module_same_name_var_order2 \
+		test/test_lazy_import/data/versioned \
 		test/test_module \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
@@ -3111,12 +3129,33 @@ config.status:	$(srcdir)/configure
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
-Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
+Python/asm_trampoline_x86_64.o: $(srcdir)/Python/asm_trampoline_x86_64.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_aarch64.o: $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+Python/asm_trampoline_riscv64.o: $(srcdir)/Python/asm_trampoline_riscv64.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
+# On macOS universal2 builds, $(PY_CORE_CFLAGS) contains "-arch arm64 -arch x86_64",
+# which would produce fat .o files containing both architectures for each .S input.
+# lipo -create then refuses to combine them because they share architectures.
+# Build each per-arch object with a single -arch flag before merging with lipo.
+Python/asm_trampoline_universal2.o: $(srcdir)/Python/asm_trampoline_aarch64.S $(srcdir)/Python/asm_trampoline_x86_64.S
+	$(CC) -c $(filter-out -arch arm64 x86_64,$(PY_CORE_CFLAGS)) -arch arm64 \
+		-o Python/asm_trampoline_arm64-apple-darwin.o $(srcdir)/Python/asm_trampoline_aarch64.S
+	$(CC) -c $(filter-out -arch arm64 x86_64,$(PY_CORE_CFLAGS)) -arch x86_64 \
+		-o Python/asm_trampoline_x86_64-apple-darwin.o $(srcdir)/Python/asm_trampoline_x86_64.S
+	lipo -create -output $@ \
+		Python/asm_trampoline_arm64-apple-darwin.o \
+		Python/asm_trampoline_x86_64-apple-darwin.o
+	rm -f Python/asm_trampoline_arm64-apple-darwin.o \
+	  Python/asm_trampoline_x86_64-apple-darwin.o
 
 Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
 	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
-	$$(dirname $$(dirname $(CC)))/bin/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
+	$$(em-config LLVM_ROOT)/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
 
 Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
 	$(PYTHON_FOR_REGEN) $(srcdir)/Platforms/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule

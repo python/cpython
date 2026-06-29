@@ -473,6 +473,15 @@ General Options
 
    .. versionadded:: 3.15
 
+.. option:: --with-build-details-suffix=[yes|SUFFIX]
+
+   Rename ``build-details.json`` to permit multiple co-located Python
+   installs. If a custom ``SUFFIX`` is supplied it is used verbatim,
+   otherwise one will be generated from the ``MULTIARCH`` tag with
+   ``-free-threading`` and ``-debug``, as appropriate.
+
+   .. versionadded:: 3.16
+
 
 C compiler options
 ------------------

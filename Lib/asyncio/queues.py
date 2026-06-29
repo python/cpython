@@ -33,9 +33,9 @@ class QueueShutDown(Exception):
 class Queue(mixins._LoopBoundMixin):
     """A queue, useful for coordinating producer and consumer coroutines.
 
-    If maxsize is less than or equal to zero, the queue size is infinite. If it
-    is an integer greater than 0, then "await put()" will block when the
-    queue reaches maxsize, until an item is removed by get().
+    If maxsize is less than or equal to zero, the queue size is infinite.
+    If it is an integer greater than 0, then "await put()" will block when
+    the queue reaches maxsize, until an item is removed by get().
 
     Unlike queue.Queue, you can reliably know this Queue's size
     with qsize(), since your single-threaded asyncio application won't be
@@ -174,8 +174,8 @@ class Queue(mixins._LoopBoundMixin):
 
         If queue is empty, wait until an item is available.
 
-        Raises QueueShutDown if the queue has been shut down and is empty, or
-        if the queue has been shut down immediately.
+        Raises QueueShutDown if the queue has been shut down and is empty,
+        or if the queue has been shut down immediately.
         """
         while self.empty():
             if self._is_shutdown and self.empty():
@@ -203,10 +203,11 @@ class Queue(mixins._LoopBoundMixin):
     def get_nowait(self):
         """Remove and return an item from the queue.
 
-        Return an item if one is immediately available, else raise QueueEmpty.
+        Return an item if one is immediately available, else raise
+        QueueEmpty.
 
-        Raises QueueShutDown if the queue has been shut down and is empty, or
-        if the queue has been shut down immediately.
+        Raises QueueShutDown if the queue has been shut down and is empty,
+        or if the queue has been shut down immediately.
         """
         if self.empty():
             if self._is_shutdown:
@@ -223,12 +224,12 @@ class Queue(mixins._LoopBoundMixin):
         a subsequent call to task_done() tells the queue that the processing
         on the task is complete.
 
-        If a join() is currently blocking, it will resume when all items have
-        been processed (meaning that a task_done() call was received for every
-        item that had been put() into the queue).
+        If a join() is currently blocking, it will resume when all items
+        have been processed (meaning that a task_done() call was received
+        for every item that had been put() into the queue).
 
-        Raises ValueError if called more times than there were items placed in
-        the queue.
+        Raises ValueError if called more times than there were items placed
+        in the queue.
         """
         if self._unfinished_tasks <= 0:
             raise ValueError('task_done() called too many times')
@@ -239,10 +240,11 @@ class Queue(mixins._LoopBoundMixin):
     async def join(self):
         """Block until all items in the queue have been gotten and processed.
 
-        The count of unfinished tasks goes up whenever an item is added to the
-        queue. The count goes down whenever a consumer calls task_done() to
-        indicate that the item was retrieved and all work on it is complete.
-        When the count of unfinished tasks drops to zero, join() unblocks.
+        The count of unfinished tasks goes up whenever an item is added to
+        the queue.  The count goes down whenever a consumer calls
+        task_done() to indicate that the item was retrieved and all work on
+        it is complete.  When the count of unfinished tasks drops to zero,
+        join() unblocks.
         """
         if self._unfinished_tasks > 0:
             await self._finished.wait()

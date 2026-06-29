@@ -1936,11 +1936,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_base
 
-   .. corresponding-type-slot:: Py_tp_base
-
    An optional pointer to a base type from which type properties are inherited.  At
    this level, only single inheritance is supported; multiple inheritance require
    dynamically creating a type object by calling the metatype.
+
+   For the corresponding slot ID, see :c:macro:`Py_tp_base`.
 
    .. note::
 
@@ -2253,17 +2253,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyObject* PyTypeObject.tp_bases
 
-   .. corresponding-type-slot:: Py_tp_bases
-
    Tuple of base types.
 
    This field should be set to ``NULL`` and treated as read-only.
    Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
 
-   For dynamically created classes, the :c:data:`Py_tp_bases`
-   :c:type:`slot <PyType_Slot>` can be used instead of the *bases* argument
-   of :c:func:`PyType_FromSpecWithBases`.
-   The argument form is preferred.
+   For the corresponding slot ID, see :c:macro:`Py_tp_bases`.
 
    .. warning::
 
@@ -2975,13 +2970,13 @@ Buffer Object Structures
    steps:
 
    (1) Check if the request can be met. If not, raise :exc:`BufferError`,
-       set :c:expr:`view->obj` to ``NULL`` and return ``-1``.
+       set ``view->obj`` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.
 
    (3) Increment an internal counter for the number of exports.
 
-   (4) Set :c:expr:`view->obj` to *exporter* and increment :c:expr:`view->obj`.
+   (4) Set ``view->obj`` to *exporter* and increment ``view->obj``.
 
    (5) Return ``0``.
 
@@ -3007,10 +3002,10 @@ Buffer Object Structures
    schemes can be used:
 
    * Re-export: Each member of the tree acts as the exporting object and
-     sets :c:expr:`view->obj` to a new reference to itself.
+     sets ``view->obj`` to a new reference to itself.
 
    * Redirect: The buffer request is redirected to the root object of the
-     tree. Here, :c:expr:`view->obj` will be a new reference to the root
+     tree. Here, ``view->obj`` will be a new reference to the root
      object.
 
    The individual fields of *view* are described in section
@@ -3064,7 +3059,7 @@ Buffer Object Structures
    *view* argument.
 
 
-   This function MUST NOT decrement :c:expr:`view->obj`, since that is
+   This function MUST NOT decrement ``view->obj``, since that is
    done automatically in :c:func:`PyBuffer_Release` (this scheme is
    useful for breaking reference cycles).
 

@@ -163,7 +163,7 @@ typedef struct {
     PyObject *iscoroutine_typecache;
 
     /* Imports from asyncio.events. */
-    PyObject *asyncio_get_event_loop_policy;
+    PyObject *asyncio_get_event_loop;
 
     /* Imports from asyncio.base_futures. */
     PyObject *asyncio_future_repr_func;
@@ -343,7 +343,6 @@ static PyObject *
 get_event_loop(asyncio_state *state)
 {
     PyObject *loop;
-    PyObject *policy;
 
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     loop = Py_XNewRef(ts->asyncio_running_loop);
@@ -352,14 +351,7 @@ get_event_loop(asyncio_state *state)
         return loop;
     }
 
-    policy = PyObject_CallNoArgs(state->asyncio_get_event_loop_policy);
-    if (policy == NULL) {
-        return NULL;
-    }
-
-    loop = PyObject_CallMethodNoArgs(policy, &_Py_ID(get_event_loop));
-    Py_DECREF(policy);
-    return loop;
+    return PyObject_CallNoArgs(state->asyncio_get_event_loop);
 }
 
 
@@ -955,12 +947,13 @@ Return the result this future represents.
 
 If the future has been cancelled, raises CancelledError.  If the
 future's result isn't yet available, raises InvalidStateError.  If
-the future is done and has an exception set, this exception is raised.
+the future is done and has an exception set, this exception is
+raised.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_result_impl(FutureObj *self)
-/*[clinic end generated code: output=f35f940936a4b1e5 input=61d89f48e4c8b670]*/
+/*[clinic end generated code: output=f35f940936a4b1e5 input=ee20e126776cbb04]*/
 {
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
     PyObject *result;
@@ -1095,15 +1088,15 @@ _asyncio.Future.add_done_callback
 
 Add a callback to be run when the future becomes done.
 
-The callback is called with a single argument - the future object. If
-the future is already done when this is called, the callback is
+The callback is called with a single argument - the future object.
+If the future is already done when this is called, the callback is
 scheduled with call_soon.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
                                        PyObject *fn, PyObject *context)
-/*[clinic end generated code: output=922e9a4cbd601167 input=37d97f941beb7b3e]*/
+/*[clinic end generated code: output=922e9a4cbd601167 input=f4f6adb074cd3e0f]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
     if (context == NULL) {
@@ -1252,15 +1245,15 @@ _asyncio.Future.cancel
 
 Cancel the future and schedule callbacks.
 
-If the future is already done or cancelled, return False.  Otherwise,
-change the future's state to cancelled, schedule the callbacks and
-return True.
+If the future is already done or cancelled, return False.
+Otherwise, change the future's state to cancelled, schedule the
+callbacks and return True.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_cancel_impl(FutureObj *self, PyTypeObject *cls,
                             PyObject *msg)
-/*[clinic end generated code: output=074956f35904b034 input=44ab4003da839970]*/
+/*[clinic end generated code: output=074956f35904b034 input=0c9157547a964c4c]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
     ENSURE_FUTURE_ALIVE(state, self)
@@ -1292,13 +1285,13 @@ _asyncio.Future.done
 
 Return True if the future is done.
 
-Done means either that a result / exception are available, or that the
-future was cancelled.
+Done means either that a result / exception are available, or that
+the future was cancelled.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future_done_impl(FutureObj *self)
-/*[clinic end generated code: output=244c5ac351145096 input=7204d3cc63bef7f3]*/
+/*[clinic end generated code: output=244c5ac351145096 input=acf2c2347f3c01d8]*/
 {
     if (!future_is_alive(self) || self->fut_state == STATE_PENDING) {
         Py_RETURN_FALSE;
@@ -1741,7 +1734,8 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+    PyDoc_STR("Futures are generic over the type of their results")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2364,6 +2358,11 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+#ifdef Py_GIL_DISABLED
+    // This is required so that _Py_TryIncref(self)
+    // works correctly in non-owning threads.
+    _PyObject_SetMaybeWeakref((PyObject *)self);
+#endif
     if (eager_start) {
         PyObject *res = PyObject_CallMethodNoArgs(loop, &_Py_ID(is_running));
         if (res == NULL) {
@@ -2382,11 +2381,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
-#ifdef Py_GIL_DISABLED
-    // This is required so that _Py_TryIncref(self)
-    // works correctly in non-owning threads.
-    _PyObject_SetMaybeWeakref((PyObject *)self);
-#endif
     register_task(ts, self);
     return 0;
 }
@@ -2926,7 +2920,8 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
     _ASYNCIO_TASK_GET_CONTEXT_METHODDEF
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+    PyDoc_STR("Tasks are generic over the return type of their wrapped coroutines")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -3635,12 +3630,13 @@ call_soon or similar API), this function will always return the
 running event loop.
 
 If there is no running event loop set, the function will return
-the result of `get_event_loop_policy().get_event_loop()` call.
+the loop set by `set_event_loop()`, or raise a RuntimeError if
+no loop has been set.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_get_event_loop_impl(PyObject *module)
-/*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
+/*[clinic end generated code: output=2a2d8b2f824c648b input=fa104f00dc7995dc]*/
 {
     asyncio_state *state = get_asyncio_state(module);
     return get_event_loop(state);
@@ -3844,6 +3840,7 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 
 
 /*[clinic input]
+@permit_long_summary
 _asyncio._swap_current_task
 
     loop: object
@@ -3858,7 +3855,7 @@ This is intended for use during eager coroutine execution.
 static PyObject *
 _asyncio__swap_current_task_impl(PyObject *module, PyObject *loop,
                                  PyObject *task)
-/*[clinic end generated code: output=9f88de958df74c7e input=c9c72208d3d38b6c]*/
+/*[clinic end generated code: output=9f88de958df74c7e input=ec14ed25855e3068]*/
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     return swap_current_task(ts, loop, task);
@@ -4188,7 +4185,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->asyncio_mod);
     Py_VISIT(state->traceback_extract_stack);
     Py_VISIT(state->asyncio_future_repr_func);
-    Py_VISIT(state->asyncio_get_event_loop_policy);
+    Py_VISIT(state->asyncio_get_event_loop);
     Py_VISIT(state->asyncio_iscoroutine_func);
     Py_VISIT(state->asyncio_task_get_stack_func);
     Py_VISIT(state->asyncio_task_print_stack_func);
@@ -4218,7 +4215,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->asyncio_mod);
     Py_CLEAR(state->traceback_extract_stack);
     Py_CLEAR(state->asyncio_future_repr_func);
-    Py_CLEAR(state->asyncio_get_event_loop_policy);
+    Py_CLEAR(state->asyncio_get_event_loop);
     Py_CLEAR(state->asyncio_iscoroutine_func);
     Py_CLEAR(state->asyncio_task_get_stack_func);
     Py_CLEAR(state->asyncio_task_print_stack_func);
@@ -4281,7 +4278,7 @@ module_init(asyncio_state *state)
     }
 
     WITH_MOD("asyncio.events")
-    GET_MOD_ATTR(state->asyncio_get_event_loop_policy, "_get_event_loop_policy")
+    GET_MOD_ATTR(state->asyncio_get_event_loop, "_get_event_loop")
 
     WITH_MOD("asyncio.base_futures")
     GET_MOD_ATTR(state->asyncio_future_repr_func, "_future_repr")

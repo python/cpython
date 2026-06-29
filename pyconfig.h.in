@@ -55,6 +55,9 @@
 /* Define to 1 if you have the 'acosh' function. */
 #undef HAVE_ACOSH
 
+/* Define to 1 if you have the 'acospi' function. */
+#undef HAVE_ACOSPI
+
 /* struct addrinfo (netdb.h) */
 #undef HAVE_ADDRINFO
 
@@ -73,11 +76,20 @@
 /* Define to 1 if you have the 'asinh' function. */
 #undef HAVE_ASINH
 
+/* Define to 1 if you have the 'asinpi' function. */
+#undef HAVE_ASINPI
+
 /* Define to 1 if you have the <asm/types.h> header file. */
 #undef HAVE_ASM_TYPES_H
 
+/* Define to 1 if you have the 'atan2pi' function. */
+#undef HAVE_ATAN2PI
+
 /* Define to 1 if you have the 'atanh' function. */
 #undef HAVE_ATANH
+
+/* Define to 1 if you have the 'atanpi' function. */
+#undef HAVE_ATANPI
 
 /* Define to 1 if you have the 'backtrace' function. */
 #undef HAVE_BACKTRACE
@@ -179,11 +191,20 @@
 /* Define to 1 if you have the 'copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
 
+/* Define to 1 if you have the 'cospi' function. */
+#undef HAVE_COSPI
+
 /* Define to 1 if you have the 'ctermid' function. */
 #undef HAVE_CTERMID
 
 /* Define if you have the 'ctermid_r' function. */
 #undef HAVE_CTERMID_R
+
+/* Define if you have the 'define_key' function. */
+#undef HAVE_CURSES_DEFINE_KEY
+
+/* Define if you have the 'ESCDELAY' variable. */
+#undef HAVE_CURSES_ESCDELAY
 
 /* Define if you have the 'filter' function. */
 #undef HAVE_CURSES_FILTER
@@ -203,20 +224,53 @@
 /* Define if you have the 'is_term_resized' function. */
 #undef HAVE_CURSES_IS_TERM_RESIZED
 
+/* Define if you have the 'keyok' function. */
+#undef HAVE_CURSES_KEYOK
+
+/* Define if you have the 'key_defined' function. */
+#undef HAVE_CURSES_KEY_DEFINED
+
+/* Define if you have the 'new_prescr' function. */
+#undef HAVE_CURSES_NEW_PRESCR
+
+/* Define if you have the 'nofilter' function. */
+#undef HAVE_CURSES_NOFILTER
+
 /* Define if you have the 'resizeterm' function. */
 #undef HAVE_CURSES_RESIZETERM
 
 /* Define if you have the 'resize_term' function. */
 #undef HAVE_CURSES_RESIZE_TERM
 
+/* Define if you have the 'scr_dump' function. */
+#undef HAVE_CURSES_SCR_DUMP
+
+/* Define if you have the 'set_escdelay' function. */
+#undef HAVE_CURSES_SET_ESCDELAY
+
+/* Define if you have the 'set_tabsize' function. */
+#undef HAVE_CURSES_SET_TABSIZE
+
 /* Define if you have the 'syncok' function. */
 #undef HAVE_CURSES_SYNCOK
+
+/* Define if you have the 'TABSIZE' variable. */
+#undef HAVE_CURSES_TABSIZE
+
+/* Define if you have the 'term_attrs' function. */
+#undef HAVE_CURSES_TERM_ATTRS
 
 /* Define if you have the 'typeahead' function. */
 #undef HAVE_CURSES_TYPEAHEAD
 
 /* Define if you have the 'use_env' function. */
 #undef HAVE_CURSES_USE_ENV
+
+/* Define if you have the 'use_screen' function. */
+#undef HAVE_CURSES_USE_SCREEN
+
+/* Define if you have the 'use_window' function. */
+#undef HAVE_CURSES_USE_WINDOW
 
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
@@ -1255,6 +1309,9 @@
 /* Define to 1 if you have the 'sigwaitinfo' function. */
 #undef HAVE_SIGWAITINFO
 
+/* Define to 1 if you have the 'sinpi' function. */
+#undef HAVE_SINPI
+
 /* Define to 1 if you have the 'snprintf' function. */
 #undef HAVE_SNPRINTF
 
@@ -1387,6 +1444,9 @@
 /* Define to 1 if you have the 'sysconf' function. */
 #undef HAVE_SYSCONF
 
+/* Define to 1 if you have the 'sysctlbyname' function. */
+#undef HAVE_SYSCTLBYNAME
+
 /* Define to 1 if you have the <sysexits.h> header file. */
 #undef HAVE_SYSEXITS_H
 
@@ -1491,6 +1551,9 @@
 /* Define to 1 if you have the <sys/syscall.h> header file. */
 #undef HAVE_SYS_SYSCALL_H
 
+/* Define to 1 if you have the <sys/sysctl.h> header file. */
+#undef HAVE_SYS_SYSCTL_H
+
 /* Define to 1 if you have the <sys/sysmacros.h> header file. */
 #undef HAVE_SYS_SYSMACROS_H
 
@@ -1526,6 +1589,9 @@
 
 /* Define to 1 if you have the <sys/xattr.h> header file. */
 #undef HAVE_SYS_XATTR_H
+
+/* Define to 1 if you have the 'tanpi' function. */
+#undef HAVE_TANPI
 
 /* Define to 1 if you have the 'tcgetpgrp' function. */
 #undef HAVE_TCGETPGRP
@@ -2066,6 +2132,9 @@
 
 /* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
 #undef _Py_HAVE_PR_SET_VMA_ANON_NAME
+
+/* Thread stack size set by the linker (in bytes). */
+#undef _Py_LINKER_THREAD_STACK_SIZE
 
 /* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
 #undef _Py_STACK_GROWS_DOWN
