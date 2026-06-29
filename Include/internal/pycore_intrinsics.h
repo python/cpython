@@ -19,8 +19,9 @@
 #define INTRINSIC_SUBSCRIPT_GENERIC             10
 #define INTRINSIC_TYPEALIAS                     11
 #define INTRINSIC_BUILD_FROZENSET               12
+#define INTRINSIC_ASYNC_GEN_UNPACK              13
 
-#define MAX_INTRINSIC_1                         12
+#define MAX_INTRINSIC_1                         13
 
 
 /* Binary Functions: */

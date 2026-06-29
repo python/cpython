@@ -32,6 +32,7 @@ PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 
 PyAPI_FUNC(PyObject *)_PyCoro_GetAwaitableIter(PyObject *o);
 PyAPI_FUNC(PyObject *)_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);
+PyAPI_FUNC(PyObject *)_PyAsyncGenUnpack_New(PyThreadState *state, PyObject *);
 
 // Exported for external JIT support
 PyAPI_FUNC(PyObject *) _PyCoro_ComputeOrigin(int origin_depth, _PyInterpreterFrame *current_frame);
@@ -39,6 +40,7 @@ PyAPI_FUNC(PyObject *) _PyCoro_ComputeOrigin(int origin_depth, _PyInterpreterFra
 extern PyTypeObject _PyCoroWrapper_Type;
 extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 extern PyTypeObject _PyAsyncGenAThrow_Type;
+extern PyTypeObject _PyAsyncGenUnpack_Type;
 
 PyAPI_FUNC(PySendResult) _PyAsyncGenASend_Send(PyObject *iter, PyObject *arg, PyObject **result);
 

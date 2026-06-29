@@ -1,0 +1,9 @@
+Unpacking a sub-iterable with ``*`` in a generator expression (:pep:`798`)
+now delegates to the sub-iterable using :keyword:`yield from <yield>`
+semantics, so that values sent with :meth:`~generator.send` and exceptions
+thrown with :meth:`~generator.throw` are forwarded to the sub-iterator.  This
+also works in asynchronous generator expressions, where
+:meth:`~agen.asend`, :meth:`~agen.athrow` and :meth:`~agen.aclose`
+are forwarded to the (synchronous) sub-iterator's
+:meth:`~generator.send`, :meth:`~generator.throw` and
+:meth:`~generator.close`.
