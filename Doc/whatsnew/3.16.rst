@@ -80,11 +80,11 @@ Other language changes
   :keyword:`yield from <yield>` semantics.  Values sent with
   :meth:`~generator.send` and exceptions thrown with
   :meth:`~generator.throw` are forwarded to the sub-iterator, and the same
-  applies to asynchronous generator expressions, where
-  :meth:`~agen.asend`, :meth:`~agen.athrow` and :meth:`~agen.aclose`
-  are forwarded to the (synchronous) sub-iterator's
-  :meth:`~generator.send`, :meth:`~generator.throw` and
-  :meth:`~generator.close`.
+  applies to asynchronous generator expressions: :meth:`~agen.asend` is
+  forwarded to the (synchronous) sub-iterator's :meth:`~generator.send`,
+  while :meth:`~agen.athrow` and :meth:`~agen.aclose` are forwarded to its
+  :meth:`~generator.throw` (:meth:`~agen.aclose` throwing
+  :exc:`GeneratorExit`, as :meth:`generator.close` does).
   (Contributed in :gh:`143055`.)
 
 

@@ -2351,6 +2351,9 @@ async_gen_unpack_am_send(PyObject *op, PyObject *arg, PyObject **presult)
 static PyObject *
 async_gen_unpack_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
 {
+    if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
+        return NULL;
+    }
     PyAsyncGenUnpack *o = _PyAsyncGenUnpack_CAST(op);
     PyObject *meth;
     if (PyObject_GetOptionalAttr(o->agu_iterator, &_Py_ID(throw), &meth) < 0) {
@@ -2361,7 +2364,7 @@ async_gen_unpack_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
            it here.  This mirrors how `yield from` behaves when throwing into
            a subiterator that does not define throw(): the exception
            propagates out of the delegation. */
-        PyObject *typ = nargs >= 1 ? args[0] : NULL;
+        PyObject *typ = args[0];
         PyObject *val = nargs >= 2 ? args[1] : NULL;
         PyObject *tb = nargs >= 3 ? args[2] : NULL;
         gen_set_exception(typ, val, tb);

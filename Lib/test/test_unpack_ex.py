@@ -901,6 +901,20 @@ class TestAsyncGeneratorExpressionDelegation(unittest.TestCase):
         self._run(agen.aclose())
         self.assertEqual(closed, [True])
 
+    def test_unpack_helper_throw_requires_argument(self):
+        # The internal sync-iterable wrapper is reachable via ag_await while
+        # suspended at the delegation; throw() must validate its arity rather
+        # than crash (gh-143055).
+        agen = (*[1, 2, 3] async for _ in self._aiter([0]))
+        self._run(agen.asend(None))
+        wrapper = agen.ag_await
+        self.assertIsNotNone(wrapper)
+        with self.assertRaises(TypeError):
+            wrapper.throw()
+        # A valid exception is still accepted and propagates out.
+        with self.assertRaises(ValueError):
+            wrapper.throw(ValueError('boom'))
+
     def test_unpacking_async_iterable_is_a_type_error(self):
         # ``*`` unpacking is synchronous; async iterables cannot be unpacked.
         async def agen_fn():
