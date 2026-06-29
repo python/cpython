@@ -306,12 +306,12 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
         fprintf(stderr, "%s", prompt);
     }
     fflush(stderr);
-
+    // Keep this outside my_fgets(): long lines call my_fgets() repeatedly.
     if (PyOS_InputHook != NULL &&
         // GH-104668: See PyOS_ReadlineFunctionPointer's comment below...
         _Py_IsMainInterpreter(tstate->interp))
     {
-      (void)(PyOS_InputHook)();
+        (void)(PyOS_InputHook)();
     }
 
     n = 0;
