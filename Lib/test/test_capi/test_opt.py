@@ -249,6 +249,8 @@ class TestUops(unittest.TestCase):
                             for opcode, oparg, _, operand in list(ex)))
 
     def test_jump_backward_extended_arg(self):
+        # gh-152192: a JUMP_BACKWARD that needs an EXTENDED_ARG must record its
+        # deopt target at the EXTENDED_ARG, not the JUMP_BACKWARD.
         ns = {}
         src = ("def f(n):\n"
                "    i = 0\n"
