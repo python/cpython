@@ -1563,7 +1563,8 @@ class TestCurses(unittest.TestCase):
         self.assertIsInstance(curses.has_ic(), bool)
         self.assertIsInstance(curses.has_il(), bool)
         self.assertIsInstance(curses.termattrs(), int)
-        self.assertIsInstance(curses.term_attrs(), int)
+        if hasattr(curses, 'term_attrs'):
+            self.assertIsInstance(curses.term_attrs(), int)
 
         c = curses.killchar()
         self.assertIsInstance(c, bytes)
