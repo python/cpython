@@ -111,7 +111,7 @@ PyDoc_STRVAR(pairwise_new__doc__,
 "\n"
 "Return an iterator of overlapping pairs taken from the input iterator.\n"
 "\n"
-"    s -> (s0,s1), (s1,s2), (s2, s3), ...");
+"    s -> (s0,s1), (s1,s2), (s2,s3), ...");
 
 static PyObject *
 pairwise_new_impl(PyTypeObject *type, PyObject *iterable);
@@ -980,4 +980,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a34a31f60100e0ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95a5ca43da64212e input=a9049054013a1b77]*/
