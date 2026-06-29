@@ -1,0 +1,3 @@
+Add an optional *timeout* parameter to :meth:`tkinter.Misc.wait_variable`.
+If the variable is not modified within the given time, the call returns
+``False`` instead of blocking indefinitely.
