@@ -9,9 +9,8 @@ from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _channels = import_helper.import_module('_interpchannels')
 from concurrent import interpreters
-from test.support import channels
+from test.support import channels, nomemtest
 from .utils import _run_output, TestBase
-import _testcapi
 
 
 class LowLevelTests(TestBase):
@@ -31,16 +30,18 @@ class LowLevelTests(TestBase):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
         importlib.reload(channels)
 
+    @nomemtest
     def test_lock_allocation_failure(self):
         # see gh-152635 (https://github.com/python/cpython/issues/152635)
         # The first allocation to happen is the lock, which
         # historically triggered an assert if alloc failed.
+        import _testcapi
+
         cid = None
         _testcapi.set_nomemory(0, 1)
         try:
-            cid = _channels.create()
-        except MemoryError:
-            pass  # MemoryError is expected behavior
+            with self.assertRaises(MemoryError):
+                cid = _channels.create()
         finally:
             _testcapi.remove_mem_hooks()
             if cid is not None:
