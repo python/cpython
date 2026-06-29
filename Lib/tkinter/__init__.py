@@ -818,7 +818,7 @@ class Misc:
         else:
             return self.tk.getint(self.tk.call(args))
 
-    def wait_variable(self, name='PY_VAR'):
+    def wait_variable(self, name):
         """Wait until the variable is modified.
 
         A parameter of type IntVar, StringVar, DoubleVar or
@@ -843,11 +843,11 @@ class Misc:
             window = self
         self.tk.call('tkwait', 'visibility', window._w)
 
-    def setvar(self, name='PY_VAR', value='1'):
+    def setvar(self, name, value):
         """Set Tcl variable NAME to VALUE."""
         self.tk.setvar(name, value)
 
-    def getvar(self, name='PY_VAR'):
+    def getvar(self, name):
         """Return value of Tcl variable NAME."""
         return self.tk.getvar(name)
 
