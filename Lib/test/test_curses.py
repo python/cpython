@@ -42,6 +42,31 @@ def requires_curses_window_meth(name):
         return wrapped
     return deco
 
+def _wide_build():
+    # True on a build that stores wide-character cells (built against ncursesw).
+    # A wide build accepts a spacing character plus a combining mark in a single
+    # cell; a narrow build accepts only one character per cell.  This stays a
+    # reliable wide/narrow signal even as the wide-character functions (get_wch()
+    # and friends) become available on narrow builds too, because the
+    # multi-codepoint cell capacity itself is build-specific.
+    if not hasattr(curses, 'complexchar'):
+        return hasattr(curses.window, 'get_wch')
+    try:
+        curses.complexchar('e\u0301')  # 'e' + combining acute: two code points
+    except ValueError:
+        return False
+    return True
+
+WIDE_BUILD = _wide_build()
+
+def requires_wide_build(test):
+    @functools.wraps(test)
+    def wrapped(self, *args, **kwargs):
+        if not WIDE_BUILD:
+            raise unittest.SkipTest('requires a wide-character curses build')
+        test(self, *args, **kwargs)
+    return wrapped
+
 
 def requires_colors(test):
     @functools.wraps(test)
@@ -313,6 +338,8 @@ class TestCurses(unittest.TestCase):
     #   'é'          common to the Latin encodings
     #   '¤'/'€'/'є'  byte 0xA4 in ISO-8859-1 / ISO-8859-15 / KOI8-U
     # Precomposed characters are used so a round-trip does not depend on the form.
+    # On a narrow (non-wide) build a cell holds one byte, so cases that need a
+    # combining sequence or a multibyte character are guarded with _storable().
 
     def _encodable(self, s):
         # Wide characters are only supported in a locale that can encode them.
@@ -321,6 +348,18 @@ class TestCurses(unittest.TestCase):
         except UnicodeEncodeError:
             return False
         return True
+
+    def _storable(self, s):
+        # Text the current build can place in character cells.  A wide build
+        # stores any locale-encodable text (combining sequences and multibyte
+        # characters included).  A narrow build has no wide-character cells, so
+        # each character must occupy a single cell -- that is, encode to exactly
+        # one byte.
+        if not self._encodable(s):
+            return False
+        if WIDE_BUILD:
+            return True
+        return len(s.encode(self.stdscr.encoding)) == len(s)
 
     def _read_char(self, y, x):
         # The character written to a cell, read back for output checks.  inch()
@@ -333,7 +372,7 @@ class TestCurses(unittest.TestCase):
             return str(stdscr.in_wch(y, x))
         return stdscr.instr(y, x, 1).decode(stdscr.encoding)
 
-    @requires_curses_window_meth('get_wch')
+    @requires_wide_build
     def test_addch_combining(self):
         stdscr = self.stdscr
         stdscr.move(0, 0)
@@ -354,7 +393,7 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(ValueError, stdscr.addch, '\n\u0301')
         self.assertRaises(ValueError, stdscr.addch, '\ne\u0301')
 
-    @requires_curses_window_meth('get_wch')
+    @requires_wide_build
     def test_addch_emoji(self):
         # curses has no grapheme-cluster support: a cell holds one spacing
         # character plus zero-width combining characters.  A lone emoji fits,
@@ -371,7 +410,7 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(ValueError, stdscr.addch,
                           '\U0001f468\u200d\U0001f469')    # man ZWJ woman
 
-    @requires_curses_window_meth('get_wch')
+    @requires_wide_build
     def test_wide_characters(self):
         # Wide and combining characters in the character-cell methods.
         stdscr = self.stdscr
@@ -393,7 +432,6 @@ class TestCurses(unittest.TestCase):
         # border() and box() cannot mix integer and wide-string characters.
         self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
 
-    @requires_curses_func('complexchar')
     def test_complexchar_in_cell_methods(self):
         # Every single-character-cell method also accepts a complexchar, whose
         # attributes and color pair come from the cell itself.
@@ -424,7 +462,6 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(TypeError, stdscr.hline, h, 3, curses.A_BOLD)
         self.assertRaises(TypeError, stdscr.vline, v, 3, curses.A_BOLD)
 
-    @requires_curses_window_meth('in_wstr')
     def test_in_wstr(self):
         # The wide-character window read returns a str (instr returns bytes).
         # See _encodable for the character set.
@@ -435,13 +472,12 @@ class TestCurses(unittest.TestCase):
                   'na\u00efve \u00a4',      # ISO-8859-1
                   'soup\u00e7on \u20ac',    # ISO-8859-15
                   '\u0434\u044f\u043a']:    # KOI8-U
-            if self._encodable(s):
+            if self._storable(s):
                 with self.subTest(s=s):
                     stdscr.addstr(0, 0, s)
                     self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
                     self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
 
-    @requires_curses_func('complexchar')
     def test_complexchar(self):
         # A complexchar is a styled wide-character cell: str() is its text,
         # and the attr and pair attributes are its rendition.
@@ -450,7 +486,7 @@ class TestCurses(unittest.TestCase):
         self.assertTrue(cc.attr & curses.A_BOLD)
         self.assertEqual(cc.pair, 0)
         # A spacing character optionally followed by combining characters.
-        if self._encodable('e\u0301'):
+        if self._storable('e\u0301'):
             self.assertEqual(str(curses.complexchar('e\u0301')), 'e\u0301')
         # Defaults: no attributes, color pair 0.
         cc = curses.complexchar('z')
@@ -485,7 +521,6 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(ValueError, curses.complexchar, 'A', 0, -1)
         self.assertRaises(ValueError, curses.complexchar, 'ab')
 
-    @requires_curses_window_meth('in_wch')
     def test_in_wch(self):
         # in_wch() returns the styled wide cell as a complexchar -- something
         # inch() (a packed chtype) cannot represent.
@@ -496,7 +531,7 @@ class TestCurses(unittest.TestCase):
         self.assertTrue(cc.attr & curses.A_UNDERLINE)
         # A character round-trips through the cell.  See _encodable for the set.
         for ch in ('A', '\u00e9', '\u00a4', '\u20ac', '\u0454'):
-            if self._encodable(ch):
+            if self._storable(ch):
                 with self.subTest(ch=ch):
                     stdscr.addch(3, 0, curses.complexchar(ch))
                     self.assertEqual(str(stdscr.in_wch(3, 0)), ch)
@@ -504,7 +539,6 @@ class TestCurses(unittest.TestCase):
         stdscr.move(0, 0)
         self.assertEqual(str(stdscr.in_wch()), 'A')
 
-    @requires_curses_window_meth('in_wch')
     @requires_colors
     def test_in_wch_color(self):
         # Unlike the chtype methods (which pack the pair into the value via
@@ -518,7 +552,6 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(cc.pair, 1)
         self.assertEqual(curses.complexchar('A', 0, 1).pair, 1)
 
-    @requires_curses_window_meth('getbkgrnd')
     def test_getbkgrnd(self):
         # getbkgrnd() returns the background as a complexchar (getbkgd() can
         # only return a packed chtype).
@@ -530,13 +563,12 @@ class TestCurses(unittest.TestCase):
         self.assertTrue(cc.attr & curses.A_BOLD)
         # A non-ASCII background round-trips as a complexchar.  See _encodable.
         for ch in ('é', '¤', '€', 'є'):
-            if self._encodable(ch):
+            if self._storable(ch):
                 with self.subTest(ch=ch):
                     stdscr.bkgd(curses.complexchar(ch))
                     self.assertEqual(str(stdscr.getbkgrnd()), ch)
         stdscr.bkgd(' ')
 
-    @requires_curses_func('complexstr')
     def test_complexstr(self):
         # A complexstr is an immutable run of styled wide-character cells: the
         # string counterpart of complexchar (as str is to a single character).
@@ -569,7 +601,7 @@ class TestCurses(unittest.TestCase):
         self.assertNotEqual(s, curses.complexstr([cc('A'), 'b', cc('c')]))
         self.assertNotEqual(s, curses.complexstr([cc('A', B), 'b']))
         # A spacing character optionally followed by combining characters.
-        if self._encodable('é'):
+        if self._storable('é'):
             self.assertEqual(str(curses.complexstr(['é', 'x'])),
                              'éx')
         # cells is positional-only.
@@ -586,7 +618,9 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(str(curses.complexstr('abc')), 'abc')
         self.assertEqual(len(curses.complexstr('')), 0)
         base = 'é'  # 'e' + combining acute: two code points, one cell
-        if self._encodable(base):
+        # Combining sequences need wide-character cells (a narrow build stores
+        # one byte per cell).
+        if WIDE_BUILD and self._encodable(base):
             self.assertEqual(len(curses.complexstr(base)), 1)
             self.assertEqual(curses.complexstr(base)[0], cc(base))
             self.assertEqual(len(curses.complexstr('a' + base + 'b')), 3)
@@ -619,7 +653,6 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(TypeError,
                           lambda: curses.complexstr(['A'], pair=0))
 
-    @requires_curses_window_meth('in_wchstr')
     def test_in_wchstr(self):
         # in_wchstr() returns a complexstr -- the styled-cell counterpart of
         # instr() (bytes) and in_wstr() (str), which both strip the rendition.
@@ -639,7 +672,6 @@ class TestCurses(unittest.TestCase):
         stdscr.move(0, 0)
         self.assertEqual(str(stdscr.in_wchstr())[:3], 'AbC')
 
-    @requires_curses_window_meth('in_wchstr')
     def test_complexstr_in_write_methods(self):
         # addstr/addnstr/insstr/insnstr also accept a complexstr, written via
         # the wide-character functions; a plain str keeps its current meaning.
@@ -734,11 +766,8 @@ class TestCurses(unittest.TestCase):
         # str is stored as a wide-character cell on a wide build, so every
         # encodable character round-trips, insch() included.  A multibyte
         # character does not fit a cell on a narrow build and is skipped.
-        wide = hasattr(stdscr, 'in_wch')
         for c in ('é', '¤', '€', 'є'):
-            if not self._encodable(c):
-                continue
-            if not wide and len(c.encode(encoding)) != 1:
+            if not self._storable(c):
                 continue
             with self.subTest(c=c):
                 stdscr.addch(0, 0, c)
@@ -982,7 +1011,6 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.getstr(), b'amet')
         self.assertEqual(win.instr(1, 0), b'amet dolor  ')
 
-    @requires_curses_window_meth('get_wstr')
     def test_get_wstr(self):
         # get_wstr() reads input as a str (getstr() returns bytes); feed it with
         # unget_wch().  See _encodable for the character set.
@@ -994,7 +1022,7 @@ class TestCurses(unittest.TestCase):
                   'naïve ¤',     # ISO-8859-1
                   'soupçon €',   # ISO-8859-15
                   'дяк']:   # KOI8-U
-            if self._encodable(s):
+            if self._storable(s):
                 with self.subTest(s=s):
                     win.erase()
                     for ch in reversed(s + '\n'):
@@ -1277,6 +1305,22 @@ class TestCurses(unittest.TestCase):
         self.assertIs(win.enclose(7, 19), False)
         self.assertIs(win.enclose(6, 20), False)
 
+    @requires_curses_window_meth('mouse_trafo')
+    def test_mouse_trafo(self):
+        win = curses.newwin(5, 15, 2, 5)
+        # to_screen=True: window-relative -> stdscr-relative.
+        self.assertEqual(win.mouse_trafo(0, 0, True), (2, 5))
+        self.assertEqual(win.mouse_trafo(3, 10, True), (5, 15))
+        self.assertEqual(win.mouse_trafo(4, 14, True), (6, 19))
+        # A coordinate outside the window has no counterpart.
+        self.assertIsNone(win.mouse_trafo(5, 0, True))
+        self.assertIsNone(win.mouse_trafo(0, 15, True))
+        # to_screen=False is the inverse: stdscr-relative -> window-relative.
+        self.assertEqual(win.mouse_trafo(2, 5, False), (0, 0))
+        self.assertEqual(win.mouse_trafo(6, 19, False), (4, 14))
+        self.assertIsNone(win.mouse_trafo(1, 5, False))
+        self.assertIsNone(win.mouse_trafo(7, 19, False))
+
     def test_putwin(self):
         win = curses.newwin(5, 12, 1, 2)
         win.addstr(2, 1, 'Lorem ipsum')
@@ -1449,7 +1493,6 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(TypeError, curses.unctrl, '')
         self.assertRaises(TypeError, curses.unctrl, 'AB')
 
-    @requires_curses_func('wunctrl')
     def test_wunctrl(self):
         # The wide-character variant of unctrl() returns a str.
         self.assertEqual(curses.wunctrl(b'A'), 'A')
@@ -1459,12 +1502,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(curses.wunctrl(10), '^J')
         # See _encodable for the character set (all printable here).
         for c in ('A', 'é', '¤', '€', 'є'):
-            self.assertEqual(curses.wunctrl(c), c)
+            if self._storable(c):
+                self.assertEqual(curses.wunctrl(c), c)
         self.assertRaises(TypeError, curses.wunctrl, b'')
         self.assertRaises(TypeError, curses.wunctrl, b'AB')
         self.assertRaises(TypeError, curses.wunctrl, '')
-        # More than one spacing character is not a single cell.
-        self.assertRaises(ValueError, curses.wunctrl, 'AB')
+        if WIDE_BUILD:
+            # More than one spacing character is not a single cell.
+            self.assertRaises(ValueError, curses.wunctrl, 'AB')
         self.assertRaises(OverflowError, curses.unctrl, 2**64)
 
     def test_endwin(self):
@@ -1518,7 +1563,8 @@ class TestCurses(unittest.TestCase):
         self.assertIsInstance(curses.has_ic(), bool)
         self.assertIsInstance(curses.has_il(), bool)
         self.assertIsInstance(curses.termattrs(), int)
-        self.assertIsInstance(curses.term_attrs(), int)
+        if hasattr(curses, 'term_attrs'):
+            self.assertIsInstance(curses.term_attrs(), int)
 
         c = curses.killchar()
         self.assertIsInstance(c, bytes)
@@ -1536,14 +1582,12 @@ class TestCurses(unittest.TestCase):
             tty_fd = None
         if tty_fd is not None:
             os.close(tty_fd)
-            if hasattr(curses, 'erasewchar'):
-                c = curses.erasewchar()
-                self.assertIsInstance(c, str)
-                self.assertEqual(len(c), 1)
-            if hasattr(curses, 'killwchar'):
-                c = curses.killwchar()
-                self.assertIsInstance(c, str)
-                self.assertEqual(len(c), 1)
+            c = curses.erasewchar()
+            self.assertIsInstance(c, str)
+            self.assertEqual(len(c), 1)
+            c = curses.killwchar()
+            self.assertIsInstance(c, str)
+            self.assertEqual(len(c), 1)
 
     @requires_curses_func('define_key')
     def test_key_management(self):
@@ -1796,6 +1840,11 @@ class TestCurses(unittest.TestCase):
     def test_has_colors(self):
         self.assertIsInstance(curses.has_colors(), bool)
         self.assertIsInstance(curses.can_change_color(), bool)
+
+    @requires_curses_func('has_mouse')
+    def test_has_mouse(self):
+        # Whether a mouse is available depends on the terminal.
+        self.assertIsInstance(curses.has_mouse(), bool)
 
     def test_start_color(self):
         if not curses.has_colors():
@@ -2219,6 +2268,118 @@ class TestCurses(unittest.TestCase):
         self._type(box, 'def')
         self.assertEqual(box.gather(), 'abc\ndef\n')
 
+    def test_textbox_8bit(self):
+        # An 8-bit-locale character is entered as integer bytes -- the way
+        # do_command() receives getch() input -- and read back; runs on both
+        # builds.  Run the suite under an 8-bit locale
+        # (ISO-8859-1, ISO-8859-15 or KOI8-U) to reach the non-ASCII cases; each
+        # string is used only if the encoding maps it to single bytes.  'abc' is
+        # ASCII, 'café' is common to the Latin encodings, and the rest are
+        # distinctive (byte 0xA4 is '¤'/'€'/'є' in ISO-8859-1/-15/KOI8-U).
+        encoding = self.stdscr.encoding
+        for text in ['abc', 'café', 'naïve ¤¦', 'café €Šž', 'дякую єі']:
+            try:
+                data = text.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != len(text):
+                continue       # a multibyte encoding is not the 8-bit byte path
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 16)
+                for byte in data:
+                    box.do_command(byte)
+                self.assertEqual(box.gather(), text + ' ')
+
+    def test_textbox_8bit_insert(self):
+        # Insert mode shifts the rest of the line right by reading each cell back
+        # and rewriting it; an 8-bit-locale character entered as bytes must
+        # survive the shift.  See test_textbox_8bit for the character choices.
+        encoding = self.stdscr.encoding
+        for ch in ['é', '¤', '€', 'є']:
+            try:
+                data = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != 1:
+                continue
+            with self.subTest(ch=ch):
+                box, win = self._make_textbox(1, 10, insert_mode=True)
+                for byte in ('a' + ch + 'c').encode(encoding):
+                    box.do_command(byte)
+                win.move(0, 1)
+                box.do_command(ord('b'))   # insert 'b', shifting ch and 'c' right
+                self.assertEqual(box.gather(), 'ab' + ch + 'c ')
+
+    def test_textbox_8bit_fill_last_cell(self):
+        # An 8-bit-locale character entered as bytes must survive being written
+        # to the lower-right cell, which uses insch() rather than addch().  See
+        # test_textbox_8bit for the character choices.
+        encoding = self.stdscr.encoding
+        for ch in ['é', '¤', '€', 'є']:
+            try:
+                data = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != 1:
+                continue
+            with self.subTest(ch=ch):
+                text = 'ab' + ch         # the last character fills the corner
+                box, win = self._make_textbox(1, len(text), stripspaces=0)
+                for byte in text.encode(encoding):
+                    box.do_command(byte)
+                self.assertEqual(box.gather(), text)
+
+    def test_textbox_unicode(self):
+        # Like test_textbox_8bit, but characters are entered as strings -- the
+        # way do_command() receives get_wch() input -- rather than integer
+        # bytes.  Each string is used only if encodable in the current locale.
+        for text in ['abc', 'héšλ', 'café', 'naïve ¤', 'soupçon €Š', 'дякую єі']:
+            if self._encodable(text):
+                with self.subTest(text=text):
+                    box, win = self._make_textbox(1, 12)
+                    for ch in text:
+                        box.do_command(ch)
+                    self.assertEqual(box.gather(), text + ' ')
+
+    def test_textbox_unicode_insert_mode(self):
+        # Like test_textbox_8bit_insert, but the character is entered as a string
+        # (get_wch() input).  Each string is used only if encodable.
+        for text in ['abcd', 'aβλc', 'aéàc', 'a¤½c', 'a€Šc', 'aдві']:
+            if self._encodable(text):
+                with self.subTest(text=text):
+                    box, win = self._make_textbox(1, 10, insert_mode=True)
+                    for ch in text[0] + text[2:]:    # all but the 2nd character
+                        box.do_command(ch)
+                    win.move(0, 1)
+                    box.do_command(text[1])          # insert it at position 1
+                    self.assertEqual(box.gather(), text + ' ')
+
+    @requires_wide_build
+    def test_textbox_combining(self):
+        # A spacing character plus a combining mark is a single cell, which
+        # needs the wide build (a narrow build stores one byte per cell).
+        text = 'e\u0301'            # 'e' + COMBINING ACUTE ACCENT
+        if self._encodable(text):
+            box, win = self._make_textbox(1, 10)
+            for ch in text:
+                box.do_command(ch)
+            self.assertEqual(box.gather(), text + ' ')
+
+    def test_textbox_edit_wide(self):
+        # edit() reads characters through get_wch().  Each character is pushed
+        # with unget_wch(), which on a narrow build requires it to encode to a
+        # single byte, so a non-ASCII case needs a wide build or an 8-bit locale.
+        for ch in ['A', 'é', '¤', '€', 'д']:
+            if not self._encodable(ch):
+                continue
+            if not WIDE_BUILD and len(ch.encode(self.stdscr.encoding)) != 1:
+                continue
+            with self.subTest(ch=ch):
+                box, win = self._make_textbox(1, 10)
+                for c in reversed(['a', ch, chr(curses.ascii.BEL)]):
+                    curses.unget_wch(c)
+                self.assertEqual(box.edit(), 'a' + ch + ' ')
+
     def test_textbox_movement(self):
         box, win = self._make_textbox(3, 10)
         self._type(box, 'abc')
@@ -2356,30 +2517,40 @@ class TestCurses(unittest.TestCase):
         curses.ungetch(1025)
         self.stdscr.getkey()
 
-    @requires_curses_func('unget_wch')
+    @unittest.skipIf(getattr(curses, 'ncurses_version', (99,)) < (5, 8),
+                     "unget_wch is broken in ncurses 5.7 and earlier")
+    def test_ungetch_wch(self):
+        # ungetch() also accepts a character, like unget_wch(), and it
+        # round-trips through get_wch() -- including a character that does not
+        # fit in a single byte.
+        stdscr = self.stdscr
+        for ch in ('a', '\xe9', '\xa4', '€', 'є', '\U0010FFFF'):
+            if not self._storable(ch):
+                continue
+            curses.ungetch(ch)
+            self.assertEqual(stdscr.get_wch(), ch)
+        # An int is a raw keycode, not a character codepoint.
+        curses.ungetch(curses.KEY_LEFT)
+        self.assertEqual(stdscr.getch(), curses.KEY_LEFT)
+
     @unittest.skipIf(getattr(curses, 'ncurses_version', (99,)) < (5, 8),
                      "unget_wch is broken in ncurses 5.7 and earlier")
     def test_unget_wch(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
-        # See _encodable for the character set, plus a non-BMP character.
+        # See _storable for the character set, plus a non-BMP character.
         for ch in ('a', '\xe9', '\xa4', '\u20ac', '\u0454', '\U0010FFFF'):
-            try:
-                ch.encode(encoding)
-            except UnicodeEncodeError:
+            if not self._storable(ch):
                 continue
             try:
                 curses.unget_wch(ch)
             except Exception as err:
                 self.fail("unget_wch(%a) failed with encoding %s: %s"
-                          % (ch, stdscr.encoding, err))
-            read = stdscr.get_wch()
-            self.assertEqual(read, ch)
+                          % (ch, encoding, err))
+            self.assertEqual(stdscr.get_wch(), ch)
 
-            code = ord(ch)
-            curses.unget_wch(code)
-            read = stdscr.get_wch()
-            self.assertEqual(read, ch)
+            curses.unget_wch(ord(ch))
+            self.assertEqual(stdscr.get_wch(), ch)
 
     def test_encoding(self):
         stdscr = self.stdscr
@@ -2596,6 +2767,11 @@ class TextboxTest(unittest.TestCase):
         self.mock_win = MagicMock(spec=curses.window)
         self.mock_win.getyx.return_value = (1, 1)
         self.mock_win.getmaxyx.return_value = (10, 20)
+        self.mock_win.encoding = 'utf-8'
+        # A non-blank cell so that _end_of_line() reports a full line: instr()
+        # backs the text reads, inch() the insert-mode shift.
+        self.mock_win.instr.return_value = b'x'
+        self.mock_win.inch.return_value = ord('x')
         self.textbox = curses.textpad.Textbox(self.mock_win)
 
     def test_init(self):

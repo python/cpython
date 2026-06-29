@@ -367,6 +367,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_getvar(self):
         self.root.setvar('test_var', 'hello')
         self.assertEqual(self.root.getvar('test_var'), 'hello')
+        # The name and value are required (gh-152587).
+        self.assertRaises(TypeError, self.root.getvar)
+        self.assertRaises(TypeError, self.root.setvar)
+        self.assertRaises(TypeError, self.root.setvar, 'test_var')
 
     def test_register(self):
         result = []
@@ -598,6 +602,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.after(1, var.set, 'done')
         self.root.wait_variable(var)  # Returns once the variable is set.
         self.assertEqual(var.get(), 'done')
+        # The name is required (gh-152587).
+        self.assertRaises(TypeError, self.root.wait_variable)
 
     def test_wait_window(self):
         top = tkinter.Toplevel(self.root)

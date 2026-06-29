@@ -848,6 +848,8 @@ appear directly in a class definition.
    ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
 
 
+.. _unpacking-comprehensions:
+
 Unpacking in comprehensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
