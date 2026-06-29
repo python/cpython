@@ -3177,18 +3177,18 @@ features:
 
    .. attribute:: st_atime
 
-      Time of most recent access expressed in seconds since the Unix epoch
-      (see the :mod:`time` module).
+      Time of most recent access expressed in
+      :ref:`seconds since the Unix epoch <stat-result-timestamps>`.
 
    .. attribute:: st_mtime
 
-      Time of most recent content modification expressed in seconds since
-      the Unix epoch (see the :mod:`time` module).
+      Time of most recent content modification expressed in
+      :ref:`seconds since the Unix epoch <stat-result-timestamps>`.
 
    .. attribute:: st_ctime
 
-      Time of most recent metadata change expressed in seconds since the
-      Unix epoch (see the :mod:`time` module).
+      Time of most recent metadata change expressed in
+      :ref:`seconds since the Unix epoch <stat-result-timestamps>`.
 
       .. versionchanged:: 3.12
          ``st_ctime`` is deprecated on Windows. Use ``st_birthtime`` for
@@ -3223,8 +3223,9 @@ features:
 
    .. attribute:: st_birthtime
 
-      Time of file creation expressed in seconds since the Unix epoch
-      (see the :mod:`time` module). This attribute is not always available,
+      Time of file creation expressed in
+      :ref:`seconds since the Unix epoch <stat-result-timestamps>`.
+      This attribute is not always available,
       and may raise :exc:`AttributeError`.
 
       .. versionchanged:: 3.12
@@ -3257,6 +3258,8 @@ features:
       :attr:`st_atime_ns`, :attr:`st_mtime_ns`, :attr:`st_ctime_ns` and
       :attr:`st_birthtime_ns`.
 
+   .. _stat-result-timestamps:
+
    .. note::
 
       These timestamps are seconds (or nanoseconds for the ``*_ns`` variants)
@@ -3265,8 +3268,7 @@ features:
       :class:`datetime.datetime`, use
       :func:`datetime.datetime.fromtimestamp` for local time or
       ``datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc)`` for
-      UTC. The function :func:`datetime.datetime.utcfromtimestamp` can also be
-      used to get a naive UTC datetime.
+      UTC.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
