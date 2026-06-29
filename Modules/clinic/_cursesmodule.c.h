@@ -8,8 +8,6 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(complexchar_new__doc__,
 "complexchar(text, /, attr=0, pair=0)\n"
 "--\n"
@@ -103,10 +101,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(complexstr_new__doc__,
 "complexstr(cells, /, attr=<unrepresentable>, pair=<unrepresentable>)\n"
 "--\n"
@@ -193,8 +187,6 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr])\n"
@@ -1101,6 +1093,63 @@ exit:
 
 #endif /* defined(NCURSES_MOUSE_VERSION) */
 
+#if defined(NCURSES_MOUSE_VERSION)
+
+PyDoc_STRVAR(_curses_window_mouse_trafo__doc__,
+"mouse_trafo($self, y, x, to_screen, /)\n"
+"--\n"
+"\n"
+"Convert coordinates between window-relative and screen-relative.\n"
+"\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  x\n"
+"    X-coordinate.\n"
+"  to_screen\n"
+"    If True, convert window-relative coordinates to\n"
+"    stdscr-relative ones; otherwise convert the other way.\n"
+"\n"
+"Return the converted (y, x) coordinates, or None if they are\n"
+"outside the window.");
+
+#define _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF    \
+    {"mouse_trafo", _PyCFunction_CAST(_curses_window_mouse_trafo), METH_FASTCALL, _curses_window_mouse_trafo__doc__},
+
+static PyObject *
+_curses_window_mouse_trafo_impl(PyCursesWindowObject *self, int y, int x,
+                                int to_screen);
+
+static PyObject *
+_curses_window_mouse_trafo(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int y;
+    int x;
+    int to_screen;
+
+    if (!_PyArg_CheckPositional("mouse_trafo", nargs, 3, 3)) {
+        goto exit;
+    }
+    y = PyLong_AsInt(args[0]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    x = PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    to_screen = PyObject_IsTrue(args[2]);
+    if (to_screen < 0) {
+        goto exit;
+    }
+    return_value = _curses_window_mouse_trafo_impl((PyCursesWindowObject *)self, y, x, to_screen);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(NCURSES_MOUSE_VERSION) */
+
 PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 "getbkgd($self, /)\n"
 "--\n"
@@ -1118,8 +1167,6 @@ _curses_window_getbkgd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _curses_window_getbkgd_impl((PyCursesWindowObject *)self);
 }
-
-#if defined(HAVE_NCURSESW)
 
 PyDoc_STRVAR(_curses_window_in_wch__doc__,
 "in_wch([y, x])\n"
@@ -1167,10 +1214,6 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_NCURSESW) */
-
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_getbkgrnd__doc__,
 "getbkgrnd($self, /)\n"
 "--\n"
@@ -1188,8 +1231,6 @@ _curses_window_getbkgrnd(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _curses_window_getbkgrnd_impl((PyCursesWindowObject *)self);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_getch__doc__,
 "getch([y, x])\n"
@@ -1287,8 +1328,6 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_window_get_wch__doc__,
 "get_wch([y, x])\n"
 "Get a wide character from terminal keyboard.\n"
@@ -1334,8 +1373,6 @@ _curses_window_get_wch(PyObject *self, PyObject *args)
 exit:
     return return_value;
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_window_hline__doc__,
 "hline([y, x,] ch, n, [attr])\n"
@@ -2800,8 +2837,6 @@ _curses_erasechar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_erasechar_impl(module);
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_erasewchar__doc__,
 "erasewchar($module, /)\n"
 "--\n"
@@ -2819,8 +2854,6 @@ _curses_erasewchar(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_erasewchar_impl(module);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_flash__doc__,
 "flash($module, /)\n"
@@ -3014,6 +3047,8 @@ PyDoc_STRVAR(_curses_getwin__doc__,
 #define _CURSES_GETWIN_METHODDEF    \
     {"getwin", (PyCFunction)_curses_getwin, METH_O, _curses_getwin__doc__},
 
+#if defined(HAVE_CURSES_SCR_DUMP)
+
 PyDoc_STRVAR(_curses_scr_dump__doc__,
 "scr_dump($module, filename, /)\n"
 "--\n"
@@ -3028,6 +3063,10 @@ PyDoc_STRVAR(_curses_scr_dump__doc__,
 
 #define _CURSES_SCR_DUMP_METHODDEF    \
     {"scr_dump", (PyCFunction)_curses_scr_dump, METH_O, _curses_scr_dump__doc__},
+
+#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+
+#if defined(HAVE_CURSES_SCR_DUMP)
 
 PyDoc_STRVAR(_curses_scr_restore__doc__,
 "scr_restore($module, filename, /)\n"
@@ -3044,6 +3083,10 @@ PyDoc_STRVAR(_curses_scr_restore__doc__,
 #define _CURSES_SCR_RESTORE_METHODDEF    \
     {"scr_restore", (PyCFunction)_curses_scr_restore, METH_O, _curses_scr_restore__doc__},
 
+#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+
+#if defined(HAVE_CURSES_SCR_DUMP)
+
 PyDoc_STRVAR(_curses_scr_init__doc__,
 "scr_init($module, filename, /)\n"
 "--\n"
@@ -3059,6 +3102,10 @@ PyDoc_STRVAR(_curses_scr_init__doc__,
 #define _CURSES_SCR_INIT_METHODDEF    \
     {"scr_init", (PyCFunction)_curses_scr_init, METH_O, _curses_scr_init__doc__},
 
+#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+
+#if defined(HAVE_CURSES_SCR_DUMP)
+
 PyDoc_STRVAR(_curses_scr_set__doc__,
 "scr_set($module, filename, /)\n"
 "--\n"
@@ -3072,6 +3119,8 @@ PyDoc_STRVAR(_curses_scr_set__doc__,
 
 #define _CURSES_SCR_SET_METHODDEF    \
     {"scr_set", (PyCFunction)_curses_scr_set, METH_O, _curses_scr_set__doc__},
+
+#endif /* defined(HAVE_CURSES_SCR_DUMP) */
 
 PyDoc_STRVAR(_curses_halfdelay__doc__,
 "halfdelay($module, tenths, /)\n"
@@ -3210,7 +3259,7 @@ exit:
 
 #endif /* defined(HAVE_CURSES_HAS_KEY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+#if defined(HAVE_CURSES_DEFINE_KEY)
 
 PyDoc_STRVAR(_curses_define_key__doc__,
 "define_key($module, definition, keycode, /)\n"
@@ -3271,9 +3320,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+#endif /* defined(HAVE_CURSES_DEFINE_KEY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+#if defined(HAVE_CURSES_KEY_DEFINED)
 
 PyDoc_STRVAR(_curses_key_defined__doc__,
 "key_defined($module, definition, /)\n"
@@ -3318,9 +3367,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+#endif /* defined(HAVE_CURSES_KEY_DEFINED) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS)
+#if defined(HAVE_CURSES_KEYOK)
 
 PyDoc_STRVAR(_curses_keyok__doc__,
 "keyok($module, keycode, enable, /)\n"
@@ -3363,7 +3412,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS) */
+#endif /* defined(HAVE_CURSES_KEYOK) */
 
 PyDoc_STRVAR(_curses_init_color__doc__,
 "init_color($module, color_number, r, g, b, /)\n"
@@ -3841,7 +3890,7 @@ _curses_new_prescr(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_CURSES_NEW_PRESCR) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_ESCDELAY)
 
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
@@ -3865,9 +3914,9 @@ _curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_escdelay_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_ESCDELAY)
 
 PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "set_escdelay($module, ms, /)\n"
@@ -3904,9 +3953,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_ESCDELAY) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_TABSIZE)
 
 PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "get_tabsize($module, /)\n"
@@ -3929,9 +3978,9 @@ _curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_get_tabsize_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_TABSIZE) */
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+#if defined(HAVE_CURSES_SET_TABSIZE)
 
 PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "set_tabsize($module, size, /)\n"
@@ -3967,7 +4016,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+#endif /* defined(HAVE_CURSES_SET_TABSIZE) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
@@ -4113,8 +4162,6 @@ _curses_killchar(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_killchar_impl(module);
 }
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_killwchar__doc__,
 "killwchar($module, /)\n"
 "--\n"
@@ -4132,8 +4179,6 @@ _curses_killwchar(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_killwchar_impl(module);
 }
-
-#endif /* defined(HAVE_NCURSESW) */
 
 PyDoc_STRVAR(_curses_longname__doc__,
 "longname($module, /)\n"
@@ -4186,6 +4231,28 @@ _curses_meta(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#if defined(NCURSES_MOUSE_VERSION)
+
+PyDoc_STRVAR(_curses_has_mouse__doc__,
+"has_mouse($module, /)\n"
+"--\n"
+"\n"
+"Return True if the mouse driver has been successfully initialized.");
+
+#define _CURSES_HAS_MOUSE_METHODDEF    \
+    {"has_mouse", (PyCFunction)_curses_has_mouse, METH_NOARGS, _curses_has_mouse__doc__},
+
+static PyObject *
+_curses_has_mouse_impl(PyObject *module);
+
+static PyObject *
+_curses_has_mouse(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_has_mouse_impl(module);
+}
+
+#endif /* defined(NCURSES_MOUSE_VERSION) */
 
 #if defined(NCURSES_MOUSE_VERSION)
 
@@ -5073,6 +5140,31 @@ _curses_termattrs(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_termattrs_impl(module);
 }
 
+#if defined(HAVE_CURSES_TERM_ATTRS)
+
+PyDoc_STRVAR(_curses_term_attrs__doc__,
+"term_attrs($module, /)\n"
+"--\n"
+"\n"
+"Return a logical OR of all video attributes supported by the terminal.\n"
+"\n"
+"The attributes are WA_* values, the extended-attribute counterparts of\n"
+"the A_* values returned by termattrs().");
+
+#define _CURSES_TERM_ATTRS_METHODDEF    \
+    {"term_attrs", (PyCFunction)_curses_term_attrs, METH_NOARGS, _curses_term_attrs__doc__},
+
+static PyObject *
+_curses_term_attrs_impl(PyObject *module);
+
+static PyObject *
+_curses_term_attrs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_term_attrs_impl(module);
+}
+
+#endif /* defined(HAVE_CURSES_TERM_ATTRS) */
+
 PyDoc_STRVAR(_curses_termname__doc__,
 "termname($module, /)\n"
 "--\n"
@@ -5311,8 +5403,6 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 #define _CURSES_UNCTRL_METHODDEF    \
     {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
 
-#if defined(HAVE_NCURSESW)
-
 PyDoc_STRVAR(_curses_wunctrl__doc__,
 "wunctrl($module, ch, /)\n"
 "--\n"
@@ -5325,8 +5415,6 @@ PyDoc_STRVAR(_curses_wunctrl__doc__,
 #define _CURSES_WUNCTRL_METHODDEF    \
     {"wunctrl", (PyCFunction)_curses_wunctrl, METH_O, _curses_wunctrl__doc__},
 
-#endif /* defined(HAVE_NCURSESW) */
-
 PyDoc_STRVAR(_curses_ungetch__doc__,
 "ungetch($module, ch, /)\n"
 "--\n"
@@ -5335,8 +5423,6 @@ PyDoc_STRVAR(_curses_ungetch__doc__,
 
 #define _CURSES_UNGETCH_METHODDEF    \
     {"ungetch", (PyCFunction)_curses_ungetch, METH_O, _curses_ungetch__doc__},
-
-#if defined(HAVE_NCURSESW)
 
 PyDoc_STRVAR(_curses_unget_wch__doc__,
 "unget_wch($module, ch, /)\n"
@@ -5347,7 +5433,446 @@ PyDoc_STRVAR(_curses_unget_wch__doc__,
 #define _CURSES_UNGET_WCH_METHODDEF    \
     {"unget_wch", (PyCFunction)_curses_unget_wch, METH_O, _curses_unget_wch__doc__},
 
-#endif /* defined(HAVE_NCURSESW) */
+PyDoc_STRVAR(_curses_slk_init__doc__,
+"slk_init($module, fmt=0, /)\n"
+"--\n"
+"\n"
+"Reserve a line for soft labels and choose their layout.\n"
+"\n"
+"  fmt\n"
+"    Label layout: 0 = 3-2-3, 1 = 4-4 (8 labels each); 2 = 4-4-4,\n"
+"    3 = 4-4-4 with an index line (12 labels each, ncurses extensions).\n"
+"\n"
+"Must be called before initscr() or newterm().");
+
+#define _CURSES_SLK_INIT_METHODDEF    \
+    {"slk_init", _PyCFunction_CAST(_curses_slk_init), METH_FASTCALL, _curses_slk_init__doc__},
+
+static PyObject *
+_curses_slk_init_impl(PyObject *module, int fmt);
+
+static PyObject *
+_curses_slk_init(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fmt = 0;
+
+    if (!_PyArg_CheckPositional("slk_init", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    fmt = PyLong_AsInt(args[0]);
+    if (fmt == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _curses_slk_init_impl(module, fmt);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_set__doc__,
+"slk_set($module, labnum, label, justify=0, /)\n"
+"--\n"
+"\n"
+"Set the text of a soft label.\n"
+"\n"
+"  labnum\n"
+"    The label number (1 to 8, or 1 to 12 in a 12-label layout).\n"
+"  label\n"
+"    The text to display.\n"
+"  justify\n"
+"    0 = left, 1 = center, 2 = right.");
+
+#define _CURSES_SLK_SET_METHODDEF    \
+    {"slk_set", _PyCFunction_CAST(_curses_slk_set), METH_FASTCALL, _curses_slk_set__doc__},
+
+static PyObject *
+_curses_slk_set_impl(PyObject *module, int labnum, PyObject *label,
+                     int justify);
+
+static PyObject *
+_curses_slk_set(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int labnum;
+    PyObject *label;
+    int justify = 0;
+
+    if (!_PyArg_CheckPositional("slk_set", nargs, 2, 3)) {
+        goto exit;
+    }
+    labnum = PyLong_AsInt(args[0]);
+    if (labnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("slk_set", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    label = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    justify = PyLong_AsInt(args[2]);
+    if (justify == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _curses_slk_set_impl(module, labnum, label, justify);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_label__doc__,
+"slk_label($module, labnum, /)\n"
+"--\n"
+"\n"
+"Return the current text of a soft label.\n"
+"\n"
+"  labnum\n"
+"    The label number.");
+
+#define _CURSES_SLK_LABEL_METHODDEF    \
+    {"slk_label", (PyCFunction)_curses_slk_label, METH_O, _curses_slk_label__doc__},
+
+static PyObject *
+_curses_slk_label_impl(PyObject *module, int labnum);
+
+static PyObject *
+_curses_slk_label(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int labnum;
+
+    labnum = PyLong_AsInt(arg);
+    if (labnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_slk_label_impl(module, labnum);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_refresh__doc__,
+"slk_refresh($module, /)\n"
+"--\n"
+"\n"
+"Update the soft labels on the screen.");
+
+#define _CURSES_SLK_REFRESH_METHODDEF    \
+    {"slk_refresh", (PyCFunction)_curses_slk_refresh, METH_NOARGS, _curses_slk_refresh__doc__},
+
+static PyObject *
+_curses_slk_refresh_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_refresh(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_refresh_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_noutrefresh__doc__,
+"slk_noutrefresh($module, /)\n"
+"--\n"
+"\n"
+"Update the soft labels on the virtual screen only.");
+
+#define _CURSES_SLK_NOUTREFRESH_METHODDEF    \
+    {"slk_noutrefresh", (PyCFunction)_curses_slk_noutrefresh, METH_NOARGS, _curses_slk_noutrefresh__doc__},
+
+static PyObject *
+_curses_slk_noutrefresh_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_noutrefresh(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_noutrefresh_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_clear__doc__,
+"slk_clear($module, /)\n"
+"--\n"
+"\n"
+"Erase the soft labels from the screen.");
+
+#define _CURSES_SLK_CLEAR_METHODDEF    \
+    {"slk_clear", (PyCFunction)_curses_slk_clear, METH_NOARGS, _curses_slk_clear__doc__},
+
+static PyObject *
+_curses_slk_clear_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_clear(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_clear_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_restore__doc__,
+"slk_restore($module, /)\n"
+"--\n"
+"\n"
+"Restore the soft labels after a preceding slk_clear().");
+
+#define _CURSES_SLK_RESTORE_METHODDEF    \
+    {"slk_restore", (PyCFunction)_curses_slk_restore, METH_NOARGS, _curses_slk_restore__doc__},
+
+static PyObject *
+_curses_slk_restore_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_restore(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_restore_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_touch__doc__,
+"slk_touch($module, /)\n"
+"--\n"
+"\n"
+"Force the soft labels to be redrawn by the next slk_refresh().");
+
+#define _CURSES_SLK_TOUCH_METHODDEF    \
+    {"slk_touch", (PyCFunction)_curses_slk_touch, METH_NOARGS, _curses_slk_touch__doc__},
+
+static PyObject *
+_curses_slk_touch_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_touch(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_touch_impl(module);
+}
+
+PyDoc_STRVAR(_curses_slk_attron__doc__,
+"slk_attron($module, attr, /)\n"
+"--\n"
+"\n"
+"Add the given chtype attributes to the soft labels.");
+
+#define _CURSES_SLK_ATTRON_METHODDEF    \
+    {"slk_attron", (PyCFunction)_curses_slk_attron, METH_O, _curses_slk_attron__doc__},
+
+static PyObject *
+_curses_slk_attron_impl(PyObject *module, long attr);
+
+static PyObject *
+_curses_slk_attron(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    long attr;
+
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_slk_attron_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_attroff__doc__,
+"slk_attroff($module, attr, /)\n"
+"--\n"
+"\n"
+"Remove the given chtype attributes from the soft labels.");
+
+#define _CURSES_SLK_ATTROFF_METHODDEF    \
+    {"slk_attroff", (PyCFunction)_curses_slk_attroff, METH_O, _curses_slk_attroff__doc__},
+
+static PyObject *
+_curses_slk_attroff_impl(PyObject *module, long attr);
+
+static PyObject *
+_curses_slk_attroff(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    long attr;
+
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_slk_attroff_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_attrset__doc__,
+"slk_attrset($module, attr, /)\n"
+"--\n"
+"\n"
+"Set the chtype attributes of the soft labels.");
+
+#define _CURSES_SLK_ATTRSET_METHODDEF    \
+    {"slk_attrset", (PyCFunction)_curses_slk_attrset, METH_O, _curses_slk_attrset__doc__},
+
+static PyObject *
+_curses_slk_attrset_impl(PyObject *module, long attr);
+
+static PyObject *
+_curses_slk_attrset(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    long attr;
+
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_slk_attrset_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+#if defined(NCURSES_EXT_FUNCS)
+
+PyDoc_STRVAR(_curses_slk_attr__doc__,
+"slk_attr($module, /)\n"
+"--\n"
+"\n"
+"Return the current chtype attributes of the soft labels.");
+
+#define _CURSES_SLK_ATTR_METHODDEF    \
+    {"slk_attr", (PyCFunction)_curses_slk_attr, METH_NOARGS, _curses_slk_attr__doc__},
+
+static PyObject *
+_curses_slk_attr_impl(PyObject *module);
+
+static PyObject *
+_curses_slk_attr(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_slk_attr_impl(module);
+}
+
+#endif /* defined(NCURSES_EXT_FUNCS) */
+
+PyDoc_STRVAR(_curses_slk_attr_on__doc__,
+"slk_attr_on($module, attr, /)\n"
+"--\n"
+"\n"
+"Turn on attributes of the soft labels without affecting others.");
+
+#define _CURSES_SLK_ATTR_ON_METHODDEF    \
+    {"slk_attr_on", (PyCFunction)_curses_slk_attr_on, METH_O, _curses_slk_attr_on__doc__},
+
+static PyObject *
+_curses_slk_attr_on_impl(PyObject *module, attr_t attr);
+
+static PyObject *
+_curses_slk_attr_on(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+
+    if (!attr_converter(arg, &attr)) {
+        goto exit;
+    }
+    return_value = _curses_slk_attr_on_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_attr_off__doc__,
+"slk_attr_off($module, attr, /)\n"
+"--\n"
+"\n"
+"Turn off attributes of the soft labels without affecting others.");
+
+#define _CURSES_SLK_ATTR_OFF_METHODDEF    \
+    {"slk_attr_off", (PyCFunction)_curses_slk_attr_off, METH_O, _curses_slk_attr_off__doc__},
+
+static PyObject *
+_curses_slk_attr_off_impl(PyObject *module, attr_t attr);
+
+static PyObject *
+_curses_slk_attr_off(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+
+    if (!attr_converter(arg, &attr)) {
+        goto exit;
+    }
+    return_value = _curses_slk_attr_off_impl(module, attr);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_attr_set__doc__,
+"slk_attr_set($module, attr, pair=0, /)\n"
+"--\n"
+"\n"
+"Set the attributes and color pair of the soft labels.");
+
+#define _CURSES_SLK_ATTR_SET_METHODDEF    \
+    {"slk_attr_set", _PyCFunction_CAST(_curses_slk_attr_set), METH_FASTCALL, _curses_slk_attr_set__doc__},
+
+static PyObject *
+_curses_slk_attr_set_impl(PyObject *module, attr_t attr, int pair);
+
+static PyObject *
+_curses_slk_attr_set(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    attr_t attr;
+    int pair = 0;
+
+    if (!_PyArg_CheckPositional("slk_attr_set", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!attr_converter(args[0], &attr)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!pair_converter(args[1], &pair)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _curses_slk_attr_set_impl(module, attr, pair);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_curses_slk_color__doc__,
+"slk_color($module, pair, /)\n"
+"--\n"
+"\n"
+"Set the color pair of the soft labels.");
+
+#define _CURSES_SLK_COLOR_METHODDEF    \
+    {"slk_color", (PyCFunction)_curses_slk_color, METH_O, _curses_slk_color__doc__},
+
+static PyObject *
+_curses_slk_color_impl(PyObject *module, int pair);
+
+static PyObject *
+_curses_slk_color(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int pair;
+
+    if (!pair_converter(arg, &pair)) {
+        goto exit;
+    }
+    return_value = _curses_slk_color_impl(module, pair);
+
+exit:
+    return return_value;
+}
 
 #if defined(HAVE_CURSES_USE_ENV)
 
@@ -5482,17 +6007,9 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
 
-#ifndef _CURSES_WINDOW_IN_WCH_METHODDEF
-    #define _CURSES_WINDOW_IN_WCH_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_IN_WCH_METHODDEF) */
-
-#ifndef _CURSES_WINDOW_GETBKGRND_METHODDEF
-    #define _CURSES_WINDOW_GETBKGRND_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_GETBKGRND_METHODDEF) */
-
-#ifndef _CURSES_WINDOW_GET_WCH_METHODDEF
-    #define _CURSES_WINDOW_GET_WCH_METHODDEF
-#endif /* !defined(_CURSES_WINDOW_GET_WCH_METHODDEF) */
+#ifndef _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF
+    #define _CURSES_WINDOW_MOUSE_TRAFO_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_MOUSE_TRAFO_METHODDEF) */
 
 #ifndef _CURSES_WINDOW_NOUTREFRESH_METHODDEF
     #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF
@@ -5522,10 +6039,6 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_IS_RAW_METHODDEF
 #endif /* !defined(_CURSES_IS_RAW_METHODDEF) */
 
-#ifndef _CURSES_ERASEWCHAR_METHODDEF
-    #define _CURSES_ERASEWCHAR_METHODDEF
-#endif /* !defined(_CURSES_ERASEWCHAR_METHODDEF) */
-
 #ifndef _CURSES_GETSYX_METHODDEF
     #define _CURSES_GETSYX_METHODDEF
 #endif /* !defined(_CURSES_GETSYX_METHODDEF) */
@@ -5537,6 +6050,22 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_UNGETMOUSE_METHODDEF
     #define _CURSES_UNGETMOUSE_METHODDEF
 #endif /* !defined(_CURSES_UNGETMOUSE_METHODDEF) */
+
+#ifndef _CURSES_SCR_DUMP_METHODDEF
+    #define _CURSES_SCR_DUMP_METHODDEF
+#endif /* !defined(_CURSES_SCR_DUMP_METHODDEF) */
+
+#ifndef _CURSES_SCR_RESTORE_METHODDEF
+    #define _CURSES_SCR_RESTORE_METHODDEF
+#endif /* !defined(_CURSES_SCR_RESTORE_METHODDEF) */
+
+#ifndef _CURSES_SCR_INIT_METHODDEF
+    #define _CURSES_SCR_INIT_METHODDEF
+#endif /* !defined(_CURSES_SCR_INIT_METHODDEF) */
+
+#ifndef _CURSES_SCR_SET_METHODDEF
+    #define _CURSES_SCR_SET_METHODDEF
+#endif /* !defined(_CURSES_SCR_SET_METHODDEF) */
 
 #ifndef _CURSES_HAS_KEY_METHODDEF
     #define _CURSES_HAS_KEY_METHODDEF
@@ -5594,9 +6123,9 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
 
-#ifndef _CURSES_KILLWCHAR_METHODDEF
-    #define _CURSES_KILLWCHAR_METHODDEF
-#endif /* !defined(_CURSES_KILLWCHAR_METHODDEF) */
+#ifndef _CURSES_HAS_MOUSE_METHODDEF
+    #define _CURSES_HAS_MOUSE_METHODDEF
+#endif /* !defined(_CURSES_HAS_MOUSE_METHODDEF) */
 
 #ifndef _CURSES_MOUSEINTERVAL_METHODDEF
     #define _CURSES_MOUSEINTERVAL_METHODDEF
@@ -5622,17 +6151,17 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_SETSYX_METHODDEF
 #endif /* !defined(_CURSES_SETSYX_METHODDEF) */
 
+#ifndef _CURSES_TERM_ATTRS_METHODDEF
+    #define _CURSES_TERM_ATTRS_METHODDEF
+#endif /* !defined(_CURSES_TERM_ATTRS_METHODDEF) */
+
 #ifndef _CURSES_TYPEAHEAD_METHODDEF
     #define _CURSES_TYPEAHEAD_METHODDEF
 #endif /* !defined(_CURSES_TYPEAHEAD_METHODDEF) */
 
-#ifndef _CURSES_WUNCTRL_METHODDEF
-    #define _CURSES_WUNCTRL_METHODDEF
-#endif /* !defined(_CURSES_WUNCTRL_METHODDEF) */
-
-#ifndef _CURSES_UNGET_WCH_METHODDEF
-    #define _CURSES_UNGET_WCH_METHODDEF
-#endif /* !defined(_CURSES_UNGET_WCH_METHODDEF) */
+#ifndef _CURSES_SLK_ATTR_METHODDEF
+    #define _CURSES_SLK_ATTR_METHODDEF
+#endif /* !defined(_CURSES_SLK_ATTR_METHODDEF) */
 
 #ifndef _CURSES_USE_ENV_METHODDEF
     #define _CURSES_USE_ENV_METHODDEF
@@ -5645,4 +6174,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=01cb1ecb396881c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=55829d2ef2b559a0 input=a9049054013a1b77]*/

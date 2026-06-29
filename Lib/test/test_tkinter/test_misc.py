@@ -2,6 +2,7 @@ import collections.abc
 import functools
 import platform
 import sys
+import textwrap
 import unittest
 import weakref
 import tkinter
@@ -9,6 +10,7 @@ from tkinter import TclError
 import enum
 from test import support
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
@@ -52,6 +54,33 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b3 = tkinter.Button(f2)
         b4 = Button2(f2)
         self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
+
+    def test_dealloc_in_wrong_thread(self):
+        # gh-83274: deallocating the interpreter in the wrong thread must not
+        # crash.
+        script = textwrap.dedent("""
+            import threading
+            import tkinter
+            root = tkinter.Tk()
+            root.destroy()
+            # Let another thread drop the last reference.
+            ready = threading.Event()
+            t = threading.Thread(target=lambda obj: ready.wait(), args=(root,))
+            t.start()
+            del root
+            ready.set()
+            t.join()
+            print('ok')
+        """)
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(out.strip(), b'ok')
+        if not support.Py_GIL_DISABLED:
+            # On the free-threaded build the interpreter may instead be
+            # deallocated in its own thread (deferred reference counting), so
+            # the warning is not necessarily emitted.  The crucial guarantee --
+            # no crash -- is already checked by assert_python_ok() above.
+            self.assertIn(b'RuntimeWarning', err)
+            self.assertIn(b'gh-83274', err)
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):
@@ -338,6 +367,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_getvar(self):
         self.root.setvar('test_var', 'hello')
         self.assertEqual(self.root.getvar('test_var'), 'hello')
+        # The name and value are required (gh-152587).
+        self.assertRaises(TypeError, self.root.getvar)
+        self.assertRaises(TypeError, self.root.setvar)
+        self.assertRaises(TypeError, self.root.setvar, 'test_var')
 
     def test_register(self):
         result = []
@@ -569,6 +602,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.after(1, var.set, 'done')
         self.root.wait_variable(var)  # Returns once the variable is set.
         self.assertEqual(var.get(), 'done')
+        # The name is required (gh-152587).
+        self.assertRaises(TypeError, self.root.wait_variable)
 
     def test_wait_window(self):
         top = tkinter.Toplevel(self.root)

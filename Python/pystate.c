@@ -1605,6 +1605,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->current_frame = &_tstate->base_frame;
     // base_frame pointer for profilers to validate stack unwinding
     tstate->base_frame = &_tstate->base_frame;
+    tstate->last_profiled_frame = NULL;
+    tstate->last_profiled_frame_seq = 0;
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;

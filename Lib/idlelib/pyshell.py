@@ -242,12 +242,13 @@ class PyShellEditorWindow(EditorWindow):
         breaks = self.breakpoints
         filename = self.io.filename
         try:
-            with open(self.breakpointPath) as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
         except OSError:
             lines = []
         try:
-            with open(self.breakpointPath, "w") as new_file:
+            with open(self.breakpointPath, "w", encoding='utf-8') as new_file:
                 for line in lines:
                     if not line.startswith(filename + '='):
                         new_file.write(line)
@@ -272,7 +273,8 @@ class PyShellEditorWindow(EditorWindow):
         if filename is None:
             return
         if os.path.isfile(self.breakpointPath):
-            with open(self.breakpointPath) as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
             for line in lines:
                 if line.startswith(filename + '='):

@@ -111,9 +111,21 @@ curses
   and the module functions :func:`curses.erasewchar`, :func:`curses.killwchar`
   and :func:`curses.wunctrl`, the wide-character counterparts of
   :func:`curses.erasechar`, :func:`curses.killchar` and :func:`curses.unctrl`.
-  These features are only available when built against the wide-character
-  ncursesw library.
+  On a narrow (non-ncursesw) build the character cell holds a single character
+  without combining marks, representable as one byte in the window's encoding,
+  and :meth:`~curses.window.in_wstr` returns its decoded text.
   (Contributed by Serhiy Storchaka in :gh:`151757`.)
+
+* The wide-character :mod:`curses` functions and methods
+  :meth:`~curses.window.get_wch`, :meth:`~curses.window.get_wstr`,
+  :func:`curses.unget_wch`, :func:`curses.erasewchar`,
+  :func:`curses.killwchar` and :func:`curses.wunctrl` now also work when Python
+  is not built against a wide-character-aware curses library, on an 8-bit
+  locale, where each character is a single byte in the relevant encoding.
+  :func:`curses.ungetch` now also accepts a one-character string, like
+  :func:`curses.unget_wch`; on a wide-character build it can be any character
+  (previously a multibyte character raised :exc:`OverflowError`).
+  (Contributed by Serhiy Storchaka in :gh:`152470`.)
 
 * Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
   (Contributed by Serhiy Storchaka in :gh:`151744`.)
@@ -139,13 +151,16 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`152219`.)
 
 * Add the :class:`curses.complexchar` type, representing a styled
-  wide-character cell (its text, attributes and color pair), and the window
+  character cell (its text, attributes and color pair), and the window
   methods :meth:`~curses.window.in_wch` and :meth:`~curses.window.getbkgrnd`
-  that return one --- the wide-character counterparts of
+  that return one --- the counterparts of
   :meth:`~curses.window.inch` and :meth:`~curses.window.getbkgd`.  The
   character-cell methods, such as :meth:`~curses.window.addch` and
   :meth:`~curses.window.border`, now also accept a
-  :class:`~curses.complexchar`.
+  :class:`~curses.complexchar`.  These work whether or not Python was built
+  against a wide-character-aware curses library; on a narrow build a cell holds a
+  single character representable as one byte in the window's encoding (so only
+  8-bit locales are supported).
   (Contributed by Serhiy Storchaka in :gh:`152233`.)
 
 * Add the :class:`curses.complexstr` type, an immutable run of styled cells
@@ -153,7 +168,9 @@ curses
   method :meth:`~curses.window.in_wchstr` that returns one.  The string-cell
   methods :meth:`~curses.window.addstr`, :meth:`~curses.window.addnstr`,
   :meth:`~curses.window.insstr` and :meth:`~curses.window.insnstr` now also
-  accept a :class:`~curses.complexstr`.
+  accept a :class:`~curses.complexstr`.  Like :class:`~curses.complexchar`, it
+  works whether or not Python was built against a wide-character-aware curses
+  library.
   (Contributed by Serhiy Storchaka in :gh:`152233`.)
 
 * Add the :mod:`curses` window method :meth:`~curses.window.dupwin`, which
@@ -165,10 +182,37 @@ curses
   :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
   (Contributed by Serhiy Storchaka in :gh:`152260`.)
 
+* Add the soft-label-key functions to the :mod:`curses` module, which manage a
+  row of labels along the bottom line of the screen:
+  :func:`~curses.slk_init`, :func:`~curses.slk_set`, :func:`~curses.slk_label`,
+  :func:`~curses.slk_refresh`, :func:`~curses.slk_noutrefresh`,
+  :func:`~curses.slk_clear`, :func:`~curses.slk_restore`,
+  :func:`~curses.slk_touch`, the attribute functions
+  :func:`~curses.slk_attron`, :func:`~curses.slk_attroff`,
+  :func:`~curses.slk_attrset`, :func:`~curses.slk_attr`,
+  :func:`~curses.slk_attr_on`, :func:`~curses.slk_attr_off`,
+  :func:`~curses.slk_attr_set`, and :func:`~curses.slk_color`.
+  (Contributed by Serhiy Storchaka in :gh:`152263`.)
+
+* Add the :func:`curses.term_attrs` function, which returns the supported
+  video attributes as :ref:`WA_* <curses-wa-constants>` values, the
+  counterpart of :func:`curses.termattrs`.
+  (Contributed by Serhiy Storchaka in :gh:`152332`.)
+
 * Add the :mod:`curses` key-management functions :func:`~curses.define_key`,
   :func:`~curses.key_defined` and :func:`~curses.keyok`, available when built
   against an ncurses with ``NCURSES_EXT_FUNCS``.
   (Contributed by Serhiy Storchaka in :gh:`152334`.)
+
+* Add the :func:`curses.has_mouse` function and the
+  :meth:`curses.window.mouse_trafo` method, completing the :mod:`curses`
+  mouse interface.
+  (Contributed by Serhiy Storchaka in :gh:`152325`.)
+
+* :class:`curses.textpad.Textbox` now supports entering and reading back the
+  full Unicode range, including combining characters, when curses is built with
+  wide-character support.
+  (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
 gzip
 ----
@@ -526,6 +570,14 @@ Porting to Python 3.16
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+* In :mod:`tkinter`, the *name* parameter of the
+  :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
+  :meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
+  :meth:`!setvar` are now required.  Calling these methods without
+  them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
+  :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka in :gh:`152587`.)
 
 
 Build changes
