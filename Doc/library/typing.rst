@@ -899,8 +899,8 @@ using ``[]``.
       Use ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
       :pep:`695` for more details.
 
-      In Python 3.16, ``AnyStr`` will be removed from ``typing.__all__``, and
-      deprecation warnings will be emitted at runtime when it is accessed or
+      Since Python 3.16, ``AnyStr`` is removed from ``typing.__all__``, and
+      deprecation warnings are emitted at runtime when it is accessed or
       imported from ``typing``. ``AnyStr`` will be removed from ``typing``
       in Python 3.18.
 

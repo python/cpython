@@ -538,6 +538,10 @@ New deprecations
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
+* :mod:`typing`:
+
+   * :data:`typing.AnyStr` now raises :exc:`DeprecationWarning` when used.
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
