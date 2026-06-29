@@ -98,6 +98,12 @@ static const uintptr_t min_frame_pointer_addr = 0x1000;
 // https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#STACK
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET 2
+#elif defined(__loongarch__)
+// On LoongArch, the frame pointer is the caller's stack pointer.
+// The saved frame pointer is stored at fp[-2], and the return
+// address is stored at fp[-1].
+#  define FRAME_POINTER_NEXT_OFFSET -2
+#  define FRAME_POINTER_RETURN_OFFSET -1
 #else
 #  define FRAME_POINTER_NEXT_OFFSET 0
 #  define FRAME_POINTER_RETURN_OFFSET 1
