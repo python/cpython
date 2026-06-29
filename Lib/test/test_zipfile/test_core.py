@@ -1239,7 +1239,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         self.assertEqual(ex_csize, 1)  # compressed size
 
         # check the entry in central directory,
-        # which should immedially follow the local file entry
+        # which should immediately follow the local file entry
         (
             header, v_made, v_ext, os, flags, comp, csize, usize, fn_len,
             ex_total_len, comment_len, in_attr, local_offset, filename,
