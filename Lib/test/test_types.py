@@ -1483,6 +1483,8 @@ class MappingProxyTests(unittest.TestCase):
         self.check_richcompare(frozendict)
 
     def test_richcompare_evil(self):
+        # This test used to mutate the list dictionary,
+        # but MappingProxyType now creates a copy to call `__eq__`:
         # https://github.com/python/cpython/issues/152405
         key = "__mappingproxy_crash_key__"
 
