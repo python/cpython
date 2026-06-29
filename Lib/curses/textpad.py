@@ -57,32 +57,13 @@ class Textbox:
         self.maxx = maxx - 1
 
     def _decode(self, ch):
-        # The text of a chtype cell or input byte, decoded with the window's
-        # encoding.  A_CHARTEXT keeps the character byte, dropping the attributes.
+        # Decode an integer keystroke or byte to text with the window's encoding.
+        # A_CHARTEXT drops any attribute bits.
         return bytes([ch & curses.A_CHARTEXT]).decode(self.win.encoding, 'replace')
 
-    def _char_at(self, *yx):
-        # The text of the cell at the given position (default: the cursor).
-        # instr() re-encodes it to the window's encoding; inch() cannot
-        # represent a non-ASCII 8-bit-locale character on a wide build.
-        return self.win.instr(*yx, 1).decode(self.win.encoding, 'replace')
-
-    def _cell_at(self, *yx):
-        # The cell at the given position (default: the cursor) as a chtype
-        # addch() can write back with its rendition.  inch() mangles a non-ASCII
-        # character on a wide build, so take the byte from instr() and the
-        # attributes from inch().
-        return self.win.instr(*yx, 1)[0] | self.win.inch(*yx) & curses.A_ATTRIBUTES
-
-    def _isprint(self, cell):
-        # Whether a chtype cell holds a printable character; _decode() drops the
-        # attribute bits.
-        return self._decode(cell).isprintable()
-
     def _printable_key(self, ch):
-        # Whether the integer keystroke is a printable character, not a key
-        # code.  0..255 are character bytes (decoded with the window's encoding);
-        # larger values are function and navigation keys.
+        # Whether the integer keystroke is a printable character, not a key code:
+        # 0..255 are character bytes, larger values are function keys.
         return ch <= 0xff and self._decode(ch).isprintable()
 
     def _end_of_line(self, y):
@@ -91,7 +72,8 @@ class Textbox:
         self._update_max_yx()
         last = self.maxx
         while True:
-            if self._char_at(y, last) != ' ':
+            # The text of the cell at (y, last).
+            if str(self.win.in_wch(y, last)) != ' ':
                 last = min(self.maxx, last+1)
                 break
             elif last == 0:
@@ -105,16 +87,22 @@ class Textbox:
         backyx = None
         while True:
             if self.insert_mode:
-                oldch = self._cell_at()
+                # The displaced cell, as a complexchar so addch() can rewrite it
+                # with its rendition.
+                oldch = self.win.in_wch()
             if y >= self.maxy and x >= self.maxx:
-                # Use insch() in the lower-right cell: addch() there would move
-                # the cursor out of the window, raising an error and scrolling
-                # a scrollable window.  Pass it as text: insch() does not decode
-                # an int byte through the locale on a wide build.
-                self.win.insch(self._decode(ch), ch & curses.A_ATTRIBUTES)
+                # Use insch() in the lower-right cell; addch() there would push
+                # the cursor out of the window (an error, and it scrolls a
+                # scrollable window).  insch() does not decode an int byte
+                # through the locale on a wide build, so pass it as text.
+                if isinstance(ch, int):
+                    self.win.insch(self._decode(ch), ch & curses.A_ATTRIBUTES)
+                else:
+                    self.win.insch(ch)
                 break
             self.win.addch(ch)
-            if not self.insert_mode or not self._isprint(oldch):
+            # In insert mode keep shifting cells right until a blank one.
+            if not self.insert_mode or not str(oldch).isprintable():
                 break
             ch = oldch
             (y, x) = self.win.getyx()
@@ -130,9 +118,17 @@ class Textbox:
         self._update_max_yx()
         (y, x) = self.win.getyx()
         self.lastcmd = ch
-        if self._printable_key(ch):
+        if isinstance(ch, str):
+            # A character from get_wch(); a control character is dispatched
+            # below by its code point.
+            if ch.isprintable():
+                self._insert_printable_char(ch)
+                return 1
+            ch = ord(ch)
+        elif self._printable_key(ch):
             self._insert_printable_char(ch)
-        elif ch == curses.ascii.SOH:                           # ^a
+            return 1
+        if ch == curses.ascii.SOH:                             # ^a
             self.win.move(y, 0)
         elif ch in (curses.ascii.STX,curses.KEY_LEFT,
                     curses.ascii.BS,
@@ -204,7 +200,7 @@ class Textbox:
             for x in range(self.maxx+1):
                 if self.stripspaces and x > stop:
                     break
-                result = result + self._char_at(y, x)
+                result = result + str(self.win.in_wch(y, x))
             if self.maxy > 0:
                 result = result + "\n"
         return result
@@ -212,7 +208,12 @@ class Textbox:
     def edit(self, validate=None):
         "Edit in the widget window and collect the results."
         while 1:
-            ch = self.win.getch()
+            ch = self.win.get_wch()
+            # Represent an ASCII keystroke by its code point, the way getch()
+            # always has, so that existing validators and the command dispatch
+            # keep working; only non-ASCII characters are passed as strings.
+            if isinstance(ch, str) and ch.isascii():
+                ch = ord(ch)
             if validate:
                 ch = validate(ch)
             if not ch:

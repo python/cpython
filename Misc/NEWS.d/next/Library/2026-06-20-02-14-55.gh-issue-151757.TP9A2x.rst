@@ -6,6 +6,4 @@ the functions :func:`curses.erasewchar`, :func:`curses.killwchar` and
 :func:`curses.wunctrl`.  On a narrow (non-ncursesw) build the character cell
 holds a single character without combining marks, representable as one byte in
 the window's encoding, and :meth:`curses.window.in_wstr` returns its decoded
-text; :meth:`curses.window.get_wstr` and the :func:`curses.erasewchar`,
-:func:`curses.killwchar` and :func:`curses.wunctrl` functions require the
-wide-character ncursesw library.
+text.

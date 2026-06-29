@@ -206,17 +206,15 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: erasechar()
 
-   Return the user's current erase character as a one-byte bytes object.  Under Unix operating systems this
-   is a property of the controlling tty of the curses program, and is not set by
-   the curses library itself.
+   Return the user's current erase character as a raw byte, a :class:`bytes`
+   object of length 1.  See also :func:`erasewchar`.
 
 
 .. function:: erasewchar()
 
-   Return the user's current erase character as a one-character string.
-   This is the wide-character variant of :func:`erasechar`.  Availability
-   depends on building Python against a wide-character-aware version of the
-   underlying curses library.
+   Return the user's current erase character as a one-character :class:`str`.
+   Under Unix operating systems this is a property of the controlling tty of the
+   curses program, and is not set by the curses library itself.
 
    .. versionadded:: next
 
@@ -346,6 +344,13 @@ The module :mod:`!curses` defines the following functions:
 
    Take a key value *ch*, and return ``True`` if the current terminal type recognizes
    a key with that value.
+
+
+.. function:: has_mouse()
+
+   Return ``True`` if the mouse driver has been successfully initialized.
+
+   .. versionadded:: next
 
 
 .. function:: define_key(definition, keycode)
@@ -493,17 +498,15 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: killchar()
 
-   Return the user's current line kill character as a one-byte bytes object. Under Unix operating systems
-   this is a property of the controlling tty of the curses program, and is not set
-   by the curses library itself.
+   Return the user's current line kill character as a raw byte, a :class:`bytes`
+   object of length 1.  See also :func:`killwchar`.
 
 
 .. function:: killwchar()
 
-   Return the user's current line kill character as a one-character string.
-   This is the wide-character variant of :func:`killchar`.  Availability
-   depends on building Python against a wide-character-aware version of the
-   underlying curses library.
+   Return the user's current line kill character as a one-character :class:`str`.
+   Under Unix operating systems this is a property of the controlling tty of the
+   curses program, and is not set by the curses library itself.
 
    .. versionadded:: next
 
@@ -910,29 +913,38 @@ The module :mod:`!curses` defines the following functions:
 .. function:: unctrl(ch)
 
    Return a bytes object which is a printable representation of the character *ch*.
-   Control characters are represented as a caret followed by the character, for
-   example as ``b'^C'``. Printing characters are left as they are.
+   *ch* cannot be a character that does not fit in a single byte; use
+   :func:`wunctrl` for those.
 
 
 .. function:: wunctrl(ch)
 
-   Return a string which is a printable representation of the wide character *ch*.
-   Control characters are represented as a caret followed by the character, for
-   example as ``'^C'``.  Printing characters are left as they are.  This is the
-   wide-character variant of :func:`unctrl`, returning a :class:`str` rather than
-   :class:`bytes`.  Availability depends on building Python against a
-   wide-character-aware version of the underlying curses library.
+   Return a string which is a printable representation of the character *ch*;
+   any attributes and color pair are ignored.
+   ASCII control characters are represented as a caret followed by a character,
+   for example as ``'^C'``.  Printing characters, including non-ASCII characters
+   printable in the locale, are left as they are.  The representation of other
+   characters is defined by the underlying curses library.
 
    .. versionadded:: next
 
 
 .. function:: ungetch(ch)
 
-   Push *ch* so the next :meth:`~window.getch` will return it.
+   Push *ch* so the next :meth:`~window.getch` or :meth:`~window.get_wch` will
+   return it.
+
+   *ch* may be an integer (a key code or character code), a byte, or a string of
+   length 1.  A one-character string is pushed like :func:`unget_wch`; on a
+   narrow build it must encode to a single byte.
 
    .. note::
 
       Only one *ch* can be pushed before :meth:`!getch` is called.
+
+   .. versionchanged:: next
+      A one-character string argument is no longer required to encode to a single
+      byte, except on a narrow build.
 
 
 .. function:: update_lines_cols()
@@ -952,6 +964,10 @@ The module :mod:`!curses` defines the following functions:
       Only one *ch* can be pushed before :meth:`!get_wch` is called.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      Also available on a narrow build, where *ch* must encode to a single byte
+      (an 8-bit locale).
 
 
 .. function:: ungetmouse(id, x, y, z, bstate)
@@ -1300,6 +1316,18 @@ Window objects
       Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
 
 
+.. method:: window.mouse_trafo(y, x, to_screen)
+
+   Convert between window-relative and screen-relative (``stdscr``-relative) character-cell coordinates.
+   If *to_screen* is true, convert the window-relative coordinates *y*, *x* to screen-relative coordinates;
+   otherwise convert in the opposite direction.
+   The two coordinate systems differ when lines are reserved on the screen, for example for soft labels.
+
+   Return the converted coordinates as a ``(y, x)`` tuple, or ``None`` if they lie outside the window.
+
+   .. versionadded:: next
+
+
 .. attribute:: window.encoding
 
    Encoding used to encode method arguments (Unicode strings and characters).
@@ -1323,15 +1351,17 @@ Window objects
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+   Its components can be extracted like those of :meth:`inch`.
+   It cannot represent a background set with a wide character or with a color
+   pair outside the :func:`color_pair` range; use :meth:`getbkgrnd` for those.
 
 
 .. method:: window.getbkgrnd()
 
    Return the given window's current background as a :class:`complexchar`.
-   This is the wide-character variant of :meth:`getbkgd`: the returned object
-   carries the background character together with its attributes and color pair,
-   and the color pair is not limited to the value that fits in a
-   :func:`color_pair`.
+   Unlike :meth:`getbkgd`, the returned object carries the background character
+   together with its attributes and color pair, and the color pair is not limited
+   to the value that fits in a :func:`color_pair`.
 
    .. versionadded:: next
 
@@ -1342,15 +1372,22 @@ Window objects
    range: function keys, keypad keys and so on are represented by numbers higher
    than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
    wait until a key is pressed.
+   A multibyte character is returned as its encoded bytes one at a time; use
+   :meth:`get_wch` to read it as a single character.
 
 
 .. method:: window.get_wch([y, x])
 
    Get a wide character. Return a character for most keys, or an integer for
-   function keys, keypad keys, and other special keys.
+   function keys, keypad keys, and other special keys.  Unlike :meth:`getch`, an
+   ordinary key is returned as a one-character :class:`str`.
    In no-delay mode, raise an exception if there is no input.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      Also available on a narrow build, where only a character representable as a
+      single byte (an 8-bit locale) can be returned.
 
 
 .. method:: window.getdelay()
@@ -1407,6 +1444,8 @@ Window objects
    Read a bytes object from the user, with primitive line editing capacity.
    At most *n* characters are read;
    *n* defaults to and cannot exceed 2047.
+   A multibyte character is returned as its encoded bytes; use :meth:`get_wstr`
+   to read the input as a :class:`str`.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
@@ -1418,9 +1457,8 @@ Window objects
             window.get_wstr(y, x, n)
 
    Read a string from the user, with primitive line editing capacity.
-   This is the wide-character variant of :meth:`getstr`: it returns a
-   :class:`str` rather than a :class:`bytes` object, so it can return
-   characters that are not representable in the window's encoding.
+   Unlike :meth:`getstr`, it can return characters that are not representable in
+   the window's encoding.
    At most *n* characters are read; *n* defaults to and cannot exceed 2047.
 
    .. versionadded:: next
@@ -1468,17 +1506,21 @@ Window objects
 
 .. method:: window.inch([y, x])
 
-   Return the character at the given position in the window. The bottom 8 bits are
-   the character proper, and upper bits are the attributes.
+   Return the character at the given position in the window.
+   The bottom 8 bits are the character proper and the upper bits are the attributes;
+   extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
+   and the color pair with :func:`pair_number`.
+   It cannot represent a cell holding combining characters, a character that does
+   not fit in a single byte, or a color pair outside the :func:`color_pair`
+   range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
 
 
 .. method:: window.in_wch([y, x])
 
    Return the complex character at the given position in the window as a
-   :class:`complexchar`.  This is the wide-character variant of :meth:`inch`:
-   the returned object carries the cell's text (a spacing character optionally
-   followed by combining characters) together with its attributes and color
-   pair, none of which :meth:`inch` can represent.
+   :class:`complexchar`.  Unlike :meth:`inch`, the returned object carries the
+   cell's text (a spacing character optionally followed by combining characters)
+   together with its attributes and color pair.
 
    .. versionadded:: next
 
@@ -1548,6 +1590,8 @@ Window objects
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
    The maximum value for *n* is 2047.
+   A character not representable in the window's encoding cannot be returned;
+   use :meth:`in_wstr` for those.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
@@ -1557,11 +1601,10 @@ Window objects
             window.in_wstr(y, x[, n])
 
    Return a string of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified.  This is the
-   wide-character variant of :meth:`instr`: it returns a :class:`str` rather
-   than a :class:`bytes` object, so it can return characters that are not
-   representable in the window's encoding.  Attributes and color information
-   are stripped from the characters.  The maximum value for *n* is 2047.
+   current cursor position, or at *y*, *x* if specified.  Unlike :meth:`instr`,
+   it can return characters that are not representable in the window's encoding.
+   Attributes and color information are stripped from the characters.  The
+   maximum value for *n* is 2047.
 
    .. versionadded:: next
 
@@ -2624,6 +2667,11 @@ You can instantiate a :class:`Textbox` object as follows:
    upper-left corner of the containing window, with coordinates ``(0, 0)``.
    The instance's :attr:`stripspaces` flag is initially on.
 
+   .. versionchanged:: next
+      Entering and reading back the full Unicode range, including combining
+      characters, is now supported when curses is built with wide-character
+      support.
+
    :class:`Textbox` objects have the following methods:
 
 
@@ -2637,6 +2685,10 @@ You can instantiate a :class:`Textbox` object as follows:
       ignored.  This method returns the window contents as a
       string; whether blanks in the window are included is affected by the
       :attr:`stripspaces` attribute.
+
+      .. versionchanged:: next
+         *validate* is now called with a non-ASCII character as a string;
+         other keystrokes are still passed as an integer.
 
 
    .. method:: do_command(ch)
