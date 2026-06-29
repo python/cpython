@@ -24,6 +24,7 @@ import warnings
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
+    "running_isolated",
     # exceptions
     "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # io
@@ -36,6 +37,7 @@ __all__ = [
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
     "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
+    "isolated",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
