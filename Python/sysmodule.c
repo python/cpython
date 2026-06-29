@@ -1645,49 +1645,44 @@ static PyStructSequence_Desc windows_version_desc = {
                                       via indexing, the rest are name only */
 };
 
-static PyObject *
-_sys_getwindowsversion_from_kernel32(void)
+static PyObject*
+_sys_getwindowsversion_from_RtlGetVersion(void)
 {
 #ifndef MS_WINDOWS_DESKTOP
     PyErr_SetString(PyExc_OSError, "cannot read version info on this platform");
     return NULL;
 #else
-    HANDLE hKernel32;
-    wchar_t kernel32_path[MAX_PATH];
-    LPVOID verblock;
-    DWORD verblock_size;
-    VS_FIXEDFILEINFO *ffi;
-    UINT ffi_len;
-    DWORD realMajor, realMinor, realBuild;
+    HMODULE hMod;
+    typedef LONG NTSTATUS, * PNTSTATUS;
+    typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+    RtlGetVersionPtr RtlGetVer;
+
+    RTL_OSVERSIONINFOW osVerInfo;
+    ZeroMemory(&osVerInfo, sizeof(osVerInfo));
+    osVerInfo.dwOSVersionInfoSize = sizeof(osVerInfo);
 
     Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    hMod = GetModuleHandleW(L"ntdll.dll");
     Py_END_ALLOW_THREADS
-    if (!hKernel32 || !GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH)) {
+    if (!hMod) {
         PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
-    verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL);
-    if (!verblock_size) {
-        PyErr_SetFromWindowsErr(0);
-        return NULL;
-    }
-    verblock = PyMem_RawMalloc(verblock_size);
-    if (!verblock ||
-        !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
-        !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
-        PyErr_SetFromWindowsErr(0);
-        if (verblock) {
-            PyMem_RawFree(verblock);
-        }
         return NULL;
     }
 
-    realMajor = HIWORD(ffi->dwProductVersionMS);
-    realMinor = LOWORD(ffi->dwProductVersionMS);
-    realBuild = HIWORD(ffi->dwProductVersionLS);
-    PyMem_RawFree(verblock);
-    return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
+    Py_BEGIN_ALLOW_THREADS
+    RtlGetVer = (RtlGetVersionPtr)GetProcAddress(hMod, "RtlGetVersion");
+    Py_END_ALLOW_THREADS
+    if (!RtlGetVer) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+
+    if (0 != RtlGetVer(&osVerInfo)) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+
+    return Py_BuildValue("(kkk)", osVerInfo.dwMajorVersion, osVerInfo.dwMinorVersion, osVerInfo.dwBuildNumber);
 #endif /* !MS_WINDOWS_DESKTOP */
 }
 
@@ -1719,7 +1714,6 @@ sys_getwindowsversion_impl(PyObject *module)
 {
     PyObject *version;
     int pos = 0;
-    OSVERSIONINFOEXW ver;
 
     if (PyObject_GetOptionalAttrString(module, "_cached_windows_version", &version) < 0) {
         return NULL;
@@ -1729,6 +1723,8 @@ sys_getwindowsversion_impl(PyObject *module)
     }
     Py_XDECREF(version);
 
+    OSVERSIONINFOEXW ver;
+    ZeroMemory(&ver, sizeof(ver));
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
         return PyErr_SetFromWindowsErr(0);
@@ -1756,11 +1752,13 @@ sys_getwindowsversion_impl(PyObject *module)
     SET_VERSION_INFO(PyLong_FromLong(ver.wSuiteMask));
     SET_VERSION_INFO(PyLong_FromLong(ver.wProductType));
 
+#ifdef MS_WINDOWS_DESKTOP
     // GetVersion will lie if we are running in a compatibility mode.
-    // We need to read the version info from a system file resource
+    // We need to read the version info from kernel with RtlGetVersion
     // to accurately identify the OS version. If we fail for any reason,
     // just return whatever GetVersion said.
-    PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
+    // UWP return correct version from GetVersionExW, this is not necessary.
+    PyObject *realVersion = _sys_getwindowsversion_from_RtlGetVersion();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
             goto error;
@@ -1775,6 +1773,7 @@ sys_getwindowsversion_impl(PyObject *module)
     }
 
     SET_VERSION_INFO(realVersion);
+#endif
 
 #undef SET_VERSION_INFO
 
