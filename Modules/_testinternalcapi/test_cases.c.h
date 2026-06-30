@@ -11114,17 +11114,23 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_ITER);
-            _PyStackRef iter;
-            _PyStackRef index_or_null;
-            index_or_null = stack_pointer[-1];
-            iter = stack_pointer[-2];
-            (void)index_or_null;
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(iter);
-            _PyFrame_StackPointerInvalidate(frame);
+            _PyStackRef value;
+            // _POP_TOP_NOP
+            {
+                value = stack_pointer[-1];
+                assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
+                   _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
+            }
+            // _POP_TOP
+            {
+                value = stack_pointer[-2];
+                stack_pointer += -2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_XCLOSE(value);
+                _PyFrame_StackPointerInvalidate(frame);
+            }
             DISPATCH();
         }
 

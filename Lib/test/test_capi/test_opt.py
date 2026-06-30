@@ -6056,6 +6056,21 @@ class TestUopsOptimization(unittest.TestCase):
         PYTHON_JIT="1", PYTHON_JIT_STRESS="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_pop_iter(self):
+        def testfunc(n):
+            for _ in range(n):
+                for _ in range(5):
+                    pass
+
+        self._run_with_optimizer(testfunc, TIER2_THRESHOLD*2)
+        all_ex = get_all_executors(testfunc)
+
+        self.assertEqual(len(all_ex), 3)
+        pop_iter_ex = all_ex[1]
+
+        self.assertEqual(count_ops(pop_iter_ex, "_POP_TOP"), 1)
+        self.assertEqual(count_ops(pop_iter_ex, "_POP_TOP_NOP"), 1)
+
     def test_call_kw(self):
         def func(a):
             return int(a) * 42
