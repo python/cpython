@@ -2,6 +2,11 @@ name: Reusable Ubuntu (Installed)
 
 on:
   workflow_call:
+    inputs:
+      os:
+         description: OS to run the job
+         required: true
+         type: string
 
 permissions:
   contents: read
@@ -11,8 +16,8 @@ env:
 
 jobs:
   build-install-reusable:
-    name: 'Build, install and test'
-    runs-on: ubuntu-24.04-arm
+    name: build, install and test (${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
       PYTHONSTRICTEXTENSIONBUILD: 1

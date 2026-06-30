@@ -392,10 +392,12 @@ jobs:
     uses: ./.github/workflows/reusable-wasi.yml
 
   build-ubuntu-installed:
-    name: 'Ubuntu ARM (installed)'
+    name: 'Ubuntu (installed)'
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     uses: ./.github/workflows/reusable-install.yml
+    with:
+      os: ubuntu-24.04-arm
 
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
