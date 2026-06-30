@@ -193,7 +193,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         ]
         self.codegen_test(snippet, expected)
 
-    def test_no_target_comp_optimization(self):
+    def test_comp_without_target_optimization(self):
         snippet = "[i for i in range(10)]"
         expected = [
             ('RESUME', 0),
