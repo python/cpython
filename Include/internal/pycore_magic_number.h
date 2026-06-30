@@ -299,7 +299,7 @@ Known values:
     Python 3.15b1 3666 (Add SEND_VIRTUAL and SEND_ASYNC_GEN specializations)
     Python 3.16a0 3700 (Initial version)
     Python 3.16a0 3701 (Add CONSTANT_EMPTY_TUPLE to LOAD_COMMON_CONSTANT)
-    Python 3.16a1 3702 (Replace DELETE_FAST with PUSH_NULL; STORE_FAST)
+    Python 3.16a1 3702 (Replace DELETE_NAME with PUSH_NULL; STORE_NAME)
 
 
     Python 3.17 will start with 3750
