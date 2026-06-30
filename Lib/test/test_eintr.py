@@ -10,7 +10,6 @@ sub-second periodicity (contrarily to signal()).
 
 import contextlib
 import faulthandler
-import fcntl
 import os
 import platform
 import select
@@ -23,9 +22,14 @@ import time
 import unittest
 
 from test import support
+from test.support import import_helper
 from test.support import isolation
 from test.support import os_helper
 from test.support import socket_helper
+
+# This module is collected on every platform, but the EINTR tests only run on
+# Unix; skip the whole module where fcntl (and thus the rest) is unavailable.
+fcntl = import_helper.import_module('fcntl')
 
 
 # gh-109592: Tolerate a difference of 20 ms when comparing timings
