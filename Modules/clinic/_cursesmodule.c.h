@@ -4232,7 +4232,7 @@ exit:
     return return_value;
 }
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if defined(NCURSES_MOUSE_VERSION) && (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081122)
 
 PyDoc_STRVAR(_curses_has_mouse__doc__,
 "has_mouse($module, /)\n"
@@ -4252,7 +4252,7 @@ _curses_has_mouse(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_has_mouse_impl(module);
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* defined(NCURSES_MOUSE_VERSION) && (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081122) */
 
 #if defined(NCURSES_MOUSE_VERSION)
 
@@ -6174,4 +6174,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=55829d2ef2b559a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=809e4680d429b870 input=a9049054013a1b77]*/
