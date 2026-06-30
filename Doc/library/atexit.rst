@@ -15,7 +15,8 @@ at interpreter termination time they will be run in the order ``C``, ``B``,
 
 **Note:** The functions registered via this module are not called when the
 program is killed by a signal not handled by Python, when a Python fatal
-internal error is detected, or when :func:`os._exit` is called.
+internal error is detected, or when :func:`os._exit` or :func:`os.exec\*
+<os.execl>` are called.
 
 **Note:** The effect of registering or unregistering functions from within
 a cleanup function is undefined.
