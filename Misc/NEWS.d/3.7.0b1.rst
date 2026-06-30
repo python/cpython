@@ -598,7 +598,7 @@ Add socket.getblocking() method.
 .. nonce: zmO8G2
 .. section: Library
 
-Add :mod:`importlib.resources` and :class:`importlib.abc.ResourceReader` as
+Add :mod:`importlib.resources` and :class:`!importlib.abc.ResourceReader` as
 the unified API for reading resources contained within packages.  Loaders
 wishing to support resource reading must implement the
 :meth:`get_resource_reader` method.  File-based and zipimport-based

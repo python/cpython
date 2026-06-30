@@ -4,9 +4,6 @@
 .. module:: dataclasses
     :synopsis: Generate special methods on user-defined classes.
 
-.. moduleauthor:: Eric V. Smith <eric@trueblade.com>
-.. sectionauthor:: Eric V. Smith <eric@trueblade.com>
-
 **Source code:** :source:`Lib/dataclasses.py`
 
 --------------
@@ -103,12 +100,25 @@ Module contents
      ignored.
 
    - *eq*: If true (the default), an :meth:`~object.__eq__` method will be
-     generated.  This method compares the class as if it were a tuple
-     of its fields, in order.  Both instances in the comparison must
-     be of the identical type.
+     generated.
 
-     If the class already defines :meth:`!__eq__`, this parameter is
-     ignored.
+     This method compares the class by comparing each field in order. Both
+     instances in the comparison must be of the identical type.
+
+     If the class already defines :meth:`!__eq__`, this parameter is ignored.
+
+     .. versionchanged:: 3.13
+        The generated ``__eq__`` method now compares each field individually
+        (for example, ``self.a == other.a and self.b == other.b``), rather than
+        comparing tuples of fields as in previous versions.
+
+        This change makes the comparison faster but it may alter results in cases
+        where attributes compare equal by identity but not by value (such as
+        ``float('nan')``).
+
+        In Python 3.12 and earlier, the comparison was performed by creating
+        tuples of the fields and comparing them (for example,
+        ``(self.a, self.b) == (other.a, other.b)``).
 
    - *order*: If true (the default is ``False``), :meth:`~object.__lt__`,
      :meth:`~object.__le__`, :meth:`~object.__gt__`, and :meth:`~object.__ge__` methods will be
@@ -121,8 +131,11 @@ Module contents
      :meth:`!__le__`, :meth:`!__gt__`, or :meth:`!__ge__`, then
      :exc:`TypeError` is raised.
 
-   - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
-     is generated according to how *eq* and *frozen* are set.
+   - *unsafe_hash*: If true, force ``dataclasses`` to create a
+     :meth:`~object.__hash__` method, even though it may not be safe to do so.
+     Otherwise, generate a :meth:`~object.__hash__` method according to how
+     *eq* and *frozen* are set.
+     The default value is ``False``.
 
      :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
@@ -158,9 +171,11 @@ Module contents
      :class:`object`, this means it will fall back to id-based hashing).
 
    - *frozen*: If true (the default is ``False``), assigning to fields will
-     generate an exception.  This emulates read-only frozen instances.  If
-     :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class, then
-     :exc:`TypeError` is raised.  See the discussion below.
+     generate an exception.  This emulates read-only frozen instances.
+     See the :ref:`discussion <dataclasses-frozen>` below.
+
+     If :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class
+     and *frozen* is true, then :exc:`TypeError` is raised.
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
@@ -312,7 +327,7 @@ Module contents
    :func:`!field`, then the class attribute for this field will be
    replaced by the specified *default* value.  If *default* is not
    provided, then the class attribute will be deleted.  The intent is
-   that after the :func:`@dataclass <dataclass>` decorator runs, the class
+   that after the :deco:`dataclass` decorator runs, the class
    attributes will all contain the default values for the fields, just
    as if the default value itself were specified.  For example,
    after::
@@ -327,6 +342,10 @@ Module contents
    The class attribute :attr:`!C.z` will be ``10``, the class attribute
    :attr:`!C.t` will be ``20``, and the class attributes :attr:`!C.x` and
    :attr:`!C.y` will not be set.
+
+   .. versionchanged:: 3.15
+      If *metadata* is ``None``, use an empty :class:`frozendict`, instead
+      of a :func:`~types.MappingProxyType` of an empty :class:`dict`.
 
 .. class:: Field
 
@@ -365,8 +384,8 @@ Module contents
    Converts the dataclass *obj* to a dict (by using the
    factory function *dict_factory*).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
-   lists, and tuples are recursed into.  Other objects are copied with
-   :func:`copy.deepcopy`.
+   frozendicts, lists, and tuples are recursed into.  Other objects are copied
+   with :func:`copy.deepcopy`.
 
    Example of using :func:`!asdict` on nested dataclasses::
 
@@ -396,8 +415,8 @@ Module contents
 
    Converts the dataclass *obj* to a tuple (by using the
    factory function *tuple_factory*).  Each dataclass is converted
-   to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into. Other objects are copied with
+   to a tuple of its field values.  dataclasses, dicts, frozendicts, lists,
+   and tuples are recursed into. Other objects are copied with
    :func:`copy.deepcopy`.
 
    Continuing from the previous example::
@@ -412,7 +431,7 @@ Module contents
    :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, decorator=dataclass)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, qualname=None, decorator=dataclass)
 
    Creates a new dataclass with name *cls_name*, fields as defined
    in *fields*, base classes as given in *bases*, and initialized
@@ -422,20 +441,23 @@ Module contents
    :data:`typing.Any` is used for ``type``.  The values of *init*,
    *repr*, *eq*, *order*, *unsafe_hash*, *frozen*,
    *match_args*, *kw_only*, *slots*, and *weakref_slot* have
-   the same meaning as they do in :func:`@dataclass <dataclass>`.
+   the same meaning as they do in :deco:`dataclass`.
 
    If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
 
+   If *qualname* is defined, the :attr:`~type.__qualname__` attribute of the dataclass
+   is set to that value. By default, it is set to the value passed to *cls_name*.
+
    The *decorator* parameter is a callable that will be used to create the dataclass.
    It should take the class object as a first argument and the same keyword arguments
-   as :func:`@dataclass <dataclass>`. By default, the :func:`@dataclass <dataclass>`
+   as :deco:`dataclass`. By default, the :deco:`dataclass`
    function is used.
 
    This function is not strictly required, because any Python
-   mechanism for creating a new class with :attr:`!__annotations__` can
-   then apply the :func:`@dataclass <dataclass>` function to convert that class to
+   mechanism for creating a new class with :attr:`~object.__annotations__` can
+   then apply the :deco:`dataclass` function to convert that class to
    a dataclass.  This function is provided as a convenience.  For
    example::
 
@@ -458,6 +480,8 @@ Module contents
 
    .. versionadded:: 3.14
       Added the *decorator* parameter.
+   .. versionadded:: next
+      Added the *qualname* parameter.
 
 .. function:: replace(obj, /, **changes)
 
@@ -492,7 +516,8 @@ Module contents
 .. function:: is_dataclass(obj)
 
    Return ``True`` if its parameter is a dataclass (including subclasses of a
-   dataclass) or an instance of one, otherwise return ``False``.
+   dataclass, but not including :ref:`generic aliases <types-genericalias>`)
+   or an instance of one, otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
    not a dataclass itself), then add a further check for ``not
@@ -564,7 +589,7 @@ Post-init processing
          def __post_init__(self):
              self.c = self.a + self.b
 
-The :meth:`~object.__init__` method generated by :func:`@dataclass <dataclass>` does not call base
+The :meth:`~object.__init__` method generated by :deco:`dataclass` does not call base
 class :meth:`!__init__` methods. If the base class has an :meth:`!__init__` method
 that has to be called, it is common to call this method in a
 :meth:`__post_init__` method::
@@ -594,7 +619,7 @@ parameters to :meth:`!__post_init__`.  Also see the warning about how
 Class variables
 ---------------
 
-One of the few places where :func:`@dataclass <dataclass>` actually inspects the type
+One of the few places where :deco:`dataclass` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
 :data:`typing.ClassVar`.  If a field is a ``ClassVar``, it is excluded
@@ -607,7 +632,7 @@ module-level :func:`fields` function.
 Init-only variables
 -------------------
 
-Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
+Another place where :deco:`dataclass` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
 if the type of a field is of type :class:`InitVar`.  If a field
 is an :class:`InitVar`, it is considered a pseudo-field called an init-only
@@ -641,7 +666,7 @@ Frozen instances
 ----------------
 
 It is not possible to create truly immutable Python objects.  However,
-by passing ``frozen=True`` to the :func:`@dataclass <dataclass>` decorator you can
+by passing ``frozen=True`` to the :deco:`dataclass` decorator you can
 emulate immutability.  In that case, dataclasses will add
 :meth:`~object.__setattr__` and :meth:`~object.__delattr__` methods to the class.  These
 methods will raise a :exc:`FrozenInstanceError` when invoked.
@@ -657,7 +682,7 @@ must use :meth:`!object.__setattr__`.
 Inheritance
 -----------
 
-When the dataclass is being created by the :func:`@dataclass <dataclass>` decorator,
+When the dataclass is being created by the :deco:`dataclass` decorator,
 it looks through all of the class's base classes in reverse MRO (that
 is, starting at :class:`object`) and, for each dataclass that it finds,
 adds the fields from that base class to an ordered mapping of fields.
@@ -781,7 +806,7 @@ for :attr:`!x` when creating a class instance will share the same copy
 of :attr:`!x`.  Because dataclasses just use normal Python class
 creation they also share this behavior.  There is no general way
 for Data Classes to detect this condition.  Instead, the
-:func:`@dataclass <dataclass>` decorator will raise a :exc:`ValueError` if it
+:deco:`dataclass` decorator will raise a :exc:`ValueError` if it
 detects an unhashable default parameter.  The assumption is that if
 a value is unhashable, it is mutable.  This is a partial solution,
 but it does protect against many common errors.
@@ -815,7 +840,7 @@ default value have the following special behaviors:
   :meth:`~object.__get__` or :meth:`!__set__` method is called rather than returning or
   overwriting the descriptor object.
 
-* To determine whether a field contains a default value, :func:`@dataclass <dataclass>`
+* To determine whether a field contains a default value, :deco:`dataclass`
   will call the descriptor's :meth:`!__get__` method using its class access
   form: ``descriptor.__get__(obj=None, type=cls)``.  If the
   descriptor returns a value in this case, it will be used as the

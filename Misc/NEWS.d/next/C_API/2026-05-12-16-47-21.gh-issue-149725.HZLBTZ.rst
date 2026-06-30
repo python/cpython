@@ -1,0 +1,2 @@
+Add :c:func:`PySentinel_CheckExact` for exact :class:`sentinel` type tests
+to accompany the existing :c:func:`PySentinel_Check`.

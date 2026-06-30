@@ -77,16 +77,8 @@ module _ctypes
 #include <mach-o/dyld.h>
 #endif
 
-#ifdef MS_WIN32
-#include <malloc.h>
-#endif
-
 #include <ffi.h>
 #include "ctypes.h"
-#ifdef HAVE_ALLOCA_H
-/* AIX needs alloca.h for alloca() */
-#include <alloca.h>
-#endif
 
 #ifdef _Py_MEMORY_SANITIZER
 #include <sanitizer/msan_interface.h>
@@ -176,8 +168,9 @@ _ctypes_get_errobj(ctypes_state *st, int **pspace)
     }
     else {
         void *space = PyMem_Calloc(2, sizeof(int));
-        if (space == NULL)
-            return NULL;
+        if (space == NULL) {
+            return PyErr_NoMemory();
+        }
         errobj = PyCapsule_New(space, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
         if (errobj == NULL) {
             PyMem_Free(space);
@@ -476,7 +469,7 @@ PyCArgObject_new(ctypes_state *st)
     if (p == NULL)
         return NULL;
     p->pffi_type = NULL;
-    p->tag = '\0';
+    p->tag = "";
     p->obj = NULL;
     memset(&p->value, 0, sizeof(p->value));
     PyObject_GC_Track(p);
@@ -520,45 +513,50 @@ static PyObject *
 PyCArg_repr(PyObject *op)
 {
     PyCArgObject *self = _PyCArgObject_CAST(op);
-    switch(self->tag) {
+
+    if (strlen(self->tag) != 1) {
+        goto generic;
+    }
+
+    switch(self->tag[0]) {
     case 'b':
     case 'B':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.b);
     case 'h':
     case 'H':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.h);
     case 'i':
     case 'I':
-        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%d)>",
             self->tag, self->value.i);
     case 'l':
     case 'L':
-        return PyUnicode_FromFormat("<cparam '%c' (%ld)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%ld)>",
             self->tag, self->value.l);
 
     case 'q':
     case 'Q':
-        return PyUnicode_FromFormat("<cparam '%c' (%lld)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%lld)>",
             self->tag, self->value.q);
     case 'd':
     case 'f': {
-        PyObject *f = PyFloat_FromDouble((self->tag == 'f') ? self->value.f : self->value.d);
+        PyObject *f = PyFloat_FromDouble((strcmp(self->tag, "f") == 0) ? self->value.f : self->value.d);
         if (f == NULL) {
             return NULL;
         }
-        PyObject *result = PyUnicode_FromFormat("<cparam '%c' (%R)>", self->tag, f);
+        PyObject *result = PyUnicode_FromFormat("<cparam '%s' (%R)>", self->tag, f);
         Py_DECREF(f);
         return result;
     }
     case 'c':
         if (is_literal_char((unsigned char)self->value.c)) {
-            return PyUnicode_FromFormat("<cparam '%c' ('%c')>",
+            return PyUnicode_FromFormat("<cparam '%s' ('%c')>",
                 self->tag, self->value.c);
         }
         else {
-            return PyUnicode_FromFormat("<cparam '%c' ('\\x%02x')>",
+            return PyUnicode_FromFormat("<cparam '%s' ('\\x%02x')>",
                 self->tag, (unsigned char)self->value.c);
         }
 
@@ -569,20 +567,16 @@ PyCArg_repr(PyObject *op)
     case 'z':
     case 'Z':
     case 'P':
-        return PyUnicode_FromFormat("<cparam '%c' (%p)>",
+        return PyUnicode_FromFormat("<cparam '%s' (%p)>",
             self->tag, self->value.p);
-        break;
 
     default:
-        if (is_literal_char((unsigned char)self->tag)) {
-            return PyUnicode_FromFormat("<cparam '%c' at %p>",
-                (unsigned char)self->tag, (void *)self);
-        }
-        else {
-            return PyUnicode_FromFormat("<cparam 0x%02x at %p>",
-                (unsigned char)self->tag, (void *)self);
-        }
+        break;
     }
+
+generic:
+    return PyUnicode_FromFormat("<cparam '%s' at %p>",
+        self->tag, (void *)self);
 }
 
 static PyMemberDef PyCArgType_members[] = {
@@ -649,9 +643,9 @@ union result {
     double d;
     float f;
     void *p;
-    double D[2];
-    float F[2];
-    long double G[2];
+    double Zd[2];
+    float Zf[2];
+    long double Zg[2];
 };
 
 struct argument {
@@ -1795,6 +1789,7 @@ align_func(PyObject *self, PyObject *obj)
 
 
 /*[clinic input]
+@permit_long_summary
 @critical_section obj
 _ctypes.byref
     obj: object(subclass_of="clinic_state()->PyCData_Type")
@@ -1806,7 +1801,7 @@ Return a pointer lookalike to a C instance, only usable as function argument.
 
 static PyObject *
 _ctypes_byref_impl(PyObject *module, PyObject *obj, Py_ssize_t offset)
-/*[clinic end generated code: output=60dec5ed520c71de input=6ec02d95d15fbd56]*/
+/*[clinic end generated code: output=60dec5ed520c71de input=870076149a2de427]*/
 {
     ctypes_state *st = get_module_state(module);
 
@@ -1814,7 +1809,7 @@ _ctypes_byref_impl(PyObject *module, PyObject *obj, Py_ssize_t offset)
     if (parg == NULL)
         return NULL;
 
-    parg->tag = 'P';
+    parg->tag = "P";
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(obj);
     parg->value.p = (char *)((CDataObject *)obj)->b_ptr + offset;
@@ -1997,8 +1992,32 @@ buffer_info(PyObject *self, PyObject *arg)
 }
 
 
+static PyObject *
+_ctypes_getattr(PyObject *Py_UNUSED(self), PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for "
+                         "removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString("1.1.0");  // Do not change
+    }
+
+    PyErr_Format(PyExc_AttributeError,
+                 "module '_ctypes' has no attribute %R", name);
+    return NULL;
+}
+
 
 PyMethodDef _ctypes_module_methods[] = {
+    {"__getattr__", _ctypes_getattr, METH_VARARGS},
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
     {"_unpickle", unpickle, METH_VARARGS },

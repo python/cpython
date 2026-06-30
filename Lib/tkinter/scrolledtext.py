@@ -23,7 +23,7 @@ class ScrolledText(Text):
         self.vbar = Scrollbar(self.frame)
         self.vbar.pack(side=RIGHT, fill=Y)
 
-        kw.update({'yscrollcommand': self.vbar.set})
+        kw['yscrollcommand'] = self.vbar.set
         Text.__init__(self, self.frame, **kw)
         self.pack(side=LEFT, fill=BOTH, expand=True)
         self.vbar['command'] = self.yview

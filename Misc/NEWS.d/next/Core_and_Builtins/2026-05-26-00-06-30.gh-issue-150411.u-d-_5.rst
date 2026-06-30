@@ -1,0 +1,2 @@
+Fix a data race in the free-threaded build when :func:`gc.get_count` reads
+the young generation allocation count while another thread updates it.

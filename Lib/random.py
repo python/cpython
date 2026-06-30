@@ -836,7 +836,11 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
-                y += _floor(_log2(random()) / c) + 1
+                try:
+                    y += _floor(_log2(random()) / c) + 1
+                except ValueError:
+                    # Reject case where random() returned 0.0
+                    continue
                 if y > n:
                     return x
                 x += 1
@@ -844,8 +848,8 @@ class Random(_random.Random):
         # BTRS: Transformed rejection with squeeze method by Wolfgang Hörmann
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.47.8407&rep=rep1&type=pdf
         assert n*p >= 10.0 and p <= 0.5
-        setup_complete = False
 
+        setup_complete = False
         spq = _sqrt(n * p * (1.0 - p))  # Standard deviation of the distribution
         b = 1.15 + 2.53 * spq
         a = -0.0873 + 0.0248 * b + 0.01 * p
@@ -860,22 +864,23 @@ class Random(_random.Random):
             k = _floor((2.0 * a / us + b) * u + c)
             if k < 0 or k > n:
                 continue
+            v = random()
 
             # The early-out "squeeze" test substantially reduces
             # the number of acceptance condition evaluations.
-            v = random()
             if us >= 0.07 and v <= vr:
                 return k
 
-            # Acceptance-rejection test.
-            # Note, the original paper erroneously omits the call to log(v)
-            # when comparing to the log of the rescaled binomial distribution.
             if not setup_complete:
                 alpha = (2.83 + 5.1 / b) * spq
                 lpq = _log(p / (1.0 - p))
                 m = _floor((n + 1) * p)         # Mode of the distribution
                 h = _lgamma(m + 1) + _lgamma(n - m + 1)
                 setup_complete = True           # Only needs to be done once
+
+            # Acceptance-rejection test.
+            # Note, the original paper erroneously omits the call to log(v)
+            # when comparing to the log of the rescaled binomial distribution.
             v *= alpha / (a / (us * us) + b)
             if _log(v) <= h - _lgamma(k + 1) - _lgamma(n - k + 1) + (k - m) * lpq:
                 return k
@@ -1011,26 +1016,26 @@ if hasattr(_os, "fork"):
 def _parse_args(arg_list: list[str] | None):
     import argparse
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter, color=True)
+        formatter_class=argparse.RawTextHelpFormatter)
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-c", "--choice", nargs="+",
         help="print a random choice")
     group.add_argument(
         "-i", "--integer", type=int, metavar="N",
-        help="print a random integer between 1 and N inclusive")
+        help="print a random integer between 1 and `N` inclusive")
     group.add_argument(
         "-f", "--float", type=float, metavar="N",
-        help="print a random floating-point number between 0 and N inclusive")
+        help="print a random floating-point number between 0 and `N` inclusive")
     group.add_argument(
         "--test", type=int, const=10_000, nargs="?",
         help=argparse.SUPPRESS)
     parser.add_argument("input", nargs="*",
                         help="""\
 if no options given, output depends on the input
-    string or multiple: same as --choice
-    integer: same as --integer
-    float: same as --float""")
+    string or multiple: same as `--choice`
+    integer: same as `--integer`
+    float: same as `--float`""")
     args = parser.parse_args(arg_list)
     return args, parser.format_help()
 
