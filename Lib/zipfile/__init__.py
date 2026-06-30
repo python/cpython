@@ -629,7 +629,8 @@ class ZipInfo:
             extra = extra[ln+4:]
 
     @classmethod
-    def from_file(cls, filename, arcname=None, *, strict_timestamps=True):
+    def from_file(cls, filename, arcname=None, *, strict_timestamps=True,
+                  with_ext_timestamps=False):
         """Construct an appropriate ZipInfo for a file on the filesystem.
 
         filename should be the path to a file or directory on the
@@ -664,6 +665,25 @@ class ZipInfo:
             zinfo.external_attr |= 0x10  # MS-DOS directory flag
         else:
             zinfo.file_size = st.st_size
+
+        if with_ext_timestamps:
+            # NTFS Extra Field (0x000a)
+            delta = 116444736000000000
+            ft_mtime = st.st_mtime_ns // 100 + delta
+            ft_atime = st.st_atime_ns // 100 + delta
+            ft_ctime = st.st_ctime_ns // 100 + delta
+            ntfs_tag = struct.pack('<LHHQQQ', 0, 0x0001, 24, ft_mtime, ft_atime, ft_ctime)
+            extra = struct.pack('<HH', 0x000a, len(ntfs_tag)) + ntfs_tag
+
+            # Extended timestamp (0x5455)
+            # According to libzip's doc, the timestamps should be 4-byte
+            # unsigned integers:
+            # https://libzip.org/specifications/extrafld.txt
+            mtime = int(st.st_mtime)
+            if 0 <= mtime <= 0xFFFF_FFFF:
+                extra += struct.pack('<HHBL', 0x5455, 5, 0x01, mtime)
+
+            zinfo.extra = extra
 
         return zinfo
 
@@ -1896,7 +1916,8 @@ class ZipFile:
     _ignore_invalid_names = False
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                 compresslevel=None, *, strict_timestamps=True, metadata_encoding=None):
+                 compresslevel=None, *, strict_timestamps=True,
+                 with_ext_timestamps=False, metadata_encoding=None):
         """Open the ZIP file with mode read 'r', write 'w', exclusive create
         'x', or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
@@ -1915,6 +1936,7 @@ class ZipFile:
         self.pwd = None
         self._comment = b''
         self._strict_timestamps = strict_timestamps
+        self._with_ext_timestamps = with_ext_timestamps
         self.metadata_encoding = metadata_encoding
 
         # Check that we don't try to write with nonconforming codecs
@@ -2526,7 +2548,8 @@ class ZipFile:
             )
 
         zinfo = ZipInfo.from_file(filename, arcname,
-                                  strict_timestamps=self._strict_timestamps)
+                                  strict_timestamps=self._strict_timestamps,
+                                  with_ext_timestamps=self._with_ext_timestamps)
 
         if zinfo.is_dir():
             zinfo.compress_size = 0

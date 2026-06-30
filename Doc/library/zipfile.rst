@@ -178,7 +178,7 @@ ZipFile objects
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                    compresslevel=None, *, strict_timestamps=True, \
-                   metadata_encoding=None)
+                   with_ext_timestamps=False, metadata_encoding=None)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -226,6 +226,9 @@ ZipFile objects
    timestamp to 1980-01-01.
    Similar behavior occurs with files newer than 2107-12-31,
    the timestamp is also set to the limit.
+
+   The *with_ext_timestamps* controls whether to fill the extended timestamps
+   when writing files to the archive.
 
    When mode is ``'r'``, *metadata_encoding* may be set to the name of a codec,
    which will be used to decode metadata such as the names of members and ZIP
@@ -284,6 +287,9 @@ ZipFile objects
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
+
+   .. versionchanged:: next
+      Added the *with_ext_timestamps* keyword-only parameter.
 
 
 .. method:: ZipFile.close()
@@ -885,7 +891,8 @@ There is one classmethod to make a :class:`ZipInfo` instance for a filesystem
 file:
 
 .. classmethod:: ZipInfo.from_file(filename, arcname=None, *, \
-                                   strict_timestamps=True)
+                                   strict_timestamps=True, \
+                                   with_ext_timestamps=False)
 
    Construct a :class:`ZipInfo` instance for a file on the filesystem, in
    preparation for adding it to a zip file.
@@ -902,6 +909,10 @@ file:
    Similar behavior occurs with files newer than 2107-12-31,
    the timestamp is also set to the limit.
 
+   Setting ``with_ext_timestamps=True`` fills the file's extended timestamps
+   to the extra data, which allows other ZIP tools to recover the timestamp
+   more accurately when extracting the file.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.6.2
@@ -909,6 +920,9 @@ file:
 
    .. versionchanged:: 3.8
       Added the *strict_timestamps* keyword-only parameter.
+
+   .. versionchanged:: next
+      Added the *with_ext_timestamps* keyword-only parameter.
 
 
 Instances have the following methods and attributes:
