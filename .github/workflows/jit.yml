@@ -29,7 +29,7 @@ env:
 jobs:
   interpreter:
     name: Interpreter (Debug)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -145,9 +145,9 @@ jobs:
           - false
         include:
           - target: x86_64-unknown-linux-gnu/gcc
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
           - target: aarch64-unknown-linux-gnu/gcc
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -171,7 +171,7 @@ jobs:
   linux-extras:
     name: ${{ matrix.name }}
 
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
