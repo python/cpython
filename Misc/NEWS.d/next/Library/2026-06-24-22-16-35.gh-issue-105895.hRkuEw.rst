@@ -1,0 +1,2 @@
+Add :keyword:`match` and :keyword:`case` to the list of supported topics by
+:func:`help`.
