@@ -2262,6 +2262,212 @@ _PyAsyncGenValueWrapperNew(PyThreadState *tstate, PyObject *val)
 }
 
 
+/* ---------- Async Generator unpacking helper (PEP 798) ------------ */
+
+/* Wraps a *synchronous* iterable so that it can be delegated to with
+   `yield from` from inside an asynchronous generator.  This is used to
+   implement unpacking a sync iterable with `*` in an async generator
+   expression, e.g. `(*it async for it in its)`.
+
+   Every value produced by the underlying iterator -- whether through plain
+   iteration, send(), or throw() -- is wrapped as an async-generator value, so
+   that the async generator machinery delivers it to the consumer as an async
+   yield rather than treating it as an awaited value.  The result of the
+   delegation (the StopIteration value) and any propagating exception are
+   passed through unwrapped. */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *agu_iterator;
+} PyAsyncGenUnpack;
+
+#define _PyAsyncGenUnpack_CAST(op) \
+    (assert(Py_IS_TYPE((op), &_PyAsyncGenUnpack_Type)), \
+     _Py_CAST(PyAsyncGenUnpack*, (op)))
+
+static int
+async_gen_unpack_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    PyAsyncGenUnpack *o = _PyAsyncGenUnpack_CAST(op);
+    Py_VISIT(o->agu_iterator);
+    return 0;
+}
+
+static int
+async_gen_unpack_clear(PyObject *op)
+{
+    PyAsyncGenUnpack *o = _PyAsyncGenUnpack_CAST(op);
+    Py_CLEAR(o->agu_iterator);
+    return 0;
+}
+
+static void
+async_gen_unpack_dealloc(PyObject *op)
+{
+    _PyObject_GC_UNTRACK(op);
+    (void)async_gen_unpack_clear(op);
+    PyObject_GC_Del(op);
+}
+
+/* Wrap a value yielded by the underlying iterator.  Steals a reference to
+   *value* (which may be NULL, in which case NULL is returned and any pending
+   exception is left set). */
+static PyObject *
+async_gen_unpack_wrap(PyObject *value)
+{
+    if (value == NULL) {
+        return NULL;
+    }
+    PyObject *wrapped = _PyAsyncGenValueWrapperNew(_PyThreadState_GET(), value);
+    Py_DECREF(value);
+    return wrapped;
+}
+
+static PyObject *
+async_gen_unpack_iternext(PyObject *op)
+{
+    PyAsyncGenUnpack *o = _PyAsyncGenUnpack_CAST(op);
+    return async_gen_unpack_wrap(PyIter_Next(o->agu_iterator));
+}
+
+static PySendResult
+async_gen_unpack_am_send(PyObject *op, PyObject *arg, PyObject **presult)
+{
+    PyAsyncGenUnpack *o = _PyAsyncGenUnpack_CAST(op);
+    PySendResult res = PyIter_Send(o->agu_iterator, arg, presult);
+    if (res == PYGEN_NEXT) {
+        /* A yielded value must be wrapped.  The return value of the
+           delegation (PYGEN_RETURN) is passed through unwrapped. */
+        PyObject *wrapped = async_gen_unpack_wrap(*presult);
+        if (wrapped == NULL) {
+            *presult = NULL;
+            return PYGEN_ERROR;
+        }
+        *presult = wrapped;
+    }
+    return res;
+}
+
+static PyObject *
+async_gen_unpack_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
+{
+    if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
+        return NULL;
+    }
+    PyAsyncGenUnpack *o = _PyAsyncGenUnpack_CAST(op);
+    PyObject *meth;
+    if (PyObject_GetOptionalAttr(o->agu_iterator, &_Py_ID(throw), &meth) < 0) {
+        return NULL;
+    }
+    if (meth == NULL) {
+        /* The underlying iterator cannot handle a thrown exception, so raise
+           it here.  This mirrors how `yield from` behaves when throwing into
+           a subiterator that does not define throw(): the exception
+           propagates out of the delegation. */
+        PyObject *typ = args[0];
+        PyObject *val = nargs >= 2 ? args[1] : NULL;
+        PyObject *tb = nargs >= 3 ? args[2] : NULL;
+        gen_set_exception(typ, val, tb);
+        return NULL;
+    }
+    PyObject *res = PyObject_Vectorcall(meth, args, (size_t)nargs, NULL);
+    Py_DECREF(meth);
+    /* If throw() raised (e.g. StopIteration when the subiterator returns, or
+       any other exception), let it propagate unwrapped. */
+    return async_gen_unpack_wrap(res);
+}
+
+static PyObject *
+async_gen_unpack_close(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    PyAsyncGenUnpack *o = _PyAsyncGenUnpack_CAST(op);
+    PyObject *meth;
+    if (PyObject_GetOptionalAttr(o->agu_iterator, &_Py_ID(close), &meth) < 0) {
+        return NULL;
+    }
+    if (meth == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *res = _PyObject_CallNoArgs(meth);
+    Py_DECREF(meth);
+    return res;
+}
+
+static PyMethodDef async_gen_unpack_methods[] = {
+    {"throw", _PyCFunction_CAST(async_gen_unpack_throw), METH_FASTCALL, NULL},
+    {"close", async_gen_unpack_close, METH_NOARGS, NULL},
+    {NULL, NULL}        /* Sentinel */
+};
+
+static PyAsyncMethods async_gen_unpack_as_async = {
+    0,                                          /* am_await */
+    0,                                          /* am_aiter */
+    0,                                          /* am_anext */
+    async_gen_unpack_am_send,                   /* am_send */
+};
+
+PyTypeObject _PyAsyncGenUnpack_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "async_generator_unpack",                   /* tp_name */
+    sizeof(PyAsyncGenUnpack),                   /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    async_gen_unpack_dealloc,                   /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &async_gen_unpack_as_async,                 /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    async_gen_unpack_traverse,                  /* tp_traverse */
+    async_gen_unpack_clear,                     /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    async_gen_unpack_iternext,                  /* tp_iternext */
+    async_gen_unpack_methods,                   /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+};
+
+PyObject *
+_PyAsyncGenUnpack_New(PyThreadState *tstate, PyObject *iterable)
+{
+    assert(iterable != NULL);
+    PyObject *iterator = PyObject_GetIter(iterable);
+    if (iterator == NULL) {
+        return NULL;
+    }
+    PyAsyncGenUnpack *o = PyObject_GC_New(PyAsyncGenUnpack,
+                                          &_PyAsyncGenUnpack_Type);
+    if (o == NULL) {
+        Py_DECREF(iterator);
+        return NULL;
+    }
+    o->agu_iterator = iterator;
+    _PyObject_GC_TRACK((PyObject *)o);
+    return (PyObject *)o;
+}
+
+
 /* ---------- Async Generator AThrow awaitable ------------ */
 
 #define _PyAsyncGenAThrow_CAST(op) \

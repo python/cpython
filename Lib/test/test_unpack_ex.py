@@ -748,6 +748,183 @@ def test_errors_in_getitem():
 
 __test__ = {'doctests' : doctests}
 
+
+class TestGeneratorExpressionDelegation(unittest.TestCase):
+    # Unpacking a sub-iterable with ``*`` in a generator expression delegates
+    # to the sub-iterable using ``yield from`` semantics, so that values sent
+    # to (and exceptions thrown into) the generator are forwarded.
+
+    def test_flatten(self):
+        lists = [[1, 2], [3], [], [4, 5]]
+        self.assertEqual(list((*sub for sub in lists)), [1, 2, 3, 4, 5])
+
+    def test_yields_from_multiple_iterables(self):
+        gen = (*(0, 1) for i in range(3))
+        self.assertEqual(list(gen), [0, 1, 0, 1, 0, 1])
+
+    def test_send_is_forwarded(self):
+        received = []
+
+        def sub():
+            while True:
+                received.append((yield 'value'))
+
+        gen = (*sub() for _ in range(1))
+        self.assertEqual(next(gen), 'value')
+        self.assertEqual(gen.send(42), 'value')
+        self.assertEqual(gen.send(7), 'value')
+        self.assertEqual(received, [42, 7])
+
+    def test_throw_is_forwarded(self):
+        caught = []
+
+        def sub():
+            try:
+                yield 1
+                yield 2
+            except ValueError as exc:
+                caught.append(str(exc))
+                yield 'after-catch'
+
+        gen = (*sub() for _ in range(1))
+        self.assertEqual(next(gen), 1)
+        self.assertEqual(gen.throw(ValueError('boom')), 'after-catch')
+        self.assertEqual(caught, ['boom'])
+
+    def test_close_is_forwarded(self):
+        closed = []
+
+        def sub():
+            try:
+                yield 1
+                yield 2
+            except GeneratorExit:
+                closed.append(True)
+                raise
+
+        gen = (*sub() for _ in range(1))
+        self.assertEqual(next(gen), 1)
+        gen.close()
+        self.assertEqual(closed, [True])
+
+    def test_subiterator_return_value_is_discarded(self):
+        def sub(n):
+            yield n
+            return 'ignored'
+
+        self.assertEqual(list((*sub(i) for i in range(3))), [0, 1, 2])
+
+
+class TestAsyncGeneratorExpressionDelegation(unittest.TestCase):
+    # Unpacking a (synchronous) sub-iterable with ``*`` in an asynchronous
+    # generator expression also delegates with ``yield from`` semantics:
+    # asend() forwards to the sub-iterator's send(), athrow() to throw() and
+    # aclose() to close().
+    #
+    # These are low-level language tests, so (like test_asyncgen) the async
+    # generators are driven by hand rather than through an event loop.
+
+    @staticmethod
+    async def _aiter(seq):
+        for item in seq:
+            yield item
+
+    @staticmethod
+    def _run(coro):
+        # Drive a coroutine that is not expected to await anything real, and
+        # return its result.  Any StopAsyncIteration (e.g. an exhausted
+        # asend()) is allowed to propagate.
+        try:
+            coro.send(None)
+        except StopIteration as exc:
+            return exc.value
+        coro.close()
+        raise AssertionError("coroutine awaited unexpectedly")
+
+    def _collect(self, agen):
+        result = []
+        while True:
+            try:
+                result.append(self._run(agen.asend(None)))
+            except StopAsyncIteration:
+                break
+        return result
+
+    def test_flatten(self):
+        lists = [[1, 2], [3], [], [4, 5]]
+        agen = (*sub async for sub in self._aiter(lists))
+        self.assertEqual(self._collect(agen), [1, 2, 3, 4, 5])
+
+    def test_asend_forwards_to_send(self):
+        received = []
+
+        def sub():
+            while True:
+                received.append((yield 'value'))
+
+        agen = (*sub() async for _ in self._aiter([0]))
+        self.assertEqual(self._run(agen.asend(None)), 'value')
+        self.assertEqual(self._run(agen.asend(99)), 'value')
+        self.assertEqual(self._run(agen.asend(123)), 'value')
+        self.assertEqual(received, [99, 123])
+
+    def test_athrow_forwards_to_throw(self):
+        caught = []
+
+        def sub():
+            try:
+                yield 1
+                yield 2
+            except ValueError as exc:
+                caught.append(str(exc))
+                yield 'after-catch'
+
+        agen = (*sub() async for _ in self._aiter([0]))
+        self.assertEqual(self._run(agen.asend(None)), 1)
+        self.assertEqual(self._run(agen.athrow(ValueError('boom'))),
+                         'after-catch')
+        self.assertEqual(caught, ['boom'])
+
+    def test_aclose_forwards_to_close(self):
+        closed = []
+
+        def sub():
+            try:
+                yield 1
+                yield 2
+            except GeneratorExit:
+                closed.append(True)
+                raise
+
+        agen = (*sub() async for _ in self._aiter([0]))
+        self.assertEqual(self._run(agen.asend(None)), 1)
+        self._run(agen.aclose())
+        self.assertEqual(closed, [True])
+
+    def test_unpack_helper_throw_requires_argument(self):
+        # The internal sync-iterable wrapper is reachable via ag_await while
+        # suspended at the delegation; throw() must validate its arity rather
+        # than crash (gh-143055).
+        agen = (*[1, 2, 3] async for _ in self._aiter([0]))
+        self._run(agen.asend(None))
+        wrapper = agen.ag_await
+        self.assertIsNotNone(wrapper)
+        with self.assertRaises(TypeError):
+            wrapper.throw()
+        # A valid exception is still accepted and propagates out.
+        with self.assertRaises(ValueError):
+            wrapper.throw(ValueError('boom'))
+
+    def test_unpacking_async_iterable_is_a_type_error(self):
+        # ``*`` unpacking is synchronous; async iterables cannot be unpacked.
+        async def agen_fn():
+            yield 1
+
+        agen = (*agen_fn() async for _ in self._aiter([0]))
+        with self.assertRaises(TypeError):
+            self._run(agen.asend(None))
+
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests

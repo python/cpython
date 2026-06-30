@@ -891,10 +891,24 @@ For example::
    >>> {**d for d in configuration_sets}
    {'color': 'yellow', 'count': 5}
 
+In a generator expression, a starred expression is delegated to using
+:keyword:`yield from <yield>` semantics: values sent into the generator with
+:meth:`~generator.send` and exceptions thrown in with :meth:`~generator.throw`
+are forwarded to the sub-iterator currently being unpacked.  The same applies
+to asynchronous generator expressions, where :meth:`~agen.asend` is forwarded
+to the (synchronous) sub-iterator's :meth:`~generator.send`, and
+:meth:`~agen.athrow` and :meth:`~agen.aclose` to its :meth:`~generator.throw`
+(:meth:`~agen.aclose` throwing :exc:`GeneratorExit`).
+
 .. versionadded:: 3.15
 
    Unpacking in comprehensions using the ``*`` and ``**`` operators
    was introduced in :pep:`798`.
+
+.. versionchanged:: 3.16
+
+   Unpacking a starred expression in a generator expression delegates to the
+   sub-iterator using :keyword:`yield from <yield>` semantics.
 
 
 .. index::

@@ -4536,6 +4536,34 @@ codegen_call_helper(compiler *c, location loc,
 */
 
 
+/* Emit code for a starred element in a generator expression, e.g. the `*it`
+   in `(*it for it in its)`.  This delegates to the sub-iterable using
+   `yield from` semantics, so that values sent to (and exceptions thrown into)
+   the generator are forwarded to the sub-iterator.
+
+   When the surrounding comprehension is an async generator, the (synchronous)
+   sub-iterable is first wrapped via INTRINSIC_ASYNC_GEN_UNPACK so that every
+   value it produces -- including values produced in response to asend() and
+   athrow() -- is wrapped as an async-generator value.  Otherwise the async
+   generator machinery would treat those values as awaited values rather than
+   async yields. */
+static int
+codegen_genexp_starred_element(compiler *c, location elt_loc, expr_ty elt)
+{
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+    int async_gen = ste->ste_generator && ste->ste_coroutine;
+    VISIT(c, expr, elt->v.Starred.value);
+    if (async_gen) {
+        ADDOP_I(c, elt_loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_UNPACK);
+    }
+    ADDOP_I(c, elt_loc, GET_ITER, GET_ITER_YIELD_FROM);
+    ADDOP_LOAD_CONST(c, elt_loc, Py_None);
+    ADD_YIELD_FROM(c, elt_loc, 0);
+    ADDOP(c, elt_loc, POP_TOP);
+    return SUCCESS;
+}
+
+
 static int
 codegen_comprehension_generator(compiler *c, location loc,
                                 asdl_comprehension_seq *generators, int gen_index,
@@ -4640,18 +4668,8 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         switch (type) {
         case COMP_GENEXP:
             if (elt->kind == Starred_kind) {
-                NEW_JUMP_TARGET_LABEL(c, unpack_start);
-                NEW_JUMP_TARGET_LABEL(c, unpack_end);
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, GET_ITER, 0);
-                USE_LABEL(c, unpack_start);
-                ADDOP_JUMP(c, elt_loc, FOR_ITER, unpack_end);
-                ADDOP_YIELD(c, elt_loc);
-                ADDOP(c, elt_loc, POP_TOP);
-                ADDOP_JUMP(c, NO_LOCATION, JUMP, unpack_start);
-                USE_LABEL(c, unpack_end);
-                ADDOP(c, NO_LOCATION, END_FOR);
-                ADDOP(c, NO_LOCATION, POP_ITER);
+                RETURN_IF_ERROR(
+                    codegen_genexp_starred_element(c, elt_loc, elt));
             }
             else {
                 VISIT(c, expr, elt);
@@ -4783,18 +4801,8 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         switch (type) {
         case COMP_GENEXP:
             if (elt->kind == Starred_kind) {
-                NEW_JUMP_TARGET_LABEL(c, unpack_start);
-                NEW_JUMP_TARGET_LABEL(c, unpack_end);
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, GET_ITER, 0);
-                USE_LABEL(c, unpack_start);
-                ADDOP_JUMP(c, elt_loc, FOR_ITER, unpack_end);
-                ADDOP_YIELD(c, elt_loc);
-                ADDOP(c, elt_loc, POP_TOP);
-                ADDOP_JUMP(c, NO_LOCATION, JUMP, unpack_start);
-                USE_LABEL(c, unpack_end);
-                ADDOP(c, NO_LOCATION, END_FOR);
-                ADDOP(c, NO_LOCATION, POP_ITER);
+                RETURN_IF_ERROR(
+                    codegen_genexp_starred_element(c, elt_loc, elt));
             }
             else {
                 VISIT(c, expr, elt);

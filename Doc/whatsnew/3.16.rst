@@ -75,6 +75,18 @@ New features
 Other language changes
 ======================
 
+* Unpacking a sub-iterable with ``*`` in a generator expression
+  (:pep:`798`) now delegates to the sub-iterable using
+  :keyword:`yield from <yield>` semantics.  Values sent with
+  :meth:`~generator.send` and exceptions thrown with
+  :meth:`~generator.throw` are forwarded to the sub-iterator, and the same
+  applies to asynchronous generator expressions: :meth:`~agen.asend` is
+  forwarded to the (synchronous) sub-iterator's :meth:`~generator.send`,
+  while :meth:`~agen.athrow` and :meth:`~agen.aclose` are forwarded to its
+  :meth:`~generator.throw` (:meth:`~agen.aclose` throwing
+  :exc:`GeneratorExit`, as :meth:`generator.close` does).
+  (Contributed in :gh:`143055`.)
+
 
 
 New modules
