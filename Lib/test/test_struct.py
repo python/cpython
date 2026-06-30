@@ -7,6 +7,7 @@ import operator
 import unittest
 import struct
 import sys
+import warnings
 import weakref
 
 from test import support
@@ -397,6 +398,21 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         big = (1 << 25) - 1
         big = math.ldexp(big, 127 - 24)
         self.assertRaises(OverflowError, struct.pack, ">f", big)
+        self.assertRaises(OverflowError, struct.pack, "<f", big)
+        # same for native format, see gh-145633
+        self.assertRaises(OverflowError, struct.pack, "f", big)
+
+        # And for half-floats
+        big = (1 << 11) - 1
+        big = math.ldexp(big, 15 - 10)
+        packed = struct.pack(">e", big)
+        unpacked = struct.unpack(">e", packed)[0]
+        self.assertEqual(big, unpacked)
+        big = (1 << 12) - 1
+        big = math.ldexp(big, 15 - 11)
+        self.assertRaises(OverflowError, struct.pack, ">e", big)
+        self.assertRaises(OverflowError, struct.pack, "<e", big)
+        self.assertRaises(OverflowError, struct.pack, "e", big)
 
     def test_1530559(self):
         for code, byteorder in iter_integer_formats():
@@ -980,10 +996,26 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
         for z in values:
-            for f in ['F', 'D', '>F', '>D', '<F', '<D']:
+            for f in ['Zf', 'Zd', '>Zf', '>Zd', '<Zf', '<Zd']:
                 with self.subTest(z=z, format=f):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
+        z = 1+1j
+        for fmt in ['F', 'D', '>F', '>D', '<F', '<D']:
+            with self.subTest(format=fmt):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", DeprecationWarning)
+                    self.assertRaises(DeprecationWarning, struct.pack, fmt, z)
+                with warnings.catch_warnings():
+                    with self.assertWarns(DeprecationWarning):
+                        b = struct.pack(fmt, z)
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", DeprecationWarning)
+                    self.assertRaises(DeprecationWarning, struct.unpack, fmt, b)
+                with self.assertWarns(DeprecationWarning):
+                    round_trip = struct.unpack(fmt, b)[0]
+                self.assertComplexesAreIdentical(z, round_trip)
 
     @unittest.skipIf(
         support.is_android or support.is_apple_mobile,
@@ -1015,6 +1047,24 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(RuntimeError, S.__sizeof__)
         self.assertRaises(RuntimeError, repr, S)
         self.assertEqual(S.size, -1)
+
+    def test_float_round_trip(self):
+        for format in (
+            "f", "<f", ">f",
+            "d", "<d", ">d",
+            "e", "<e", ">e",
+        ):
+            with self.subTest(format=format):
+                f = struct.unpack(format, struct.pack(format, 1.5))[0]
+                self.assertEqual(f, 1.5)
+                f = struct.unpack(format, struct.pack(format, NAN))[0]
+                self.assertTrue(math.isnan(f), f)
+                f = struct.unpack(format, struct.pack(format, INF))[0]
+                self.assertTrue(math.isinf(f), f)
+                self.assertEqual(math.copysign(1.0, f), 1.0)
+                f = struct.unpack(format, struct.pack(format, -INF))[0]
+                self.assertTrue(math.isinf(f), f)
+                self.assertEqual(math.copysign(1.0, f), -1.0)
 
 
 class UnpackIteratorTest(unittest.TestCase):

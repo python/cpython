@@ -262,19 +262,20 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "Return an array of bytes representing an integer.\n"
 "\n"
 "  length\n"
-"    Length of bytes object to use.  An OverflowError is raised if the\n"
-"    integer is not representable with the given number of bytes.  Default\n"
-"    is length 1.\n"
+"    Length of bytes object to use.  An OverflowError is raised if\n"
+"    the integer is not representable with the given number of bytes.\n"
+"    Default is length 1.\n"
 "  byteorder\n"
-"    The byte order used to represent the integer.  If byteorder is \'big\',\n"
-"    the most significant byte is at the beginning of the byte array.  If\n"
-"    byteorder is \'little\', the most significant byte is at the end of the\n"
-"    byte array.  To request the native byte order of the host system, use\n"
-"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
+"    The byte order used to represent the integer.  If byteorder is\n"
+"    \'big\', the most significant byte is at the beginning of the byte\n"
+"    array.  If byteorder is \'little\', the most significant byte is at\n"
+"    the end of the byte array.  To request the native byte order of\n"
+"    the host system, use sys.byteorder as the byte order value.\n"
+"    Default is to use \'big\'.\n"
 "  signed\n"
-"    Determines whether two\'s complement is used to represent the integer.\n"
-"    If signed is False and a negative integer is given, an OverflowError\n"
-"    is raised.");
+"    Determines whether two\'s complement is used to represent the\n"
+"    integer.  If signed is False and a negative integer is given,\n"
+"    an OverflowError is raised.");
 
 #define INT_TO_BYTES_METHODDEF    \
     {"to_bytes", _PyCFunction_CAST(int_to_bytes), METH_FASTCALL|METH_KEYWORDS, int_to_bytes__doc__},
@@ -383,17 +384,19 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "\n"
 "  bytes\n"
 "    Holds the array of bytes to convert.  The argument must either\n"
-"    support the buffer protocol or be an iterable object producing bytes.\n"
-"    Bytes and bytearray are examples of built-in objects that support the\n"
-"    buffer protocol.\n"
+"    support the buffer protocol or be an iterable object producing\n"
+"    bytes.  Bytes and bytearray are examples of built-in objects that\n"
+"    support the buffer protocol.\n"
 "  byteorder\n"
-"    The byte order used to represent the integer.  If byteorder is \'big\',\n"
-"    the most significant byte is at the beginning of the byte array.  If\n"
-"    byteorder is \'little\', the most significant byte is at the end of the\n"
-"    byte array.  To request the native byte order of the host system, use\n"
-"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
+"    The byte order used to represent the integer.  If byteorder is\n"
+"    \'big\', the most significant byte is at the beginning of the byte\n"
+"    array.  If byteorder is \'little\', the most significant byte is at\n"
+"    the end of the byte array.  To request the native byte order of\n"
+"    the host system, use sys.byteorder as the byte order value.\n"
+"    Default is to use \'big\'.\n"
 "  signed\n"
-"    Indicates whether two\'s complement is used to represent the integer.");
+"    Indicates whether two\'s complement is used to represent the\n"
+"    integer.");
 
 #define INT_FROM_BYTES_METHODDEF    \
     {"from_bytes", _PyCFunction_CAST(int_from_bytes), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, int_from_bytes__doc__},
@@ -490,4 +493,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=e68f4e23ead3f649 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d95766fb7ff46963 input=a9049054013a1b77]*/

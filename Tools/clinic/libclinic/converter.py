@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 import libclinic
 from libclinic import fail
-from libclinic import Sentinels, unspecified, unknown
+from libclinic import Sentinels, unspecified, unknown, NULL
 from libclinic.codegen import CRenderData, Include, TemplateDict
 from libclinic.function import Function, Parameter
 
@@ -83,9 +83,9 @@ class CConverter(metaclass=CConverterAutoRegister):
     # at runtime).
     default: object = unspecified
 
-    # If not None, default must be isinstance() of this type.
+    # default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type: bltns.type[object] | tuple[bltns.type[object], ...] | None = None
+    default_type: bltns.type[object] | tuple[bltns.type[object], ...] = object
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
@@ -94,6 +94,13 @@ class CConverter(metaclass=CConverterAutoRegister):
     # "default" converted into a Python value, as a string.
     # Or None if there is no default.
     py_default: str | None = None
+
+    # The default value used to initialize the C variable when
+    # there is no default.
+    #
+    # Every non-abstract subclass with non-trivial cleanup() should supply
+    # a valid value.
+    c_init_default: str = ''
 
     # The default value used to initialize the C variable when
     # there is no default, but not specifying a default may
@@ -105,7 +112,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     #
     # This value is specified as a string.
     # Every non-abstract subclass should supply a valid value.
-    c_ignored_default: str = 'NULL'
+    c_ignored_default: str = ''
 
     # If true, wrap with Py_UNUSED.
     unused = False
@@ -182,21 +189,6 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.unused = unused
         self._includes: list[Include] = []
 
-        if default is not unspecified:
-            if (self.default_type
-                and default is not unknown
-                and not isinstance(default, self.default_type)
-            ):
-                if isinstance(self.default_type, type):
-                    types_str = self.default_type.__name__
-                else:
-                    names = [cls.__name__ for cls in self.default_type]
-                    types_str = ', '.join(names)
-                cls_name = self.__class__.__name__
-                fail(f"{cls_name}: default value {default!r} for field "
-                     f"{name!r} is not of type {types_str!r}")
-            self.default = default
-
         if c_default:
             self.c_default = c_default
         if py_default:
@@ -210,6 +202,56 @@ class CConverter(metaclass=CConverterAutoRegister):
         # about the function in converter_init().
         # (That breaks if we get cloned.)
         self.converter_init(**kwargs)
+
+        if default is not unspecified:
+            if self.default_type == ():
+                conv_name = self.__class__.__name__.removesuffix('_converter')
+                fail(f"A '{conv_name}' parameter cannot be marked optional.")
+            if (default is not unknown
+                and not isinstance(default, self.default_type)
+            ):
+                if isinstance(self.default_type, type):
+                    types_str = self.default_type.__name__
+                else:
+                    names = [cls.__name__ for cls in self.default_type]
+                    types_str = ', '.join(names)
+                cls_name = self.__class__.__name__
+                fail(f"{cls_name}: default value {default!r} for field "
+                     f"{name!r} is not of type {types_str!r}")
+            self.default = default
+
+        if not self.c_default:
+            if default is unspecified:
+                if self.c_init_default:
+                    self.c_default = self.c_init_default
+            elif default is NULL:
+                self.c_default = self.c_ignored_default or self.c_init_default
+                if not self.c_default:
+                    cls_name = self.__class__.__name__
+                    fail(f"{cls_name}: c_default is required for "
+                         f"default value NULL")
+            else:
+                assert default is not unknown
+                self.c_default_init()
+                if not self.c_default:
+                    if default is None:
+                        self.c_default = self.c_init_default
+                        if not self.c_default:
+                            cls_name = self.__class__.__name__
+                            fail(f"{cls_name}: c_default is required for "
+                                 f"default value None")
+                    elif isinstance(default, str):
+                        self.c_default = libclinic.c_str_repr(default)
+                    elif isinstance(default, bytes):
+                        self.c_default = libclinic.c_bytes_repr(default)
+                    elif isinstance(default, (int, float)):
+                        self.c_default = repr(default)
+                    else:
+                        cls_name = self.__class__.__name__
+                        fail(f"{cls_name}: c_default is required for "
+                             f"default value {default!r}")
+                        fail(f"Unsupported default value {default!r}.")
+
         self.function = function
 
     # Add a custom __getattr__ method to improve the error message
@@ -232,6 +274,9 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def converter_init(self) -> None:
         pass
+
+    def c_default_init(self) -> None:
+        return
 
     def is_optional(self) -> bool:
         return (self.default is not unspecified)
@@ -324,7 +369,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             args.append(self.converter)
 
         if self.encoding:
-            args.append(libclinic.c_repr(self.encoding))
+            args.append(libclinic.c_str_repr(self.encoding))
         elif self.subclass_of:
             args.append(self.subclass_of)
 
@@ -371,7 +416,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         declaration = [self.simple_declaration(in_parser=True)]
         default = self.c_default
         if not default and self.parameter.group:
-            default = self.c_ignored_default
+            default = self.c_ignored_default or self.c_init_default
         if default:
             declaration.append(" = ")
             declaration.append(default)

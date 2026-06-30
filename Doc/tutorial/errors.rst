@@ -549,9 +549,9 @@ caught like any other exception. ::
    >>> try:
    ...     f()
    ... except Exception as e:
-   ...     print(f'caught {type(e)}: e')
+   ...     print(f'caught {type(e)}: {e}')
    ...
-   caught <class 'ExceptionGroup'>: e
+   caught <class 'ExceptionGroup'>: there were problems (2 sub-exceptions)
    >>>
 
 By using ``except*`` instead of ``except``, we can selectively
