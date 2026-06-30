@@ -1009,14 +1009,14 @@ class TZStrTest(ZoneInfoTestBase):
 
         cls._tzif_header = bytes(out)
 
-    def zone_from_tzstr(self, tzstr):
+    def zone_from_tzstr(self, tzstr, encoding="ascii"):
         """Creates a zoneinfo file following a POSIX rule."""
         zonefile = io.BytesIO(self._tzif_header)
         zonefile.seek(0, 2)
 
         # Write the footer
         zonefile.write(b"\x0A")
-        zonefile.write(tzstr.encode("ascii"))
+        zonefile.write(tzstr.encode(encoding))
         zonefile.write(b"\x0A")
 
         zonefile.seek(0)
@@ -1142,9 +1142,21 @@ class TZStrTest(ZoneInfoTestBase):
     def test_invalid_tzstr(self):
         invalid_tzstrs = [
             "PST8PDT",  # DST but no transition specified
+            # gh-152212: the std offset is required (POSIX TZ grammar)
+            "AAA",
+            "A",
+            "AA",
+            "B",
             "+11",  # Unquoted alphanumeric
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
+            # Unquoted abbreviation with embedded or leading whitespace
+            "AB C3",
+            " A B 3",
+            "AAA4BB B,J60/2,J300/2",  # Embedded whitespace in DST
+            # Empty quoted abbreviation
+            "<>5",
+            "AAA4<>,M3.2.0/2,M11.1.0/3",
             "PST8PDT,M3.2.0/2",  # Only one transition rule
             # Invalid offset hours
             "AAA168",
@@ -1226,6 +1238,15 @@ class TZStrTest(ZoneInfoTestBase):
                 tzstr_regex = re.escape(invalid_tzstr)
                 with self.assertRaisesRegex(ValueError, tzstr_regex):
                     self.zone_from_tzstr(invalid_tzstr)
+
+    def test_invalid_tzstr_non_ascii_abbr(self):
+        tzstr = "ABÀC3"
+        if self.module is py_zoneinfo:
+            expected = re.escape(tzstr)
+        else:
+            expected = re.escape(repr(tzstr.encode("utf-8")))
+        with self.assertRaisesRegex(ValueError, expected):
+            self.zone_from_tzstr(tzstr, encoding="utf-8")
 
     @classmethod
     def _populate_test_cases(cls):

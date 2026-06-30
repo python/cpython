@@ -8547,8 +8547,7 @@
                         (this_instr->op.code == JUMP_BACKWARD_JIT || is_resume)) &&
                     next_instr->op.code != ENTER_EXECUTOR) {
                     _Py_CODEUNIT *insert_exec_at = this_instr;
-                    while (oparg > 255) {
-                        oparg >>= 8;
+                    for (int tmp = oparg; tmp > 255; tmp >>= 8) {
                         insert_exec_at--;
                     }
                     int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
@@ -9221,7 +9220,18 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            // _GUARD_KEYS_VERSION
+            {
+                uint32_t keys_version = read_u32(&this_instr[4].cache);
+                PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+                PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+                PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
+                if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
+                    UPDATE_MISS_STATS(LOAD_ATTR);
+                    assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
+                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                }
+            }
             // _LOAD_ATTR_METHOD_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -9406,7 +9416,18 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            // _GUARD_KEYS_VERSION
+            {
+                uint32_t keys_version = read_u32(&this_instr[4].cache);
+                PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+                PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+                PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
+                if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
+                    UPDATE_MISS_STATS(LOAD_ATTR);
+                    assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
+                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                }
+            }
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -11518,8 +11539,7 @@
                         (this_instr->op.code == JUMP_BACKWARD_JIT || is_resume)) &&
                     next_instr->op.code != ENTER_EXECUTOR) {
                     _Py_CODEUNIT *insert_exec_at = this_instr;
-                    while (oparg > 255) {
-                        oparg >>= 8;
+                    for (int tmp = oparg; tmp > 255; tmp >>= 8) {
                         insert_exec_at--;
                     }
                     int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,

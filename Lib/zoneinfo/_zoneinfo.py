@@ -640,11 +640,11 @@ def _parse_tz_str(tz_str):
 
     parser_re = re.compile(
         r"""
-        (?P<std>[^<0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+        (?P<std>[a-zA-Z]+|<[a-zA-Z0-9+-]+>)
         (?:
             (?P<stdoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)
             (?:
-                (?P<dst>[^0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+                (?P<dst>[a-zA-Z]+|<[a-zA-Z0-9+-]+>)
                 (?P<dstoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)?
             )? # dst
         )? # stdoff
@@ -672,7 +672,8 @@ def _parse_tz_str(tz_str):
         except ValueError as e:
             raise ValueError(f"Invalid STD offset in {tz_str}") from e
     else:
-        std_offset = 0
+        # The STD offset is required
+        raise ValueError(f"Invalid STD offset in {tz_str}")
 
     if dst_abbr is not None:
         if dst_offset := m.group("dstoff"):

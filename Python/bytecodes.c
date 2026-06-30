@@ -3534,8 +3534,8 @@ dummy_func(
                 next_instr->op.code != ENTER_EXECUTOR) {
                 /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
                 _Py_CODEUNIT *insert_exec_at = this_instr;
-                while (oparg > 255) {
-                    oparg >>= 8;
+                // gh-152192: count with a temporary. oparg must stay intact, it's passed to the tracer below
+                for (int tmp = oparg; tmp > 255; tmp >>= 8) {
                     insert_exec_at--;
                 }
                 int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
@@ -4244,6 +4244,13 @@ dummy_func(
             EXIT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid));
         }
 
+        op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
+            PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+            PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
+            EXIT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version);
+        }
+
         op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             /* Cached method object */
@@ -4260,7 +4267,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
-            unused/2 +
+            _GUARD_KEYS_VERSION +
             _LOAD_ATTR_METHOD_WITH_VALUES;
 
         op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
@@ -4294,7 +4301,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
-            unused/2 +
+            _GUARD_KEYS_VERSION +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 
         op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
