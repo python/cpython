@@ -22,6 +22,16 @@ def normalize_text(text):
     return text.strip()
 
 
+def first_line(text):
+    # Get the first line. Return text unchanged if it's empty.
+    lines = text.splitlines()
+    if lines:
+        return lines[0]
+    else:
+        # text is an empty string
+        return text
+
+
 def read_first_line(filename):
     # Get the first line of a text file and strip trailing spaces
     try:
@@ -481,12 +491,9 @@ def run_command(cmd, check=True, **kwargs):
 
 def collect_gdb(info_add):
     version = run_command(["gdb", "-nx", "--version"])
-    if not version:
-        return
-
-    # Only keep the first line
-    version = version.splitlines()[0]
-    info_add('gdb_version', version)
+    if version:
+        # Only keep the first line
+        info_add('gdb_version', first_line(version))
 
 
 def collect_tkinter(info_add):
@@ -904,7 +911,7 @@ def collect_cc(info_add):
         # CC --version failed: ignore error
         return
 
-    text = stdout.splitlines()[0]
+    text = first_line(stdout)
     text = normalize_text(text)
     info_add('CC.version', text)
 
@@ -1027,9 +1034,7 @@ def collect_windows(info_add):
     # "ver" output starts with an empty line: remove it
     output = output.strip()
     if output:
-        first_line = output.splitlines()[0]
-        if first_line:
-            info_add('windows.ver', first_line)
+        info_add('windows.ver', first_line(output))
 
     # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
     value = winreg_query(r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows"
