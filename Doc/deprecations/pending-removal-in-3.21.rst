@@ -20,6 +20,6 @@ Pending removal in Python 3.21
 
 * :mod:`struct`:
 
-  * Soft-deprecated since Python 3.15 using ``'F'`` and ``'D'`` type codes now
+  * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
     deprecated.  These codes will be removed in Python 3.21.  Use instead
     two-letter forms ``'Zf'`` and ``'Zd'``.

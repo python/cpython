@@ -1009,6 +1009,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 with warnings.catch_warnings():
                     with self.assertWarns(DeprecationWarning):
                         b = struct.pack(f, z)
+
                 with warnings.catch_warnings():
                     warnings.simplefilter("error", DeprecationWarning)
                     self.assertRaises(DeprecationWarning, struct.unpack, f, b)
