@@ -1000,21 +1000,21 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 with self.subTest(z=z, format=f):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
+        z = 1+1j
         for f in ['F', 'D', '>F', '>D', '<F', '<D']:
-            z = 1+1j
-            with self.subTest(format=f):
+            with self.subTest(format=fmt):
                 with warnings.catch_warnings():
                     warnings.simplefilter("error", DeprecationWarning)
-                    self.assertRaises(DeprecationWarning, struct.pack, f, z)
+                    self.assertRaises(DeprecationWarning, struct.pack, fmt, z)
                 with warnings.catch_warnings():
                     with self.assertWarns(DeprecationWarning):
-                        b = struct.pack(f, z)
+                        b = struct.pack(fmt, z)
 
                 with warnings.catch_warnings():
                     warnings.simplefilter("error", DeprecationWarning)
-                    self.assertRaises(DeprecationWarning, struct.unpack, f, b)
+                    self.assertRaises(DeprecationWarning, struct.unpack, fmt, b)
                 with self.assertWarns(DeprecationWarning):
-                    round_trip = struct.unpack(f, b)[0]
+                    round_trip = struct.unpack(fmt, b)[0]
                 self.assertComplexesAreIdentical(z, round_trip)
 
     @unittest.skipIf(
