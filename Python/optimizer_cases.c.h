@@ -2163,10 +2163,6 @@
             break;
         }
 
-        case _DELETE_GLOBAL: {
-            break;
-        }
-
         case _LOAD_LOCALS: {
             JitOptRef locals;
             locals = sym_new_not_null(ctx);

@@ -5906,33 +5906,6 @@
             DISPATCH();
         }
 
-        TARGET(DELETE_GLOBAL) {
-            #if _Py_TAIL_CALL_INTERP
-            int opcode = DELETE_GLOBAL;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(DELETE_GLOBAL);
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
-            _PyFrame_StackPointerInvalidate(frame);
-            if (err < 0) {
-                JUMP_TO_LABEL(error);
-            }
-            if (err == 0) {
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
-                _PyFrame_StackPointerInvalidate(frame);
-                JUMP_TO_LABEL(error);
-            }
-            DISPATCH();
-        }
-
         TARGET(DELETE_SUBSCR) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_SUBSCR;
@@ -12534,17 +12507,36 @@
             _PyStackRef v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
-            _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(v);
-            _PyFrame_StackPointerInvalidate(frame);
-            if (err) {
+            int err;
+            if (PyStackRef_IsNull(v)) {
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                err = PyDict_Pop(GLOBALS(), name, NULL);
+                _PyFrame_StackPointerInvalidate(frame);
+                if (err == 0) {
+                    err = -1;
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                        NAME_ERROR_MSG, name);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
+            }
+            else {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_CLOSE(v);
+                _PyFrame_StackPointerInvalidate(frame);
+            }
+            if (err < 0) {
                 JUMP_TO_LABEL(error);
             }
             DISPATCH();
