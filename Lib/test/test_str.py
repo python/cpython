@@ -1572,7 +1572,8 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('%F' % NAN, 'NAN')
         self.assertEqual('%f' % INF, 'inf')
         self.assertEqual('%F' % INF, 'INF')
-
+        self.assertEqual('%f' % -INF, '-inf')
+        self.assertEqual('%F' % -INF, '-INF')
         # PEP 393
         self.assertEqual('%.1s' % "a\xe9\u20ac", 'a')
         self.assertEqual('%.2s' % "a\xe9\u20ac", 'a\xe9')
