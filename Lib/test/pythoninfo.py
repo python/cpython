@@ -464,8 +464,11 @@ def run_command(cmd, check=True, **kwargs):
             return ''
 
         # Strip trailing spaces and newlines
-        return stdout.rstrip()
+        print(f"Command {cmd_str} succeeded: {stdout!r}")
+        stdout = stdout.rstrip()
+        return stdout
     except FileNotFoundError:
+        print(f"Command {cmd_str} failed with: {exc!r}")
         return ''
     except OSError as exc:
         print(f"Command {cmd_str} failed with: {exc!r}")
