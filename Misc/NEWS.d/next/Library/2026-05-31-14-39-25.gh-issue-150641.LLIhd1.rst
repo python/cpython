@@ -1,2 +1,2 @@
-Fix evaluating forward references in STRING format can 'leak' internal names
-in ``typing``.
+Fix bug where :func:`typing.evaluate_forward_ref` with the ``STRING`` format
+could leak internal names used by the annotation machinery.
