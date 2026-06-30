@@ -207,10 +207,9 @@ class _Extra(bytes):
     @classmethod
     def read_one(cls, raw):
         try:
-            xid, xlen = cls.FIELD_STRUCT.unpack(raw[:4])
+            xid, xlen = cls.FIELD_STRUCT.unpack_from(raw)
         except struct.error:
-            xid = None
-            xlen = 0
+            xid, xlen = None, 0
         return cls(raw[:4+xlen], xid), raw[4+xlen:]
 
     @classmethod
