@@ -9126,7 +9126,16 @@ signed_number_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ signed_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'+' NUMBER"));
-            _res = number;
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_UnaryOp ( UAdd , number , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -9236,7 +9245,16 @@ signed_real_number_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ signed_real_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'+' real_number"));
-            _res = real;
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_UnaryOp ( UAdd , real , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -9346,6 +9364,15 @@ imaginary_number_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        p->level--;
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NUMBER
         if (p->error_indicator) {
             p->level--;
@@ -9385,7 +9412,16 @@ imaginary_number_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ imaginary_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'+' NUMBER"));
-            _res = _PyPegen_ensure_imaginary ( p , imag );
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_UnaryOp ( UAdd , _PyPegen_ensure_imaginary ( p , imag ) , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

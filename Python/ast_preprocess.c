@@ -867,11 +867,14 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTPreprocessState *st
     {
         case UnaryOp_kind:
         {
-            if (node->v.UnaryOp.op == USub &&
+            if ((node->v.UnaryOp.op == USub || node->v.UnaryOp.op == UAdd) &&
                 node->v.UnaryOp.operand->kind == Constant_kind)
             {
                 PyObject *operand = node->v.UnaryOp.operand->v.Constant.value;
-                PyObject *folded = PyNumber_Negative(operand);
+                PyObject *folded = node->v.UnaryOp.op == USub ? PyNumber_Negative(operand) : PyNumber_Positive(operand);
+                if (folded == NULL) {
+                    return 0;
+                }
                 return make_const(node, folded, ctx_);
             }
             break;
@@ -879,14 +882,18 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTPreprocessState *st
         case BinOp_kind:
         {
             operator_ty op = node->v.BinOp.op;
-            if ((op == Add || op == Sub) &&
-                node->v.BinOp.right->kind == Constant_kind)
+            if (op == Add || op == Sub)
             {
                 CALL(fold_const_match_patterns, expr_ty, node->v.BinOp.left);
-                if (node->v.BinOp.left->kind == Constant_kind) {
+                CALL(fold_const_match_patterns, expr_ty, node->v.BinOp.right);
+                if (node->v.BinOp.left->kind == Constant_kind &&
+                    node->v.BinOp.right->kind == Constant_kind) {
                     PyObject *left = node->v.BinOp.left->v.Constant.value;
                     PyObject *right = node->v.BinOp.right->v.Constant.value;
                     PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
+                    if (folded == NULL) {
+                        return 0;
+                    }
                     return make_const(node, folded, ctx_);
                 }
             }
