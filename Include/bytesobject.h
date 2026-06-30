@@ -24,9 +24,18 @@ functions should be applied to NULL pointer.
 PyAPI_DATA(PyTypeObject) PyBytes_Type;
 PyAPI_DATA(PyTypeObject) PyBytesIter_Type;
 
-#define PyBytes_Check(op) \
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
+PyAPI_FUNC(int) PyBytes_Check(PyObject *op);
+PyAPI_FUNC(int) PyBytes_CheckExact(PyObject *op);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 16)
+#  define PyBytes_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_BYTES_SUBCLASS)
-#define PyBytes_CheckExact(op) Py_IS_TYPE((op), &PyBytes_Type)
+#  define PyBytes_CheckExact(op) Py_IS_TYPE((op), &PyBytes_Type)
+#else
+#  define PyBytes_Check(op) PyBytes_Check(_PyObject_CAST(op))
+#  define PyBytes_CheckExact(op) PyBytes_CheckExact(_PyObject_CAST(op))
+#endif
 
 PyAPI_FUNC(PyObject *) PyBytes_FromStringAndSize(const char *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyBytes_FromString(const char *);

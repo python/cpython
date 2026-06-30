@@ -225,3 +225,8 @@ struct _longobject _Py_TrueStruct = {
         { 1 }
     }
 };
+
+// Implementations for the Stable ABI
+
+#undef PyBool_Check
+int PyBool_Check(PyObject *x) { return Py_IS_TYPE(x, &PyBool_Type); }

@@ -9,7 +9,14 @@ extern "C" {
 
 // PyBool_Type is declared by object.h
 
-#define PyBool_Check(x) Py_IS_TYPE((x), &PyBool_Type)
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
+PyAPI_FUNC(int) PyBool_Check(PyObject *x);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 16)
+#  define PyBool_Check(x) Py_IS_TYPE((x), &PyBool_Type)
+#else
+#  define PyBool_Check(x) PyBool_Check(_PyObject_CAST(x))
+#endif
 
 /* Py_False and Py_True are the only two bools in existence. */
 

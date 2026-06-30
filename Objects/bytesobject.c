@@ -3923,3 +3923,12 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
     Py_ssize_t size = buf - byteswriter_data(writer);
     return PyBytesWriter_Resize(writer, size);
 }
+
+
+// Implementations for the Stable ABI
+
+#undef PyBytes_Check
+int PyBytes_Check(PyObject *op) { return PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_BYTES_SUBCLASS); }
+
+#undef PyBytes_CheckExact
+int PyBytes_CheckExact(PyObject *op) { return Py_IS_TYPE(op, &PyBytes_Type); }
