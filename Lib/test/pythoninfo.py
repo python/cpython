@@ -314,6 +314,7 @@ def collect_os(info_add):
         "HOMEDRIVE",
         "HOMEPATH",
         "IDLESTARTUP",
+        "IMAGE_OS_VERSION",
         "IPHONEOS_DEPLOYMENT_TARGET",
         "LANG",
         "LDFLAGS",
@@ -466,11 +467,9 @@ def run_command(cmd, check=True, **kwargs):
             return ''
 
         # Strip trailing spaces and newlines
-        print(f"DEBUG: Command {cmd_str} succeeded: {stdout!r}")
         stdout = stdout.rstrip()
         return stdout
-    except FileNotFoundError as exc:
-        print(f"DEBUG: Command {cmd_str} failed with: {exc!r}")
+    except FileNotFoundError:
         return ''
     except OSError as exc:
         print(f"Command {cmd_str} failed with: {exc!r}")
@@ -1025,6 +1024,8 @@ def collect_windows(info_add):
 
     # windows.ver: "ver" command
     output = run_command(["ver"], shell=True)
+    # "ver" output starts with an empty line: remove it
+    output = output.strip()
     if output:
         first_line = output.splitlines()[0]
         if first_line:
@@ -1157,7 +1158,7 @@ def detect_virt():
         return container
 
     if APPLE:
-        hv_vmm_present = run_command(['sysctl', 'kern.hv_vmm_present'])
+        hv_vmm_present = run_command(['sysctl', '-n', 'kern.hv_vmm_present'])
         if hv_vmm_present == '1':
             return 'run in a VM (kern.hv_vmm_present is 1)'
 
