@@ -1,5 +1,3 @@
-:meth:`~datetime.datetime.fromisoformat` and :meth:`~datetime.time.fromisoformat`
-now reject a decimal separator (``.`` or ``,``) that is not followed by any
-fractional digit before a timezone designator, such as ``'12:34:56.+05:00'``.
-The C implementation previously accepted such strings while the pure-Python
-implementation correctly raised :exc:`ValueError`.
+The C implementations of :meth:`~datetime.datetime.fromisoformat` and :meth:`~datetime.time.fromisoformat`
+now reject a decimal separator that is not followed by any
+fractional digit before a timezone designator.
