@@ -2665,7 +2665,7 @@ class ZipFile:
             extra_data = zinfo.extra
             min_version = 0
             if extra:
-                # Append a ZIP64 field to the extra's
+                # Prepend a ZIP64 field to the extra's
                 extra_data = _Extra.strip(extra_data, (1,))
                 extra_data = struct.pack(
                     '<HH' + 'Q'*len(extra),
