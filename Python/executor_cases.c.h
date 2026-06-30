@@ -14317,6 +14317,109 @@
             break;
         }
 
+        case _MATCH_CLASS_ISINSTANCE_r22: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
+            _PyStackRef type;
+            _PyStackRef subject;
+            _PyStackRef res;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            type = _stack_item_1;
+            subject = _stack_item_0;
+            PyObject *subject_o = PyStackRef_AsPyObjectBorrow(subject);
+            PyObject *type_o = PyStackRef_AsPyObjectBorrow(type);
+            if (!PyType_Check(type_o)) {
+                const char *e = "called match pattern must be a class";
+                stack_pointer[0] = subject;
+                stack_pointer[1] = type;
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                _PyErr_Format(tstate, PyExc_TypeError, e);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_CLOSE(type);
+                _PyFrame_StackPointerInvalidate(frame);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
+            stack_pointer[0] = subject;
+            stack_pointer[1] = type;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            int retval = PyObject_IsInstance(subject_o, type_o);
+            _PyFrame_StackPointerInvalidate(frame);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            PyStackRef_CLOSE(type);
+            _PyFrame_StackPointerInvalidate(frame);
+            if (retval < 0) {
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_ERROR();
+            }
+            assert(!_PyErr_Occurred(tstate));
+            res = retval ? PyStackRef_True : PyStackRef_False;
+            _tos_cache1 = res;
+            _tos_cache0 = subject;
+            _tos_cache2 = PyStackRef_ZERO_BITS;
+            SET_CURRENT_CACHED_VALUES(2);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
+            break;
+        }
+
+        case _MATCH_CLASS_GET_OPT_ATTR_r13: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
+            _PyStackRef subject;
+            _PyStackRef attr;
+            _PyStackRef res;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            oparg = CURRENT_OPARG();
+            subject = _stack_item_0;
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            assert(PyUnicode_CheckExact(name));
+            PyObject *subject_o = PyStackRef_AsPyObjectBorrow(subject);
+            PyObject *attr_o;
+            stack_pointer[0] = subject;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            (void)PyObject_GetOptionalAttr(subject_o, name, &attr_o);
+            _PyFrame_StackPointerInvalidate(frame);
+            if (attr_o) {
+                assert(!_PyErr_Occurred(tstate));
+                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                res = PyStackRef_True;
+            } else {
+                if (_PyErr_Occurred(tstate)) {
+                    SET_CURRENT_CACHED_VALUES(0);
+                    JUMP_TO_ERROR();
+                }
+                attr = PyStackRef_FromPyObjectSteal(Py_None);
+                res = PyStackRef_False;
+            }
+            _tos_cache2 = res;
+            _tos_cache1 = attr;
+            _tos_cache0 = subject;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
+            break;
+        }
+
         case _MATCH_CLASS_r33: {
             CHECK_CURRENT_CACHED_VALUES(3);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
