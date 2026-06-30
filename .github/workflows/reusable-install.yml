@@ -38,9 +38,14 @@ jobs:
       run: ./configure --config-cache --with-pydebug --prefix="$INSTALL_DIR"
     - name: Build CPython
       run: make -j
-    - name: Display build info
-      run: make pythoninfo
     - name: Install CPython
       run: make install
+    - name: Set installed interpreter
+      run: |
+        ldversion=$(./python -c 'import sysconfig; print(sysconfig.get_config_var("LDVERSION"))')
+        echo "INSTALLED_PYTHON=${INSTALL_DIR}/bin/python${ldversion}" >> "$GITHUB_ENV"
+    - name: Display build info
+      run: |
+        "$INSTALLED_PYTHON" -m test.pythoninfo
     - name: Test the installed Python
-      run: xvfb-run "$INSTALL_DIR/bin/python3" -m test -j0 --fast-ci --timeout=900
+      run: xvfb-run "$INSTALLED_PYTHON" -m test -j0 --fast-ci --timeout=900
