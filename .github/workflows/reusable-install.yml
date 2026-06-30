@@ -1,0 +1,41 @@
+name: Reusable Ubuntu (Installed)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-install-reusable:
+    name: 'Build, install and test'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    env:
+      PYTHONSTRICTEXTENSIONBUILD: 1
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Set install dir
+      run:
+        echo "INSTALL_DIR=$(realpath "${GITHUB_WORKSPACE}/../installed-python")" >> "$GITHUB_ENV"
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure CPython
+      run: ./configure --config-cache --with-pydebug --prefix="$INSTALL_DIR"
+    - name: Build CPython
+      run: make -j
+    - name: Display build info
+      run: make pythoninfo
+    - name: Install CPython
+      run: make install
+    - name: Test the installed Python
+      run: xvfb-run "$INSTALL_DIR/bin/python3" -m test -j0 --fast-ci --timeout=900
