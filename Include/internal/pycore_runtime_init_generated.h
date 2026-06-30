@@ -2101,6 +2101,7 @@ extern "C" {
     INIT_ID(strict), \
     INIT_ID(strict_mode), \
     INIT_ID(string), \
+    INIT_ID(strip_ws), \
     INIT_ID(sub_key), \
     INIT_ID(subcalls), \
     INIT_ID(symmetric_difference_update), \

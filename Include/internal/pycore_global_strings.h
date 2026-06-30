@@ -826,6 +826,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(strict)
         STRUCT_FOR_ID(strict_mode)
         STRUCT_FOR_ID(string)
+        STRUCT_FOR_ID(strip_ws)
         STRUCT_FOR_ID(sub_key)
         STRUCT_FOR_ID(subcalls)
         STRUCT_FOR_ID(symmetric_difference_update)

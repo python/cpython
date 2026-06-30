@@ -220,7 +220,7 @@ Here are the methods of the :class:`Message` class:
          trailing whitespace, contrary to :rfc:`2045` but matching
          common mail clients.
          Use :func:`binascii.a2b_qp` with ``strip_ws=True``
-         (or :func:`email.quoprimime.decode`) for RFC-compliant decoding.
+         (or ``email.quoprimime.decode``) for RFC-compliant decoding.
 
       When *decode* is ``False`` (the default) the body is returned as a string
       without decoding the :mailheader:`Content-Transfer-Encoding`.  However,
