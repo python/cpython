@@ -10995,6 +10995,56 @@
             DISPATCH();
         }
 
+        TARGET(MATCH_CLASS_ISINSTANCE) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = MATCH_CLASS_ISINSTANCE;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(MATCH_CLASS_ISINSTANCE);
+            _PyStackRef subject;
+            _PyStackRef type;
+            _PyStackRef res;
+            type = stack_pointer[-1];
+            subject = stack_pointer[-2];
+            PyObject *subject_o = PyStackRef_AsPyObjectBorrow(subject);
+            PyObject *type_o = PyStackRef_AsPyObjectBorrow(type);
+            if (!PyType_Check(type_o)) {
+                const char *e = "called match pattern must be a class";
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                _PyErr_Format(tstate, PyExc_TypeError, e);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_CLOSE(type);
+                _PyFrame_StackPointerInvalidate(frame);
+                JUMP_TO_LABEL(error);
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            int retval = PyObject_IsInstance(subject_o, type_o);
+            _PyFrame_StackPointerInvalidate(frame);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            PyStackRef_CLOSE(type);
+            _PyFrame_StackPointerInvalidate(frame);
+            if (retval < 0) {
+                JUMP_TO_LABEL(error);
+            }
+            assert(!_PyErr_Occurred(tstate));
+            res = retval ? PyStackRef_True : PyStackRef_False;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+
         TARGET(MATCH_KEYS) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = MATCH_KEYS;

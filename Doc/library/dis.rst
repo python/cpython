@@ -1777,6 +1777,14 @@ iterations of the loop.
    .. versionadded:: 3.13
 
 
+.. opcode:: MATCH_CLASS_ISINSTANCE
+
+   Read match subject ``Stack[-2]`` and the type object ``Stack[-1]`` from stack.
+   Pop ``Stack[-1]`` and push ``True`` or ``False`` for the result of :func:`isinstance`.
+
+   .. versionadded:: 3.15
+
+
 .. opcode:: MATCH_CLASS (count)
 
    ``STACK[-1]`` is a tuple of keyword attribute names, ``STACK[-2]`` is the class
