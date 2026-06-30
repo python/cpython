@@ -205,19 +205,22 @@ class _Extra(bytes):
         self.id = id
 
     @classmethod
-    def read_one(cls, raw):
+    def read_one(cls, raw, validate=False):
         try:
             xid, xlen = cls.FIELD_STRUCT.unpack_from(raw)
         except struct.error:
             xid, xlen = None, 0
+        else:
+            if validate and xlen + 4 > len(raw):
+                raise BadZipFile("Corrupt extra field %04x (size=%d)" % (xid, xlen))
         return cls(raw[:4+xlen], xid), raw[4+xlen:]
 
     @classmethod
-    def split(cls, data):
+    def split(cls, data, validate=False):
         # use memoryview for zero-copy slices
         rest = memoryview(data)
         while rest:
-            extra, rest = cls.read_one(rest)
+            extra, rest = cls.read_one(rest, validate=validate)
             yield extra
 
     @classmethod
@@ -584,14 +587,11 @@ class ZipInfo:
 
     def _decodeExtra(self, filename_crc):
         # Try to decode the extra field.
-        extra = self.extra
         unpack = struct.unpack
-        while len(extra) >= 4:
-            tp, ln = unpack('<HH', extra[:4])
-            if ln+4 > len(extra):
-                raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
+        for extra in _Extra.split(self.extra, True):
+            tp = extra.id
             if tp == 0x0001:
-                data = extra[4:ln+4]
+                data = extra[4:]
                 # ZIP64 extension (large files and/or large archives)
                 try:
                     if self.file_size in (0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF):
@@ -609,7 +609,7 @@ class ZipInfo:
                     raise BadZipFile(f"Corrupt zip64 extra field. "
                                      f"{field} not found.") from None
             elif tp == 0x7075:
-                data = extra[4:ln+4]
+                data = extra[4:]
                 # Unicode Path Extra Field
                 try:
                     up_version, up_name_crc = unpack('<BL', data[:5])
@@ -624,8 +624,6 @@ class ZipInfo:
                     raise BadZipFile("Corrupt unicode path extra field (0x7075)") from e
                 except UnicodeDecodeError as e:
                     raise BadZipFile('Corrupt unicode path extra field (0x7075): invalid utf-8 bytes') from e
-
-            extra = extra[ln+4:]
 
     @classmethod
     def from_file(cls, filename, arcname=None, *, strict_timestamps=True):
