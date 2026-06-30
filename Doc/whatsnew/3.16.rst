@@ -297,6 +297,17 @@ shlex
   (Contributed by Jay Berry in :gh:`148846`.)
 
 
+textwrap
+--------
+
+* Add a *text_len* parameter to :func:`textwrap.wrap`, :func:`textwrap.fill`,
+  :func:`textwrap.shorten`, and :class:`textwrap.TextWrapper`.  It customizes
+  how the visible width of a string is measured, so text that contains
+  zero-width or double-width characters, or invisible ANSI escape sequences,
+  can be wrapped correctly.
+  (Contributed by Kevin Deldycke in :gh:`152702`.)
+
+
 tkinter
 -------
 

@@ -8,6 +8,7 @@
 # $Id$
 #
 
+import re
 import unittest
 
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
@@ -1133,5 +1134,74 @@ class ShortenTestCase(BaseTestCase):
         self.check_shorten("Helloo", 5, "[...]")
 
 
-if __name__ == '__main__':
+class TextLenTestCase(BaseTestCase):
+    # The text_len option customizes how the visible width of a string is
+    # measured. The motivating case is colored output, where invisible ANSI
+    # escape sequences must not count towards the line width (gh-142035).
+
+    _ansi = re.compile(r"\x1b\[[0-9;]*m")
+
+    @classmethod
+    def visible_len(cls, text):
+        return len(cls._ansi.sub("", text))
+
+    @classmethod
+    def decolor(cls, lines):
+        return [cls._ansi.sub("", line) for line in lines]
+
+    @staticmethod
+    def color(text):
+        # Wrap every word in a pair of (zero visible width) escape sequences.
+        return " ".join(f"\x1b[31m{word}\x1b[0m" for word in text.split())
+
+    def check_shorten(self, text, width, expect, **kwargs):
+        self.check(shorten(text, width, **kwargs), expect)
+
+    def test_default_text_len_is_len(self):
+        self.assertIs(TextWrapper().text_len, len)
+
+    def test_explicit_len_matches_default(self):
+        text = "Hello there, how are you this fine day?  I'm glad to hear it!"
+        self.check_wrap(text, 12, wrap(text, 12), text_len=len)
+
+    def test_color_does_not_change_breaks(self):
+        text = "These are several short words to be wrapped and colored here"
+        for width in (10, 15, 20, 30):
+            with self.subTest(width=width):
+                lines = wrap(self.color(text), width, text_len=self.visible_len)
+                self.assertEqual(self.decolor(lines), wrap(text, width))
+
+    def test_color_respects_width(self):
+        lines = wrap(
+            self.color("one two three four five six seven"),
+            9,
+            text_len=self.visible_len,
+        )
+        for line in lines:
+            self.assertLessEqual(self.visible_len(line), 9)
+
+    def test_break_long_word_by_visible_width(self):
+        word = "\x1b[31m" + "x" * 20 + "\x1b[0m"
+        lines = wrap(word, 8, text_len=self.visible_len)
+        self.assertEqual(self.decolor(lines), ["xxxxxxxx", "xxxxxxxx", "xxxx"])
+
+    def test_break_on_hyphens_with_color(self):
+        lines = wrap(self.color("spam-egg-ham-bacon"), 9, text_len=self.visible_len)
+        self.assertEqual(self.decolor(lines), ["spam-egg-", "ham-bacon"])
+
+    def test_shorten_with_text_len(self):
+        result = shorten(
+            self.color("one two three four five"), 12, text_len=self.visible_len
+        )
+        self.assertLessEqual(self.visible_len(result), 12)
+        self.assertEqual(self._ansi.sub("", result), "one [...]")
+
+    def test_measure_is_not_limited_to_ansi(self):
+        # Any width measure works, e.g. counting every character as two columns.
+        double = lambda s: 2 * len(s)
+        self.check_wrap("aa bb cc dd", 4, ["aa", "bb", "cc", "dd"], text_len=double)
+        self.check_wrap("aa bb cc dd", 5, ["aa", "bb", "cc", "dd"], text_len=double)
+
+
+if __name__ == "__main__":
     unittest.main()

@@ -771,19 +771,25 @@ class HelpFormatter(object):
             yield from get_subactions()
             self._dedent()
 
+    def _text_len(self, text):
+        # Measure the visible width of *text*, ignoring any ANSI color escape
+        # sequences that may have been inserted for colored help output.
+        return len(self._decolor(text))
+
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
         # The textwrap module is used only for formatting help.
         # Delay its import for speeding up the common usage of argparse.
         import textwrap
-        return textwrap.wrap(text, width)
+        return textwrap.wrap(text, width, text_len=self._text_len)
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
         import textwrap
         return textwrap.fill(text, width,
                              initial_indent=indent,
-                             subsequent_indent=indent)
+                             subsequent_indent=indent,
+                             text_len=self._text_len)
 
     def _get_help_string(self, action):
         return action.help

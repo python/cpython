@@ -1,0 +1,4 @@
+Fix :mod:`argparse` help text wrapping when colors are enabled.  ANSI escape
+sequences inserted around interpolated values such as the ``(default: ...)``
+suffix no longer count towards the line width, so colored help wraps at the
+same place as the equivalent uncolored help.
