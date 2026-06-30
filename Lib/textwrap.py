@@ -61,6 +61,8 @@ class TextWrapper:
         Truncate wrapped lines.
       placeholder (default: ' [...]')
         Append to the last line of truncated text.
+      ignore_ansi_escape (default: false)
+        Ignore ANSI escape sequences when computing lengths of lines.
     """
 
     unicode_whitespace_trans = dict.fromkeys(map(ord, _whitespace), ord(' '))
@@ -109,6 +111,8 @@ class TextWrapper:
                                  r'[\"\']?'           # optional end-of-quote
                                  r'\z')               # end of chunk
 
+    ansi_escape_re = re.compile(r'\x1b\[[0-9;]*m')
+
     def __init__(self,
                  width=70,
                  initial_indent="",
@@ -122,7 +126,8 @@ class TextWrapper:
                  tabsize=8,
                  *,
                  max_lines=None,
-                 placeholder=' [...]'):
+                 placeholder=' [...]',
+                 ignore_ansi_escape=False):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -135,6 +140,7 @@ class TextWrapper:
         self.tabsize = tabsize
         self.max_lines = max_lines
         self.placeholder = placeholder
+        self.ignore_ansi_escape = ignore_ansi_escape
 
 
     # -- Private methods -----------------------------------------------
@@ -235,6 +241,10 @@ class TextWrapper:
         # cur_len will be zero, so the next line will be entirely
         # devoted to the long word that we can't handle right now.
 
+    def _str_len_without_ansi_escape_codes(self, s):
+        """Return the length of string s without ANSI escape codes."""
+        return len(self.ansi_escape_re.sub("", s))
+
     def _wrap_chunks(self, chunks):
         """_wrap_chunks(chunks : [string]) -> [string]
 
@@ -258,6 +268,11 @@ class TextWrapper:
                 indent = self.initial_indent
             if len(indent) + len(self.placeholder.lstrip()) > self.width:
                 raise ValueError("placeholder too large for max width")
+
+        if self.ignore_ansi_escape:
+            _str_len = self._str_len_without_ansi_escape_codes
+        else:
+            _str_len = len
 
         # Arrange in reverse order so items can be efficiently popped
         # from a stack of chucks.
@@ -285,7 +300,7 @@ class TextWrapper:
                 del chunks[-1]
 
             while chunks:
-                l = len(chunks[-1])
+                l = _str_len(chunks[-1])
 
                 # Can at least squeeze this chunk onto the current line.
                 if cur_len + l <= width:
