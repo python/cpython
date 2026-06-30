@@ -385,6 +385,21 @@ thread_run(void *boot_raw)
     PyEval_AcquireThread(tstate);
     _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
 
+#ifdef Py_GIL_DISABLED
+    // See gh-149816 - (62) Concurrent kwargs growth causes heap overwrite
+    // So duplicate boot->kwargs to ensure that it won't be mutated concurrently
+    // by the caller.
+    if (boot->kwargs != NULL) {
+        PyObject *n_kwargs = PyDict_Copy(boot->kwargs);
+        if (n_kwargs == NULL) {
+            thread_bootstate_free(boot, 1);
+            goto exit;
+        }
+        Py_DECREF(boot->kwargs); // I am not pretty sure about this.
+        boot->kwargs = n_kwargs;
+    }
+#endif /* Py_GIL_DISABLED */
+
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
