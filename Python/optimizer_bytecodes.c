@@ -43,6 +43,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_is_immortal _Py_uop_symbol_is_immortal
 #define sym_new_compact_int _Py_uop_sym_new_compact_int
 #define sym_is_compact_int _Py_uop_sym_is_compact_int
+#define sym_fits_int64 _Py_uop_sym_fits_int64
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
 #define sym_new_predicate _Py_uop_sym_new_predicate
 #define sym_apply_predicate_narrowing _Py_uop_sym_apply_predicate_narrowing
@@ -205,28 +206,23 @@ dummy_func(void) {
         res = PyJitRef_Borrow(sym_new_null(ctx));
     }
 
+    /* Compact guard: value must be a compact int.  When the type is already
+     * known to be PyLong_Type, use the cheaper _GUARD_TOS_COMPACT which skips
+     * the redundant type check. */
+    /* Merged guard: accept any exact int.  When the type is already known to
+     * be PyLong_Type the guard can be eliminated. */
     op(_GUARD_TOS_INT, (value -- value)) {
-        if (sym_is_compact_int(value)) {
+        if (sym_matches_type(value, &PyLong_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        else {
-            if (sym_get_type(value) == &PyLong_Type) {
-                ADD_OP(_GUARD_TOS_OVERFLOWED, 0, 0);
-            }
-            sym_set_compact_int(value);
-        }
+        sym_set_type(value, &PyLong_Type);
     }
 
     op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
-        if (sym_is_compact_int(left)) {
+        if (sym_matches_type(left, &PyLong_Type)) {
             ADD_OP(_NOP, 0, 0);
         }
-        else {
-            if (sym_get_type(left) == &PyLong_Type) {
-                ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
-            }
-            sym_set_compact_int(left);
-        }
+        sym_set_type(left, &PyLong_Type);
     }
 
     op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
@@ -390,9 +386,7 @@ dummy_func(void) {
         else if (PyJitRef_IsUnique(right)) {
             REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE_RIGHT, 0, 0);
         }
-        // Result may be a unique compact int or a cached small int
-        // at runtime. Mark as unique; inplace ops verify at runtime.
-        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
@@ -405,7 +399,7 @@ dummy_func(void) {
         else if (PyJitRef_IsUnique(right)) {
             REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, 0, 0);
         }
-        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
@@ -418,7 +412,7 @@ dummy_func(void) {
         else if (PyJitRef_IsUnique(right)) {
             REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, 0, 0);
         }
-        res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+        res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
         l = left;
         r = right;
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);

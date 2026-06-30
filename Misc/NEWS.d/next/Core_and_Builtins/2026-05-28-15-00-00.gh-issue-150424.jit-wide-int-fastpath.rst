@@ -1,0 +1,4 @@
+Speed up addition, subtraction, and multiplication of large integers
+(those too big for CPython's inline "compact" representation).
+Also fixes a crash when using such integers as list indices in
+specialized code paths.

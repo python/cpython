@@ -620,10 +620,17 @@ gen_try_set_executing(PyGenObject *gen)
             break;                                                       \
         }                                                                \
         assert(_PyObject_IsUniquelyReferenced(target_o));                \
+        PyLongObject *left_long =                                        \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(left);           \
+        PyLongObject *right_long =                                       \
+            (PyLongObject *)PyStackRef_AsPyObjectBorrow(right);          \
+        if (!_PyLong_BothAreCompact(left_long, right_long)) {            \
+            break;                                                       \
+        }                                                                \
         Py_ssize_t left_val = _PyLong_CompactValue(                      \
-            (PyLongObject *)PyStackRef_AsPyObjectBorrow(left));          \
+            left_long);                                                  \
         Py_ssize_t right_val = _PyLong_CompactValue(                     \
-            (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
+            right_long);                                                 \
         Py_ssize_t result = left_val OP right_val;                       \
         if (!_PY_IS_SMALL_INT(result)                                    \
             && ((twodigits)((stwodigits)result) + PyLong_MASK            \

@@ -116,6 +116,10 @@ PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Add(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
+/* Wide variants: accept exact ints in the full int64 range (may be non-compact). */
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_AddWide(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_MultiplyWide(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(_PyStackRef) _PyCompactLong_SubtractWide(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
@@ -217,6 +221,7 @@ _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
 static inline bool
 _PyLong_IsZero(const PyLongObject *op)
 {
+    assert(op != NULL);
     return (op->long_value.lv_tag & SIGN_MASK) == SIGN_ZERO;
 }
 
@@ -344,6 +349,106 @@ static inline int
 _PyLong_CheckExactAndCompact(PyObject *op)
 {
     return PyLong_CheckExact(op) && _PyLong_IsCompact((const PyLongObject *)op);
+}
+
+/* A cheap range guard used by Tier 2 / JIT integer fast paths.
+ *
+ * "Compact" ints are single-digit. Non-compact ints may still fit in int64_t,
+ * but are limited to a small number of digits (3 for 30-bit digits, 5 for
+ * 15-bit digits).
+ */
+#define _PY_LONG_MAX_DIGITS_FOR_INT64 ((64 + PyLong_SHIFT - 1) / PyLong_SHIFT)
+
+static inline int
+_PyLong_FitsInt64(const PyLongObject *v)
+{
+    uintptr_t tag = v->long_value.lv_tag;
+   if (tag < (_PY_LONG_MAX_DIGITS_FOR_INT64 << NON_SIZE_BITS)) {
+       return 1;
+    }
+    Py_ssize_t ndigits = (Py_ssize_t)(tag >> NON_SIZE_BITS);
+    if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
+        return 0;
+    }
+
+    unsigned int shift = PyLong_SHIFT * (unsigned int)(ndigits - 1);
+    uint64_t top = (uint64_t)v->long_value.ob_digit[ndigits - 1];
+    if ((tag & SIGN_MASK) == SIGN_NEGATIVE) {
+        uint64_t max_top = ((uint64_t)INT64_MAX + 1) >> shift;
+        if (top < max_top) {
+            return 1;
+        }
+        if (top > max_top) {
+            return 0;
+        }
+        for (Py_ssize_t i = 0; i < ndigits - 1; i++) {
+            if (v->long_value.ob_digit[i] != 0) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    uint64_t max_top = (uint64_t)INT64_MAX >> shift;
+    return top <= max_top;
+}
+
+static inline int
+_PyLong_CheckExactAndFitsInt64(PyObject *op)
+{
+    return PyLong_CheckExact(op) &&
+           _PyLong_FitsInt64((const PyLongObject *)op);
+}
+
+/* Extract an exact int to int64_t without raising.
+ *
+ * Returns true on success and writes to *out; returns false if the value is
+ * out of int64_t range. Never sets an exception.
+ */
+static inline bool
+_PyLong_TryAsInt64Exact(PyLongObject *v, int64_t *out)
+{
+    assert(PyLong_CheckExact((PyObject *)v));
+    uintptr_t tag = v->long_value.lv_tag;
+    int sign = 1 - (tag & SIGN_MASK);
+    if (tag < (2 << NON_SIZE_BITS)) {
+        *out = (int64_t)(sign * (Py_ssize_t)v->long_value.ob_digit[0]);
+        return true;
+    }
+    Py_ssize_t ndigits = (Py_ssize_t)(tag >> NON_SIZE_BITS);
+    if (ndigits > _PY_LONG_MAX_DIGITS_FOR_INT64) {
+        return false;
+    }
+    uint64_t abs_val = 0;
+#if PyLong_SHIFT == 30
+    if (ndigits == 2) {
+        abs_val = (uint64_t)v->long_value.ob_digit[0] |
+                  ((uint64_t)v->long_value.ob_digit[1] << 30);
+        *out = sign < 0 ? -(int64_t)abs_val : (int64_t)abs_val;
+        return true;
+    }
+#endif
+    unsigned int shift = 0;
+    for (Py_ssize_t i = 0; i < ndigits; i++) {
+        uint64_t d = (uint64_t)v->long_value.ob_digit[i];
+        if (ndigits == _PY_LONG_MAX_DIGITS_FOR_INT64 &&
+            i == ndigits - 1 &&
+            shift != 0 &&
+            (d >> (64 - shift)) != 0)
+        {
+            return false;
+        }
+        abs_val |= d << shift;
+        shift += PyLong_SHIFT;
+    }
+    if (abs_val <= (uint64_t)INT64_MAX) {
+        *out = sign < 0 ? -(int64_t)abs_val : (int64_t)abs_val;
+        return true;
+    }
+    if (sign < 0 && abs_val == (uint64_t)INT64_MAX + 1) {
+        *out = INT64_MIN;
+        return true;
+    }
+    return false;
 }
 
 #ifdef __cplusplus

@@ -554,38 +554,20 @@
         case _GUARD_NOS_INT: {
             JitOptRef left;
             left = stack_pointer[-2];
-            if (sym_is_compact_int(left)) {
+            if (sym_matches_type(left, &PyLong_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            else {
-                if (sym_get_type(left) == &PyLong_Type) {
-                    ADD_OP(_GUARD_NOS_OVERFLOWED, 0, 0);
-                }
-                sym_set_compact_int(left);
-            }
+            sym_set_type(left, &PyLong_Type);
             break;
         }
 
         case _GUARD_TOS_INT: {
             JitOptRef value;
             value = stack_pointer[-1];
-            if (sym_is_compact_int(value)) {
+            if (sym_matches_type(value, &PyLong_Type)) {
                 ADD_OP(_NOP, 0, 0);
             }
-            else {
-                if (sym_get_type(value) == &PyLong_Type) {
-                    ADD_OP(_GUARD_TOS_OVERFLOWED, 0, 0);
-                }
-                sym_set_compact_int(value);
-            }
-            break;
-        }
-
-        case _GUARD_NOS_OVERFLOWED: {
-            break;
-        }
-
-        case _GUARD_TOS_OVERFLOWED: {
+            sym_set_type(value, &PyLong_Type);
             break;
         }
 
@@ -603,7 +585,7 @@
             else if (PyJitRef_IsUnique(right)) {
                 REPLACE_OP(this_instr, _BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT, 0, 0);
             }
-            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
             l = left;
             r = right;
             if (
@@ -622,7 +604,6 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
-                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
                 STAT_INC(BINARY_OP, hit);
                 res_stackref = _PyCompactLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
                 if (PyStackRef_IsNull(res_stackref )) {
@@ -631,6 +612,9 @@
                 }
                 l_stackref = left;
                 r_stackref = right;
+                if (PyStackRef_IsError(res_stackref )) {
+                    goto error;
+                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 (void)l_stackref;
                 (void)r_stackref;
@@ -674,7 +658,7 @@
             else if (PyJitRef_IsUnique(right)) {
                 REPLACE_OP(this_instr, _BINARY_OP_ADD_INT_INPLACE_RIGHT, 0, 0);
             }
-            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
             l = left;
             r = right;
             if (
@@ -693,7 +677,6 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
-                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
                 STAT_INC(BINARY_OP, hit);
                 res_stackref = _PyCompactLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
                 if (PyStackRef_IsNull(res_stackref )) {
@@ -702,6 +685,9 @@
                 }
                 l_stackref = left;
                 r_stackref = right;
+                if (PyStackRef_IsError(res_stackref )) {
+                    goto error;
+                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 (void)l_stackref;
                 (void)r_stackref;
@@ -745,7 +731,7 @@
             else if (PyJitRef_IsUnique(right)) {
                 REPLACE_OP(this_instr, _BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT, 0, 0);
             }
-            res = PyJitRef_MakeUnique(sym_new_compact_int(ctx));
+            res = PyJitRef_MakeUnique(sym_new_type(ctx, &PyLong_Type));
             l = left;
             r = right;
             if (
@@ -764,7 +750,6 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
-                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
                 STAT_INC(BINARY_OP, hit);
                 res_stackref = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
                 if (PyStackRef_IsNull(res_stackref )) {
@@ -773,6 +758,9 @@
                 }
                 l_stackref = left;
                 r_stackref = right;
+                if (PyStackRef_IsError(res_stackref )) {
+                    goto error;
+                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 (void)l_stackref;
                 (void)r_stackref;
@@ -3063,13 +3051,15 @@
                 /* Start of uop copied from bytecodes for constant evaluation */
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-                assert(_PyLong_IsCompact((PyLongObject *)left_o));
-                assert(_PyLong_IsCompact((PyLongObject *)right_o));
                 STAT_INC(COMPARE_OP, hit);
-                assert(_PyLong_DigitCount((PyLongObject *)left_o) <= 1 &&
-                   _PyLong_DigitCount((PyLongObject *)right_o) <= 1);
-                Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left_o);
-                Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right_o);
+                int64_t ileft;
+                int64_t iright;
+                int ok = _PyLong_TryAsInt64Exact((PyLongObject *)left_o, &ileft)
+                && _PyLong_TryAsInt64Exact((PyLongObject *)right_o, &iright);
+                if (!ok) {
+                    ctx->done = true;
+                    break;
+                }
                 int sign_ish = COMPARISON_BIT(ileft, iright);
                 l_stackref = left;
                 r_stackref = right;

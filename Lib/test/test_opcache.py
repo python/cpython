@@ -1375,7 +1375,7 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_int, "BINARY_OP_ADD_INT")
         self.assert_no_opcode(binary_op_add_int, "BINARY_OP")
 
-        def binary_op_int_non_compact():
+        def binary_op_int_non_compact_int64():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 a, b = 10000000000, 1
                 c = a + b
@@ -1385,10 +1385,40 @@ class TestSpecializer(TestBase):
                 c = a * b
                 self.assertEqual(c, 10000000000)
 
-        binary_op_int_non_compact()
-        self.assert_no_opcode(binary_op_int_non_compact, "BINARY_OP_ADD_INT")
-        self.assert_no_opcode(binary_op_int_non_compact, "BINARY_OP_SUBTRACT_INT")
-        self.assert_no_opcode(binary_op_int_non_compact, "BINARY_OP_MULTIPLY_INT")
+        binary_op_int_non_compact_int64()
+        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_ADD_INT")
+        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_SUBTRACT_INT")
+        self.assert_specialized(binary_op_int_non_compact_int64, "BINARY_OP_MULTIPLY_INT")
+
+        def binary_op_int_too_large():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a, b = 1 << 200, 1
+                c = a + b
+                self.assertEqual(c, (1 << 200) + 1)
+                c = a - b
+                self.assertEqual(c, (1 << 200) - 1)
+                c = a * b
+                self.assertEqual(c, 1 << 200)
+
+        binary_op_int_too_large()
+        self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_SUBTRACT_INT")
+        self.assert_no_opcode(binary_op_int_too_large, "BINARY_OP_MULTIPLY_INT")
+
+        def binary_op_int_max_digits_too_large():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a, b = 1 << 64, 1
+                c = a + b
+                self.assertEqual(c, (1 << 64) + 1)
+                c = a - b
+                self.assertEqual(c, (1 << 64) - 1)
+                c = a * b
+                self.assertEqual(c, 1 << 64)
+
+        binary_op_int_max_digits_too_large()
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_SUBTRACT_INT")
+        self.assert_no_opcode(binary_op_int_max_digits_too_large, "BINARY_OP_MULTIPLY_INT")
 
         def binary_op_add_unicode():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):

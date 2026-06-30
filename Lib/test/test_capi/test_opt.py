@@ -4245,6 +4245,49 @@ class TestUopsOptimization(unittest.TestCase):
         # Verify small int singletons are not corrupted
         self.assertEqual(7, 3 + 4)
 
+    def test_int_add_inplace_noncompact_unique_lhs(self):
+        # a + b produces a unique non-compact int that still fits in int64_t.
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += (a + b) + c
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (5_000_000_000, 6_000_000_000, 7, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 11_000_000_007)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+    def test_int_add_inplace_noncompact_int64_boundary(self):
+        def testfunc(args):
+            a, b, n = args
+            total = 0
+            for _ in range(n):
+                total += (a + b) + 1
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (4_611_686_018_427_387_903, 4_611_686_018_427_387_903,
+                       TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 9_223_372_036_854_775_807)
+        self.assertIsNotNone(ex)
+
+    def test_int_add_inplace_noncompact_overflow_falls_back(self):
+        def testfunc(args):
+            a, b, n = args
+            total = 0
+            for _ in range(n):
+                total += (a + b) + 1
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (4_611_686_018_427_387_904, 4_611_686_018_427_387_904,
+                       TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 9_223_372_036_854_775_809)
+        self.assertIsNotNone(ex)
+
     def test_int_subtract_inplace_unique_lhs(self):
         # a * b produces a unique compact int; subtracting c reuses it
         def testfunc(args):
@@ -4275,6 +4318,34 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_SUBTRACT_INT_INPLACE_RIGHT", uops)
 
+    def test_int_subtract_inplace_noncompact_unique_lhs(self):
+        # a + b produces a unique non-compact int that still fits in int64_t.
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += (a + b) - c
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (5_000_000_000, 6_000_000_000, 7, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 10_999_999_993)
+        self.assertIsNotNone(ex)
+
+    def test_int_subtract_inplace_noncompact_int64_min_boundary(self):
+        def testfunc(args):
+            a, b, n = args
+            total = 0
+            for _ in range(n):
+                total += (a + b) - 1
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (-4_611_686_018_427_387_904, -4_611_686_018_427_387_903,
+                       TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * (-9_223_372_036_854_775_808))
+        self.assertIsNotNone(ex)
+
     def test_int_multiply_inplace_unique_lhs(self):
         # (a + b) produces a unique compact int; multiplying by c reuses it
         def testfunc(args):
@@ -4304,6 +4375,67 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT", uops)
+
+    def test_int_multiply_inplace_noncompact_unique_lhs(self):
+        # a + b produces a unique non-compact int that still fits in int64_t.
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += (a + b) * c
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (5_000_000_000, 6_000_000_000, 3, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 33_000_000_000)
+        self.assertIsNotNone(ex)
+
+    def test_int_multiply_inplace_noncompact_overflow_falls_back(self):
+        def testfunc(args):
+            a, b, c, n = args
+            total = 0
+            for _ in range(n):
+                total += (a + b) * c
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (4_611_686_018_427_387_904, 4_611_686_018_427_387_904, 2,
+                       TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 18_446_744_073_709_551_616)
+        self.assertIsNotNone(ex)
+
+    def test_compare_int_noncompact(self):
+        def testfunc(args):
+            a, b, n = args
+            total = 0
+            for _ in range(n):
+                if a < b:
+                    total += 1
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (5_000_000_000, 6_000_000_000, TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+
+    def test_compare_int_noncompact_all_predicates(self):
+        def testfunc(args):
+            a, b, n = args
+            total = 0
+            for _ in range(n):
+                total += (a < b)
+                total += (a <= b)
+                total += (a == a)
+                total += (b != a)
+                total += (b > a)
+                total += (b >= a)
+            return total
+
+        res, ex = self._run_with_optimizer(
+            testfunc, (9_223_372_036_854_775_006, 9_223_372_036_854_775_007,
+                       TIER2_THRESHOLD))
+        self.assertEqual(res, TIER2_THRESHOLD * 6)
+        self.assertIsNotNone(ex)
 
     def test_int_inplace_chain_propagation(self):
         # a * b + c * d: both products are unique, the + reuses one;

@@ -272,7 +272,7 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     if (const_val == NULL) {
         return false;
     }
-    if (_PyLong_CheckExactAndCompact(const_val)) {
+    if (_PyLong_CheckExactAndFitsInt64(const_val)) {
         return true;
     }
     PyTypeObject *typ = Py_TYPE(const_val);
@@ -566,7 +566,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
             make_const(sym, const_val);
             return;
         case JIT_SYM_COMPACT_INT:
-            if (_PyLong_CheckExactAndCompact(const_val)) {
+            if (_PyLong_CheckExactAndFitsInt64(const_val)) {
                 make_const(sym, const_val);
             }
             else {
@@ -971,6 +971,16 @@ _Py_uop_sym_is_compact_int(JitOptRef ref)
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         return (bool)_PyLong_CheckExactAndCompact(sym->value.value);
+    }
+    return sym->tag == JIT_SYM_COMPACT_INT;
+}
+
+bool
+_Py_uop_sym_fits_int64(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        return (bool)_PyLong_CheckExactAndFitsInt64(sym->value.value);
     }
     return sym->tag == JIT_SYM_COMPACT_INT;
 }
@@ -1567,6 +1577,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_abstractcontext_init(ctx, NULL);
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
+    PyObject *val_noncompact_int64 = NULL;
     PyObject *val_big = NULL;
     PyObject *tuple = NULL;
     PyFunctionObject *func = NULL;
@@ -1618,6 +1629,11 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     val_43 = PyLong_FromLong(43);
     assert(val_43 != NULL);
     assert(_Py_IsImmortal(val_43));
+
+    val_noncompact_int64 = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(40));
+    if (val_noncompact_int64 == NULL) {
+        goto fail;
+    }
 
     ref = _Py_uop_sym_new_type(ctx, &PyLong_Type);
     if (PyJitRef_IsNull(ref)) {
@@ -1954,16 +1970,25 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == one_obj, "value is not 1");
 
-    val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
+    val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(200));
     if (val_big == NULL) {
         goto fail;
     }
 
     JitOptRef ref_42 = _Py_uop_sym_new_const(ctx, val_42);
+    JitOptRef ref_noncompact_int64 = _Py_uop_sym_new_const(ctx, val_noncompact_int64);
     JitOptRef ref_big = _Py_uop_sym_new_const(ctx, val_big);
     JitOptRef ref_int = _Py_uop_sym_new_compact_int(ctx);
     TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_42), "42 is not a compact int");
-    TEST_PREDICATE(!_Py_uop_sym_is_compact_int(ref_big), "(1 << 66) is a compact int");
+    TEST_PREDICATE(_Py_uop_sym_fits_int64(ref_42), "42 does not fit int64");
+    TEST_PREDICATE(
+        !_Py_uop_sym_is_compact_int(ref_noncompact_int64),
+        "(1 << 40) is a compact int");
+    TEST_PREDICATE(
+        _Py_uop_sym_fits_int64(ref_noncompact_int64),
+        "(1 << 40) does not fit int64");
+    TEST_PREDICATE(!_Py_uop_sym_is_compact_int(ref_big), "(1 << 200) is a compact int");
+    TEST_PREDICATE(!_Py_uop_sym_fits_int64(ref_big), "(1 << 200) fits int64");
     TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "compact int is not a compact int");
     TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "compact int is not an int");
 
@@ -2092,6 +2117,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
+    Py_DECREF(val_noncompact_int64);
     Py_DECREF(val_big);
     Py_DECREF(tuple);
     Py_DECREF(func);
@@ -2101,6 +2127,7 @@ fail:
     _Py_uop_abstractcontext_fini(ctx);
     Py_XDECREF(val_42);
     Py_XDECREF(val_43);
+    Py_XDECREF(val_noncompact_int64);
     Py_XDECREF(val_big);
     Py_XDECREF(tuple);
     Py_XDECREF(func);
