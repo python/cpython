@@ -439,10 +439,11 @@ def collect_readline(info_add):
             info_add('readline.library', 'GNU readline')
 
 
-def run_command(cmd, **kwargs):
+def run_command(cmd, check=True, **kwargs):
     import subprocess
     timeout = COMMAND_TIMEOUT
 
+    cmd_str = ' '.join(cmd)
     try:
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
@@ -458,15 +459,19 @@ def run_command(cmd, **kwargs):
                 proc.communicate()
                 raise
 
-        if proc.returncode:
+        if check and proc.returncode:
+            print(f"Command {cmd_str} failed with exit code {proc.returncode}")
             return ''
 
         # Strip trailing spaces and newlines
         return stdout.rstrip()
-    except OSError:
+    except FileNotFoundError:
+        return ''
+    except OSError as exc:
+        print(f"Command {cmd_str} failed with: {exc!r}")
         return ''
     except subprocess.TimeoutExpired:
-        print(f"ERROR: Command {' '.join(cmd)}: timeout!")
+        print(f"Command {cmd_str}: timeout!")
         return ''
 
 
@@ -1131,7 +1136,7 @@ def get_machine_id():
 
 def detect_virt():
     # Run systemd-detect-virt command
-    virt = run_command(["systemd-detect-virt"])
+    virt = run_command(["systemd-detect-virt"], check=False)
     if virt and virt != "none":
         return virt
 
