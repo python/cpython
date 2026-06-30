@@ -1195,6 +1195,8 @@ Here is an incomplete list of things to consider:
 * Check filenames against an allow-list of characters
   (to filter out control characters, confusables, foreign path separators,
   and so on).
+* Check for platform-specific filename semantics. For example, on Windows
+  some names can have reserved meanings.
 * Check that filenames have expected extensions (discouraging files that
   execute when you “click on them”, or extension-less files like Windows
   special device names).
