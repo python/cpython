@@ -1156,6 +1156,11 @@ def detect_virt():
     if container:
         return container
 
+    if APPLE:
+        hv_vmm_present = run_command(['sysctl', 'kern.hv_vmm_present'])
+        if hv_vmm_present == '1':
+            return 'run in a VM (kern.hv_vmm_present is 1)'
+
     # Other ways to check if running in a container:
     # * Parse /proc/1/mounts or /proc/1/mountinfo (check "/" filesystem).
     # * Parse /proc/1/cgroup.
@@ -1197,7 +1202,7 @@ def collect_system(info_add):
         info_add('system.virt', virt)
 
     if APPLE:
-        hardware = run_command(['sysctl', '-n', 'hw.model')
+        hardware = run_command(['sysctl', '-n', 'hw.model'])
         if hardware:
             info_add('system.hardware', hardware)
 
