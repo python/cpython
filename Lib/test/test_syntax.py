@@ -2691,6 +2691,7 @@ import textwrap
 import unittest
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 class SyntaxWarningTest(unittest.TestCase):
     def check_warning(self, code, errtext, filename="<testcase>", mode="exec"):
@@ -3023,6 +3024,22 @@ if x:
 class A:
     class B[{name}]: pass
                 """, "<testcase>", mode="exec")
+
+    @support.nomemtest
+    def test_disallowed_type_param_names_oom(self):
+        # gh-152682: Don't crash on OOM when formatting the SyntaxError message
+        # in symtable_visit_type_param_bound_or_default.
+        code = textwrap.dedent("""\
+            import _testcapi
+            _testcapi.set_nomemory(0)
+            try:
+                compile("class A[__classdict__]: pass", "<string>", "exec")
+            except MemoryError:
+                pass
+            else:
+                raise RuntimeError('MemoryError not raised')
+        """)
+        assert_python_ok("-c", code)
 
     @support.cpython_only
     def test_nested_named_except_blocks(self):
