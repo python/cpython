@@ -272,12 +272,12 @@ def _wrap_strftime(object, format, timetuple):
                     newformat.append(Zreplace)
                 # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
                 # year 1000 for %G can go on the fast path.
-                elif ((ch in 'YG' or ch in 'FC') and
-                        object.year < 1000 and _need_normalize_century()):
+                elif (ch in 'YGFC' and timetuple[0] < 1000 and
+                        _need_normalize_century()):
                     if ch == 'G':
                         year = int(_time.strftime("%G", timetuple))
                     else:
-                        year = object.year
+                        year = timetuple[0]
                     if ch == 'C':
                         push('{:02}'.format(year // 100))
                     else:
@@ -358,7 +358,8 @@ def _find_isoformat_datetime_separator(dtstr):
 def _parse_isoformat_date(dtstr):
     # It is assumed that this is an ASCII-only string of lengths 7, 8 or 10,
     # see the comment on Modules/_datetimemodule.c:_find_isoformat_datetime_separator
-    assert len(dtstr) in (7, 8, 10)
+    if len(dtstr) not in (7, 8, 10):
+        raise ValueError("Invalid isoformat string")
     year = int(dtstr[0:4])
     has_sep = dtstr[4] == '-'
 

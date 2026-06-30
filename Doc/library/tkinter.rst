@@ -129,116 +129,6 @@ the modern themed widget set and API::
    from tkinter import ttk
 
 
-.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=True, sync=False, use=None)
-
-   Construct a toplevel Tk widget, which is usually the main window of an
-   application, and initialize a Tcl interpreter for this widget.  Each
-   instance has its own associated Tcl interpreter.
-
-   The :class:`Tk` class is typically instantiated using all default values.
-   However, the following keyword arguments are currently recognized:
-
-   *screenName*
-      When given (as a string), sets the :envvar:`DISPLAY` environment
-      variable. (X11 only)
-   *baseName*
-      Name of the profile file.  By default, *baseName* is derived from the
-      program name (``sys.argv[0]``).
-   *className*
-      Name of the widget class.  Used as a profile file and also as the name
-      with which Tcl is invoked (*argv0* in *interp*).
-   *useTk*
-      If ``True``, initialize the Tk subsystem.  The :func:`tkinter.Tcl() <Tcl>`
-      function sets this to ``False``.
-   *sync*
-      If ``True``, execute all X server commands synchronously, so that errors
-      are reported immediately.  Can be used for debugging. (X11 only)
-   *use*
-      Specifies the *id* of the window in which to embed the application,
-      instead of it being created as an independent toplevel window. *id* must
-      be specified in the same way as the value for the -use option for
-      toplevel widgets (that is, it has a form like that returned by
-      :meth:`~Misc.winfo_id`).
-
-      Note that on some platforms this will only work correctly if *id* refers
-      to a Tk frame or toplevel that has its -container option enabled.
-
-   :class:`Tk` reads and interprets profile files, named
-   :file:`.{className}.tcl` and :file:`.{baseName}.tcl`, into the Tcl
-   interpreter and calls :func:`exec` on the contents of
-   :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
-   profile files is the :envvar:`HOME` environment variable or, if that
-   isn't defined, then :data:`os.curdir`.
-
-   .. attribute:: tk
-
-      The Tk application object created by instantiating :class:`Tk`.  This
-      provides access to the Tcl interpreter.  Each widget that is attached
-      the same instance of :class:`Tk` has the same value for its :attr:`tk`
-      attribute.
-
-   .. attribute:: master
-
-      The widget object that contains this widget.
-      For :class:`Tk`, the :attr:`!master` is :const:`None` because it is the
-      main window.
-      The terms *master* and *parent* are similar and sometimes used
-      interchangeably as argument names; however, calling
-      :meth:`~Misc.winfo_parent` returns a string of the widget name whereas
-      :attr:`!master` returns the object.
-      *parent*/*child* reflects the tree-like relationship while *master* (or
-      *container*)/*content* reflects the container structure.
-
-   .. attribute:: children
-
-      The immediate descendants of this widget as a :class:`dict` with the
-      child widget names as the keys and the child instance objects as the
-      values.
-
-   .. method:: destroy()
-
-      Destroy this and all descendant widgets and, for the main window, end the
-      connection to the underlying Tcl interpreter.
-
-   .. method:: loadtk()
-
-      Finish loading and initializing the Tk subsystem.
-      This is needed only when the interpreter was created without Tk (for
-      example through :func:`Tcl`); it is called automatically when *useTk* is
-      true.
-
-   .. method:: readprofile(baseName, className)
-
-      Read and source the user's profile files :file:`.{className}.tcl` and
-      :file:`.{baseName}.tcl` into the Tcl interpreter, and execute the
-      corresponding :file:`.{className}.py` and :file:`.{baseName}.py` files.
-      This is called during initialization; see the description of the
-      constructor above.
-
-   .. method:: report_callback_exception(exc, val, tb)
-
-      Report a callback exception.
-      This is called when an exception propagates out of a Tkinter callback;
-      *exc*, *val* and *tb* are the exception type, value and traceback as
-      returned by :func:`sys.exc_info`.
-      The default implementation prints a traceback to :data:`sys.stderr`.
-      It can be overridden to customize error handling, for example to display
-      the traceback in a dialog.
-
-
-.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
-
-   The :func:`Tcl` function is a factory function which creates an object much
-   like that created by the :class:`Tk` class, except that it does not
-   initialize the Tk subsystem.
-   This is most often useful when driving the Tcl interpreter in an environment
-   where one doesn't want to create extraneous toplevel windows, or where one
-   cannot (such as Unix/Linux systems without an X server).
-   An object created by the :func:`Tcl` object can have a Toplevel window
-   created (and the Tk subsystem initialized) by calling its :meth:`~Tk.loadtk`
-   method.
-
-
 The modules that provide Tk support include:
 
 :mod:`!tkinter`
@@ -880,6 +770,8 @@ cursor
    The standard X cursor names from :file:`cursorfont.h` can be used, without the
    ``XC_`` prefix.  For example to get a hand cursor (``XC_hand2``), use the
    string ``"hand2"``.  You can also specify a bitmap and mask file of your own.
+   On Windows a cursor file (:file:`.cur` or :file:`.ani`) may be used directly,
+   giving its path preceded with an ``@``, as in ``"@C:/cursors/bart.ani"``.
    See page 179 of Ousterhout's book.
 
 distance
@@ -993,6 +885,20 @@ they are denoted in Tk, which can be useful when referring to the Tk man pages.
 | %d | detail              | %D | delta               |
 +----+---------------------+----+---------------------+
 
+The ``add`` parameter above only affects the bindings you make yourself.
+Every widget also inherits *class bindings*
+that implement its standard behavior --
+for example a :class:`Text` widget binds :kbd:`Control-t`
+to transpose two characters.
+These are described in the bindings section of the widget's Tk man page
+(such as :manpage:`text(3tk)` or :manpage:`entry(3tk)`).
+
+Class bindings are processed separately from your own,
+so binding an event yourself does not replace the default; both run.
+To suppress an unwanted default binding,
+bind the event on the widget
+and return the string ``"break"`` from your callback.
+
 
 The index parameter
 ^^^^^^^^^^^^^^^^^^^
@@ -1068,55 +974,6 @@ wherever the image was used.
 
     The `Pillow <https://python-pillow.org/>`_ package adds support for
     formats such as BMP, JPEG, TIFF, and WebP, among others.
-
-.. _tkinter-file-handlers:
-
-File handlers
--------------
-
-Tk allows you to register and unregister a callback function which will be
-called from the Tk mainloop when I/O is possible on a file descriptor.
-Only one handler may be registered per file descriptor. Example code::
-
-   import tkinter
-   widget = tkinter.Tk()
-   mask = tkinter.READABLE | tkinter.WRITABLE
-   widget.tk.createfilehandler(file, mask, callback)
-   ...
-   widget.tk.deletefilehandler(file)
-
-This feature is not available on Windows.
-
-Since you don't know how many bytes are available for reading, you may not
-want to use the :class:`~io.BufferedIOBase` or :class:`~io.TextIOBase`
-:meth:`~io.BufferedIOBase.read` or :meth:`~io.IOBase.readline` methods,
-since these will insist on reading a predefined number of bytes.
-For sockets, the :meth:`~socket.socket.recv` or
-:meth:`~socket.socket.recvfrom` methods will work fine; for other files,
-use raw reads or ``os.read(file.fileno(), maxbytecount)``.
-
-
-.. method:: Widget.tk.createfilehandler(file, mask, func)
-
-   Registers the file handler callback function *func*. The *file* argument
-   may either be an object with a :meth:`~io.IOBase.fileno` method (such as
-   a file or socket object), or an integer file descriptor. The *mask*
-   argument is an ORed combination of any of the three constants below.
-   The callback is called as follows::
-
-      callback(file, mask)
-
-
-.. method:: Widget.tk.deletefilehandler(file)
-
-   Unregisters a file handler.
-
-
-.. data:: READABLE
-          WRITABLE
-          EXCEPTION
-
-   Constants used in the *mask* arguments.
 
 
 Reference
@@ -1199,11 +1056,11 @@ Base and mixin classes
       :class:`int`.
       Raise :exc:`ValueError` if *s* is not a valid integer.
 
-   .. method:: getvar(name='PY_VAR')
+   .. method:: getvar(name)
 
       Return the value of the Tcl global variable named *name*.
 
-   .. method:: setvar(name='PY_VAR', value='1')
+   .. method:: setvar(name, value)
 
       Set the Tcl global variable named *name* to *value*.
 
@@ -1266,10 +1123,18 @@ Base and mixin classes
       If *belowThis* is given, the widget is moved to be just below it in the
       stacking order instead.
 
+      :meth:`tkraise`/:meth:`lift` and :meth:`lower` are overridden by the
+      :class:`Canvas` widget,
+      where they restack canvas items instead.
+
    .. method:: image_names()
 
       Return the names of all images that currently exist in the Tcl
       interpreter.
+
+      This is overridden by the :class:`Text` widget,
+      where :meth:`!image_names` returns the names of its embedded images
+      instead.
 
    .. method:: image_types()
 
@@ -1303,7 +1168,11 @@ Base and mixin classes
       column 0 to that cell; if *col2* and *row2* are also given, it spans from
       the cell (*column*, *row*) to the cell (*col2*, *row2*).
 
-      :meth:`bbox` is an alias of :meth:`!grid_bbox`.
+      :meth:`bbox` is an alias of :meth:`!grid_bbox`,
+      except on :class:`Canvas`, :class:`Listbox`, :class:`Spinbox`,
+      :class:`Text`, :class:`ttk.Entry <tkinter.ttk.Entry>` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!bbox` method.
 
    .. method:: columnconfigure(index, cnf={}, **kw)
       :no-typesetting:
@@ -1378,7 +1247,10 @@ Base and mixin classes
       Return the size of the grid managed by this container as a
       ``(columns, rows)`` tuple.
 
-      :meth:`size` is an alias of :meth:`!grid_size`.
+      :meth:`size` is an alias of :meth:`!grid_size`,
+      except on :class:`Listbox` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!size` method.
 
    .. method:: grid_slaves(row=None, column=None)
 
@@ -1445,6 +1317,9 @@ Base and mixin classes
       container with the place geometry manager.
 
       .. versionadded:: 3.15
+
+   The methods with the ``bind`` and ``unbind`` prefixes associate event
+   patterns with callbacks and remove those associations.
 
    .. method:: bind(sequence=None, func=None, add=None)
 
@@ -1529,6 +1404,9 @@ Base and mixin classes
       binding tags are set to its elements, which determines the order in which
       bindings are evaluated.
 
+   The methods with the ``event_`` prefix define virtual events and generate
+   events programmatically.
+
    .. method:: event_add(virtual, *sequences)
 
       Associate the virtual event *virtual*, whose name has the form
@@ -1562,6 +1440,9 @@ Base and mixin classes
       are currently defined.
       If *virtual* is given, return a tuple of the physical event sequences
       currently associated with it, or an empty tuple if it is not defined.
+
+   The methods with the ``after`` prefix schedule callbacks to run after a
+   delay or when the application is idle.
 
    .. method:: after(ms, func=None, *args, **kw)
 
@@ -1643,10 +1524,10 @@ Base and mixin classes
       This updates the display of windows, for example after geometry changes,
       but does not process events caused by the user.
 
-   .. method:: waitvar(name='PY_VAR')
+   .. method:: waitvar(name)
       :no-typesetting:
 
-   .. method:: wait_variable(name='PY_VAR')
+   .. method:: wait_variable(name)
 
       Wait until the Tcl variable *name* is modified, continuing to process
       events in the meantime so that the application stays responsive.
@@ -1671,6 +1552,9 @@ Base and mixin classes
       If *window* is omitted, this widget is used.
       This is typically used to wait for a newly created window to become
       visible before acting on it.
+
+   The methods with the ``focus_`` prefix manage the keyboard focus.
+
    .. method:: focus_set()
       :no-typesetting:
 
@@ -1681,7 +1565,10 @@ Base and mixin classes
       widget's display, the widget is remembered as the focus window for its
       top level, and the focus will be redirected to it the next time the
       window manager gives the focus to the top level.
-      :meth:`focus` is an alias of :meth:`!focus_set`.
+      :meth:`focus` is an alias of :meth:`!focus_set`,
+      except on the :class:`Canvas` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>` widgets,
+      which provide their own :meth:`!focus` method.
 
    .. method:: focus_force()
 
@@ -1735,6 +1622,9 @@ Base and mixin classes
       See :meth:`tk_focusNext` for how the order is defined.
       This method is used in the default bindings for the :kbd:`Shift-Tab` key.
 
+   The methods with the ``grab_`` prefix set and query the input grab, which
+   directs all input events to a single widget.
+
    .. method:: grab_set()
 
       Set a local grab on this widget.
@@ -1774,6 +1664,9 @@ Base and mixin classes
       Return ``None`` if no grab is currently set on this widget, ``"local"``
       if a local grab is set, or ``"global"`` if a global grab is set.
 
+   The methods with the ``selection_`` prefix retrieve and manage the X
+   selection.
+
    .. method:: selection_clear(**kw)
 
       Clear the X selection, so that no window owns it anymore.
@@ -1782,6 +1675,10 @@ Base and mixin classes
       ``PRIMARY``.
       The *displayof* keyword argument names a widget that determines the
       display on which to operate, and defaults to this widget.
+
+      This is overridden by the :class:`Entry`, :class:`Listbox` and
+      :class:`Spinbox` widgets,
+      where :meth:`!selection_clear` clears the widget's own selection instead.
 
    .. method:: selection_get(**kw)
 
@@ -1828,6 +1725,8 @@ Base and mixin classes
       The *displayof* keyword argument names a widget that determines the
       display to query, and defaults to this widget.
 
+   The methods with the ``clipboard_`` prefix manage the clipboard.
+
    .. method:: clipboard_append(string, **kw)
 
       Append *string* to the Tk clipboard and claim ownership of the clipboard
@@ -1860,7 +1759,10 @@ Base and mixin classes
       first and ``STRING`` is used as a fallback.
       The *displayof* keyword argument names a widget that determines the
       display, and defaults to the root window of the application.
-      This is equivalent to ``selection_get(selection= 'CLIPBOARD')``.
+      This is equivalent to ``selection_get(selection='CLIPBOARD')``.
+
+   The methods with the ``option_`` prefix query and modify the Tk option
+   database.
 
    .. method:: option_add(pattern, value, priority=None)
 
@@ -1932,6 +1834,60 @@ Base and mixin classes
       A true *boolean* value enables strict Motif compliance (for example, no
       color change when the mouse passes over a slider).
       Return the resulting setting.
+
+   .. method:: tk_appname(name=None)
+
+      Query or set the name used to communicate with this application through
+      the ``send`` command.
+      With no argument, return the current name; otherwise change it to *name*
+      and return the actual name set, which may have a suffix appended to keep
+      it unique among the applications on the display.
+
+      .. versionadded:: next
+
+   .. method:: tk_useinputmethods(boolean=None, *, displayof=0)
+
+      Query or set whether Tk uses the X Input Methods (XIM) for filtering
+      events, and return the resulting state.
+      This is significant only on X11; if XIM support is not available it
+      always returns ``False``.
+
+      .. versionadded:: next
+
+   .. method:: tk_caret(*, x=None, y=None, height=None)
+
+      Set or query the caret location for the widget's display.
+      The caret is the per-display insertion position used for global focus
+      indication (for accessibility) and for placing the input method
+      (XIM or IME) window.
+      With no argument, return the current location as a dictionary with the
+      keys ``'x'``, ``'y'`` and ``'height'``; otherwise update the given
+      coordinates.
+
+      .. versionadded:: next
+
+   .. method:: tk_scaling(number=None, *, displayof=0)
+
+      Query or set the scaling factor used by Tk to convert between physical
+      units (such as points, inches or millimeters) and pixels, expressed as
+      the number of pixels per point (where a point is 1/72 inch).
+      With no argument, return the current factor; otherwise set it to the
+      floating-point *number*.
+
+      .. versionadded:: next
+
+   .. method:: tk_inactive(reset=False, *, displayof=0)
+
+      Return the number of milliseconds since the last time the user interacted
+      with the system, or ``-1`` if the windowing system does not support this.
+      If *reset* is true, reset the inactivity timer to zero instead and return
+      ``None``.
+
+      .. versionadded:: next
+
+   The methods with the ``busy_`` prefix manage the busy state of a window,
+   which shows a busy cursor and ignores user input.
+
    .. method:: busy(**kw)
       :no-typesetting:
 
@@ -2047,6 +2003,9 @@ Base and mixin classes
 
       .. versionadded:: 3.13
 
+   The methods with the ``winfo_`` prefix retrieve information about windows
+   managed by Tk.
+
    .. method:: winfo_atom(name, displayof=0)
 
       Return the integer identifier for the atom whose name is *name*, creating
@@ -2133,6 +2092,16 @@ Base and mixin classes
       If *displayof* is given, the return value refers to the display of that
       window; otherwise it refers to the display of the application's main
       window.
+
+   .. method:: winfo_isdark()
+
+      On macOS and Windows, return ``True`` if the widget is in "dark mode",
+      and ``False`` otherwise.
+      Always return ``False`` on X11.
+
+      .. versionadded:: next
+
+         Requires Tk 9.1 or newer.
 
    .. method:: winfo_ismapped()
 
@@ -2546,6 +2515,8 @@ Base and mixin classes
       widget is managed again.
       :meth:`wm_forget` is an alias of :meth:`!forget`.
 
+      Not to be confused with :meth:`Pack.forget`.
+
       .. versionadded:: 3.3
 
    .. method:: wm_frame()
@@ -2591,6 +2562,8 @@ Base and mixin classes
       string if the window is not gridded.
       :meth:`wm_grid` is an alias of :meth:`!grid`.
 
+      Not to be confused with the grid geometry manager :meth:`Grid.grid`.
+
    .. method:: wm_group(pathName=None)
       :no-typesetting:
 
@@ -2604,6 +2577,24 @@ Base and mixin classes
       With no argument, return the path name of the current group leader, or an
       empty string.
       :meth:`wm_group` is an alias of :meth:`!group`.
+
+   .. method:: wm_iconbadge(badge)
+      :no-typesetting:
+
+   .. method:: iconbadge(badge)
+
+      Set a badge for the window's icon, intended for display in the Dock
+      (macOS), taskbar (Windows) or app panel (X11).
+      *badge* may be a positive integer (for example a count of unread
+      messages) or an exclamation point to denote that attention is needed;
+      an empty string removes the badge.
+      On X11 the variable ``::tk::icons::base_icon(window)`` must be set to the
+      window's icon image for the badge to appear.
+      :meth:`wm_iconbadge` is an alias of :meth:`!iconbadge`.
+
+      .. versionadded:: next
+
+         Requires Tk 9.0 or newer.
 
    .. method:: wm_iconbitmap(bitmap=None, default=None)
       :no-typesetting:
@@ -2708,7 +2699,8 @@ Base and mixin classes
       Make *widget* a stand-alone top-level window, decorated by the window
       manager with a title bar and so on.
       Only :class:`Frame`, :class:`LabelFrame` and :class:`Toplevel` widgets
-      may be used; passing any other widget type raises an error.
+      may be used (the :mod:`tkinter.ttk` versions are **not** accepted);
+      passing any other widget type raises an error.
       :meth:`wm_manage` is an alias of :meth:`!manage`.
 
       .. versionadded:: 3.3
@@ -2814,6 +2806,22 @@ Base and mixin classes
       has been set.
       :meth:`wm_sizefrom` is an alias of :meth:`!sizefrom`.
 
+   .. method:: wm_stackorder(relation=None, window=None)
+      :no-typesetting:
+
+   .. method:: stackorder(relation=None, window=None)
+
+      Query the stacking order of top-level windows.
+      With no arguments, return a list of the mapped top-level widgets in
+      stacking order, from lowest to highest, recursively including this
+      window's top-level children.
+      If *relation* is ``'isabove'`` or ``'isbelow'`` and *window* is another
+      top-level, return ``True`` if this window is respectively above or below
+      *window* in the stacking order, and ``False`` otherwise.
+      :meth:`wm_stackorder` is an alias of :meth:`!stackorder`.
+
+      .. versionadded:: next
+
    .. method:: wm_state(newstate=None)
       :no-typesetting:
 
@@ -2827,6 +2835,9 @@ Base and mixin classes
       refers to a window serving as the icon for another window (see
       :meth:`iconwindow`); the ``'icon'`` state cannot be set.
       :meth:`wm_state` is an alias of :meth:`!state`.
+
+      Not to be confused with :meth:`ttk.Widget.state
+      <tkinter.ttk.Widget.state>`.
 
    .. method:: wm_title(string=None)
       :no-typesetting:
@@ -2878,6 +2889,21 @@ Base and mixin classes
    :class:`Widget`) and provides the methods for managing a widget with the
    *pack* geometry manager.
    See also :ref:`pack-the-packer`.
+
+   .. note::
+
+      :class:`Pack`, :class:`Place` and :class:`Grid` all define the short
+      method names :meth:`!forget`, :meth:`!info`, :meth:`!slaves`,
+      :meth:`!content` and :meth:`!propagate`.
+      On a widget the bare names resolve to the *pack* manager's versions,
+      since :class:`Pack` and :class:`Misc` precede :class:`Place` and
+      :class:`Grid` in the method resolution order,
+      whatever manager actually manages the widget;
+      and :meth:`!configure`/:meth:`!config` configure the widget's options,
+      not its geometry.
+      Use the explicit ``pack_*``, ``grid_*`` and ``place_*`` methods
+      (and ``pack``, ``grid``, ``place`` for geometry configuration)
+      to act on a specific geometry manager.
 
    .. method:: configure(cnf={}, **kw)
       :no-typesetting:
@@ -2941,7 +2967,13 @@ Base and mixin classes
       Unmap the widget and remove it from the packing order, forgetting its
       packing options.
       It can be packed again later with :meth:`pack_configure`.
-      :meth:`forget` is an alias of :meth:`!pack_forget`.
+      :meth:`forget` is an alias of :meth:`!pack_forget`,
+      except on :class:`PanedWindow`,
+      :class:`ttk.Notebook <tkinter.ttk.Notebook>` and
+      :class:`ttk.PanedWindow <tkinter.ttk.PanedWindow>`,
+      which provide their own :meth:`!forget` method.
+
+      Not to be confused with :meth:`Wm.forget`.
 
    .. method:: info()
       :no-typesetting:
@@ -3048,7 +3080,6 @@ Base and mixin classes
 
       Unmap the widget and remove it from the placement, forgetting its place
       options.
-      :meth:`forget` is an alias of :meth:`!place_forget`.
 
    .. method:: info()
       :no-typesetting:
@@ -3056,7 +3087,6 @@ Base and mixin classes
    .. method:: place_info()
 
       Return a dictionary of the widget's current place options.
-      :meth:`info` is an alias of :meth:`!place_info`.
 
    .. method:: slaves()
       :no-typesetting:
@@ -3065,7 +3095,6 @@ Base and mixin classes
 
       Same as :meth:`Misc.place_slaves`: return the list of widgets placed in
       this widget.
-      :meth:`slaves` is an alias of :meth:`!place_slaves`.
 
    .. method:: content()
       :no-typesetting:
@@ -3073,7 +3102,6 @@ Base and mixin classes
    .. method:: place_content()
 
       Same as :meth:`Misc.place_content`.
-      :meth:`content` is an alias of :meth:`!place_content`.
 
       .. versionadded:: 3.15
 
@@ -3095,6 +3123,9 @@ Base and mixin classes
                grid(cnf={}, **kw)
 
       Position the widget in a cell of its container's grid.
+
+      Not to be confused with :meth:`Wm.grid`.
+
       The supported options are:
 
       *row*, *column*
@@ -3139,7 +3170,6 @@ Base and mixin classes
 
       Unmap the widget and remove it from the grid, forgetting its grid
       options.
-      :meth:`forget` is an alias of :meth:`!grid_forget`.
 
    .. method:: grid_remove()
 
@@ -3152,7 +3182,6 @@ Base and mixin classes
    .. method:: grid_info()
 
       Return a dictionary of the widget's current grid options.
-      :meth:`info` is an alias of :meth:`!grid_info`.
 
    .. method:: bbox(column=None, row=None, col2=None, row2=None)
       :no-typesetting:
@@ -3160,7 +3189,11 @@ Base and mixin classes
    .. method:: grid_bbox(column=None, row=None, col2=None, row2=None)
 
       Same as :meth:`Misc.grid_bbox`.
-      :meth:`bbox` is an alias of :meth:`!grid_bbox`.
+      :meth:`bbox` is an alias of :meth:`!grid_bbox`,
+      except on :class:`Canvas`, :class:`Listbox`, :class:`Spinbox`,
+      :class:`Text`, :class:`ttk.Entry <tkinter.ttk.Entry>` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!bbox` method.
 
    .. method:: columnconfigure(index, cnf={}, **kw)
       :no-typesetting:
@@ -3196,7 +3229,10 @@ Base and mixin classes
 
       Same as :meth:`Misc.grid_size`: return a ``(columns, rows)`` tuple giving
       the size of the grid.
-      :meth:`size` is an alias of :meth:`!grid_size`.
+      :meth:`size` is an alias of :meth:`!grid_size`,
+      except on :class:`Listbox` and
+      :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+      which provide their own :meth:`!size` method.
 
    .. method:: propagate()
                propagate(flag)
@@ -3206,7 +3242,6 @@ Base and mixin classes
                grid_propagate(flag)
 
       Same as :meth:`Misc.grid_propagate`.
-      :meth:`propagate` is an alias of :meth:`!grid_propagate`.
 
    .. method:: slaves(row=None, column=None)
       :no-typesetting:
@@ -3215,7 +3250,6 @@ Base and mixin classes
 
       Same as :meth:`Misc.grid_slaves`: return the widgets managed in the grid,
       optionally restricted to a *row* and/or *column*.
-      :meth:`slaves` is an alias of :meth:`!grid_slaves`.
 
    .. method:: content(row=None, column=None)
       :no-typesetting:
@@ -3223,7 +3257,6 @@ Base and mixin classes
    .. method:: grid_content(row=None, column=None)
 
       Same as :meth:`Misc.grid_content`.
-      :meth:`content` is an alias of :meth:`!grid_content`.
 
       .. versionadded:: 3.15
 
@@ -3311,6 +3344,118 @@ Base and mixin classes
    managed by any of the three geometry managers.
    The concrete widget classes (:class:`Button`, :class:`Label`, and so on)
    derive from :class:`!Widget`.
+
+
+Toplevel widgets
+^^^^^^^^^^^^^^^^
+
+.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=True, sync=False, use=None)
+
+   Construct a toplevel Tk widget, which is usually the main window of an
+   application, and initialize a Tcl interpreter for this widget.  Each
+   instance has its own associated Tcl interpreter.
+   Inherits from :class:`Misc` and :class:`Wm`.
+
+   To create a Tcl interpreter without initializing the Tk subsystem, use the
+   :func:`Tcl` factory function instead.
+
+   The :class:`Tk` class is typically instantiated using all default values.
+   However, the following keyword arguments are currently recognized:
+
+   *screenName*
+      When given (as a string), sets the :envvar:`DISPLAY` environment
+      variable. (X11 only)
+   *baseName*
+      Name of the profile file.  By default, *baseName* is derived from the
+      program name (``sys.argv[0]``).
+   *className*
+      Name of the widget class.  Used as a profile file and also as the name
+      with which Tcl is invoked (*argv0* in *interp*).
+   *useTk*
+      If ``True``, initialize the Tk subsystem.  The :func:`tkinter.Tcl() <Tcl>`
+      function sets this to ``False``.
+   *sync*
+      If ``True``, execute all X server commands synchronously, so that errors
+      are reported immediately.  Can be used for debugging. (X11 only)
+   *use*
+      Specifies the *id* of the window in which to embed the application,
+      instead of it being created as an independent toplevel window. *id* must
+      be specified in the same way as the value for the -use option for
+      toplevel widgets (that is, it has a form like that returned by
+      :meth:`~Misc.winfo_id`).
+
+      Note that on some platforms this will only work correctly if *id* refers
+      to a Tk frame or toplevel that has its -container option enabled.
+
+   :class:`Tk` reads and interprets profile files, named
+   :file:`.{className}.tcl` and :file:`.{baseName}.tcl`, into the Tcl
+   interpreter and calls :func:`exec` on the contents of
+   :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
+   profile files is the :envvar:`HOME` environment variable or, if that
+   isn't defined, then :data:`os.curdir`.
+
+   .. note::
+
+      On Windows, creating a Tcl interpreter (by instantiating :class:`Tk` or
+      calling :func:`Tcl`) sets the :envvar:`HOME` environment variable for
+      the process, if it is not already set, to ``%HOMEDRIVE%%HOMEPATH%`` (or
+      :envvar:`USERPROFILE`, or ``c:\``).  This is done by Tcl and can affect
+      other code that reads :envvar:`HOME`.
+
+   .. attribute:: tk
+
+      The Tk application object created by instantiating :class:`Tk`.  This
+      provides access to the Tcl interpreter.  Each widget that is attached
+      the same instance of :class:`Tk` has the same value for its :attr:`tk`
+      attribute.
+
+   .. attribute:: master
+
+      The widget object that contains this widget.
+      For :class:`Tk`, the :attr:`!master` is :const:`None` because it is the
+      main window.
+      The terms *master* and *parent* are similar and sometimes used
+      interchangeably as argument names; however, calling
+      :meth:`~Misc.winfo_parent` returns a string of the widget name whereas
+      :attr:`!master` returns the object.
+      *parent*/*child* reflects the tree-like relationship while *master* (or
+      *container*)/*content* reflects the container structure.
+
+   .. attribute:: children
+
+      The immediate descendants of this widget as a :class:`dict` with the
+      child widget names as the keys and the child instance objects as the
+      values.
+
+   .. method:: destroy()
+
+      Destroy this and all descendant widgets and, for the main window, end the
+      connection to the underlying Tcl interpreter.
+
+   .. method:: loadtk()
+
+      Finish loading and initializing the Tk subsystem.
+      This is needed only when the interpreter was created without Tk (for
+      example through :func:`Tcl`); it is called automatically when *useTk* is
+      true.
+
+   .. method:: readprofile(baseName, className)
+
+      Read and source the user's profile files :file:`.{className}.tcl` and
+      :file:`.{baseName}.tcl` into the Tcl interpreter, and execute the
+      corresponding :file:`.{className}.py` and :file:`.{baseName}.py` files.
+      This is called during initialization; see the description of the
+      constructor above.
+
+   .. method:: report_callback_exception(exc, val, tb)
+
+      Report a callback exception.
+      This is called when an exception propagates out of a Tkinter callback;
+      *exc*, *val* and *tb* are the exception type, value and traceback as
+      returned by :func:`sys.exc_info`.
+      The default implementation prints a traceback to :data:`sys.stderr`.
+      It can be overridden to customize error handling, for example to display
+      the traceback in a dialog.
 
 
 .. class:: Toplevel(master=None, cnf={}, **kw)
@@ -3648,6 +3793,15 @@ Widget classes
       *yOrigin* changes by a factor of *yScale* (a factor of ``1.0`` leaves the
       coordinate unchanged).
 
+   .. method:: rotate(tagOrId, xOrigin, yOrigin, angle, /)
+
+      Rotate the coordinates of all items given by *tagOrId* in canvas
+      coordinate space about the origin (*xOrigin*, *yOrigin*) by *angle*
+      degrees anticlockwise.
+      Negative values of *angle* rotate clockwise.
+
+      .. versionadded:: next
+
    .. method:: delete(*tagOrIds)
 
       Delete each of the items given by the *tagOrIds* arguments.
@@ -3666,6 +3820,17 @@ Widget classes
       character or coordinate whose index is *beforeThis*.
       For line and polygon items *string* must be a valid sequence of
       coordinates.
+
+   .. method:: rchars(tagOrId, first, last, string, /)
+
+      Replace the characters (for text items) or coordinates (for line and
+      polygon items) in the range from *first* to *last* inclusive of each of
+      the items given by *tagOrId* with *string*.
+      For line and polygon items *string* must be a valid sequence of
+      coordinates.
+      Items that do not support indexing ignore this operation.
+
+      .. versionadded:: next
 
    .. method:: itemcget(tagOrId, option)
 
@@ -3825,6 +3990,14 @@ Widget classes
       This has no effect on embedded window items.
       :meth:`lower` is an alias of :meth:`!tag_lower`.
 
+      .. note::
+
+         On a :class:`Canvas`, :meth:`tkraise`/:meth:`lift` and :meth:`lower`
+         restack canvas items,
+         shadowing the inherited :meth:`Misc.tkraise`/:meth:`Misc.lift` and
+         :meth:`Misc.lower` methods that restack the widget itself,
+         which are therefore not available.
+
    .. method:: tag_bind(tagOrId, sequence=None, func=None, add=None)
 
       Bind the callback *func* to the event *sequence* for all items given by
@@ -3860,6 +4033,9 @@ Widget classes
       Return ``None`` if no item matches or the matching items have nothing to
       display.
 
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~Misc.grid_bbox` for the grid bounding box.
+
    .. method:: canvasx(screenx, gridspacing=None)
 
       Given a window x-coordinate *screenx*, return the canvas x-coordinate
@@ -3885,6 +4061,9 @@ Widget classes
       or an empty string if none does.
       An item only displays the insertion cursor when both it is the focus item
       and its canvas has the input focus.
+
+      This shadows the inherited :meth:`!Misc.focus`;
+      use :meth:`~Misc.focus_set` to focus the widget itself.
 
    .. method:: icursor(tagOrId, index, /)
 
@@ -4083,6 +4262,12 @@ Widget classes
       If the selection is not in this widget the method has no effect.
       :meth:`select_clear` is an alias of :meth:`!selection_clear`.
 
+      .. note::
+
+         This shadows the inherited :meth:`Misc.selection_clear`,
+         which clears the X selection;
+         that method is not available on an :class:`Entry`.
+
    .. method:: select_from(index)
       :no-typesetting:
 
@@ -4140,6 +4325,14 @@ Widget classes
       that difference.
       Typically associated with mouse motion events, to produce the effect of
       dragging the entry at high speed through the window.
+
+   .. method:: validate()
+
+      Force an evaluation of the command given by the *validatecommand* option,
+      independently of the conditions specified by the *validate* option, and
+      return whether the value is considered valid.
+
+      .. versionadded:: next
 
 
 .. class:: Frame(master=None, cnf={}, **kw)
@@ -4222,6 +4415,9 @@ Widget classes
 
       Return the total number of items in the listbox.
 
+      This shadows the inherited :meth:`!Misc.size`;
+      use :meth:`~Misc.grid_size` for the grid size.
+
    .. method:: index(index)
 
       Return the integer index value corresponding to *index*, or ``None`` if
@@ -4237,6 +4433,9 @@ Widget classes
       *index* refers to a non-existent item; if the item is only partly
       visible, the result still gives the full area of the item, including the
       parts that are not visible.
+
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~Misc.grid_bbox` for the grid bounding box.
 
    .. method:: nearest(y)
 
@@ -4285,6 +4484,12 @@ Widget classes
       that are selected.
       The selection state of items outside this range is not changed.
       :meth:`select_clear` is an alias of :meth:`!selection_clear`.
+
+      .. note::
+
+         This shadows the inherited :meth:`Misc.selection_clear`,
+         which clears the X selection;
+         that method is not available on a :class:`Listbox`.
 
    .. method:: select_includes(index)
       :no-typesetting:
@@ -4572,6 +4777,15 @@ Widget classes
       If the *postcommand* option has been specified, it is evaluated before
       the menu is posted.
 
+   .. method:: postcascade(index)
+
+      Post the submenu associated with the cascade entry given by *index*,
+      unposting any previously posted submenu.
+      This has no effect if *index* does not name a cascade entry or if the
+      menu itself is not posted.
+
+      .. versionadded:: next
+
    .. method:: tk_popup(x, y, entry='')
 
       Post the menu as a popup at the root-window coordinates *x* and *y*.
@@ -4629,6 +4843,8 @@ Widget classes
    is the initial choice, and *values* are the remaining menu entries.
    The keyword argument *command* may be given a callback that is invoked with
    the selected value, and the keyword argument *name* sets the Tk widget name.
+   Other keyword arguments are passed to the underlying :class:`Menubutton`
+   and may override its default appearance.
 
    .. method:: destroy()
 
@@ -4636,6 +4852,9 @@ Widget classes
 
    .. versionchanged:: 3.14
       Added support for the *name* keyword argument.
+
+   .. versionchanged:: next
+      Other :class:`Menubutton` options can now be passed as keyword arguments.
 
 
 
@@ -4670,6 +4889,9 @@ Widget classes
       Remove the pane containing *child* from the panedwindow.
       All geometry management options for *child* are forgotten.
       :meth:`forget` is an alias of :meth:`!remove`.
+      This shadows the inherited geometry-manager :meth:`!forget`;
+      use :meth:`~Pack.pack_forget`, :meth:`~Grid.grid_forget` or
+      :meth:`~Place.place_forget` to remove the widget itself from its manager.
 
    .. method:: panes()
 
@@ -4819,6 +5041,9 @@ Widget classes
    dropped; *from* is spelled ``from_`` because :keyword:`from` is a Python
    keyword.
 
+   With a non-integer *resolution*, see :ref:`numeric values and the locale
+   <tkinter-numeric-locale>`.
+
    .. method:: get()
 
       Return the current value of the scale.
@@ -4917,6 +5142,9 @@ Widget classes
    text.
    Inherits from :class:`Widget` and :class:`XView`.
 
+   With a non-integer *increment*, see :ref:`numeric values and the locale
+   <tkinter-numeric-locale>`.
+
    Many of the methods take an *index* argument identifying a character in the
    spinbox's string.
    As described in the Tk ``spinbox`` manual page, *index* may be a numeric
@@ -4960,6 +5188,9 @@ Widget classes
       in pixels.
       The bounding box may refer to a region outside the visible area of the
       window.
+
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~Misc.grid_bbox` for the grid bounding box.
 
    .. method:: identify(x, y)
 
@@ -5022,6 +5253,12 @@ Widget classes
       Clear the selection if it is currently in this widget.
       If the selection is not in this widget, the method has no effect.
 
+      .. note::
+
+         This shadows the inherited :meth:`Misc.selection_clear`,
+         which clears the X selection;
+         that method is not available on a :class:`Spinbox`.
+
    .. method:: selection_element(element=None)
 
       Set or get the currently selected element.
@@ -5068,6 +5305,14 @@ Widget classes
       the most recent anchor point.
 
       .. versionadded:: 3.8
+
+   .. method:: validate()
+
+      Force an evaluation of the command given by the *validatecommand* option,
+      independently of the conditions specified by the *validate* option, and
+      return whether the value is considered valid.
+
+      .. versionadded:: next
 
 
 
@@ -5178,6 +5423,9 @@ Widget classes
       Return a tuple ``(x, y, width, height)`` giving the bounding box, in
       pixels, of the visible part of the character at *index*, or ``None`` if
       that character is not visible on the screen.
+
+      This shadows the inherited :meth:`!Misc.bbox`;
+      use :meth:`~Misc.grid_bbox` for the grid bounding box.
 
    .. method:: dlineinfo(index)
 
@@ -5433,6 +5681,12 @@ Widget classes
 
       Return a tuple of the names of all images embedded in the widget.
 
+      .. note::
+
+         This shadows the inherited :meth:`Misc.image_names`,
+         which returns the names of all images in the Tcl interpreter;
+         that method is not available on a :class:`Text`.
+
    .. method:: window_create(index, cnf={}, **kw)
 
       Embed a window (any widget) at *index*.
@@ -5678,6 +5932,7 @@ Variable classes
    .. method:: set(value)
 
       Set the variable to *value*.
+      :meth:`initialize` is an alias of :meth:`!set`.
 
       .. versionadded:: 3.3
          The *initialize* spelling.
@@ -5724,6 +5979,7 @@ Variable classes
       *mode* is one of the strings ``'r'``, ``'w'`` or ``'u'``, for read, write
       or unset.
       Return the internal name of the registered callback.
+      :meth:`trace` is an alias of :meth:`!trace_variable`.
 
       .. deprecated:: 3.6
          Use :meth:`trace_add` instead.  This method wraps a Tcl feature that
@@ -5777,6 +6033,18 @@ Variable classes
 
       Return the value of the variable as a :class:`float`.
 
+   .. _tkinter-numeric-locale:
+
+   .. note::
+
+      A floating-point value is always parsed with a period (``.``) as the
+      decimal separator, but :class:`Spinbox`, :class:`Scale` and
+      :class:`ttk.Spinbox <tkinter.ttk.Spinbox>` format it according to the
+      ``LC_NUMERIC`` locale.  Under a locale that uses a comma they produce a
+      value that :meth:`get` cannot read, raising :exc:`TclError`.  Set
+      ``LC_NUMERIC`` to a locale that uses a period (such as ``'C'``) to avoid
+      this.
+
 
 .. class:: BooleanVar(master=None, value=None, name=None)
 
@@ -5795,6 +6063,7 @@ Variable classes
    .. method:: set(value)
 
       Set the variable to *value*, converting it to a boolean.
+      :meth:`initialize` is an alias of :meth:`!set`.
 
       .. versionadded:: 3.3
          The *initialize* spelling.
@@ -5859,6 +6128,14 @@ Image classes
       Blank the image; that is, set the entire image to have no data, so that
       it is displayed as transparent and the background of whatever window it
       is displayed in shows through.
+
+   .. method:: redither()
+
+      Recalculate the dithered image in each window where it is displayed.
+      This is useful when the image data was supplied in pieces, in which case
+      the dithered image may not be exactly correct.
+
+      .. versionadded:: next
 
    .. method:: cget(option)
 
@@ -5927,7 +6204,7 @@ Image classes
 
 
    .. method:: data(format=None, *, from_coords=None, background=None, \
-                    grayscale=False)
+                    grayscale=False, metadata=None)
 
       Return the image data.
 
@@ -5951,16 +6228,27 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionadded:: 3.13
 
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
-   .. method:: get(x, y)
+
+   .. method:: get(x, y, *, withalpha=False)
 
       Return the color of the pixel at coordinates (*x*, *y*) as an
       ``(r, g, b)`` tuple of three integers between 0 and 255, representing the
       red, green and blue components respectively.
+      If *withalpha* is true, the returned tuple has a fourth element giving
+      the alpha (opacity) value of the pixel.
 
-   .. method:: put(data, to=None)
+      .. versionchanged:: next
+         Added the *withalpha* parameter, which requires Tcl/Tk 9.0 or newer.
+
+   .. method:: put(data, to=None, *, format=None, metadata=None)
 
       Set pixels of the image to the colors given in *data*, which must be a
       string or a nested sequence of horizontal rows of pixel colors (for
@@ -5973,12 +6261,24 @@ Image classes
       bottom-right corner, of the region.
       The default position is ``(0, 0)``.
 
+      *format* specifies the format of the image *data*, so that only image
+      file format handlers whose names begin with it are tried.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
+      .. versionchanged:: next
+         Added the *format* and *metadata* parameters.
+
    .. method:: read(filename, format=None, *, from_coords=None, to=None, \
-                    shrink=False)
+                    shrink=False, metadata=None)
 
       Read image data from the file named *filename* into the image.
 
       *format* specifies the format of the image data in the file.
+
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
 
       *from_coords* specifies a rectangular sub-region of the image file data
       to be copied to the destination image.
@@ -5999,6 +6299,9 @@ Image classes
       corner of the image.
 
       .. versionadded:: 3.13
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: subsample(x, y='', *, from_coords=None)
@@ -6032,7 +6335,7 @@ Image classes
 
 
    .. method:: write(filename, format=None, from_coords=None, *, \
-                     background=None, grayscale=False)
+                     background=None, grayscale=False, metadata=None)
 
       Write image data from the image to the file named *filename*.
 
@@ -6054,8 +6357,14 @@ Image classes
       If *grayscale* is true, the data does not contain color information; all
       pixel data is transformed into grayscale.
 
+      *metadata* is a dictionary passed to the image format driver.
+      It requires Tcl/Tk 9.0 or newer.
+
       .. versionchanged:: 3.13
          Added the *background* and *grayscale* parameters.
+
+      .. versionchanged:: next
+         Added the *metadata* parameter.
 
 
    .. method:: zoom(x, y='', *, from_coords=None)
@@ -6220,6 +6529,18 @@ Other classes
 Module-level functions
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
+
+   The :func:`Tcl` function is a factory function which creates an object much
+   like that created by the :class:`Tk` class, except that it does not
+   initialize the Tk subsystem.
+   This is most often useful when driving the Tcl interpreter in an environment
+   where one doesn't want to create extraneous toplevel windows, or where one
+   cannot (such as Unix/Linux systems without an X server).
+   An object created by the :func:`Tcl` object can have a Toplevel window
+   created (and the Tk subsystem initialized) by calling its :meth:`~Tk.loadtk`
+   method.
+
 .. function:: NoDefaultRoot()
 
    Inhibit the creation of an implicit default root window.
@@ -6259,6 +6580,57 @@ Module-level functions
 
    Return the available image types (such as ``'photo'`` and ``'bitmap'``) in
    the default root's interpreter.
+
+
+.. _tkinter-file-handlers:
+
+File handlers
+^^^^^^^^^^^^^
+
+Tk allows you to register and unregister a callback function which will be
+called from the Tk mainloop when I/O is possible on a file descriptor.
+Only one handler may be registered per file descriptor. Example code::
+
+   import tkinter
+   widget = tkinter.Tk()
+   mask = tkinter.READABLE | tkinter.WRITABLE
+   widget.tk.createfilehandler(file, mask, callback)
+   ...
+   widget.tk.deletefilehandler(file)
+
+This feature is not available on Windows.
+
+Since you don't know how many bytes are available for reading, you may not
+want to use the :class:`~io.BufferedIOBase` or :class:`~io.TextIOBase`
+:meth:`~io.BufferedIOBase.read` or :meth:`~io.IOBase.readline` methods,
+since these will insist on reading a predefined number of bytes.
+For sockets, the :meth:`~socket.socket.recv` or
+:meth:`~socket.socket.recvfrom` methods will work fine; for other files,
+use raw reads or ``os.read(file.fileno(), maxbytecount)``.
+
+
+.. method:: Widget.tk.createfilehandler(file, mask, func)
+
+   Registers the file handler callback function *func*. The *file* argument
+   may either be an object with a :meth:`~io.IOBase.fileno` method (such as
+   a file or socket object), or an integer file descriptor. The *mask*
+   argument is an ORed combination of any of the three constants below.
+   The callback is called as follows::
+
+      callback(file, mask)
+
+
+.. method:: Widget.tk.deletefilehandler(file)
+
+   Unregisters a file handler.
+
+
+.. data:: READABLE
+          WRITABLE
+          EXCEPTION
+
+   Constants used in the *mask* arguments.
+
 
 Constants
 ^^^^^^^^^
