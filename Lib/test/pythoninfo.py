@@ -9,6 +9,9 @@ import warnings
 
 
 MS_WINDOWS = (sys.platform == "win32")
+APPLE = (sys.platform in ("darwin", "ios", "tvos", "watchos"))
+
+COMMAND_TIMEOUT = 60.0
 
 
 def normalize_text(text):
@@ -17,6 +20,16 @@ def normalize_text(text):
     text = str(text)
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
+
+
+def first_line(text):
+    # Get the first line. Return text unchanged if it's empty.
+    lines = text.splitlines()
+    if lines:
+        return lines[0]
+    else:
+        # text is an empty string
+        return text
 
 
 def read_first_line(filename):
@@ -293,9 +306,11 @@ def collect_os(info_add):
         "BUILDPYTHON",
         "CC",
         "CFLAGS",
+        "CI",
         "COLUMNS",
         "COMPUTERNAME",
         "COMSPEC",
+        "CONTAINER",
         "CPP",
         "CPPFLAGS",
         "DISPLAY",
@@ -310,6 +325,7 @@ def collect_os(info_add):
         "HOMEDRIVE",
         "HOMEPATH",
         "IDLESTARTUP",
+        "IMAGE_OS_VERSION",
         "IPHONEOS_DEPLOYMENT_TARGET",
         "LANG",
         "LDFLAGS",
@@ -434,24 +450,47 @@ def collect_readline(info_add):
             info_add('readline.library', 'GNU readline')
 
 
-def collect_gdb(info_add):
+def run_command(cmd, check=True, **kwargs):
     import subprocess
+    timeout = COMMAND_TIMEOUT
 
+    cmd_str = ' '.join(cmd)
     try:
-        proc = subprocess.Popen(["gdb", "-nx", "--version"],
+        proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                universal_newlines=True)
-        version = proc.communicate()[0]
-        if proc.returncode:
-            # ignore gdb failure: test_gdb will log the error
-            return
-    except OSError:
-        return
+                                stderr=subprocess.DEVNULL,
+                                text=True,
+                                **kwargs)
+        with proc:
+            try:
+                stdout = proc.communicate(timeout=timeout)[0]
+            except:
+                proc.kill()
+                proc.communicate()
+                raise
 
-    # Only keep the first line
-    version = version.splitlines()[0]
-    info_add('gdb_version', version)
+        if check and proc.returncode:
+            print(f"Command {cmd_str} failed with exit code {proc.returncode}")
+            return ''
+
+        # Strip trailing spaces and newlines
+        stdout = stdout.rstrip()
+        return stdout
+    except FileNotFoundError:
+        return ''
+    except OSError as exc:
+        print(f"Command {cmd_str} failed with: {exc!r}")
+        return ''
+    except subprocess.TimeoutExpired:
+        print(f"Command {cmd_str}: timeout!")
+        return ''
+
+
+def collect_gdb(info_add):
+    version = run_command(["gdb", "-nx", "--version"])
+    if version:
+        # Only keep the first line
+        info_add('gdb_version', first_line(version))
 
 
 def collect_tkinter(info_add):
@@ -835,7 +874,6 @@ def collect_support_threading_helper(info_add):
 
 
 def collect_cc(info_add):
-    import subprocess
     import sysconfig
 
     CC = sysconfig.get_config_var('CC')
@@ -848,23 +886,17 @@ def collect_cc(info_add):
     except ImportError:
         args = CC.split()
     args.append('--version')
-    try:
-        proc = subprocess.Popen(args,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                universal_newlines=True)
-    except OSError:
+
+    stdout = run_command(args)
+    if not stdout:
         # Cannot run the compiler, for example when Python has been
         # cross-compiled and installed on the target platform where the
         # compiler is missing.
-        return
-
-    stdout = proc.communicate()[0]
-    if proc.returncode:
+        #
         # CC --version failed: ignore error
         return
 
-    text = stdout.splitlines()[0]
+    text = first_line(stdout)
     text = normalize_text(text)
     info_add('CC.version', text)
 
@@ -959,21 +991,11 @@ def collect_windows(info_add):
         pass
 
     # windows.version_caption: "wmic os get Caption,Version /value" command
-    import subprocess
-    try:
-        # When wmic.exe output is redirected to a pipe,
-        # it uses the OEM code page
-        proc = subprocess.Popen(["wmic", "os", "get", "Caption,Version", "/value"],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                encoding="oem",
-                                text=True)
-        output, stderr = proc.communicate()
-        if proc.returncode:
-            output = ""
-    except OSError:
-        pass
-    else:
+    output = run_command(["wmic", "os", "get", "Caption,Version", "/value"],
+                         # When wmic.exe output is redirected to a pipe,
+                         # it uses the OEM code page
+                         encoding="oem")
+    if output:
         for line in output.splitlines():
             line = line.strip()
             if line.startswith('Caption='):
@@ -986,23 +1008,11 @@ def collect_windows(info_add):
                     info_add('windows.version', line)
 
     # windows.ver: "ver" command
-    try:
-        proc = subprocess.Popen(["ver"], shell=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                text=True)
-        output = proc.communicate()[0]
-        if proc.returncode == 0xc0000142:
-            return
-        if proc.returncode:
-            output = ""
-    except OSError:
-        return
-    else:
-        output = output.strip()
-        line = output.splitlines()[0]
-        if line:
-            info_add('windows.ver', line)
+    output = run_command(["ver"], shell=True)
+    # "ver" output starts with an empty line: remove it
+    output = output.strip()
+    if output:
+        info_add('windows.ver', first_line(output))
 
     # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
     value = winreg_query(r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows"
@@ -1113,7 +1123,45 @@ def get_machine_id():
     return None
 
 
-def collect_linux(info_add):
+def detect_virt():
+    # Run systemd-detect-virt command
+    virt = run_command(["systemd-detect-virt"], check=False)
+    if virt and virt != "none":
+        return virt
+
+    # Check if the process in running in a container
+    import os.path
+    if os.path.exists('/.dockerenv'):
+        return 'docker'
+    if os.path.exists('/run/.containerenv'):
+        return 'podman'
+
+    container = read_first_line('/run/systemd/container')
+    if container:
+        return container
+
+    if APPLE:
+        hv_vmm_present = run_command(['sysctl', '-n', 'kern.hv_vmm_present'])
+        if hv_vmm_present == '1':
+            return 'run in a VM (kern.hv_vmm_present is 1)'
+
+    # Other ways to check if running in a container:
+    # * Parse /proc/1/mounts or /proc/1/mountinfo (check "/" filesystem).
+    # * Parse /proc/1/cgroup.
+    # * Parse the first line of /proc/1/sched (check process name is different
+    #   than "init" and "systemd").
+    # * Check / inode.
+    # * On systems using SELinux (Fedora/CentOS/RHEL), check for "container_t"
+    #   label, for example of /proc/1/attr/current.
+    # * Check for "container" variable in /proc/1/environ
+    #   (only root can read this file).
+    # * Check for "container" environment variable.
+    # * Set a specific env var when creating the container image.
+    # * Run virt-what, need to install the script, and must be run as root.
+    # * Check for "GITHUB_ACTIONS" environmant variable (GitHub Action).
+
+
+def collect_system(info_add):
     boot_id = read_first_line("/proc/sys/kernel/random/boot_id")
     if boot_id:
         info_add('system.boot_id', boot_id)
@@ -1132,6 +1180,15 @@ def collect_linux(info_add):
         except ImportError:
             uptime = f'{uptime} sec'
         info_add('system.uptime', uptime)
+
+    virt = detect_virt()
+    if virt:
+        info_add('system.virt', virt)
+
+    if APPLE:
+        hardware = run_command(['sysctl', '-n', 'hw.model'])
+        if hardware:
+            info_add('system.hardware', hardware)
 
 
 def collect_info(info):
@@ -1174,7 +1231,7 @@ def collect_info(info):
         collect_windows,
         collect_zlib,
         collect_libregrtest_utils,
-        collect_linux,
+        collect_system,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
