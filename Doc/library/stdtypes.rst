@@ -1403,6 +1403,8 @@ application).
    Many other operations also produce lists, including the :func:`sorted`
    built-in.
 
+   Lists are :ref:`generic <generics>` over the types of their items.
+
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
@@ -1493,6 +1495,10 @@ homogeneous data is needed (such as allowing storage in a :class:`set` or
 
    Tuples implement all of the :ref:`common <typesseq-common>` sequence
    operations.
+
+   Tuples are :ref:`generic <generics>` over the types of their contents.
+   For more information, refer to
+   :ref:`the typing documentation on annotating tuples <annotating-tuples>`.
 
 For heterogeneous collections of data where access by name is clearer than
 access by index, :func:`collections.namedtuple` may be a more appropriate
@@ -2168,8 +2174,24 @@ expression support in the :mod:`re` module).
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
-   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   like the `Kharosthi numbers <https://en.wikipedia.org/wiki/Kharosthi#Numerals>`__.
+   Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-Indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`.
 
 
 .. method:: str.isidentifier()
@@ -2211,15 +2233,14 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-Indic digits zero to nine
       True
       >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
-   a superset of decimal numbers.
+   See also :meth:`isdecimal` and :meth:`isdigit`.
 
 
 .. method:: str.isprintable()
@@ -2370,7 +2391,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a prefix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.lstrip()
@@ -2573,7 +2595,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a suffix; rather, all combinations of its values are stripped.
    For example:
 
@@ -2610,7 +2633,9 @@ expression support in the :mod:`re` module).
    :func:`re.split`). Splitting an empty string with a specified separator
    returns ``['']``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1,2,3'.split(',')
       ['1', '2', '3']
@@ -2628,7 +2653,9 @@ expression support in the :mod:`re` module).
    string or a string consisting of just whitespace with a ``None`` separator
    returns ``[]``.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> '1 2 3'.split()
       ['1', '2', '3']
@@ -2640,7 +2667,9 @@ expression support in the :mod:`re` module).
    If *sep* is not specified or is ``None`` and  *maxsplit* is ``0``, only
    leading runs of consecutive whitespace are considered.
 
-   For example::
+   For example:
+
+   .. doctest::
 
       >>> "".split(None, 0)
       []
@@ -2649,7 +2678,7 @@ expression support in the :mod:`re` module).
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
 
-   See also :meth:`join`.
+   See also :meth:`join` and :meth:`rsplit`.
 
 
 .. index::
@@ -2743,9 +2772,9 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
-   If omitted or ``None``, the *chars* argument defaults to removing whitespace.
-   The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped.
+   If omitted or ``None``, the *chars* argument defaults to removing whitespace,
+   that is characters for which :meth:`str.isspace` is true.  The *chars* argument
+   is not a prefix or suffix; rather, all combinations of its values are stripped.
 
    For example:
 
@@ -4584,6 +4613,9 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
+   :class:`!memoryview`\s are :ref:`generic <generics>` over the type of their
+   underlying data.
+
    ``len(view)`` is equal to the length of :meth:`~memoryview.tolist`, which
    is the nested list representation of the view. If ``view.ndim = 1``,
    this is equal to the number of elements in the view.
@@ -5277,6 +5309,8 @@ Note, the *elem* argument to the :meth:`~object.__contains__`,
 :meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
+Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
+
 .. seealso::
 
    For detailed information on thread-safety guarantees for :class:`set`
@@ -5379,6 +5413,9 @@ can be used interchangeably to index the same dictionary entry.
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
       an implementation detail of CPython from 3.6.
+
+   Dictionaries are :ref:`generic <generics>` over two types, signifying
+   (respectively) the types of the dictionary's keys and values.
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
@@ -5717,6 +5754,16 @@ Frozen dictionaries
    :class:`!frozendict` is not a :class:`!dict` subclass but inherits directly
    from ``object``.
 
+   Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
+   signifying (respectively) the types of the frozendict's keys and values.
+
+   .. classmethod:: fromkeys(iterable, value=None, /)
+
+      Similar to :meth:`dict.fromkeys`, but call again the type constructor
+      with an initialized :class:`frozendict` if the type is a
+      :class:`frozendict` subclass or if the constructor returned a
+      :class:`frozendict`.
+
    .. versionadded:: 3.15
 
 
@@ -5858,7 +5905,8 @@ type and the :class:`bytes` data type:
 
 ``GenericAlias`` objects are instances of the class
 :class:`types.GenericAlias`, which can also be used to create ``GenericAlias``
-objects directly.
+objects directly. Specializations of user-defined :ref:`generic classes <generic-classes>`
+may not be instances of :class:`types.GenericAlias`, but they provide similar functionality.
 
 .. describe:: T[X, Y, ...]
 
@@ -5906,6 +5954,15 @@ creation::
    >>> l = t()
    >>> type(l)
    <class 'list'>
+
+
+Instances of ``GenericAlias`` are not classes at runtime, even though they behave like classes (they can be instantiated and subclassed)::
+
+   >>> import inspect
+   >>> inspect.isclass(list[int])
+   False
+
+This is true for :ref:`user-defined generics <user-defined-generics>` also.
 
 Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
 

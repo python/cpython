@@ -59,10 +59,7 @@ CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
-HAS_KEYLOG = hasattr(ssl.SSLContext, 'keylog_filename')
-requires_keylog = unittest.skipUnless(
-    HAS_KEYLOG, 'test requires OpenSSL 1.1.1 with keylog callback')
-CAN_SET_KEYLOG = HAS_KEYLOG and os.name != "nt"
+CAN_SET_KEYLOG = (os.name != "nt")
 requires_keylog_setter = unittest.skipUnless(
     CAN_SET_KEYLOG,
     "cannot set 'keylog_filename' on Windows"
@@ -638,6 +635,7 @@ class BasicSocketTests(unittest.TestCase):
             del ss
         self.assertEqual(wr(), None)
 
+    @unittest.skipIf(sys.platform == 'cygwin', 'test hangs on Cygwin')
     def test_wrapped_unconnected(self):
         # Methods on an unconnected SSLSocket propagate the original
         # OSError raise by the underlying socket object.
@@ -1605,6 +1603,59 @@ class ContextTests(unittest.TestCase):
         del ctx, dummycallback
         gc.collect()
         self.assertIs(wr(), None)
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "test is only useful if the GIL is disabled")
+    @threading_helper.requires_working_threading()
+    def test_sni_callback_race(self):
+        # Replacing sni_callback while handshakes are in-flight must not
+        # crash (use-after-free on the callback in free-threaded builds).
+        client_ctx, server_ctx, hostname = testing_context()
+
+        server_ctx.sni_callback = lambda *a: None
+        done = threading.Event()
+
+        def do_handshakes():
+            while not done.is_set():
+                c_in = ssl.MemoryBIO()
+                c_out = ssl.MemoryBIO()
+                s_in = ssl.MemoryBIO()
+                s_out = ssl.MemoryBIO()
+                client = client_ctx.wrap_bio(
+                    c_in, c_out, server_hostname=hostname)
+                server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+                for _ in range(50):
+                    try:
+                        client.do_handshake()
+                    except ssl.SSLWantReadError:
+                        pass
+                    except ssl.SSLError:
+                        break
+                    if c_out.pending:
+                        s_in.write(c_out.read())
+                    try:
+                        server.do_handshake()
+                    except ssl.SSLWantReadError:
+                        pass
+                    except ssl.SSLError:
+                        break
+                    if s_out.pending:
+                        c_in.write(s_out.read())
+
+        def toggle_callback():
+            while not done.is_set():
+                server_ctx.sni_callback = lambda *a: None
+                server_ctx.sni_callback = None
+
+        workers = max(4, (os.cpu_count() or 4) * 2)
+        threads = [threading.Thread(target=do_handshakes)
+                   for _ in range(workers)]
+        threads.append(threading.Thread(target=toggle_callback))
+
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                done.set()
+            self.assertIsNone(cm.exc_value)
 
     def test_cert_store_stats(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -2843,6 +2894,36 @@ class ThreadedEchoServer(threading.Thread):
     def stop(self):
         self.active = False
 
+class TestEOFServer(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.listening = threading.Event()
+        self.address = None
+
+    def run(self):
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(CERTFILE)
+        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        with server_sock:
+            server_sock.settimeout(support.SHORT_TIMEOUT)
+            server_sock.bind((HOST, 0))
+            server_sock.listen(5)
+
+            self.address = server_sock.getsockname()
+            self.listening.set()
+
+            sock, addr = server_sock.accept()
+            sslconn = context.wrap_socket(sock, server_side=True)
+            with sslconn:
+                request = b''
+                while chunk := sslconn.recv(1024):
+                    request += chunk
+                    if b'\n' in chunk:
+                        break
+
+                sslconn.sendall(b'server\n')
+                sslconn.shutdown(socket.SHUT_WR)
+
 class AsyncoreEchoServer(threading.Thread):
 
     # this one's based on asyncore.dispatcher
@@ -3548,7 +3629,7 @@ class ThreadedTests(unittest.TestCase):
                 OSError,
                 'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA|'
                 'closed by the remote host|Connection reset by peer|'
-                'Broken pipe'
+                'Broken pipe|Software caused connection abort'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -4502,6 +4583,8 @@ class ThreadedTests(unittest.TestCase):
             ssl.SSLError,
             # On handshake failures, some systems raise a ConnectionResetError.
             ConnectionResetError,
+            # On handshake failures, Cygwin raises ConnectionAbortedError.
+            ConnectionAbortedError,
             # On handshake failures, macOS may raise a BrokenPipeError.
             # See https://github.com/python/cpython/issues/139504.
             BrokenPipeError,
@@ -4674,7 +4757,9 @@ class ThreadedTests(unittest.TestCase):
                                            sni_name='supermessage')
 
             # Allow for flexible libssl error messages.
-            regex = "(SSLV3_ALERT_HANDSHAKE_FAILURE|NO_PRIVATE_VALUE)"
+            regex = ("(TLS_ALERT_HANDSHAKE_FAILURE"
+                     "|SSLV3_ALERT_HANDSHAKE_FAILURE"
+                     "|NO_PRIVATE_VALUE)")
             self.assertRegex(cm.exception.reason, regex)
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
@@ -4999,6 +5084,50 @@ class ThreadedTests(unittest.TestCase):
                     if cm.exc_value is not None:
                         raise cm.exc_value
 
+    def test_got_eof(self):
+        # gh-148292: Test that _ssl._SSLSocket behaves the same on all OpenSSL
+        # versions on calling methods after EOF (after the first SSLEOFError).
+
+        server = TestEOFServer()
+        server.start()
+        if not server.listening.wait(support.SHORT_TIMEOUT):
+            raise RuntimeError("server took too long")
+        self.addCleanup(server.join)
+
+        context = ssl.create_default_context(cafile=CERTFILE)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(support.SHORT_TIMEOUT)
+        sock.connect(server.address)
+        sslsock = context.wrap_socket(sock, server_hostname='localhost')
+        with sslsock:
+            sslsock.sendall(b'client\n')
+            # test the _ssl._SSLSocket object, not ssl.SSLSocket
+            sslobj = sslsock._sslobj
+
+            data = sslobj.read(1024)
+            self.assertEqual(data, b'server\n')
+
+            # The second read gets EOF error and sets got_eof_error to 1
+            with self.assertRaises(ssl.SSLEOFError):
+                sslobj.read(1024)
+
+            # Following read(), sendfile(), write() and do_handshake() calls
+            # must raise SSLEOFError
+            with self.assertRaises(ssl.SSLEOFError):
+                # The _SSLSocket remembers the previous EOF error
+                # and raises again SSLEOFError
+                sslobj.read(1024)
+            if hasattr(sslobj, 'sendfile'):
+                with open(__file__, "rb") as fp:
+                    with self.assertRaises(ssl.SSLEOFError):
+                        sslobj.sendfile(fp.fileno(), 0, 1)
+            with self.assertRaises(ssl.SSLEOFError):
+                sslobj.write(b'client2\n')
+            with self.assertRaises(ssl.SSLEOFError):
+                sslsock.do_handshake()
+
+            self.assertEqual(sslsock.pending(), 0)
+
 
 @unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
                      "Test needs TLS 1.3 PHA")
@@ -5321,7 +5450,6 @@ class TestSSLDebug(unittest.TestCase):
         with open(fname) as f:
             return len(list(f))
 
-    @requires_keylog
     def test_keylog_defaults(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -5349,7 +5477,6 @@ class TestSSLDebug(unittest.TestCase):
         with self.assertRaises(TypeError):
             ctx.keylog_filename = 1
 
-    @requires_keylog
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
@@ -5390,7 +5517,6 @@ class TestSSLDebug(unittest.TestCase):
         client_context.keylog_filename = None
         server_context.keylog_filename = None
 
-    @requires_keylog
     @unittest.skipIf(sys.flags.ignore_environment,
                      "test is not compatible with ignore_environment")
     def test_keylog_env(self):
@@ -5564,17 +5690,29 @@ class TestPreHandshakeClose(unittest.TestCase):
     def non_linux_skip_if_other_okay_error(self, err):
         if sys.platform in ("linux", "android"):
             return  # Expect the full test setup to always work on Linux.
-        if (isinstance(err, ConnectionResetError) or
+        if (isinstance(err, (ConnectionResetError, ConnectionAbortedError)) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
-            re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I)):
+            re.search(
+                # Matches the following error messages:
+                # '[SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1123)'
+                # '[SSL: RECORD_LAYER_FAILURE] record layer failure (_ssl.c:1109)'
+                # '[SSL: HTTP_REQUEST] http request (_ssl.c:1143)'
+                r'wrong.version.number|record.layer.failure|http.request',
+                str(getattr(err, "reason", "")),
+                re.IGNORECASE,
+            )
+        ):
             # On Windows the TCP RST leads to a ConnectionResetError
             # (ECONNRESET) which Linux doesn't appear to surface to userspace.
             # If wrap_socket() winds up on the "if connected:" path and doing
-            # the actual wrapping... we get an SSLError from OpenSSL. Typically
-            # WRONG_VERSION_NUMBER. While appropriate, neither is the scenario
-            # we're specifically trying to test. The way this test is written
-            # is known to work on Linux. We'll skip it anywhere else that it
-            # does not present as doing so.
+            # the actual wrapping... we get an SSLError from OpenSSL. This is
+            # typically WRONG_VERSION_NUMBER. The same happens on iOS, but
+            # RECORD_LAYER_FAILURE or HTTP_REQUEST is the error.
+            #
+            # While appropriate, these scenarios aren't what we're specifically
+            # trying to test. The way this test is written is known to work on
+            # Linux. We'll skip it anywhere else that it does not present as
+            # doing so.
             try:
                 self.skipTest(f"Could not recreate conditions on {sys.platform}:"
                               f" {err=}")

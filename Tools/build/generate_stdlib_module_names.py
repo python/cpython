@@ -42,6 +42,7 @@ IGNORE = {
     'test',
     'xxlimited',
     'xxlimited_35',
+    'xxlimited_3_13',
     'xxsubtype',
 }
 

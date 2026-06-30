@@ -5,7 +5,8 @@ on:
     types:
       - opened
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   notify-new-bugs-announce:

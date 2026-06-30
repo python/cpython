@@ -11,7 +11,8 @@ on:
     - 'main'
     - '3.*'
 
-permissions: {}
+permissions:
+  contents: read
 
 concurrency:
   # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
@@ -205,16 +206,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-26 is Apple Silicon, macos-15-intel is Intel.
-        # macos-15-intel only runs tests against the GIL-enabled CPython.
+        # macos-26 is Apple Silicon, macos-26-intel is Intel.
+        # macos-26-intel only runs tests against the GIL-enabled CPython.
         os:
         - macos-26
-        - macos-15-intel
+        - macos-26-intel
         free-threading:
         - false
         - true
         exclude:
-        - os: macos-15-intel
+        - os: macos-26-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
@@ -277,13 +278,13 @@ jobs:
           # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
           # supported by important vendors such as AWS-LC.
           - { name: openssl, version: 1.1.1w }
-          - { name: openssl, version: 3.0.19 }
-          - { name: openssl, version: 3.3.6 }
-          - { name: openssl, version: 3.4.4 }
-          - { name: openssl, version: 3.5.5 }
-          - { name: openssl, version: 3.6.1 }
+          - { name: openssl, version: 3.0.21 }
+          - { name: openssl, version: 3.4.6 }
+          - { name: openssl, version: 3.5.7 }
+          - { name: openssl, version: 3.6.3 }
+          - { name: openssl, version: 4.0.1 }
           ## AWS-LC
-          - { name: aws-lc, version: 1.68.0 }
+          - { name: aws-lc, version: 5.0.0 }
     env:
       SSLLIB_VER: ${{ matrix.ssllib.version }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -353,7 +354,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
     name: iOS
@@ -397,7 +398,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.5.5
+      OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -505,7 +506,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.5.5
+      OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -600,6 +601,9 @@ jobs:
         run: ./configure --prefix="$BUILD_DIR/cross-python" --with-build-python="$BUILD_DIR/host-python/bin/python3"
       - name: Install cross Python
         run: make -j8 install
+      - name: Display build info
+        run: |
+          "$BUILD_DIR/cross-python/bin/python3" -m test.pythoninfo
       - name: Run test subset with host build
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
@@ -612,6 +616,7 @@ jobs:
       needs.build-context.outputs.run-ci-fuzz == 'true'
       || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
     permissions:
+      contents: read
       security-events: write
     strategy:
       fail-fast: false

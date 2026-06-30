@@ -23,7 +23,8 @@ on:
          type: string
          default: ''
 
-permissions: {}
+permissions:
+  contents: read
 
 env:
   FORCE_COLOR: 1
@@ -34,7 +35,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
-      OPENSSL_VER: 3.5.5
+      OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:

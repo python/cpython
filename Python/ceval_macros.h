@@ -168,7 +168,6 @@
 #define STOP_TRACING() ((void)(0));
 #endif
 
-
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
@@ -199,7 +198,7 @@ do { \
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
-        assert(frame->stackpointer == NULL); \
+        _PyFrame_StackAssertInvalid(frame); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -207,7 +206,7 @@ do { \
 
 #define DISPATCH_NON_TRACING() \
     { \
-        assert(frame->stackpointer == NULL); \
+        _PyFrame_StackAssertInvalid(frame); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO_NON_TRACING(); \
@@ -220,14 +219,15 @@ do { \
         DISPATCH_GOTO_NON_TRACING(); \
     }
 
-#define DISPATCH_INLINED(NEW_FRAME)                     \
-    do {                                                \
-        assert(tstate->interp->eval_frame == NULL);     \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        assert((NEW_FRAME)->previous == frame);         \
-        frame = tstate->current_frame = (NEW_FRAME);     \
-        CALL_STAT_INC(inlined_py_calls);                \
-        JUMP_TO_LABEL(start_frame);                      \
+#define DISPATCH_INLINED(NEW_FRAME)                              \
+    do {                                                         \
+        assert(!IS_PEP523_HOOKED(tstate));                       \
+        _PyFrame_SetStackPointer(frame, stack_pointer);          \
+        _PyFrame_StackPointerValidate(frame);                    \
+        assert((NEW_FRAME)->previous == frame);                  \
+        frame = tstate->current_frame = (NEW_FRAME);             \
+        CALL_STAT_INC(inlined_py_calls);                         \
+        JUMP_TO_LABEL(start_frame);                              \
     } while (0)
 
 /* Tuple access macros */
@@ -269,10 +269,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #if defined(Py_DEBUG) && !defined(_Py_JIT)
 // This allows temporary stack "overflows", provided it's all in the cache at any point of time.
-#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
-   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+#define ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(F, L) \
+   assert(frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
 #else
-#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
+#define ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE ASSERT_WITHIN_STACK_BOUNDS
 #endif
 
 /* Data access macros */
@@ -291,7 +291,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {       \
+        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {      \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
     } while (0)
@@ -329,10 +329,23 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
 
+#if defined(WITH_DTRACE) && !defined(Py_BUILD_CORE_MODULE)
+static void dtrace_function_entry(_PyInterpreterFrame *);
+static void dtrace_function_return(_PyInterpreterFrame *);
+
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
         dtrace_function_entry(frame); \
     }
+
+#define DTRACE_FUNCTION_RETURN() \
+    if (PyDTrace_FUNCTION_RETURN_ENABLED()) { \
+        dtrace_function_return(frame); \
+    }
+#else
+#define DTRACE_FUNCTION_ENTRY() ((void)0)
+#define DTRACE_FUNCTION_RETURN() ((void)0)
+#endif
 
 /* This takes a uint16_t instead of a _Py_BackoffCounter,
  * because it is used directly on the cache entry in generated code,
@@ -376,14 +389,15 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 // for an exception handler, displaying the traceback, and so on
 #define INSTRUMENTED_JUMP(src, dest, event) \
 do { \
+    _Py_CODEUNIT *_dest = (dest); \
     if (tstate->tracing) {\
-        next_instr = dest; \
+        next_instr = _dest; \
     } else { \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        next_instr = _Py_call_instrumentation_jump(this_instr, tstate, event, frame, src, dest); \
+        next_instr = _Py_call_instrumentation_jump(this_instr, tstate, event, frame, src, _dest); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
-            next_instr = (dest)+1; \
+            next_instr = _dest + 1; \
             JUMP_TO_LABEL(error); \
         } \
     } \
@@ -563,6 +577,30 @@ gen_try_set_executing(PyGenObject *gen)
             ->ob_fval = _dres;                                           \
     } while (0)
 
+// Inplace float true division. Sets _divop_err to 1 on zero division.
+// Caller must check _divop_err and call ERROR_NO_POP() if set.
+#define FLOAT_INPLACE_DIVOP(left, right, TARGET)                         \
+    int _divop_err = 0;                                                  \
+    do {                                                                 \
+        PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);            \
+        PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);          \
+        assert(PyFloat_CheckExact(left_o));                              \
+        assert(PyFloat_CheckExact(right_o));                             \
+        assert(_PyObject_IsUniquelyReferenced(                           \
+            PyStackRef_AsPyObjectBorrow(TARGET)));                       \
+        STAT_INC(BINARY_OP, hit);                                        \
+        double _divisor = ((PyFloatObject *)right_o)->ob_fval;           \
+        if (_divisor == 0.0) {                                           \
+            PyErr_SetString(PyExc_ZeroDivisionError,                     \
+                            "float division by zero");                   \
+            _divop_err = 1;                                              \
+            break;                                                       \
+        }                                                                \
+        double _dres = ((PyFloatObject *)left_o)->ob_fval / _divisor;    \
+        ((PyFloatObject *)PyStackRef_AsPyObjectBorrow(TARGET))           \
+            ->ob_fval = _dres;                                           \
+    } while (0)
+
 // Inplace compact int operation. TARGET is expected to be uniquely
 // referenced at the optimizer level, but at runtime it may be a
 // cached small int singleton. We check _Py_IsImmortal on TARGET
@@ -605,3 +643,5 @@ gen_try_set_executing(PyGenObject *gen)
             (PyLongObject *)PyStackRef_AsPyObjectBorrow(right));         \
     }
 
+#define CALL_TP_ITERITEM_NO_ESCAPE(ITER, INDEX) \
+    Py_TYPE(ITER)->_tp_iteritem((ITER), (INDEX))

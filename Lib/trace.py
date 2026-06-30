@@ -604,7 +604,7 @@ class Trace:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version='trace 2.0')
 
     grp = parser.add_argument_group('Main options',
@@ -612,27 +612,27 @@ def main():
 
     grp.add_argument('-c', '--count', action='store_true',
             help='Count the number of times each line is executed and write '
-                 'the counts to <module>.cover for each module executed, in '
-                 'the module\'s directory. See also --coverdir, --file, '
-                 '--no-report below.')
+                 'the counts to `<module>.cover` for each module executed, in '
+                 'the module\'s directory. See also `--coverdir`, `--file`, '
+                 '`--no-report` below.')
     grp.add_argument('-t', '--trace', action='store_true',
-            help='Print each line to sys.stdout before it is executed')
+            help='Print each line to `sys.stdout` before it is executed')
     grp.add_argument('-l', '--listfuncs', action='store_true',
             help='Keep track of which functions are executed at least once '
-                 'and write the results to sys.stdout after the program exits. '
-                 'Cannot be specified alongside --trace or --count.')
+                 'and write the results to `sys.stdout` after the program exits. '
+                 'Cannot be specified alongside `--trace` or `--count`.')
     grp.add_argument('-T', '--trackcalls', action='store_true',
             help='Keep track of caller/called pairs and write the results to '
-                 'sys.stdout after the program exits.')
+                 '`sys.stdout` after the program exits.')
 
     grp = parser.add_argument_group('Modifiers')
 
     _grp = grp.add_mutually_exclusive_group()
     _grp.add_argument('-r', '--report', action='store_true',
             help='Generate a report from a counts file; does not execute any '
-                 'code. --file must specify the results file to read, which '
-                 'must have been created in a previous run with --count '
-                 '--file=FILE')
+                 'code. `--file` must specify the results file to read, which '
+                 'must have been created in a previous run with `--count` '
+                 '`--file=FILE`')
     _grp.add_argument('-R', '--no-report', action='store_true',
             help='Do not generate the coverage report files. '
                  'Useful if you want to accumulate over several runs.')
@@ -641,14 +641,14 @@ def main():
             help='File to accumulate counts over several runs')
     grp.add_argument('-C', '--coverdir',
             help='Directory where the report files go. The coverage report '
-                 'for <package>.<module> will be written to file '
-                 '<dir>/<package>/<module>.cover')
+                 'for `<package>.<module>` will be written to file '
+                 '`<dir>/<package>/<module>.cover`')
     grp.add_argument('-m', '--missing', action='store_true',
             help='Annotate executable lines that were not executed with '
                  '">>>>>> "')
     grp.add_argument('-s', '--summary', action='store_true',
-            help='Write a brief summary for each file to sys.stdout. '
-                 'Can only be used with --count or --report')
+            help='Write a brief summary for each file to `sys.stdout`. '
+                 'Can only be used with `--count` or `--report`')
     grp.add_argument('-g', '--timing', action='store_true',
             help='Prefix each line with the time since the program started. '
                  'Only used while tracing')
@@ -661,7 +661,7 @@ def main():
                  'module names.')
     grp.add_argument('--ignore-dir', action='append', default=[],
             help='Ignore files in the given directory '
-                 '(multiple directories can be joined by os.pathsep).')
+                 '(multiple directories can be joined by `os.pathsep`).')
 
     parser.add_argument('--module', action='store_true', default=False,
                         help='Trace a module. ')

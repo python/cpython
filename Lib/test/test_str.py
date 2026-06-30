@@ -607,6 +607,21 @@ class StrTest(string_tests.StringLikeTest,
         text = 'abc def'
         self.assertIs(text.replace(pattern, pattern), text)
 
+    @support.nomemtest
+    def test_replace_oom(self):
+        # https://github.com/python/cpython/issues/152228
+        s1 = "轘" * 4
+        s2 = "&"
+        s3 = "&amp;"
+        assertion = self.assertRaises(MemoryError)
+        _testcapi.set_nomemory(0, 0)
+        try:
+            # No allocations made in the test itself:
+            with assertion:
+                s1.replace(s2, s3)  # this line used to crash before
+        finally:
+            _testcapi.remove_mem_hooks()
+
     def test_repeat_id_preserving(self):
         a = '123abc1@'
         b = '456zyx-+'

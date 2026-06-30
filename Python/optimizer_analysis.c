@@ -18,6 +18,7 @@
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_uop_metadata.h"
 #include "pycore_long.h"
@@ -119,14 +120,15 @@ static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return (d->_ma_watcher_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+    uint64_t tag = FT_ATOMIC_LOAD_UINT64_RELAXED(d->_ma_watcher_tag);
+    return (tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS) - 1);
 }
 
 static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    d->_ma_watcher_tag += (1 << DICT_MAX_WATCHERS);
+    FT_ATOMIC_ADD_UINT64(d->_ma_watcher_tag, 1ULL << DICT_MAX_WATCHERS);
 }
 
 /* The first two dict watcher IDs are reserved for CPython,
@@ -153,6 +155,27 @@ type_watcher_callback(PyTypeObject* type)
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), type, 1);
     PyType_Unwatch(TYPE_WATCHER_ID, (PyObject *)type);
     return 0;
+}
+
+static int
+_setup_optimizer_watchers(void *Py_UNUSED(arg))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_ATOMIC_STORE_PTR_RELEASE(
+        interp->dict_state.watchers[GLOBALS_WATCHER_ID],
+        globals_watcher_callback);
+    interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
+    return 0;
+}
+
+static void
+watch_type(PyTypeObject *type, _PyBloomFilter *filter)
+{
+    if (_Py_IsImmortal(type) && (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+        return;
+    }
+    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+    _Py_BloomFilter_Add(filter, type);
 }
 
 static PyObject *
@@ -234,6 +257,9 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     out->target = this_instr->target;
     out->operand0 = (operand0);
     out->operand1 = this_instr->operand1;
+#ifdef Py_STATS
+    out->fitness = this_instr->fitness;
+#endif
     ctx->out_buffer.next++;
 }
 
@@ -256,6 +282,7 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_get_probable_type _Py_uop_sym_get_probable_type
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_matches_type_version _Py_uop_sym_matches_type_version
+#define sym_get_type_version _Py_uop_sym_get_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
@@ -282,8 +309,6 @@ add_op(JitOptContext *ctx, _PyUOpInstruction *this_instr,
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
 #define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
-#define sym_get_func_version _Py_uop_sym_get_func_version
-#define sym_set_func_version _Py_uop_sym_set_func_version
 
 /* Comparison oparg masks */
 #define COMPARE_LT_MASK 2
@@ -364,8 +389,7 @@ optimize_dict_known_hash(
         // for user-defined objects which don't override tp_hash
         Py_hash_t hash = PyObject_Hash(sub);
         ADD_OP(opcode, 0, hash);
-        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)Py_TYPE(sub));
-        _Py_BloomFilter_Add(dependencies, Py_TYPE(sub));
+        watch_type(Py_TYPE(sub), dependencies);
     }
 }
 
@@ -397,8 +421,9 @@ lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction 
             if (suffix != _NOP) {
                 ADD_OP(suffix, 2, 0);
             }
-            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-            _Py_BloomFilter_Add(dependencies, type);
+            if ((type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+                watch_type(type, dependencies);
+            }
             return sym_new_const(ctx, lookup);
         }
     }
@@ -466,10 +491,11 @@ lookup_super_attr(JitOptContext *ctx, _PyBloomFilter *dependencies,
     if (suffix != _NOP) {
         ADD_OP(suffix, 2, 0);
     }
-    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)su_type);
-    _Py_BloomFilter_Add(dependencies, su_type);
-    PyType_Watch(TYPE_WATCHER_ID, (PyObject *)obj_type);
-    _Py_BloomFilter_Add(dependencies, obj_type);
+    // if obj_type is immutable, then all its superclasses are immutable
+    if ((obj_type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+        watch_type(su_type, dependencies);
+        watch_type(obj_type, dependencies);
+    }
     return sym_new_const_steal(ctx, lookup);
 }
 
@@ -566,10 +592,8 @@ optimize_uops(
 
     // Make sure that watchers are set up
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
-        interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
-        interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
-    }
+    _PyOnceFlag_CallOnce(&interp->dict_state.watcher_setup_once,
+                         _setup_optimizer_watchers, NULL);
 
     _Py_uop_abstractcontext_init(ctx, dependencies);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, NULL, 0);

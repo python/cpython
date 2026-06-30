@@ -20,6 +20,7 @@
 #include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_jit_unwind.h"    // _Py_jit_debug_mutex
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -757,6 +758,13 @@ PyOS_AfterFork_Child(void)
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
+
+#if defined(PY_HAVE_JIT_GDB_UNWIND)
+    // The child can inherit this mutex locked if another thread held it at
+    // fork(), but the child itself cannot be inside gdb_jit_register_code().
+    // Reinitialize it before any executor cleanup can unregister JIT code.
+    _Py_jit_debug_mutex = (PyMutex){0};
+#endif
 
     reset_remotedebug_data(tstate);
 
@@ -2357,7 +2365,7 @@ PyDoc_STRVAR(stat_result__doc__,
 "stat_result: Result from stat, fstat, or lstat.\n\n\
 This object may be accessed either as a tuple of\n\
   (mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime)\n\
-or via the attributes st_mode, st_ino, st_dev, st_nlink, st_uid, and so on.\n\
+or via the attributes st_mode, st_ino, st_dev, st_nlink, and so on.\n\
 \n\
 Posix/windows: If your platform supports st_blksize, st_blocks, st_rdev,\n\
 or st_flags, they are available as attributes only.\n\
@@ -3115,7 +3123,7 @@ class path_t_converter(CConverter):
     impl_by_reference = True
     parse_by_reference = True
     default_type = ()
-    c_init_default = "<placeholder>"  # overridden in pre_render(()
+    c_init_default = "<placeholder>"  # overridden in pre_render()
 
     converter = 'path_converter'
 
@@ -3258,7 +3266,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d58f18bdf3bd3565]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ddbf3ac90a981122]*/
 
 /*[clinic input]
 
@@ -3917,14 +3925,14 @@ os.chdir
 
 Change the current working directory to the specified path.
 
-path may always be specified as a string.
-On some platforms, path may also be specified as an open file descriptor.
-If this functionality is unavailable, using it raises an exception.
+path may always be specified as a string.  On some platforms, path may
+also be specified as an open file descriptor.  If this functionality is
+unavailable, using it raises an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3be6400eee26eaae input=a74ceab5d72adf74]*/
+/*[clinic end generated code: output=3be6400eee26eaae input=64673c342e4369f1]*/
 {
     int result;
 
@@ -4037,15 +4045,16 @@ win32_fchmod(int fd, int mode)
 os.chmod
 
     path: path_t(allow_fd='PATH_HAVE_FCHMOD')
-        Path to be modified.  May always be specified as a str, bytes, or a path-like object.
-        On some platforms, path may also be specified as an open file descriptor.
-        If this functionality is unavailable, using it raises an exception.
+        Path to be modified.  May always be specified as a str, bytes, or
+        a path-like object.  On some platforms, path may also be specified
+        as an open file descriptor.  If this functionality is unavailable,
+        using it raises an exception.
 
     mode: int
         Operating-system mode bitfield.
-        Be careful when using number literals for *mode*. The conventional UNIX notation for
-        numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in
-        Python.
+        Be careful when using number literals for *mode*. The conventional
+        UNIX notation for numeric modes uses an octal base, which needs to
+        be indicated with a ``0o`` prefix in Python.
 
     *
 
@@ -4072,7 +4081,7 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks)
-/*[clinic end generated code: output=5cf6a94915cc7bff input=fcf115d174b9f3d8]*/
+/*[clinic end generated code: output=5cf6a94915cc7bff input=7b6e2eeadd8bf199]*/
 {
     int result;
 
@@ -4208,9 +4217,9 @@ os.fchmod
         The file descriptor of the file to be modified.
     mode: int
         Operating-system mode bitfield.
-        Be careful when using number literals for *mode*. The conventional UNIX notation for
-        numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in
-        Python.
+        Be careful when using number literals for *mode*.  The conventional
+        UNIX notation for numeric modes uses an octal base, which needs to
+        be indicated with a ``0o`` prefix in Python.
 
 Change the access permissions of the file given by file descriptor fd.
 
@@ -4219,7 +4228,7 @@ Equivalent to os.chmod(fd, mode).
 
 static PyObject *
 os_fchmod_impl(PyObject *module, int fd, int mode)
-/*[clinic end generated code: output=afd9bc05b4e426b3 input=b5594618bbbc22df]*/
+/*[clinic end generated code: output=afd9bc05b4e426b3 input=d24331f9fdc17f49]*/
 {
     int res;
 
@@ -4253,6 +4262,7 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
 
 #if defined(HAVE_LCHMOD) || defined(MS_WINDOWS)
 /*[clinic input]
+@permit_long_summary
 os.lchmod
 
     path: path_t
@@ -4260,13 +4270,13 @@ os.lchmod
 
 Change the access permissions of a file, without following symbolic links.
 
-If path is a symlink, this affects the link itself rather than the target.
-Equivalent to chmod(path, mode, follow_symlinks=False)."
+If path is a symlink, this affects the link itself rather than the
+target.  Equivalent to chmod(path, mode, follow_symlinks=False).
 [clinic start generated code]*/
 
 static PyObject *
 os_lchmod_impl(PyObject *module, path_t *path, int mode)
-/*[clinic end generated code: output=082344022b51a1d5 input=90c5663c7465d24f]*/
+/*[clinic end generated code: output=082344022b51a1d5 input=13110fb62911b015]*/
 {
     int res;
     if (PySys_Audit("os.chmod", "Oii", path->object, mode, -1) < 0) {
@@ -4304,9 +4314,9 @@ os.chflags
 
 Set file flags.
 
-If follow_symlinks is False, and the last element of the path is a symbolic
-  link, chflags will change flags on the symbolic link itself instead of the
-  file the link points to.
+If follow_symlinks is False, and the last element of the path is
+a symbolic link, chflags() will change flags on the symbolic link itself
+instead of the file the link points to.
 follow_symlinks may not be implemented on your platform.  If it is
 unavailable, using it will raise a NotImplementedError.
 
@@ -4315,7 +4325,7 @@ unavailable, using it will raise a NotImplementedError.
 static PyObject *
 os_chflags_impl(PyObject *module, path_t *path, unsigned long flags,
                 int follow_symlinks)
-/*[clinic end generated code: output=85571c6737661ce9 input=0327e29feb876236]*/
+/*[clinic end generated code: output=85571c6737661ce9 input=31391927707be1de]*/
 {
     int result;
 
@@ -4465,7 +4475,8 @@ os_fdatasync_impl(PyObject *module, int fd)
 os.chown
 
     path : path_t(allow_fd='PATH_HAVE_FCHOWN')
-        Path to be examined; can be string, bytes, a path-like object, or open-file-descriptor int.
+        Path to be examined; can be string, bytes, a path-like object, or
+        open-file-descriptor int.
 
     uid: uid_t
 
@@ -4473,7 +4484,7 @@ os.chown
 
     *
 
-    dir_fd : dir_fd(requires='fchownat') = None
+    dir_fd: dir_fd(requires='fchownat') = None
         If not None, it should be a file descriptor open to a directory,
         and path should be relative; path will then be relative to that
         directory.
@@ -4483,27 +4494,28 @@ os.chown
         stat will examine the symbolic link itself instead of the file
         the link points to.
 
-Change the owner and group id of path to the numeric uid and gid.\
+Change the owner and group id of path to the numeric uid and gid.
 
-path may always be specified as a string.
-On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
-If follow_symlinks is False, and the last element of the path is a symbolic
-  link, chown will modify the symbolic link itself instead of the file the
-  link points to.
+path may always be specified as a string.  On some platforms, path may
+also be specified as an open file descriptor.  If this functionality is
+unavailable, using it raises an exception.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative to
+that directory.
+If follow_symlinks is False, and the last element of the path is
+a symbolic link, chown will modify the symbolic link itself instead of
+the file the link points to.
 It is an error to use dir_fd or follow_symlinks when specifying path as
-  an open file descriptor.
-dir_fd and follow_symlinks may not be implemented on your platform.
-  If they are unavailable, using them will raise a NotImplementedError.
+an open file descriptor.
+dir_fd and follow_symlinks may not be implemented on your platform.  If
+they are unavailable, using them will raise a NotImplementedError.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
               int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=4beadab0db5f70cd input=b08c5ec67996a97d]*/
+/*[clinic end generated code: output=4beadab0db5f70cd input=509c91b7a0e72f52]*/
 {
     int result;
 
@@ -4787,7 +4799,6 @@ os_getcwdb_impl(PyObject *module)
 #ifdef HAVE_LINK
 /*[clinic input]
 
-@permit_long_docstring_body
 os.link
 
     src : path_t
@@ -4800,20 +4811,21 @@ os.link
 Create a hard link to a file.
 
 If either src_dir_fd or dst_dir_fd is not None, it should be a file
-  descriptor open to a directory, and the respective path string (src or dst)
-  should be relative; the path will then be relative to that directory.
+descriptor open to a directory, and the respective path string (src or
+dst) should be relative; the path will then be relative to that
+directory.
 If follow_symlinks is False, and the last element of src is a symbolic
-  link, link will create a link to the symbolic link itself instead of the
-  file the link points to.
-src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
-  platform.  If they are unavailable, using them will raise a
-  NotImplementedError.
+link, link will create a link to the symbolic link itself instead of the
+file the link points to.
+src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on
+your platform.  If they are unavailable, using them will raise
+a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7f00f6007fd5269a input=e2a50a6497050e44]*/
+/*[clinic end generated code: output=7f00f6007fd5269a input=a28e6866fbd20a01]*/
 {
 #ifdef MS_WINDOWS
     BOOL result = FALSE;
@@ -5107,30 +5119,28 @@ exit:
 
 
 /*[clinic input]
-@permit_long_docstring_body
 os.listdir
 
     path : path_t(nullable=True, allow_fd='PATH_HAVE_FDOPENDIR') = None
 
 Return a list containing the names of the files in the directory.
 
-path can be specified as either str, bytes, or a path-like object.  If path is bytes,
-  the filenames returned will also be bytes; in all other circumstances
-  the filenames returned will be str.
+path can be specified as either str, bytes, or a path-like object.  If
+path is bytes, the filenames returned will also be bytes; in all other
+circumstances the filenames returned will be str.
 If path is None, uses the path='.'.
-On some platforms, path may also be specified as an open file descriptor;\
-  the file descriptor must refer to a directory.
-  If this functionality is unavailable, using it raises NotImplementedError.
+On some platforms, path may also be specified as an open file
+descriptor; the file descriptor must refer to a directory.  If this
+functionality is unavailable, using it raises NotImplementedError.
 
 The list is in arbitrary order.  It does not include the special
 entries '.' and '..' even if they are present in the directory.
-
 
 [clinic start generated code]*/
 
 static PyObject *
 os_listdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=293045673fcd1a75 input=0bd1728387391b9a]*/
+/*[clinic end generated code: output=293045673fcd1a75 input=4eefe7c6a42ec9b2]*/
 {
     if (PySys_Audit("os.listdir", "O",
                     path->object ? path->object : Py_None) < 0) {
@@ -5589,6 +5599,7 @@ cleanup:
 }
 
 /*[clinic input]
+@permit_long_summary
 os._findfirstfile
     path: path_t
     /
@@ -5597,7 +5608,7 @@ A function to get the real file name without accessing the file in Windows.
 
 static PyObject *
 os__findfirstfile_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=106dd3f0779c83dd input=0734dff70f60e1a8]*/
+/*[clinic end generated code: output=106dd3f0779c83dd input=48c319aaa48d05d4]*/
 {
     PyObject *result;
     HANDLE hFindFile;
@@ -5688,7 +5699,7 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 
     buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (wcslen(path->wide) + 1));
     if (!buffer) {
-        return NULL;
+        return PyErr_NoMemory();
     }
     wcscpy(buffer, path->wide);
     for (wchar_t *p = wcschr(buffer, L'/'); p; p = wcschr(p, L'/')) {
@@ -6134,6 +6145,9 @@ os__path_normpath_impl(PyObject *module, path_t *path)
     else {
         result = PyUnicode_FromWideChar(norm_path, norm_len);
     }
+    if (result == NULL) {
+        return NULL;
+    }
     if (PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
@@ -6151,22 +6165,21 @@ os.mkdir
 
     dir_fd : dir_fd(requires='mkdirat') = None
 
-# "mkdir(path, mode=0o777, *, dir_fd=None)\n\n\
-
 Create a directory.
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
-dir_fd may not be implemented on your platform.
-  If it is unavailable, using it will raise a NotImplementedError.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative to
+that directory.
+dir_fd may not be implemented on your platform.  If it is unavailable,
+using it will raise a NotImplementedError.
 
-The mode argument is ignored on Windows. Where it is used, the current umask
-value is first masked out.
+The mode argument is ignored on Windows.  Where it is used, the current
+umask value is first masked out.
 [clinic start generated code]*/
 
 static PyObject *
 os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
-/*[clinic end generated code: output=a70446903abe821f input=a61722e1576fab03]*/
+/*[clinic end generated code: output=a70446903abe821f input=30270d369599634b]*/
 {
     int result;
 #ifdef MS_WINDOWS
@@ -6420,7 +6433,6 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
 
 
 /*[clinic input]
-@permit_long_docstring_body
 os.rename
 
     src : path_t
@@ -6432,38 +6444,39 @@ os.rename
 Rename a file or directory.
 
 If either src_dir_fd or dst_dir_fd is not None, it should be a file
-  descriptor open to a directory, and the respective path string (src or dst)
-  should be relative; the path will then be relative to that directory.
+descriptor open to a directory, and the respective path string (src or
+dst) should be relative; the path will then be relative to that
+directory.
 src_dir_fd and dst_dir_fd, may not be implemented on your platform.
-  If they are unavailable, using them will raise a NotImplementedError.
+If they are unavailable, using them will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_rename_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                int dst_dir_fd)
-/*[clinic end generated code: output=59e803072cf41230 input=11aae8c091162766]*/
+/*[clinic end generated code: output=59e803072cf41230 input=7d320d687c715fd6]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 0);
 }
 
 
 /*[clinic input]
-@permit_long_docstring_body
 os.replace = os.rename
 
 Rename a file or directory, overwriting the destination.
 
 If either src_dir_fd or dst_dir_fd is not None, it should be a file
-  descriptor open to a directory, and the respective path string (src or dst)
-  should be relative; the path will then be relative to that directory.
+descriptor open to a directory, and the respective path string (src or
+dst) should be relative; the path will then be relative to that
+directory.
 src_dir_fd and dst_dir_fd, may not be implemented on your platform.
-  If they are unavailable, using them will raise a NotImplementedError.
+If they are unavailable, using them will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_replace_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                 int dst_dir_fd)
-/*[clinic end generated code: output=1968c02e7857422b input=78d6c8087e90994c]*/
+/*[clinic end generated code: output=1968c02e7857422b input=44ed6b762d5953fc]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 1);
 }
@@ -6478,15 +6491,16 @@ os.rmdir
 
 Remove a directory.
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative
+to that directory.
 dir_fd may not be implemented on your platform.
-  If it is unavailable, using it will raise a NotImplementedError.
+If it is unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_rmdir_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=080eb54f506e8301 input=38c8b375ca34a7e2]*/
+/*[clinic end generated code: output=080eb54f506e8301 input=84325211e33a98e0]*/
 {
     int result;
 #ifdef HAVE_UNLINKAT
@@ -6657,16 +6671,17 @@ os.unlink
 
 Remove a file (same as remove()).
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative to
+that directory.
 dir_fd may not be implemented on your platform.
-  If it is unavailable, using it will raise a NotImplementedError.
+If it is unavailable, using it will raise a NotImplementedError.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_unlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=621797807b9963b1 input=d7bcde2b1b2a2552]*/
+/*[clinic end generated code: output=621797807b9963b1 input=1a2ef2579207eab1]*/
 {
     int result;
 #ifdef HAVE_UNLINKAT
@@ -6718,15 +6733,16 @@ os.remove = os.unlink
 
 Remove a file (same as unlink()).
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative
+to that directory.
 dir_fd may not be implemented on your platform.
-  If it is unavailable, using it will raise a NotImplementedError.
+If it is unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_remove_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=a8535b28f0068883 input=e05c5ab55cd30983]*/
+/*[clinic end generated code: output=a8535b28f0068883 input=9f6e66912126bd56]*/
 {
     return os_unlink_impl(module, path, dir_fd);
 }
@@ -7048,38 +7064,37 @@ os.utime
     dir_fd: dir_fd(requires='futimensat') = None
     follow_symlinks: bool=True
 
-# "utime(path, times=None, *[, ns], dir_fd=None, follow_symlinks=True)\n\
-
 Set the access and modified time of path.
 
-path may always be specified as a string.
-On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+path may always be specified as a string.  On some platforms, path may
+also be specified as an open file descriptor.  If this functionality is
+unavailable, using it raises an exception.
 
 If times is not None, it must be a tuple (atime, mtime);
-    atime and mtime should be expressed as float seconds since the epoch.
+atime and mtime should be expressed as float seconds since the epoch.
 If ns is specified, it must be a tuple (atime_ns, mtime_ns);
-    atime_ns and mtime_ns should be expressed as integer nanoseconds
-    since the epoch.
+atime_ns and mtime_ns should be expressed as integer nanoseconds
+since the epoch.
 If times is None and ns is unspecified, utime uses the current time.
 Specifying tuples for both times and ns is an error.
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
-If follow_symlinks is False, and the last element of the path is a symbolic
-  link, utime will modify the symbolic link itself instead of the file the
-  link points to.
-It is an error to use dir_fd or follow_symlinks when specifying path
-  as an open file descriptor.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative to
+that directory.
+If follow_symlinks is False, and the last element of the path is
+a symbolic link, utime will modify the symbolic link itself instead of
+the file the link points to.
+It is an error to use dir_fd or follow_symlinks when specifying path as
+an open file descriptor.
 dir_fd and follow_symlinks may not be available on your platform.
-  If they are unavailable, using them will raise a NotImplementedError.
+If they are unavailable, using them will raise a NotImplementedError.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
               int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=cfcac69d027b82cf input=2fbd62a2f228f8f4]*/
+/*[clinic end generated code: output=cfcac69d027b82cf input=5ab470b2bc250788]*/
 {
 #ifdef MS_WINDOWS
     HANDLE hFile;
@@ -7236,6 +7251,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
 
 /*[clinic input]
+@permit_long_summary
 os._exit
 
     status: int
@@ -7245,7 +7261,7 @@ Exit to the system with specified status, without normal exit processing.
 
 static PyObject *
 os__exit_impl(PyObject *module, int status)
-/*[clinic end generated code: output=116e52d9c2260d54 input=5e6d57556b0c4a62]*/
+/*[clinic end generated code: output=116e52d9c2260d54 input=c35d282acfebe8fd]*/
 {
     _exit(status);
     return NULL; /* Make gcc -Wall happy */
@@ -8049,7 +8065,8 @@ os.posix_spawn
     resetids: bool = False
         If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.
     setsid: bool = False
-        If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.
+        If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP
+        will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
@@ -8066,7 +8083,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, int resetids, int setsid,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=14a1098c566bc675 input=69e7c9ebbdcf94a5]*/
+/*[clinic end generated code: output=14a1098c566bc675 input=c7592dcbc96e8114]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -8095,7 +8112,8 @@ os.posix_spawnp
     resetids: bool = False
         If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
     setsid: bool = False
-        If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.
+        If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP
+        will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
@@ -8112,7 +8130,7 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *setpgroup, int resetids, int setsid,
                      PyObject *setsigmask, PyObject *setsigdef,
                      PyObject *scheduler)
-/*[clinic end generated code: output=7b9aaefe3031238d input=a5c057527c6881a5]*/
+/*[clinic end generated code: output=7b9aaefe3031238d input=43ccc1452cae2be3]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -8177,18 +8195,15 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     int i;
     Py_ssize_t argc;
     intptr_t spawnval;
-    PyObject *(*getitem)(PyObject *, Py_ssize_t);
 
     /* spawnv has three arguments: (mode, path, argv), where
        argv is a list or tuple of strings. */
 
     if (PyList_Check(argv)) {
         argc = PyList_Size(argv);
-        getitem = PyList_GetItem;
     }
     else if (PyTuple_Check(argv)) {
         argc = PyTuple_Size(argv);
-        getitem = PyTuple_GetItem;
     }
     else {
         PyErr_SetString(PyExc_TypeError,
@@ -8206,14 +8221,29 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
         return PyErr_NoMemory();
     }
     for (i = 0; i < argc; i++) {
-        if (!fsconvert_strdup((*getitem)(argv, i),
-                              &argvlist[i])) {
+        // The item must be a strong reference because of possible
+        // side-effects of PyUnicode_FS{Converter,Decoder}() in
+        // fsconvert_strdup(): an item's __fspath__() can mutate a list
+        // *argv*, releasing the list's reference to the item (gh-151416).
+        PyObject *item = PySequence_ITEM(argv, i);
+        if (item == NULL) {
             free_string_array(argvlist, i);
-            PyErr_SetString(
-                PyExc_TypeError,
-                "spawnv() arg 2 must contain only strings");
             return NULL;
         }
+        if (!fsconvert_strdup(item, &argvlist[i])) {
+            Py_DECREF(item);
+            free_string_array(argvlist, i);
+            // Add argument context to the converter's terse TypeError, but
+            // let MemoryError, codec errors, embedded-null ValueError, etc.
+            // propagate unmasked.
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_SetString(
+                    PyExc_TypeError,
+                    "spawnv() arg 2 must contain only strings");
+            }
+            return NULL;
+        }
+        Py_DECREF(item);
         if (i == 0 && !argvlist[0][0]) {
             free_string_array(argvlist, i + 1);
             PyErr_SetString(
@@ -8284,7 +8314,6 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     PyObject *res = NULL;
     Py_ssize_t argc, i, envc;
     intptr_t spawnval;
-    PyObject *(*getitem)(PyObject *, Py_ssize_t);
     Py_ssize_t lastarg = 0;
 
     /* spawnve has four arguments: (mode, path, argv, env), where
@@ -8293,11 +8322,9 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 
     if (PyList_Check(argv)) {
         argc = PyList_Size(argv);
-        getitem = PyList_GetItem;
     }
     else if (PyTuple_Check(argv)) {
         argc = PyTuple_Size(argv);
-        getitem = PyTuple_GetItem;
     }
     else {
         PyErr_SetString(PyExc_TypeError,
@@ -8321,12 +8348,21 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         goto fail_0;
     }
     for (i = 0; i < argc; i++) {
-        if (!fsconvert_strdup((*getitem)(argv, i),
-                              &argvlist[i]))
-        {
+        // The item must be a strong reference because of possible
+        // side-effects of PyUnicode_FS{Converter,Decoder}() in
+        // fsconvert_strdup(): an item's __fspath__() can mutate a list
+        // *argv*, releasing the list's reference to the item (gh-151416).
+        PyObject *item = PySequence_ITEM(argv, i);
+        if (item == NULL) {
             lastarg = i;
             goto fail_1;
         }
+        if (!fsconvert_strdup(item, &argvlist[i])) {
+            Py_DECREF(item);
+            lastarg = i;
+            goto fail_1;
+        }
+        Py_DECREF(item);
         if (i == 0 && !argvlist[0][0]) {
             lastarg = i + 1;
             PyErr_SetString(
@@ -9148,13 +9184,13 @@ os.posix_openpt -> int
 Open and return a file descriptor for a master pseudo-terminal device.
 
 Performs a posix_openpt() C function call. The oflag argument is used to
-set file status flags and file access modes as specified in the manual page
-of posix_openpt() of your system.
+set file status flags and file access modes as specified in the manual
+page of posix_openpt() of your system.
 [clinic start generated code]*/
 
 static int
 os_posix_openpt_impl(PyObject *module, int oflag)
-/*[clinic end generated code: output=ee0bc2624305fc79 input=0de33d0e29693caa]*/
+/*[clinic end generated code: output=ee0bc2624305fc79 input=3ce4eb297fa64307]*/
 {
     int fd;
 
@@ -9429,6 +9465,7 @@ error:
 
 #if defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)
 /*[clinic input]
+@permit_long_summary
 os.login_tty
 
     fd: fildes
@@ -9443,7 +9480,7 @@ calling process; close fd.
 
 static PyObject *
 os_login_tty_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=495a79911b4cc1bc input=5f298565099903a2]*/
+/*[clinic end generated code: output=495a79911b4cc1bc input=b102a7c36e8baf00]*/
 {
 #ifdef HAVE_LOGIN_TTY
     if (login_tty(fd) == -1) {
@@ -9798,14 +9835,14 @@ os.initgroups
 
 Initialize the group access list.
 
-Call the system initgroups() to initialize the group access list with all of
-the groups of which the specified username is a member, plus the specified
-group id.
+Call the system initgroups() to initialize the group access list with
+all of the groups of which the specified username is a member, plus the
+specified group id.
 [clinic start generated code]*/
 
 static PyObject *
 os_initgroups_impl(PyObject *module, PyObject *oname, int gid)
-/*[clinic end generated code: output=7f074d30a425fd3a input=984e60c7fed88cb4]*/
+/*[clinic end generated code: output=7f074d30a425fd3a input=35f2d4fb7fcc0bdf]*/
 #else
 /*[clinic input]
 os.initgroups
@@ -9816,14 +9853,14 @@ os.initgroups
 
 Initialize the group access list.
 
-Call the system initgroups() to initialize the group access list with all of
-the groups of which the specified username is a member, plus the specified
-group id.
+Call the system initgroups() to initialize the group access list with
+all of the groups of which the specified username is a member, plus the
+specified group id.
 [clinic start generated code]*/
 
 static PyObject *
 os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
-/*[clinic end generated code: output=59341244521a9e3f input=17d8fbe2dea42ca4]*/
+/*[clinic end generated code: output=59341244521a9e3f input=7e4514dff4526a95]*/
 #endif
 {
     const char *username = PyBytes_AS_STRING(oname);
@@ -10020,12 +10057,13 @@ os.getppid
 Return the parent's process id.
 
 If the parent process has already exited, Windows machines will still
-return its id; others systems will return the id of the 'init' process (1).
+return its id; others systems will return the id of the 'init' proces
+(1).
 [clinic start generated code]*/
 
 static PyObject *
 os_getppid_impl(PyObject *module)
-/*[clinic end generated code: output=43b2a946a8c603b4 input=e637cb87539c030e]*/
+/*[clinic end generated code: output=43b2a946a8c603b4 input=e17c1de18f41316b]*/
 {
 #ifdef MS_WINDOWS
     return win32_getppid();
@@ -10579,13 +10617,13 @@ os.waitid
 
 Returns the result of waiting for a process or processes.
 
-Returns either waitid_result or None if WNOHANG is specified and there are
-no children in a waitable state.
+Returns either waitid_result or None if WNOHANG is specified and there
+are no children in a waitable state.
 [clinic start generated code]*/
 
 static PyObject *
 os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
-/*[clinic end generated code: output=5d2e1c0bde61f4d8 input=d8e7f76e052b7920]*/
+/*[clinic end generated code: output=5d2e1c0bde61f4d8 input=14956bc8d102b5db]*/
 {
     PyObject *result;
     int res;
@@ -10752,15 +10790,44 @@ os.pidfd_open
 
 Return a file descriptor referring to the process *pid*.
 
-The descriptor can be used to perform process management without races and
-signals.
+The descriptor can be used to perform process management without races
+and signals.
 [clinic start generated code]*/
 
 static PyObject *
 os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
-/*[clinic end generated code: output=5c7252698947dc41 input=c3fd99ce947ccfef]*/
+/*[clinic end generated code: output=5c7252698947dc41 input=03058b32c389f874]*/
 {
     int fd = syscall(__NR_pidfd_open, pid, flags);
+    if (fd < 0) {
+        return posix_error();
+    }
+    return PyLong_FromLong(fd);
+}
+#endif
+
+
+#if defined(__linux__) && defined(__NR_pidfd_getfd) && \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+/*[clinic input]
+os.pidfd_getfd
+  pidfd: int
+    A process file descriptor.
+  targetfd: int
+    The file descriptor to duplicate from the target process.
+  *
+  flags: unsigned_int = 0
+    Reserved, must be 0.
+
+Duplicate a file descriptor from the process referred to by *pidfd*.
+[clinic start generated code]*/
+
+static PyObject *
+os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
+                    unsigned int flags)
+/*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
+{
+    int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
     if (fd < 0) {
         return posix_error();
     }
@@ -10837,8 +10904,9 @@ os.readlink
 
 Return a string representing the path to which the symbolic link points.
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-and path should be relative; path will then be relative to that directory.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative to
+that directory.
 
 dir_fd may not be implemented on your platform.  If it is unavailable,
 using it will raise a NotImplementedError.
@@ -10846,7 +10914,7 @@ using it will raise a NotImplementedError.
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=113c87e0db1ecaf2]*/
+/*[clinic end generated code: output=d21b732a2e814030 input=03d10130870dbca8]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
@@ -11041,26 +11109,25 @@ os.symlink
     *
     dir_fd: dir_fd(requires='symlinkat')=None
 
-# "symlink(src, dst, target_is_directory=False, *, dir_fd=None)\n\n\
-
 Create a symbolic link pointing to src named dst.
 
 target_is_directory is required on Windows if the target is to be
-  interpreted as a directory.  (On Windows, symlink requires
-  Windows 6.0 or greater, and raises a NotImplementedError otherwise.)
-  target_is_directory is ignored on non-Windows platforms.
+interpreted as a directory.  (On Windows, symlink requires Windows 6.0
+or greater, and raises a NotImplementedError otherwise.)
+target_is_directory is ignored on non-Windows platforms.
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
-dir_fd may not be implemented on your platform.
-  If it is unavailable, using it will raise a NotImplementedError.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative
+to that directory.
+dir_fd may not be implemented on your platform.  If it is unavailable,
+using it will raise a NotImplementedError.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
                 int target_is_directory, int dir_fd)
-/*[clinic end generated code: output=08ca9f3f3cf960f6 input=e820ec4472547bc3]*/
+/*[clinic end generated code: output=08ca9f3f3cf960f6 input=71b75467b31c45f7]*/
 {
 #ifdef MS_WINDOWS
     DWORD result;
@@ -11619,19 +11686,18 @@ os.open -> int
     *
     dir_fd: dir_fd(requires='openat') = None
 
-# "open(path, flags, mode=0o777, *, dir_fd=None)\n\n\
-
 Open a file for low level IO.  Returns a file descriptor (integer).
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
-dir_fd may not be implemented on your platform.
-  If it is unavailable, using it will raise a NotImplementedError.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative to
+that directory.
+dir_fd may not be implemented on your platform.  If it is unavailable,
+using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static int
 os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
-/*[clinic end generated code: output=abc7227888c8bc73 input=ad8623b29acd2934]*/
+/*[clinic end generated code: output=abc7227888c8bc73 input=75f7b4eaf92f2225]*/
 {
     int fd;
     int async_err = 0;
@@ -11905,7 +11971,6 @@ os_lockf_impl(PyObject *module, int fd, int command, Py_off_t length)
 
 
 /*[clinic input]
-@permit_long_docstring_body
 os.lseek -> Py_off_t
 
     fd: int
@@ -11921,12 +11986,13 @@ os.lseek -> Py_off_t
 
 Set the position of a file descriptor.  Return the new position.
 
-The return value is the number of bytes relative to the beginning of the file.
+The return value is the number of bytes relative to the beginning of
+the file.
 [clinic start generated code]*/
 
 static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
-/*[clinic end generated code: output=971e1efb6b30bd2f input=4a3de549f07e1c40]*/
+/*[clinic end generated code: output=971e1efb6b30bd2f input=32ea0788da7cb44b]*/
 {
     Py_off_t result;
 
@@ -11990,7 +12056,6 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 os.readinto -> Py_ssize_t
     fd: int
     buffer: Py_buffer(accept={rwbuffer})
@@ -11998,20 +12063,20 @@ os.readinto -> Py_ssize_t
 
 Read into a buffer object from a file descriptor.
 
-The buffer should be mutable and bytes-like. On success, returns the number of
-bytes read. Less bytes may be read than the size of the buffer. The underlying
-system call will be retried when interrupted by a signal, unless the signal
-handler raises an exception. Other errors will not be retried and an error will
-be raised.
+The buffer should be mutable and bytes-like.  On success, returns the
+number of bytes read.  Less bytes may be read than the size of the
+buffer.  The underlying system call will be retried when interrupted by
+a signal, unless the signal handler raises an exception.  Other errors
+will not be retried and an error will be raised.
 
-Returns 0 if *fd* is at end of file or if the provided *buffer* has length 0
-(which can be used to check for errors without reading data). Never returns
-negative.
+Returns 0 if *fd* is at end of file or if the provided *buffer* has
+length 0 (which can be used to check for errors without reading data).
+Never returns negative.
 [clinic start generated code]*/
 
 static Py_ssize_t
 os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer)
-/*[clinic end generated code: output=8091a3513c683a80 input=a770382bd3d32f9a]*/
+/*[clinic end generated code: output=8091a3513c683a80 input=2a5f8b212cb5730c]*/
 {
     assert(buffer->len >= 0);
     Py_ssize_t result = _Py_read(fd, buffer->buf, buffer->len);
@@ -12195,7 +12260,7 @@ os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
 
 #if defined(HAVE_PREADV) || defined (HAVE_PREADV2)
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 os.preadv -> Py_ssize_t
 
     fd: int
@@ -12206,14 +12271,15 @@ os.preadv -> Py_ssize_t
 
 Reads from a file descriptor into a number of mutable bytes-like objects.
 
-Combines the functionality of readv() and pread(). As readv(), it will
-transfer data into each buffer until it is full and then move on to the next
-buffer in the sequence to hold the rest of the data. Its fourth argument,
-specifies the file offset at which the input operation is to be performed. It
-will return the total number of bytes read (which can be less than the total
-capacity of all the objects).
+Combines the functionality of readv() and pread().  As readv(), it will
+transfer data into each buffer until it is full and then move on to the
+next buffer in the sequence to hold the rest of the data.  Its fourth
+argument, specifies the file offset at which the input operation is to
+be performed.  It will return the total number of bytes read (which can
+be less than the total capacity of all the objects).
 
-The flags argument contains a bitwise OR of zero or more of the following flags:
+The flags argument contains a bitwise OR of zero or more of the
+following flags:
 
 - RWF_HIPRI
 - RWF_NOWAIT
@@ -12225,7 +12291,7 @@ Using non-zero flags requires Linux 4.6 or newer.
 static Py_ssize_t
 os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                int flags)
-/*[clinic end generated code: output=26fc9c6e58e7ada5 input=34fb3b9ca06f7ba7]*/
+/*[clinic end generated code: output=26fc9c6e58e7ada5 input=bbc70c63b4f4e877]*/
 {
     Py_ssize_t cnt, n;
     int async_err = 0;
@@ -12562,6 +12628,7 @@ done:
 
 #if defined(__APPLE__)
 /*[clinic input]
+@permit_long_summary
 os._fcopyfile
 
     in_fd: int
@@ -12574,7 +12641,7 @@ Efficiently copy content or metadata of 2 regular file descriptors (macOS).
 
 static PyObject *
 os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags)
-/*[clinic end generated code: output=c9d1a35a992e401b input=1e34638a86948795]*/
+/*[clinic end generated code: output=c9d1a35a992e401b input=80b53ad8863c9101]*/
 {
     int ret;
 
@@ -12763,6 +12830,7 @@ os_pipe2_impl(PyObject *module, int flags)
 
 #ifdef HAVE_WRITEV
 /*[clinic input]
+@permit_long_summary
 os.writev -> Py_ssize_t
     fd: int
     buffers: object
@@ -12776,7 +12844,7 @@ buffers must be a sequence of bytes-like objects.
 
 static Py_ssize_t
 os_writev_impl(PyObject *module, int fd, PyObject *buffers)
-/*[clinic end generated code: output=56565cfac3aac15b input=5b8d17fe4189d2fe]*/
+/*[clinic end generated code: output=56565cfac3aac15b input=5771a0f0c2b326f2]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -12852,7 +12920,6 @@ os_pwrite_impl(PyObject *module, int fd, Py_buffer *buffer, Py_off_t offset)
 #if defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 os.pwritev -> Py_ssize_t
 
     fd: int
@@ -12863,14 +12930,16 @@ os.pwritev -> Py_ssize_t
 
 Writes the contents of bytes-like objects to a file descriptor at a given offset.
 
-Combines the functionality of writev() and pwrite(). All buffers must be a sequence
-of bytes-like objects. Buffers are processed in array order. Entire contents of first
-buffer is written before proceeding to second, and so on. The operating system may
-set a limit (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
-This function writes the contents of each object to the file descriptor and returns
-the total number of bytes written.
+Combines the functionality of writev() and pwrite(). All buffers must be
+a sequence of bytes-like objects.  Buffers are processed in array order.
+Entire contents of first buffer is written before proceeding to second,
+and so on. The operating system may set a limit (sysconf() value
+SC_IOV_MAX) on the number of buffers that can be used.
+This function writes the contents of each object to the file descriptor
+and returns the total number of bytes written.
 
-The flags argument contains a bitwise OR of zero or more of the following flags:
+The flags argument contains a bitwise OR of zero or more of the
+following flags:
 
 - RWF_DSYNC
 - RWF_SYNC
@@ -12884,7 +12953,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=7de72245873f56bf]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=b2e352a22f030e9a]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -13097,15 +13166,16 @@ os.mkfifo
 
 Create a "fifo" (a POSIX named pipe).
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
-dir_fd may not be implemented on your platform.
-  If it is unavailable, using it will raise a NotImplementedError.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative to
+that directory.
+dir_fd may not be implemented on your platform.  If it is unavailable,
+using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd)
-/*[clinic end generated code: output=ce41cfad0e68c940 input=73032e98a36e0e19]*/
+/*[clinic end generated code: output=ce41cfad0e68c940 input=d2fb917c01e888d6]*/
 {
     int result;
     int async_err = 0;
@@ -13148,7 +13218,6 @@ os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 /*[clinic input]
-@permit_long_docstring_body
 os.mknod
 
     path: path_t
@@ -13159,23 +13228,24 @@ os.mknod
 
 Create a node in the file system.
 
-Create a node in the file system (file, device special file or named pipe)
-at path.  mode specifies both the permissions to use and the
+Create a node in the file system (file, device special file or named
+pipe) at path.  mode specifies both the permissions to use and the
 type of node to be created, being combined (bitwise OR) with one of
-S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO.  If S_IFCHR or S_IFBLK is set on mode,
-device defines the newly created device special file (probably using
-os.makedev()).  Otherwise device is ignored.
+S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO.  If S_IFCHR or S_IFBLK is set
+on mode, device defines the newly created device special file (probably
+using os.makedev()).  Otherwise device is ignored.
 
-If dir_fd is not None, it should be a file descriptor open to a directory,
-  and path should be relative; path will then be relative to that directory.
-dir_fd may not be implemented on your platform.
-  If it is unavailable, using it will raise a NotImplementedError.
+If dir_fd is not None, it should be a file descriptor open to
+a directory, and path should be relative; path will then be relative
+to that directory.
+dir_fd may not be implemented on your platform.  If it is unavailable,
+using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
               int dir_fd)
-/*[clinic end generated code: output=92e55d3ca8917461 input=7121c4723d22545b]*/
+/*[clinic end generated code: output=92e55d3ca8917461 input=7d0099e85c6b4cba]*/
 {
     int result;
     int async_err = 0;
@@ -13344,13 +13414,14 @@ os.truncate
 
 Truncate a file, specified by path, to a specific length.
 
-On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+On some platforms, path may also be specified as an open file
+descriptor.  If this functionality is unavailable, using it raises
+an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
-/*[clinic end generated code: output=43009c8df5c0a12b input=77229cf0b50a9b77]*/
+/*[clinic end generated code: output=43009c8df5c0a12b input=ce33fd7808a511c4]*/
 {
     int result;
 #ifdef MS_WINDOWS
@@ -13393,6 +13464,7 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
    OSs, support was dropped in WASI preview2. */
 #if defined(HAVE_POSIX_FALLOCATE) && !defined(__wasi__)
 /*[clinic input]
+@permit_long_summary
 os.posix_fallocate
 
     fd: int
@@ -13403,13 +13475,14 @@ os.posix_fallocate
 Ensure a file has allocated at least a particular number of bytes on disk.
 
 Ensure that the file specified by fd encompasses a range of bytes
-starting at offset bytes from the beginning and continuing for length bytes.
+starting at offset bytes from the beginning and continuing for length
+bytes.
 [clinic start generated code]*/
 
 static PyObject *
 os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
                         Py_off_t length)
-/*[clinic end generated code: output=73f107139564aa9d input=d7a2ef0ab2ca52fb]*/
+/*[clinic end generated code: output=73f107139564aa9d input=c718971d18b96896]*/
 {
     int result;
     int async_err = 0;
@@ -13444,8 +13517,8 @@ os.posix_fadvise
 
 Announce an intention to access data in a specific pattern.
 
-Announce an intention to access data in a specific pattern, thus allowing
-the kernel to make optimizations.
+Announce an intention to access data in a specific pattern, thus
+allowing the kernel to make optimizations.
 The advice applies to the region of the file specified by fd starting at
 offset and continuing for length bytes.
 advice is one of POSIX_FADV_NORMAL, POSIX_FADV_SEQUENTIAL,
@@ -13456,7 +13529,7 @@ POSIX_FADV_DONTNEED.
 static PyObject *
 os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
                       Py_off_t length, int advice)
-/*[clinic end generated code: output=412ef4aa70c98642 input=0fbe554edc2f04b5]*/
+/*[clinic end generated code: output=412ef4aa70c98642 input=961b01a4518ef727]*/
 {
     int result;
     int async_err = 0;
@@ -13655,6 +13728,10 @@ static PyObject *
 os__clearenv_impl(PyObject *module)
 /*[clinic end generated code: output=2d6705d62c014b51 input=47d2fa7f323c43ca]*/
 {
+    if (PySys_Audit("os._clearenv", NULL) < 0) {
+        return NULL;
+    }
+
     errno = 0;
     int err = clearenv();
     if (err) {
@@ -13712,6 +13789,7 @@ os_WCOREDUMP_impl(PyObject *module, int status)
 
 #ifdef WIFCONTINUED
 /*[clinic input]
+@permit_long_summary
 os.WIFCONTINUED -> bool
 
     status: int
@@ -13724,7 +13802,7 @@ job control stop.
 
 static int
 os_WIFCONTINUED_impl(PyObject *module, int status)
-/*[clinic end generated code: output=1e35295d844364bd input=e777e7d38eb25bd9]*/
+/*[clinic end generated code: output=1e35295d844364bd input=7b577845a0f8b12f]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13837,6 +13915,7 @@ os_WTERMSIG_impl(PyObject *module, int status)
 
 #ifdef WSTOPSIG
 /*[clinic input]
+@permit_long_summary
 os.WSTOPSIG -> int
 
     status: int
@@ -13846,7 +13925,7 @@ Return the signal that stopped the process that provided the status value.
 
 static int
 os_WSTOPSIG_impl(PyObject *module, int status)
-/*[clinic end generated code: output=0ab7586396f5d82b input=46ebf1d1b293c5c1]*/
+/*[clinic end generated code: output=0ab7586396f5d82b input=4698db1a6a320433]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -14037,13 +14116,14 @@ os.statvfs
 Perform a statvfs system call on the given path.
 
 path may always be specified as a string.
-On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+On some platforms, path may also be specified as an open file
+descriptor.  If this functionality is unavailable, using it raises
+an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_statvfs_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=87106dd1beb8556e input=3f5c35791c669bd9]*/
+/*[clinic end generated code: output=87106dd1beb8556e input=1cfd9a4fd36f7425]*/
 {
     int result;
 
@@ -14092,6 +14172,7 @@ os_statvfs_impl(PyObject *module, path_t *path)
 
 #ifdef MS_WINDOWS
 /*[clinic input]
+@permit_long_summary
 os._getdiskusage
 
     path: path_t
@@ -14101,7 +14182,7 @@ Return disk usage statistics about the given path as a (total, free) tuple.
 
 static PyObject *
 os__getdiskusage_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3bd3991f5e5c5dfb input=6af8d1b7781cc042]*/
+/*[clinic end generated code: output=3bd3991f5e5c5dfb input=aee7e38bc3e7fb08]*/
 {
     BOOL retval;
     ULARGE_INTEGER _, total, free;
@@ -14322,13 +14403,14 @@ os.pathconf -> long
 Return the configuration limit name for the file or directory path.
 
 If there is no limit, return -1.
-On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+On some platforms, path may also be specified as an open file
+descriptor.  If this functionality is unavailable, using it raises
+an exception.
 [clinic start generated code]*/
 
 static long
 os_pathconf_impl(PyObject *module, path_t *path, int name)
-/*[clinic end generated code: output=5bedee35b293a089 input=6f6072f57b10c787]*/
+/*[clinic end generated code: output=5bedee35b293a089 input=e86f6eacfa006426]*/
 {
     long limit;
 
@@ -15133,13 +15215,13 @@ os.abort
 
 Abort the interpreter immediately.
 
-This function 'dumps core' or otherwise fails in the hardest way possible
-on the hosting operating system.  This function never returns.
+This function 'dumps core' or otherwise fails in the hardest way
+possible on the hosting operating system.  This function never returns.
 [clinic start generated code]*/
 
 static PyObject *
 os_abort_impl(PyObject *module)
-/*[clinic end generated code: output=dcf52586dad2467c input=cf2c7d98bc504047]*/
+/*[clinic end generated code: output=dcf52586dad2467c input=ee8bd0ed690440ab]*/
 {
     abort();
     /*NOTREACHED*/
@@ -15348,6 +15430,7 @@ os_setresgid_impl(PyObject *module, gid_t rgid, gid_t egid, gid_t sgid)
 
 #ifdef HAVE_GETRESUID
 /*[clinic input]
+@permit_long_summary
 os.getresuid
 
 Return a tuple of the current process's real, effective, and saved user ids.
@@ -15355,7 +15438,7 @@ Return a tuple of the current process's real, effective, and saved user ids.
 
 static PyObject *
 os_getresuid_impl(PyObject *module)
-/*[clinic end generated code: output=8e0becff5dece5bf input=41ccfa8e1f6517ad]*/
+/*[clinic end generated code: output=8e0becff5dece5bf input=ddf95881f492cb97]*/
 {
     uid_t ruid, euid, suid;
     if (getresuid(&ruid, &euid, &suid) < 0)
@@ -15400,17 +15483,18 @@ os.getxattr
 
 Return the value of extended attribute attribute on path.
 
-path may be either a string, a path-like object, or an open file descriptor.
-If follow_symlinks is False, and the last element of the path is a symbolic
-  link, getxattr will examine the symbolic link itself instead of the file
-  the link points to.
+path may be either a string, a path-like object, or an open file
+descriptor.
+If follow_symlinks is False, and the last element of the path is
+a symbolic link, getxattr will examine the symbolic link itself
+instead of the file the link points to.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  int follow_symlinks)
-/*[clinic end generated code: output=5f2f44200a43cff2 input=025789491708f7eb]*/
+/*[clinic end generated code: output=5f2f44200a43cff2 input=db1021ed738d9754]*/
 {
     if (fd_and_follow_symlinks_invalid("getxattr", path->is_fd, follow_symlinks))
         return NULL;
@@ -15457,7 +15541,6 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
 
 
 /*[clinic input]
-@permit_long_docstring_body
 os.setxattr
 
     path: path_t(allow_fd=True)
@@ -15469,17 +15552,18 @@ os.setxattr
 
 Set extended attribute attribute on path to value.
 
-path may be either a string, a path-like object,  or an open file descriptor.
-If follow_symlinks is False, and the last element of the path is a symbolic
-  link, setxattr will modify the symbolic link itself instead of the file
-  the link points to.
+path may be either a string, a path-like object,  or an open file
+descriptor.
+If follow_symlinks is False, and the last element of the path is
+a symbolic link, setxattr will modify the symbolic link itself instead
+of the file the link points to.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  Py_buffer *value, int flags, int follow_symlinks)
-/*[clinic end generated code: output=98b83f63fdde26bb input=4098e6f68699f3d7]*/
+/*[clinic end generated code: output=98b83f63fdde26bb input=6c4ee6724e8947a4]*/
 {
     ssize_t result;
 
@@ -15522,17 +15606,18 @@ os.removexattr
 
 Remove extended attribute attribute on path.
 
-path may be either a string, a path-like object, or an open file descriptor.
-If follow_symlinks is False, and the last element of the path is a symbolic
-  link, removexattr will modify the symbolic link itself instead of the file
-  the link points to.
+path may be either a string, a path-like object, or an open file
+descriptor.
+If follow_symlinks is False, and the last element of the path is
+a symbolic link, removexattr will modify the symbolic link itself
+instead of the file the link points to.
 
 [clinic start generated code]*/
 
 static PyObject *
 os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
                     int follow_symlinks)
-/*[clinic end generated code: output=521a51817980cda6 input=3d9a7d36fe2f7c4e]*/
+/*[clinic end generated code: output=521a51817980cda6 input=a7ec62a86aa83f01]*/
 {
     ssize_t result;
 
@@ -15561,7 +15646,6 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
 
 
 /*[clinic input]
-@permit_long_docstring_body
 os.listxattr
 
     path: path_t(allow_fd=True, nullable=True) = None
@@ -15570,16 +15654,17 @@ os.listxattr
 
 Return a list of extended attributes on path.
 
-path may be either None, a string, a path-like object, or an open file descriptor.
-if path is None, listxattr will examine the current directory.
-If follow_symlinks is False, and the last element of the path is a symbolic
-  link, listxattr will examine the symbolic link itself instead of the file
-  the link points to.
+path may be either None, a string, a path-like object, or an open file
+descriptor.  If path is None, listxattr will examine the current
+directory.
+If follow_symlinks is False, and the last element of the path is
+a symbolic link, listxattr will examine the symbolic link itself instead
+of the file the link points to.
 [clinic start generated code]*/
 
 static PyObject *
 os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
-/*[clinic end generated code: output=bebdb4e2ad0ce435 input=48aa9ac8be47dea1]*/
+/*[clinic end generated code: output=bebdb4e2ad0ce435 input=cb4a6414afaa99bd]*/
 {
     Py_ssize_t i;
     PyObject *result = NULL;
@@ -16482,7 +16567,7 @@ static PyMemberDef DirEntry_members[] = {
     {"name", Py_T_OBJECT_EX, offsetof(DirEntry, name), Py_READONLY,
      "the entry's base filename, relative to scandir() \"path\" argument"},
     {"path", Py_T_OBJECT_EX, offsetof(DirEntry, path), Py_READONLY,
-     "the entry's full path name; equivalent to os.path.join(scandir_path, entry.name)"},
+     "the entry's full path name; equivalent to\nos.path.join(scandir_path, entry.name)"},
     {NULL}
 };
 
@@ -16497,7 +16582,7 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
     {"__class_getitem__",       Py_GenericAlias,
-    METH_O|METH_CLASS,          PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,          PyDoc_STR("DirEntry is generic over the type of the path (str or bytes)")},
     {NULL}
 };
 
@@ -16976,16 +17061,16 @@ os.scandir
 
 Return an iterator of DirEntry objects for given path.
 
-path can be specified as either str, bytes, or a path-like object.  If path
-is bytes, the names of yielded DirEntry objects will also be bytes; in
-all other circumstances they will be str.
+path can be specified as either str, bytes, or a path-like object.  If
+path is bytes, the names of yielded DirEntry objects will also be bytes;
+in all other circumstances they will be str.
 
 If path is None, uses the path='.'.
 [clinic start generated code]*/
 
 static PyObject *
 os_scandir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=6eb2668b675ca89e input=6bdd312708fc3bb0]*/
+/*[clinic end generated code: output=6eb2668b675ca89e input=6ab9600993f51577]*/
 {
     ScandirIterator *iterator;
 #ifdef MS_WINDOWS
@@ -17132,21 +17217,20 @@ PyOS_FSPath(PyObject *path)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 os.fspath
 
     path: object
 
 Return the file system path representation of the object.
 
-If the object is str or bytes, then allow it to pass through as-is. If the
-object defines __fspath__(), then return the result of that method. All other
-types raise a TypeError.
+If the object is str or bytes, then allow it to pass through as-is.  If
+the object defines __fspath__(), then return the result of that method.
+All other types raise a TypeError.
 [clinic start generated code]*/
 
 static PyObject *
 os_fspath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=c3c3b78ecff2914f input=f608743e60a3211e]*/
+/*[clinic end generated code: output=c3c3b78ecff2914f input=d3c54404240d5da0]*/
 {
     return PyOS_FSPath(path);
 }
@@ -17194,6 +17278,8 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
         PyErr_SetFromErrno(PyExc_OSError);
         goto error;
     }
+
+    _Py_MSAN_UNPOISON(data, size);
 
     return PyBytesWriter_FinishWithSize(writer, n);
 
@@ -17321,13 +17407,13 @@ On Unix:
 On Windows, return status shifted right by 8 bits.
 
 On Unix, if the process is being traced or if waitpid() was called with
-WUNTRACED option, the caller must first check if WIFSTOPPED(status) is true.
-This function must not be called if WIFSTOPPED(status) is true.
+WUNTRACED option, the caller must first check if WIFSTOPPED(status) is
+true.  This function must not be called if WIFSTOPPED(status) is true.
 [clinic start generated code]*/
 
 static PyObject *
 os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
-/*[clinic end generated code: output=db50b1b0ba3c7153 input=7fe2d7fdaea3db42]*/
+/*[clinic end generated code: output=db50b1b0ba3c7153 input=3b44a23f5090006c]*/
 {
 #ifndef MS_WINDOWS
     int status = PyLong_AsInt(status_obj);
@@ -17596,6 +17682,7 @@ static PyMethodDef posix_methods[] = {
     OS_WAITID_METHODDEF
     OS_WAITPID_METHODDEF
     OS_PIDFD_OPEN_METHODDEF
+    OS_PIDFD_GETFD_METHODDEF
     OS_GETSID_METHODDEF
     OS_SETSID_METHODDEF
     OS_SETPGID_METHODDEF

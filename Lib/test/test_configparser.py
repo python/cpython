@@ -526,6 +526,17 @@ boolean {0[0]} NO
             cf.get(self.default_section, "Foo"), "Bar",
             "could not locate option, expecting case-insensitive defaults")
 
+    def test_crlf_normalization(self):
+        cf = self.newconfig({"key1": "a\nb","key2": "a\rb", "key3": "a\r\nb", "key4": "a\r\nb"})
+        buf = io.StringIO()
+        cf.write(buf)
+        cf_str = buf.getvalue()
+        self.assertNotIn("\r", cf_str)
+        self.assertNotIn("\r\n", cf_str)
+        self.assertEqual(cf_str.count("\n"), 10)
+        self.assertEqual(cf_str.count("\n\t"), 4)
+        self.assertTrue(cf_str.endswith("\n\n"))
+
     def test_parse_errors(self):
         cf = self.newconfig()
         self.parse_error(cf, configparser.ParsingError,
@@ -1728,6 +1739,19 @@ class ExceptionPicklingTestCase(unittest.TestCase):
             e2 = pickle.loads(pickled)
             self.assertEqual(e1.message, e2.message)
             self.assertEqual(repr(e1), repr(e2))
+
+    def test_combine_error_linear_complexity(self):
+        # Ensure that ParsingError.combine() has linear complexity.
+        # See https://github.com/python/cpython/issues/148370.
+        n = 50000
+        s = '[*]\n' + (err_line := '=\n') * n
+        p = configparser.ConfigParser(strict=False)
+        with self.assertRaises(configparser.ParsingError) as cm:
+            p.read_string(s)
+        errlines = cm.exception.message.splitlines()
+        self.assertEqual(len(errlines), n + 1)
+        self.assertStartsWith(errlines[0], "Source contains parsing errors: ")
+        self.assertEqual(errlines[42], f"\t[line {43:2d}]: {err_line!r}")
 
     def test_nosectionerror(self):
         import pickle

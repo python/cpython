@@ -1,7 +1,6 @@
 # gh-91321: Build a basic C test extension to check that the Python C API is
 # compatible with C and does not emit C compiler warnings.
 import os
-import platform
 import shlex
 import sys
 import sysconfig
@@ -18,6 +17,11 @@ if not support.MS_WINDOWS:
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+        # Enable extra checks for header files, which:
+        #  - need to be enabled somewhere inside Python headers (rather than
+        #    before including Python.h)
+        #  - should not be checked for user code
+        '-D_Py_IS_TESTCEXT',
     ]
 
     # C compiler flags for GCC and clang
@@ -61,6 +65,8 @@ def main():
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
     abi3t = bool(os.environ.get("CPYTHON_TEST_ABI3T", ""))
     internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
+    incdirs = os.environ.get("CPYTHON_EXTRA_INCDIRS", "")
+    libdirs = os.environ.get("CPYTHON_EXTRA_LIBDIRS", "")
 
     sources = [SOURCE]
 
@@ -101,19 +107,16 @@ def main():
     if internal:
         cflags.append('-DTEST_INTERNAL_C_API=1')
 
-    # On Windows, add PCbuild\amd64\ to include and library directories
+    # Add additional include and library directories, typically for in-tree
+    # testing where not all directories are inferred
     include_dirs = []
     library_dirs = []
-    if support.MS_WINDOWS:
-        srcdir = sysconfig.get_config_var('srcdir')
-        machine = platform.uname().machine
-        pcbuild = os.path.join(srcdir, 'PCbuild', machine)
-        if os.path.exists(pcbuild):
-            # pyconfig.h is generated in PCbuild\amd64\
-            include_dirs.append(pcbuild)
-            # python313.lib is generated in PCbuild\amd64\
-            library_dirs.append(pcbuild)
-            print(f"Add PCbuild directory: {pcbuild}")
+    if incdirs:
+        print("Add incdirs:", incdirs)
+        include_dirs.extend(incdirs.split(os.pathsep))
+    if libdirs:
+        print("Add libdirs:", libdirs)
+        library_dirs.extend(libdirs.split(os.pathsep))
 
     # Display information to help debugging
     for env_name in ('CC', 'CFLAGS', 'CPPFLAGS'):
