@@ -209,14 +209,26 @@
 /* Define if you have the 'filter' function. */
 #undef HAVE_CURSES_FILTER
 
+/* Define if you have the 'getmouse' function with the X/Open signature. */
+#undef HAVE_CURSES_GETMOUSE
+
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
 
 /* Define if you have the 'has_key' function. */
 #undef HAVE_CURSES_HAS_KEY
 
+/* Define if you have the 'has_mouse' function. */
+#undef HAVE_CURSES_HAS_MOUSE
+
 /* Define if you have the 'immedok' function. */
 #undef HAVE_CURSES_IMMEDOK
+
+/* Define if you have the 'is_keypad' function. */
+#undef HAVE_CURSES_IS_KEYPAD
+
+/* Define if you have the 'is_leaveok' function. */
+#undef HAVE_CURSES_IS_LEAVEOK
 
 /* Define if you have the 'is_pad' function. */
 #undef HAVE_CURSES_IS_PAD
