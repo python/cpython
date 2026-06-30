@@ -1036,7 +1036,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
 
         if (c == '.' || c == ',') {
             if (i < 2) {
-                return -3; // Decimal mark on hour or minute
+                return -3;  // Decimal mark on hour or minute
             }
             if (p >= p_end) {
                 return -3;  // Decimal mark not followed by any digit
@@ -1051,9 +1051,11 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
                 return -4;  // Malformed microsecond separator
             }
             continue;
-        } else if (!has_separator) {
+        }
+        else if (!has_separator) {
             --p;
-        } else {
+        }
+        else {
             return -4;  // Malformed time separator
         }
     }
