@@ -310,6 +310,7 @@ def collect_os(info_add):
         "COLUMNS",
         "COMPUTERNAME",
         "COMSPEC",
+        "CONTAINER",
         "CPP",
         "CPPFLAGS",
         "DISPLAY",
@@ -369,9 +370,6 @@ def collect_os(info_add):
         "_PYTHON_SYSCONFIGDATA_NAME",
         "_PYTHON_SYSCONFIGDATA_PATH",
         "__PYVENV_LAUNCHER__",
-
-        # Lower case variables
-        "container",
 
         # Sanitizer options
         "ASAN_OPTIONS",
