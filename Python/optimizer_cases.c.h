@@ -2020,10 +2020,6 @@
             break;
         }
 
-        case _DELETE_NAME: {
-            break;
-        }
-
         case _UNPACK_SEQUENCE: {
             JitOptRef *values;
             JitOptRef *top;
