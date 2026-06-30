@@ -354,7 +354,7 @@ clear_module_state(module_state *state)
 #define ERR_CHANNEL_INTERP_CLOSED -4
 #define ERR_CHANNEL_EMPTY -5
 #define ERR_CHANNEL_NOT_EMPTY -6
-#define ERR_CHANNEL_MUTEX_ALLOC_FAIL -7
+#define ERR_CHANNEL_MUTEX_INIT -7  // currently unused
 #define ERR_CHANNELS_MUTEX_INIT -8
 #define ERR_NO_NEXT_CHANNEL_ID -9
 #define ERR_CHANNEL_CLOSED_WAITING -10
@@ -1743,7 +1743,8 @@ channel_create(_channels *channels, struct _channeldefaults defaults)
 {
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
-        return ERR_CHANNEL_MUTEX_ALLOC_FAIL;
+        PyErr_NoMemory();
+        return -1;
     }
     _channel_state *chan = _channel_new(mutex, defaults);
     if (chan == NULL) {
