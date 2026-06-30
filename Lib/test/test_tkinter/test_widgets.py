@@ -7,6 +7,7 @@ from test.support import requires
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (requires_tk, tk_version,
                                   get_tk_patchlevel, widget_eq,
+                                  wait_until_mapped,
                                   AbstractDefaultRootTest)
 
 from test.test_tkinter.widget_tests import (
@@ -437,9 +438,22 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
     def create(self, default='b', values=('a', 'b', 'c'), **kwargs):
         return tkinter.OptionMenu(self.root, None, default, *values, **kwargs)
 
+    def test_kwargs(self):
+        # Menubutton options can be passed at construction (gh-101284).
+        widget = tkinter.OptionMenu(self.root, None, 'b',
+                                    width=10, direction='right')
+        self.assertEqual(int(widget['width']), 10)
+        self.assertEqual(str(widget['direction']), 'right')
+        # They override OptionMenu's own appearance defaults,
+        widget = tkinter.OptionMenu(self.root, None, 'b', relief='flat')
+        self.assertEqual(str(widget['relief']), 'flat')
+        # which otherwise keep their historical values.
+        widget = tkinter.OptionMenu(self.root, None, 'b')
+        self.assertEqual(str(widget['relief']), 'raised')
+
     def test_bad_kwarg(self):
-        with self.assertRaisesRegex(TclError, r"^unknown option -image$"):
-            tkinter.OptionMenu(self.root, None, 'b', image='')
+        with self.assertRaisesRegex(TclError, r'^unknown option "-spam"$'):
+            tkinter.OptionMenu(self.root, None, 'b', spam='')
 
     def test_specify_name(self):
         widget = tkinter.OptionMenu(self.root, None, ':)', name="option_menu")
@@ -773,10 +787,11 @@ class SpinboxTest(EntryTest, unittest.TestCase):
     def test_identify(self):
         widget = self.create()
         widget.pack()
-        widget.update_idletasks()
-        # The empty string is returned for a point over no element.
-        self.assertIn(widget.identify(5, 5),
-                      ('entry', 'buttonup', 'buttondown', 'none', ''))
+        # Identifying the element under a point requires the widget to be
+        # mapped with a real size.
+        if wait_until_mapped(widget):
+            self.assertIn(widget.identify(5, 5),
+                          ('entry', 'buttonup', 'buttondown', 'none'))
         self.assertRaises(TclError, widget.identify, 'a', 'b')
 
     def test_scan(self):
@@ -1979,7 +1994,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         lb = self.create(selectmode='browse', exportselection=False)
         lb.insert(0, *('el%d' % i for i in range(5)))
         lb.pack()
-        lb.update()
+        self.require_mapped(lb)
         events = []
         lb.bind('<<ListboxSelect>>', lambda e: events.append(lb.curselection()))
         lb.focus_force()
@@ -2143,9 +2158,11 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
     def test_identify(self):
         sb = self.create()
         sb.pack(fill='y', expand=True)
-        sb.update_idletasks()
-        self.assertIn(sb.identify(5, 5),
-                      ('arrow1', 'arrow2', 'slider', 'trough1', 'trough2', ''))
+        # Identifying the element under a point requires the widget to be
+        # mapped with a real size.
+        if wait_until_mapped(sb):
+            self.assertIn(sb.identify(5, 5),
+                          ('arrow1', 'arrow2', 'slider', 'trough1', 'trough2'))
         self.assertRaises(TclError, sb.identify, 'a', 'b')
 
 
@@ -2265,10 +2282,12 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         p, b, c = self.create2()
         p.configure(width=200, height=50)
         p.pack()
-        p.update()
-        x, y = p.sash_coord(0)
-        # A point over the sash reports the sash.
-        self.assertIn('sash', p.identify(x + 1, y + 5))
+        # Locating the sash requires the widget to be mapped with a real
+        # size; the rest of the checks do not.
+        if wait_until_mapped(p):
+            x, y = p.sash_coord(0)
+            # A point over the sash reports the sash.
+            self.assertIn('sash', p.identify(x + 1, y + 5))
         # A point over a pane reports nothing.
         self.assertFalse(p.identify(2, 2))
         self.assertRaises(TclError, p.identify, 'a', 'b')

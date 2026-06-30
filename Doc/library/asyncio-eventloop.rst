@@ -48,10 +48,10 @@ an event loop:
    running event loop.
 
    If there is no running event loop set, the function will return
-   the result of the ``get_event_loop_policy().get_event_loop()`` call.
+   the loop set by :func:`set_event_loop`, or raise a :exc:`RuntimeError`
+   if no loop has been set.
 
-   Because this function has rather complex behavior (especially
-   when custom event loop policies are in use), using the
+   Because this function has rather complex behavior, using the
    :func:`get_running_loop` function is preferred to :func:`get_event_loop`
    in coroutines and callbacks.
 
@@ -62,13 +62,6 @@ an event loop:
    .. versionchanged:: 3.14
       Raises a :exc:`RuntimeError` if there is no current event loop.
 
-   .. note::
-
-      The :mod:`!asyncio` policy system is deprecated and will be removed
-      in Python 3.16; from there on, this function will return the current
-      running event loop if present else it will return the
-      loop set by :func:`set_event_loop`.
-
 .. function:: set_event_loop(loop)
 
    Set *loop* as the current event loop for the current OS thread.
@@ -76,10 +69,6 @@ an event loop:
 .. function:: new_event_loop()
 
    Create and return a new event loop object.
-
-Note that the behaviour of :func:`get_event_loop`, :func:`set_event_loop`,
-and :func:`new_event_loop` functions can be altered by
-:ref:`setting a custom event loop policy <asyncio-policies>`.
 
 
 .. rubric:: Contents

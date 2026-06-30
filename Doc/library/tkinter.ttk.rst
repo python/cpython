@@ -463,6 +463,9 @@ ttk.Spinbox
 
 .. class:: Spinbox
 
+   With a non-integer increment, see :ref:`numeric values and the locale
+   <tkinter-numeric-locale>`.
+
    .. versionadded:: 3.8
 
    .. method:: get()
@@ -2014,6 +2017,16 @@ If you don't know the class name of a widget, use the method
    .. method:: theme_names()
 
       Returns a tuple of all known themes.
+
+
+   .. method:: theme_styles(themename=None)
+
+      Returns a tuple of all styles in *themename*.
+      If *themename* is not given, the current theme is used.
+
+      .. versionadded:: next
+
+      Availability: Tk 9.0.
 
 
    .. method:: theme_use(themename=None)
