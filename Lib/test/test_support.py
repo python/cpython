@@ -91,6 +91,35 @@ class TestSupport(unittest.TestCase):
     def test_import_fresh_module(self):
         import_helper.import_fresh_module("ftplib")
 
+    def test_import_fresh_module_restores_parent_attr(self):
+        import importlib.util
+
+        name = importlib.util.__name__
+        original_module = sys.modules[name]
+        self.assertIs(importlib.util, original_module)
+
+        fresh_module = import_helper.import_fresh_module(name)
+
+        self.assertIsNot(fresh_module, original_module)
+        self.assertIs(sys.modules[name], original_module)
+        self.assertIs(importlib.util, original_module)
+
+    def test_import_fresh_module_removes_added_parent_attr(self):
+        import xml
+
+        name = "xml.sax"
+        self.enterContext(import_helper.CleanImport(name))
+        if hasattr(xml, "sax"):
+            self.addCleanup(setattr, xml, "sax", xml.sax)
+            del xml.sax
+        self.assertFalse(hasattr(xml, "sax"))
+
+        fresh_module = import_helper.import_fresh_module(name)
+
+        self.assertIsNotNone(fresh_module)
+        self.assertNotIn(name, sys.modules)
+        self.assertFalse(hasattr(xml, "sax"))
+
     def test_get_attribute(self):
         self.assertEqual(support.get_attribute(self, "test_get_attribute"),
                         self.test_get_attribute)
