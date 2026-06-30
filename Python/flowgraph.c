@@ -3784,11 +3784,6 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
             return ERROR;
         }
     }
-
-    RETURN_IF_ERROR(
-        add_checks_for_loads_of_uninitialized_variables(
-            g->g_entryblock, nlocals, nparams));
-
     int ret = optimize_cfg(g, consts, const_cache, consts_index, firstlineno);
 
     _Py_hashtable_destroy(consts_index);
@@ -3796,6 +3791,9 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(ret);
 
     RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
+    RETURN_IF_ERROR(
+        add_checks_for_loads_of_uninitialized_variables(
+            g->g_entryblock, nlocals, nparams));
     RETURN_IF_ERROR(insert_superinstructions(g));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
