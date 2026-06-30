@@ -1,0 +1,1 @@
+Windows embed-layout Azure jobs no longer fail when collecting ``test.pythoninfo``. The ``wmic`` output is now decoded with the Windows OEM code page returned by ``_winapi.GetOEMCP()``, and the Azure layout pipeline skips the diagnostic step for the embeddable build while publishing test results only when the XML file exists.
