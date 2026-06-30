@@ -313,6 +313,7 @@ def build_targets(context):
     if context.target in {"all", "build"}:
         configure_build_python(context)
         make_build_python(context)
+        pythoninfo_build_python(context)
 
     for host in HOSTS:
         if context.target in {"all", "hosts", host}:
@@ -824,6 +825,7 @@ def ci(context):
     for step in [
         configure_build_python,
         make_build_python,
+        pythoninfo_build_python,
         configure_host_python,
         make_host_python,
         package,
