@@ -232,6 +232,18 @@ class _Extra(bytes):
             if ex.id not in xids
         )
 
+    @classmethod
+    def update(cls, data, extra):
+        """Insert fields from extra and strip duplicates."""
+        extras = {
+            ex.id: ex
+            for ex in cls.split(extra, True)
+            if ex.id is not None
+        }
+        # New fields first since data may have a corrupted tail that renders
+        # following fields inaccessible.
+        return b''.join(extras.values()) + cls.strip(data, extras)
+
 
 def _check_zipfile(fp):
     try:
@@ -2663,10 +2675,10 @@ class ZipFile:
             min_version = 0
             if extra:
                 # Prepend a ZIP64 field to the extra's
-                extra_data = _Extra.strip(extra_data, (1,))
-                extra_data = struct.pack(
+                extra_data = _Extra.update(extra_data, struct.pack(
                     '<HH' + 'Q'*len(extra),
-                    1, 8*len(extra), *extra) + extra_data
+                    1, 8*len(extra), *extra,
+                ))
 
                 min_version = ZIP64_VERSION
 
