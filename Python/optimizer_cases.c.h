@@ -1311,6 +1311,27 @@
         }
 
         case _STORE_SLICE: {
+            JitOptRef stop;
+            JitOptRef start;
+            JitOptRef container;
+            JitOptRef v;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            container = stack_pointer[-3];
+            v = stack_pointer[-4];
+            (void)v;
+            (void)start;
+            (void)stop;
+            if (sym_matches_type(container, &PyList_Type)) {
+                REPLACE_OP(this_instr, _STORE_SLICE_LIST, 0, 0);
+            }
+            CHECK_STACK_BOUNDS(-4);
+            stack_pointer += -4;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _STORE_SLICE_LIST: {
             CHECK_STACK_BOUNDS(-4);
             stack_pointer += -4;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

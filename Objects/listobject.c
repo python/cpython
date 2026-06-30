@@ -740,6 +740,24 @@ _PyList_BinarySlice(PyObject *container, PyObject *start, PyObject *stop)
     return ret;
 }
 
+static int
+list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v);
+
+int
+_PyList_StoreSlice(PyObject *a, PyObject *start, PyObject *stop, PyObject *v)
+{
+    assert(PyList_CheckExact(a));
+    Py_ssize_t istart = 0, istop = PY_SSIZE_T_MAX;
+    if (!_PyEval_SliceIndex(start, &istart)) {
+        return -1;
+    }
+    if (!_PyEval_SliceIndex(stop, &istop)) {
+        return -1;
+    }
+    PySlice_AdjustIndices(PyList_GET_SIZE(a), &istart, &istop, 1);
+    return list_ass_slice((PyListObject *)a, istart, istop, v);
+}
+
 PyObject *
 PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {

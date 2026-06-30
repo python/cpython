@@ -136,6 +136,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_OP_EXTEND] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_STORE_SLICE_LIST] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_LIST_INT] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_LIST_SLICE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_STR_INT] = HAS_EXIT_FLAG,
@@ -1356,6 +1357,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 0, 3, _STORE_SLICE_r30 },
+        },
+    },
+    [_STORE_SLICE_LIST] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 0, 3, _STORE_SLICE_LIST_r30 },
         },
     },
     [_BINARY_OP_SUBSCR_LIST_INT] = {
@@ -4238,6 +4248,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_EXTEND_r23] = _BINARY_OP_EXTEND,
     [_BINARY_SLICE_r31] = _BINARY_SLICE,
     [_STORE_SLICE_r30] = _STORE_SLICE,
+    [_STORE_SLICE_LIST_r30] = _STORE_SLICE_LIST,
     [_BINARY_OP_SUBSCR_LIST_INT_r23] = _BINARY_OP_SUBSCR_LIST_INT,
     [_BINARY_OP_SUBSCR_LIST_SLICE_r23] = _BINARY_OP_SUBSCR_LIST_SLICE,
     [_BINARY_OP_SUBSCR_STR_INT_r23] = _BINARY_OP_SUBSCR_STR_INT,
@@ -6090,6 +6101,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_STORE_NAME_r10] = "_STORE_NAME_r10",
     [_STORE_SLICE] = "_STORE_SLICE",
     [_STORE_SLICE_r30] = "_STORE_SLICE_r30",
+    [_STORE_SLICE_LIST] = "_STORE_SLICE_LIST",
+    [_STORE_SLICE_LIST_r30] = "_STORE_SLICE_LIST_r30",
     [_STORE_SUBSCR] = "_STORE_SUBSCR",
     [_STORE_SUBSCR_r30] = "_STORE_SUBSCR_r30",
     [_STORE_SUBSCR_DICT] = "_STORE_SUBSCR_DICT",
@@ -6425,6 +6438,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_SLICE:
             return 3;
         case _STORE_SLICE:
+            return 4;
+        case _STORE_SLICE_LIST:
             return 4;
         case _BINARY_OP_SUBSCR_LIST_INT:
             return 2;

@@ -2465,6 +2465,28 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT"), 1)
         self.assertEqual(uops.count("_TO_BOOL_LIST"), 1)
 
+    def test_store_slice_list_specialization(self):
+        # _STORE_SLICE_LIST fires only when an earlier op has proven the
+        # container is a list. Use a non-constant slice bound so the
+        # compiler emits STORE_SLICE (a constant slice gets folded).
+        def f(n):
+            lst = list(range(8))
+            src = [9, 8, 7]
+            k = 3
+            kk = k + (n & 0)
+            for _ in range(n):
+                _ = lst[0]
+                lst[:kk] = src
+            return lst
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, [9, 8, 7, 3, 4, 5, 6, 7])
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SLICE_LIST", uops)
+        self.assertNotIn("_STORE_SLICE", uops)
+
+
     def test_unique_tuple_unpack(self):
         def f(n):
             def four_tuple(x):
