@@ -758,6 +758,16 @@ symtable
   (Contributed by Irit Katriel in :gh:`124697`.)
 
 
+textwrap
+--------
+
+* Add a *text_len* parameter to :func:`textwrap.wrap`, :func:`textwrap.fill`,
+  :func:`textwrap.shorten`, and :class:`textwrap.TextWrapper`.  It customizes
+  how the width of a string is measured, so text that contains double-width
+  or zero-width characters can be wrapped correctly.
+  (Contributed by Kevin Deldycke in :gh:`154686`.)
+
+
 tkinter
 -------
 
