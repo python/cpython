@@ -1,0 +1,8 @@
+Add Poisson sampling to :mod:`tracemalloc`.  :func:`tracemalloc.start` now
+accepts an optional *sample_interval* parameter (in bytes).  When set to a
+value greater than zero, only a statistical sample of allocations is traced,
+which can reduce overhead while producing aggregate estimates.  In sampled
+mode, ``Trace.size`` is an upscaled estimate of the bytes represented by
+the sample, while ``Trace.real_size`` is the actual allocation size.
+Sampling can also be enabled at startup via
+``-X tracemalloc=NFRAME:INTERVAL`` or ``PYTHONTRACEMALLOC=NFRAME:INTERVAL``.

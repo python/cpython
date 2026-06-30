@@ -1943,6 +1943,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(newline));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(newlines));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(next));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nframe));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nlocals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(node_depth));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(node_offset));
@@ -2045,6 +2046,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reversed));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(rounding));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(salt));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sample_interval));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sample_interval_us));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sched_priority));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(scheduler));

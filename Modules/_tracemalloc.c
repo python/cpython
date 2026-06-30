@@ -85,19 +85,31 @@ _tracemalloc__get_object_traceback(PyObject *module, PyObject *obj)
 _tracemalloc.start
 
     nframe: int = 1
-    /
+    sample_interval: Py_ssize_t = 0
 
 Start tracing Python memory allocations.
 
 Also set the maximum number of frames stored in the traceback of a
 trace to nframe.
+
+If sample_interval is 0, every allocation is traced.  If sample_interval
+is N > 0, allocations are sampled using a Poisson process with a mean
+inter-arrival of N bytes.  In sampled mode, Trace.size is an upscaled
+estimate of the bytes represented by the sample, and Trace.real_size is
+the actual allocation size.
 [clinic start generated code]*/
 
 static PyObject *
-_tracemalloc_start_impl(PyObject *module, int nframe)
-/*[clinic end generated code: output=caae05c23c159d3c input=40d849b5b29d1933]*/
+_tracemalloc_start_impl(PyObject *module, int nframe,
+                        Py_ssize_t sample_interval)
+/*[clinic end generated code: output=001520d78054eab6 input=d02adbc327e2037e]*/
 {
-    if (_PyTraceMalloc_Start(nframe) < 0) {
+    if (sample_interval < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "sample_interval must be >= 0");
+        return NULL;
+    }
+    if (_PyTraceMalloc_Start(nframe, (size_t)sample_interval) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
