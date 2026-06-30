@@ -7041,6 +7041,8 @@ _curses_meta_impl(PyObject *module, int yes)
 }
 
 #ifdef NCURSES_MOUSE_VERSION
+/* has_mouse() was added to ncurses after the 5.7 release. */
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081122
 /*[clinic input]
 _curses.has_mouse
 
@@ -7055,6 +7057,7 @@ _curses_has_mouse_impl(PyObject *module)
 
     return PyBool_FromLong(has_mouse());
 }
+#endif /* NCURSES_EXT_FUNCS >= 20081122 */
 
 /*[clinic input]
 _curses.mouseinterval
