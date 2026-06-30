@@ -483,6 +483,7 @@ class TurtleScreenBase(object):
         self.canvwidth = w
         self.canvheight = h
         self.xscale = self.yscale = 1.0
+        self._updating = False
 
     def _createpoly(self):
         """Create an invisible polygon item on canvas self.cv)
@@ -552,7 +553,16 @@ class TurtleScreenBase(object):
     def _update(self):
         """Redraw graphics items on canvas
         """
-        self.cv.update()
+        if self._updating:
+            # Reentrant call (e.g. a drag handler moving the turtle,
+            # gh-50966): flush drawing without reprocessing input.
+            self.cv.update_idletasks()
+            return
+        self._updating = True
+        try:
+            self.cv.update()
+        finally:
+            self._updating = False
 
     def _delay(self, delay):
         """Delay subsequent canvas actions for delay ms."""
