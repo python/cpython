@@ -427,9 +427,6 @@ handle_channel_error(int err, PyObject *mod, int64_t cid)
                      "if not empty (try force=True)",
                      cid);
     }
-    else if (err == ERR_CHANNEL_MUTEX_ALLOC_FAIL) {
-        PyErr_NoMemory();
-    }
     else if (err == ERR_CHANNELS_MUTEX_INIT) {
         PyErr_SetString(state->ChannelError,
                         "can't initialize mutex for channel management");
