@@ -463,7 +463,6 @@ def run_command(cmd, check=True, **kwargs):
                                 stderr=subprocess.DEVNULL,
                                 text=True,
                                 **kwargs)
-        # ignore stderr
         with proc:
             try:
                 stdout = proc.communicate(timeout=timeout)[0]
