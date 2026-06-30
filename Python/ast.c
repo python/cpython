@@ -476,6 +476,11 @@ ensure_literal_complex(expr_ty exp)
                 return 0;
             }
             break;
+        case UnaryOp_kind:
+            if (!ensure_literal_signed(right, /*real=*/false, /*imaginary=*/true)) {
+                return 0;
+            }
+            break;
         default:
             return 0;
     }
