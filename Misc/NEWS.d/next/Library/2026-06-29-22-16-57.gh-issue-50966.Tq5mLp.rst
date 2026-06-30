@@ -1,0 +1,3 @@
+Fix unbounded recursion in :mod:`turtle` when a mouse event handler that moves
+the turtle is reentered while the screen is being redrawn, for example with
+``screen.ondrag(turtle.goto)``.  This could previously crash the interpreter.
