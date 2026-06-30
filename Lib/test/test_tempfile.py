@@ -148,6 +148,7 @@ class TestExports(BaseTestCase):
             "template" : 1,
             "SpooledTemporaryFile" : 1,
             "TemporaryDirectory" : 1,
+            "TemporaryFileWrapper" : 1,
         }
 
         unexp = []
@@ -1141,7 +1142,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         try:
             with self.assertWarnsRegex(
                 expected_warning=ResourceWarning,
-                expected_regex=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
+                expected_regex=r"Implicitly cleaning up <TemporaryFileWrapper file=.*>",
             ):
                 tmp_name = my_func(dir)
                 support.gc_collect()
@@ -1194,6 +1195,19 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.assertEqual(os.listdir(dir), [])
 
     # How to test the mode and bufsize parameters?
+
+class TestTemporaryFileWrapper(BaseTestCase):
+    """Test TemporaryFileWrapper."""
+
+    def test_public_name(self):
+        self.assertIs(tempfile.TemporaryFileWrapper, tempfile._TemporaryFileWrapper)
+
+    def test_in_all(self):
+        self.assertIn("TemporaryFileWrapper", tempfile.__all__)
+
+    def test_is_return_type_of_named_temporary_file(self):
+        with tempfile.NamedTemporaryFile() as f:
+            self.assertIsInstance(f, tempfile.TemporaryFileWrapper)
 
 class TestSpooledTemporaryFile(BaseTestCase):
     """Test SpooledTemporaryFile()."""

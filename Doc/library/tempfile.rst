@@ -14,10 +14,11 @@
 
 This module creates temporary files and directories.  It works on all
 supported platforms. :class:`TemporaryFile`, :class:`NamedTemporaryFile`,
-:class:`TemporaryDirectory`, and :class:`SpooledTemporaryFile` are high-level
-interfaces which provide automatic cleanup and can be used as
-:term:`context managers <context manager>`. :func:`mkstemp` and
-:func:`mkdtemp` are lower-level functions which require manual cleanup.
+:class:`TemporaryFileWrapper`, :class:`TemporaryDirectory`, and
+:class:`SpooledTemporaryFile` are high-level interfaces which provide
+automatic cleanup and can be used as :term:`context managers
+<context manager>`. :func:`mkstemp` and :func:`mkdtemp` are lower-level
+functions which require manual cleanup.
 
 All the user-callable functions and constructors take additional arguments which
 allow direct control over the location and name of temporary files and
@@ -139,6 +140,33 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.12
       Added *delete_on_close* parameter.
+
+.. class:: TemporaryFileWrapper(file, name, delete=True, delete_on_close=True)
+
+   A mutable wrapper returned by :func:`NamedTemporaryFile`. It wraps the
+   underlying file object, delegating attribute access to it, and ensures
+   the temporary file is deleted when appropriate.
+
+   .. attribute:: file
+
+      The underlying :term:`file-like object`.
+
+   .. attribute:: name
+
+      The file name of the temporary file.
+
+   .. method:: close()
+
+      Close the temporary file, possibly deleting it depending on the
+      *delete* and *delete_on_close* arguments passed to
+      :func:`NamedTemporaryFile`.
+
+   .. note::
+
+      ``tempfile._TemporaryFileWrapper`` is kept as a backwards compatible
+      alias for this class.
+
+   .. versionadded:: 3.16
 
 
 .. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)

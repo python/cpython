@@ -31,6 +31,7 @@ __all__ = [
     "TMP_MAX", "gettempprefix",            # constants
     "tempdir", "gettempdir",
     "gettempprefixb", "gettempdirb",
+    "TemporaryFileWrapper",
    ]
 
 
@@ -484,7 +485,7 @@ class _TemporaryFileCloser:
             _warnings.warn(self.warn_message, ResourceWarning)
 
 
-class _TemporaryFileWrapper:
+class TemporaryFileWrapper:
     """Temporary file wrapper
 
     This class provides a wrapper around files opened for
@@ -555,6 +556,8 @@ class _TemporaryFileWrapper:
         for line in self.file:
             yield line
 
+_TemporaryFileWrapper = TemporaryFileWrapper
+
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
                        dir=None, delete=True, *, errors=None,
@@ -607,7 +610,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
             raw = getattr(file, 'buffer', file)
             raw = getattr(raw, 'raw', raw)
             raw.name = name
-            return _TemporaryFileWrapper(file, name, delete, delete_on_close)
+            return TemporaryFileWrapper(file, name, delete, delete_on_close)
         except:
             file.close()
             raise
