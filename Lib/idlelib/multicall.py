@@ -334,6 +334,13 @@ def MultiCallCreator(widget):
         def bind(self, sequence=None, func=None, add=None):
             #print("bind(%s, %s, %s)" % (sequence, func, add),
             #      file=sys.__stderr__)
+            def wrapper(event):
+                if event.type == tkinter.EventType.Key:
+                    # Check for any mismatch between event.char and event.keysym
+                    if (len(event.char) and event.char.isprintable()
+                        and event.char.lower() != event.keysym.lower()):
+                        return None
+                return func(event)
             if type(sequence) is str and len(sequence) > 2 and \
                sequence[:2] == "<<" and sequence[-2:] == ">>":
                 if sequence in self.__eventinfo:
@@ -341,13 +348,13 @@ def MultiCallCreator(widget):
                     if ei[0] is not None:
                         for triplet in ei[1]:
                             self.__binders[triplet[1]].unbind(triplet, ei[0])
-                    ei[0] = func
+                    ei[0] = wrapper
                     if ei[0] is not None:
                         for triplet in ei[1]:
-                            self.__binders[triplet[1]].bind(triplet, func)
+                            self.__binders[triplet[1]].bind(triplet, wrapper)
                 else:
-                    self.__eventinfo[sequence] = [func, []]
-            return widget.bind(self, sequence, func, add)
+                    self.__eventinfo[sequence] = [wrapper, []]
+            return widget.bind(self, sequence, wrapper, add)
 
         def unbind(self, sequence, funcid=None):
             if type(sequence) is str and len(sequence) > 2 and \
