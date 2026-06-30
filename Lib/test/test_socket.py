@@ -1427,6 +1427,7 @@ class GeneralModuleTests(unittest.TestCase):
             except OSError as e:
                 if e.winerror == 10022:
                     self.skipTest('IPv6 might not be supported')
+                raise
 
         f = lambda a: inet_pton(AF_INET6, a)
         assertInvalid = lambda a: self.assertRaises(
@@ -1517,6 +1518,7 @@ class GeneralModuleTests(unittest.TestCase):
             except OSError as e:
                 if e.winerror == 10022:
                     self.skipTest('IPv6 might not be supported')
+                raise
 
         f = lambda a: inet_ntop(AF_INET6, a)
         assertInvalid = lambda a: self.assertRaises(
