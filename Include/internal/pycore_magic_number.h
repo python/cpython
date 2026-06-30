@@ -299,6 +299,7 @@ Known values:
     Python 3.15b1 3666 (Add SEND_VIRTUAL and SEND_ASYNC_GEN specializations)
     Python 3.16a0 3700 (Initial version)
     Python 3.16a0 3701 (Add CONSTANT_EMPTY_TUPLE to LOAD_COMMON_CONSTANT)
+    Python 3.16a1 3702 (Replace DELETE_NAME with PUSH_NULL; STORE_NAME)
 
 
     Python 3.17 will start with 3750
@@ -312,7 +313,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3701
+#define PYC_MAGIC_NUMBER 3702
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

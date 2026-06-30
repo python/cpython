@@ -63,15 +63,17 @@ jobs:
       run: python3 Platforms/emscripten configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
       run: python3 Platforms/emscripten make-build-python
+    - name: "Display build info of the build Python"
+      run: python3 Platforms/emscripten pythoninfo-build
     - name: "Make dependencies"
       run: >-
         python3 Platforms/emscripten make-dependencies
         ${{ steps.emsdk-cache.outputs.cache-hit == 'true' && '--check-up-to-date' || '' }}
-    - name: "Configure host Python"
+    - name: "Configure host/Emscripten Python"
       run: python3 Platforms/emscripten configure-host --host-runner node -- --config-cache
-    - name: "Make host Python"
+    - name: "Make host/Emscripten Python"
       run: python3 Platforms/emscripten make-host
-    - name: "Display build info"
-      run: python3 Platforms/emscripten run --pythoninfo
+    - name: "Display build info of the host/Emscripten Python"
+      run: python3 Platforms/emscripten pythoninfo-host
     - name: "Test"
       run: python3 Platforms/emscripten run --test
