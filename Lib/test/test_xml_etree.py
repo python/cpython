@@ -16,7 +16,6 @@ import pickle
 import pyexpat
 import sys
 import textwrap
-import time
 import types
 import unittest
 import unittest.mock as mock
