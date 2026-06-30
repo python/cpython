@@ -1001,7 +1001,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
         z = 1+1j
-        for f in ['F', 'D', '>F', '>D', '<F', '<D']:
+        for fmt in ['F', 'D', '>F', '>D', '<F', '<D']:
             with self.subTest(format=fmt):
                 with warnings.catch_warnings():
                     warnings.simplefilter("error", DeprecationWarning)
