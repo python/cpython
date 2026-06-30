@@ -9,6 +9,8 @@ import warnings
 
 
 MS_WINDOWS = (sys.platform == "win32")
+APPLE = (sys.platform in ("darwin", "ios", "tvos", "watchos"))
+
 COMMAND_TIMEOUT = 60.0
 
 
@@ -464,11 +466,11 @@ def run_command(cmd, check=True, **kwargs):
             return ''
 
         # Strip trailing spaces and newlines
-        print(f"Command {cmd_str} succeeded: {stdout!r}")
+        print(f"DEBUG: Command {cmd_str} succeeded: {stdout!r}")
         stdout = stdout.rstrip()
         return stdout
-    except FileNotFoundError:
-        print(f"Command {cmd_str} failed with: {exc!r}")
+    except FileNotFoundError as exc:
+        print(f"DEBUG: Command {cmd_str} failed with: {exc!r}")
         return ''
     except OSError as exc:
         print(f"Command {cmd_str} failed with: {exc!r}")
@@ -1193,6 +1195,11 @@ def collect_system(info_add):
     virt = detect_virt()
     if virt:
         info_add('system.virt', virt)
+
+    if APPLE:
+        hardware = run_command(['sysctl', '-n', 'hw.model')
+        if hardware:
+            info_add('system.hardware', hardware)
 
 
 def collect_info(info):
