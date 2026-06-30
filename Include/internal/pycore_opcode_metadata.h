@@ -184,8 +184,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 0;
         case DELETE_FAST:
             return 0;
-        case DELETE_NAME:
-            return 0;
         case DELETE_SUBSCR:
             return 2;
         case DICT_MERGE:
@@ -683,8 +681,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case DELETE_FAST:
             return 0;
-        case DELETE_NAME:
-            return 0;
         case DELETE_SUBSCR:
             return 0;
         case DICT_MERGE:
@@ -1181,7 +1177,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [DELETE_ATTR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [DELETE_DEREF] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [DELETE_FAST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [DELETE_NAME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [DELETE_SUBSCR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [DICT_MERGE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [DICT_UPDATE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1433,7 +1428,6 @@ _PyOpcode_macro_expansion[256] = {
     [DELETE_ATTR] = { .nuops = 1, .uops = { { _DELETE_ATTR, OPARG_SIMPLE, 0 } } },
     [DELETE_DEREF] = { .nuops = 1, .uops = { { _DELETE_DEREF, OPARG_SIMPLE, 0 } } },
     [DELETE_FAST] = { .nuops = 1, .uops = { { _DELETE_FAST, OPARG_SIMPLE, 0 } } },
-    [DELETE_NAME] = { .nuops = 1, .uops = { { _DELETE_NAME, OPARG_SIMPLE, 0 } } },
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { _DELETE_SUBSCR, OPARG_SIMPLE, 0 } } },
     [DICT_MERGE] = { .nuops = 2, .uops = { { _DICT_MERGE, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 } } },
     [DICT_UPDATE] = { .nuops = 2, .uops = { { _DICT_UPDATE, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 } } },
@@ -1637,7 +1631,6 @@ const char *_PyOpcode_OpName[267] = {
     [DELETE_ATTR] = "DELETE_ATTR",
     [DELETE_DEREF] = "DELETE_DEREF",
     [DELETE_FAST] = "DELETE_FAST",
-    [DELETE_NAME] = "DELETE_NAME",
     [DELETE_SUBSCR] = "DELETE_SUBSCR",
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
@@ -1841,6 +1834,7 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
+    [118] = 118,
     [119] = 119,
     [120] = 120,
     [121] = 121,
@@ -1937,7 +1931,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [DELETE_ATTR] = DELETE_ATTR,
     [DELETE_DEREF] = DELETE_DEREF,
     [DELETE_FAST] = DELETE_FAST,
-    [DELETE_NAME] = DELETE_NAME,
     [DELETE_SUBSCR] = DELETE_SUBSCR,
     [DICT_MERGE] = DICT_MERGE,
     [DICT_UPDATE] = DICT_UPDATE,
@@ -2102,6 +2095,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 118: \
     case 119: \
     case 120: \
     case 121: \

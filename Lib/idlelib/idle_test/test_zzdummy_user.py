@@ -68,7 +68,7 @@ class ZZDummyTest(ZZDummyMixin, unittest.TestCase):
         zzdummy.idleConf.userCfg = real_usercfg
         del cls.editor, cls.text
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root

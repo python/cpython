@@ -2861,6 +2861,7 @@ import textwrap
 import unittest
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 class SyntaxWarningTest(unittest.TestCase):
     def check_warning(self, code, errtext, filename="<testcase>", mode="exec"):
@@ -3201,6 +3202,22 @@ class A:
     class B[{name}]: pass
                 """, "<testcase>", mode="exec")
 
+    @support.nomemtest
+    def test_disallowed_type_param_names_oom(self):
+        # gh-152682: Don't crash on OOM when formatting the SyntaxError message
+        # in symtable_visit_type_param_bound_or_default.
+        code = textwrap.dedent("""\
+            import _testcapi
+            _testcapi.set_nomemory(0)
+            try:
+                compile("class A[__classdict__]: pass", "<string>", "exec")
+            except MemoryError:
+                pass
+            else:
+                raise RuntimeError('MemoryError not raised')
+        """)
+        assert_python_ok("-c", code)
+
     @support.cpython_only
     def test_nested_named_except_blocks(self):
         code = ""
@@ -3504,6 +3521,50 @@ while 1:
             ("continue", "import ast")
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
+
+    def test_double_ampersand(self):
+        self._check_error(
+            "a && b",
+            r"Maybe you meant 'and' or '&' instead of '&&'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+        self._check_error(
+            "a & & b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=5,
+            end_offset=6,
+        )
+        self._check_error(
+            "(a &\n    & b)",
+            "invalid syntax",
+            lineno=2,
+            end_lineno=2,
+            offset=5,
+            end_offset=6,
+        )
+
+    def test_double_pipe(self):
+        self._check_error(
+            "a || b",
+            r"Maybe you meant 'or' or '|' instead of '||'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+        self._check_error(
+            "a | | b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=5,
+            end_offset=6,
+        )
 
 
 class LazyImportRestrictionTestCase(SyntaxErrorTestCase):
