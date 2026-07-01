@@ -1923,7 +1923,7 @@ _Py_read(int fd, void *buf, size_t count)
 static Py_ssize_t
 _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 {
-    Py_ssize_t n;
+    Py_ssize_t n = 0;
     int err;
     int async_err = 0;
 
@@ -1970,7 +1970,11 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
                 c /= 2;
             } while (c > 0);
 #else
-            n = write(fd, buf, count);
+            /* Only call write() if there is something to write as
+             * writing 0 bytes to a non-regular file is an undefined behaviour. */
+            if (count > 0) {
+                n = write(fd, buf, count);
+            }
 #endif
             /* save/restore errno because PyErr_CheckSignals()
              * and PyErr_SetFromErrno() can modify it */
@@ -1996,7 +2000,11 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
                 c /= 2;
             } while (c > 0);
 #else
-            n = write(fd, buf, count);
+            /* Only call write() if there is something to write as
+             * writing 0 bytes to a non-regular file is an undefined behaviour. */
+            if (count > 0) {
+                n = write(fd, buf, count);
+            }
 #endif
             err = errno;
         } while (n < 0 && err == EINTR);
