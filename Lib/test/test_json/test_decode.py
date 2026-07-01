@@ -155,6 +155,28 @@ class TestDecode:
             with self.assertRaises(ValueError):
                 self.loads('1' * (maxdigits + 1))
 
+    def test_int_boundaries(self):
+        # Values around the signed/unsigned 64-bit limits and the
+        # 19-vs-20 digit fast-path threshold of the C accelerator.
+        for s in ['0', '-0',
+                  '9223372036854775807',    # LLONG_MAX
+                  '9223372036854775808',     # LLONG_MAX + 1
+                  '-9223372036854775808',    # LLONG_MIN
+                  '-9223372036854775809',    # LLONG_MIN - 1
+                  '9999999999999999999',     # largest 19-digit
+                  '-9999999999999999999',
+                  '18446744073709551615',    # ULLONG_MAX (20 digits)
+                  '18446744073709551616',    # ULLONG_MAX + 1
+                  '10000000000000000000',    # smallest 20-digit
+                  '-10000000000000000000']:
+            with self.subTest(s=s):
+                self.assertEqual(self.loads(s), int(s))
+
+    def test_long_float(self):
+        # A float longer than the C accelerator's stack buffer.
+        s = '0.' + '1' * 200
+        self.assertEqual(self.loads(s), float(s))
+
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
