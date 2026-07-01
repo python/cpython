@@ -3789,6 +3789,7 @@ typedef struct {
     PyObject *ittuple;                  /* tuple of iterators */
     PyObject *result;
     PyObject *fillvalue;
+    uint8_t running;
 } ziplongestobject;
 
 #define ziplongestobject_CAST(op)   ((ziplongestobject *)(op))
@@ -3858,6 +3859,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     lz->numactive = tuplesize;
     lz->result = result;
     lz->fillvalue = Py_NewRef(fillvalue);
+    lz->running = 0;
     return (PyObject *)lz;
 }
 
@@ -3896,10 +3898,21 @@ zip_longest_next_lock_held(PyObject *op)
     PyObject *item;
     PyObject *olditem;
 
-    if (tuplesize == 0)
+    if (lz->running == 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "zip_longest() iterator already executing");
         return NULL;
-    if (lz->numactive == 0)
-        return NULL;
+    }
+    lz->running = 1;
+
+    if (tuplesize == 0) {
+        result = NULL;
+        goto done;
+    }
+    if (lz->numactive == 0) {
+        result = NULL;
+        goto done;
+    }
     if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
@@ -3913,7 +3926,8 @@ zip_longest_next_lock_held(PyObject *op)
                     if (lz->numactive == 0 || PyErr_Occurred()) {
                         lz->numactive = 0;
                         Py_DECREF(result);
-                        return NULL;
+                        result = NULL;
+                        goto done;
                     } else {
                         item = Py_NewRef(lz->fillvalue);
                         PyTuple_SET_ITEM(lz->ittuple, i, NULL);
@@ -3930,8 +3944,10 @@ zip_longest_next_lock_held(PyObject *op)
         _PyTuple_Recycle(result);
     } else {
         result = PyTuple_New(tuplesize);
-        if (result == NULL)
-            return NULL;
+        if (result == NULL) {
+            result = NULL;
+            goto done;
+        }
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);
             if (it == NULL) {
@@ -3943,7 +3959,8 @@ zip_longest_next_lock_held(PyObject *op)
                     if (lz->numactive == 0 || PyErr_Occurred()) {
                         lz->numactive = 0;
                         Py_DECREF(result);
-                        return NULL;
+                        result = NULL;
+                        goto done;
                     } else {
                         item = Py_NewRef(lz->fillvalue);
                         PyTuple_SET_ITEM(lz->ittuple, i, NULL);
@@ -3954,6 +3971,8 @@ zip_longest_next_lock_held(PyObject *op)
             PyTuple_SET_ITEM(result, i, item);
         }
     }
+done:
+    lz->running = 0;
     return result;
 }
 
