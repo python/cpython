@@ -932,8 +932,7 @@ For an example of the usage of queues for interprocess communication see
    standard library's :mod:`queue` module are raised to signal timeouts.
 
    :class:`Queue` implements all the methods of :class:`queue.Queue` except for
-   :meth:`~queue.Queue.task_done`, :meth:`~queue.Queue.join`, and
-   :meth:`~queue.Queue.shutdown`.
+   :meth:`~queue.Queue.task_done`, :meth:`~queue.Queue.join`.
 
    .. method:: qsize()
 
@@ -970,6 +969,10 @@ For an example of the usage of queues for interprocess communication see
          If the queue is closed, :exc:`ValueError` is raised instead of
          :exc:`AssertionError`.
 
+      Can raise the :exc:`queue.ShutDown` when queue shuts down.
+
+      .. versionadded:: 3.16
+
    .. method:: put_nowait(obj)
 
       Equivalent to ``put(obj, False)``.
@@ -988,9 +991,24 @@ For an example of the usage of queues for interprocess communication see
          If the queue is closed, :exc:`ValueError` is raised instead of
          :exc:`OSError`.
 
+      Can raise the :exc:`queue.ShutDown` when queue shuts down and is empty.
+
+      .. versionadded:: 3.16
+
    .. method:: get_nowait()
 
       Equivalent to ``get(False)``.
+
+   .. method:: shutdown([immediate])
+
+      Shuts down the queue. If optional args *immediate* is ``False``
+      (the default), all remaining items could be retrieve until queue is empty.
+      If optional args *immediate* is ``True``, all remaining items from the
+      queue are erased. When queue is empty, get an item raises
+      a :exc:`queue.ShutDown` exception. Adding a new item into the queue
+      also raises this same exception.
+
+   .. versionadded:: 3.16
 
    :class:`multiprocessing.Queue` has a few additional methods not found in
    :class:`queue.Queue`.  These methods are usually unnecessary for most
