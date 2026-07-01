@@ -1,0 +1,3 @@
+Allow :class:`subprocess.Popen` to run subprocesses as root after dropping
+root privileges but saving the original user/group identity so it can be
+re-assumed.
