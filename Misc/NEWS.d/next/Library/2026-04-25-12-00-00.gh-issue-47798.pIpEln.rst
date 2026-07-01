@@ -1,0 +1,6 @@
+Added :func:`subprocess.run_pipeline` for running shell-style pipelines of
+commands. The new :class:`subprocess.CompletedPipeline` and
+:exc:`subprocess.PipelineError` types describe pipeline outcomes and check
+failures, with ``check=True`` providing pipefail-style error handling.
+Individual commands may be wrapped in a :class:`subprocess.PipelineCommand`
+to override *stderr*, *env*, *cwd*, or *shell* for that command only.
