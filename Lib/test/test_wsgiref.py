@@ -179,18 +179,92 @@ class IntegrationTests(TestCase):
                 )
                 self.assertEqual(err.splitlines()[-2], exc_message)
 
-    def test_wsgi_input(self):
-        def bad_app(e,s):
+    @force_not_colorized
+    def test_wsgi_input_validation(self):
+        def app(e, s):
             e["wsgi.input"].read()
             s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
             return [b"data"]
-        out, err = run_amock(validator(bad_app))
-        self.assertEndsWith(out,
-            b"A server error occurred.  Please contact the administrator."
+        out, err = run_amock(validator(app))
+        self.assertEqual(out.splitlines()[-1], b"data")
+        self.assertEndsWith(err, '"GET / HTTP/1.0" 200 4\n')
+
+    @force_not_colorized
+    def test_wsgi_input_read(self):
+        def app(e, s):
+            s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+            return [e["wsgi.input"].read(3), b"-", e["wsgi.input"].read()]
+        request = (
+            b"POST / HTTP/1.0\n"
+            b"Content-Length: 6\n\n"
+            b"foobarEXTRA"
         )
-        self.assertEqual(
-            err.splitlines()[-2], "AssertionError"
+        out, err = run_amock(app, request)
+        self.assertEqual(out.splitlines()[-1], b"foo-bar")
+        self.assertEndsWith(err, '"POST / HTTP/1.0" 200 7\n')
+
+    @force_not_colorized
+    def test_wsgi_input_readline(self):
+        def app(e, s):
+            s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+            return [
+                e["wsgi.input"].readline(3),
+                b"-",
+                e["wsgi.input"].readline(),
+                e["wsgi.input"].readline(),
+            ]
+        request = (
+            b"POST / HTTP/1.0\n"
+            b"Content-Length: 10\n\n"
+            b"foobar\n"
+            b"bazEXTRA"
         )
+        out, err = run_amock(app, request)
+        self.assertEqual(out.splitlines()[-2], b"foo-bar")
+        self.assertEqual(out.splitlines()[-1], b"baz")
+        self.assertEndsWith(err, '"POST / HTTP/1.0" 200 11\n')
+
+    @force_not_colorized
+    def test_wsgi_input_readlines(self):
+        def app(e, s):
+            s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+            return (
+                e["wsgi.input"].readlines(3)
+                + [b"-"]
+                + e["wsgi.input"].readlines()
+            )
+        request = (
+            b"POST / HTTP/1.0\n"
+            b"Content-Length: 17\n\n"
+            b"foobar\n"
+            b"baz\n"
+            b"hello\n"
+            b"EXTRA"
+        )
+        out, err = run_amock(app, request)
+        self.assertEqual(out.splitlines()[-3], b"foobar")
+        self.assertEqual(out.splitlines()[-2], b"-baz")
+        self.assertEqual(out.splitlines()[-1], b"hello")
+        self.assertEndsWith(err, '"POST / HTTP/1.0" 200 18\n')
+
+    @force_not_colorized
+    def test_wsgi_input_iter(self):
+        def app(e, s):
+            s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+            return e["wsgi.input"]
+        request = (
+            b"POST / HTTP/1.0\n"
+            b"Content-Length: 17\n\n"
+            b"foobar\n"
+            b"baz\n"
+            b"hello\n"
+            b"EXTRA"
+        )
+        out, err = run_amock(app, request)
+        self.assertEqual(out.splitlines()[-3], b"foobar")
+        self.assertEqual(out.splitlines()[-2], b"baz")
+        self.assertEqual(out.splitlines()[-1], b"hello")
+        self.assertEndsWith(err, '"POST / HTTP/1.0" 200 17\n')
 
     @force_not_colorized
     def test_bytes_validation(self):
