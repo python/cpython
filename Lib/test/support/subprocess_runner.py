@@ -1,7 +1,7 @@
 """Run a single test method in this (sub)process and report the result.
 
 Invoked as ``python -m test.support.subprocess_runner MODULE QUALNAME OUTFILE``
-by :func:`test.support.isolation.isolated`.  The outcome of the test (including
+by :func:`test.support.isolation.runInSubprocess`.  The outcome of the test (including
 that of each individual subtest) is written as JSON to OUTFILE.  This module is
 not meant to be imported.
 """
@@ -23,8 +23,8 @@ module = sys.argv[1]
 qualname = sys.argv[2]
 outfile = sys.argv[3]
 
-# Mirror the parent's regrtest configuration (-u, -M, -v, ...) before importing
-# the test, so resource gating and bigmem sizing match the parent process.
+# Set up the child (mirror the parent's -u/-M/-v config, suppress Windows CRT
+# assertion dialogs, ...) before importing the test.
 from test.support.isolation import _apply_child_config
 _apply_child_config()
 

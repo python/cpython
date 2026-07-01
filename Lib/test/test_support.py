@@ -1078,8 +1078,8 @@ class TestHashlibSupport(unittest.TestCase):
 
 class TestIsolated(unittest.TestCase):
     # Drive the sample tests in test._isolated_sample (which really spawn
-    # subprocesses through @isolation.isolated()) under a private TestResult,
-    # and check that each subprocess outcome is replayed in the parent.
+    # subprocesses through @isolation.runInSubprocess()) under a private
+    # TestResult, and check that each subprocess outcome is replayed in the parent.
 
     @staticmethod
     def _run(name):
@@ -1160,6 +1160,17 @@ class TestIsolated(unittest.TestCase):
         name, elapsed = result.collectedDurations[0]
         self.assertEqual(name.split()[0], 'test_slow')
         self.assertGreaterEqual(elapsed, DURATION_SLEEP / 2)
+
+    @support.requires_subprocess()
+    def test_subclass_fixtures_bound_to_runtime_class(self):
+        # A decorated class and a subclass of it each run setUpClass bound to
+        # their own class; both samples pass only if that holds.
+        for name in ('FixtureBindingSample', 'FixtureBindingSubclassSample'):
+            with self.subTest(sample=name):
+                result = self._run(name)
+                self.assertEqual(result.testsRun, 1)
+                self.assertEqual(result.failures, [])
+                self.assertEqual(result.errors, [])
 
     def test_skipped_without_subprocess_support(self):
         # On a platform without subprocess support the test is skipped in the

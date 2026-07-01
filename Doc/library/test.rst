@@ -963,10 +963,10 @@ The :mod:`!test.support` module defines the following functions:
 
 .. currentmodule:: test.support.isolation
 
-.. decorator:: isolated()
+.. decorator:: runInSubprocess()
 
-   Decorator that runs the decorated test in isolation, in a fresh interpreter
-   subprocess, so that it does not share global or interpreter state with the
+   Decorator that runs the decorated test in a fresh interpreter subprocess, in
+   isolation, so that it does not share global or interpreter state with the
    rest of the test run.  It can decorate a test method or a whole
    :class:`~unittest.TestCase` subclass.  Decorated methods must take no extra
    arguments.  A failure, error or skip in the subprocess is reported for the
@@ -989,7 +989,7 @@ The :mod:`!test.support` module defines the following functions:
    :meth:`~unittest.TestCase.setUpClass` in the subprocess is reported for the
    whole class.  ``setUpModule()`` cannot be controlled by a class decorator,
    so it still runs in the parent process too; test it with
-   :data:`running_isolated` if needed.
+   :data:`runningInSubprocess` if needed.
 
    The subprocess inherits the enabled resources (``-u``), memory limit
    (``-M``) and verbosity (``-v``) of the parent test run, so that
@@ -1000,11 +1000,11 @@ The :mod:`!test.support` module defines the following functions:
    The test is skipped on platforms without subprocess support.
 
 
-.. data:: running_isolated
+.. data:: runningInSubprocess
 
    ``True`` while the code runs in the isolated subprocess spawned by
-   :func:`isolated`, and ``False`` otherwise (including in the parent process
-   and in a normal, non-isolated test run).  Fixtures such as
+   :func:`runInSubprocess`, and ``False`` otherwise (including in the parent
+   process and in a normal, non-isolated test run).  Fixtures such as
    :meth:`~unittest.TestCase.setUp`, :meth:`~unittest.TestCase.tearDown`,
    :meth:`~unittest.TestCase.setUpClass`, :meth:`~unittest.TestCase.tearDownClass`,
    ``setUpModule()`` and ``tearDownModule()`` can test it to choose which code

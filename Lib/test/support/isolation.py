@@ -1,4 +1,4 @@
-"""Run tests in isolated subprocesses (the test.support.isolation.isolated decorator).
+"""Run tests in isolated subprocesses (the test.support.isolation.runInSubprocess decorator).
 
 A failure, error or skip that happens in the subprocess is replayed in the
 parent process so that the test runner records it.  The original (subprocess)
@@ -11,10 +11,8 @@ import os
 import sys
 import unittest
 
-# Mark this module's frames as belonging to the test machinery, so that
-# unittest strips them from reported tracebacks (see TestResult._clean_tracebacks
-# in Lib/unittest/result.py).  Only the original subprocess traceback, attached
-# as the cause, is then shown -- not the parent-side replay frames.
+# Let unittest strip this module's frames from tracebacks, so only the original
+# subprocess traceback (attached as the cause) is shown, not the replay frames.
 __unittest = True
 
 # Environment variable set in the child process so that the decorated test
@@ -39,11 +37,11 @@ def _child_config():
     return {name: getattr(support, name) for name in _PROPAGATED_CONFIG}
 
 def _apply_child_config():
-    """Mirror the parent's test.support configuration in the subprocess.
+    """Set up the child to run the test like a regrtest worker would.
 
-    Called by subprocess_runner before loading the test, so that import-time
-    decorators (e.g. requires_resource) and runtime checks see the same -u/-M/-v
-    configuration as the parent process.
+    Mirror the parent's -u/-M/-v config, then suppress the Windows CRT assertion
+    dialogs that would otherwise block a debug build on a modal dialog and hang
+    the parent.
     """
     import json
     import test.support as support
@@ -51,11 +49,11 @@ def _apply_child_config():
     if data:
         for name, value in json.loads(data).items():
             setattr(support, name, value)
+    support.suppress_msvcrt_asserts(support.verbose >= 2)
 
-# True while running inside the isolated subprocess spawned by @isolated().
-# setUp()/tearDown() and the class- and module-level fixtures can test it to
-# decide which code to run in the subprocess as opposed to the parent process.
-running_isolated = bool(os.environ.get(_RUN_IN_SUBPROCESS_ENV))
+# True inside the subprocess spawned by @runInSubprocess().  Fixtures can test
+# it to decide what to run in the subprocess as opposed to the parent process.
+runningInSubprocess = bool(os.environ.get(_RUN_IN_SUBPROCESS_ENV))
 
 
 class _RemoteTraceback(Exception):
@@ -82,8 +80,8 @@ def _remote(detail):
 
 
 def _check_subprocess_support():
-    # isolated() always runs the test in a subprocess, so skip (in the parent)
-    # on platforms that do not support spawning one.
+    # runInSubprocess() always runs the test in a subprocess, so skip (in the
+    # parent) on platforms that do not support spawning one.
     import test.support as support
     if not support.has_subprocess_support:
         raise unittest.SkipTest('requires subprocess support')
@@ -127,9 +125,9 @@ def _replay_outcome(test, outcome):
     if kind == 'skipped':
         test.skipTest(detail)  # the detail is the skip reason, not a traceback
     elif kind in ('failure', 'expected_failure'):
-        # An expected failure is replayed like a failure: the wrapper carries
-        # the @expectedFailure marker (copied by functools.wraps), so the parent
-        # records the raised exception as an expectedFailure, not a failure.
+        # Replay an expected failure like a failure: the wrapper keeps the
+        # @expectedFailure marker (via functools.wraps), so the parent records
+        # the raised exception as an expectedFailure.
         exc = test.failureException('test failed in the subprocess')
         raise exc from _remote(detail)
     else:  # 'error'
@@ -163,7 +161,7 @@ def _raise_fixture_outcome(outcome):
 def _isolate_method(func):
     @functools.wraps(func)
     def wrapper(self, /, *args, **kwargs):
-        if running_isolated:
+        if runningInSubprocess:
             # Already running in the subprocess: run the real test.
             return func(self, *args, **kwargs)
         _check_subprocess_support()
@@ -182,9 +180,9 @@ def _isolate_method(func):
 
 
 def _isolate_class(cls):
-    # Unwrap to the plain functions: the replacements below call them with the
-    # runtime cls, so a subclass of an isolated class runs the fixtures bound to
-    # itself (a bound classmethod would freeze the decoration-time class).
+    # Unwrap to the plain functions so the replacements can call them with the
+    # runtime cls; a bound classmethod would freeze the decoration-time class
+    # and a subclass would run the fixtures bound to the base class.
     orig_setUpClass = cls.setUpClass.__func__
     orig_tearDownClass = cls.tearDownClass.__func__
     orig_setUp = cls.setUp
@@ -192,7 +190,7 @@ def _isolate_class(cls):
     orig_addDuration = getattr(cls, '_addDuration', None)
 
     def setUpClass(cls):
-        if running_isolated:
+        if runningInSubprocess:
             orig_setUpClass(cls)
             return
         _check_subprocess_support()
@@ -215,7 +213,7 @@ def _isolate_class(cls):
         cls._isolated_durations = dict(payload.get('durations', ()))
 
     def tearDownClass(cls):
-        if running_isolated:
+        if runningInSubprocess:
             orig_tearDownClass(cls)
         else:
             cls._isolated_outcomes = None
@@ -223,18 +221,17 @@ def _isolate_class(cls):
 
     def setUp(self):
         # In the parent the real test does not run, so neither should setUp().
-        if running_isolated:
+        if runningInSubprocess:
             orig_setUp(self)
 
     def tearDown(self):
-        if running_isolated:
+        if runningInSubprocess:
             orig_tearDown(self)
 
     def _addDuration(self, result, elapsed):
-        # In the parent, report the per-test duration measured in the subprocess
-        # rather than the replay time (subprocess startup is paid once, in
-        # setUpClass).
-        if not running_isolated:
+        # In the parent, report the subprocess timing rather than the (instant)
+        # replay time; subprocess startup is paid once, in setUpClass.
+        if not runningInSubprocess:
             durations = getattr(type(self), '_isolated_durations', None) or {}
             elapsed = durations.get(self.id(), elapsed)
         orig_addDuration(self, result, elapsed)
@@ -253,15 +250,15 @@ def _isolate_class(cls):
         method = getattr(cls, name)
         @functools.wraps(method)
         def wrapper(self, /, *args, __func=method, **kwargs):
-            if running_isolated:
+            if runningInSubprocess:
                 return __func(self, *args, **kwargs)
             replay(self)
         setattr(cls, name, wrapper)
     return cls
 
 
-def isolated():
-    """Decorator to run a test method or class in isolation from the rest.
+def runInSubprocess():
+    """Decorator to run a test method or class in a fresh subprocess.
 
     The decorated test runs in a separate, fresh Python process, so it does not
     share global or interpreter state with the rest of the test run.  When a
@@ -274,7 +271,7 @@ def isolated():
     individual subtests (:meth:`~unittest.TestCase.subTest`) that fail or are
     skipped are reported individually.  The original subprocess traceback is
     shown as the cause of a reported failure or error.  Use
-    :data:`running_isolated` in fixtures to choose what to run in the subprocess.
+    :data:`runningInSubprocess` in fixtures to choose what to run in the subprocess.
 
     The test is skipped on platforms without subprocess support, since it must
     spawn one.
