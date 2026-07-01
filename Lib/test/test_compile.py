@@ -911,6 +911,28 @@ class TestSpecifics(unittest.TestCase):
             'RETURN_VALUE',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
+    # gh-150001: Test that this code does not raise SystemError
+    def test_parser_stack_overflow_no_crash(self):
+        string = (
+            b'(*h(((h(h(h(' +
+            b'[' * 35 +
+            b'*h(' +
+            b'[' * 38 +
+            b'**h(' +
+            b'[' * 31 +
+            b'(' * 4 +
+            b'~' * 20 +
+            b'F{' +
+            b'[' * 27 +
+            b'**h(' +
+            b'[' * 31 +
+            b'(' * 4 +
+            b'~' * 23 +
+            b'F{F"{F"{F"{F"{F"{F"{F"{FF""{{F"{""{F"{F{{F"{F"{F"\\}'
+        )
+        with self.assertRaises((MemoryError, SyntaxError)):
+            compile(string, '<input>', "single")
+
     @support.cpython_only
     def test_docstring(self):
         src = textwrap.dedent("""

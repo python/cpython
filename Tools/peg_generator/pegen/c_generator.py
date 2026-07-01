@@ -870,6 +870,12 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 f"D(fprintf(stderr, \"%*c%s {rulename}[%d-%d]: %s failed!\\n\", p->level, ' ',\n"
                 f'                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "{node_str}"));'
             )
+            if is_loop:
+                self.print("if (p->error_indicator) {")
+                with self.indent():
+                    self.print("p->level--;")
+                    self.print("return NULL;")
+                self.print("}")
             if "_cut_var" in vars:
                 self.print("if (_cut_var) {")
                 with self.indent():
