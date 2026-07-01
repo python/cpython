@@ -614,7 +614,11 @@ C API changes
 New features
 ------------
 
-* TODO
+* Add :c:func:`PyUnicodeWriter_WriteRawStr` function to write a string into
+  a Unicode writer. It can be used to write a :class:`str` subclass which
+  overrides the ``__str__()`` method: it writes the string contents instead of
+  calling the ``__str__()`` method.
+  (Contributed by Victor Stinner in :gh:`150973`.)
 
 Porting to Python 3.16
 ----------------------
