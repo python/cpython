@@ -384,7 +384,16 @@ class IOBinding:
         ("All files", "*"),
         )
 
+    # Output windows (Shell, Output) are not Python source, so they list
+    # text files first and default to ".txt" (gh-65339).
+    text_filetypes = (
+        ("Text files", "*.txt", "TEXT"),
+        ("Python files", py_extensions, "TEXT"),
+        ("All files", "*"),
+        )
+
     defaultextension = '.py' if sys.platform == 'darwin' else ''
+    text_defaultextension = '.txt'
 
     def askopenfile(self):
         dir, base = self.defaultfilename("open")
