@@ -126,8 +126,12 @@ class SymbolTable:
         return bool(self._table.type == _symtable.TYPE_FUNCTION)
 
     def is_nested(self):
-        """Return *True* if the block is a nested class
-        or function."""
+        """Return *True* if the block is a function or class nested,
+        directly or indirectly, within a function.
+
+        A block defined at module level, or nested only within classes
+        (and not within any function), is not considered nested.
+        """
         return bool(self._table.nested)
 
     def has_children(self):

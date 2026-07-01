@@ -125,7 +125,10 @@ Examining Symbol Tables
 
    .. method:: is_nested()
 
-      Return ``True`` if the block is a nested class or function.
+      Return ``True`` if the block is a function or class nested, directly or
+      indirectly, within a function.  A block defined at module level, or
+      nested only within classes (and not within any function), is not
+      considered nested.
 
    .. method:: has_children()
 

@@ -234,6 +234,10 @@ class SymtableTest(unittest.TestCase):
     def test_nested(self):
         self.assertFalse(self.top.is_nested())
         self.assertFalse(self.Mine.is_nested())
+        # gh-99350: a method of a top-level class is not nested, because
+        # is_nested() reflects being enclosed by a function, not merely
+        # being nested inside some other block.
+        self.assertFalse(self.a_method.is_nested())
         self.assertFalse(self.spam.is_nested())
         self.assertTrue(self.internal.is_nested())
 
