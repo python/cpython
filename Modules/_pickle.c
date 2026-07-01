@@ -1284,6 +1284,27 @@ _Unpickler_SkipConsumed(UnpicklerObject *self)
 
 static const Py_ssize_t READ_WHOLE_LINE = -1;
 
+/* Release the temporary memoryview handed to readinto() and drop our reference,
+   so a view retained by readinto() can no longer reach the underlying buffer.
+   Returns -1 if release() failed.  Any pending exception is preserved. */
+static int
+_Unpickler_ReleaseBufObj(PyObject *buf_obj)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *res = PyObject_CallMethodNoArgs(buf_obj, &_Py_ID(release));
+    int err = (res == NULL) ? -1 : 0;
+    Py_XDECREF(res);
+    if (exc != NULL) {
+        if (err < 0) {
+            PyErr_Clear();
+        }
+        PyErr_SetRaisedException(exc);
+        err = 0;
+    }
+    Py_DECREF(buf_obj);
+    return err;
+}
+
 /* Don't call it directly: use _Unpickler_ReadInto() */
 static Py_ssize_t
 _Unpickler_ReadIntoFromFile(PickleState *state, UnpicklerObject *self, char *buf,
@@ -1319,17 +1340,24 @@ _Unpickler_ReadIntoFromFile(PickleState *state, UnpicklerObject *self, char *buf
         return n;
     }
 
-    /* Call readinto() into user buffer */
+    /* buf is a temporary buffer; we wrap it in a memoryview only to pass it to
+       readinto().  Release the view once readinto() returns, so a view it kept
+       a reference to cannot be used to access buf after it is freed. */
     PyObject *buf_obj = PyMemoryView_FromMemory(buf, n, PyBUF_WRITE);
     if (buf_obj == NULL) {
         return -1;
     }
-    PyObject *read_size_obj = _Pickle_FastCall(self->readinto, buf_obj);
+    /* PyObject_CallOneArg does not steal buf_obj, so we can release it below. */
+    PyObject *read_size_obj = PyObject_CallOneArg(self->readinto, buf_obj);
     if (read_size_obj == NULL) {
+        _Unpickler_ReleaseBufObj(buf_obj);
         return -1;
     }
     Py_ssize_t read_size = PyLong_AsSsize_t(read_size_obj);
     Py_DECREF(read_size_obj);
+    if (_Unpickler_ReleaseBufObj(buf_obj) < 0) {
+        return -1;
+    }
 
     if (read_size < 0) {
         if (!PyErr_Occurred()) {
