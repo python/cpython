@@ -364,6 +364,64 @@ class BaseHTTPServerTestCase(BaseTestCase):
             self.assertEqual(b'', data)
 
 
+class RFC7230BodyDrainTestCase(BaseTestCase):
+    """Exercise the post-dispatch body drain added for RFC 7230 section 6.3."""
+
+    class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+        protocol_version = 'HTTP/1.1'
+        default_request_version = 'HTTP/1.1'
+
+        def do_GET(self):
+            # Deliberately does not read the body, to exercise the
+            # post-dispatch body drain.
+            out = b'GET ok\n'
+            self.send_response(HTTPStatus.OK)
+            self.send_header('Content-Type', 'text/plain')
+            self.send_header('Content-Length', str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
+
+    def _send_raw(self, payload, timeout=2):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((self.HOST, self.PORT))
+        try:
+            sock.sendall(payload)
+            data = b''
+            try:
+                while True:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+            except TimeoutError:
+                pass
+        finally:
+            sock.close()
+        return data
+
+    def test_body_drained_on_persistent_connection(self):
+        # The leftover body of a GET request must not be parsed as the
+        # next request line on a keep-alive connection.
+        body_filler = b'A' * 100
+        smuggled = b'GET /pwn HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n'
+        data = self._send_raw(
+            b'GET / HTTP/1.1\r\n'
+            b'Host: 127.0.0.1\r\n'
+            b'Content-Length: 100\r\n'
+            b'\r\n'
+            + body_filler
+            + smuggled
+        )
+        # The leftover body must not be parsed as a malformed request
+        # line; we should never see "Unsupported method ('AAAA...')".
+        self.assertNotIn(b"Unsupported method ('AAA", data)
+        # The smuggled GET /pwn is a well-formed request that arrives
+        # after the body has been drained, so the server should reply
+        # to it normally as the second request on the connection.
+        self.assertEqual(data.count(b'HTTP/1.1 200'), 2)
+
+
 class HTTP09ServerTestCase(BaseTestCase):
 
     class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
