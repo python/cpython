@@ -1908,11 +1908,34 @@ def getproxies_environment():
                 proxies.pop(proxy_name, None)
     return proxies
 
+def _ip_address_from_host(host):
+    from ipaddress import ip_address
+
+    hostonly, port = _splitport(host)
+    for candidate in (hostonly, host):
+        candidate = candidate.strip('[]')
+        try:
+            return ip_address(candidate)
+        except ValueError:
+            pass
+    return None
+
+def _is_ip_address_in_network(ip_address, network):
+    if ip_address is None:
+        return False
+    from ipaddress import ip_network
+
+    try:
+        return ip_address in ip_network(network, strict=False)
+    except ValueError:
+        return False
+
 def proxy_bypass_environment(host, proxies=None):
     """Test if proxies should not be used for a particular host.
 
     Checks the proxy dict for the value of no_proxy, which should
-    be a list of comma separated DNS suffixes, or '*' for all hosts.
+    be a list of comma separated DNS suffixes, IP address CIDR ranges,
+    or '*' for all hosts.
 
     """
     if proxies is None:
@@ -1928,14 +1951,28 @@ def proxy_bypass_environment(host, proxies=None):
     host = host.lower()
     # strip port off host
     hostonly, port = _splitport(host)
-    # check if the host ends with any of the DNS suffixes
+    host_ip = None
+    checked_host_ip = False
+    # for every entry in no_proxy...
     for name in no_proxy.split(','):
         name = name.strip()
         if name:
             name = name.lstrip('.')  # ignore leading dots
             name = name.lower()
+
+            # check for exact match
             if hostonly == name or host == name:
                 return True
+
+            # check if the IP is within CIDR range
+            if '/' in name:
+                if not checked_host_ip:
+                    host_ip = _ip_address_from_host(host)
+                    checked_host_ip = True
+                if _is_ip_address_in_network(host_ip, name):
+                    return True
+
+            # check if the host ends with any of the DNS suffixes
             name = '.' + name
             if hostonly.endswith(name) or host.endswith(name):
                 return True
@@ -1958,9 +1995,9 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
     }
     """
     from fnmatch import fnmatch
-    from ipaddress import AddressValueError, IPv4Address
 
     hostonly, port = _splitport(host)
+    host_ip = _ip_address_from_host(host)
 
     def ip2num(ipAddr):
         parts = ipAddr.split('.')
@@ -1975,14 +2012,15 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
             return True
 
     hostIP = None
-    try:
-        hostIP = int(IPv4Address(hostonly))
-    except AddressValueError:
-        pass
+    if host_ip is not None and host_ip.version == 4:
+        hostIP = int(host_ip)
 
     for value in proxy_settings.get('exceptions', ()):
         # Items in the list are strings like these: *.local, 169.254/16
         if not value: continue
+
+        if '/' in value and _is_ip_address_in_network(host_ip, value):
+            return True
 
         m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
         if m is not None and hostIP is not None:
@@ -2016,10 +2054,11 @@ def _proxy_bypass_winreg_override(host, override):
     Internet settings proxy override registry value.
 
     An example of a proxy override value is:
-    "www.example.com;*.example.net; 192.168.0.1"
+    "www.example.com;*.example.net; 192.168.0.1; 192.168.0.0/16"
     """
     from fnmatch import fnmatch
 
+    host_ip = _ip_address_from_host(host)
     host, _ = _splitport(host)
     proxy_override = override.split(';')
     for test in proxy_override:
@@ -2028,6 +2067,8 @@ def _proxy_bypass_winreg_override(host, override):
         if test == '<local>':
             if '.' not in host:
                 return True
+        elif '/' in test and _is_ip_address_in_network(host_ip, test):
+            return True
         elif fnmatch(host, test):
             return True
     return False

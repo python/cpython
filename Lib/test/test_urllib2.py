@@ -1552,6 +1552,17 @@ class HandlerTests(unittest.TestCase):
                             "expect <local> to bypass intranet address '%s'"
                             % host)
 
+        # check IP CIDR bypass
+        proxy_override = "192.168.0.0/16; 2001:db8::/32"
+        for host in ("192.168.1.1", "192.168.1.1:443",
+                     "2001:db8::1", "[2001:db8::1]:443"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expected bypass of %s to be true" % host)
+
+        for host in ("192.169.1.1", "2001:db9::1"):
+            self.assertFalse(proxy_bypass(host, proxy_override),
+                             "expected bypass of %s to be False" % host)
+
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
         bypass = {
@@ -1585,6 +1596,18 @@ class HandlerTests(unittest.TestCase):
         host = '10.0.1.5'
         self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
                         'expected bypass of %s to be False' % host)
+
+        # Check IPv6 CIDR ranges
+        bypass = {
+            'exclude_simple': False,
+            'exceptions': ['2001:db8::/32']
+        }
+        for host in ('2001:db8::1', '[2001:db8::1]:443'):
+            self.assertTrue(_proxy_bypass_macosx_sysconf(host, bypass),
+                            'expected bypass of %s to be True' % host)
+        host = '2001:db9::1'
+        self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
+                         'expected bypass of %s to be False' % host)
 
     def check_basic_auth(self, headers, realm):
         with self.subTest(realm=realm, headers=headers):
