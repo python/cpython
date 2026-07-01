@@ -1,0 +1,6 @@
+Improve :mod:`concurrent.interpreters` documentation with clearer
+descriptions of :class:`~concurrent.interpreters.Queue` methods,
+:meth:`~concurrent.interpreters.Interpreter.prepare_main` usage,
+:meth:`~concurrent.interpreters.Interpreter.exec` parameters,
+and expanded usage examples. Also fix the ``exec`` signature which
+incorrectly listed a ``dedent`` parameter.
