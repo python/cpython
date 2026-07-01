@@ -12,7 +12,7 @@ from typing import NoReturn
 from test.support import os_helper, MS_WINDOWS, flush_std_streams
 
 from .cmdline import _parse_args, Namespace
-from .findtests import findtests, split_test_packages, list_cases
+from .findtests import findtests, split_test_packages, list_cases, collect_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
 from .result import TestResult
@@ -73,6 +73,7 @@ class Regrtest:
         self.want_header: bool = ns.header
         self.want_list_tests: bool = ns.list_tests
         self.want_list_cases: bool = ns.list_cases
+        self.want_single_process_per_case: bool = ns.single_process_per_case
         self.want_wait: bool = ns.wait
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
@@ -521,6 +522,8 @@ class Regrtest:
             randomize=self.randomize,
             random_seed=self.random_seed,
             parallel_threads=self.parallel_threads,
+            single_process_per_case=self.want_single_process_per_case,
+            case_groups=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -528,6 +531,10 @@ class Regrtest:
             msg = ("WARNING: Running tests with --huntrleaks/-R and "
                    "less than 3 warmup repetitions can give false positives!")
             print(msg, file=sys.stdout, flush=True)
+
+        if self.want_single_process_per_case and self.num_workers == 0:
+            # Each test case must run in its own subprocess
+            self.num_workers = 1
 
         if self.num_workers < 0:
             # Use all CPUs + 2 extra worker processes for tests
@@ -546,6 +553,22 @@ class Regrtest:
         print("Using random seed:", self.random_seed)
 
         runtests = self.create_run_tests(selected)
+        if self.want_single_process_per_case:
+            cases_by_module, _ = collect_cases(
+                selected,
+                match_tests=self.match_tests,
+                test_dir=self.test_dir)
+            case_groups = tuple(
+                (module_name, tuple(cases))
+                for module_name, cases in cases_by_module.items()
+            )
+            if not case_groups:
+                self.log("No test cases found")
+                return 0
+            case_ids = tuple(
+                case_id for _, cases in case_groups for case_id in cases
+            )
+            runtests = runtests.copy(tests=case_ids, case_groups=case_groups)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
 
