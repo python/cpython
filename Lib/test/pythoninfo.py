@@ -1161,20 +1161,27 @@ def get_machine_id():
 def detect_virt(info_add):
     # On Windows, use WMI to get the computer manufacturer and the BIOS version
     if MS_WINDOWS:
-        data = wmi_query("SELECT Manufacturer FROM Win32_ComputerSystem")
+        data = wmi_query("SELECT Manufacturer, Model FROM Win32_ComputerSystem")
         manufacturer = data.get('Manufacturer', '')
+        model = data.get('Model', '')
         patterns = (
             'QEMU',
+            'KVM',
             'VMWare',
             'Virtual',
         )
         if any(pattern in manufacturer for pattern in patterns):
             return manufacturer
-        elif manufacturer:
-            # Log the value to update patterns on new VM
-            info_add('system.manufacturer', manufacturer)
+        elif any(pattern in model for pattern in patterns):
+            return model
+        else:
+            # Log the values to update patterns on new VM
+            if manufacturer and manufacturer != "Microsoft Corporation":
+                info_add('system.manufacturer', manufacturer)
+            if model:
+                info_add('system.model', model)
 
-        data = wmi_query("SELECT SerialNumber,Version FROM Win32_Bios")
+        data = wmi_query("SELECT SerialNumber, Version FROM Win32_Bios")
         bios_serial_number = data.get('SerialNumber', '')
         bios_version = data.get('Version', '')
         patterns = (
