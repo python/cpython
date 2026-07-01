@@ -1,0 +1,1 @@
+Added early validation of the ``target`` argument in :class:`threading.Thread` and :class:`multiprocessing.Process` constructors. If ``target`` is not callable, a :exc:`TypeError` is now raised immediately in the calling thread, resulting in a clearer traceback. Optimized the validation of the reserved ``group`` argument by replacing internal assertions with :exc:`TypeError`.
