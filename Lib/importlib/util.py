@@ -171,6 +171,13 @@ class _LazyModule(types.ModuleType):
     def __getattribute__(self, attr):
         """Trigger the load of the module and return the attribute."""
         __spec__ = object.__getattribute__(self, '__spec__')
+
+        # gh-139669: avoid triggering lazy loading from these 2 attrs
+        if attr == "__name__":
+            return __spec__.name
+        if attr == "__file__":
+            return __spec__.origin
+
         loader_state = __spec__.loader_state
         with loader_state['lock']:
             # Only the first thread to get the lock should trigger the load
@@ -223,11 +230,20 @@ class _LazyModule(types.ModuleType):
 
         return getattr(self, attr)
 
+    def __setattr__(self, attr, value):
+        """Keep __name__/__file__ in sync with __spec__ without loading."""
+        __spec__ = object.__getattribute__(self, '__spec__')
+        if attr == "__name__":
+            __spec__.name = value
+        elif attr == "__file__":
+            __spec__.origin = value
+        else:
+            object.__setattr__(self, attr, value)
+
     def __delattr__(self, attr):
         """Trigger the load and then perform the deletion."""
-        # To trigger the load and raise an exception if the attribute
-        # doesn't exist.
-        self.__getattribute__(attr)
+        self.__getattribute__('__spec__')
+        # Goes into ModuleType.__delattr__
         delattr(self, attr)
 
 
