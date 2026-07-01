@@ -75,6 +75,22 @@ class TestConsoleIO(unittest.TestCase):
             support.skip_on_low_desktop_heap_memory_subprocess(exc.returncode)
             raise
 
+    @requires_resource('gui')
+    def assert_console_read_raises_after_freeconsole(self, funcname):
+        code = dedent(f'''
+            import ctypes
+            import msvcrt
+            import sys
+
+            ctypes.windll.kernel32.FreeConsole()
+            try:
+                msvcrt.{funcname}()
+            except OSError:
+                sys.exit(0)
+            sys.exit(1)
+        ''')
+        self.run_in_separated_process(code)
+
     def test_kbhit(self):
         code = dedent('''
             import msvcrt
@@ -85,6 +101,9 @@ class TestConsoleIO(unittest.TestCase):
     def test_getch(self):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getch(), b'c')
+
+    def test_getch_without_console(self):
+        self.assert_console_read_raises_after_freeconsole('getch')
 
     def check_getwch(self, funcname):
         code = dedent(f'''
@@ -99,12 +118,21 @@ class TestConsoleIO(unittest.TestCase):
     def test_getwch(self):
         self.check_getwch('getwch')
 
+    def test_getwch_without_console(self):
+        self.assert_console_read_raises_after_freeconsole('getwch')
+
     def test_getche(self):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getche(), b'c')
 
+    def test_getche_without_console(self):
+        self.assert_console_read_raises_after_freeconsole('getche')
+
     def test_getwche(self):
         self.check_getwch('getwche')
+
+    def test_getwche_without_console(self):
+        self.assert_console_read_raises_after_freeconsole('getwche')
 
     def test_putch(self):
         msvcrt.putch(b'c')
