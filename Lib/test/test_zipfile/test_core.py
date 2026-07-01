@@ -5713,12 +5713,12 @@ class EncodedMetadataTests(unittest.TestCase):
     def _test_read(self, zipfp, expected_names, expected_content):
         # Check the namelist
         names = zipfp.namelist()
-        self.assertEqual(sorted(names), sorted(expected_names))
+        self.assertEqual(names, expected_names)
 
         # Check infolist
         infos = zipfp.infolist()
         names = [zi.filename for zi in infos]
-        self.assertEqual(sorted(names), sorted(expected_names))
+        self.assertEqual(names, expected_names)
 
         # check getinfo
         for name, content in zip(expected_names, expected_content):
@@ -5766,7 +5766,7 @@ class EncodedMetadataTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, "a") as zipfp:
             zipfp.writestr(newname, "newcontent")
             zipfp.writestr(newname2, "newcontent2")
-            self.assertEqual(sorted(zipfp.namelist()), sorted(mojibake_expected_names))
+            self.assertEqual(zipfp.namelist(), mojibake_expected_names)
 
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
             self._test_read(zipfp, mojibake_expected_names, expected_content)
