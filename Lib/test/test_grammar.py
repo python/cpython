@@ -266,6 +266,16 @@ the \'lazy\' dog.\n\
             eval("(" * (MAXLEVEL + 1) + ")" * (MAXLEVEL + 1))
         self.assertStartsWith(str(cm.exception), 'too many nested parentheses')
 
+        # Dict:
+        with self.assertRaises(SyntaxError) as cm:
+            eval("{1: " * (MAXLEVEL + 1) + "}" * (MAXLEVEL + 1))
+        self.assertStartsWith(str(cm.exception), 'too many nested parentheses')
+
+        # Frozendict:
+        with self.assertRaises(SyntaxError) as cm:
+            eval("f{1: " * (MAXLEVEL + 1) + "}" * (MAXLEVEL + 1))
+        self.assertStartsWith(str(cm.exception), 'too many nested parentheses')
+
 var_annot_global: int # a global annotated is necessary for test_var_annot
 
 

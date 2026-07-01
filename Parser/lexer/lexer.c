@@ -780,6 +780,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 }
                 goto letter_quote;
             }
+            if (saw_f && c == '{') {
+                goto parentheses;
+            }
         }
         while (is_potential_identifier_char(c)) {
             if (c >= 128) {
@@ -1297,6 +1300,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         tok_backup(tok, c2);
     }
 
+  parentheses:
     /* Keep track of parentheses nesting level */
     switch (c) {
     case '(':
@@ -1373,6 +1377,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         break;
     default:
         break;
+    }
+
+    if (*tok->start == 'f' && c == '{') {
+        p_start = tok->start;
+        p_end = tok->cur;
+
+        return MAKE_TOKEN(LFBRACE);
     }
 
     if (!Py_UNICODE_ISPRINTABLE(c)) {

@@ -59,6 +59,7 @@ RARROW                  '->'
 ELLIPSIS                '...'
 COLONEQUAL              ':='
 EXCLAMATION             '!'
+LFBRACE                 'f{'
 
 OP
 TYPE_IGNORE

@@ -1838,6 +1838,7 @@ class TestTokenize(TestCase):
         self.assertExactTypeEqual('.', token.DOT)
         self.assertExactTypeEqual('%', token.PERCENT)
         self.assertExactTypeEqual('{}', token.LBRACE, token.RBRACE)
+        self.assertExactTypeEqual('f{}', token.LFBRACE, token.RBRACE)
         self.assertExactTypeEqual('==', token.EQEQUAL)
         self.assertExactTypeEqual('!=', token.NOTEQUAL)
         self.assertExactTypeEqual('<=', token.LESSEQUAL)
@@ -1875,6 +1876,12 @@ class TestTokenize(TestCase):
                                   tokenize.NAME, token.DOUBLESTAR, tokenize.NUMBER)
         self.assertExactTypeEqual('{1, 2, 3}',
                                   token.LBRACE,
+                                  token.NUMBER, token.COMMA,
+                                  token.NUMBER, token.COMMA,
+                                  token.NUMBER,
+                                  token.RBRACE)
+        self.assertExactTypeEqual('f{1, 2, 3}',
+                                  token.LFBRACE,
                                   token.NUMBER, token.COMMA,
                                   token.NUMBER, token.COMMA,
                                   token.NUMBER,
@@ -2557,6 +2564,18 @@ c"""', """\
     FSTRING_END '"'           (1, 8) (1, 9)
     """)
 
+        self.check_tokenize('fR"a{f{b}}c"', """\
+    FSTRING_START \'fR"\'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a'           (1, 3) (1, 4)
+    LBRACE     '{'           (1, 4) (1, 5)
+    LFBRACE    'f{'          (1, 5) (1, 7)
+    NAME       'b'           (1, 7) (1, 8)
+    RBRACE     '}'           (1, 8) (1, 9)
+    RBRACE     '}'           (1, 9) (1, 10)
+    FSTRING_MIDDLE 'c'           (1, 10) (1, 11)
+    FSTRING_END \'"\'           (1, 11) (1, 12)
+    """)
+
         self.check_tokenize('f"""abc"""', """\
     FSTRING_START 'f\"""'        (1, 0) (1, 4)
     FSTRING_MIDDLE 'abc'         (1, 4) (1, 7)
@@ -2625,6 +2644,24 @@ f'''__{
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
     """)
+
+    def test_frozen_objects(self):
+        self.check_tokenize('f{}', """\
+    LFBRACE    'f{'          (1, 0) (1, 2)
+    RBRACE     '}'           (1, 2) (1, 3)
+""")
+        self.check_tokenize('f{1}', """\
+    LFBRACE    'f{'          (1, 0) (1, 2)
+    NUMBER     '1'           (1, 2) (1, 3)
+    RBRACE     '}'           (1, 3) (1, 4)
+""")
+        self.check_tokenize('f{1: 2}', """\
+    LFBRACE    'f{'          (1, 0) (1, 2)
+    NUMBER     '1'           (1, 2) (1, 3)
+    COLON      ':'           (1, 3) (1, 4)
+    NUMBER     '2'           (1, 5) (1, 6)
+    RBRACE     '}'           (1, 6) (1, 7)
+""")
 
     def test_function(self):
 

@@ -639,6 +639,9 @@ except Exception:
                             r"does not match opening parenthesis '\('",
                             ["f'{a(4}'",
                             ])
+        self.assertAllRaise(SyntaxError,
+                            r"f-string: expecting a valid expression after '{'",
+                            ["f'{f{4)}'"])
         self.assertRaises(SyntaxError, eval, "f'{" + "("*20 + "}'")
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
