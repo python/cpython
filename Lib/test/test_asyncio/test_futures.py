@@ -755,6 +755,16 @@ class BaseFutureTests:
         with self.assertRaises(RuntimeError, msg="is already initialized"):
             f.__init__(loop=self.loop)
 
+    def test_futureiter_send_after_throw_no_crash(self):
+        fut = self._new_future(loop=self.loop)
+        it = fut.__await__()
+        next(it)
+        with self.assertRaises(RuntimeError):
+            it.throw(RuntimeError)
+        with self.assertRaises(StopIteration):
+            it.send(None)
+
+
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
 class CFutureTests(BaseFutureTests, test_utils.TestCase):
