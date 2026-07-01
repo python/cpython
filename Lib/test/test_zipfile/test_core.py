@@ -3835,6 +3835,25 @@ class ExtractTests(unittest.TestCase):
         with temp_dir() as extdir:
             self._test_extract_all_with_target(FakePath(extdir))
 
+    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
+    @unittest.skipIf(sys.platform == 'win32', 'Unix permissions only')
+    def test_extract_preserves_unix_permissions(self):
+        """_extract_member must apply Unix mode stored in external_attr."""
+        info = zipfile.ZipInfo('secret.txt')
+        info.external_attr = (stat.S_IFREG | 0o600) << 16
+        with zipfile.ZipFile(TESTFN2, 'w') as zf:
+            zf.writestr(info, b'data')
+
+        with temp_dir() as extdir:
+            with zipfile.ZipFile(TESTFN2, 'r') as zf:
+                zf.extract('secret.txt', path=extdir)
+
+            extracted = os.path.join(extdir, 'secret.txt')
+            actual = stat.S_IMODE(os.stat(extracted).st_mode)
+            self.assertEqual(actual, 0o600, f'expected 0o600, got 0o{actual:03o}')
+
+        unlink(TESTFN2)
+
     def check_file(self, filename, content):
         self.assertTrue(os.path.isfile(filename))
         with open(filename, 'rb') as f:

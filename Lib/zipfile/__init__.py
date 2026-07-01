@@ -2482,11 +2482,19 @@ class ZipFile:
                 except FileExistsError:
                     if not os.path.isdir(targetpath):
                         raise
+            unix_mode = member.external_attr >> 16
+            if unix_mode:
+                os.chmod(targetpath, unix_mode)
             return targetpath
 
         with self.open(member, pwd=pwd) as source, \
              open(targetpath, "wb") as target:
             shutil.copyfileobj(source, target)
+
+        # Restore Unix permissions stored in the upper 16 bits of external_attr.
+        unix_mode = member.external_attr >> 16
+        if unix_mode:
+            os.chmod(targetpath, unix_mode)
 
         return targetpath
 
