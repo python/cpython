@@ -4,8 +4,10 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, Self
 
-from .utils import ANSI_ESCAPE_SEQUENCE, THEME, StyleRef, str_width
+from _colorize import ANSIColors
+
 from .types import CursorXY
+from .utils import ANSI_ESCAPE_SEQUENCE, THEME, StyleRef, str_width
 
 type RenderStyle = StyleRef | str | None
 type LineUpdateKind = Literal[
@@ -55,7 +57,7 @@ def _style_escape(style: StyleRef) -> str:
 
 
 def _update_terminal_state(state: str, escape: str) -> str:
-    if escape in {"\x1b[0m", "\x1b[m"}:
+    if escape in {ANSIColors.RESET, "\x1b[m"}:
         return ""
     return state + escape
 
@@ -344,14 +346,14 @@ def render_cells(
             target_escape += visual_style
         if target_escape != active_escape:
             if active_escape:
-                rendered.append("\x1b[0m")
+                rendered.append(ANSIColors.RESET)
             if target_escape:
                 rendered.append(target_escape)
             active_escape = target_escape
         rendered.append(cell.text)
 
     if active_escape:
-        rendered.append("\x1b[0m")
+        rendered.append(ANSIColors.RESET)
     return "".join(rendered)
 
 
