@@ -427,6 +427,10 @@ class InterpreterPoolExecutorTest(
                         ready.get(timeout=1)  # blocking
                     except interpreters.QueueEmpty:
                         pass
+                    except queues.QueueEmpty:
+                        # GH-142414: reloading the _queues module makes get to raise
+                        # queues.QueueEmpty instead of interpreters.QueueEmpty.
+                        pass
                     else:
                         done += 1
                 pending -= done
