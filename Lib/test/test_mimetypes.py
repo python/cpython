@@ -230,6 +230,9 @@ class MimeTypesModuleTestCase(unittest.TestCase):
         mimetypes.init()
         self.assertEqual(guess_file_type("file.test2")[0], "testing/test2")
 
+        mimetypes.init(use_system_defaults=False)
+        self.assertEqual(guess_file_type("file.test2")[0], None)
+
     def test_added_types_are_used(self):
         mimetypes.add_type('testing/default-type', '')
         mime_type, _ = mimetypes.guess_type('')
@@ -271,6 +274,10 @@ class MimeTypesClassTestCase(unittest.TestCase):
         db = mimetypes.MimeTypes()
         guess_file_type = db.guess_file_type
         self.assertEqual(guess_file_type("file.test2")[0], None)
+
+        db = mimetypes.MimeTypes(use_system_defaults=True)
+        guess_file_type = db.guess_file_type
+        self.assertEqual(guess_file_type("file.test2")[0], "testing/test2")
 
     def test_case_sensitivity(self):
         eq = self.assertEqual

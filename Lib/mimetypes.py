@@ -64,7 +64,7 @@ class MimeTypes:
     URL, and can guess a reasonable extension given a MIME type.
     """
 
-    def __init__(self, filenames=(), strict=True):
+    def __init__(self, filenames=(), strict=True, *, use_system_defaults=False):
         if not inited:
             init()
         self.encodings_map = _encodings_map_default.copy()
@@ -75,6 +75,14 @@ class MimeTypes:
             self.add_type(type, ext, True)
         for (ext, type) in _common_types_default.items():
             self.add_type(type, ext, False)
+        if use_system_defaults:
+            # Quick return if not supported
+            self.read_windows_registry(strict)
+            for name in knownfiles:
+                try:
+                    self.read(name, strict)
+                except OSError:
+                    pass
         for name in filenames:
             self.read(name, strict)
 
@@ -411,20 +419,15 @@ def add_type(type, ext, strict=True):
     return _db.add_type(type, ext, strict)
 
 
-def init(files=None):
+def init(files=None, *, use_system_defaults=True):
     global suffix_map, types_map, encodings_map, common_types
     global inited, _db
     inited = True    # so that MimeTypes.__init__() doesn't call us again
 
     if files is None or _db is None:
-        db = MimeTypes()
-        # Quick return if not supported
-        db.read_windows_registry()
-
+        db = MimeTypes(use_system_defaults=use_system_defaults)
         if files is None:
-            files = knownfiles
-        else:
-            files = knownfiles + list(files)
+            files = ()
     else:
         db = _db
 
