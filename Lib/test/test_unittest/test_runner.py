@@ -1494,6 +1494,206 @@ class Test_TextTestRunner(unittest.TestCase):
         run(Foo('test_1'), expect_durations=False)
 
 
+class SubTestMockContextManager:
+    def __init__(self, events_list, name="cm"):
+        self.events = events_list
+        self.name = name
+        self.entered_value = f"{name}_entered_value"
+
+    def __enter__(self):
+        self.events.append(f"{self.name}_enter")
+        return self.entered_value
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.events.append((f"{self.name}_exit", exc_type.__name__ if exc_type else None))
+        return False
+
+
+class SubTestFailingEnterCM:
+    def __init__(self, events_list, name="cm_enter_fail"):
+        self.events = events_list
+        self.name = name
+
+    def __enter__(self):
+        self.events.append(f"{self.name}_enter_attempt")
+        raise RuntimeError("Simulated __enter__ failure")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.events.append((f"{self.name}_exit_UNEXPECTED", exc_type.__name__ if exc_type else None))
+        return False
+
+
+class TestSubTestCleanups(unittest.TestCase):
+    def setUp(self):
+        self.events = []
+        TestSubTestCleanups._active_events_list = self.events
+        TestSubTestCleanups._active_instance = self
+
+    def tearDown(self):
+        if hasattr(TestSubTestCleanups, '_active_events_list'):
+            del TestSubTestCleanups._active_events_list
+        if hasattr(TestSubTestCleanups, '_active_instance'):
+            del TestSubTestCleanups._active_instance
+
+    @classmethod
+    def _get_events(cls):
+        return cls._active_events_list
+
+    def _record_event(self, event_name, *args, **kwargs):
+        TestSubTestCleanups._get_events().append(event_name)
+
+    def test_addCleanup_operation_and_LIFO_order(self):
+        class MyTests(unittest.TestCase):
+            def runTest(inner_self):
+                events = TestSubTestCleanups._get_events()
+                recorder = TestSubTestCleanups._active_instance._record_event
+                with inner_self.subTest() as sub:
+                    events.append("subtest_body_start")
+                    sub.addCleanup(recorder, "cleanup_2_args", "arg")
+                    sub.addCleanup(recorder, "cleanup_1")
+                    events.append("subtest_body_end")
+
+        MyTests().run()
+
+        expected_events = [
+            "subtest_body_start",
+            "subtest_body_end",
+            "cleanup_1",
+            "cleanup_2_args",
+        ]
+        self.assertEqual(self.events, expected_events)
+
+    def test_addCleanup_runs_on_subtest_failure(self):
+        class MyTests(unittest.TestCase):
+            def runTest(inner_self):
+                recorder = TestSubTestCleanups._active_instance._record_event
+                with inner_self.subTest() as sub:
+                    sub.addCleanup(recorder, "cleanup_on_fail")
+                    inner_self.fail("Intentional subtest failure")
+
+        test = MyTests()
+        result = unittest.TestResult()
+        test.run(result)
+
+        self.assertFalse(result.wasSuccessful())
+        self.assertEqual(len(result.failures), 1)
+        self.assertEqual(self.events, ["cleanup_on_fail"])
+
+    def test_enterContext_success(self):
+        class MyTests(unittest.TestCase):
+            def runTest(inner_self):
+                events = TestSubTestCleanups._get_events()
+                with inner_self.subTest() as sub:
+                    cm = SubTestMockContextManager(events, name="cm_ok")
+                    value = sub.enterContext(cm)
+                    inner_self.assertEqual(value, "cm_ok_entered_value")
+                    events.append(f"context_body_value_{value}")
+
+        test = MyTests()
+        result = unittest.TestResult()
+        test.run(result)
+
+        self.assertTrue(result.wasSuccessful())
+        expected_events = [
+            "cm_ok_enter",
+            "context_body_value_cm_ok_entered_value",
+            ("cm_ok_exit", None),
+        ]
+        self.assertEqual(self.events, expected_events)
+
+    def test_enterContext_body_fails_after_enter(self):
+        class MyTests(unittest.TestCase):
+            def runTest(inner_self):
+                events = TestSubTestCleanups._get_events()
+                with inner_self.subTest(description="inner_subtest_expected_to_fail") as sub:
+                    cm = SubTestMockContextManager(events, name="cm_body_fail")
+                    sub.enterContext(cm)
+                    events.append("before_body_raise")
+                    raise ValueError("Deliberate body failure after enterContext")
+
+        test_instance = MyTests()
+        internal_result = unittest.TestResult()
+        test_instance.run(internal_result)
+
+        self.assertFalse(internal_result.wasSuccessful())
+        self.assertEqual(len(internal_result.failures), 0)
+        self.assertEqual(len(internal_result.errors), 1)
+
+        errored_test_obj, tb = internal_result.errors[0]
+        self.assertIsInstance(errored_test_obj, unittest.case._SubTest)
+        self.assertIn("ValueError: Deliberate body failure after enterContext", tb)
+        self.assertEqual(errored_test_obj.params.get("description"), "inner_subtest_expected_to_fail")
+
+        expected_events = [
+            "cm_body_fail_enter",
+            "before_body_raise",
+            ("cm_body_fail_exit", None),
+        ]
+        self.assertEqual(self.events, expected_events)
+
+    def test_enterContext_manager_enter_fails(self):
+        class MyTests(unittest.TestCase):
+            def runTest(inner_self):
+                events = TestSubTestCleanups._get_events()
+                with inner_self.subTest() as sub:
+                    cm_enter_fail = SubTestFailingEnterCM(events)
+                    with inner_self.assertRaisesRegex(RuntimeError, "Simulated __enter__ failure"):
+                        sub.enterContext(cm_enter_fail)
+                    inner_self.assertEqual(len(sub._cleanups), 0)
+
+        test = MyTests()
+        result = unittest.TestResult()
+        test.run(result)
+
+        self.assertTrue(result.wasSuccessful())
+        self.assertEqual(self.events, ["cm_enter_fail_enter_attempt"])
+
+    def test_failing_cleanup_function_in_subtest(self):
+        def failing_cleanup_func():
+            TestSubTestCleanups._get_events().append("failing_cleanup_called")
+            raise ZeroDivisionError("cleanup boom")
+
+        class MyTests(unittest.TestCase):
+            def runTest(inner_self):
+                recorder = TestSubTestCleanups._active_instance._record_event
+                with inner_self.subTest() as sub:
+                    sub.addCleanup(recorder, "cleanup_after_fail_attempt")
+                    sub.addCleanup(failing_cleanup_func)
+                    sub.addCleanup(recorder, "cleanup_before_fail_attempt")
+
+        test = MyTests()
+        result = unittest.TestResult()
+        test.run(result)
+
+        self.assertFalse(result.wasSuccessful())
+        self.assertEqual(len(result.errors), 1)
+
+        expected_events_order = [
+            "cleanup_before_fail_attempt",
+            "failing_cleanup_called",
+            "cleanup_after_fail_attempt",
+        ]
+        self.assertEqual(self.events, expected_events_order)
+
+    def test_multiple_subtests_independent_cleanups(self):
+        class MyTests(unittest.TestCase):
+            def runTest(inner_self):
+                events = TestSubTestCleanups._get_events()
+                recorder = TestSubTestCleanups._active_instance._record_event
+                for i in range(2):
+                    with inner_self.subTest(i=i) as sub:
+                        cleanup_msg = f"cleanup_sub_{i}"
+                        sub.addCleanup(recorder, cleanup_msg)
+                        events.append(f"subtest_body_{i}")
+
+        MyTests().run()
+
+        expected_events = [
+            "subtest_body_0", "cleanup_sub_0",
+            "subtest_body_1", "cleanup_sub_1",
+        ]
+        self.assertEqual(self.events, expected_events)
+
 
 if __name__ == "__main__":
     unittest.main()
