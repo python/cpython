@@ -2387,6 +2387,10 @@ class _IPv6Constants:
         IPv6Network('2002::/16'),
         # RFC 9637: https://www.rfc-editor.org/rfc/rfc9637.html#section-6-2.2
         IPv6Network('3fff::/20'),
+        # RFC 9602: https://www.rfc-editor.org/rfc/rfc9602.html
+        IPv6Network('5f00::/16'),
+        # RFC 9780: https://www.rfc-editor.org/rfc/rfc9780.html
+        IPv6Network('100:0:0:1::/64'),
         IPv6Network('fc00::/7'),
         IPv6Network('fe80::/10'),
         ]
