@@ -379,15 +379,37 @@ if not py_setpath:
             # the base installation — isn't set (eg. when embedded), try to find
             # it in 'home'.
             if not base_executable:
-                # First try to resolve symlinked executables, since that may be
-                # more accurate than assuming the executable in 'home'.
+                # Prefer the executable found in 'home' (the public, possibly
+                # symlinked, location the venv was created from) when it resolves
+                # to the same real file as the running executable. This avoids
+                # baking an internal, implementation-detail prefix (e.g. a
+                # Homebrew Cellar path) into pyvenv.cfg, which then breaks the
+                # venv when that internal path changes (gh-128670). Match on the
+                # *resolved* executable's name, since the venv's primary exe may
+                # be 'python' while 'home' only provides 'python3.X'. Fall back to
+                # the fully resolved path when 'home' has no matching executable.
                 try:
-                    base_executable = realpath(executable)
+                    _executable_realpath = realpath(executable)
+                except OSError:
+                    _executable_realpath = ''
+                _home_executable = ''
+                if _executable_realpath:
+                    _home_executable = joinpath(executable_dir,
+                                                basename(_executable_realpath))
+                try:
+                    _home_realpath = realpath(_home_executable) if _home_executable else ''
+                except OSError:
+                    _home_realpath = ''
+                if (_executable_realpath and _home_executable
+                        and isfile(_home_executable)
+                        and _home_realpath == _executable_realpath):
+                    base_executable = _home_executable
+                else:
+                    base_executable = _executable_realpath
                     if base_executable == executable:
                         # No change, so probably not a link. Clear it and fall back
                         base_executable = ''
-                except OSError:
-                    pass
+
                 if not base_executable:
                     base_executable = joinpath(executable_dir, basename(executable))
                     # It's possible "python" is executed from within a posix venv but that
