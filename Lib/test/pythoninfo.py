@@ -1158,47 +1158,65 @@ def get_machine_id():
     return None
 
 
-def detect_virt(info_add):
+def detect_virt_windows(info_add):
     # On Windows, use WMI to get the computer manufacturer and the BIOS version
-    if MS_WINDOWS:
-        data = wmi_query("SELECT Manufacturer, Model FROM Win32_ComputerSystem")
-        manufacturer = data.get('Manufacturer', '')
-        model = data.get('Model', '')
-        patterns = (
-            'QEMU',
-            'KVM',
-            'VMWare',
-            'Virtual',
-        )
-        if any(pattern in manufacturer for pattern in patterns):
-            return manufacturer
-        elif any(pattern in model for pattern in patterns):
-            return model
-        else:
-            # Log the values to update patterns on new VM
-            if manufacturer and manufacturer != "Microsoft Corporation":
-                info_add('system.manufacturer', manufacturer)
-            if model:
-                info_add('system.model', model)
+    #
+    # VMware:
+    # - Win32_Bios.SerialNumber starts with "VMware-"
+    # - Win32_ComputerSystem.Model = "VMware"
+    # - Win32_ComputerSystem.Manufacturer = "VMware"
+    #
+    # QEMU:
+    # - Win32_ComputerSystem.Manufacturer = "QEMU"
+    #
+    # Parallels:
+    # - Win32_Bios.Version = "PARALLELS"
+    #
+    # VirtualBox:
+    # - Win32_Bios.Version = "VBOX"
+    # - Win32_ComputerSystem.Model = "VirtualBox"
+    # - Win32_ComputerSystem.Manufacturer = "innotek GmbH"
 
-        data = wmi_query("SELECT SerialNumber, Version FROM Win32_Bios")
-        bios_serial_number = data.get('SerialNumber', '')
-        bios_version = data.get('Version', '')
-        patterns = (
-            'VIRTUAL',
-            'VMware',
-            'Xen',
-        )
-        if any(pattern in bios_serial_number for pattern in patterns):
-            return bios_serial_number
-        elif any(pattern in bios_version for pattern in patterns):
-            return bios_version
-        else:
-            # Log the values to update patterns on new VM
-            if bios_version:
-                info_add('system.bios_version', bios_version)
-            if bios_serial_number:
-                info_add('system.bios_serial_number', bios_serial_number)
+    data = wmi_query("SELECT Model, Manufacturer FROM Win32_ComputerSystem")
+    known_virt = (
+        'QEMU',
+        'VMware',
+        'VirtualBox',
+    )
+    model = data.get('Model', '')
+    if model in known_virt:
+        return model
+    manufacturer = data.get('Manufacturer', '')
+    if manufacturer in known_virt:
+        return manufacturer
+
+    data = wmi_query("SELECT Version FROM Win32_Bios")
+    bios_version = data.get('Version', '')
+    if bios_version in known_virt:
+        return bios_version
+    known_bios_versions = {
+        "PARALLELS": "Parallels",
+        "VBOX": "VirtualBox",
+    }
+    try:
+        return known_bios_versions[bios_version]
+    except KeyError:
+        pass
+
+    # Log the values to update patterns on new VM
+    if model:
+        info_add('system.model', model)
+    if manufacturer:
+        info_add('system.manufacturer', manufacturer)
+    if bios_version:
+        info_add('system.bios_version', bios_version)
+
+
+def detect_virt(info_add):
+    if MS_WINDOWS:
+        virt = detect_virt_windows(info_add)
+        if virt:
+            return virt
 
     # Run systemd-detect-virt command
     virt = run_command(["systemd-detect-virt"], check=False)
