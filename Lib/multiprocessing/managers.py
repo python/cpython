@@ -1224,7 +1224,7 @@ class SetProxy(_BaseSetProxy):
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
-collections.abc.MutableMapping.register(_BaseSetProxy)
+collections.abc.MutableSet.register(_BaseSetProxy)
 
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
