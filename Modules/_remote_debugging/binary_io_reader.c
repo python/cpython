@@ -240,6 +240,16 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
 static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
+    /* Reject a count larger than the remaining bytes can hold. */
+    size_t max_strings =
+        (file_size - reader->string_table_offset) / MIN_STRING_ENTRY_SIZE;
+    if (reader->strings_count > max_strings) {
+        PyErr_Format(PyExc_ValueError,
+            "Invalid string count %u exceeds maximum possible %zu",
+            reader->strings_count, max_strings);
+        return -1;
+    }
+
     reader->strings = PyMem_Calloc(reader->strings_count, sizeof(PyObject *));
     if (!reader->strings && reader->strings_count > 0) {
         PyErr_NoMemory();
@@ -279,6 +289,16 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         return -1;
     }
 #endif
+
+    /* Reject a count larger than the remaining bytes can hold. */
+    size_t max_frames =
+        (file_size - reader->frame_table_offset) / MIN_FRAME_ENTRY_SIZE;
+    if (reader->frames_count > max_frames) {
+        PyErr_Format(PyExc_ValueError,
+            "Invalid frame count %u exceeds maximum possible %zu",
+            reader->frames_count, max_frames);
+        return -1;
+    }
 
     size_t alloc_size = (size_t)reader->frames_count * sizeof(FrameEntry);
     reader->frames = PyMem_Malloc(alloc_size);
