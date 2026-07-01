@@ -1,0 +1,3 @@
+Fix a crash in the ``seek`` method of :class:`~io.BufferedWriter`,
+:class:`~io.BufferedReader` and :class:`~io.BufferedRandom` when the
+stream is concurrently closed or detached.
