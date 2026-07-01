@@ -24,7 +24,7 @@ py_extensions = ('.py', '.pyw', '.pyi')
 def fix_scaling(root):  # Called in filelist _test, pyshell, and run.
     """Scale fonts on HiDPI displays, once per process."""
     import tkinter.font
-    scaling = float(root.tk.call('tk', 'scaling'))
+    scaling = root.tk_scaling()
     if scaling > 1.4:
         for name in tkinter.font.names(root):
             font = tkinter.font.Font(root=root, name=name, exists=True)
