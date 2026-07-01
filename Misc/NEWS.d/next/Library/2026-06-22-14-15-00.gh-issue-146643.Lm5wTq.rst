@@ -1,0 +1,3 @@
+Fix a :exc:`TypeError` raised when defining a :class:`typing.Protocol` whose
+body (or one of its bases) declares a member named ``__annotate__`` that is not
+a usable annotate function.  Such a class can now be created without error.

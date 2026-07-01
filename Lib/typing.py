@@ -1874,9 +1874,16 @@ def _get_protocol_attrs(cls):
             annotations = base.__annotations__
         except Exception:
             # Only go through annotationlib to handle deferred annotations if we need to
-            annotations = annotationlib.get_annotations(
-                base, format=annotationlib.Format.FORWARDREF
-            )
+            try:
+                annotations = annotationlib.get_annotations(
+                    base, format=annotationlib.Format.FORWARDREF
+                )
+            except Exception:
+                # The annotations cannot be retrieved at all, e.g. the base
+                # defines an ``__annotate__`` member that is not a usable
+                # annotate function (gh-146643).  Treat it as un-annotated
+                # rather than letting the class definition fail.
+                annotations = {}
         for attr in (*base.__dict__, *annotations):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)

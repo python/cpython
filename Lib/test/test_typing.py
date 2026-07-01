@@ -4259,6 +4259,19 @@ class ProtocolTests(BaseTestCase):
         self.assertEqual(frozenset(typing._get_protocol_attrs(PG)),
                          frozenset({'x', 'meth'}))
 
+    def test_protocol_with_annotate_method_does_not_crash(self):
+        # gh-146643: defining a Protocol whose member is named __annotate__
+        # (a reserved name whose value is not a usable annotate function)
+        # used to crash protocol attribute collection with a TypeError.
+        class CanAnnotate(Protocol):
+            def __annotate__(self, format, /): ...
+
+        self.assertIs(CanAnnotate._is_protocol, True)
+        # __annotate__ is an excluded special name, so it is not collected as
+        # a protocol member, but creating the class must not raise.
+        self.assertNotIn('__annotate__',
+                         typing._get_protocol_attrs(CanAnnotate))
+
     def test_no_runtime_deco_on_nominal(self):
         with self.assertRaises(TypeError):
             @runtime_checkable
