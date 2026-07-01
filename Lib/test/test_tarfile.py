@@ -2394,6 +2394,35 @@ class PaxWriteTest(GNUWriteTest):
         finally:
             tar.close()
 
+    def test_pax_global_header_empty_archive(self):
+        # An archive that contains only a global header and no regular
+        # members should be opened successfully (gh-149578).
+        pax_headers = {"foo": "bar"}
+
+        # Create a PAX archive with global headers but no file entries.
+        with tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT,
+                          pax_headers=pax_headers):
+            pass
+
+        # Reading the archive should work and preserve global headers.
+        with tarfile.open(tmpname) as tar:
+            self.assertEqual(tar.pax_headers, pax_headers)
+            self.assertEqual(tar.getmembers(), [])
+
+        # Appending to the archive should work.
+        with tarfile.open(tmpname, "a") as tar:
+            self.assertEqual(tar.pax_headers, pax_headers)
+            self.assertEqual(tar.getmembers(), [])
+            tar.addfile(tarfile.TarInfo("test"))
+
+        # Verify the appended member is present and global headers
+        # are preserved.
+        with tarfile.open(tmpname) as tar:
+            self.assertEqual(tar.pax_headers, pax_headers)
+            members = tar.getmembers()
+            self.assertEqual(len(members), 1)
+            self.assertEqual(members[0].name, "test")
+
     def test_pax_extended_header(self):
         # The fields from the pax header have priority over the
         # TarInfo.

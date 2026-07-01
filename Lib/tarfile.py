@@ -1592,6 +1592,14 @@ class TarInfo(object):
         # Fetch the next header.
         try:
             next = self._fromtarfile(tarfile, dircheck=False)
+        except EOFHeaderError:
+            if self.type == XGLTYPE:
+                # If this is a global header at the end of the archive
+                # (no regular members follow), let the EOFHeaderError
+                # propagate so the caller handles end-of-archive normally.
+                tarfile.offset = tarfile.fileobj.tell() - BLOCKSIZE
+                raise
+            raise SubsequentHeaderError("end of file header") from None
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
