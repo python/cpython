@@ -1682,6 +1682,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->cache_info_type = Py_NewRef(cache_info_type);
     obj->dict = NULL;
     obj->weakreflist = NULL;
+    _PyObject_SetDeferredRefcount((PyObject *)obj);
     return (PyObject *)obj;
 }
 
