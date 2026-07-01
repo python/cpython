@@ -746,9 +746,10 @@ deque_clear(PyObject *self)
        adversary could cause it to never terminate).
     */
 
+    PyObject *old_exc = PyErr_GetRaisedException();
     b = newblock(deque);
+    PyErr_SetRaisedException(old_exc);
     if (b == NULL) {
-        PyErr_Clear();
         goto alternate_method;
     }
 
