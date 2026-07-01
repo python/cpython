@@ -19,7 +19,6 @@ apt-get -yq --no-install-recommends install \
     libssl-dev \
     libzstd-dev \
     lzma \
-    lzma-dev \
     strace \
     tk-dev \
     uuid-dev \
