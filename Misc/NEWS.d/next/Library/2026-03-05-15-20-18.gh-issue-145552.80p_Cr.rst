@@ -1,0 +1,1 @@
+Fix ``smtplib.quoteaddr()`` to ensure the returned address always has a closing ``>`` when the input starts with ``<`` but ``email.utils.parseaddr()`` fails to parse it.
