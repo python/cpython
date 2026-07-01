@@ -307,7 +307,7 @@ class ThreadTests(BaseTestCase):
         # Issue gh-106236:
         with self.assertRaises(RuntimeError):
             dummy_thread.join()
-        dummy_thread._started.clear()
+        dummy_thread._os_thread_handle._set_done()
         with self.assertRaises(RuntimeError):
             dummy_thread.is_alive()
         # Busy wait for the following condition: after the thread dies, the
@@ -1504,6 +1504,27 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(err, b"")
         self.assertEqual(out.strip(), b"Exiting...")
+
+    def _nothing(self):
+        pass
+
+    def _set_ident_error(self):
+        1/0
+
+    def test_error_bootstrap(self):
+        # gh-140746: Test that Thread.start() doesn't hang indefinitely if
+        # the new thread fails (MemoryError in the referenced issue)
+        # during its initialization
+
+
+        thread = threading.Thread(target=self._nothing)
+        with support.catch_unraisable_exception(), self.assertRaises(RuntimeError):
+            thread._set_ident = self._set_ident_error
+            thread.start()
+
+        self.assertFalse(thread.is_alive())
+        self.assertFalse(thread in threading._limbo)
+        self.assertFalse(thread in threading._active)
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
