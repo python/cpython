@@ -318,8 +318,11 @@ The module defines the following user-callable items:
 
    #. A platform-specific location:
 
-      * On Windows, the directories :file:`C:\\TEMP`, :file:`C:\\TMP`,
-        :file:`\\TEMP`, and :file:`\\TMP`, in that order.
+      * On Windows, the directories
+        :file:`%USERPROFILE%\AppData\Local\Temp`,
+        :file:`%SYSTEMROOT%\Temp`, :file:`C:\TEMP`,
+        :file:`C:\TMP`, :file:`\TEMP`, and
+        :file:`\TMP`, in that order.
 
       * On all other platforms, the directories :file:`/tmp`, :file:`/var/tmp`, and
         :file:`/usr/tmp`, in that order.
