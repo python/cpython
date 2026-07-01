@@ -1669,6 +1669,9 @@ new_threadstate(PyInterpreterState *interp, int whence)
     if (tstate == NULL) {
         return NULL;
     }
+    // Set the back-pointer before init_threadstate() so early cleanup can
+    // recognize the preallocated initial thread state after allocation failures.
+    tstate->base.interp = interp;
 
 #ifdef Py_GIL_DISABLED
     Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
