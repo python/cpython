@@ -514,6 +514,8 @@ fill_and_set_sslerror(_sslmodulestate *state,
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
     PyObject *init_value, *msg, *key;
     PyUnicodeWriter *writer = NULL;
+    PyObject *error_queue = PyList_New(0);
+    if (!error_queue) goto fail;
 
     if (ssl_errno == PY_SSL_ERROR_EOF && sslsock != NULL) {
         sslsock->got_eof_error = 1;
@@ -542,6 +544,45 @@ fill_and_set_sslerror(_sslmodulestate *state,
         }
         if (errstr == NULL) {
             errstr = ERR_reason_error_string(errcode);
+        }
+
+        /* populate error_list from OpenSSL's error queue */
+        unsigned int q_pos = 0;  /* Error queue position */
+        const char *eq_filename, *eq_func, *eq_data;
+        char eq_msg[256];
+        int eq_lineno;
+        int flags;  /* Flags (discarded) */
+        unsigned long openssl_errorcode;
+
+        /* Presumably, we no longer need the OpenSSL error queue after this, so
+           we can call ERR_get_error (destructive) instead of ERR_peek_error */
+        while ((openssl_errorcode = ERR_get_error_all(&eq_filename, &eq_lineno, &eq_func,
+                                                      &eq_data, &flags))) {
+            if (q_pos == 0) {
+                /* errcode should have come from a caller, and should have been
+                   returned from ERR_peek_last_error() */
+                assert(openssl_errorcode == errcode);
+            }
+
+            ERR_error_string_n(openssl_errorcode, eq_msg, 256);
+
+            // Follows [lib reason] error_string extra_data (OpenSSL file:func:line)
+            PyObject *current_eq_msg = NULL;
+            if (eq_data != NULL) {
+                current_eq_msg = PyUnicode_FromFormat(
+                    "%s %s (%s:%s:%d)",
+                    eq_msg, eq_data, eq_filename, eq_func, eq_lineno
+                );
+            } else {
+                current_eq_msg = PyUnicode_FromFormat(
+                    "%s (%s:%s:%d)",
+                    eq_msg, eq_filename, eq_func, eq_lineno
+                );
+            }
+            if (PyList_Append(error_queue, current_eq_msg) != 0) {
+                goto fail;
+            }
+            q_pos++;
         }
     }
 
@@ -655,6 +696,12 @@ fill_and_set_sslerror(_sslmodulestate *state,
         if (PyObject_SetAttr(err_value, state->str_verify_message, verify_obj))
             goto fail;
     }
+
+    /* Add the full OpenSSL error queue to exception */
+    if (PyObject_SetAttr(err_value, state->str_error_queue, error_queue) != 0) {
+        goto fail;
+    }
+    Py_DECREF(error_queue);
 
     PyErr_SetObject(type, err_value);
 fail:
@@ -7358,6 +7405,10 @@ sslmodule_init_strings(PyObject *module)
     }
     state->str_verify_code = PyUnicode_InternFromString("verify_code");
     if (state->str_verify_code == NULL) {
+        return -1;
+    }
+    state->str_error_queue = PyUnicode_InternFromString("error_queue");
+    if (state->str_error_queue == NULL) {
         return -1;
     }
     return 0;
