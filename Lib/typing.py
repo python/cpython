@@ -129,6 +129,7 @@ __all__ = [
     'dataclass_transform',
     'disjoint_base',
     'evaluate_forward_ref',
+    'evaluate_type',
     'final',
     'get_args',
     'get_origin',
@@ -1049,6 +1050,24 @@ def evaluate_forward_ref(
         owner=owner,
         parent_fwdref=forward_ref,
     )
+
+
+def evaluate_type(
+    type_hint,
+    *,
+    owner=None,
+    globalns=None,
+    localns=None,
+    type_params=None,
+    format=None,
+):
+    """Evaluate a type hint, by resolving any forward references.
+
+    This is similar to the evaluate_forward_ref() method, but unlike that method,
+    evaluate_type() also supports arbitrary type hints.
+    """
+
+    return _eval_type(type_hint, owner=owner, globalns=globalns, localns=localns, type_params=type_params, format=format)
 
 
 def _is_unpacked_typevartuple(x: Any) -> bool:
