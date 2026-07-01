@@ -391,6 +391,14 @@ jobs:
     if: needs.build-context.outputs.run-wasi == 'true'
     uses: ./.github/workflows/reusable-wasi.yml
 
+  build-ubuntu-installed:
+    name: 'Ubuntu (installed)'
+    needs: build-context
+    if: needs.build-context.outputs.run-ubuntu == 'true'
+    uses: ./.github/workflows/reusable-install.yml
+    with:
+      os: ubuntu-24.04-arm
+
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-24.04
@@ -670,6 +678,7 @@ jobs:
     - build-ios
     - build-emscripten
     - build-wasi
+    - build-ubuntu-installed
     - test-hypothesis
     - build-asan
     - build-san
@@ -717,6 +726,7 @@ jobs:
             && '
             build-ubuntu,
             build-ubuntu-ssltests,
+            build-ubuntu-installed,
             test-hypothesis,
             build-asan,
             build-san,
