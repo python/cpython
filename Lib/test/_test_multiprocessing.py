@@ -138,8 +138,12 @@ SHUTDOWN_TIMEOUT = support.SHORT_TIMEOUT
 
 WAIT_ACTIVE_CHILDREN_TIMEOUT = 5.0
 
-HAVE_GETVALUE = not getattr(_multiprocessing,
-                            'HAVE_BROKEN_SEM_GETVALUE', False)
+# Since gh-125828, we no longer need HAVE_GETVALUE.
+# This value should be remove from Modules/_multiprocessing/multiprocessing.c.
+# when cleanup is complete.
+# -------------------
+# HAVE_GETVALUE = not getattr(_multiprocessing,
+#                            'HAVE_BROKEN_SEM_GETVALUE', False)
 
 WIN32 = (sys.platform == "win32")
 
@@ -1750,10 +1754,8 @@ class _TestSemaphore(BaseTestCase):
     def test_bounded_semaphore(self):
         sem = self.BoundedSemaphore(2)
         self._test_semaphore(sem)
-        # Currently fails on OS/X
-        #if HAVE_GETVALUE:
-        #    self.assertRaises(ValueError, sem.release)
-        #    self.assertReturnsIfImplemented(2, get_value, sem)
+        self.assertRaises(ValueError, sem.release)
+        self.assertReturnsIfImplemented(2, get_value, sem)
 
     def test_timeout(self):
         if self.TYPE != 'processes':
@@ -7384,6 +7386,224 @@ class MiscTestCase(unittest.TestCase):
             'worker:5002:sentinel',
             '',
         ])
+
+#
+# Tests for workaround macOSX Semaphore
+#
+
+ACQUIRE, RELEASE = range(2)
+@unittest.skipIf(sys.platform != "darwin", "MacOSX only")
+class _TestMacOSXSemaphore(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes',)
+    @classmethod
+    def _run_thread(cls, sem, meth, ntime, delay):
+        if meth == ACQUIRE:
+            for _ in range(ntime):
+                sem.acquire()
+                time.sleep(delay)
+        else:
+            for _ in range(ntime):
+                sem.release()
+                time.sleep(delay)
+
+    @classmethod
+    def _run_process(cls, sem, sem_meth, nthread=1, ntime=10, delay=0.1):
+        ts = []
+        for _ in range(nthread):
+            t = threading.Thread(target=cls._run_thread,
+                            args=(sem, sem_meth, ntime, delay))
+            ts.append(t)
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
+
+    def test_mix_several_acquire_release(self):
+        # n processes, threads per process and loops per threads
+        n_p_acq, n_th_acq, n_loop_acq = 15, 5, 20
+        n_p_rel, n_th_rel, n_loop_rel = 8, 8, 8
+
+        n_acq = n_p_acq*n_th_acq*n_loop_acq
+        n_rel = n_p_rel*n_th_rel*n_loop_rel
+        sem = self.Semaphore(n_acq)
+        ps = []
+        for _ in range(n_p_acq):
+            p = self.Process(target=self._run_process,
+                             args=(sem, ACQUIRE, n_th_acq, n_loop_acq, 0.01))
+            ps.append(p)
+
+        for _ in range(n_p_rel):
+            p = self.Process(target=self._run_process,
+                             args=(sem, RELEASE, n_th_rel, n_loop_rel, 0.005))
+            ps.append(p)
+
+        for p in ps:
+            p.start()
+        for p in ps:
+            p.join()
+        self.assertEqual(sem.get_value(), n_rel)
+
+    @unittest.skipUnless(hasattr(_multiprocessing, '_MACOSX_SHAREDMEM_NAME'), "C Workaround for `get_value` is necessary")
+    def test_sharedmem_and_lock_names(self):
+
+        self.assertTrue(hasattr(_multiprocessing, '_MACOSX_SHAREDMEM_NAME'))
+        self.assertTrue(_multiprocessing._MACOSX_SHAREDMEM_NAME.startswith("/psm-gh125828-"))
+        self.assertTrue(_multiprocessing._MACOSX_SHAREDMEM_NAME.endswith(f"-{os.getpid()}"))
+
+        self.assertTrue(hasattr(_multiprocessing, '_MACOSX_SHMLOCK_NAME'))
+        self.assertTrue(_multiprocessing._MACOSX_SHMLOCK_NAME.startswith("/mp-gh125828-"))
+        self.assertTrue(_multiprocessing._MACOSX_SHMLOCK_NAME.endswith(f"-{os.getpid()}"))
+
+    @unittest.skipUnless(hasattr(_multiprocessing, '_MACOSX_SHAREDMEM_NAME'), "C Workaround for `get_value` is necessary")
+    def test_exist_sharedmem_and_lock(self):
+        import multiprocessing.synchronize as synchronize
+        import _multiprocessing
+        import _posixshmem
+
+        # shared memory
+        shm_name = _multiprocessing._MACOSX_SHAREDMEM_NAME
+
+        # shm lock
+        lock_name = _multiprocessing._MACOSX_SHMLOCK_NAME
+
+        # check if shared mem already exists.
+        with self.assertRaises(FileNotFoundError):
+            _posixshmem.shm_open(shm_name,
+                                os.O_RDWR,
+                                0o600)
+
+        # check if lock does not exists.
+        with self.assertRaises(FileNotFoundError):
+            _multiprocessing.sem_unlink(lock_name)
+
+        # create 2 semaphores
+        sems = [self.Semaphore(10), self.BoundedSemaphore(3)]
+
+        # check if shared mem already exists.
+        with self.assertRaises(FileExistsError):
+            _posixshmem.shm_open(shm_name,
+                                os.O_CREAT | os.O_EXCL | os.O_RDWR,
+                                0o600)
+
+        # check if lock already exists.
+        with self.assertRaises(FileExistsError):
+            _multiprocessing.SemLock(synchronize.SEMAPHORE,
+                                     1, 1,
+                                     lock_name,
+                                     unlink=0)
+
+        # remove all semaphores
+        while len(sems) and (s := sems.pop()):
+            del s
+
+        # check if shared mem does not exists.
+        with self.assertRaises(FileNotFoundError):
+            _posixshmem.shm_unlink(shm_name)
+
+        # check if lock does not exists.
+        with self.assertRaises(FileNotFoundError):
+            _multiprocessing.sem_unlink(lock_name)
+
+    def _get_counters_and_test(self, l, sem):
+        internal_counter, pending_acquires = l[0], l[1]
+        self.assertEqual(max(0, internal_counter - pending_acquires),
+                        sem.get_value())
+
+    def _get_name_and_test(self, b, sem):
+        name = b.decode("utf-8").rstrip('\x00')
+        self.assertEqual(sem._semlock.name, name)
+
+    def test_sharedmem_details(self):
+        import mmap
+        import _posixshmem
+
+        # create semaphores
+        sems = [self.Semaphore(10), self.BoundedSemaphore(5), self.Semaphore(0)]
+        n = len(sems)
+
+        # Starts n_acqs threads to acquire sems[-1],
+        # which will update the sharedmem content regarding pending acquires.
+        n_acqs = 3
+        ts = [threading.Thread(target= sems[-1].acquire) for _ in range(n_acqs)]
+        for t in ts:
+            t.start()
+
+        # check content of the sharedmem: header, plus n semaphoreq.
+        # See file ./Modules/multiprocessing/semaphore_macosx.h
+        # for the shared memory layout.
+        shm_name = _multiprocessing._MACOSX_SHAREDMEM_NAME
+        try:
+            _fd = _posixshmem.shm_open(shm_name, os.O_RDWR, 0o600)
+            if _fd:
+                size = os.fstat(_fd).st_size
+                _mmap = mmap.mmap(_fd, size)
+
+                # header
+                start = 0
+                _len = 16 # 4 ints
+                with memoryview(_mmap[:16]).cast('i') as _buf: # signed int
+                    header = _buf[:4].tolist()
+                    self.assertEqual(header[0], n)
+                    self.assertEqual(header[1], _multiprocessing._MACOSX_MAX_OPEN_SEMS)
+                    self.assertEqual(header[2], size)
+                    sizeof_counter = header[-1]
+
+                start += _len
+                len_sem_name = 16   # 16 chars for the name of the semaphore
+                len_internal_counter = 6   # 3 unisgned short
+                len_ctimestamp = 8 #    # 1 ctime
+                struct_format = (
+                    (len_sem_name, 'B', memoryview.tobytes, self._get_name_and_test), # unsigned char
+                    (len_internal_counter, 'H', memoryview.tolist, self._get_counters_and_test), # unsigned short
+                    (len_ctimestamp, 'L', memoryview.tolist, None), # unsigned long
+                )
+                # all semahores in the counters array
+                for s in sems:
+                    st = start
+                    for _len, _cast,_convert, _assert in struct_format:
+                        with memoryview(_mmap[st:st+_len]).cast(_cast) as _buf:
+                            if _assert is not None:
+                                _assert(_convert(_buf), s)
+                        st += _len # after each part of a semaphore data
+                    start += sizeof_counter # after each semaphore data
+                # end of exploration
+
+                # Remove first created sem from sems array.
+                s = sems.pop(0)
+                del s
+                # Check that its dedicated counter in sharedmem is reset to 0.
+                st = 16
+                with memoryview(_mmap[st:st+sizeof_counter]).cast('B') as _buf:
+                    self.assertEqual(_buf.tobytes(), bytes([0]*sizeof_counter))
+
+                # Check number of semaphores in header is changed.
+                with memoryview(_mmap[:16]).cast('i') as _buf: # signed int
+                    header = _buf[:4].tolist()
+                    self.assertEqual(header[0], len(sems))
+
+                _mmap.close()
+                os.close(_fd)
+
+        except Exception as e:
+            raise
+
+        # release sems[-1] regarding each acquire,
+        # then finish each thread
+        for t in ts:
+            sems[-1].release()
+            t.join()
+
+        # remove all semaphores
+        while len(sems) and (s := sems.pop()):
+            del s
+
+    def test_sharedmem_max_open_sems(self):
+        # This test should be run alone.
+        with self.assertRaisesRegex(OSError, "No space left on device"):
+            sems = []
+            for i in range(1, _multiprocessing._MACOSX_MAX_OPEN_SEMS + 1):
+                sems.append(self.Semaphore(i) if i % 2 else self.BoundedSemaphore(i))
 
 #
 # Mixins
