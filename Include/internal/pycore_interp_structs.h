@@ -658,6 +658,7 @@ struct _warnings_runtime_state {
     PyObject *filters;  /* List */
     PyObject *once_registry;  /* Dict */
     PyObject *default_action; /* String */
+    PyObject *module;  /* Weakref, used after sys.modules cleanup */
     _PyRecursiveMutex lock;
     long filters_version;
     PyObject *context;

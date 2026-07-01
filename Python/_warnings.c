@@ -69,6 +69,7 @@ warnings_clear_state(WarningsState *st)
     Py_CLEAR(st->filters);
     Py_CLEAR(st->once_registry);
     Py_CLEAR(st->default_action);
+    Py_CLEAR(st->module);
     Py_CLEAR(st->context);
 }
 
@@ -245,8 +246,13 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
             return NULL;
         }
         warnings_module = PyImport_GetModule(&_Py_ID(warnings));
-        if (warnings_module == NULL)
-            return NULL;
+        if (warnings_module == NULL) {
+            WarningsState *st = warnings_get_state(interp);
+            if (st->module == NULL ||
+                    PyWeakref_GetRef(st->module, &warnings_module) <= 0) {
+                return NULL;
+            }
+        }
     }
 
     (void)PyObject_GetOptionalAttr(warnings_module, attr, &obj);
@@ -372,6 +378,25 @@ warnings_release_lock_impl(PyObject *module)
         PyErr_SetString(PyExc_RuntimeError, "cannot release un-acquired lock");
         return NULL;
     }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+warnings_set_module(PyObject *Py_UNUSED(module), PyObject *warnings_module)
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+    WarningsState *st = warnings_get_state(interp);
+    if (st == NULL) {
+        return NULL;
+    }
+    PyObject *ref = PyWeakref_NewRef(warnings_module, NULL);
+    if (ref == NULL) {
+        return NULL;
+    }
+    Py_XSETREF(st->module, ref);
     Py_RETURN_NONE;
 }
 
@@ -1593,6 +1618,7 @@ static PyMethodDef warnings_functions[] = {
     WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF
     WARNINGS_ACQUIRE_LOCK_METHODDEF
     WARNINGS_RELEASE_LOCK_METHODDEF
+    {"_set_module", warnings_set_module, METH_O, NULL},
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */

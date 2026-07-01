@@ -1,0 +1,2 @@
+Fix :func:`warnings.warn` to call a custom :func:`warnings.showwarning`
+during Python finalization.
