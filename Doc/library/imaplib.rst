@@ -197,12 +197,17 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.append(mailbox, flags, date_time, message)
 
-   Append *message* to named mailbox.
+   Append *message* to named mailbox.  *message* must be a
+   :term:`bytes-like object` and is passed as an IMAP4 literal.  If *mailbox*
+   is ``None`` or empty, ``'INBOX'`` is used.
 
    *flags* may be ``None`` or a string of IMAP flag tokens.  Multiple
    flags are separated by spaces, for example ``r'\Seen \Answered'``.
    If *flags* is not already enclosed in parentheses, parentheses are
    added automatically.
+
+   *date_time* may be ``None`` to omit the ``INTERNALDATE`` argument.
+   Otherwise, *date_time* is converted with :func:`Time2Internaldate`.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
@@ -729,4 +734,3 @@ retrieves and prints all messages::
        print('Message %s\n%s\n' % (num, data[0][1]))
    M.close()
    M.logout()
-
