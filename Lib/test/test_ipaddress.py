@@ -1845,6 +1845,9 @@ class IpaddrUnitTest(unittest.TestCase):
                           '1.2.3.4/0')
 
     def testCollapsing(self):
+        collapsed = ipaddress.collapse_addresses([])
+        self.assertEqual(list(collapsed), [])
+
         # test only IP addresses including some duplicates
         ip1 = ipaddress.IPv4Address('1.1.1.0')
         ip2 = ipaddress.IPv4Address('1.1.1.1')
@@ -1858,18 +1861,12 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(list(collapsed),
                 [ipaddress.IPv4Network('1.1.1.0/30'),
                  ipaddress.IPv4Network('1.1.1.4/32')])
-
-        # test a mix of IP addresses and networks including some duplicates
-        ip1 = ipaddress.IPv4Address('1.1.1.0')
-        ip2 = ipaddress.IPv4Address('1.1.1.1')
-        ip3 = ipaddress.IPv4Address('1.1.1.2')
-        ip4 = ipaddress.IPv4Address('1.1.1.3')
-        #ip5 = ipaddress.IPv4Interface('1.1.1.4/30')
-        #ip6 = ipaddress.IPv4Interface('1.1.1.4/30')
-        # check that addresses are subsumed properly.
-        collapsed = ipaddress.collapse_addresses([ip1, ip2, ip3, ip4])
+        collapsed = ipaddress.collapse_addresses([ip1])
         self.assertEqual(list(collapsed),
-                         [ipaddress.IPv4Network('1.1.1.0/30')])
+                [ipaddress.IPv4Network('1.1.1.0/32')])
+        # test same IP addresses
+        self.assertEqual(list(ipaddress.collapse_addresses([ip1, ip1, ip6])),
+                [ipaddress.ip_network('1.1.1.0/32')])
 
         # test only IP networks
         ip1 = ipaddress.IPv4Network('1.1.0.0/24')
@@ -1877,8 +1874,8 @@ class IpaddrUnitTest(unittest.TestCase):
         ip3 = ipaddress.IPv4Network('1.1.2.0/24')
         ip4 = ipaddress.IPv4Network('1.1.3.0/24')
         ip5 = ipaddress.IPv4Network('1.1.4.0/24')
-        # stored in no particular order b/c we want CollapseAddr to call
-        # [].sort
+        # stored in no particular order b/c we want collapse_addresses()
+        # to call sorted()
         ip6 = ipaddress.IPv4Network('1.1.0.0/22')
         # check that addresses are subsumed properly.
         collapsed = ipaddress.collapse_addresses([ip1, ip2, ip3, ip4, ip5,
@@ -1893,16 +1890,9 @@ class IpaddrUnitTest(unittest.TestCase):
                          [ipaddress.IPv4Network('1.1.0.0/23')])
 
         # test same IP networks
-        ip_same1 = ip_same2 = ipaddress.IPv4Network('1.1.1.1/32')
-        self.assertEqual(list(ipaddress.collapse_addresses(
-                    [ip_same1, ip_same2])),
-                         [ip_same1])
+        self.assertEqual(list(ipaddress.collapse_addresses([ip1, ip1])),
+                         [ip1])
 
-        # test same IP addresses
-        ip_same1 = ip_same2 = ipaddress.IPv4Address('1.1.1.1')
-        self.assertEqual(list(ipaddress.collapse_addresses(
-                    [ip_same1, ip_same2])),
-                         [ipaddress.ip_network('1.1.1.1/32')])
         ip1 = ipaddress.IPv6Network('2001::/100')
         ip2 = ipaddress.IPv6Network('2001::/120')
         ip3 = ipaddress.IPv6Network('2001::/96')
@@ -1916,6 +1906,21 @@ class IpaddrUnitTest(unittest.TestCase):
         # test that ipv6 addresses are subsumed properly.
         collapsed = ipaddress.collapse_addresses([ip1, ip2, ip3])
         self.assertEqual(list(collapsed), [ip3])
+
+        # test a mix of IP addresses and networks
+        ip1 = ipaddress.IPv4Address('1.1.1.0')
+        ip2 = ipaddress.IPv4Address('1.1.1.1')
+        ip3 = ipaddress.IPv4Network('1.1.1.2/31')
+        # check that addresses are subsumed properly.
+        collapsed = ipaddress.collapse_addresses([ip1, ip2, ip3])
+        self.assertEqual(list(collapsed),
+                         [ipaddress.IPv4Network('1.1.1.0/30')])
+
+        # unsupported types
+        self.assertRaises(TypeError, ipaddress.collapse_addresses, [42])
+        self.assertRaises(TypeError, ipaddress.collapse_addresses, [None])
+        self.assertRaises(TypeError, ipaddress.collapse_addresses,
+                          [ipaddress.IPv4Interface('1.1.1.4/30')])
 
         # the toejam test
         addr_tuples = [
@@ -1941,6 +1946,24 @@ class IpaddrUnitTest(unittest.TestCase):
         for ip1, ip2 in addr_tuples:
             self.assertRaises(TypeError, ipaddress.collapse_addresses,
                               [ip1, ip2])
+        for ip1 in [
+            ipaddress.ip_address('1.1.1.1'),
+            ipaddress.IPv4Network('1.1.0.0/24'),
+            ipaddress.IPv4Network('1.1.0.0/32'),
+        ]:
+            for ip2 in [
+                ipaddress.ip_address('::1'),
+                ipaddress.IPv6Network('2001::/120'),
+                ipaddress.IPv6Network('2001::/128'),
+                ipaddress.ip_address('::1%scope'),
+                ipaddress.IPv6Network('2001::%scope/120'),
+                ipaddress.IPv6Network('2001::%scope/128'),
+            ]:
+                with self.subTest(ip1=ip1, ip2=ip2):
+                    with self.assertRaises(TypeError):
+                        list(ipaddress.collapse_addresses([ip1, ip2]))
+                    with self.assertRaises(TypeError):
+                        list(ipaddress.collapse_addresses([ip2, ip1]))
 
     def testSummarizing(self):
         #ip = ipaddress.ip_address
