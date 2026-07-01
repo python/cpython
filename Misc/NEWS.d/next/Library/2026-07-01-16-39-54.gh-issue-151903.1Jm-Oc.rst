@@ -1,0 +1,1 @@
+Optimize ``contextlib.contextmanager`` and ``contextlib.asynccontextmanager`` by replacing explicit ``next()`` and ``anext()`` calls with ``for`` and ``async for`` loops.
