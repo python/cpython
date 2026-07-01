@@ -19,7 +19,6 @@ apt-get -yq --no-install-recommends install \
     libsqlite3-dev \
     libssl-dev \
     libzstd-dev \
-    lzma \
     strace \
     tk-dev \
     uuid-dev \
