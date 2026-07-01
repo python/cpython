@@ -656,6 +656,9 @@ method on it, and to change its value you call the :meth:`!set` method.
 If you follow this protocol, the widget will always track the value of the
 variable, with no further intervention on your part.
 
+Keep a reference to the variable for as long as a widget uses it, for example
+by storing it as an attribute (see :class:`Variable`).
+
 For example::
 
    import tkinter as tk
@@ -5915,6 +5918,14 @@ Variable classes
    In most cases you should use one of the typed subclasses below --
    :class:`StringVar`, :class:`IntVar`, :class:`DoubleVar` or
    :class:`BooleanVar` -- rather than :class:`!Variable` directly.
+
+   .. note::
+
+      When a :class:`!Variable` is garbage collected, its Tcl variable is unset.
+      Keep a reference to it for as long as a widget is linked to it, for example
+      by storing it as an attribute rather than in a local variable.
+      Otherwise Tk recreates the Tcl variable to keep the widget working, but it
+      is never unset again, leaking one Tcl variable per dropped wrapper.
 
    .. versionchanged:: 3.10
       Two variables now compare equal (``==``) only when they have the same
