@@ -19,14 +19,14 @@ on:
         type: boolean
         default: false
       os:
-         description: OS to run the job
-         required: true
-         type: string
+        description: OS to run the job
+        required: true
+        type: string
       test-opts:
-         description: Extra options to pass to the test runner via TESTOPTS
-         required: false
-         type: string
-         default: ''
+        description: Extra options to pass to the test runner via TESTOPTS
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
