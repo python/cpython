@@ -475,8 +475,8 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
 
-    // Clear stale last_profiled_frame values from previous profilers
-    // This prevents us from stopping frame walking early due to stale values
+    // Clear stale profiler anchors from previous profilers. This prevents us
+    // from stopping frame walking early due to stale frame pointers.
     if (cache_frames) {
         clear_last_profiled_frames(self);
     }
@@ -1624,9 +1624,6 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
-#endif
     int rc = PyModule_AddIntConstant(m, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
     if (rc < 0) {
         return -1;

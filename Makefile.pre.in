@@ -1616,6 +1616,8 @@ Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) 
 _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+	# Dummy pybuilddir.txt  is needed for _bootstrap_python to be runnable
+	@echo "none" > ./pybuilddir.txt
 
 
 ############################################################################
@@ -2673,6 +2675,20 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lazy_import/data \
 		test/test_lazy_import/data/pkg \
 		test/test_lazy_import/data/badsyntax \
+		test/test_lazy_import/data/circular_import_pkg \
+		test/test_lazy_import/data/metasyntactic \
+		test/test_lazy_import/data/metasyntactic/foo \
+		test/test_lazy_import/data/metasyntactic/foo/ack \
+		test/test_lazy_import/data/metasyntactic/foo/bar \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz \
+		test/test_lazy_import/data/metasyntactic/foo/bar/baz/qux \
+		test/test_lazy_import/data/metasyntactic/foo/bar/thud \
+		test/test_lazy_import/data/metasyntactic/plugh \
+		test/test_lazy_import/data/metasyntactic/waldo \
+		test/test_lazy_import/data/metasyntactic/waldo/fred \
+		test/test_lazy_import/data/module_same_name_var_order1 \
+		test/test_lazy_import/data/module_same_name_var_order2 \
+		test/test_lazy_import/data/versioned \
 		test/test_module \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \

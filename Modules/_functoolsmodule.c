@@ -860,7 +860,8 @@ static PyMethodDef partial_methods[] = {
     {"__reduce__", partial_reduce, METH_NOARGS},
     {"__setstate__", partial_setstate, METH_O},
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("partial is generic over the wrapped function's return type")},
     {NULL,              NULL}           /* sentinel */
 };
 
