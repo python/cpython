@@ -13,6 +13,7 @@ import threading
 import time
 import unittest
 from test import support
+from test.support import isolation
 from test.support import (
     force_not_colorized, is_apple, is_apple_mobile, os_helper, threading_helper
 )
@@ -312,86 +313,41 @@ class WakeupFDTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class WakeupSignalTests(unittest.TestCase):
-    @unittest.skipIf(_testcapi is None, 'need _testcapi')
-    def check_wakeup(self, test_body, *signals, ordered=True):
-        # use a subprocess to have only one thread
-        code = """if 1:
-        import _testcapi
-        import os
-        import signal
+    def check_wakeup(self, test, *signals, ordered=True):
+        # The caller is decorated with @isolated(), so this runs in a fresh
+        # subprocess that has only one thread for the signal to be delivered to.
         import struct
 
-        signals = {!r}
+        signals = tuple(int(s) for s in signals)
 
         def handler(signum, frame):
             pass
-
-        def check_signum(signals):
-            data = os.read(read, len(signals)+1)
-            raised = struct.unpack('%uB' % len(data), data)
-            if not {!r}:
-                raised = set(raised)
-                signals = set(signals)
-            if raised != signals:
-                raise Exception("%r != %r" % (raised, signals))
-
-        {}
 
         signal.signal(signal.SIGALRM, handler)
         read, write = os.pipe()
         os.set_blocking(write, False)
         signal.set_wakeup_fd(write)
 
-        test()
-        check_signum(signals)
+        test(read)
+
+        data = os.read(read, len(signals) + 1)
+        raised = struct.unpack('%uB' % len(data), data)
+        if ordered:
+            self.assertEqual(raised, signals)
+        else:
+            self.assertEqual(set(raised), set(signals))
 
         os.close(read)
         os.close(write)
-        """.format(tuple(map(int, signals)), ordered, test_body)
-
-        assert_python_ok('-c', code)
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     @force_not_colorized
+    @isolation.isolated()
     def test_wakeup_write_error(self):
         # Issue #16105: write() errors in the C signal handler should not
         # pass silently.
-        # Use a subprocess to have only one thread.
-        code = """if 1:
-        import _testcapi
-        import errno
-        import os
-        import signal
-        import sys
-        from test.support import captured_stderr
-
-        def handler(signum, frame):
-            1/0
-
-        signal.signal(signal.SIGALRM, handler)
-        r, w = os.pipe()
-        os.set_blocking(r, False)
-
-        # Set wakeup_fd a read-only file descriptor to trigger the error
-        signal.set_wakeup_fd(r)
-        try:
-            with captured_stderr() as err:
-                signal.raise_signal(signal.SIGALRM)
-        except ZeroDivisionError:
-            # An ignored exception should have been printed out on stderr
-            err = err.getvalue()
-            if ('Exception ignored while trying to write to the signal wakeup fd'
-                not in err):
-                raise AssertionError(err)
-            if ('OSError: [Errno %d]' % errno.EBADF) not in err:
-                raise AssertionError(err)
-        else:
-            raise AssertionError("ZeroDivisionError not raised")
-
-        os.close(r)
-        os.close(w)
-        """
+        # Use @isolated() to run in a subprocess with only one thread.
         r, w = os.pipe()
         try:
             os.write(r, b'x')
@@ -403,10 +359,32 @@ class WakeupSignalTests(unittest.TestCase):
             os.close(r)
             os.close(w)
 
-        assert_python_ok('-c', code)
+        def handler(signum, frame):
+            1/0
 
+        signal.signal(signal.SIGALRM, handler)
+        r, w = os.pipe()
+        os.set_blocking(r, False)
+
+        # Set wakeup_fd a read-only file descriptor to trigger the error
+        signal.set_wakeup_fd(r)
+        with support.captured_stderr() as err:
+            with self.assertRaises(ZeroDivisionError):
+                signal.raise_signal(signal.SIGALRM)
+        # An ignored exception should have been printed out on stderr
+        err = err.getvalue()
+        self.assertIn(
+            'Exception ignored while trying to write to the signal wakeup fd',
+            err)
+        self.assertIn('OSError: [Errno %d]' % errno.EBADF, err)
+
+        os.close(r)
+        os.close(w)
+
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @isolation.isolated()
     def test_wakeup_fd_early(self):
-        self.check_wakeup("""def test():
+        def test(read):
             import select
             import time
 
@@ -429,18 +407,19 @@ class WakeupSignalTests(unittest.TestCase):
             except InterruptSelect:
                 pass
             else:
-                raise Exception("select() was not interrupted")
+                self.fail("select() was not interrupted")
 
             before_time = time.monotonic()
             select.select([read], [], [], TIMEOUT_FULL)
             after_time = time.monotonic()
             dt = after_time - before_time
-            if dt >= TIMEOUT_HALF:
-                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
-        """, signal.SIGALRM)
+            self.assertLess(dt, TIMEOUT_HALF)
+        self.check_wakeup(test, signal.SIGALRM)
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @isolation.isolated()
     def test_wakeup_fd_during(self):
-        self.check_wakeup("""def test():
+        def test(read):
             import select
             import time
 
@@ -462,27 +441,34 @@ class WakeupSignalTests(unittest.TestCase):
             except InterruptSelect:
                 pass
             else:
-                raise Exception("select() was not interrupted")
+                self.fail("select() was not interrupted")
             after_time = time.monotonic()
             dt = after_time - before_time
-            if dt >= TIMEOUT_HALF:
-                raise Exception("%s >= %s" % (dt, TIMEOUT_HALF))
-        """, signal.SIGALRM)
+            self.assertLess(dt, TIMEOUT_HALF)
+        self.check_wakeup(test, signal.SIGALRM)
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @isolation.isolated()
     def test_signum(self):
-        self.check_wakeup("""def test():
+        def test(read):
+            def handler(signum, frame):
+                pass
             signal.signal(signal.SIGUSR1, handler)
             signal.raise_signal(signal.SIGUSR1)
             signal.raise_signal(signal.SIGALRM)
-        """, signal.SIGUSR1, signal.SIGALRM)
+        self.check_wakeup(test, signal.SIGUSR1, signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @isolation.isolated()
     def test_pending(self):
-        self.check_wakeup("""def test():
+        def test(read):
             signum1 = signal.SIGUSR1
             signum2 = signal.SIGUSR2
 
+            def handler(signum, frame):
+                pass
             signal.signal(signum1, handler)
             signal.signal(signum2, handler)
 
@@ -491,20 +477,17 @@ class WakeupSignalTests(unittest.TestCase):
             signal.raise_signal(signum2)
             # Unblocking the 2 signals calls the C signal handler twice
             signal.pthread_sigmask(signal.SIG_UNBLOCK, (signum1, signum2))
-        """,  signal.SIGUSR1, signal.SIGUSR2, ordered=False)
+        self.check_wakeup(test, signal.SIGUSR1, signal.SIGUSR2, ordered=False)
 
 
 @unittest.skipUnless(hasattr(socket, 'socketpair'), 'need socket.socketpair')
 class WakeupSocketSignalTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @isolation.isolated()
     def test_socket(self):
-        # use a subprocess to have only one thread
-        code = """if 1:
-        import signal
-        import socket
+        # Use @isolated() to run in a subprocess with only one thread.
         import struct
-        import _testcapi
 
         signum = signal.SIGINT
         signals = (signum,)
@@ -521,33 +504,21 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.raise_signal(signum)
 
         data = read.recv(1)
-        if not data:
-            raise Exception("no signum written")
+        self.assertTrue(data, "no signum written")
         raised = struct.unpack('B', data)
-        if raised != signals:
-            raise Exception("%r != %r" % (raised, signals))
+        self.assertEqual(raised, signals)
 
         read.close()
         write.close()
-        """
-
-        assert_python_ok('-c', code)
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @isolation.isolated()
     def test_send_error(self):
-        # Use a subprocess to have only one thread.
+        # Use @isolated() to run in a subprocess with only one thread.
         if os.name == 'nt':
             action = 'send'
         else:
             action = 'write'
-        code = """if 1:
-        import errno
-        import signal
-        import socket
-        import sys
-        import time
-        import _testcapi
-        from test.support import captured_stderr
 
         signum = signal.SIGINT
 
@@ -566,31 +537,22 @@ class WakeupSocketSignalTests(unittest.TestCase):
         read.close()
         write.close()
 
-        with captured_stderr() as err:
+        with support.captured_stderr() as err:
             signal.raise_signal(signum)
 
-        err = err.getvalue()
-        if ('Exception ignored while trying to {action} to the signal wakeup fd'
-            not in err):
-            raise AssertionError(err)
-        """.format(action=action)
-        assert_python_ok('-c', code)
+        self.assertIn(
+            'Exception ignored while trying to %s to the signal wakeup fd'
+            % action,
+            err.getvalue())
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @isolation.isolated()
     def test_warn_on_full_buffer(self):
-        # Use a subprocess to have only one thread.
+        # Use @isolated() to run in a subprocess with only one thread.
         if os.name == 'nt':
             action = 'send'
         else:
             action = 'write'
-        code = """if 1:
-        import errno
-        import signal
-        import socket
-        import sys
-        import time
-        import _testcapi
-        from test.support import captured_stderr
 
         signum = signal.SIGINT
 
@@ -627,67 +589,46 @@ class WakeupSocketSignalTests(unittest.TestCase):
             except (BlockingIOError, TimeoutError):
                 pass
 
-        print(f"%s bytes written into the socketpair" % written, flush=True)
-
         write.setblocking(False)
-        try:
+        with self.assertRaises(BlockingIOError,
+                               msg="%s bytes failed to fill the socketpair "
+                                   "buffer" % written):
             write.send(b"x")
-        except BlockingIOError:
-            # The socketpair buffer seems full
-            pass
-        else:
-            raise AssertionError("%s bytes failed to fill the socketpair "
-                                 "buffer" % written)
 
         # By default, we get a warning when a signal arrives
-        msg = ('Exception ignored while trying to {action} '
-               'to the signal wakeup fd')
+        msg = ('Exception ignored while trying to %s '
+               'to the signal wakeup fd' % action)
         signal.set_wakeup_fd(write.fileno())
 
-        with captured_stderr() as err:
+        with support.captured_stderr() as err:
             signal.raise_signal(signum)
-
-        err = err.getvalue()
-        if msg not in err:
-            raise AssertionError("first set_wakeup_fd() test failed, "
-                                 "stderr: %r" % err)
+        self.assertIn(msg, err.getvalue(),
+                      "first set_wakeup_fd() test failed")
 
         # And also if warn_on_full_buffer=True
         signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=True)
 
-        with captured_stderr() as err:
+        with support.captured_stderr() as err:
             signal.raise_signal(signum)
-
-        err = err.getvalue()
-        if msg not in err:
-            raise AssertionError("set_wakeup_fd(warn_on_full_buffer=True) "
-                                 "test failed, stderr: %r" % err)
+        self.assertIn(msg, err.getvalue(),
+                      "set_wakeup_fd(warn_on_full_buffer=True) test failed")
 
         # But not if warn_on_full_buffer=False
         signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=False)
 
-        with captured_stderr() as err:
+        with support.captured_stderr() as err:
             signal.raise_signal(signum)
-
-        err = err.getvalue()
-        if err != "":
-            raise AssertionError("set_wakeup_fd(warn_on_full_buffer=False) "
-                                 "test failed, stderr: %r" % err)
+        self.assertEqual(err.getvalue(), "",
+                         "set_wakeup_fd(warn_on_full_buffer=False) test failed")
 
         # And then check the default again, to make sure warn_on_full_buffer
         # settings don't leak across calls.
         signal.set_wakeup_fd(write.fileno())
 
-        with captured_stderr() as err:
+        with support.captured_stderr() as err:
             signal.raise_signal(signum)
-
-        err = err.getvalue()
-        if msg not in err:
-            raise AssertionError("second set_wakeup_fd() test failed, "
-                                 "stderr: %r" % err)
-
-        """.format(action=action)
-        assert_python_ok('-c', code)
+        self.assertIn(msg, err.getvalue(),
+                      "second set_wakeup_fd() test failed")
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
