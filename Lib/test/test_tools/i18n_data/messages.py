@@ -85,6 +85,9 @@ def _(x="don't extract me"):
     pass
 
 
+def func():
+    """Docstring..."""
+
 # Other gettext functions
 gettext("foo")
 ngettext("foo", "foos", 1)
