@@ -527,14 +527,49 @@ struct _py_func_state {
 
 /****** type state *********/
 
+/* One TYPE(name) per textual _PyStaticType_InitBuiltin /
+   _PyStructSequence_InitBuiltin{,WithFlags} call site outside the static_types
+   and static_exceptions arrays.  Count-only -- the calls themselves stay at
+   their existing locations.  Forgetting an entry trips the
+   `index < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES` assertion in
+   Objects/typeobject.c on interpreter start. */
+#define _Py_FOREACH_STATIC_EXTRA_TYPE(TYPE) \
+    /* Python/crossinterp_exceptions.h */ \
+    TYPE(_PyExc_InterpreterError) \
+    TYPE(_PyExc_InterpreterNotFoundError) \
+    /* Objects/unicodeobject.c */ \
+    TYPE(EncodingMapType) \
+    TYPE(PyFieldNameIter_Type) \
+    TYPE(PyFormatterIter_Type) \
+    /* Python/thread.c */ \
+    TYPE(ThreadInfoType) \
+    /* Python/sysmodule.c */ \
+    TYPE(Hash_InfoType) \
+    TYPE(AsyncGenHooksType) \
+    TYPE(VersionInfoType) \
+    TYPE(FlagsType) \
+    TYPE(WindowsVersionType) \
+    /* Python/errors.c */ \
+    TYPE(UnraisableHookArgsType) \
+    /* Objects/longobject.c */ \
+    TYPE(Int_InfoType) \
+    /* Objects/floatobject.c */ \
+    TYPE(FloatInfoType)
+
+#define _PY_COUNT_STATIC_TYPE_(name) + 1
+#define _Py_NUM_MANAGED_STATIC_EXTRA_TYPES \
+    (0 _Py_FOREACH_STATIC_EXTRA_TYPE(_PY_COUNT_STATIC_TYPE_))
+
 /* For now we hard-code this to a value for which we are confident
    all the static builtin types will fit (for all builds).
    If you add a new static type to the standard library, you may have to
    update one of these numbers.
    */
 #define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 120
+#define _Py_NUM_STATIC_EXCEPTIONS 69
 #define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
-    (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + 83)
+    (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + _Py_NUM_STATIC_EXCEPTIONS \
+     + _Py_NUM_MANAGED_STATIC_EXTRA_TYPES)
 #define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
 #define _Py_MAX_MANAGED_STATIC_TYPES \
     (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
