@@ -1644,19 +1644,13 @@ You can handle these with code like the following. Note that
 for arbitrary getset descriptors invoking these may trigger
 code execution::
 
-   # example code for resolving the builtin descriptor types
-   class _foo:
-       __slots__ = ['foo']
-
-   slot_descriptor = type(_foo.foo)
-   getset_descriptor = type(type(open(__file__)).name)
-   wrapper_descriptor = type(str.__dict__['__add__'])
-   descriptor_types = (slot_descriptor, getset_descriptor, wrapper_descriptor)
+   import types
+   descriptor_types = (types.MemberDescriptorType, types.GetSetDescriptorType, types.WrapperDescriptorType)
 
    result = getattr_static(some_object, 'foo')
-   if type(result) in descriptor_types:
+   if isinstance(result, descriptor_types):
        try:
-           result = result.__get__()
+           result = result.__get__(some_object)
        except AttributeError:
            # descriptors can raise AttributeError to
            # indicate there is no underlying value
