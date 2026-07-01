@@ -146,6 +146,33 @@ class CopyTestBase:
         self.target_ground.create_dir(target_dir)
         self.assertRaises(ValueError, source.copy_into, target_dir)
 
+    def test_copy_dir_into_existing_dir_merges_when_exist_ok_true(self):
+        if isinstance(self.target_root, WritableZipPath):
+            self.skipTest('needs local target')
+        source = self.source_root / 'dirC'
+        target_dir = self.target_root
+        preexisting = target_dir / 'dirC'
+        self.target_ground.create_dir(preexisting)
+        self.target_ground.create_file(preexisting / 'pre.txt', b'pre\n')
+
+        result = source.copy_into(target_dir)
+        self.assertEqual(result, preexisting)
+
+        self.assertTrue(self.target_ground.isfile(preexisting / 'pre.txt'))
+
+        self.assertTrue(self.target_ground.isfile(preexisting / 'fileC'))
+        self.assertTrue(self.target_ground.isdir(preexisting / 'dirD'))
+        self.assertTrue(self.target_ground.isfile(preexisting / 'dirD' / 'fileD'))
+
+    def test_copy_dir_into_existing_dir_exist_ok_false(self):
+        if isinstance(self.target_root, WritableZipPath):
+            self.skipTest('needs local target')
+        source = self.source_root / 'dirC'
+        target_dir = self.target_root
+        self.target_ground.create_dir(target_dir / 'dirC')
+        with self.assertRaises(FileExistsError):
+            source.copy_into(target_dir, exist_ok=False)
+
 
 class ZipToZipPathCopyTest(CopyTestBase, unittest.TestCase):
     source_ground = ZipPathGround(ReadableZipPath)
