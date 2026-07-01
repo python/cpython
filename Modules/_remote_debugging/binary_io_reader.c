@@ -380,7 +380,22 @@ binary_reader_open(PyObject *path)
         Py_fclose(fp);
         goto error;
     }
+    if (st.st_size < 0) {
+        PyErr_SetString(PyExc_IOError, "Invalid negative file size");
+        Py_fclose(fp);
+        goto error;
+    }
+    if ((uintmax_t)st.st_size > SIZE_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "File is too large to map");
+        Py_fclose(fp);
+        goto error;
+    }
     reader->mapped_size = st.st_size;
+    if (reader->mapped_size == 0) {
+        PyErr_SetString(PyExc_ValueError, "File too small for header");
+        Py_fclose(fp);
+        goto error;
+    }
 
     /* Map the file into memory.
      * MAP_POPULATE (Linux-only) pre-faults all pages at mmap time, which:
@@ -424,7 +439,10 @@ binary_reader_open(PyObject *path)
     }
 #endif
 
-    (void)Py_fclose(fp);
+    if (Py_fclose(fp) != 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        goto error;
+    }
 
     uint8_t *data = reader->mapped_data;
     size_t file_size = reader->mapped_size;
@@ -444,7 +462,15 @@ binary_reader_open(PyObject *path)
         PyErr_SetFromErrno(PyExc_IOError);
         goto error;
     }
+    if ((uint64_t)file_size_off > SIZE_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "File is too large to read");
+        goto error;
+    }
     reader->file_size = (size_t)file_size_off;
+    if (reader->file_size == 0) {
+        PyErr_SetString(PyExc_ValueError, "File too small for header");
+        goto error;
+    }
     if (FSEEK64(reader->fp, 0, SEEK_SET) != 0) {
         PyErr_SetFromErrno(PyExc_IOError);
         goto error;
@@ -456,8 +482,18 @@ binary_reader_open(PyObject *path)
         goto error;
     }
 
-    if (fread(reader->file_data, 1, reader->file_size, reader->fp) != reader->file_size) {
-        PyErr_SetFromErrno(PyExc_IOError);
+    size_t nread = fread(reader->file_data, 1, reader->file_size, reader->fp);
+    if (nread != reader->file_size) {
+        int err = errno;
+        if (ferror(reader->fp) && err != 0) {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            PyErr_Format(PyExc_ValueError,
+                "Unexpected end of file: read %zu of %zu bytes",
+                nread, reader->file_size);
+        }
         goto error;
     }
 
@@ -944,10 +980,16 @@ invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint32_t total)
 Py_ssize_t
 binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progress_callback)
 {
-    if (!PyObject_HasAttrString(collector, "collect")) {
+    PyObject *collect_method;
+    int has_collect = PyObject_GetOptionalAttrString(collector, "collect", &collect_method);
+    if (has_collect < 0) {
+        return -1;
+    }
+    if (has_collect == 0) {
         PyErr_SetString(PyExc_TypeError, "Collector must have a collect() method");
         return -1;
     }
+    Py_DECREF(collect_method);
 
     /* Get module state for struct sequence types */
     PyObject *module = PyImport_ImportModule("_remote_debugging");
@@ -973,7 +1015,10 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
     while (offset < reader->sample_data_size) {
         /* Read thread_id (8 bytes) + interpreter_id (4 bytes) + encoding byte */
         if (reader->sample_data_size - offset < SAMPLE_HEADER_FIXED_SIZE) {
-            break;  /* End of data */
+            PyErr_Format(PyExc_ValueError,
+                "Truncated sample data: %zu trailing bytes",
+                reader->sample_data_size - offset);
+            return -1;
         }
 
         /* Use memcpy to avoid strict aliasing violations, then byte-swap if needed */
@@ -1017,6 +1062,11 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 PyErr_Format(PyExc_ValueError,
                     "Invalid RLE count %u exceeds maximum possible %zu for remaining data",
                     count, max_possible_samples);
+                return -1;
+            }
+            if ((uint64_t)count > (uint64_t)PY_SSIZE_T_MAX - (uint64_t)replayed) {
+                PyErr_SetString(PyExc_OverflowError,
+                    "Sample count exceeds Py_ssize_t maximum");
                 return -1;
             }
 
@@ -1149,6 +1199,11 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 return -1;
             }
             Py_DECREF(timestamps_list);
+            if (replayed == PY_SSIZE_T_MAX) {
+                PyErr_SetString(PyExc_OverflowError,
+                    "Sample count exceeds Py_ssize_t maximum");
+                return -1;
+            }
             replayed++;
             reader->stats.total_samples++;
             break;
@@ -1165,6 +1220,13 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 return -1;
             }
         }
+    }
+
+    if ((uint64_t)replayed != reader->sample_count) {
+        PyErr_Format(PyExc_ValueError,
+            "Sample count mismatch: header declares %u samples but replay decoded %zd",
+            reader->sample_count, replayed);
+        return -1;
     }
 
     /* Final progress callback at 100% */

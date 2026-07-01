@@ -1,0 +1,4 @@
+Opening a :mod:`tarfile` archive no longer attempts to pre-allocate a huge
+buffer when a crafted or truncated member claims an oversized extended header
+(a GNU long name/link or a pax header).  The extended header is now read in
+bounded chunks, so its size field can no longer trigger memory exhaustion.

@@ -250,6 +250,7 @@ dummy_func(
         op(_MONITOR_RESUME, (--)) {
             int err = _Py_call_instrumentation(
                     tstate, oparg == 0 ? PY_MONITORING_EVENT_PY_START : PY_MONITORING_EVENT_PY_RESUME, frame, this_instr);
+            RELOAD_STACK();
             ERROR_IF(err);
             if (frame->instr_ptr != this_instr) {
                 /* Instrumentation has jumped */
@@ -1116,7 +1117,8 @@ dummy_func(
 
         op(_STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                                                        PyStackRef_AsPyObjectSteal(stop));
+                                                        PyStackRef_AsPyObjectSteal(stop),
+                                                        Py_None);
             int err;
             if (slice == NULL) {
                 err = 1;
@@ -1547,6 +1549,7 @@ dummy_func(
             _PyStackRef executor = frame->localsplus[0];
             assert(tstate->current_executor == NULL);
             if (!PyStackRef_IsNull(executor)) {
+                assert(PyStackRef_TYPE(executor) == &_PyUOpExecutor_Type);
                 tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
                 PyStackRef_CLOSE(executor);
             }
@@ -1859,6 +1862,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
+            _PyThreadState_UpdateLastProfiledFrame(tstate, gen_frame, gen_frame->previous);
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
@@ -1888,9 +1892,11 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
             if (err) {
+                RELOAD_STACK();
                 ERROR_NO_POP();
             }
             if (frame->instr_ptr != this_instr) {
+                RELOAD_STACK();
                 next_instr = frame->instr_ptr;
                 DISPATCH();
             }
@@ -1973,7 +1979,7 @@ dummy_func(
         inst(LOAD_COMMON_CONSTANT, ( -- value)) {
             // Keep in sync with _common_constants in opcode.py
             assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
+            value = PyStackRef_DupImmortal(tstate->interp->common_consts[oparg]);
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
@@ -1991,40 +1997,14 @@ dummy_func(
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
-            int err;
-            if (ns == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals found when storing %R", name);
-                PyStackRef_CLOSE(v);
-                ERROR_IF(true);
-            }
-            if (PyDict_CheckExact(ns)) {
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            int error = _PyEval_StoreName(tstate, v, name, ns);
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
             }
             else {
-                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                PyStackRef_CLOSE(v);
             }
-            PyStackRef_CLOSE(v);
-            ERROR_IF(err);
-        }
-
-        inst(DELETE_NAME, (--)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *ns = LOCALS();
-            int err;
-            if (ns == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals when deleting %R", name);
-                ERROR_NO_POP();
-            }
-            err = PyObject_DelItem(ns, name);
-            // Can't use ERROR_IF here.
-            if (err != 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG,
-                                          name);
-                ERROR_NO_POP();
-            }
+            ERROR_IF(error);
         }
 
         family(UNPACK_SEQUENCE, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
@@ -2183,23 +2163,21 @@ dummy_func(
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
-            PyStackRef_CLOSE(v);
-            ERROR_IF(err);
-        }
-
-        inst(DELETE_GLOBAL, (--)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
-            // Can't use ERROR_IF here.
-            if (err < 0) {
-                ERROR_NO_POP();
+            int err;
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
+                err = PyDict_Pop(GLOBALS(), name, NULL);
+                if (err == 0) {
+                    err = -1;
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                }
             }
-            if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG, name);
-                ERROR_NO_POP();
+            else {
+                err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+                PyStackRef_CLOSE(v);
             }
+            ERROR_IF(err < 0);
         }
 
         inst(LOAD_LOCALS, ( -- locals)) {
@@ -2348,7 +2326,7 @@ dummy_func(
             assert(keys->dk_kind == DICT_KEYS_UNICODE);
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
             assert(index < DK_SIZE(keys));
-            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_CONSUME(entries[index].me_value);
             DEOPT_IF(res_o == NULL);
             #if Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
@@ -2367,7 +2345,7 @@ dummy_func(
             DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);
             assert(keys->dk_kind == DICT_KEYS_UNICODE);
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
-            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_CONSUME(entries[index].me_value);
             DEOPT_IF(res_o == NULL);
             #if Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
@@ -2957,7 +2935,7 @@ dummy_func(
             assert(keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(keys->dk_nentries));
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(keys) + index;
-            PyObject *attr_o = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_value);
+            PyObject *attr_o = FT_ATOMIC_LOAD_PTR_CONSUME(ep->me_value);
             EXIT_IF(attr_o == NULL);
             #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
@@ -3554,8 +3532,8 @@ dummy_func(
                 next_instr->op.code != ENTER_EXECUTOR) {
                 /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
                 _Py_CODEUNIT *insert_exec_at = this_instr;
-                while (oparg > 255) {
-                    oparg >>= 8;
+                // gh-152192: count with a temporary. oparg must stay intact, it's passed to the tracer below
+                for (int tmp = oparg; tmp > 255; tmp >>= 8) {
                     insert_exec_at--;
                 }
                 int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
@@ -4661,14 +4639,16 @@ dummy_func(
             assert(!IS_PEP523_HOOKED(tstate));
             _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
             DEAD(new_frame);
-            SYNC_SP();
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            SAVE_STACK();
             assert(temp->previous == frame || temp->previous->previous == frame);
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = temp;
             tstate->py_recursion_remaining--;
-            LOAD_SP();
+            RELOAD_STACK();
             LOAD_IP(0);
+            #ifdef Py_DEBUG
+            assert(frame->previous->stackpointer_valid == 1);
+            #endif
             DTRACE_FUNCTION_ENTRY();
             LLTRACE_RESUME_FRAME();
         }
@@ -5880,6 +5860,7 @@ dummy_func(
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *prev = frame->previous;
+            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             LOAD_IP(frame->return_offset);
@@ -5984,13 +5965,13 @@ dummy_func(
             } else {
                 original_opcode = _Py_call_instrumentation_line(
                         tstate, frame, this_instr, prev_instr);
+                RELOAD_STACK();
                 if (original_opcode < 0) {
                     next_instr = this_instr+1;
                     goto error;
                 }
                 next_instr = frame->instr_ptr;
                 if (next_instr != this_instr) {
-                    SYNC_SP();
                     DISPATCH();
                 }
             }
@@ -6001,6 +5982,7 @@ dummy_func(
                 PAUSE_ADAPTIVE_COUNTER(cache->counter);
             }
             opcode = original_opcode;
+            PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
         }
 
@@ -6481,6 +6463,7 @@ dummy_func(
         }
 
         label(error) {
+            _PyFrame_StackAssertInvalid(frame);
             /* Double-check exception status. */
 #ifdef NDEBUG
             if (!_PyErr_Occurred(tstate)) {
@@ -6507,9 +6490,7 @@ dummy_func(
         }
 
         spilled label(exception_unwind) {
-            SAVE_STACK();
             STOP_TRACING();
-            RELOAD_STACK();
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
@@ -6601,6 +6582,9 @@ dummy_func(
         }
 
         spilled label(start_frame) {
+            #ifdef Py_DEBUG
+            assert(frame->stackpointer_valid == 1);
+            #endif
             int too_deep = _Py_EnterRecursivePy(tstate);
             if (too_deep) {
                 goto exit_unwind_notrace;

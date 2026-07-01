@@ -70,7 +70,7 @@ class saved_test_environment:
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'files', 'locale', 'warnings.showwarning',
                  'shutil_archive_formats', 'shutil_unpack_formats',
-                 'asyncio.events._event_loop_policy',
+                 'asyncio.events._local._loop',
                  'urllib.requests._url_tempfiles', 'urllib.requests._opener',
                  'stty_echo',
                 )
@@ -100,12 +100,12 @@ class saved_test_environment:
         urllib_request = self.get_module('urllib.request')
         urllib_request._opener = opener
 
-    def get_asyncio_events__event_loop_policy(self):
+    def get_asyncio_events__local__loop(self):
         self.try_get_module('asyncio')
-        return support.maybe_get_event_loop_policy()
-    def restore_asyncio_events__event_loop_policy(self, policy):
+        return support.maybe_get_event_loop()
+    def restore_asyncio_events__local__loop(self, loop):
         asyncio = self.get_module('asyncio')
-        asyncio.events._set_event_loop_policy(policy)
+        asyncio.events._local._loop = loop
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]

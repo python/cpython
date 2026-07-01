@@ -10,6 +10,7 @@ import os
 import os.path
 import errno
 import functools
+import socket
 import subprocess
 import random
 import string
@@ -29,7 +30,7 @@ except ImportError:
     posix = None
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
@@ -1587,12 +1588,49 @@ class TestCopy(BaseTest, unittest.TestCase):
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
         try:
-            self.assertRaises(shutil.SpecialFileError,
-                                shutil.copyfile, TESTFN, TESTFN2)
-            self.assertRaises(shutil.SpecialFileError,
-                                shutil.copyfile, __file__, TESTFN)
+            self.assertRaisesRegex(shutil.SpecialFileError, 'is a named pipe',
+                                   shutil.copyfile, TESTFN, TESTFN2)
+            self.assertRaisesRegex(shutil.SpecialFileError, 'is a named pipe',
+                                   shutil.copyfile, __file__, TESTFN)
         finally:
             os.remove(TESTFN)
+
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_copyfile_socket(self):
+        sock_path = os.path.join(self.mkdtemp(), 'sock')
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        try:
+            socket_helper.bind_unix_socket(sock, sock_path)
+        except OSError as e:
+            # AF_UNIX path too long (e.g. on iOS)
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
+        self.addCleanup(os_helper.unlink, sock_path)
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
+                               shutil.copyfile, sock_path, sock_path + '.copy')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
+                               shutil.copyfile, __file__, sock_path)
+
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_character_device(self):
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
+                               shutil.copyfile, '/dev/null', TESTFN)
+        src_file = os.path.join(self.mkdtemp(), 'src')
+        create_file(src_file, 'foo')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
+                               shutil.copyfile, src_file, '/dev/null')
+
+    def test_copyfile_block_device(self):
+        block_dev = None
+        for dev in ['/dev/loop0', '/dev/sda', '/dev/vda', '/dev/disk0']:
+            if os.path.exists(dev) and stat.S_ISBLK(os.stat(dev).st_mode):
+                if os.access(dev, os.R_OK):
+                    block_dev = dev
+                    break
+        if block_dev is None:
+            self.skipTest('no accessible block device found')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a block device',
+                               shutil.copyfile, block_dev, TESTFN)
 
     def test_copyfile_return_value(self):
         # copytree returns its destination path.
@@ -2950,6 +2988,23 @@ class TestMove(BaseTest, unittest.TestCase):
                             'dst (%s) is in src (%s)' % (dst, src))
         finally:
             os_helper.rmtree(TESTFN)
+
+    @os_helper.skip_unless_symlink
+    def test_destinsrc_symlink_bypass(self):
+        tmp = self.mkdtemp()
+        src = os.path.join(tmp, 'src')
+        os.makedirs(src)
+        # tmp/link -> tmp (one level up)
+        link = os.path.join(tmp, 'link')
+        os.symlink(tmp, link)
+        # raw path: tmp/link/src/sub - no src prefix in string space
+        # real path: tmp/src/sub     - physically inside src
+        dst = os.path.join(link, 'src', 'sub')
+        self.assertTrue(
+            shutil._destinsrc(src, dst),
+            msg='_destinsrc failed to detect dst inside src via symlink '
+                '(dst=%s, src=%s)' % (dst, src),
+        )
 
     @os_helper.skip_unless_symlink
     @mock_rename
