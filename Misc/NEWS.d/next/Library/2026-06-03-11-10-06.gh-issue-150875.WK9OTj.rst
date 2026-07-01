@@ -1,0 +1,4 @@
+Speed up :func:`json.dumps` encoding of strings made up of long runs of
+characters that need no escaping, by scanning eight bytes at a time. Short
+strings, strings that need escaping, and strings containing non-Latin-1
+characters are unaffected. Patch by Bernát Gábor.
