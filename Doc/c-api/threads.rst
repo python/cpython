@@ -924,7 +924,7 @@ pointer and a void pointer argument.
 
    To prevent naive misuse, you must write your own C extension to call this.
    This function must be called with an :term:`attached thread state`.
-   This function does not steal any references to *exc*.
+   This function does not :term:`steal` any references to *exc*.
    This function does not necessarily interrupt system calls such as
    :py:func:`~time.sleep`.
 
