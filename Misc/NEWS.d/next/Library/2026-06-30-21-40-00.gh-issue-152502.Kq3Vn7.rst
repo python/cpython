@@ -1,0 +1,5 @@
+Detect the :mod:`curses` mouse interface (:func:`~curses.getmouse`, the
+``BUTTON*`` constants, and others) with a configure capability probe or library
+macros instead of gating it on ncurses-specific macros.  It is now also
+available with other curses implementations that provide it, such as NetBSD
+curses and PDCurses (the latter underpins ``windows-curses``).
