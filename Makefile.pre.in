@@ -1525,7 +1525,10 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 	$(MKDIR_P) $$target; \
 	for mod in X $(SHAREDMODS); do \
 		if test $$mod != X; then \
-			$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
+			rel=`echo $$mod | sed 's,^Modules/,,'`; \
+			dest=$$target/$$rel; \
+			$(MKDIR_P) `dirname $$dest`; \
+			$(LN) -sf `pwd`/$$mod $$dest; \
 		fi; \
 	done
 
@@ -2394,11 +2397,13 @@ sharedinstall: all
 		done
 		@for i in X $(SHAREDMODS); do \
 		  if test $$i != X; then \
-		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
-		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+		    rel=`echo $$i | sed 's,^Modules/,,'`; \
+		    $(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(DESTSHARED)/`dirname $$rel`; \
+		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/$$rel; \
+		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/$$rel; \
 			if test -d "$$i.dSYM"; then \
-				echo $(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
-				$(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+				echo $(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/$$rel; \
+				$(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/$$rel; \
 			fi; \
 		  fi; \
 		done

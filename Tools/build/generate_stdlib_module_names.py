@@ -121,6 +121,14 @@ def list_modules() -> set[str]:
         if package_name in IGNORE:
             names.discard(name)
 
+    # Extension submodules (e.g. math.integer) are not listed individually,
+    # but their parent package must be present.
+    for name in list(names):
+        if "." in name:
+            if name.partition(".")[0] not in names:
+                raise Exception(f"submodule without a known parent: {name}")
+            names.discard(name)
+
     # Sanity checks
     for name in names:
         if "." in name:

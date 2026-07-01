@@ -1287,8 +1287,17 @@ static struct PyModuleDef math_integer_module = {
     .m_slots = math_integer_slots,
 };
 
+/* Shared, the dynamic loader looks up PyInit_integer (the last component of
+ * the name).  Built into the interpreter (Py_BUILD_CORE_BUILTIN), the inittab
+ * uses PyInit_math_integer instead, so the static symbol stays unique. */
+#ifdef Py_BUILD_CORE_BUILTIN
+#  define MATH_INTEGER_PYINIT PyInit_math_integer
+#else
+#  define MATH_INTEGER_PYINIT PyInit_integer
+#endif
+
 PyMODINIT_FUNC
-PyInit__math_integer(void)
+MATH_INTEGER_PYINIT(void)
 {
     return PyModuleDef_Init(&math_integer_module);
 }

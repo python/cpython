@@ -3188,7 +3188,26 @@ math_exec(PyObject *module)
         return -1;
     }
 
-    PyObject *intmath = PyImport_ImportModule("_math_integer");
+    /* math is a package.  A shared build gets __path__ from the math/
+     * directory; a builtin build (e.g. Windows, WebAssembly) does not, so set
+     * an empty one to mark math as a package and find the builtin submodule. */
+    PyObject *path;
+    if (PyObject_GetOptionalAttrString(module, "__path__", &path) < 0) {
+        return -1;
+    }
+    if (path == NULL) {
+        path = PyList_New(0);
+        if (path == NULL || PyModule_Add(module, "__path__", path) < 0) {
+            return -1;
+        }
+    }
+    else {
+        Py_DECREF(path);
+    }
+
+    /* Importing the math.integer submodule sets sys.modules['math.integer']
+     * and the parent's 'integer' attribute automatically. */
+    PyObject *intmath = PyImport_ImportModule("math.integer");
     if (!intmath) {
         return -1;
     }
@@ -3206,13 +3225,9 @@ math_exec(PyObject *module)
     IMPORT_FROM_INTMATH(isqrt);
     IMPORT_FROM_INTMATH(lcm);
     IMPORT_FROM_INTMATH(perm);
-    if (_PyImport_SetModuleString("math.integer", intmath) < 0) {
-        Py_DECREF(intmath);
-        return -1;
-    }
-    if (PyModule_Add(module, "integer", intmath) < 0) {
-        return -1;
-    }
+    /* sys.modules['math.integer'] and the parent 'integer' attribute were
+     * set by the import machinery above. */
+    Py_DECREF(intmath);
     return 0;
 }
 
