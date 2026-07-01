@@ -1,0 +1,2 @@
+Make concurrent iteration over :class:`itertools.dropwhile` and
+:class:`itertools.takewhile` safe under free-threading.
