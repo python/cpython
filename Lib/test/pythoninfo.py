@@ -1159,15 +1159,23 @@ def get_machine_id():
 
 
 def detect_virt_windows(info_add):
-    # On Windows, use WMI to get the computer manufacturer and the BIOS version
+    # On Windows, use WMI to detect the virtualization.
+    #
+    # Microsoft Hyper-V:
+    # - Win32_Bios.Version = "VRTUAL - 1"
+    # - Win32_ComputerSystem.Model = "Virtual Machine"
+    # - Win32_ComputerSystem.Manufacturer = "Microsoft Corporation"
     #
     # VMware:
-    # - Win32_Bios.SerialNumber starts with "VMware-"
     # - Win32_ComputerSystem.Model = "VMware"
     # - Win32_ComputerSystem.Manufacturer = "VMware"
+    # - Win32_Bios.SerialNumber starts with "VMware-"
     #
     # QEMU:
     # - Win32_ComputerSystem.Manufacturer = "QEMU"
+    # - Win32_ComputerSystem.Model = "Standard PC (Q35 + ICH9, 2009)"
+    # - Win32_Bios.Version = "BOCHS  - 1"
+    # - Win32_Bios.Manufacturer = "EDK II"
     #
     # Parallels:
     # - Win32_Bios.Version = "PARALLELS"
@@ -1177,46 +1185,55 @@ def detect_virt_windows(info_add):
     # - Win32_ComputerSystem.Model = "VirtualBox"
     # - Win32_ComputerSystem.Manufacturer = "innotek GmbH"
 
-    data = wmi_query("SELECT Model, Manufacturer FROM Win32_ComputerSystem")
-    known_virt = (
+    KNOWN_VIRT = (
         'QEMU',
         'VMware',
         'VirtualBox',
+        'Xen',
+        'oVirt',
     )
-    model = data.get('Model', '')
-    if model in known_virt:
-        return model
-    manufacturer = data.get('Manufacturer', '')
-    if manufacturer in known_virt:
-        return manufacturer
-
-    data = wmi_query("SELECT Version FROM Win32_Bios")
-    bios_version = data.get('Version', '')
-    if bios_version in known_virt:
-        return bios_version
-    known_bios_versions = {
+    KNOWN_BIOS_VERSIONS = {
+        "VRTUAL - 1": "Microsoft Hyper-V",
         "PARALLELS": "Parallels",
         "VBOX": "VirtualBox",
     }
+
+    computer = wmi_query("SELECT Model, Manufacturer FROM Win32_ComputerSystem")
+    computer_model = computer.get('Model', '')
+    if computer_model in KNOWN_VIRT:
+        return computer_model
+    computer_manufacturer = computer.get('Manufacturer', '')
+    if computer_manufacturer in KNOWN_VIRT:
+        return computer_manufacturer
+
+    bios = wmi_query("SELECT Version, Manufacturer FROM Win32_Bios")
+
+    bios_version = bios.get('Version', '')
+    if bios_version in KNOWN_VIRT:
+        return bios_version
     try:
-        return known_bios_versions[bios_version]
+        return KNOWN_BIOS_VERSIONS[bios_version]
     except KeyError:
         pass
 
-    # Log the values to update patterns on new VM
-    if model:
-        info_add('system.model', model)
-    if manufacturer:
-        info_add('system.manufacturer', manufacturer)
+    bios_manufacturer = bios.get('Manufacturer', '')
+    if bios_manufacturer in KNOWN_VIRT:
+        return bios_manufacturer
+
+    # Log the values to update the code if a new VM is discovered
+    if computer_model:
+        info_add('system.computer.model', computer_model)
+    if computer_manufacturer:
+        info_add('system.computer.manufacturer', computer_manufacturer)
     if bios_version:
-        info_add('system.bios_version', bios_version)
+        info_add('system.bios.version', bios_version)
+    if bios_manufacturer:
+        info_add('system.bios.manufacturer', bios_manufacturer)
 
 
 def detect_virt(info_add):
     if MS_WINDOWS:
-        virt = detect_virt_windows(info_add)
-        if virt:
-            return virt
+        return detect_virt_windows(info_add)
 
     # Run systemd-detect-virt command
     virt = run_command(["systemd-detect-virt"], check=False)
