@@ -1997,40 +1997,14 @@ dummy_func(
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
-            int err;
-            if (ns == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals found when storing %R", name);
-                PyStackRef_CLOSE(v);
-                ERROR_IF(true);
-            }
-            if (PyDict_CheckExact(ns)) {
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+            int error = _PyEval_StoreName(tstate, v, name, ns);
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
             }
             else {
-                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                PyStackRef_CLOSE(v);
             }
-            PyStackRef_CLOSE(v);
-            ERROR_IF(err);
-        }
-
-        inst(DELETE_NAME, (--)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *ns = LOCALS();
-            int err;
-            if (ns == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals when deleting %R", name);
-                ERROR_NO_POP();
-            }
-            err = PyObject_DelItem(ns, name);
-            // Can't use ERROR_IF here.
-            if (err != 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG,
-                                          name);
-                ERROR_NO_POP();
-            }
+            ERROR_IF(error);
         }
 
         family(UNPACK_SEQUENCE, INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE) = {
@@ -2189,23 +2163,21 @@ dummy_func(
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
-            PyStackRef_CLOSE(v);
-            ERROR_IF(err);
-        }
-
-        inst(DELETE_GLOBAL, (--)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_Pop(GLOBALS(), name, NULL);
-            // Can't use ERROR_IF here.
-            if (err < 0) {
-                ERROR_NO_POP();
+            int err;
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
+                err = PyDict_Pop(GLOBALS(), name, NULL);
+                if (err == 0) {
+                    err = -1;
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                }
             }
-            if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG, name);
-                ERROR_NO_POP();
+            else {
+                err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+                PyStackRef_CLOSE(v);
             }
+            ERROR_IF(err < 0);
         }
 
         inst(LOAD_LOCALS, ( -- locals)) {
@@ -3560,8 +3532,8 @@ dummy_func(
                 next_instr->op.code != ENTER_EXECUTOR) {
                 /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
                 _Py_CODEUNIT *insert_exec_at = this_instr;
-                while (oparg > 255) {
-                    oparg >>= 8;
+                // gh-152192: count with a temporary. oparg must stay intact, it's passed to the tracer below
+                for (int tmp = oparg; tmp > 255; tmp >>= 8) {
                     insert_exec_at--;
                 }
                 int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at,
@@ -4270,6 +4242,13 @@ dummy_func(
             EXIT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid));
         }
 
+        op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
+            PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
+            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+            PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
+            EXIT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version);
+        }
+
         op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             /* Cached method object */
@@ -4286,7 +4265,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
-            unused/2 +
+            _GUARD_KEYS_VERSION +
             _LOAD_ATTR_METHOD_WITH_VALUES;
 
         op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
@@ -4320,7 +4299,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
-            unused/2 +
+            _GUARD_KEYS_VERSION +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 
         op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {

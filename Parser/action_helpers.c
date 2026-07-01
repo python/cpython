@@ -254,7 +254,11 @@ _set_seq_context(Parser *p, asdl_expr_seq *seq, expr_context_ty ctx)
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty e = asdl_seq_GET(seq, i);
-        asdl_seq_SET(new_seq, i, _PyPegen_set_expr_context(p, e, ctx));
+        expr_ty new_e = _PyPegen_set_expr_context(p, e, ctx);
+        if (!new_e) {
+            return NULL;
+        }
+        asdl_seq_SET(new_seq, i, new_e);
     }
     return new_seq;
 }
@@ -268,19 +272,21 @@ _set_name_context(Parser *p, expr_ty e, expr_context_ty ctx)
 static expr_ty
 _set_tuple_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_Tuple(
-            _set_seq_context(p, e->v.Tuple.elts, ctx),
-            ctx,
-            EXTRA_EXPR(e, e));
+    asdl_expr_seq *seq = _set_seq_context(p, e->v.Tuple.elts, ctx);
+    if (!seq && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyAST_Tuple(seq, ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
 _set_list_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_List(
-            _set_seq_context(p, e->v.List.elts, ctx),
-            ctx,
-            EXTRA_EXPR(e, e));
+    asdl_expr_seq *seq = _set_seq_context(p, e->v.List.elts, ctx);
+    if (!seq && PyErr_Occurred()) {
+        return NULL;
+    }
+    return _PyAST_List(seq, ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
@@ -300,8 +306,11 @@ _set_attribute_context(Parser *p, expr_ty e, expr_context_ty ctx)
 static expr_ty
 _set_starred_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _PyAST_Starred(_PyPegen_set_expr_context(p, e->v.Starred.value, ctx),
-                          ctx, EXTRA_EXPR(e, e));
+    expr_ty inner = _PyPegen_set_expr_context(p, e->v.Starred.value, ctx);
+    if (!inner) {
+        return NULL;
+    }
+    return _PyAST_Starred(inner, ctx, EXTRA_EXPR(e, e));
 }
 
 /* Creates an `expr_ty` equivalent to `expr` but with `ctx` as context */
@@ -1168,7 +1177,14 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
     }
 
     asdl_expr_seq *starreds = _PyPegen_seq_extract_starred_exprs(p, b);
+    if (!starreds && PyErr_Occurred()) {
+        return NULL;
+    }
+
     asdl_keyword_seq *keywords = _PyPegen_seq_delete_starred_exprs(p, b);
+    if (!keywords && PyErr_Occurred()) {
+        return NULL;
+    }
 
     if (starreds) {
         total_len += asdl_seq_LEN(starreds);
@@ -1580,7 +1596,7 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
         end_col_offset, arena
     );
 
-    if (!debug) {
+    if (!interpolation || !debug) {
         return interpolation;
     }
 
@@ -1591,6 +1607,9 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
     }
 
     asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+    if (!values) {
+        return NULL;
+    }
     asdl_seq_SET(values, 0, debug_text);
     asdl_seq_SET(values, 1, interpolation);
     return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
@@ -1607,7 +1626,7 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
         end_col_offset, arena
     );
 
-    if (!debug) {
+    if (!formatted_value || !debug) {
         return formatted_value;
     }
 
@@ -1637,6 +1656,9 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, Re
     }
 
     asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+    if (!values) {
+        return NULL;
+    }
     asdl_seq_SET(values, 0, debug_text);
     asdl_seq_SET(values, 1, formatted_value);
     return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
@@ -1904,6 +1926,9 @@ _build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
 {
     asdl_expr_seq *values = _build_concatenated_str(p, strings, lineno,
         col_offset, end_lineno, end_col_offset, arena);
+    if (!values) {
+        return NULL;
+    }
     return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }
 
@@ -1914,6 +1939,9 @@ _PyPegen_concatenate_tstrings(Parser *p, asdl_expr_seq *strings,
 {
     asdl_expr_seq *values = _build_concatenated_str(p, strings, lineno,
         col_offset, end_lineno, end_col_offset, arena);
+    if (!values) {
+        return NULL;
+    }
     return _PyAST_TemplateStr(values, lineno, col_offset, end_lineno,
         end_col_offset, arena);
 }

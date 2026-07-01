@@ -46,6 +46,7 @@ static const char copyright[] =
 #include "pycore_moduleobject.h"     // _PyModule_GetState()
 #include "pycore_tuple.h"            // _PyTuple_FromPairSteal
 #include "pycore_unicodeobject.h"    // _PyUnicode_Copy
+#include "pycore_unicodectype.h"     // _PyUnicode_IsXidStart()
 #include "pycore_weakref.h"          // FT_CLEAR_WEAKREFS()
 
 #include "sre.h"                     // SRE_CODE
@@ -170,6 +171,48 @@ static unsigned int sre_upper_locale(unsigned int ch)
 #define SRE_UNI_IS_LINEBREAK(ch) Py_UNICODE_ISLINEBREAK(ch)
 #define SRE_UNI_IS_ALNUM(ch) Py_UNICODE_ISALNUM(ch)
 #define SRE_UNI_IS_WORD(ch) (SRE_UNI_IS_ALNUM(ch) || (ch) == '_')
+#define SRE_UNI_IS_ALPHA(ch) Py_UNICODE_ISALPHA(ch)
+#define SRE_UNI_IS_LOWER(ch) Py_UNICODE_ISLOWER(ch)
+#define SRE_UNI_IS_UPPER(ch) Py_UNICODE_ISUPPER(ch)
+#define SRE_UNI_IS_NUMERIC(ch) Py_UNICODE_ISNUMERIC(ch)
+#define SRE_UNI_IS_PRINTABLE(ch) Py_UNICODE_ISPRINTABLE(ch)
+#define SRE_UNI_IS_XID_START(ch) _PyUnicode_IsXidStart(ch)
+#define SRE_UNI_IS_XID_CONTINUE(ch) _PyUnicode_IsXidContinue(ch)
+#define SRE_UNI_IS_TITLE(ch) Py_UNICODE_ISTITLE(ch)
+#define SRE_UNI_IS_CASED(ch) _PyUnicode_IsCased(ch)
+#define SRE_UNI_IS_CASE_IGNORABLE(ch) _PyUnicode_IsCaseIgnorable(ch)
+/* General_Category values, here re-expressed as combinations of the simple
+   predicates; the combinations reproduce the canonical General_Category
+   partition (the Unicode Standard 4.5, Table 4-4 "General_Category Values";
+   they are not Unicode-published identities).  SRE_IS_CC/CS/CO are the fixed
+   categories Cc, Cs (surrogates) and Co (private use).  Verify against
+   https://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedGeneralCategory.txt */
+#define SRE_IS_CC(ch) ((ch) <= 0x1F || (0x7F <= (ch) && (ch) <= 0x9F))
+#define SRE_IS_CS(ch) (0xD800 <= (ch) && (ch) <= 0xDFFF)
+#define SRE_IS_CO(ch) ((0xE000 <= (ch) && (ch) <= 0xF8FF) || \
+                       (0xF0000 <= (ch) && (ch) <= 0xFFFFD) || \
+                       (0x100000 <= (ch) && (ch) <= 0x10FFFD))
+#define SRE_UNI_IS_LU(ch) (SRE_UNI_IS_UPPER(ch) && SRE_UNI_IS_ALPHA(ch))
+#define SRE_UNI_IS_N(ch) (SRE_UNI_IS_ALNUM(ch) && !SRE_UNI_IS_ALPHA(ch))
+#define SRE_UNI_IS_LM(ch) (SRE_UNI_IS_ALPHA(ch) && SRE_UNI_IS_CASE_IGNORABLE(ch))
+#define SRE_UNI_IS_NL(ch) (SRE_UNI_IS_N(ch) && SRE_UNI_IS_XID_START(ch))
+#define SRE_UNI_IS_NO(ch) (SRE_UNI_IS_N(ch) && !SRE_UNI_IS_DIGIT(ch) && \
+                           !SRE_UNI_IS_XID_START(ch))
+#define SRE_UNI_IS_CF(ch) (SRE_UNI_IS_CASE_IGNORABLE(ch) && !SRE_UNI_IS_PRINTABLE(ch))
+#define SRE_UNI_IS_Z(ch) (SRE_UNI_IS_SPACE(ch) && !SRE_IS_CC(ch))
+#define SRE_UNI_IS_ZS(ch) (SRE_UNI_IS_Z(ch) && (ch) != 0x2028 && (ch) != 0x2029)
+/* Other (C) = not printable and not a separator; Cn (unassigned) = an Other
+   that is none of Cc, Cf, Cs, Co.  Hence the POSIX classes, the compatibility
+   properties of UTS #18 Annex C. */
+#define SRE_UNI_IS_C(ch) (!SRE_UNI_IS_PRINTABLE(ch) && !SRE_UNI_IS_Z(ch))
+#define SRE_UNI_IS_CN(ch) (SRE_UNI_IS_C(ch) && !SRE_IS_CC(ch) && \
+    !SRE_IS_CS(ch) && !SRE_IS_CO(ch) && !SRE_UNI_IS_CASE_IGNORABLE(ch))
+#define SRE_UNI_IS_ASSIGNED(ch) (!SRE_UNI_IS_CN(ch))
+#define SRE_UNI_IS_BLANK(ch) (SRE_UNI_IS_ZS(ch) || (ch) == 0x09)
+#define SRE_UNI_IS_GRAPH(ch) (!SRE_UNI_IS_SPACE(ch) && !SRE_IS_CC(ch) && \
+                              !SRE_IS_CS(ch) && !SRE_UNI_IS_CN(ch))
+#define SRE_UNI_IS_PRINT(ch) ((SRE_UNI_IS_GRAPH(ch) || SRE_UNI_IS_BLANK(ch)) && \
+                              !SRE_IS_CC(ch))
 
 static unsigned int sre_lower_unicode(unsigned int ch)
 {
@@ -224,6 +267,107 @@ sre_category(SRE_CODE category, unsigned int ch)
         return SRE_UNI_IS_LINEBREAK(ch);
     case SRE_CATEGORY_UNI_NOT_LINEBREAK:
         return !SRE_UNI_IS_LINEBREAK(ch);
+
+    case SRE_CATEGORY_ALPHA:
+        return SRE_UNI_IS_ALPHA(ch);
+    case SRE_CATEGORY_NOT_ALPHA:
+        return !SRE_UNI_IS_ALPHA(ch);
+    case SRE_CATEGORY_LOWER:
+        return SRE_UNI_IS_LOWER(ch);
+    case SRE_CATEGORY_NOT_LOWER:
+        return !SRE_UNI_IS_LOWER(ch);
+    case SRE_CATEGORY_UPPER:
+        return SRE_UNI_IS_UPPER(ch);
+    case SRE_CATEGORY_NOT_UPPER:
+        return !SRE_UNI_IS_UPPER(ch);
+    case SRE_CATEGORY_NUMERIC:
+        return SRE_UNI_IS_NUMERIC(ch);
+    case SRE_CATEGORY_NOT_NUMERIC:
+        return !SRE_UNI_IS_NUMERIC(ch);
+    case SRE_CATEGORY_PRINTABLE:
+        return SRE_UNI_IS_PRINTABLE(ch);
+    case SRE_CATEGORY_NOT_PRINTABLE:
+        return !SRE_UNI_IS_PRINTABLE(ch);
+    case SRE_CATEGORY_ALNUM:
+        return SRE_UNI_IS_ALNUM(ch);
+    case SRE_CATEGORY_NOT_ALNUM:
+        return !SRE_UNI_IS_ALNUM(ch);
+    case SRE_CATEGORY_XID_START:
+        return SRE_UNI_IS_XID_START(ch);
+    case SRE_CATEGORY_NOT_XID_START:
+        return !SRE_UNI_IS_XID_START(ch);
+    case SRE_CATEGORY_XID_CONTINUE:
+        return SRE_UNI_IS_XID_CONTINUE(ch);
+    case SRE_CATEGORY_NOT_XID_CONTINUE:
+        return !SRE_UNI_IS_XID_CONTINUE(ch);
+    case SRE_CATEGORY_TITLE:
+        return SRE_UNI_IS_TITLE(ch);
+    case SRE_CATEGORY_NOT_TITLE:
+        return !SRE_UNI_IS_TITLE(ch);
+    case SRE_CATEGORY_CASED:
+        return SRE_UNI_IS_CASED(ch);
+    case SRE_CATEGORY_NOT_CASED:
+        return !SRE_UNI_IS_CASED(ch);
+    case SRE_CATEGORY_CASE_IGNORABLE:
+        return SRE_UNI_IS_CASE_IGNORABLE(ch);
+    case SRE_CATEGORY_NOT_CASE_IGNORABLE:
+        return !SRE_UNI_IS_CASE_IGNORABLE(ch);
+    case SRE_CATEGORY_LU:
+        return SRE_UNI_IS_LU(ch);
+    case SRE_CATEGORY_NOT_LU:
+        return !SRE_UNI_IS_LU(ch);
+    case SRE_CATEGORY_N:
+        return SRE_UNI_IS_N(ch);
+    case SRE_CATEGORY_NOT_N:
+        return !SRE_UNI_IS_N(ch);
+    case SRE_CATEGORY_LM:
+        return SRE_UNI_IS_LM(ch);
+    case SRE_CATEGORY_NOT_LM:
+        return !SRE_UNI_IS_LM(ch);
+    case SRE_CATEGORY_NL:
+        return SRE_UNI_IS_NL(ch);
+    case SRE_CATEGORY_NOT_NL:
+        return !SRE_UNI_IS_NL(ch);
+    case SRE_CATEGORY_NO:
+        return SRE_UNI_IS_NO(ch);
+    case SRE_CATEGORY_NOT_NO:
+        return !SRE_UNI_IS_NO(ch);
+    case SRE_CATEGORY_CF:
+        return SRE_UNI_IS_CF(ch);
+    case SRE_CATEGORY_NOT_CF:
+        return !SRE_UNI_IS_CF(ch);
+    case SRE_CATEGORY_Z:
+        return SRE_UNI_IS_Z(ch);
+    case SRE_CATEGORY_NOT_Z:
+        return !SRE_UNI_IS_Z(ch);
+    case SRE_CATEGORY_ZS:
+        return SRE_UNI_IS_ZS(ch);
+    case SRE_CATEGORY_NOT_ZS:
+        return !SRE_UNI_IS_ZS(ch);
+    case SRE_CATEGORY_C:
+        return SRE_UNI_IS_C(ch);
+    case SRE_CATEGORY_NOT_C:
+        return !SRE_UNI_IS_C(ch);
+    case SRE_CATEGORY_CN:
+        return SRE_UNI_IS_CN(ch);
+    case SRE_CATEGORY_NOT_CN:
+        return !SRE_UNI_IS_CN(ch);
+    case SRE_CATEGORY_ASSIGNED:
+        return SRE_UNI_IS_ASSIGNED(ch);
+    case SRE_CATEGORY_NOT_ASSIGNED:
+        return !SRE_UNI_IS_ASSIGNED(ch);
+    case SRE_CATEGORY_BLANK:
+        return SRE_UNI_IS_BLANK(ch);
+    case SRE_CATEGORY_NOT_BLANK:
+        return !SRE_UNI_IS_BLANK(ch);
+    case SRE_CATEGORY_GRAPH:
+        return SRE_UNI_IS_GRAPH(ch);
+    case SRE_CATEGORY_NOT_GRAPH:
+        return !SRE_UNI_IS_GRAPH(ch);
+    case SRE_CATEGORY_PRINT:
+        return SRE_UNI_IS_PRINT(ch);
+    case SRE_CATEGORY_NOT_PRINT:
+        return !SRE_UNI_IS_PRINT(ch);
     }
     return 0;
 }
@@ -1843,6 +1987,84 @@ bad_template:
 #define GET_SKIP GET_SKIP_ADJ(0)
 
 static int
+_validate_category(SRE_CODE arg)
+{
+    switch (arg) {
+    case SRE_CATEGORY_DIGIT:
+    case SRE_CATEGORY_NOT_DIGIT:
+    case SRE_CATEGORY_SPACE:
+    case SRE_CATEGORY_NOT_SPACE:
+    case SRE_CATEGORY_WORD:
+    case SRE_CATEGORY_NOT_WORD:
+    case SRE_CATEGORY_LINEBREAK:
+    case SRE_CATEGORY_NOT_LINEBREAK:
+    case SRE_CATEGORY_LOC_WORD:
+    case SRE_CATEGORY_LOC_NOT_WORD:
+    case SRE_CATEGORY_UNI_DIGIT:
+    case SRE_CATEGORY_UNI_NOT_DIGIT:
+    case SRE_CATEGORY_UNI_SPACE:
+    case SRE_CATEGORY_UNI_NOT_SPACE:
+    case SRE_CATEGORY_UNI_WORD:
+    case SRE_CATEGORY_UNI_NOT_WORD:
+    case SRE_CATEGORY_UNI_LINEBREAK:
+    case SRE_CATEGORY_UNI_NOT_LINEBREAK:
+    case SRE_CATEGORY_ALPHA:
+    case SRE_CATEGORY_NOT_ALPHA:
+    case SRE_CATEGORY_LOWER:
+    case SRE_CATEGORY_NOT_LOWER:
+    case SRE_CATEGORY_UPPER:
+    case SRE_CATEGORY_NOT_UPPER:
+    case SRE_CATEGORY_NUMERIC:
+    case SRE_CATEGORY_NOT_NUMERIC:
+    case SRE_CATEGORY_PRINTABLE:
+    case SRE_CATEGORY_NOT_PRINTABLE:
+    case SRE_CATEGORY_ALNUM:
+    case SRE_CATEGORY_NOT_ALNUM:
+    case SRE_CATEGORY_XID_START:
+    case SRE_CATEGORY_NOT_XID_START:
+    case SRE_CATEGORY_XID_CONTINUE:
+    case SRE_CATEGORY_NOT_XID_CONTINUE:
+    case SRE_CATEGORY_TITLE:
+    case SRE_CATEGORY_NOT_TITLE:
+    case SRE_CATEGORY_CASED:
+    case SRE_CATEGORY_NOT_CASED:
+    case SRE_CATEGORY_CASE_IGNORABLE:
+    case SRE_CATEGORY_NOT_CASE_IGNORABLE:
+    case SRE_CATEGORY_LU:
+    case SRE_CATEGORY_NOT_LU:
+    case SRE_CATEGORY_N:
+    case SRE_CATEGORY_NOT_N:
+    case SRE_CATEGORY_LM:
+    case SRE_CATEGORY_NOT_LM:
+    case SRE_CATEGORY_NL:
+    case SRE_CATEGORY_NOT_NL:
+    case SRE_CATEGORY_NO:
+    case SRE_CATEGORY_NOT_NO:
+    case SRE_CATEGORY_CF:
+    case SRE_CATEGORY_NOT_CF:
+    case SRE_CATEGORY_Z:
+    case SRE_CATEGORY_NOT_Z:
+    case SRE_CATEGORY_ZS:
+    case SRE_CATEGORY_NOT_ZS:
+    case SRE_CATEGORY_C:
+    case SRE_CATEGORY_NOT_C:
+    case SRE_CATEGORY_CN:
+    case SRE_CATEGORY_NOT_CN:
+    case SRE_CATEGORY_ASSIGNED:
+    case SRE_CATEGORY_NOT_ASSIGNED:
+    case SRE_CATEGORY_BLANK:
+    case SRE_CATEGORY_NOT_BLANK:
+    case SRE_CATEGORY_GRAPH:
+    case SRE_CATEGORY_NOT_GRAPH:
+    case SRE_CATEGORY_PRINT:
+    case SRE_CATEGORY_NOT_PRINT:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static int
 _validate_charset(SRE_CODE *code, SRE_CODE *end)
 {
     /* Some variables are manipulated by the macros above */
@@ -1894,27 +2116,7 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
 
         case SRE_OP_CATEGORY:
             GET_ARG;
-            switch (arg) {
-            case SRE_CATEGORY_DIGIT:
-            case SRE_CATEGORY_NOT_DIGIT:
-            case SRE_CATEGORY_SPACE:
-            case SRE_CATEGORY_NOT_SPACE:
-            case SRE_CATEGORY_WORD:
-            case SRE_CATEGORY_NOT_WORD:
-            case SRE_CATEGORY_LINEBREAK:
-            case SRE_CATEGORY_NOT_LINEBREAK:
-            case SRE_CATEGORY_LOC_WORD:
-            case SRE_CATEGORY_LOC_NOT_WORD:
-            case SRE_CATEGORY_UNI_DIGIT:
-            case SRE_CATEGORY_UNI_NOT_DIGIT:
-            case SRE_CATEGORY_UNI_SPACE:
-            case SRE_CATEGORY_UNI_NOT_SPACE:
-            case SRE_CATEGORY_UNI_WORD:
-            case SRE_CATEGORY_UNI_NOT_WORD:
-            case SRE_CATEGORY_UNI_LINEBREAK:
-            case SRE_CATEGORY_UNI_NOT_LINEBREAK:
-                break;
-            default:
+            if (!_validate_category(arg)) {
                 FAIL;
             }
             break;
@@ -1991,6 +2193,13 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             case SRE_AT_UNI_NON_BOUNDARY:
                 break;
             default:
+                FAIL;
+            }
+            break;
+
+        case SRE_OP_CATEGORY:
+            GET_ARG;
+            if (!_validate_category(arg)) {
                 FAIL;
             }
             break;

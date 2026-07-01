@@ -362,6 +362,9 @@ PyContextVar_Set(PyObject *ovar, PyObject *val)
     Py_XINCREF(old_val);
     PyContextToken *tok = token_new(ctx, var, old_val);
     Py_XDECREF(old_val);
+    if (tok == NULL) {
+        return NULL;
+    }
 
     if (contextvar_set(var, val)) {
         Py_DECREF(tok);
