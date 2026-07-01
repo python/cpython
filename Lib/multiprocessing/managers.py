@@ -909,9 +909,7 @@ class BaseProxy(object):
             util.info('incref failed: %s' % e)
 
     def __reduce__(self):
-        kwds = {}
-        if get_spawning_popen() is not None:
-            kwds['authkey'] = self._authkey
+        kwds = {"authkey": self._authkey}
 
         if getattr(self, '_isauto', False):
             kwds['exposed'] = self._exposed_
