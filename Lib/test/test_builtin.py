@@ -2829,7 +2829,8 @@ class PtyTests(unittest.TestCase):
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None, *,
                         expected=None,
                         stdin_errors='surrogateescape',
-                        stdout_errors='replace'):
+                        stdout_errors='replace',
+                        terminal_input_end=b'\r\n'):
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             self.skipTest("stdin and stdout must be ttys")
         def child(wpipe):
@@ -2847,7 +2848,7 @@ class PtyTests(unittest.TestCase):
             except BaseException as e:
                 print(ascii(f'{e.__class__.__name__}: {e!s}'), file=wpipe)
         with self.detach_readline():
-            lines = self.run_child(child, terminal_input + b"\r\n")
+            lines = self.run_child(child, terminal_input + terminal_input_end)
         # Check we did exercise the GNU readline path
         self.assertIn(lines[0], {'tty = True', 'tty = False'})
         if lines[0] != 'tty = True':
@@ -2884,6 +2885,9 @@ class PtyTests(unittest.TestCase):
     def test_input_tty(self):
         # Test input() functionality when wired to a tty
         self.check_input_tty("prompt", b"quux")
+
+    def test_input_tty_eof_without_newline(self):
+        self.check_input_tty("prompt", b"quux", terminal_input_end=b"\x04")
 
     def test_input_tty_non_ascii(self):
         # Check stdin/stdout encoding is used when invoking PyOS_Readline()
