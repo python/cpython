@@ -489,6 +489,31 @@ the following constants:
    .. versionadded:: 3.3
 
 
+.. data:: zlib_version
+
+   A named tuple containing the four components of the zlib library
+   version that was used for building the module:
+   *major*, *minor*, *revision*, and *subversion*.
+   All values are integers.
+   The components can also be accessed by name, so ``zlib.zlib_version[0]``
+   is equivalent to ``zlib.zlib_version.major`` and so on.
+   This may be different from the zlib library actually used at runtime, which
+   is available as :const:`zlib_runtime_version`.
+
+   .. versionadded:: next
+
+
+.. data:: zlib_runtime_version
+
+   A named tuple containing the zlib library version actually loaded by the interpreter.
+
+   .. versionadded:: next
+
+
+The following constants are only present if zlib-ng was used to build
+the module:
+
+
 .. data:: ZLIBNG_VERSION
 
    The version string of the zlib-ng library that was used for building the
@@ -496,9 +521,30 @@ the following constants:
    :data:`ZLIB_RUNTIME_VERSION` constants reflect the version of the zlib API
    provided by zlib-ng.
 
-   If zlib-ng was not used to build the module, this constant will be absent.
-
    .. versionadded:: 3.14
+
+.. data:: ZLIBNG_RUNTIME_VERSION
+
+   The version string of the zlib-ng library actually loaded
+   by the interpreter.
+
+   .. versionadded:: next
+
+
+.. data:: zlibng_version
+
+   A named tuple containing the version of the zlib-ng library that was
+   used for building the module if zlib-ng was used.
+
+   .. versionadded:: next
+
+
+.. data:: zlibng_runtime_version
+
+   A named tuple containing the zlib-ng library version actually loaded
+   by the interpreter.
+
+   .. versionadded:: next
 
 
 .. seealso::
