@@ -519,6 +519,11 @@ class EnvBuilder:
         def quote_bat(s):
             return s
 
+        def quote_csh(s):
+            # (t)csh history-expands '!' even inside single quotes, so POSIX
+            # quoting is not enough; escape each '!' explicitly.
+            return shlex.quote(s).replace('!', "'\\!'")
+
         # gh-124651: need to quote the template strings properly
         quote = shlex.quote
         script_path = context.script_path
@@ -526,6 +531,8 @@ class EnvBuilder:
             quote = quote_ps1
         elif script_path.endswith('.bat'):
             quote = quote_bat
+        elif script_path.endswith('.csh'):
+            quote = quote_csh
         else:
             # fallbacks to POSIX shell compliant quote
             quote = shlex.quote
