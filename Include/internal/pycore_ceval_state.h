@@ -35,6 +35,7 @@ extern "C" {
     { \
         .status = PERF_STATUS_NO_INIT, \
         .extra_code_index = -1, \
+        .code_watcher_id = -1, \
         .persist_after_fork = 0, \
     }
 #else

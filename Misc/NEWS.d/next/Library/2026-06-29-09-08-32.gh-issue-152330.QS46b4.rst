@@ -1,0 +1,1 @@
+Make perf_trampoline thread safe by fixing critical data races, post-fork deadlocks, memory leaks, and edge-case exception handling issues.
