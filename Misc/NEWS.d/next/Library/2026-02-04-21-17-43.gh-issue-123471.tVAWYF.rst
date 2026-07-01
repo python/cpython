@@ -1,0 +1,1 @@
+Make concurrent iteration over :class:`itertools.pairwise` safe under free-threading.
