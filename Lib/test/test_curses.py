@@ -2332,27 +2332,36 @@ class TestCurses(unittest.TestCase):
     def test_textbox_unicode(self):
         # Like test_textbox_8bit, but characters are entered as strings -- the
         # way do_command() receives get_wch() input -- rather than integer
-        # bytes.  Each string is used only if encodable in the current locale.
+        # bytes.  Each string is used only if encodable in the current locale;
+        # a narrow build stores one byte per cell, so multi-byte characters
+        # additionally need a wide build.
         for text in ['abc', 'héšλ', 'café', 'naïve ¤', 'soupçon €Š', 'дякую єі']:
-            if self._encodable(text):
-                with self.subTest(text=text):
-                    box, win = self._make_textbox(1, 12)
-                    for ch in text:
-                        box.do_command(ch)
-                    self.assertEqual(box.gather(), text + ' ')
+            if not self._encodable(text):
+                continue
+            if not WIDE_BUILD and len(text.encode(self.stdscr.encoding)) != len(text):
+                continue
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 12)
+                for ch in text:
+                    box.do_command(ch)
+                self.assertEqual(box.gather(), text + ' ')
 
     def test_textbox_unicode_insert_mode(self):
         # Like test_textbox_8bit_insert, but the character is entered as a string
-        # (get_wch() input).  Each string is used only if encodable.
+        # (get_wch() input).  Each string is used only if encodable; multi-byte
+        # characters additionally need a wide build (one byte per cell otherwise).
         for text in ['abcd', 'aβλc', 'aéàc', 'a¤½c', 'a€Šc', 'aдві']:
-            if self._encodable(text):
-                with self.subTest(text=text):
-                    box, win = self._make_textbox(1, 10, insert_mode=True)
-                    for ch in text[0] + text[2:]:    # all but the 2nd character
-                        box.do_command(ch)
-                    win.move(0, 1)
-                    box.do_command(text[1])          # insert it at position 1
-                    self.assertEqual(box.gather(), text + ' ')
+            if not self._encodable(text):
+                continue
+            if not WIDE_BUILD and len(text.encode(self.stdscr.encoding)) != len(text):
+                continue
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 10, insert_mode=True)
+                for ch in text[0] + text[2:]:    # all but the 2nd character
+                    box.do_command(ch)
+                win.move(0, 1)
+                box.do_command(text[1])          # insert it at position 1
+                self.assertEqual(box.gather(), text + ' ')
 
     @requires_wide_build
     def test_textbox_combining(self):
