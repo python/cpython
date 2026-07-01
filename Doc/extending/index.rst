@@ -46,6 +46,8 @@ source file by including the header ``"Python.h"``.
    :hidden:
 
    first-extension-module.rst
+   reference-counting.rst
+   error-handling.rst
    extending.rst
    newtypes_tutorial.rst
    newtypes.rst
@@ -77,6 +79,8 @@ as part of this version of CPython.
 
 
 #. :ref:`first-extension-module`
+#. :ref:`reference-counting-intro`
+#. :ref:`error-handling`
 
 
 Guides for intermediate topics
