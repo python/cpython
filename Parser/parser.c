@@ -18970,7 +18970,7 @@ frozendictcomp_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_DictComp ( a -> key , a -> value , b , EXTRA );
+            _res = _PyAST_FrozenDictComp ( a -> key , a -> value , b , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

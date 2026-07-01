@@ -1088,7 +1088,7 @@ dictcomp[expr_ty]:
     | '{' '**' a=expression b=for_if_clauses '}' { _PyAST_DictComp(a, NULL, b, EXTRA) }
 
 frozendictcomp[expr_ty]:
-    | 'f{' a=kvpair b=for_if_clauses '}' { _PyAST_DictComp(a->key, a->value, b, EXTRA) }
+    | 'f{' a=kvpair b=for_if_clauses '}' { _PyAST_FrozenDictComp(a->key, a->value, b, EXTRA) }
     | 'f{' '**' a=expression b=for_if_clauses '}' { _PyAST_FrozenDictComp(a, NULL, b, EXTRA) }
 
 # FUNCTION CALL ARGUMENTS
