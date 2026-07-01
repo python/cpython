@@ -1,0 +1,1 @@
+Linux: Include multiarch tuples in ``abi3t`` stable ABI C extension filenames, e.g. ``foo.abi3t-x86-64-linux-gnu.so``.
