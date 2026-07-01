@@ -5,6 +5,7 @@ apt-get -yq --no-install-recommends install \
     build-essential \
     pkg-config \
     cmake \
+    curl \
     gdb \
     lcov \
     libb2-dev \
