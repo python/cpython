@@ -1,0 +1,1 @@
+Refactor ``xml.etree.ElementTree._namespaces`` for further enhancements.
