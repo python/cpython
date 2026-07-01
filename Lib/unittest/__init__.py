@@ -49,14 +49,15 @@ __all__ = ['TestResult', 'TestCase', 'IsolatedAsyncioTestCase', 'TestSuite',
            'defaultTestLoader', 'SkipTest', 'skip', 'skipIf', 'skipUnless',
            'expectedFailure', 'TextTestResult', 'installHandler',
            'registerResult', 'removeResult', 'removeHandler',
-           'addModuleCleanup', 'doModuleCleanups', 'enterModuleContext']
+           'addModuleCleanup', 'doModuleCleanups', 'enterModuleContext',
+           'TestStatus']
 
 __unittest = True
 
 from .result import TestResult
 from .case import (addModuleCleanup, TestCase, FunctionTestCase, SkipTest, skip,
                    skipIf, skipUnless, expectedFailure, doModuleCleanups,
-                   enterModuleContext)
+                   enterModuleContext, TestStatus)
 from .suite import BaseTestSuite, TestSuite  # noqa: F401
 from .loader import TestLoader, defaultTestLoader
 from .main import TestProgram, main  # noqa: F401
