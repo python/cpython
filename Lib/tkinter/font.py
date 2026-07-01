@@ -72,7 +72,21 @@ class Font:
         tk = getattr(root, 'tk', root)
         if font:
             # get actual settings corresponding to the given font
-            font = tk.splitlist(tk.call("font", "actual", font))
+            font_opts = tk.splitlist(tk.call("font", "actual", font))
+            #if input was passed as tuple, restore
+            # font actual will normalize negative (pixel) -> positive(points)
+            if isinstance(font, tuple) and len(font) >= 2:
+                # format=(family, size, styles)
+                req_size = font[1]
+                if isinstance(req_size, (int, float)):
+                    opt=list(font_opts)
+                    try:
+                        i = opt.index('-size')
+                        opt[i+1] = str(req_size)
+                        font_opts = tuple(opt)
+                    except ValueError:
+                        pass
+            font = font_opts
         else:
             font = self._set(options)
         if not name:
