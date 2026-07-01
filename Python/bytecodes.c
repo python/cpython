@@ -6199,8 +6199,8 @@ dummy_func(
             value = PyStackRef_FromPyObjectNew(ptr);
         }
 
-        tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-            value = PyStackRef_FromPyObjectBorrow(ptr);
+        tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4^ -- value)) {
+            value = PyStackRef_FromPreTagged(ptr);
         }
 
         tier2 pure op(_RROT_3, (bottom, middle, top -- bottom, middle, top)) {

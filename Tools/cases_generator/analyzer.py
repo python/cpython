@@ -180,9 +180,21 @@ class StackEffect:
 class CacheEntry:
     name: str
     size: int
+    pretagged: bool = False
+
+    @classmethod
+    def from_parsed(cls, effect: parser.CacheEffect) -> "CacheEntry":
+        if effect.pretagged and effect.size != 4:
+            raise analysis_error(
+                f"'^' (pretagged) marker requires size /4, "
+                f"got /{effect.size}",
+                effect.tokens[0],
+            )
+        return cls(effect.name, effect.size, effect.pretagged)
 
     def __str__(self) -> str:
-        return f"{self.name}/{self.size}"
+        suffix = "^" if self.pretagged else ""
+        return f"{self.name}/{self.size}{suffix}"
 
 
 @dataclass
@@ -443,7 +455,7 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
                 position = "First" if index == 0 else "Last"
                 msg = f"{position} cache entry in op is unused. Move to enclosing macro."
                 raise analysis_error(msg, cache.tokens[0])
-    return [CacheEntry(i.name, int(i.size)) for i in caches]
+    return [CacheEntry.from_parsed(i) for i in caches]
 
 
 def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
@@ -611,6 +623,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_DUP",
     "PyStackRef_DupImmortal",
     "PyStackRef_False",
+    "PyStackRef_FromPreTagged",
     "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
@@ -782,7 +795,7 @@ def escaping_call_in_simple_stmt(stmt: SimpleStmt, result: dict[SimpleStmt, Esca
                 continue
             #if not tkn.text.startswith(("Py", "_Py", "monitor")):
             #    continue
-            if tkn.text.startswith(("sym_", "optimize_", "PyJitRef")):
+            if tkn.text.startswith(("sym_", "optimize_", "PyJitRef", "PyStackRef_Tag", "PyStackRef_Untag")):
                 # Optimize functions
                 continue
             if tkn.text.endswith("Check"):
@@ -1127,6 +1140,11 @@ def desugar_inst(
     # Move unused cache entries to the Instruction, removing them from the Uop.
     for input in inst.inputs:
         if isinstance(input, parser.CacheEffect) and input.name == "unused":
+            if input.pretagged:
+                raise analysis_error(
+                    "'unused' cache slot cannot carry a '^' marker",
+                    input.tokens[0],
+                )
             parts.append(Skip(input.size))
         else:
             op_inputs.append(input)
