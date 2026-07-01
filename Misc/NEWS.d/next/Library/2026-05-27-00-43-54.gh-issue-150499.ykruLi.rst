@@ -1,0 +1,4 @@
+:mod:`http.server` now rejects requests that send any ``Transfer-Encoding``
+header or that pair conflicting ``Content-Length`` values, since the module
+does not implement a chunked decoder. Both rejections return
+``400 Bad Request`` with ``Connection: close``, per :rfc:`7230#section-3.3.3`.
