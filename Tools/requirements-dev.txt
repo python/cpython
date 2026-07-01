@@ -3,5 +3,5 @@
 mypy==2.1.0
 
 # needed for peg_generator:
-types-psutil==7.2.2.20260508
+types-psutil==7.2.2.20260518
 types-setuptools==82.0.0.20260508
