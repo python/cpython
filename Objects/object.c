@@ -2892,7 +2892,17 @@ int
 PyUnstable_SetImmortal(PyObject *op)
 {
     assert(op != NULL);
-    if (!_PyObject_IsUniquelyReferenced(op) || PyUnicode_Check(op)) {
+    if (_Py_IsImmortal(op)) {
+        // If the object is immortal, be idempotent.
+        return 1;
+    }
+#if Py_GIL_DISABLED
+    // Only the owning thread can immortalize the object safely
+    if (!_Py_IsOwnedByCurrentThread(op)) {
+        return 0;
+    }
+#endif
+    if (PyUnicode_Check(op)) {
         return 0;
     }
     _Py_SetImmortal(op);
