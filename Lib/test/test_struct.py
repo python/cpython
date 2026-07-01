@@ -366,6 +366,37 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             (got,) = struct.unpack(code, got)
             self.assertEqual(got, expectedback)
 
+    def test_pack_s_p_bytes_like(self):
+        # gh-148529: the 's' and 'p' format codes accept any contiguous
+        # bytes-like object when packing, not only bytes and bytearray.
+        data = b'abcd'
+        providers = [
+            ('memoryview', memoryview(data)),
+            ('memoryview(bytearray)', memoryview(bytearray(data))),
+            ('array', array.array('b', data)),
+        ]
+        for code in ('4s', '10s', '0s', '4p', '10p', '1p'):
+            expected = struct.pack(code, data)
+            s = struct.Struct(code)
+            for name, value in providers:
+                with self.subTest(code=code, provider=name):
+                    self.assertEqual(struct.pack(code, value), expected)
+                    self.assertEqual(s.pack(value), expected)
+                    buf = bytearray(s.size)
+                    struct.pack_into(code, buf, 0, value)
+                    self.assertEqual(bytes(buf), expected)
+
+        # Non-contiguous buffers cannot be packed and raise struct.error.
+        noncontig = memoryview(bytearray(b'abcdefgh'))[::2]
+        self.assertRaises(struct.error, struct.pack, '4s', noncontig)
+        self.assertRaises(struct.error, struct.pack, '4p', noncontig)
+
+        # Objects that do not support the buffer protocol still raise
+        # struct.error for the 's' and 'p' codes.
+        for bad in (5, 'string', None, [1, 2, 3]):
+            self.assertRaises(struct.error, struct.pack, '4s', bad)
+            self.assertRaises(struct.error, struct.pack, '4p', bad)
+
     def test_705836(self):
         # SF bug 705836.  "<f" and ">f" had a severe rounding bug, where a carry
         # from the low-order discarded bits could propagate into the exponent
