@@ -3810,5 +3810,65 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(t.prop, 1)
 
 
+class CachedValueAdder:
+    def __init__(self, value):
+        self.value = value
+
+    @py_functools.cached_method
+    def add(self, other):
+        return self.value + other
+
+
+class TestCachedMethod(unittest.TestCase):
+    module = py_functools
+
+    def test_cached_usage(self):
+        one = CachedValueAdder(1)
+        self.assertEqual(one.add(2), 3)
+        one.value = 2
+        self.assertEqual(one.add(2), 3)  # still 3, not 4
+        one.add.cache_clear()
+        self.assertEqual(one.add(2), 4)  # now 4
+
+    def test_cache_info(self):
+        one = CachedValueAdder(1)
+        self.assertEqual(one.add.cache_info(),
+            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
+        for _ in range(3):
+            for i in range(10):
+                one.add(i)
+        self.assertEqual(one.add.cache_info(),
+            self.module._CacheInfo(hits=20, misses=10, maxsize=None, currsize=10))
+        one.add.cache_clear()
+        self.assertEqual(one.add.cache_info(),
+            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
+
+    def test_reapplication_is_allowed(self):
+        decorator = py_functools.cached_method(maxsize=10)
+
+        class MyObject:
+            @decorator
+            def a(self):
+                return 1
+
+            @decorator
+            def b(self):
+                return 2
+
+        x = MyObject()
+        self.assertEqual(x.a(), 1)
+        self.assertEqual(x.b(), 2)
+
+    def test_cached_method_under_property(self):
+        class MyObject:
+            @property
+            @py_functools.cached_method
+            def foo(self):
+                return 1
+
+        x = MyObject()
+        self.assertEqual(x.foo, 1)
+
+
 if __name__ == '__main__':
     unittest.main()

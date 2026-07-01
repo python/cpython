@@ -122,6 +122,51 @@ The :mod:`!functools` module defines the following functions:
       Python 3.12+ this locking is removed.
 
 
+.. decorator:: cached_method(func)
+               cached_method(maxsize=128, typed=False)
+
+   Decorator to wrap a method with a bounded or unbounded cache.
+
+   When :func:`cache` or :func:`lru_cache` are used on an instance method, the
+   instance (``self``) will be stored in the cache. As a result, instances cannot be
+   garbage collected until the relevant caches are cleared.
+   This decorator uses :func:`lru_cache`, but it wraps the unbound method to accept
+   a weakref and ensures that caches are cleared when instances are garbage collected.
+
+   This is useful for expensive computations which are consistent with respect to
+   an instance, for example, those which depend only on immutable attributes.
+
+   Example::
+
+       class DataSet:
+
+           def __init__(self, sequence_of_ints):
+               self._data = tuple(sequence_of_ints)
+
+           @cached_method
+           def shifted(self, shift):
+               return DataSet([value + shift for value in self._data])
+
+   On instances, :func:`cached_method` behaves very similarly to :func:`cache`,
+   providing :func:`!cache_info` and :func:`!cache_clear`.
+
+   The *cached_method* does not prevent all possible race conditions in
+   multi-threaded usage. The function could run more than once on the
+   same instance, with the same inputs, with the latest run setting the cached
+   value. The per-instance cache is lazily initialized on first access (via the
+   descriptor protocol), so parallel access on a single instance can race to
+   initialize.
+
+   This decorator requires that the instance supports weak references.
+   Some immutable types and slotted classes without ``__weakref__`` as one of
+   the defined slots will encounter errors when the cached method is first used.
+
+   *maxsize* and *typed* are supported as keyword arguments to the decorator,
+   and are passed to the underlying :func:`lru_cache`.
+
+   .. versionadded:: 3.16
+
+
 .. function:: cmp_to_key(func)
 
    Transform an old-style comparison function to a :term:`key function`.  Used
