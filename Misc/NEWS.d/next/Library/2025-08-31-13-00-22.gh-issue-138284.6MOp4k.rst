@@ -1,0 +1,1 @@
+:mod:`urllib.parse`: in strict parsing, :func:`~urllib.parse.parse_qsl` now properly rejects characters according to :rfc:`3986` and raises a :exc:`ValueError` when encountering them.
