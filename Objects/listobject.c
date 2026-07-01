@@ -2810,6 +2810,26 @@ unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
     return res;
 }
 
+#ifndef NDEBUG
+static void
+assert_compare_consistent(PyObject *v, PyObject *w, int res)
+{
+    int cmp = PyObject_RichCompareBool(v, w, Py_LT);
+    if (cmp < 0) {
+        /* This debug-only cross-check can hit the C stack guard even when
+         * the specialized comparison itself is safe. Keep the optimized path
+         * side-effect free by discarding that exception.
+         */
+        assert(PyErr_ExceptionMatches(PyExc_RecursionError));
+        PyErr_Clear();
+        return;
+    }
+    assert(res == cmp);
+}
+#else
+#  define assert_compare_consistent(v, w, res) ((void)0)
+#endif
+
 /* Latin string compare: safe for any two latin (one byte per char) strings. */
 static int
 unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
@@ -2830,7 +2850,7 @@ unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
            res < 0 :
            PyUnicode_GET_LENGTH(v) < PyUnicode_GET_LENGTH(w));
 
-    assert(res == PyObject_RichCompareBool(v, w, Py_LT));;
+    assert_compare_consistent(v, w, res);
     return res;
 }
 
@@ -2855,7 +2875,7 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     w0 = _PyLong_CompactValue(wl);
 
     res = v0 < w0;
-    assert(res == PyObject_RichCompareBool(v, w, Py_LT));
+    assert_compare_consistent(v, w, res);
     return res;
 }
 
@@ -2870,7 +2890,7 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
     assert(Py_IS_TYPE(w, &PyFloat_Type));
 
     res = PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
-    assert(res == PyObject_RichCompareBool(v, w, Py_LT));
+    assert_compare_consistent(v, w, res);
     return res;
 }
 
