@@ -1257,6 +1257,94 @@ class StreamTests(test_utils.TestCase):
         main_coro = main()
         asyncio.run(main_coro)
 
+    # --- BufferError regression tests (gh-146379) ---
+    # StreamReader must not raise BufferError when a memoryview is held
+    # on the internal buffer, e.g. by an async database driver.
+
+    def test_readexactly_with_active_memoryview(self):
+        """readexactly must succeed even when a memoryview is active."""
+        async def go():
+            reader = asyncio.StreamReader()
+            reader.feed_data(b"AABBCCDD")
+            mv = memoryview(reader._buffer)
+            data = await reader.readexactly(4)
+            self.assertEqual(data, b"AABB")
+            self.assertEqual(bytes(reader._buffer), b"CCDD")
+            mv.release()
+        asyncio.run(go())
+
+    def test_read_with_active_memoryview(self):
+        """read(n) must succeed even when a memoryview is active."""
+        async def go():
+            reader = asyncio.StreamReader()
+            reader.feed_data(b"HELLO")
+            mv = memoryview(reader._buffer)
+            data = await reader.read(3)
+            self.assertEqual(data, b"HEL")
+            self.assertEqual(bytes(reader._buffer), b"LO")
+            mv.release()
+        asyncio.run(go())
+
+    def test_readline_with_active_memoryview(self):
+        """readline must succeed even when a memoryview is active."""
+        async def go():
+            reader = asyncio.StreamReader()
+            reader.feed_data(b"line1\nline2\n")
+            mv = memoryview(reader._buffer)
+            data = await reader.readline()
+            self.assertEqual(data, b"line1\n")
+            mv.release()
+        asyncio.run(go())
+
+    def test_readuntil_with_active_memoryview(self):
+        """readuntil must succeed even when a memoryview is active."""
+        async def go():
+            reader = asyncio.StreamReader()
+            reader.feed_data(b"payload|rest")
+            mv = memoryview(reader._buffer)
+            data = await reader.readuntil(b"|")
+            self.assertEqual(data, b"payload|")
+            self.assertEqual(bytes(reader._buffer), b"rest")
+            mv.release()
+        asyncio.run(go())
+
+    def test_readexactly_eof_with_active_memoryview(self):
+        """readexactly at EOF must not raise BufferError."""
+        async def go():
+            reader = asyncio.StreamReader()
+            reader.feed_data(b"short")
+            reader.feed_eof()
+            mv = memoryview(reader._buffer)
+            with self.assertRaises(asyncio.IncompleteReadError) as cm:
+                await reader.readexactly(100)
+            self.assertEqual(cm.exception.partial, b"short")
+            mv.release()
+        asyncio.run(go())
+
+    def test_readuntil_eof_with_active_memoryview(self):
+        """readuntil at EOF must not raise BufferError."""
+        async def go():
+            reader = asyncio.StreamReader()
+            reader.feed_data(b"no separator")
+            reader.feed_eof()
+            mv = memoryview(reader._buffer)
+            with self.assertRaises(asyncio.IncompleteReadError) as cm:
+                await reader.readuntil(b"|")
+            self.assertEqual(cm.exception.partial, b"no separator")
+            mv.release()
+        asyncio.run(go())
+
+    def test_readline_limit_overrun_with_active_memoryview(self):
+        """readline over limit with active memoryview must not raise BufferError."""
+        async def go():
+            reader = asyncio.StreamReader(limit=5)
+            reader.feed_data(b"x" * 6 + b"\n")
+            mv = memoryview(reader._buffer)
+            with self.assertRaises(ValueError):
+                await reader.readline()
+            mv.release()
+        asyncio.run(go())
+
 
 if __name__ == '__main__':
     unittest.main()

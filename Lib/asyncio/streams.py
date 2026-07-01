@@ -480,6 +480,29 @@ class StreamReader:
             self._paused = False
             self._transport.resume_reading()
 
+    def _consume_buffer(self, n=None):
+        """Take *n* bytes from the buffer (all bytes when *n* is ``None``).
+
+        Returns a :class:`bytes` object.  Uses ``bytearray.take_bytes()``
+        when possible, but falls back to a non-mutating replacement when
+        a ``BufferError`` is raised due to active memoryview exports.
+        """
+        try:
+            if n is None:
+                return self._buffer.take_bytes()
+            return self._buffer.take_bytes(n)
+        except BufferError:
+            # A memoryview held by a caller (e.g. an async database driver)
+            # prevents in-place resize.  Fall back to a copy-and-replace
+            # strategy that does not mutate the exported object.
+            if n is None:
+                data = bytes(self._buffer)
+                self._buffer = bytearray()
+            else:
+                data = bytes(self._buffer[:n])
+                self._buffer = self._buffer[n:]
+            return data
+
     def feed_eof(self):
         self._eof = True
         self._wakeup_waiter()
@@ -562,9 +585,9 @@ class StreamReader:
             return e.partial
         except exceptions.LimitOverrunError as e:
             if self._buffer.startswith(sep, e.consumed):
-                del self._buffer[:e.consumed + seplen]
+                self._consume_buffer(e.consumed + seplen)
             else:
-                self._buffer.clear()
+                self._consume_buffer()
             self._maybe_resume_transport()
             raise ValueError(e.args[0])
         return line
@@ -667,7 +690,7 @@ class StreamReader:
             # adds data which makes separator be found. That's why we check for
             # EOF *after* inspecting the buffer.
             if self._eof:
-                chunk = self._buffer.take_bytes()
+                chunk = self._consume_buffer()
                 raise exceptions.IncompleteReadError(chunk, None)
 
             # _wait_for_data() will resume reading if stream was paused.
@@ -677,7 +700,7 @@ class StreamReader:
             raise exceptions.LimitOverrunError(
                 'Separator is found, but chunk is longer than limit', match_start)
 
-        chunk = self._buffer.take_bytes(match_end)
+        chunk = self._consume_buffer(match_end)
         self._maybe_resume_transport()
         return chunk
 
@@ -723,7 +746,7 @@ class StreamReader:
             await self._wait_for_data('read')
 
         # This will work right even if buffer is less than n bytes
-        data = self._buffer.take_bytes(min(len(self._buffer), n))
+        data = self._consume_buffer(min(len(self._buffer), n))
 
         self._maybe_resume_transport()
         return data
@@ -754,12 +777,12 @@ class StreamReader:
 
         while len(self._buffer) < n:
             if self._eof:
-                incomplete = self._buffer.take_bytes()
+                incomplete = self._consume_buffer()
                 raise exceptions.IncompleteReadError(incomplete, n)
 
             await self._wait_for_data('readexactly')
 
-        data = self._buffer.take_bytes(n)
+        data = self._consume_buffer(n)
         self._maybe_resume_transport()
         return data
 
