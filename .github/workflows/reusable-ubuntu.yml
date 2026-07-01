@@ -32,6 +32,11 @@ on:
         required: false
         type: string
         default: ''
+      upload-install:
+        description: Install Python and upload the result artifact
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -130,3 +135,13 @@ jobs:
       run: xvfb-run make ci EXTRATESTOPTS="${TEST_OPTS}"
       env:
         TEST_OPTS: ${{ inputs.test-opts }}
+    - name: Install Python
+      if: ${{ inputs.upload-install }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: make install DESTDIR=build/install
+    - name: Upload Installed Python
+      if: ${{ inputs.upload-install }}
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: install-tree-${{ runner.arch }}-${{ case(inputs.free-threading, 't', '')}}${{ case(inputs.debug, 'd', '') }}
+        path: ${{ env.CPYTHON_BUILDDIR }}/build/install
