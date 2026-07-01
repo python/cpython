@@ -2265,7 +2265,11 @@ class VarTrace:
         "Return default callback function to add values to changes instance."
         def default_callback(*params):
             "Add config values to changes instance."
-            changes.add_option(*config, var.get())
+            value = var.get()
+            # A blanked int entry is an empty string; do not save it as an
+            # invalid config value (gh-83653).
+            if value != '':
+                changes.add_option(*config, value)
         return default_callback
 
     def attach(self):
