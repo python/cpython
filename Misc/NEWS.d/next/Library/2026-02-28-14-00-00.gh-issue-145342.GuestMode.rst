@@ -1,0 +1,8 @@
+Add :func:`asyncio.start_guest_run` to allow asyncio to run cooperatively
+inside a host event loop (e.g. Tkinter, Qt, GTK). The host loop retains
+control of the main thread while asyncio I/O polling runs in a background
+daemon thread. Also adds three low-level :class:`~asyncio.BaseEventLoop`
+methods -- :meth:`~asyncio.BaseEventLoop.poll_events`,
+:meth:`~asyncio.BaseEventLoop.process_events`, and
+:meth:`~asyncio.BaseEventLoop.process_ready` -- that decompose
+:meth:`~asyncio.BaseEventLoop._run_once` into independently callable steps.
