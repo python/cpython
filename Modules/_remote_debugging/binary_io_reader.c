@@ -1105,7 +1105,8 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                             return -1;
                         }
                     }
-                    timestamps_list = PyList_New(count - i);
+                    /* Exact-size the list; alloc+trim is O(count^2). */
+                    timestamps_list = PyList_New(0);
                     if (!timestamps_list) {
                         return -1;
                     }
@@ -1118,7 +1119,13 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                     Py_DECREF(timestamps_list);
                     return -1;
                 }
-                PyList_SET_ITEM(timestamps_list, batch_idx++, ts_obj);
+                int append_rc = PyList_Append(timestamps_list, ts_obj);
+                Py_DECREF(ts_obj);
+                if (append_rc < 0) {
+                    Py_DECREF(timestamps_list);
+                    return -1;
+                }
+                batch_idx++;
             }
 
             /* Emit final batch */
