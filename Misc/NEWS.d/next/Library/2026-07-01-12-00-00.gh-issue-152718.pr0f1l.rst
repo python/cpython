@@ -1,4 +1,2 @@
 Fix unbounded memory allocation in the :mod:`profiling.sampling` binary profile
-reader, which trusted the string and frame table counts declared in a file's
-footer before allocating. A malformed file can no longer make the reader
-attempt a huge allocation.
+reader when a file declares more string or frame entries than it contains.

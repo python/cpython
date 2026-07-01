@@ -240,7 +240,6 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
 static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
-    /* Reject a count larger than the remaining bytes can hold. */
     size_t max_strings =
         (file_size - reader->string_table_offset) / MIN_STRING_ENTRY_SIZE;
     if (reader->strings_count > max_strings) {
@@ -290,7 +289,6 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
     }
 #endif
 
-    /* Reject a count larger than the remaining bytes can hold. */
     size_t max_frames =
         (file_size - reader->frame_table_offset) / MIN_FRAME_ENTRY_SIZE;
     if (reader->frames_count > max_frames) {
