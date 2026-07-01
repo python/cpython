@@ -1,0 +1,1 @@
+tar.addfile() doesn't set member offsets in 3.15. From reviewing the file it seemed like the copy was not adding the proper offsets to the tarinfo object. The way I fixed this is that I added the classes current offset of when.addFile is called and then added the block size after .tobuf function was called.
