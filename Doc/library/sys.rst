@@ -450,10 +450,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       Raise an auditing event ``sys.excepthook`` with arguments ``hook``,
       ``type``, ``value``, ``traceback`` when an uncaught exception occurs.
-      If no hook has been set, ``hook`` may be ``None``. If any hook raises
-      an exception derived from :class:`RuntimeError` the call to the hook will
-      be suppressed. Otherwise, the audit hook exception will be reported as
-      unraisable and ``sys.excepthook`` will be called.
+      If no hook has been set, ``hook`` may be ``None``. If any audit hook
+      raises an exception derived from :class:`RuntimeError` the call to that
+      audit hook will be suppressed. Otherwise, the audit hook exception will be
+      reported as unraisable and ``sys.excepthook`` will be called.
 
    .. seealso::
 
