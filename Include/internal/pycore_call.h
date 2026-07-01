@@ -52,12 +52,6 @@ extern PyObject* _PyObject_Call(
     PyObject *args,
     PyObject *kwargs);
 
-extern PyObject * _PyObject_CallMethodFormat(
-    PyThreadState *tstate,
-    PyObject *callable,
-    const char *format,
-    ...);
-
 // Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_CallMethod(
     PyObject *obj,
