@@ -6976,6 +6976,18 @@ PY_CHECK_CURSES_FUNC([set_escdelay])
 PY_CHECK_CURSES_FUNC([set_tabsize])
 PY_CHECK_CURSES_VAR([ESCDELAY])
 PY_CHECK_CURSES_VAR([TABSIZE])
+
+dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
+dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
+AC_CACHE_CHECK([for ncurses-style curses function getmouse],
+  [ac_cv_lib_curses_getmouse],
+  [AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(_CURSES_INCLUDES, [MEVENT event; (void)getmouse(&event);])],
+    [ac_cv_lib_curses_getmouse=yes],
+    [ac_cv_lib_curses_getmouse=no])])
+AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
+  [AC_DEFINE([HAVE_CURSES_GETMOUSE], [1],
+    [Define if you have the 'getmouse' function with the X/Open signature.])])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

@@ -27836,6 +27836,55 @@ fi
 
 
 
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncurses-style curses function getmouse" >&5
+printf %s "checking for ncurses-style curses function getmouse... " >&6; }
+if test ${ac_cv_lib_curses_getmouse+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+MEVENT event; (void)getmouse(&event);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_getmouse=yes
+else $as_nop
+  ac_cv_lib_curses_getmouse=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_getmouse" >&5
+printf "%s\n" "$ac_cv_lib_curses_getmouse" >&6; }
+if test "x$ac_cv_lib_curses_getmouse" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_GETMOUSE 1" >>confdefs.h
+
+fi
 CPPFLAGS=$ac_save_cppflags
 
 fi
