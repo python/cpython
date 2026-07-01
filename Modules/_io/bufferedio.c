@@ -62,7 +62,9 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
 
     if (!PyBytes_Check(data)) {
         Py_DECREF(data);
-        PyErr_SetString(PyExc_TypeError, "read() should return bytes");
+        PyErr_Format(PyExc_TypeError,
+                     "read() must return a bytes object, not %T",
+                     data);
         return NULL;
     }
 
@@ -1719,7 +1721,9 @@ _bufferedreader_read_all(buffered *self)
         if (tmp == NULL)
             goto cleanup;
         if (tmp != Py_None && !PyBytes_Check(tmp)) {
-            PyErr_SetString(PyExc_TypeError, "readall() should return bytes");
+            PyErr_Format(PyExc_TypeError,
+                         "readall() must return a bytes object, not %T",
+                         tmp);
             goto cleanup;
         }
         if (current_size == 0) {
@@ -1749,7 +1753,9 @@ _bufferedreader_read_all(buffered *self)
         if (data == NULL)
             goto cleanup;
         if (data != Py_None && !PyBytes_Check(data)) {
-            PyErr_SetString(PyExc_TypeError, "read() should return bytes");
+            PyErr_Format(PyExc_TypeError,
+                         "read() must return a bytes object, not %T",
+                         data);
             goto cleanup;
         }
         if (data == Py_None || PyBytes_GET_SIZE(data) == 0) {
