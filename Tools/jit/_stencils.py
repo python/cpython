@@ -1,5 +1,6 @@
 """Core data structures for compiled code templates."""
 
+import copy
 import dataclasses
 import enum
 import typing
@@ -16,6 +17,8 @@ class HoleValue(enum.Enum):
 
     # The base address of the machine code for the current uop (exposed as _JIT_ENTRY):
     CODE = enum.auto()
+    # The base address of the cold machine code for the current uop:
+    COLD_CODE = enum.auto()
     # The base address of the read-only data for this uop:
     DATA = enum.auto()
     # The base address of the "global" offset table located in the read-only data.
@@ -105,6 +108,7 @@ _PATCH_FUNCS = {
 # Translate HoleValues to C expressions:
 _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
+    HoleValue.COLD_CODE: "(uintptr_t)cold",
     HoleValue.DATA: "(uintptr_t)data",
     HoleValue.GOT: "",
     # These should all have been turned into DATA values by process_relocations:
@@ -144,6 +148,9 @@ _X86_GOT_RELOCATIONS = {
     "IMAGE_REL_AMD64_REL32",
 }
 
+_CROSS_SECTION_PREFIX = "_JIT_CROSS_SECTION_"
+_CROSS_SECTION_SUFFIX = "_JIT_CROSS_SECTION"
+
 
 @dataclasses.dataclass
 class Hole:
@@ -167,8 +174,17 @@ class Hole:
     func: str = dataclasses.field(init=False)
     offset2: int = -1
     void: bool = False
-    # Convenience method:
-    replace = dataclasses.replace
+
+    def replace(self, **changes: typing.Any) -> typing.Self:
+        """Copy this hole without rerunning __post_init__ and resetting func."""
+        field_names = {field.name for field in dataclasses.fields(self)}
+        for name in changes:
+            if name not in field_names:
+                raise TypeError(f"unexpected field name: {name!r}")
+        result = copy.copy(self)
+        for name, value in changes.items():
+            setattr(result, name, value)
+        return result
 
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
@@ -246,6 +262,7 @@ class StencilGroup:
     """
 
     code: Stencil = dataclasses.field(default_factory=Stencil, init=False)
+    cold_code: Stencil = dataclasses.field(default_factory=Stencil, init=False)
     data: Stencil = dataclasses.field(default_factory=Stencil, init=False)
     symbols: dict[int | str, tuple[HoleValue, int]] = dataclasses.field(
         default_factory=dict, init=False
@@ -256,6 +273,12 @@ class StencilGroup:
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
     _got_entries: set[int] = dataclasses.field(default_factory=set, init=False)
 
+    def _code_stencils(self) -> tuple[Stencil, Stencil]:
+        return self.code, self.cold_code
+
+    def _all_stencils(self) -> tuple[Stencil, Stencil, Stencil]:
+        return self.code, self.cold_code, self.data
+
     def convert_labels_to_relocations(self) -> None:
         holes_by_offset: dict[int, Hole] = {}
         first_in_pair: dict[str, Hole] = {}
@@ -264,10 +287,14 @@ class StencilGroup:
         for name, hole_plus in self.symbols.items():
             if isinstance(name, str) and "_JIT_RELOCATION_" in name:
                 _, offset = hole_plus
-                reloc, target, _ = name.split("_JIT_RELOCATION_")
+                reloc, target, *_ = name.split("_JIT_RELOCATION_")
                 value, symbol = symbol_to_value(target)
                 hole = Hole(
-                    int(offset), typing.cast(_schema.HoleKind, reloc), value, symbol, 0
+                    int(offset),
+                    typing.cast(_schema.HoleKind, reloc),
+                    value,
+                    symbol,
+                    0,
                 )
                 self.code.holes.append(hole)
             elif isinstance(name, str) and "_JIT_PAIR_" in name:
@@ -281,58 +308,99 @@ class StencilGroup:
                         first = first_in_pair[index]
                         hole.fold(first)
 
+        self.split_code_at_cold_start()
+
+    def split_code_at_cold_start(self) -> None:
+        cold_start = self.symbols.get("_JIT_COLD_START")
+        if cold_start is None:
+            return
+        value, split = cold_start
+        assert value is HoleValue.CODE
+        assert 0 <= split <= len(self.code.body)
+
+        self.cold_code.body.extend(self.code.body[split:])
+        del self.code.body[split:]
+
+        hot_holes = []
+        cold_holes = []
+        for hole in self.code.holes:
+            if hole.offset2 >= 0:
+                assert (hole.offset < split) == (hole.offset2 < split)
+            if hole.offset < split:
+                hot_holes.append(hole)
+            else:
+                offset2 = hole.offset2
+                if offset2 >= 0:
+                    offset2 -= split
+                cold_holes.append(
+                    hole.replace(offset=hole.offset - split, offset2=offset2)
+                )
+        self.code.holes = hot_holes
+        self.cold_code.holes = cold_holes
+
+        for name, (symbol_value, offset) in self.symbols.copy().items():
+            if symbol_value is HoleValue.CODE and offset >= split:
+                self.symbols[name] = HoleValue.COLD_CODE, offset - split
+
     def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
-        for hole in self.code.holes.copy():
-            if (
-                hole.kind
-                in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
-                and hole.value is HoleValue.ZERO
-                and hole.symbol not in self.symbols
-            ):
-                hole.func = "patch_aarch64_trampoline"
-                hole.need_state = True
-                assert hole.symbol is not None
-                if hole.symbol in known_symbols:
-                    ordinal = known_symbols[hole.symbol]
-                else:
-                    ordinal = len(known_symbols)
-                    known_symbols[hole.symbol] = ordinal
-                self._trampolines.add(ordinal)
-                hole.addend = ordinal
-                hole.symbol = None
-            # x86_64 Darwin trampolines for external symbols
-            elif (
-                hole.kind == "X86_64_RELOC_BRANCH"
-                and hole.value is HoleValue.ZERO
-                and hole.symbol not in self.symbols
-            ):
-                hole.func = "patch_x86_64_trampoline"
-                hole.need_state = True
-                assert hole.symbol is not None
-                if hole.symbol in known_symbols:
-                    ordinal = known_symbols[hole.symbol]
-                else:
-                    ordinal = len(known_symbols)
-                    known_symbols[hole.symbol] = ordinal
-                self._trampolines.add(ordinal)
-                hole.addend = ordinal
-                hole.symbol = None
-            elif (
-                hole.kind in _AARCH64_GOT_RELOCATIONS | _X86_GOT_RELOCATIONS
-                and hole.symbol
-                and "_JIT_" not in hole.symbol
-                and hole.value is HoleValue.GOT
-            ):
-                if hole.symbol in known_symbols:
-                    ordinal = known_symbols[hole.symbol]
-                else:
-                    ordinal = len(known_symbols)
-                    known_symbols[hole.symbol] = ordinal
-                self._got_entries.add(ordinal)
+        for stencil in self._code_stencils():
+            for hole in stencil.holes.copy():
+                # Cross-section symbols are optimizer-generated internal
+                # targets; resolve them before external branch handling.
+                if self._resolve_cross_section_symbol(hole):
+                    continue
+                if (
+                    hole.kind
+                    in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
+                    and hole.value is HoleValue.ZERO
+                    and hole.symbol not in self.symbols
+                ):
+                    hole.func = "patch_aarch64_trampoline"
+                    hole.need_state = True
+                    assert hole.symbol is not None
+                    if hole.symbol in known_symbols:
+                        ordinal = known_symbols[hole.symbol]
+                    else:
+                        ordinal = len(known_symbols)
+                        known_symbols[hole.symbol] = ordinal
+                    self._trampolines.add(ordinal)
+                    hole.addend = ordinal
+                    hole.symbol = None
+                # x86_64 Darwin trampolines for external symbols
+                elif (
+                    hole.kind == "X86_64_RELOC_BRANCH"
+                    and hole.value is HoleValue.ZERO
+                    and hole.symbol not in self.symbols
+                ):
+                    hole.func = "patch_x86_64_trampoline"
+                    hole.need_state = True
+                    assert hole.symbol is not None
+                    if hole.symbol in known_symbols:
+                        ordinal = known_symbols[hole.symbol]
+                    else:
+                        ordinal = len(known_symbols)
+                        known_symbols[hole.symbol] = ordinal
+                    self._trampolines.add(ordinal)
+                    hole.addend = ordinal
+                    hole.symbol = None
+                elif (
+                    hole.kind in _AARCH64_GOT_RELOCATIONS | _X86_GOT_RELOCATIONS
+                    and hole.symbol
+                    and "_JIT_" not in hole.symbol
+                    and hole.value is HoleValue.GOT
+                ):
+                    if hole.symbol in known_symbols:
+                        ordinal = known_symbols[hole.symbol]
+                    else:
+                        ordinal = len(known_symbols)
+                        known_symbols[hole.symbol] = ordinal
+                    self._got_entries.add(ordinal)
         self.data.pad(8)
-        for stencil in [self.code, self.data]:
+        for stencil in self._all_stencils():
             for hole in stencil.holes:
+                if self._resolve_cross_section_symbol(hole):
+                    continue
                 if hole.value is HoleValue.GOT:
                     assert hole.symbol is not None
                     if "_JIT_" in hole.symbol:
@@ -366,7 +434,32 @@ class StencilGroup:
         self._emit_jit_symbol_table()
         self._emit_global_offset_table()
         self.code.holes.sort(key=lambda hole: hole.offset)
+        self.cold_code.holes.sort(key=lambda hole: hole.offset)
         self.data.holes.sort(key=lambda hole: hole.offset)
+
+    def _resolve_cross_section_symbol(self, hole: Hole) -> bool:
+        """Strip hot/cold target wrappers and rewrite holes to CODE/COLD_CODE."""
+        if hole.value is not HoleValue.ZERO or hole.symbol is None:
+            return False
+        symbol = hole.symbol
+        if not (
+            symbol.startswith(_CROSS_SECTION_PREFIX)
+            and symbol.endswith(_CROSS_SECTION_SUFFIX)
+        ):
+            return False
+        target = symbol.removeprefix(_CROSS_SECTION_PREFIX).removesuffix(
+            _CROSS_SECTION_SUFFIX
+        )
+        try:
+            value, addend = self.symbols[target]
+        except KeyError:
+            raise ValueError(
+                f"Missing cross-section relocation target {target}"
+            ) from None
+        hole.value = value
+        hole.addend += addend
+        hole.symbol = None
+        return True
 
     def _jit_symbol_table_lookup(self, symbol: str) -> int:
         return len(self.data.body) + self._jit_symbol_table.setdefault(
@@ -400,13 +493,14 @@ class StencilGroup:
             self.data.body.extend([0] * 8)
 
     def _emit_global_offset_table(self) -> None:
-        for hole in self.code.holes:
-            if hole.value is HoleValue.GOT:
-                _got_hole = Hole(0, "R_X86_64_64", hole.value, None, hole.addend)
-                _got_hole.func = "patch_got_symbol"
-                _got_hole.custom_location = "state"
-                if _got_hole not in self.data.holes:
-                    self.data.holes.append(_got_hole)
+        for stencil in self._code_stencils():
+            for hole in stencil.holes:
+                if hole.value is HoleValue.GOT:
+                    _got_hole = Hole(0, "R_X86_64_64", hole.value, None, hole.addend)
+                    _got_hole.func = "patch_got_symbol"
+                    _got_hole.custom_location = "state"
+                    if _got_hole not in self.data.holes:
+                        self.data.holes.append(_got_hole)
 
     def _get_symbol_mask(self, ordinals: set[int]) -> str:
         bitmask: int = 0
@@ -427,7 +521,7 @@ class StencilGroup:
 
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""
-        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}, {self._get_got_mask()}}}"
+        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.cold_code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}, {self._get_got_mask()}}}"
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
