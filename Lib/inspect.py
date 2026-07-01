@@ -2209,7 +2209,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
         if isinstance(value, (str, int, float, bytes, bool, type(None),
                               sentinel)):
-            return ast.Constant(value)
+            return ast.parse(s, mode='eval').body
         raise ValueError
 
     class RewriteSymbolics(ast.NodeTransformer):
@@ -2230,28 +2230,23 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 raise ValueError()
             return wrap_value(node.id)
 
-        def visit_BinOp(self, node):
-            # Support constant folding of a couple simple binary operations
-            # commonly used to define default values in text signatures
-            left = self.visit(node.left)
-            right = self.visit(node.right)
-            if not isinstance(left, ast.Constant) or not isinstance(right, ast.Constant):
-                raise ValueError
-            if isinstance(node.op, ast.Add):
-                return ast.Constant(left.value + right.value)
-            elif isinstance(node.op, ast.Sub):
-                return ast.Constant(left.value - right.value)
-            elif isinstance(node.op, ast.BitOr):
-                return ast.Constant(left.value | right.value)
-            raise ValueError
-
     def p(name_node, default_node, default=empty):
         name = parse_name(name_node)
         if default_node and default_node is not _empty:
             try:
                 default_node = RewriteSymbolics().visit(default_node)
-                default = ast.literal_eval(default_node)
-            except ValueError:
+                default_source = ast.unparse(default_node)
+                try:
+                    default = ast.literal_eval(default_source)
+                except ValueError:
+                    try:
+                        default = eval(default_source, module_dict)
+                    except NameError:
+                        try:
+                            default = eval(default_source, sys_module_dict)
+                        except NameError:
+                            raise ValueError
+            except ValueError as exc:
                 raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
         parameters.append(Parameter(name, kind, default=default, annotation=empty))
 

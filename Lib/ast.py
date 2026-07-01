@@ -59,17 +59,25 @@ def literal_eval(node_or_string):
     """
     if isinstance(node_or_string, str):
         node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval').body
+        return _convert_literal(node_or_string, True)
     elif isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     return _convert_literal(node_or_string)
 
 
-def _convert_literal(node):
+_permitted_literal_types = (str, bytes, int, float, complex,
+                            bool, type(None), type(...))
+
+
+def _convert_literal(node, omit_validation=False):
     """
     Used by `literal_eval` to convert an AST node into a value.
     """
     if isinstance(node, Constant):
-        return node.value
+        if omit_validation:
+            return node.value
+        if type(value := node.value) in _permitted_literal_types:
+            return value
     if isinstance(node, Dict) and len(node.keys) == len(node.values):
         return dict(zip(
             map(_convert_literal, node.keys),
