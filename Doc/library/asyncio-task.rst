@@ -649,7 +649,7 @@ Eager task factory
 Shielding from cancellation
 ===========================
 
-.. awaitablefunction:: shield(aw)
+.. awaitablefunction:: shield(arg)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
@@ -686,7 +686,7 @@ Shielding from cancellation
 
    .. important::
 
-      Save a reference to tasks passed to this function, to avoid
+      Save a reference to tasks passed to this function to avoid
       a task disappearing mid-execution. The event loop only keeps
       weak references to tasks. A task that isn't referenced elsewhere
       may get garbage collected at any time, even before it's done.
@@ -708,10 +708,10 @@ Timeouts
     that can be used to limit the amount of time spent waiting on
     something.
 
-    *delay* can either be ``None``, or a float/int number of
-    seconds to wait. If *delay* is ``None``, no time limit will
-    be applied; this can be useful if the delay is unknown when
-    the context manager is created.
+    *delay* can either be ``None``, or a float/int representing
+    the number of seconds to wait. If *delay* is ``None``, no time
+    limit will be applied; this can be useful if the delay is
+    unknown when the context manager is created.
 
     In either case, the context manager can be rescheduled after
     creation using :meth:`Timeout.reschedule`.
@@ -826,9 +826,9 @@ Timeouts
 
    If *aw* is a coroutine it is automatically scheduled as a Task.
 
-   *timeout* can either be ``None`` or a float or int number of seconds
-   to wait for.  If *timeout* is ``None``, block until the future
-   completes.
+   *timeout* can either be ``None`` or a float or int representing
+   the number of seconds to wait for.  If *timeout* is ``None``,
+   block until the future completes.
 
    If a timeout occurs, it cancels the task and raises
    :exc:`TimeoutError`.
@@ -879,14 +879,14 @@ Timeouts
 Waiting primitives
 ==================
 
-.. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(fs, *, timeout=None, return_when=ALL_COMPLETED)
    :async:
 
-   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
+   Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *fs*
    iterable concurrently and block until the condition specified
-   by *return_when*.
+   by *return_when* is satisfied.
 
-   The *aws* iterable must not be empty.
+   The *fs* iterable must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -928,19 +928,19 @@ Waiting primitives
       Removed the *loop* parameter.
 
    .. versionchanged:: 3.11
-      Passing coroutine objects to ``wait()`` directly is forbidden.
+      Forbade passing coroutine objects to ``wait()`` directly.
 
    .. versionchanged:: 3.12
       Added support for generators yielding tasks.
 
 
-.. function:: as_completed(aws, *, timeout=None)
+.. function:: as_completed(fs, *, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *fs* iterable
    concurrently. The returned object can be iterated to obtain the results
    of the awaitables as they finish.
 
-   The object returned by ``as_completed()`` can be iterated as an
+   The object returned by ``as_completed()`` can be iterated over as an
    :term:`asynchronous iterator` or a plain :term:`iterator`. When asynchronous
    iteration is used, the originally-supplied awaitables are yielded if they
    are tasks or futures. This makes it easy to correlate previously-scheduled
@@ -985,7 +985,7 @@ Waiting primitives
       Removed the *loop* parameter.
 
    .. deprecated:: 3.10
-      Deprecation warning is emitted if not all awaitable objects in the *aws*
+      Deprecation warning is emitted if not all awaitable objects in the *fs*
       iterable are Future-like objects and there is no running event loop.
 
    .. versionchanged:: 3.12
@@ -1011,7 +1011,7 @@ Running in threads
 
    Return a coroutine that can be awaited to get the eventual result of *func*.
 
-   This coroutine function is primarily intended to be used for executing
+   This coroutine function is primarily intended to be used to execute
    IO-bound functions/methods that would otherwise block the event loop if
    they were run in the main thread. For example::
 
@@ -1061,13 +1061,13 @@ Scheduling from other threads
 
 .. function:: run_coroutine_threadsafe(coro, loop)
 
-   Submit a coroutine to the given event loop.  Thread-safe.
+   Submit a coroutine to the given event loop. Thread-safe.
 
    Return a :class:`concurrent.futures.Future` to wait for the result
    from another OS thread.
 
    This function is meant to be called from a different OS thread
-   than the one where the event loop is running.  Example::
+   than the one where the event loop is running. Example::
 
      def in_thread(loop: asyncio.AbstractEventLoop) -> None:
          # Run some blocking IO
@@ -1089,7 +1089,7 @@ Scheduling from other threads
          # Run something in a thread
          await asyncio.to_thread(in_thread, loop)
 
-   It's also possible to run the other way around.  Example::
+   It's also possible to run the other way around. Example::
 
      @contextlib.contextmanager
      def loop_in_thread() -> Generator[asyncio.AbstractEventLoop]:
@@ -1140,7 +1140,7 @@ Scheduling from other threads
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
-   Unlike other asyncio functions this function requires the *loop*
+   Unlike other asyncio functions, this function requires the *loop*
    argument to be passed explicitly.
 
    .. versionadded:: 3.5.1
@@ -1225,10 +1225,10 @@ Task object
 
    An optional keyword-only *eager_start* argument allows eagerly starting
    the execution of the :class:`asyncio.Task` at task creation time.
-   If set to ``True`` and the event loop is running, the task will start
+   If set to ``True`` with the event loop running, the task will start
    executing the coroutine immediately, until the first time the coroutine
    blocks. If the coroutine returns or raises without blocking, the task
-   will be finished eagerly and will skip scheduling to the event loop.
+   will be finished eagerly and the event loop scheduling step is skipped.
 
    Tasks are :ref:`generic <generics>` over the return type of their wrapped
    coroutines.
@@ -1362,8 +1362,7 @@ Task object
       Return the name of the Task.
 
       If no name has been explicitly assigned to the Task, the default
-      asyncio Task implementation generates a default name during
-      instantiation.
+      implementation generates a default name during instantiation.
 
       .. versionadded:: 3.8
 
@@ -1517,6 +1516,6 @@ Task object
       cancellation requests go down to zero.
 
       This method is used by asyncio's internals and isn't expected to be
-      used by end-user code.  See :meth:`uncancel` for more details.
+      used by end-user code. See :meth:`uncancel` for more details.
 
       .. versionadded:: 3.11

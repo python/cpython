@@ -15,10 +15,10 @@ asyncio queues are designed to be similar to classes of the
 they are designed to be used specifically in async/await code.
 
 Note that methods of asyncio queues don't have a *timeout* parameter;
-use :func:`asyncio.wait_for` function to do queue operations with a
-timeout.
+use :func:`asyncio.wait_for` function to perform queue operations with
+timeouts.
 
-See also the `Examples`_ section below.
+Also see the `Examples`_ section below.
 
 Queue
 =====
@@ -28,7 +28,7 @@ Queue
    A first in, first out (FIFO) queue.
 
    If *maxsize* is less than or equal to zero, the queue size is
-   infinite.  If it is an integer greater than ``0``, then
+   infinite. If it is an integer greater than ``0``, then
    ``await put()`` blocks when the queue reaches *maxsize*
    until an item is removed by :meth:`get`.
 
@@ -54,8 +54,9 @@ Queue
 
       Return ``True`` if there are :attr:`maxsize` items in the queue.
 
-      If the queue was initialized with ``maxsize=0`` (the default),
-      then :meth:`full` never returns ``True``.
+      If the queue was initialized with ``maxsize=0`` (the default)
+      or a negative ``maxsize``, then :meth:`full` never returns
+      ``True``.
 
    .. method:: get()
       :async:
@@ -77,7 +78,7 @@ Queue
       Block until all items in the queue have been received and processed.
 
       The count of unfinished tasks goes up whenever an item is added
-      to the queue. The count goes down whenever a consumer coroutine calls
+      to the queue. The count goes down whenever a consumer calls
       :meth:`task_done` to indicate that the item was retrieved and all
       work on it is complete.  When the count of unfinished tasks drops
       to zero, :meth:`join` unblocks.
@@ -109,27 +110,28 @@ Queue
       Currently blocked callers of :meth:`~Queue.put` will be unblocked
       and will raise :exc:`QueueShutDown` in the formerly awaiting task.
 
-      If *immediate* is false (the default), the queue can be wound
+      If *immediate* is ``False`` (the default), the queue can be wound
       down normally with :meth:`~Queue.get` calls to extract tasks
       that have already been loaded.
 
-      And if :meth:`~Queue.task_done` is called for each remaining task, a
-      pending :meth:`~Queue.join` will be unblocked normally.
+      In this case, if :meth:`~Queue.task_done` is called for each
+      remaining task, a pending :meth:`~Queue.join` will be unblocked
+      normally.
 
       Once the queue is empty, future calls to :meth:`~Queue.get` will
       raise :exc:`QueueShutDown`.
 
-      If *immediate* is true, the queue is terminated immediately.
+      If *immediate* is ``True``, the queue is terminated immediately.
       The queue is drained to be completely empty and the count
       of unfinished tasks is reduced by the number of tasks drained.
-      If unfinished tasks is zero, callers of :meth:`~Queue.join`
-      are unblocked.  Also, blocked callers of :meth:`~Queue.get`
-      are unblocked and will raise :exc:`QueueShutDown` because the
+      If the count reaches zero, callers of :meth:`~Queue.join` are
+      unblocked.  Also, blocked callers of :meth:`~Queue.get` are
+      unblocked and will raise :exc:`QueueShutDown` because the
       queue is empty.
 
-      Use caution when using :meth:`~Queue.join` with *immediate* set
-      to true. This unblocks the join even when no work has been done
-      on the tasks, violating the usual invariant for joining a queue.
+      Exercise caution when using :meth:`~Queue.join` in the above case.
+      The join may be unblocked even when no work has been done on the
+      tasks, violating the usual invariant for joining a queue.
 
       .. versionadded:: 3.13
 
@@ -212,7 +214,7 @@ concurrent tasks::
            # Get a "work item" out of the queue.
            sleep_for = await queue.get()
 
-           # Sleep for the "sleep_for" seconds.
+           # Sleep "sleep_for" seconds.
            await asyncio.sleep(sleep_for)
 
            # Notify the queue that the "work item" has been processed.
