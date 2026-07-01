@@ -5369,6 +5369,43 @@ class GenericTests(BaseTestCase):
             set(results.generic_func.__type_params__)
         )
 
+    def test_pep695_generic_class_with_future_typed_dicts(self):
+        # gh-138949
+        td1_hints = get_type_hints(ann_module695.TD1)
+        self.assertEqual(td1_hints, {'a': ann_module695.TD1.__type_params__[0]})
+
+        td2_hints = get_type_hints(ann_module695.TD2)  # used to fail with `NameError`
+        self.assertEqual(
+            td2_hints,
+            {'a': ann_module695.TD1.__type_params__[0], 'b': int},
+        )
+
+        td3_hints = get_type_hints(ann_module695.TD3)
+        self.assertEqual(
+            td3_hints,
+            {
+                'a': ann_module695.TD1.__type_params__[0],
+                'b': int,
+                'c': ann_module695.TD3.__type_params__[0],
+            },
+        )
+
+        td4_hints = get_type_hints(ann_module695.TD4)
+        self.assertEqual(
+            td4_hints,
+            {
+                # Type param `TD4.T` must have a higher precedence over `TD1.T`:
+                'a': ann_module695.TD4.__type_params__[0],
+                'b': int,
+                'c': ann_module695.TD3.__type_params__[0],
+                'd': ann_module695.TD4.__type_params__[0],
+                'e': ann_module695.TD4.__type_params__[1],
+            },
+        )
+
+        with self.assertRaisesRegex(NameError, "name 'T' is not defined"):
+            get_type_hints(ann_module695.TD1_2)
+
     def test_extended_generic_rules_subclassing(self):
         class T1(Tuple[T, KT]): ...
         class T2(Tuple[T, ...]): ...
