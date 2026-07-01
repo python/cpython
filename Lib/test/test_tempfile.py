@@ -1709,6 +1709,37 @@ class TestTemporaryDirectory(BaseTestCase):
                 temp_path.exists(),
                 f"TemporaryDirectory {temp_path!s} exists after cleanup")
 
+    def test_explicit_cleanup_ignore_errors_resetperms(self):
+        with tempfile.TemporaryDirectory() as working_dir:
+            temp_dir = self.do_create(
+                dir=working_dir, ignore_cleanup_errors=True)
+
+            def fake_rmtree(path, onexc):
+                onexc(os.open, path, PermissionError())
+
+            def fake_resetperms(path):
+                raise PermissionError(path)
+
+            with support.swap_attr(tempfile._shutil, "rmtree", fake_rmtree), \
+                 support.swap_attr(tempfile, "_resetperms", fake_resetperms):
+                temp_dir.cleanup()
+
+    def test_explicit_cleanup_resetperms_error(self):
+        with tempfile.TemporaryDirectory() as working_dir:
+            temp_dir = self.do_create(dir=working_dir)
+            self.addCleanup(temp_dir.cleanup)
+
+            def fake_rmtree(path, onexc):
+                onexc(os.open, path, PermissionError())
+
+            def fake_resetperms(path):
+                raise PermissionError(path)
+
+            with support.swap_attr(tempfile._shutil, "rmtree", fake_rmtree), \
+                 support.swap_attr(tempfile, "_resetperms", fake_resetperms):
+                with self.assertRaises(PermissionError):
+                    temp_dir.cleanup()
+
     @unittest.skipUnless(os.name == "nt", "Only on Windows.")
     def test_explicit_cleanup_correct_error(self):
         with tempfile.TemporaryDirectory() as working_dir:
