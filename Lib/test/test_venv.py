@@ -1268,6 +1268,23 @@ class EnsurePipTest(BaseTest):
 
         self.assertTrue(os.path.exists(os.devnull))
 
+    def test_ensurepip_failure_shows_stderr(self):
+        """Test that ensurepip failure output is shown to the user (gh-89830)"""
+        with tempfile.TemporaryDirectory() as env_dir:
+            builder = venv.EnvBuilder(with_pip=True)
+            # Simulate ensurepip failing with a traceback on stderr
+            def fake_call_new_python(context, *args, **kwargs):
+                raise subprocess.CalledProcessError(
+                    returncode=1,
+                    cmd=args,
+                    stderr=b"AttributeError: simulated ensurepip failure"
+                )
+            with patch.object(venv.EnvBuilder, '_call_new_python', fake_call_new_python):
+                with captured_stderr() as err:
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        builder.create(env_dir)
+                self.assertIn("simulated ensurepip failure", err.getvalue())
+
     def do_test_with_pip(self, system_site_packages):
         rmtree(self.env_dir)
         with EnvironmentVarGuard() as envvars:
