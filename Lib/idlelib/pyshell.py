@@ -36,13 +36,14 @@ from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 from idlelib import debugger
 from idlelib import debugger_r
-from idlelib.editor import EditorWindow, fixwordbreaks
+from idlelib.editor import EditorWindow
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
 from idlelib import replace
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
+from idlelib.util import fix_word_breaks
 
 # Default for testing; defaults to True in main() for running.
 use_subprocess = False
@@ -882,9 +883,9 @@ class PyShell(OutputWindow):
         if ms[2][0] != "shell":
             ms.insert(2, ("shell", "She_ll"))
         self.interp = ModifiedInterpreter(self)
-        if flist is None:
+        if flist is None:  # TODO possible? root and flist in main.
             root = Tk()
-            fixwordbreaks(root)
+            fix_word_breaks(root)
             root.withdraw()
             flist = PyShellFileList(root)
 
@@ -1453,17 +1454,6 @@ class PyShell(OutputWindow):
         self.shell_sidebar.update_sidebar()
 
 
-def fix_x11_paste(root):
-    "Make paste replace selection on x11.  See issue #5124."
-    if root._windowingsystem == 'x11':
-        for cls in 'Text', 'Entry', 'Spinbox':
-            root.bind_class(
-                cls,
-                '<<Paste>>',
-                'catch {%W delete sel.first sel.last}\n' +
-                        root.bind_class(cls, '<<Paste>>'))
-
-
 usage_msg = """\
 
 USAGE: idle  [-deins] [-t title] [file]*
@@ -1523,6 +1513,7 @@ def main():
     from platform import system
     from idlelib import testing  # bool value
     from idlelib import macosx
+    from idlelib.util import fix_scaling, fix_x11_paste
 
     global flist, root, use_subprocess
 
@@ -1608,7 +1599,6 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
-    from idlelib.run import fix_scaling
     fix_scaling(root)
 
     # set application icon
@@ -1630,7 +1620,7 @@ def main():
         root.wm_iconphoto(True, *icons)
 
     # start editor and/or shell windows:
-    fixwordbreaks(root)
+    fix_word_breaks(root)
     fix_x11_paste(root)
     flist = PyShellFileList(root)
     macosx.setupApp(root, flist)
