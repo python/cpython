@@ -22,6 +22,11 @@ on:
         description: OS to run the job
         required: true
         type: string
+      test:
+        description: Whether to run the Python test suite
+        required: false
+        type: boolean
+        default: true
       test-opts:
         description: Extra options to pass to the test runner via TESTOPTS
         required: false
@@ -36,7 +41,7 @@ env:
 
 jobs:
   build-ubuntu-reusable:
-    name: build and test (${{ inputs.os }})
+    name: build ${{ fromJSON(inputs.test) && 'and test ' || '' }}(${{ inputs.os }})
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
@@ -120,6 +125,7 @@ jobs:
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount "$CPYTHON_RO_SRCDIR" -oremount,rw
     - name: Tests
+      if: ${{ inputs.test }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: xvfb-run make ci EXTRATESTOPTS="${TEST_OPTS}"
       env:
