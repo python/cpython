@@ -1400,13 +1400,33 @@ static struct PyMemberDef cursor_members[] =
     {"description", _Py_T_OBJECT, offsetof(pysqlite_Cursor, description), Py_READONLY},
     {"lastrowid", _Py_T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), Py_READONLY},
     {"rowcount", Py_T_LONG, offsetof(pysqlite_Cursor, rowcount), Py_READONLY},
-    {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), Py_READONLY},
     {NULL}
 };
 
+static PyObject *
+cursor_get_row_factory(PyObject *op, void *closure)
+{
+    pysqlite_Cursor *self = (pysqlite_Cursor *)op;
+    return Py_NewRef(self->row_factory);
+}
+
+static int
+cursor_set_row_factory(PyObject *op, PyObject *value, void *closure)
+{
+    pysqlite_Cursor *self = (pysqlite_Cursor *)op;
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "cannot delete row_factory attribute");
+        return -1;
+    }
+    Py_XSETREF(self->row_factory, Py_NewRef(value));
+    return 0;
+}
+
 static struct PyGetSetDef cursor_getsets[] = {
     _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF
+    {"row_factory", cursor_get_row_factory, cursor_set_row_factory},
     {NULL},
 };
 
