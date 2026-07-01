@@ -566,6 +566,77 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         buf = bytearray(2)
         self.assertEqual(0, memio.readinto(buf))
 
+    def test_peek(self):
+        buf = self.buftype("1234567890")
+        with self.ioclass(buf) as memio:
+            self.assertEqual(memio.tell(), 0)
+            self.assertEqual(memio.peek(1), buf[:1])
+            self.assertEqual(memio.peek(1), buf[:1])
+            self.assertEqual(memio.peek(), buf)
+            self.assertEqual(memio.peek(3), buf[:3])
+            self.assertEqual(memio.peek(5), buf[:5])
+            self.assertEqual(memio.peek(0), buf)
+            self.assertEqual(memio.peek(len(buf) + 100), buf)
+            self.assertEqual(memio.peek(-1), buf)
+            self.assertEqual(memio.tell(), 0)
+
+            memio.read(1)
+            self.assertEqual(memio.tell(), 1)
+            self.assertEqual(memio.peek(1), buf[1:2])
+            self.assertEqual(memio.peek(), buf[1:])
+            self.assertEqual(memio.peek(3), buf[1:4])
+            self.assertEqual(memio.peek(5), buf[1:6])
+            self.assertEqual(memio.peek(0), buf[1:])
+            self.assertEqual(memio.peek(len(buf) + 100), buf[1:])
+            self.assertEqual(memio.peek(-1), buf[1:])
+            self.assertEqual(memio.tell(), 1)
+
+            memio.read()
+            self.assertEqual(memio.tell(), len(buf))
+            self.assertEqual(memio.peek(1), self.EOF)
+            self.assertEqual(memio.peek(3), self.EOF)
+            self.assertEqual(memio.peek(5), self.EOF)
+            self.assertEqual(memio.peek(0), b"")
+            self.assertEqual(memio.tell(), len(buf))
+
+            # Peeking works after writing
+            abc = self.buftype("abc")
+            memio.write(abc)
+            self.assertEqual(memio.peek(), self.EOF)
+            memio.seek(len(buf))
+            self.assertEqual(memio.peek(), abc)
+            self.assertEqual(memio.peek(-1), abc)
+            self.assertEqual(memio.peek(len(abc) + 100), abc)
+            self.assertEqual(memio.tell(), len(buf))
+
+        with self.ioclass(buf) as memio:
+            memio.seek(len(buf))
+            self.assertEqual(memio.peek(), self.EOF)
+
+        # Length greater than DEFAULT_BUFFER_SIZE
+        buf = self.buftype("1234567890" * io.DEFAULT_BUFFER_SIZE)
+        with self.ioclass(buf) as memio:
+            self.assertEqual(memio.peek(), buf[:io.DEFAULT_BUFFER_SIZE])
+            self.assertEqual(memio.peek(0), buf[:io.DEFAULT_BUFFER_SIZE])
+            self.assertEqual(memio.peek(-1), buf[:io.DEFAULT_BUFFER_SIZE])
+            self.assertEqual(memio.peek(io.DEFAULT_BUFFER_SIZE + 100),
+                             buf[:io.DEFAULT_BUFFER_SIZE + 100])
+            self.assertEqual(memio.peek(io.DEFAULT_BUFFER_SIZE * 100), buf)
+
+        # Current position beyond buffer end
+        with self.ioclass(buf) as memio:
+            memio.seek(len(buf) + 100)
+            self.assertEqual(memio.peek(), self.EOF)
+        with self.ioclass(buf) as memio:
+            memio.read()
+            memio.truncate(0)
+            self.assertEqual(memio.tell(), len(buf))
+            self.assertEqual(memio.peek(), self.EOF)
+
+
+        # Peek after close raises
+        self.assertRaises(ValueError, memio.peek)
+
     def test_unicode(self):
         memio = self.ioclass()
 

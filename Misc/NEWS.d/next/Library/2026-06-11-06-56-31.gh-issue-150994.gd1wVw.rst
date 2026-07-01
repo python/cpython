@@ -1,0 +1,1 @@
+Make type annotations in the private ``_colorize`` module resolvable.

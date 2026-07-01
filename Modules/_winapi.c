@@ -1684,6 +1684,9 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
             }
             PyMem_Free((void *)buffer);
         }
+        else {
+            PyErr_NoMemory();
+        }
     } else {
         PyErr_SetFromWindowsErr(0);
     }
@@ -2394,6 +2397,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
     while (i < nhandles) {
         BatchedWaitData *data = (BatchedWaitData*)PyMem_Malloc(sizeof(BatchedWaitData));
         if (!data) {
+            PyErr_NoMemory();
             goto error;
         }
         thread_data[thread_count++] = data;
@@ -3145,6 +3149,21 @@ error:
 }
 
 
+/*[clinic input]
+_winapi.GetTickCount64
+
+Number of milliseconds that have elapsed since the system was started.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetTickCount64_impl(PyObject *module)
+/*[clinic end generated code: output=cb33c0568f0b3ed1 input=77ed6539ac7d6590]*/
+{
+    ULONGLONG ticks = GetTickCount64();
+    return PyLong_FromUnsignedLongLong(ticks);
+}
+
+
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
@@ -3196,6 +3215,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF
     _WINAPI_COPYFILE2_METHODDEF
     _WINAPI_GETPROCESSMEMORYINFO_METHODDEF
+    _WINAPI_GETTICKCOUNT64_METHODDEF
     {NULL, NULL}
 };
 
