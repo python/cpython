@@ -1697,6 +1697,21 @@ prepare_s(PyStructObject *self, PyObject *format)
         if (e == NULL)
             return -1;
 
+        if (strcmp(e->format, "F") == 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "The 'F' type code is deprecated, use 'Zf'", 1))
+            {
+                return -1;
+            }
+        }
+        if (strcmp(e->format, "D") == 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "The 'D' type code is deprecated, use 'Zd'", 1))
+            {
+                return -1;
+            }
+        }
+
         switch (c) {
             case 's': _Py_FALLTHROUGH;
             case 'p':
@@ -2065,6 +2080,20 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
                 }
                 v = PyBytes_FromStringAndSize(res + 1, n);
             } else {
+                if (strcmp(e->format, "F") == 0) {
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "The 'F' type code is deprecated, use 'Zf'", 1))
+                    {
+                        goto fail;
+                    }
+                }
+                if (strcmp(e->format, "D") == 0) {
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "The 'D' type code is deprecated, use 'Zd'", 1))
+                    {
+                        goto fail;
+                    }
+                }
                 v = e->unpack(state, res, e);
             }
             if (v == NULL)

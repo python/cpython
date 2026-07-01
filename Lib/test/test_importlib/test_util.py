@@ -328,6 +328,17 @@ class PEP3147Tests:
 
     tag = sys.implementation.cache_tag
 
+    def setUp(self):
+        # Most of these tests assume the default (unset) pycache prefix, so
+        # clear it for the duration of the test (e.g. when the test suite is
+        # run with PYTHONPYCACHEPREFIX set).  Tests that need a specific prefix
+        # set their own via util.temporary_pycache_prefix().
+        self._orig_pycache_prefix = sys.pycache_prefix
+        sys.pycache_prefix = None
+
+    def tearDown(self):
+        sys.pycache_prefix = self._orig_pycache_prefix
+
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag not be None')
     def test_cache_from_source(self):

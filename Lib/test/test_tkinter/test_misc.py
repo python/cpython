@@ -592,7 +592,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         ms = self.root.tk_inactive()
         self.assertIsInstance(ms, int)
         # A count of milliseconds, or -1 if the windowing system lacks support.
-        self.assertGreaterEqual(ms, -1)
+        if self.root._windowingsystem != 'win32':
+            # On Windows the value can overflow to a negative number
+            # (Tk ticket 3cb7c4ac72d4).
+            self.assertGreaterEqual(ms, -1)
         # Resetting the timer returns None and does not raise.
         self.assertIsNone(self.root.tk_inactive(reset=True))
 

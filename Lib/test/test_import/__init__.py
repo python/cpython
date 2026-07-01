@@ -1669,6 +1669,11 @@ class PycacheTests(unittest.TestCase):
         unlink(self.source)
 
     def setUp(self):
+        # These tests assume bytecode is written next to the source in a
+        # local __pycache__ directory, so neutralize any pycache prefix (e.g.
+        # when the test suite is run with PYTHONPYCACHEPREFIX set).
+        self._orig_pycache_prefix = sys.pycache_prefix
+        sys.pycache_prefix = None
         self.source = TESTFN + '.py'
         self._clean()
         with open(self.source, 'w', encoding='utf-8') as fp:
@@ -1680,6 +1685,7 @@ class PycacheTests(unittest.TestCase):
         assert sys.path[0] == os.curdir, 'Unexpected sys.path[0]'
         del sys.path[0]
         self._clean()
+        sys.pycache_prefix = self._orig_pycache_prefix
 
     @skip_if_dont_write_bytecode
     def test_import_pyc_path(self):
