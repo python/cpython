@@ -1784,9 +1784,9 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
- * flushes pending RLE samples via flush_pending_rle(), which increments
- * writer->total_samples for each one. Caching before finalize would lose
- * those trailing samples. */
+ * flushes pending RLE records and updates the file header before the writer is
+ * destroyed. Caching before finalize would preserve a count for a file that
+ * might still fail to finish. */
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
 {
