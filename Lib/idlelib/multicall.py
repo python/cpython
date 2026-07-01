@@ -311,11 +311,10 @@ def _triplet_to_sequence(triplet):
         return '<'+_state_names[triplet[0]]+_types[triplet[1]][0]+'>'
 
 
-def _warn_bad_binding(triplet, err):
-    # Ignore a key binding invalidated by a typo in the user's config
-    # instead of crashing IDLE (gh-55646).
-    print(f'Warning: ignoring invalid key binding '
-          f'{_triplet_to_sequence(triplet)!r}: {err}', file=sys.stderr)
+def _warn_bad_binding(sequence, err):
+    # gh-55646: warn instead of crashing on an invalid key binding.
+    print(f'Warning: ignoring invalid key binding {sequence!r}: {err}',
+          file=sys.stderr)
 
 
 _multicall_dict = {}
@@ -356,7 +355,8 @@ def MultiCallCreator(widget):
                             try:
                                 self.__binders[triplet[1]].bind(triplet, func)
                             except tkinter.TclError as err:
-                                _warn_bad_binding(triplet, err)
+                                _warn_bad_binding(_triplet_to_sequence(triplet),
+                                                  err)
                                 bad.append(triplet)
                         for triplet in bad:  # Drop the invalid sequences.
                             ei[1].remove(triplet)
@@ -386,13 +386,17 @@ def MultiCallCreator(widget):
                 triplet = _parse_sequence(seq)
                 if triplet is None:
                     #print("Tkinter event_add(%s)" % seq, file=sys.__stderr__)
-                    widget.event_add(self, virtual, seq)
+                    try:
+                        widget.event_add(self, virtual, seq)
+                    except tkinter.TclError as err:
+                        _warn_bad_binding(seq, err)
+                        continue  # Drop the invalid sequence.
                 else:
                     if func is not None:
                         try:
                             self.__binders[triplet[1]].bind(triplet, func)
                         except tkinter.TclError as err:
-                            _warn_bad_binding(triplet, err)
+                            _warn_bad_binding(_triplet_to_sequence(triplet), err)
                             continue  # Drop the invalid sequence.
                     triplets.append(triplet)
 

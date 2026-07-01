@@ -1,11 +1,9 @@
 "Test multicall, coverage 33%."
 
 from idlelib import multicall
-import io
 import unittest
-from test.support import requires
+from test.support import requires, captured_stderr
 from tkinter import Tk, Text
-from unittest import mock
 
 
 class MultiCallTest(unittest.TestCase):
@@ -45,12 +43,29 @@ class MultiCallTest(unittest.TestCase):
         mctext = self.mc(self.root)
         self.assertIs(mctext.yview.__func__, Text.yview)
 
-    def test_invalid_binding(self):
-        # gh-55646: an invalid key binding must not crash IDLE.
+    def test_valid_binding(self):
+        # A valid key binding must bind without a warning (cf. gh-55646).
         mctext = self.mc(self.root)
-        # 'up' is not a keysym; it should be 'Up'.
-        mctext.event_add('<<test-bad>>', '<Alt-Key-up>')
-        with mock.patch('sys.stderr', new_callable=io.StringIO) as stderr:
+        with captured_stderr() as stderr:
+            mctext.event_add('<<test-good>>', '<Control-Key-Up>')
+            mctext.bind('<<test-good>>', lambda e: None)
+        self.assertEqual(stderr.getvalue(), '')
+
+    def test_invalid_triplet_binding(self):
+        # gh-55646: '<Control-Key-up>' parses into a triplet on every platform,
+        # so Tk rejects it in bind().
+        mctext = self.mc(self.root)
+        with captured_stderr() as stderr:
+            mctext.event_add('<<test-bad>>', '<Control-Key-up>')  # Must not raise.
+            mctext.bind('<<test-bad>>', lambda e: None)  # Must not raise.
+        self.assertIn('invalid key binding', stderr.getvalue())
+
+    def test_invalid_nontriplet_binding(self):
+        # gh-55646: '<Foo-Key-Up>' has no valid modifier, so MultiCall does not
+        # parse it and falls back to Tk's event_add, which rejects it.
+        mctext = self.mc(self.root)
+        with captured_stderr() as stderr:
+            mctext.event_add('<<test-bad>>', '<Foo-Key-Up>')  # Must not raise.
             mctext.bind('<<test-bad>>', lambda e: None)  # Must not raise.
         self.assertIn('invalid key binding', stderr.getvalue())
 
