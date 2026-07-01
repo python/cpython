@@ -70,7 +70,8 @@ typedef struct
 
     PyObject *statement_cache;
 
-    /* Lists of weak references to blobs used within this connection */
+    /* Lists of weak references to cursors and blobs used within this connection */
+    PyObject *cursors;
     PyObject *blobs;
 
     PyObject* row_factory;

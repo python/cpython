@@ -587,6 +587,33 @@ class WindowFunctionTests(unittest.TestCase):
         self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
                                self.cur.execute, self.query % "err_val_ret")
 
+    def test_close_conn_in_window_func_value(self):
+        # gh-145040: closing connection in window function value() callback.
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x INTEGER)")
+        con.executemany("INSERT INTO t VALUES(?)",
+                        [(i,) for i in range(20)])
+
+        class CloseConnWindow:
+            def step(self, value):
+                pass
+            def finalize(self):
+                return 0
+            def value(self):
+                con.close()
+                return 0
+            def inverse(self, value):
+                pass
+
+        con.create_window_function("evil_win", 1, CloseConnWindow)
+        with self.assertRaises(sqlite.OperationalError):
+            cursor = con.execute(
+                "SELECT evil_win(x) OVER "
+                "(ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM t"
+            )
+            list(cursor)
+        con.close()
+
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):
@@ -722,6 +749,140 @@ class AggregateTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                 'takes exactly 3 positional arguments'):
             self.con.create_aggregate("test", 1, aggregate_class=AggrText)
+
+    def test_aggr_close_conn_in_step(self):
+        # Connection.close() in an aggregate step callback must not crash.
+        con = sqlite.connect(":memory:", autocommit=True)
+        cur = con.cursor()
+        cur.execute("CREATE TABLE t(x INTEGER)")
+        for i in range(50):
+            cur.execute("INSERT INTO t VALUES (?)", (i,))
+
+        class CloseConnAgg:
+            def __init__(self):
+                self.total = 0
+
+            def step(self, value):
+                self.total += value
+                con.close()
+
+            def finalize(self):
+                return self.total
+
+        con.create_aggregate("agg_close", 1, CloseConnAgg)
+        with self.assertRaises(sqlite.OperationalError):
+            con.execute("SELECT agg_close(x) FROM t")
+        con.close()
+
+    def test_close_conn_in_nested_callback(self):
+        # gh-145040: close() must be prevented even in nested callbacks.
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x INTEGER)")
+        for i in range(5):
+            con.execute("INSERT INTO t VALUES(?)", (i,))
+
+        def outer_func(x):
+            con.close()
+            return x
+
+        def inner_func(x):
+            return x * 10
+
+        con.create_function("outer_func", 1, outer_func)
+        con.create_function("inner_func", 1, inner_func)
+        with self.assertRaises(sqlite.OperationalError):
+            con.execute("SELECT outer_func(inner_func(x)) FROM t")
+        # Connection must still be usable after the failed close attempt.
+        self.assertEqual(con.execute("SELECT 1").fetchone(), (1,))
+        con.close()
+
+    def test_close_conn_in_nested_callback_caught(self):
+        # gh-145040: if the ProgrammingError from close() is caught inside
+        # the callback, execution continues normally.
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x INTEGER)")
+        con.execute("INSERT INTO t VALUES(1)")
+
+        def swallow_close(x):
+            try:
+                con.close()
+            except sqlite.ProgrammingError:
+                pass
+            return x
+
+        con.create_function("swallow_close", 1, swallow_close)
+        # The close() was prevented and the exception was caught,
+        # so the execute should succeed.
+        result = con.execute("SELECT swallow_close(x) FROM t").fetchone()
+        self.assertEqual(result, (1,))
+        # Connection must still be usable.
+        self.assertEqual(con.execute("SELECT 1").fetchone(), (1,))
+        con.close()
+
+    def test_close_conn_in_udf_during_executemany(self):
+        # gh-145040: closing connection in UDF during executemany.
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x)")
+
+        def close_conn(x):
+            con.close()
+            return x
+
+        con.create_function("close_conn", 1, close_conn)
+        with self.assertRaises(sqlite.OperationalError):
+            con.executemany("INSERT INTO t VALUES(close_conn(?))",
+                            [(i,) for i in range(10)])
+        con.close()
+
+    def test_close_conn_in_progress_handler_during_iternext(self):
+        # gh-145040: closing connection in progress handler during iteration.
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x)")
+        con.executemany("INSERT INTO t VALUES(?)",
+                        [(i,) for i in range(100)])
+
+        count = 0
+        def close_progress():
+            nonlocal count
+            count += 1
+            if count >= 5:
+                con.close()
+                return 1
+            return 0
+
+        cursor = con.execute("SELECT * FROM t")
+        con.set_progress_handler(close_progress, 1)
+        with self.assertRaises(sqlite.OperationalError):
+            for row in cursor:
+                pass
+        con.close()
+
+    def test_close_conn_in_collation_callback(self):
+        # gh-145040: closing connection in collation callback.
+        con = sqlite.connect(":memory:", autocommit=True)
+        con.execute("CREATE TABLE t(x TEXT)")
+        con.executemany("INSERT INTO t VALUES(?)",
+                        [(f"item_{i}",) for i in range(50)])
+
+        count = 0
+        def evil_collation(a, b):
+            nonlocal count
+            count += 1
+            if count == 10:
+                con.close()
+            if a < b:
+                return -1
+            elif a > b:
+                return 1
+            return 0
+
+        con.create_collation("evil_coll", evil_collation)
+        msg = "from within a callback"
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            con.execute(
+                "SELECT * FROM t ORDER BY x COLLATE evil_coll"
+            )
+        con.close()
 
 
 class AuthorizerTests(unittest.TestCase):
