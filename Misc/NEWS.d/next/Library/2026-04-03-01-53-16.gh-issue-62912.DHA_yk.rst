@@ -1,0 +1,2 @@
+Correct pure-Python version of the :func:`operator.index` to behave like the
+C version.  Patch by Sergey B Kirpichev.
