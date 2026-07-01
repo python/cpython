@@ -200,6 +200,7 @@ static int codegen_nameop(compiler *, location, identifier, expr_context_ty);
 static int codegen_visit_stmt(compiler *, stmt_ty);
 static int codegen_visit_keyword(compiler *, keyword_ty);
 static int codegen_visit_expr(compiler *, expr_ty);
+static int codegen_visit_unused_expr(compiler *, expr_ty);
 static int codegen_augassign(compiler *, stmt_ty);
 static int codegen_annassign(compiler *, stmt_ty);
 static int codegen_subscript(compiler *, expr_ty);
@@ -233,8 +234,6 @@ typedef enum {
     ITERATOR_ON_STACK = 2,
 } IterStackPosition;
 
-static int
-codegen_listcomp_impl(compiler *c, expr_ty e, bool avoid_creation);
 static int codegen_sync_comprehension_generator(
                                       compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
@@ -476,6 +475,9 @@ codegen_addop_j(instr_sequence *seq, location loc,
             }                                                               \
         }                                                                   \
     } while (0)
+
+#define VISIT_UNUSED(C, TYPE, V) \
+    RETURN_IF_ERROR(codegen_visit_unused_ ## TYPE((C), (V)))
 
 static int
 codegen_call_exit_with_nones(compiler *c, location loc)
@@ -3086,13 +3088,7 @@ codegen_stmt_expr(compiler *c, location loc, expr_ty value)
         return SUCCESS;
     }
 
-    if (value->kind == ListComp_kind) {
-        /* Optimization: Don't bother creating structures if they won't be
-         * used. */
-        return codegen_listcomp_impl(c, value, /*avoid_creation=*/true);
-    }
-
-    VISIT(c, expr, value);
+    VISIT_UNUSED(c, expr, value);
     ADDOP(c, NO_LOCATION, POP_TOP); /* artificial */
     return SUCCESS;
 }
@@ -5110,9 +5106,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         if (pop_inlined_comprehension_state(c, loc, &inline_state)) {
             goto error;
         }
-        if (avoid_creation) {
-            ADDOP(c, loc, POP_TOP);
-        }
         return SUCCESS;
     }
 
@@ -5174,19 +5167,13 @@ codegen_genexp(compiler *c, expr_ty e)
 }
 
 static int
-codegen_listcomp_impl(compiler *c, expr_ty e, bool avoid_creation)
+codegen_listcomp(compiler *c, expr_ty e, bool avoid_creation)
 {
     assert(e->kind == ListComp_kind);
     _Py_DECLARE_STR(anon_listcomp, "<listcomp>");
     return codegen_comprehension(c, e, COMP_LISTCOMP, &_Py_STR(anon_listcomp),
                                  e->v.ListComp.generators,
                                  e->v.ListComp.elt, NULL, avoid_creation);
-}
-
-static int
-codegen_listcomp(compiler *c, expr_ty e)
-{
-    return codegen_listcomp_impl(c, e, false);
 }
 
 static int
@@ -5455,7 +5442,7 @@ codegen_with(compiler *c, stmt_ty s)
 }
 
 static int
-codegen_visit_expr(compiler *c, expr_ty e)
+codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
 {
     if (Py_EnterRecursiveCall(" during compilation")) {
         return ERROR;
@@ -5498,7 +5485,7 @@ codegen_visit_expr(compiler *c, expr_ty e)
     case GeneratorExp_kind:
         return codegen_genexp(c, e);
     case ListComp_kind:
-        return codegen_listcomp(c, e);
+        return codegen_listcomp(c, e, result_is_unused);
     case SetComp_kind:
         return codegen_setcomp(c, e);
     case DictComp_kind:
@@ -5606,6 +5593,18 @@ codegen_visit_expr(compiler *c, expr_ty e)
         return codegen_tuple(c, e);
     }
     return SUCCESS;
+}
+
+static int
+codegen_visit_expr(compiler *c, expr_ty e)
+{
+    return codegen_visit_expr_impl(c, e, false);
+}
+
+static int
+codegen_visit_unused_expr(compiler *c, expr_ty e)
+{
+    return codegen_visit_expr_impl(c, e, true);
 }
 
 static bool
