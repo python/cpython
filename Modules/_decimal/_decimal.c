@@ -30,6 +30,7 @@
 #endif
 
 #include <Python.h>
+#include "pycore_context.h"       // _PyContext_CurrentDepth()
 #include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
@@ -224,6 +225,11 @@ typedef struct PyDecContextObject {
     int capitals;
     PyThreadState *tstate;
     decimal_state *modstate;
+    /* Depth of the contextvars context this context object was bound into
+       (see _pycontextobject.ctx_depth).  Used to detect when the current
+       context object was inherited from an outer context/task and therefore
+       must be copied to keep mutations isolated. */
+    uint64_t ctx_depth;
 } PyDecContextObject;
 
 #define _PyDecContextObject_CAST(op)    ((PyDecContextObject *)(op))
@@ -247,6 +253,7 @@ typedef struct {
 #define SdFlags(v) (*_PyDecSignalDictObject_CAST(v)->flags)
 #define CTX(v) (&_PyDecContextObject_CAST(v)->ctx)
 #define CtxCaps(v) (_PyDecContextObject_CAST(v)->capitals)
+#define CtxDepth(v) (_PyDecContextObject_CAST(v)->ctx_depth)
 
 static inline decimal_state *
 get_module_state_from_ctx(PyObject *v)
@@ -1477,6 +1484,7 @@ context_new(PyTypeObject *type,
     CtxCaps(self) = 1;
     self->tstate = NULL;
     self->modstate = state;
+    self->ctx_depth = 0;
 
     if (type == state->PyDecContext_Type) {
         PyObject_GC_Track(self);
@@ -1915,13 +1923,17 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
 }
 #else
 static PyObject *
-init_current_context(decimal_state *state)
+init_current_context(decimal_state *state, PyObject *prev_context,
+                     uint64_t depth)
 {
-    PyObject *tl_context = context_copy(state, state->default_context_template);
+    PyObject *tl_context = context_copy(state, prev_context);
     if (tl_context == NULL) {
         return NULL;
     }
     CTX(tl_context)->status = 0;
+    /* Stamp the copy with the current context's depth so that subsequent
+       lookups in this same context recognize it as locally owned. */
+    CtxDepth(tl_context) = depth;
 
     PyObject *tok = PyContextVar_Set(state->current_context_var, tl_context);
     if (tok == NULL) {
@@ -1941,11 +1953,24 @@ current_context(decimal_state *state)
         return NULL;
     }
 
+    uint64_t cur_depth = _PyContext_CurrentDepth();
+
     if (tl_context != NULL) {
-        return tl_context;
+        if (CtxDepth(tl_context) == cur_depth) {
+            /* The context object was created for this same context scope. */
+            return tl_context;
+        }
+        /* The context object was inherited from an outer context (e.g. a
+           parent thread or asyncio task); copy it so that mutations stay
+           isolated from the context that shared it. */
+        PyObject *new_context = init_current_context(state, tl_context,
+                                                     cur_depth);
+        Py_DECREF(tl_context);
+        return new_context;
     }
 
-    return init_current_context(state);
+    return init_current_context(state, state->default_context_template,
+                                cur_depth);
 }
 
 /* ctxobj := borrowed reference to the current context */
@@ -1987,6 +2012,10 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
     else {
         Py_INCREF(v);
     }
+
+    /* Mark the context object as owned by the current context scope, so a
+       following getcontext() returns this very object rather than a copy. */
+    CtxDepth(v) = _PyContext_CurrentDepth();
 
     PyObject *tok = PyContextVar_Set(state->current_context_var, v);
     Py_DECREF(v);
