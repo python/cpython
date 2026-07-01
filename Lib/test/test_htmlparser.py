@@ -1011,6 +1011,115 @@ text
              ('endtag', 'a'), ('data', ' bar & baz')]
         )
 
+    @support.subTests('trigger,convert_charrefs,source,expected', [
+        # convert_charrefs=True takes the rawdata.find('<') branch.
+        ('data', True, 'abc<x>def', [('data', 'abc')]),
+        ('starttag', True, '<a>x<b>y', [('starttag', 'a')]),
+        ('endtag', True, '<a></a>tail<b>',
+         [('starttag', 'a'), ('endtag', 'a')]),
+        ('comment', True, '<!--c-->after<x>', [('comment', 'c')]),
+        # convert_charrefs=False takes the self.interesting.search branch
+        # and additionally reports charrefs/entityrefs.
+        ('data', False, 'abc<x>def', [('data', 'abc')]),
+        ('starttag', False, '<a>x<b>y', [('starttag', 'a')]),
+        ('endtag', False, '<a></a>tail<b>',
+         [('starttag', 'a'), ('endtag', 'a')]),
+        ('comment', False, '<!--c-->after<x>', [('comment', 'c')]),
+        ('charref', False, 'a&#97;b<x>',
+         [('data', 'a'), ('charref', '97')]),
+        ('entityref', False, 'a&amp;b<x>',
+         [('data', 'a'), ('entityref', 'amp')]),
+    ])
+    def test_reset_in_handler(self, trigger, convert_charrefs, source,
+                              expected):
+        # gh-70398: calling reset() from within a handler used to leave
+        # goahead() processing a stale buffer and crash with an
+        # AssertionError.  It should instead stop parsing the current data.
+        class Resetter(html.parser.HTMLParser):
+            def __init__(self, trigger, **kw):
+                super().__init__(**kw)
+                self.trigger = trigger
+                self.done = False
+                self.events = []
+            def _reset_once(self):
+                if not self.done:
+                    self.done = True
+                    self.reset()
+            def handle_starttag(self, tag, attrs):
+                self.events.append(('starttag', tag))
+                if self.trigger == 'starttag':
+                    self._reset_once()
+            def handle_endtag(self, tag):
+                self.events.append(('endtag', tag))
+                if self.trigger == 'endtag':
+                    self._reset_once()
+            def handle_data(self, data):
+                self.events.append(('data', data))
+                if self.trigger == 'data':
+                    self._reset_once()
+            def handle_comment(self, data):
+                self.events.append(('comment', data))
+                if self.trigger == 'comment':
+                    self._reset_once()
+            def handle_charref(self, name):
+                self.events.append(('charref', name))
+                if self.trigger == 'charref':
+                    self._reset_once()
+            def handle_entityref(self, name):
+                self.events.append(('entityref', name))
+                if self.trigger == 'entityref':
+                    self._reset_once()
+
+        parser = Resetter(trigger, convert_charrefs=convert_charrefs)
+        parser.feed(source)
+        # Only events up to the reset() call are reported; the rest
+        # of the now-discarded buffer is not processed.
+        self.assertEqual(parser.events, expected)
+        self.assertEqual(parser.rawdata, '')
+        # A fresh document still parses correctly after the reset.
+        parser.events.clear()
+        parser.feed('<keep>kept')
+        parser.close()
+        self.assertEqual(parser.events,
+                         [('starttag', 'keep'), ('data', 'kept')])
+
+    @support.subTests('convert_charrefs', [True, False])
+    def test_feed_in_handler(self, convert_charrefs):
+        # gh-70398: a handler calling feed() (rather than reset()) also
+        # swaps self.rawdata mid-parse and used to crash goahead().  The
+        # already-consumed prefix is re-emitted (pre-existing behavior);
+        # what matters is that it does not crash and the parser stays
+        # usable for the newly fed data and for a later feed()/close().
+        class Feeder(html.parser.HTMLParser):
+            def __init__(self, extra, **kw):
+                super().__init__(**kw)
+                self.extra = extra
+                self.done = False
+                self.events = []
+            def handle_starttag(self, tag, attrs):
+                self.events.append(('starttag', tag))
+                if not self.done:
+                    self.done = True
+                    self.feed(self.extra)
+            def handle_endtag(self, tag):
+                self.events.append(('endtag', tag))
+            def handle_data(self, data):
+                self.events.append(('data', data))
+
+        parser = Feeder('<b>more', convert_charrefs=convert_charrefs)
+        parser.feed('<a>x</a>')
+        parser.close()
+        # The data fed from within the handler is parsed.
+        self.assertIn(('starttag', 'b'), parser.events)
+        self.assertIn(('data', 'more'), parser.events)
+        self.assertEqual(parser.rawdata, '')
+        # The parser remains usable afterwards.
+        parser.events.clear()
+        parser.feed('<keep>kept')
+        parser.close()
+        self.assertEqual(parser.events,
+                         [('starttag', 'keep'), ('data', 'kept')])
+
     @support.requires_resource('cpu')
     def test_eof_no_quadratic_complexity(self):
         # Each of these examples used to take about an hour.
