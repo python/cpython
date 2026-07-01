@@ -2339,6 +2339,17 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
 
     Parameter = cls._parameter_cls
 
+    # A real Python function has valid identifier names in co_varnames, so its
+    # parameters can be built without re-validating them.  A function-like
+    # object (is_duck_function) carries an arbitrary code object whose
+    # co_varnames are not guaranteed to be valid identifiers, so it must go
+    # through the validating constructor.
+    if is_duck_function:
+        def make_param(name, kind, default, annotation, _P=Parameter):
+            return _P(name, kind, default=default, annotation=annotation)
+    else:
+        make_param = Parameter._from_valid_args
+
     # Parameter information.
     func_code = func.__code__
     pos_count = func_code.co_argcount
@@ -2366,8 +2377,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     for name in positional[:non_default_count]:
         kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=kind))
+        parameters.append(make_param(name, kind, _empty, annotation))
         if posonly_left:
             posonly_left -= 1
 
@@ -2375,9 +2385,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     for offset, name in enumerate(positional[non_default_count:]):
         kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=kind,
-                                    default=defaults[offset]))
+        parameters.append(make_param(name, kind, defaults[offset], annotation))
         if posonly_left:
             posonly_left -= 1
 
@@ -2385,8 +2393,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     if func_code.co_flags & CO_VARARGS:
         name = arg_names[pos_count + keyword_only_count]
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=_VAR_POSITIONAL))
+        parameters.append(make_param(name, _VAR_POSITIONAL, _empty, annotation))
 
     # Keyword-only parameters.
     for name in keyword_only:
@@ -2395,9 +2402,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
             default = kwdefaults.get(name, _empty)
 
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=_KEYWORD_ONLY,
-                                    default=default))
+        parameters.append(make_param(name, _KEYWORD_ONLY, default, annotation))
     # **kwargs
     if func_code.co_flags & CO_VARKEYWORDS:
         index = pos_count + keyword_only_count
@@ -2406,8 +2411,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
 
         name = arg_names[index]
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=_VAR_KEYWORD))
+        parameters.append(make_param(name, _VAR_KEYWORD, _empty, annotation))
 
     # Is 'func' is a pure Python function - don't validate the
     # parameters list (for correct order and defaults), it should be OK.
@@ -2735,6 +2739,24 @@ class Parameter:
             raise ValueError('{!r} is not a valid parameter name'.format(name))
 
         self._name = name
+
+    @classmethod
+    def _from_valid_args(cls, name, kind, default, annotation):
+        # Fast path for trusted callers (e.g. _signature_from_function), where
+        # the name comes from a code object's co_varnames -- always a valid,
+        # non-keyword identifier -- and the kind is one of the module-level
+        # _ParameterKind constants. Skips the validation done in __init__.
+        # Implicit comprehension arguments ('.0') are rare and need the
+        # recast __init__ performs, so defer those to it rather than
+        # duplicate the logic here.
+        if name[0] == '.':
+            return cls(name, kind=kind, default=default, annotation=annotation)
+        self = cls.__new__(cls)
+        self._name = name
+        self._kind = kind
+        self._default = default
+        self._annotation = annotation
+        return self
 
     def __reduce__(self):
         return (type(self),
