@@ -1158,7 +1158,35 @@ def get_machine_id():
     return None
 
 
-def detect_virt():
+def detect_virt(info_add):
+    # On Windows, use WMI to get the computer manufacturer and the BIOS version
+    if MS_WINDOWS:
+        data = wmi_query("SELECT Manufacturer FROM Win32_ComputerSystem")
+        manufacturer = data.get('Manufacturer', '')
+        patterns = (
+            'QEMU',
+            'VMWare',
+            'Virtual',
+        )
+        if any(pattern in manufacturer for pattern in patterns):
+            return manufacturer
+        elif manufacturer:
+            # Log the value to update patterns on new VM
+            info_add('system.manufacturer', manufacturer)
+
+        data = wmi_query("SELECT Version FROM Win32_Bios")
+        bios_version = data.get('Version', '')
+        patterns = (
+            'VIRTUAL',
+            'VMware',
+            'Xen',
+        )
+        if any(pattern in bios_version for pattern in patterns):
+            return bios_version
+        elif bios_version:
+            # Log the value to update patterns on new VM
+            info_add('system.bios_version', bios_version)
+
     # Run systemd-detect-virt command
     virt = run_command(["systemd-detect-virt"], check=False)
     if virt and virt != "none":
@@ -1216,16 +1244,7 @@ def collect_system(info_add):
             uptime = f'{uptime} sec'
         info_add('system.uptime', uptime)
 
-    virt = None
-    if MS_WINDOWS:
-        data = wmi_query("SELECT Manufacturer FROM Win32_ComputerSystem")
-        manufacturer = data.get('Manufacturer', '')
-        if manufacturer == 'QEMU':
-            virt = manufacturer
-        elif manufacturer:
-            info_add('system.manufacturer', manufacturer)
-    if not virt:
-        virt = detect_virt()
+    virt = detect_virt()
     if virt:
         info_add('system.virt', virt)
 
