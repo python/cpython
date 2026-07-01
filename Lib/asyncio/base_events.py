@@ -590,7 +590,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             return_exceptions=True)
 
         for result, agen in zip(results, closing_agens):
-            if isinstance(result, Exception):
+            if isinstance(result, (Exception, exceptions.CancelledError)):
                 self.call_exception_handler({
                     'message': f'an error occurred during closing of '
                                f'asynchronous generator {agen!r}',
