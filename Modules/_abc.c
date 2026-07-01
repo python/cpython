@@ -35,21 +35,13 @@ get_abc_state(PyObject *module)
 static inline uint64_t
 get_invalidation_counter(_abcmodule_state *state)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64(&state->abc_invalidation_counter);
-#else
-    return state->abc_invalidation_counter;
-#endif
+    return FT_ATOMIC_LOAD_UINT64_RELAXED(state->abc_invalidation_counter);
 }
 
 static inline void
 increment_invalidation_counter(_abcmodule_state *state)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_uint64(&state->abc_invalidation_counter, 1);
-#else
-    state->abc_invalidation_counter++;
-#endif
+    FT_ATOMIC_ADD_UINT64(state->abc_invalidation_counter, 1);
 }
 
 /* This object stores internal state for ABCs.
@@ -65,6 +57,7 @@ typedef struct {
     PyObject *_abc_cache;
     PyObject *_abc_negative_cache;
     uint64_t _abc_negative_cache_version;
+    uint8_t _abc_issubclasscheck_recursive;
 } _abc_data;
 
 #define _abc_data_CAST(op)  ((_abc_data *)(op))
@@ -72,21 +65,31 @@ typedef struct {
 static inline uint64_t
 get_cache_version(_abc_data *impl)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint64(&impl->_abc_negative_cache_version);
-#else
-    return impl->_abc_negative_cache_version;
-#endif
+    return FT_ATOMIC_LOAD_UINT64_RELAXED(impl->_abc_negative_cache_version);
 }
 
 static inline void
 set_cache_version(_abc_data *impl, uint64_t version)
 {
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_store_uint64(&impl->_abc_negative_cache_version, version);
-#else
-    impl->_abc_negative_cache_version = version;
-#endif
+    FT_ATOMIC_STORE_UINT64_RELAXED(impl->_abc_negative_cache_version, version);
+}
+
+static inline uint8_t
+is_issubclasscheck_recursive(_abc_data *impl)
+{
+    return FT_ATOMIC_LOAD_UINT8_RELAXED(impl->_abc_issubclasscheck_recursive);
+}
+
+static inline void
+set_issubclasscheck_recursive(_abc_data *impl)
+{
+    FT_ATOMIC_STORE_UINT8_RELAXED(impl->_abc_issubclasscheck_recursive, 1);
+}
+
+static inline void
+unset_issubclasscheck_recursive(_abc_data *impl)
+{
+    FT_ATOMIC_STORE_UINT8_RELAXED(impl->_abc_issubclasscheck_recursive, 0);
 }
 
 static int
@@ -139,6 +142,7 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->_abc_cache = NULL;
     self->_abc_negative_cache = NULL;
     self->_abc_negative_cache_version = get_invalidation_counter(state);
+    self->_abc_issubclasscheck_recursive = 0;
     return (PyObject *) self;
 }
 
@@ -175,6 +179,30 @@ _get_impl(PyObject *module, PyObject *self)
         return NULL;
     }
     return (_abc_data *)impl;
+}
+
+/* If class is inherited from ABC, set data to point to internal ABC state of class, and return 1.
+   If object is not inherited from ABC, return 0.
+   If error is encountered, return -1.
+ */
+static int
+_get_optional_impl(_abcmodule_state *state, PyObject *self, _abc_data **data)
+{
+    assert(data != NULL);
+    PyObject *impl = NULL;
+    int res = PyObject_GetOptionalAttr(self, &_Py_ID(_abc_impl), &impl);
+    if (res <= 0) {
+        *data = NULL;
+        return res;
+    }
+    if (!Py_IS_TYPE(impl, state->_abc_data_type)) {
+        PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
+        Py_DECREF(impl);
+        *data = NULL;
+        return -1;
+    }
+    *data = (_abc_data *)impl;
+    return 1;
 }
 
 static int
@@ -347,11 +375,12 @@ _abc__get_dump(PyObject *module, PyObject *self)
     }
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(impl);
-    res = Py_BuildValue("NNNK",
+    res = Py_BuildValue("NNNKK",
                         PySet_New(impl->_abc_registry),
                         PySet_New(impl->_abc_cache),
                         PySet_New(impl->_abc_negative_cache),
-                        get_cache_version(impl));
+                        get_cache_version(impl),
+                        is_issubclasscheck_recursive(impl));
     Py_END_CRITICAL_SECTION();
     Py_DECREF(impl);
     return res;
@@ -584,7 +613,13 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     if (impl == NULL) {
         return NULL;
     }
+    // Add registry entry
     if (_add_to_weak_set(impl, &impl->_abc_registry, subclass) < 0) {
+        Py_DECREF(impl);
+        return NULL;
+    }
+    // Automatically include cache entry
+    if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -818,23 +853,53 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         if (scls == NULL) {
             goto end;
         }
-        int r = PyObject_IsSubclass(subclass, scls);
-        Py_DECREF(scls);
-        if (r > 0) {
-            if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
-                goto end;
-            }
-            result = Py_True;
+
+        _abc_data *scls_impl;
+        int scls_is_abc = _get_optional_impl(state, scls, &scls_impl);
+        if (scls_is_abc < 0) {
+            Py_DECREF(scls);
             goto end;
         }
+        if (scls_is_abc > 0) {
+            /*
+              If inside recursive issubclass check, avoid adding classes
+              to any cache because this may drastically increase memory usage.
+              Unfortunately, issubclass/__subclasscheck__ don't accept third
+              argument with context, so using global context within ABCMeta.
+              This is done only on first method call, next will use cache.
+            */
+            set_issubclasscheck_recursive(scls_impl);
+        }
+
+        // Perform recursive check
+        int r = PyObject_IsSubclass(subclass, scls);
+        Py_DECREF(scls);
+
+        if (scls_is_abc > 0) {
+            // reset recursion guard even if exception was raised in __subclasscheck__
+            unset_issubclasscheck_recursive(scls_impl);
+        }
+        Py_XDECREF(scls_impl);
+
         if (r < 0) {
+            goto end;
+        }
+        if (r > 0) {
+            if (!is_issubclasscheck_recursive(impl)) {
+                if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+                    goto end;
+                }
+            }
+            result = Py_True;
             goto end;
         }
     }
 
     /* No dice; update negative cache. */
-    if (_add_to_weak_set(impl, &impl->_abc_negative_cache, subclass) < 0) {
-        goto end;
+    if (!is_issubclasscheck_recursive(impl)) {
+        if (_add_to_weak_set(impl, &impl->_abc_negative_cache, subclass) < 0) {
+            goto end;
+        }
     }
     result = Py_False;
 
@@ -849,17 +914,6 @@ static int
 subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                              PyObject **result)
 {
-    // Fast path: check subclass is in weakref directly.
-    int ret = _in_weak_set(impl, &impl->_abc_registry, subclass);
-    if (ret < 0) {
-        *result = NULL;
-        return -1;
-    }
-    if (ret > 0) {
-        *result = Py_True;
-        return 1;
-    }
-
     PyObject *registry_shared;
     Py_BEGIN_CRITICAL_SECTION(impl);
     registry_shared = impl->_abc_registry;
@@ -874,6 +928,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     if (registry == NULL) {
         return -1;
     }
+    int ret = 0;
     PyObject *key;
     Py_ssize_t pos = 0;
     Py_hash_t hash;
