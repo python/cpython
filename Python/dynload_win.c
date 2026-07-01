@@ -164,12 +164,16 @@ _Py_CheckPython3(void)
     static int python3_checked = 0;
     static HANDLE hPython3;
     #define MAXPATHLEN 512
-    wchar_t py3path[MAXPATHLEN+1];
     if (python3_checked) {
         return hPython3 != NULL;
     }
     python3_checked = 1;
 
+#ifndef MS_WINDOWS_DESKTOP
+    // LoadPackagedLibrary doesn't accept absolute paths so load dll name from current app dir
+    hPython3 = LoadPackagedLibrary(PY3_DLLNAME, 0);
+#else
+    wchar_t py3path[MAXPATHLEN + 1];
     /* If there is a python3.dll next to the python3y.dll,
        use that DLL */
     if (PyWin_DLLhModule && GetModuleFileNameW(PyWin_DLLhModule, py3path, MAXPATHLEN)) {
@@ -202,6 +206,8 @@ _Py_CheckPython3(void)
             hPython3 = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
         }
     }
+#endif
+
     return hPython3 != NULL;
     #undef MAXPATHLEN
 #endif /* PY3_DLLNAME */
@@ -299,14 +305,18 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
         old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
 #endif
 
+        Py_BEGIN_ALLOW_THREADS
+#ifndef MS_WINDOWS_DESKTOP
+        hDLL = LoadPackagedLibrary(wpathname, 0);
+#else
         /* bpo-36085: We use LoadLibraryEx with restricted search paths
            to avoid DLL preloading attacks and enable use of the
            AddDllDirectory function. We add SEARCH_DLL_LOAD_DIR to
            ensure DLLs adjacent to the PYD are preferred. */
-        Py_BEGIN_ALLOW_THREADS
         hDLL = LoadLibraryExW(wpathname, NULL,
                               LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
                               LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+#endif
         Py_END_ALLOW_THREADS
         PyMem_Free(wpathname);
 
