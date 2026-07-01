@@ -3,6 +3,7 @@ import functools
 import platform
 import sys
 import textwrap
+import time
 import unittest
 import weakref
 import tkinter
@@ -613,6 +614,21 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.after(1, top.destroy)
         self.root.wait_window(top)  # Returns once the window is destroyed.
         self.assertFalse(top.winfo_exists())
+
+    def test_wait_visibility_timeout(self):
+        # The widget becomes viewable before the timeout elapses.
+        top = tkinter.Toplevel(self.root)
+        self.assertIs(
+            self.root.wait_visibility(top, timeout=support.SHORT_TIMEOUT), True)
+        self.assertTrue(top.winfo_viewable())
+        # The widget never becomes viewable: give up instead of blocking.
+        hidden = tkinter.Toplevel(self.root)
+        hidden.withdraw()
+        start = time.monotonic()
+        self.assertIs(self.root.wait_visibility(hidden, timeout=0.2), False)
+        self.assertGreaterEqual(time.monotonic() - start, 0.2)
+        self.assertFalse(hidden.winfo_viewable())
+        hidden.destroy()
 
     def test_tk_focusFollowsMouse(self):
         self.root.tk_focusFollowsMouse()  # No exception.
