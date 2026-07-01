@@ -34,7 +34,7 @@ class AbstractWidgetTest(AbstractTkTest):
         try:
             return self._scaling
         except AttributeError:
-            self._scaling = root.tk_scaling()
+            self._scaling = self.root.tk_scaling()
             return self._scaling
 
     def _str(self, value):
