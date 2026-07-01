@@ -40,11 +40,11 @@ jobs:
         # Install clang
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 20
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
-        sudo update-alternatives --set clang /usr/bin/clang-20
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
-        sudo update-alternatives --set clang++ /usr/bin/clang++-20
+        sudo ./llvm.sh 22
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-22 100
+        sudo update-alternatives --set clang /usr/bin/clang-22
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-22 100
+        sudo update-alternatives --set clang++ /usr/bin/clang++-22
 
         if [ "${SANITIZER}" = "TSan" ]; then
           # Reduce ASLR to avoid TSan crashing
