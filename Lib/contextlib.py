@@ -199,22 +199,18 @@ class _GeneratorContextManager(
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore
         del self.args, self.kwds, self.func
-        try:
-            return next(self.gen)
-        except StopIteration:
-            raise RuntimeError("generator didn't yield") from None
+        for value in self.gen:
+            return value
+        raise RuntimeError("generator didn't yield")
 
     def __exit__(self, typ, value, traceback):
         if typ is None:
-            try:
-                next(self.gen)
-            except StopIteration:
-                return False
-            else:
+            for _ in self.gen:
                 try:
                     raise RuntimeError("generator didn't stop")
                 finally:
                     self.gen.close()
+            return False
         else:
             if value is None:
                 # Need to force instantiation so we can reliably
@@ -272,22 +268,18 @@ class _AsyncGeneratorContextManager(
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore
         del self.args, self.kwds, self.func
-        try:
-            return await anext(self.gen)
-        except StopAsyncIteration:
-            raise RuntimeError("generator didn't yield") from None
+        async for value in self.gen:
+            return value
+        raise RuntimeError("generator didn't yield")
 
     async def __aexit__(self, typ, value, traceback):
         if typ is None:
-            try:
-                await anext(self.gen)
-            except StopAsyncIteration:
-                return False
-            else:
+            async for _ in self.gen:
                 try:
                     raise RuntimeError("generator didn't stop")
                 finally:
                     await self.gen.aclose()
+            return False
         else:
             if value is None:
                 # Need to force instantiation so we can reliably
