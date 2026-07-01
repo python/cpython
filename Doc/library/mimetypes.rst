@@ -225,30 +225,32 @@ than one MIME-type database; it provides an interface similar to the one of the
       Dictionary mapping suffixes to suffixes.  This is used to allow recognition of
       encoded files for which the encoding and the type are indicated by the same
       extension.  For example, the :file:`.tgz` extension is mapped to :file:`.tar.gz`
-      to allow the encoding and type to be recognized separately.  This is initially a
-      copy of the global :data:`suffix_map` defined in the module.
+      to allow the encoding and type to be recognized separately.
+      This is initialized with some predefined values.
 
 
    .. attribute:: MimeTypes.encodings_map
 
-      Dictionary mapping filename extensions to encoding types.  This is initially a
-      copy of the global :data:`encodings_map` defined in the module.
+      Dictionary mapping filename extensions to encoding types.
+      This is initialized with some predefined values.
 
 
    .. attribute:: MimeTypes.types_map
 
       Tuple containing two dictionaries, mapping filename extensions to MIME types:
       the first dictionary is for the non-standards types and the second one is for
-      the standard types. They are initialized by :data:`common_types` and
-      :data:`types_map`.
+      the standard types.
+      They are initialized with some predefined values and MIME type
+      information loaded from files specified by the *filenames* argument.
 
 
    .. attribute:: MimeTypes.types_map_inv
 
       Tuple containing two dictionaries, mapping MIME types to a list of filename
       extensions: the first dictionary is for the non-standards types and the
-      second one is for the standard types. They are initialized by
-      :data:`common_types` and :data:`types_map`.
+      second one is for the standard types.
+      They are initialized with some predefined values and MIME type
+      information loaded from files specified by the *filenames* argument.
 
 
    .. method:: MimeTypes.guess_extension(type, strict=True)
