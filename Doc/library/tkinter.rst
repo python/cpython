@@ -2071,6 +2071,7 @@ Base and mixin classes
 
       Return the geometry of the widget, in the form ``widthxheight+x+y``.
       All dimensions are in pixels.
+      An offset can be negative; see :meth:`~Wm.geometry`.
 
    .. method:: winfo_height()
 
@@ -2541,6 +2542,8 @@ Base and mixin classes
       *width* and *height* are in pixels (or grid units for a gridded window);
       a position preceded by ``+`` is measured from the left or top edge of the
       screen and one preceded by ``-`` from the right or bottom edge.
+      An offset can be negative, as in ``'200x100+-9+-8'``, when the window
+      edge is positioned beyond the corresponding screen edge.
       An empty string cancels any user-specified geometry, letting the window
       revert to its natural size.
       With no argument, return the current geometry as a string of the form
