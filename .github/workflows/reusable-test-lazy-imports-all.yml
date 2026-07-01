@@ -1,0 +1,80 @@
+name: Reusable Lazy Imports Tests
+
+# Run the CPython test suite with global lazy imports forced on
+# (``-X lazy_imports=all``).
+#
+# Modules that are known to fail under lazy imports are listed in
+# Lib/test/lazy_imports_all_exclude.txt and skipped here. Remove entries from
+# that file as the modules are fixed so this workflow starts guarding them
+# against regressions. Excluded modules are also checked separately so the
+# workflow fails when one starts passing and its exclusion should be removed.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  test-lazy-imports-all:
+    name: 'Run Tests with lazy_imports=all'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      EXCLUDE_FILE: Lib/test/lazy_imports_all_exclude.txt
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure CPython
+      run: ./configure --config-cache --with-pydebug
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Verify lazy imports are fully enabled
+      run: ./python -X lazy_imports=all -c "import sys; assert sys.flags.lazy_imports == 1, sys.flags.lazy_imports; print('lazy imports all enabled')"
+    - name: Build test list (all tests minus the known-failing exclusions)
+      run: |
+        set -euo pipefail
+        ./python -m test --list-tests > all_tests.txt
+        # Strip comments/blank lines from the exclusion file, then drop those
+        # exact test names (whole-line, fixed-string match) from the run list.
+        grep -vE '^\s*(#.*)?$' "$EXCLUDE_FILE" > exclude_tests.txt
+        grep -vxF -f exclude_tests.txt all_tests.txt > run_tests.txt
+        # Fail loudly if any exclusion entry matched nothing: a stale or
+        # mistyped name (or a change in `--list-tests` output) would otherwise
+        # silently stop excluding a module and let it fail the run.
+        stale=$(comm -23 <(sort -u exclude_tests.txt) <(sort -u all_tests.txt))
+        if [ -n "$stale" ]; then
+          echo "::error::Stale entries in $EXCLUDE_FILE (no longer match 'python -m test --list-tests'); remove or fix them:"
+          echo "$stale"
+          exit 1
+        fi
+        echo "Excluding $(wc -l < exclude_tests.txt) module(s); running $(wc -l < run_tests.txt) of $(wc -l < all_tests.txt)."
+    - name: Run tests with lazy imports
+      run: xvfb-run xargs ./python -X lazy_imports=all -m test --fast-ci --timeout=900 < run_tests.txt
+    - name: Verify excluded tests still need exclusion
+      if: success()
+      run: |
+        set -euo pipefail
+        unexpected_passes=()
+        while IFS= read -r test_name; do
+          [ -n "$test_name" ] || continue
+          echo "Checking excluded test: $test_name"
+          if xvfb-run ./python -X lazy_imports=all -m test --fast-ci --timeout=900 "$test_name"; then
+            unexpected_passes+=("$test_name")
+          fi
+        done < exclude_tests.txt
+        if [ "${#unexpected_passes[@]}" -ne 0 ]; then
+          echo "::error::These tests still appear in $EXCLUDE_FILE but now pass with -X lazy_imports=all. Remove them from the exclude file:"
+          printf '%s\n' "${unexpected_passes[@]}"
+          exit 1
+        fi

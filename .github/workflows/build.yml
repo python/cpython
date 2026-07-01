@@ -495,6 +495,12 @@ jobs:
         name: hypothesis-example-db
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/examples/
 
+  test-lazy-imports-all:
+    name: 'Lazy imports enabled'
+    needs: build-context
+    if: fromJSON(needs.build-context.outputs.run-tests)
+    uses: ./.github/workflows/reusable-test-lazy-imports-all.yml
+
   build-asan:
     name: 'Address sanitizer'
     runs-on: ${{ matrix.os }}
@@ -671,6 +677,7 @@ jobs:
     - build-emscripten
     - build-wasi
     - test-hypothesis
+    - test-lazy-imports-all
     - build-asan
     - build-san
     - cross-build-linux

@@ -1,0 +1,42 @@
+# Test modules that currently FAIL under global lazy imports
+# (``-X lazy_imports=all`` / ``PYTHON_LAZY_IMPORTS=all``).
+#
+# The "Lazy Imports All" CI workflow
+# (.github/workflows/reusable-test-lazy-imports-all.yml) runs the whole test
+# suite with lazy_imports=all, skipping every module listed here. Exclusion is
+# whole-module: a listed module is skipped entirely, so any passing tests it
+# contains are not covered until its line is removed. As each module is fixed,
+# delete its line so the workflow starts guarding it against regressions. The
+# workflow also checks listed modules separately and fails if one now passes,
+# so accidental fixes prompt cleanup of this file.
+#
+# Format: one test name per line, exactly as printed by
+# ``python -m test --list-tests``. Lines starting with ``#`` and blank lines
+# are ignored. Note that split test packages use a dotted path
+# (e.g. test.test_future_stmt.test_future) while ordinary modules use the bare
+# name (e.g. test_builtin).
+
+test.test_inspect.test_inspect
+test___all__
+test__interpreters
+test_builtin
+test_clinic
+test_crossinterp
+test_datetime
+test_generated_cases
+test_heapq
+test_idle
+test_import
+test_importlib
+test_json
+test_pkg
+test_profile
+test_profiling
+test_pyrepl
+test_subprocess
+test_symtable
+test_tools
+test_trace
+test_type_annotations
+test_unittest
+test_zoneinfo
