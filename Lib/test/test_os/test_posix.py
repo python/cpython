@@ -412,11 +412,10 @@ class PosixTester(unittest.TestCase):
             # so skip Solaris-based since they are likely to have ZFS.
             # issue33655: Also ignore EINVAL on *BSD since ZFS is also
             # often used there.
-            if inst.errno == errno.EINVAL and sys.platform.startswith(
-                ('sunos', 'freebsd', 'openbsd', 'gnukfreebsd')):
-                raise unittest.SkipTest("test may fail on ZFS filesystems")
-            elif inst.errno == errno.EOPNOTSUPP and sys.platform.startswith("netbsd"):
-                raise unittest.SkipTest("test may fail on FFS filesystems")
+            # gh-148841: unified to one case for EINVAL/EOPNOTSUPP on *BSD
+            if inst.errno in (errno.EINVAL, errno.EOPNOTSUPP) and sys.platform.startswith(
+                ('sunos', 'freebsd', 'openbsd', 'netbsd', 'gnukfreebsd')):
+                raise unittest.SkipTest("test may fail on ZFS / FFS filesystems")
             else:
                 raise
         finally:
