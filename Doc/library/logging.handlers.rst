@@ -31,8 +31,8 @@ StreamHandler
 
 The :class:`StreamHandler` class, located in the core :mod:`logging` package,
 sends logging output to streams such as *sys.stdout*, *sys.stderr* or any
-file-like object (or, more precisely, any object which supports :meth:`write`
-and :meth:`flush` methods).
+file-like object (or, more precisely, any object which supports
+:meth:`!write` and :meth:`!flush` methods).
 
 
 .. class:: StreamHandler(stream=None)
@@ -52,9 +52,10 @@ and :meth:`flush` methods).
 
    .. method:: flush()
 
-      Flushes the stream by calling its :meth:`flush` method. Note that the
-      :meth:`close` method is inherited from :class:`~logging.Handler` and so
-      does no output, so an explicit :meth:`flush` call may be needed at times.
+      Flushes the stream by calling its :meth:`!flush` method. Note that
+      the :meth:`~logging.Handler.close` method is inherited from
+      :class:`~logging.Handler` and so does no output, so an explicit
+      :meth:`!flush` call may be needed at times.
 
    .. method:: setStream(stream)
 
@@ -158,8 +159,8 @@ WatchedFileHandler
 .. currentmodule:: logging.handlers
 
 The :class:`WatchedFileHandler` class, located in the :mod:`!logging.handlers`
-module, is a :class:`FileHandler` which watches the file it is logging to. If
-the file changes, it is closed and reopened using the file name.
+module, is a :class:`~logging.FileHandler` which watches the file it is logging
+to. If the file changes, it is closed and reopened using the file name.
 
 A file change can happen because of usage of programs such as *newsyslog* and
 *logrotate* which perform log file rotation. This handler, intended for use
@@ -218,7 +219,7 @@ need to override.
 
 .. class:: BaseRotatingHandler(filename, mode, encoding=None, delay=False, errors=None)
 
-   The parameters are as for :class:`FileHandler`. The attributes are:
+   The parameters are as for :class:`~logging.FileHandler`. The attributes are:
 
    .. attribute:: namer
 
@@ -290,8 +291,8 @@ The reason the attributes exist is to save you having to subclass - you can use
 the same callables for instances of :class:`RotatingFileHandler` and
 :class:`TimedRotatingFileHandler`. If either the namer or rotator callable
 raises an exception, this will be handled in the same way as any other
-exception during an :meth:`emit` call, i.e. via the :meth:`handleError` method
-of the handler.
+exception during a :meth:`~logging.Handler.emit` call, i.e. via the
+:meth:`~logging.Handler.handleError` method of the handler.
 
 If you need to make more significant changes to rotation processing, you can
 override the methods.
@@ -633,7 +634,7 @@ supports sending logging messages to a remote or local Unix syslog.
    alternative to providing a ``(host, port)`` tuple is providing an address as a
    string, for example '/dev/log'. In this case, a Unix domain socket is used to
    send the message to the syslog. If *facility* is not specified,
-   :const:`LOG_USER` is used. The type of socket opened depends on the
+   :const:`!LOG_USER` is used. The type of socket opened depends on the
    *socktype* argument, which defaults to :const:`socket.SOCK_DGRAM` and thus
    opens a UDP socket. To open a TCP socket (for use with the newer syslog
    daemons such as rsyslog), specify a value of :const:`socket.SOCK_STREAM`.
@@ -846,9 +847,10 @@ extensions for Python installed.
 
       Returns the event type for the record. Override this if you want to
       specify your own types. This version does a mapping using the handler's
-      typemap attribute, which is set up in :meth:`__init__` to a dictionary
-      which contains mappings for :const:`DEBUG`, :const:`INFO`,
-      :const:`WARNING`, :const:`ERROR` and :const:`CRITICAL`. If you are using
+      typemap attribute, which is set up in :meth:`!__init__`
+      to a dictionary which contains mappings for :const:`~logging.DEBUG`,
+      :const:`~logging.INFO`, :const:`~logging.WARNING`,
+      :const:`~logging.ERROR` and :const:`~logging.CRITICAL`. If you are using
       your own levels, you will either need to override this method or place a
       suitable dictionary in the handler's *typemap* attribute.
 
@@ -915,8 +917,8 @@ event of a certain severity or greater is seen.
 :class:`MemoryHandler` is a subclass of the more general
 :class:`BufferingHandler`, which is an abstract class. This buffers logging
 records in memory. Whenever each record is added to the buffer, a check is made
-by calling :meth:`shouldFlush` to see if the buffer should be flushed.  If it
-should, then :meth:`flush` is expected to do the flushing.
+by calling :meth:`!shouldFlush` to see if the buffer should be flushed.  If it
+should, then :meth:`!flush` is expected to do the flushing.
 
 
 .. class:: BufferingHandler(capacity)
@@ -927,8 +929,8 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: emit(record)
 
-      Append the record to the buffer. If :meth:`shouldFlush` returns true,
-      call :meth:`flush` to process the buffer.
+      Append the record to the buffer. If :meth:`!shouldFlush` returns true,
+      call :meth:`!flush` to process the buffer.
 
 
    .. method:: flush()
@@ -948,7 +950,7 @@ should, then :meth:`flush` is expected to do the flushing.
 
    Returns a new instance of the :class:`MemoryHandler` class. The instance is
    initialized with a buffer size of *capacity* (number of records buffered).
-   If *flushLevel* is not specified, :const:`ERROR` is used. If no *target* is
+   If *flushLevel* is not specified, :const:`~logging.ERROR` is used. If no *target* is
    specified, the target will need to be set using :meth:`setTarget` before this
    handler does anything useful. If *flushOnClose* is specified as ``False``,
    then the buffer is *not* flushed when the handler is closed. If not specified
@@ -961,7 +963,7 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: close()
 
-      Calls :meth:`flush`, sets the target to ``None`` and clears the
+      Calls :meth:`!flush`, sets the target to ``None`` and clears the
       buffer.
 
 
@@ -1088,9 +1090,9 @@ possible, while any potentially slow operations (such as sending an email via
       The base implementation formats the record to merge the message,
       arguments, exception and stack information, if present.  It also removes
       unpickleable items from the record in-place. Specifically, it overwrites
-      the record's :attr:`msg` and :attr:`message` attributes with the merged
+      the record's :attr:`!msg` and :attr:`!message` attributes with the merged
       message (obtained by calling the handler's :meth:`format` method), and
-      sets the :attr:`args`, :attr:`exc_info` and :attr:`exc_text` attributes
+      sets the :attr:`!args`, :attr:`!exc_info` and :attr:`!exc_text` attributes
       to ``None``.
 
       You might want to override this method if you want to convert
