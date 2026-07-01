@@ -89,6 +89,13 @@ Improved modules
 curses
 ------
 
+* Add support for multiple terminals to the :mod:`curses` module:
+  the new functions :func:`curses.newterm`, :func:`curses.set_term`
+  and :func:`curses.new_prescr`,
+  the corresponding :ref:`screen <curses-screen-objects>` object,
+  and the :meth:`window.use() <curses.window.use>` method.
+  (Contributed by Serhiy Storchaka in :gh:`90092`.)
+
 * The :mod:`curses` character-cell window methods now accept a full character
   cell --- a spacing character optionally followed by combining characters ---
   in addition to a single integer or byte character.  This affects
@@ -104,12 +111,96 @@ curses
   and the module functions :func:`curses.erasewchar`, :func:`curses.killwchar`
   and :func:`curses.wunctrl`, the wide-character counterparts of
   :func:`curses.erasechar`, :func:`curses.killchar` and :func:`curses.unctrl`.
-  These features are only available when built against the wide-character
-  ncursesw library.
+  On a narrow (non-ncursesw) build the character cell holds a single character
+  without combining marks, representable as one byte in the window's encoding,
+  and :meth:`~curses.window.in_wstr` returns its decoded text.
   (Contributed by Serhiy Storchaka in :gh:`151757`.)
+
+* The wide-character :mod:`curses` functions and methods
+  :meth:`~curses.window.get_wch`, :meth:`~curses.window.get_wstr`,
+  :func:`curses.unget_wch`, :func:`curses.erasewchar`,
+  :func:`curses.killwchar` and :func:`curses.wunctrl` now also work when Python
+  is not built against a wide-character-aware curses library, on an 8-bit
+  locale, where each character is a single byte in the relevant encoding.
+  :func:`curses.ungetch` now also accepts a one-character string, like
+  :func:`curses.unget_wch`; on a wide-character build it can be any character
+  (previously a multibyte character raised :exc:`OverflowError`).
+  (Contributed by Serhiy Storchaka in :gh:`152470`.)
 
 * Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
   (Contributed by Serhiy Storchaka in :gh:`151744`.)
+
+* Add the :mod:`curses` functions :func:`curses.alloc_pair`,
+  :func:`curses.find_pair`, :func:`curses.free_pair` and
+  :func:`curses.reset_color_pairs` for dynamic color-pair management,
+  available when built against a wide-character ncurses with extended-color
+  support.
+  (Contributed by Serhiy Storchaka in :gh:`151774`.)
+
+* Add :mod:`curses` functions and window methods that report state which could
+  previously only be set, such as :meth:`curses.window.is_keypad`,
+  :meth:`curses.window.getparent` and :func:`curses.is_cbreak`,
+  available when built against an ncurses with ``NCURSES_EXT_FUNCS``.
+  (Contributed by Serhiy Storchaka in :gh:`151776`.)
+
+* Add the :mod:`curses` window methods :meth:`~curses.window.attr_get`,
+  :meth:`~curses.window.attr_set`, :meth:`~curses.window.attr_on`,
+  :meth:`~curses.window.attr_off` and :meth:`~curses.window.color_set`, which
+  pass the color pair as a separate argument instead of packing it into the
+  attribute value, and the corresponding ``WA_*`` attribute constants.
+  (Contributed by Serhiy Storchaka in :gh:`152219`.)
+
+* Add the :class:`curses.complexchar` type, representing a styled
+  character cell (its text, attributes and color pair), and the window
+  methods :meth:`~curses.window.in_wch` and :meth:`~curses.window.getbkgrnd`
+  that return one --- the counterparts of
+  :meth:`~curses.window.inch` and :meth:`~curses.window.getbkgd`.  The
+  character-cell methods, such as :meth:`~curses.window.addch` and
+  :meth:`~curses.window.border`, now also accept a
+  :class:`~curses.complexchar`.  These work whether or not Python was built
+  against a wide-character-aware curses library; on a narrow build a cell holds a
+  single character representable as one byte in the window's encoding (so only
+  8-bit locales are supported).
+  (Contributed by Serhiy Storchaka in :gh:`152233`.)
+
+* Add the :class:`curses.complexstr` type, an immutable run of styled cells
+  (the string counterpart of :class:`~curses.complexchar`), and the window
+  method :meth:`~curses.window.in_wchstr` that returns one.  The string-cell
+  methods :meth:`~curses.window.addstr`, :meth:`~curses.window.addnstr`,
+  :meth:`~curses.window.insstr` and :meth:`~curses.window.insnstr` now also
+  accept a :class:`~curses.complexstr`.  Like :class:`~curses.complexchar`, it
+  works whether or not Python was built against a wide-character-aware curses
+  library.
+  (Contributed by Serhiy Storchaka in :gh:`152233`.)
+
+* Add the :mod:`curses` window method :meth:`~curses.window.dupwin`, which
+  returns a new window that is an independent duplicate of an existing one.
+  (Contributed by Serhiy Storchaka in :gh:`152258`.)
+
+* Add the :mod:`curses` functions :func:`~curses.scr_dump`,
+  :func:`~curses.scr_restore`, :func:`~curses.scr_init` and
+  :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
+  (Contributed by Serhiy Storchaka in :gh:`152260`.)
+
+* Add the :func:`curses.term_attrs` function, which returns the supported
+  video attributes as :ref:`WA_* <curses-wa-constants>` values, the
+  counterpart of :func:`curses.termattrs`.
+  (Contributed by Serhiy Storchaka in :gh:`152332`.)
+
+* Add the :mod:`curses` key-management functions :func:`~curses.define_key`,
+  :func:`~curses.key_defined` and :func:`~curses.keyok`, available when built
+  against an ncurses with ``NCURSES_EXT_FUNCS``.
+  (Contributed by Serhiy Storchaka in :gh:`152334`.)
+
+* Add the :func:`curses.has_mouse` function and the
+  :meth:`curses.window.mouse_trafo` method, completing the :mod:`curses`
+  mouse interface.
+  (Contributed by Serhiy Storchaka in :gh:`152325`.)
+
+* :class:`curses.textpad.Textbox` now supports entering and reading back the
+  full Unicode range, including combining characters, when curses is built with
+  wide-character support.
+  (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
 gzip
 ----
@@ -117,6 +208,12 @@ gzip
 * :func:`gzip.open` now accepts an optional argument ``mtime``
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
+
+io
+--
+
+* Add :meth:`io.BytesIO.peek` method to read without advancing position.
+  (Contributed by Marcel Martin in :gh:`90533`.)
 
 
 logging
@@ -159,6 +256,25 @@ os
 * Add :func:`os.pidfd_getfd` for duplicating a file descriptor from another
   process via a pidfd.  Available on Linux 5.6+.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
+
+
+re
+--
+
+* :mod:`re` now supports set operations and nested sets in character classes,
+  as described in `Unicode Technical Standard #18
+  <https://unicode.org/reports/tr18/>`__: set difference (``[A--B]``),
+  intersection (``[A&&B]``) and union (``[A||B]``), where an operand may be a
+  nested set written in square brackets.  For example, ``[a-z--[aeiou]]``
+  matches an ASCII lowercase consonant.
+  (Contributed by Serhiy Storchaka in :gh:`152100`.)
+
+* Regular expressions now support Unicode property escapes ``\p{...}`` and
+  ``\P{...}``, which match a character by a Unicode property -- for example
+  ``\p{Lu}`` (an uppercase letter), ``\p{Cased}`` or ``\p{ASCII}``.  See
+  :ref:`the regular expression syntax <re-syntax>` for the supported
+  properties.
+  (Contributed by Serhiy Storchaka in :gh:`95555`.)
 
 
 shlex
@@ -288,10 +404,12 @@ re
 --
 
 * Character class escapes (``\d``, ``\D``, ``\s``, ``\S``, ``\w`` and ``\W``)
-  outside a character set are now compiled to a single ``CATEGORY`` opcode
-  instead of being wrapped in an ``IN`` block.  This speeds up matching of
-  patterns such as ``\d+`` and reduces the size of the compiled byte code.
-  (Contributed by Serhiy Storchaka in :gh:`152033`.)
+  outside a character set, and character sets containing a single such escape
+  (such as ``[\d]`` or ``[^\s]``), are now compiled to a single ``CATEGORY``
+  opcode instead of being wrapped in an ``IN`` block.  This speeds up matching
+  of patterns such as ``\d+`` and reduces the size of the compiled byte code.
+  (Contributed by Serhiy Storchaka in :gh:`152033` and Pieter Eendebak in
+  :gh:`152056`.)
 
 module_name
 -----------
@@ -324,6 +442,17 @@ asyncio
 * The :func:`!asyncio.iscoroutinefunction`
   which has been deprecated since Python 3.14.
   Use :func:`inspect.iscoroutinefunction` instead.
+
+* The event loop policy system, including the
+  :class:`!asyncio.AbstractEventLoopPolicy`,
+  :class:`!asyncio.DefaultEventLoopPolicy`,
+  :class:`!asyncio.WindowsSelectorEventLoopPolicy` and
+  :class:`!asyncio.WindowsProactorEventLoopPolicy` classes and the
+  :func:`!asyncio.get_event_loop_policy` and
+  :func:`!asyncio.set_event_loop_policy` functions,
+  which have been deprecated since Python 3.14.
+  Use :func:`asyncio.run` or :class:`asyncio.Runner` with a custom
+  *loop_factory* instead.
 
 functools
 ---------
@@ -429,6 +558,14 @@ Porting to Python 3.16
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+* In :mod:`tkinter`, the *name* parameter of the
+  :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
+  :meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
+  :meth:`!setvar` are now required.  Calling these methods without
+  them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
+  :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka in :gh:`152587`.)
 
 
 Build changes

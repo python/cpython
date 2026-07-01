@@ -8,12 +8,24 @@ import traceback
 import warnings
 
 
+MS_WINDOWS = (sys.platform == "win32")
+
+
 def normalize_text(text):
     if text is None:
         return None
     text = str(text)
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
+
+
+def read_first_line(filename):
+    # Get the first line of a text file and strip trailing spaces
+    try:
+        with open(filename, encoding="utf-8") as fp:
+            return fp.readline().rstrip()
+    except OSError:
+        return ''
 
 
 class PythonInfo:
@@ -897,8 +909,30 @@ def collect_subprocess(info_add):
     copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
 
 
+def winreg_query(path):
+    try:
+        import winreg
+    except ImportError:
+        return None
+
+    key, path = path.split('\\', 1)
+    sub_key, value = path.rsplit('\\', 1)
+    if key == "HKEY_LOCAL_MACHINE":
+        key = winreg.HKEY_LOCAL_MACHINE
+    else:
+        raise ValueError(f"unknown key {key!r}")
+
+    try:
+        access = winreg.KEY_READ | winreg.KEY_WOW64_64KEY
+        with winreg.OpenKey(key, sub_key, access=access) as key_handle:
+            result, _ = winreg.QueryValueEx(key_handle, value)
+        return result
+    except OSError:
+        return None
+
+
 def collect_windows(info_add):
-    if sys.platform != "win32":
+    if not MS_WINDOWS:
         # Code specific to Windows
         return
 
@@ -990,19 +1024,10 @@ def collect_windows(info_add):
             info_add('windows.ver', line)
 
     # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
-    import winreg
-    try:
-        key = winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE,
-            r"SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock")
-        subkey = "AllowDevelopmentWithoutDevLicense"
-        try:
-            value, value_type = winreg.QueryValueEx(key, subkey)
-        finally:
-            winreg.CloseKey(key)
-    except OSError:
-        pass
-    else:
+    value = winreg_query(r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows"
+                         r"\CurrentVersion\AppModelUnlock"
+                         r"\AllowDevelopmentWithoutDevLicense")
+    if value is not None:
         info_add('windows.developer_mode', "enabled" if value else "disabled")
 
 
@@ -1015,14 +1040,9 @@ def collect_fips(info_add):
     if _hashlib is not None:
         call_func(info_add, 'fips.openssl_fips_mode', _hashlib, 'get_fips_mode')
 
-    try:
-        with open("/proc/sys/crypto/fips_enabled", encoding="utf-8") as fp:
-            line = fp.readline().rstrip()
-
-        if line:
-            info_add('fips.linux_crypto_fips_enabled', line)
-    except OSError:
-        pass
+    fips_enabled = read_first_line("/proc/sys/crypto/fips_enabled")
+    if fips_enabled:
+        info_add('fips.linux_crypto_fips_enabled', fips_enabled)
 
 
 def collect_tempfile(info_add):
@@ -1038,6 +1058,99 @@ def collect_libregrtest_utils(info_add):
         return
 
     info_add('libregrtests.build_info', ' '.join(utils.get_build_info()))
+
+
+def uptime_boottime():
+    # Use CLOCK_BOOTTIME
+    import time
+    try:
+        return time.clock_gettime(time.CLOCK_BOOTTIME)
+    except (AttributeError, OSError):
+        return None
+
+
+def uptime_linux():
+    # Parse the first member of /proc/uptime
+    line = read_first_line("/proc/uptime")
+    if not line:
+        return
+    try:
+        parts = line.split()
+        if not parts:
+            return
+        return float(parts[0])
+    except ValueError:
+        return
+
+
+def uptime_bsd():
+    # Get sysctlbyname("kern.boottime")
+    try:
+        import _testcapi
+    except ImportError:
+        return None
+    try:
+        return _testcapi.uptime_bsd()
+    except (AttributeError, OSError):
+        return None
+
+
+def uptime_windows():
+    try:
+        import _winapi
+    except ImportError:
+        return None
+    else:
+        return _winapi.GetTickCount64() / 1000.
+
+
+def get_uptime():
+    for func in (uptime_boottime, uptime_linux, uptime_bsd, uptime_windows):
+        uptime = func()
+        if uptime is not None:
+            return uptime
+    return None
+
+
+def get_machine_id():
+    if MS_WINDOWS:
+        machine_guid = winreg_query(r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft"
+                                    r"\Cryptography\MachineGuid")
+        if machine_guid:
+            return machine_guid
+
+    for filename in (
+        # https://www.freedesktop.org/software/systemd/man/latest/machine-id.html
+        "/etc/machine-id",
+        # BSD
+        "/etc/hostid",
+    ):
+        machine_id = read_first_line(filename)
+        if machine_id:
+            return machine_id
+
+    return None
+
+
+def collect_linux(info_add):
+    boot_id = read_first_line("/proc/sys/kernel/random/boot_id")
+    if boot_id:
+        info_add('system.boot_id', boot_id)
+
+    machine_id = get_machine_id()
+    if machine_id:
+        info_add('system.machine_id', machine_id)
+
+    uptime = get_uptime()
+    if uptime is not None:
+        # truncate microseconds
+        uptime = int(uptime)
+        try:
+            import datetime
+            uptime = str(datetime.timedelta(seconds=uptime))
+        except ImportError:
+            uptime = f'{uptime} sec'
+        info_add('system.uptime', uptime)
 
 
 def collect_info(info):
@@ -1081,6 +1194,7 @@ def collect_info(info):
         collect_zlib,
         collect_zstd,
         collect_libregrtest_utils,
+        collect_linux,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
