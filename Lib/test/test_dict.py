@@ -1794,6 +1794,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(dict_getitem_knownhash(d, k1, hash(k1)), 1)
         self.assertRaises(Exc, dict_getitem_knownhash, d, k2, hash(k2))
 
+    @support.cpython_only
+    def test_dict_keys_layout(self):
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        check_layout = _testinternalcapi.dict_keys_layout
+
+        for i in range(4):
+            self.assertTrue(check_layout({j: j for j in range(10**i)}))
+
+    @support.cpython_only
+    def test_dict_keys_to_base(self):
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        check_base = _testinternalcapi.dict_keys_to_base
+
+        for i in range(4):
+            self.assertTrue(check_base({j: j for j in range(10**i)}))
 
 from test import mapping_tests
 
