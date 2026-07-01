@@ -10,7 +10,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_pythonrun.h"     // _PyRun_AnyFileObject()
+#include "pycore_pythonrun.h"     // _PyRun_SimpleFileObjectNoPrint()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Dedent()
 
@@ -235,7 +235,6 @@ static int
 pymain_run_command(wchar_t *command)
 {
     PyObject *unicode, *bytes;
-    int ret;
 
     unicode = PyUnicode_FromWideChar(command, -1);
     if (unicode == NULL) {
@@ -259,9 +258,13 @@ pymain_run_command(wchar_t *command)
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
-    ret = _PyRun_SimpleStringFlagsWithName(PyBytes_AsString(bytes), "<string>", &cf);
+    PyObject *result = _PyRun_SimpleStringFlagsNoPrint(PyBytes_AsString(bytes), "<string>", &cf);
     Py_DECREF(bytes);
-    return (ret != 0);
+    if (result == NULL) {
+        return pymain_exit_err_print();
+    }
+    Py_DECREF(result);
+    return 0;
 
 error:
     PySys_WriteStderr("Unable to decode the command from the command line:\n");
@@ -406,10 +409,24 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
-    /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    int run = _PyRun_AnyFileObject(fp, filename, 1, &cf);
-    return (run != 0);
+
+    if (_Py_FdIsInteractive(fp, filename)) {
+        // Preserve the interactive REPL behavior for TTY inputs
+        // (e.g., "python3 /dev/stdin" when stdin is a terminal).
+        int run = _PyRun_InteractiveLoopObject(fp, filename, &cf);
+        fclose(fp);
+        return (run != 0);
+    }
+
+    /* Use _PyRun_SimpleFileObjectNoPrint which returns PyObject* without calling
+       PyErr_Print(), so we can handle SystemExit properly via pymain_exit_err_print. */
+    PyObject *result = _PyRun_SimpleFileObjectNoPrint(fp, filename, 1, &cf);
+    if (result == NULL) {
+        return pymain_exit_err_print();
+    }
+    Py_DECREF(result);
+    return 0;
 }
 
 static int

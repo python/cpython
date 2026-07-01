@@ -458,15 +458,19 @@ set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
 }
 
 
-int
-_PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
-                        PyCompilerFlags *flags)
+/* Run a simple file object. Returns the result PyObject* on success,
+   or NULL on failure. Does NOT call PyErr_Print(); the caller must
+   handle the error (e.g. with PyErr_Print() or
+   _Py_HandleSystemExitAndKeyboardInterrupt()). */
+PyObject *
+_PyRun_SimpleFileObjectNoPrint(FILE *fp, PyObject *filename, int closeit,
+                               PyCompilerFlags *flags)
 {
-    int ret = -1;
+    PyObject *result = NULL;
 
     PyObject *main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL)
-        return -1;
+        return NULL;
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
 
     int set_file_name = 0;
@@ -486,12 +490,12 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
         goto done;
     }
 
-    PyObject *v;
     if (pyc) {
         FILE *pyc_fp;
         /* Try to run a pyc file. First, re-open in binary */
         if (closeit) {
             fclose(fp);
+            closeit = 0;  // already closed
         }
 
         pyc_fp = Py_fopen(filename, "rb");
@@ -502,39 +506,58 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 
         if (set_main_loader(dict, filename, "SourcelessFileLoader") < 0) {
             fprintf(stderr, "python: failed to set __main__.__loader__\n");
-            ret = -1;
             fclose(pyc_fp);
             goto done;
         }
-        v = run_pyc_file(pyc_fp, dict, dict, flags);
+        result = run_pyc_file(pyc_fp, dict, dict, flags);
     } else {
         /* When running from stdin, leave __main__.__loader__ alone */
         if ((!PyUnicode_Check(filename) || !PyUnicode_EqualToUTF8(filename, "<stdin>")) &&
             set_main_loader(dict, filename, "SourceFileLoader") < 0) {
             fprintf(stderr, "python: failed to set __main__.__loader__\n");
-            ret = -1;
             goto done;
         }
-        v = pyrun_file(fp, filename, Py_file_input, dict, dict,
-                       closeit, flags);
+        result = pyrun_file(fp, filename, Py_file_input, dict, dict,
+                            closeit, flags);
     }
     flush_io();
-    if (v == NULL) {
-        Py_CLEAR(main_module);
-        PyErr_Print();
-        goto done;
-    }
-    Py_DECREF(v);
-    ret = 0;
 
-  done:
+done:
     if (set_file_name) {
-        if (PyDict_PopString(dict, "__file__", NULL) < 0) {
-            PyErr_Print();
+        if (result == NULL) {
+            // Main code failed: save the exception before cleanup
+            // so PyDict_PopString doesn't overwrite it
+            PyObject *saved_exc = PyErr_GetRaisedException();
+            if (PyDict_PopString(dict, "__file__", NULL) < 0) {
+                /* Non-fatal cleanup error; just clear it */
+                PyErr_Clear();
+            }
+            PyErr_SetRaisedException(saved_exc);
+        } else {
+            // Main code succeeded: if cleanup fails, print it
+            // to match legacy behavior
+            if (PyDict_PopString(dict, "__file__", NULL) < 0) {
+                PyErr_Print();
+            }
         }
     }
     Py_XDECREF(main_module);
-    return ret;
+    return result;
+}
+
+
+int
+_PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
+                        PyCompilerFlags *flags)
+{
+    PyObject *result = _PyRun_SimpleFileObjectNoPrint(fp, filename, closeit,
+                                                      flags);
+    if (result == NULL) {
+        PyErr_Print();
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
 }
 
 
@@ -552,36 +575,51 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 }
 
 
-int
-_PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags) {
+/* Run a simple string. Returns the result PyObject* on success,
+   or NULL on failure. Does NOT call PyErr_Print(); the caller must
+   handle the error (e.g. with PyErr_Print() or
+   _Py_HandleSystemExitAndKeyboardInterrupt()). */
+PyObject *
+_PyRun_SimpleStringFlagsNoPrint(const char *command, const char* name,
+                                PyCompilerFlags *flags)
+{
     PyObject *main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL) {
-        return -1;
+        return NULL;
     }
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
 
-    PyObject *res = NULL;
+    PyObject *result = NULL;
     if (name == NULL) {
-        res = PyRun_StringFlags(command, Py_file_input, dict, dict, flags);
+        result = PyRun_StringFlags(command, Py_file_input, dict, dict, flags);
     } else {
         PyObject* the_name = PyUnicode_FromString(name);
         if (!the_name) {
-            PyErr_Print();
             Py_DECREF(main_module);
-            return -1;
+            return NULL;
         }
-        res = _PyRun_StringFlagsWithName(command, the_name, Py_file_input, dict, dict, flags, 0);
+        result = _PyRun_StringFlagsWithName(command, the_name, Py_file_input,
+                                            dict, dict, flags, 0);
         Py_DECREF(the_name);
     }
     Py_DECREF(main_module);
-    if (res == NULL) {
+    return result;
+}
+
+
+int
+_PyRun_SimpleStringFlagsWithName(const char *command, const char* name,
+                                 PyCompilerFlags *flags)
+{
+    PyObject *result = _PyRun_SimpleStringFlagsNoPrint(command, name, flags);
+    if (result == NULL) {
         PyErr_Print();
         return -1;
     }
-
-    Py_DECREF(res);
+    Py_DECREF(result);
     return 0;
 }
+
 
 int
 PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
