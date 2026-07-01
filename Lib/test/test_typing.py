@@ -706,6 +706,36 @@ class TypeParameterDefaultsTests(BaseTestCase):
         self.assertEqual(A[int, str, range].__args__, (int, str, range))
         self.assertEqual(A[int, str, *tuple[int, ...]].__args__, (int, str, *tuple[int, ...]))
 
+    def test_typevar_default_referencing_other_typevar(self):
+        # gh-140665: a type parameter default that references an earlier type
+        # parameter is substituted when the generic is parameterized.
+        T = TypeVar("T")
+        S = TypeVar("S", default=T)
+        class A(Generic[T, S]): ...
+        self.assertEqual(A[int].__args__, (int, int))
+        self.assertEqual(A[str].__args__, (str, str))
+        # an explicit argument is not overridden by the default
+        self.assertEqual(A[int, str].__args__, (int, str))
+
+        # PEP 695 syntax
+        class B[T, S = T]: ...
+        self.assertEqual(B[int].__args__, (int, int))
+        self.assertEqual(B[int, str].__args__, (int, str))
+
+        # a default that contains an earlier type parameter
+        class C[T, S = list[T]]: ...
+        self.assertEqual(C[int].__args__, (int, list[int]))
+        self.assertEqual(C[int, str].__args__, (int, str))
+
+        # chained defaults
+        class D[T, S = T, U = S]: ...
+        self.assertEqual(D[int].__args__, (int, int, int))
+        self.assertEqual(D[int, str].__args__, (int, str, str))
+
+        # a concrete default is unaffected
+        class E[T, S = int]: ...
+        self.assertEqual(E[str].__args__, (str, int))
+
     def test_no_default_after_typevar_tuple(self):
         T = TypeVar("T", default=int)
         Ts = TypeVarTuple("Ts")

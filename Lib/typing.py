@@ -1138,6 +1138,40 @@ def _paramspec_prepare_subst(self, alias, args):
     return args
 
 
+def _resolve_parameter_defaults(parameters, args, defaulted):
+    """Substitute now-bound parameters into PEP 696 defaults (gh-140665).
+
+    A type parameter's default may reference earlier parameters in the same
+    scope, e.g. ``class C[T, S = T]`` or ``class C[T, S = list[T]]``. Such a
+    default is stored unsubstituted, so once every parameter is bound to an
+    argument we replace those references here. *defaulted* is the set of
+    parameters whose argument came from their default (not from an explicit
+    argument). *args* is positional with *parameters*; a new tuple is returned.
+    """
+    arg_by_param = dict(zip(parameters, args))
+    for param in parameters:
+        if param not in defaulted:
+            continue
+        default = arg_by_param[param]
+        if isinstance(default, type):
+            continue
+        if getattr(default, '__typing_subst__', None) is not None:
+            # The default is itself a parameter, e.g. ``S = T``.
+            arg_by_param[param] = arg_by_param.get(default, default)
+        else:
+            subparams = getattr(default, '__parameters__', ())
+            if subparams:
+                # The default contains parameters, e.g. ``S = list[T]``.
+                subargs = []
+                for x in subparams:
+                    if isinstance(x, TypeVarTuple):
+                        subargs.extend(arg_by_param[x])
+                    else:
+                        subargs.append(arg_by_param.get(x, x))
+                arg_by_param[param] = default[tuple(subargs)]
+    return tuple(arg_by_param[p] for p in parameters)
+
+
 @_tp_cache
 def _generic_class_getitem(cls, args):
     """Parameterizes a generic class.
@@ -1182,11 +1216,18 @@ def _generic_class_getitem(cls, args):
                     f"calling 'super().__init_subclass__()'"
                 )
             raise
+        defaulted = set()
         for param in parameters:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:
+                prev_len = len(args)
                 args = prepare(cls, args)
+                if (len(args) > prev_len and isinstance(param, TypeVar)
+                        and param.has_default()):
+                    defaulted.add(param)
         _check_generic_specialization(cls, args)
+        if defaulted:
+            args = _resolve_parameter_defaults(parameters, args, defaulted)
 
         new_args = []
         for param, new_arg in zip(parameters, args):
@@ -1450,15 +1491,22 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         """
         params = self.__parameters__
         # In the example above, this would be {T3: str}
+        defaulted = set()
         for param in params:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:
+                prev_len = len(args)
                 args = prepare(self, args)
+                if (len(args) > prev_len and isinstance(param, TypeVar)
+                        and param.has_default()):
+                    defaulted.add(param)
         alen = len(args)
         plen = len(params)
         if alen != plen:
             raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
                             f" actual {alen}, expected {plen}")
+        if defaulted:
+            args = _resolve_parameter_defaults(params, args, defaulted)
         new_arg_by_param = dict(zip(params, args))
         return tuple(self._make_substitution(self.__args__, new_arg_by_param))
 
