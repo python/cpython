@@ -1,4 +1,5 @@
 import contextlib
+import dis
 import itertools
 import sys
 import textwrap
@@ -246,6 +247,28 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertTrue(any((opcode, oparg, operand) == ("_LOAD_FAST_BORROW", 259, 0)
                             for opcode, oparg, _, operand in list(ex)))
+
+    def test_jump_backward_extended_arg(self):
+        # gh-152192: a JUMP_BACKWARD that needs an EXTENDED_ARG must record its
+        # deopt target at the EXTENDED_ARG, not the JUMP_BACKWARD.
+        ns = {}
+        src = ("def f(n):\n"
+               "    i = 0\n"
+               "    while i < n:\n"
+               "        i += 1\n"
+               + "".join(f"        a = {j}\n" for j in range(140)))
+        exec(src, ns)
+        f = ns["f"]
+
+        instrs = list(dis.get_instructions(f))
+        ext, jb = next((p, i) for p, i in zip(instrs, instrs[1:])
+                       if i.opname == "JUMP_BACKWARD" and p.opname == "EXTENDED_ARG")
+
+        f(TIER2_THRESHOLD + 1)
+        ex = _opcode.get_executor(f.__code__, ext.offset)
+        set_ips = {t for op, _, t, _ in ex if op == "_SET_IP"}
+        self.assertIn(ext.offset // 2, set_ips)
+        self.assertNotIn(jb.offset // 2, set_ips)
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode

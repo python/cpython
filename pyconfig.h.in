@@ -200,8 +200,17 @@
 /* Define if you have the 'ctermid_r' function. */
 #undef HAVE_CTERMID_R
 
+/* Define if you have the 'define_key' function. */
+#undef HAVE_CURSES_DEFINE_KEY
+
+/* Define if you have the 'ESCDELAY' variable. */
+#undef HAVE_CURSES_ESCDELAY
+
 /* Define if you have the 'filter' function. */
 #undef HAVE_CURSES_FILTER
+
+/* Define if you have the 'getmouse' function with the X/Open signature. */
+#undef HAVE_CURSES_GETMOUSE
 
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
@@ -209,8 +218,17 @@
 /* Define if you have the 'has_key' function. */
 #undef HAVE_CURSES_HAS_KEY
 
+/* Define if you have the 'has_mouse' function. */
+#undef HAVE_CURSES_HAS_MOUSE
+
 /* Define if you have the 'immedok' function. */
 #undef HAVE_CURSES_IMMEDOK
+
+/* Define if you have the 'is_keypad' function. */
+#undef HAVE_CURSES_IS_KEYPAD
+
+/* Define if you have the 'is_leaveok' function. */
+#undef HAVE_CURSES_IS_LEAVEOK
 
 /* Define if you have the 'is_pad' function. */
 #undef HAVE_CURSES_IS_PAD
@@ -218,20 +236,53 @@
 /* Define if you have the 'is_term_resized' function. */
 #undef HAVE_CURSES_IS_TERM_RESIZED
 
+/* Define if you have the 'keyok' function. */
+#undef HAVE_CURSES_KEYOK
+
+/* Define if you have the 'key_defined' function. */
+#undef HAVE_CURSES_KEY_DEFINED
+
+/* Define if you have the 'new_prescr' function. */
+#undef HAVE_CURSES_NEW_PRESCR
+
+/* Define if you have the 'nofilter' function. */
+#undef HAVE_CURSES_NOFILTER
+
 /* Define if you have the 'resizeterm' function. */
 #undef HAVE_CURSES_RESIZETERM
 
 /* Define if you have the 'resize_term' function. */
 #undef HAVE_CURSES_RESIZE_TERM
 
+/* Define if you have the 'scr_dump' function. */
+#undef HAVE_CURSES_SCR_DUMP
+
+/* Define if you have the 'set_escdelay' function. */
+#undef HAVE_CURSES_SET_ESCDELAY
+
+/* Define if you have the 'set_tabsize' function. */
+#undef HAVE_CURSES_SET_TABSIZE
+
 /* Define if you have the 'syncok' function. */
 #undef HAVE_CURSES_SYNCOK
+
+/* Define if you have the 'TABSIZE' variable. */
+#undef HAVE_CURSES_TABSIZE
+
+/* Define if you have the 'term_attrs' function. */
+#undef HAVE_CURSES_TERM_ATTRS
 
 /* Define if you have the 'typeahead' function. */
 #undef HAVE_CURSES_TYPEAHEAD
 
 /* Define if you have the 'use_env' function. */
 #undef HAVE_CURSES_USE_ENV
+
+/* Define if you have the 'use_screen' function. */
+#undef HAVE_CURSES_USE_SCREEN
+
+/* Define if you have the 'use_window' function. */
+#undef HAVE_CURSES_USE_WINDOW
 
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
@@ -1405,6 +1456,9 @@
 /* Define to 1 if you have the 'sysconf' function. */
 #undef HAVE_SYSCONF
 
+/* Define to 1 if you have the 'sysctlbyname' function. */
+#undef HAVE_SYSCTLBYNAME
+
 /* Define to 1 if you have the <sysexits.h> header file. */
 #undef HAVE_SYSEXITS_H
 
@@ -1508,6 +1562,9 @@
 
 /* Define to 1 if you have the <sys/syscall.h> header file. */
 #undef HAVE_SYS_SYSCALL_H
+
+/* Define to 1 if you have the <sys/sysctl.h> header file. */
+#undef HAVE_SYS_SYSCTL_H
 
 /* Define to 1 if you have the <sys/sysmacros.h> header file. */
 #undef HAVE_SYS_SYSMACROS_H
@@ -2087,6 +2144,9 @@
 
 /* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
 #undef _Py_HAVE_PR_SET_VMA_ANON_NAME
+
+/* Thread stack size set by the linker (in bytes). */
+#undef _Py_LINKER_THREAD_STACK_SIZE
 
 /* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
 #undef _Py_STACK_GROWS_DOWN

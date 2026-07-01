@@ -30,7 +30,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 MOCK_ANY = mock.ANY
@@ -1332,6 +1332,46 @@ class TestFork(unittest.TestCase):
         process.join()
 
         self.assertEqual(result.value, 0)
+
+
+@unittest.skipUnless(
+    unix_events.can_use_pidfd(),
+    "operating system does not support pidfd",
+)
+class PidfdChildWatcherTests(test_utils.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
+
+    def test_pidfd_closed_when_waitpid_raises(self):
+        # _do_wait() must close the pidfd even when waitpid()
+        # fails with something other than ChildProcessError, otherwise the
+        # pidfd is leaked
+        self.loop.set_exception_handler(lambda loop, context: None)
+
+        async def coro():
+            before = os_helper.fd_count()
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', 'import sys; sys.stdin.read()',
+                stdin=asyncio.subprocess.PIPE
+            )
+
+            with mock.patch.object(os, 'waitpid',
+                                   side_effect=OSError('unexpected')) as m:
+                proc.stdin.close()
+                while not m.called:
+                    await asyncio.sleep(0)
+
+            os.waitpid(proc.pid, 0)
+            proc._transport._process_exited(0)
+            await proc.wait()
+
+            self.assertEqual(os_helper.fd_count(), before)
+
+        self.loop.run_until_complete(coro())
+
 
 if __name__ == '__main__':
     unittest.main()
