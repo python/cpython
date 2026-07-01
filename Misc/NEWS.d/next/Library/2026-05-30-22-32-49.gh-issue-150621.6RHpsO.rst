@@ -1,0 +1,6 @@
+Improve performance of
+:func:`!asyncio.protocols._feed_data_to_buffered_proto`, used by the
+proactor event loop's read transports (sockets, pipes, subprocess
+stdout/stderr) when the protocol is a :class:`~asyncio.BufferedProtocol`.
+Total work drops from ``O(N²)`` to ``O(N)`` when the payload exceeds a
+single buffer.
