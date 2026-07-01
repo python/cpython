@@ -832,6 +832,18 @@ def uuid6(node=None, clock_seq=None):
 
 _last_timestamp_v7 = None
 _last_counter_v7 = 0  # 42-bit counter
+# Indicate whether one or more counter overflow(s) happened in the same frame.
+#
+# Since the timestamp is incremented after a counter overflow by design,
+# we must prevent incrementing the timestamp again in consecutive calls
+# for which the logical timestamp millisecond remains the same.
+#
+# If the resampled counter hits an overflow again within the same time,
+# we want to advance the timestamp again and resample the timestamp.
+#
+# See https://github.com/python/cpython/issues/138862.
+_last_counter_v7_overflow = False
+
 
 def _uuid7_get_counter_and_tail():
     rand = int.from_bytes(os.urandom(10))
@@ -862,18 +874,29 @@ def uuid7():
 
     global _last_timestamp_v7
     global _last_counter_v7
+    global _last_counter_v7_overflow
 
     nanoseconds = time.time_ns()
     timestamp_ms = nanoseconds // 1_000_000
 
     if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
         counter, tail = _uuid7_get_counter_and_tail()
+        # Clear the overflow state every new millisecond.
+        _last_counter_v7_overflow = False
     else:
         if timestamp_ms < _last_timestamp_v7:
-            timestamp_ms = _last_timestamp_v7 + 1
+            # The clock went backwards or we are within the same timestamp
+            # after a counter overflow. We follow the RFC for in the former
+            # case. In the latter case, we re-use the already advanced
+            # timestamp (it was updated when we detected the overflow).
+            if _last_counter_v7_overflow:
+                timestamp_ms = _last_timestamp_v7
+            else:
+                timestamp_ms = _last_timestamp_v7 + 1
         # advance the 42-bit counter
         counter = _last_counter_v7 + 1
         if counter > 0x3ff_ffff_ffff:
+            _last_counter_v7_overflow = True
             # advance the 48-bit timestamp
             timestamp_ms += 1
             counter, tail = _uuid7_get_counter_and_tail()
