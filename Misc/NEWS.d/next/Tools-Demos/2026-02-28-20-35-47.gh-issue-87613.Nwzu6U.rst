@@ -1,0 +1,3 @@
+Add a ``@vectorcall`` decorator to Argument Clinic that can be used on
+``__init__`` and ``__new__``  which generates :ref:`vectorcall` argument
+parsing.

@@ -353,6 +353,10 @@ Modules/_testclinic.c	-	DeprKwdInit	-
 Modules/_testclinic.c	-	DeprKwdInitNoInline	-
 Modules/_testclinic.c	-	DeprKwdNew	-
 Modules/_testclinic.c	-	TestClass	-
+Modules/_testclinic.c	-	VcInit_Type	-
+Modules/_testclinic.c	-	VcKwOnly_Type	-
+Modules/_testclinic.c	-	VcNew_Type	-
+Modules/_testclinic.c	-	VcNewExact_Type	-
 
 
 ##################################
