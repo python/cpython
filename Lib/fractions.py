@@ -500,6 +500,15 @@ class Fraction(numbers.Rational):
         no_neg_zero = bool(match["no_neg_zero"])
         alternate_form = bool(match["alt"])
         zeropad = bool(match["zeropad"])
+
+        # Support zeropad handling like built-in types (see gh-61449).
+        if match["zeropad"] is not None:
+            if match["fill"] is not None and match["align"] is not None:
+                zeropad = False
+            elif match["align"] is not None:
+                zeropad = False
+                fill = "0"
+
         minimumwidth = int(match["minimumwidth"] or "0")
         thousands_sep = match["thousands_sep"]
         precision = int(match["precision"] or "6")
@@ -603,10 +612,7 @@ class Fraction(numbers.Rational):
             return self._format_general(match)
 
         if match := _FLOAT_FORMAT_SPECIFICATION_MATCHER(format_spec):
-            # Refuse the temptation to guess if both alignment _and_
-            # zero padding are specified.
-            if match["align"] is None or match["zeropad"] is None:
-                return self._format_float_style(match)
+            return self._format_float_style(match)
 
         raise ValueError(
             f"Invalid format specifier {format_spec!r} "
