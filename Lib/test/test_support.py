@@ -91,6 +91,48 @@ class TestSupport(unittest.TestCase):
     def test_import_fresh_module(self):
         import_helper.import_fresh_module("ftplib")
 
+    def test_import_fresh_module_restores_parent_attr(self):
+        import importlib.util
+
+        name = "importlib.util"
+        original_module = sys.modules[name]
+        self.assertIs(importlib.util, original_module)
+
+        fresh_module = import_helper.import_fresh_module(name)
+
+        self.assertIsNot(fresh_module, original_module)
+        self.assertIs(sys.modules[name], original_module)
+        self.assertIs(importlib.util, original_module)
+        self.assertIs(importlib.util, sys.modules[name])
+
+    def test_import_fresh_module_removes_added_parent_attr(self):
+        import xml
+
+        name = "xml.sax"
+        original_module = sys.modules.pop(name, None)
+        original_attr = getattr(xml, "sax", None)
+        had_attr = hasattr(xml, "sax")
+        if had_attr:
+            del xml.sax
+        try:
+            self.assertFalse(hasattr(xml, "sax"))
+
+            fresh_module = import_helper.import_fresh_module(name)
+
+            self.assertIsNotNone(fresh_module)
+            self.assertNotIn(name, sys.modules)
+            self.assertFalse(hasattr(xml, "sax"))
+        finally:
+            if original_module is not None:
+                sys.modules[name] = original_module
+            if had_attr:
+                xml.sax = original_attr
+            else:
+                try:
+                    del xml.sax
+                except AttributeError:
+                    pass
+
     def test_get_attribute(self):
         self.assertEqual(support.get_attribute(self, "test_get_attribute"),
                         self.test_get_attribute)
