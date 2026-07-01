@@ -1056,12 +1056,6 @@ iterations of the loop.
    The compiler tries to use :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
-.. opcode:: DELETE_NAME (namei)
-
-   Implements ``del name``, where *namei* is the index into :attr:`~codeobject.co_names`
-   attribute of the :ref:`code object <code-objects>`.
-
-
 .. opcode:: UNPACK_SEQUENCE (count)
 
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
@@ -1104,11 +1098,6 @@ iterations of the loop.
 .. opcode:: STORE_GLOBAL (namei)
 
    Works as :opcode:`STORE_NAME`, but stores the name as a global.
-
-
-.. opcode:: DELETE_GLOBAL (namei)
-
-   Works as :opcode:`DELETE_NAME`, but deletes a global name.
 
 
 .. opcode:: LOAD_CONST (consti)
