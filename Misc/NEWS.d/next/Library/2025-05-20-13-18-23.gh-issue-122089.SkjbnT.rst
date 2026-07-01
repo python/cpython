@@ -1,0 +1,2 @@
+Cache LogRecord.getMessage() the first time the message is formatted. Patch
+by Carey Metcalfe.
