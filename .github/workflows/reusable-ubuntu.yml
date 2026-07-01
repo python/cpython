@@ -49,9 +49,9 @@ jobs:
     - name: Install Clang and BOLT
       if: ${{ fromJSON(inputs.bolt-optimizations) }}
       run: |
-        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
-        sudo apt-get install --no-install-recommends bolt-19
-        echo PATH="$(llvm-config-19 --bindir):$PATH" >> $GITHUB_ENV
+        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 22
+        sudo apt-get install --no-install-recommends bolt-22
+        echo PATH="$(llvm-config-22 --bindir):$PATH" >> $GITHUB_ENV
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
