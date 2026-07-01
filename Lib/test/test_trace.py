@@ -499,6 +499,57 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
                 >>>>>>     print('unreachable')
             '''))
 
+
+# gh-142867: Deferred annotations (PEP 649) should not appear as not covered
+class TestCoverageAnnotations(unittest.TestCase):
+
+    codefile = 'tmp_annotations.py'
+    coverfile = 'tmp_annotations.cover'
+
+    def tearDown(self):
+        unlink(self.codefile)
+        unlink(self.coverfile)
+
+    def test_multiline_annotation_not_marked_uncovered(self):
+        # gh-142867: Multiline type annotations should not be marked as
+        # uncovered since annotation evaluation is deferred (PEP 649)
+        with open(self.codefile, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                def x() -> tuple[
+                        int,
+                ]:
+                    return (1,)
+
+                x()
+            '''))
+        argv = '-m trace --count --missing'.split() + [self.codefile]
+        status, stdout, stderr = assert_python_ok(*argv)
+        self.assertTrue(os.path.exists(self.coverfile))
+        with open(self.coverfile, encoding='utf-8') as f:
+            content = f.read()
+        # The multiline annotation (line 2: "int,") should NOT be marked
+        # as uncovered with ">>>>>>". It should have a blank prefix since
+        # annotation lines are not executed during normal program flow.
+        self.assertNotIn('>>>>>> ', content)
+
+    def test_class_annotation_not_marked_uncovered(self):
+        # Class attribute annotations should not be marked as uncovered
+        with open(self.codefile, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                class X:
+                    a: int
+
+                x = X()
+            '''))
+        argv = '-m trace --count --missing'.split() + [self.codefile]
+        status, stdout, stderr = assert_python_ok(*argv)
+        self.assertTrue(os.path.exists(self.coverfile))
+        with open(self.coverfile, encoding='utf-8') as f:
+            content = f.read()
+        # The annotation line should NOT be marked as uncovered
+        self.assertNotIn('>>>>>> ', content)
+
+
 class TestCommandLine(unittest.TestCase):
 
     def test_failures(self):
