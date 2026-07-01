@@ -1466,16 +1466,26 @@ def getcallargs(func, /, *positional, **named):
     num_args = len(args)
     num_defaults = len(defaults) if defaults else 0
 
+    # Positional-only parameters cannot be filled by keyword, matching the
+    # behaviour of an actual call and Signature.bind() (gh-107831).
+    func_obj = func.__func__ if ismethod(func) else func
+    code = getattr(func_obj, '__code__', None)
+    posonlyargs = set(args[:code.co_posonlyargcount]) if code is not None else set()
+
     n = min(num_pos, num_args)
     for i in range(n):
         arg2value[args[i]] = positional[i]
     if varargs:
         arg2value[varargs] = tuple(positional[n:])
-    possible_kwargs = set(args + kwonlyargs)
+    possible_kwargs = set(args + kwonlyargs) - posonlyargs
     if varkw:
         arg2value[varkw] = {}
+    posonly_passed_as_kwarg = []
     for kw, value in named.items():
         if kw not in possible_kwargs:
+            if kw in posonlyargs and not varkw:
+                posonly_passed_as_kwarg.append(kw)
+                continue
             if not varkw:
                 raise TypeError("%s() got an unexpected keyword argument %r" %
                                 (f_name, kw))
@@ -1485,6 +1495,10 @@ def getcallargs(func, /, *positional, **named):
             raise TypeError("%s() got multiple values for argument %r" %
                             (f_name, kw))
         arg2value[kw] = value
+    if posonly_passed_as_kwarg:
+        raise TypeError(
+            "%s() got some positional-only arguments passed as keyword "
+            "arguments: %r" % (f_name, ', '.join(posonly_passed_as_kwarg)))
     if num_pos > num_args and not varargs:
         _too_many(f_name, args, kwonlyargs, varargs, num_defaults,
                    num_pos, arg2value)
