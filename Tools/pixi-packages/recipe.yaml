@@ -1,6 +1,3 @@
-# NOTE: Please always only modify default/recipe.yaml and then run clone-recipe.sh to
-# propagate the changes to the other variants.
-
 context:
   # Keep up to date
   freethreading_tag: ${{ "t" if "freethreading" in variant else "" }}
@@ -9,7 +6,7 @@ recipe:
   name: python
 
 source:
-  - path: ../../..
+  - path: ../..
 
 outputs:
 - package:
@@ -25,12 +22,14 @@ outputs:
     name: python
     version: ${{ version }}
   build:
+    flags:
+      - ${{ variant }}
     string: "0_${{ abi_tag }}"
     files:
       exclude:
         - "*.o"
     script:
-      file: ../build.sh
+      file: build.sh
       env:
         PYTHON_VARIANT: ${{ variant }}
     python:

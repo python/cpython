@@ -1,0 +1,8 @@
+version: ["3.16"]
+
+openssl:
+  - '3.5'
+
+zip_keys: [["variant", "abi_tag"]]
+variant: ["default", "asan",       "freethreading", "tsan_freethreading"]
+abi_tag: ["cp316",   "asan_cp316", "cp316t",        "tsan_cp316t"]
