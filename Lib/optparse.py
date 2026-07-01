@@ -706,7 +706,7 @@ class Option:
                 not isinstance(self.callback_kwargs, dict)):
                 raise OptionError(
                     "callback_kwargs, if supplied, must be a dict: not %r"
-                    % self.callback_kwargs, self)
+                    % (self.callback_kwargs,), self)
         else:
             if self.callback is not None:
                 raise OptionError(
