@@ -161,7 +161,7 @@ dummy_func(
         }
 
         replaced op(_CHECK_PERIODIC_AT_END, (--)) {
-            int err = check_periodics(tstate);
+            int err = check_periodics_at_end(tstate, frame);
             ERROR_IF(err != 0);
         }
 
