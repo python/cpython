@@ -1,0 +1,1 @@
+Fix overly permissive validation of IPvFuture hostnames in :func:`urllib.parse.urlparse`, in compliance with RFC 3986. Invalid characters are now correctly rejected.
