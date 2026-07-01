@@ -12,6 +12,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Modules\expat\fallthrough.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\memory_sanitizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\Modules\expat\xmlrole.h">
       <Filter>Header Files</Filter>
     </ClInclude>
