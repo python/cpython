@@ -284,6 +284,16 @@ def _wrap_strftime(object, format, timetuple):
                         push('{:04}'.format(year))
                         if ch == 'F':
                             push('-{:02}-{:02}'.format(*timetuple[1:3]))
+                elif ch == '-':
+                    if i < n:
+                        next_ch = format[i]
+                        i += 1
+                        if next_ch not in 'dmHIMSjUWVy':
+                            push('%%-' + next_ch)
+                        else:
+                           push('%-' + next_ch)
+                    else:
+                        push('%-')
                 else:
                     push('%')
                     push(ch)
