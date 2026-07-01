@@ -313,7 +313,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 .. class:: Mapping
            MutableMapping
 
-   ABCs for read-only and mutable :term:`mappings <mapping>`.
+   ABCs for read-only and mutable :ref:`mapping <typesmapping>`.
 
 .. class:: MappingView
            ItemsView
