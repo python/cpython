@@ -1110,6 +1110,7 @@ enable_profiling
 enable_gil
 with_pydebug
 with_trace_refs
+enable_stackref_debug
 enable_pystats
 with_assertions
 enable_optimizations
@@ -1852,6 +1853,7 @@ Optional Features:
                           no)
   --disable-gil           enable support for running without the GIL (default
                           is no)
+  --enable-stackref-debug enable Py_STACKREF_DEBUG
   --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
@@ -8414,6 +8416,30 @@ fi
 if test "$disable_gil" = "yes" -a "$with_trace_refs" = "yes";
 then
   as_fn_error $? "--disable-gil cannot be used with --with-trace-refs" "$LINENO" 5
+fi
+
+# Check for --enable-stackref-debug
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-stackref-debug" >&5
+printf %s "checking for --enable-stackref-debug... " >&6; }
+# Check whether --enable-stackref-debug was given.
+if test ${enable_stackref_debug+y}
+then :
+  enableval=$enable_stackref_debug;
+else case e in #(
+  e) enable_stackref_debug=no
+ ;;
+esac
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_stackref_debug" >&5
+printf "%s\n" "$enable_stackref_debug" >&6; }
+
+if test "$enable_stackref_debug" = "yes"
+then
+
+printf "%s\n" "#define Py_STACKREF_DEBUG 1" >>confdefs.h
+
 fi
 
 # Check for --enable-pystats
