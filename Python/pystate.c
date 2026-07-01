@@ -175,9 +175,13 @@ bind_tstate(PyThreadState *tstate)
     // Currently we don't necessarily store the thread state
     // in thread-local storage (e.g. per-interpreter).
 
-    tstate->thread_id = PyThread_get_thread_ident();
+    // Published while still attaching and already on the thread list, so a
+    // stop-the-world reader can load it concurrently; store atomically.
+    FT_ATOMIC_STORE_ULONG_RELAXED(tstate->thread_id,
+                                  PyThread_get_thread_ident());
 #ifdef PY_HAVE_THREAD_NATIVE_ID
-    tstate->native_thread_id = PyThread_get_thread_native_id();
+    FT_ATOMIC_STORE_ULONG_RELAXED(tstate->native_thread_id,
+                                  PyThread_get_thread_native_id());
 #endif
 
 #ifdef Py_GIL_DISABLED
@@ -2586,7 +2590,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      */
     PyThreadState *tstate = NULL;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, t) {
-        if (t->thread_id == id) {
+        if (FT_ATOMIC_LOAD_ULONG_RELAXED(t->thread_id) == id) {
             tstate = t;
             break;
         }
@@ -2750,7 +2754,8 @@ _PyThread_CurrentFrames(void)
             if (frame == NULL) {
                 continue;
             }
-            PyObject *id = PyLong_FromUnsignedLong(t->thread_id);
+            PyObject *id = PyLong_FromUnsignedLong(
+                FT_ATOMIC_LOAD_ULONG_RELAXED(t->thread_id));
             if (id == NULL) {
                 goto fail;
             }
@@ -2814,7 +2819,8 @@ _PyThread_CurrentExceptions(void)
             if (err_info == NULL) {
                 continue;
             }
-            PyObject *id = PyLong_FromUnsignedLong(t->thread_id);
+            PyObject *id = PyLong_FromUnsignedLong(
+                FT_ATOMIC_LOAD_ULONG_RELAXED(t->thread_id));
             if (id == NULL) {
                 goto fail;
             }
