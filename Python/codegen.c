@@ -37,10 +37,12 @@
 
 #include <stdbool.h>
 
-#define COMP_GENEXP   0
-#define COMP_LISTCOMP 1
-#define COMP_SETCOMP  2
-#define COMP_DICTCOMP 3
+#define COMP_GENEXP         0
+#define COMP_LISTCOMP       1
+#define COMP_SETCOMP        2
+#define COMP_DICTCOMP       3
+#define COMP_FROZENSETCOMP  4
+#define COMP_FROZENDICTCOMP 5
 
 #undef SUCCESS
 #undef ERROR
@@ -3595,7 +3597,7 @@ codegen_frozenset(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.FrozenSet.elts, 0,
-                             BUILD_SET, SET_ADD, SET_UPDATE, 0);
+                             BUILD_FROZENSET, SET_ADD, SET_UPDATE, 0);
 }
 
 static int
@@ -3624,7 +3626,8 @@ codegen_subdict(compiler *c, expr_ty e,
 
 static int
 dict_codegen_impl(compiler *c, expr_ty e,
-                  asdl_expr_seq *keys, asdl_expr_seq *values)
+                  asdl_expr_seq *keys, asdl_expr_seq *values,
+                  int is_frozen)
 {
     location loc = LOC(e);
     Py_ssize_t i, n, elements;
@@ -3675,19 +3678,24 @@ dict_codegen_impl(compiler *c, expr_ty e,
     if (!have_dict) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
     }
+    if (is_frozen) {
+        ADDOP(c, loc, BUILD_FROZENDICT);
+    }
     return SUCCESS;
 }
 
 static int
 codegen_dict(compiler *c, expr_ty e)
 {
-    return dict_codegen_impl(c, e, e->v.Dict.keys, e->v.Dict.values);
+    return dict_codegen_impl(c, e, e->v.Dict.keys, e->v.Dict.values, 0);
 }
 
 static int
 codegen_frozendict(compiler *c, expr_ty e)
 {
-    return dict_codegen_impl(c, e, e->v.FrozenDict.keys, e->v.FrozenDict.values);
+    return dict_codegen_impl(c, e,
+                             e->v.FrozenDict.keys,
+                             e->v.FrozenDict.values, /* is_frozen */ 1);
 }
 
 static int
@@ -4698,6 +4706,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                 ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             }
             break;
+        case COMP_FROZENSETCOMP: _Py_FALLTHROUGH;
         case COMP_SETCOMP:
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
@@ -4708,6 +4717,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                 ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             }
             break;
+        case COMP_FROZENDICTCOMP: _Py_FALLTHROUGH;
         case COMP_DICTCOMP:
             if (val == NULL) {
                 /* unpacking (**) case */
@@ -4841,6 +4851,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                 ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             }
             break;
+        case COMP_FROZENSETCOMP: _Py_FALLTHROUGH;
         case COMP_SETCOMP:
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
@@ -4851,6 +4862,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                 ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             }
             break;
+        case COMP_FROZENDICTCOMP: _Py_FALLTHROUGH;
         case COMP_DICTCOMP:
             if (val == NULL) {
                 /* unpacking (**) case */
@@ -5090,7 +5102,13 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         case COMP_SETCOMP:
             op = BUILD_SET;
             break;
+        case COMP_FROZENSETCOMP:
+            op = BUILD_FROZENSET;
+            break;
         case COMP_DICTCOMP:
+            op = BUILD_MAP;
+            break;
+        case COMP_FROZENDICTCOMP:
             op = BUILD_MAP;
             break;
         default:
@@ -5107,6 +5125,10 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     if (codegen_comprehension_generator(c, loc, generators, 0, 0,
                                         elt, val, type, iter_state) < 0) {
         goto error_in_scope;
+    }
+
+    if (type == COMP_FROZENDICTCOMP) {
+        ADDOP(c, LOC(e), BUILD_FROZENDICT);
     }
 
     if (is_inlined) {
@@ -5196,7 +5218,7 @@ codegen_frozensetcomp(compiler *c, expr_ty e)
 {
     assert(e->kind == FrozenSetComp_kind);
     _Py_DECLARE_STR(anon_frozensetcomp, "<frozensetcomp>");
-    return codegen_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_frozensetcomp),
+    return codegen_comprehension(c, e, COMP_FROZENSETCOMP, &_Py_STR(anon_frozensetcomp),
                                  e->v.FrozenSetComp.generators,
                                  e->v.FrozenSetComp.elt, NULL);
 }
@@ -5216,7 +5238,7 @@ codegen_frozendictcomp(compiler *c, expr_ty e)
 {
     assert(e->kind == FrozenDictComp_kind);
     _Py_DECLARE_STR(anon_frozendictcomp, "<frozendictcomp>");
-    return codegen_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_frozendictcomp),
+    return codegen_comprehension(c, e, COMP_FROZENDICTCOMP, &_Py_STR(anon_frozendictcomp),
                                  e->v.FrozenDictComp.generators,
                                  e->v.FrozenDictComp.key, e->v.FrozenDictComp.value);
 }

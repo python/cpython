@@ -2560,18 +2560,24 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true);
             }
-
-            int err = 0;
-            for (Py_ssize_t i = 0; i < oparg; i++) {
-                _PyStackRef value = values[i];
-                values[i] = PyStackRef_NULL;
-                if (err == 0) {
-                    err = _PySet_AddTakeRef((PySetObject *)set_o, PyStackRef_AsPyObjectSteal(value));
-                }
-                else {
-                    PyStackRef_CLOSE(value);
-                }
+            int err = _Py_BuildSet_StackRefSteal(set_o, values, oparg);
+            DEAD(values);
+            if (err) {
+                Py_DECREF(set_o);
+                ERROR_IF(true);
             }
+
+            INPUTS_DEAD();
+            set = PyStackRef_FromPyObjectStealMortal(set_o);
+        }
+
+        inst(BUILD_FROZENSET, (values[oparg] -- set)) {
+            PyObject *set_o = PyFrozenSet_New(NULL);
+            if (set_o == NULL) {
+                DECREF_INPUTS();
+                ERROR_IF(true);
+            }
+            int err = _Py_BuildSet_StackRefSteal(set_o, values, oparg);
             DEAD(values);
             if (err) {
                 Py_DECREF(set_o);
@@ -2583,9 +2589,17 @@ dummy_func(
         }
 
         inst(BUILD_MAP, (values[oparg*2] -- map)) {
-
             PyObject *map_o = _Py_BuildMap_StackRefSteal(values, oparg);
             DEAD(values);
+            ERROR_IF(map_o == NULL);
+            map = PyStackRef_FromPyObjectStealMortal(map_o);
+        }
+
+        inst(BUILD_FROZENDICT, (dict -- map)) {
+            PyObject *dict_o = PyStackRef_AsPyObjectSteal(dict);
+            // TODO: use `PyFrozenDict_FromDictSteal` API here:
+            PyObject *map_o = PyFrozenDict_New(dict_o);
+            Py_DECREF(dict_o);
             ERROR_IF(map_o == NULL);
             map = PyStackRef_FromPyObjectStealMortal(map_o);
         }
