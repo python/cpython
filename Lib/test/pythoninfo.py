@@ -1174,18 +1174,24 @@ def detect_virt(info_add):
             # Log the value to update patterns on new VM
             info_add('system.manufacturer', manufacturer)
 
-        data = wmi_query("SELECT Version FROM Win32_Bios")
+        data = wmi_query("SELECT SerialNumber,Version FROM Win32_Bios")
+        bios_serial_number = data.get('SerialNumber', '')
         bios_version = data.get('Version', '')
         patterns = (
             'VIRTUAL',
             'VMware',
             'Xen',
         )
-        if any(pattern in bios_version for pattern in patterns):
+        if any(pattern in bios_serial_number for pattern in patterns):
+            return bios_serial_number
+        elif any(pattern in bios_version for pattern in patterns):
             return bios_version
-        elif bios_version:
-            # Log the value to update patterns on new VM
-            info_add('system.bios_version', bios_version)
+        else:
+            # Log the values to update patterns on new VM
+            if bios_version:
+                info_add('system.bios_version', bios_version)
+            if bios_serial_number:
+                info_add('system.bios_serial_number', bios_serial_number)
 
     # Run systemd-detect-virt command
     virt = run_command(["systemd-detect-virt"], check=False)
