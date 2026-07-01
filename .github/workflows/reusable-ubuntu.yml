@@ -105,6 +105,7 @@ jobs:
         ${{ fromJSON(inputs.debug) && '--with-pydebug' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
         ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
+        ${{ fromJSON(inputs.upload-install) && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
     - name: Build CPython out-of-tree
       if: ${{ inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
@@ -139,6 +140,21 @@ jobs:
       if: ${{ inputs.upload-install }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make install DESTDIR=build/install
+    - name: Install some test packages in the Python
+      if: ${{ inputs.upload-install }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: |
+        CPYTHON_TEST_EXT_NAME=c_mod \
+          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+        CPYTHON_TEST_LIMITED=1 CPYTHON_TEST_EXT_NAME=abi3_mod \
+          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+        CPYTHON_TEST_ABI3T=1 CPYTHON_TEST_EXT_NAME=abi3t_mod \
+          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+        # Until https://github.com/pypa/setuptools/pull/5193 is released
+        if [ ${{ fromJSON(inputs.free-threading) && '1' || '0' }} = '0' ]; then \
+          (cd build/install/usr/lib/python*/site-packages && \
+            mv abi3t_mod.abi3.so abi3t_mod.abi3t.so); \
+        fi
     - name: Upload Installed Python
       if: ${{ inputs.upload-install }}
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0

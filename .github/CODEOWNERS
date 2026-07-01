@@ -150,6 +150,8 @@ Tools/build/generate_sbom.py  @sethmlarson
 # ABI check
 Misc/libabigail.abignore      @encukou
 
+# Multiarch
+Tools/coinstall-check/        @stefanor
 
 # ----------------------------------------------------------------------------
 # Platform Support
