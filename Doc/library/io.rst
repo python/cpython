@@ -660,6 +660,95 @@ I/O Base Classes
       so the implementation should only access *b* during the method call.
 
 
+.. class:: TextIOBase
+
+   Base class for text streams.  This class provides a character and line based
+   interface to stream I/O.  It inherits from :class:`IOBase`.
+
+   :class:`TextIOBase` provides or overrides these data attributes and
+   methods in addition to those from :class:`IOBase`:
+
+   .. attribute:: encoding
+
+      The name of the encoding used to decode the stream's bytes into
+      strings, and to encode strings into bytes.
+
+   .. attribute:: errors
+
+      The error setting of the decoder or encoder.
+
+   .. attribute:: newlines
+
+      A string, a tuple of strings, or ``None``, indicating the newlines
+      translated so far.  Depending on the implementation and the initial
+      constructor flags, this may not be available.
+
+   .. attribute:: buffer
+
+      The underlying binary buffer (a :class:`BufferedIOBase`
+      or :class:`RawIOBase` instance) that :class:`TextIOBase` deals with.
+      This is not part of the :class:`TextIOBase` API and may not exist
+      in some implementations.
+
+   .. method:: detach()
+
+      Separate the underlying binary buffer from the :class:`TextIOBase` and
+      return it.
+
+      After the underlying buffer has been detached, the :class:`TextIOBase` is
+      in an unusable state.
+
+      Some :class:`TextIOBase` implementations, like :class:`StringIO`, may not
+      have the concept of an underlying buffer and calling this method will
+      raise :exc:`UnsupportedOperation`.
+
+      .. versionadded:: 3.1
+
+   .. method:: read(size=-1, /)
+
+      Read and return at most *size* characters from the stream as a single
+      :class:`str`.  If *size* is negative or ``None``, reads until EOF.
+
+   .. method:: readline(size=-1, /)
+
+      Read until newline or EOF and return a single :class:`str`.  If the stream is
+      already at EOF, an empty string is returned.
+
+      If *size* is specified, at most *size* characters will be read.
+
+   .. method:: seek(offset, whence=SEEK_SET, /)
+
+      Change the stream position to the given *offset*.  Behaviour depends on
+      the *whence* parameter.  The default value for *whence* is
+      :data:`!SEEK_SET`.
+
+      * :data:`!SEEK_SET` or ``0``: seek from the start of the stream
+        (the default); *offset* must either be a number returned by
+        :meth:`TextIOBase.tell`, or zero.  Any other *offset* value
+        produces undefined behaviour.
+      * :data:`!SEEK_CUR` or ``1``: "seek" to the current position;
+        *offset* must be zero, which is a no-operation (all other values
+        are unsupported).
+      * :data:`!SEEK_END` or ``2``: seek to the end of the stream;
+        *offset* must be zero (all other values are unsupported).
+
+      Return the new absolute position as an opaque number.
+
+      .. versionadded:: 3.1
+         The :data:`!SEEK_*` constants.
+
+   .. method:: tell()
+
+      Return the current stream position as an opaque number.  The number
+      does not usually represent a number of bytes in the underlying
+      binary storage.
+
+   .. method:: write(s, /)
+
+      Write the string *s* to the stream and return the number of characters
+      written.
+
+
 Raw File I/O
 ^^^^^^^^^^^^
 
@@ -903,95 +992,6 @@ than raw I/O does.
 
 Text I/O
 ^^^^^^^^
-
-.. class:: TextIOBase
-
-   Base class for text streams.  This class provides a character and line based
-   interface to stream I/O.  It inherits from :class:`IOBase`.
-
-   :class:`TextIOBase` provides or overrides these data attributes and
-   methods in addition to those from :class:`IOBase`:
-
-   .. attribute:: encoding
-
-      The name of the encoding used to decode the stream's bytes into
-      strings, and to encode strings into bytes.
-
-   .. attribute:: errors
-
-      The error setting of the decoder or encoder.
-
-   .. attribute:: newlines
-
-      A string, a tuple of strings, or ``None``, indicating the newlines
-      translated so far.  Depending on the implementation and the initial
-      constructor flags, this may not be available.
-
-   .. attribute:: buffer
-
-      The underlying binary buffer (a :class:`BufferedIOBase`
-      or :class:`RawIOBase` instance) that :class:`TextIOBase` deals with.
-      This is not part of the :class:`TextIOBase` API and may not exist
-      in some implementations.
-
-   .. method:: detach()
-
-      Separate the underlying binary buffer from the :class:`TextIOBase` and
-      return it.
-
-      After the underlying buffer has been detached, the :class:`TextIOBase` is
-      in an unusable state.
-
-      Some :class:`TextIOBase` implementations, like :class:`StringIO`, may not
-      have the concept of an underlying buffer and calling this method will
-      raise :exc:`UnsupportedOperation`.
-
-      .. versionadded:: 3.1
-
-   .. method:: read(size=-1, /)
-
-      Read and return at most *size* characters from the stream as a single
-      :class:`str`.  If *size* is negative or ``None``, reads until EOF.
-
-   .. method:: readline(size=-1, /)
-
-      Read until newline or EOF and return a single :class:`str`.  If the stream is
-      already at EOF, an empty string is returned.
-
-      If *size* is specified, at most *size* characters will be read.
-
-   .. method:: seek(offset, whence=SEEK_SET, /)
-
-      Change the stream position to the given *offset*.  Behaviour depends on
-      the *whence* parameter.  The default value for *whence* is
-      :data:`!SEEK_SET`.
-
-      * :data:`!SEEK_SET` or ``0``: seek from the start of the stream
-        (the default); *offset* must either be a number returned by
-        :meth:`TextIOBase.tell`, or zero.  Any other *offset* value
-        produces undefined behaviour.
-      * :data:`!SEEK_CUR` or ``1``: "seek" to the current position;
-        *offset* must be zero, which is a no-operation (all other values
-        are unsupported).
-      * :data:`!SEEK_END` or ``2``: seek to the end of the stream;
-        *offset* must be zero (all other values are unsupported).
-
-      Return the new absolute position as an opaque number.
-
-      .. versionadded:: 3.1
-         The :data:`!SEEK_*` constants.
-
-   .. method:: tell()
-
-      Return the current stream position as an opaque number.  The number
-      does not usually represent a number of bytes in the underlying
-      binary storage.
-
-   .. method:: write(s, /)
-
-      Write the string *s* to the stream and return the number of characters
-      written.
-
 
 .. class:: TextIOWrapper(buffer, encoding=None, errors=None, newline=None, \
                          line_buffering=False, write_through=False)
