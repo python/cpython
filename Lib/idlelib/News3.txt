@@ -4,6 +4,11 @@ Released on 2026-10-01
 =========================
 
 
+gh-152740: The "In files:" field of IDLE's Find in Files dialog now
+always contains a full directory path, even for an unsaved editor or
+the Shell. This shows in the grep output which directory was searched.
+Patch by Serhiy Storchaka and Claude Code.
+
 gh-152739: Omit the idlelib directory from the path of the IDLE user
 process. User code imports such as `import help' can no longer import
 an idlelib submodule (here idlelib.help) instead of the intended
