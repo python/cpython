@@ -99,9 +99,13 @@ types_world_is_stopped(void)
 // PyType_FromMetaclass() to indicate that a newly initialized type might be
 // revealed.  We only have ob_flags on 64-bit platforms.
 #if SIZEOF_VOID_P > 4
-#define TYPE_IS_REVEALED(tp) ((((PyObject *)(tp))->ob_flags & _Py_TYPE_REVEALED_FLAG) != 0)
+#define TYPE_IS_REVEALED(tp) \
+    ((FT_ATOMIC_LOAD_UINT16_RELAXED(((PyObject *)(tp))->ob_flags) & _Py_TYPE_REVEALED_FLAG) != 0)
+#define TYPE_SET_REVEALED(tp) \
+    ((void)_Py_atomic_or_uint16(&((PyObject *)(tp))->ob_flags, _Py_TYPE_REVEALED_FLAG))
 #else
 #define TYPE_IS_REVEALED(tp) 0
+#define TYPE_SET_REVEALED(tp) ((void)0)
 #endif
 
 #ifdef Py_DEBUG
@@ -187,6 +191,7 @@ type_lock_allow_release(void)
 #define END_TYPE_DICT_LOCK()
 #define ASSERT_TYPE_LOCK_HELD()
 #define TYPE_IS_REVEALED(tp) 0
+#define TYPE_SET_REVEALED(tp) ((void)0)
 #define ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp)
 #define ASSERT_NEW_TYPE_OR_LOCKED(tp)
 #define types_world_is_stopped() 1
@@ -3943,7 +3948,7 @@ static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
-static void fixup_slot_dispatchers(PyTypeObject *);
+static int fixup_slot_dispatchers(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
@@ -4955,7 +4960,9 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     // Put the proper slots in place
-    fixup_slot_dispatchers(type);
+    if (fixup_slot_dispatchers(type) < 0) {
+        goto error;
+    }
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         if (PyErr_WarnFormat(
@@ -4978,8 +4985,8 @@ type_new_impl(type_new_ctx *ctx)
 
     assert(_PyType_CheckConsistency(type));
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+    // After this point, other threads can potentially use this type.
+    TYPE_SET_REVEALED(type);
 #endif
 
     return (PyObject *)type;
@@ -5777,7 +5784,7 @@ type_from_slots_or_spec(
     assert(_PyType_CheckConsistency(type));
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
     // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+    TYPE_SET_REVEALED(type);
 #endif
 
 finally:
@@ -6844,7 +6851,13 @@ type_dealloc_common(PyTypeObject *type)
     PyObject *bases = lookup_tp_bases(type);
     if (bases != NULL) {
         PyObject *exc = PyErr_GetRaisedException();
+#ifdef Py_GIL_DISABLED
+        BEGIN_TYPE_LOCK();
+#endif
         remove_all_subclasses(type, bases);
+#ifdef Py_GIL_DISABLED
+        END_TYPE_LOCK();
+#endif
         PyErr_SetRaisedException(exc);
     }
 }
@@ -12121,13 +12134,33 @@ update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its
    dict. */
-static void
+static int
 fixup_slot_dispatchers(PyTypeObject *type)
 {
     assert(!PyErr_Occurred());
+#ifdef Py_GIL_DISABLED
+    slot_update_t queued_updates = {0};
+    int res = 0;
+    BEGIN_TYPE_LOCK();
+    for (pytype_slotdef *p = slotdefs; p->name; ) {
+        if (update_one_slot(type, p, &p, &queued_updates) < 0) {
+            res = -1;
+            break;
+        }
+    }
+    if (res == 0 && queued_updates.head != NULL) {
+        apply_type_slot_updates(&queued_updates);
+        ASSERT_TYPE_LOCK_HELD();
+    }
+    END_TYPE_LOCK();
+    slot_update_free_chunks(&queued_updates);
+    return res;
+#else
     for (pytype_slotdef *p = slotdefs; p->name; ) {
         update_one_slot(type, p, &p, NULL);
     }
+    return 0;
+#endif
 }
 
 #ifdef Py_GIL_DISABLED
