@@ -453,6 +453,7 @@ class ZipInfo:
         'file_size',
         '_raw_time',
         '_end_offset',
+        '_metadata_encoding',
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
@@ -488,6 +489,7 @@ class ZipInfo:
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
         self._end_offset = None         # Start of the next local header or central directory
+        self._metadata_encoding = None  # Encoding used when read from the archive
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
@@ -575,12 +577,18 @@ class ZipInfo:
 
     def _encodeFilenameFlags(self):
         if self.flag_bits & _MASK_UTF_FILENAME:
-            encoding = 'ascii'
-        else:
-            encoding = 'cp437'
+            return self.filename.encode('utf-8'), self.flag_bits
+
+        # For a file read from the archive, preserve its original encoding.
+        encoding = self._metadata_encoding
+        if encoding:
+            return self.filename.encode(encoding), self.flag_bits
+
+        # For a newly added file, enforce EFS if filename or comment is non-ASCII.
         try:
-            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
-        except UnicodeEncodeError:
+            self.comment.decode('ascii')
+            return self.filename.encode('ascii'), self.flag_bits
+        except (UnicodeEncodeError, UnicodeDecodeError):
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
     def _decodeExtra(self, filename_crc):
@@ -2072,6 +2080,7 @@ class ZipFile:
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
             x._decodeExtra(orig_filename_crc)
             x.header_offset = x.header_offset + concat
+            x._metadata_encoding = self.metadata_encoding or 'cp437'
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
 
@@ -2286,7 +2295,7 @@ class ZipFile:
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = _MASK_UTF_FILENAME
+        zinfo.flag_bits = 0x00
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
