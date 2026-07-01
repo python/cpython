@@ -229,6 +229,18 @@ class ResourceTest(unittest.TestCase):
         self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, BadSeq()),
                          limits)
 
+    # Issue 142317: Setting RLIMIT_STACK not working on Darwin
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "setting RLIMIT_STACK is not supported on VxWorks")
+    @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
+    @unittest.skipIf(
+        sys.platform == "darwin" and support.check_sanitizer(ub=True),
+        "UBSan on MacOS explicitly compiles with a large stack size which breaks this test"
+    )
+    def test_rlimit_stack(self):
+        resource.setrlimit(
+            resource.RLIMIT_STACK, resource.getrlimit(resource.RLIMIT_STACK)
+        )
 
 if __name__ == "__main__":
     unittest.main()

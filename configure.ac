@@ -3775,18 +3775,25 @@ then
 	Darwin/*|iOS/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 
-		# Issue #18075: the default maximum stack size (8MBytes) is too
-		# small for the default recursion limit. Increase the stack size
-		# to ensure that tests don't crash
-		stack_size="1000000"  # 16 MB
+		# Use the default stack size (0) unless otherwise requested to
+		# ensure that modifying RLIMIT_STACK works.
+		stack_size="0"
 		if test "$with_ubsan" = "yes"
 		then
 			# Undefined behavior sanitizer requires an even deeper stack
 			stack_size="4000000"  # 64 MB
 		fi
 
+		thread_stack_size="$stack_size"
+		# 0 does not map to a default thread stack size value, so we
+		# explicitly set the platform default (8MB) here if necessary.
+		if test "$stack_size" = "0"
+		then
+			thread_stack_size="800000"
+		fi
+
 		AC_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
-				[0x$stack_size],
+				[0x$thread_stack_size],
 				[Custom thread stack size depending on chosen sanitizer runtimes.])
 
 		if test $ac_sys_system = "Darwin"; then
