@@ -25,9 +25,7 @@ extensible in C or C++.  It is also usable as an extension language for
 applications that need a programmable interface. Finally, Python is portable:
 it runs on many Unix variants including Linux and macOS, and on Windows.
 
-To find out more, start with :ref:`tutorial-index`.  The `Beginner's Guide to
-Python <https://wiki.python.org/moin/BeginnersGuide>`_ links to other
-introductory tutorials and resources for learning Python.
+To find out more, start with :ref:`tutorial-index`.
 
 
 What is the Python Software Foundation?
@@ -200,9 +198,6 @@ I've never programmed before. Is there a Python tutorial?
 There are numerous tutorials and books available.  The standard documentation
 includes :ref:`tutorial-index`.
 
-Consult `the Beginner's Guide <https://wiki.python.org/moin/BeginnersGuide>`_ to
-find information for beginning Python programmers, including lists of tutorials.
-
 
 Is there a newsgroup or mailing list devoted to Python?
 -------------------------------------------------------
@@ -261,10 +256,9 @@ written in 1991 and is now quite outdated.
 Are there any books on Python?
 ------------------------------
 
-Yes, there are many, and more are being published.  See the python.org wiki at
-https://wiki.python.org/moin/PythonBooks for a list.
+Yes, there are many, and more are being published.
 
-You can also search online bookstores for "Python" and filter out the Monty
+You can search online bookstores for "Python" and filter out the Monty
 Python references; or perhaps search for "Python" and "language".
 
 
@@ -439,9 +433,7 @@ There are also good IDEs for Python.  IDLE is a cross-platform IDE for Python
 that is written in Python using Tkinter.
 Emacs users will be happy to know that there is a very good Python mode for
 Emacs.  All of these programming environments provide syntax highlighting,
-auto-indenting, and access to the interactive interpreter while coding.  Consult
-`the Python wiki <https://wiki.python.org/moin/PythonEditors>`_ for a full list
-of Python editing environments.
+auto-indenting, and access to the interactive interpreter while coding.
 
 If you want to discuss Python's use in education, you may be interested in
 joining `the edu-sig mailing list
