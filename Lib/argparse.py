@@ -610,7 +610,7 @@ class HelpFormatter(object):
         parts = [action_header]
 
         # if there was help for the action, add lines of help text
-        if action.help and action.help.strip():
+        if action.help and str(action.help).strip():
             help_text = self._expand_help(action)
             if help_text:
                 help_lines = self._split_lines(help_text, help_width)
@@ -712,8 +712,9 @@ class HelpFormatter(object):
 
     def _expand_help(self, action):
         help_string = self._get_help_string(action)
-        if '%' not in help_string:
-            return self._apply_text_markup(help_string)
+        help_text = str(help_string)
+        if '%' not in help_text:
+            return self._apply_text_markup(help_text)
         params = dict(vars(action), prog=self._prog)
         for name in list(params):
             value = params[name]
@@ -758,7 +759,7 @@ class HelpFormatter(object):
             return spec % params
 
         return self._apply_text_markup(
-            _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
+            _re.sub(fmt_spec, colorize, help_text, flags=_re.VERBOSE)
         )
 
     def _iter_indented_subactions(self, action):

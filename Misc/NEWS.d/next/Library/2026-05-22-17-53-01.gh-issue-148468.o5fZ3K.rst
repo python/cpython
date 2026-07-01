@@ -1,0 +1,2 @@
+Fix regression in :mod:`argparse` so colorized argument help once again accepts
+string-like proxy objects.

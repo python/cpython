@@ -7837,6 +7837,55 @@ class TestColorized(TestCase):
         self.assertIn("set the `foo` value", help_text)
         self.assertNotIn("\x1b[", help_text)
 
+    def test_argument_help_interpolation_accepts_string_like_proxy(self):
+        class LazyStr:
+            def __init__(self, message):
+                self._message = message
+
+            def __str__(self):
+                return self._message
+
+            def __contains__(self, item):
+                return item in self._message
+
+            def __mod__(self, other):
+                return self._message % other
+
+            def strip(self):
+                return self._message.strip()
+
+        parser = argparse.ArgumentParser(prog="PROG", color=True)
+        parser.add_argument(
+            "--foo",
+            default="bar",
+            help=LazyStr("set `foo` (default: %(default)s)"),
+        )
+
+        prog_extra = self.theme.prog_extra
+        interp = self.theme.interpolated_value
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f"set {prog_extra}foo{reset}", help_text)
+        self.assertIn(f"default: {interp}bar{reset}", help_text)
+
+    def test_argument_help_without_interpolation_accepts_string_like_proxy(self):
+        class LazyStr:
+            def __init__(self, message):
+                self._message = message
+
+            def __str__(self):
+                return self._message
+
+        parser = argparse.ArgumentParser(prog="PROG", color=True)
+        parser.add_argument("--foo", help=LazyStr("set `foo` value"))
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f"set {prog_extra}foo{reset} value", help_text)
+
     def test_help_with_format_specifiers(self):
         # GH-142950: format specifiers like %x should work with color=True
         parser = argparse.ArgumentParser(prog='PROG', color=True)
