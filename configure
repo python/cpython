@@ -26596,6 +26596,129 @@ fi
 
 
 
+# Check for the reentrant getservbyname_r(), getservbyport_r() and
+# getprotobyname_r() functions. These compile tests use the glibc/POSIX-TSF
+# 6-argument form; platforms with a different arity (e.g. the 5-argument
+# Solaris/illumos form) fail the probe and fall back to the netdb lock.
+OLD_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS $MY_CPPFLAGS $MY_THREAD_CPPFLAGS $MY_CFLAGS"
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getservbyname_r" >&5
+printf %s "checking for getservbyname_r... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <netdb.h>
+
+int
+main (void)
+{
+
+  char buffer[2048];
+  struct servent serv, *res;
+
+  (void) getservbyname_r("name", "proto", &serv, buffer, sizeof(buffer), &res);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+
+printf "%s\n" "#define HAVE_GETSERVBYNAME_R 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+else case e in #(
+  e)
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getservbyport_r" >&5
+printf %s "checking for getservbyport_r... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <netdb.h>
+
+int
+main (void)
+{
+
+  char buffer[2048];
+  struct servent serv, *res;
+
+  (void) getservbyport_r(80, "proto", &serv, buffer, sizeof(buffer), &res);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+
+printf "%s\n" "#define HAVE_GETSERVBYPORT_R 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+else case e in #(
+  e)
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getprotobyname_r" >&5
+printf %s "checking for getprotobyname_r... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <netdb.h>
+
+int
+main (void)
+{
+
+  char buffer[2048];
+  struct protoent prot, *res;
+
+  (void) getprotobyname_r("name", &prot, buffer, sizeof(buffer), &res);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+
+printf "%s\n" "#define HAVE_GETPROTOBYNAME_R 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+else case e in #(
+  e)
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+CFLAGS=$OLD_CFLAGS
+
 # checks for system services
 # (none yet)
 
