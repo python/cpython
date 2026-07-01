@@ -751,7 +751,8 @@ class ABCTestCase(unittest.TestCase):
         self.assertNotIsInstance(C(), abc)
         self.assertNotIsSubclass(C, abc)
 
-    def validate_comparison(self, instance):
+    def validate_comparison(self, klass):
+        instance = klass()
         ops = ['lt', 'gt', 'le', 'ge', 'ne', 'or', 'and', 'xor', 'sub']
         operators = {}
         for op in ops:
@@ -781,6 +782,21 @@ class ABCTestCase(unittest.TestCase):
             op(instance, other)
             self.assertTrue(other.right_side,'Right side not called for %s.%s'
                             % (type(instance), name))
+
+        # gh-85588: Inherited __ne__ should be overriddent together with __eq__
+        # in Set and Mapping.
+        class Mixin:
+            def __eq__(self, other):
+                raise AssertionError('should not be called')
+            __ne__ = __eq__
+        class C(klass, Mixin):
+            pass
+        instance = C()
+        other = object()
+        self.assertIs(instance == other, False)
+        self.assertIs(instance != other, True)
+        self.assertIs(instance.__eq__(other), NotImplemented)
+        self.assertIs(instance.__ne__(other), NotImplemented)
 
 def _test_gen():
     yield
@@ -1430,7 +1446,7 @@ class TestCollectionABCs(ABCTestCase):
                 return 0
             def __iter__(self):
                 return iter([])
-        self.validate_comparison(MySet())
+        self.validate_comparison(MySet)
 
     def test_hash_Set(self):
         class OneTwoThreeSet(Set):
@@ -1852,7 +1868,7 @@ class TestCollectionABCs(ABCTestCase):
                 raise IndexError
             def __iter__(self):
                 return iter(())
-        self.validate_comparison(MyMapping())
+        self.validate_comparison(MyMapping)
         self.assertRaises(TypeError, reversed, MyMapping())
 
     def test_MutableMapping(self):
