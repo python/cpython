@@ -285,6 +285,10 @@ ZipFile objects
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
 
+   .. versionchanged:: next
+      Deleting a :class:`zipfile.ZipFile` which contains unwritten data before
+      it is closed now emits a :exc:`ResourceWarning`. Use as a
+      :term:`context manager` or call :meth:`~zipfile.ZipFile.close` explicitly.
 
 .. method:: ZipFile.close()
 

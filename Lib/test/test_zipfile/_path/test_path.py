@@ -6,6 +6,7 @@ import pickle
 import stat
 import sys
 import unittest
+import warnings
 import zipfile
 import zipfile._path
 
@@ -86,6 +87,12 @@ class TestPath(unittest.TestCase):
     def setUp(self):
         self.fixtures = contextlib.ExitStack()
         self.addCleanup(self.fixtures.close)
+        # These tests use zipfiles as fixtures which do not get closed. Ignore
+        # the ResourceWarning.
+        self.fixtures.enter_context(warnings.catch_warnings())
+        warnings.filterwarnings(
+            'ignore', category=ResourceWarning, message='unclosed ZipFile'
+        )
 
     def zipfile_ondisk(self, alpharep):
         tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))

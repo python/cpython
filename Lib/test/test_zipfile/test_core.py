@@ -25,12 +25,13 @@ from test.support import script_helper, os_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
-    cpython_only
+    cpython_only, gc_collect
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
 )
 from test.support.import_helper import ensure_lazy_imports
+from test.support.warnings_helper import check_no_resource_warning
 
 
 TESTFN2 = TESTFN + "2"
@@ -4051,6 +4052,28 @@ class OtherTests(unittest.TestCase):
         except zipfile.BadZipFile:
             self.assertIsNone(zipfp2.fp, 'zipfp is not closed')
 
+    def test_garbage_collection(self):
+        # gh-81954: Warn if a writable zipfile is closed by GC.
+        with self.assertWarns(ResourceWarning):
+            zipfile.ZipFile(io.BytesIO(), "w")
+            gc_collect()
+
+        # Only warn if there is possible data loss.
+        # Properly closed via context manager.
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("f.txt", b"data")
+
+        with check_no_resource_warning(self):
+            # Read mode: No possible data loss.
+            zipfile.ZipFile(buf, "r")
+
+            # Write with manual explicit close: No pending data.
+            zf = zipfile.ZipFile(io.BytesIO(), "w")
+            zf.writestr("f.txt", b"data")
+            zf.close()
+            del zf
+
     def test_unsupported_version(self):
         # File has an extract_version of 120
         data = (b'PK\x03\x04x\x00\x00\x00\x00\x00!p\xa1@\x00\x00\x00\x00\x00\x00'
@@ -5503,10 +5526,10 @@ class TestWithDirectory(unittest.TestCase):
         the zip file, this is a strange behavior, but we should support it.
         """
         in_memory_file = io.BytesIO()
-        zf = zipfile.ZipFile(in_memory_file, "w")
-        zf.mkdir('/')
-        zf.writestr('./a.txt', 'aaa')
-        zf.extractall(TESTFN2)
+        with zipfile.ZipFile(in_memory_file, "w") as zf:
+            zf.mkdir('/')
+            zf.writestr('./a.txt', 'aaa')
+            zf.extractall(TESTFN2)
 
     def tearDown(self):
         rmtree(TESTFN2)
