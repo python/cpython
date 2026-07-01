@@ -3,6 +3,7 @@ import functools
 import platform
 import sys
 import textwrap
+import time
 import unittest
 import weakref
 import tkinter
@@ -611,8 +612,24 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_wait_window(self):
         top = tkinter.Toplevel(self.root)
         self.root.after(1, top.destroy)
-        self.root.wait_window(top)  # Returns once the window is destroyed.
+        # Returns once the window is destroyed.
+        self.assertIs(self.root.wait_window(top), True)
         self.assertFalse(top.winfo_exists())
+
+    def test_wait_window_timeout(self):
+        # The window is destroyed before the timeout elapses.
+        top = tkinter.Toplevel(self.root)
+        self.root.after(1, top.destroy)
+        self.assertIs(
+            self.root.wait_window(top, timeout=support.SHORT_TIMEOUT), True)
+        self.assertFalse(top.winfo_exists())
+        # The window outlives the timeout: give up instead of blocking.
+        top = tkinter.Toplevel(self.root)
+        start = time.monotonic()
+        self.assertIs(self.root.wait_window(top, timeout=0.2), False)
+        self.assertGreaterEqual(time.monotonic() - start, 0.2)
+        self.assertTrue(top.winfo_exists())
+        top.destroy()
 
     def test_tk_focusFollowsMouse(self):
         self.root.tk_focusFollowsMouse()  # No exception.
