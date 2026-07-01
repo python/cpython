@@ -20,7 +20,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
-  LLVM_VERSION: 21
+  LLVM_VERSION: 22
 
 jobs:
   macos:
