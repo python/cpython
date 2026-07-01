@@ -25,7 +25,7 @@ from test.support import has_socket_support, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 SKIP_CORO_TESTS = False
 
@@ -4775,14 +4775,27 @@ def bœr():
         self.assertIn("The specified object 'C.foo' is not a function", stdout)
 
     def test_pyrepl_available(self):
+        tty_stdin = Mock()
+        tty_stdin.fileno.return_value = 0
+        tty_stdout = Mock()
+        tty_stdout.fileno.return_value = 1
+
         with patch.dict(os.environ, {"PYTHON_BASIC_REPL": "1"}):
-            self.assertFalse(pdb._pyrepl_available())
+            self.assertFalse(pdb._pyrepl_available(tty_stdin, tty_stdout))
 
         with patch.dict(os.environ, {}, clear=True):
             mod = types.ModuleType("_pyrepl.main")
             mod.CAN_USE_PYREPL = True
-            with patch.dict("sys.modules", {"_pyrepl.main": mod}):
-                self.assertTrue(pdb._pyrepl_available())
+            with patch.dict("sys.modules", {"_pyrepl.main": mod}), \
+                 patch.object(os, "isatty", return_value=True):
+                self.assertTrue(pdb._pyrepl_available(tty_stdin, tty_stdout))
+
+        with patch.dict(os.environ, {}, clear=True):
+            mod = types.ModuleType("_pyrepl.main")
+            mod.CAN_USE_PYREPL = True
+            with patch.dict("sys.modules", {"_pyrepl.main": mod}), \
+                 patch.object(os, "isatty", return_value=False):
+                self.assertFalse(pdb._pyrepl_available(tty_stdin, tty_stdout))
 
 
 class ChecklineTests(unittest.TestCase):
@@ -5002,9 +5015,14 @@ class PdbTestColorize(unittest.TestCase):
         p.set_trace(commands=['w', 'c'])
         self.assertIn("\x1b", output.getvalue())
 
-    @unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
     def test_gen_colors(self):
+        # Do not use @unittest.skipIf(pdb._pyrepl_available()): that is
+        # evaluated at import time, before regrtest may redirect stdin.
+        if not pdb._pyrepl_available():
+            self.skipTest("pyrepl is not available")
         p = pdb.Pdb()
+        if p.pyrepl_input is None:
+            self.skipTest("pyrepl input is not available")
         gen_colors = p.pyrepl_input.gen_colors
 
         test_cases = [
@@ -5265,8 +5283,12 @@ class PdbTestReadline(unittest.TestCase):
         self.assertIn('84', output)
 
 
-@unittest.skipIf(not pdb._pyrepl_available(), "pyrepl is not available")
 class PdbTestReadlinePyREPL(PdbTestReadline):
+    @classmethod
+    def setUpClass(cls):
+        if not pdb._pyrepl_available():
+            raise unittest.SkipTest("pyrepl is not available")
+
     def _run_pty(self, script, input):
         # Override the env to make sure pyrepl is used in this test class
         return super()._run_pty(script, input, env={**os.environ})
