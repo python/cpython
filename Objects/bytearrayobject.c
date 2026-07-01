@@ -1247,13 +1247,12 @@ bytearray_dealloc(PyObject *op)
 /*[clinic input]
 @permit_long_summary
 @critical_section
-@text_signature "($self, sub[, start[, end]], /)"
 bytearray.find
 
     sub: object
-    start: slice_index(accept={int, NoneType}, c_default='0') = None
+    start: slice_index = 0
          Optional start position. Default: start of the bytes.
-    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+    end: slice_index(c_default='PY_SSIZE_T_MAX') = sys.maxsize
          Optional stop position. Default: end of the bytes.
     /
 
@@ -1265,7 +1264,7 @@ Return -1 on failure.
 static PyObject *
 bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
                     Py_ssize_t end)
-/*[clinic end generated code: output=413e1cab2ae87da0 input=df3aa94840d893a7]*/
+/*[clinic end generated code: output=413e1cab2ae87da0 input=71e48ba61755c729]*/
 {
     return _bytearray_with_buffer(self, _Py_bytes_find, sub, start, end);
 }
