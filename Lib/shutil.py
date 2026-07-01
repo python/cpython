@@ -693,24 +693,27 @@ def _rmtree_unsafe(path, dir_fd, onexc):
     def onerror(err):
         if not isinstance(err, FileNotFoundError):
             onexc(os.scandir, err.filename, err)
-    results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
-    for dirpath, dirnames, filenames in results:
-        for name in dirnames:
-            fullname = os.path.join(dirpath, name)
-            try:
-                os.rmdir(fullname)
-            except FileNotFoundError:
-                continue
-            except OSError as err:
-                onexc(os.rmdir, fullname, err)
-        for name in filenames:
-            fullname = os.path.join(dirpath, name)
-            try:
-                os.unlink(fullname)
-            except FileNotFoundError:
-                continue
-            except OSError as err:
-                onexc(os.unlink, fullname, err)
+    try:
+        results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+        for dirpath, dirnames, filenames in results:
+            for name in dirnames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.rmdir(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.rmdir, fullname, err)
+            for name in filenames:
+                fullname = os.path.join(dirpath, name)
+                try:
+                    os.unlink(fullname)
+                except FileNotFoundError:
+                    continue
+                except OSError as err:
+                    onexc(os.unlink, fullname, err)
+    except OSError as err:
+        onexc(os.walk, path, err)
     try:
         os.rmdir(path)
     except FileNotFoundError:

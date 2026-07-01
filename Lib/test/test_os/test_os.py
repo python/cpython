@@ -1872,14 +1872,10 @@ class WalkTests(unittest.TestCase):
         self.assertRaises(StopIteration, next, walk_it)
 
         walk_it = self.walk(self.tmp1_path)
-        self.assertRaises(StopIteration, next, walk_it)
+        self.assertRaises(NotADirectoryError, next, walk_it)
 
         walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
-        if self.is_fwalk:
-            with self.assertRaises(OSError) as cm:
-                next(walk_it)
-            self.assertIn(cm.exception.errno, (errno.ENOTDIR, errno.EINVAL))
-        self.assertRaises(StopIteration, next, walk_it)
+        self.assertRaises(NotADirectoryError, next, walk_it)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
@@ -1890,12 +1886,10 @@ class WalkTests(unittest.TestCase):
         self.addCleanup(os.unlink, path)
 
         walk_it = self.walk(path)
-        self.assertRaises(StopIteration, next, walk_it)
+        self.assertRaises(NotADirectoryError, next, walk_it)
 
         walk_it = self.walk(path, follow_symlinks=True)
-        if self.is_fwalk:
-            self.assertRaises(NotADirectoryError, next, walk_it)
-        self.assertRaises(StopIteration, next, walk_it)
+        self.assertRaises(NotADirectoryError, next, walk_it)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
@@ -1990,6 +1984,13 @@ class WalkTests(unittest.TestCase):
         self.assertEqual(sorted(dirs), ["SUB1", "SUB2", "d"])
         self.assertEqual(all, expected)
 
+    def test_walk_on_file_raises_not_a_directory(self):
+        # gh-101420: os.walk() was silently returning [] when top is a
+        # regular file instead of raising NotADirectoryError.
+        with tempfile.NamedTemporaryFile() as f:
+            with self.assertRaises(NotADirectoryError):
+                list(os.walk(f.name))
+
 
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
@@ -2046,6 +2047,19 @@ class FwalkTests(WalkTests):
                 os.stat(rootfd)
                 # check that listdir() returns consistent information
                 self.assertEqual(set(os.listdir(rootfd)), set(dirs) | set(files))
+
+    def test_fwalk_on_file_raises_not_a_directory(self):
+        with tempfile.NamedTemporaryFile() as f:
+            with self.assertRaises(NotADirectoryError):
+                list(os.fwalk(f.name, follow_symlinks=False))
+
+            # follow_symlinks=True: raised but with fd int as filename, must now have path
+            with self.assertRaises(NotADirectoryError) as ctx:
+                list(os.fwalk(f.name, follow_symlinks=True))
+            self.assertEqual(
+                ctx.exception.filename, f.name,
+                "filename should be the path string, not a raw fd integer"
+            )
 
     @unittest.skipIf(
         support.is_android, "dup return value is unpredictable on Android"
