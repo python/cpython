@@ -320,7 +320,7 @@ class ExpatBuilder:
     def notation_decl_handler(self, notationName, base, systemId, publicId):
         node = self.document._create_notation(notationName, publicId, systemId)
         self.document.doctype.notations._seq.append(node)
-        if self._filter and self._filter.acceptNode(node) == FILTER_ACCEPT:
+        if self._filter and self._filter.acceptNode(node) == FILTER_REJECT:
             del self.document.doctype.notations._seq[-1]
 
     def comment_handler(self, data):

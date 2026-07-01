@@ -1,0 +1,4 @@
+Fix the handling of notation declarations by
+:class:`!xml.dom.xmlbuilder.DOMBuilderFilter` in :mod:`xml.dom.minidom`. A
+notation that the filter accepted was dropped and a rejected one was kept, the
+opposite of the filter contract and of entity declarations.
