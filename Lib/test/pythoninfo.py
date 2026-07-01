@@ -969,17 +969,16 @@ def winreg_query(path):
         return None
 
 
-def wmi_get_os():
+def wmi_query(query):
     try:
         import _wmi
     except ImportError:
-        return
+        return {}
 
-    query = "SELECT Caption, Version FROM Win32_OperatingSystem"
     try:
         data = _wmi.exec_query(query)
     except OSError:
-        return
+        return {}
 
     dict_data = {}
     for item in data.split("\0"):
@@ -1035,14 +1034,13 @@ def collect_windows(info_add):
         call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
 
     # Get operating system caption and version using WMI
-    data = wmi_get_os()
-    if data:
-        caption = data.get('Caption', '')
-        if caption:
-            info_add('windows.version_caption', caption)
-        version = data.get('Version', '')
-        if version:
-            info_add('windows.version', version)
+    data = wmi_query("SELECT Caption, Version FROM Win32_OperatingSystem")
+    caption = data.get('Caption', '')
+    if caption:
+        info_add('windows.version_caption', caption)
+    version = data.get('Version', '')
+    if version:
+        info_add('windows.version', version)
 
     # windows.ver: "ver" command
     output = run_command(["ver"], shell=True)
@@ -1218,7 +1216,16 @@ def collect_system(info_add):
             uptime = f'{uptime} sec'
         info_add('system.uptime', uptime)
 
-    virt = detect_virt()
+    virt = None
+    if MS_WINDOWS:
+        data = wmi_query("SELECT Manufacturer FROM Win32_ComputerSystem")
+        manufacturer = data.get('Manufacturer', '')
+        if manufacturer == 'QEMU':
+            virt = manufacturer
+        elif manufacturer:
+            info_add('system.manufacturer', manufacturer)
+    if not virt:
+        virt = detect_virt()
     if virt:
         info_add('system.virt', virt)
 
