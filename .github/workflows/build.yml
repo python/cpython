@@ -353,14 +353,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+      - name: Dump environment
+        run: env
       - name: Build and test
-        env:
-          # Gradle 8 doesn't work on Java 25
-          # https://github.com/gradle/gradle/issues/35111
-          # https://github.com/gradle/gradle/issues/35401
-          JAVA_HOME: $(JAVA_HOME_11_X64)
-          PATH: $(JAVA_HOME_11_X64)/bin:$(PATH)
-        run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME_17_arm64}" python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
     name: iOS
