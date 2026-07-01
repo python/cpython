@@ -8,7 +8,7 @@
 #
 
 __all__ = [
-    'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition', 'Event'
+    'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition', 'Event', 'Barrier'
     ]
 
 import threading
