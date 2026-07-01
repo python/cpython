@@ -197,12 +197,29 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
     // Try allocating from our internal freelist
     struct _qsbr_thread_state *qsbr = qsbr_allocate(shared);
 
-    // If there are no free entries, we pause all threads, grow the array,
-    // and update the pointers in PyThreadState to entries in the new array.
-    if (qsbr == NULL) {
+    while (qsbr == NULL) {
+        // Unlock before stopping the world to avoid deadlocks.
+        // If we hold shared->mutex while waiting for the world to stop,
+        // we might block a thread that needs to acquire shared->mutex to park.
+        PyMutex_Unlock(&shared->mutex);
         _PyEval_StopTheWorld(interp);
+        PyMutex_Lock(&shared->mutex);
+
+        // Try allocating again, as another thread might have grown the array
+        // or freed an entry while we were waiting.
+        qsbr = qsbr_allocate(shared);
+        if (qsbr != NULL) {
+            _PyEval_StartTheWorld(interp);
+            break;
+        }
+
+        // Still NULL, we must grow it
         if (grow_thread_array(shared) == 0) {
             qsbr = qsbr_allocate(shared);
+        } else {
+            // Failed to grow array (e.g. OOM). Break to avoid infinite loop.
+            _PyEval_StartTheWorld(interp);
+            break;
         }
         _PyEval_StartTheWorld(interp);
     }
