@@ -6,6 +6,7 @@ c-api/file.html: deprecated-api
 
 # Removed sections
 library/asyncio-task.html: terminating-a-task-group
+library/dis.html: opcode-DELETE_ATTR
 library/dis.html: opcode-DELETE_GLOBAL
 library/dis.html: opcode-DELETE_NAME
 library/asyncio-llapi-index.html: event-loop-policies

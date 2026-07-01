@@ -187,7 +187,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_UNPACK_SEQUENCE_LIST] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_EX] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_DELETE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_LOCALS] = HAS_ERROR_FLAG,
     [_LOAD_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -1812,15 +1811,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 0, 2, _STORE_ATTR_r20 },
-            { -1, -1, -1 },
-        },
-    },
-    [_DELETE_ATTR] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _DELETE_ATTR_r10 },
-            { -1, -1, -1 },
             { -1, -1, -1 },
         },
     },
@@ -4318,7 +4308,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_UNPACK_SEQUENCE_LIST_r10] = _UNPACK_SEQUENCE_LIST,
     [_UNPACK_EX_r10] = _UNPACK_EX,
     [_STORE_ATTR_r20] = _STORE_ATTR,
-    [_DELETE_ATTR_r10] = _DELETE_ATTR,
     [_STORE_GLOBAL_r10] = _STORE_GLOBAL,
     [_LOAD_LOCALS_r01] = _LOAD_LOCALS,
     [_LOAD_LOCALS_r12] = _LOAD_LOCALS,
@@ -5179,8 +5168,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_COPY_FREE_VARS_r33] = "_COPY_FREE_VARS_r33",
     [_CREATE_INIT_FRAME] = "_CREATE_INIT_FRAME",
     [_CREATE_INIT_FRAME_r01] = "_CREATE_INIT_FRAME_r01",
-    [_DELETE_ATTR] = "_DELETE_ATTR",
-    [_DELETE_ATTR_r10] = "_DELETE_ATTR_r10",
     [_DELETE_DEREF] = "_DELETE_DEREF",
     [_DELETE_DEREF_r00] = "_DELETE_DEREF_r00",
     [_DELETE_FAST] = "_DELETE_FAST",
@@ -6502,8 +6489,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _STORE_ATTR:
             return 2;
-        case _DELETE_ATTR:
-            return 1;
         case _STORE_GLOBAL:
             return 1;
         case _LOAD_LOCALS:
