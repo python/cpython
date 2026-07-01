@@ -4,6 +4,11 @@ Released on 2026-10-01
 =========================
 
 
+gh-152739: Omit the idlelib directory from the path of the IDLE user
+process. User code imports such as `import help' can no longer import
+an idlelib submodule (here idlelib.help) instead of the intended
+top-level module.  Patch by Serhiy Storchaka and Claude Code.
+
 gh-152738: Fix a rare crash in the IDLE editor when the completion
 window is closed: deleting a key binding for a sequence that is not
 bound to the virtual event is now ignored instead of raising a
