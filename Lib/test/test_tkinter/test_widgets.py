@@ -2397,6 +2397,27 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.check_paneconfigure_bad(p, b, 'width',
                 EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG.format('badValue'))
 
+    def test_paneconfigure_child(self):
+        p, b, c = self.create2()
+        # The child pane is the first argument, positionally or by keyword.
+        p.paneconfigure(b, minsize=40)
+        self.assertEqual(p.panecget(b, 'minsize'), 40)
+        p.paneconfigure(child=b, minsize=50)
+        self.assertEqual(p.panecget(b, 'minsize'), 50)
+        self.assertIsInstance(p.paneconfigure(b), dict)
+        self.assertEqual(p.paneconfigure(b, 'minsize')[4], 50)
+        # Omitting the child is an error.
+        self.assertRaises(TypeError, p.paneconfigure)
+
+    def test_paneconfigure_tagOrId_deprecated(self):
+        p, b, c = self.create2()
+        # 'tagOrId' is a deprecated alias of 'child'.
+        with self.assertWarns(DeprecationWarning):
+            p.paneconfigure(tagOrId=b, minsize=40)
+        self.assertEqual(p.panecget(b, 'minsize'), 40)
+        # Giving both 'child' and 'tagOrId' is an error.
+        self.assertRaises(TypeError, p.paneconfigure, b, tagOrId=c)
+
 
 @add_configure_tests(StandardOptionsTests)
 class MenuTest(AbstractWidgetTest, unittest.TestCase):
