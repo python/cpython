@@ -2450,7 +2450,11 @@ dict_unhashable_type(PyObject *op, PyObject *key)
         errmsg = "cannot use '%T' as a dict key (%S)";
     }
     PyErr_Format(PyExc_TypeError, errmsg, key, exc);
+    PyObject *exc2 = PyErr_GetRaisedException();
+    PyException_SetCause(exc2, Py_NewRef(exc));
+    PyException_SetContext(exc2, Py_NewRef(exc));
     Py_DECREF(exc);
+    PyErr_SetRaisedException(exc2);
 }
 
 Py_ssize_t

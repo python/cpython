@@ -1630,6 +1630,26 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             d.get(key2)
 
+    def test_unhashable_key_preserves_exception_info(self):
+        """gh-149313: exception notes and cause must survive the improved message."""
+        class Key:
+            def __hash__(self):
+                try:
+                    hash([])
+                except TypeError as e:
+                    e.add_note("custom note")
+                    raise
+
+        with self.assertRaises(TypeError) as cm:
+            {Key(): 1}
+
+        exc = cm.exception
+        self.assertIn("cannot use", str(exc))
+        # The original exception is chained as __cause__
+        self.assertIsNotNone(exc.__cause__)
+        self.assertIn("unhashable type: 'list'", str(exc.__cause__))
+        self.assertIn("custom note", exc.__cause__.__notes__[0])
+
     def test_clear_at_lookup(self):
         # gh-140551 dict crash if clear is called at lookup stage
         class X:
