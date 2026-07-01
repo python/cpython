@@ -1,0 +1,2 @@
+Add the address to the error message if :exc:`ConnectionRefusedError` is
+raised when :meth:`socket.socket.connect` is called.
