@@ -1596,6 +1596,13 @@ class TestAddressAndGroup(TestEmailBase):
         with self.assertRaises(ValueError):
             Address('foo', addr_spec="name@ex[]ample.com")
 
+    def test_trailing_dot_in_addr_spec_domain_raises(self):
+        # gh-101034: report a clear error instead of the internal
+        # "expected atext but found ''".
+        with self.assertRaisesRegex(errors.HeaderParseError,
+                                    "expected atom after '.'"):
+            Address('Jane Doe', addr_spec="jane_doe@example.org.")
+
     def test_empty_group(self):
         g = Group('foo')
         self.assertEqual(g.display_name, 'foo')
