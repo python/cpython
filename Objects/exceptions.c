@@ -4393,97 +4393,12 @@ struct static_exception {
 };
 
 static struct static_exception static_exceptions[] = {
-#define ITEM(NAME) {&_PyExc_##NAME, #NAME}
-    // Level 1
-    ITEM(BaseException),
-
-    // Level 2: BaseException subclasses
-    ITEM(BaseExceptionGroup),
-    ITEM(Exception),
-    ITEM(GeneratorExit),
-    ITEM(KeyboardInterrupt),
-    ITEM(SystemExit),
-
-    // Level 3: Exception(BaseException) subclasses
-    ITEM(ArithmeticError),
-    ITEM(AssertionError),
-    ITEM(AttributeError),
-    ITEM(BufferError),
-    ITEM(EOFError),
-    //ITEM(ExceptionGroup),
-    ITEM(ImportError),
-    ITEM(LookupError),
-    ITEM(MemoryError),
-    ITEM(NameError),
-    ITEM(OSError),
-    ITEM(ReferenceError),
-    ITEM(RuntimeError),
-    ITEM(StopAsyncIteration),
-    ITEM(StopIteration),
-    ITEM(SyntaxError),
-    ITEM(SystemError),
-    ITEM(TypeError),
-    ITEM(ValueError),
-    ITEM(Warning),
-
-    // Level 4: ArithmeticError(Exception) subclasses
-    ITEM(FloatingPointError),
-    ITEM(OverflowError),
-    ITEM(ZeroDivisionError),
-
-    // Level 4: Warning(Exception) subclasses
-    ITEM(BytesWarning),
-    ITEM(DeprecationWarning),
-    ITEM(EncodingWarning),
-    ITEM(FutureWarning),
-    ITEM(ImportWarning),
-    ITEM(PendingDeprecationWarning),
-    ITEM(ResourceWarning),
-    ITEM(RuntimeWarning),
-    ITEM(SyntaxWarning),
-    ITEM(UnicodeWarning),
-    ITEM(UserWarning),
-
-    // Level 4: OSError(Exception) subclasses
-    ITEM(BlockingIOError),
-    ITEM(ChildProcessError),
-    ITEM(ConnectionError),
-    ITEM(FileExistsError),
-    ITEM(FileNotFoundError),
-    ITEM(InterruptedError),
-    ITEM(IsADirectoryError),
-    ITEM(NotADirectoryError),
-    ITEM(PermissionError),
-    ITEM(ProcessLookupError),
-    ITEM(TimeoutError),
-
-    // Level 4: Other subclasses
-    ITEM(IndentationError), // base: SyntaxError(Exception)
-    {&_PyExc_IncompleteInputError, "_IncompleteInputError"}, // base: SyntaxError(Exception)
-    ITEM(IndexError),  // base: LookupError(Exception)
-    ITEM(KeyError),  // base: LookupError(Exception)
-    ITEM(ImportCycleError), // base: ImportError(Exception)
-    ITEM(ModuleNotFoundError), // base: ImportError(Exception)
-    ITEM(NotImplementedError),  // base: RuntimeError(Exception)
-    ITEM(PythonFinalizationError),  // base: RuntimeError(Exception)
-    ITEM(RecursionError),  // base: RuntimeError(Exception)
-    ITEM(UnboundLocalError), // base: NameError(Exception)
-    ITEM(UnicodeError),  // base: ValueError(Exception)
-
-    // Level 5: ConnectionError(OSError) subclasses
-    ITEM(BrokenPipeError),
-    ITEM(ConnectionAbortedError),
-    ITEM(ConnectionRefusedError),
-    ITEM(ConnectionResetError),
-
-    // Level 5: IndentationError(SyntaxError) subclasses
-    ITEM(TabError),  // base: IndentationError
-
-    // Level 5: UnicodeError(ValueError) subclasses
-    ITEM(UnicodeDecodeError),
-    ITEM(UnicodeEncodeError),
-    ITEM(UnicodeTranslateError),
+#define ITEM(NAME) {&_PyExc_##NAME, #NAME},
+#define ITEM_RENAMED(NAME, STR) {&_PyExc_##NAME, STR},
+    _Py_FOREACH_STATIC_EXCEPTION_TYPE(ITEM)
+    _Py_FOREACH_RENAMED_EXCEPTION_TYPE(ITEM_RENAMED)
 #undef ITEM
+#undef ITEM_RENAMED
 };
 
 

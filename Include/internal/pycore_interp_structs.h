@@ -527,17 +527,10 @@ struct _py_func_state {
 
 /****** type state *********/
 
-/* For now we hard-code this to a value for which we are confident
-   all the static builtin types will fit (for all builds).
-   If you add a new static type to the standard library, you may have to
-   update one of these numbers.
-   */
-#define _Py_NUM_MANAGED_PREINITIALIZED_TYPES 120
-#define _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES \
-    (_Py_NUM_MANAGED_PREINITIALIZED_TYPES + 83)
-#define _Py_MAX_MANAGED_STATIC_EXT_TYPES 10
-#define _Py_MAX_MANAGED_STATIC_TYPES \
-    (_Py_MAX_MANAGED_STATIC_BUILTIN_TYPES + _Py_MAX_MANAGED_STATIC_EXT_TYPES)
+/* All _Py_MAX_MANAGED_STATIC_* sizing macros are derived at compile
+   time from the X-macro lists in pycore_static_builtin_types.h, the
+   single source of truth for every static builtin registration. */
+#include "pycore_static_builtin_types.h"
 
 struct _types_runtime_state {
     /* Used to set PyTypeObject.tp_version_tag for core static types. */
