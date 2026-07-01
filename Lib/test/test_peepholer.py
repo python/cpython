@@ -2521,24 +2521,14 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         insts = [
             ("LOAD_FAST", 0, 1),
             ("LOAD_FAST", 1, 2),
-            ("POP_TOP", None, 3),
+            ("LOAD_SMALL_INT", 1, 3),
+            ("BINARY_OP", 0, 3),
         ]
         expected = [
             ("LOAD_FAST", 0, 1),
             ("LOAD_FAST_BORROW", 1, 2),
-            ("POP_TOP", None, 3),
-        ]
-        self.check(insts, expected)
-
-        insts = [
-            ("LOAD_FAST", 0, 1),
-            ("COPY", 1, 2),
-            ("POP_TOP", None, 3),
-        ]
-        expected = [
-            ("LOAD_FAST", 0, 1),
-            ("NOP", None, 2),
-            ("NOP", None, 3),
+            ("LOAD_SMALL_INT", 1, 3),
+            ("BINARY_OP", 0, 3),
         ]
         self.check(insts, expected)
 
@@ -2861,6 +2851,33 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
             var = f"{var}"
             return var
         self.assertEqual(f(), "1")
+
+    def test_load_fast_removed(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("POP_TOP", None, 3),
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("NOP", None, 2),
+            ("NOP", None, 3),
+        ]
+        self.check(insts, expected)
+
+    def test_copy(self):
+        for i in range(1, 5):
+            insts = [
+                ("LOAD_FAST", 0, 1),
+                ("COPY", i, 2),
+                ("POP_TOP", None, 3),
+            ]
+            expected = [
+                ("LOAD_FAST", 0, 1),
+                ("NOP", None, 2),
+                ("NOP", None, 3),
+            ]
+            self.check(insts, expected)
 
 
 

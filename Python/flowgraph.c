@@ -1147,21 +1147,16 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                 prev_instr = instr;
                 instr = &b->b_instr[i];
                 int prev_opcode = prev_instr ? prev_instr->i_opcode : 0;
-                int prev_oparg = prev_instr ? prev_instr->i_oparg : 0;
                 int opcode = instr->i_opcode;
-                bool is_redundant_pair = false;
                 if (opcode == POP_TOP) {
-                   if (loads_const(prev_opcode)) {
-                       is_redundant_pair = true;
+                   if (loads_const(prev_opcode)
+                       || prev_opcode == COPY
+                       || prev_opcode == LOAD_FAST)
+                   {
+                        INSTR_SET_OP0(prev_instr, NOP);
+                        INSTR_SET_OP0(instr, NOP);
+                        done = false;
                    }
-                   else if (prev_opcode == COPY && prev_oparg == 1) {
-                       is_redundant_pair = true;
-                   }
-                }
-                if (is_redundant_pair) {
-                    INSTR_SET_OP0(prev_instr, NOP);
-                    INSTR_SET_OP0(instr, NOP);
-                    done = false;
                 }
             }
             if ((instr && is_jump(instr)) || !BB_HAS_FALLTHROUGH(b)) {
@@ -2635,9 +2630,15 @@ remove_redundant_nops_and_jumps(cfg_builder *g)
    Code trasnformations that reduce code size initially fill the gaps with
    NOPs.  Later those NOPs are removed.
 */
+
+static int
+add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
+                                                int nlocals,
+                                                int nparams);
+
 static int
 optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache,
-             _Py_hashtable_t *consts_index, int firstlineno)
+             _Py_hashtable_t *consts_index, int firstlineno, int nlocals, int nparams)
 {
     assert(PyDict_CheckExact(const_cache));
     RETURN_IF_ERROR(check_cfg(g));
@@ -2648,6 +2649,9 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts, consts_index));
     }
+    RETURN_IF_ERROR(
+        add_checks_for_loads_of_uninitialized_variables(
+            g->g_entryblock, nlocals, nparams));
     RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
     RETURN_IF_ERROR(remove_redundant_nops_and_jumps(g));
@@ -3790,16 +3794,13 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
         }
     }
 
-    int ret = optimize_cfg(g, consts, const_cache, consts_index, firstlineno);
+    int ret = optimize_cfg(g, consts, const_cache, consts_index, firstlineno, nlocals, nparams);
 
     _Py_hashtable_destroy(consts_index);
 
     RETURN_IF_ERROR(ret);
 
     RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
-    RETURN_IF_ERROR(
-        add_checks_for_loads_of_uninitialized_variables(
-            g->g_entryblock, nlocals, nparams));
     RETURN_IF_ERROR(insert_superinstructions(g));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
