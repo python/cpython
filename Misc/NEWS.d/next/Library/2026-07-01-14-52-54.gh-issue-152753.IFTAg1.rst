@@ -1,0 +1,1 @@
+blurb new "Fix memory leak in ipaddress properties by switching from functools.lru_cache to functools.cached_property."
