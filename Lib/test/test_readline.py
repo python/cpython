@@ -431,6 +431,16 @@ readline.write_history_file(history_file)
         readline.set_pre_input_hook(my_hook)
         self.assertIs(readline.get_pre_input_hook(), my_hook)
 
+    def test_environment_is_not_modified(self):
+        # os.environ contains enviroment at the time "os" module was loaded, so
+        # before the "readline" module is loaded.
+        original_env = dict(os.environ)
+
+        # Force refresh of os.environ and make sure it is the same as before the
+        # refresh.
+        os.reload_environ()
+        self.assertEqual(dict(os.environ), original_env)
+
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
 class FreeThreadingTest(unittest.TestCase):
