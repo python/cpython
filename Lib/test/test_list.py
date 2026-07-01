@@ -330,8 +330,9 @@ class ListTest(list_tests.CommonTest):
         # gh-118331: Make sure we don't crash if list allocation fails
         code = textwrap.dedent("""
         import _testcapi, sys
-        # Prime the freelist
-        l = [None]
+        # Prime the freelist, size needs to larger than the small list freelists
+        l = [None, None, None, None, None, None, None, None, None, None, None,
+             None, None, None, None, None, None, None, None, None,]
         del l
         _testcapi.set_nomemory(0)
         l = [None]
