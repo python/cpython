@@ -2,6 +2,7 @@ import datetime
 import warnings
 import weakref
 import unittest
+import collections
 from test.support import gc_collect
 from itertools import product
 
@@ -264,6 +265,13 @@ class TestLongMessage(unittest.TestCase):
                             [r'^None unexpectedly found in \[None\]$', "^oops$",
                              r'^None unexpectedly found in \[None\]$',
                              r'^None unexpectedly found in \[None\] : oops$'])
+
+    def testAssertMappingEqual(self):
+        M = collections.UserDict
+        self.assertMessages('assertMappingEqual', (M({}), M({'key': 'value'})),
+                            [r"\+ \{'key': 'value'\}$", "^oops$",
+                             r"\+ \{'key': 'value'\}$",
+                             r"\+ \{'key': 'value'\} : oops$"])
 
     def testAssertDictEqual(self):
         self.assertMessages('assertDictEqual', ({}, {'key': 'value'}),
