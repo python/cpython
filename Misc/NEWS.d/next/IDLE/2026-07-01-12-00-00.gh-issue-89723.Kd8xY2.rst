@@ -1,0 +1,3 @@
+Set ``sys.last_exc`` and friends in the user process for a ``SyntaxError``
+entered in the Shell, as the standard interpreter does.  Previously they
+were left unset because IDLE catches the error in its GUI process.

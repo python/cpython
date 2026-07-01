@@ -677,6 +677,12 @@ class Executive:
         else:
             flush_stdout()
 
+    def setup_last_exception(self, exc):
+        "Set sys.last_* for an exception caught in the GUI process (gh-89723)."
+        sys.last_exc = sys.last_value = exc
+        sys.last_type = type(exc)
+        sys.last_traceback = exc.__traceback__
+
     def interrupt_the_server(self):
         if interruptible:
             thread.interrupt_main()
