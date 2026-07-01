@@ -105,8 +105,16 @@ typedef struct _PyThreadStateImpl {
 
 #ifdef Py_GIL_DISABLED
     // gh-144438: Add padding to ensure that the fields above don't share a
-    // cache line with other allocations.
-    char __padding[64];
+    // cache line with other allocations. Reuse the first bytes of the padding
+    // for a cold stop-the-world flag without growing the thread state.
+    union {
+        struct {
+            // Set while the thread is waiting to attach after a
+            // stop-the-world pause suspended it while detached.
+            int stw_attach_waiting;
+        };
+        char __padding[64];
+    };
 #endif
 } _PyThreadStateImpl;
 
