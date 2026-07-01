@@ -2,6 +2,8 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
+#include "pycore_critical_section.h"
+#include "pycore_dict.h"
 #include "pycore_frame.h"
 #include "pycore_import.h"
 #include "pycore_interpframe.h"
@@ -33,12 +35,16 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
     m->lz_builtins = Py_XNewRef(builtins);
     m->lz_from = Py_NewRef(name);
     m->lz_attr = Py_XNewRef(fromlist);
+    m->lz_globals = NULL;
 
     // Capture frame information for the original import location.
     m->lz_code = NULL;
     m->lz_instr_offset = -1;
 
     if (frame != NULL) {
+        if (frame->f_globals != NULL) {
+            m->lz_globals = Py_NewRef(frame->f_globals);
+        }
         PyCodeObject *code = _PyFrame_GetCode(frame);
         if (code != NULL) {
             m->lz_code = (PyCodeObject *)Py_NewRef(code);
@@ -58,6 +64,7 @@ lazy_import_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(m->lz_builtins);
     Py_VISIT(m->lz_from);
     Py_VISIT(m->lz_attr);
+    Py_VISIT(m->lz_globals);
     Py_VISIT(m->lz_code);
     return 0;
 }
@@ -69,6 +76,7 @@ lazy_import_clear(PyObject *op)
     Py_CLEAR(m->lz_builtins);
     Py_CLEAR(m->lz_from);
     Py_CLEAR(m->lz_attr);
+    Py_CLEAR(m->lz_globals);
     Py_CLEAR(m->lz_code);
     return 0;
 }
@@ -116,10 +124,46 @@ _PyLazyImport_GetName(PyObject *op)
     return lazy_import_name(lazy_import);
 }
 
+static int
+lazy_import_replace_globals(PyObject *op, PyObject *resolved)
+{
+    PyLazyImportObject *m = PyLazyImportObject_CAST(op);
+    if (m->lz_globals == NULL || !PyDict_Check(m->lz_globals)) {
+        return 0;
+    }
+
+    int err = 0;
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    Py_hash_t hash;
+
+    Py_BEGIN_CRITICAL_SECTION(m->lz_globals);
+    while (_PyDict_Next(m->lz_globals, &pos, &key, &value, &hash)) {
+        if (value == op) {
+            err = _PyDict_SetItem_KnownHash_LockHeld(
+                (PyDictObject *)m->lz_globals, key, resolved, hash);
+            if (err < 0) {
+                break;
+            }
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+
+    return err;
+}
+
 static PyObject *
 lazy_import_resolve(PyObject *self, PyObject *args)
 {
-    return _PyImport_LoadLazyImportTstate(PyThreadState_GET(), self);
+    PyObject *resolved = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), self);
+    if (resolved == NULL) {
+        return NULL;
+    }
+    if (lazy_import_replace_globals(self, resolved) < 0) {
+        Py_DECREF(resolved);
+        return NULL;
+    }
+    return resolved;
 }
 
 static PyMethodDef lazy_import_methods[] = {

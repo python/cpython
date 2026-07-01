@@ -906,32 +906,45 @@ class GlobalsAndDictTests(LazyImportTestCase):
         self.assertIn("test.test_lazy_import.data.basic2", sys.modules)
 
     def test_resolve_method_forces_reification(self):
-        """Calling resolve() on lazy proxy should force reification.
-
-        Note: Must access lazy proxy from within a function to avoid automatic
-        reification by LOAD_NAME at module level.
-        """
+        """Calling resolve() on lazy proxy should force reification."""
         code = textwrap.dedent("""
-            import sys
+            import builtins
             import types
 
-            lazy from test.test_lazy_import.data.basic2 import x
+            real_import = builtins.__import__
+            calls = []
 
-            assert 'test.test_lazy_import.data.basic2' not in sys.modules
+            lazy import target_module as target
 
-            def test_resolve():
-                g = globals()
-                lazy_obj = g['x']
-                assert type(lazy_obj) is types.LazyImportType, f"Expected lazy proxy, got {type(lazy_obj)}"
+            def custom_import(name, globals=None, locals=None, fromlist=None, level=0):
+                if name == "target_module":
+                    index = len(calls) + 1
+                    calls.append((index, name, globals.get("__name__"), fromlist))
+                    module = types.ModuleType(name)
+                    module.VALUE = f"value-{index}"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
 
-                resolved = lazy_obj.resolve()
+            builtins.__import__ = custom_import
+            try:
+                def test_resolve():
+                    g = globals()
+                    lazy_obj = g["target"]
+                    assert type(lazy_obj) is types.LazyImportType, (
+                        f"Expected lazy proxy, got {type(lazy_obj)}"
+                    )
 
-                # Now module should be loaded
-                assert 'test.test_lazy_import.data.basic2' in sys.modules
-                assert resolved == 42  # x is 42 in basic2.py
-                return True
+                    resolved = lazy_obj.resolve()
 
-            assert test_resolve()
+                    assert resolved.VALUE == "value-1"
+                    assert g["target"] is resolved
+                    return True
+
+                assert test_resolve()
+                assert target.VALUE == "value-1"
+                assert calls == [(1, "target_module", "__main__", None)], calls
+            finally:
+                builtins.__import__ = real_import
             print("OK")
         """)
         result = subprocess.run(
