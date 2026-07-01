@@ -228,6 +228,14 @@ io
   (Contributed by Marcel Martin in :gh:`90533`.)
 
 
+imaplib
+-------
+
+* Add the :meth:`~imaplib.IMAP4.move` method,
+  a wrapper for the ``MOVE`` command (:rfc:`6851`).
+  (Contributed by Serhiy Storchaka in :gh:`77508`.)
+
+
 logging
 -------
 
