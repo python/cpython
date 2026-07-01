@@ -156,6 +156,13 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         with self.assertRaises(AttributeError):
             del self.con.text_factory
 
+    def test_delete_cursor_row_factory(self):
+        # gh-149738: deleting row_factory should raise an exception
+        cur = self.con.cursor()
+        del cur.row_factory
+        # Executing a query here should succeed.
+        self.assertEqual(tuple(cur.execute("select 1").fetchone()), (1,))
+
     def test_sqlite_row_index_unicode(self):
         row = self.con.execute("select 1 as \xff").fetchone()
         self.assertEqual(row["\xff"], 1)
