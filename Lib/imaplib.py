@@ -483,12 +483,17 @@ class IMAP4:
     #       IMAP4 commands
 
 
-    def append(self, mailbox, flags, date_time, message):
+    def append(self, mailbox, flags, date_time, message, *,
+               translate_line_endings=True):
         """Append message to named mailbox.
 
         (typ, [data]) = <instance>.append(mailbox, flags, date_time, message)
 
                 All args except 'message' can be None.
+
+        If 'translate_line_endings' is true (the default), line endings in
+        'message' are translated to CRLF.  Pass false to send the message
+        literal exactly as given.
         """
         name = 'APPEND'
         if not mailbox:
@@ -502,8 +507,9 @@ class IMAP4:
             date_time = Time2Internaldate(date_time)
         else:
             date_time = None
-        literal = MapCRLF.sub(CRLF, message)
-        self.literal = literal
+        if translate_line_endings:
+            message = MapCRLF.sub(CRLF, message)
+        self.literal = message
         return self._simple_command(name, mailbox, flags, date_time)
 
 

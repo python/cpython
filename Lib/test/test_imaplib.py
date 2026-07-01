@@ -634,6 +634,25 @@ class NewIMAPTestsMixin:
         self.assertEqual(data[0], b'LOGIN completed')
         self.assertEqual(client.state, 'AUTH')
 
+    def test_append_translate_line_endings(self):
+        # By default line endings in the message are normalized to CRLF;
+        # translate_line_endings=False sends the literal exactly (gh-49680).
+        class AppendHandler(SimpleIMAPHandler):
+            def cmd_APPEND(self, tag, args):
+                size = int(args[-1].strip('{}'))
+                self._send_textline('+')
+                self.server.response = self.rfile.read(size)
+                self.rfile.readline()  # trailing CRLF after the literal
+                self._send_tagged(tag, 'OK', 'APPEND completed')
+        message = b'a\rb\nc\r\nd'
+        client, server = self._setup(AppendHandler)
+        client.login('user', 'pass')
+        client.append('INBOX', None, None, message)
+        self.assertEqual(server.response, b'a\r\nb\r\nc\r\nd')
+        client.append('INBOX', None, None, message,
+                      translate_line_endings=False)
+        self.assertEqual(server.response, message)
+
     def test_logout(self):
         client, _ = self._setup(SimpleIMAPHandler)
         typ, data = client.login('user', 'pass')
