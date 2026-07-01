@@ -1,5 +1,7 @@
 import codecs
 import io
+import os
+import tempfile
 import _pyio as pyio
 import threading
 from unittest import TestCase
@@ -175,3 +177,52 @@ class IncrementalNewlineDecoderTest(TestCase):
                 decoder.reset()
 
         run_concurrently([decode_worker] * 2 + [reset_worker] * 2)
+
+
+class TestFileIO(TestCase):
+    NTHREADS = 4
+    ITERS = 200
+
+    def _run_io_vs_close(self, open_mode: str, io_func, data: bytes = b"") -> None:
+        """Repeatedly race io_func against close on a fresh FileIO object."""
+        for _ in range(self.ITERS):
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                if data:
+                    tmp.write(data)
+                name = tmp.name
+            try:
+                f = io.FileIO(name, open_mode)
+
+                def io_worker(f: io.FileIO = f) -> None:
+                    for _ in range(10):
+                        try:
+                            io_func(f)
+                        except (ValueError, OSError):
+                            pass
+
+                def closer(f: io.FileIO = f) -> None:
+                    try:
+                        f.close()
+                    except OSError:
+                        pass
+
+                run_concurrently([io_worker] * self.NTHREADS + [closer])
+            finally:
+                os.unlink(name)
+
+    @threading_helper.requires_working_threading()
+    def test_concurrent_read_and_close(self):
+        self._run_io_vs_close("rb", lambda f: f.read(256), data=b"x" * 4096)
+
+    @threading_helper.requires_working_threading()
+    def test_concurrent_readinto_and_close(self):
+        buf = bytearray(256)
+        self._run_io_vs_close("rb", lambda f: f.readinto(buf), data=b"x" * 4096)
+
+    @threading_helper.requires_working_threading()
+    def test_concurrent_write_and_close(self):
+        self._run_io_vs_close("wb", lambda f: f.write(b"x" * 256))
+
+    @threading_helper.requires_working_threading()
+    def test_concurrent_seek_and_close(self):
+        self._run_io_vs_close("rb", lambda f: f.seek(0), data=b"x" * 256)
