@@ -1,0 +1,1 @@
+Speed up :func:`math.lcm` for larger number of arguments.
