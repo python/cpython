@@ -37,9 +37,9 @@ handler.  Code to create and run the server looks like this::
 .. class:: HTTPServer(server_address, RequestHandlerClass)
 
    This class builds on the :class:`~socketserver.TCPServer` class by storing
-   the server address as instance variables named :attr:`server_name` and
-   :attr:`server_port`. The server is accessible by the handler, typically
-   through the handler's :attr:`server` instance variable.
+   the server address as instance variables named ``server_name`` and
+   ``server_port``. The server is accessible by the handler, typically
+   through the handler's :attr:`~BaseHTTPRequestHandler.server` instance variable.
 
 .. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
@@ -437,7 +437,7 @@ instantiation, of which this module provides three different variants:
       If the request was mapped to a directory, the directory is checked for a
       file named ``index.html`` or ``index.htm`` (in that order). If found, the
       file's contents are returned; otherwise a directory listing is generated
-      by calling the :meth:`list_directory` method. This method uses
+      by calling the ``list_directory`` method. This method uses
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
       response if the :func:`~os.listdir` fails.
 
@@ -446,7 +446,7 @@ instantiation, of which this module provides three different variants:
       ``'File not found'`` error. If there was an ``'If-Modified-Since'``
       header in the request, and the file was not modified after this time,
       a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
-      type is guessed by calling the :meth:`guess_type` method, which in turn
+      type is guessed by calling the ``guess_type`` method, which in turn
       uses the *extensions_map* variable, and the file contents are returned.
 
       A ``'Content-type:'`` header with the guessed content type is output,
@@ -483,7 +483,7 @@ the current directory::
 
 :class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
 such as using different index file names by overriding the class attribute
-:attr:`index_pages`.
+``index_pages``.
 
 
 .. _http-server-cli:
