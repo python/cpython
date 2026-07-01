@@ -629,14 +629,20 @@ class BaseBytesTest:
         self.assertEqual(dot_join([b"ab", memoryview(b"cd")]), b"ab.:cd")
         self.assertEqual(dot_join([bytearray(b"ab"), b"cd"]), b"ab.:cd")
         self.assertEqual(dot_join([b"ab", bytearray(b"cd")]), b"ab.:cd")
-        # Stress it with many items
-        seq = [b"abc"] * 100000
-        expected = b"abc" + b".:abc" * 99999
+        # Stress it with many items or many views on immutable bytes
+        N = 0x100000  # threshold for releasing the GIL in join()
+        seq = [b"abc"] * N
+        expected = b"abc" + b".:abc" * (N - 1)
+        self.assertGreater(len(expected), N)
         self.assertEqual(dot_join(seq), expected)
+        views = list(map(memoryview, seq))
+        self.assertEqual(dot_join(views), expected)
         # Stress test with empty separator
-        seq = [b"abc"] * 100000
-        expected = b"abc" * 100000
+        expected = b"abc" * N
+        self.assertGreater(len(expected), N)
         self.assertEqual(self.type2test(b"").join(seq), expected)
+        views = list(map(memoryview, seq))
+        self.assertEqual(self.type2test(b"").join(views), expected)
         self.assertRaises(TypeError, self.type2test(b" ").join, None)
         # Error handling and cleanup when some item in the middle of the
         # sequence has the wrong type.
