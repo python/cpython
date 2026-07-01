@@ -503,7 +503,35 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
         {
             // Use tight scope variable to help register allocation.
             Py_UCS4 d = 0;
-            for (next = end; next < len; next++) {
+            next = end;
+            /* For the 1-byte representation, skip 8 bytes at a time while none
+               is '"', '\\', or (strict) a control char < 0x20.  The masks are
+               exact (no false negatives); the scalar loop below pins the exact
+               first special char and does the work. */
+            if (kind == PyUnicode_1BYTE_KIND) {
+                const Py_UCS1 *p = (const Py_UCS1 *)buf;
+                const uint64_t ones = 0x0101010101010101ULL;
+                const uint64_t high = 0x8080808080808080ULL;
+                const uint64_t bq = 0x22ULL * ones;   /* '"'  */
+                const uint64_t bs = 0x5cULL * ones;    /* '\\' */
+                const uint64_t bc = 0xE0ULL * ones;    /* (b & 0xE0)==0 iff b<0x20 */
+                while (next + 8 <= len) {
+                    uint64_t w;
+                    memcpy(&w, p + next, 8);
+                    uint64_t mq = w ^ bq; mq = (mq - ones) & ~mq & high;
+                    uint64_t ms = w ^ bs; ms = (ms - ones) & ~ms & high;
+                    uint64_t mc = 0;
+                    if (strict) {
+                        uint64_t v = w & bc;
+                        mc = (v - ones) & ~v & high;
+                    }
+                    if (mq | ms | mc) {
+                        break;
+                    }
+                    next += 8;
+                }
+            }
+            for (; next < len; next++) {
                 d = PyUnicode_READ(kind, buf, next);
                 if (d == '"' || d == '\\') {
                     break;
