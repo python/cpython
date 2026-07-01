@@ -13,10 +13,16 @@ Test simple loop with conditional
     >>> sum({i*i for i in range(100) if i&1 == 1})
     166650
 
+    >>> sum(f{i*i for i in range(100) if i&1 == 1})
+    166650
+
 Test simple case
 
     >>> {2*y + x + 1 for x in (0,) for y in (1,)}
     {3}
+
+    >>> f{2*y + x + 1 for x in (0,) for y in (1,)}
+    frozenset({3})
 
 Test simple nesting
 
@@ -48,6 +54,12 @@ Make sure the induction variable is not exposed
 
     >>> i = 20
     >>> sum({i*i for i in range(100)})
+    328350
+
+    >>> i
+    20
+
+    >>> sum(f{i*i for i in range(100)})
     328350
 
     >>> i
@@ -93,6 +105,9 @@ Make sure that None is a valid return value
     >>> {None for i in range(10)}
     {None}
 
+    >>> f{None for i in range(10)}
+    frozenset({None})
+
 ########### Tests for various scoping corner cases ############
 
 Return lambdas that use the iteration variable as a default argument
@@ -120,6 +135,11 @@ And confirm that a closure can jump over the list comp scope
     >>> y = 2
     >>> {x() for x in items}
     {2}
+
+    >>> items = f{(lambda: y) for i in range(5)}
+    >>> y = 2
+    >>> f{x() for x in items}
+    frozenset({2})
 
 We also repeat each of the above scoping tests inside a function
 
@@ -151,7 +171,18 @@ We also repeat each of the above scoping tests inside a function
 
 """
 
-class SetComprehensionTest(unittest.TestCase):
+class BaseComprehensionTest:
+    def check_exception_location(self, func, indent, expected):
+        exc = func()
+        f = traceback.extract_tb(exc.__traceback__)[0]
+        co = func.__code__
+        self.assertEqual(f.lineno, co.co_firstlineno + 2)
+        self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+        self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                         expected)
+
+
+class SetComprehensionTest(BaseComprehensionTest, unittest.TestCase):
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
         # __next__ should be the iterator expression
@@ -179,14 +210,41 @@ class SetComprehensionTest(unittest.TestCase):
                                (iter_raises, "BrokenIter(iter_raises=True)"),
                               ]:
             with self.subTest(func):
-                exc = func()
-                f = traceback.extract_tb(exc.__traceback__)[0]
-                indent = 16
-                co = func.__code__
-                self.assertEqual(f.lineno, co.co_firstlineno + 2)
-                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
-                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
-                                 expected)
+                self.check_exception_location(
+                    func, indent=16, expected=expected,
+                )
+
+class FrozenSetComprehensionTest(BaseComprehensionTest, unittest.TestCase):
+    def test_exception_locations(self):
+        # The location of an exception raised from __init__ or
+        # __next__ should be the iterator expression
+
+        def init_raises():
+            try:
+                f{x for x in BrokenIter(init_raises=True)}
+            except Exception as e:
+                return e
+
+        def next_raises():
+            try:
+                f{x for x in BrokenIter(next_raises=True)}
+            except Exception as e:
+                return e
+
+        def iter_raises():
+            try:
+                f{x for x in BrokenIter(iter_raises=True)}
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
+                              ]:
+            with self.subTest(func):
+                self.check_exception_location(
+                    func, indent=16, expected=expected,
+                )
 
 __test__ = {'doctests' : doctests}
 

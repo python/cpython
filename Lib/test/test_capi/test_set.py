@@ -229,7 +229,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
 class TestInternalCAPI(BaseSetTests, unittest.TestCase):
     def test_set_update(self):
         update = _testinternalcapi.set_update
-        for cls in (set, set_subclass):
+        for cls in (set, set_subclass, frozenset):
             for it in ('ab', ('a', 'b'), ['a', 'b'],
                        set('ab'), set_subclass('ab'),
                        frozenset('ab'), frozenset_subclass('ab')):
@@ -246,7 +246,6 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
                 update(cls(), [{}])
         with self.assertRaises(SystemError):
             update(object(), 'ab')
-        self.assertImmutable(update, 'ab')
         # CRASHES: update(NULL, object())
         # CRASHES: update(instance, NULL)
         # CRASHES: update(NULL, NULL)

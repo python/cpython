@@ -1828,6 +1828,8 @@ class FrozenDictTests(unittest.TestCase):
         self.assertIs(type(d), frozendict)
         self.assertEqual(d, frozendict(a=1, b=2, c=3))
         self.assertEqual(f{**d}, d)
+        self.assertNotEqual(f{**d, 'a': 2}, d)
+        self.assertEqual(f{'a': 1, **d, 'c': 3}, d)
 
     def test_constructor(self):
         # frozendict.__init__() has no effect

@@ -1592,6 +1592,18 @@ Incomplete frozen dictionary literals
 
 Specific errors for frozen literals:
 
+   >>> f {}
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   >>> f {1}
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   >>> f {1: 2}
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
    >>> f{1)
    Traceback (most recent call last):
    SyntaxError: closing parenthesis ')' does not match opening parenthesis '{'
