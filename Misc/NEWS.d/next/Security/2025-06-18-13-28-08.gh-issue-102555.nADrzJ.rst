@@ -1,3 +1,0 @@
-Fix comment parsing in :class:`html.parser.HTMLParser` according to the
-HTML5 standard. ``--!>`` now ends the comment. ``-- >`` no longer ends the
-comment. Support abnormally ended empty comments ``<-->`` and ``<--->``.

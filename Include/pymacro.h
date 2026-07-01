@@ -86,6 +86,28 @@
 #    endif
 #endif
 
+
+// _Py_ANONYMOUS: modifier for declaring an anonymous union.
+// Usage: _Py_ANONYMOUS union { ... };
+// Standards/compiler support:
+// - C++ allows anonymous unions, but not structs
+// - C11 and above allows anonymous unions and structs
+// - MSVC has warning(disable: 4201) "nonstandard extension used : nameless
+//   struct/union". This is specific enough that we disable it for all of
+//   Python.h.
+// - GCC & clang needs __extension__ before C11
+// To allow unsupported platforms which need other spellings, we use a
+// predefined value of _Py_ANONYMOUS if it exists.
+#ifndef _Py_ANONYMOUS
+#   if (defined(__GNUC__) || defined(__clang__)) \
+          && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#       define _Py_ANONYMOUS __extension__
+#   else
+#       define _Py_ANONYMOUS
+#   endif
+#endif
+
+
 /* Minimum value between x and y */
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 
@@ -94,6 +116,12 @@
 
 /* Absolute value of the number x */
 #define Py_ABS(x) ((x) < 0 ? -(x) : (x))
+/* Safer implementation that avoids an undefined behavior for the minimal
+   value of the signed integer type if its absolute value is larger than
+   the maximal value of the signed integer type (in the two's complement
+   representations, which is common).
+ */
+#define _Py_ABS_CAST(T, x) ((x) >= 0 ? ((T) (x)) : ((T) (((T) -((x) + 1)) + 1u)))
 
 #define _Py_XSTRINGIFY(x) #x
 

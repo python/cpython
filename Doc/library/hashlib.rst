@@ -4,9 +4,6 @@
 .. module:: hashlib
    :synopsis: Secure hash and message digest algorithms.
 
-.. moduleauthor:: Gregory P. Smith <greg@krypto.org>
-.. sectionauthor:: Gregory P. Smith <greg@krypto.org>
-
 **Source code:** :source:`Lib/hashlib.py`
 
 .. index::
@@ -53,15 +50,18 @@ hash supplied more than 2047 bytes of data at once in its constructor or
 .. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
-:func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, :func:`sha512`,
-:func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, :func:`sha3_512`,
-:func:`shake_128`, :func:`shake_256`, :func:`blake2b`, and :func:`blake2s`.
-:func:`md5` is normally available as well, though it may be missing or blocked
-if you are using a rare "FIPS compliant" build of Python.
-These correspond to :data:`algorithms_guaranteed`.
+:func:`md5`, :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
+:func:`sha512`, :func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`,
+:func:`sha3_512`, :func:`shake_128`, :func:`shake_256`, :func:`blake2b`, and
+:func:`blake2s`.  These correspond to :data:`algorithms_guaranteed`.
+
+Any of these may nonetheless be missing or blocked in unusual environments,
+such as a rare "FIPS compliant" build of Python or when OpenSSL's "FIPS mode"
+is configured to exclude some algorithms from its default provider.  Calling
+the constructor of an algorithm that is unavailable raises :exc:`ValueError`.
 
 Additional algorithms may also be available if your Python distribution's
-:mod:`hashlib` was linked against a build of OpenSSL that provides others.
+:mod:`!hashlib` was linked against a build of OpenSSL that provides others.
 Others *are not guaranteed available* on all installations and will only be
 accessible by name via :func:`new`.  See :data:`algorithms_available`.
 
@@ -310,7 +310,7 @@ a file or file-like object.
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.14
-      Now raises a :exc:`BlockingIOError` if the file is opened in blocking
+      Now raises a :exc:`BlockingIOError` if the file is opened in non-blocking
       mode. Previously, spurious null bytes were added to the digest.
 
 
@@ -379,8 +379,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 BLAKE2
 ------
 
-.. sectionauthor:: Dmitry Chestnykh
-
 .. index::
    single: blake2b, blake2s
 
@@ -397,7 +395,7 @@ BLAKE2 supports **keyed mode** (a faster and simpler replacement for HMAC_),
 **salted hashing**, **personalization**, and **tree hashing**.
 
 Hash objects from this module follow the API of standard library's
-:mod:`hashlib` objects.
+:mod:`!hashlib` objects.
 
 
 Creating hash objects

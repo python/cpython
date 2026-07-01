@@ -32,10 +32,6 @@
 /* The Android API level. */
 #undef ANDROID_API_LEVEL
 
-/* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
-   mixed-endian order (byte order 45670123) */
-#undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
-
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored with the most
    significant byte first */
 #undef DOUBLE_IS_BIG_ENDIAN_IEEE754
@@ -59,6 +55,9 @@
 /* Define to 1 if you have the 'acosh' function. */
 #undef HAVE_ACOSH
 
+/* Define to 1 if you have the 'acospi' function. */
+#undef HAVE_ACOSPI
+
 /* struct addrinfo (netdb.h) */
 #undef HAVE_ADDRINFO
 
@@ -77,11 +76,20 @@
 /* Define to 1 if you have the 'asinh' function. */
 #undef HAVE_ASINH
 
+/* Define to 1 if you have the 'asinpi' function. */
+#undef HAVE_ASINPI
+
 /* Define to 1 if you have the <asm/types.h> header file. */
 #undef HAVE_ASM_TYPES_H
 
+/* Define to 1 if you have the 'atan2pi' function. */
+#undef HAVE_ATAN2PI
+
 /* Define to 1 if you have the 'atanh' function. */
 #undef HAVE_ATANH
+
+/* Define to 1 if you have the 'atanpi' function. */
+#undef HAVE_ATANPI
 
 /* Define to 1 if you have the 'backtrace' function. */
 #undef HAVE_BACKTRACE
@@ -141,6 +149,9 @@
 /* Define if you have the 'chroot' function. */
 #undef HAVE_CHROOT
 
+/* Define to 1 if you have the 'clearenv' function. */
+#undef HAVE_CLEARENV
+
 /* Define to 1 if you have the 'clock' function. */
 #undef HAVE_CLOCK
 
@@ -180,14 +191,26 @@
 /* Define to 1 if you have the 'copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
 
+/* Define to 1 if you have the 'cospi' function. */
+#undef HAVE_COSPI
+
 /* Define to 1 if you have the 'ctermid' function. */
 #undef HAVE_CTERMID
 
 /* Define if you have the 'ctermid_r' function. */
 #undef HAVE_CTERMID_R
 
+/* Define if you have the 'define_key' function. */
+#undef HAVE_CURSES_DEFINE_KEY
+
+/* Define if you have the 'ESCDELAY' variable. */
+#undef HAVE_CURSES_ESCDELAY
+
 /* Define if you have the 'filter' function. */
 #undef HAVE_CURSES_FILTER
+
+/* Define if you have the 'getmouse' function with the X/Open signature. */
+#undef HAVE_CURSES_GETMOUSE
 
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
@@ -195,8 +218,17 @@
 /* Define if you have the 'has_key' function. */
 #undef HAVE_CURSES_HAS_KEY
 
+/* Define if you have the 'has_mouse' function. */
+#undef HAVE_CURSES_HAS_MOUSE
+
 /* Define if you have the 'immedok' function. */
 #undef HAVE_CURSES_IMMEDOK
+
+/* Define if you have the 'is_keypad' function. */
+#undef HAVE_CURSES_IS_KEYPAD
+
+/* Define if you have the 'is_leaveok' function. */
+#undef HAVE_CURSES_IS_LEAVEOK
 
 /* Define if you have the 'is_pad' function. */
 #undef HAVE_CURSES_IS_PAD
@@ -204,14 +236,41 @@
 /* Define if you have the 'is_term_resized' function. */
 #undef HAVE_CURSES_IS_TERM_RESIZED
 
+/* Define if you have the 'keyok' function. */
+#undef HAVE_CURSES_KEYOK
+
+/* Define if you have the 'key_defined' function. */
+#undef HAVE_CURSES_KEY_DEFINED
+
+/* Define if you have the 'new_prescr' function. */
+#undef HAVE_CURSES_NEW_PRESCR
+
+/* Define if you have the 'nofilter' function. */
+#undef HAVE_CURSES_NOFILTER
+
 /* Define if you have the 'resizeterm' function. */
 #undef HAVE_CURSES_RESIZETERM
 
 /* Define if you have the 'resize_term' function. */
 #undef HAVE_CURSES_RESIZE_TERM
 
+/* Define if you have the 'scr_dump' function. */
+#undef HAVE_CURSES_SCR_DUMP
+
+/* Define if you have the 'set_escdelay' function. */
+#undef HAVE_CURSES_SET_ESCDELAY
+
+/* Define if you have the 'set_tabsize' function. */
+#undef HAVE_CURSES_SET_TABSIZE
+
 /* Define if you have the 'syncok' function. */
 #undef HAVE_CURSES_SYNCOK
+
+/* Define if you have the 'TABSIZE' variable. */
+#undef HAVE_CURSES_TABSIZE
+
+/* Define if you have the 'term_attrs' function. */
+#undef HAVE_CURSES_TERM_ATTRS
 
 /* Define if you have the 'typeahead' function. */
 #undef HAVE_CURSES_TYPEAHEAD
@@ -219,11 +278,21 @@
 /* Define if you have the 'use_env' function. */
 #undef HAVE_CURSES_USE_ENV
 
+/* Define if you have the 'use_screen' function. */
+#undef HAVE_CURSES_USE_SCREEN
+
+/* Define if you have the 'use_window' function. */
+#undef HAVE_CURSES_USE_WINDOW
+
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
 
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
+
+/* Define to 1 if you have the declaration of 'PR_SET_VMA_ANON_NAME', and to 0
+   if you don't. */
+#undef HAVE_DECL_PR_SET_VMA_ANON_NAME
 
 /* Define to 1 if you have the declaration of 'RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -727,6 +796,9 @@
 /* Define to 1 if you have the <linux/can.h> header file. */
 #undef HAVE_LINUX_CAN_H
 
+/* Define to 1 if you have the <linux/can/isotp.h> header file. */
+#undef HAVE_LINUX_CAN_ISOTP_H
+
 /* Define to 1 if you have the <linux/can/j1939.h> header file. */
 #undef HAVE_LINUX_CAN_J1939_H
 
@@ -968,6 +1040,9 @@
 /* Define to 1 if you have the 'posix_spawn_file_actions_addclosefrom_np'
    function. */
 #undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+
+/* Define to 1 if you have the 'ppoll' function. */
+#undef HAVE_PPOLL
 
 /* Define to 1 if you have the 'pread' function. */
 #undef HAVE_PREAD
@@ -1246,6 +1321,9 @@
 /* Define to 1 if you have the 'sigwaitinfo' function. */
 #undef HAVE_SIGWAITINFO
 
+/* Define to 1 if you have the 'sinpi' function. */
+#undef HAVE_SINPI
+
 /* Define to 1 if you have the 'snprintf' function. */
 #undef HAVE_SNPRINTF
 
@@ -1278,6 +1356,9 @@
 
 /* Define to 1 if you have the 'statvfs' function. */
 #undef HAVE_STATVFS
+
+/* Define to 1 if you have the 'statx' function. */
+#undef HAVE_STATX
 
 /* Define if you have struct stat.st_mtim.tv_nsec */
 #undef HAVE_STAT_TV_NSEC
@@ -1321,6 +1402,27 @@
 /* Define to 1 if 'pw_passwd' is a member of 'struct passwd'. */
 #undef HAVE_STRUCT_PASSWD_PW_PASSWD
 
+/* Define to 1 if 'stx_atomic_write_unit_max_opt' is a member of 'struct
+   statx'. */
+#undef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
+
+/* Define to 1 if 'stx_atomic_write_unit_min' is a member of 'struct statx'.
+   */
+#undef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
+
+/* Define to 1 if 'stx_dio_mem_align' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
+
+/* Define to 1 if 'stx_dio_read_offset_align' is a member of 'struct statx'.
+   */
+#undef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
+
+/* Define to 1 if 'stx_mnt_id' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_MNT_ID
+
+/* Define to 1 if 'stx_subvol' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_SUBVOL
+
 /* Define to 1 if 'st_birthtime' is a member of 'struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BIRTHTIME
 
@@ -1353,6 +1455,9 @@
 
 /* Define to 1 if you have the 'sysconf' function. */
 #undef HAVE_SYSCONF
+
+/* Define to 1 if you have the 'sysctlbyname' function. */
+#undef HAVE_SYSCTLBYNAME
 
 /* Define to 1 if you have the <sysexits.h> header file. */
 #undef HAVE_SYSEXITS_H
@@ -1458,6 +1563,9 @@
 /* Define to 1 if you have the <sys/syscall.h> header file. */
 #undef HAVE_SYS_SYSCALL_H
 
+/* Define to 1 if you have the <sys/sysctl.h> header file. */
+#undef HAVE_SYS_SYSCTL_H
+
 /* Define to 1 if you have the <sys/sysmacros.h> header file. */
 #undef HAVE_SYS_SYSMACROS_H
 
@@ -1493,6 +1601,9 @@
 
 /* Define to 1 if you have the <sys/xattr.h> header file. */
 #undef HAVE_SYS_XATTR_H
+
+/* Define to 1 if you have the 'tanpi' function. */
+#undef HAVE_TANPI
 
 /* Define to 1 if you have the 'tcgetpgrp' function. */
 #undef HAVE_TCGETPGRP
@@ -1699,6 +1810,9 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* Define to use huge pages for pymalloc arenas */
+#undef PYMALLOC_USE_HUGEPAGES
+
 /* enabled builtin hash modules */
 #undef PY_BUILTIN_HASHLIB_HASHES
 
@@ -1748,9 +1862,6 @@
 
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
-
-/* Define if you want to use tail-calling interpreters in CPython. */
-#undef Py_TAIL_CALL_INTERP
 
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
@@ -2002,7 +2113,7 @@
 /* Define on NetBSD to activate all library features */
 #undef _NETBSD_SOURCE
 
-/* Define to activate features from IEEE Stds 1003.1-2008 */
+/* Define to activate features from IEEE Std 1003.1-2024 */
 #undef _POSIX_C_SOURCE
 
 /* Define if you have POSIX threads, and your system does not define that. */
@@ -2023,8 +2134,29 @@
 /* HACL* library can compile SIMD256 implementations */
 #undef _Py_HACL_CAN_COMPILE_VEC256
 
-/* Define if year with century should be normalized for strftime. */
-#undef _Py_NORMALIZE_CENTURY
+/* Define if compiler supports __builtin_shufflevector with 128-bit vectors
+   AND the target architecture has native SIMD (not just API availability) */
+#undef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+
+/* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
+   */
+#undef _Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION
+
+/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
+#undef _Py_HAVE_PR_SET_VMA_ANON_NAME
+
+/* Thread stack size set by the linker (in bytes). */
+#undef _Py_LINKER_THREAD_STACK_SIZE
+
+/* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
+#undef _Py_STACK_GROWS_DOWN
+
+/* Define if you want to use tail-calling interpreters in CPython. */
+#undef _Py_TAIL_CALL_INTERP
+
+/* Define to 1 if frame unwinding via pointers is expected to work, 0 if not.
+   Leave undefined if unknown. */
+#undef _Py_WITH_FRAME_POINTERS
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

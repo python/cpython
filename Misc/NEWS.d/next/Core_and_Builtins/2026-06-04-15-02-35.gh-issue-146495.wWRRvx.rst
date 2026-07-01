@@ -1,0 +1,1 @@
+Improve :exc:`SyntaxError` message for ``&&`` and ``||`` operators, suggesting ``and``/``&`` and ``or``/``|`` respectively.

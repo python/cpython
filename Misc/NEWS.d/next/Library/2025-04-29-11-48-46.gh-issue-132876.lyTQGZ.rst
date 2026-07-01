@@ -1,4 +1,0 @@
-``ldexp()`` on Windows doesn't round subnormal results before Windows 11,
-but should.  Python's :func:`math.ldexp` wrapper now does round them, so
-results may change slightly, in rare cases of very small results, on
-Windows versions before 11.

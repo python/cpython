@@ -1,3 +1,4 @@
+import _thread
 import asyncio
 import contextlib
 import io
@@ -498,21 +499,35 @@ class InterpreterPoolExecutorTest(
         self.assertEqual(p.stdout.decode(), '')
         self.assertEqual(p.stderr.decode(), '')
 
+    def test_thread_name_prefix(self):
+        self.assertStartsWith(self.executor._thread_name_prefix,
+                              "InterpreterPoolExecutor-")
+
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_thread_name_prefix_with_thread_get_name(self):
+        def get_thread_name():
+            import _thread
+            return _thread._get_name()
+
+        # Some platforms (Linux) are using 16 bytes to store the thread name,
+        # so only compare the first 15 bytes (without the trailing \n).
+        self.assertStartsWith(self.executor.submit(get_thread_name).result(),
+                              "InterpreterPoolExecutor-"[:15])
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Most uses of asyncio will implicitly call set_event_loop_policy()
-        # with the default policy if a policy hasn't been set already.
+        # Most uses of asyncio will implicitly set a thread event loop
+        # if one hasn't been set already.
         # If that happens in a test, like here, we'll end up with a failure
         # when --fail-env-changed is used.  That's why the other tests that
-        # use asyncio are careful to set the policy back to None and why
+        # use asyncio are careful to set the loop back to None and why
         # we're careful to do so here.  We also validate that no other
-        # tests left a policy in place, just in case.
-        policy = support.maybe_get_event_loop_policy()
-        assert policy is None, policy
-        cls.addClassCleanup(lambda: asyncio.events._set_event_loop_policy(None))
+        # tests left a loop in place, just in case.
+        loop = support.maybe_get_event_loop()
+        assert loop is None, loop
+        cls.addClassCleanup(lambda: asyncio.set_event_loop(None))
 
     def setUp(self):
         super().setUp()

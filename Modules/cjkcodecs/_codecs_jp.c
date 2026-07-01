@@ -192,8 +192,11 @@ ENCODER(euc_jis_2004)
                                 JISX0213_ENCPAIRS);
                             if (code == DBCINV)
                                 return 1;
-                        } else
+                        }
+                        else if (c2 != 0) {
+                            /* Don't consume null char as part of pair */
                             insize = 2;
+                        }
                     }
                 }
             }
@@ -611,8 +614,10 @@ ENCODER(shift_jis_2004)
                             if (code == DBCINV)
                                 return 1;
                             }
-                            else
+                            else if (ch2 != 0) {
+                                /* Don't consume null char as part of pair */
                                 insize = 2;
+                            }
                         }
                     }
                 }

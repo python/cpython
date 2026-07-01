@@ -4,9 +4,6 @@
 .. module:: concurrent.interpreters
    :synopsis: Multiple interpreters in the same process
 
-.. moduleauthor:: Eric Snow <ericsnowcurrently@gmail.com>
-.. sectionauthor:: Eric Snow <ericsnowcurrently@gmail.com>
-
 .. versionadded:: 3.14
 
 **Source code:** :source:`Lib/concurrent/interpreters`
@@ -29,12 +26,12 @@ Actual concurrency is available separately through
 .. seealso::
 
    :class:`~concurrent.futures.InterpreterPoolExecutor`
-      combines threads with interpreters in a familiar interface.
+      Combines threads with interpreters in a familiar interface.
 
-    .. XXX Add references to the upcoming HOWTO docs in the seealso block.
+   .. XXX Add references to the upcoming HOWTO docs in the seealso block.
 
    :ref:`isolating-extensions-howto`
-       how to update an extension module to support multiple interpreters
+      How to update an extension module to support multiple interpreters.
 
    :pep:`554`
 
@@ -134,7 +131,7 @@ makes them similar to processes, but they still enjoy in-process
 efficiency, like threads.
 
 All that said, interpreters do naturally support certain flavors of
-concurrency, as a powerful side effect of that isolation.
+concurrency.
 There's a powerful side effect of that isolation.  It enables a
 different approach to concurrency than you can take with async or
 threads.  It's a similar concurrency model to CSP or the actor model,

@@ -1,2 +1,0 @@
-:func:`curses.window.getch` now correctly handles signals. Patch by Bénédikt
-Tran.

@@ -403,6 +403,16 @@ class PointersTestCase(unittest.TestCase):
         self.assertEqual(len(ws_typ), 0, ws_typ)
         self.assertEqual(len(ws_ptr), 0, ws_ptr)
 
+    def test_pointer_proto_missing_argtypes_error(self):
+        class BadType(ctypes._Pointer):
+            # _type_ is intentionally missing
+            pass
+
+        func = ctypes.pythonapi.Py_GetVersion
+        func.argtypes = (BadType,)
+
+        with self.assertRaises(ctypes.ArgumentError):
+            func(object())
 
 class PointerTypeCacheTestCase(unittest.TestCase):
     # dummy tests to check warnings and base behavior

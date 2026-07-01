@@ -88,7 +88,7 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
     }
 
     if (PyErr_WarnExplicitObject(category, msg, p->tok->filename,
-                                 lineno, NULL, NULL) < 0) {
+                                 lineno, p->tok->module, NULL) < 0) {
         if (PyErr_ExceptionMatches(category)) {
             /* Replace the Syntax/DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */

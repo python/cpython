@@ -11,6 +11,7 @@ from concurrent.futures.process import _check_system_limits
 from logging.handlers import QueueHandler
 
 from test import support
+from test.support import warnings_helper
 
 from .util import ExecutorMixin, create_executor_tests, setup_module
 
@@ -48,6 +49,7 @@ class InitializerMixin(ExecutorMixin):
                                     initargs=('initialized',))
         super().setUp()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_initializer(self):
         futures = [self.executor.submit(get_init_status)
                    for _ in range(self.worker_count)]
@@ -74,6 +76,7 @@ class FailingInitializerMixin(ExecutorMixin):
             self.executor_kwargs = dict(initializer=init_fail)
         super().setUp()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_initializer(self):
         with self._assert_logged('ValueError: error in initializer'):
             try:
@@ -144,6 +147,8 @@ class FailingInitializerResourcesTest(unittest.TestCase):
         self._test(ProcessPoolSpawnFailingInitializerTest)
 
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
+    @unittest.skipIf(sys.platform == "cygwin",
+                     "Forkserver is not available on Cygwin")
     def test_forkserver(self):
         self._test(ProcessPoolForkserverFailingInitializerTest)
 

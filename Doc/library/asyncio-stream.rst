@@ -316,10 +316,14 @@ StreamWriter
       If that fails, the data is queued in an internal write buffer until it can be
       sent.
 
+      The *data* buffer should be a bytes, bytearray, or C-contiguous one-dimensional
+      memoryview object.
+
       The method should be used along with the ``drain()`` method::
 
          stream.write(data)
          await stream.drain()
+
 
    .. method:: writelines(data)
 
