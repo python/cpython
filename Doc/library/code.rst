@@ -40,7 +40,7 @@ build applications which provide an interactive interpreter prompt.
    .. versionchanged:: 3.13
       Added *local_exit* parameter.
 
-.. function:: interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False)
+.. function:: interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False, *, use_pyrepl=False)
 
    Convenience function to run a read-eval-print loop.  This creates a new
    instance of :class:`InteractiveConsole` and sets *readfunc* to be used as
@@ -49,14 +49,18 @@ build applications which provide an interactive interpreter prompt.
    use as the default namespace for the interpreter loop.  If *local_exit* is provided,
    it is passed to the :class:`InteractiveConsole` constructor.  The :meth:`~InteractiveConsole.interact`
    method of the instance is then run with *banner* and *exitmsg* passed as the
-   banner and exit message to use, if provided.  The console object is discarded
-   after use.
+   banner and exit message to use, if provided.  The *use_pyrepl* argument is
+   passed to :meth:`~InteractiveConsole.interact` to control whether to use the
+   pyrepl-based REPL. The console object is discarded after use.
 
    .. versionchanged:: 3.6
       Added *exitmsg* parameter.
 
    .. versionchanged:: 3.13
       Added *local_exit* parameter.
+
+   .. versionchanged:: next
+      Added *use_pyrepl* parameter.
 
 .. function:: compile_command(source, filename="<input>", symbol="single")
 
@@ -153,7 +157,7 @@ The :class:`InteractiveConsole` class is a subclass of
 interpreter objects as well as the following additions.
 
 
-.. method:: InteractiveConsole.interact(banner=None, exitmsg=None)
+.. method:: InteractiveConsole.interact(banner=None, exitmsg=None, *, use_pyrepl=False)
 
    Closely emulate the interactive Python console. The optional *banner* argument
    specify the banner to print before the first interaction; by default it prints a
@@ -165,11 +169,20 @@ interpreter objects as well as the following additions.
    Pass the empty string to suppress the exit message. If *exitmsg* is not given or
    ``None``, a default message is printed.
 
+   The optional *use_pyrepl* argument controls whether to use the pyrepl-based REPL
+   when available. When ``True``, pyrepl is used. When ``False`` (the default),
+   the basic readline-based REPL is used. When ``None``, pyrepl is used
+   automatically if available and the :envvar:`PYTHON_BASIC_REPL` environment
+   variable is not set.
+
    .. versionchanged:: 3.4
       To suppress printing any banner, pass an empty string.
 
    .. versionchanged:: 3.6
       Print an exit message when exiting.
+
+   .. versionchanged:: next
+      Added *use_pyrepl* parameter.
 
 
 .. method:: InteractiveConsole.push(line)
