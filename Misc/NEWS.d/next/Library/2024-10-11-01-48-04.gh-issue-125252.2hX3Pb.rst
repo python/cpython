@@ -1,0 +1,2 @@
+Added support :class:`unittest.TestCase` of multiple-inheritance
+cooperative.
