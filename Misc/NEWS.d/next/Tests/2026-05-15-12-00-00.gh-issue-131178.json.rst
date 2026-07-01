@@ -1,0 +1,3 @@
+Add tests for the :mod:`json` command-line interface, covering error paths
+(invalid JSON, missing input file, unknown and mutually exclusive options)
+as well as ``--json-lines`` combined with ``--compact`` or ``--no-indent``.
