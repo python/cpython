@@ -556,7 +556,17 @@ class TemporaryFileWrapper:
         for line in self.file:
             yield line
 
-_TemporaryFileWrapper = TemporaryFileWrapper
+# _TemporaryFileWrapper is deprecated in favor of the public
+def __getattr__(name):
+    if name == "_TemporaryFileWrapper":
+        _warnings._deprecated(
+            "tempfile._TemporaryFileWrapper",
+            message="{name} is deprecated and will be removed in a future "
+                    "version. Use tempfile.TemporaryFileWrapper instead.",
+            remove=(3, 16),
+        )
+        return TemporaryFileWrapper
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
