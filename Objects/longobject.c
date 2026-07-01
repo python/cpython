@@ -3871,13 +3871,90 @@ _PyCompactLong_Add(PyLongObject *a, PyLongObject *b)
     return medium_from_stwodigits(v);
 }
 
+static inline bool
+_Py_i64_add_overflow(int64_t a, int64_t b, int64_t *out)
+{
+#if defined(__GNUC__) || defined(__clang__)
+    return __builtin_add_overflow(a, b, out);
+#else
+    if ((b > 0 && a > INT64_MAX - b) || (b < 0 && a < INT64_MIN - b)) {
+        return true;
+    }
+    *out = a + b;
+    return false;
+#endif
+}
+
+/* Build a _PyStackRef from an int64 arithmetic result.
+ * Returns PyStackRef_ERROR on OOM (no exception set); never PyStackRef_NULL. */
+static inline _PyStackRef
+_wide_op_result(int64_t v)
+{
+    if (IS_SMALL_INT(v)) {
+        return PyStackRef_FromPyObjectBorrow(get_small_int((sdigit)v));
+    }
+    assert(v != 0);
+    if (is_medium_int(v)) {
+        PyLongObject *result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+        if (result == NULL) {
+            result = PyObject_Malloc(sizeof(PyLongObject));
+            if (result == NULL) {
+                return PyStackRef_ERROR;
+            }
+            _PyObject_Init((PyObject *)result, &PyLong_Type);
+            _PyLong_InitTag(result);
+        }
+        digit abs_v = v < 0 ? (digit)(-(sdigit)v) : (digit)(sdigit)v;
+        _PyLong_SetSignAndDigitCount(result, v < 0 ? -1 : 1, 1);
+        result->long_value.ob_digit[0] = abs_v;
+        return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+    }
+    PyObject *result = (PyObject *)_PyLong_FromLarge(v);
+    if (result == NULL) {
+        return PyStackRef_ERROR;
+    }
+    return PyStackRef_FromPyObjectStealMortal(result);
+}
+
+/* Exact int -> int64_t helper for the wide int fast path.
+ * Keeps the exact-type check local to this translation unit. */
+static inline bool
+_PyLong_CheckExactAndTryAsInt64(PyObject *op, int64_t *out)
+{
+    return PyLong_CheckExact(op) &&
+        _PyLong_TryAsInt64Exact((PyLongObject *)op, out);
+}
+
+/* Wide variant: operands are exact ints in the full int64 range (may be
+ * non-compact).  Returns PyStackRef_NULL (without raising) when an input is
+ * out of int64 range or the sum overflows int64.  Returns PyStackRef_ERROR
+ * only on OOM. */
+_PyStackRef
+_PyCompactLong_AddWide(PyLongObject *a, PyLongObject *b)
+{
+    /* Fast path: both compact — avoids int64 extraction overhead. */
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits v = medium_value(a) + medium_value(b);
+        return medium_from_stwodigits(v);
+    }
+    int64_t va, vb;
+    if (!_PyLong_CheckExactAndTryAsInt64((PyObject *)a, &va) ||
+        !_PyLong_CheckExactAndTryAsInt64((PyObject *)b, &vb)) {
+        return PyStackRef_NULL;
+    }
+    int64_t v;
+    if (_Py_i64_add_overflow(va, vb, &v)) {
+        return PyStackRef_NULL;
+    }
+    return _wide_op_result(v);
+}
+
 static PyObject *
 long_add_method(PyObject *a, PyObject *b)
 {
     CHECK_BINOP(a, b);
     return (PyObject*)long_add((PyLongObject*)a, (PyLongObject*)b);
 }
-
 
 static PyLongObject *
 long_sub(PyLongObject *a, PyLongObject *b)
@@ -3914,6 +3991,39 @@ _PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
     assert(_PyLong_BothAreCompact(a, b));
     stwodigits v = medium_value(a) - medium_value(b);
     return medium_from_stwodigits(v);
+}
+
+static inline bool
+_Py_i64_sub_overflow(int64_t a, int64_t b, int64_t *out)
+{
+#if defined(__GNUC__) || defined(__clang__)
+    return __builtin_sub_overflow(a, b, out);
+#else
+    if ((b < 0 && a > INT64_MAX + b) || (b > 0 && a < INT64_MIN + b)) {
+        return true;
+    }
+    *out = a - b;
+    return false;
+#endif
+}
+
+_PyStackRef
+_PyCompactLong_SubtractWide(PyLongObject *a, PyLongObject *b)
+{
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits v = medium_value(a) - medium_value(b);
+        return medium_from_stwodigits(v);
+    }
+    int64_t va, vb;
+    if (!_PyLong_CheckExactAndTryAsInt64((PyObject *)a, &va) ||
+        !_PyLong_CheckExactAndTryAsInt64((PyObject *)b, &vb)) {
+        return PyStackRef_NULL;
+    }
+    int64_t v;
+    if (_Py_i64_sub_overflow(va, vb, &v)) {
+        return PyStackRef_NULL;
+    }
+    return _wide_op_result(v);
 }
 
 static PyObject *
