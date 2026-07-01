@@ -660,12 +660,14 @@ jobs:
         # The generic python3.pc and python3.X.pc files are not expected to be co-installable
         # pyconfig.h is not expected to be co-installable
         # dist-info RECORD and WHEEL are not co-installable
+        # abi3 and abi3t are not currently co-installable (#122931)
         run: |
           find installs -type d -name __pycache__ | xargs rm -r
           rm -r installs/*/usr/bin/
           rm installs/install-tree-*-*[td]/usr/lib/*/pkgconfig/python*[0-9]{,-embed}.pc
           rm installs/*/usr/include/python*/pyconfig.h
           rm installs/*/usr/lib/python*/site-packages/*.dist-info/{RECORD,WHEEL}
+          rm installs/*/usr/lib/python*/site-packages/*.abi3{,t}.so
       - name: Compare installs
         run: python3 Tools/coinstall-check/compare.py installs/
 
