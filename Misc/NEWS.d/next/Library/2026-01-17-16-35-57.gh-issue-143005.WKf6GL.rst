@@ -1,0 +1,2 @@
+Fix a memory safety issue in ctypes arrays by rejecting ``__class__``
+assignment to incompatible array types.
