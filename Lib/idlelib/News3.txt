@@ -4,8 +4,22 @@ Released on 2026-10-01
 =========================
 
 
-gh-152728: Move functions run.fix_scaling, editor.fixwordbreaks (as fix_word_breaks)
-and pyshell.fix_x11_paste to module util. Patch by Terry J. Reedy.
+gh-152738: Fix a rare crash in the IDLE editor when the completion
+window is closed: deleting a key binding for a sequence that is not
+bound to the virtual event is now ignored instead of raising a
+ValueError. Patch by Serhiy Storchaka and Claude Code.
+
+gh-152737: Fix Replace All in the IDLE editor's Replace dialog when the
+search direction is "Up" and "Wrap around" is off: it now replaces all
+matches above the current position instead of only the first one.
+Patch by Serhiy Storchaka and Claude Code.
+
+gh-152733: For X11 window managers, set toplevel window classes to
+"Idle".  Patch by Serhiy Storchaka and Claude Code.
+
+gh-152728: Move functions run.fix_scaling, editor.fixwordbreaks
+(as 'fix_word_breaks') and pyshell.fix_x11_paste to module util.
+Patch by Terry J. Reedy.
 
 gh-85320: IDLE now reads and writes its configuration files and the
 breakpoints file using UTF-8 instead of the locale encoding.
