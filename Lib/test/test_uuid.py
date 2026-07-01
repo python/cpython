@@ -277,9 +277,17 @@ class BaseTestUUID:
         # Badly formed hex strings.
         badvalue(lambda: self.uuid.UUID(''))
         badvalue(lambda: self.uuid.UUID('abc'))
+        badvalue(lambda: self.uuid.UUID('123_4567812345678123456781234567'))
+        badvalue(lambda: self.uuid.UUID('123_4567812345678123456781_23456'))
         badvalue(lambda: self.uuid.UUID('1234567812345678123456781234567'))
         badvalue(lambda: self.uuid.UUID('123456781234567812345678123456789'))
         badvalue(lambda: self.uuid.UUID('123456781234567812345678z2345678'))
+        badvalue(lambda: self.uuid.UUID('0x123456781234567812345678z23456'))
+        badvalue(lambda: self.uuid.UUID('0X123456781234567812345678z23456'))
+        badvalue(lambda: self.uuid.UUID('+123456781234567812345678z234567'))
+        badvalue(lambda: self.uuid.UUID(' 123456781234567812345678z23456 '))
+        badvalue(lambda: self.uuid.UUID('  123456781234567812345678z2345  '))
+        badvalue(lambda: self.uuid.UUID('\uff10123456781234567812345678z234567'))
 
         # Badly formed bytes.
         badvalue(lambda: self.uuid.UUID(bytes='abc'))

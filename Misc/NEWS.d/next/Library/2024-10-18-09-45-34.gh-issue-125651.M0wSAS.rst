@@ -1,0 +1,1 @@
+Fix HEX parsing of :class:`uuid.UUID`.
