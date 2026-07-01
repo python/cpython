@@ -1,0 +1,2 @@
+Make :func:`socket.send_fds` and :func:`socket.recv_fds` honour optional
+arguments. Patch by Stefano Miccoli.
