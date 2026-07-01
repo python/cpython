@@ -1,0 +1,3 @@
+Fix :func:`operator.concat` and :func:`operator.iconcat` to return a correct
+exception message, if the object class lacks the :meth:`~object.__getitem__`
+dunder.  Patch by Sergey B Kirpichev.
