@@ -476,6 +476,22 @@ code before trusting a returned component part.  Does that ``scheme`` make
 sense?  Is that a sensible ``path``?  Is there anything strange about that
 ``hostname``?  etc.
 
+When using :func:`urlsplit` or :func:`urlparse` to validate redirect
+targets, do not rely only on the ``netloc`` component. These functions
+only recognize a network location when the URL uses the ``//`` form.
+Some user agents may interpret other forms differently.
+
+For example::
+
+    >>> from urllib.parse import urlsplit
+    >>> urlsplit("////example.com")
+    SplitResult(scheme='', netloc='', path='//example.com', query='', fragment='')
+
+Some browsers may treat this URL as a redirect target for
+``example.com``, even though ``urlsplit`` reports an empty ``netloc``.
+Applications handling redirects should perform validation appropriate for their
+security requirements.
+
 What constitutes a URL is not universally well defined.  Different applications
 have different needs and desired constraints.  For instance the living `WHATWG
 spec`_ describes what user facing web clients such as a web browser require.
