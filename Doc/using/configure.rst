@@ -481,7 +481,7 @@ Options for third-party dependencies
    ``libncurses`` library is present on the host system (built and installed by
    default if ``libncurses`` is present).
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 WebAssembly Options
