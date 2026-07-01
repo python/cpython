@@ -452,6 +452,12 @@ def collect_readline(info_add):
 
 def run_command(cmd, check=True, **kwargs):
     import subprocess
+    from test.support import has_subprocess_support
+
+    if not has_subprocess_support:
+        # subprocess is not supported by the current platform
+        return ''
+
     timeout = COMMAND_TIMEOUT
 
     cmd_str = ' '.join(cmd)
@@ -963,6 +969,25 @@ def winreg_query(path):
         return None
 
 
+def wmi_get_os():
+    try:
+        import _wmi
+    except ImportError:
+        return
+
+    query = "SELECT Caption, Version FROM Win32_OperatingSystem"
+    try:
+        data = _wmi.exec_query(query)
+    except OSError:
+        return
+
+    dict_data = {}
+    for item in data.split("\0"):
+        key, _, value = item.partition("=")
+        dict_data[key] = value
+    return dict_data
+
+
 def collect_windows(info_add):
     if not MS_WINDOWS:
         # Code specific to Windows
@@ -1009,22 +1034,15 @@ def collect_windows(info_add):
         call_func(info_add, 'windows.ansi_code_page', _winapi, 'GetACP')
         call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
 
-    # windows.version_caption: "wmic os get Caption,Version /value" command
-    output = run_command(["wmic", "os", "get", "Caption,Version", "/value"],
-                         # When wmic.exe output is redirected to a pipe,
-                         # it uses the OEM code page
-                         encoding="oem")
-    if output:
-        for line in output.splitlines():
-            line = line.strip()
-            if line.startswith('Caption='):
-                line = line.removeprefix('Caption=').strip()
-                if line:
-                    info_add('windows.version_caption', line)
-            elif line.startswith('Version='):
-                line = line.removeprefix('Version=').strip()
-                if line:
-                    info_add('windows.version', line)
+    # Get operating system caption and version using WMI
+    data = wmi_get_os()
+    if data:
+        caption = data.get('Caption', '')
+        if caption:
+            info_add('windows.version_caption', caption)
+        version = data.get('Version', '')
+        if version:
+            info_add('windows.version', version)
 
     # windows.ver: "ver" command
     output = run_command(["ver"], shell=True)
