@@ -53,20 +53,6 @@ def _hash_algorithm(numerator, denominator):
     result = hash_ if numerator >= 0 else -hash_
     return -2 if result == -1 else result
 
-_RATIONAL_FORMAT = re.compile(r"""
-    \A\s*                                  # optional whitespace at the start,
-    (?P<sign>[-+]?)                        # an optional sign, then
-    (?=\d|\.\d)                            # lookahead for digit or .digit
-    (?P<num>\d*|\d+(_\d+)*)                # numerator (possibly empty)
-    (?:                                    # followed by
-       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?   # an optional denominator
-    |                                      # or
-       (?:\.(?P<decimal>\d*|\d+(_\d+)*))?  # an optional fractional part
-       (?:E(?P<exp>[-+]?\d+(_\d+)*))?      # and optional exponent
-    )
-    \s*\z                                  # and optional whitespace to finish
-""", re.VERBOSE | re.IGNORECASE)
-
 
 # Helpers for formatting
 
@@ -251,31 +237,58 @@ class Fraction(numbers.Rational):
 
             elif isinstance(numerator, str):
                 # Handle construction from strings.
-                m = _RATIONAL_FORMAT.match(numerator)
-                if m is None:
-                    raise ValueError('Invalid literal for Fraction: %r' %
-                                     numerator)
-                numerator = int(m.group('num') or '0')
-                denom = m.group('denom')
-                if denom:
-                    denominator = int(denom)
-                else:
-                    denominator = 1
-                    decimal = m.group('decimal')
-                    if decimal:
-                        decimal = decimal.replace('_', '')
-                        scale = 10**len(decimal)
-                        numerator = numerator * scale + int(decimal)
-                        denominator *= scale
-                    exp = m.group('exp')
-                    if exp:
-                        exp = int(exp)
-                        if exp >= 0:
-                            numerator *= 10**exp
+                fraction_literal = numerator
+                num, is_fraction_format, denom = fraction_literal.partition('/')
+                try:
+                    num = num.strip()
+                    denom = denom.strip()
+                    if num and denom and denom[0].isdigit():
+                        denominator = int(denom)
+                        numerator = int(num)
+                    elif num and not is_fraction_format:
+                        denominator = 1
+                        num, is_exp_format, exp = num.replace('E', 'e').partition('e')
+                        if is_exp_format and not exp:
+                            raise ValueError
+                        num, _, decimal = num.partition('.')
+                        if num:
+                            if num[0] in ('+', '-'):
+                                sign = num[0] == '-'
+                                num = num[1:]
+                            else:
+                                sign = 0
+                            if num and not (num[-1].isdigit() and num[0].isdigit()):
+                                raise ValueError
                         else:
-                            denominator *= 10**-exp
-                if m.group('sign') == '-':
-                    numerator = -numerator
+                            sign = 0
+                        if decimal:
+                            if not decimal[0].isdigit() or not decimal[-1].isdigit():
+                                raise ValueError
+                            numerator = int(num or '0')
+                            decimal_len = len(decimal.replace('_', ''))
+                            decimal = int(decimal)
+                            scale = 10**decimal_len
+                            numerator = numerator*scale + decimal
+                            denominator *= scale
+                        else:
+                            numerator = int(num)
+                        if sign:
+                            numerator = -numerator
+                        if exp:
+                            if not (exp[0] in ('+', '-') or exp[0].isdigit()):
+                                raise ValueError
+                            exp = int(exp)
+                            if exp >= 0:
+                                numerator *= 10**exp
+                            else:
+                                denominator *= 10**-exp
+                    else:
+                        raise ValueError
+                except ValueError as exc:
+                    if exc.args and re.match('^Exceeds', exc.args[0]):
+                        raise
+                    raise ValueError('Invalid literal for Fraction: %r' %
+                                     fraction_literal)
 
             elif isinstance(numerator, numbers.Rational):
                 self._numerator = numerator.numerator
