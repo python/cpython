@@ -41,6 +41,13 @@ class OutputWindowTest(unittest.TestCase):
         self.assertFalse(w.ispythonsource('test.txt'))
         self.assertFalse(w.ispythonsource(__file__))
 
+    def test_save_defaults_to_text(self):
+        # gh-65339: output is saved as text, not Python source.
+        io = self.window.io
+        self.assertEqual(io.defaultextension, '.txt')
+        # Text files are offered before Python files.
+        self.assertEqual(io.filetypes[0][0], 'Text files')
+
     def test_window_title(self):
         self.assertEqual(self.window.top.title(), 'Output' + ' (%s)' % platform.python_version())
 
