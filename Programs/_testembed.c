@@ -1849,6 +1849,7 @@ static int test_initconfig_get_api(void)
     char **items;
     assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
     assert(length == 0);
+    PyInitConfig_FreeStrList(length, items);
 
     char* xoptions[] = {"faulthandler"};
     assert(PyInitConfig_SetStrList(config, "xoptions",
@@ -1871,6 +1872,7 @@ static int test_initconfig_get_api(void)
                                    Py_ARRAY_LENGTH(paths), paths) == 0);
     assert(initconfig_getint(config, "module_search_paths_set") == 1);
 
+    PyInitConfig_Free(config);
     return 0;
 }
 
