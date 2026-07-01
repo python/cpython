@@ -776,6 +776,13 @@ class TestSpecifics(unittest.TestCase):
             self.fail("unable to find constant %r in %r"
                       % (expected, func.__code__.co_consts))
 
+    @staticmethod
+    def _frozen_dict_consts(*consts):
+        """Use AST to make frozendict constants since it has no literal syntax"""
+        m = ast.Interactive([ast.Expr(ast.Constant(c)) for c in consts])
+        ast.fix_missing_locations(m)
+        return compile(m, "<test>", "single")
+
     # Merging equal constants is not a strict requirement for the Python
     # semantics, it's a more an implementation detail.
     @support.cpython_only
@@ -819,6 +826,36 @@ class TestSpecifics(unittest.TestCase):
         self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
+
+        # two identical frozendicts merge into one constant
+        c = self._frozen_dict_consts(frozendict({0: 1}), frozendict({0: 1}))
+        self.assertEqual(c.co_consts, (frozendict({0: 1}),))
+
+        # empty frozendicts also merge
+        c = self._frozen_dict_consts(frozendict(), frozendict())
+        self.assertEqual(c.co_consts, (frozendict(),))
+
+        # frozendicts containing a nested frozendict value merge
+        c = self._frozen_dict_consts(
+            frozendict({0: frozendict({1: 2})}),
+            frozendict({0: frozendict({1: 2})}),
+        )
+        self.assertEqual(c.co_consts, (frozendict({0: frozendict({1: 2})}),))
+
+        # A tuple value inside a frozendict is merged with the same
+        # constant used elsewhere. Use a variable to ensure the two tuple
+        # objects are distinct before they are merged.
+        name = "not a name"
+        t_standalone = (name,)
+        m = ast.Interactive([
+            ast.Expr(ast.Constant(t_standalone)),
+            ast.Expr(ast.Constant(frozendict({0: (name,)}))),
+            ast.Expr(ast.Constant(frozendict({(name,): 0}))),
+        ])
+        ast.fix_missing_locations(m)
+        c = compile(m, "<test>", "single")
+        self.assertIs(c.co_consts[0], c.co_consts[1][0])
+        self.assertIs(c.co_consts[0], next(iter(c.co_consts[2])))
 
     # Merging equal co_linetable is not a strict requirement
     # for the Python semantics, it's a more an implementation detail.
@@ -1032,6 +1069,16 @@ class TestSpecifics(unittest.TestCase):
         self.check_constant(f2, frozenset({0.0}))
         self.assertTrue(f1(0))
         self.assertTrue(f2(0.0))
+
+        # frozendicts with type-distinct keys must not merge (0 vs 0.0)
+        c = self._frozen_dict_consts(frozendict({0: 1}), frozendict({0.0: 1}))
+        self.assertEqual(c.co_consts, (frozendict({0: 1}), frozendict({0.0: 1})))
+        self.assertIsNot(c.co_consts[0], c.co_consts[1])
+
+        # frozendicts with type-distinct values must not merge (1 vs 1.0)
+        c = self._frozen_dict_consts(frozendict({0: 1}), frozendict({0: 1.0}))
+        self.assertEqual(c.co_consts, (frozendict({0: 1}), frozendict({0: 1.0})))
+        self.assertIsNot(c.co_consts[0], c.co_consts[1])
 
     def test_path_like_objects(self):
         # An implicit test for PyUnicode_FSDecoder().

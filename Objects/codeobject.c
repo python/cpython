@@ -14,6 +14,7 @@
 #include "pycore_pymem.h"         // _PyMem_FreeDelayed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_dict.h"          // _PyFrozenDict_ClearInternal()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
@@ -167,6 +168,16 @@ should_immortalize_constant(PyObject *v)
         }
         return 1;
     }
+    else if (PyFrozenDict_CheckExact(v)) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(v, &pos, &key, &value)) {
+            if (!_Py_IsImmortal(key) || !_Py_IsImmortal(value)) {
+                return 0;
+            }
+        }
+        return 1;
+    }
     else if (PySlice_Check(v)) {
         PySliceObject *slice = (PySliceObject *)v;
         return (_Py_IsImmortal(slice->start) &&
@@ -240,6 +251,53 @@ intern_constants(PyObject *tuple, int *modified)
                     return -1;
                 }
 
+                PyTuple_SET_ITEM(tuple, i, v);
+                Py_DECREF(w);
+                if (modified) {
+                    *modified = 1;
+                }
+            }
+            Py_DECREF(tmp);
+        }
+        else if (PyFrozenDict_CheckExact(v)) {
+            PyObject *w = v;
+            PyObject *tmp = PyTuple_New(2 * PyDict_GET_SIZE(v));
+            if (tmp == NULL) {
+                return -1;
+            }
+            Py_ssize_t pos = 0;
+            PyObject *k, *val;
+            Py_ssize_t j = 0;
+            while (PyDict_Next(v, &pos, &k, &val)) {
+                PyTuple_SET_ITEM(tmp, j++, Py_NewRef(k));
+                PyTuple_SET_ITEM(tmp, j++, Py_NewRef(val));
+            }
+            int tmp_modified = 0;
+            if (intern_constants(tmp, &tmp_modified) < 0) {
+                Py_DECREF(tmp);
+                return -1;
+            }
+            if (tmp_modified) {
+                PyObject *new_dict = PyDict_New();
+                if (new_dict == NULL) {
+                    Py_DECREF(tmp);
+                    return -1;
+                }
+                for (j = 0; j < PyTuple_GET_SIZE(tmp); j += 2) {
+                    if (PyDict_SetItem(new_dict,
+                                      PyTuple_GET_ITEM(tmp, j),
+                                      PyTuple_GET_ITEM(tmp, j + 1)) < 0) {
+                        Py_DECREF(tmp);
+                        Py_DECREF(new_dict);
+                        return -1;
+                    }
+                }
+                v = PyFrozenDict_New(new_dict);
+                Py_DECREF(new_dict);
+                if (v == NULL) {
+                    Py_DECREF(tmp);
+                    return -1;
+                }
                 PyTuple_SET_ITEM(tuple, i, v);
                 Py_DECREF(w);
                 if (modified) {
@@ -3046,6 +3104,45 @@ _PyCode_ConstantKey(PyObject *op)
         Py_DECREF(set);
         return key;
     }
+    else if (PyFrozenDict_CheckExact(op)) {
+        PyObject *dict = PyDict_New();
+        if (dict == NULL) {
+            return NULL;
+        }
+
+        Py_ssize_t pos = 0;
+        PyObject *k_obj, *v_obj;
+        while (PyDict_Next(op, &pos, &k_obj, &v_obj)) {
+            PyObject *k_key = _PyCode_ConstantKey(k_obj);
+            if (k_key == NULL) {
+                Py_DECREF(dict);
+                return NULL;
+            }
+            PyObject *v_key = _PyCode_ConstantKey(v_obj);
+            if (v_key == NULL) {
+                Py_DECREF(k_key);
+                Py_DECREF(dict);
+                return NULL;
+            }
+            int res = PyDict_SetItem(dict, k_key, v_key);
+            Py_DECREF(k_key);
+            Py_DECREF(v_key);
+            if (res < 0) {
+                Py_DECREF(dict);
+                return NULL;
+            }
+        }
+
+        PyObject *fdict = PyFrozenDict_New(dict);
+        Py_DECREF(dict);
+        if (fdict == NULL) {
+            return NULL;
+        }
+
+        key = _PyTuple_FromPair(fdict, op);
+        Py_DECREF(fdict);
+        return key;
+    }
     else if (PySlice_Check(op)) {
         PySliceObject *slice = (PySliceObject *)op;
         PyObject *start_key = NULL;
@@ -3167,6 +3264,21 @@ compare_constants(const void *key1, const void *key2)
         }
         return 1;
     }
+    else if (PyFrozenDict_CheckExact(op1)) {
+        if (PyDict_GET_SIZE(op1) != PyDict_GET_SIZE(op2)) {
+            return 0;
+        }
+        Py_ssize_t pos1 = 0, pos2 = 0;
+        PyObject *k1, *k2, *v1, *v2;
+        while (PyDict_Next(op1, &pos1, &k1, &v1) &&
+               PyDict_Next(op2, &pos2, &k2, &v2))
+        {
+            if (k1 != k2 || v1 != v2) {
+                return 0;
+            }
+        }
+        return 1;
+    }
     else if (PySlice_Check(op1)) {
         PySliceObject *s1 = (PySliceObject *)op1;
         PySliceObject *s2 = (PySliceObject *)op2;
@@ -3240,6 +3352,9 @@ clear_containers(_Py_hashtable_t *ht, const void *key, const void *value,
     }
     else if (PyFrozenSet_CheckExact(op)) {
         _PySet_ClearInternal((PySetObject *)op);
+    }
+    else if (PyFrozenDict_CheckExact(op)) {
+        _PyFrozenDict_ClearInternal(op);
     }
     return 0;
 }

@@ -2714,6 +2714,11 @@ class ConstantTests(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "got an invalid type in Constant: list")
 
+        with self.assertRaises(TypeError) as cm:
+            self.compile_constant(frozendict({1: [2, 3]}))
+        self.assertEqual(str(cm.exception),
+                         "got an invalid type in Constant: list")
+
     def test_singletons(self):
         for const in (None, False, True, Ellipsis, b''):
             with self.subTest(const=const):
@@ -2723,13 +2728,15 @@ class ConstantTests(unittest.TestCase):
     def test_values(self):
         nested_tuple = (1,)
         nested_frozenset = frozenset({1})
+        nested_frozendict = frozendict({1: 1})
         for level in range(3):
             nested_tuple = (nested_tuple, 2)
             nested_frozenset = frozenset({nested_frozenset, 2})
+            nested_frozendict = frozendict({nested_frozendict: 2})
         values = (123, 123.0, 123j,
                   "unicode", b'bytes',
-                  tuple("tuple"), frozenset("frozenset"),
-                  nested_tuple, nested_frozenset)
+                  tuple("tuple"), frozenset("frozenset"), frozendict({"a": 1}),
+                  nested_tuple, nested_frozenset, nested_frozendict)
         for value in values:
             with self.subTest(value=value):
                 result = self.compile_constant(value)

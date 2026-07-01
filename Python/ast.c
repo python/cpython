@@ -198,6 +198,23 @@ validate_constant(PyObject *value)
         return 1;
     }
 
+    if (PyFrozenDict_CheckExact(value)) {
+        ENTER_RECURSIVE();
+
+        Py_ssize_t pos = 0;
+        PyObject *key, *val;
+
+        while (PyDict_Next(value, &pos, &key, &val)) {
+            if (!validate_constant(key) || !validate_constant(val)) {
+                LEAVE_RECURSIVE();
+                return 0;
+            }
+        }
+
+        LEAVE_RECURSIVE();
+        return 1;
+    }
+
     if (!PyErr_Occurred()) {
         PyErr_Format(PyExc_TypeError,
                      "got an invalid type in Constant: %s",

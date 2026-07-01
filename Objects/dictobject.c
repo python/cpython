@@ -3129,6 +3129,34 @@ _PyDict_Clear_LockHeld(PyObject *op) {
     clear_lock_held(op);
 }
 
+#ifdef Py_GIL_DISABLED
+void
+_PyFrozenDict_ClearInternal(PyObject *op)
+{
+    assert(PyFrozenDict_CheckExact(op));
+    PyDictObject *mp = (PyDictObject *)op;
+    PyDictKeysObject *keys = mp->ma_keys;
+    if (keys == Py_EMPTY_KEYS) {
+        return;
+    }
+    assert(mp->ma_values == NULL);
+    if (DK_IS_UNICODE(keys)) {
+        PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
+        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            Py_CLEAR(entries[i].me_key);
+            Py_CLEAR(entries[i].me_value);
+        }
+    }
+    else {
+        PyDictKeyEntry *entries = DK_ENTRIES(keys);
+        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            Py_CLEAR(entries[i].me_key);
+            Py_CLEAR(entries[i].me_value);
+        }
+    }
+}
+#endif
+
 void
 PyDict_Clear(PyObject *op)
 {
