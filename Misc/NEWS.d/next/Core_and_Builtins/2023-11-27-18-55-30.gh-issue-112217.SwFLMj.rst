@@ -1,0 +1,1 @@
+Add check for the type of ``__cause__`` returned from calling the type ``T`` in ``raise from T``.

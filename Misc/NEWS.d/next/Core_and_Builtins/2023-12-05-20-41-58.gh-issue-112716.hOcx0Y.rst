@@ -1,0 +1,2 @@
+Fix SystemError in the ``import`` statement and in ``__reduce__()`` methods
+of builtin types when ``__builtins__`` is not a dict.

@@ -1,0 +1,2 @@
+Fix an error that was causing the parser to try to overwrite tokenizer
+errors. Patch by pablo Galindo
