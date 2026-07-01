@@ -4,8 +4,14 @@ Released on 2026-10-01
 =========================
 
 
-gh-152743: When an integer entry in IDLE's Settings dialog, such as "Auto squeeze min lines", is deleted, do not save '', which is an invalid configuration value.
-Patch by Serhiy Storchaka
+gh-152745:  When "Run... Customized" with "Restart shell" unchecked
+while Shell is running code, including waiting for an input('prompt:')
+response, just report that the shell is executing instead of
+reporting twice and restarting anyway.  Patch by Serhiy Storchaka.
+
+gh-152743: When an integer entry in IDLE's Settings dialog, such as
+"Auto squeeze min lines", is deleted, do not save '', which is an
+invalid configuration value.  Patch by Serhiy Storchaka.
 
 gh-152742: MakeChange the default extension when saving a Shell or
 Output window '.txt' and list text files before Python files.  Their
