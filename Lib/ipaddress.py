@@ -1480,6 +1480,10 @@ class IPv4Interface(IPv4Address):
     def is_unspecified(self):
         return self._ip == 0 and self.network.is_unspecified
 
+    @property
+    def is_loopback(self):
+        return super().is_loopback and self.network.is_loopback
+
 
 class IPv4Network(_BaseV4, _BaseNetwork):
 
