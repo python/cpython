@@ -360,14 +360,20 @@ def _parse_isoformat_date(dtstr):
     # see the comment on Modules/_datetimemodule.c:_find_isoformat_datetime_separator
     if len(dtstr) not in (7, 8, 10):
         raise ValueError("Invalid isoformat string")
-    year = int(dtstr[0:4])
+    def _read(s, n):
+        # Require exactly n ASCII digits, as the C parse_digits() does.
+        if len(s) != n or not all(map(_is_ascii_digit, s)):
+            raise ValueError(f"Invalid isoformat string: {dtstr!r}")
+        return int(s)
+
+    year = _read(dtstr[0:4], 4)
     has_sep = dtstr[4] == '-'
 
     pos = 4 + has_sep
     if dtstr[pos:pos + 1] == "W":
         # YYYY-?Www-?D?
         pos += 1
-        weekno = int(dtstr[pos:pos + 2])
+        weekno = _read(dtstr[pos:pos + 2], 2)
         pos += 2
 
         dayno = 1
@@ -377,17 +383,17 @@ def _parse_isoformat_date(dtstr):
 
             pos += has_sep
 
-            dayno = int(dtstr[pos:pos + 1])
+            dayno = _read(dtstr[pos:pos + 1], 1)
 
         return list(_isoweek_to_gregorian(year, weekno, dayno))
     else:
-        month = int(dtstr[pos:pos + 2])
+        month = _read(dtstr[pos:pos + 2], 2)
         pos += 2
         if (dtstr[pos:pos + 1] == "-") != has_sep:
             raise ValueError("Inconsistent use of dash separator")
 
         pos += has_sep
-        day = int(dtstr[pos:pos + 2])
+        day = _read(dtstr[pos:pos + 2], 2)
 
         return [year, month, day]
 
