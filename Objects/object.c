@@ -2144,14 +2144,11 @@ PyObject_IsTrue(PyObject *v)
         return 0;
     if (v == Py_None)
         return 0;
-    else if (Py_TYPE(v)->tp_as_number != NULL &&
-             Py_TYPE(v)->tp_as_number->nb_bool != NULL)
+    else if (Py_TYPE(v)->tp_as_number->nb_bool != NULL)
         res = (*Py_TYPE(v)->tp_as_number->nb_bool)(v);
-    else if (Py_TYPE(v)->tp_as_mapping != NULL &&
-             Py_TYPE(v)->tp_as_mapping->mp_length != NULL)
+    else if (Py_TYPE(v)->tp_as_mapping->mp_length != NULL)
         res = (*Py_TYPE(v)->tp_as_mapping->mp_length)(v);
-    else if (Py_TYPE(v)->tp_as_sequence != NULL &&
-             Py_TYPE(v)->tp_as_sequence->sq_length != NULL)
+    else if (Py_TYPE(v)->tp_as_sequence->sq_length != NULL)
         res = (*Py_TYPE(v)->tp_as_sequence->sq_length)(v);
     else
         return 1;

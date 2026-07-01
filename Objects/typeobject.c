@@ -877,6 +877,9 @@ _PyType_CheckConsistency(PyTypeObject *type)
 
     CHECK(Py_REFCNT(type) >= 1);
     CHECK(PyType_Check(type));
+    CHECK(type->tp_as_number != NULL);
+    CHECK(type->tp_as_sequence != NULL);
+    CHECK(type->tp_as_mapping != NULL);
 
     CHECK(!is_readying(type));
     CHECK(lookup_tp_dict(type) != NULL);
@@ -8839,10 +8842,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     /* This won't inherit indirect slots (from tp_as_number etc.)
        if type doesn't provide the space. */
 
-    if (type->tp_as_number != NULL && base->tp_as_number != NULL) {
+    if (type->tp_as_number != NULL) {
         basebase = base->tp_base;
-        if (basebase->tp_as_number == NULL)
-            basebase = NULL;
         COPYNUM(nb_add);
         COPYNUM(nb_subtract);
         COPYNUM(nb_multiply);
@@ -8889,10 +8890,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         COPYASYNC(am_anext);
     }
 
-    if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL) {
+    if (type->tp_as_sequence != NULL) {
         basebase = base->tp_base;
-        if (basebase->tp_as_sequence == NULL)
-            basebase = NULL;
         COPYSEQ(sq_length);
         COPYSEQ(sq_concat);
         COPYSEQ(sq_repeat);
@@ -8903,10 +8902,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         COPYSEQ(sq_inplace_repeat);
     }
 
-    if (type->tp_as_mapping != NULL && base->tp_as_mapping != NULL) {
+    if (type->tp_as_mapping != NULL) {
         basebase = base->tp_base;
-        if (basebase->tp_as_mapping == NULL)
-            basebase = NULL;
         COPYMAP(mp_length);
         COPYMAP(mp_subscript);
         COPYMAP(mp_ass_subscript);
@@ -9278,6 +9275,24 @@ type_ready_mro(PyTypeObject *type, int initial)
 }
 
 
+const PyNumberMethods _PyType_EmptyNumberMethods = {0};
+const PySequenceMethods _PyType_EmptySequenceMethods = {0};
+const PyMappingMethods _PyType_EmptyMappingMethods = {0};
+
+static void
+type_ready_install_method_tables(PyTypeObject *type)
+{
+    if (type->tp_as_number == NULL) {
+        type->tp_as_number = (PyNumberMethods *)&_PyType_EmptyNumberMethods;
+    }
+    if (type->tp_as_sequence == NULL) {
+        type->tp_as_sequence = (PySequenceMethods *)&_PyType_EmptySequenceMethods;
+    }
+    if (type->tp_as_mapping == NULL) {
+        type->tp_as_mapping = (PyMappingMethods *)&_PyType_EmptyMappingMethods;
+    }
+}
+
 // For static types, inherit tp_as_xxx structures from the base class
 // if it's NULL.
 //
@@ -9338,6 +9353,7 @@ type_ready_inherit(PyTypeObject *type)
     if (base != NULL) {
         type_ready_inherit_as_structs(type, base);
     }
+    type_ready_install_method_tables(type);
 
     /* Sanity check for tp_free. */
     if (_PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&
@@ -9988,7 +10004,7 @@ getindex(PyObject *self, PyObject *arg)
         return -1;
     if (i < 0) {
         PySequenceMethods *sq = Py_TYPE(self)->tp_as_sequence;
-        if (sq && sq->sq_length) {
+        if (sq->sq_length) {
             Py_ssize_t n = (*sq->sq_length)(self);
             if (n < 0) {
                 assert(PyErr_Occurred());
@@ -10570,10 +10586,8 @@ FUNCNAME(PyObject *self, PyObject *other) \
     PyObject* stack[2]; \
     PyThreadState *tstate = _PyThreadState_GET(); \
     int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) && \
-        Py_TYPE(other)->tp_as_number != NULL && \
         Py_TYPE(other)->tp_as_number->SLOTNAME == TESTFUNC; \
-    if (Py_TYPE(self)->tp_as_number != NULL && \
-        Py_TYPE(self)->tp_as_number->SLOTNAME == TESTFUNC) { \
+    if (Py_TYPE(self)->tp_as_number->SLOTNAME == TESTFUNC) { \
         PyObject *r; \
         if (do_other && PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) { \
             int ok = method_is_overloaded(self, other, &_Py_ID(RDUNDER)); \
@@ -10750,10 +10764,8 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
     PyObject* stack[3];
     PyThreadState *tstate = _PyThreadState_GET();
     int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) &&
-        Py_TYPE(other)->tp_as_number != NULL &&
         Py_TYPE(other)->tp_as_number->nb_power == slot_nb_power;
-    if (Py_TYPE(self)->tp_as_number != NULL &&
-        Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
+    if (Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
         PyObject *r;
         if (do_other && PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) {
             int ok = method_is_overloaded(self, other, &_Py_ID(__rpow__));

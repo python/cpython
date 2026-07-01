@@ -1511,8 +1511,9 @@ store_subscr_fail_kind(PyObject *container, PyObject *sub)
 {
     PyTypeObject *container_type = Py_TYPE(container);
     PyMappingMethods *as_mapping = container_type->tp_as_mapping;
-    if (as_mapping && (as_mapping->mp_ass_subscript
-                       == PyDict_Type.tp_as_mapping->mp_ass_subscript)) {
+    if (as_mapping->mp_ass_subscript
+        == PyDict_Type.tp_as_mapping->mp_ass_subscript)
+    {
         return SPEC_FAIL_SUBSCR_DICT_SUBCLASS_NO_OVERRIDE;
     }
     if (PyObject_CheckBuffer(container)) {
@@ -1603,8 +1604,7 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
             return;
         }
     }
-    if (container_type->tp_as_mapping != NULL &&
-        container_type->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
+    if (container_type->tp_as_mapping->mp_ass_subscript == _PyDict_StoreSubscript)
     {
         specialize(instr, STORE_SUBSCR_DICT);
         return;
@@ -2415,8 +2415,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                     }
                 }
             }
-            if (Py_TYPE(lhs)->tp_as_mapping != NULL &&
-                Py_TYPE(lhs)->tp_as_mapping->mp_subscript == _PyDict_Subscript)
+            if (Py_TYPE(lhs)->tp_as_mapping->mp_subscript == _PyDict_Subscript)
             {
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
                 return;
@@ -2813,17 +2812,14 @@ to_bool_fail_kind(PyObject *value)
 static int
 check_type_always_true(PyTypeObject *ty)
 {
-    PyNumberMethods *nb = ty->tp_as_number;
-    if (nb && nb->nb_bool) {
+    if (ty->tp_as_number->nb_bool) {
         return SPEC_FAIL_TO_BOOL_NUMBER;
     }
-    PyMappingMethods *mp = ty->tp_as_mapping;
-    if (mp && mp->mp_length) {
+    if (ty->tp_as_mapping->mp_length) {
         return SPEC_FAIL_TO_BOOL_MAPPING;
     }
-    PySequenceMethods *sq = ty->tp_as_sequence;
-    if (sq && sq->sq_length) {
-      return SPEC_FAIL_TO_BOOL_SEQUENCE;
+    if (ty->tp_as_sequence->sq_length) {
+        return SPEC_FAIL_TO_BOOL_SEQUENCE;
     }
     return 0;
 }

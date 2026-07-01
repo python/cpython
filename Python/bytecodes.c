@@ -1281,13 +1281,11 @@ dummy_func(
 
         op(_GUARD_NOS_DICT_SUBSCRIPT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
             DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_subscript != _PyDict_Subscript);
         }
 
         op(_GUARD_NOS_DICT_STORE_SUBSCRIPT, (unused, nos, unused -- unused, nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
             DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_ass_subscript != _PyDict_StoreSubscript);
         }
 

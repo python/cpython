@@ -16,6 +16,7 @@ import weakref
 from copy import deepcopy
 from contextlib import redirect_stdout
 from test import support
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
 
 try:
@@ -6317,6 +6318,140 @@ class TestGenericDescriptors(unittest.TestCase):
             weakref_descriptor.__get__(SlotClass(), SlotClass)
         with self.assertRaises(AttributeError):
             weakref_descriptor.__get__(IntSubclass(), IntSubclass)
+
+
+class TestSubtableDispatchInvariants(unittest.TestCase):
+
+    def test_int_times_list(self):
+        self.assertEqual(2 * [1], [1, 1])
+
+    def test_list_times_int(self):
+        self.assertEqual([1] * 2, [1, 1])
+
+    def test_int_times_tuple(self):
+        self.assertEqual(2 * (1,), (1, 1))
+
+    def test_tuple_times_int(self):
+        self.assertEqual((1,) * 2, (1, 1))
+
+    def test_int_times_str(self):
+        self.assertEqual(2 * "ab", "abab")
+
+    def test_str_times_int(self):
+        self.assertEqual("ab" * 2, "abab")
+
+    def test_int_times_bytes(self):
+        self.assertEqual(2 * b"ab", b"abab")
+
+    def test_int_imul_list(self):
+        a = 2
+        a *= [1]
+        self.assertEqual(a, [1, 1])
+
+    def test_list_imul_int(self):
+        a = [1]
+        a *= 2
+        self.assertEqual(a, [1, 1])
+
+    def test_str_imul_int(self):
+        a = "ab"
+        a *= 2
+        self.assertEqual(a, "abab")
+
+    def test_class_without_mul_imul_seq_raises(self):
+        class NoSeq:
+            pass
+        a = NoSeq()
+        with self.assertRaises(TypeError):
+            a *= [1]
+
+    def test_class_with_empty_seq_methods_imul_seq_raises(self):
+        class HasMulOnly:
+            def __mul__(self, other):
+                return NotImplemented
+            def __index__(self):
+                return 2
+        a = HasMulOnly()
+        with self.assertRaises(TypeError):
+            a *= [1]
+
+    def test_int_getitem_raises_type_error(self):
+        x = 5
+        with self.assertRaises(TypeError):
+            x[0]
+
+    def test_int_setitem_raises_type_error(self):
+        x = 5
+        with self.assertRaises(TypeError):
+            x[0] = 1
+
+    def test_object_setitem_does_not_coerce_index(self):
+        class BadIndex:
+            called = False
+
+            def __index__(self):
+                self.called = True
+                raise AssertionError("__index__ called")
+
+        obj = object()
+        key = BadIndex()
+        with self.assertRaisesRegex(TypeError,
+                                    "does not support item assignment"):
+            obj[key] = 1
+        self.assertFalse(key.called)
+
+    def test_object_delitem_does_not_coerce_index(self):
+        class BadIndex:
+            called = False
+
+            def __index__(self):
+                self.called = True
+                raise AssertionError("__index__ called")
+
+        obj = object()
+        key = BadIndex()
+        with self.assertRaisesRegex(TypeError,
+                                    "does not support item deletion"):
+            del obj[key]
+        self.assertFalse(key.called)
+
+    def test_object_bool_default(self):
+        class C:
+            pass
+        self.assertTrue(bool(C()))
+
+    def test_object_bool_with_len(self):
+        class C:
+            def __len__(self):
+                return 0
+        self.assertFalse(bool(C()))
+
+    def test_object_bool_with_dunder_bool(self):
+        class C:
+            def __bool__(self):
+                return False
+        self.assertFalse(bool(C()))
+
+    def test_sequence_check_int_is_false(self):
+        _testlimitedcapi = import_helper.import_module("_testlimitedcapi")
+        self.assertFalse(_testlimitedcapi.sequence_check(5))
+
+    def test_mapping_check_int_is_false(self):
+        _testlimitedcapi = import_helper.import_module("_testlimitedcapi")
+        self.assertFalse(_testlimitedcapi.mapping_check(5))
+
+    def test_int_index_protocol(self):
+        class MyInt(int):
+            pass
+        a = [10, 20, 30]
+        self.assertEqual(a[MyInt(1)], 20)
+
+    def test_class_without_index_protocol_subscript_raises(self):
+        class NoIndex:
+            pass
+        a = [10, 20, 30]
+        with self.assertRaises(TypeError):
+            a[NoIndex()]
 
 
 if __name__ == "__main__":
