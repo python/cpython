@@ -1,0 +1,1 @@
+The :c:func:`socket_getaddrinfo` function updated to encode scoped IPV6 address strings as the operating system encoding istead of IDNA.
