@@ -2976,16 +2976,20 @@ class BaseWidget(Misc):
             del cnf['name']
         if not name:
             name = self.__class__.__name__.lower()
+            # Generated names are marked with a leading "+", which a user is
+            # unlikely to use, so they do not clash with explicit names.
+            # "+" is also one of the few symbols with no special meaning in
+            # canvas and text tag expressions, so the name can be used as a tag.
             if name[-1].isdigit():
-                name += "!"  # Avoid duplication when calculating names below
+                name += "+"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
             master._last_child_ids[name] = count
             if count == 1:
-                name = '!%s' % (name,)
+                name = '+%s' % (name,)
             else:
-                name = '!%s%d' % (name, count)
+                name = '+%s%d' % (name, count)
         self._name = name
         if master._w=='.':
             self._w = '.' + name
