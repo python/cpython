@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
         default: false
+      debug:
+        description: Whether to create a Debug Build
+        required: false
+        type: boolean
+        default: true
       free-threading:
         description: Whether to use free-threaded mode
         required: false
@@ -84,10 +89,10 @@ jobs:
         PROFILE_TASK='-m test --pgo --ignore test_unpickle_module_race'
         ../cpython-ro-srcdir/configure
         --config-cache
-        --with-pydebug
         --enable-slower-safety
         --enable-safety
         --with-openssl="$OPENSSL_DIR"
+        ${{ fromJSON(inputs.debug) && '--with-pydebug' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
         ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
     - name: Build CPython out-of-tree
