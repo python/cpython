@@ -1,0 +1,4 @@
+Add a note to :class:`ctypes.CDLL` documenting that loading a shared library
+via an absolute path can silently break ``use_errno=True`` on Linux, because
+:manpage:`dlopen(3)` may return a separate library instance with its own
+:data:`errno` variable.
