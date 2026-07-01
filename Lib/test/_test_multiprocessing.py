@@ -81,6 +81,11 @@ try:
 except ImportError:
     msvcrt = None
 
+try:
+    import resource
+except ImportError:
+    resource = None
+
 
 if support.HAVE_ASAN_FORK_BUG:
     # gh-89363: Skip multiprocessing tests if Python is built with ASAN to
