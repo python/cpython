@@ -1886,7 +1886,11 @@ def _get_protocol_attrs(cls):
 def _no_init_or_replace_init(self, *args, **kwargs):
     cls = type(self)
 
-    if cls._is_protocol:
+    # Determine if this is a protocol or a concrete subclass.
+    # Note: not using cls._is_protocol here,
+    #  since this may be called before __init_subclass__ is resolved.
+    #  for example when subclassing enum.Enum.
+    if any(b is Protocol for b in cls.__bases__):
         raise TypeError('Protocols cannot be instantiated')
 
     # Already using a custom `__init__`. No need to calculate correct
