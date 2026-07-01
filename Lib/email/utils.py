@@ -69,7 +69,7 @@ def _sanitize(string):
 
 # Helpers
 
-def formataddr(pair, charset='utf-8'):
+def formataddr(pair, charset='utf-8', *, strict=True):
     """The inverse of parseaddr(), this takes a 2-tuple of the form
     (realname, email_address) and returns the string value suitable
     for an RFC 2822 From, To or Cc header.
@@ -81,8 +81,15 @@ def formataddr(pair, charset='utf-8'):
     realname in case realname is not ASCII safe.  Can be an instance of str or
     a Charset-like object which has a header_encode method.  Default is
     'utf-8'.
+
+    If strict is True (the default), raise ValueError for inputs that
+    contain CR or LF, which are not allowed in an email address.
     """
     name, address = pair
+    if strict and ('\r' in address or '\n' in address
+                   or (name and ('\r' in name or '\n' in name))):
+        raise ValueError(
+            "invalid arguments; address parts cannot contain CR or LF")
     # The address MUST (per RFC) be ascii, so raise a UnicodeError if it isn't.
     address.encode('ascii')
     if name:

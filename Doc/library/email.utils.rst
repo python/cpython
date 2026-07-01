@@ -70,7 +70,7 @@ of the new API.
       Add *strict* optional parameter and reject malformed inputs by default.
 
 
-.. function:: formataddr(pair, charset='utf-8')
+.. function:: formataddr(pair, charset='utf-8', *, strict=True)
 
    The inverse of :meth:`parseaddr`, this takes a 2-tuple of the form ``(realname,
    email_address)`` and returns the string value suitable for a :mailheader:`To` or
@@ -82,8 +82,15 @@ of the new API.
    characters.  Can be an instance of :class:`str` or a
    :class:`~email.charset.Charset`.  Defaults to ``utf-8``.
 
+   If *strict* is true (the default), raise :exc:`ValueError` for inputs that
+   contain CR or LF, which are not allowed in an email address.  Set *strict*
+   to ``False`` to allow non-strict inputs.
+
    .. versionchanged:: 3.3
       Added the *charset* option.
+
+   .. versionchanged:: next
+      Added the *strict* parameter.
 
 
 .. function:: getaddresses(fieldvalues, *, strict=True)
