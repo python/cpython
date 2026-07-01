@@ -4748,6 +4748,72 @@ class OtherTests(unittest.TestCase):
                 zipf.open(zipf.infolist()[0]).close()
             self.assertEqual(cm.filename, __file__)
 
+    def test_forged_compress_size_read_is_bounded(self):
+        # The ZIP file contains two central directory entries with the
+        # same name that point at the same local header.  The first
+        # entry claims an oversized compressed size, but the underlying
+        # read request should still stay bounded.
+        filename = b"a.txt"
+        file_data = b"x"
+        claimed_size = 0xFFFF_FFFE
+        local_header = struct.pack(
+            "<4s2B4HL2L2H",
+            b"PK\x03\x04",
+            20, 0, 0, 0, 0, 0, 0,
+            len(file_data), len(file_data),
+            len(filename), 0,
+        )
+        cd_offset = len(local_header) + len(filename) + len(file_data)
+        cd_entry_forged = struct.pack(
+            "<4s4B4HL2L5H2L",
+            b"PK\x01\x02",
+            20, 0, 20, 0,
+            0, 0, 0, 0, 0,
+            claimed_size, claimed_size,
+            len(filename),
+            0, 0, 0, 0, 0,
+            0,
+        )
+        cd_entry_normal = struct.pack(
+            "<4s4B4HL2L5H2L",
+            b"PK\x01\x02",
+            20, 0, 20, 0,
+            0, 0, 0, 0, 0,
+            len(file_data), len(file_data),
+            len(filename),
+            0, 0, 0, 0, 0,
+            0,
+        )
+        central_directory = (
+            cd_entry_forged + filename +
+            cd_entry_normal + filename
+        )
+        end_record = struct.pack(
+            zipfile.structEndArchive,
+            b"PK\x05\x06",
+            0, 0, 2, 2,
+            len(central_directory), cd_offset, 0,
+        )
+        data = local_header + filename + file_data + central_directory + end_record
+
+        class ObservedBytesIO(io.BytesIO):
+            def __init__(self, data):
+                super().__init__(data)
+                self.read_sizes = []
+
+            def read(self, n=-1):
+                self.read_sizes.append(n)
+                return super().read(n)
+
+        fileobj = ObservedBytesIO(data)
+        with zipfile.ZipFile(fileobj, "r") as zipf:
+            forged = zipf.filelist[0]
+            with self.assertWarnsRegex(UserWarning, "Overlapped entries"):
+                with self.assertRaises(EOFError):
+                    zipf.open(forged).read()
+
+        self.assertLessEqual(max(fileobj.read_sizes), len(data))
+
     @requires_zlib()
     def test_quoted_overlap(self):
         # The ZIP file contains two files. The second local header
