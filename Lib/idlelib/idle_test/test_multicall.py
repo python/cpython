@@ -1,9 +1,11 @@
 "Test multicall, coverage 33%."
 
 from idlelib import multicall
+import io
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
+from unittest import mock
 
 
 class MultiCallTest(unittest.TestCase):
@@ -42,6 +44,15 @@ class MultiCallTest(unittest.TestCase):
         self.assertIs(mc.yview, Text.yview)
         mctext = self.mc(self.root)
         self.assertIs(mctext.yview.__func__, Text.yview)
+
+    def test_invalid_binding(self):
+        # gh-55646: an invalid key binding must not crash IDLE.
+        mctext = self.mc(self.root)
+        # 'up' is not a keysym; it should be 'Up'.
+        mctext.event_add('<<test-bad>>', '<Alt-Key-up>')
+        with mock.patch('sys.stderr', new_callable=io.StringIO) as stderr:
+            mctext.bind('<<test-bad>>', lambda e: None)  # Must not raise.
+        self.assertIn('invalid key binding', stderr.getvalue())
 
 
 if __name__ == '__main__':
