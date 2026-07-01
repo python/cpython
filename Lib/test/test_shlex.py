@@ -376,6 +376,18 @@ class ShlexTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             shlex_instance.punctuation_chars = False
 
+    def testPushSourceAfterEOF(self):
+        # gh-140950: a source pushed after the current input has reached
+        # EOF must still be read.  Previously get_token() set state to None
+        # at EOF, and push_source() did not reset it, so the new source
+        # was silently ignored.
+        lexer = shlex.shlex('a')
+        self.assertEqual(lexer.get_token(), 'a')
+        self.assertEqual(lexer.get_token(), lexer.eof)
+        lexer.push_source('b')
+        self.assertEqual(lexer.get_token(), 'b')
+        self.assertEqual(lexer.get_token(), lexer.eof)
+
     @cpython_only
     def test_lazy_imports(self):
         import_helper.ensure_lazy_imports('shlex', {'collections', 're', 'os'})
