@@ -243,3 +243,62 @@ Unless using :pep:`523`, you will not need this.
    Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
+
+
+.. c:var:: const PyTypeObject *PyUnstable_ExecutableKinds
+
+   An array of executable kinds (executor types) for frames, used for internal
+   debugging and tracing.
+
+   Tools like debuggers and profilers can use this to identify the type of execution
+   context associated with a frame (such as to filter out internal frames).
+   The entries are indexed by the following constants:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: auto
+
+      * - Constant
+        - Description
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
+        - The frame is internal (For example: inlined) and should be skipped by tools.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
+        - The frame corresponds to a standard Python function.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
+        - The frame corresponds to a function defined in native code.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
+        - The frame corresponds to a method on a class instance.
+
+   However, Python's C API lacks a function to read the executable kind from
+   a frame. Instead, use this recipe:
+
+   .. code-block:: c
+
+      int
+      get_executable_kind(PyFrameObject *frame)
+      {
+         _PyInterpreterFrame *f = frame->f_frame;
+         PyObject *exec = PyStackRef_AsPyObjectBorrow(f->f_executable);
+
+         if (PyCode_Check(exec)) {
+            return PyUnstable_EXECUTABLE_KIND_PY_FUNCTION;
+         }
+         if (PyMethod_Check(exec)) {
+            return PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION;
+         }
+         if (Py_IS_TYPE(exec, &PyMethodDescr_Type)) {
+            return PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR;
+         }
+
+         return PyUnstable_EXECUTABLE_KIND_SKIP;
+      }
+
+   .. versionadded:: 3.13
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KINDS
+
+   The number of entries in :c:data:`PyUnstable_ExecutableKinds`.
+
+   .. versionadded:: 3.13
+
