@@ -1,0 +1,1 @@
+Fix an abnormal exit of a case in turtledemo.
