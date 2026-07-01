@@ -166,7 +166,7 @@ The module defines the following user-callable items:
       ``tempfile._TemporaryFileWrapper`` is kept as a backwards compatible
       alias for this class.
 
-   .. versionadded:: 3.16
+   .. versionadded:: next
 
 
 .. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
