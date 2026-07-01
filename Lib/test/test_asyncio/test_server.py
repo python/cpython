@@ -186,6 +186,8 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         loop.call_soon(srv.close)
         loop.call_soon(wr.close)
         await srv.wait_closed()
+        self.assertTrue(task.done())
+        self.assertFalse(srv.is_serving())
 
     async def test_close_clients(self):
         async def serve(rd, wr):
@@ -211,6 +213,9 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         await asyncio.sleep(0)
         self.assertTrue(task.done())
+
+        with self.assertRaisesRegex(RuntimeError, r'is closed'):
+            await srv.start_serving()
 
     async def test_abort_clients(self):
         async def serve(rd, wr):
