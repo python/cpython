@@ -5757,8 +5757,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 #else
             type = SOCK_STREAM;
 #endif
-#ifdef SO_PROTOCOL
             if (proto == -1) {
+#ifdef SO_PROTOCOL
                 int tmp;
                 socklen_t slen = sizeof(tmp);
                 if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL,
@@ -5769,10 +5769,10 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
                     set_error();
                     return -1;
                 }
-            }
 #else
             proto = 0;
 #endif
+            }
         }
     }
     else {
