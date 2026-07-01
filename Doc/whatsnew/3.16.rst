@@ -270,6 +270,16 @@ os
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
 
+quopri
+------
+
+* :func:`quopri.decode`, :func:`quopri.decodestring` and
+  :func:`binascii.a2b_qp` gained a *strip_ws* parameter.  When true, trailing
+  whitespace is stripped from each line while decoding, as required by
+  :rfc:`2045` for a quoted-printable body.
+  (Contributed by Serhiy Storchaka in :gh:`62222`.)
+
+
 re
 --
 

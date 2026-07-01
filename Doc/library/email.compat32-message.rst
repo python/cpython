@@ -214,6 +214,14 @@ Here are the methods of the :class:`Message` class:
       defect property (:class:`~email.errors.InvalidBase64PaddingDefect` or
       :class:`~email.errors.InvalidBase64CharactersDefect`, respectively).
 
+      .. note::
+
+         A ``quoted-printable`` payload is decoded without stripping
+         trailing whitespace, contrary to :rfc:`2045` but matching
+         common mail clients.
+         Use :func:`binascii.a2b_qp` with ``strip_ws=True``
+         (or ``email.quoprimime.decode``) for RFC-compliant decoding.
+
       When *decode* is ``False`` (the default) the body is returned as a string
       without decoding the :mailheader:`Content-Transfer-Encoding`.  However,
       for a :mailheader:`Content-Transfer-Encoding` of 8bit, an attempt is made

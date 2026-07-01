@@ -1,0 +1,9 @@
+:func:`binascii.a2b_qp` and :mod:`quopri` now leave a stray ``=`` (one not
+followed by two hexadecimal digits or a soft line break) in place and rescan
+the following character, instead of consuming and discarding it; for example
+``b'==41'`` now decodes to ``b'=A'``, matching the :mod:`email` package and
+other quoted-printable decoders.  A *strip_ws* parameter is also added to
+:func:`binascii.a2b_qp`, :func:`quopri.decode`, :func:`quopri.decodestring`
+and ``email.quoprimime.decode`` to strip trailing whitespace from each line
+while decoding, as required by :rfc:`2045`; it is false by default everywhere
+except ``email.quoprimime.decode``, preserving every existing behavior.

@@ -4813,6 +4813,14 @@ class TestQuopri(unittest.TestCase):
     def test_decode_two_lines_trailing_spaces(self):
         self._test_decode('hello    \r\nworld   \r\n', 'hello\nworld\n')
 
+    def test_decode_keep_trailing_spaces(self):
+        # strip_ws=False keeps trailing whitespace (the default strips it).
+        self.assertEqual(quoprimime.decode('hello    \r\n', strip_ws=False),
+                         'hello    \n')
+        self.assertEqual(quoprimime.decode('hello    \r\nworld   \r\n',
+                                           strip_ws=False),
+                         'hello    \nworld   \n')
+
     def test_decode_quoted_word(self):
         self._test_decode('=22quoted=20words=22', '"quoted words"')
 
