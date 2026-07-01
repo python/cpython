@@ -1,0 +1,2 @@
+Fix difference in Ctrl+D handling between :func:`code.interact` and the Python
+REPL.  Patch by Adam Hartz
