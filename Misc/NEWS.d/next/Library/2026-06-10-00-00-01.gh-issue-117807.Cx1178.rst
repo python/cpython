@@ -1,0 +1,2 @@
+Fix :mod:`mimetypes` initialization from MIME map files containing invalid
+UTF-8 bytes in comments.
