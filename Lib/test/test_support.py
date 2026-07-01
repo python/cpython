@@ -19,6 +19,7 @@ import unittest
 import warnings
 
 from test import support
+from test.support import isolation
 from test.support import hashlib_helper
 from test.support import import_helper
 from test.support import os_helper
@@ -1073,6 +1074,118 @@ class TestHashlibSupport(unittest.TestCase):
         self.assertRaises(ValueError, self.hashlib.md5)
         h = self.hashlib.md5(usedforsecurity=False)
         self.assertIsInstance(h, self._hashlib.HASH)
+
+
+class TestIsolated(unittest.TestCase):
+    # Drive the sample tests in test._isolated_sample (which really spawn
+    # subprocesses through @isolation.runInSubprocess()) under a private
+    # TestResult, and check that each subprocess outcome is replayed in the parent.
+
+    @staticmethod
+    def _run(name):
+        suite = unittest.TestLoader().loadTestsFromName(
+            'test._isolated_sample.' + name)
+        result = unittest.TestResult()
+        suite.run(result)
+        return result
+
+    @staticmethod
+    def _names(items):
+        # Map outcome entries (which are (test, detail) pairs, except
+        # unexpectedSuccesses which are bare tests) to their method names.
+        names = []
+        for item in items:
+            test = item[0] if isinstance(item, tuple) else item
+            names.append(test.id().rpartition('.')[2])
+        return sorted(names)
+
+    @support.requires_subprocess()
+    def test_method_outcomes(self):
+        result = self._run('MethodSample')
+        self.assertEqual(result.testsRun, 6)
+        self.assertEqual(self._names(result.failures), ['test_fail'])
+        self.assertEqual(self._names(result.errors), ['test_error'])
+        self.assertEqual(self._names(result.skipped), ['test_skip'])
+        self.assertEqual(self._names(result.expectedFailures),
+                         ['test_expected_failure'])
+        self.assertEqual(self._names(result.unexpectedSuccesses),
+                         ['test_unexpected_success'])
+
+    @support.requires_subprocess()
+    def test_class_outcomes(self):
+        result = self._run('ClassSample')
+        self.assertEqual(result.testsRun, 3)
+        self.assertEqual(self._names(result.failures), ['test_fail'])
+        self.assertEqual(self._names(result.expectedFailures),
+                         ['test_expected_failure'])
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.unexpectedSuccesses, [])
+
+    @support.requires_subprocess()
+    def test_subtests_reported_individually(self):
+        result = self._run('SubtestSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.failures), 1)
+        test, _ = result.failures[0]
+        self.assertIn('i=1', str(test))
+
+    @support.requires_subprocess()
+    def test_skip_reason_propagated(self):
+        result = self._run('MethodSample.test_skip')
+        self.assertEqual([reason for _, reason in result.skipped], ['nope'])
+
+    @support.requires_subprocess()
+    def test_subprocess_traceback_is_cause(self):
+        result = self._run('MethodSample.test_fail')
+        self.assertEqual(len(result.failures), 1)
+        _, tb = result.failures[0]
+        # The real assertion that failed in the subprocess is shown ...
+        self.assertIn('self.assertEqual(1, 2)', tb)
+        # ... as the direct cause of the replayed failure ...
+        self.assertIn('direct cause', tb)
+        # ... without leaking the parent-side replay frames.
+        self.assertNotIn('isolation.py', tb)
+
+    @support.requires_subprocess()
+    def test_durations_forwarded_for_class(self):
+        from test._isolated_sample import DURATION_SLEEP
+        result = unittest.TestResult()
+        result.collectedDurations = []
+        suite = unittest.TestLoader().loadTestsFromName(
+            'test._isolated_sample.DurationSample')
+        suite.run(result)
+        # The duration reported in the parent is the one measured in the
+        # subprocess (around the sleep), not the near-instant replay time.
+        self.assertEqual(len(result.collectedDurations), 1)
+        name, elapsed = result.collectedDurations[0]
+        self.assertEqual(name.split()[0], 'test_slow')
+        self.assertGreaterEqual(elapsed, DURATION_SLEEP / 2)
+
+    @support.requires_subprocess()
+    def test_subclass_fixtures_bound_to_runtime_class(self):
+        # A decorated class and a subclass of it each run setUpClass bound to
+        # their own class; both samples pass only if that holds.
+        for name in ('FixtureBindingSample', 'FixtureBindingSubclassSample'):
+            with self.subTest(sample=name):
+                result = self._run(name)
+                self.assertEqual(result.testsRun, 1)
+                self.assertEqual(result.failures, [])
+                self.assertEqual(result.errors, [])
+
+    def test_skipped_without_subprocess_support(self):
+        # On a platform without subprocess support the test is skipped in the
+        # parent, before any subprocess is spawned.
+        calls = []
+        orig = isolation._run_in_subprocess
+        with support.swap_attr(support, 'has_subprocess_support', False):
+            isolation._run_in_subprocess = lambda *a, **k: calls.append(a)
+            try:
+                result = self._run('MethodSample.test_pass')
+            finally:
+                isolation._run_in_subprocess = orig
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.skipped), 1)
+        self.assertEqual(calls, [])
 
 
 if __name__ == '__main__':
