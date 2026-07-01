@@ -4952,12 +4952,18 @@ self*other.
 
     >>> Decimal(2).fma(3, 5)
     Decimal('11')
+    >>> with localcontext(ExtendedContext):
+    ...     a, b, c = map(Decimal, ['888565290', '1557.96930',
+    ...                             '-86087.7578'])
+    ...     a.fma(b, c), a*b + c
+    ...
+    (Decimal('1.38435736E+12'), Decimal('1.38435735E+12'))
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_fma_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                           PyObject *third, PyObject *context)
-/*[clinic end generated code: output=db49a777e85b71e4 input=2104c001f6077c35]*/
+/*[clinic end generated code: output=db49a777e85b71e4 input=cf13278e863e8269]*/
 Dec_TernaryFuncVA(mpd_qfma)
 
 /* Boolean functions, no context arg */
