@@ -178,7 +178,7 @@ class Queue(mixins._LoopBoundMixin):
         or if the queue has been shut down immediately.
         """
         while self.empty():
-            if self._is_shutdown and self.empty():
+            if self._is_shutdown:
                 raise QueueShutDown
             getter = self._get_loop().create_future()
             self._getters.append(getter)
