@@ -117,6 +117,13 @@ class CreateTests(TestBase):
         # GH-126221: Passing an invalid Unicode character used to cause a SystemError
         self.assertRaises(UnicodeEncodeError, _interpreters.create, '\udc80')
 
+    def test_config_with_surrogate_str_field(self):
+        # gh-148798: a config whose string field contains an unpaired
+        # surrogate used to crash the interpreter. It must raise instead.
+        config = _interpreters.new_config()
+        config.gil = 'own\udc80'
+        self.assertRaises(UnicodeEncodeError, _interpreters.create, config)
+
     def test_in_thread(self):
         lock = threading.Lock()
         interp = None
