@@ -133,6 +133,42 @@ class TestUnicode:
                                     object_hook = lambda x: None),
                          OrderedDict(p))
 
+    def test_ensure_ascii_false_long_string_paths(self):
+        # Cover the SWAR scan in _json escape_size(): it inspects eight bytes
+        # per iteration, so exercise runs that cross the 8-byte windows and the
+        # short-string guard with a special character at every offset.
+        dumps, loads = self.dumps, self.loads
+
+        def is_optimized(s):
+            # The no-escape fast path returns the string verbatim in quotes.
+            self.assertEqual(dumps(s, ensure_ascii=False), f'"{s}"')
+
+        # Bytes that are kept as-is, including Latin-1 and 0x7f, stay verbatim.
+        for s in ("abc", "\xe9", "kept latin1 \xe9\xff \x7f text"):
+            is_optimized(s)
+            is_optimized(s * 8)
+
+        def need_escape(s, expected):
+            encoded = dumps(s, ensure_ascii=False)
+            self.assertEqual(encoded, expected)
+            self.assertEqual(loads(encoded), s)
+
+        tail = "tail"
+        for n in range(40):
+            run = "a" * n
+            for char, escaped in (('"', '\\"'), ("\\", "\\\\"), ("\n", "\\n"),
+                                  ("\x00", "\\u0000"), ("\x1f", "\\u001f")):
+                need_escape(run + char + tail, f'"{run}{escaped}{tail}"')
+            for char in ("\x7f", "\xe9", "中", "\U0001f600"):
+                s = run + char + tail
+                need_escape(s, f'"{s}"')
+
+        # Structural escapes and control characters are still escaped after a
+        # long no-escape run.
+        base = "a" * 20
+        for char, escaped in (('"', '\\"'), ("\\", "\\\\"), ("\x01", "\\u0001")):
+            need_escape(base + char, f'"{base}{escaped}"')
+
 
 class TestPyUnicode(TestUnicode, PyTest): pass
 class TestCUnicode(TestUnicode, CTest): pass
