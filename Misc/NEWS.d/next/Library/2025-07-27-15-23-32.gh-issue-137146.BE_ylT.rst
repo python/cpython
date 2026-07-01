@@ -1,0 +1,2 @@
+:func:`urllib.parse.urlparse` now rejects IPv6 ZoneIDs containing
+invalid or unsafe characters as per :rfc:`6874`.
