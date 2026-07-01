@@ -3395,6 +3395,7 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45.400 +02:30',  # Space between ms and timezone (gh-130959)
             '2009-04-19T12:30:45.400 ',        # Trailing space (gh-130959)
             '2009-04-19T12:30:45. 400',        # Space before fraction (gh-130959)
+            '2020-2020',                    # Ambiguous 9-char date portion
         ]
 
         for bad_str in bad_strs:
