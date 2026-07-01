@@ -94,6 +94,10 @@ typedef PyObject* (*_ba_bytes_op)(const char *buf, Py_ssize_t len,
                                   PyObject *sub, Py_ssize_t start,
                                   Py_ssize_t end);
 
+typedef PyObject* (*_ba_bytes_op2)(const char *buf, Py_ssize_t len,
+                                  PyObject *sub, Py_ssize_t start,
+                                  Py_ssize_t end, const char *classname);
+
 static PyObject *
 _bytearray_with_buffer(PyByteArrayObject *self, _ba_bytes_op op, PyObject *sub,
                        Py_ssize_t start, Py_ssize_t end)
@@ -105,6 +109,22 @@ _bytearray_with_buffer(PyByteArrayObject *self, _ba_bytes_op op, PyObject *sub,
     /* Increase exports to prevent bytearray storage from changing during op. */
     self->ob_exports++;
     res = op(PyByteArray_AS_STRING(self), Py_SIZE(self), sub, start, end);
+    self->ob_exports--;
+    return res;
+}
+
+static PyObject *
+_bytearray_with_buffer2(PyByteArrayObject *self, _ba_bytes_op2 op, PyObject *sub,
+                       Py_ssize_t start, Py_ssize_t end)
+{
+    PyObject *res;
+
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
+    /* Increase exports to prevent bytearray storage from changing during op. */
+    self->ob_exports++;
+    res = op(PyByteArray_AS_STRING(self), Py_SIZE(self), sub, start, end,
+             "bytearray");
     self->ob_exports--;
     return res;
 }
@@ -1331,7 +1351,7 @@ bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=067a1e78efc672a7 input=c37f177cfee19fe4]*/
 {
-    return _bytearray_with_buffer(self, _Py_bytes_index, sub, start, end);
+    return _bytearray_with_buffer2(self, _Py_bytes_index, sub, start, end);
 }
 
 /*[clinic input]
@@ -1367,7 +1387,7 @@ bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
                       Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=38e1cf66bafb08b9 input=7d198b3d6b0a62ce]*/
 {
-    return _bytearray_with_buffer(self, _Py_bytes_rindex, sub, start, end);
+    return _bytearray_with_buffer2(self, _Py_bytes_rindex, sub, start, end);
 }
 
 static int
@@ -2337,7 +2357,7 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
 
     where = stringlib_find_char(buf, n, value);
     if (where < 0) {
-        PyErr_SetString(PyExc_ValueError, "value not found in bytearray");
+        PyErr_SetString(PyExc_ValueError, "value not in bytearray");
         return NULL;
     }
     if (!_canresize(self))

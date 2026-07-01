@@ -2974,7 +2974,7 @@ memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
             }
         }
 
-        PyErr_SetString(PyExc_ValueError, "memoryview.index(x): x not found");
+        PyErr_SetString(PyExc_ValueError, "value not in memoryview");
         return NULL;
     }
 
