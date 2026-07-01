@@ -5,6 +5,7 @@
 
 
 import copy
+import itertools
 import unittest
 import re
 import contextlib
@@ -2028,6 +2029,43 @@ class IpaddrUnitTest(unittest.TestCase):
                         ipaddress.ip_address('::1%scope'))
         self.assertTrue(ipaddress.ip_address('::1%scope') <=
                         ipaddress.ip_address('::2%scope'))
+
+    def testScopedAddressComparison(self):
+        plain = ipaddress.ip_address('fe80::1')
+        eth0 = ipaddress.ip_address('fe80::1%eth0')
+        eth1 = ipaddress.ip_address('fe80::1%eth1')
+        scoped = [plain, eth0, eth1]
+        for a in scoped:
+            for b in scoped:
+                self.assertEqual((a < b) + (a == b) + (a > b), 1, msg=(a, b))
+                if a != b:
+                    self.assertNotEqual(a > b, b > a, msg=(a, b))
+        self.assertTrue(plain < eth0)
+        self.assertTrue(eth0 < eth1)
+        self.assertTrue(eth0 > plain)
+        self.assertFalse(plain > eth0)
+        self.assertTrue(plain <= eth0)
+        self.assertTrue(eth0 >= plain)
+        expected = [plain, eth0, eth1]
+        for perm in itertools.permutations(scoped):
+            self.assertEqual(sorted(perm), expected, msg=perm)
+            self.assertEqual(min(perm), plain, msg=perm)
+            self.assertEqual(max(perm), eth1, msg=perm)
+        v4 = [ipaddress.ip_address('10.0.0.1'),
+              ipaddress.ip_address('10.0.0.2'),
+              ipaddress.ip_address('10.0.0.3')]
+        for perm in itertools.permutations(v4):
+            self.assertEqual(sorted(perm), v4, msg=perm)
+        ifaces = [ipaddress.ip_interface('fe80::1/64'),
+                  ipaddress.ip_interface('fe80::1%eth0/64'),
+                  ipaddress.ip_interface('fe80::1%eth1/64')]
+        for perm in itertools.permutations(ifaces):
+            self.assertEqual(sorted(perm), ifaces, msg=perm)
+        nets = [ipaddress.ip_network('fe80::/64'),
+                ipaddress.ip_network('fe80::%eth0/64'),
+                ipaddress.ip_network('fe80::%eth1/64')]
+        for perm in itertools.permutations(nets):
+            self.assertEqual(sorted(perm), nets, msg=perm)
 
     def testInterfaceComparison(self):
         self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') ==
