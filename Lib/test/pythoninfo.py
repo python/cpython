@@ -1250,7 +1250,7 @@ def collect_system(info_add):
             uptime = f'{uptime} sec'
         info_add('system.uptime', uptime)
 
-    virt = detect_virt()
+    virt = detect_virt(info_add)
     if virt:
         info_add('system.virt', virt)
 
