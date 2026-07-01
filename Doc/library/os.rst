@@ -4076,6 +4076,8 @@ The following flags are used in :attr:`statvfs_result.f_flag`.
    as a directory if *target_is_directory* is ``True`` or a file symlink (the
    default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
+   If the *dst* already exists, :exc:`FileExistsError` is raised.
+
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
