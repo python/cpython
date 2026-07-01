@@ -1385,6 +1385,14 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         return MAKE_TOKEN(LFBRACE);
     }
+    else if (*tok->start == 'F' && c == '{') {
+        // We don't allow `F{}` notation:
+        p_start = tok->start;
+        p_end = tok->cur;
+
+        return MAKE_TOKEN(_PyTokenizer_syntaxerror(
+            tok, "frozen literals must start from lower case 'f'"));
+    }
 
     if (!Py_UNICODE_ISPRINTABLE(c)) {
         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid non-printable character U+%04X", c));
