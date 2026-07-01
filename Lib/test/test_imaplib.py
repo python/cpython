@@ -655,6 +655,23 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(data[0], b'() "." directoryA')
 
+    def test_extra_blank_line_after_literal(self):
+        # Some buggy servers send an extra blank line after the counted
+        # literal data.  imaplib should skip it instead of failing.
+        class BlankLineHandler(SimpleIMAPHandler):
+            def cmd_FETCH(self, tag, args):
+                self._send(b'* 1 FETCH (BODY[HEADER] {13}\r\n')
+                self._send(b'Subject: test')       # 13-byte literal
+                self._send(b'\r\n)\r\n')            # stray blank line, then ')'
+                self._send_tagged(tag, 'OK', 'FETCH completed')
+        client, _ = self._setup(BlankLineHandler)
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.fetch('1', '(BODY[HEADER])')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [(b'1 (BODY[HEADER] {13}', b'Subject: test'),
+                                b')'])
+
     def test_unselect(self):
         client, _ = self._setup(SimpleIMAPHandler)
         client.login('user', 'pass')
