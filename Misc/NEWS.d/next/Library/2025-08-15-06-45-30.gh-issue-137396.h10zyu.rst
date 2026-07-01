@@ -1,0 +1,3 @@
+When creating :class:`tarfile.TarFile` or :class:`tarfile.TarInfo` from
+bytes of a tarfile with an offset or numbytes field in a sparse entry that
+is negative, it raises :class:`tarfile.HeaderError`.
