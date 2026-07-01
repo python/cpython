@@ -1932,6 +1932,44 @@ class GzipStreamWriteTest(GzipTest, StreamWriteTest):
             fobj.read()
             self.assertEqual(fobj.mtime, 0)
 
+    def test_create_with_mtime_out_of_range(self):
+        # gh-133998: an mtime outside the gzip header's 32-bit range is
+        # stored as 0 rather than raising struct.error.
+        for mtime in (-1, 2**32):
+            with self.subTest(mtime=mtime):
+                tarfile.open(tmpname, self.mode, mtime=mtime).close()
+                with self.open(tmpname, 'r') as fobj:
+                    fobj.read()
+                    self.assertEqual(fobj.mtime, 0)
+                os_helper.unlink(tmpname)
+
+    def test_create_with_mtime_at_boundary(self):
+        # gh-133998: the largest in-range mtime is preserved, not clamped.
+        mtime = 2**32 - 1
+        tarfile.open(tmpname, self.mode, mtime=mtime).close()
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertEqual(fobj.mtime, mtime)
+
+    def test_create_with_out_of_range_clock(self):
+        # gh-133998: an out-of-range system clock (mtime defaulting to
+        # time.time()) is stored as 0 rather than raising struct.error.
+        for clock in (-1, 2**32):
+            with self.subTest(clock=clock):
+                with unittest.mock.patch('time.time', return_value=float(clock)):
+                    tarfile.open(tmpname, self.mode).close()
+                with self.open(tmpname, 'r') as fobj:
+                    fobj.read()
+                    self.assertEqual(fobj.mtime, 0)
+                os_helper.unlink(tmpname)
+
+    def test_create_with_float_mtime(self):
+        # gh-133998: a float mtime is truncated like gzip, not rejected.
+        tarfile.open(tmpname, self.mode, mtime=123456789.9).close()
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertEqual(fobj.mtime, 123456789)
+
     def test_create_without_mtime(self):
         before = int(time.time())
         tarfile.open(tmpname, self.mode).close()
