@@ -48,7 +48,11 @@ const char *_PyImport_DynLoadFiletab[] = {
 #ifndef Py_GIL_DISABLED
     ".abi" PYTHON_ABI_STRING ".so",
 #endif  /* Py_GIL_DISABLED */
+#ifdef SOABI_PLATFORM
+    ".abi" PYTHON_ABI_STRING "t-" SOABI_PLATFORM ".so",
+#else
     ".abi" PYTHON_ABI_STRING "t.so",
+#endif  /* SOABI_PLATFORM */
     ".so",
 #endif  /* __CYGWIN__ */
     NULL,
