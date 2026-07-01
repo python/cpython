@@ -1,5 +1,12 @@
 config-variables: null
 
+# At 2026-07-01, ubuntu-26.04 is not self hosted, but a "public preview" not
+# recognized by actionlint yet.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+    - ubuntu-26.04-arm
+
 paths:
   .github/workflows/**/*.yml:
      ignore:
