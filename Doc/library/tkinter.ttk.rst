@@ -116,9 +116,10 @@ All the :mod:`!ttk` Widgets accept the following options:
 |           | read-only, and may only be specified when the window is      |
 |           | created.                                                     |
 +-----------+--------------------------------------------------------------+
-| cursor    | Specifies the mouse cursor to be used for the widget. If set |
-|           | to the empty string (the default), the cursor is inherited   |
-|           | from the parent widget.                                      |
+| cursor    | Specifies the mouse cursor to be used for the widget.  See   |
+|           | the *cursor* option type under :ref:`Tk-option-data-types`.  |
+|           | If set to the empty string (the default), the cursor is      |
+|           | inherited from the parent widget.                            |
 +-----------+--------------------------------------------------------------+
 | takefocus | Determines whether the window accepts the focus during       |
 |           | keyboard traversal. 0, 1 or an empty string is returned.     |

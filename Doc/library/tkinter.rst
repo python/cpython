@@ -734,6 +734,8 @@ Here are some examples of typical usage::
    myapp.mainloop()
 
 
+.. _Tk-option-data-types:
+
 Tk option data types
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -767,12 +769,16 @@ color
    represent any legal hex digit.  See page 160 of Ousterhout's book for details.
 
 cursor
-   The standard X cursor names from :file:`cursorfont.h` can be used, without the
-   ``XC_`` prefix.  For example to get a hand cursor (``XC_hand2``), use the
-   string ``"hand2"``.  You can also specify a bitmap and mask file of your own.
+   The name of the mouse cursor to display while the pointer is over the widget.
+   Tk provides a portable set of cursor names available on all platforms
+   (for example ``"arrow"``, ``"watch"``, ``"cross"``, or ``"hand2"``);
+   the standard X cursor names from :file:`cursorfont.h` may also be used,
+   without the ``XC_`` prefix (so ``XC_hand2`` becomes ``"hand2"``).
+   The full list of names, including the platform-specific ones,
+   is given in the :manpage:`cursors(3tk)` manual page.
+   You can also specify a bitmap and mask file of your own.
    On Windows a cursor file (:file:`.cur` or :file:`.ani`) may be used directly,
    giving its path preceded with an ``@``, as in ``"@C:/cursors/bart.ani"``.
-   See page 179 of Ousterhout's book.
 
 distance
    Screen distances can be specified in either pixels or absolute distances.
