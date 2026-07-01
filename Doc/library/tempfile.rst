@@ -106,6 +106,11 @@ The module defines the following user-callable items:
    The latter approach is recommended as it provides assistance in automatic
    cleaning of the temporary file upon the context manager exit.
 
+   .. warning::
+
+      Reopening the temporary file by name is only safe when the file's
+      directory is trusted. See :cwe:`377` for more information.
+
    Opening the temporary file again by its name while it is still open works as
    follows:
 
@@ -409,6 +414,7 @@ Here are some examples of typical usage of the :mod:`!tempfile` module::
 
     # create a temporary file using a context manager
     # close the file, use the name to open the file again
+    # this is only safe if the directory cannot be modified by untrusted users
     >>> with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
     ...     fp.write(b'Hello world!')
     ...     fp.close()
