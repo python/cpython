@@ -14442,7 +14442,13 @@ case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
     perf_trampoline=yes
                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o ;; #(
+  x86_64-linux-musl) :
+    perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o ;; #(
   aarch64-linux-gnu) :
+    perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o ;; #(
+  aarch64-linux-musl) :
     perf_trampoline=yes
                          PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o ;; #(
   darwin) :

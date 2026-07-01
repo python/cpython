@@ -3878,7 +3878,11 @@ PERF_TRAMPOLINE_OBJ=""
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes
                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o],
+  [x86_64-linux-musl], [perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o],
   [aarch64-linux-gnu], [perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o],
+  [aarch64-linux-musl], [perf_trampoline=yes
                          PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o],
   [darwin], [AS_CASE([$MACOSX_DEPLOYMENT_TARGET],
                 [[10.[0-9]|10.1[0-1]]], [perf_trampoline=no],
