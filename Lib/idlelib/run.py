@@ -229,7 +229,7 @@ def show_socket_error(err, address):
 
 
 def get_message_lines(typ, exc, tb):
-    "Return line composing the exception message."
+    "Return lines of the exception message, with any suggestion."
     return list(traceback.TracebackException(typ, exc, tb).format_exception_only())
 
 
