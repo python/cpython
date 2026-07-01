@@ -536,25 +536,54 @@ _PyObject_GetXIData(PyThreadState *tstate,
         case _PyXIDATA_XIDATA_ONLY:
             return _get_xidata(tstate, obj, fallback, xidata);
         case _PyXIDATA_FULL_FALLBACK:
-            if (_get_xidata(tstate, obj, fallback, xidata) == 0) {
-                return 0;
+        {
+            // Check the type registry first to avoid unnecessary exception
+            // creation when falling back to pickle for unregistered types.
+            dlcontext_t ctx;
+            if (get_lookup_context(tstate, &ctx) < 0) {
+                return -1;
             }
-            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            _PyXIData_getdata_t getdata = lookup_getdata(&ctx, obj);
+            if (getdata.basic != NULL || getdata.fallback != NULL) {
+                // Type is in the registry.  Use the normal path which may
+                // still fail (e.g. a tuple with non-shareable elements).
+                if (_get_xidata(tstate, obj, fallback, xidata) == 0) {
+                    return 0;
+                }
+                // Save the exception to restore if all fallbacks fail.
+                PyObject *exc = _PyErr_GetRaisedException(tstate);
+                if (PyFunction_Check(obj)) {
+                    if (_PyFunction_GetXIData(tstate, obj, xidata) == 0) {
+                        Py_DECREF(exc);
+                        return 0;
+                    }
+                    _PyErr_Clear(tstate);
+                }
+                if (_PyPickle_GetXIData(tstate, obj, xidata) == 0) {
+                    Py_DECREF(exc);
+                    return 0;
+                }
+                _PyErr_SetRaisedException(tstate, exc);
+                return -1;
+            }
+            // Type is NOT in the registry.  Skip _get_xidata() entirely
+            // to avoid creating and discarding a NotShareableError.
             if (PyFunction_Check(obj)) {
                 if (_PyFunction_GetXIData(tstate, obj, xidata) == 0) {
-                    Py_DECREF(exc);
                     return 0;
                 }
                 _PyErr_Clear(tstate);
             }
             // We could try _PyMarshal_GetXIData() but we won't for now.
             if (_PyPickle_GetXIData(tstate, obj, xidata) == 0) {
-                Py_DECREF(exc);
                 return 0;
             }
-            // Raise the original exception.
-            _PyErr_SetRaisedException(tstate, exc);
+            // All fallbacks failed.  Raise the same NotShareableError
+            // as the non-optimized path would.
+            _PyErr_Clear(tstate);
+            _set_xid_lookup_failure(tstate, obj, NULL, NULL);
             return -1;
+        }
         default:
 #ifdef Py_DEBUG
             Py_FatalError("unsupported xidata fallback option");
