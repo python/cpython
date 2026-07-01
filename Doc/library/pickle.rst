@@ -316,6 +316,12 @@ The :mod:`!pickle` module exports three classes, :class:`Pickler`,
    It is an error if *buffer_callback* is not ``None`` and *protocol* is
    ``None`` or smaller than 5.
 
+   .. note::
+      :class:`Pickler` objects are not thread-safe. Sharing a single
+      :class:`Pickler` instance across multiple threads without external
+      synchronization leads to undefined behavior. Use a separate instance
+      per thread.
+
    .. versionchanged:: 3.8
       The *buffer_callback* argument was added.
 
@@ -429,6 +435,12 @@ The :mod:`!pickle` module exports three classes, :class:`Pickler`,
    objects that is consumed each time the pickle stream references
    an :ref:`out-of-band <pickle-oob>` buffer view.  Such buffers have been
    given in order to the *buffer_callback* of a Pickler object.
+
+   .. note::
+      :class:`Unpickler` objects are not thread-safe. Sharing a single
+      :class:`Unpickler` instance across multiple threads without external
+      synchronization leads to undefined behavior. Use a separate instance
+      per thread.
 
    .. versionchanged:: 3.8
       The *buffers* argument was added.
