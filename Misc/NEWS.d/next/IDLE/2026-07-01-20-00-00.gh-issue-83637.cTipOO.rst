@@ -1,0 +1,2 @@
+Skip IDLE calltip tests that require docstrings when running with ``-OO`` or
+without docstrings.
