@@ -1,0 +1,5 @@
+Add checking if sequences ``a[alo:ahi]`` and ``b[blo:bhi]`` are the same on the
+beginning of the method find_longest_match in SequenceMatcher. For identical
+sequences there is no reason to run whole logic when simple check can be done.
+It appears to fix issue when comparing two slightly different strings ends up
+with waiting forever for the result.
