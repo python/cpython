@@ -406,7 +406,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             raise
         except BaseException:
             transp.close()
-            await transp._wait()
+            await tasks.shield(transp._wait())
             raise
 
         return transp

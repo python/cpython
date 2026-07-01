@@ -160,10 +160,10 @@ class Process:
             # write() and drain() can raise these exceptions.
             if debug:
                 logger.debug('%r communicate: stdin got %r', self, exc)
-
-        if debug:
-            logger.debug('%r communicate: close stdin', self)
-        self.stdin.close()
+        finally:
+            if debug:
+                logger.debug('%r communicate: close stdin', self)
+            self.stdin.close()
 
     async def _noop(self):
         return None
@@ -178,12 +178,14 @@ class Process:
         if self._loop.get_debug():
             name = 'stdout' if fd == 1 else 'stderr'
             logger.debug('%r communicate: read %s', self, name)
-        output = await stream.read()
-        if self._loop.get_debug():
-            name = 'stdout' if fd == 1 else 'stderr'
-            logger.debug('%r communicate: close %s', self, name)
-        transport.close()
-        return output
+        try:
+            output = await stream.read()
+            if self._loop.get_debug():
+                name = 'stdout' if fd == 1 else 'stderr'
+                logger.debug('%r communicate: close %s', self, name)
+            return output
+        finally:
+            transport.close()
 
     async def communicate(self, input=None):
         if self.stdin is not None:
@@ -198,8 +200,13 @@ class Process:
             stderr = self._read_stream(2)
         else:
             stderr = self._noop()
-        stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr)
-        await self.wait()
+        try:
+            stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr)
+        except:
+            self.kill()
+            raise
+        finally:
+            await self.wait()
         return (stdout, stderr)
 
 
