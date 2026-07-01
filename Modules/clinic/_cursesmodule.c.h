@@ -683,7 +683,7 @@ exit:
     return return_value;
 }
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_window_enclose__doc__,
 "enclose($self, y, x, /)\n"
@@ -726,7 +726,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
 PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 "getbkgd($self, /)\n"
@@ -2303,7 +2303,7 @@ _curses_getsyx(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(getsyx) */
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_getmouse__doc__,
 "getmouse($module, /)\n"
@@ -2326,9 +2326,9 @@ _curses_getmouse(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_getmouse_impl(module);
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_ungetmouse__doc__,
 "ungetmouse($module, id, x, y, z, bstate, /)\n"
@@ -2400,7 +2400,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
 PyDoc_STRVAR(_curses_getwin__doc__,
 "getwin($module, file, /)\n"
@@ -3089,7 +3089,7 @@ exit:
     return return_value;
 }
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_mouseinterval__doc__,
 "mouseinterval($module, interval, /)\n"
@@ -3126,9 +3126,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
-#if defined(NCURSES_MOUSE_VERSION)
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_mousemask__doc__,
 "mousemask($module, newmask, /)\n"
@@ -3164,7 +3164,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(NCURSES_MOUSE_VERSION) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
 
 PyDoc_STRVAR(_curses_napms__doc__,
 "napms($module, ms, /)\n"
@@ -4395,4 +4395,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=ca163c1f0f8293e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28bf3e5445c762b4 input=a9049054013a1b77]*/

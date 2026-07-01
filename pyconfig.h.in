@@ -189,6 +189,9 @@
 /* Define if you have the 'filter' function. */
 #undef HAVE_CURSES_FILTER
 
+/* Define if you have the 'getmouse' function with the X/Open signature. */
+#undef HAVE_CURSES_GETMOUSE
+
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
 
