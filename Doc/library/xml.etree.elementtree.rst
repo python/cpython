@@ -711,14 +711,14 @@ Functions
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
                        xml_declaration=None, default_namespace=None, \
-                       short_empty_elements=True)
+                       validate=False, short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
+   *xml_declaration*, *default_namespace*, *validate* and *short_empty_elements* have the same
    meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
    containing the XML data.
 
@@ -732,17 +732,20 @@ Functions
       The :func:`tostring` function now preserves the attribute order
       specified by the user.
 
+   .. versionchanged:: next
+      Added the *validate* parameter.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
                            xml_declaration=None, default_namespace=None, \
-                           short_empty_elements=True)
+                           validate=False, short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
+   *xml_declaration*, *default_namespace*, *validate* and *short_empty_elements* have the same
    meaning as in :meth:`ElementTree.write`. Returns a list of (optionally) encoded
    strings containing the XML data. It does not guarantee any specific sequence,
    except that ``b"".join(tostringlist(element)) == tostring(element)``.
@@ -758,6 +761,9 @@ Functions
    .. versionchanged:: 3.8
       The :func:`tostringlist` function now preserves the attribute order
       specified by the user.
+
+   .. versionchanged:: next
+      Added the *validate* parameter.
 
 
 .. function:: XML(text, parser=None)
@@ -1186,7 +1192,7 @@ ElementTree Objects
 
    .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
                      default_namespace=None, method="xml", *, \
-                     short_empty_elements=True)
+                     validate=False, short_empty_elements=True)
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       :term:`file object` opened for writing.  *encoding* [1]_ is the output
@@ -1197,6 +1203,15 @@ ElementTree Objects
       *default_namespace* sets the default XML namespace (for "xmlns").
       *method* is either ``"xml"``, ``"html"`` or ``"text"`` (default is
       ``"xml"``).
+
+      If *validate* is true, check that all characters are legal,
+      that element and attribute names are valid, and that the content
+      of comments, processing instructions and HTML elements
+      like ``<script>`` do not contain illegal sequences according
+      to the selected *method* (``"xml"`` or ``"html"``).
+      Raise :exc:`ValueError` if any check fails.
+      By default, or if *method* is ``"text"``, no validation is performed.
+
       The keyword-only *short_empty_elements* parameter controls the formatting
       of elements that contain no content.  If ``True`` (the default), they are
       emitted as a single self-closed tag, otherwise they are emitted as a pair
@@ -1215,6 +1230,9 @@ ElementTree Objects
       .. versionchanged:: 3.8
          The :meth:`write` method now preserves the attribute order specified
          by the user.
+
+      .. versionchanged:: next
+         Added the *validate* parameter.
 
 
 This is the XML file that is going to be manipulated::
