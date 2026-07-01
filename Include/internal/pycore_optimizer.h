@@ -310,7 +310,8 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 int _Py_uop_analyze_and_optimize(
     _PyThreadStateImpl *tstate,
     _PyUOpInstruction *input, int trace_len, int curr_stackentries,
-    _PyUOpInstruction *output, _PyBloomFilter *dependencies);
+    _PyUOpInstruction *output, _PyBloomFilter *dependencies,
+    bool progress_needed);
 
 PyAPI_DATA(PyTypeObject) _PyUOpExecutor_Type;
 

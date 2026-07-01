@@ -1,6 +1,7 @@
 import contextlib
 import dis
 import itertools
+import subprocess
 import sys
 import textwrap
 import unittest
@@ -10,7 +11,7 @@ import types
 
 import _opcode
 
-from test.support import (script_helper, requires_specialization,
+from test.support import (SHORT_TIMEOUT, script_helper, requires_specialization,
                           import_helper, Py_GIL_DISABLED, requires_jit_enabled,
                           reset_code)
 
@@ -6056,6 +6057,51 @@ class TestUopsOptimization(unittest.TestCase):
         """), PYTHON_JIT="1", PYTHON_JIT_STRESS="1",
              PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE="1")
         self.assertEqual(result[0].rc, 0, result)
+
+    def test_side_exit_to_executor_makes_progress(self):
+        script = textwrap.dedent("""
+        classes = []
+
+        def make_iter():
+            class It:
+                def __init__(self):
+                    self.i = 0
+
+                def __iter__(self):
+                    return self
+
+                def __next__(self):
+                    self.i += 1
+                    if self.i > 1000:
+                        raise StopIteration
+                    return self.i
+
+            classes.append(It)
+            return It()
+
+        def f(n):
+            for outer in range(n):
+                for x in make_iter():
+                    pass
+
+        f(200)
+        """)
+        env = os.environ.copy()
+        env.update({
+            "PYTHON_JIT": "1",
+            "PYTHON_JIT_SIDE_EXIT_INITIAL_VALUE": "1",
+        })
+        try:
+            result = subprocess.run(
+                [sys.executable, "-X", "faulthandler", "-c", script],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=env,
+                timeout=SHORT_TIMEOUT,
+            )
+        except subprocess.TimeoutExpired as exc:
+            self.fail(f"subprocess timed out: {exc}")
+        self.assertEqual(result.returncode, 0, result)
 
     def test_for_iter_gen_cleared_frame_does_not_crash(self):
         # See: https://github.com/python/cpython/issues/145197

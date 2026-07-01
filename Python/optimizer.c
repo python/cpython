@@ -1666,7 +1666,7 @@ uop_optimize(
         _PyUOpInstruction *output = &_tstate->jit_tracer_state->uop_array[UOP_MAX_TRACE_LENGTH];
         length = _Py_uop_analyze_and_optimize(
             _tstate, buffer, length, curr_stackentries,
-            output, &dependencies);
+            output, &dependencies, progress_needed);
 
         if (length <= 0) {
             return length;
