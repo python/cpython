@@ -1,0 +1,2 @@
+Improve ``sys.getwindowsversion()`` use ``RtlGetVersion`` for Desktop, also
+fixes errors in UWP.
