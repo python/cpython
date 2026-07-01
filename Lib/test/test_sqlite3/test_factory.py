@@ -159,7 +159,8 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
     def test_delete_cursor_row_factory(self):
         # gh-149738: deleting row_factory should raise an exception
         cur = self.con.cursor()
-        del cur.row_factory
+        with self.assertRaises(AttributeError):
+            del cur.row_factory
         # Executing a query here should succeed.
         self.assertEqual(tuple(cur.execute("select 1").fetchone()), (1,))
 
