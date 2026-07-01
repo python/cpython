@@ -1999,6 +1999,49 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertEqual(A.two_f_ga1, A.two_f_ga2)
         self.assertEqual(hash(A.two_f_ga1), hash(A.two_f_ga2))
 
+    def test_forward_equality_and_hash_with_extra_names(self):
+        """Regression test for the __extra_names__ sibling of GH-143831."""
+        class Unhashable:
+            __hash__ = None
+
+        # An unhashable value referenced in an annotation is kept in the
+        # forward ref's __extra_names__.
+        ns = support.run_code(
+            "def f(a: undefined | obj): pass",
+            extra_names={"obj": Unhashable()},
+        )
+        fr1 = get_annotations(ns["f"], format=Format.FORWARDREF)["a"]
+        fr2 = get_annotations(ns["f"], format=Format.FORWARDREF)["a"]
+        self.assertIsInstance(fr1.__extra_names__, dict)
+
+        self.assertEqual(fr1, fr2)
+        self.assertEqual(hash(fr1), hash(fr2))
+        self.assertEqual(len({fr1, fr2}), 1)
+
+        # Forward refs with different extra-name values are unequal.
+        ns2 = support.run_code(
+            "def g(a: undefined | obj): pass",
+            extra_names={"obj": Unhashable()},
+        )
+        fr3 = get_annotations(ns2["g"], format=Format.FORWARDREF)["a"]
+        self.assertNotEqual(fr1, fr3)
+        self.assertEqual(len({fr1, fr2, fr3}), 2)
+
+    def test_forward_equality_and_hash_with_unhashable_owner(self):
+        """Regression test for an unhashable __owner__ (GH-143831 sibling)."""
+        class MetaNoHash(type):
+            __hash__ = None
+
+        class D(metaclass=MetaNoHash):
+            x: undefined
+
+        fr1 = get_annotations(D, format=Format.FORWARDREF)["x"]
+        fr2 = get_annotations(D, format=Format.FORWARDREF)["x"]
+        self.assertIs(fr1.__owner__, D)
+        self.assertEqual(fr1, fr2)
+        self.assertEqual(hash(fr1), hash(fr2))
+        self.assertEqual(len({fr1, fr2}), 1)
+
     def test_forward_equality_namespace(self):
         def namespace1():
             a = ForwardRef("A")
