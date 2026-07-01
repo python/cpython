@@ -1,0 +1,1 @@
+:func:`sys.getsizeof` now accounts for inline values stored alongside the object
