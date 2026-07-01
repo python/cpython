@@ -816,7 +816,9 @@ A ``TarInfo`` object has the following public data attributes:
 .. attribute:: TarInfo.size
    :type: int
 
-   Size in bytes.
+   Size of the archived file's data in bytes.
+   This is the size of the file data stored in the archive,
+   excluding the tar header blocks (which are typically 512 bytes each).
 
 
 .. attribute:: TarInfo.mtime
@@ -1374,9 +1376,8 @@ Reading examples
 How to extract an entire tar archive to the current working directory::
 
    import tarfile
-   tar = tarfile.open("sample.tar.gz")
-   tar.extractall(filter='data')
-   tar.close()
+   with tarfile.open("sample.tar.gz") as tar:
+       tar.extractall(filter='data')
 
 How to extract a subset of a tar archive with :meth:`TarFile.extractall` using
 a generator function instead of a list::
@@ -1389,36 +1390,79 @@ a generator function instead of a list::
            if os.path.splitext(tarinfo.name)[1] == ".py":
                yield tarinfo
 
-   tar = tarfile.open("sample.tar.gz")
-   tar.extractall(members=py_files(tar))
-   tar.close()
+   with tarfile.open("sample.tar.gz") as tar:
+       tar.extractall(members=py_files(tar))
 
 How to read a gzip compressed tar archive and display some member information::
 
    import tarfile
-   tar = tarfile.open("sample.tar.gz", "r:gz")
-   for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
-       if tarinfo.isreg():
-           print("a regular file.")
-       elif tarinfo.isdir():
-           print("a directory.")
-       else:
-           print("something else.")
-   tar.close()
+   with tarfile.open("sample.tar.gz", "r:gz") as tar:
+       for tarinfo in tar:
+           print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
+           if tarinfo.isreg():
+               print("a regular file.")
+           elif tarinfo.isdir():
+               print("a directory.")
+           else:
+               print("something else.")
+
+How to read a specific file from a tar archive into memory without
+extracting it to the filesystem, using :meth:`TarFile.extractfile`::
+
+    import tarfile
+
+    with tarfile.open("sample.tar.gz") as tar:
+        member = tar.getmember("README.txt")
+        f = tar.extractfile(member)
+        if f is not None:
+            content = f.read()
+            print(f"README.txt ({len(content)} bytes):")
+            print(content.decode("utf-8")[:200])
+        else:
+            print("README.txt is not a regular file")
+
+How to iterate over all members and read their contents, handling
+non-file members (directories, symlinks, etc.) that return ``None``::
+
+    import tarfile
+
+    with tarfile.open("sample.tar.gz") as tar:
+        for member in tar.getmembers():
+            f = tar.extractfile(member)
+            if f is None:
+                print(f"{member.name} is not a regular file "
+                      f"(type code: {member.type})")
+            else:
+                print(f"{member.name}: {len(f.read())} bytes")
+
+How to handle errors when a member does not exist in the archive::
+
+    import tarfile
+
+    with tarfile.open("sample.tar.gz") as tar:
+        try:
+            f = tar.extractfile("nonexistent.txt")
+        except KeyError:
+            print("File not found in archive")
+
+How to stream-read a tar archive without seeking, using the ``'r|*'``
+stream mode.  This is useful for large files or network streams where
+the archive is processed sequentially without random access::
+
+    import tarfile
+
+    with tarfile.open("large_archive.tar.gz", "r|gz") as tar:
+        for member in tar:
+            f = tar.extractfile(member)
+            if f is not None:
+                data = f.read(1024)  # read the first 1024 bytes
+                print(f"{member.name}: {len(data)} bytes read")
 
 Writing examples
 ~~~~~~~~~~~~~~~~
 
-How to create an uncompressed tar archive from a list of filenames::
-
-   import tarfile
-   tar = tarfile.open("sample.tar", "w")
-   for name in ["foo", "bar", "quux"]:
-       tar.add(name)
-   tar.close()
-
-The same example using the :keyword:`with` statement::
+How to create an uncompressed tar archive from a list of filenames using
+the :keyword:`with` statement::
 
     import tarfile
     with tarfile.open("sample.tar", "w") as tar:
@@ -1443,9 +1487,8 @@ parameter in :meth:`TarFile.add`::
         tarinfo.uid = tarinfo.gid = 0
         tarinfo.uname = tarinfo.gname = "root"
         return tarinfo
-    tar = tarfile.open("sample.tar.gz", "w:gz")
-    tar.add("foo", filter=reset)
-    tar.close()
+    with tarfile.open("sample.tar.gz", "w:gz") as tar:
+        tar.add("foo", filter=reset)
 
 
 .. _tar-formats:
