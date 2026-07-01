@@ -1279,7 +1279,7 @@ mimetypes
   (Contributed by Benedikt Johannes, Charlie Lin, Foolbar, Gil Forcada and
   John Franey
   in :gh:`144217`, :gh:`145720`, :gh:`140937`, :gh:`139959`, :gh:`145698`,
-  :gh:`145718`, :gh:`145918`, and :gh:`144213`.)
+  :gh:`145718`, :gh:`146342`, :gh:`145918`, and :gh:`144213`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`.)
 * Changed the MIME type for ``.ai`` files to ``application/pdf``.
