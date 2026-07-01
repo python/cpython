@@ -1114,12 +1114,20 @@ _PyPegen_get_expr_name(expr_ty e)
             return "list comprehension";
         case SetComp_kind:
             return "set comprehension";
+        case FrozenSetComp_kind:
+            return "frozenset comprehension";
         case DictComp_kind:
             return "dict comprehension";
+        case FrozenDictComp_kind:
+            return "frozendict comprehension";
         case Dict_kind:
             return "dict literal";
+        case FrozenDict_kind:
+            return "frozendict literal";
         case Set_kind:
             return "set display";
+        case FrozenSet_kind:
+            return "frozenset display";
         case JoinedStr_kind:
         case FormattedValue_kind:
             return "f-string expression";

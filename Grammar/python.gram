@@ -1024,7 +1024,7 @@ tuple[expr_ty]:
 
 set[expr_ty]: '{' a=star_named_expressions_sequence '}' { _PyAST_Set(a, EXTRA) }
 
-frozenset[expr_ty]: 'f{' a=star_named_expressions_sequence '}' { _PyAST_Set(a, EXTRA) }
+frozenset[expr_ty]: 'f{' a=star_named_expressions_sequence '}' { _PyAST_FrozenSet(a, EXTRA) }
 
 # Dicts
 # -----
@@ -1039,7 +1039,7 @@ dict[expr_ty]:
 
 frozendict[expr_ty]:
     | 'f{' a=[double_starred_kvpairs] '}' {
-        _PyAST_Dict(
+        _PyAST_FrozenDict(
             CHECK(asdl_expr_seq*, _PyPegen_get_keys(p, a)),
             CHECK(asdl_expr_seq*, _PyPegen_get_values(p, a)),
             EXTRA) }
@@ -1076,7 +1076,7 @@ setcomp[expr_ty]:
     | invalid_comprehension
 
 frozensetcomp[expr_ty]:
-    | 'f{' a=star_named_expression b=for_if_clauses '}' { _PyAST_SetComp(a, b, EXTRA) }
+    | 'f{' a=star_named_expression b=for_if_clauses '}' { _PyAST_FrozenSetComp(a, b, EXTRA) }
     | invalid_comprehension
 
 genexp[expr_ty]:
@@ -1089,7 +1089,7 @@ dictcomp[expr_ty]:
 
 frozendictcomp[expr_ty]:
     | 'f{' a=kvpair b=for_if_clauses '}' { _PyAST_DictComp(a->key, a->value, b, EXTRA) }
-    | 'f{' '**' a=expression b=for_if_clauses '}' { _PyAST_DictComp(a, NULL, b, EXTRA) }
+    | 'f{' '**' a=expression b=for_if_clauses '}' { _PyAST_FrozenDictComp(a, NULL, b, EXTRA) }
 
 # FUNCTION CALL ARGUMENTS
 # =======================

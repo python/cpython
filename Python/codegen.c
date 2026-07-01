@@ -5462,7 +5462,11 @@ codegen_visit_expr(compiler *c, expr_ty e)
         return codegen_ifexp(c, e);
     case Dict_kind:
         return codegen_dict(c, e);
+    case FrozenDict_kind:
+        return codegen_dict(c, e);
     case Set_kind:
+        return codegen_set(c, e);
+    case FrozenSet_kind:
         return codegen_set(c, e);
     case GeneratorExp_kind:
         return codegen_genexp(c, e);
@@ -5470,7 +5474,11 @@ codegen_visit_expr(compiler *c, expr_ty e)
         return codegen_listcomp(c, e);
     case SetComp_kind:
         return codegen_setcomp(c, e);
+    case FrozenSetComp_kind:
+        return codegen_setcomp(c, e);
     case DictComp_kind:
+        return codegen_dictcomp(c, e);
+    case FrozenDictComp_kind:
         return codegen_dictcomp(c, e);
     case Yield_kind:
         if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {

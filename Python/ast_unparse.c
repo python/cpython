@@ -323,46 +323,51 @@ append_ast_ifexp(PyUnicodeWriter *writer, expr_ty e, int level)
     return 0;
 }
 
-static int
-append_ast_dict(PyUnicodeWriter *writer, expr_ty e)
-{
-    Py_ssize_t i, value_count;
-    expr_ty key_node;
-
-    APPEND_CHAR('{');
-    value_count = asdl_seq_LEN(e->v.Dict.values);
-
-    for (i = 0; i < value_count; i++) {
-        APPEND_STR_IF(i > 0, ", ");
-        key_node = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i);
-        if (key_node != NULL) {
-            APPEND_EXPR(key_node, PR_TEST);
-            APPEND_STR(": ");
-            APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Dict.values, i), PR_TEST);
-        }
-        else {
-            APPEND_STR("**");
-            APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Dict.values, i), PR_EXPR);
-        }
-    }
-
-    APPEND_CHAR_FINISH('}');
+#define DICT_LIKE(NAME, START) \
+static int \
+append_ast_ ## NAME(PyUnicodeWriter *writer, expr_ty e) \
+{ \
+    Py_ssize_t i, value_count; \
+    expr_ty key_node; \
+    APPEND_STR(START); \
+    value_count = asdl_seq_LEN(e->v.NAME.values); \
+    for (i = 0; i < value_count; i++) { \
+        APPEND_STR_IF(i > 0, ", "); \
+        key_node = (expr_ty)asdl_seq_GET(e->v.NAME.keys, i); \
+        if (key_node != NULL) { \
+            APPEND_EXPR(key_node, PR_TEST); \
+            APPEND_STR(": "); \
+            APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.NAME.values, i), PR_TEST); \
+        } \
+        else { \
+            APPEND_STR("**"); \
+            APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.NAME.values, i), PR_EXPR); \
+        } \
+    } \
+    APPEND_CHAR_FINISH('}'); \
 }
 
-static int
-append_ast_set(PyUnicodeWriter *writer, expr_ty e)
-{
-    Py_ssize_t i, elem_count;
+DICT_LIKE(Dict, "{")
+DICT_LIKE(FrozenDict, "f{")
+#undef DICT_LIKE
 
-    APPEND_CHAR('{');
-    elem_count = asdl_seq_LEN(e->v.Set.elts);
-    for (i = 0; i < elem_count; i++) {
-        APPEND_STR_IF(i > 0, ", ");
-        APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Set.elts, i), PR_TEST);
-    }
-
-    APPEND_CHAR_FINISH('}');
+#define SET_LIKE(NAME, START) \
+static int \
+append_ast_ ## NAME(PyUnicodeWriter *writer, expr_ty e) \
+{ \
+    Py_ssize_t i, elem_count; \
+    APPEND_STR(START); \
+    elem_count = asdl_seq_LEN(e->v.NAME.elts); \
+    for (i = 0; i < elem_count; i++) { \
+        APPEND_STR_IF(i > 0, ", "); \
+        APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.NAME.elts, i), PR_TEST); \
+    } \
+    APPEND_CHAR_FINISH('}'); \
 }
+
+SET_LIKE(Set, "{")
+SET_LIKE(FrozenSet, "f{")
+#undef SET_LIKE
 
 static int
 append_ast_list(PyUnicodeWriter *writer, expr_ty e)
@@ -451,31 +456,41 @@ append_ast_listcomp(PyUnicodeWriter *writer, expr_ty e)
     APPEND_CHAR_FINISH(']');
 }
 
-static int
-append_ast_setcomp(PyUnicodeWriter *writer, expr_ty e)
-{
-    APPEND_CHAR('{');
-    APPEND_EXPR(e->v.SetComp.elt, PR_TEST);
-    APPEND(comprehensions, e->v.SetComp.generators);
-    APPEND_CHAR_FINISH('}');
+#define SETCOMP(NAME, START) \
+static int \
+append_ast_ ## NAME(PyUnicodeWriter *writer, expr_ty e) \
+{ \
+    APPEND_STR(START); \
+    APPEND_EXPR(e->v.NAME.elt, PR_TEST); \
+    APPEND(comprehensions, e->v.NAME.generators); \
+    APPEND_CHAR_FINISH('}'); \
 }
 
-static int
-append_ast_dictcomp(PyUnicodeWriter *writer, expr_ty e)
-{
-    APPEND_CHAR('{');
-    if (e->v.DictComp.value) {
-        APPEND_EXPR(e->v.DictComp.key, PR_TEST);
-        APPEND_STR(": ");
-        APPEND_EXPR(e->v.DictComp.value, PR_TEST);
-    }
-    else {
-        APPEND_STR("**");
-        APPEND_EXPR(e->v.DictComp.key, PR_TEST);
-    }
-    APPEND(comprehensions, e->v.DictComp.generators);
-    APPEND_CHAR_FINISH('}');
+SETCOMP(SetComp, "{")
+SETCOMP(FrozenSetComp, "f{")
+#undef SETCOMP
+
+#define DICTCOMP(NAME, START) \
+static int \
+append_ast_ ## NAME(PyUnicodeWriter *writer, expr_ty e) \
+{ \
+    APPEND_STR(START); \
+    if (e->v.NAME.value) { \
+        APPEND_EXPR(e->v.NAME.key, PR_TEST); \
+        APPEND_STR(": "); \
+        APPEND_EXPR(e->v.NAME.value, PR_TEST); \
+    } \
+    else { \
+        APPEND_STR("**"); \
+        APPEND_EXPR(e->v.NAME.key, PR_TEST); \
+    } \
+    APPEND(comprehensions, e->v.NAME.generators); \
+    APPEND_CHAR_FINISH('}'); \
 }
+
+DICTCOMP(DictComp, "{")
+DICTCOMP(FrozenDictComp, "f{")
+#undef DICTCOMP
 
 static int
 append_ast_compare(PyUnicodeWriter *writer, expr_ty e, int level)
@@ -951,17 +966,25 @@ append_ast_expr(PyUnicodeWriter *writer, expr_ty e, int level)
     case IfExp_kind:
         return append_ast_ifexp(writer, e, level);
     case Dict_kind:
-        return append_ast_dict(writer, e);
+        return append_ast_Dict(writer, e);
+    case FrozenDict_kind:
+        return append_ast_FrozenDict(writer, e);
     case Set_kind:
-        return append_ast_set(writer, e);
+        return append_ast_Set(writer, e);
+    case FrozenSet_kind:
+        return append_ast_FrozenSet(writer, e);
     case GeneratorExp_kind:
         return append_ast_genexp(writer, e);
     case ListComp_kind:
         return append_ast_listcomp(writer, e);
     case SetComp_kind:
-        return append_ast_setcomp(writer, e);
+        return append_ast_SetComp(writer, e);
+    case FrozenSetComp_kind:
+        return append_ast_FrozenSetComp(writer, e);
     case DictComp_kind:
-        return append_ast_dictcomp(writer, e);
+        return append_ast_DictComp(writer, e);
+    case FrozenDictComp_kind:
+        return append_ast_FrozenDictComp(writer, e);
     case Yield_kind:
         return append_ast_yield(writer, e);
     case YieldFrom_kind:

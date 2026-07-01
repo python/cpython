@@ -730,23 +730,37 @@ class Unparser(NodeVisitor):
             for gen in node.generators:
                 self.traverse(gen)
 
+    def _set_comp(self, node):
+        self.traverse(node.elt)
+        for gen in node.generators:
+            self.traverse(gen)
+
     def visit_SetComp(self, node):
         with self.delimit("{", "}"):
-            self.traverse(node.elt)
-            for gen in node.generators:
-                self.traverse(gen)
+            self._set_comp(node)
+
+    def visit_FrozenSetComp(self, node):
+        with self.delimit("f{", "}"):
+            self._set_comp(node)
+
+    def _dict_comp(self, node):
+        if node.value:
+            self.traverse(node.key)
+            self.write(": ")
+            self.traverse(node.value)
+        else:
+            self.write("**")
+            self.traverse(node.key)
+        for gen in node.generators:
+            self.traverse(gen)
 
     def visit_DictComp(self, node):
         with self.delimit("{", "}"):
-            if node.value:
-                self.traverse(node.key)
-                self.write(": ")
-                self.traverse(node.value)
-            else:
-                self.write("**")
-                self.traverse(node.key)
-            for gen in node.generators:
-                self.traverse(gen)
+            self._dict_comp(node)
+
+    def visit_FrozenDictComp(self, node):
+        with self.delimit("f{", "}"):
+            self._dict_comp(node)
 
     def visit_comprehension(self, node):
         if node.is_async:
@@ -772,16 +786,22 @@ class Unparser(NodeVisitor):
             self.set_precedence(_Precedence.TEST, node.orelse)
             self.traverse(node.orelse)
 
-    def visit_Set(self, node):
+    def _set_like(self, node, delimit_start):
         if node.elts:
-            with self.delimit("{", "}"):
+            with self.delimit(delimit_start, "}"):
                 self.interleave(lambda: self.write(", "), self.traverse, node.elts)
         else:
             # `{}` would be interpreted as a dictionary literal, and
             # `set` might be shadowed. Thus:
-            self.write('{*()}')
+            self.write(delimit_start + "*()}")
 
-    def visit_Dict(self, node):
+    def visit_Set(self, node):
+        self._set_like(node, "{")
+
+    def visit_FrozenSet(self, node):
+        self._set_like(node, "f{")
+
+    def _dict_like(self, node, delimit_start):
         def write_key_value_pair(k, v):
             self.traverse(k)
             self.write(": ")
@@ -798,10 +818,16 @@ class Unparser(NodeVisitor):
             else:
                 write_key_value_pair(k, v)
 
-        with self.delimit("{", "}"):
+        with self.delimit(delimit_start, "}"):
             self.interleave(
                 lambda: self.write(", "), write_item, zip(node.keys, node.values)
             )
+
+    def visit_Dict(self, node):
+        self._dict_like(node, "{")
+
+    def visit_FrozenDict(self, node):
+        self._dict_like(node, "f{")
 
     def visit_Tuple(self, node):
         with self.delimit_if(

@@ -2005,6 +2005,14 @@ SyntaxError: cannot assign to set display here. Maybe you meant '==' instead of 
 Traceback (most recent call last):
 SyntaxError: cannot assign to dict literal here. Maybe you meant '==' instead of '='?
 
+>>> f{1, 2, 3} = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to frozenset display here. Maybe you meant '==' instead of '='?
+
+>>> f{1: 2, 3: 4} = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to frozendict literal here. Maybe you meant '==' instead of '='?
+
 >>> f'{x}' = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
