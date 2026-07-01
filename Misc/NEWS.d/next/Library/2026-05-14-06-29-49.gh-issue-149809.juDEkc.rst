@@ -1,0 +1,1 @@
+Make the gettext functions accept a localedir of type Traversable.

@@ -484,6 +484,13 @@ class GNUTranslations(NullTranslations):
                 tmsg = msgid2
         return tmsg
 
+# Path objects also implement Traversable, but they work with legacy APIs.
+# Only return True for non-path Traversable objects that truly need the Traversable API.
+def _needs_traversable_api(file):
+    if not isinstance(file, str | os.PathLike):
+        from importlib.resources.abc import Traversable
+        return isinstance(file, Traversable)
+    return False
 
 # Locate a .mo file using the gettext strategy
 def find(domain, localedir=None, languages=None, all=False):
@@ -513,8 +520,14 @@ def find(domain, localedir=None, languages=None, all=False):
     for lang in nelangs:
         if lang == 'C':
             break
-        mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
-        if os.path.exists(mofile):
+        if _needs_traversable_api(localedir):
+            mofile = localedir.joinpath(lang, 'LC_MESSAGES', '%s.mo' % domain)
+            is_exists= mofile.is_file()
+        else:
+            mofile = os.path.join(localedir, lang, 'LC_MESSAGES', '%s.mo' % domain)
+            is_exists = os.path.exists(mofile)
+
+        if is_exists:
             if all:
                 result.append(mofile)
             else:
@@ -541,10 +554,14 @@ def translation(domain, localedir=None, languages=None,
     # once.
     result = None
     for mofile in mofiles:
-        key = (class_, os.path.abspath(mofile))
+        use_traversable_api = _needs_traversable_api(mofile)
+        if not use_traversable_api:
+            mofile = os.path.abspath(mofile)
+
+        key = (class_, mofile)
         t = _translations.get(key)
         if t is None:
-            with open(mofile, 'rb') as fp:
+            with (mofile.open('rb') if use_traversable_api else open(mofile, 'rb')) as fp:
                 t = _translations.setdefault(key, class_(fp))
         # Copy the translation object to allow setting fallbacks and
         # output charset. All other instance data is shared with the
