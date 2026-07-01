@@ -658,6 +658,32 @@ deque_copy_impl(dequeobject *deque)
         Py_DECREF(result);
         return NULL;
     }
+    /* gh-152042: also copy the instance __dict__ onto the subclass copy so
+       that copy.copy() and deque.copy() preserve instance attributes
+       (matching pickle and copy.deepcopy()). */
+    if (result != NULL && _PyObject_GetDictPtr((PyObject *)deque) != NULL) {
+        PyObject *srcdict = PyObject_GenericGetDict((PyObject *)deque, NULL);
+        if (srcdict == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (PyDict_GET_SIZE(srcdict) != 0) {
+            PyObject *newdict = PyDict_Copy(srcdict);
+            if (newdict == NULL) {
+                Py_DECREF(srcdict);
+                Py_DECREF(result);
+                return NULL;
+            }
+            int err = PyObject_GenericSetDict(result, newdict, NULL);
+            Py_DECREF(newdict);
+            if (err < 0) {
+                Py_DECREF(srcdict);
+                Py_DECREF(result);
+                return NULL;
+            }
+        }
+        Py_DECREF(srcdict);
+    }
     return result;
 }
 

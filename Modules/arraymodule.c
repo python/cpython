@@ -1016,6 +1016,71 @@ array_array_clear_impl(arrayobject *self)
     Py_RETURN_NONE;
 }
 
+/* gh-152042: produce a copy of the array as an instance of its actual
+   (sub)type, copying the raw item buffer.  The instance __dict__ is handled
+   separately by the callers. */
+static PyObject *
+array_copy_buffer(arrayobject *self)
+{
+    Py_ssize_t size = Py_SIZE(self);
+    arrayobject *np = (arrayobject *)newarrayobject(Py_TYPE(self), size,
+                                                    self->ob_descr);
+    if (np == NULL) {
+        return NULL;
+    }
+    if (size > 0) {
+        memcpy(np->ob_item, self->ob_item,
+               (size_t)size * self->ob_descr->itemsize);
+    }
+    return (PyObject *)np;
+}
+
+/* gh-152042: copy the instance __dict__ from src to dst.  When memo is NULL
+   the dict is shallow-copied (for __copy__); otherwise it is deep-copied via
+   copy.deepcopy(d, memo) (for __deepcopy__).  Returns 0 on success, including
+   when there is no instance dict. */
+static int
+array_copy_dict(PyObject *src, PyObject *dst, PyObject *memo)
+{
+    if (_PyObject_GetDictPtr(src) == NULL) {
+        return 0;               /* no instance dict (base array or __slots__) */
+    }
+    PyObject *srcdict = PyObject_GenericGetDict(src, NULL);
+    if (srcdict == NULL) {
+        return -1;
+    }
+    if (PyDict_GET_SIZE(srcdict) == 0) {
+        Py_DECREF(srcdict);
+        return 0;
+    }
+    PyObject *newdict;
+    if (memo == NULL) {
+        newdict = PyDict_Copy(srcdict);
+    }
+    else {
+        PyObject *copymod = PyImport_ImportModule("copy");
+        if (copymod == NULL) {
+            Py_DECREF(srcdict);
+            return -1;
+        }
+        PyObject *deepcopy = PyObject_GetAttrString(copymod, "deepcopy");
+        Py_DECREF(copymod);
+        if (deepcopy == NULL) {
+            Py_DECREF(srcdict);
+            return -1;
+        }
+        newdict = PyObject_CallFunctionObjArgs(deepcopy, srcdict, memo, NULL);
+        Py_DECREF(deepcopy);
+    }
+    Py_DECREF(srcdict);
+    if (newdict == NULL) {
+        return -1;
+    }
+    int err = PyObject_GenericSetDict(dst, newdict, NULL);
+    Py_DECREF(newdict);
+    return err;
+}
+
 /*[clinic input]
 array.array.__copy__
 
@@ -1026,23 +1091,54 @@ static PyObject *
 array_array___copy___impl(arrayobject *self)
 /*[clinic end generated code: output=dec7c3f925d9619e input=ad1ee5b086965f09]*/
 {
-    return array_slice(self, 0, Py_SIZE(self));
+    PyObject *copy = array_copy_buffer(self);
+    if (copy == NULL) {
+        return NULL;
+    }
+    if (array_copy_dict((PyObject *)self, copy, NULL) < 0) {
+        Py_DECREF(copy);
+        return NULL;
+    }
+    return copy;
 }
 
 /*[clinic input]
 array.array.__deepcopy__
 
-    unused: object
+    memo: object(subclass_of="&PyDict_Type")
     /
 
 Return a copy of the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array___deepcopy___impl(arrayobject *self, PyObject *unused)
-/*[clinic end generated code: output=703b4c412feaaf31 input=2405ecb4933748c4]*/
+array_array___deepcopy___impl(arrayobject *self, PyObject *memo)
+/*[clinic end generated code: output=4f54235d9f41697e input=b38ca00fa84a5843]*/
 {
-    return array_array___copy___impl(self);
+    PyObject *copy = array_copy_buffer(self);
+    if (copy == NULL) {
+        return NULL;
+    }
+    /* Register the copy in the memo before deep-copying the instance dict so
+       that a subclass instance whose attributes refer back to itself does not
+       recurse forever.  This mirrors _elementtree.Element.__deepcopy__() and
+       copy._reconstruct(), which likewise record id(self) in the memo. */
+    PyObject *key = PyLong_FromVoidPtr(self);
+    if (key == NULL) {
+        Py_DECREF(copy);
+        return NULL;
+    }
+    int err = PyDict_SetItem(memo, key, copy);
+    Py_DECREF(key);
+    if (err < 0) {
+        Py_DECREF(copy);
+        return NULL;
+    }
+    if (array_copy_dict((PyObject *)self, copy, memo) < 0) {
+        Py_DECREF(copy);
+        return NULL;
+    }
+    return copy;
 }
 
 static PyObject *

@@ -305,6 +305,39 @@ class BaseTest:
         self.assertNotEqual(id(a), id(b))
         self.assertEqual(a, b)
 
+    def test_copy_subclass_preserves_type_and_dict(self):
+        # gh-152042: copy.copy() and copy.deepcopy() of an array subclass
+        # must preserve the subclass type and the instance __dict__
+        # (like pickle does).
+        import copy
+        a = ArraySubclass(self.typecode, self.example)
+        a.tag = "kept"
+        for b in (copy.copy(a), copy.deepcopy(a),
+                  pickle.loads(pickle.dumps(a))):
+            self.assertIs(type(b), ArraySubclass)
+            self.assertEqual(a, b)
+            self.assertEqual(b.tag, "kept")
+        # deepcopy must deep-copy the instance attributes.
+        a2 = ArraySubclass(self.typecode, self.example)
+        a2.payload = [1]
+        b2 = copy.deepcopy(a2)
+        a2.payload[0] = 99
+        self.assertEqual(b2.payload, [1])
+
+    def test_deepcopy_subclass_self_reference(self):
+        # gh-152042: deepcopy() of a subclass instance whose __dict__ refers
+        # back to itself must terminate and rebind the reference to the copy,
+        # not recurse forever.  __deepcopy__ registers the new object in the
+        # memo before deep-copying the instance dict to make this work.
+        import copy
+        a = ArraySubclass(self.typecode, self.example)
+        a.self_ref = a
+        b = copy.deepcopy(a)
+        self.assertIs(type(b), ArraySubclass)
+        self.assertEqual(a, b)
+        self.assertIs(b.self_ref, b)
+        self.assertIsNot(b, a)
+
     def test_reduce_ex(self):
         a = array.array(self.typecode, self.example)
         for protocol in range(3):
