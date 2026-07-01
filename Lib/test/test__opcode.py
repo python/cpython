@@ -61,6 +61,23 @@ class OpListTests(unittest.TestCase):
         check_function(self, _opcode.has_local, dis.haslocal)
         check_function(self, _opcode.has_exc, dis.hasexc)
 
+    def test_hasfree_membership(self):
+        # gh-151321: opcodes that access a free (closure) variable must be
+        # reported by dis.hasfree and not by dis.haslocal.
+        free_ops = {
+            'DELETE_DEREF',
+            'LOAD_CLOSURE',
+            'LOAD_DEREF',
+            'LOAD_FROM_DICT_OR_DEREF',
+            'MAKE_CELL',
+            'STORE_DEREF',
+        }
+        self.assertEqual(free_ops, {dis.opname[op] for op in dis.hasfree})
+        self.assertNotIn(dis.opmap['LOAD_DEREF'], dis.haslocal)
+        self.assertNotIn(dis.opmap['LOAD_CLOSURE'], dis.haslocal)
+        # A free-variable access is never also a local access.
+        self.assertEqual(set(), set(dis.hasfree) & set(dis.haslocal))
+
 
 class StackEffectTests(unittest.TestCase):
     def test_stack_effect(self):

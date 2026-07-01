@@ -313,7 +313,15 @@ class PseudoInstruction:
 
     @property
     def properties(self) -> Properties:
-        return Properties.from_list([i.properties for i in self.targets])
+        properties = Properties.from_list([i.properties for i in self.targets])
+        if "HAS_FREE" in self.flags:
+            # A pseudo that explicitly accesses a free (closure) variable is
+            # not a local access, even though it may target a local-accessing
+            # instruction such as LOAD_FAST.  This mirrors the
+            # ``uses_locals and not has_free`` rule for real instructions so
+            # that HAS_FREE and HAS_LOCAL are not both set (gh-151321).
+            properties.uses_locals = False
+        return properties
 
 
 @dataclass
@@ -971,6 +979,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         or variable_used(op, "PyCell_GetRef")
         or variable_used(op, "PyCell_SetTakeRef")
         or variable_used(op, "PyCell_SwapTakeRef")
+        or variable_used(op, "_PyCell_GetStackRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
     exits_if = variable_used(op, "EXIT_IF")

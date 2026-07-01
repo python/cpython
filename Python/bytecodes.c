@@ -265,7 +265,7 @@ dummy_func(
             _CHECK_PERIODIC_IF_NOT_YIELD_FROM +
             _MONITOR_RESUME;
 
-        pseudo(LOAD_CLOSURE, (-- unused)) = {
+        pseudo(LOAD_CLOSURE, (-- unused), (HAS_FREE)) = {
             LOAD_FAST,
         };
 
