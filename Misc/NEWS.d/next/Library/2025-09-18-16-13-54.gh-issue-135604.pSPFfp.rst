@@ -1,0 +1,1 @@
+Change ``venv`` to append ``*`` to ``.gitignore`` instead of overwriting it.
