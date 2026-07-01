@@ -663,7 +663,7 @@ async def gradle_task(context):
         context.args[0:0] = ["-m", "test"]
 
     args = [
-        gradlew, "--stacktrace", "--debug", "--console", "plain", f"{task_prefix}DebugAndroidTest",
+        gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest",
     ] + [
         f"-P{name}={value}"
         for name, value in [

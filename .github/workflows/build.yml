@@ -354,6 +354,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
+        env:
+          # Gradle 8 doesn't work on Java 25
+          # https://github.com/gradle/gradle/issues/35111
+          # https://github.com/gradle/gradle/issues/35401
+          JAVA_HOME: $(JAVA_HOME_11_X64)
+          PATH: $(JAVA_HOME_11_X64)/bin:$(PATH)
         run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
