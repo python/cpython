@@ -1,0 +1,4 @@
+:mod:`http.cookiejar`: loading malformed Netscape/Mozilla cookie files
+by :meth:`MozillaCookieJar.load <http.cookiejar.FileCookieJar.load>`
+now raise a :exc:`~http.cookiejar.LoadError` instead of an uncaught
+:exc:`ValueError`.
