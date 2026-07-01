@@ -644,7 +644,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             return
         item = debugobj_r.StubObjectTreeItem(self.rpcclt, oid)
         from idlelib.tree import ScrolledCanvas, TreeNode
-        top = Toplevel(self.tkconsole.root)
+        top = Toplevel(self.tkconsole.root, class_='Idle')
         theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
         sc = ScrolledCanvas(top, bg=background, highlightthickness=0)
