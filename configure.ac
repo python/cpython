@@ -6846,7 +6846,7 @@ AC_ARG_ENABLE([curses], [AS_HELP_STRING(
 ], [Py_CHECK_NCURSES=yes])
 AC_MSG_RESULT([$Py_CHECK_NCURSES])
 
-if test "$Py_CHECK_NCURSES" == 'yes' ; then
+if test "$Py_CHECK_NCURSES" = 'yes' ; then
   dnl PY_CHECK_CURSES(LIBCURSES, LIBPANEL)
   dnl Sets 'have_curses' and 'have_panel'.
   dnl For the PKG_CHECK_MODULES() calls, we can safely reuse the first variable
