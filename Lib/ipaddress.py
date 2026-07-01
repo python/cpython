@@ -10,6 +10,9 @@ and networks.
 
 import functools
 
+lazy import warnings
+
+
 IPV4LENGTH = 32
 IPV6LENGTH = 128
 
@@ -2083,6 +2086,13 @@ class IPv6Address(_BaseV6, _BaseAddress):
             A boolean, True if the address is reserved per RFC 3513 2.5.6.
 
         """
+        warnings._deprecated(
+            "IPv6Address.is_site_local",
+            "{name!r} is deprecated and slated for removal in Python "
+            "{remove}; site-local addresses (fec0::/10) were deprecated by "
+            "RFC 3879, use is_private instead",
+            remove=(3, 21),
+        )
         return self in self._constants._sitelocal_network
 
     @property
@@ -2363,8 +2373,16 @@ class IPv6Network(_BaseV6, _BaseNetwork):
             A boolean, True if the address is reserved per RFC 3513 2.5.6.
 
         """
-        return (self.network_address.is_site_local and
-                self.broadcast_address.is_site_local)
+        warnings._deprecated(
+            "IPv6Network.is_site_local",
+            "{name!r} is deprecated and slated for removal in Python "
+            "{remove}; site-local addresses (fec0::/10) were deprecated by "
+            "RFC 3879, use is_private instead",
+            remove=(3, 21),
+        )
+        sitelocal_network = self._constants._sitelocal_network
+        return (self.network_address in sitelocal_network and
+                self.broadcast_address in sitelocal_network)
 
 
 class _IPv6Constants:
@@ -2408,7 +2426,7 @@ class _IPv6Constants:
         IPv6Network('8000::/3'), IPv6Network('A000::/3'),
         IPv6Network('C000::/3'), IPv6Network('E000::/4'),
         IPv6Network('F000::/5'), IPv6Network('F800::/6'),
-        IPv6Network('FE00::/9'),
+        IPv6Network('FE00::/9'), IPv6Network('FEC0::/10'),
     ]
 
     _sitelocal_network = IPv6Network('fec0::/10')
