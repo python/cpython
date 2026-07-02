@@ -1,0 +1,2 @@
+``pickle.load_reduce()`` now requires a tuple for ``REDUCE`` arguments to
+match ``_pickle``; non-tuple argument lists now raise ``TypeError``.
