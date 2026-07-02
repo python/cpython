@@ -3377,6 +3377,47 @@ class TestFrozen(unittest.TestCase):
                 class D:
                     x: int
                     y: int = 10
+                    z: int = 1
+
+                    @property
+                    def readonly(self) -> int:
+                        return self.x
+
+                    @property
+                    def prop(self) -> int:
+                        return self.z
+
+                    @prop.setter
+                    def prop(self, val: int) -> None:
+                        object.__setattr__(self, 'z', val)
+
+                    @prop.deleter
+                    def prop(self) -> None:
+                        object.__setattr__(self, 'z', 0)
+
+                d = D(5)
+                self.assertEqual(d.x, 5)
+                self.assertEqual(d.y, 10)
+                self.assertEqual(d.z, 1)
+                self.assertEqual(d.readonly, 5)
+                self.assertEqual(d.prop, 1)
+
+                with self.assertRaises(FrozenInstanceError):
+                    d.x = 5
+                with self.assertRaises(FrozenInstanceError):
+                    d.readonly = 5
+                with self.assertRaises(FrozenInstanceError):
+                    d.z = 5
+                with self.assertRaises(FrozenInstanceError):
+                    d.prop = 5
+                with self.assertRaises(FrozenInstanceError):
+                    del d.prop
+
+                self.assertEqual(d.x, 5)
+                self.assertEqual(d.y, 10)
+                self.assertEqual(d.z, 1)
+                self.assertEqual(d.readonly, 5)
+                self.assertEqual(d.prop, 1)
 
                 class S(D):
                     pass
@@ -3384,16 +3425,40 @@ class TestFrozen(unittest.TestCase):
                 s = S(3)
                 self.assertEqual(s.x, 3)
                 self.assertEqual(s.y, 10)
+                self.assertEqual(s.z, 1)
+                self.assertEqual(s.readonly, 3)
+                self.assertEqual(s.prop, 1)
+                # Can set new attrs:
                 s.cached = True
+                self.assertTrue(s.cached)
+                # Can mutate them:
+                s.cached = False
+                self.assertFalse(s.cached)
+
+                # Can also change writable properties:
+                with self.assertRaisesRegex(
+                    AttributeError,
+                    'object has no setter',
+                ) as cm:
+                    s.readonly = 5
+                self.assertNotIsInstance(cm.exception, FrozenInstanceError)
+                s.prop = 2
+                self.assertEqual(s.x, 3)
+                self.assertEqual(s.readonly, 3)
+                self.assertEqual(s.prop, 2)
+                self.assertEqual(s.z, 2)
 
                 # But can't change the frozen attributes.
                 with self.assertRaises(FrozenInstanceError):
                     s.x = 5
                 with self.assertRaises(FrozenInstanceError):
                     s.y = 5
+                with self.assertRaises(FrozenInstanceError):
+                    s.z = 5
                 self.assertEqual(s.x, 3)
                 self.assertEqual(s.y, 10)
-                self.assertEqual(s.cached, True)
+                self.assertEqual(s.z, 2)
+                self.assertIs(s.cached, False)
 
                 with self.assertRaises(FrozenInstanceError):
                     del s.x
@@ -3401,11 +3466,26 @@ class TestFrozen(unittest.TestCase):
                 with self.assertRaises(FrozenInstanceError):
                     del s.y
                 self.assertEqual(s.y, 10)
+                with self.assertRaisesRegex(
+                    AttributeError,
+                    'object has no deleter',
+                ) as cm:
+                    del s.readonly
+                self.assertNotIsInstance(cm.exception, FrozenInstanceError)
+                self.assertEqual(s.x, 3)
+                self.assertEqual(s.readonly, 3)
                 del s.cached
                 self.assertNotHasAttr(s, 'cached')
-                with self.assertRaises(AttributeError) as cm:
+                with self.assertRaisesRegex(
+                    AttributeError,
+                    "object has no attribute 'cached'",
+                ) as cm:
                     del s.cached
                 self.assertNotIsInstance(cm.exception, FrozenInstanceError)
+                del s.prop
+                self.assertEqual(s.z, 0)
+                self.assertEqual(s.prop, 0)
+                del s.prop
 
     def test_non_frozen_normal_derived_from_empty_frozen(self):
         @dataclass(frozen=True)
