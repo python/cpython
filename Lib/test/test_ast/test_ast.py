@@ -968,6 +968,19 @@ class AST_Tests(unittest.TestCase):
                 with self.assertRaises(SyntaxError):
                     ast.parse(sample, feature_version=(3, 12))
 
+    def test_lazy_imports_feature_version(self):
+        samples = [
+            "lazy import os",
+            "lazy from .. import name",
+            "lazy from mod import some",
+        ]
+        for sample in samples:
+            with self.subTest(sample):
+                ast.parse(sample)
+                ast.parse(sample, feature_version=(3, 15))
+                with self.assertRaises(SyntaxError):
+                    ast.parse(sample, feature_version=(3, 14))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))

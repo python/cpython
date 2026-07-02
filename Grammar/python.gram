@@ -225,14 +225,24 @@ import_stmt[stmt_ty](memo):
 # -----------------
 
 import_name[stmt_ty]:
-    | lazy="lazy"? 'import' a=dotted_as_names { _PyAST_Import(a, lazy ? 1 : 0, EXTRA) }
+    | "lazy" 'import' a=dotted_as_names {
+        CHECK_VERSION(stmt_ty, 15, "Lazy imports are",
+            _PyAST_Import(a, 1, EXTRA)) }
+    | 'import' a=dotted_as_names { _PyAST_Import(a, 0, EXTRA) }
 
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
-    | lazy="lazy"? 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), lazy, EXTRA) }
-    | lazy="lazy"? 'from' a=('.' | '...')+ 'import' b=import_from_targets {
-        _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), lazy ? 1 : 0, EXTRA) }
+    | lazy="lazy" 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
+        CHECK_VERSION(stmt_ty, 15, "Lazy imports are",
+            _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), lazy, EXTRA)) }
+    | "lazy" 'from' a=('.' | '...')+ 'import' b=import_from_targets {
+        CHECK_VERSION(stmt_ty, 15, "Lazy imports are",
+            _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), 1, EXTRA)) }
+    | 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
+        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), 0, EXTRA) }
+    | 'from' a=('.' | '...')+ 'import' b=import_from_targets {
+        _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), 0, EXTRA) }
+
 import_from_targets[asdl_alias_seq*]:
     | '(' a=import_from_as_names [','] ')' { a }
     | import_from_as_names !','
