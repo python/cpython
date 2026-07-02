@@ -336,5 +336,59 @@ class TestDict(TestCase):
         with threading_helper.start_threads([t1, t2]):
             pass
 
+    def test_racing_dict_update_and_method_lookup_with_inline_values(self):
+        # gh-149816: sub-case 108
+        # The race below checks that setattr() does not write into a detached
+        # dict after __dict__ is replaced by another thread.
+        class Target:
+            pass
+
+        def appender(obj: Target, start: Barrier, iter_times: int) -> None:
+            start.wait()
+            index = 0
+            for _ in range(iter_times):
+                setattr(obj, f"probe_{index}", index)
+                index += 1
+                time.sleep(0)
+
+        def replacer(obj: Target, start: Barrier, iter_times: int,
+                     detached_dict_queue: list[tuple[dict, frozenset]]) -> None:
+            start.wait()
+            for _ in range(iter_times):
+                dict_snapshot = obj.__dict__
+                obj.__dict__ = {}
+                current_keys = frozenset(dict_snapshot)
+                detached_dict_queue.append((dict_snapshot, current_keys))
+                time.sleep(0)
+
+        def race(iter_times: int, appender_threads: int,
+                 replacer_threads: int) -> None:
+            obj = Target()
+            setattr(obj, "origin", 0)
+            _ = obj.__dict__  # Access __dict__ to ensure it's initialized
+
+            start = Barrier(appender_threads + replacer_threads)
+            detached_dict_queue: list[tuple[dict, frozenset]] = []
+            threads = []
+            for _ in range(appender_threads):
+                threads.append(Thread(target=appender, args=(obj, start, iter_times),
+                                      name="appender"))
+            for _ in range(replacer_threads):
+                threads.append(Thread(target=replacer, args=(obj, start, iter_times, detached_dict_queue),
+                                      name="replacer"))
+
+            with threading_helper.start_threads(threads):
+                pass
+
+            for dict_snapshot, current_keys in detached_dict_queue:
+                self.assertEqual(set(dict_snapshot), current_keys,
+                                 f"Detached dict keys {set(dict_snapshot)} " +
+                                 f"do not match current keys {current_keys}")
+
+        ITER_TIMES = 50_000
+        APPENDER_THREADS = 8
+        REPLACER_THREADS = 8
+        race(ITER_TIMES, APPENDER_THREADS, REPLACER_THREADS)
+
 if __name__ == "__main__":
     unittest.main()

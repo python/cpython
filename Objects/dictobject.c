@@ -7489,10 +7489,114 @@ store_instance_attr_dict(PyObject *obj, PyDictObject *dict, PyObject *name, PyOb
     return res;
 }
 
+#ifdef Py_GIL_DISABLED
+static inline int
+store_instance_attr_with_dict_lock_held(PyObject *obj, PyDictObject *dict,
+                                        PyObject *name, PyObject *value)
+{
+    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
+    ASSERT_WORLD_STOPPED_OR_DICT_LOCKED(dict);
+    int res;
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    if (dict->ma_values == values) {
+        res = store_instance_attr_lock_held(obj, values, name, value);
+    }
+    else {
+        res = _PyDict_SetItem_LockHeld(dict, name, value);
+    }
+    return res;
+}
+
+typedef enum {
+    TRY_STORE_ATTR_FAILURE = -1,
+    TRY_STORE_ATTR_DONE = 0,
+    TRY_STORE_ATTR_RETRY = 1,
+    TRY_STORE_ATTR_ALREADY_VALID = 2
+} try_store_instance_attr_status;
+
+typedef struct {
+    try_store_instance_attr_status try_status;
+    int res;
+} try_store_instance_attr_result_t;
+
+static try_store_instance_attr_result_t
+try_store_instance_attr_invalid_inline(PyObject *obj, PyObject *name,
+                                       PyObject *value)
+{
+    bool valid;
+    PyDictObject *dict;
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    if (!(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
+        dict = _PyObject_GetManagedDict(obj);
+        if (dict != NULL) {
+            dict = (PyDictObject *)Py_NewRef(dict);
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (valid) {
+        return (try_store_instance_attr_result_t){TRY_STORE_ATTR_ALREADY_VALID, 0};
+    }
+
+    if (dict == NULL) {
+        // PyObject_GenericGetDict may lock the object,
+        // so we need to do it outside of the critical section.
+        dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
+        if (dict == NULL) {
+            return (try_store_instance_attr_result_t){TRY_STORE_ATTR_FAILURE, -1};
+        }
+    }
+
+    int res;
+    bool success = false;
+    Py_BEGIN_CRITICAL_SECTION2(obj, dict);
+    PyDictObject *current_dict = _PyObject_GetManagedDict(obj);
+    if (current_dict == dict && !(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
+        success = true;
+        res = store_instance_attr_with_dict_lock_held(obj, dict, name, value);
+    }
+    Py_END_CRITICAL_SECTION2();
+    Py_DECREF(dict);
+    if (success) {
+        return (try_store_instance_attr_result_t){TRY_STORE_ATTR_DONE, res};
+    }
+    if (valid) {
+        return (try_store_instance_attr_result_t){TRY_STORE_ATTR_ALREADY_VALID, 0};
+    }
+    return (try_store_instance_attr_result_t){TRY_STORE_ATTR_RETRY, 0};
+}
+#endif
+
 int
 _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
+#ifdef Py_GIL_DISABLED
+    uint8_t valid;
+    try_store_instance_attr_result_t try_res = {TRY_STORE_ATTR_ALREADY_VALID, 0};
+    while (!(valid = FT_ATOMIC_LOAD_UINT8(values->valid))) {
+        // Retry if the managed dict changes before we can lock and validate it.
+        try_res = try_store_instance_attr_invalid_inline(obj, name, value);
+        if (try_res.try_status != TRY_STORE_ATTR_RETRY) {
+            break;
+        }
+    }
+    switch (try_res.try_status) {
+        case TRY_STORE_ATTR_FAILURE:
+        case TRY_STORE_ATTR_DONE:
+            return try_res.res;
+        case TRY_STORE_ATTR_ALREADY_VALID:
+            break;
+        case TRY_STORE_ATTR_RETRY:
+        // It will happen if the inline values become valid after we read it
+        // but before we can lock the object.
+            assert(valid);
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+#else
     if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
         PyDictObject *dict = _PyObject_GetManagedDict(obj);
         if (dict == NULL) {
@@ -7506,6 +7610,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
         }
         return store_instance_attr_dict(obj, dict, name, value);
     }
+#endif
 
 #ifdef Py_GIL_DISABLED
     // We have a valid inline values, at least for now...  There are two potential
