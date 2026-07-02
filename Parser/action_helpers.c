@@ -2,6 +2,7 @@
 #include "pycore_pystate.h"         // _PyInterpreterState_GET()
 #include "pycore_runtime.h"         // _PyRuntime
 #include "pycore_unicodeobject.h"   // _PyUnicode_InternImmortal()
+#include "pycore_pyerrors.h"        // _PyErr_EmitSyntaxWarning()
 
 #include "pegen.h"
 #include "string_parser.h"          // _PyPegen_decode_string()
@@ -2007,11 +2008,64 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
         col_offset, end_lineno, end_col_offset, arena);
 }
 
+static int
+_warn_relative_import_of_lazy(Parser *p, asdl_seq *dots, expr_ty module)
+{
+    // Warn about `from . lazy import x`: the whitespace between the dots and
+    // the module name is insignificant, so this is parsed exactly like
+    // `from .lazy import x` (an import of the relative module "lazy"), but it
+    // is most likely a transposition of `lazy from . import x` (PEP 810).
+    if (p->call_invalid_rules) {
+        return 0;
+    }
+
+    // Only fire if there is whitespace between the last dot and the name,
+    // i.e. not for the common `from .lazy import x` spelling.
+    Token *last_dot = asdl_seq_GET_UNTYPED(dots, asdl_seq_LEN(dots) - 1);
+    if (
+        last_dot->end_lineno == module->lineno
+        && last_dot->end_col_offset == module->col_offset
+    ) {
+        return 0;
+    }
+
+    int count = _PyPegen_seq_count_dots(dots);
+    char *buf = PyMem_RawMalloc(count + 1);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    memset(buf, '.', count);
+    buf[count] = '\0';
+
+    PyObject *msg = PyUnicode_FromFormat(
+        "'from %s lazy import' is the same as 'from %slazy import'; "
+        "did you mean 'lazy from %s import'?",
+        buf, buf, buf);
+    PyMem_RawFree(buf);
+    if (msg == NULL) {
+        return -1;
+    }
+
+    int res = _PyErr_EmitSyntaxWarning(msg,
+                                       p->tok->filename,
+                                       module->lineno,
+                                       module->col_offset + 1,
+                                       module->end_lineno,
+                                       module->end_col_offset + 1,
+                                       p->tok->module);
+    Py_DECREF(msg);
+    return res;
+}
+
 stmt_ty
-_PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * names,
-                               int level, expr_ty lazy_token, int lineno,
-                               int col_offset, int end_lineno, int end_col_offset,
-                               PyArena *arena) {
+_PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
+                             asdl_alias_seq *names, expr_ty lazy_token, int lineno,
+                             int col_offset, int end_lineno, int end_col_offset,
+                             PyArena *arena)
+{
+    identifier module = module_name->v.Name.id;
+    int level = _PyPegen_seq_count_dots(dots);
     if (level == 0 && PyUnicode_CompareWithASCIIString(module, "__future__") == 0) {
         if (lazy_token) {
             RAISE_SYNTAX_ERROR_KNOWN_LOCATION(lazy_token,
@@ -2023,6 +2077,15 @@ _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * na
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
                 p->flags |= PyPARSE_BARRY_AS_BDFL;
             }
+        }
+    }
+    else if (
+        level > 0
+        && lazy_token == NULL
+        && PyUnicode_CompareWithASCIIString(module, "lazy") == 0
+    ) {
+        if (_warn_relative_import_of_lazy(p, dots, module_name) < 0) {
+            return NULL;
         }
     }
     return _PyAST_ImportFrom(module, names, level, lazy_token ? 1 : 0, lineno,

@@ -371,8 +371,10 @@ mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
-stmt_ty _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq *,
-                                       int, expr_ty, int, int, int, int, PyArena *);
+stmt_ty _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
+                                     asdl_alias_seq *names, expr_ty lazy_token, int lineno,
+                                     int col_offset, int end_lineno, int end_col_offset,
+                                     PyArena *arena);
 asdl_stmt_seq* _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts);
 stmt_ty _PyPegen_register_stmt(Parser *p, stmt_ty s);
 
