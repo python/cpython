@@ -98,7 +98,7 @@ The following classes are provided:
    1) are treated according to the RFC 2965 rules.  However, if RFC 2965 handling
    is turned off or :attr:`rfc2109_as_netscape` is ``True``, RFC 2109 cookies are
    'downgraded' by the :class:`CookieJar` instance to Netscape cookies, by
-   setting the :attr:`version` attribute of the :class:`Cookie` instance to 0.
+   setting the :attr:`~Cookie.version` attribute of the :class:`Cookie` instance to 0.
    :class:`DefaultCookiePolicy` also provides some parameters to allow some
    fine-tuning of policy.
 
@@ -107,7 +107,7 @@ The following classes are provided:
 
    This class represents Netscape, :rfc:`2109` and :rfc:`2965` cookies.  It is not
    expected that users of :mod:`!http.cookiejar` construct their own :class:`Cookie`
-   instances.  Instead, if necessary, call :meth:`make_cookies` on a
+   instances.  Instead, if necessary, call :meth:`~CookieJar.make_cookies` on a
    :class:`CookieJar` instance.
 
 
@@ -154,20 +154,27 @@ contained :class:`Cookie` objects.
 
    Add correct :mailheader:`Cookie` header to *request*.
 
-   If policy allows (ie. the :attr:`rfc2965` and :attr:`hide_cookie2` attributes of
+   If policy allows (ie. the :attr:`~CookiePolicy.rfc2965` and
+   :attr:`~CookiePolicy.hide_cookie2` attributes of
    the :class:`CookieJar`'s :class:`CookiePolicy` instance are true and false
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the methods :meth:`get_full_url`, :meth:`has_header`,
-   :meth:`get_header`, :meth:`header_items`, :meth:`add_unredirected_header`
-   and the attributes :attr:`host`, :attr:`!type`, :attr:`unverifiable`
-   and :attr:`origin_req_host` as documented by :mod:`urllib.request`.
+   must support the methods :meth:`~urllib.request.Request.get_full_url`,
+   :meth:`~urllib.request.Request.has_header`,
+   :meth:`~urllib.request.Request.get_header`,
+   :meth:`~urllib.request.Request.header_items`,
+   :meth:`~urllib.request.Request.add_unredirected_header`
+   and the attributes :attr:`~urllib.request.Request.host`, :attr:`!type`,
+   :attr:`~urllib.request.Request.unverifiable`
+   and :attr:`~urllib.request.Request.origin_req_host` as documented by
+   :mod:`urllib.request`.
 
    .. versionchanged:: 3.3
 
-    *request* object needs :attr:`origin_req_host` attribute. Dependency on a
-    deprecated method :meth:`get_origin_req_host` has been removed.
+    *request* object needs :attr:`~urllib.request.Request.origin_req_host`
+    attribute. Dependency on a deprecated method ``get_origin_req_host`` has
+    been removed.
 
 
 .. method:: CookieJar.extract_cookies(response, request)
@@ -180,20 +187,24 @@ contained :class:`Cookie` objects.
    as appropriate (subject to the :meth:`CookiePolicy.set_ok` method's approval).
 
    The *response* object (usually the result of a call to
-   :meth:`urllib.request.urlopen`, or similar) should support an :meth:`info`
-   method, which returns an :class:`email.message.Message` instance.
+   :meth:`urllib.request.urlopen`, or similar) should support an
+   :meth:`~urllib.response.addinfourl.info` method, which returns an
+   :class:`email.message.Message` instance.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the method :meth:`get_full_url` and the attributes
-   :attr:`host`, :attr:`unverifiable` and :attr:`origin_req_host`,
+   must support the method :meth:`~urllib.request.Request.get_full_url` and
+   the attributes :attr:`~urllib.request.Request.host`,
+   :attr:`~urllib.request.Request.unverifiable`
+   and :attr:`~urllib.request.Request.origin_req_host`,
    as documented by :mod:`urllib.request`.  The request is used to set
    default values for cookie-attributes as well as for checking that the
    cookie is allowed to be set.
 
    .. versionchanged:: 3.3
 
-    *request* object needs :attr:`origin_req_host` attribute. Dependency on a
-    deprecated method :meth:`get_origin_req_host` has been removed.
+    *request* object needs :attr:`~urllib.request.Request.origin_req_host`
+    attribute. Dependency on a deprecated method ``get_origin_req_host`` has
+    been removed.
 
 .. method:: CookieJar.set_policy(policy)
 
@@ -236,13 +247,13 @@ contained :class:`Cookie` objects.
 
    Discard all session cookies.
 
-   Discards all contained cookies that have a true :attr:`discard` attribute
+   Discards all contained cookies that have a true :attr:`~Cookie.discard` attribute
    (usually because they had either no ``max-age`` or ``expires`` cookie-attribute,
    or an explicit ``discard`` cookie-attribute).  For interactive browsers, the end
    of a session usually corresponds to closing the browser window.
 
-   Note that the :meth:`save` method won't save session cookies anyway, unless you
-   ask otherwise by passing a true *ignore_discard* argument.
+   Note that the :meth:`~FileCookieJar.save` method won't save session cookies
+   anyway, unless you ask otherwise by passing a true *ignore_discard* argument.
 
 :class:`FileCookieJar` implements the following additional methods:
 
@@ -255,8 +266,9 @@ contained :class:`Cookie` objects.
    method unimplemented.
 
    *filename* is the name of file in which to save cookies.  If *filename* is not
-   specified, :attr:`self.filename` is used (whose default is the value passed to
-   the constructor, if any); if :attr:`self.filename` is :const:`None`,
+   specified, :attr:`~FileCookieJar.filename` is used (whose default is the
+   value passed to the constructor, if any); if
+   :attr:`~FileCookieJar.filename` is :const:`None`,
    :exc:`ValueError` is raised.
 
    *ignore_discard*: save even cookies set to be discarded. *ignore_expires*: save
@@ -463,9 +475,10 @@ blocking some benign cookies).
 A domain blocklist and allowlist is provided (both off by default). Only domains
 not in the blocklist and present in the allowlist (if the allowlist is active)
 participate in cookie setting and returning.  Use the *blocked_domains*
-constructor argument, and :meth:`blocked_domains` and
-:meth:`set_blocked_domains` methods (and the corresponding argument and methods
-for *allowed_domains*).  If you set an allowlist, you can turn it off again by
+constructor argument, and :meth:`~DefaultCookiePolicy.blocked_domains` and
+:meth:`~DefaultCookiePolicy.set_blocked_domains` methods (and the corresponding
+argument and methods for *allowed_domains*).  If you set an allowlist, you can
+turn it off again by
 setting it to :const:`None`.
 
 Domains in block or allow lists that do not start with a dot must equal the
