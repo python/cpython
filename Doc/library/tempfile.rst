@@ -86,7 +86,7 @@ The module defines the following user-callable items:
      determine whether and how the named file should be automatically deleted.
 
    The returned object is always a :class:`TemporaryFileWrapper` instance
-   (a :term:`file-like object`) whose :attr:`!file` attribute is the underlying
+   (a :term:`file-like object`) whose :attr:`~TemporaryFileWrapper.file` attribute is the underlying
    true file object. This file-like object can be used in a :keyword:`with`
    statement, just like a normal file.  The name of the temporary file can be
    retrieved from the :attr:`!name` attribute of the returned file-like object.
