@@ -67,30 +67,24 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 #endif
 }
 
-// Similar to PyUnstable_InterpreterFrame_GetLasti(), but return NULL if the
-// frame is invalid or freed. Used by dump_frame() in Python/traceback.c. The
-// function uses heuristics to detect freed memory, it's not 100% reliable.
-static inline int _Py_NO_SANITIZE_THREAD
-_PyFrame_SafeGetLasti(struct _PyInterpreterFrame *f)
+// Safe version of _PyFrame_GetBytecode() for racy signal-handler contexts.
+// Takes an already-validated code object. Returns NULL if tlbc_index is
+// out of range (GIL-disabled only).
+static inline _Py_CODEUNIT * _Py_NO_SANITIZE_THREAD
+_PyFrame_SafeGetBytecode(_PyInterpreterFrame *f, PyCodeObject *code)
 {
-    // Code based on _PyFrame_GetBytecode() but replace _PyFrame_GetCode()
-    // with _PyFrame_SafeGetCode().
-    PyCodeObject *co = _PyFrame_SafeGetCode(f);
-    if (co == NULL) {
-        return -1;
-    }
-
-    _Py_CODEUNIT *bytecode;
 #ifdef Py_GIL_DISABLED
-    _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
-    assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
-    bytecode = (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
+    _PyCodeArray *tlbc = _PyCode_GetTLBCArray(code);
+    int idx = f->tlbc_index;
+    if (idx < 0 || idx >= tlbc->size) {
+        return NULL;
+    }
+    return (_Py_CODEUNIT *)tlbc->entries[idx];
 #else
-    bytecode = _PyCode_CODE(co);
+    return _PyCode_CODE(code);
 #endif
-
-    return (int)(f->instr_ptr - bytecode) * sizeof(_Py_CODEUNIT);
 }
+
 
 static inline PyFunctionObject *_PyFrame_GetFunction(_PyInterpreterFrame *f) {
     PyObject *func = PyStackRef_AsPyObjectBorrow(f->f_funcobj);
@@ -294,9 +288,18 @@ _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
     if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return true;
     }
-    return frame->owner != FRAME_OWNED_BY_GENERATOR &&
-           frame->instr_ptr < _PyFrame_GetBytecode(frame) +
-                                  _PyFrame_GetCode(frame)->_co_firsttraceable;
+    if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        return false;
+    }
+    PyCodeObject *code = _PyFrame_SafeGetCode(frame);
+    if (code == NULL) {
+        return true;
+    }
+    _Py_CODEUNIT *bytecode = _PyFrame_SafeGetBytecode(frame, code);
+    if (bytecode == NULL) {
+        return true;
+    }
+    return frame->instr_ptr < bytecode + code->_co_firsttraceable;
 }
 
 static inline _PyInterpreterFrame *

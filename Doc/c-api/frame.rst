@@ -224,11 +224,57 @@ Unless using :pep:`523`, you will not need this.
 
    .. versionadded:: 3.11
 
+The allocation-free raw-frame APIs added in Python 3.15 —
+:c:func:`PyUnstable_ThreadState_GetCurrentFrame`,
+:c:func:`PyUnstable_InterpreterFrame_GetCaller`,
+:c:func:`PyUnstable_InterpreterFrame_GetCodeBorrowed`, and
+:c:func:`PyUnstable_InterpreterFrame_GetLineChecked` — are intended for
+low-level observability and diagnostic tools that need to inspect the Python
+call stack without materializing Python frame objects.  Examples include native
+profilers, crash reporters, custom allocator hooks, and C callbacks used with
+:mod:`sys.monitoring`.
+
+Unlike :c:func:`PyThreadState_GetFrame`, :c:func:`PyFrame_GetBack`,
+:c:func:`PyFrame_GetCode`, and :c:func:`PyFrame_GetLineNumber`, these APIs do
+not allocate memory, do not create :c:type:`PyFrameObject` instances, do not
+change reference counts, do not set exceptions, do not call Python code, and do
+not acquire or release the GIL.
+
+They provide best-effort, read-only access to raw interpreter frames.  Returned
+frame and code object pointers are borrowed and must not be stored.  If frame
+state appears invalid or concurrently torn down, these APIs may return ``NULL``
+or ``-1``.  Freed-memory checks are heuristic and are not guaranteed to detect
+all races.
+
+When used from a C callable registered with :mod:`sys.monitoring`, these APIs
+can be used to collect additional stack context beyond the code object and
+offset supplied to the callback.  They do not make Python-level monitoring
+callbacks allocation-free or non-reentrant.
+
 .. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
-    Return a :term:`strong reference` to the code object for the frame.
+   Return a :term:`strong reference` to the code object for the frame.
+   Does not raise an exception.
+
+   If allocation and reference count changes are not permitted (for example,
+   from a signal handler or a custom memory allocator), use
+   :c:func:`PyUnstable_InterpreterFrame_GetCodeBorrowed` instead.
 
    .. versionadded:: 3.12
+
+
+.. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCodeBorrowed(struct _PyInterpreterFrame *frame);
+
+   Return a :term:`borrowed reference` to the code object for the frame.
+
+   Use this instead of :c:func:`PyUnstable_InterpreterFrame_GetCode` when
+   allocation and reference count changes are not permitted (for example,
+   from a custom memory allocator hook).  Does not allocate memory, does not
+   change any reference counts, does not acquire or release the GIL, and does
+   not raise an exception.  Uses heuristics to detect freed memory — not 100%
+   reliable in the presence of concurrent deallocation.
+
+   .. versionadded:: 3.15
 
 
 .. c:function:: int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
@@ -243,3 +289,54 @@ Unless using :pep:`523`, you will not need this.
    Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLineChecked(struct _PyInterpreterFrame *frame)
+
+   Return the currently executing line number, or ``-1`` if there is no line
+   number or the frame is invalid.  Does not raise an exception.
+
+   Unlike :c:func:`PyUnstable_InterpreterFrame_GetLine`, validates the code
+   object and instruction offset before accessing the line table rather than
+   asserting them, avoiding assertion failures when the frame state may be
+   partially torn down.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: struct _PyInterpreterFrame* PyUnstable_ThreadState_GetCurrentFrame(PyThreadState *tstate)
+
+   Return the innermost Python frame of *tstate*, or ``NULL`` if the thread
+   has no Python frame or freed memory is detected.  Incomplete frames
+   (interpreter entry trampolines and frames that have not yet begun executing)
+   are skipped automatically.
+
+   Does not allocate memory, does not raise an exception, does not acquire or
+   release the GIL, and does not re-enter the interpreter.  Racy reads from
+   other threads are intentional.  Uses heuristics to detect freed memory —
+   not 100% reliable in the presence of concurrent deallocation.
+
+   To iterate over the full call stack, call
+   :c:func:`PyUnstable_InterpreterFrame_GetCaller` repeatedly on the
+   returned frame until it returns ``NULL``.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: struct _PyInterpreterFrame* PyUnstable_InterpreterFrame_GetCaller(struct _PyInterpreterFrame *frame)
+
+   Return the frame that called *frame*, or ``NULL`` if *frame* is the
+   outermost frame or freed memory is detected.  Incomplete frames (interpreter
+   entry trampolines and frames that have not yet begun executing) are skipped
+   automatically.
+
+   Does not allocate memory, does not raise an exception, does not acquire or
+   release the GIL, and does not re-enter the interpreter.  Racy reads from
+   other threads are intentional.  Uses heuristics to detect freed memory —
+   not 100% reliable in the presence of concurrent deallocation.
+
+   Unlike :c:func:`PyFrame_GetBack`, this function never allocates memory,
+   making it usable from a custom memory allocator hook without risking
+   re-entrant allocation.
+
+   .. versionadded:: 3.15

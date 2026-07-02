@@ -2800,6 +2800,86 @@ class TestInternalFrameApi(unittest.TestCase):
         firstline = self.func.__code__.co_firstlineno
         self.assertEqual(line, firstline + 2)
 
+    def test_tstate_getcurrentframe_is_current(self):
+        # PyUnstable_ThreadState_GetCurrentFrame must return the same
+        # PyFrameObject as sys._getframe(0) when called at the same level.
+        frame_from_c = _testinternalcapi.tstate_getcurrentframe()
+        self.assertIs(frame_from_c, sys._getframe(0))
+
+    def test_getcaller_matches_f_back(self):
+        # GetCaller must match f_back at every step, all the way to None.
+        c_frame = _testinternalcapi.tstate_getcurrentframe()
+        py_frame = sys._getframe(0)
+        while c_frame is not None:
+            self.assertIs(c_frame, py_frame)
+            c_frame = _testinternalcapi.iframe_getcaller(c_frame)
+            py_frame = py_frame.f_back
+        self.assertIsNone(py_frame)
+
+    def test_stack_to_yaml(self):
+        # stack_to_yaml uses only signal-safe operations for the walk and
+        # emission (no allocation, no refcount changes, no GIL release).
+        # Verify the output is well-formed and contains the expected frames.
+        def inner():
+            return _testinternalcapi.stack_to_yaml()
+
+        yaml_str = inner()
+        self.assertIsInstance(yaml_str, str)
+
+        # Parse the YAML manually to avoid a PyYAML dependency.
+        # Format is blocks of:
+        #   - filename: <path>
+        #     name: <name>
+        #     lineno: <n>
+        frames = []
+        current = {}
+        for line in yaml_str.splitlines():
+            if line.startswith('- filename: '):
+                if current:
+                    frames.append(current)
+                current = {'filename': line[len('- filename: '):]}
+            elif line.startswith('  name: '):
+                current['name'] = line[len('  name: '):]
+            elif line.startswith('  lineno: '):
+                current['lineno'] = int(line[len('  lineno: '):])
+        if current:
+            frames.append(current)
+
+        self.assertGreater(len(frames), 1)
+        # Innermost frame is the Python function that called stack_to_yaml.
+        self.assertEqual(frames[0]['name'], 'inner')
+        # Next frame is this test method.
+        self.assertEqual(frames[1]['name'], 'test_stack_to_yaml')
+        # Every frame must have a non-empty filename and a valid lineno.
+        for f in frames:
+            self.assertTrue(f.get('filename'), f)
+            self.assertIsInstance(f.get('lineno'), int, f)
+
+    def test_getcodeborrowed_matches_fcode(self):
+        # GetCodeBorrowed must return the same code object as frame.f_code.
+        frame = _testinternalcapi.tstate_getcurrentframe()
+        self.assertIs(_testinternalcapi.iframe_getcodeborrowed(frame), frame.f_code)
+
+
+    def test_iframe_getlinechecked(self):
+        # Use a generator frame frozen at a yield point so that iframe_getlasti
+        # and iframe_getlinechecked both read the same (stable) instruction pointer.
+        def gen():
+            yield
+        g = gen()
+        next(g)
+        frame = g.gi_frame
+        lasti = _testinternalcapi.iframe_getlasti(frame)
+        lineno = _testinternalcapi.iframe_getlinechecked(frame)
+        if lasti >= 0:
+            expected = None
+            for start, end, ln in frame.f_code.co_lines():
+                if ln is not None and start <= lasti < end:
+                    expected = ln
+                    break
+            if expected is not None:
+                self.assertEqual(lineno, expected)
+
 
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 

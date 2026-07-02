@@ -1,0 +1,9 @@
+Add four new ``PyUnstable_*`` C API functions for best-effort,
+allocation-free, refcount-neutral stack inspection over raw interpreter frames:
+:c:func:`PyUnstable_ThreadState_GetCurrentFrame`,
+:c:func:`PyUnstable_InterpreterFrame_GetCaller`,
+:c:func:`PyUnstable_InterpreterFrame_GetCodeBorrowed`, and
+:c:func:`PyUnstable_InterpreterFrame_GetLineChecked`.  These APIs avoid
+frame-object materialization and interpreter re-entry, making them useful for
+low-level observability and diagnostic tools, such as native profilers, crash
+reporters, custom allocator hooks, and C callbacks used with ``sys.monitoring``.
