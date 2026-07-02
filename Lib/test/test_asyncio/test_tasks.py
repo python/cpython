@@ -1218,6 +1218,19 @@ class BaseTaskTests:
         loop.advance_time(10)
         loop.run_until_complete(asyncio.wait([a, b]))
 
+    def test_wait_discards_awaited_by_for_pending(self):
+        # gh-152569: wait() must remove itself from the await-graph of every
+        # future once it returns, including futures that never resolved.
+        async def coro():
+            immortal = self.loop.create_future()
+            done = self.new_task(self.loop, asyncio.sleep(0))
+            await asyncio.wait({done, immortal},
+                               return_when=asyncio.FIRST_COMPLETED)
+            self.assertFalse(immortal._asyncio_awaited_by)
+            immortal.cancel()
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_wait_really_done(self):
         # there is possibility that some tasks in the pending list
         # became done but their callbacks haven't all been called yet
