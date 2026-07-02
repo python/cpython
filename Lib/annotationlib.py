@@ -1090,7 +1090,8 @@ def type_repr(value):
 
     """
     if isinstance(value, (type, types.FunctionType, types.BuiltinFunctionType)):
-        if value.__module__ == "builtins":
+        # Built-in methods have __module__ set to None.
+        if value.__module__ is None or value.__module__ == "builtins":
             return value.__qualname__
         return f"{value.__module__}.{value.__qualname__}"
     elif isinstance(value, _Template):
