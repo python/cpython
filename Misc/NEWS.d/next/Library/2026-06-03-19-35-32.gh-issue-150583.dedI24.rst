@@ -1,0 +1,2 @@
+Fix compression level in :mod:`compression.zstd` when passing a digested
+dictionary during compression.
