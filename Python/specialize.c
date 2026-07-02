@@ -980,12 +980,15 @@ static int
 specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name)
 {
     // 0 is not a valid version
-    uint32_t shared_keys_version = 0;
-    bool shadow = instance_has_key(owner, name, &shared_keys_version);
     PyObject *descr = NULL;
     unsigned int tp_version = 0;
     PyTypeObject *type = Py_TYPE(owner);
+    // Read the type version before the keys version, we could have a concurrent
+    // modification of the split keys in which case we update the keys version and
+    // then the type version, this ensures we will still deopt if that happens.
     DescriptorClassification kind = analyze_descriptor_load(type, name, &descr, &tp_version);
+    uint32_t shared_keys_version = 0;
+    bool shadow = instance_has_key(owner, name, &shared_keys_version);
     int result = do_specialize_instance_load_attr(owner, instr, name, shadow, shared_keys_version, kind, descr, tp_version);
     Py_XDECREF(descr);
     return result;

@@ -1952,6 +1952,10 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
         return ix;
     }
 
+    // We need to acquire the type lock before the keys mutex. Another lock
+    // is never acquired below the keys mutex but a keys mutex can be acquired
+    // elsewhere while we hold the types lock. To avoid deadlocks we must always
+    // acquire the type lock first.
     Py_BEGIN_CRITICAL_SECTION_MUTEX(&_PyInterpreterState_GET()->types.mutex);
 #endif
 
@@ -1960,7 +1964,12 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
         FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
-        _PyDict_SplitKeysInvalidated(keys);
+        struct _instancekeysobject *shared_keys = _PyDictKeys_AsSharedKeys(keys);
+        PyTypeObject *type = FT_ATOMIC_LOAD_PTR_ACQUIRE(shared_keys->dsk_owning_type);
+        if (type) {
+            // we acquired the type lock above
+            _PyType_Modified_Unlocked(type);
+        }
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
@@ -7291,16 +7300,6 @@ _PyDict_RemoveKeysForClass(PyHeapTypeObject *cls)
     FT_ATOMIC_STORE_PTR_RELEASE(shared_keys->dsk_owning_type, NULL);
 
     _PyDictKeys_DecRef(cls->ht_cached_keys);
-}
-
-void
-_PyDict_SplitKeysInvalidated(PyDictKeysObject* keys)
-{
-    struct _instancekeysobject *shared_keys = _PyDictKeys_AsSharedKeys(keys);
-    PyTypeObject *type = FT_ATOMIC_LOAD_PTR_ACQUIRE(shared_keys->dsk_owning_type);
-    if (type) {
-        _PyType_Modified_Unlocked(type);
-    }
 }
 
 void

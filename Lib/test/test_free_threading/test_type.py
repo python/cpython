@@ -236,10 +236,6 @@ class TestType(TestCase):
         for t in writers:
             t.join()
 
-        print(
-            "rounds=%d writers=%d stoppers=%d -> stale reads = %d"
-            % (NROUNDS, NWRITERS, NSTOPPERS, len(bugs))
-        )
         self.assertFalse(bugs)
 
     def run_one(self, writer_func, reader_func):
