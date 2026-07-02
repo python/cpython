@@ -111,7 +111,6 @@ subclasses to override in order to tweak the default behaviour.
 If you want to completely replace the main wrapping algorithm,
 you\'ll probably have to override _wrap_chunks().''')
 
-    @requires_docstrings
     def test_properly_formatted(self):
 
         def foo(s='a'*100):
@@ -131,7 +130,9 @@ you\'ll probably have to override _wrap_chunks().''')
                "aaaaaaaaaa')"
         sbar = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
-               "aaaaaaaaaa')\nHello Guido"
+               "aaaaaaaaaa')"
+        if bar.__doc__ is not None:
+            sbar += "\nHello Guido"
         sbaz = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
                "aaaaaaaaaa', z='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"\
@@ -186,24 +187,32 @@ bytes() -> empty bytes object''')
             with self.subTest(func=func):
                 self.assertEqual(get_spec(func), func.tip + doc)
 
-    @requires_docstrings
     def test_methods(self):
-        doc = '\ndoc'
-        for meth in (TC.t1, TC.t2, TC.t3, TC.t4, TC.t5, TC.t6, TC.__call__):
+        doc = '\ndoc' if TC.__doc__ is not None else ''
+        for meth in (TC.t1, TC.t2, TC.t3, TC.t4, TC.t5, TC.t6):
             with self.subTest(meth=meth):
                 self.assertEqual(get_spec(meth), meth.tip + doc)
         self.assertEqual(get_spec(TC.cm), "(a)" + doc)
         self.assertEqual(get_spec(TC.sm), "(b)" + doc)
+        # __call__ inherits object.__call__'s docstring when its own is
+        # missing (build without docstrings or run with -OO).
+        call_doc = doc or ('\n' + object.__call__.__doc__
+                           if object.__call__.__doc__ else '')
+        self.assertEqual(get_spec(TC.__call__), TC.__call__.tip + call_doc)
 
-    @requires_docstrings
     def test_bound_methods(self):
         # test that first parameter is correctly removed from argspec
-        doc = '\ndoc'
+        doc = '\ndoc' if TC.__doc__ is not None else ''
         for meth, mtip  in ((tc.t1, "()"), (tc.t4, "(*args)"),
-                            (tc.t6, "(self)"), (tc.__call__, '(ci)'),
+                            (tc.t6, "(self)"),
                             (tc, '(ci)'), (TC.cm, "(a)"),):
             with self.subTest(meth=meth, mtip=mtip):
                 self.assertEqual(get_spec(meth), mtip + doc)
+        # __call__ inherits object.__call__'s docstring when its own is
+        # missing (build without docstrings or run with -OO).
+        call_doc = doc or ('\n' + object.__call__.__doc__
+                           if object.__call__.__doc__ else '')
+        self.assertEqual(get_spec(tc.__call__), '(ci)' + call_doc)
 
     def test_starred_parameter(self):
         # test that starred first parameter is *not* removed from argspec
