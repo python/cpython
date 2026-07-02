@@ -1,0 +1,4 @@
+Fix the :exc:`OverflowError` message raised for an out-of-range float
+timestamp (such as a very large :func:`time.sleep` argument): it now reports
+the internal ``PyTime_t`` overflow, matching the integer path, instead of a
+spurious ``time_t`` overflow. Patch by tonghuaroot.
