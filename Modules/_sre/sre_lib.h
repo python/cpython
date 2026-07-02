@@ -213,6 +213,29 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
             ptr++;
         break;
 
+    case SRE_OP_IN_IGNORE:
+        /* repeated set, case-insensitive (ascii) */
+        TRACE(("|%p|%p|COUNT IN_IGNORE\n", pattern, ptr));
+        while (ptr < end && SRE(charset)(state, pattern + 2,
+                                         (SRE_CODE) sre_lower_ascii(*ptr)))
+            ptr++;
+        break;
+
+    case SRE_OP_IN_UNI_IGNORE:
+        /* repeated set, case-insensitive (unicode) */
+        TRACE(("|%p|%p|COUNT IN_UNI_IGNORE\n", pattern, ptr));
+        while (ptr < end && SRE(charset)(state, pattern + 2,
+                                         (SRE_CODE) sre_lower_unicode(*ptr)))
+            ptr++;
+        break;
+
+    case SRE_OP_IN_LOC_IGNORE:
+        /* repeated set, case-insensitive (locale) */
+        TRACE(("|%p|%p|COUNT IN_LOC_IGNORE\n", pattern, ptr));
+        while (ptr < end && SRE(charset_loc_ignore)(state, pattern + 2, *ptr))
+            ptr++;
+        break;
+
     case SRE_OP_ANY:
         /* repeated dot wildcard. */
         TRACE(("|%p|%p|COUNT ANY\n", pattern, ptr));
