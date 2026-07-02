@@ -3137,7 +3137,8 @@ _curses_window_getbkgrnd_impl(PyCursesWindowObject *self)
     curses_cell_t wcval = {0};
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
 #ifdef HAVE_NCURSESW
-    if (wgetbkgrnd(self->win, &wcval) == ERR) {
+    int rtn = wgetbkgrnd(self->win, &wcval);  /* avoid -Wunreachable-code on macOS */
+    if (rtn == ERR) {
         curses_window_set_error(self, "wgetbkgrnd", "getbkgrnd");
         return NULL;
     }
