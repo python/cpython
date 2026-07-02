@@ -258,7 +258,7 @@ class IMAP4:
         else:
             raise self.error(self.welcome)
 
-        self._get_capabilities()
+        self._refresh_capabilities()
         if __debug__:
             if self.debug >= 3:
                 self._mesg('CAPABILITIES: %r' % (self.capabilities,))
@@ -527,6 +527,7 @@ class IMAP4:
         if typ != 'OK':
             raise self.error(dat[-1].decode('utf-8', 'replace'))
         self.state = 'AUTH'
+        self._refresh_capabilities()
         return typ, dat
 
 
@@ -708,6 +709,7 @@ class IMAP4:
         if typ != 'OK':
             raise self.error(dat[-1].decode('UTF-8', 'replace'))
         self.state = 'AUTH'
+        self._refresh_capabilities()
         return typ, dat
 
 
@@ -1190,6 +1192,15 @@ class IMAP4:
         dat = str(dat[-1], self._encoding)
         dat = dat.upper()
         self.capabilities = tuple(dat.split())
+
+
+    def _refresh_capabilities(self):
+        # Use a CAPABILITY response sent by the server, or ask for it.
+        if 'CAPABILITY' in self.untagged_responses:
+            dat = self.untagged_responses.pop('CAPABILITY')[-1]
+            self.capabilities = tuple(str(dat, self._encoding).upper().split())
+        else:
+            self._get_capabilities()
 
 
     def _get_response(self, start_timeout=False):
