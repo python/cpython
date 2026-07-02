@@ -887,6 +887,12 @@ Default interactive shell
   (Contributed by Antonio Cuni and Pablo Galindo in :gh:`130472`.)
 
 
+* Allowed defining any *__slots__* for a class derived from :class:`type` or
+  other :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>`
+  with the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag.
+  (Contributed by Serhiy Storchaka in :gh:`103740`.)
+
+
 New modules
 ===========
 
