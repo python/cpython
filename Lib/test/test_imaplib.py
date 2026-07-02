@@ -332,6 +332,39 @@ class NewIMAPTestsMixin:
         self.assertRaises(imaplib.IMAP4.abort, self.imap_class,
                           *server.server_address)
 
+    def test_invalid_greeting(self):
+        # An invalid greeting, e.g. from a POP3 server on the IMAP port,
+        # must not fail with "error: None" but report the server's line
+        # (gh-108280).
+        class Pop3Handler(socketserver.StreamRequestHandler):
+            def handle(self):
+                self.wfile.write(b'+OK POP3 server ready\r\n')
+        _, server = self._setup(Pop3Handler, connect=False)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                                    r'invalid greeting: \+OK POP3 server ready'):
+            self.imap_class(*server.server_address)
+
+    def test_invalid_greeting_untagged(self):
+        # An untagged greeting that is neither OK nor PREAUTH (e.g. BYE)
+        # is reported as is (gh-108280).
+        class ByeHandler(socketserver.StreamRequestHandler):
+            def handle(self):
+                self.wfile.write(b'* BYE Server unavailable\r\n')
+        _, server = self._setup(ByeHandler, connect=False)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                                    r'invalid greeting: \* BYE Server unavailable'):
+            self.imap_class(*server.server_address)
+
+    def test_invalid_greeting_bare_continuation(self):
+        # A bare continuation greeting is still reported (gh-108280).
+        class BareHandler(socketserver.StreamRequestHandler):
+            def handle(self):
+                self.wfile.write(b'+\r\n')
+        _, server = self._setup(BareHandler, connect=False)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                                    r'invalid greeting: \+'):
+            self.imap_class(*server.server_address)
+
     def test_line_termination(self):
         class BadNewlineHandler(SimpleIMAPHandler):
             def cmd_CAPABILITY(self, tag, args):
