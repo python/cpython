@@ -1301,6 +1301,10 @@ class IMAP4:
 
                 dat = self._get_line()
 
+                # Skip a blank line that some servers send after a literal.
+                if dat == b'':
+                    dat = self._get_line()
+
             self._append_untagged(typ, dat)
 
         # Bracketed response information?
