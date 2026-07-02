@@ -58,7 +58,9 @@ class MultiCallTest(unittest.TestCase):
         with captured_stderr() as stderr:
             mctext.event_add('<<test-bad>>', '<Control-Key-up>')  # Must not raise.
             mctext.bind('<<test-bad>>', lambda e: None)  # Must not raise.
-        self.assertIn('invalid key binding', stderr.getvalue())
+        warning = stderr.getvalue()
+        self.assertIn('invalid key binding', warning)
+        self.assertIn('test-bad', warning)  # The offending action is named.
 
     def test_invalid_nontriplet_binding(self):
         # gh-55646: '<Foo-Key-Up>' has no valid modifier, so MultiCall does not
@@ -67,7 +69,10 @@ class MultiCallTest(unittest.TestCase):
         with captured_stderr() as stderr:
             mctext.event_add('<<test-bad>>', '<Foo-Key-Up>')  # Must not raise.
             mctext.bind('<<test-bad>>', lambda e: None)  # Must not raise.
-        self.assertIn('invalid key binding', stderr.getvalue())
+        warning = stderr.getvalue()
+        self.assertIn('invalid key binding', warning)
+        self.assertIn('test-bad', warning)  # The offending action is named.
+
     def test_event_delete_unbound_sequence(self):
         # gh-89360: deleting a sequence that was not added to a virtual
         # event is ignored instead of raising ValueError.
