@@ -1,8 +1,10 @@
 # xml.etree test for cElementTree
 import io
 import struct
+import time
 from test import support
 from test.support.import_helper import import_fresh_module
+from test.support import threading_helper
 import types
 import unittest
 
@@ -255,6 +257,37 @@ class SizeofTest(unittest.TestCase):
         # should have space for 8 children now
         self.check_sizeof(e, self.elementsize + self.extra +
                              struct.calcsize('8P'))
+
+
+@unittest.skipUnless(cET, 'requires _elementtree')
+@threading_helper.requires_working_threading()
+class TestElementTreeFreeThreading(unittest.TestCase):
+    def test_element_concurrent_clear_and_access(self):
+        # Race len(), .attrib, and .clear() to verify fix for gh-149861.
+        root = cET.Element('root')
+        children = [cET.Element(f'child-{i}') for i in range(5)]
+
+        end_time = time.monotonic() + 1.0
+
+        def reader_task():
+            while time.monotonic() < end_time:
+                len(root)
+                _ = root.attrib
+
+        def writer_task():
+            while time.monotonic() < end_time:
+                # Test element_add_subelement / extend
+                root.extend(children)
+                # Test clear_extra
+                root.clear()
+
+        threads = []
+        for _ in range(4):
+            threads.append(reader_task)
+        for _ in range(2):
+            threads.append(writer_task)
+
+        threading_helper.run_concurrently(worker_func=threads, nthreads=6)
 
 
 def install_tests():

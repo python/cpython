@@ -276,13 +276,14 @@ create_extra(ElementObject* self, PyObject* attrib)
         PyErr_NoMemory();
         return -1;
     }
-
+    Py_BEGIN_CRITICAL_SECTION(self);
     self->extra->attrib = Py_XNewRef(attrib);
 
     self->extra->length = 0;
     self->extra->allocated = STATIC_CHILDREN;
     self->extra->children = self->extra->_children;
 
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -297,7 +298,7 @@ dealloc_extra(ElementObjectExtra *extra)
     Py_XDECREF(extra->attrib);
 
     for (i = 0; i < extra->length; i++)
-        Py_DECREF(extra->children[i]);
+        Py_XDECREF(extra->children[i]);
 
     if (extra->children != extra->_children) {
         PyMem_Free(extra->children);
@@ -311,15 +312,16 @@ clear_extra(ElementObject* self)
 {
     ElementObjectExtra *myextra;
 
-    if (!self->extra)
-        return;
+    Py_BEGIN_CRITICAL_SECTION(self);
 
     /* Avoid DECREFs calling into this code again (cycles, etc.)
     */
     myextra = self->extra;
     self->extra = NULL;
-
-    dealloc_extra(myextra);
+    Py_END_CRITICAL_SECTION();
+    if (myextra) {
+        dealloc_extra(myextra);
+    }
 }
 
 /* Convenience internal function to create new Element objects with the given
@@ -544,6 +546,7 @@ element_add_subelement(elementtreestate *st, ElementObject *self,
         return -1;
     }
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (element_resize(self, 1) < 0)
         return -1;
 
@@ -551,22 +554,26 @@ element_add_subelement(elementtreestate *st, ElementObject *self,
 
     self->extra->length++;
 
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
 LOCAL(PyObject*)
 element_get_attrib(ElementObject* self)
 {
-    /* return borrowed reference to attrib dictionary */
+    /* return new reference to attrib dictionary */
     /* note: this function assumes that the extra section exists */
 
-    PyObject* res = self->extra->attrib;
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = self->extra->attrib;
 
     if (!res) {
         /* create missing dictionary */
         res = self->extra->attrib = PyDict_New();
     }
-
+    Py_XINCREF(res);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -667,6 +674,7 @@ element_gc_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(JOIN_OBJ(self->text));
     Py_VISIT(JOIN_OBJ(self->tail));
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (self->extra) {
         Py_ssize_t i;
         Py_VISIT(self->extra->attrib);
@@ -674,6 +682,7 @@ element_gc_traverse(PyObject *op, visitproc visit, void *arg)
         for (i = 0; i < self->extra->length; ++i)
             Py_VISIT(self->extra->children[i]);
     }
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -1625,10 +1634,17 @@ static Py_ssize_t
 element_length(PyObject *op)
 {
     ElementObject *self = _Element_CAST(op);
-    if (!self->extra)
-        return 0;
+    Py_ssize_t res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (!self->extra) {
+        res = 0;
+    }
+    else {
+        res = self->extra->length;
+    }
+    Py_END_CRITICAL_SECTION();
 
-    return self->extra->length;
+    return res;
 }
 
 /*[clinic input]
@@ -1766,9 +1782,12 @@ _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
     if (!attrib)
         return NULL;
 
-    if (PyDict_SetItem(attrib, key, value) < 0)
+    if (PyDict_SetItem(attrib, key, value) < 0) {
+        Py_DECREF(attrib);
         return NULL;
+    }
 
+    Py_DECREF(attrib);
     Py_RETURN_NONE;
 }
 
@@ -2079,12 +2098,15 @@ element_attrib_getter(PyObject *op, void *closure)
 {
     PyObject *res;
     ElementObject *self = _Element_CAST(op);
-    if (!self->extra) {
-        if (create_extra(self, NULL) < 0)
-            return NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (!self->extra && create_extra(self, NULL) < 0){
+            res = NULL;
     }
-    res = element_get_attrib(self);
-    return Py_XNewRef(res);
+    else {
+        res = element_get_attrib(self);
+    }
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 /* macro for setter validation */
