@@ -2046,10 +2046,12 @@ Socket Objects
    .. method:: sendfile(file, offset=0, count=None)
 
       Send a file until EOF is reached by using high-performance
-      :mod:`os.sendfile` and return the total number of bytes which were sent.
+      :mod:`os.sendfile` or :c:func:`!TransmitFile` and return the total
+      number of bytes which were sent.
       *file* must be a regular file object opened in binary mode. If
-      :mod:`os.sendfile` is not available (e.g. Windows) or *file* is not a
-      regular file :meth:`send` will be used instead. *offset* tells from where to
+      :mod:`os.sendfile` or :c:func:`!TransmitFile` is not available or
+      *file* is not a regular file :meth:`send` will be used
+      instead. *offset* tells from where to
       start reading the file. If specified, *count* is the total number of bytes
       to transmit as opposed to sending the file until EOF is reached. File
       position is updated on return or also in case of error in which case
@@ -2058,6 +2060,10 @@ Socket Objects
       Non-blocking sockets are not supported.
 
       .. versionadded:: 3.5
+
+      .. versionchanged:: next
+         On Windows, :c:func:`!TransmitFile` is now used instead of falling
+         back to :meth:`send`.
 
    .. method:: set_inheritable(inheritable)
 

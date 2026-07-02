@@ -59,6 +59,13 @@ from enum import IntEnum, IntFlag
 from functools import partial
 
 try:
+    import _overlapped
+    import msvcrt
+except ImportError:
+    _overlapped = None
+    msvcrt = None
+
+try:
     import errno
 except ImportError:
     errno = None
@@ -467,6 +474,66 @@ class socket(_socket.socket):
             if total_sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset + total_sent)
 
+    if _overlapped and msvcrt:
+        def _sendfile_use_transmitfile(self, file, offset=0, count=None):
+            self._check_sendfile_params(file, offset, count)
+            timeout = self.gettimeout()
+            if timeout == 0:
+                raise ValueError("non-blocking sockets are not supported")
+            try:
+                fileno = file.fileno()
+            except (AttributeError, io.UnsupportedOperation) as err:
+                raise _GiveupOnSendfile(err)  # not a regular file
+            try:
+                os.fstat(fileno)
+            except OSError as err:
+                raise _GiveupOnSendfile(err)  # not a regular file
+            sock_fileno = self.fileno()
+            file_handle = msvcrt.get_osfhandle(fileno)
+            timeout_ms = _overlapped.INFINITE
+            if timeout is not None:
+                timeout_ms = int(timeout * 1000)
+
+            max_count = 0xffff_ffff
+            total_sent = 0
+            remaining = count
+            try:
+                while True:
+                    chunk_offset = offset + total_sent
+                    offset_low = chunk_offset & 0xffff_ffff
+                    offset_high = (chunk_offset >> 32) & 0xffff_ffff
+                    if remaining is None:
+                        chunk_count = 0
+                    else:
+                        chunk_count = min(remaining, max_count)
+                        if chunk_count <= 0:
+                            break
+
+                    ov = _overlapped.Overlapped()
+                    ov.TransmitFile(sock_fileno, file_handle, offset_low,
+                                    offset_high, chunk_count, 0, 0)
+                    try:
+                        sent = ov.getresultex(timeout_ms, False)
+                    except WindowsError as e:
+                        if e.winerror == 258:
+                            raise TimeoutError('timed out')
+                        raise
+
+                    total_sent += sent
+
+                    if remaining is None:
+                        if sent == 0:
+                            break
+                    else:
+                        remaining -= sent
+                        if sent < chunk_count:
+                            break
+
+                return total_sent
+            finally:
+                if total_sent > 0 and hasattr(file, 'seek'):
+                    file.seek(offset + total_sent)
+
     def _check_sendfile_params(self, file, offset, count):
         if 'b' not in getattr(file, 'mode', 'b'):
             raise ValueError("file should be opened in binary mode")
@@ -484,10 +551,10 @@ class socket(_socket.socket):
         """sendfile(file[, offset[, count]]) -> sent
 
         Send a file until EOF is reached by using high-performance
-        os.sendfile() and return the total number of bytes which
-        were sent.
+        os.sendfile() or TransmitFile() and return the total number of
+        bytes which were sent.
         *file* must be a regular file object opened in binary mode.
-        If os.sendfile() is not available (e.g. Windows) or file is
+        If os.sendfile() or TransmitFile() is not available or file is
         not a regular file socket.send() will be used instead.
         *offset* tells from where to start reading the file.
         If specified, *count* is the total number of bytes to transmit
@@ -499,6 +566,11 @@ class socket(_socket.socket):
         Non-blocking sockets are not supported.
         """
         try:
+            if sys.platform == "win32":
+                sendfile_use_transmitfile = getattr(
+                    self, "_sendfile_use_transmitfile", None)
+                if sendfile_use_transmitfile is not None:
+                    return sendfile_use_transmitfile(file, offset, count)
             return self._sendfile_use_sendfile(file, offset, count)
         except _GiveupOnSendfile:
             return self._sendfile_use_send(file, offset, count)

@@ -297,6 +297,15 @@ shlex
   (Contributed by Jay Berry in :gh:`148846`.)
 
 
+socket
+------
+
+* :meth:`socket.socket.sendfile` now uses the :c:func:`!TransmitFile` system
+  call on Windows, instead of falling back to a slower
+  :meth:`~socket.socket.send` loop.
+  (Contributed by An Long in :gh:`65920`.)
+
+
 tkinter
 -------
 
