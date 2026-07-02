@@ -919,6 +919,10 @@ CDataType_from_buffer_impl(PyObject *type, PyTypeObject *cls, PyObject *obj,
         return NULL;
     }
 
+    if (CDataObject_Check(st, obj)) {
+        ((CDataObject *)result)->b_base = (CDataObject *)Py_NewRef(obj);
+    }
+
     return result;
 }
 
