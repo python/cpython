@@ -1,3 +1,0 @@
-Add :func:`typing.get_protocol_members` to return the set of members
-defining a :class:`typing.Protocol`.  Add :func:`typing.is_protocol` to
-check whether a class is a :class:`typing.Protocol`. Patch by Jelle Zijlstra.

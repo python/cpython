@@ -4,8 +4,6 @@
   Unicode HOWTO
 *****************
 
-:Release: 1.12
-
 This HOWTO discusses Python's support for the Unicode specification
 for representing textual data, and explains various problems that
 people commonly encounter when trying to work with Unicode.
@@ -352,6 +350,8 @@ If you don't include such a comment, the default encoding used will be UTF-8 as
 already mentioned.  See also :pep:`263` for more information.
 
 
+.. _unicode-properties:
+
 Unicode Properties
 ------------------
 
@@ -424,8 +424,8 @@ lowercase letters 'ss'.
 
 A second tool is the :mod:`unicodedata` module's
 :func:`~unicodedata.normalize` function that converts strings to one
-of several normal forms, where letters followed by a combining
-character are replaced with single characters.  :func:`normalize` can
+of several normal forms, where letters followed by a combining character are
+replaced with single characters.  :func:`~unicodedata.normalize` can
 be used to perform string comparisons that won't falsely report
 inequality if two strings use combining characters differently:
 
@@ -474,8 +474,8 @@ The Unicode Standard also specifies how to do caseless comparisons::
 
     print(compare_caseless(single_char, multiple_chars))
 
-This will print ``True``.  (Why is :func:`NFD` invoked twice?  Because
-there are a few characters that make :meth:`casefold` return a
+This will print ``True``.  (Why is :func:`!NFD` invoked twice?  Because
+there are a few characters that make :meth:`~str.casefold` return a
 non-normalized string, so the result needs to be normalized again. See
 section 3.13 of the Unicode Standard for a discussion and an example.)
 

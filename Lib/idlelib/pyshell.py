@@ -11,15 +11,9 @@ except ImportError:
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
 
-# Valid arguments for the ...Awareness call below are defined in the following.
-# https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
 if sys.platform == 'win32':
-    try:
-        import ctypes
-        PROCESS_SYSTEM_DPI_AWARE = 1  # Int required.
-        ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
-    except (ImportError, AttributeError, OSError):
-        pass
+    from idlelib.util import fix_win_hidpi
+    fix_win_hidpi()
 
 from tkinter import messagebox
 
@@ -28,7 +22,6 @@ import itertools
 import linecache
 import os
 import os.path
-from platform import python_version
 import re
 import socket
 import subprocess
@@ -43,13 +36,14 @@ from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 from idlelib import debugger
 from idlelib import debugger_r
-from idlelib.editor import EditorWindow, fixwordbreaks
+from idlelib.editor import EditorWindow
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
 from idlelib import replace
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
+from idlelib.util import fix_word_breaks
 
 # Default for testing; defaults to True in main() for running.
 use_subprocess = False
@@ -133,8 +127,8 @@ class PyShellEditorWindow(EditorWindow):
     def __init__(self, *args):
         self.breakpoints = []
         EditorWindow.__init__(self, *args)
-        self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
-        self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
+        self.text.bind("<<set-breakpoint>>", self.set_breakpoint_event)
+        self.text.bind("<<clear-breakpoint>>", self.clear_breakpoint_event)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
         #TODO: don't read/write this from/to .idlerc when testing
@@ -155,8 +149,8 @@ class PyShellEditorWindow(EditorWindow):
         ("Copy", "<<copy>>", "rmenu_check_copy"),
         ("Paste", "<<paste>>", "rmenu_check_paste"),
         (None, None, None),
-        ("Set Breakpoint", "<<set-breakpoint-here>>", None),
-        ("Clear Breakpoint", "<<clear-breakpoint-here>>", None)
+        ("Set Breakpoint", "<<set-breakpoint>>", None),
+        ("Clear Breakpoint", "<<clear-breakpoint>>", None)
     ]
 
     def color_breakpoint_text(self, color=True):
@@ -181,11 +175,11 @@ class PyShellEditorWindow(EditorWindow):
             self.breakpoints.append(lineno)
         try:    # update the subprocess debugger
             debug = self.flist.pyshell.interp.debugger
-            debug.set_breakpoint_here(filename, lineno)
+            debug.set_breakpoint(filename, lineno)
         except: # but debugger may not be active right now....
             pass
 
-    def set_breakpoint_here(self, event=None):
+    def set_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -194,7 +188,7 @@ class PyShellEditorWindow(EditorWindow):
         lineno = int(float(text.index("insert")))
         self.set_breakpoint(lineno)
 
-    def clear_breakpoint_here(self, event=None):
+    def clear_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -209,7 +203,7 @@ class PyShellEditorWindow(EditorWindow):
                         "insert lineend +1char")
         try:
             debug = self.flist.pyshell.interp.debugger
-            debug.clear_breakpoint_here(filename, lineno)
+            debug.clear_breakpoint(filename, lineno)
         except:
             pass
 
@@ -249,12 +243,13 @@ class PyShellEditorWindow(EditorWindow):
         breaks = self.breakpoints
         filename = self.io.filename
         try:
-            with open(self.breakpointPath) as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
         except OSError:
             lines = []
         try:
-            with open(self.breakpointPath, "w") as new_file:
+            with open(self.breakpointPath, "w", encoding='utf-8') as new_file:
                 for line in lines:
                     if not line.startswith(filename + '='):
                         new_file.write(line)
@@ -279,7 +274,8 @@ class PyShellEditorWindow(EditorWindow):
         if filename is None:
             return
         if os.path.isfile(self.breakpointPath):
-            with open(self.breakpointPath) as fp:
+            with open(self.breakpointPath,
+                      encoding='utf-8', errors='replace') as fp:
                 lines = fp.readlines()
             for line in lines:
                 if line.startswith(filename + '='):
@@ -412,6 +408,17 @@ def restart_line(width, filename):  # See bpo-38141.
         return tag[:-2]  # Remove ' ='.
 
 
+def fix_user_path(path):
+    """Return path without the idlelib directory (gh-134300).
+
+    That directory is on sys.path when idle.py is run as a script.
+    Otherwise user code could import idlelib submodules as top-level
+    modules, such as "import help".
+    """
+    idlelib_dir = os.path.dirname(os.path.abspath(__file__))
+    return [p for p in path if p != idlelib_dir]
+
+
 class ModifiedInterpreter(InteractiveInterpreter):
 
     def __init__(self, tkconsole):
@@ -430,7 +437,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def spawn_subprocess(self):
         if self.subprocess_arglist is None:
             self.subprocess_arglist = self.build_subprocess_arglist()
-        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist)
+        # gh-127060: Disable traceback colors
+        env = dict(os.environ, TERM='dumb')
+        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist, env=env)
 
     def build_subprocess_arglist(self):
         assert (self.port!=0), (
@@ -503,7 +512,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.close()
         self.terminate_subprocess()
         console = self.tkconsole
-        was_executing = console.executing
         console.executing = False
         self.spawn_subprocess()
         try:
@@ -571,6 +579,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             path.extend(sys.path)
         else:
             path = sys.path
+        path = fix_user_path(path)  # gh-134300
 
         self.runcommand("""if 1:
         import sys as _sys
@@ -647,7 +656,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             return
         item = debugobj_r.StubObjectTreeItem(self.rpcclt, oid)
         from idlelib.tree import ScrolledCanvas, TreeNode
-        top = Toplevel(self.tkconsole.root)
+        top = Toplevel(self.tkconsole.root, class_='Idle')
         theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
         sc = ScrolledCanvas(top, bg=background, highlightthickness=0)
@@ -712,7 +721,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             del _filename, _sys, _dirname, _dir
             \n""".format(filename))
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Override Interactive Interpreter method: Use Colorizing
 
         Color the offending position instead of printing it and pointing at it
@@ -747,10 +756,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.tkconsole.open_stack_viewer()
 
     def checklinecache(self):
-        c = linecache.cache
-        for key in list(c.keys()):
+        "Remove keys other than '<pyshell#n>'."
+        cache = linecache.cache
+        for key in list(cache):  # Iterate list because mutate cache.
             if key[:1] + key[-1:] != "<>":
-                del c[key]
+                del cache[key]
 
     def runcommand(self, code):
         "Run the code without invoking the debugger"
@@ -844,7 +854,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 class PyShell(OutputWindow):
     from idlelib.squeezer import Squeezer
 
-    shell_title = "IDLE Shell " + python_version()
+    shell_title = "IDLE Shell"
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
@@ -880,14 +890,13 @@ class PyShell(OutputWindow):
     from idlelib.sidebar import ShellSidebar
 
     def __init__(self, flist=None):
-        if use_subprocess:
-            ms = self.menu_specs
-            if ms[2][0] != "shell":
-                ms.insert(2, ("shell", "She_ll"))
+        ms = self.menu_specs
+        if ms[2][0] != "shell":
+            ms.insert(2, ("shell", "She_ll"))
         self.interp = ModifiedInterpreter(self)
-        if flist is None:
+        if flist is None:  # TODO possible? root and flist in main.
             root = Tk()
-            fixwordbreaks(root)
+            fix_word_breaks(root)
             root.withdraw()
             flist = PyShellFileList(root)
 
@@ -956,6 +965,11 @@ class PyShell(OutputWindow):
         # events generated in Tcl/Tk to go through this delegator.
         self.text.insert = self.per.top.insert
         self.per.insertfilter(UserInputTaggingDelegator())
+
+        if not use_subprocess:
+            # Menu options "View Last Restart" and "Restart Shell" are disabled
+            self.update_menu_state("shell", 0, "disabled")
+            self.update_menu_state("shell", 1, "disabled")
 
     def ResetFont(self):
         super().ResetFont()
@@ -1136,8 +1150,7 @@ class PyShell(OutputWindow):
     def short_title(self):
         return self.shell_title
 
-    COPYRIGHT = \
-          'Type "help", "copyright", "credits" or "license()" for more information.'
+    SPLASHLINE = 'Enter "help" below or click "Help" above for more information.'
 
     def begin(self):
         self.text.mark_set("iomark", "insert")
@@ -1156,7 +1169,7 @@ class PyShell(OutputWindow):
             sys.displayhook = rpc.displayhook
 
         self.write("Python %s on %s\n%s\n%s" %
-                   (sys.version, sys.platform, self.COPYRIGHT, nosub))
+                   (sys.version, sys.platform, self.SPLASHLINE, nosub))
         self.text.focus_force()
         self.showprompt()
         # User code should use separate default Tk root window
@@ -1350,7 +1363,7 @@ class PyShell(OutputWindow):
             self.text.see("insert")
             self.text.undo_block_stop()
 
-    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?\Z")
+    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?\z")
     def runit(self):
         index_before = self.text.index("end-2c")
         line = self.text.get("iomark", "end-1c")
@@ -1452,17 +1465,6 @@ class PyShell(OutputWindow):
         self.shell_sidebar.update_sidebar()
 
 
-def fix_x11_paste(root):
-    "Make paste replace selection on x11.  See issue #5124."
-    if root._windowingsystem == 'x11':
-        for cls in 'Text', 'Entry', 'Spinbox':
-            root.bind_class(
-                cls,
-                '<<Paste>>',
-                'catch {%W delete sel.first sel.last}\n' +
-                        root.bind_class(cls, '<<Paste>>'))
-
-
 usage_msg = """\
 
 USAGE: idle  [-deins] [-t title] [file]*
@@ -1522,6 +1524,7 @@ def main():
     from platform import system
     from idlelib import testing  # bool value
     from idlelib import macosx
+    from idlelib.util import fix_scaling, fix_x11_paste
 
     global flist, root, use_subprocess
 
@@ -1607,7 +1610,6 @@ def main():
         NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
-    from idlelib.run import fix_scaling
     fix_scaling(root)
 
     # set application icon
@@ -1629,7 +1631,7 @@ def main():
         root.wm_iconphoto(True, *icons)
 
     # start editor and/or shell windows:
-    fixwordbreaks(root)
+    fix_word_breaks(root)
     fix_x11_paste(root)
     flist = PyShellFileList(root)
     macosx.setupApp(root, flist)
@@ -1692,6 +1694,7 @@ def main():
         root.mainloop()
     root.destroy()
     capture_warnings(False)
+
 
 if __name__ == "__main__":
     main()

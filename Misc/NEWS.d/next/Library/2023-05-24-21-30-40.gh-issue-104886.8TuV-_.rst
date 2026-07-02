@@ -1,3 +1,0 @@
-Remove the undocumented :class:`!configparser.LegacyInterpolation` class,
-deprecated in the docstring since Python 3.2, and with a deprecation warning
-since Python 3.11. Patch by Hugo van Kemenade.

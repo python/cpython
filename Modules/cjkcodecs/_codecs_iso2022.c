@@ -207,8 +207,9 @@ ENCODER(iso2022)
 
         encoded = MAP_UNMAPPABLE;
         for (dsg = CONFIG_DESIGNATIONS; dsg->mark; dsg++) {
+            Py_UCS4 buf[2] = {c, 0};
             Py_ssize_t length = 1;
-            encoded = dsg->encoder(codec, &c, &length);
+            encoded = dsg->encoder(codec, buf, &length);
             if (encoded == MAP_MULTIPLE_AVAIL) {
                 /* this implementation won't work for pair
                  * of non-bmp characters. */
@@ -217,9 +218,11 @@ ENCODER(iso2022)
                         return MBERR_TOOFEW;
                     length = -1;
                 }
-                else
+                else {
+                    buf[1] = INCHAR2;
                     length = 2;
-                encoded = dsg->encoder(codec, &c, &length);
+                }
+                encoded = dsg->encoder(codec, buf, &length);
                 if (encoded != MAP_UNMAPPABLE) {
                     insize = length;
                     break;
@@ -799,11 +802,14 @@ jisx0213_encoder(const MultibyteCodec *codec, const Py_UCS4 *data,
         return coded;
 
     case 2: /* second character of unicode pair */
-        coded = find_pairencmap((ucs2_t)data[0], (ucs2_t)data[1],
-                                jisx0213_pair_encmap, JISX0213_ENCPAIRS);
-        if (coded != DBCINV)
-            return coded;
-        /* fall through */
+        if (data[1] != 0) { /* Don't consume null char as part of pair */
+            coded = find_pairencmap((ucs2_t)data[0], (ucs2_t)data[1],
+                                    jisx0213_pair_encmap, JISX0213_ENCPAIRS);
+            if (coded != DBCINV) {
+                return coded;
+            }
+        }
+        _Py_FALLTHROUGH;
 
     case -1: /* flush unterminated */
         *length = 1;

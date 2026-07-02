@@ -1,3 +1,0 @@
-:mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
-methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
-They will be removed in Python 3.15. Patch by Victor Stinner.

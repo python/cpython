@@ -1,0 +1,2 @@
+Fix a potential use after free condition in :func:`pickle.dumps` in free-threaded
+mode when serializing lists.

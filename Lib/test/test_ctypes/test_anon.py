@@ -1,20 +1,23 @@
 import unittest
 import test.support
 from ctypes import c_int, Union, Structure, sizeof
+from ._support import StructCheckMixin
 
 
-class AnonTest(unittest.TestCase):
+class AnonTest(unittest.TestCase, StructCheckMixin):
 
     def test_anon(self):
         class ANON(Union):
             _fields_ = [("a", c_int),
                         ("b", c_int)]
+        self.check_union(ANON)
 
         class Y(Structure):
             _fields_ = [("x", c_int),
                         ("_", ANON),
                         ("y", c_int)]
             _anonymous_ = ["_"]
+        self.check_struct(Y)
 
         self.assertEqual(Y.a.offset, sizeof(c_int))
         self.assertEqual(Y.b.offset, sizeof(c_int))
@@ -52,17 +55,20 @@ class AnonTest(unittest.TestCase):
     def test_nested(self):
         class ANON_S(Structure):
             _fields_ = [("a", c_int)]
+        self.check_struct(ANON_S)
 
         class ANON_U(Union):
             _fields_ = [("_", ANON_S),
                         ("b", c_int)]
             _anonymous_ = ["_"]
+        self.check_union(ANON_U)
 
         class Y(Structure):
             _fields_ = [("x", c_int),
                         ("_", ANON_U),
                         ("y", c_int)]
             _anonymous_ = ["_"]
+        self.check_struct(Y)
 
         self.assertEqual(Y.x.offset, 0)
         self.assertEqual(Y.a.offset, sizeof(c_int))

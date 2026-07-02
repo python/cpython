@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(EncodingMap_size__doc__,
 "size($self, /)\n"
@@ -21,9 +22,9 @@ static PyObject *
 EncodingMap_size_impl(struct encoding_map *self);
 
 static PyObject *
-EncodingMap_size(struct encoding_map *self, PyObject *Py_UNUSED(ignored))
+EncodingMap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EncodingMap_size_impl(self);
+    return EncodingMap_size_impl((struct encoding_map *)self);
 }
 
 PyDoc_STRVAR(unicode_title__doc__,
@@ -32,8 +33,8 @@ PyDoc_STRVAR(unicode_title__doc__,
 "\n"
 "Return a version of the string where each word is titlecased.\n"
 "\n"
-"More specifically, words start with uppercased characters and all remaining\n"
-"cased characters have lower case.");
+"More specifically, words start with uppercased characters and all\n"
+"remaining cased characters have lower case.");
 
 #define UNICODE_TITLE_METHODDEF    \
     {"title", (PyCFunction)unicode_title, METH_NOARGS, unicode_title__doc__},
@@ -53,8 +54,8 @@ PyDoc_STRVAR(unicode_capitalize__doc__,
 "\n"
 "Return a capitalized version of the string.\n"
 "\n"
-"More specifically, make the first character have upper case and the rest lower\n"
-"case.");
+"More specifically, make the first character have upper case and the\n"
+"rest lower case.");
 
 #define UNICODE_CAPITALIZE_METHODDEF    \
     {"capitalize", (PyCFunction)unicode_capitalize, METH_NOARGS, unicode_capitalize__doc__},
@@ -92,7 +93,8 @@ PyDoc_STRVAR(unicode_center__doc__,
 "\n"
 "Return a centered string of length width.\n"
 "\n"
-"Padding is done using the specified fill character (default is a space).");
+"Padding is done using the specified fill character (default is\n"
+"a space).");
 
 #define UNICODE_CENTER_METHODDEF    \
     {"center", _PyCFunction_CAST(unicode_center), METH_FASTCALL, unicode_center__doc__},
@@ -135,6 +137,62 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_count__doc__,
+"count($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the number of non-overlapping occurrences of substring sub in string S[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice\n"
+"notation.");
+
+#define UNICODE_COUNT_METHODDEF    \
+    {"count", _PyCFunction_CAST(unicode_count), METH_FASTCALL, unicode_count__doc__},
+
+static Py_ssize_t
+unicode_count_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                   Py_ssize_t end);
+
+static PyObject *
+unicode_count(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *substr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("count", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("count", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    substr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    _return_value = unicode_count_impl(str, substr, start, end);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_encode__doc__,
 "encode($self, /, encoding=\'utf-8\', errors=\'strict\')\n"
 "--\n"
@@ -146,8 +204,8 @@ PyDoc_STRVAR(unicode_encode__doc__,
 "  errors\n"
 "    The error handling scheme to use for encoding errors.\n"
 "    The default is \'strict\' meaning that encoding errors raise a\n"
-"    UnicodeEncodeError.  Other possible values are \'ignore\', \'replace\' and\n"
-"    \'xmlcharrefreplace\' as well as any other name registered with\n"
+"    UnicodeEncodeError.  Other possible values are \'ignore\', \'replace\'\n"
+"    and \'xmlcharrefreplace\' as well as any other name registered with\n"
 "    codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define UNICODE_ENCODE_METHODDEF    \
@@ -166,9 +224,11 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -190,7 +250,8 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -259,9 +320,11 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(tabsize), },
     };
     #undef NUM_KEYWORDS
@@ -282,19 +345,132 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int tabsize = 8;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    tabsize = _PyLong_AsInt(args[0]);
+    tabsize = PyLong_AsInt(args[0]);
     if (tabsize == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_pos:
     return_value = unicode_expandtabs_impl(self, tabsize);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_find__doc__,
+"find($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice\n"
+"notation.  Return -1 on failure.");
+
+#define UNICODE_FIND_METHODDEF    \
+    {"find", _PyCFunction_CAST(unicode_find), METH_FASTCALL, unicode_find__doc__},
+
+static Py_ssize_t
+unicode_find_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                  Py_ssize_t end);
+
+static PyObject *
+unicode_find(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *substr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("find", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("find", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    substr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    _return_value = unicode_find_impl(str, substr, start, end);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_index__doc__,
+"index($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice\n"
+"notation.  Raises ValueError when the substring is not found.");
+
+#define UNICODE_INDEX_METHODDEF    \
+    {"index", _PyCFunction_CAST(unicode_index), METH_FASTCALL, unicode_index__doc__},
+
+static Py_ssize_t
+unicode_index_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                   Py_ssize_t end);
+
+static PyObject *
+unicode_index(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *substr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("index", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    substr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    _return_value = unicode_index_impl(str, substr, start, end);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
     return return_value;
@@ -327,8 +503,8 @@ PyDoc_STRVAR(unicode_islower__doc__,
 "\n"
 "Return True if the string is a lowercase string, False otherwise.\n"
 "\n"
-"A string is lowercase if all cased characters in the string are lowercase and\n"
-"there is at least one cased character in the string.");
+"A string is lowercase if all cased characters in the string are\n"
+"lowercase and there is at least one cased character in the string.");
 
 #define UNICODE_ISLOWER_METHODDEF    \
     {"islower", (PyCFunction)unicode_islower, METH_NOARGS, unicode_islower__doc__},
@@ -348,8 +524,8 @@ PyDoc_STRVAR(unicode_isupper__doc__,
 "\n"
 "Return True if the string is an uppercase string, False otherwise.\n"
 "\n"
-"A string is uppercase if all cased characters in the string are uppercase and\n"
-"there is at least one cased character in the string.");
+"A string is uppercase if all cased characters in the string are\n"
+"uppercase and there is at least one cased character in the string.");
 
 #define UNICODE_ISUPPER_METHODDEF    \
     {"isupper", (PyCFunction)unicode_isupper, METH_NOARGS, unicode_isupper__doc__},
@@ -390,8 +566,8 @@ PyDoc_STRVAR(unicode_isspace__doc__,
 "\n"
 "Return True if the string is a whitespace string, False otherwise.\n"
 "\n"
-"A string is whitespace if all characters in the string are whitespace and there\n"
-"is at least one character in the string.");
+"A string is whitespace if all characters in the string are\n"
+"whitespace and there is at least one character in the string.");
 
 #define UNICODE_ISSPACE_METHODDEF    \
     {"isspace", (PyCFunction)unicode_isspace, METH_NOARGS, unicode_isspace__doc__},
@@ -411,8 +587,8 @@ PyDoc_STRVAR(unicode_isalpha__doc__,
 "\n"
 "Return True if the string is an alphabetic string, False otherwise.\n"
 "\n"
-"A string is alphabetic if all characters in the string are alphabetic and there\n"
-"is at least one character in the string.");
+"A string is alphabetic if all characters in the string are\n"
+"alphabetic and there is at least one character in the string.");
 
 #define UNICODE_ISALPHA_METHODDEF    \
     {"isalpha", (PyCFunction)unicode_isalpha, METH_NOARGS, unicode_isalpha__doc__},
@@ -432,8 +608,8 @@ PyDoc_STRVAR(unicode_isalnum__doc__,
 "\n"
 "Return True if the string is an alpha-numeric string, False otherwise.\n"
 "\n"
-"A string is alpha-numeric if all characters in the string are alpha-numeric and\n"
-"there is at least one character in the string.");
+"A string is alpha-numeric if all characters in the string are\n"
+"alpha-numeric and there is at least one character in the string.");
 
 #define UNICODE_ISALNUM_METHODDEF    \
     {"isalnum", (PyCFunction)unicode_isalnum, METH_NOARGS, unicode_isalnum__doc__},
@@ -453,8 +629,8 @@ PyDoc_STRVAR(unicode_isdecimal__doc__,
 "\n"
 "Return True if the string is a decimal string, False otherwise.\n"
 "\n"
-"A string is a decimal string if all characters in the string are decimal and\n"
-"there is at least one character in the string.");
+"A string is a decimal string if all characters in the string are\n"
+"decimal and there is at least one character in the string.");
 
 #define UNICODE_ISDECIMAL_METHODDEF    \
     {"isdecimal", (PyCFunction)unicode_isdecimal, METH_NOARGS, unicode_isdecimal__doc__},
@@ -474,8 +650,8 @@ PyDoc_STRVAR(unicode_isdigit__doc__,
 "\n"
 "Return True if the string is a digit string, False otherwise.\n"
 "\n"
-"A string is a digit string if all characters in the string are digits and there\n"
-"is at least one character in the string.");
+"A string is a digit string if all characters in the string are\n"
+"digits and there is at least one character in the string.");
 
 #define UNICODE_ISDIGIT_METHODDEF    \
     {"isdigit", (PyCFunction)unicode_isdigit, METH_NOARGS, unicode_isdigit__doc__},
@@ -495,8 +671,8 @@ PyDoc_STRVAR(unicode_isnumeric__doc__,
 "\n"
 "Return True if the string is a numeric string, False otherwise.\n"
 "\n"
-"A string is numeric if all characters in the string are numeric and there is at\n"
-"least one character in the string.");
+"A string is numeric if all characters in the string are numeric and\n"
+"there is at least one character in the string.");
 
 #define UNICODE_ISNUMERIC_METHODDEF    \
     {"isnumeric", (PyCFunction)unicode_isnumeric, METH_NOARGS, unicode_isnumeric__doc__},
@@ -516,8 +692,8 @@ PyDoc_STRVAR(unicode_isidentifier__doc__,
 "\n"
 "Return True if the string is a valid Python identifier, False otherwise.\n"
 "\n"
-"Call keyword.iskeyword(s) to test whether string s is a reserved identifier,\n"
-"such as \"def\" or \"class\".");
+"Call keyword.iskeyword(s) to test whether string s is a reserved\n"
+"identifier, such as \"def\" or \"class\".");
 
 #define UNICODE_ISIDENTIFIER_METHODDEF    \
     {"isidentifier", (PyCFunction)unicode_isidentifier, METH_NOARGS, unicode_isidentifier__doc__},
@@ -535,10 +711,9 @@ PyDoc_STRVAR(unicode_isprintable__doc__,
 "isprintable($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is printable, False otherwise.\n"
+"Return True if all characters in the string are printable, False otherwise.\n"
 "\n"
-"A string is printable if all of its characters are considered printable in\n"
-"repr() or if it is empty.");
+"A character is printable if repr() may use it in its output.");
 
 #define UNICODE_ISPRINTABLE_METHODDEF    \
     {"isprintable", (PyCFunction)unicode_isprintable, METH_NOARGS, unicode_isprintable__doc__},
@@ -558,8 +733,8 @@ PyDoc_STRVAR(unicode_join__doc__,
 "\n"
 "Concatenate any number of strings.\n"
 "\n"
-"The string whose method is called is inserted in between each given string.\n"
-"The result is returned as a new string.\n"
+"The string whose method is called is inserted in between each given\n"
+"string.  The result is returned as a new string.\n"
 "\n"
 "Example: \'.\'.join([\'ab\', \'pq\', \'rs\']) -> \'ab.pq.rs\'");
 
@@ -572,7 +747,8 @@ PyDoc_STRVAR(unicode_ljust__doc__,
 "\n"
 "Return a left-justified string of length width.\n"
 "\n"
-"Padding is done using the specified fill character (default is a space).");
+"Padding is done using the specified fill character (default is\n"
+"a space).");
 
 #define UNICODE_LJUST_METHODDEF    \
     {"ljust", _PyCFunction_CAST(unicode_ljust), METH_FASTCALL, unicode_ljust__doc__},
@@ -736,7 +912,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_replace__doc__,
-"replace($self, old, new, count=-1, /)\n"
+"replace($self, old, new, /, count=-1)\n"
 "--\n"
 "\n"
 "Return a copy with all occurrences of substring old replaced by new.\n"
@@ -745,25 +921,56 @@ PyDoc_STRVAR(unicode_replace__doc__,
 "    Maximum number of occurrences to replace.\n"
 "    -1 (the default value) means replace all occurrences.\n"
 "\n"
-"If the optional argument count is given, only the first count occurrences are\n"
-"replaced.");
+"If count is given, only the first count occurrences are replaced.\n"
+"If count is not specified or -1, then all occurrences are replaced.");
 
 #define UNICODE_REPLACE_METHODDEF    \
-    {"replace", _PyCFunction_CAST(unicode_replace), METH_FASTCALL, unicode_replace__doc__},
+    {"replace", _PyCFunction_CAST(unicode_replace), METH_FASTCALL|METH_KEYWORDS, unicode_replace__doc__},
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count);
 
 static PyObject *
-unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(count), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "count", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replace",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *old;
     PyObject *new;
     Py_ssize_t count = -1;
 
-    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -776,8 +983,8 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     new = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
     {
         Py_ssize_t ival = -1;
@@ -791,7 +998,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         }
         count = ival;
     }
-skip_optional:
+skip_optional_pos:
     return_value = unicode_replace_impl(self, old, new, count);
 
 exit:
@@ -804,8 +1011,9 @@ PyDoc_STRVAR(unicode_removeprefix__doc__,
 "\n"
 "Return a str with the given prefix string removed if present.\n"
 "\n"
-"If the string starts with the prefix string, return string[len(prefix):].\n"
-"Otherwise, return a copy of the original string.");
+"If the string starts with the prefix string, return\n"
+"string[len(prefix):].  Otherwise, return a copy of the original\n"
+"string.");
 
 #define UNICODE_REMOVEPREFIX_METHODDEF    \
     {"removeprefix", (PyCFunction)unicode_removeprefix, METH_O, unicode_removeprefix__doc__},
@@ -836,9 +1044,9 @@ PyDoc_STRVAR(unicode_removesuffix__doc__,
 "\n"
 "Return a str with the given suffix string removed if present.\n"
 "\n"
-"If the string ends with the suffix string and that suffix is not empty,\n"
-"return string[:-len(suffix)]. Otherwise, return a copy of the original\n"
-"string.");
+"If the string ends with the suffix string and that suffix is not\n"
+"empty, return string[:-len(suffix)].  Otherwise, return a copy of\n"
+"the original string.");
 
 #define UNICODE_REMOVESUFFIX_METHODDEF    \
     {"removesuffix", (PyCFunction)unicode_removesuffix, METH_O, unicode_removesuffix__doc__},
@@ -863,13 +1071,126 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_rfind__doc__,
+"rfind($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice\n"
+"notation.  Return -1 on failure.");
+
+#define UNICODE_RFIND_METHODDEF    \
+    {"rfind", _PyCFunction_CAST(unicode_rfind), METH_FASTCALL, unicode_rfind__doc__},
+
+static Py_ssize_t
+unicode_rfind_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                   Py_ssize_t end);
+
+static PyObject *
+unicode_rfind(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *substr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("rfind", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("rfind", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    substr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    _return_value = unicode_rfind_impl(str, substr, start, end);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_rindex__doc__,
+"rindex($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice\n"
+"notation.  Raises ValueError when the substring is not found.");
+
+#define UNICODE_RINDEX_METHODDEF    \
+    {"rindex", _PyCFunction_CAST(unicode_rindex), METH_FASTCALL, unicode_rindex__doc__},
+
+static Py_ssize_t
+unicode_rindex_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                    Py_ssize_t end);
+
+static PyObject *
+unicode_rindex(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *substr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("rindex", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("rindex", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    substr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    _return_value = unicode_rindex_impl(str, substr, start, end);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_rjust__doc__,
 "rjust($self, width, fillchar=\' \', /)\n"
 "--\n"
 "\n"
 "Return a right-justified string of length width.\n"
 "\n"
-"Padding is done using the specified fill character (default is a space).");
+"Padding is done using the specified fill character (default is\n"
+"a space).");
 
 #define UNICODE_RJUST_METHODDEF    \
     {"rjust", _PyCFunction_CAST(unicode_rjust), METH_FASTCALL, unicode_rjust__doc__},
@@ -921,16 +1242,18 @@ PyDoc_STRVAR(unicode_split__doc__,
 "  sep\n"
 "    The separator used to split the string.\n"
 "\n"
-"    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
-"    empty strings from the result.\n"
+"    When set to None (the default value), will split on any\n"
+"    whitespace character (including \\n \\r \\t \\f and spaces) and\n"
+"    will discard empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits.\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
-"Note, str.split() is mainly useful for data that has been intentionally\n"
-"delimited.  With natural text that includes punctuation, consider using\n"
-"the regular expression module.");
+"Splitting starts at the front of the string and works to the end.\n"
+"\n"
+"Note, str.split() is mainly useful for data that has been\n"
+"intentionally delimited.  With natural text that includes\n"
+"punctuation, consider using the regular expression module.");
 
 #define UNICODE_SPLIT_METHODDEF    \
     {"split", _PyCFunction_CAST(unicode_split), METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
@@ -948,9 +1271,11 @@ unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
     };
     #undef NUM_KEYWORDS
@@ -972,7 +1297,8 @@ unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1010,12 +1336,12 @@ PyDoc_STRVAR(unicode_partition__doc__,
 "\n"
 "Partition the string into three parts using the given separator.\n"
 "\n"
-"This will search for the separator in the string.  If the separator is found,\n"
-"returns a 3-tuple containing the part before the separator, the separator\n"
-"itself, and the part after it.\n"
+"This will search for the separator in the string.  If the separator\n"
+"is found, returns a 3-tuple containing the part before the\n"
+"separator, the separator itself, and the part after it.\n"
 "\n"
-"If the separator is not found, returns a 3-tuple containing the original string\n"
-"and two empty strings.");
+"If the separator is not found, returns a 3-tuple containing\n"
+"the original string and two empty strings.");
 
 #define UNICODE_PARTITION_METHODDEF    \
     {"partition", (PyCFunction)unicode_partition, METH_O, unicode_partition__doc__},
@@ -1026,12 +1352,13 @@ PyDoc_STRVAR(unicode_rpartition__doc__,
 "\n"
 "Partition the string into three parts using the given separator.\n"
 "\n"
-"This will search for the separator in the string, starting at the end. If\n"
-"the separator is found, returns a 3-tuple containing the part before the\n"
-"separator, the separator itself, and the part after it.\n"
+"This will search for the separator in the string, starting at the\n"
+"end.  If the separator is found, returns a 3-tuple containing the\n"
+"part before the separator, the separator itself, and the part after\n"
+"it.\n"
 "\n"
-"If the separator is not found, returns a 3-tuple containing two empty strings\n"
-"and the original string.");
+"If the separator is not found, returns a 3-tuple containing two\n"
+"empty strings and the original string.");
 
 #define UNICODE_RPARTITION_METHODDEF    \
     {"rpartition", (PyCFunction)unicode_rpartition, METH_O, unicode_rpartition__doc__},
@@ -1045,11 +1372,11 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "  sep\n"
 "    The separator used to split the string.\n"
 "\n"
-"    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
-"    empty strings from the result.\n"
+"    When set to None (the default value), will split on any\n"
+"    whitespace character (including \\n \\r \\t \\f and spaces) and\n"
+"    will discard empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits.\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
 "Splitting starts at the end of the string and works to the front.");
@@ -1070,9 +1397,11 @@ unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
     };
     #undef NUM_KEYWORDS
@@ -1094,7 +1423,8 @@ unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1132,8 +1462,8 @@ PyDoc_STRVAR(unicode_splitlines__doc__,
 "\n"
 "Return a list of the lines in the string, breaking at line boundaries.\n"
 "\n"
-"Line breaks are not included in the resulting list unless keepends is given and\n"
-"true.");
+"Line breaks are not included in the resulting list unless keepends\n"
+"is given and true.");
 
 #define UNICODE_SPLITLINES_METHODDEF    \
     {"splitlines", _PyCFunction_CAST(unicode_splitlines), METH_FASTCALL|METH_KEYWORDS, unicode_splitlines__doc__},
@@ -1151,9 +1481,11 @@ unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(keepends), },
     };
     #undef NUM_KEYWORDS
@@ -1174,7 +1506,8 @@ unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int keepends = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1216,13 +1549,14 @@ PyDoc_STRVAR(unicode_maketrans__doc__,
 "\n"
 "Return a translation table usable for str.translate().\n"
 "\n"
-"If there is only one argument, it must be a dictionary mapping Unicode\n"
-"ordinals (integers) or characters to Unicode ordinals, strings or None.\n"
-"Character keys will be then converted to ordinals.\n"
-"If there are two arguments, they must be strings of equal length, and\n"
-"in the resulting dictionary, each character in x will be mapped to the\n"
-"character at the same position in y. If there is a third argument, it\n"
-"must be a string, whose characters will be mapped to None in the result.");
+"If there is only one argument, it must be a dictionary mapping\n"
+"Unicode ordinals (integers) or characters to Unicode ordinals,\n"
+"strings or None.  Character keys will be then converted to ordinals.\n"
+"If there are two arguments, they must be strings of equal length,\n"
+"and in the resulting dictionary, each character in x will be mapped\n"
+"to the character at the same position in y.  If there is a third\n"
+"argument, it must be a string, whose characters will be mapped to\n"
+"None in the result.");
 
 #define UNICODE_MAKETRANS_METHODDEF    \
     {"maketrans", _PyCFunction_CAST(unicode_maketrans), METH_FASTCALL|METH_STATIC, unicode_maketrans__doc__},
@@ -1231,7 +1565,7 @@ static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
+unicode_maketrans(PyObject *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *x;
@@ -1272,12 +1606,13 @@ PyDoc_STRVAR(unicode_translate__doc__,
 "Replace each character in the string using the given translation table.\n"
 "\n"
 "  table\n"
-"    Translation table, which must be a mapping of Unicode ordinals to\n"
-"    Unicode ordinals, strings, or None.\n"
+"    Translation table, which must be a mapping of Unicode ordinals\n"
+"    to Unicode ordinals, strings, or None.\n"
 "\n"
-"The table must implement lookup/indexing via __getitem__, for instance a\n"
-"dictionary or list.  If this operation raises LookupError, the character is\n"
-"left untouched.  Characters mapped to None are deleted.");
+"The table must implement lookup/indexing via __getitem__, for\n"
+"instance a dictionary or list.  If this operation raises\n"
+"LookupError, the character is left untouched.  Characters mapped to\n"
+"None are deleted.");
 
 #define UNICODE_TRANSLATE_METHODDEF    \
     {"translate", (PyCFunction)unicode_translate, METH_O, unicode_translate__doc__},
@@ -1333,6 +1668,108 @@ unicode_zfill(PyObject *self, PyObject *arg)
         width = ival;
     }
     return_value = unicode_zfill_impl(self, width);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_startswith__doc__,
+"startswith($self, prefix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if the string starts with the specified prefix, False otherwise.\n"
+"\n"
+"  prefix\n"
+"    A string or a tuple of strings to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the string.\n"
+"  end\n"
+"    Optional stop position. Default: end of the string.");
+
+#define UNICODE_STARTSWITH_METHODDEF    \
+    {"startswith", _PyCFunction_CAST(unicode_startswith), METH_FASTCALL, unicode_startswith__doc__},
+
+static PyObject *
+unicode_startswith_impl(PyObject *self, PyObject *subobj, Py_ssize_t start,
+                        Py_ssize_t end);
+
+static PyObject *
+unicode_startswith(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("startswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = unicode_startswith_impl(self, subobj, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_endswith__doc__,
+"endswith($self, suffix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if the string ends with the specified suffix, False otherwise.\n"
+"\n"
+"  suffix\n"
+"    A string or a tuple of strings to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the string.\n"
+"  end\n"
+"    Optional stop position. Default: end of the string.");
+
+#define UNICODE_ENDSWITH_METHODDEF    \
+    {"endswith", _PyCFunction_CAST(unicode_endswith), METH_FASTCALL, unicode_endswith__doc__},
+
+static PyObject *
+unicode_endswith_impl(PyObject *self, PyObject *subobj, Py_ssize_t start,
+                      Py_ssize_t end);
+
+static PyObject *
+unicode_endswith(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("endswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = unicode_endswith_impl(self, subobj, start, end);
 
 exit:
     return return_value;
@@ -1399,9 +1836,11 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(object), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -1426,7 +1865,8 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -1476,4 +1916,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0a71c4aeffdf0bc5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d243c63e951e31d input=a9049054013a1b77]*/

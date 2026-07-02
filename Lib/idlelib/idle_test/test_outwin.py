@@ -1,6 +1,8 @@
 "Test outwin, coverage 76%."
 
 from idlelib import outwin
+import platform
+import sys
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
@@ -18,6 +20,10 @@ class OutputWindowTest(unittest.TestCase):
         root.withdraw()
         w = cls.window = outwin.OutputWindow(None, None, None, root)
         cls.text = w.text = Text(root)
+        if sys.platform == 'darwin':  # Issue 112938
+            cls.text.update = cls.text.update_idletasks
+            # Without this, test write, writelines, and goto... fail.
+            # The reasons and why macOS-specific are unclear.
 
     @classmethod
     def tearDownClass(cls):
@@ -35,8 +41,15 @@ class OutputWindowTest(unittest.TestCase):
         self.assertFalse(w.ispythonsource('test.txt'))
         self.assertFalse(w.ispythonsource(__file__))
 
+    def test_save_defaults_to_text(self):
+        # gh-65339: output is saved as text, not Python source.
+        io = self.window.io
+        self.assertEqual(io.defaultextension, '.txt')
+        # Text files are offered before Python files.
+        self.assertEqual(io.filetypes[0][0], 'Text files')
+
     def test_window_title(self):
-        self.assertEqual(self.window.top.title(), 'Output')
+        self.assertEqual(self.window.top.title(), 'Output' + ' (%s)' % platform.python_version())
 
     def test_maybesave(self):
         w = self.window

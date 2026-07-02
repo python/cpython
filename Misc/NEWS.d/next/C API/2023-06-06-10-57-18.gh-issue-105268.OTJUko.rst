@@ -1,3 +1,0 @@
-Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
-which was kept for backward compatibility with Python 3.8 and older. Patch by
-Victor Stinner.

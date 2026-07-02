@@ -5,8 +5,6 @@
   <PropertyGroup>
     <WixInstallPath Condition="'$(WixInstallPath)' == '' and Exists('$(MSBuildThisFileDirectory)\Wix')">$(MSBuildThisFileDirectory)\Wix\</WixInstallPath>
     <WixInstallPath Condition="'$(WixInstallPath)' == '' and Exists('$(ExternalsDir)\windows-installer\wix-314')">$(ExternalsDir)\windows-installer\wix-314\</WixInstallPath>
-    <WixInstallPath Condition="'$(WixInstallPath)' == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Installer XML\3.10@InstallRoot)</WixInstallPath>
-    <WixInstallPath Condition="'$(WixInstallPath)' == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows Installer XML\3.10@InstallRoot)</WixInstallPath>
     <WixTargetsPath>$(WixInstallPath)\Wix.targets</WixTargetsPath>
   </PropertyGroup>
 </Project>

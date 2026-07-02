@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_codecs_register__doc__,
 "register($module, search_function, /)\n"
@@ -14,9 +14,10 @@ PyDoc_STRVAR(_codecs_register__doc__,
 "\n"
 "Register a codec search function.\n"
 "\n"
-"Search functions are expected to take one argument, the encoding name in\n"
-"all lower case letters, and either return None, or a tuple of functions\n"
-"(encoder, decoder, stream_reader, stream_writer) (or a CodecInfo object).");
+"Search functions are expected to take one argument, the encoding\n"
+"name in all lower case letters, and either return None, or a tuple\n"
+"of functions (encoder, decoder, stream_reader, stream_writer) (or\n"
+"a CodecInfo object).");
 
 #define _CODECS_REGISTER_METHODDEF    \
     {"register", (PyCFunction)_codecs_register, METH_O, _codecs_register__doc__},
@@ -76,10 +77,10 @@ PyDoc_STRVAR(_codecs_encode__doc__,
 "Encodes obj using the codec registered for encoding.\n"
 "\n"
 "The default encoding is \'utf-8\'.  errors may be given to set a\n"
-"different error handling scheme.  Default is \'strict\' meaning that encoding\n"
-"errors raise a ValueError.  Other possible values are \'ignore\', \'replace\'\n"
-"and \'backslashreplace\' as well as any other name registered with\n"
-"codecs.register_error that can handle ValueErrors.");
+"different error handling scheme.  Default is \'strict\' meaning that\n"
+"encoding errors raise a ValueError.  Other possible values are \'ignore\',\n"
+"\'replace\' and \'backslashreplace\' as well as any other name registered\n"
+"with codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_ENCODE_METHODDEF    \
     {"encode", _PyCFunction_CAST(_codecs_encode), METH_FASTCALL|METH_KEYWORDS, _codecs_encode__doc__},
@@ -98,9 +99,11 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(obj), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -123,7 +126,8 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -176,10 +180,10 @@ PyDoc_STRVAR(_codecs_decode__doc__,
 "Decodes obj using the codec registered for encoding.\n"
 "\n"
 "Default encoding is \'utf-8\'.  errors may be given to set a\n"
-"different error handling scheme.  Default is \'strict\' meaning that encoding\n"
-"errors raise a ValueError.  Other possible values are \'ignore\', \'replace\'\n"
-"and \'backslashreplace\' as well as any other name registered with\n"
-"codecs.register_error that can handle ValueErrors.");
+"different error handling scheme.  Default is \'strict\' meaning that\n"
+"encoding errors raise a ValueError.  Other possible values are \'ignore\',\n"
+"\'replace\' and \'backslashreplace\' as well as any other name registered\n"
+"with codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_DECODE_METHODDEF    \
     {"decode", _PyCFunction_CAST(_codecs_decode), METH_FASTCALL|METH_KEYWORDS, _codecs_decode__doc__},
@@ -198,9 +202,11 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(obj), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -223,7 +229,8 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -297,14 +304,12 @@ _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("escape_decode", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -422,10 +427,6 @@ _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_7_decode", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -490,10 +491,6 @@ _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_8_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -562,10 +559,6 @@ _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_16_decode", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -632,10 +625,6 @@ _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_16_le_decode", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -700,10 +689,6 @@ _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_16_be_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -774,10 +759,6 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_16_ex_decode", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -802,7 +783,7 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    byteorder = _PyLong_AsInt(args[2]);
+    byteorder = PyLong_AsInt(args[2]);
     if (byteorder == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -849,10 +830,6 @@ _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_32_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -921,10 +898,6 @@ _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_32_le_decode", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -989,10 +962,6 @@ _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_32_be_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1063,10 +1032,6 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("utf_32_ex_decode", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -1091,7 +1056,7 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    byteorder = _PyLong_AsInt(args[2]);
+    byteorder = PyLong_AsInt(args[2]);
     if (byteorder == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1143,14 +1108,12 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("unicode_escape_decode", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1223,14 +1186,12 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("raw_unicode_escape_decode", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1299,10 +1260,6 @@ _codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("latin_1_decode", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -1359,10 +1316,6 @@ _codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("ascii_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1422,10 +1375,6 @@ _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("charmap_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1491,10 +1440,6 @@ _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("mbcs_decode", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1567,10 +1512,6 @@ _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("oem_decode", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -1639,15 +1580,11 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("code_page_decode", nargs, 2, 4)) {
         goto exit;
     }
-    codepage = _PyLong_AsInt(args[0]);
+    codepage = PyLong_AsInt(args[0]);
     if (codepage == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("code_page_decode", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -1720,14 +1657,12 @@ _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t na
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("readbuffer_encode", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1926,7 +1861,7 @@ _codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    byteorder = _PyLong_AsInt(args[2]);
+    byteorder = PyLong_AsInt(args[2]);
     if (byteorder == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2099,7 +2034,7 @@ _codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    byteorder = _PyLong_AsInt(args[2]);
+    byteorder = PyLong_AsInt(args[2]);
     if (byteorder == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2669,7 +2604,7 @@ _codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("code_page_encode", nargs, 2, 3)) {
         goto exit;
     }
-    code_page = _PyLong_AsInt(args[0]);
+    code_page = PyLong_AsInt(args[0]);
     if (code_page == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -2715,8 +2650,9 @@ PyDoc_STRVAR(_codecs_register_error__doc__,
 "Register the specified error handler under the name errors.\n"
 "\n"
 "handler must be a callable object, that will be called with an exception\n"
-"instance containing information about the location of the encoding/decoding\n"
-"error and must return a (replacement, new position) tuple.");
+"instance containing information about the location of the\n"
+"encoding/decoding error and must return a (replacement, new position)\n"
+"tuple.");
 
 #define _CODECS_REGISTER_ERROR_METHODDEF    \
     {"register_error", _PyCFunction_CAST(_codecs_register_error), METH_FASTCALL, _codecs_register_error__doc__},
@@ -2755,14 +2691,64 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_codecs__unregister_error__doc__,
+"_unregister_error($module, errors, /)\n"
+"--\n"
+"\n"
+"Un-register the specified error handler for the error handling `errors\'.\n"
+"\n"
+"Only custom error handlers can be un-registered. An exception is raised\n"
+"if the error handling is a built-in one (e.g., \'strict\'), or if an error\n"
+"occurs.\n"
+"\n"
+"Otherwise, this returns True if a custom handler has been successfully\n"
+"un-registered, and False if no custom handler for the specified error\n"
+"handling exists.");
+
+#define _CODECS__UNREGISTER_ERROR_METHODDEF    \
+    {"_unregister_error", (PyCFunction)_codecs__unregister_error, METH_O, _codecs__unregister_error__doc__},
+
+static int
+_codecs__unregister_error_impl(PyObject *module, const char *errors);
+
+static PyObject *
+_codecs__unregister_error(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *errors;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("_unregister_error", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(arg, &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    _return_value = _codecs__unregister_error_impl(module, errors);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_codecs_lookup_error__doc__,
 "lookup_error($module, name, /)\n"
 "--\n"
 "\n"
 "lookup_error(errors) -> handler\n"
 "\n"
-"Return the error handler for the specified error handling name or raise a\n"
-"LookupError, if no handler exists under this name.");
+"Return the error handler for the specified error handling name or raise\n"
+"a LookupError, if no handler exists under this name.");
 
 #define _CODECS_LOOKUP_ERROR_METHODDEF    \
     {"lookup_error", (PyCFunction)_codecs_lookup_error, METH_O, _codecs_lookup_error__doc__},
@@ -2795,6 +2781,70 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_codecs__normalize_encoding__doc__,
+"_normalize_encoding($module, /, encoding)\n"
+"--\n"
+"\n"
+"Normalize an encoding name *encoding*.\n"
+"\n"
+"Used for encodings.normalize_encoding. Does not convert to lower case.");
+
+#define _CODECS__NORMALIZE_ENCODING_METHODDEF    \
+    {"_normalize_encoding", _PyCFunction_CAST(_codecs__normalize_encoding), METH_FASTCALL|METH_KEYWORDS, _codecs__normalize_encoding__doc__},
+
+static PyObject *
+_codecs__normalize_encoding_impl(PyObject *module, PyObject *encoding);
+
+static PyObject *
+_codecs__normalize_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(encoding), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"encoding", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_normalize_encoding",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *encoding;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("_normalize_encoding", "argument 'encoding'", "str", args[0]);
+        goto exit;
+    }
+    encoding = args[0];
+    return_value = _codecs__normalize_encoding_impl(module, encoding);
+
+exit:
+    return return_value;
+}
+
 #ifndef _CODECS_MBCS_DECODE_METHODDEF
     #define _CODECS_MBCS_DECODE_METHODDEF
 #endif /* !defined(_CODECS_MBCS_DECODE_METHODDEF) */
@@ -2818,4 +2868,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=0f52053d31533376 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=505edef891a06329 input=a9049054013a1b77]*/

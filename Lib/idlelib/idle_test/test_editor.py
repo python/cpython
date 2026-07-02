@@ -20,7 +20,7 @@ class EditorWindowTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)
         cls.root.destroy()
         del cls.root
@@ -95,7 +95,7 @@ class GetLineIndentTest(unittest.TestCase):
 def insert(text, string):
     text.delete('1.0', 'end')
     text.insert('end', string)
-    text.update()  # Force update for colorizer to finish.
+    text.update_idletasks()  # Force update for colorizer to finish.
 
 
 class IndentAndNewlineTest(unittest.TestCase):
@@ -114,7 +114,7 @@ class IndentAndNewlineTest(unittest.TestCase):
         cls.window._close()
         del cls.window
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)
         cls.root.destroy()
         del cls.root
@@ -225,7 +225,7 @@ class RMenuTest(unittest.TestCase):
         cls.window._close()
         del cls.window
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)
         cls.root.destroy()
         del cls.root

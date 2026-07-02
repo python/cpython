@@ -1,0 +1,7 @@
+This folder can contain any Python application code.
+
+During the build, any binary modules found in this folder will be processed into
+Framework form.
+
+When the test suite runs, this folder will be on the PYTHONPATH, and will be the
+working directory for the test suite.

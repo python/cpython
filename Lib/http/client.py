@@ -111,6 +111,18 @@ responses = {v: v.phrase for v in http.HTTPStatus.__members__.values()}
 _MAXLINE = 65536
 _MAXHEADERS = 100
 
+# maximal number of interim (1xx) responses tolerated before the final
+# response.  Real servers send at most a few; without a bound, a server
+# streaming "100 Continue" responses would hang getresponse() forever.
+# A socket timeout cannot detect that as data keeps arriving within every
+# timeout window.
+_MAXINTERIMRESPONSES = 100
+
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = 1 << 20
+
+
 # Header name/value ABNF (http://tools.ietf.org/html/rfc7230#section-3.2)
 #
 # VCHAR          = %x21-7E
@@ -172,13 +184,19 @@ def _encode(data, name='data'):
             "if you want to send it encoded in UTF-8." %
             (name.title(), data[err.start:err.end], name)) from None
 
+def _strip_ipv6_iface(enc_name: bytes) -> bytes:
+    """Remove interface scope from IPv6 address."""
+    enc_name, percent, _ = enc_name.partition(b"%")
+    if percent:
+        assert enc_name.startswith(b'['), enc_name
+        enc_name += b']'
+    return enc_name
 
 class HTTPMessage(email.message.Message):
-    # XXX The only usage of this method is in
-    # http.server.CGIHTTPRequestHandler.  Maybe move the code there so
-    # that it doesn't need to be part of the public API.  The API has
-    # never been defined so this could cause backwards compatibility
-    # issues.
+
+    # The getallmatchingheaders() method was only used by the CGI handler
+    # that was removed in Python 3.15. However, since the public API was not
+    # properly defined, it will be kept for backwards compatibility reasons.
 
     def getallmatchingheaders(self, name):
         """Find all header lines matching a given header name.
@@ -203,27 +221,29 @@ class HTTPMessage(email.message.Message):
                 lst.append(line)
         return lst
 
-def _read_headers(fp):
+def _read_headers(fp, max_headers):
     """Reads potential header lines into a list from a file pointer.
 
     Length of line is limited by _MAXLINE, and number of
-    headers is limited by _MAXHEADERS.
+    headers is limited by max_headers.
     """
     headers = []
+    if max_headers is None:
+        max_headers = _MAXHEADERS
     while True:
         line = fp.readline(_MAXLINE + 1)
         if len(line) > _MAXLINE:
             raise LineTooLong("header line")
-        headers.append(line)
-        if len(headers) > _MAXHEADERS:
-            raise HTTPException("got more than %d headers" % _MAXHEADERS)
         if line in (b'\r\n', b'\n', b''):
             break
+        headers.append(line)
+        if len(headers) > max_headers:
+            raise HTTPException(f"got more than {max_headers} headers")
     return headers
 
 def _parse_header_lines(header_lines, _class=HTTPMessage):
     """
-    Parses only RFC2822 headers from header lines.
+    Parses only RFC 5322 headers from header lines.
 
     email Parser wants to see strings rather than bytes.
     But a TextIOWrapper around self.rfile would buffer too many bytes
@@ -235,10 +255,10 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
     hstring = b''.join(header_lines).decode('iso-8859-1')
     return email.parser.Parser(_class=_class).parsestr(hstring)
 
-def parse_headers(fp, _class=HTTPMessage):
-    """Parses only RFC2822 headers from a file pointer."""
+def parse_headers(fp, _class=HTTPMessage, *, _max_headers=None):
+    """Parses only RFC 5322 headers from a file pointer."""
 
-    headers = _read_headers(fp)
+    headers = _read_headers(fp, _max_headers)
     return _parse_header_lines(headers, _class)
 
 
@@ -280,6 +300,7 @@ class HTTPResponse(io.BufferedIOBase):
         self.chunk_left = _UNKNOWN      # bytes left to read in current chunk
         self.length = _UNKNOWN          # number of bytes left in response
         self.will_close = _UNKNOWN      # conn will close at end of response
+        self._max_headers = None        # configured header count limit
 
     def _read_status(self):
         line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
@@ -314,21 +335,29 @@ class HTTPResponse(io.BufferedIOBase):
             raise BadStatusLine(line)
         return version, status, reason
 
-    def begin(self):
+    def begin(self, *, _max_headers=None):
         if self.headers is not None:
             # we've already started reading the response
             return
 
+        # Trailers of a chunked response are read by read() long after
+        # begin() returns, so remember the configured header count limit
+        # for _read_and_discard_trailer() to enforce.
+        self._max_headers = _max_headers
+
         # read until we get a non-100 response
-        while True:
+        for _ in range(_MAXINTERIMRESPONSES):
             version, status, reason = self._read_status()
             if status != CONTINUE:
                 break
             # skip the header from the 100 response
-            skipped_headers = _read_headers(self.fp)
+            skipped_headers = _read_headers(self.fp, _max_headers)
             if self.debuglevel > 0:
                 print("headers:", skipped_headers)
             del skipped_headers
+        else:
+            raise HTTPException(
+                f"got more than {_MAXINTERIMRESPONSES} interim responses")
 
         self.code = self.status = status
         self.reason = reason.strip()
@@ -340,7 +369,9 @@ class HTTPResponse(io.BufferedIOBase):
         else:
             raise UnknownProtocol(version)
 
-        self.headers = self.msg = parse_headers(self.fp)
+        self.headers = self.msg = parse_headers(
+            self.fp, _max_headers=_max_headers
+        )
 
         if self.debuglevel > 0:
             for hdr, val in self.headers.items():
@@ -465,7 +496,7 @@ class HTTPResponse(io.BufferedIOBase):
         if self.chunked:
             return self._read_chunked(amt)
 
-        if amt is not None:
+        if amt is not None and amt >= 0:
             if self.length is not None and amt > self.length:
                 # clip the read to the "end of response"
                 amt = self.length
@@ -546,6 +577,10 @@ class HTTPResponse(io.BufferedIOBase):
     def _read_and_discard_trailer(self):
         # read and discard trailer up to the CRLF terminator
         ### note: we shouldn't have any trailers!
+        max_trailers = self._max_headers
+        if max_trailers is None:
+            max_trailers = _MAXHEADERS
+        trailers_read = 0
         while True:
             line = self.fp.readline(_MAXLINE + 1)
             if len(line) > _MAXLINE:
@@ -556,6 +591,13 @@ class HTTPResponse(io.BufferedIOBase):
                 break
             if line in (b'\r\n', b'\n', b''):
                 break
+            # Bound the trailer count just as response headers are bounded.
+            # A server streaming trailer lines forever would otherwise hang
+            # the client; a socket timeout cannot detect that as data keeps
+            # arriving within every timeout window.
+            trailers_read += 1
+            if trailers_read > max_trailers:
+                raise HTTPException(f"got more than {max_trailers} trailers")
 
     def _get_chunk_left(self):
         # return self.chunk_left, reading a new chunk if necessary.
@@ -583,6 +625,8 @@ class HTTPResponse(io.BufferedIOBase):
 
     def _read_chunked(self, amt=None):
         assert self.chunked != _UNKNOWN
+        if amt is not None and amt < 0:
+            amt = None
         value = []
         try:
             while (chunk_left := self._get_chunk_left()) is not None:
@@ -630,10 +674,25 @@ class HTTPResponse(io.BufferedIOBase):
         reading. If the bytes are truly not available (due to EOF), then the
         IncompleteRead exception can be used to detect the problem.
         """
-        data = self.fp.read(amt)
-        if len(data) < amt:
-            raise IncompleteRead(data, amt-len(data))
-        return data
+        cursize = min(amt, _MIN_READ_BUF_SIZE)
+        data = self.fp.read(cursize)
+        if len(data) >= amt:
+            return data
+        if len(data) < cursize:
+            raise IncompleteRead(data, amt - len(data))
+
+        data = io.BytesIO(data)
+        data.seek(0, 2)
+        while True:
+            # This is a geometric increase in read size (never more than
+            # doubling out the current length of data per loop iteration).
+            delta = min(cursize, amt - cursize)
+            data.write(self.fp.read(delta))
+            if data.tell() >= amt:
+                return data.getvalue()
+            cursize += delta
+            if data.tell() < cursize:
+                raise IncompleteRead(data.getvalue(), amt - data.tell())
 
     def _safe_readinto(self, b):
         """Same as _safe_read, but for reading into a buffer."""
@@ -658,6 +717,8 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
         elif self.length is not None:
             self.length -= len(result)
+            if not self.length:
+                self._close_conn()
         return result
 
     def peek(self, n=-1):
@@ -682,6 +743,8 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
         elif self.length is not None:
             self.length -= len(result)
+            if not self.length:
+                self._close_conn()
         return result
 
     def _read1_chunked(self, n):
@@ -852,7 +915,7 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None, blocksize=8192):
+                 source_address=None, blocksize=8192, *, max_response_headers=None):
         self.timeout = timeout
         self.source_address = source_address
         self.blocksize = blocksize
@@ -865,6 +928,7 @@ class HTTPConnection:
         self._tunnel_port = None
         self._tunnel_headers = {}
         self._raw_proxy_headers = None
+        self.max_response_headers = max_response_headers
 
         (self.host, self.port) = self._get_hostport(host, port)
 
@@ -925,21 +989,36 @@ class HTTPConnection:
                 host = host[:i]
             else:
                 port = self.default_port
-            if host and host[0] == '[' and host[-1] == ']':
-                host = host[1:-1]
+        if host and host[0] == '[' and host[-1] == ']':
+            host = host[1:-1]
 
         return (host, port)
 
     def set_debuglevel(self, level):
         self.debuglevel = level
 
+    def _wrap_ipv6(self, ip):
+        if b':' in ip and ip[0] != b'['[0]:
+            return b"[" + ip + b"]"
+        return ip
+
     def _tunnel(self):
+        if _contains_disallowed_url_pchar_re.search(self._tunnel_host):
+            raise ValueError('Tunnel host can\'t contain control characters %r'
+                             % (self._tunnel_host,))
         connect = b"CONNECT %s:%d %s\r\n" % (
-            self._tunnel_host.encode("idna"), self._tunnel_port,
+            self._wrap_ipv6(self._tunnel_host.encode("idna")),
+            self._tunnel_port,
             self._http_vsn_str.encode("ascii"))
         headers = [connect]
         for header, value in self._tunnel_headers.items():
-            headers.append(f"{header}: {value}\r\n".encode("latin-1"))
+            header_bytes = header.encode("latin-1")
+            value_bytes = value.encode("latin-1")
+            if not _is_legal_header_name(header_bytes):
+                raise ValueError('Invalid header name %r' % (header_bytes,))
+            if _is_illegal_header_value(value_bytes):
+                raise ValueError('Invalid header value %r' % (value_bytes,))
+            headers.append(b"%s: %s\r\n" % (header_bytes, value_bytes))
         headers.append(b"\r\n")
         # Making a single send() call instead of one per line encourages
         # the host OS to use a more optimal packet size instead of
@@ -951,7 +1030,7 @@ class HTTPConnection:
         try:
             (version, code, message) = response._read_status()
 
-            self._raw_proxy_headers = _read_headers(response.fp)
+            self._raw_proxy_headers = _read_headers(response.fp, self.max_response_headers)
 
             if self.debuglevel > 0:
                 for header in self._raw_proxy_headers:
@@ -970,13 +1049,12 @@ class HTTPConnection:
         received from the proxy server to the CONNECT request
         sent to set the tunnel.
 
-        If the CONNECT request was not sent, the method returns
-        an empty dictionary.
+        If the CONNECT request was not sent, the method returns None.
         """
         return (
             _parse_header_lines(self._raw_proxy_headers)
             if self._raw_proxy_headers is not None
-            else {}
+            else None
         )
 
     def connect(self):
@@ -1009,7 +1087,7 @@ class HTTPConnection:
                 response.close()
 
     def send(self, data):
-        """Send `data' to the server.
+        """Send 'data' to the server.
         ``data`` can be a string object, a bytes object, an array object, a
         file-like object that supports a .read() method, or an iterable object.
         """
@@ -1121,10 +1199,10 @@ class HTTPConnection:
                    skip_accept_encoding=False):
         """Send a request to the server.
 
-        `method' specifies an HTTP request method, e.g. 'GET'.
-        `url' specifies the object being requested, e.g. '/index.html'.
-        `skip_host' if True does not add automatically a 'Host:' header
-        `skip_accept_encoding' if True does not add automatically an
+        'method' specifies an HTTP request method, e.g. 'GET'.
+        'url' specifies the object being requested, e.g. '/index.html'.
+        'skip_host' if True does not add automatically a 'Host:' header
+        'skip_accept_encoding' if True does not add automatically an
            'Accept-Encoding:' header
         """
 
@@ -1195,7 +1273,7 @@ class HTTPConnection:
                         netloc_enc = netloc.encode("ascii")
                     except UnicodeEncodeError:
                         netloc_enc = netloc.encode("idna")
-                    self.putheader('Host', netloc_enc)
+                    self.putheader('Host', _strip_ipv6_iface(netloc_enc))
                 else:
                     if self._tunnel_host:
                         host = self._tunnel_host
@@ -1211,9 +1289,9 @@ class HTTPConnection:
 
                     # As per RFC 273, IPv6 address should be wrapped with []
                     # when used as Host header
-
-                    if host.find(':') >= 0:
-                        host_enc = b'[' + host_enc + b']'
+                    host_enc = self._wrap_ipv6(host_enc)
+                    if ":" in host:
+                        host_enc = _strip_ipv6_iface(host_enc)
 
                     if port == self.default_port:
                         self.putheader('Host', host_enc)
@@ -1369,8 +1447,7 @@ class HTTPConnection:
         """Get the response from the server.
 
         If the HTTPConnection is in the correct state, returns an
-        instance of HTTPResponse or of whatever object is returned by
-        the response_class variable.
+        instance of HTTPResponse.
 
         If a request has not been sent or if a previous response has
         not be handled, ResponseNotReady is raised.  If the HTTP
@@ -1409,7 +1486,10 @@ class HTTPConnection:
 
         try:
             try:
-                response.begin()
+                if self.max_response_headers is None:
+                    response.begin()
+                else:
+                    response.begin(_max_headers=self.max_response_headers)
             except ConnectionError:
                 self.close()
                 raise
@@ -1440,10 +1520,12 @@ else:
 
         def __init__(self, host, port=None,
                      *, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                     source_address=None, context=None, blocksize=8192):
+                     source_address=None, context=None, blocksize=8192,
+                     max_response_headers=None):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
-                                                  blocksize=blocksize)
+                                                  blocksize=blocksize,
+                                                  max_response_headers=max_response_headers)
             if context is None:
                 context = _create_https_context(self._http_vsn)
             self._context = context

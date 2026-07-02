@@ -1,4 +1,0 @@
-Prepare the ``_tkinter`` module for building with Tcl 9.0 and future
-libtommath by replacing usage of deprecated functions
-:c:func:`mp_to_unsigned_bin_n` and :c:func:`mp_unsigned_bin_size`
-when necessary.

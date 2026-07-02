@@ -31,11 +31,11 @@ two types exist -- :ref:`GenericAlias <types-genericalias>` and
       static PyMethodDef my_obj_methods[] = {
           // Other methods.
           ...
-          {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, "See PEP 585"}
+          {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, "my_obj is generic over its contained type"}
           ...
       }
 
-   .. seealso:: The data model method :meth:`__class_getitem__`.
+   .. seealso:: The data model method :meth:`~object.__class_getitem__`.
 
    .. versionadded:: 3.9
 

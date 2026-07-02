@@ -1,2 +1,0 @@
-Fix a bug in :c:func:`PyErr_WarnExplicit` where an exception could end up
-being overwritten if the API failed internally.

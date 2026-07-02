@@ -386,10 +386,11 @@ def MultiCallCreator(widget):
                 if triplet is None:
                     #print("Tkinter event_delete: %s" % seq, file=sys.__stderr__)
                     widget.event_delete(self, virtual, seq)
-                else:
+                elif triplet in triplets:
                     if func is not None:
                         self.__binders[triplet[1]].unbind(triplet, func)
                     triplets.remove(triplet)
+                # Else the sequence is not bound; ignore it (gh-89360).
 
         def event_info(self, virtual=None):
             if virtual is None or virtual not in self.__eventinfo:
@@ -421,6 +422,8 @@ def _multi_call(parent):  # htest #
     top.geometry("+%d+%d" % (x, y + 175))
     text = MultiCallCreator(tkinter.Text)(top)
     text.pack()
+    text.focus_set()
+
     def bindseq(seq, n=[0]):
         def handler(event):
             print(seq)
@@ -439,6 +442,7 @@ def _multi_call(parent):  # htest #
     bindseq("<FocusOut>")
     bindseq("<Enter>")
     bindseq("<Leave>")
+
 
 if __name__ == "__main__":
     from unittest import main

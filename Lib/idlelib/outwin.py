@@ -78,6 +78,10 @@ class OutputWindow(EditorWindow):
     def __init__(self, *args):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
+        # Output is not Python source, so save it as text by default
+        # (gh-65339).
+        self.io.filetypes = self.io.text_filetypes
+        self.io.defaultextension = self.io.text_defaultextension
 
     # Customize EditorWindow
     def ispythonsource(self, filename):
@@ -112,7 +116,7 @@ class OutputWindow(EditorWindow):
         assert isinstance(s, str)
         self.text.insert(mark, s, tags)
         self.text.see(mark)
-        self.text.update_idletasks()
+        self.text.update()
         return len(s)
 
     def writelines(self, lines):
@@ -181,6 +185,7 @@ class OnDemandOutputWindow:
                 text.tag_configure(tag, **cnf)
         text.tag_raise('sel')
         self.write = self.owin.write
+
 
 if __name__ == '__main__':
     from unittest import main

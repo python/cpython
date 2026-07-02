@@ -179,7 +179,7 @@ it -- i.e. you can only edit the current command, and the cursor can't
 escape from the command area.  (Albert Brandl)
 
 - Set X11 class to "idle/Idle", set icon and title to something
-beginning with "idle" -- for window manangers.  (Randall Hopper)
+beginning with "idle" -- for window managers.  (Randall Hopper)
 
 - Config files editable through a preferences dialog.  (me) DONE
 

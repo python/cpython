@@ -1,9 +1,8 @@
+.. _functional-howto:
+
 ********************************
   Functional Programming HOWTO
 ********************************
-
-:Author: A. M. Kuchling
-:Release: 0.32
 
 In this document, we'll take a tour of Python's features suitable for
 implementing programs in a functional style.  After an introduction to the
@@ -370,8 +369,8 @@ have the form::
                  for expr2 in sequence2
                  if condition2
                  for expr3 in sequence3
-                 ...
                  if condition3
+                 ...
                  for exprN in sequenceN
                  if conditionN )
 
@@ -600,7 +599,7 @@ generators:
   raise an exception inside the generator; the exception is raised by the
   ``yield`` expression where the generator's execution is paused.
 
-* :meth:`~generator.close` raises a :exc:`GeneratorExit` exception inside the
+* :meth:`~generator.close` sends a :exc:`GeneratorExit` exception to the
   generator to terminate the iteration.  On receiving this exception, the
   generator's code must either raise :exc:`GeneratorExit` or
   :exc:`StopIteration`; catching the exception and doing anything else is
@@ -1040,7 +1039,7 @@ first calculation. ::
     >>> functools.reduce(operator.concat, [])
     Traceback (most recent call last):
       ...
-    TypeError: reduce() of empty sequence with no initial value
+    TypeError: reduce() of empty iterable with no initial value
     >>> functools.reduce(operator.mul, [1, 2, 3], 1)
     6
     >>> functools.reduce(operator.mul, [], 1)
@@ -1072,8 +1071,8 @@ write the obvious :keyword:`for` loop::
 
 A related function is :func:`itertools.accumulate(iterable, func=operator.add)
 <itertools.accumulate>`.  It performs the same calculation, but instead of
-returning only the final result, :func:`accumulate` returns an iterator that
-also yields each partial result::
+returning only the final result, :func:`~itertools.accumulate` returns an iterator
+that also yields each partial result::
 
     itertools.accumulate([1, 2, 3, 4, 5]) =>
       1, 3, 6, 10, 15
@@ -1183,7 +1182,8 @@ about whether this lambda-free style is better.
 Revision History and Acknowledgements
 =====================================
 
-The author would like to thank the following people for offering suggestions,
+This HOWTO was originally written by A. M. Kuchling. The author would like to
+thank the following people for offering suggestions,
 corrections and assistance with various drafts of this article: Ian Bicking,
 Nick Coghlan, Nick Efford, Raymond Hettinger, Jim Jewett, Mike Krell, Leandro
 Lameiro, Jussi Salmela, Collin Winter, Blake Winton.
@@ -1215,7 +1215,7 @@ flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
 Python code.
 
-https://www.defmacro.org/ramblings/fp.html: A general introduction to functional
+https://defmacro.org/2006/06/19/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
 https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
@@ -1237,9 +1237,9 @@ Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
 for IBM's DeveloperWorks site; see
-`part 1 <https://developer.ibm.com/articles/l-prog/>`__,
-`part 2 <https://developer.ibm.com/tutorials/l-prog2/>`__, and
-`part 3 <https://developer.ibm.com/tutorials/l-prog3/>`__,
+`part 1 <https://web.archive.org/web/20211006103639/https://developer.ibm.com/articles/l-prog/>`__,
+`part 2 <https://web.archive.org/web/20211205224606/https://developer.ibm.com/tutorials/l-prog2/>`__, and
+`part 3 <https://web.archive.org/web/20211127083846/https://developer.ibm.com/tutorials/l-prog3/>`__.
 
 
 Python documentation

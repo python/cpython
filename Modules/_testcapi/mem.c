@@ -2,6 +2,28 @@
 
 #include <stddef.h>
 
+#if defined(__APPLE__)
+#  include <TargetConditionals.h>
+   // Older macOS SDKs do not define TARGET_OS_OSX
+#  if !defined(TARGET_OS_OSX)
+#    define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
+#    include <errno.h>              // errno, ESRCH
+#    include <libproc.h>            // proc_pidinfo(), PROC_PIDTASKINFO
+#    include <sys/proc_info.h>      // struct proc_taskinfo
+#  endif
+#endif
+
+#ifdef __FreeBSD__
+#  include <fcntl.h>              // O_RDONLY
+#  include <kvm.h>                // kvm_openfiles()
+#  include <limits.h>             // _POSIX2_LINE_MAX
+#  include <sys/sysctl.h>         // KERN_PROC_PID
+#  include <sys/user.h>           // kinfo_proc definition
+#  include <unistd.h>             // sysconf()
+#endif
+
 
 typedef struct {
     PyMemAllocatorEx alloc;
@@ -323,6 +345,53 @@ test_setallocators(PyMemAllocatorDomain domain)
         goto fail;
     }
 
+    /* realloc(NULL, size) should behave like malloc(size) */
+    size_t size3 = 100;
+    void *ptr3;
+    switch(domain) {
+        case PYMEM_DOMAIN_RAW:
+            ptr3 = PyMem_RawRealloc(NULL, size3);
+            break;
+        case PYMEM_DOMAIN_MEM:
+            ptr3 = PyMem_Realloc(NULL, size3);
+            break;
+        case PYMEM_DOMAIN_OBJ:
+            ptr3 = PyObject_Realloc(NULL, size3);
+            break;
+        default:
+            ptr3 = NULL;
+            break;
+    }
+
+    CHECK_CTX("realloc(NULL, size)");
+    if (ptr3 == NULL) {
+        error_msg = "realloc(NULL, size) failed";
+        goto fail;
+    }
+    if (hook.realloc_ptr != NULL || hook.realloc_new_size != size3) {
+        error_msg = "realloc(NULL, size) invalid parameters";
+        goto fail;
+    }
+
+    hook.free_ptr = NULL;
+    switch(domain) {
+        case PYMEM_DOMAIN_RAW:
+            PyMem_RawFree(ptr3);
+            break;
+        case PYMEM_DOMAIN_MEM:
+            PyMem_Free(ptr3);
+            break;
+        case PYMEM_DOMAIN_OBJ:
+            PyObject_Free(ptr3);
+            break;
+    }
+
+    CHECK_CTX("realloc(NULL, size) free");
+    if (hook.free_ptr != ptr3) {
+        error_msg = "unexpected pointer passed to free";
+        goto fail;
+    }
+
     res = Py_NewRef(Py_None);
     goto finally;
 
@@ -441,17 +510,6 @@ test_pymem_alloc0(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-test_pymem_getallocatorsname(PyObject *self, PyObject *args)
-{
-    const char *name = _PyMem_GetCurrentAllocatorName();
-    if (name == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "cannot get allocators name");
-        return NULL;
-    }
-    return PyUnicode_FromString(name);
-}
-
-static PyObject *
 test_pymem_setrawallocators(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return test_setallocators(PYMEM_DOMAIN_RAW);
@@ -526,75 +584,6 @@ pymem_malloc_without_gil(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-test_pyobject_is_freed(const char *test_name, PyObject *op)
-{
-    if (!_PyObject_IsFreed(op)) {
-        PyErr_SetString(PyExc_AssertionError,
-                        "object is not seen as freed");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-check_pyobject_null_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyObject *op = NULL;
-    return test_pyobject_is_freed("check_pyobject_null_is_freed", op);
-}
-
-
-static PyObject *
-check_pyobject_uninitialized_is_freed(PyObject *self,
-                                      PyObject *Py_UNUSED(args))
-{
-    PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
-    if (op == NULL) {
-        return NULL;
-    }
-    /* Initialize reference count to avoid early crash in ceval or GC */
-    Py_SET_REFCNT(op, 1);
-    /* object fields like ob_type are uninitialized! */
-    return test_pyobject_is_freed("check_pyobject_uninitialized_is_freed", op);
-}
-
-
-static PyObject *
-check_pyobject_forbidden_bytes_is_freed(PyObject *self,
-                                        PyObject *Py_UNUSED(args))
-{
-    /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
-    PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
-    if (op == NULL) {
-        return NULL;
-    }
-    /* Initialize reference count to avoid early crash in ceval or GC */
-    Py_SET_REFCNT(op, 1);
-    /* ob_type field is after the memory block: part of "forbidden bytes"
-       when using debug hooks on memory allocators! */
-    return test_pyobject_is_freed("check_pyobject_forbidden_bytes_is_freed", op);
-}
-
-
-static PyObject *
-check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    /* This test would fail if run with the address sanitizer */
-#ifdef _Py_ADDRESS_SANITIZER
-    Py_RETURN_NONE;
-#else
-    PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
-    if (op == NULL) {
-        return NULL;
-    }
-    Py_TYPE(op)->tp_dealloc(op);
-    /* Reset reference count to avoid early crash in ceval or GC */
-    Py_SET_REFCNT(op, 1);
-    /* object memory is freed! */
-    return test_pyobject_is_freed("check_pyobject_freed_is_freed", op);
-#endif
-}
 
 // Tracemalloc tests
 static PyObject *
@@ -637,8 +626,9 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
 {
     unsigned int domain;
     PyObject *ptr_obj;
+    int release_gil = 0;
 
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
+    if (!PyArg_ParseTuple(args, "IO|i", &domain, &ptr_obj, &release_gil)) {
         return NULL;
     }
     void *ptr = PyLong_AsVoidPtr(ptr_obj);
@@ -646,7 +636,15 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    int res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    int res;
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    }
     if (res < 0) {
         PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
         return NULL;
@@ -655,49 +653,196 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-tracemalloc_get_traceback(PyObject *self, PyObject *args)
+
+static void
+tracemalloc_track_race_thread(void *data)
 {
-    unsigned int domain;
-    PyObject *ptr_obj;
+    PyTraceMalloc_Track(123, 10, 1);
+    PyTraceMalloc_Untrack(123, 10);
 
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
-        return NULL;
-    }
-    void *ptr = PyLong_AsVoidPtr(ptr_obj);
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
-    return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
+    PyThread_type_lock lock = (PyThread_type_lock)data;
+    PyThread_release_lock(lock);
 }
 
+// gh-128679: Test fix for tracemalloc.stop() race condition
+static PyObject *
+tracemalloc_track_race(PyObject *self, PyObject *args)
+{
+#define NTHREAD 50
+    PyObject *tracemalloc = NULL;
+    PyObject *stop = NULL;
+    PyThread_type_lock locks[NTHREAD];
+    memset(locks, 0, sizeof(locks));
+
+    // Call tracemalloc.start()
+    tracemalloc = PyImport_ImportModule("tracemalloc");
+    if (tracemalloc == NULL) {
+        goto error;
+    }
+    PyObject *start = PyObject_GetAttrString(tracemalloc, "start");
+    if (start == NULL) {
+        goto error;
+    }
+    PyObject *res = PyObject_CallNoArgs(start);
+    Py_DECREF(start);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    stop = PyObject_GetAttrString(tracemalloc, "stop");
+    Py_CLEAR(tracemalloc);
+    if (stop == NULL) {
+        goto error;
+    }
+
+    // Start threads
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = PyThread_allocate_lock();
+        if (!lock) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        locks[i] = lock;
+        PyThread_acquire_lock(lock, 1);
+
+        unsigned long thread;
+        thread = PyThread_start_new_thread(tracemalloc_track_race_thread,
+                                           (void*)lock);
+        if (thread == (unsigned long)-1) {
+            PyErr_SetString(PyExc_RuntimeError, "can't start new thread");
+            goto error;
+        }
+    }
+
+    // Call tracemalloc.stop() while threads are running
+    res = PyObject_CallNoArgs(stop);
+    Py_CLEAR(stop);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    // Wait until threads complete with the GIL released
+    Py_BEGIN_ALLOW_THREADS
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_acquire_lock(lock, 1);
+        PyThread_release_lock(lock);
+    }
+    Py_END_ALLOW_THREADS
+
+    // Free threads locks
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_free_lock(lock);
+    }
+    Py_RETURN_NONE;
+
+error:
+    Py_CLEAR(tracemalloc);
+    Py_CLEAR(stop);
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        if (lock) {
+            PyThread_free_lock(lock);
+        }
+    }
+    return NULL;
+#undef NTHREAD
+}
+
+
+#if TARGET_OS_OSX || defined(__FreeBSD__)
+// Return RSS only. Per-process swap usage isn't readily available
+static PyObject*
+get_process_memory_usage(PyObject *self, PyObject *args)
+{
+    int pid;
+    if (!PyArg_ParseTuple(args, "i", &pid)) {
+        return NULL;
+    }
+
+#if TARGET_OS_OSX
+    // macOS: proc_pidinfo(PROC_PIDTASKINFO).pti_resident_size
+    struct proc_taskinfo pti;
+    int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &pti, sizeof(pti));
+    if (ret <= 0) {
+        if (errno == 0) {
+            // proc_pidinfo() can return 0 without setting errno when the
+            // process does not exist.
+            errno = ESRCH;
+        }
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    return PyLong_FromUnsignedLongLong(pti.pti_resident_size);
+#else
+    // FreeBSD: kvm_getprocs(KERN_PROC_PID) and ki_rssize * page_size
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // Using /dev/null for vmcore avoids needing dump file.
+    // NULL for kernel file uses running kernel.
+    char errbuf[_POSIX2_LINE_MAX];
+    kvm_t *kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, errbuf);
+    if (kd == NULL) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    // KERN_PROC_PID filters for the specific process ID.
+    int n_procs;
+    struct kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, &n_procs);
+    if (kp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    if (n_procs <= 0) {
+        // Process with PID not found
+        errno = ESRCH;
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    assert(n_procs == 1);
+
+    // ki_rssize is in pages. Convert to bytes.
+    size_t rss = (size_t)kp[0].ki_rssize * page_size;
+    kvm_close(kd);
+
+    return PyLong_FromSize_t(rss);
+
+error:
+    kvm_close(kd);
+    return NULL;
+#endif
+}
+#endif
+
+
 static PyMethodDef test_methods[] = {
-    {"check_pyobject_forbidden_bytes_is_freed",
-                            check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
-    {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
-    {"check_pyobject_null_is_freed",  check_pyobject_null_is_freed,  METH_NOARGS},
-    {"check_pyobject_uninitialized_is_freed",
-                              check_pyobject_uninitialized_is_freed, METH_NOARGS},
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
-    {"pymem_getallocatorsname",       test_pymem_getallocatorsname,  METH_NOARGS},
     {"pymem_malloc_without_gil",      pymem_malloc_without_gil,      METH_NOARGS},
     {"pyobject_malloc_without_gil",   pyobject_malloc_without_gil,   METH_NOARGS},
     {"remove_mem_hooks",              remove_mem_hooks,              METH_NOARGS,
         PyDoc_STR("Remove memory hooks.")},
-    {"set_nomemory",                  (PyCFunction)set_nomemory,     METH_VARARGS,
+    {"set_nomemory",                  set_nomemory,                  METH_VARARGS,
         PyDoc_STR("set_nomemory(start:int, stop:int = 0)")},
     {"test_pymem_alloc0",             test_pymem_alloc0,             METH_NOARGS},
     {"test_pymem_setallocators",      test_pymem_setallocators,      METH_NOARGS},
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
+#if TARGET_OS_OSX || defined(__FreeBSD__)
+    {"get_process_memory_usage",      get_process_memory_usage,      METH_VARARGS},
+#endif
 
     // Tracemalloc tests
     {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
     {"tracemalloc_untrack",           tracemalloc_untrack,           METH_VARARGS},
-    {"tracemalloc_get_traceback",     tracemalloc_get_traceback,     METH_VARARGS},
+    {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
     {NULL},
 };
 
@@ -710,13 +855,20 @@ _PyTestCapi_Init_Mem(PyObject *mod)
 
     PyObject *v;
 #ifdef WITH_PYMALLOC
-    v = Py_NewRef(Py_True);
+    v = Py_True;
 #else
-    v = Py_NewRef(Py_False);
+    v = Py_False;
 #endif
-    int rc = PyModule_AddObjectRef(mod, "WITH_PYMALLOC", v);
-    Py_DECREF(v);
-    if (rc < 0) {
+    if (PyModule_AddObjectRef(mod, "WITH_PYMALLOC", v) < 0) {
+        return -1;
+    }
+
+#ifdef WITH_MIMALLOC
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    if (PyModule_AddObjectRef(mod, "WITH_MIMALLOC", v) < 0) {
         return -1;
     }
 

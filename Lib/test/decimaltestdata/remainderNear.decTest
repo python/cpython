@@ -498,7 +498,7 @@ rmnx758 remaindernear  1000 sNaN   ->  NaN  Invalid_operation
 rmnx759 remaindernear  Inf  sNaN   ->  NaN  Invalid_operation
 rmnx760 remaindernear  NaN  sNaN   ->  NaN  Invalid_operation
 
--- propaging NaNs
+-- propagating NaNs
 rmnx761 remaindernear  NaN1   NaN7   ->  NaN1
 rmnx762 remaindernear sNaN2   NaN8   ->  NaN2 Invalid_operation
 rmnx763 remaindernear  NaN3 -sNaN9   -> -NaN9 Invalid_operation

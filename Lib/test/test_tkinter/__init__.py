@@ -10,6 +10,7 @@ from test.support import (
 
 
 if check_sanitizer(address=True, memory=True):
+    # See gh-90791 for details
     raise unittest.SkipTest("Tests involving libX11 can SEGFAULT on ASAN/MSAN builds")
 
 # Skip test if _tkinter wasn't built.
@@ -21,3 +22,9 @@ requires('gui')
 
 def load_tests(*args):
     return load_package_tests(os.path.dirname(__file__), *args)
+
+def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))

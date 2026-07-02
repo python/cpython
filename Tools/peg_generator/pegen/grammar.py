@@ -1,15 +1,7 @@
 from __future__ import annotations
 
-from typing import (
-    AbstractSet,
-    Any,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from collections.abc import Iterable, Iterator, Set
+from typing import Any
 
 
 class GrammarError(Exception):
@@ -34,8 +26,14 @@ class GrammarVisitor:
 
 
 class Grammar:
-    def __init__(self, rules: Iterable[Rule], metas: Iterable[Tuple[str, Optional[str]]]):
-        self.rules = {rule.name: rule for rule in rules}
+    def __init__(self, rules: Iterable[Rule], metas: Iterable[tuple[str, str | None]]):
+        # Check if there are repeated rules in "rules"
+        all_rules = {}
+        for rule in rules:
+            if rule.name in all_rules:
+                raise GrammarError(f"Repeated rule {rule.name!r}")
+            all_rules[rule.name] = rule
+        self.rules = all_rules
         self.metas = dict(metas)
 
     def __str__(self) -> str:
@@ -60,11 +58,11 @@ SIMPLE_STR = True
 
 
 class Rule:
-    def __init__(self, name: str, type: Optional[str], rhs: Rhs, memo: Optional[object] = None):
+    def __init__(self, name: str, type: str | None, rhs: Rhs, flags: frozenset[str] | None = None):
         self.name = name
         self.type = type
         self.rhs = rhs
-        self.memo = bool(memo)
+        self.flags = flags or frozenset()
         self.left_recursive = False
         self.leader = False
 
@@ -112,8 +110,7 @@ class Leaf:
         return self.value
 
     def __iter__(self) -> Iterable[str]:
-        if False:
-            yield
+        yield from ()
 
 
 class NameLeaf(Leaf):
@@ -136,9 +133,8 @@ class StringLeaf(Leaf):
 
 
 class Rhs:
-    def __init__(self, alts: List[Alt]):
+    def __init__(self, alts: list[Alt]):
         self.alts = alts
-        self.memo: Optional[Tuple[Optional[str], str]] = None
 
     def __str__(self) -> str:
         return " | ".join(str(alt) for alt in self.alts)
@@ -146,7 +142,7 @@ class Rhs:
     def __repr__(self) -> str:
         return f"Rhs({self.alts!r})"
 
-    def __iter__(self) -> Iterator[List[Alt]]:
+    def __iter__(self) -> Iterator[list[Alt]]:
         yield self.alts
 
     @property
@@ -160,7 +156,7 @@ class Rhs:
 
 
 class Alt:
-    def __init__(self, items: List[NamedItem], *, icut: int = -1, action: Optional[str] = None):
+    def __init__(self, items: list[NamedItem], *, icut: int = -1, action: str | None = None):
         self.items = items
         self.icut = icut
         self.action = action
@@ -180,12 +176,12 @@ class Alt:
             args.append(f"action={self.action!r}")
         return f"Alt({', '.join(args)})"
 
-    def __iter__(self) -> Iterator[List[NamedItem]]:
+    def __iter__(self) -> Iterator[list[NamedItem]]:
         yield self.items
 
 
 class NamedItem:
-    def __init__(self, name: Optional[str], item: Item, type: Optional[str] = None):
+    def __init__(self, name: str | None, item: Item, type: str | None = None):
         self.name = name
         self.item = item
         self.type = type
@@ -266,7 +262,6 @@ class Repeat:
 
     def __init__(self, node: Plain):
         self.node = node
-        self.memo: Optional[Tuple[Optional[str], str]] = None
 
     def __iter__(self) -> Iterator[Plain]:
         yield self.node
@@ -329,29 +324,28 @@ class Cut:
         pass
 
     def __repr__(self) -> str:
-        return f"Cut()"
+        return "Cut()"
 
     def __str__(self) -> str:
-        return f"~"
+        return "~"
 
-    def __iter__(self) -> Iterator[Tuple[str, str]]:
-        if False:
-            yield
+    def __iter__(self) -> Iterator[tuple[str, str]]:
+        yield from ()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Cut):
             return NotImplemented
         return True
 
-    def initial_names(self) -> AbstractSet[str]:
+    def initial_names(self) -> Set[str]:
         return set()
 
 
-Plain = Union[Leaf, Group]
-Item = Union[Plain, Opt, Repeat, Forced, Lookahead, Rhs, Cut]
-RuleName = Tuple[str, str]
-MetaTuple = Tuple[str, Optional[str]]
-MetaList = List[MetaTuple]
-RuleList = List[Rule]
-NamedItemList = List[NamedItem]
-LookaheadOrCut = Union[Lookahead, Cut]
+Plain = Leaf | Group
+Item = Plain | Opt | Repeat | Forced | Lookahead | Rhs | Cut
+RuleName = tuple[str, str | None]
+MetaTuple = tuple[str, str | None]
+MetaList = list[MetaTuple]
+RuleList = list[Rule]
+NamedItemList = list[NamedItem]
+LookaheadOrCut = Lookahead | Cut
