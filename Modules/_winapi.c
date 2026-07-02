@@ -1739,7 +1739,19 @@ _winapi_GetVersion_impl(PyObject *module)
 #pragma warning(disable:4996)
 
 {
+#ifdef MS_WINDOWS_DESKTOP
     return GetVersion();
+#else
+    OSVERSIONINFOW version_info;
+    ZeroMemory(&version_info, sizeof(version_info));
+    version_info.dwOSVersionInfoSize = sizeof(version_info);
+    if (GetVersionExW(&version_info)) {
+        return version_info.dwMinorVersion |
+            (version_info.dwMajorVersion << 8) |
+            (version_info.dwBuildNumber << 16);
+    }
+    return 0;
+#endif
 }
 
 #pragma warning(pop)
