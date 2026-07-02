@@ -1162,30 +1162,38 @@ def detect_virt_windows(info_add):
     # On Windows, use WMI to detect the virtualization.
     #
     # Microsoft Hyper-V:
-    # - Win32_Bios.Version = "VRTUAL - 1"
-    # - Win32_ComputerSystem.Model = "Virtual Machine"
-    # - Win32_ComputerSystem.Manufacturer = "Microsoft Corporation"
+    # - Win32_Bios.Version = 'VRTUAL - 12001807'
+    # - Win32_Bios.Manufacturer = 'American Megatrends Inc.'
+    # - Win32_ComputerSystem.Model = 'Virtual Machine'
+    # - Win32_ComputerSystem.Manufacturer = 'Microsoft Corporation'
     #
     # VMware:
-    # - Win32_ComputerSystem.Model = "VMware"
-    # - Win32_ComputerSystem.Manufacturer = "VMware"
-    # - Win32_Bios.SerialNumber starts with "VMware-"
+    # - Win32_ComputerSystem.Model = 'VMware'
+    # - Win32_ComputerSystem.Manufacturer = 'VMWare' (uppercase W in Ware)
+    # - Win32_Bios.SerialNumber starts with 'VMware-'
     #
     # QEMU:
-    # - Win32_ComputerSystem.Manufacturer = "QEMU"
-    # - Win32_ComputerSystem.Model = "Standard PC (Q35 + ICH9, 2009)"
-    # - Win32_Bios.Version = "BOCHS  - 1"
-    # - Win32_Bios.Manufacturer = "EDK II"
+    # - Win32_ComputerSystem.Manufacturer = 'QEMU'
+    # - Win32_ComputerSystem.Model = 'Standard PC (Q35 + ICH9, 2009)'
+    # - Win32_Bios.Version = 'BOCHS  - 1'
+    # - Win32_Bios.Manufacturer = 'EDK II'
     #
     # Parallels:
-    # - Win32_Bios.Version = "PARALLELS"
+    # - Win32_Bios.Version = 'PARALLELS'
     #
     # VirtualBox:
-    # - Win32_Bios.Version = "VBOX"
-    # - Win32_ComputerSystem.Model = "VirtualBox"
-    # - Win32_ComputerSystem.Manufacturer = "innotek GmbH"
+    # - Win32_Bios.Version = 'VBOX'
+    # - Win32_ComputerSystem.Model = 'VirtualBox'
+    # - Win32_ComputerSystem.Manufacturer = 'innotek GmbH'
+    #
+    # Amazon EC2:
+    # - Win32_Bios.Version = 'AMAZON - 1'
+    # - Win32_Bios.Manufacturer = 'Amazon EC2'
+    # - Win32_ComputerSystem.Model = 'm7i.4xlarge'
+    # - Win32_ComputerSystem.Manufacturer = 'Amazon EC2'
 
     KNOWN_VIRT = (
+        'Amazon EC2',
         'QEMU',
         'VMware',
         'VirtualBox',
@@ -1193,24 +1201,30 @@ def detect_virt_windows(info_add):
         'oVirt',
     )
     KNOWN_BIOS_VERSIONS = {
-        "VRTUAL - 1": "Microsoft Hyper-V",
-        "PARALLELS": "Parallels",
-        "VBOX": "VirtualBox",
+        'PARALLELS': 'Parallels',
+        'VBOX': 'VirtualBox',
     }
 
-    computer = wmi_query("SELECT Model, Manufacturer FROM Win32_ComputerSystem")
+    computer = wmi_query('SELECT Model, Manufacturer FROM Win32_ComputerSystem')
     computer_model = computer.get('Model', '')
+    computer_manufacturer = computer.get('Manufacturer', '')
+    if computer_manufacturer == 'Amazon EC2':
+        # Log the VM model (ex: 'm7i.4xlarge')
+        info_add('system.computer.model', computer_model)
+        return computer_manufacturer
     if computer_model in KNOWN_VIRT:
         return computer_model
-    computer_manufacturer = computer.get('Manufacturer', '')
     if computer_manufacturer in KNOWN_VIRT:
         return computer_manufacturer
 
-    bios = wmi_query("SELECT Version, Manufacturer FROM Win32_Bios")
+    bios = wmi_query('SELECT Version, Manufacturer FROM Win32_Bios')
 
     bios_version = bios.get('Version', '')
     if bios_version in KNOWN_VIRT:
         return bios_version
+    if (bios_version.startswith('VRTUAL - ')
+        and computer_manufacturer == 'Microsoft Corporation'):
+        return 'Microsoft Hyper-V'
     try:
         return KNOWN_BIOS_VERSIONS[bios_version]
     except KeyError:
