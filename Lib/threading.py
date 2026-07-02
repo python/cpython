@@ -1147,7 +1147,7 @@ class Thread:
         self._started.wait()  # Will set ident and native_id
 
     def run(self):
-        """Method representing the thread's activity.
+        """Method representing the thread's activity. Use Thread.start() to start a thread's execution
 
         You may override this method in a subclass. The standard run() method
         invokes the callable object passed to the object's constructor as the
