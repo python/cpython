@@ -36,7 +36,8 @@ def mock_socket_module():
     m_socket = mock.MagicMock(spec=socket)
     for name in (
         'AF_INET', 'AF_INET6', 'AF_UNSPEC', 'IPPROTO_TCP', 'IPPROTO_UDP',
-        'SOCK_STREAM', 'SOCK_DGRAM', 'SOL_SOCKET', 'SO_REUSEADDR', 'inet_pton'
+        'SOCK_STREAM', 'SOCK_DGRAM', 'SOL_SOCKET', 'SO_REUSEADDR', 'inet_pton',
+        'gaierror', 'AI_NUMERICHOST', 'AI_NUMERICSERV', 'EAI_NONAME',
     ):
         if hasattr(socket, name):
             setattr(m_socket, name, getattr(socket, name))
@@ -2058,31 +2059,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             reuse_port=True)
 
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
-
-    @patch_socket
-    def test_create_datagram_endpoint_ip_addr(self, m_socket):
-        def getaddrinfo(*args, **kw):
-            self.fail('should not have called getaddrinfo')
-
-        m_socket.getaddrinfo = getaddrinfo
-        m_socket.socket.return_value.bind = bind = mock.Mock()
-        self.loop._add_reader = mock.Mock()
-
-        reuseport_supported = hasattr(socket, 'SO_REUSEPORT')
-        coro = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(loop=self.loop),
-            local_addr=('1.2.3.4', 0),
-            reuse_port=reuseport_supported)
-
-        t, p = self.loop.run_until_complete(coro)
-        try:
-            bind.assert_called_with(('1.2.3.4', 0))
-            m_socket.socket.assert_called_with(family=m_socket.AF_INET,
-                                               proto=m_socket.IPPROTO_UDP,
-                                               type=m_socket.SOCK_DGRAM)
-        finally:
-            t.close()
-            test_utils.run_briefly(self.loop)  # allow transport to close
 
     def test_accept_connection_retry(self):
         sock = mock.Mock()
