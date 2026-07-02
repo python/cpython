@@ -7,6 +7,9 @@
 
 #include "_remote_debugging.h"
 
+#define MAX_LINETABLE_SIZE (1024 * 1024)
+#define MAX_LINETABLE_ENTRIES 65536
+
 /* ============================================================================
  * TLBC CACHING FUNCTIONS (Py_GIL_DISABLED only)
  * ============================================================================ */
@@ -186,7 +189,6 @@ parse_linetable(const uintptr_t addrq, const char* linetable, Py_ssize_t linetab
     int computed_line = firstlineno;  // Running accumulator, separate from output
     int val;  // Temporary for varint results
     uint8_t byte;  // Temporary for byte reads
-    const size_t MAX_LINETABLE_ENTRIES = 65536;
     size_t entry_count = 0;
 
     while (ptr < end && *ptr != '\0' && entry_count < MAX_LINETABLE_ENTRIES) {
@@ -387,7 +389,8 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         }
 
         linetable = read_py_bytes(unwinder,
-            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable), 4096);
+            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable),
+            MAX_LINETABLE_SIZE);
         if (!linetable) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
             goto error;
