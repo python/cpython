@@ -1105,7 +1105,7 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                             return -1;
                         }
                     }
-                    /* Exact-size the list; alloc+trim is O(count^2). */
+                    /* Append per element; the old alloc(count - i) + trim per batch was O(count^2). */
                     timestamps_list = PyList_New(0);
                     if (!timestamps_list) {
                         return -1;
