@@ -550,6 +550,35 @@ ZipFile objects
    .. versionadded:: 3.11
 
 
+.. method:: ZipFile.copy(zinfo_or_arcname, new_arcname[, chunk_size])
+
+   Copies a member *zinfo_or_arcname* to *new_arcname* in the archive.
+   *zinfo_or_arcname* may be the full path of the member or a :class:`ZipInfo`
+   instance.
+
+   *chunk_size* may be specified to control the buffer size when copying
+   entry data (default is 1 MiB).
+
+   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``, and the
+   underlying stream must be seekable.
+
+   Returns the original version of the copied :class:`ZipInfo` instance.
+
+   Calling :meth:`copy` on a closed ZipFile will raise a :exc:`ValueError`.
+
+   .. note::
+      Renaming a member in a ZIP file requires rewriting its data, as the
+      filename is stored within its local file entry.
+
+      To rename a member and reclaim the space occupied by the old entry,
+      combine :meth:`copy`, :meth:`remove`, and :meth:`repack` like::
+
+          with ZipFile('spam.zip', 'a') as myzip:
+              myzip.repack([myzip.remove(myzip.copy('old.txt', 'new.txt'))])
+
+   .. versionadded:: next
+
+
 .. method:: ZipFile.remove(zinfo_or_arcname)
 
    Removes a member entry from the archive's central directory.

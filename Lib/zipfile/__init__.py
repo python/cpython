@@ -4,6 +4,7 @@ Read and write ZIP files.
 XXX references to utf-8 need further investigation.
 """
 import binascii
+import copy
 import io
 import os
 import shutil
@@ -1418,6 +1419,31 @@ class _ZipRepacker:
         if self.debug >= level:
             print(*msg)
 
+    def copy(self, zfile, zinfo, filename):
+        # make a copy of zinfo
+        zinfo2 = copy.copy(zinfo)
+
+        # apply sanitized new filename as in `ZipInfo.__init__`
+        zinfo2.orig_filename = filename
+        zinfo2.filename = _sanitize_filename(filename)
+
+        zinfo2.header_offset = zfile.start_dir
+        zinfo2._end_offset = None
+
+        # write to a new local file header
+        fp = zfile.fp
+        sizes = self._calc_local_file_entry_size(fp, zinfo)
+        fp.seek(zinfo2.header_offset)
+        fp.write(zinfo2.FileHeader())
+        self._copy_bytes(fp, zinfo.header_offset + sum(sizes[:3]), fp.tell(), sum(sizes[3:]))
+        zfile.start_dir = fp.tell()
+
+        # add to filelist
+        zfile.filelist.append(zinfo2)
+        zfile.NameToInfo[zinfo2.filename] = zinfo2
+
+        zfile._didModify = True
+
     def repack(self, zfile, removed=None):
         """
         Repack the ZIP file, stripping unreferenced local file entries.
@@ -1517,7 +1543,7 @@ class _ZipRepacker:
             entry_size = offset - zinfo.header_offset
 
             # may raise on an invalid local file header
-            used_entry_size = self._calc_local_file_entry_size(fp, zinfo)
+            used_entry_size = sum(self._calc_local_file_entry_size(fp, zinfo))
 
             self._debug(3, 'entry:', i, zinfo.orig_filename,
                         zinfo.header_offset, entry_size, used_entry_size)
@@ -1842,10 +1868,11 @@ class _ZipRepacker:
             dd_size = 0
 
         return (
-            sizeFileHeader +
-            fheader[_FH_FILENAME_LENGTH] + fheader[_FH_EXTRA_FIELD_LENGTH] +
-            zinfo.compress_size +
-            dd_size
+            sizeFileHeader,
+            fheader[_FH_FILENAME_LENGTH],
+            fheader[_FH_EXTRA_FIELD_LENGTH],
+            zinfo.compress_size,
+            dd_size,
         )
 
     def _copy_bytes(self, fp, old_offset, new_offset, size):
@@ -2344,6 +2371,38 @@ class ZipFile:
 
         for zipinfo in members:
             self._extract_member(zipinfo, path, pwd)
+
+    def copy(self, zinfo_or_arcname, filename, *, chunk_size=_REPACK_CHUNK_SIZE):
+        """Copy a member in the archive."""
+        if self.mode not in ('w', 'x', 'a'):
+            raise ValueError("copy() requires mode 'w', 'x', or 'a'")
+        if not self.fp:
+            raise ValueError(
+                "Attempt to write to ZIP archive that was already closed")
+        if self._writing:
+            raise ValueError(
+                "Can't write to ZIP archive while an open writing handle exists."
+            )
+        if not self._seekable:
+            raise io.UnsupportedOperation("copy() requires a seekable stream.")
+
+        with self._lock:
+            # get the zinfo
+            # raise KeyError if arcname does not exist
+            if isinstance(zinfo_or_arcname, ZipInfo):
+                zinfo = zinfo_or_arcname
+                if zinfo not in self.filelist:
+                    raise KeyError('There is no item %r in the archive' % zinfo)
+            else:
+                zinfo = self.getinfo(zinfo_or_arcname)
+
+            self._writing = True
+            try:
+                _ZipRepacker(chunk_size=chunk_size).copy(self, zinfo, filename)
+            finally:
+                self._writing = False
+
+        return zinfo
 
     def remove(self, zinfo_or_arcname):
         """Remove a member from the archive."""

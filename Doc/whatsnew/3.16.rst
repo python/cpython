@@ -407,6 +407,8 @@ zipfile
   by the local file entries of removed members.
   (Contributed by Danny Lin in :gh:`51067`.)
 
+* Add :meth:`ZipFile.copy() <zipfile.ZipFile.copy>` to copy a member.
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
