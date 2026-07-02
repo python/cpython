@@ -2,6 +2,7 @@ from test import support
 from test.support import socket_helper
 
 from contextlib import contextmanager
+from email.message import EmailMessage
 import imaplib
 import os.path
 import socketserver
@@ -9,6 +10,7 @@ import time
 import calendar
 import threading
 import re
+import select
 import socket
 
 from test.support import verbose, run_with_tz, run_with_locale, cpython_only
@@ -25,6 +27,18 @@ support.requires_working_socket(module=True)
 
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
+
+
+def _read_literal(handler, marker):
+    # Read one literal, a raw octet sequence, by its count from the marker
+    # ('{N}', or '(~{N}' in UTF8 mode).
+    size = int(re.search(r'\{(\d+)\}', marker).group(1))
+    # The client must wait for the continuation, so nothing should be readable.
+    if select.select([handler.connection], [], [], 0)[0]:
+        raise AssertionError('client sent the literal before the '
+                             'continuation request')
+    handler._send_textline('+')
+    return handler.rfile.read(size)
 
 
 class TestImaplib(unittest.TestCase):
@@ -371,10 +385,8 @@ class NewIMAPTestsMixin:
                 self.server.response = yield
                 self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
             def cmd_APPEND(self, tag, args):
-                self._send_textline('+')
                 self.server.response = args
-                literal = yield
-                self.server.response.append(literal)
+                self.server.response.append(_read_literal(self, args[-1]))
                 literal = yield
                 self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
@@ -635,20 +647,28 @@ class NewIMAPTestsMixin:
         self.assertEqual(client.state, 'AUTH')
 
     def test_append_translate_line_endings(self):
-        # By default line endings in the message are normalized to CRLF;
-        # translate_line_endings=False sends the literal exactly (gh-49680).
+        # By default line endings are normalized to CRLF; False sends the
+        # literal exactly (gh-49680).
         class AppendHandler(SimpleIMAPHandler):
             def cmd_APPEND(self, tag, args):
-                size = int(args[-1].strip('{}'))
-                self._send_textline('+')
-                self.server.response = self.rfile.read(size)
-                self.rfile.readline()  # trailing CRLF after the literal
+                self.server.response = _read_literal(self, args[-1])
+                yield  # read the trailer line
                 self._send_tagged(tag, 'OK', 'APPEND completed')
-        message = b'a\rb\nc\r\nd'
         client, server = self._setup(AppendHandler)
         client.login('user', 'pass')
+        message = b'a\rb\nc\r\nd'
         client.append('INBOX', None, None, message)
         self.assertEqual(server.response, b'a\r\nb\r\nc\r\nd')
+        client.append('INBOX', None, None, message,
+                      translate_line_endings=False)
+        self.assertEqual(server.response, message)
+
+        # An email message uses bare LF by default; False sends it verbatim.
+        message = EmailMessage()
+        message['Subject'] = 'line endings'
+        message.set_content('body line\n')
+        message = message.as_bytes()
+        self.assertNotIn(b'\r\n', message)
         client.append('INBOX', None, None, message,
                       translate_line_endings=False)
         self.assertEqual(server.response, message)
@@ -944,10 +964,8 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
         class UTF8AppendServer(self.UTF8Server):
             def cmd_APPEND(self, tag, args):
-                self._send_textline('+')
                 self.server.response = args
-                literal = yield
-                self.server.response.append(literal)
+                self.server.response.append(_read_literal(self, args[-1]))
                 literal = yield
                 self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')

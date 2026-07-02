@@ -208,6 +208,9 @@ An :class:`IMAP4` instance has the following methods:
    line endings in *message* are translated to CRLF.
    Pass ``False`` to send the message literal exactly as given,
    which is required to preserve messages that contain bare CR or LF.
+   In that case *message* must already use CRLF line endings as required
+   by :rfc:`3501`; for example, serialize :mod:`email` messages using
+   :class:`email.policy.SMTP`.
 
    .. versionchanged:: next
       Added the *translate_line_endings* parameter.
