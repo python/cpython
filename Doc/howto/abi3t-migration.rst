@@ -127,7 +127,7 @@ Prerequisites
 This guide assumes that you have an extension written directly in C (or C++),
 which you want to port to ``abi3t``.
 
-If your extenstion uses a code generator (like Cython) or language binding
+If your extension uses a code generator (like Cython) or language binding
 (like PyO3), it's best to wait until that tool has support for ``abi3t``.
 If you maintain such a tool, you might be able to adapt the instructions
 here for your tool.
