@@ -8,20 +8,35 @@ on:
         required: false
         type: boolean
         default: false
+      debug:
+        description: Whether to create a Debug Build
+        required: false
+        type: boolean
+        default: true
       free-threading:
         description: Whether to use free-threaded mode
         required: false
         type: boolean
         default: false
       os:
-         description: OS to run the job
-         required: true
-         type: string
+        description: OS to run the job
+        required: true
+        type: string
+      test:
+        description: Whether to run the Python test suite
+        required: false
+        type: boolean
+        default: true
       test-opts:
-         description: Extra options to pass to the test runner via TESTOPTS
-         required: false
-         type: string
-         default: ''
+        description: Extra options to pass to the test runner via TESTOPTS
+        required: false
+        type: string
+        default: ''
+      upload-install-hashes:
+        description: Install Python and upload the result artifact
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,7 +46,7 @@ env:
 
 jobs:
   build-ubuntu-reusable:
-    name: build and test (${{ inputs.os }})
+    name: build ${{ fromJSON(inputs.test) && 'and test ' || '' }}(${{ inputs.os }})
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
@@ -84,12 +99,13 @@ jobs:
         PROFILE_TASK='-m test --pgo --ignore test_unpickle_module_race'
         ../cpython-ro-srcdir/configure
         --config-cache
-        --with-pydebug
         --enable-slower-safety
         --enable-safety
         --with-openssl="$OPENSSL_DIR"
+        ${{ fromJSON(inputs.debug) && '--with-pydebug' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
         ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
+        ${{ fromJSON(inputs.upload-install-hashes) && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
     - name: Build CPython out-of-tree
       if: ${{ inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
@@ -115,7 +131,46 @@ jobs:
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount "$CPYTHON_RO_SRCDIR" -oremount,rw
     - name: Tests
+      if: ${{ inputs.test }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: xvfb-run make ci EXTRATESTOPTS="${TEST_OPTS}"
       env:
         TEST_OPTS: ${{ inputs.test-opts }}
+    - name: Install Python
+      if: ${{ inputs.upload-install-hashes }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: make install DESTDIR=build/install
+    - name: Install some test packages in the Python
+      if: ${{ inputs.upload-install-hashes }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: |
+        CPYTHON_TEST_EXT_NAME=c_mod \
+          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+        CPYTHON_TEST_LIMITED=1 CPYTHON_TEST_EXT_NAME=abi3_mod \
+          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+        CPYTHON_TEST_ABI3T=1 CPYTHON_TEST_EXT_NAME=abi3t_mod \
+          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+        # Until https://github.com/pypa/setuptools/pull/5193 is released
+        if [ ${{ fromJSON(inputs.free-threading) && '1' || '0' }} = '0' ]; then \
+          (cd build/install/usr/lib/python*/site-packages && \
+            mv abi3t_mod.abi3.so abi3t_mod.abi3t.so); \
+        fi
+    - name: Generate the install hashes filename
+      if: ${{ inputs.upload-install-hashes }}
+      run: |
+        echo "INSTALL_HASHES_FILE=install-hashes-${{ runner.arch }}-${{ case(inputs.free-threading, 't', '')}}${{ case(inputs.debug, 'd', '') }}" >> "$GITHUB_ENV"
+    - name: Hash the installed Python
+      if: ${{ inputs.upload-install-hashes }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: >-
+        build/install/usr/bin/python3
+        ../cpython-ro-srcdir/Tools/coinstall-check/hash-r.py
+        build/install > "$INSTALL_HASHES_FILE"
+    - name: Upload the hashes
+      if: ${{ inputs.upload-install-hashes }}
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: ${{ env.INSTALL_HASHES_FILE }}
+        path: ${{ env.CPYTHON_BUILDDIR }}/${{ env.INSTALL_HASHES_FILE }}
+        archive: false
+        retention-days: 1

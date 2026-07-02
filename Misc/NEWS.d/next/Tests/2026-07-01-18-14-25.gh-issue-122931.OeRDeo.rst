@@ -1,0 +1,3 @@
+CI Tests to ensure Debian `multi-arch co-installability
+<https://www.debian.org/doc/debian-policy/ch-controlfields.html#multi-arch>`_
+of Python.
