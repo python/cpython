@@ -352,6 +352,42 @@ bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyByteArrayObject *self = _PyByteArray_CAST(op);
 
+    // optimization: Avoid copying the bytes coming in when possible.
+    if (self->ob_alloc == 0 && PyUnstable_Object_IsUniqueReferencedTemporary(other)) {
+        assert(self->ob_bytes_object == Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_BYTES));
+        if (!_canresize(self)) {
+            return NULL;
+        }
+
+        /* Get the bytes out of the temporary bytearray.
+         * Just returning other doesn't work as __init__ calls this and can't
+         * change self. */
+        if (PyByteArray_CheckExact(other)) {
+            PyObject *taken;
+            taken = bytearray_take_bytes_impl((PyByteArrayObject*)other, Py_None);
+            if (taken == NULL) {
+                return NULL;
+            }
+            // Avoid Py_INCREF needed for argument case.
+            Py_ssize_t size = Py_SIZE(taken);
+            self->ob_bytes_object = taken;
+            bytearray_reinit_from_bytes(self, size, size);
+            return Py_NewRef(self);
+        }
+
+        if (PyBytes_CheckExact(other)) {
+            Py_ssize_t size = Py_SIZE(other);
+            self->ob_bytes_object = other;
+            bytearray_reinit_from_bytes(self, size, size);
+            Py_INCREF(self->ob_bytes_object);
+
+            // Caller has a reference still and its decref will return
+            // bytes to be uniquely referenced.
+            assert(Py_REFCNT(self->ob_bytes_object) == 2);
+            return Py_NewRef(self);
+        }
+    }
+
     Py_buffer vo;
     if (PyObject_GetBuffer(other, &vo, PyBUF_SIMPLE) != 0) {
         PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
@@ -1011,22 +1047,14 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         }
     }
 
-    /* Use the buffer API */
+    /* Use the buffer API. Defer to iconcat which optimizes. */
     if (PyObject_CheckBuffer(arg)) {
-        Py_ssize_t size;
-        Py_buffer view;
-        if (PyObject_GetBuffer(arg, &view, PyBUF_FULL_RO) < 0)
+        PyObject *new = bytearray_iconcat((PyObject *)self, arg);
+        if (new == NULL) {
             return -1;
-        size = view.len;
-        if (PyByteArray_Resize((PyObject *)self, size) < 0) goto fail;
-        if (PyBuffer_ToContiguous(PyByteArray_AS_STRING(self),
-            &view, size, 'C') < 0)
-            goto fail;
-        PyBuffer_Release(&view);
+        }
+        Py_DECREF(new);
         return 0;
-    fail:
-        PyBuffer_Release(&view);
-        return -1;
     }
 
     if (PyList_CheckExact(arg) || PyTuple_CheckExact(arg)) {
