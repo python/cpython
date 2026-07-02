@@ -2237,7 +2237,7 @@ class TestHelper(unittest.TestCase):
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
-                         sorted(keyword.kwlist + ['lazy']))
+                         sorted(keyword.kwlist + ['case', 'match', 'lazy']))
 
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session

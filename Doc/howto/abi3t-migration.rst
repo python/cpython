@@ -210,6 +210,8 @@ versions you support.
 This will ensure that nothing breaks as you are porting.
 
 
+.. _abi3t-howto-modexport:
+
 Module export hook
 ==================
 
@@ -289,6 +291,104 @@ and substitute your own values.
 
 See the :c:type:`PySlot` and :c:ref:`export hook <extension-export-hook>`
 documentation for details on this API.
+
+As in the example, your ``PyModExport_`` function should *only* return a
+pointer to static data.
+If you cannot avoid additional code, refer to the
+:ref:`caveats in PyModExport documentation <pymodexport-api-caveats>`.
+
+
+Existing slots
+--------------
+
+If you have a ``Py_mod_slots`` slot, check the array it refers to.
+It should be a :c:type:`PyModuleDef_Slot` array like the following:
+
+.. code-block::
+   :class: bad
+
+   static PyObject *create_module(PyObject *spec, PyModuleDef *def) { ... }
+   static int my_first_module_exec(PyObject *module) { ... }
+   static int my_second_module_exec(PyObject *module) { ... }
+
+   static PyModuleDef_Slot my_slots[] = {
+      {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+      {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+      {Py_mod_create, my_module_create},
+      {Py_mod_exec, my_first_module_exec},
+      {Py_mod_exec, my_second_module_exec},
+      {0, NULL}
+   };
+
+``py_mod_create``
+.................
+
+
+If you have a :c:macro:`Py_mod_create` entry, make sure the function can be
+called with ``NULL`` as its second argument (instead of the
+:c:type:`PyModuleDef`, which you are removing).
+Often, this argument isn't used at all; you can check by renaming it:
+
+.. code-block::
+   :class: good
+
+   static PyObject *create_module(PyObject *spec, PyModuleDef *_unused) { ... }
+
+If the argument is used, find a different way to pass in the data.
+Commonly, the information is static and you can refer to it directly.
+(If you're reusing a single function for several different modules, consider
+defining several functions instead.)
+
+
+Multiple ``py_mod_exec``
+........................
+
+If you have *more than one* :c:macro:`Py_mod_exec` entry, consolidate them:
+create a new function that calls the others, and replace existing slots
+with it.
+
+.. code-block::
+   :class: good
+
+   static int my_module_exec(PyObject *module) {
+      if (my_first_module_exec(module) < 0) return -1;
+      if (my_second_module_exec(module) < 0) return -1;
+   }
+
+   static PyModuleDef_Slot my_slots[] = {
+      ...
+      /* (remove other Py_mod_exec slots) */
+      ...
+      {Py_mod_exec, my_module_exec},
+      {0, NULL}
+   };
+
+If the functions aren't used elsewhere, you can combine their bodies instead.
+
+
+Merging slot arrays
+...................
+
+Optionally, when you break compatibility with Python 3.14, you may clean up
+the code by moving slots into the :c:type:`PySlot` array, and converting the
+definitions to :c:macro:`PySlot_DATA` and :c:macro:`PySlot_FUNC`:
+
+.. code-block::
+   :class: good
+
+   static PySlot my_slot_array[] = {
+       ...
+       PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
+       PySlot_DATA(Py_mod_multiple_interpreters,
+            Py_MOD_PER_INTERPRETER_GIL_SUPPORTED)
+       PySlot_FUNC(Py_mod_create, my_module_create),
+       PySlot_FUNC(Py_mod_exec, my_module_exec),
+       PySlot_END
+   };
+
+If you do this, delete the original :c:type:`PyModuleDef_Slot` array and
+its ``Py_mod_slots`` entry.
+
 
 Associated ``PyModuleDef``
 --------------------------
@@ -483,7 +583,7 @@ For example, if a user makes a subclass like this:
    class Sub(YourCustomClass):
       __slots__ = ('a', 'b')
 
-then ``Py_TYPE(obj)`` is ``YourCustomClass``, and the underlying memory may
+then ``Py_TYPE(obj)`` is ``Sub``, and the underlying memory may
 look like this:
 
 .. code-block:: text

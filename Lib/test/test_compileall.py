@@ -554,6 +554,24 @@ class CommandLineTestsBase:
         finally:
             sys.pycache_prefix = old_prefix
 
+    @contextlib.contextmanager
+    def no_pycache_prefix(self):
+        """Ignore any ambient pycache prefix for the duration of the test.
+
+        Some tests assume bytecode is written next to the source in a
+        __pycache__ directory.  When the test suite is run with
+        PYTHONPYCACHEPREFIX set, neutralize it both in this process (used by
+        cache_from_source) and in any spawned subprocesses.
+        """
+        old_prefix = sys.pycache_prefix
+        sys.pycache_prefix = None
+        try:
+            with os_helper.EnvironmentVarGuard() as env:
+                env.unset('PYTHONPYCACHEPREFIX')
+                yield
+        finally:
+            sys.pycache_prefix = old_prefix
+
     def _get_run_args(self, args):
         return [*support.optim_args_from_interpreter_flags(),
                 '-S', '-m', 'compileall',
@@ -650,15 +668,16 @@ class CommandLineTestsBase:
     def test_multiple_runs(self):
         # Bug 8527 reported that multiple calls produced empty
         # __pycache__/__pycache__ directories.
-        self.assertRunOK('-q', self.pkgdir)
-        # Verify the __pycache__ directory contents.
-        self.assertTrue(os.path.exists(self.pkgdir_cachedir))
-        cachecachedir = os.path.join(self.pkgdir_cachedir, '__pycache__')
-        self.assertFalse(os.path.exists(cachecachedir))
-        # Call compileall again.
-        self.assertRunOK('-q', self.pkgdir)
-        self.assertTrue(os.path.exists(self.pkgdir_cachedir))
-        self.assertFalse(os.path.exists(cachecachedir))
+        with self.no_pycache_prefix():
+            self.assertRunOK('-q', self.pkgdir)
+            # Verify the __pycache__ directory contents.
+            self.assertTrue(os.path.exists(self.pkgdir_cachedir))
+            cachecachedir = os.path.join(self.pkgdir_cachedir, '__pycache__')
+            self.assertFalse(os.path.exists(cachecachedir))
+            # Call compileall again.
+            self.assertRunOK('-q', self.pkgdir)
+            self.assertTrue(os.path.exists(self.pkgdir_cachedir))
+            self.assertFalse(os.path.exists(cachecachedir))
 
     @without_source_date_epoch  # timestamp invalidation test
     def test_force(self):
@@ -731,10 +750,13 @@ class CommandLineTestsBase:
         script_helper.make_pkg(pkg)
         os.symlink('.', os.path.join(pkg, 'evil'))
         os.symlink('.', os.path.join(pkg, 'evil2'))
-        self.assertRunOK('-q', self.pkgdir)
-        self.assertCompiled(os.path.join(
-            self.pkgdir, 'spam', 'evil', 'evil2', '__init__.py'
-        ))
+        # This relies on the __pycache__ layout (shared across the symlinked
+        # paths), so neutralize any ambient PYTHONPYCACHEPREFIX.
+        with self.no_pycache_prefix():
+            self.assertRunOK('-q', self.pkgdir)
+            self.assertCompiled(os.path.join(
+                self.pkgdir, 'spam', 'evil', 'evil2', '__init__.py'
+            ))
 
     def test_quiet(self):
         noisy = self.assertRunOK(self.pkgdir)
@@ -821,13 +843,16 @@ class CommandLineTestsBase:
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        p = script_helper.spawn_python(*(self._get_run_args(()) + ['-i', '-']))
-        p.stdin.write((f3+os.linesep).encode('ascii'))
-        script_helper.kill_python(p)
-        self.assertNotCompiled(f1)
-        self.assertNotCompiled(f2)
-        self.assertCompiled(f3)
-        self.assertNotCompiled(f4)
+        # spawn_python() runs with -E, ignoring PYTHONPYCACHEPREFIX, so make
+        # cache_from_source() in this process agree by neutralizing it too.
+        with self.no_pycache_prefix():
+            p = script_helper.spawn_python(*(self._get_run_args(()) + ['-i', '-']))
+            p.stdin.write((f3+os.linesep).encode('ascii'))
+            script_helper.kill_python(p)
+            self.assertNotCompiled(f1)
+            self.assertNotCompiled(f2)
+            self.assertCompiled(f3)
+            self.assertNotCompiled(f4)
 
     def test_compiles_as_much_as_possible(self):
         bingfn = script_helper.make_script(self.pkgdir, 'bing', 'syntax(error')

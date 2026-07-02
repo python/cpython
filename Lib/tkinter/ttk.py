@@ -492,6 +492,20 @@ class Style(object):
         return self.tk.splitlist(self.tk.call(self._name, "theme", "names"))
 
 
+    def theme_styles(self, themename=None):
+        """Returns a list of all styles in themename.
+
+        If themename is omitted, the current theme is used.
+
+        Availability: Tk 9.0.
+        """
+        if themename is None:
+            return self.tk.splitlist(
+                self.tk.call(self._name, "theme", "styles"))
+        return self.tk.splitlist(
+            self.tk.call(self._name, "theme", "styles", themename))
+
+
     def theme_use(self, themename=None):
         """If themename is None, returns the theme in use, otherwise, set
         the current theme to themename, refreshes all widgets and emits
@@ -579,8 +593,8 @@ class Button(Widget):
 
         STANDARD OPTIONS
 
-            class, compound, cursor, image, state, style, takefocus,
-            text, textvariable, underline, width
+            class, compound, cursor, image, justify (Tk 9.0+), padding,
+            state, style, takefocus, text, textvariable, underline, width
 
         WIDGET-SPECIFIC OPTIONS
 
@@ -602,8 +616,8 @@ class Checkbutton(Widget):
 
         STANDARD OPTIONS
 
-            class, compound, cursor, image, state, style, takefocus,
-            text, textvariable, underline, width
+            class, compound, cursor, image, justify (Tk 9.0+), padding,
+            state, style, takefocus, text, textvariable, underline, width
 
         WIDGET-SPECIFIC OPTIONS
 
@@ -636,8 +650,10 @@ class Entry(Widget, tkinter.Entry):
 
         WIDGET-SPECIFIC OPTIONS
 
-            exportselection, invalidcommand, justify, show, state,
-            textvariable, validate, validatecommand, width
+            background, exportselection, font, foreground, invalidcommand,
+            justify, locale (Tk 9.1+), placeholder (Tk 9.0+),
+            placeholderforeground (Tk 9.0+), show, state, textvariable,
+            validate, validatecommand, width
 
         VALIDATION MODES
 
@@ -646,7 +662,7 @@ class Entry(Widget, tkinter.Entry):
         Widget.__init__(self, master, widget or "ttk::entry", kw)
 
 
-    def bbox(self, index):
+    def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of (x, y, width, height) which describes the
         bounding box of the character given by index."""
         return self._getints(self.tk.call(self._w, "bbox", index))
@@ -674,12 +690,14 @@ class Combobox(Entry):
 
         STANDARD OPTIONS
 
-            class, cursor, style, takefocus
+            class, cursor, style, takefocus, xscrollcommand
 
         WIDGET-SPECIFIC OPTIONS
 
-            exportselection, justify, height, postcommand, state,
-            textvariable, values, width
+            background, exportselection, font, foreground, height,
+            invalidcommand, justify, locale (Tk 9.1+), placeholder (Tk 9.0+),
+            placeholderforeground (Tk 9.0+), postcommand, show, state,
+            textvariable, validate, validatecommand, values, width
         """
         Entry.__init__(self, master, "ttk::combobox", **kw)
 
@@ -728,13 +746,13 @@ class Label(Widget):
 
         STANDARD OPTIONS
 
-            class, compound, cursor, image, style, takefocus, text,
-            textvariable, underline, width
+            class, compound, cursor, image, state, style, takefocus,
+            text, textvariable, underline, width
 
         WIDGET-SPECIFIC OPTIONS
 
-            anchor, background, font, foreground, justify, padding,
-            relief, text, wraplength
+            anchor, background, borderwidth, font, foreground, justify,
+            padding, relief, text, textangle (Tk 9.1+), wraplength
         """
         Widget.__init__(self, master, "ttk::label", kw)
 
@@ -752,8 +770,9 @@ class Labelframe(Widget):
             class, cursor, style, takefocus
 
         WIDGET-SPECIFIC OPTIONS
-            labelanchor, text, underline, padding, labelwidget, width,
-            height
+
+            borderwidth, height, labelanchor, labelwidget, padding,
+            relief, text, underline, width
         """
         Widget.__init__(self, master, "ttk::labelframe", kw)
 
@@ -769,8 +788,8 @@ class Menubutton(Widget):
 
         STANDARD OPTIONS
 
-            class, compound, cursor, image, state, style, takefocus,
-            text, textvariable, underline, width
+            class, compound, cursor, image, justify (Tk 9.0+), padding,
+            state, style, takefocus, text, textvariable, underline, width
 
         WIDGET-SPECIFIC OPTIONS
 
@@ -824,7 +843,7 @@ class Notebook(Widget):
         self.tk.call(self._w, "add", child, *(_format_optdict(kw)))
 
 
-    def forget(self, tab_id):
+    def forget(self, tab_id):  # overrides Pack.forget
         """Removes the tab specified by tab_id, unmaps and unmanages the
         associated window."""
         self.tk.call(self._w, "forget", tab_id)
@@ -983,7 +1002,9 @@ class Progressbar(Widget):
 
         STANDARD OPTIONS
 
-            class, cursor, style, takefocus
+            anchor (Tk 9.0+), class, cursor, font (Tk 9.0+),
+            foreground (Tk 9.0+), justify (Tk 9.0+), style, takefocus,
+            text (Tk 9.0+), wraplength (Tk 9.0+)
 
         WIDGET-SPECIFIC OPTIONS
 
@@ -1022,8 +1043,8 @@ class Radiobutton(Widget):
 
         STANDARD OPTIONS
 
-            class, compound, cursor, image, state, style, takefocus,
-            text, textvariable, underline, width
+            class, compound, cursor, image, justify (Tk 9.0+), padding,
+            state, style, takefocus, text, textvariable, underline, width
 
         WIDGET-SPECIFIC OPTIONS
 
@@ -1050,7 +1071,7 @@ class Scale(Widget, tkinter.Scale):
 
         STANDARD OPTIONS
 
-            class, cursor, style, takefocus
+            class, cursor, state, style, takefocus
 
         WIDGET-SPECIFIC OPTIONS
 
@@ -1147,7 +1168,10 @@ class Spinbox(Entry):
 
         WIDGET-SPECIFIC OPTIONS
 
-            to, from_, increment, values, wrap, format, command
+            background, command, exportselection, font, foreground,
+            format, from_, increment, justify, locale (Tk 9.1+),
+            placeholder (Tk 9.0+), placeholderforeground (Tk 9.0+), show,
+            state, textvariable, to, values, width, wrap
         """
         Entry.__init__(self, master, "ttk::spinbox", **kw)
 
@@ -1174,7 +1198,10 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
         WIDGET-SPECIFIC OPTIONS
 
-            columns, displaycolumns, height, padding, selectmode, show
+            columns, displaycolumns, headingheight (Tk 9.1+), height,
+            padding, rowheight (Tk 9.1+), selectmode, selecttype (Tk 9.0+),
+            show, striped (Tk 9.0+), titlecolumns (Tk 9.0+),
+            titleitems (Tk 9.0+)
 
         ITEM OPTIONS
 
@@ -1187,7 +1214,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         Widget.__init__(self, master, "ttk::treeview", kw)
 
 
-    def bbox(self, item, column=None):
+    def bbox(self, item, column=None):  # overrides Misc.bbox
         """Returns the bounding box (relative to the treeview widget's
         window) of the specified item in the form x y width height.
 
@@ -1246,7 +1273,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         return self.tk.getboolean(self.tk.call(self._w, "exists", item))
 
 
-    def focus(self, item=None):
+    def focus(self, item=None):  # overrides Misc.focus
         """If item is specified, sets the focus item to item. Otherwise,
         returns the current focus item, or '' if there is none."""
         return self.tk.call(self._w, "focus", item)
@@ -1377,7 +1404,9 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
     def next(self, item):
         """Returns the identifier of item's next sibling, or '' if item
-        is the last child of its parent."""
+        is the last child of its parent.
+
+        Equivalent to after_item(item, hidden=True, recurse=False)."""
         return self.tk.call(self._w, "next", item)
 
 
@@ -1389,8 +1418,540 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
     def prev(self, item):
         """Returns the identifier of item's previous sibling, or '' if
-        item is the first child of its parent."""
+        item is the first child of its parent.
+
+        Equivalent to before_item(item, hidden=True, recurse=False)."""
         return self.tk.call(self._w, "prev", item)
+
+
+    def after_item(self, item, *, hidden=False, recurse=True):
+        """Return the identifier of the item after item, or '' if there is
+        none.
+
+        The result can be the first child, a next sibling, or a next sibling
+        of an ancestor.  By default only visible items are considered; if
+        hidden is true, hidden items are included too.  If recurse is false,
+        only siblings of item are considered (next item).
+
+        * Availability: Tk 9.1"""
+        options = []
+        if hidden:
+            options.append("-hidden")
+        if not recurse:
+            options.append("-norecurse")
+        return self.tk.call(self._w, "after", *options, item)
+
+
+    def before_item(self, item, *, hidden=False, recurse=True):
+        """Return the identifier of the item before item, or '' if there is
+        none.
+
+        The result can be the previous sibling or the parent of item.  By
+        default only visible items are considered; if hidden is true, hidden
+        items are included too.  If recurse is false, only siblings of item
+        are considered (previous item).
+
+        * Availability: Tk 9.1"""
+        options = []
+        if hidden:
+            options.append("-hidden")
+        if not recurse:
+            options.append("-norecurse")
+        return self.tk.call(self._w, "before", *options, item)
+
+
+    def depth(self, item):
+        """Return the number of levels between item and the root item.
+
+        * Availability: Tk 9.1"""
+        return self.tk.getint(self.tk.call(self._w, "depth", item))
+
+
+    def haschildren(self, item):
+        """Return True if item has children, False otherwise.
+
+        * Availability: Tk 9.1"""
+        return self.tk.getboolean(self.tk.call(self._w, "haschildren", item))
+
+
+    def visible(self, item):
+        """Return True if item is visible, False otherwise.
+
+        An item is visible if it is not detached, not hidden, and all of its
+        ancestors are open and not hidden.
+
+        * Availability: Tk 9.1"""
+        return self.tk.getboolean(self.tk.call(self._w, "visible", item))
+
+
+    def size(self, item, *, hidden=False, recurse=False):  # overrides Misc.size
+        """Return the number of children of item.
+
+        If hidden is true, hidden items are included.  If recurse is true,
+        all descendants of item are included.  Use '' for the root item.
+        size(item, hidden=True) equals len(get_children(item)).
+
+        * Availability: Tk 9.1"""
+        options = []
+        if hidden:
+            options.append("-hidden")
+        if recurse:
+            options.append("-recurse")
+        return self.tk.getint(self.tk.call(self._w, "size", *options, item))
+
+
+    def range(self, first, last, *, hidden=False, recurse=True):
+        """Return a tuple of items from first through last, inclusive.
+
+        If hidden is true, hidden items are included.  If recurse is false,
+        descendants and ancestors are excluded.
+
+        * Availability: Tk 9.1"""
+        options = []
+        if hidden:
+            options.append("-hidden")
+        if not recurse:
+            options.append("-norecurse")
+        return self.tk.splitlist(
+            self.tk.call(self._w, "range", *options, first, last))
+
+
+    def identifier(self, item, index):
+        """Return the identifier of the item at index within item's list of
+        children.
+
+        * Availability: Tk 9.1"""
+        return self.tk.call(self._w, "identifier", item, index)
+
+
+    def current(self):
+        """Return the current item id and column id as a 2-tuple, or an empty
+        tuple if there is none.
+
+        The current item is the item under the mouse pointer.
+
+        * Availability: Tk 9.1"""
+        return self.tk.splitlist(self.tk.call(self._w, "current"))
+
+
+    def _itemlist(self, command, items, recurse):
+        if len(items) == 1 and isinstance(items[0], (tuple, list)):
+            items = items[0]
+        options = ("-recurse",) if recurse else ()
+        self.tk.call(self._w, command, *options, items)
+
+
+    def expand(self, *items, recurse=False):
+        """Set all of the specified items to the open state.
+
+        If recurse is true, also open all of their descendants; this requires
+        Tk 9.1.  Use '' for the root item.
+
+        expand(item) is equivalent to item(item, open=True)."""
+        try:
+            self._itemlist("expand", items, recurse)
+        except tkinter.TclError:
+            if recurse or self.info_patchlevel() >= (9, 1):
+                raise
+            self._open(True, items)
+
+
+    def collapse(self, *items, recurse=False):
+        """Set all of the specified items to the closed state.
+
+        If recurse is true, also close all of their descendants; this requires
+        Tk 9.1.  Use '' for the root item.
+
+        collapse(item) is equivalent to item(item, open=False)."""
+        try:
+            self._itemlist("collapse", items, recurse)
+        except tkinter.TclError:
+            if recurse or self.info_patchlevel() >= (9, 1):
+                raise
+            self._open(False, items)
+
+
+    def _open(self, opening, items):
+        if len(items) == 1 and isinstance(items[0], (tuple, list)):
+            items = items[0]
+        for item in items:
+            if item != '':  # the root item has no open state
+                self.item(item, open=opening)
+
+
+    def hide(self, *items, recurse=False):
+        """Hide all of the specified items and all of their child items.
+
+        If recurse is true, also hide all of their descendants.  Use '' for
+        the root item.  hide(item) is equivalent to item(item, hidden=True).
+
+        * Availability: Tk 9.1"""
+        self._itemlist("hide", items, recurse)
+
+
+    def unhide(self, *items, recurse=False):
+        """Unhide all of the specified items.
+
+        If recurse is true, also unhide all of their descendants.  Use '' for
+        the root item.  unhide(item) is equivalent to item(item, hidden=False).
+
+        * Availability: Tk 9.1"""
+        self._itemlist("unhide", items, recurse)
+
+
+    def detached(self, item=None):
+        """Return all detached items, or whether item is detached.
+
+        Without arguments, return a tuple of all detached items (but not
+        their descendants; see detached_all).  With item, return whether item
+        is detached; since Tk 9.1, also return true if an ancestor of item
+        is detached.
+
+        * Availability: Tk 9.0"""
+        if item is None:
+            return self.tk.splitlist(self.tk.call(self._w, "detached"))
+        return self.tk.getboolean(self.tk.call(self._w, "detached", item))
+
+
+    def detached_all(self):
+        """Return a tuple of all detached items and all of their descendants.
+
+        * Availability: Tk 9.1"""
+        return self.tk.splitlist(self.tk.call(self._w, "detached", "-all"))
+
+
+    def cellfocus(self, cell=None):
+        """Get or set the focus cell.
+
+        Without cell, return the focus cell as an (item, column) 2-tuple, or
+        an empty tuple if there is none.  With cell, set the focus cell; use
+        '' to clear it.  A cell is specified as an (item, column) pair.
+
+        * Availability: Tk 9.1"""
+        if cell is None:
+            return self.tk.splitlist(self.tk.call(self._w, "cellfocus"))
+        return self.tk.call(self._w, "cellfocus", cell)
+
+
+    def sort(self, parent, *, column=None, command=None, dictionary=False,
+             integer=False, real=False, nocase=False, decreasing=False,
+             ignoreempty=False, recurse=False):
+        """Sort the children of parent.
+
+        By default the children are sorted by the value of the first display
+        column, as Unicode strings, in increasing order.  column selects the
+        column to sort on.  dictionary, integer and real select the
+        comparison type; nocase makes string comparison case-insensitive.
+        command is a function of two values returning a negative, zero or
+        positive number.  decreasing reverses the order.  ignoreempty skips
+        empty values (with integer or real).  recurse also sorts all
+        descendants.
+
+        * Availability: Tk 9.1"""
+        options = []
+        if column is not None:
+            options += ("-column", column)
+        if dictionary:
+            options.append("-dictionary")
+        if integer:
+            options.append("-integer")
+        if real:
+            options.append("-real")
+        if nocase:
+            options.append("-nocase")
+        if decreasing:
+            options.append("-decreasing")
+        if ignoreempty:
+            options.append("-ignoreempty")
+        if recurse:
+            options.append("-recurse")
+        if command is None:
+            self.tk.call(self._w, "sort", parent, *options)
+        else:
+            cmd = self.register(command)
+            try:
+                self.tk.call(self._w, "sort", parent, *options,
+                             "-command", cmd)
+            finally:
+                self.deletecommand(cmd)
+
+
+    def search(self, parent, pattern, *, columns=None, start=None, stop=None,
+               dictionary=False, integer=False, real=False, nocase=False,
+               glob=False, regexp=False, backwards=False, hidden=False,
+               recurse=False, wraparound=False):
+        """Search parent's children for pattern and return the first match.
+
+        By default pattern is matched for exact equality against the value of
+        each displayed column, as Unicode strings, searching forwards through
+        the direct children of parent.  glob or regexp select glob-style or
+        regular expression matching; dictionary, integer and real select the
+        comparison type; nocase makes it case-insensitive.  columns limits the
+        search to the given columns.  start and stop bound the search;
+        backwards reverses its direction; wraparound continues from the other
+        end.  hidden also searches hidden and closed items; recurse searches
+        all descendants.
+
+        Return the identifier of the first matching item, or '' if there is no
+        match.  See search_all (all matching items), search_cell (the first
+        matching cell) and search_all_cells (all matching cells).
+
+        * Availability: Tk 9.1"""
+        return self._search(False, False, parent, pattern, columns, start,
+                            stop, dictionary, integer, real, nocase, glob,
+                            regexp, backwards, hidden, recurse, wraparound)
+
+
+    def search_all(self, parent, pattern, *, columns=None, start=None,
+                   stop=None, dictionary=False, integer=False, real=False,
+                   nocase=False, glob=False, regexp=False, backwards=False,
+                   hidden=False, recurse=False, wraparound=False):
+        """Search parent's children for pattern and return all matches.
+
+        Like search, but returns a tuple of the identifiers of all matching
+        items.
+
+        * Availability: Tk 9.1"""
+        return self._search(True, False, parent, pattern, columns, start,
+                            stop, dictionary, integer, real, nocase, glob,
+                            regexp, backwards, hidden, recurse, wraparound)
+
+
+    def search_cell(self, parent, pattern, *, columns=None, start=None,
+                    stop=None, dictionary=False, integer=False, real=False,
+                    nocase=False, glob=False, regexp=False, backwards=False,
+                    hidden=False, recurse=False, wraparound=False):
+        """Search parent's children for pattern and return the first cell.
+
+        Like search, but matches and returns a cell, as an (item, column)
+        2-tuple, or () if there is no match.
+
+        * Availability: Tk 9.1"""
+        return self._search(False, True, parent, pattern, columns, start,
+                            stop, dictionary, integer, real, nocase, glob,
+                            regexp, backwards, hidden, recurse, wraparound)
+
+
+    def search_all_cells(self, parent, pattern, *, columns=None, start=None,
+                         stop=None, dictionary=False, integer=False,
+                         real=False, nocase=False, glob=False, regexp=False,
+                         backwards=False, hidden=False, recurse=False,
+                         wraparound=False):
+        """Search parent's children for pattern and return all matching cells.
+
+        Like search, but returns a tuple of all matching cells, each an
+        (item, column) 2-tuple.
+
+        * Availability: Tk 9.1"""
+        return self._search(True, True, parent, pattern, columns, start,
+                            stop, dictionary, integer, real, nocase, glob,
+                            regexp, backwards, hidden, recurse, wraparound)
+
+
+    def _search(self, all, cell, parent, pattern, columns, start, stop,
+                dictionary, integer, real, nocase, glob, regexp, backwards,
+                hidden, recurse, wraparound):
+        options = []
+        if columns is not None:
+            options += ("-columns", columns)
+        if start is not None:
+            options += ("-start", start)
+        if stop is not None:
+            options += ("-stop", stop)
+        if dictionary:
+            options.append("-dictionary")
+        if integer:
+            options.append("-integer")
+        if real:
+            options.append("-real")
+        if nocase:
+            options.append("-nocase")
+        if glob:
+            options.append("-glob")
+        if regexp:
+            options.append("-regexp")
+        if backwards:
+            options.append("-backwards")
+        if hidden:
+            options.append("-hidden")
+        if recurse:
+            options.append("-recurse")
+        if wraparound:
+            options.append("-wraparound")
+        if cell:
+            options.append("-cell")
+        if all:
+            options.append("-all")
+        res = self.tk.call(self._w, "search", parent, *options, pattern)
+        if cell:
+            cells = tuple(self.tk.splitlist(c)
+                          for c in self.tk.splitlist(res))
+            if all:
+                return cells
+            return cells[0] if cells else ()
+        if all:
+            return self.tk.splitlist(res)
+        return res
+
+
+    @staticmethod
+    def _cells(cells):
+        # Accept either several (item, column) cells or a single list of them.
+        if (len(cells) == 1 and cells[0]
+                and isinstance(cells[0], (tuple, list))
+                and isinstance(cells[0][0], (tuple, list))):
+            return cells[0]
+        return cells
+
+
+    def cellselection(self):
+        """Return a tuple of the selected cells.
+
+        Each cell is an (item, column) 2-tuple.  The cell selection is
+        independent from the item selection (see selection).
+
+        * Availability: Tk 9.1"""
+        return tuple(self.tk.splitlist(c) for c in
+                     self.tk.splitlist(self.tk.call(self._w, "cellselection")))
+
+
+    def _cellselection(self, selop, cells):
+        self.tk.call(self._w, "cellselection", selop, self._cells(cells))
+
+
+    def cellselection_set(self, *cells):
+        """The specified cells become the new cell selection.
+
+        Each cell is an (item, column) pair.  Call without arguments to clear
+        the cell selection.
+
+        * Availability: Tk 9.1"""
+        self._cellselection("set", cells)
+
+
+    def cellselection_add(self, *cells):
+        """Add the specified cells to the cell selection.
+
+        * Availability: Tk 9.1"""
+        self._cellselection("add", cells)
+
+
+    def cellselection_remove(self, *cells):
+        """Remove the specified cells from the cell selection.
+
+        * Availability: Tk 9.1"""
+        self._cellselection("remove", cells)
+
+
+    def _cellselection_range(self, selop, first, last, hidden, recurse):
+        options = []
+        if not hidden:
+            options.append("-nohidden")
+        if not recurse:
+            options.append("-norecurse")
+        self.tk.call(self._w, "cellselection", selop, *options, first, last)
+
+
+    def cellselection_set_range(self, first, last, *, hidden=True,
+                                recurse=True):
+        """Set the cell selection to the rectangle of cells from first to last.
+
+        first and last are the opposite corner cells, each an (item, column)
+        pair, and must be in displayed columns.  All other cells are
+        unselected.  If hidden is false, hidden cells are excluded; if recurse
+        is false, cells in descendant items are excluded.
+
+        * Availability: Tk 9.1"""
+        self._cellselection_range("set", first, last, hidden, recurse)
+
+
+    def cellselection_add_range(self, first, last, *, hidden=True,
+                                recurse=True):
+        """Add the rectangle of cells from first to last to the cell selection.
+
+        Like cellselection_set_range, but adds to the selection instead of
+        replacing it.
+
+        * Availability: Tk 9.1"""
+        self._cellselection_range("add", first, last, hidden, recurse)
+
+
+    def cellselection_remove_range(self, first, last, *, hidden=True,
+                                   recurse=True):
+        """Remove the rectangle of cells from first to last from the selection.
+
+        Like cellselection_set_range, but removes the cells from the selection.
+
+        * Availability: Tk 9.1"""
+        self._cellselection_range("remove", first, last, hidden, recurse)
+
+
+    def cellselection_anchor(self, cell=None):
+        """Get or set the cell selection anchor.
+
+        Without cell, return the anchor as an (item, column) 2-tuple, or an
+        empty tuple if unset.  With cell, set the anchor; use '' to unset it.
+
+        * Availability: Tk 9.1"""
+        if cell is None:
+            return self.tk.splitlist(
+                self.tk.call(self._w, "cellselection", "anchor"))
+        return self.tk.call(self._w, "cellselection", "anchor", cell)
+
+
+    def cellselection_includes(self, *cells):
+        """Return whether all of the specified cells are selected.
+
+        * Availability: Tk 9.1"""
+        return self.tk.getboolean(self.tk.call(
+            self._w, "cellselection", "includes", self._cells(cells)))
+
+
+    def cellselection_present(self):
+        """Return whether any cell is selected.
+
+        * Availability: Tk 9.1"""
+        return self.tk.getboolean(
+            self.tk.call(self._w, "cellselection", "present"))
+
+
+    def tag_cell_add(self, tagname, *cells):
+        """Add the given tag to each of the specified cells.
+
+        Each cell is an (item, column) pair.  Cell tags are independent from
+        item tags (see tag_add).
+
+        * Availability: Tk 9.1"""
+        self.tk.call(self._w, "tag", "cell", "add", tagname, self._cells(cells))
+
+
+    def tag_cell_remove(self, tagname, *cells):
+        """Remove the given tag from each of the specified cells.
+
+        If no cell is specified, the tag is removed from all cells.
+
+        * Availability: Tk 9.1"""
+        if cells:
+            self.tk.call(self._w, "tag", "cell", "remove", tagname,
+                         self._cells(cells))
+        else:
+            # Omit the cell list entirely (an empty list would match no cell).
+            self.tk.call(self._w, "tag", "cell", "remove", tagname)
+
+
+    def tag_cell_has(self, tagname, cell=None):
+        """Test for a cell tag, or list the cells that have it.
+
+        If cell is specified, return whether that cell has the given tag.
+        Otherwise return a tuple of all cells (as (item, column) 2-tuples)
+        that have the tag.
+
+        * Availability: Tk 9.1"""
+        if cell is None:
+            return tuple(self.tk.splitlist(c) for c in self.tk.splitlist(
+                self.tk.call(self._w, "tag", "cell", "has", tagname)))
+        return self.tk.getboolean(
+            self.tk.call(self._w, "tag", "cell", "has", tagname, cell))
 
 
     def see(self, item):
