@@ -27,6 +27,7 @@
 
 /* Progress callback frequency */
 #define PROGRESS_CALLBACK_INTERVAL 1000
+#define MAX_RLE_BATCH_SAMPLES 8192  /* Cap per-batch samples to bound the timestamp list (gh-152089) */
 
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
@@ -1095,7 +1096,8 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 ts->prev_timestamp += delta;
 
                 /* Start new batch on first sample or status change */
-                if (i == 0 || status != batch_status) {
+                if (i == 0 || status != batch_status
+                        || batch_idx >= MAX_RLE_BATCH_SAMPLES) {
                     if (timestamps_list) {
                         int rc = emit_batch(state, collector, thread_id, interpreter_id,
                                             batch_status, ts->current_stack, ts->current_stack_depth,
