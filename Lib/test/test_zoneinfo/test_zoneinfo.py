@@ -1212,7 +1212,7 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid julian offset
             "AAA4BBB,J0/2,J20/2",
             "AAA4BBB,J20/2,J366/2",
-            # gh-152847: non-digit day-of-year (e.g. J1_0)
+            # gh-152847: non-digit day-of-year
             "AAA4BBB,J1_0,J300/2",
             "AAA4BBB,J60/2,J30_0/2",
             "AAA4BBB,1_0,J300/2",
