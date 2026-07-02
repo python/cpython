@@ -629,11 +629,6 @@ flush_pending_rle(BinaryWriter *writer, ThreadEntry *entry)
     if (!entry->has_pending_rle || entry->pending_rle_count == 0) {
         return 0;
     }
-    if (entry->pending_rle_count > UINT32_MAX - writer->total_samples) {
-        PyErr_SetString(PyExc_OverflowError,
-            "too many samples for binary format");
-        return -1;
-    }
 
     /* Write RLE record:
      * [thread_id: 8] [interpreter_id: 4] [STACK_REPEAT: 1] [count: varint]
@@ -655,7 +650,6 @@ flush_pending_rle(BinaryWriter *writer, ThreadEntry *entry)
         if (writer_write_bytes(writer, &entry->pending_rle[i].status, 1) < 0) {
             return -1;
         }
-        writer->total_samples++;
     }
 
     writer->stats.repeat_records++;
@@ -678,12 +672,6 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
                            const uint32_t *frame_indices, size_t stack_depth,
                            size_t shared_count, size_t pop_count, size_t push_count)
 {
-    if (writer->total_samples == UINT32_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "too many samples for binary format");
-        return -1;
-    }
-
     /* Header: thread_id(8) + interpreter_id(4) + encoding(1) + delta(varint) + status(1) */
     uint8_t header_buf[SAMPLE_HEADER_MAX_SIZE];
     memcpy(header_buf + SMP_OFF_THREAD_ID, &entry->thread_id, SMP_SIZE_THREAD_ID);
@@ -955,6 +943,12 @@ static int
 process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
                       uint32_t interpreter_id, uint64_t timestamp_us)
 {
+    if (writer->total_samples == UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many samples for binary format");
+        return -1;
+    }
+
     PyObject *thread_id_obj = PyStructSequence_GET_ITEM(thread_info, 0);
     PyObject *status_obj = PyStructSequence_GET_ITEM(thread_info, 1);
     PyObject *frame_list = PyStructSequence_GET_ITEM(thread_info, 2);
@@ -1010,6 +1004,7 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
         entry->pending_rle[entry->pending_rle_count].status = status;
         entry->pending_rle_count++;
         entry->has_pending_rle = 1;
+        writer->total_samples++;
     } else {
         /* Stack changed - flush any pending RLE first */
         if (entry->has_pending_rle) {
