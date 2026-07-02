@@ -1,0 +1,3 @@
+If number of arguments differs by one for bound methods and the number of
+positional arg differs, we we add an additional hint in the TypeError: "Did
+you forget the 'self' parameter in the function definition?"

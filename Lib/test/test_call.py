@@ -910,14 +910,35 @@ class A:
     def positional_only(arg, /):
         pass
 
+    def method_with_self(self, arg, kwarg=1):
+        pass
+
+    def missing_self(another_arg):
+        pass
+
+    def missing_self_no_args():
+        pass
+
 @cpython_only
 class TestErrorMessagesUseQualifiedName(unittest.TestCase):
-
     @contextlib.contextmanager
     def check_raises_type_error(self, message):
         with self.assertRaises(TypeError) as cm:
             yield
         self.assertEqual(str(cm.exception), message)
+
+    def test_happy_path(self):
+        self.assertIs(None, A().method_with_self(1, kwarg=2))
+
+    def test_too_many_positional_but_missing_self(self):
+        msg = "A.missing_self() takes 1 positional argument but 2 were given. Did you forget the 'self' parameter in the function definition?"
+        with self.check_raises_type_error(msg):
+            A().missing_self("another_arg")
+
+    def test_too_many_positional_but_missing_self_no_args(self):
+        msg = "A.missing_self_no_args() takes 0 positional arguments but 1 was given. Did you forget the 'self' parameter in the function definition?"
+        with self.check_raises_type_error(msg):
+            A().missing_self_no_args()
 
     def test_missing_arguments(self):
         msg = "A.method_two_args() missing 1 required positional argument: 'y'"
