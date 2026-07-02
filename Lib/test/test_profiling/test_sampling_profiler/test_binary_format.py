@@ -1010,6 +1010,15 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         # keeps the samples collected before the limit was hit.
         collector._writer = real_writer
         collector.export(None)
+
+        with open(filename, "rb") as f:
+            header = f.read(32)
+        magic, version = struct.unpack_from("=II", header, 0)
+        self.assertEqual(magic, 0x54414348)  # "TACH"
+        self.assertEqual(version, 1)
+        (sample_count,) = struct.unpack_from("=I", header, 28)
+        self.assertEqual(sample_count, 3)
+
         reader_collector = RawCollector()
         with BinaryReader(filename) as reader:
             self.assertEqual(reader.replay_samples(reader_collector), 3)
