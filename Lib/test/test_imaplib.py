@@ -143,6 +143,15 @@ class TestImaplib(unittest.TestCase):
             internal = imaplib.Time2Internaldate(t)
             self.assertEqual(internal, expected)
 
+    @run_with_tz('STD-1DST,M3.2.0,M11.1.0')
+    def test_Time2Internaldate_datetime_timetuple(self):
+        date_time = datetime.fromtimestamp(2000000000).timetuple()
+        self.assertIsNone(date_time.tm_gmtoff)
+        self.assertEqual(
+            imaplib.Time2Internaldate(date_time),
+            '"18-May-2033 05:33:20 +0200"',
+        )
+
     def test_that_Time2Internaldate_returns_a_result(self):
         # Without tzset, we can check only that it successfully
         # produces a result, not the correctness of the result itself,

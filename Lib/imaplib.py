@@ -1872,6 +1872,8 @@ def Time2Internaldate(date_time):
         try:
             gmtoff = date_time.tm_gmtoff
         except AttributeError:
+            gmtoff = None
+        if gmtoff is None:
             if time.daylight:
                 dst = date_time[8]
                 if dst == -1:
