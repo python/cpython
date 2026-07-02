@@ -1,0 +1,1 @@
+Handle bracketed paste in :mod:`!_pyrepl` isearch mode.
