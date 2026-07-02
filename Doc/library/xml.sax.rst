@@ -79,7 +79,8 @@ instantiated by the application itself.  Since Python does not have an explicit
 notion of interface, they are formally introduced as classes, but applications
 may use implementations which do not inherit from the provided classes.  The
 :class:`~xml.sax.xmlreader.InputSource`, :class:`~xml.sax.xmlreader.Locator`,
-:class:`~xml.sax.xmlreader.AttributesImpl`,
+:ref:`Attributes <attributes-objects>`,
+:ref:`AttributesNS <attributes-ns-objects>`,
 :class:`~xml.sax.xmlreader.AttributesNSImpl`, and :class:`~xml.sax.xmlreader.XMLReader`
 interfaces are defined in the module :mod:`xml.sax.xmlreader`.
 The handler interfaces are defined in :mod:`xml.sax.handler`.  For convenience,
