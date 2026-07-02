@@ -32,7 +32,7 @@ on:
         required: false
         type: string
         default: ''
-      upload-install:
+      upload-install-hashes:
         description: Install Python and upload the result artifact
         required: false
         type: boolean
@@ -105,7 +105,7 @@ jobs:
         ${{ fromJSON(inputs.debug) && '--with-pydebug' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
         ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
-        ${{ fromJSON(inputs.upload-install) && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
+        ${{ fromJSON(inputs.upload-install-hashes) && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
     - name: Build CPython out-of-tree
       if: ${{ inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
@@ -137,11 +137,11 @@ jobs:
       env:
         TEST_OPTS: ${{ inputs.test-opts }}
     - name: Install Python
-      if: ${{ inputs.upload-install }}
+      if: ${{ inputs.upload-install-hashes }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make install DESTDIR=build/install
     - name: Install some test packages in the Python
-      if: ${{ inputs.upload-install }}
+      if: ${{ inputs.upload-install-hashes }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
         CPYTHON_TEST_EXT_NAME=c_mod \
@@ -155,9 +155,22 @@ jobs:
           (cd build/install/usr/lib/python*/site-packages && \
             mv abi3t_mod.abi3.so abi3t_mod.abi3t.so); \
         fi
-    - name: Upload Installed Python
-      if: ${{ inputs.upload-install }}
+    - name: Generate the install hashes filename
+      if: ${{ inputs.upload-install-hashes }}
+      run: |
+        echo "INSTALL_HASHES_FILE=install-hashes-${{ runner.arch }}-${{ case(inputs.free-threading, 't', '')}}${{ case(inputs.debug, 'd', '') }}" >> "$GITHUB_ENV"
+    - name: Hash the installed Python
+      if: ${{ inputs.upload-install-hashes }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: >-
+        build/install/usr/bin/python3
+        ../cpython-ro-srcdir/Tools/coinstall-check/hash-r.py
+        build/install > "$INSTALL_HASHES_FILE"
+    - name: Upload the hashes
+      if: ${{ inputs.upload-install-hashes }}
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
-        name: install-tree-${{ runner.arch }}-${{ case(inputs.free-threading, 't', '')}}${{ case(inputs.debug, 'd', '') }}
-        path: ${{ env.CPYTHON_BUILDDIR }}/build/install
+        name: ${{ env.INSTALL_HASHES_FILE }}
+        path: ${{ env.CPYTHON_BUILDDIR }}/${{ env.INSTALL_HASHES_FILE }}
+        archive: false
+        retention-days: 1
