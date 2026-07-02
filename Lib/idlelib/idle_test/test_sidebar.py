@@ -11,11 +11,10 @@ import tkinter as tk
 from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
-from idlelib.editor import fixwordbreaks
 from idlelib.percolator import Percolator
 import idlelib.pyshell
-from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
-from idlelib.run import fix_scaling
+from idlelib.pyshell import PyShell, PyShellFileList
+from idlelib.util import fix_scaling, fix_word_breaks, fix_x11_paste
 import idlelib.sidebar
 from idlelib.sidebar import get_end_linenumber, get_lineno
 
@@ -403,7 +402,7 @@ class ShellSidebarTest(unittest.TestCase):
         root.withdraw()
 
         fix_scaling(root)
-        fixwordbreaks(root)
+        fix_word_breaks(root)
         fix_x11_paste(root)
 
         cls.flist = flist = PyShellFileList(root)

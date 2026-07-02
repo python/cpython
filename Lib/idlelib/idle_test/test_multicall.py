@@ -68,6 +68,21 @@ class MultiCallTest(unittest.TestCase):
             mctext.event_add('<<test-bad>>', '<Foo-Key-Up>')  # Must not raise.
             mctext.bind('<<test-bad>>', lambda e: None)  # Must not raise.
         self.assertIn('invalid key binding', stderr.getvalue())
+    def test_event_delete_unbound_sequence(self):
+        # gh-89360: deleting a sequence that was not added to a virtual
+        # event is ignored instead of raising ValueError.
+        mctext = self.mc(self.root)
+        mctext.event_add('<<tester>>', '<Control-Key-a>')
+        info = mctext.event_info('<<tester>>')
+        self.assertEqual(len(info), 1)
+
+        # A different sequence, never added: a no-op, not an error.
+        mctext.event_delete('<<tester>>', '<Control-Key-b>')
+        self.assertEqual(mctext.event_info('<<tester>>'), info)
+
+        # The added sequence can still be deleted normally.
+        mctext.event_delete('<<tester>>', '<Control-Key-a>')
+        self.assertNotIn(info[0], mctext.event_info('<<tester>>'))
 
 
 if __name__ == '__main__':

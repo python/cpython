@@ -4,6 +4,9 @@ Released on 2026-10-01
 =========================
 
 
+gh-152728: Move functions run.fix_scaling, editor.fixwordbreaks (as fix_word_breaks)
+and pyshell.fix_x11_paste to module util. Patch by Terry J. Reedy.
+
 gh-85320: IDLE now reads and writes its configuration files and the
 breakpoints file using UTF-8 instead of the locale encoding.
 Files with non-ASCII characters and non-UTF-8 encoding may need

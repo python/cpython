@@ -465,7 +465,7 @@ Mouse
 
    Return ``True`` if the mouse driver has been successfully initialized.
 
-   Availability: ncurses 5.8 or later.
+   Availability: if the underlying curses library provides ``has_mouse()``.
 
    .. versionadded:: next
 
