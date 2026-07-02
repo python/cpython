@@ -73,6 +73,33 @@ def kill_process_group(proc):
     proc.communicate()  # Clean up
 
 
+def run_readelf(cmd):
+    # Force the C locale to disable localization.
+    env = dict(os.environ, LC_ALL="C")
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+        )
+    except OSError:
+        raise unittest.SkipTest("Couldn't find readelf on the path")
+
+    with proc:
+        stdout, stderr = proc.communicate()
+
+    if proc.returncode:
+        raise AssertionError(
+            f"Command {' '.join(cmd)!r} failed "
+            f"with exit code {proc.returncode}: "
+            f"stdout={stdout!r} stderr={stderr!r}"
+        )
+
+    return stdout
+
+
 class TraceBackend:
     EXTENSION = None
     COMMAND = None
@@ -408,28 +435,7 @@ class CheckDtraceProbes(unittest.TestCase):
 
     @staticmethod
     def get_readelf_version():
-        try:
-            cmd = ["readelf", "--version"]
-            # Force the C locale to disable localization.
-            env = dict(os.environ, LC_ALL="C")
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                env=env,
-            )
-            with proc:
-                version, stderr = proc.communicate()
-
-            if proc.returncode:
-                raise Exception(
-                    f"Command {' '.join(cmd)!r} failed "
-                    f"with exit code {proc.returncode}: "
-                    f"stdout={version!r} stderr={stderr!r}"
-                )
-        except OSError:
-            raise unittest.SkipTest("Couldn't find readelf on the path")
+        version = run_readelf(["readelf", "--version"])
 
         # Regex to parse:
         # 'GNU readelf (GNU Binutils) 2.40.0\n' -> 2.40
@@ -461,17 +467,7 @@ class CheckDtraceProbes(unittest.TestCase):
                         binary = libpython_path
                         break
 
-        command = ["readelf", "-n", binary]
-        # Force the C locale to disable localization.
-        env = dict(os.environ, LC_ALL="C")
-        stdout, _ = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            env=env,
-        ).communicate()
-        return stdout
+        return run_readelf(["readelf", "-n", binary])
 
     def test_check_probes(self):
         readelf_output = self.get_readelf_output()
