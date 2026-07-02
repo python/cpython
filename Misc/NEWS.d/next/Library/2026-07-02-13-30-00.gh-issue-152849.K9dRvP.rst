@@ -1,0 +1,2 @@
+Fix the :exc:`OverflowError` message for out-of-range float timestamps: it
+now names ``PyTime_t`` instead of ``time_t``. Patch by tonghuaroot.

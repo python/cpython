@@ -1013,6 +1013,18 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             with self.assertRaises(ValueError):
                 _PyTime_FromSecondsObject(float('nan'), time_rnd)
 
+    def test_FromSecondsObject_float_overflow_message(self):
+        # Float path must report a PyTime_t overflow, like the integer path.
+        from _testcapi import PyTime_MIN, PyTime_MAX
+        from _testinternalcapi import _PyTime_FromSecondsObject
+        for value in (float(PyTime_MAX), float(PyTime_MIN)):
+            for time_rnd, _ in ROUNDING_MODES:
+                with self.subTest(value=value, time_rnd=time_rnd):
+                    with self.assertRaisesRegex(
+                            OverflowError,
+                            "timestamp out of range for C PyTime_t"):
+                        _PyTime_FromSecondsObject(value, time_rnd)
+
     def test_AsSecondsDouble(self):
         from _testcapi import PyTime_AsSecondsDouble
 
