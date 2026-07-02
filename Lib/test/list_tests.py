@@ -202,6 +202,88 @@ class CommonTest(seq_tests.CommonTest):
         x[:] = reversed(range(3))
         self.assertEqual(x, self.type2test([2, 1, 0]))
 
+    def test_extended_slice_assign_infinite_iterator(self):
+        # gh-146268: assigning an infinite iterator to an extended slice
+        # (step != 1) should raise ValueError, not hang indefinitely.
+        def infinite_gen():
+            while True:
+                yield "foo"
+
+        a = self.type2test(range(4))
+        with self.assertRaises(ValueError) as cm:
+            a[::2] = infinite_gen()
+        self.assertIn("yielded more items than extended slice of size 2",
+                       str(cm.exception))
+        # list should be unchanged after the failed assignment
+        self.assertEqual(a, self.type2test(range(4)))
+
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[::3] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
+        # Negative step with infinite iterator
+        a = self.type2test(range(6))
+        with self.assertRaises(ValueError):
+            a[::-2] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(6)))
+
+        # Explicit start and stop with infinite iterator
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[1:8:2] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
+        # Explicit start only
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[2::3] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
+        # Explicit stop only
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[:7:2] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
+        # Negative step with explicit start and stop
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError):
+            a[8:1:-2] = infinite_gen()
+        self.assertEqual(a, self.type2test(range(10)))
+
+    def test_extended_slice_assign_iterator(self):
+        # Assigning a finite iterator with the correct length to an
+        # extended slice should work.
+        a = self.type2test(range(10))
+        a[::2] = iter(range(5))
+        self.assertEqual(a, self.type2test([0, 1, 1, 3, 2, 5, 3, 7, 4, 9]))
+
+        # Too few items from an iterator
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError) as cm:
+            a[::2] = iter(range(3))
+        self.assertIn("sequence of size 3 to extended slice of size 5",
+                       str(cm.exception))
+        self.assertEqual(a, self.type2test(range(10)))
+
+        # Too many items from an iterator
+        a = self.type2test(range(10))
+        with self.assertRaises(ValueError) as cm:
+            a[::2] = iter(range(10))
+        self.assertIn("yielded more items than extended slice of size 5",
+                       str(cm.exception))
+        self.assertEqual(a, self.type2test(range(10)))
+
+    def test_extended_slice_assign_non_iterable(self):
+        # Assigning a non-iterable to an extended slice should raise TypeError.
+        a = self.type2test(range(4))
+        with self.assertRaises(TypeError) as cm:
+            a[::2] = 42
+        self.assertIn("must assign iterable to extended slice",
+                       str(cm.exception))
+        self.assertEqual(a, self.type2test(range(4)))
+
     def test_delslice(self):
         a = self.type2test([0, 1])
         del a[1:2]
