@@ -95,11 +95,19 @@ def str_width(c: str) -> int:
 def wlen(s: str) -> int:
     if len(s) == 1 and s != "\x1a":
         return str_width(s)
-    length = sum(str_width(i) for i in s)
-    # remove lengths of any escape sequences
-    sequence = ANSI_ESCAPE_SEQUENCE.findall(s)
-    ctrl_z_cnt = s.count("\x1a")
-    return length - sum(len(i) for i in sequence) + ctrl_z_cnt
+    length = 0
+    # Strip ANSI escapes first
+    plain = ANSI_ESCAPE_SEQUENCE.sub("", s)
+    for c in plain:
+        if c == "\b":
+            # Backspace decreases cursor position, and cannot move before column 0.
+            length = max(length - 1, 0)
+        elif c == "\x1a":
+            # Control-Z is treated as width 2 to account for the fact that it will be rendered as ^Z
+            length += 2
+        else:
+            length += str_width(c)
+    return length
 
 
 def unbracket(s: str, including_content: bool = False) -> str:
