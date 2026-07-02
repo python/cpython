@@ -27,6 +27,9 @@ Py_ssize_t
 _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssize_t col_offset, Py_ssize_t end_col_offset)
 {
     const unsigned char *data = (const unsigned char*)PyUnicode_AsUTF8(line);
+    if (data == NULL) {
+        return -1;
+    }
 
     Py_ssize_t len = 0;
     while (col_offset < end_col_offset) {
