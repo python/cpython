@@ -1720,6 +1720,9 @@ unicode_is_singleton(PyObject *unicode)
 
     PyASCIIObject *ascii = _PyASCIIObject_CAST(unicode);
     if (ascii->length == 1) {
+        if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode) == NULL) {
+            return 0;
+        }
         Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, 0);
         if (ch < 256 && LATIN1(ch) == unicode) {
             return 1;
