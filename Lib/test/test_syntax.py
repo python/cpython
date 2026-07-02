@@ -3528,7 +3528,59 @@ while 1:
             lineno=2,
             end_lineno=2,
             offset=5,
+        )
+
+    def test_diamond_operator(self):
+        self._check_error(
+            "1<>2",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=2,
+            end_offset=4,
+        )
+
+    def test_diamond_operator_barry_as_flufl(self):
+        # Under barry_as_FLUFL, '<>' is the valid "not equal" operator
+        compile(
+            "from __future__ import barry_as_FLUFL\n1<>2",
+            "<test>", "exec",
+        )
+        self._check_error(
+            "from __future__ import barry_as_FLUFL\na < > b",
+            "invalid syntax",
+            lineno=2,
+            end_lineno=2,
+            offset=5,
             end_offset=6,
+        )
+
+    def test_triple_equal(self):
+        self._check_error(
+            "a === b",
+            r"Maybe you meant 'is' instead of '==='\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=6,
+        )
+        self._check_error(
+            "a == = b",
+            "invalid syntax",
+            lineno=1,
+            end_lineno=1,
+            offset=6,
+            end_offset=7,
+        )
+
+    def test_eq_lt_typo(self):
+        self._check_error(
+            "a =< b",
+            r"Maybe you meant '<=' instead of '=<'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
         )
 
     def test_double_pipe(self):
@@ -3547,6 +3599,26 @@ while 1:
             end_lineno=1,
             offset=5,
             end_offset=6,
+        )
+
+    def test_eq_gt_typo(self):
+        self._check_error(
+            "a => b",
+            r"Maybe you meant '>=' instead of '=>'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
+        )
+
+    def test_eq_bang_typo(self):
+        self._check_error(
+            "a =! b",
+            r"Maybe you meant '!=' instead of '=!'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=3,
+            end_offset=5,
         )
 
 

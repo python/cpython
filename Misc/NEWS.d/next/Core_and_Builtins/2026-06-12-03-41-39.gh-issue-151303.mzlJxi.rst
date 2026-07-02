@@ -1,0 +1,1 @@
+Improve :exc:`SyntaxError` messages for common operator typos coming from other languages: ``=<``, ``=>``, and ``=!`` now suggest ``<=``, ``>=``, and ``!=`` respectively, ``===`` suggests ``is``, and ``<>`` shows a tailored message suggesting ``!=``.
