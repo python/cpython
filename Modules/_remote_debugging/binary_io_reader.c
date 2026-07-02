@@ -27,7 +27,9 @@
 
 /* Progress callback frequency */
 #define PROGRESS_CALLBACK_INTERVAL 1000
-#define MAX_RLE_BATCH_SAMPLES 8192  /* Cap per-batch samples to bound the timestamp list (gh-152089) */
+
+/* Cap per-batch RLE samples to bound the timestamp list (gh-152089) */
+#define MAX_RLE_BATCH_SAMPLES 8192
 
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
