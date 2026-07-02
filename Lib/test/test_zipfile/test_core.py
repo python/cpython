@@ -4020,6 +4020,37 @@ class OtherTests(unittest.TestCase):
                 zip_info = zf.getinfo("test_no_source_date_epoch.txt")
                 self.assertTimestampAlmostEqual(time.localtime(), zip_info.date_time, tolerance=2)
 
+    def test_writestr_strict_timestamps_false_with_pre1980_source_date_epoch(self):
+        # gh-152445: writestr() with strict_timestamps=False should clamp
+        # SOURCE_DATE_EPOCH before 1980 to 1980-01-01, not raise.
+        with os_helper.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '0'  # 1970-01-01
+            with zipfile.ZipFile(TESTFN, 'w', strict_timestamps=False) as zf:
+                zf.writestr('test.txt', 'Hello World')
+            with zipfile.ZipFile(TESTFN, 'r') as zf:
+                info = zf.getinfo('test.txt')
+                self.assertEqual(info.date_time[:3], (1980, 1, 1))
+
+    def test_writestr_strict_timestamps_false_with_post2107_source_date_epoch(self):
+        # gh-152445: writestr() with strict_timestamps=False should clamp
+        # SOURCE_DATE_EPOCH after 2107 to 2107-12-31, not raise.
+        with os_helper.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '4354819200'  # 2108-01-01
+            with zipfile.ZipFile(TESTFN, 'w', strict_timestamps=False) as zf:
+                zf.writestr('test.txt', 'Hello World')
+            with zipfile.ZipFile(TESTFN, 'r') as zf:
+                info = zf.getinfo('test.txt')
+                self.assertEqual(info.date_time[:3], (2107, 12, 31))
+
+    def test_writestr_strict_timestamps_true_raises_for_pre1980_source_date_epoch(self):
+        # gh-152445: writestr() with strict_timestamps=True (default) should
+        # still raise when SOURCE_DATE_EPOCH is before 1980.
+        with os_helper.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '0'  # 1970-01-01
+            with zipfile.ZipFile(TESTFN, 'w') as zf:
+                with self.assertRaises((struct.error, ValueError)):
+                    zf.writestr('test.txt', 'Hello World')
+
     def assertTimestampAlmostEqual(self, time1, time2, tolerance):
         import datetime
         dt1 = datetime.datetime(*time1[:6])
