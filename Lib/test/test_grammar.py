@@ -266,6 +266,16 @@ the \'lazy\' dog.\n\
             eval("(" * (MAXLEVEL + 1) + ")" * (MAXLEVEL + 1))
         self.assertStartsWith(str(cm.exception), 'too many nested parentheses')
 
+        # Dict:
+        with self.assertRaises(SyntaxError) as cm:
+            eval("{1: " * (MAXLEVEL + 1) + "}" * (MAXLEVEL + 1))
+        self.assertStartsWith(str(cm.exception), 'too many nested parentheses')
+
+        # Frozendict:
+        with self.assertRaises(SyntaxError) as cm:
+            eval("f{1: " * (MAXLEVEL + 1) + "}" * (MAXLEVEL + 1))
+        self.assertStartsWith(str(cm.exception), 'too many nested parentheses')
+
 var_annot_global: int # a global annotated is necessary for test_var_annot
 
 
@@ -1218,10 +1228,16 @@ class GrammarTests(unittest.TestCase):
               "'yield' inside list comprehension")
         check("def g(): {(yield x) for x in ()}",
               "'yield' inside set comprehension")
+        check("def g(): f{(yield x) for x in ()}",
+              "'yield' inside frozenset comprehension")
         check("def g(): {(yield x): x for x in ()}",
               "'yield' inside dict comprehension")
         check("def g(): {x: (yield x) for x in ()}",
               "'yield' inside dict comprehension")
+        check("def g(): f{(yield x): x for x in ()}",
+              "'yield' inside frozendict comprehension")
+        check("def g(): f{x: (yield x) for x in ()}",
+              "'yield' inside frozendict comprehension")
         check("def g(): ((yield x) for x in ())",
               "'yield' inside generator expression")
         check("def g(): [(yield from x) for x in ()]",
@@ -1742,7 +1758,27 @@ class GrammarTests(unittest.TestCase):
         #                                   (',' test ':' test)* [','])) |
         #                   (test (comp_for | (',' test)* [','])) )
         nums = [1, 2, 3]
-        self.assertEqual({i:i+1 for i in nums}, {1: 2, 2: 3, 3: 4})
+        expr = {i:i+1 for i in nums}
+        self.assertEqual(expr, {1: 2, 2: 3, 3: 4})
+        self.assertIs(type(expr), dict)
+
+    def test_frozendictcomps(self):
+        nums = [1, 2, 3]
+        expr = f{i:i+1 for i in nums}
+        self.assertEqual(expr, f{1: 2, 2: 3, 3: 4})
+        self.assertIs(type(expr), frozendict)
+
+    def test_setcomps(self):
+        nums = [1, 2, 3]
+        expr = {i for i in nums}
+        self.assertEqual(expr, {1, 2, 3})
+        self.assertIs(type(expr), set)
+
+    def test_frozensetcomps(self):
+        nums = [1, 2, 3]
+        expr = f{i for i in nums}
+        self.assertEqual(expr, f{1, 2, 3})
+        self.assertIs(type(expr), frozenset)
 
     def test_listcomps(self):
         # list comprehension tests

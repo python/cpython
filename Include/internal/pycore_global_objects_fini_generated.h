@@ -1311,6 +1311,8 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_characters)[254]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_characters)[255]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_dictcomp));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_frozendictcomp));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_frozensetcomp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_genexpr));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_lambda));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(anon_listcomp));

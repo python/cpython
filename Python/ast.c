@@ -280,36 +280,51 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_expr(exp->v.IfExp.body, Load) &&
             validate_expr(exp->v.IfExp.orelse, Load);
         break;
-    case Dict_kind:
-        if (asdl_seq_LEN(exp->v.Dict.keys) != asdl_seq_LEN(exp->v.Dict.values)) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Dict doesn't have the same number of keys as values");
-            return 0;
-        }
-        /* null_ok=1 for keys expressions to allow dict unpacking to work in
-           dict literals, i.e. ``{**{a:b}}`` */
-        ret = validate_exprs(exp->v.Dict.keys, Load, /*null_ok=*/ 1) &&
-            validate_exprs(exp->v.Dict.values, Load, /*null_ok=*/ 0);
-        break;
+#define DICT_CASE(NAME) \
+        case NAME ## _kind: \
+            if (asdl_seq_LEN(exp->v.NAME.keys) != asdl_seq_LEN(exp->v.NAME.values)) { \
+                PyErr_SetString(PyExc_ValueError, \
+                                "NAME doesn't have the same number of keys as values"); \
+                return 0; \
+            } \
+            /* null_ok=1 for keys expressions to allow dict unpacking to work in \
+            dict literals, i.e. ``{**{a:b}}`` */ \
+            ret = validate_exprs(exp->v.NAME.keys, Load, /*null_ok=*/ 1) && \
+                validate_exprs(exp->v.NAME.values, Load, /*null_ok=*/ 0); \
+            break;
+
+    DICT_CASE(Dict)
+    DICT_CASE(FrozenDict)
+#undef DICT_CASE
     case Set_kind:
         ret = validate_exprs(exp->v.Set.elts, Load, 0);
+        break;
+    case FrozenSet_kind:
+        ret = validate_exprs(exp->v.FrozenSet.elts, Load, 0);
         break;
 #define COMP(NAME) \
         case NAME ## _kind: \
             ret = validate_comprehension(exp->v.NAME.generators) && \
                 validate_expr(exp->v.NAME.elt, Load); \
             break;
+
     COMP(ListComp)
     COMP(SetComp)
+    COMP(FrozenSetComp)
     COMP(GeneratorExp)
 #undef COMP
-    case DictComp_kind:
-        ret = validate_comprehension(exp->v.DictComp.generators) &&
-            validate_expr(exp->v.DictComp.key, Load);
-        if (ret && exp->v.DictComp.value != NULL){
-            ret = validate_expr(exp->v.DictComp.value, Load);
-        }
-        break;
+#define DICTCOMP(NAME) \
+        case NAME ## _kind: \
+            ret = validate_comprehension(exp->v.NAME.generators) && \
+                validate_expr(exp->v.NAME.key, Load); \
+            if (ret && exp->v.NAME.value != NULL) { \
+                ret = validate_expr(exp->v.NAME.value, Load); \
+            } \
+            break;
+
+    DICTCOMP(DictComp)
+    DICTCOMP(FrozenDictComp)
+#undef DICTCOMP
     case Yield_kind:
         ret = !exp->v.Yield.value || validate_expr(exp->v.Yield.value, Load);
         break;

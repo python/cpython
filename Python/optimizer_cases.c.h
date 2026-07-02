@@ -2461,6 +2461,16 @@
             break;
         }
 
+        case _BUILD_FROZENSET: {
+            JitOptRef set;
+            set = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(1 - oparg);
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _BUILD_MAP: {
             JitOptRef map;
             map = sym_new_type(ctx, &PyDict_Type);
@@ -2468,6 +2478,13 @@
             stack_pointer[-oparg*2] = map;
             stack_pointer += 1 - oparg*2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BUILD_FROZENDICT: {
+            JitOptRef map;
+            map = sym_new_not_null(ctx);
+            stack_pointer[-1] = map;
             break;
         }
 

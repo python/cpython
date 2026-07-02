@@ -902,6 +902,7 @@ atom[expr_ty]:
     | &'(' (genexp | tuple | group)
     | &'[' (listcomp | list)
     | &'{' (dictcomp | setcomp | dict | set)
+    | &'f{' (frozendictcomp | frozensetcomp | frozendict | frozenset)
     | '...' { _PyAST_Constant(Py_Ellipsis, NULL, EXTRA) }
 
 group[expr_ty]:
@@ -1023,6 +1024,8 @@ tuple[expr_ty]:
 
 set[expr_ty]: '{' a=star_named_expressions_sequence '}' { _PyAST_Set(a, EXTRA) }
 
+frozenset[expr_ty]: 'f{' a=star_named_expressions_sequence '}' { _PyAST_FrozenSet(a, EXTRA) }
+
 # Dicts
 # -----
 
@@ -1033,6 +1036,14 @@ dict[expr_ty]:
             CHECK(asdl_expr_seq*, _PyPegen_get_values(p, a)),
             EXTRA) }
     | '{' invalid_double_starred_kvpairs '}'
+
+frozendict[expr_ty]:
+    | 'f{' a=[double_starred_kvpairs] '}' {
+        _PyAST_FrozenDict(
+            CHECK(asdl_expr_seq*, _PyPegen_get_keys(p, a)),
+            CHECK(asdl_expr_seq*, _PyPegen_get_values(p, a)),
+            EXTRA) }
+    | 'f{' invalid_double_starred_kvpairs '}'
 
 double_starred_kvpairs[asdl_seq*]: a=','.double_starred_kvpair+ [','] { a }
 
@@ -1064,6 +1075,10 @@ setcomp[expr_ty]:
     | '{' a=star_named_expression b=for_if_clauses '}' { _PyAST_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 
+frozensetcomp[expr_ty]:
+    | 'f{' a=star_named_expression b=for_if_clauses '}' { _PyAST_FrozenSetComp(a, b, EXTRA) }
+    | invalid_comprehension
+
 genexp[expr_ty]:
     | '(' a=( assignment_expression | expression !':=' | starred_expression ) b=for_if_clauses ')' { _PyAST_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
@@ -1071,6 +1086,10 @@ genexp[expr_ty]:
 dictcomp[expr_ty]:
     | '{' a=kvpair b=for_if_clauses '}' { _PyAST_DictComp(a->key, a->value, b, EXTRA) }
     | '{' '**' a=expression b=for_if_clauses '}' { _PyAST_DictComp(a, NULL, b, EXTRA) }
+
+frozendictcomp[expr_ty]:
+    | 'f{' a=kvpair b=for_if_clauses '}' { _PyAST_FrozenDictComp(a->key, a->value, b, EXTRA) }
+    | 'f{' '**' a=expression b=for_if_clauses '}' { _PyAST_FrozenDictComp(a, NULL, b, EXTRA) }
 
 # FUNCTION CALL ARGUMENTS
 # =======================
@@ -1353,10 +1372,10 @@ invalid_comprehension:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in list comprehension") }
     | '(' a='**' b=expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in generator expression") }
-    | ('[' | '{') a=star_named_expression ',' b=star_named_expressions for_if_clauses {
+    | ('[' | '{' | 'f{') a=star_named_expression ',' b=star_named_expressions for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, expr_ty),
         "did you forget parentheses around the comprehension target?") }
-    | ('[' | '{') a=star_named_expression b=',' for_if_clauses {
+    | ('[' | '{' | 'f{') a=star_named_expression b=',' for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "did you forget parentheses around the comprehension target?") }
 invalid_parameters:
     | a="/" ',' {

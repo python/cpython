@@ -3178,7 +3178,8 @@ PySet_Pop(PyObject *set)
 int
 _PySet_Update(PyObject *set, PyObject *iterable)
 {
-    if (!PySet_Check(set)) {
+    // TODO: this works with `frozenset` to support `f{1}`, but API might change:
+    if (!PyAnySet_Check(set)) {
         PyErr_BadInternalCall();
         return -1;
     }

@@ -388,8 +388,25 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("def f(**kwargs: dict): pass")
         self.check_ast_roundtrip("def f() -> None: pass")
 
+    def test_dict_literal(self):
+        self.check_ast_roundtrip("{}")
+        self.check_ast_roundtrip("{'a': 1}")
+        self.check_ast_roundtrip("{**a}")
+        self.check_ast_roundtrip("{**a, 'a': 1, **{}}")
+
+    def test_frozendict_literal(self):
+        self.check_ast_roundtrip("f{}")
+        self.check_ast_roundtrip("f{'a': 1}")
+        self.check_ast_roundtrip("f{**a}")
+        self.check_ast_roundtrip("f{**a, 'a': 1, **f{}, **{}}")
+
     def test_set_literal(self):
         self.check_ast_roundtrip("{'a', 'b', 'c'}")
+        self.check_ast_roundtrip("{'a', *b}")
+
+    def test_frozenset_literal(self):
+        self.check_ast_roundtrip("f{'a', 'b', 'c'}")
+        self.check_ast_roundtrip("f{'a', *b}")
 
     def test_empty_set(self):
         self.assertASTEqual(
@@ -400,13 +417,23 @@ class UnparseTestCase(ASTTestCase):
     def test_set_comprehension(self):
         self.check_ast_roundtrip("{x for x in range(5)}")
 
+    def test_frozenset_comprehension(self):
+        self.check_ast_roundtrip("f{x for x in range(5)}")
+
     def test_dict_comprehension(self):
         self.check_ast_roundtrip("{x: x*x for x in range(10)}")
+
+    def test_frozendict_comprehension(self):
+        self.check_ast_roundtrip("f{x: x*x for x in range(10)}")
 
     def test_dict_comprehension_unpacking(self):
         self.check_ast_roundtrip("{**x for x in ()}")
         self.check_ast_roundtrip("{**x for x in range(10)}")
         self.check_ast_roundtrip("[*x for x in ()]")
+
+    def test_frozendict_comprehension_unpacking(self):
+        self.check_ast_roundtrip("f{**x for x in ()}")
+        self.check_ast_roundtrip("f{**x for x in range(10)}")
 
     def test_class_decorators(self):
         self.check_ast_roundtrip(class_decorator)

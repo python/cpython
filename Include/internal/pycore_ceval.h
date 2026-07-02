@@ -472,6 +472,12 @@ _Py_BuildMap_StackRefSteal(
     _PyStackRef *arguments,
     int half_args);
 
+PyAPI_FUNC(int)
+_Py_BuildSet_StackRefSteal(
+    PyObject *set_o,
+    _PyStackRef *values,
+    int oparg);
+
 PyAPI_FUNC(void)
 _Py_assert_within_stack_bounds(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,

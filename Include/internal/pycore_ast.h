@@ -359,14 +359,15 @@ struct _stmt {
 };
 
 enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
-                  Lambda_kind=5, IfExp_kind=6, Dict_kind=7, Set_kind=8,
-                  ListComp_kind=9, SetComp_kind=10, DictComp_kind=11,
-                  GeneratorExp_kind=12, Await_kind=13, Yield_kind=14,
-                  YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
-                  FormattedValue_kind=18, Interpolation_kind=19,
-                  JoinedStr_kind=20, TemplateStr_kind=21, Constant_kind=22,
-                  Attribute_kind=23, Subscript_kind=24, Starred_kind=25,
-                  Name_kind=26, List_kind=27, Tuple_kind=28, Slice_kind=29};
+                  Lambda_kind=5, IfExp_kind=6, Dict_kind=7, FrozenDict_kind=8,
+                  Set_kind=9, FrozenSet_kind=10, ListComp_kind=11,
+                  SetComp_kind=12, FrozenSetComp_kind=13, DictComp_kind=14,
+                  FrozenDictComp_kind=15, GeneratorExp_kind=16, Await_kind=17,
+                  Yield_kind=18, YieldFrom_kind=19, Compare_kind=20,
+                  Call_kind=21, FormattedValue_kind=22, Interpolation_kind=23,
+                  JoinedStr_kind=24, TemplateStr_kind=25, Constant_kind=26,
+                  Attribute_kind=27, Subscript_kind=28, Starred_kind=29,
+                  Name_kind=30, List_kind=31, Tuple_kind=32, Slice_kind=33};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -408,8 +409,17 @@ struct _expr {
         } Dict;
 
         struct {
+            asdl_expr_seq *keys;
+            asdl_expr_seq *values;
+        } FrozenDict;
+
+        struct {
             asdl_expr_seq *elts;
         } Set;
+
+        struct {
+            asdl_expr_seq *elts;
+        } FrozenSet;
 
         struct {
             expr_ty elt;
@@ -422,10 +432,21 @@ struct _expr {
         } SetComp;
 
         struct {
+            expr_ty elt;
+            asdl_comprehension_seq *generators;
+        } FrozenSetComp;
+
+        struct {
             expr_ty key;
             expr_ty value;
             asdl_comprehension_seq *generators;
         } DictComp;
+
+        struct {
+            expr_ty key;
+            expr_ty value;
+            asdl_comprehension_seq *generators;
+        } FrozenDictComp;
 
         struct {
             expr_ty elt;
@@ -806,17 +827,29 @@ expr_ty _PyAST_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno,
 expr_ty _PyAST_Dict(asdl_expr_seq * keys, asdl_expr_seq * values, int lineno,
                     int col_offset, int end_lineno, int end_col_offset, PyArena
                     *arena);
+expr_ty _PyAST_FrozenDict(asdl_expr_seq * keys, asdl_expr_seq * values, int
+                          lineno, int col_offset, int end_lineno, int
+                          end_col_offset, PyArena *arena);
 expr_ty _PyAST_Set(asdl_expr_seq * elts, int lineno, int col_offset, int
                    end_lineno, int end_col_offset, PyArena *arena);
+expr_ty _PyAST_FrozenSet(asdl_expr_seq * elts, int lineno, int col_offset, int
+                         end_lineno, int end_col_offset, PyArena *arena);
 expr_ty _PyAST_ListComp(expr_ty elt, asdl_comprehension_seq * generators, int
                         lineno, int col_offset, int end_lineno, int
                         end_col_offset, PyArena *arena);
 expr_ty _PyAST_SetComp(expr_ty elt, asdl_comprehension_seq * generators, int
                        lineno, int col_offset, int end_lineno, int
                        end_col_offset, PyArena *arena);
+expr_ty _PyAST_FrozenSetComp(expr_ty elt, asdl_comprehension_seq * generators,
+                             int lineno, int col_offset, int end_lineno, int
+                             end_col_offset, PyArena *arena);
 expr_ty _PyAST_DictComp(expr_ty key, expr_ty value, asdl_comprehension_seq *
                         generators, int lineno, int col_offset, int end_lineno,
                         int end_col_offset, PyArena *arena);
+expr_ty _PyAST_FrozenDictComp(expr_ty key, expr_ty value,
+                              asdl_comprehension_seq * generators, int lineno,
+                              int col_offset, int end_lineno, int
+                              end_col_offset, PyArena *arena);
 expr_ty _PyAST_GeneratorExp(expr_ty elt, asdl_comprehension_seq * generators,
                             int lineno, int col_offset, int end_lineno, int
                             end_col_offset, PyArena *arena);

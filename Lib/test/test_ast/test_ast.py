@@ -2048,6 +2048,12 @@ Module(
         malformed = ast.Dict(keys=[ast.Constant(1)], values=[ast.Constant(2), ast.Constant(3)])
         self.assertRaises(ValueError, ast.literal_eval, malformed)
 
+    def test_literal_eval_malformed_frozen_dict_nodes(self):
+        malformed = ast.FrozenDict(keys=[ast.Constant(1), ast.Constant(2)], values=[ast.Constant(3)])
+        self.assertRaises(ValueError, ast.literal_eval, malformed)
+        malformed = ast.FrozenDict(keys=[ast.Constant(1)], values=[ast.Constant(2), ast.Constant(3)])
+        self.assertRaises(ValueError, ast.literal_eval, malformed)
+
     def test_literal_eval_trailing_ws(self):
         self.assertEqual(ast.literal_eval("    -1"), -1)
         self.assertEqual(ast.literal_eval("\t\t-1"), -1)
@@ -2408,7 +2414,18 @@ class ASTValidatorTests(unittest.TestCase):
         d = ast.Dict([ast.Name("x", ast.Load())], [None])
         self.expr(d, "None disallowed")
 
+    def test_frozen_dict(self):
+        d = ast.FrozenDict([], [ast.Name("x", ast.Load())])
+        self.expr(d, "same number of keys as values")
+        d = ast.FrozenDict([ast.Name("x", ast.Load())], [None])
+        self.expr(d, "None disallowed")
+
     def test_set(self):
+        self.expr(ast.Set([None]), "None disallowed")
+        s = ast.Set([ast.Name("x", ast.Store())])
+        self.expr(s, "must have Load context")
+
+    def test_frozen_set(self):
         self.expr(ast.Set([None]), "None disallowed")
         s = ast.Set([ast.Name("x", ast.Store())])
         self.expr(s, "must have Load context")
@@ -2443,6 +2460,9 @@ class ASTValidatorTests(unittest.TestCase):
     def test_setcomp(self):
         self._simple_comp(ast.SetComp)
 
+    def test_frozensetcomp(self):
+        self._simple_comp(ast.FrozenSetComp)
+
     def test_generatorexp(self):
         self._simple_comp(ast.GeneratorExp)
 
@@ -2459,6 +2479,21 @@ class ASTValidatorTests(unittest.TestCase):
             k = ast.Name("x", ast.Load())
             v = ast.Name("y", ast.Load())
             return ast.DictComp(k, v, comps)
+        self._check_comprehension(factory)
+
+    def test_frozendictcomp(self):
+        g = ast.comprehension(ast.Name("y", ast.Store()),
+                              ast.Name("p", ast.Load()), [], 0)
+        c = ast.FrozenDictComp(ast.Name("x", ast.Store()),
+                               ast.Name("y", ast.Load()), [g])
+        self.expr(c, "must have Load context")
+        c = ast.FrozenDictComp(ast.Name("x", ast.Load()),
+                               ast.Name("y", ast.Store()), [g])
+        self.expr(c, "must have Load context")
+        def factory(comps):
+            k = ast.Name("x", ast.Load())
+            v = ast.Name("y", ast.Load())
+            return ast.FrozenDictComp(k, v, comps)
         self._check_comprehension(factory)
 
     def test_yield(self):
