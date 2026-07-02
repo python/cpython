@@ -124,6 +124,7 @@ def _coerce_args(*args):
     #   - noop for str inputs
     #   - encoding function otherwise
     str_input = None
+    empty_values = {"", b"", None}
     for arg in args:
         if arg:
             if str_input is None:
@@ -131,6 +132,13 @@ def _coerce_args(*args):
             else:
                 if isinstance(arg, str) != str_input:
                     raise TypeError("Cannot mix str and non-str arguments")
+            if arg is not None and str_input is False and not hasattr(arg, "decode"):
+                raise TypeError(f"Expected a string, bytes, or None: got {type(arg)}")
+        elif arg is not None and not isinstance(arg, str) and not hasattr(arg, "decode"):
+            warnings.warn(
+                f"Providing false values other than empty strings, bytes, or"
+                f"None to urllib.parse is deprecated: got {type(arg)}",
+                DeprecationWarning, stacklevel=3)
     if str_input is None:
         for arg in args:
             if arg is not None:
@@ -697,12 +705,12 @@ def _urlunsplit(scheme, netloc, url, query, fragment):
 def urljoin(base, url, allow_fragments=True):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter."""
-    if not base:
-        return url
-    if not url:
-        return base
-
     base, url, _coerce_result = _coerce_args(base, url)
+    if not base:
+        return _coerce_result(url)
+    if not url:
+        return _coerce_result(base)
+
     bscheme, bnetloc, bpath, bquery, bfragment = \
             _urlsplit(base, None, allow_fragments)
     scheme, netloc, path, query, fragment = \
