@@ -556,7 +556,6 @@ class TemporaryFileWrapper:
         for line in self.file:
             yield line
 
-# _TemporaryFileWrapper is deprecated in favor of the public
 def __getattr__(name):
     if name == "_TemporaryFileWrapper":
         _warnings._deprecated(
