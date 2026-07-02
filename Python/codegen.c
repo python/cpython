@@ -4561,6 +4561,28 @@ codegen_comprehension_generator(compiler *c, location loc,
 }
 
 static int
+codegen_starred_comprehension(compiler *c, location loc, expr_ty value, bool discard)
+{
+    NEW_JUMP_TARGET_LABEL(c, unpack_start);
+    NEW_JUMP_TARGET_LABEL(c, unpack_end);
+    VISIT(c, expr, value);
+    ADDOP_I(c, loc, GET_ITER, 0);
+    USE_LABEL(c, unpack_start);
+    ADDOP_JUMP(c, loc, FOR_ITER, unpack_end);
+    if (discard) {
+        ADDOP(c, loc, POP_TOP);
+    } else {
+        ADDOP_YIELD(c, loc);
+        ADDOP(c, loc, POP_TOP);
+    }
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, unpack_start);
+    USE_LABEL(c, unpack_end);
+    ADDOP(c, NO_LOCATION, END_FOR);
+    ADDOP(c, NO_LOCATION, POP_ITER);
+    return SUCCESS;
+}
+
+static int
 codegen_sync_comprehension_generator(compiler *c, location loc,
                                      asdl_comprehension_seq *generators,
                                      int gen_index, int depth,
@@ -4645,18 +4667,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         case COMP_GENEXP:
             assert(!avoid_creation);
             if (elt->kind == Starred_kind) {
-                NEW_JUMP_TARGET_LABEL(c, unpack_start);
-                NEW_JUMP_TARGET_LABEL(c, unpack_end);
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, elt_loc, GET_ITER, 0);
-                USE_LABEL(c, unpack_start);
-                ADDOP_JUMP(c, elt_loc, FOR_ITER, unpack_end);
-                ADDOP_YIELD(c, elt_loc);
-                ADDOP(c, elt_loc, POP_TOP);
-                ADDOP_JUMP(c, NO_LOCATION, JUMP, unpack_start);
-                USE_LABEL(c, unpack_end);
-                ADDOP(c, NO_LOCATION, END_FOR);
-                ADDOP(c, NO_LOCATION, POP_ITER);
+                RETURN_IF_ERROR(codegen_starred_comprehension(c, elt_loc, elt->v.Starred.value, /*discard=*/false));
             }
             else {
                 VISIT(c, expr, elt);
@@ -4666,8 +4677,12 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
             break;
         case COMP_LISTCOMP:
             if (avoid_creation) {
-                VISIT(c, expr, elt);
-                ADDOP(c, elt_loc, POP_TOP);
+                if (elt->kind == Starred_kind) {
+                    RETURN_IF_ERROR(codegen_starred_comprehension(c, elt_loc, elt->v.Starred.value, /*discard=*/true));
+                } else {
+                    VISIT(c, expr, elt);
+                    ADDOP(c, elt_loc, POP_TOP);
+                }
                 break;
             }
             if (elt->kind == Starred_kind) {
@@ -4815,10 +4830,15 @@ codegen_async_comprehension_generator(compiler *c, location loc,
             break;
         case COMP_LISTCOMP:
             if (avoid_creation) {
-                VISIT(c, expr, elt);
-                ADDOP(c, elt_loc, POP_TOP);
+                if (elt->kind == Starred_kind) {
+                    RETURN_IF_ERROR(codegen_starred_comprehension(c, elt_loc, elt->v.Starred.value, /*discard=*/false));
+                } else {
+                    VISIT(c, expr, elt);
+                    ADDOP(c, elt_loc, POP_TOP);
+                }
                 break;
             }
+
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);

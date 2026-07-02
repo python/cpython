@@ -835,6 +835,33 @@ class ListComprehensionTest(unittest.TestCase):
         exhaust(gen2(numbers()))
         self.assertEqual(count, 5)
 
+    def test_optimization_with_starred_unpack(self):
+        with self.assertRaises(TypeError):
+            [*i for i in [1, 2, 3]]
+
+        async def coro():
+            async def gen():
+                yield 1
+
+            with self.assertRaises(TypeError):
+                [*i async for i in gen()]
+
+        c = coro()
+        while True:
+            try:
+                c.send(None)
+            except StopIteration:
+                break
+
+        count = 0
+        def weird():
+            nonlocal count
+            count += 1
+            yield 0
+
+        [*weird() for _ in range(5)]
+        self.assertEqual(count, 5)
+
 __test__ = {'doctests' : doctests}
 
 def load_tests(loader, tests, pattern):
