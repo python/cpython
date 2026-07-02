@@ -139,13 +139,11 @@ _dateParser = re.compile(r"(?P<year>\d\d\d\d)(?:-(?P<month>\d\d)(?:-(?P<day>\d\d
 
 def _date_from_string(s, aware_datetime):
     order = ('year', 'month', 'day', 'hour', 'minute', 'second')
+    # Smaller units may be omitted; default them to the start of the period.
+    defaults = (1, 1, 1, 0, 0, 0)
     gd = _dateParser.match(s).groupdict()
-    lst = []
-    for key in order:
-        val = gd[key]
-        if val is None:
-            break
-        lst.append(int(val))
+    lst = [int(val) if (val := gd[key]) is not None else default
+           for key, default in zip(order, defaults)]
     if aware_datetime:
         return datetime.datetime(*lst, tzinfo=datetime.UTC)
     return datetime.datetime(*lst)

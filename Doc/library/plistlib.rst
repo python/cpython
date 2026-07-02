@@ -81,6 +81,11 @@ This module defines the following functions:
    .. versionchanged:: 3.13
       The keyword-only parameter *aware_datetime* has been added.
 
+   .. versionchanged:: next
+      ``<date>`` values that omit smaller units (for example ``2024-06Z``)
+      are now accepted, with the omitted components defaulting to the start
+      of the period.  Previously such values raised :exc:`TypeError`.
+
 
 .. function:: loads(data, *, fmt=None, dict_type=dict, aware_datetime=False)
 

@@ -938,6 +938,24 @@ class TestPlistlib(unittest.TestCase):
                             aware_datetime=True)
         self.assertEqual(dt.tzinfo, datetime.UTC)
 
+    def test_load_partial_datetime(self):
+        # Smaller units may be omitted; missing components default to the
+        # start of the period.
+        for data, expected in [
+            (b"<plist><date>2024Z</date></plist>",
+             datetime.datetime(2024, 1, 1)),
+            (b"<plist><date>2024-06Z</date></plist>",
+             datetime.datetime(2024, 6, 1)),
+            (b"<plist><date>2024-06-07Z</date></plist>",
+             datetime.datetime(2024, 6, 7)),
+            (b"<plist><date>2024-06-07T08Z</date></plist>",
+             datetime.datetime(2024, 6, 7, 8)),
+            (b"<plist><date>2024-06-07T08:09Z</date></plist>",
+             datetime.datetime(2024, 6, 7, 8, 9)),
+        ]:
+            with self.subTest(data=data):
+                self.assertEqual(plistlib.loads(data), expected)
+
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
                          "Can't find timezone datebase")
     def test_dump_aware_datetime(self):

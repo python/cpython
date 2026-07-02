@@ -1,0 +1,3 @@
+Fix :mod:`plistlib` raising a confusing :exc:`TypeError` when loading a
+``<date>`` that omits smaller units (for example ``2024-06Z`` or ``2024Z``).
+The omitted components now default to the start of the period.
