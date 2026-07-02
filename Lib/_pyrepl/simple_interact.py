@@ -146,6 +146,13 @@ def run_multiline_interactive_console(
             if maybe_run_command(statement):
                 continue
 
+            preexec = getattr(sys, "_preexec", None)
+            if callable(preexec):
+                try:
+                    preexec(statement)
+                except Exception:
+                    pass
+
             input_name = f"<python-input-{input_n}>"
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
