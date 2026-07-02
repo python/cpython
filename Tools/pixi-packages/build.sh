@@ -17,6 +17,14 @@ else
     exit 1
 fi
 
+VER_REF=$(cat configure.ac | grep "\[PYTHON_VERSION\]\, \[" | sed -n 's/.*\[\([0-9.]*\)\].*/\1/p')
+VER=$(echo ${PKG_VERSION} | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
+
+if [[ "${VER_REF}" != "${VER}" ]]; then
+    echo "Unexpected version from conda package. Got ${VER}. Expected ${VER_REF}"
+    exit 1
+fi
+
 # rattler-build by default set a target of 10.9
 # override it to at least 10.12
 case ${MACOSX_DEPLOYMENT_TARGET:-10.12} in

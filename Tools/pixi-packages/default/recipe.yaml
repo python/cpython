@@ -2,8 +2,10 @@
 # propagate the changes to the other variants.
 
 context:
-  # Keep up to date
+  version: ${{ git.latest_tag(".")[1:] }}
   freethreading_tag: ${{ "t" if "freethreading" in variant else "" }}
+  abi_prefix: ${{ (variant | split("-"))[0] + "_" if "san" in variant else "" }}
+  abi_tag: ${{ abi_prefix }}cp${{ (version | split('.'))[:2] | join('') }}
 
 recipe:
   name: python
