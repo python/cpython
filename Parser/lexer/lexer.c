@@ -352,7 +352,6 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     }
     else /* In future releases, only error will remain. */
     if (c < 128 && is_potential_identifier_char(c)) {
-        tok_backup(tok, c);
         _PyTokenizer_syntaxerror(tok, "invalid %s literal", kind);
         return 0;
     }
