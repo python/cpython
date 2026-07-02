@@ -649,3 +649,10 @@ retrieves and prints all messages::
    M.close()
    M.logout()
 
+.. note::
+
+   A ``FETCH`` response may contain additional or unsolicited data
+   (see :rfc:`3501`, section 7.4.2),
+   so production code should inspect the whole response
+   rather than rely on ``data[0][1]``.
+
