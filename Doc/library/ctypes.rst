@@ -2531,8 +2531,8 @@ Data types
 
       Sometimes ctypes data instances do not own the memory block they contain,
       instead they share part of the memory block of a base object.  The
-      :attr:`_b_base_` read-only member is the root ctypes object that owns the
-      memory block.
+      :attr:`_b_base_` read-only member is the base ctypes object that shares
+      the memory block.
 
    .. attribute:: _b_needsfree_
 
