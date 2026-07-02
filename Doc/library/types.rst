@@ -390,6 +390,19 @@ Standard names are defined for the following types:
    signifying (respectively) the types of the underlying mapping's keys and
    values.
 
+   .. note::
+
+      There are important differences between ``MappingProxyType``
+      and :class:`frozendict`.
+
+      ``MappingProxyType`` is a wrapper around a mapping that renders
+      the mapping immutable to the viewer of the proxy
+      without affecting the underlying container.
+      ``MappingProxyType`` can expose its internal mapping in some rare cases.
+
+      While ``frozendict`` is a concrete container type
+      that actually holds data that cannot be changed in any way.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.9
