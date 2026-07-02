@@ -506,6 +506,13 @@ New deprecations
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
+* :mod:`tempfile`
+
+  * The private ``tempfile._TemporaryFileWrapper`` name is deprecated.
+    Use the new public :class:`tempfile.TemporaryFileWrapper` instead,
+    which is the return type of :func:`tempfile.NamedTemporaryFile`.
+    It is slated for removal in Python 3.21.
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst

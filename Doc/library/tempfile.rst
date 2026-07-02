@@ -161,6 +161,10 @@ The module defines the following user-callable items:
       *delete* and *delete_on_close* arguments passed to
       :func:`NamedTemporaryFile`.
 
+   .. deprecated:: next
+      ``tempfile._TemporaryFileWrapper`` is kept as a deprecated alias
+      for this class and will be removed in Python 3.21.
+
    .. note::
 
       ``tempfile._TemporaryFileWrapper`` is kept as a backwards compatible
