@@ -163,7 +163,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_INTRINSIC_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_INTRINSIC_2] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_HEAP_SAFE] = 0,
-    [_RETURN_VALUE] = HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
+    [_RETURN_VALUE] = HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -173,12 +173,11 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_SEND_VIRTUAL_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
     [_GUARD_3OS_ASYNC_GEN_ASEND] = HAS_EXIT_FLAG,
     [_SEND_ASYNC_GEN_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
-    [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
+    [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
     [_LOAD_BUILD_CLASS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_DELETE_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_TWO_TUPLE] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE] = 0,
@@ -190,7 +189,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_DELETE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_DELETE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_LOCALS] = HAS_ERROR_FLAG,
     [_LOAD_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -368,7 +366,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_FUNCTION_EX_NON_PY_GENERAL] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG,
-    [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
+    [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_BUILD_SLICE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CONVERT_VALUE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_FORMAT_SIMPLE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -1736,15 +1734,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_DELETE_NAME] = {
-        .best = { 0, 0, 0, 0 },
-        .entries = {
-            { 0, 0, _DELETE_NAME_r00 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
     [_UNPACK_SEQUENCE] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -1840,15 +1829,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 0, 1, _STORE_GLOBAL_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
-    [_DELETE_GLOBAL] = {
-        .best = { 0, 0, 0, 0 },
-        .entries = {
-            { 0, 0, _DELETE_GLOBAL_r00 },
-            { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -3449,7 +3429,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
     [_RETURN_GENERATOR] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 1, 0, _RETURN_GENERATOR_r01 },
+            { 1, 1, _RETURN_GENERATOR_r01 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -4326,7 +4306,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_COMMON_CONSTANT_r23] = _LOAD_COMMON_CONSTANT,
     [_LOAD_BUILD_CLASS_r01] = _LOAD_BUILD_CLASS,
     [_STORE_NAME_r10] = _STORE_NAME,
-    [_DELETE_NAME_r00] = _DELETE_NAME,
     [_UNPACK_SEQUENCE_r10] = _UNPACK_SEQUENCE,
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = _UNPACK_SEQUENCE_TWO_TUPLE,
     [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r02] = _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE,
@@ -4341,7 +4320,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_STORE_ATTR_r20] = _STORE_ATTR,
     [_DELETE_ATTR_r10] = _DELETE_ATTR,
     [_STORE_GLOBAL_r10] = _STORE_GLOBAL,
-    [_DELETE_GLOBAL_r00] = _DELETE_GLOBAL,
     [_LOAD_LOCALS_r01] = _LOAD_LOCALS,
     [_LOAD_LOCALS_r12] = _LOAD_LOCALS,
     [_LOAD_LOCALS_r23] = _LOAD_LOCALS,
@@ -5207,10 +5185,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_DELETE_DEREF_r00] = "_DELETE_DEREF_r00",
     [_DELETE_FAST] = "_DELETE_FAST",
     [_DELETE_FAST_r00] = "_DELETE_FAST_r00",
-    [_DELETE_GLOBAL] = "_DELETE_GLOBAL",
-    [_DELETE_GLOBAL_r00] = "_DELETE_GLOBAL_r00",
-    [_DELETE_NAME] = "_DELETE_NAME",
-    [_DELETE_NAME_r00] = "_DELETE_NAME_r00",
     [_DELETE_SUBSCR] = "_DELETE_SUBSCR",
     [_DELETE_SUBSCR_r20] = "_DELETE_SUBSCR_r20",
     [_DEOPT] = "_DEOPT",
@@ -6510,8 +6484,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _STORE_NAME:
             return 1;
-        case _DELETE_NAME:
-            return 0;
         case _UNPACK_SEQUENCE:
             return 1;
         case _UNPACK_SEQUENCE_TWO_TUPLE:
@@ -6534,8 +6506,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _STORE_GLOBAL:
             return 1;
-        case _DELETE_GLOBAL:
-            return 0;
         case _LOAD_LOCALS:
             return 0;
         case _LOAD_NAME:

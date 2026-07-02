@@ -488,10 +488,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         If factory is None the default task factory will be set.
 
         If factory is a callable, it should have a signature matching
-        '(loop, coro, **kwargs)', where 'loop' will be a reference to the active
-        event loop, 'coro' will be a coroutine object, and **kwargs will be
-        arbitrary keyword arguments that should be passed on to Task.
-        The callable must return a Task.
+        '(loop, coro, **kwargs)', where 'loop' will be a reference to the
+        active event loop, 'coro' will be a coroutine object, and **kwargs
+        will be arbitrary keyword arguments that should be passed on to
+        Task.  The callable must return a Task.
         """
         if factory is not None and not callable(factory):
             raise TypeError('task factory must be a callable or None')
@@ -727,8 +727,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     def stop(self):
         """Stop running the event loop.
 
-        Every callback already scheduled will still run.  This simply informs
-        run_forever to stop looping after a complete iteration.
+        Every callback already scheduled will still run.  This simply
+        informs run_forever to stop looping after a complete iteration.
         """
         self._stopping = True
 
@@ -969,7 +969,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
-        if offset:
+        if hasattr(file, 'seek'):
             file.seek(offset)
         blocksize = (
             min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
@@ -1076,12 +1076,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Create a streaming transport connection to a given internet host and
         port: socket family AF_INET or socket.AF_INET6 depending on host (or
-        family if specified), socket type SOCK_STREAM. protocol_factory must be
-        a callable returning a protocol instance.
+        family if specified), socket type SOCK_STREAM. protocol_factory must
+        be a callable returning a protocol instance.
 
-        This method is a coroutine which will try to establish the connection
-        in the background.  When successful, the coroutine returns a
-        (transport, protocol) pair.
+        This method is a coroutine which will try to establish the
+        connection in the background.  When successful, the coroutine
+        returns a (transport, protocol) pair.
         """
         if server_hostname is not None and not ssl:
             raise ValueError('server_hostname is only meaningful with ssl')
@@ -1283,10 +1283,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                     raise
 
         if not fallback:
-            raise RuntimeError(
+            raise exceptions.SendfileNotAvailableError(
                 f"fallback is disabled and native sendfile is not "
                 f"supported for transport {transport!r}")
-
         return await self._sendfile_fallback(transport, file,
                                              offset, count)
 
@@ -1295,9 +1294,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             "sendfile syscall is not supported")
 
     async def _sendfile_fallback(self, transp, file, offset, count):
-        if offset:
+        if hasattr(file, 'seek'):
             file.seek(offset)
-        blocksize = min(count, 16384) if count else 16384
+        blocksize = (
+            min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
+            if count else constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        )
         buf = bytearray(blocksize)
         total_sent = 0
         proto = _SendfileFallbackProtocol(transp)
@@ -1551,11 +1553,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         The host parameter can be a string, in that case the TCP server is
         bound to host and port.
 
-        The host parameter can also be a sequence of strings and in that case
-        the TCP server is bound to all hosts of the sequence. If a host
-        appears multiple times (possibly indirectly e.g. when hostnames
-        resolve to the same IP address), the server is only bound once to that
-        host.
+        The host parameter can also be a sequence of strings and in that
+        case the TCP server is bound to all hosts of the sequence.  If
+        a host appears multiple times (possibly indirectly e.g. when
+        hostnames resolve to the same IP address), the server is only bound
+        once to that host.
 
         Return a Server object which can be used to stop the service.
 

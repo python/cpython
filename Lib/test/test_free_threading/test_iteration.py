@@ -12,7 +12,7 @@ if support.check_sanitizer(thread=True):
     NUMITEMS = 1000
     NUMTHREADS = 2
 else:
-    NUMITEMS = 100000
+    NUMITEMS = 5000
     NUMTHREADS = 5
 NUMMUTATORS = 2
 

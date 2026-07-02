@@ -948,12 +948,13 @@ cmath.log
 
 log(z[, base]) -> the logarithm of z to the given base.
 
-If the base is not specified, returns the natural logarithm (base e) of z.
+If the base is not specified, returns the natural logarithm (base e)
+of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=e1f81d4fcfd26497]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=eb25de0757baf4a0]*/
 {
     Py_complex y;
 
@@ -1162,7 +1163,6 @@ cmath_isinf_impl(PyObject *module, Py_complex z)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 cmath.isclose -> bool
 
     a: Py_complex
@@ -1179,17 +1179,18 @@ Determine whether two complex numbers are close in value.
 
 Return True if a is close in value to b, and False otherwise.
 
-For the values to be considered close, the difference between them must be
-smaller than at least one of the tolerances.
+For the values to be considered close, the difference between them must
+be smaller than at least one of the tolerances.
 
--inf, inf and NaN behave similarly to the IEEE 754 Standard. That is, NaN is
-not close to anything, even itself. inf and -inf are only close to themselves.
+-inf, inf and NaN behave similarly to the IEEE 754 Standard.  That is,
+NaN is not close to anything, even itself. inf and -inf are only close
+to themselves.
 [clinic start generated code]*/
 
 static int
 cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
                    double rel_tol, double abs_tol)
-/*[clinic end generated code: output=8a2486cc6e0014d1 input=0d45feea7c626f47]*/
+/*[clinic end generated code: output=8a2486cc6e0014d1 input=301b56c90d9a79de]*/
 {
     double diff;
 

@@ -198,7 +198,7 @@ do { \
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
-        assert(frame->stackpointer == NULL); \
+        _PyFrame_StackAssertInvalid(frame); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -206,7 +206,7 @@ do { \
 
 #define DISPATCH_NON_TRACING() \
     { \
-        assert(frame->stackpointer == NULL); \
+        _PyFrame_StackAssertInvalid(frame); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO_NON_TRACING(); \
@@ -223,6 +223,7 @@ do { \
     do {                                                         \
         assert(!IS_PEP523_HOOKED(tstate));                       \
         _PyFrame_SetStackPointer(frame, stack_pointer);          \
+        _PyFrame_StackPointerValidate(frame);                    \
         assert((NEW_FRAME)->previous == frame);                  \
         frame = tstate->current_frame = (NEW_FRAME);             \
         CALL_STAT_INC(inlined_py_calls);                         \
@@ -268,10 +269,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #if defined(Py_DEBUG) && !defined(_Py_JIT)
 // This allows temporary stack "overflows", provided it's all in the cache at any point of time.
-#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
-   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+#define ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(F, L) \
+   assert(frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
 #else
-#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
+#define ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE ASSERT_WITHIN_STACK_BOUNDS
 #endif
 
 /* Data access macros */
@@ -290,7 +291,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {       \
+        if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {      \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
     } while (0)
@@ -388,14 +389,15 @@ static void dtrace_function_return(_PyInterpreterFrame *);
 // for an exception handler, displaying the traceback, and so on
 #define INSTRUMENTED_JUMP(src, dest, event) \
 do { \
+    _Py_CODEUNIT *_dest = (dest); \
     if (tstate->tracing) {\
-        next_instr = dest; \
+        next_instr = _dest; \
     } else { \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        next_instr = _Py_call_instrumentation_jump(this_instr, tstate, event, frame, src, dest); \
+        next_instr = _Py_call_instrumentation_jump(this_instr, tstate, event, frame, src, _dest); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
-            next_instr = (dest)+1; \
+            next_instr = _dest + 1; \
             JUMP_TO_LABEL(error); \
         } \
     } \
@@ -521,6 +523,22 @@ check_periodics(PyThreadState *tstate) {
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
     QSBR_QUIESCENT_STATE(tstate);
     if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+        return _Py_HandlePending(tstate);
+    }
+    return 0;
+}
+
+static inline int
+check_periodics_at_end(PyThreadState *tstate, _PyInterpreterFrame *frame) {
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+    QSBR_QUIESCENT_STATE(tstate);
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+        // Do not handle pending interrupts if the previous instruction was LOAD_SPECIAL
+        // This may also not handle interrupts if a cache looks like LOAD_SPECIAL,
+        // but this is benign as we won't skip periodic checks indefinitely.
+        if (frame->instr_ptr[-1].op.code == LOAD_SPECIAL) {
+            return 0;
+        }
         return _Py_HandlePending(tstate);
     }
     return 0;

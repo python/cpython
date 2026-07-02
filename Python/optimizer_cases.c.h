@@ -1991,15 +1991,11 @@
         case _LOAD_COMMON_CONSTANT: {
             JitOptRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
-            PyObject *val = _PyInterpreterState_GET()->common_consts[oparg];
-            if (_Py_IsImmortal(val)) {
-                ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-                value = PyJitRef_Borrow(sym_new_const(ctx, val));
-            }
-            else {
-                ADD_OP(_LOAD_CONST_INLINE, 0, (uintptr_t)val);
-                value = sym_new_const(ctx, val);
-            }
+            PyObject *val = PyStackRef_AsPyObjectBorrow(
+                _PyInterpreterState_GET()->common_consts[oparg]);
+            assert(_Py_IsImmortal(val));
+            ADD_OP(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            value = PyJitRef_Borrow(sym_new_const(ctx, val));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -2021,10 +2017,6 @@
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _DELETE_NAME: {
             break;
         }
 
@@ -2168,10 +2160,6 @@
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _DELETE_GLOBAL: {
             break;
         }
 

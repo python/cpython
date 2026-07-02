@@ -455,7 +455,7 @@ static const char usage_xoptions[] =
 "         log imports of already-loaded modules; also #e{PYTHONPROFILEIMPORTTIME}\n"
 "#s{-X} #L{int_max_str_digits}#b{=N}: limit the size of int<->str conversions;\n"
 "         0 disables the limit; also #e{PYTHONINTMAXSTRDIGITS}\n"
-"#s{-X} #L{lazy_imports}#b{=[all|none|normal]}: control global lazy imports;\n"
+"#s{-X} #L{lazy_imports}#b{=[all|normal]}: control global lazy imports;\n"
 "         default is #B{normal}; also #e{PYTHON_LAZY_IMPORTS}\n"
 "#s{-X} #L{no_debug_ranges}: don't include extra location information in code objects;\n"
 "         also #e{PYTHONNODEBUGRANGES}\n"
@@ -1065,7 +1065,8 @@ config_check_consistency(const PyConfig *config)
     assert(config->int_max_str_digits >= 0);
     // cpu_count can be -1 if the user doesn't override it.
     assert(config->cpu_count != 0);
-    // lazy_imports can be -1 (default), 0 (off), or 1 (on).
+    // lazy_imports can be -1 (default) or 1 (on). 0 is rejected later
+    // for embedders with an error message.
     assert(config->lazy_imports >= -1 && config->lazy_imports <= 1);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
@@ -2437,15 +2438,12 @@ config_init_lazy_imports(PyConfig *config)
         if (strcmp(env, "all") == 0) {
             lazy_imports = 1;
         }
-        else if (strcmp(env, "none") == 0) {
-            lazy_imports = 0;
-        }
         else if (strcmp(env, "normal") == 0) {
             lazy_imports = -1;
         }
         else {
             return _PyStatus_ERR("PYTHON_LAZY_IMPORTS: invalid value; "
-                                 "expected 'all', 'none', or 'normal'");
+                                 "expected 'all' or 'normal'");
         }
         config->lazy_imports = lazy_imports;
     }
@@ -2455,15 +2453,12 @@ config_init_lazy_imports(PyConfig *config)
         if (wcscmp(x_value, L"all") == 0) {
             lazy_imports = 1;
         }
-        else if (wcscmp(x_value, L"none") == 0) {
-            lazy_imports = 0;
-        }
         else if (wcscmp(x_value, L"normal") == 0) {
             lazy_imports = -1;
         }
         else {
             return _PyStatus_ERR("-X lazy_imports: invalid value; "
-                                 "expected 'all', 'none', or 'normal'");
+                                 "expected 'all' or 'normal'");
         }
         config->lazy_imports = lazy_imports;
     }
@@ -4646,7 +4641,8 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
 
         if (strcmp(spec->name, "int_max_str_digits") == 0) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
-            return PyLong_FromLong(interp->long_state.max_str_digits);
+            int maxdigits = _Py_atomic_load_int(&interp->long_state.max_str_digits);
+            return PyLong_FromLong(maxdigits);
         }
     }
 

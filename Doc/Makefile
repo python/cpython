@@ -88,9 +88,9 @@ htmlhelp: build
 	      "build/htmlhelp/pydoc.hhp project file."
 
 .PHONY: latex
-latex: _ensure-sphinxcontrib-svg2pdfconverter
 latex: BUILDER = latex
-latex: build
+latex: _ensure-sphinxcontrib-svg2pdfconverter
+	$(MAKE) build BUILDER=$(BUILDER)
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."

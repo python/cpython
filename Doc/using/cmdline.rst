@@ -50,8 +50,8 @@ additional methods of invocation:
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
   newlines.
-* When called with ``-m module-name``, the given module is located on the
-  Python module path and executed as a script.
+* When called with ``-m module-name``, the given module is located using the standard
+  import mechanism and executed as a script.
 
 In non-interactive mode, the entire input is parsed before it is executed.
 
@@ -78,8 +78,8 @@ source.
 
 .. option:: -m <module-name>
 
-   Search :data:`sys.path` for the named module and execute its contents as
-   the :mod:`__main__` module.
+   Locate the module using the standard import mechanism and execute its contents
+   as the :mod:`__main__` module.
 
    Since the argument is a *module* name, you must not give a file extension
    (``.py``).  The module name should be a valid absolute Python module name, but
@@ -705,10 +705,9 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
-   * :samp:`-X lazy_imports={all,none,normal}` controls lazy import behavior.
-     ``all`` makes all imports lazy by default, ``none`` disables lazy imports
-     entirely (even explicit ``lazy`` statements become eager), and ``normal``
-     (the default) respects the ``lazy`` keyword in source code.
+   * :samp:`-X lazy_imports={all,normal}` controls lazy import behavior.
+     ``all`` makes all imports lazy by default, and ``normal`` (the default)
+     respects the ``lazy`` keyword in source code.
      See also :envvar:`PYTHON_LAZY_IMPORTS`.
 
      .. versionadded:: 3.15
@@ -1413,10 +1412,9 @@ conflict.
 
 .. envvar:: PYTHON_LAZY_IMPORTS
 
-   Controls lazy import behavior. Accepts three values: ``all`` makes all
-   imports lazy by default, ``none`` disables lazy imports entirely (even
-   explicit ``lazy`` statements become eager), and ``normal`` (the default)
-   respects the ``lazy`` keyword in source code.
+   Controls lazy import behavior. Accepts two values: ``all`` makes all
+   imports lazy by default, and ``normal`` (the default) respects the
+   ``lazy`` keyword in source code.
 
    See also the :option:`-X lazy_imports <-X>` command-line option.
 
