@@ -237,9 +237,32 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
 }
 #endif
 
+/* Reject a table/run count whose entries cannot fit in the bytes still
+ * available; a malicious file could otherwise drive a huge allocation.
+ * Each entry occupies at least min_entry_size bytes. */
+static int
+reader_validate_count(const char *what, uint32_t count,
+                      size_t available_bytes, size_t min_entry_size)
+{
+    size_t max_possible = available_bytes / min_entry_size;
+    if (count > max_possible) {
+        PyErr_Format(PyExc_ValueError,
+            "Invalid %s count %u exceeds maximum possible %zu",
+            what, count, max_possible);
+        return -1;
+    }
+    return 0;
+}
+
 static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
+    if (reader_validate_count("string", reader->strings_count,
+                              file_size - reader->string_table_offset,
+                              MIN_STRING_ENTRY_SIZE) < 0) {
+        return -1;
+    }
+
     reader->strings = PyMem_Calloc(reader->strings_count, sizeof(PyObject *));
     if (!reader->strings && reader->strings_count > 0) {
         PyErr_NoMemory();
@@ -279,6 +302,12 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         return -1;
     }
 #endif
+
+    if (reader_validate_count("frame", reader->frames_count,
+                              file_size - reader->frame_table_offset,
+                              MIN_FRAME_ENTRY_SIZE) < 0) {
+        return -1;
+    }
 
     size_t alloc_size = (size_t)reader->frames_count * sizeof(FrameEntry);
     reader->frames = PyMem_Malloc(alloc_size);
@@ -1053,15 +1082,10 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 return -1;
             }
 
-            /* Validate RLE count to prevent DoS from malicious files.
-             * Each RLE sample needs at least 2 bytes (1 byte min varint + 1 status byte).
-             * Also reject absurdly large counts that would exhaust memory. */
-            size_t remaining_data = reader->sample_data_size - offset;
-            size_t max_possible_samples = remaining_data / 2;
-            if (count > max_possible_samples) {
-                PyErr_Format(PyExc_ValueError,
-                    "Invalid RLE count %u exceeds maximum possible %zu for remaining data",
-                    count, max_possible_samples);
+            /* Reject a count larger than the remaining bytes can hold; each
+             * RLE sample needs at least 2 bytes (1-byte min varint + status). */
+            if (reader_validate_count("RLE", count,
+                                      reader->sample_data_size - offset, 2) < 0) {
                 return -1;
             }
             if ((uint64_t)count > (uint64_t)PY_SSIZE_T_MAX - (uint64_t)replayed) {
