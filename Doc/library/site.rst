@@ -449,11 +449,18 @@ Module contents
       Also processes :file:`.start` files.  See :ref:`site-start-files`.
 
 
-.. function:: getsitepackages()
+.. function:: getsitepackages(prefixes=None)
 
-   Return a list containing all global site-packages directories.
+   Return a list containing all global :file:`site-packages` directories.
+
+   For each directory present in *prefixes* (or :data:`PREFIXES` if *prefixes*
+   is None), this function will find its :file:`site-packages` subdirectory
+   depending on the system environment, and will return a list of full paths.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.3
+      Add the optional *prefixes* argument.
 
 
 .. function:: getuserbase()
