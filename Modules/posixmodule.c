@@ -7911,11 +7911,12 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     const char *func_name = use_posix_spawnp ? "posix_spawnp" : "posix_spawn";
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
+    int envlist_owned = 0;
     posix_spawn_file_actions_t file_actions_buf;
     posix_spawn_file_actions_t *file_actionsp = NULL;
     posix_spawnattr_t attr;
     posix_spawnattr_t *attrp = NULL;
-    Py_ssize_t argc, envc;
+    Py_ssize_t argc, envc = 0;
     PyObject *result = NULL;
     PyObject *temp_buffer = NULL;
     pid_t pid;
@@ -7974,6 +7975,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         if (envlist == NULL) {
             goto exit;
         }
+        envlist_owned = 1;
     }
 
     if (file_actions != NULL && file_actions != Py_None) {
@@ -8036,7 +8038,11 @@ exit:
     if (attrp) {
         (void)posix_spawnattr_destroy(attrp);
     }
-    if (envlist && envlist != environ) {
+    /* Only free envlist if we own it. Code that wraps posix_spawn (e.g.
+       gprofng) can mutate the global environ during the spawn call, which
+       would make `envlist != environ` true even for the borrowed case and
+       cause a free of process-owned memory with an uninitialized count. */
+    if (envlist_owned) {
         free_string_array(envlist, envc);
     }
     if (argvlist) {

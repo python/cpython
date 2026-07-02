@@ -1,0 +1,5 @@
+Fix a crash in :func:`os.posix_spawn` and :func:`os.posix_spawnp` when
+``env`` is ``None`` and the global ``environ`` array is mutated during
+the call (for example, by an ``LD_PRELOAD`` interposer such as
+``gprofng``). The cleanup path no longer attempts to free the borrowed
+``environ`` pointer.

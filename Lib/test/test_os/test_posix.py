@@ -2311,6 +2311,52 @@ class _PosixSpawnMixin:
         with open(dupfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'hello')
 
+    @support.requires_subprocess()
+    def test_env_none_with_environ_mutated_during_call(self):
+        # Regression test for gh-149509: when env is None the C-level
+        # ``environ`` array is borrowed, not copied. If anything mutates
+        # ``environ`` between argument parsing and the cleanup block
+        # (this is what an LD_PRELOAD interposer such as gprofng does),
+        # the previous identity check ``envlist != environ`` could
+        # mis-classify the borrowed pointer as owned and try to free it
+        # using an uninitialised count.
+        #
+        # The subprocess uses an audit hook to swap the global ``environ``
+        # pointer to a fresh array just before the spawn call. With the
+        # bug present this triggers a crash in the cleanup path; with the
+        # fix the borrowed pointer is left alone.
+        try:
+            import ctypes  # noqa: F401
+        except ImportError:
+            self.skipTest("ctypes required")
+        spawn_name = self.spawn_func.__name__
+        code = textwrap.dedent(f"""
+            import ctypes
+            import os
+            import sys
+
+            libc = ctypes.CDLL(None)
+            environ_var = ctypes.c_void_p.in_dll(libc, 'environ')
+            saved = environ_var.value
+
+            # A fresh, empty environ array we substitute in.
+            replacement = (ctypes.c_char_p * 1)(None)
+            replacement_addr = ctypes.cast(replacement, ctypes.c_void_p).value
+
+            def hook(event, args):
+                if event == 'os.posix_spawn':
+                    environ_var.value = replacement_addr
+
+            sys.addaudithook(hook)
+            try:
+                pid = os.{spawn_name}(sys.executable,
+                                      [sys.executable, '-c', 'pass'], None)
+                os.waitpid(pid, 0)
+            finally:
+                environ_var.value = saved
+            """)
+        assert_python_ok('-c', code)
+
 
 @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
 @support.requires_subprocess()
