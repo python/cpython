@@ -1264,7 +1264,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
     """Represent and manipulate single IPv4 Addresses."""
 
-    __slots__ = ('_ip', '__weakref__')
+    __slots__ = ('_ip', '__weakref__', '__dict__')
 
     def __init__(self, address):
 
@@ -1317,8 +1317,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
         """
         return self in self._constants._reserved_network
 
-    @property
-    @functools.lru_cache()
+    @functools.cached_property
     def is_private(self):
         """``True`` if the address is defined as not globally reachable by
         iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
@@ -1339,8 +1338,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
             and all(self not in net for net in self._constants._private_networks_exceptions)
         )
 
-    @property
-    @functools.lru_cache()
+    @functools.cached_property
     def is_global(self):
         """``True`` if the address is defined as globally reachable by
         iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
@@ -1548,8 +1546,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         elif self._prefixlen == (self.max_prefixlen):
             self.hosts = lambda: iter((IPv4Address(addr),))
 
-    @property
-    @functools.lru_cache()
+    @functools.cached_property
     def is_global(self):
         """Test if this address is allocated for public networks.
 
@@ -1912,7 +1909,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
     """Represent and manipulate single IPv6 Addresses."""
 
-    __slots__ = ('_ip', '_scope_id', '__weakref__')
+    __slots__ = ('_ip', '_scope_id', '__weakref__', '__dict__')
 
     def __init__(self, address):
         """Instantiate a new IPv6 address object.
@@ -2085,8 +2082,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
         """
         return self in self._constants._sitelocal_network
 
-    @property
-    @functools.lru_cache()
+    @functools.cached_property
     def is_private(self):
         """``True`` if the address is defined as not globally reachable by
         iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
