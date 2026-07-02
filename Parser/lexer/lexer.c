@@ -110,8 +110,139 @@ tok_backup(struct tok_state *tok, int c)
     }
 }
 
+static Py_ssize_t
+recurse_set_ftstring_expr(tokenizer_mode *tok_mode, char *result, Py_ssize_t *in_pos, Py_ssize_t out_pos)
+{
+    Py_ssize_t i = *in_pos;
+    Py_ssize_t j = out_pos;
+    Py_ssize_t in_pos_start = *in_pos;
+    Py_ssize_t in_pos_end = tok_mode->last_expr_size - tok_mode->last_expr_end;
+    char *last_expr_buffer = tok_mode->last_expr_buffer;
+
+    int curly_depth = 1;  // count these in expressions because of sets and dicts
+    int in_string = 0;  // inside a string, constant or f or t
+    int is_string_ft;  // string we are inside of is an f or t-string
+    char quote_char;
+    int is_triple_quote;
+
+    // Process each character
+    while (i < in_pos_end) {
+        char ch = last_expr_buffer[i++];
+
+        if (in_string) {
+            // Skip escaped characters (also harmless line continuations)
+            if (ch == '\\') {
+                result[j++] = '\\';
+                if (i < in_pos_end) {
+                    result[j++] = last_expr_buffer[i++];
+                }
+                continue;
+            }
+
+            // Check for string end quotes
+            if (ch == quote_char) {
+                if (!is_triple_quote || i + 1 >= in_pos_end) {
+                    in_string = 0;
+                }
+                else if (last_expr_buffer[i] == ch && last_expr_buffer[i + 1] == ch) {
+                    in_string = 0;
+                    result[j++] = ch;
+                    result[j++] = ch;
+                    i += 2;
+                }
+                result[j++] = ch;
+                continue;
+            }
+
+            // If inside an f or t-string then check for expressions
+            if (ch == '{') {
+                result[j++] = '{';
+                if (is_string_ft && i < in_pos_end) {
+                    // Double '{{' is doesn't start an expression
+                    if (last_expr_buffer[i] == '{') {
+                        result[j++] = '{';
+                        i++;
+                    }
+                    else {
+                        j = recurse_set_ftstring_expr(tok_mode, result, &i, j);
+                    }
+                }
+                continue;
+            }
+        }
+        // In ftstring expression outside of actual string part
+        else {
+            // Skip comments
+            if (ch == '#') {
+                while (i < in_pos_end) {
+                    if (last_expr_buffer[i++] == '\n') {
+                        result[j++] = '\n';
+                        break;
+                    }
+                }
+                continue;
+            }
+
+            // Handle string start quotes
+            if (ch == '"' || ch == '\'') {
+                quote_char = ch;
+                in_string = 1;
+                is_string_ft = 0;
+                is_triple_quote = 0;
+
+                // Check preceding characters to see if is f or t-string
+                if ((i - 2) >= in_pos_start) {
+                    char ch_prev = last_expr_buffer[i - 2];
+
+                    if (ch_prev == 'f' || ch_prev == 't') {
+                        is_string_ft = 1;
+                    }
+                    // If may be raw f or t-string then check pre-preceding char
+                    else if (ch_prev == 'r' && (i - 3) >= in_pos_start) {
+                        char ch_prev_prev = last_expr_buffer[i - 3];
+
+                        if (ch_prev_prev == 'f' || ch_prev_prev == 't') {
+                            is_string_ft = 1;
+                        }
+                    }
+                }
+
+                // Check for triple quotes
+                if (i + 2 <= in_pos_end && last_expr_buffer[i] == ch && last_expr_buffer[i + 1] == ch) {
+                    is_triple_quote = 1;
+                    result[j++] = ch;
+                    result[j++] = ch;
+                    i += 2;
+                }
+                result[j++] = ch;
+
+                continue;
+            }
+
+            // Count nested curlies
+            if (ch == '{') {
+                curly_depth++;
+            }
+            // Check for end of expression curlies
+            else if (ch == '}') {
+                if (!--curly_depth) {
+                    result[j++] = '}';
+                    break;
+                }
+            }
+        }
+
+        // Copy other chars
+        result[j++] = ch;
+    }
+
+    *in_pos = i;
+    return j;
+}
+
 static int
-set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
+set_ftstring_expr(struct tok_state* tok, struct token *token, char c)
+{
     assert(token != NULL);
     assert(c == '}' || c == ':' || c == '!');
     tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
@@ -121,92 +252,19 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     }
     PyObject *res = NULL;
 
-    // Look for a # character outside of string literals
-    int hash_detected = 0;
-    int in_string = 0;
-    char quote_char = 0;
-
-    for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
-        char ch = tok_mode->last_expr_buffer[i];
-
-        // Skip escaped characters
-        if (ch == '\\') {
-            i++;
-            continue;
-        }
-
-        // Handle quotes
-        if (ch == '"' || ch == '\'') {
-            // The following if/else block works becase there is an off number
-            // of quotes in STRING tokens and the lexer only ever reaches this
-            // function with valid STRING tokens.
-            // For example: """hello"""
-            // First quote: in_string = 1
-            // Second quote: in_string = 0
-            // Third quote: in_string = 1
-            if (!in_string) {
-                in_string = 1;
-                quote_char = ch;
-            }
-            else if (ch == quote_char) {
-                in_string = 0;
-            }
-            continue;
-        }
-
-        // Check for # outside strings
-        if (ch == '#' && !in_string) {
-            hash_detected = 1;
-            break;
-        }
-    }
-    // If we found a # character in the expression, we need to handle comments
-    if (hash_detected) {
+    // If there is a '#' character in the expression, we need to handle possible comments
+    if (memchr(tok_mode->last_expr_buffer, '#', tok_mode->last_expr_size - tok_mode->last_expr_end) != NULL) {
         // Allocate buffer for processed result
         char *result = (char *)PyMem_Malloc((tok_mode->last_expr_size - tok_mode->last_expr_end + 1) * sizeof(char));
         if (!result) {
             return -1;
         }
 
-        Py_ssize_t i = 0;  // Input position
-        Py_ssize_t j = 0;  // Output position
-        in_string = 0;     // Whether we're in a string
-        quote_char = 0;    // Current string quote char
+        Py_ssize_t in_pos = 0;
+        Py_ssize_t out_pos = recurse_set_ftstring_expr(tok_mode, result, &in_pos, 0);
 
-        // Process each character
-        while (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
-            char ch = tok_mode->last_expr_buffer[i];
-
-            // Handle string quotes
-            if (ch == '"' || ch == '\'') {
-                // See comment above to understand this part
-                if (!in_string) {
-                    in_string = 1;
-                    quote_char = ch;
-                } else if (ch == quote_char) {
-                    in_string = 0;
-                }
-                result[j++] = ch;
-            }
-            // Skip comments
-            else if (ch == '#' && !in_string) {
-                while (i < tok_mode->last_expr_size - tok_mode->last_expr_end &&
-                       tok_mode->last_expr_buffer[i] != '\n') {
-                    i++;
-                }
-                if (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
-                    result[j++] = '\n';
-                }
-            }
-            // Copy other chars
-            else {
-                result[j++] = ch;
-            }
-            i++;
-        }
-
-        result[j] = '\0';  // Null-terminate the result string
-        res = PyUnicode_DecodeUTF8(result, j, NULL);
+        result[out_pos] = '\0';  // Null-terminate the result string
+        res = PyUnicode_DecodeUTF8(result, out_pos, NULL);
         PyMem_Free(result);
     } else {
         res = PyUnicode_DecodeUTF8(
