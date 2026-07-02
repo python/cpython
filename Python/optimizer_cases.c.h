@@ -3530,8 +3530,18 @@
         }
 
         case _MATCH_MAPPING: {
+            JitOptRef subject;
             JitOptRef res;
-            res = sym_new_not_null(ctx);
+            subject = stack_pointer[-1];
+            PyTypeObject *type = sym_get_type(subject);
+            if (type != NULL) {
+                int match = type->tp_flags & Py_TPFLAGS_MAPPING;
+                REPLACE_OP(this_instr, _LOAD_COMMON_CONSTANT, match? CONSTANT_TRUE : CONSTANT_FALSE, 0);
+                res = sym_new_const(ctx, match? Py_True : Py_False);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -3540,8 +3550,18 @@
         }
 
         case _MATCH_SEQUENCE: {
+            JitOptRef subject;
             JitOptRef res;
-            res = sym_new_not_null(ctx);
+            subject = stack_pointer[-1];
+            PyTypeObject *type = sym_get_type(subject);
+            if (type != NULL) {
+                int match = type->tp_flags & Py_TPFLAGS_SEQUENCE;
+                REPLACE_OP(this_instr, _LOAD_COMMON_CONSTANT, match? CONSTANT_TRUE : CONSTANT_FALSE, 0);
+                res = sym_new_const(ctx, match? Py_True : Py_False);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = res;
             stack_pointer += 1;

@@ -2592,6 +2592,30 @@ dummy_func(void) {
         n = names;
     }
 
+    op(_MATCH_MAPPING, (subject -- subject, res)) {
+        PyTypeObject *type = sym_get_type(subject);
+        if (type != NULL) {
+            int match = type->tp_flags & Py_TPFLAGS_MAPPING;
+            REPLACE_OP(this_instr, _LOAD_COMMON_CONSTANT, match? CONSTANT_TRUE : CONSTANT_FALSE, 0);
+            res = sym_new_const(ctx, match? Py_True : Py_False);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
+    }
+
+    op(_MATCH_SEQUENCE, (subject -- subject, res)) {
+        PyTypeObject *type = sym_get_type(subject);
+        if (type != NULL) {
+            int match = type->tp_flags & Py_TPFLAGS_SEQUENCE;
+            REPLACE_OP(this_instr, _LOAD_COMMON_CONSTANT, match? CONSTANT_TRUE : CONSTANT_FALSE, 0);
+            res = sym_new_const(ctx, match? Py_True : Py_False);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
+    }
+
     op(_DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1], upd)) {
         (void)dict;
         upd = update;
