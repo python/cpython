@@ -81,7 +81,7 @@ may use implementations which do not inherit from the provided classes.  The
 :class:`~xml.sax.xmlreader.InputSource`, :class:`~xml.sax.xmlreader.Locator`,
 :ref:`Attributes <attributes-objects>`,
 :ref:`AttributesNS <attributes-ns-objects>`,
-:class:`~xml.sax.xmlreader.AttributesNSImpl`, and :class:`~xml.sax.xmlreader.XMLReader`
+and :class:`~xml.sax.xmlreader.XMLReader`
 interfaces are defined in the module :mod:`xml.sax.xmlreader`.
 The handler interfaces are defined in :mod:`xml.sax.handler`.  For convenience,
 :class:`~xml.sax.xmlreader.InputSource` (which is often
