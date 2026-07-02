@@ -107,7 +107,7 @@ static void
 pytime_overflow(void)
 {
     PyErr_SetString(PyExc_OverflowError,
-                    "timestamp too large to convert to C PyTime_t");
+                    "timestamp out of range for C PyTime_t");
 }
 
 
