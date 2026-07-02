@@ -1,0 +1,11 @@
+Fixed multiple quadratic-complexity parsing issues in the :mod:`email`
+header value parser that could be exploited for denial of service.  The
+parser now advances through the input using indices instead of repeatedly
+slicing off the already-parsed prefix.
+
+As part of this change, an obsolete ``local-part`` is now re-parsed from the
+original source text rather than from the decoded representation of the
+already-parsed tokens.  This only affects malformed addresses that contain an
+:rfc:`2047` encoded-word inside an ``addr-spec``, which :rfc:`2047` does not
+permit; such an encoded-word is no longer decoded and the address is reported
+as invalid.  Patch by Serhiy Storchaka.
