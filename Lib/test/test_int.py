@@ -732,6 +732,24 @@ class IntStrDigitLimitsTests(unittest.TestCase):
             after_value = sys.get_int_max_str_digits()
             self.assertEqual(before_value, after_value)
 
+    def test_int_max_str_digits_not_inherited_by_subinterpreter(self):
+        # gh-98417: sys.set_int_max_str_digits() changes runtime state
+        # only; it must not be written back into the interpreter's
+        # initialization config.  Interpreters created afterwards start
+        # from the initial config, not the current runtime value.
+        sentinel = 99_999
+        if sys.get_int_max_str_digits() == sentinel:
+            sentinel = 88_888
+        code = f"""if 1:
+        import sys
+        if sys.get_int_max_str_digits() == {sentinel}:
+            raise AssertionError(
+                'subinterpreter inherited a runtime limit change')
+        """
+        with support.adjust_int_max_str_digits(sentinel):
+            self.assertEqual(support.run_in_subinterp(code), 0,
+                             'subinterp code failure, check stderr.')
+
 
 class IntSubclassStrDigitLimitsTests(IntStrDigitLimitsTests):
     int_class = IntSubclass

@@ -1,0 +1,5 @@
+:func:`sys.set_int_max_str_digits` no longer writes the new limit back into
+the interpreter's initialization configuration (:c:type:`PyConfig`).  As a
+consequence, interpreters created after changing the limit at runtime now
+start with the initial configured limit rather than inheriting the runtime
+value.
