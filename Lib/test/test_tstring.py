@@ -287,5 +287,14 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "\n        Hello,\n        Python\n        ")
 
+    def test_not_equal_with_format_spec(self):
+        # gh-146448: != in expression with format spec should not be
+        # confused with the ! conversion specifier
+        t = t"{0!=0:}"
+        self.assertTStringEqual(t, ("", ""), [(False, "0!=0")])
+
+        t = t"{0!=0:s}"
+        self.assertTStringEqual(t, ("", ""), [(False, "0!=0", None, "s")])
+
 if __name__ == '__main__':
     unittest.main()
