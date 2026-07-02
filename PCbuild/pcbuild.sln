@@ -191,6 +191,7 @@ Global
 		Release|ARM64 = Release|ARM64
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
+		Description = .\pcbuild.sln
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}.Debug|ARM.ActiveCfg = Debug|ARM
