@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
+#include "pycore_dict.h"          // _PyDict_GetItemRef_KnownHash_LockHeld()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -2595,24 +2595,35 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
                 goto done;
             }
 
-            oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);
-            if (oldval == NULL) {
-                if (PyErr_Occurred())
-                    goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
-                    goto done;
-            } else {
-                /* oldval is a borrowed reference.  Keep it alive across
-                   PyNumber_Add(), which can execute arbitrary user code and
-                   mutate (or even clear) the underlying dict. */
-                Py_INCREF(oldval);
+            int found;
+            int cs_err = 0;
+            Py_BEGIN_CRITICAL_SECTION(mapping);
+            found = _PyDict_GetItemRef_KnownHash_LockHeld(
+                        (PyDictObject *)mapping, key, hash, &oldval);
+            if (found < 0) {
+                cs_err = -1;
+            }
+            else if (found == 0) {
+                if (_PyDict_SetItem_KnownHash_LockHeld(
+                        (PyDictObject *)mapping, key, one, hash) < 0) {
+                    cs_err = -1;
+                }
+            }
+            else {
                 newval = PyNumber_Add(oldval, one);
                 Py_DECREF(oldval);
-                if (newval == NULL)
-                    goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
-                    goto done;
-                Py_CLEAR(newval);
+                if (newval == NULL) {
+                    cs_err = -1;
+                }
+                else if (_PyDict_SetItem_KnownHash_LockHeld(
+                        (PyDictObject *)mapping, key, newval, hash) < 0) {
+                    cs_err = -1;
+                }
+            }
+            Py_END_CRITICAL_SECTION();
+            Py_CLEAR(newval);
+            if (cs_err < 0) {
+                goto done;
             }
             Py_DECREF(key);
         }
