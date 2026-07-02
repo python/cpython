@@ -195,40 +195,54 @@ _CD64_OFFSET_START_CENTDIR = 9
 _DD_SIGNATURE = 0x08074b50
 
 
-class _Extra(bytes):
+class _Extra:
     FIELD_STRUCT = struct.Struct('<HH')
 
-    def __new__(cls, val, id=None):
-        return super().__new__(cls, val)
-
-    def __init__(self, val, id=None):
-        self.id = id
-
     @classmethod
-    def read_one(cls, raw):
-        try:
-            xid, xlen = cls.FIELD_STRUCT.unpack(raw[:4])
-        except struct.error:
-            xid = None
-            xlen = 0
-        return cls(raw[:4+xlen], xid), raw[4+xlen:]
+    def iter(cls, data, validate=False):
+        """Iter through and yield each (field, id)."""
+        # early return for empty extra data
+        if not data:
+            return
 
-    @classmethod
-    def split(cls, data):
-        # use memoryview for zero-copy slices
-        rest = memoryview(data)
-        while rest:
-            extra, rest = _Extra.read_one(rest)
-            yield extra
+        pos, data_len = 0, len(data)
+        while pos < data_len:
+            try:
+                xid, xlen = cls.FIELD_STRUCT.unpack_from(data, pos)
+            except struct.error:
+                xid, xlen = None, 0
+            else:
+                if validate and pos + 4 + xlen > data_len:
+                    raise BadZipFile(
+                        "Corrupt extra field %04x (size=%d)" % (xid, xlen))
+            yield data[pos:pos + 4 + xlen], xid
+            pos += 4 + xlen
 
     @classmethod
     def strip(cls, data, xids):
         """Remove Extra fields with specified IDs."""
         return b''.join(
             ex
-            for ex in cls.split(data)
-            if ex.id not in xids
+            for ex, xid in cls.iter(data)
+            if xid not in xids
         )
+
+    @classmethod
+    def update(cls, data, extra):
+        """Insert fields from extra and strip duplicates."""
+        # early return for empty data
+        if not data:
+            return extra
+
+        extras = {
+            xid: ex
+            for ex, xid in cls.iter(extra)
+            if xid is not None
+        }
+        # New fields first since data may have a corrupted tail that renders
+        # following fields inaccessible.  (The caller is responsible for making
+        # sure that extra is valid.)
+        return b''.join(extras.values()) + cls.strip(data, extras)
 
 
 def _check_zipfile(fp):
@@ -585,14 +599,10 @@ class ZipInfo:
 
     def _decodeExtra(self, filename_crc):
         # Try to decode the extra field.
-        extra = self.extra
         unpack = struct.unpack
-        while len(extra) >= 4:
-            tp, ln = unpack('<HH', extra[:4])
-            if ln+4 > len(extra):
-                raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
+        for extra, tp in _Extra.iter(self.extra, True):
             if tp == 0x0001:
-                data = extra[4:ln+4]
+                data = extra[4:]
                 # ZIP64 extension (large files and/or large archives)
                 try:
                     if self.file_size in (0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF):
@@ -610,7 +620,7 @@ class ZipInfo:
                     raise BadZipFile(f"Corrupt zip64 extra field. "
                                      f"{field} not found.") from None
             elif tp == 0x7075:
-                data = extra[4:ln+4]
+                data = extra[4:]
                 # Unicode Path Extra Field
                 try:
                     up_version, up_name_crc = unpack('<BL', data[:5])
@@ -625,8 +635,6 @@ class ZipInfo:
                     raise BadZipFile("Corrupt unicode path extra field (0x7075)") from e
                 except UnicodeDecodeError as e:
                     raise BadZipFile('Corrupt unicode path extra field (0x7075): invalid utf-8 bytes') from e
-
-            extra = extra[ln+4:]
 
     @classmethod
     def from_file(cls, filename, arcname=None, *, strict_timestamps=True):
@@ -2665,11 +2673,11 @@ class ZipFile:
             extra_data = zinfo.extra
             min_version = 0
             if extra:
-                # Append a ZIP64 field to the extra's
-                extra_data = _Extra.strip(extra_data, (1,))
-                extra_data = struct.pack(
+                # Prepend a ZIP64 field to the extra's
+                extra_data = _Extra.update(extra_data, struct.pack(
                     '<HH' + 'Q'*len(extra),
-                    1, 8*len(extra), *extra) + extra_data
+                    1, 8*len(extra), *extra,
+                ))
 
                 min_version = ZIP64_VERSION
 

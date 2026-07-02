@@ -4114,6 +4114,16 @@ class OtherTests(unittest.TestCase):
         with self.assertRaises(zipfile.BadZipfile):
             zipfile.ZipFile(TESTFN, "r").close()
 
+    def test_read_zipfile_with_corrupted_extra_field(self):
+        with zipfile.ZipFile(TESTFN, mode='w') as zf:
+            zinfo = zipfile.ZipInfo("file.txt")
+            zinfo.extra = struct.pack('<HH', 1, 1)
+            zf.writestr(zinfo, b'_')
+
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'Corrupt extra field 0001'):
+            with zipfile.ZipFile(TESTFN) as zf:
+                pass
+
     def test_read_after_write_unicode_filenames(self):
         with zipfile.ZipFile(TESTFN2, 'w') as zipfp:
             zipfp.writestr('приклад', b'sample')
@@ -5840,20 +5850,21 @@ class StripExtraTests(unittest.TestCase):
 
     ZIP64_EXTRA = 1
 
+    strip_extra = staticmethod(zipfile._Extra.strip)
+
     def test_no_data(self):
         s = struct.Struct("<HH")
         a = s.pack(self.ZIP64_EXTRA, 0)
         b = s.pack(2, 0)
         c = s.pack(3, 0)
 
-        self.assertEqual(b'', zipfile._Extra.strip(a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b, zipfile._Extra.strip(b, (self.ZIP64_EXTRA,)))
-        self.assertEqual(
-            b+b"z", zipfile._Extra.strip(b+b"z", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b'', self.strip_extra(a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, self.strip_extra(b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+b"z", self.strip_extra(b+b"z", (self.ZIP64_EXTRA,)))
 
-        self.assertEqual(b+c, zipfile._Extra.strip(a+b+c, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b+c, zipfile._Extra.strip(b+a+c, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b+c, zipfile._Extra.strip(b+c+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, self.strip_extra(a+b+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, self.strip_extra(b+a+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, self.strip_extra(b+c+a, (self.ZIP64_EXTRA,)))
 
     def test_with_data(self):
         s = struct.Struct("<HH")
@@ -5861,38 +5872,47 @@ class StripExtraTests(unittest.TestCase):
         b = s.pack(2, 2) + b"bb"
         c = s.pack(3, 3) + b"ccc"
 
-        self.assertEqual(b"", zipfile._Extra.strip(a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b, zipfile._Extra.strip(b, (self.ZIP64_EXTRA,)))
-        self.assertEqual(
-            b+b"z", zipfile._Extra.strip(b+b"z", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", self.strip_extra(a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, self.strip_extra(b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+b"z", self.strip_extra(b+b"z", (self.ZIP64_EXTRA,)))
 
-        self.assertEqual(b+c, zipfile._Extra.strip(a+b+c, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b+c, zipfile._Extra.strip(b+a+c, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b+c, zipfile._Extra.strip(b+c+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, self.strip_extra(a+b+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, self.strip_extra(b+a+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, self.strip_extra(b+c+a, (self.ZIP64_EXTRA,)))
 
     def test_multiples(self):
         s = struct.Struct("<HH")
         a = s.pack(self.ZIP64_EXTRA, 1) + b"a"
         b = s.pack(2, 2) + b"bb"
 
-        self.assertEqual(b"", zipfile._Extra.strip(a+a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b"", zipfile._Extra.strip(a+a+a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(
-            b"z", zipfile._Extra.strip(a+a+b"z", (self.ZIP64_EXTRA,)))
-        self.assertEqual(
-            b+b"z", zipfile._Extra.strip(a+a+b+b"z", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", self.strip_extra(a+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", self.strip_extra(a+a+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"z", self.strip_extra(a+a+b"z", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+b"z", self.strip_extra(a+a+b+b"z", (self.ZIP64_EXTRA,)))
 
-        self.assertEqual(b, zipfile._Extra.strip(a+a+b, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b, zipfile._Extra.strip(a+b+a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b, zipfile._Extra.strip(b+a+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, self.strip_extra(a+a+b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, self.strip_extra(a+b+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, self.strip_extra(b+a+a, (self.ZIP64_EXTRA,)))
+
+    def test_truncated_data_for_stripped_id(self):
+        s = struct.Struct("<HH")
+        a = s.pack(self.ZIP64_EXTRA, 3) + b"a"
+        b = s.pack(2, 2) + b"bb"
+
+        self.assertEqual(b, self.strip_extra(b+a, (self.ZIP64_EXTRA,)))
+
+    def test_truncated_data_for_nonstripped_id(self):
+        s = struct.Struct("<HH")
+        a = s.pack(self.ZIP64_EXTRA, 1) + b"a"
+        b = s.pack(2, 4) + b"bb"
+
+        self.assertEqual(b, self.strip_extra(a+b, (self.ZIP64_EXTRA,)))
 
     def test_too_short(self):
-        self.assertEqual(b"", zipfile._Extra.strip(b"", (self.ZIP64_EXTRA,)))
-        self.assertEqual(b"z", zipfile._Extra.strip(b"z", (self.ZIP64_EXTRA,)))
-        self.assertEqual(
-            b"zz", zipfile._Extra.strip(b"zz", (self.ZIP64_EXTRA,)))
-        self.assertEqual(
-            b"zzz", zipfile._Extra.strip(b"zzz", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", self.strip_extra(b"", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"z", self.strip_extra(b"z", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"zz", self.strip_extra(b"zz", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"zzz", self.strip_extra(b"zzz", (self.ZIP64_EXTRA,)))
 
 
 class StatIO(_pyio.BytesIO):
