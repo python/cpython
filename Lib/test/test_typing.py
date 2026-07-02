@@ -823,6 +823,54 @@ class TypeParameterDefaultsTests(BaseTestCase):
                 self.assertEqual(z.__bound__, typevar.__bound__)
                 self.assertEqual(z.__default__, typevar.__default__)
 
+    def test_forward_reference_default_typevar(self):
+        ns = run_code(
+            """
+            class A[T, U = ForwardName]:
+                pass
+            """
+        )
+        U, A = ns["A"].__type_params__[1], ns["A"]
+        with self.assertRaises(NameError):
+            U.__default__
+        result = A[int]
+        self.assertIsInstance(result.__args__[0], type)
+        self.assertIs(int, result.__args__[0])
+        self.assertIsInstance(result.__args__[1], ForwardRef)
+        self.assertEqual(result.__args__[1].__forward_arg__, 'ForwardName')
+
+    def test_forward_reference_default_typevartuple(self):
+        ns = run_code(
+            """
+            class A[T, *Ts = ForwardName]:
+                pass
+            """
+        )
+        Ts, A = ns["A"].__type_params__[1], ns["A"]
+        with self.assertRaises(NameError):
+            Ts.__default__
+        result = A[int]
+        self.assertIsInstance(result.__args__[0], type)
+        self.assertIs(int, result.__args__[0])
+        self.assertIsInstance(result.__args__[1], ForwardRef)
+        self.assertEqual(result.__args__[1].__forward_arg__, 'ForwardName')
+
+    def test_forward_reference_default_paramspec(self):
+        ns = run_code(
+            """
+            class A[T, **P = ForwardName]:
+                pass
+            """
+        )
+        P, A = ns["A"].__type_params__[1], ns["A"]
+        with self.assertRaises(NameError):
+            P.__default__
+        result = A[int]
+        self.assertIsInstance(result.__args__[0], type)
+        self.assertIs(int, result.__args__[0])
+        self.assertIsInstance(result.__args__[1], ForwardRef)
+        self.assertEqual(result.__args__[1].__forward_arg__, 'ForwardName')
+
 
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
     """Renders templates with possible combinations of replacements.
