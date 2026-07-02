@@ -26,7 +26,7 @@ jobs:
         && ' (free-threading)'
         || ''
       }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -40,11 +40,11 @@ jobs:
         # Install clang
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 20
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
-        sudo update-alternatives --set clang /usr/bin/clang-20
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
-        sudo update-alternatives --set clang++ /usr/bin/clang++-20
+        sudo ./llvm.sh 22
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-22 100
+        sudo update-alternatives --set clang /usr/bin/clang-22
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-22 100
+        sudo update-alternatives --set clang++ /usr/bin/clang++-22
 
         if [ "${SANITIZER}" = "TSan" ]; then
           # Reduce ASLR to avoid TSan crashing

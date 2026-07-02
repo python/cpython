@@ -20,7 +20,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
-  LLVM_VERSION: 21
+  LLVM_VERSION: 22
 
 jobs:
   macos:
@@ -66,13 +66,13 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu/gcc
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
             configure_flags: --with-pydebug
           - target: x86_64-unknown-linux-gnu/gcc-free-threading
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
             configure_flags: --disable-gil
           - target: aarch64-unknown-linux-gnu/gcc
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
             configure_flags: --with-pydebug
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
