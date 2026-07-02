@@ -132,7 +132,7 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 
 static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    dest->f_executable = PyStackRef_MakeHeapSafe(src->f_executable);
+    dest->f_executable = PyStackRef_Borrow(src->f_executable);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
@@ -191,7 +191,7 @@ _PyFrame_Initialize(
 {
     frame->previous = previous;
     frame->f_funcobj = func;
-    frame->f_executable = PyStackRef_FromPyObjectNew(code);
+    frame->f_executable = PyStackRef_FromPyObjectBorrow((PyObject *)code);
     PyFunctionObject *func_obj = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(func);
     frame->f_builtins = func_obj->func_builtins;
     frame->f_globals = func_obj->func_globals;
@@ -424,7 +424,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     assert(tstate->datastack_top < tstate->datastack_limit);
     frame->previous = previous;
     frame->f_funcobj = PyStackRef_None;
-    frame->f_executable = PyStackRef_FromPyObjectNew(code);
+    frame->f_executable = PyStackRef_FromPyObjectBorrow((PyObject *)code);
 #ifdef Py_DEBUG
     frame->f_builtins = NULL;
     frame->f_globals = NULL;

@@ -130,6 +130,19 @@ function_get_annotations(PyObject *self, PyObject *func)
 }
 
 
+static PyObject *
+function_get_old_codes(PyObject *self, PyObject *func)
+{
+    PyFunctionObject *func_o = (PyFunctionObject *) func;
+    PyObject *old_codes = func_o->func_old_codes;
+    if (old_codes == NULL) {
+        Py_RETURN_NONE;
+    }
+
+    return Py_NewRef(old_codes);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"function_get_code", function_get_code, METH_O, NULL},
     {"function_get_globals", function_get_globals, METH_O, NULL},
@@ -141,6 +154,7 @@ static PyMethodDef test_methods[] = {
     {"function_get_closure", function_get_closure, METH_O, NULL},
     {"function_set_closure", function_set_closure, METH_VARARGS, NULL},
     {"function_get_annotations", function_get_annotations, METH_O, NULL},
+    {"function_get_old_codes", function_get_old_codes, METH_O, NULL},
     {NULL},
 };
 
