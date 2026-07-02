@@ -265,6 +265,9 @@ in the top-level :mod:`email` package namespace.
    ``Parser().parsestr(s)``.  *_class* and *policy* are interpreted as
    with the :class:`~email.parser.Parser` class constructor.
 
+   To decode message headers, set *policy* to ``email.policy.default``. For
+   more information on *policy*, see the :mod:`~email.policy` documentation.
+
    .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
 
