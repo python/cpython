@@ -3479,6 +3479,9 @@ channelsmod__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
     PyTypeObject *cls = state->ChannelIDType;
 
     PyObject *mod = get_module_from_owned_type(cls);
+    if (mod == NULL) {
+        return NULL;
+    }
     assert(mod == self);
     Py_DECREF(mod);
 
