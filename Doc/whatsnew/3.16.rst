@@ -75,6 +75,11 @@ New features
 Other language changes
 ======================
 
+* :ref:`Frame objects <frame-objects>` now support :mod:`weak references
+  <weakref>`.  This allows associating extra data with active frames,
+  for example in debuggers, without keeping the frames (and everything
+  they reference) alive indefinitely.
+  (Contributed by Łukasz Langa in :gh:`102960`.)
 
 
 New modules

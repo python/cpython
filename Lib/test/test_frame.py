@@ -273,6 +273,194 @@ class FrameAttrsTest(unittest.TestCase):
             raise AssertionError('coroutine did not exit')
 
 
+class WeakRefTest(unittest.TestCase):
+    """
+    Frames support weak references (gh-102960).
+    """
+
+    def make_frame(self):
+        # Return the frame object of a finished function call.  Unlike
+        # frames extracted from a traceback, it isn't part of a reference
+        # cycle, so it dies as soon as the last reference is dropped.
+        def func():
+            return sys._getframe()
+        return func()
+
+    def make_traceback_frames(self):
+        def outer():
+            def inner():
+                1/0
+            return inner()
+        try:
+            outer()
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+            frames = []
+            while tb:
+                frames.append(tb.tb_frame)
+                tb = tb.tb_next
+        return frames
+
+    def test_weakref_basic(self):
+        f = self.make_frame()
+        ref = weakref.ref(f)
+        self.assertIs(ref(), f)
+        del f
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    def test_weakref_live_frame(self):
+        refs = []
+        def func():
+            frame = sys._getframe()
+            refs.append(weakref.ref(frame))
+            self.assertIs(refs[0](), frame)
+        func()
+        support.gc_collect()
+        self.assertIsNone(refs[0]())
+
+    def test_weakref_callback(self):
+        called = []
+        f = self.make_frame()
+        ref = weakref.ref(f, called.append)
+        del f
+        support.gc_collect()
+        self.assertEqual(called, [ref])
+        self.assertIsNone(ref())
+
+    def test_weakref_proxy(self):
+        f = self.make_frame()
+        proxy = weakref.proxy(f)
+        self.assertEqual(proxy.f_lineno, f.f_lineno)
+        self.assertIs(proxy.f_code, f.f_code)
+        del f
+        support.gc_collect()
+        with self.assertRaises(ReferenceError):
+            proxy.f_lineno
+
+    def test_multiple_weakrefs(self):
+        f = self.make_frame()
+        called = []
+        refs = [weakref.ref(f) for _ in range(3)]
+        refs += [weakref.ref(f, called.append) for _ in range(2)]
+        # Callback-less weakrefs to the same object are shared.
+        self.assertIs(refs[0], refs[1])
+        self.assertIs(refs[0], refs[2])
+        self.assertEqual(weakref.getweakrefcount(f), 3)
+        # Weakrefs hash and compare through their referent while it is
+        # alive, so compare identities instead.
+        self.assertEqual({id(r) for r in weakref.getweakrefs(f)},
+                         {id(refs[0]), id(refs[3]), id(refs[4])})
+        del f
+        support.gc_collect()
+        for ref in refs:
+            self.assertIsNone(ref())
+        self.assertEqual({id(r) for r in called}, {id(refs[3]), id(refs[4])})
+
+    def test_weak_key_dictionary(self):
+        wkd = weakref.WeakKeyDictionary()
+        def _fill():
+            for i, frame in enumerate(self.make_traceback_frames()):
+                wkd[frame] = i
+            self.assertEqual(len(wkd), 3)
+        _fill()
+        support.gc_collect()
+        self.assertEqual(len(wkd), 0)
+
+    def test_weak_value_dictionary(self):
+        wvd = weakref.WeakValueDictionary()
+        def _fill():
+            for i, frame in enumerate(self.make_traceback_frames()):
+                wvd[i] = frame
+            self.assertEqual(len(wvd), 3)
+        _fill()
+        support.gc_collect()
+        self.assertEqual(len(wvd), 0)
+
+    def test_weakref_traceback_frames(self):
+        # Frames that participate in reference cycles are cleaned up
+        # by the cyclic garbage collector.
+        refs = []
+        def _make():
+            for frame in self.make_traceback_frames():
+                refs.append(weakref.ref(frame))
+            for ref in refs:
+                self.assertIsNotNone(ref())
+        _make()
+        support.gc_collect()
+        for ref in refs:
+            self.assertIsNone(ref())
+
+    def test_weakref_generator_frame(self):
+        def gen():
+            yield sys._getframe()
+        g = gen()
+        frame = next(g)
+        ref = weakref.ref(frame)
+        del frame
+        support.gc_collect()
+        # The generator keeps its frame alive while suspended.
+        self.assertIsNotNone(ref())
+        g.close()
+        del g
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    def test_weakref_coroutine_frame(self):
+        async def coro():
+            return sys._getframe()
+        c = coro()
+        ref = None
+        try:
+            c.send(None)
+        except StopIteration as ex:
+            ref = weakref.ref(ex.value)
+        self.assertIsNotNone(ref, 'coroutine did not exit')
+        del c
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    def test_weakref_after_frame_clear(self):
+        f = self.make_frame()
+        ref = weakref.ref(f)
+        # Clearing the frame's contents must not affect weak references
+        # to the frame object itself.
+        f.clear()
+        self.assertIs(ref(), f)
+        del f
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    @threading_helper.requires_working_threading()
+    def test_weakref_concurrent(self):
+        # Exercise concurrent creation and destruction of weak references
+        # to the same frame, mainly for the free-threaded build.
+        def gen():
+            yield sys._getframe()
+        g = gen()
+        frame = next(g)
+        barrier = threading.Barrier(4)
+        def work():
+            barrier.wait()
+            for _ in range(1000):
+                ref = weakref.ref(frame)
+                self.assertIs(ref(), frame)
+                # Callback refs are not shared, so this concurrently adds
+                # to and removes from the frame's weakref list.
+                cb_ref = weakref.ref(frame, lambda r: None)
+                self.assertIs(cb_ref(), frame)
+                del ref, cb_ref
+        threads = [threading.Thread(target=work) for _ in range(4)]
+        with threading_helper.start_threads(threads):
+            pass
+        ref = weakref.ref(frame)
+        del frame
+        g.close()
+        del g
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+
 class ReprTest(unittest.TestCase):
     """
     Tests for repr(frame).
