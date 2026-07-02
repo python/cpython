@@ -676,6 +676,91 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 
+    def test_add_file_with_ext_timestamp(self):
+        """Check that calling ZipFile.write() sets extra data according to
+        with_ext_timestamps parameter."""
+        mtime = 946684800.123456
+        mtime_ns = 946684800_123456789
+        atime_ns = 946684800_987654321
+        ctime_ns = 946684800_555555555
+
+        with mock.patch('os.stat_result.st_mtime', mtime), \
+             mock.patch('os.stat_result.st_mtime_ns', mtime_ns), \
+             mock.patch('os.stat_result.st_atime_ns', atime_ns), \
+             mock.patch('os.stat_result.st_ctime_ns', ctime_ns):
+
+            # with_ext_timestamps=False (default)
+            with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+                zipfp.write(TESTFN)
+
+            with zipfile.ZipFile(TESTFN2) as zipfp:
+                zinfo = zipfp.infolist()[0]
+
+            self.assertEqual(zinfo.extra, b'')
+
+            # with_ext_timestamps=True
+            with zipfile.ZipFile(TESTFN2, "w", with_ext_timestamps=True) as zipfp:
+                zipfp.write(TESTFN)
+
+            with zipfile.ZipFile(TESTFN2) as zipfp:
+                zinfo = zipfp.infolist()[0]
+
+            self.assertEqual(zinfo.date_time[0], 2000)
+
+            # NTFS Extra Field (0x000a)
+            delta = 116444736000000000
+            ntfs_field = struct.unpack_from('<HHLHHQQQ', zinfo.extra)
+            self.assertEqual(ntfs_field, (
+                0x000a, 32,
+                0, 0x0001, 24,
+                mtime_ns // 100 + delta,
+                atime_ns // 100 + delta,
+                ctime_ns // 100 + delta,
+            ))
+
+            # Extended timestamp (0x5455)
+            ut_field = struct.unpack_from('<HHBL', zinfo.extra, struct.calcsize('<HHLHHQQQ'))
+            self.assertEqual(ut_field, (0x5455, 5, 1, int(mtime)))
+
+    def test_add_file_with_ext_timestamp_after_2038(self):
+        """Extended timestamp field should exist for a timestamp after
+        2038-01-19T03:14:07Z."""
+        mtime = 2147483648.123456  # 2038-01-19T03:14:08.123456Z
+
+        with mock.patch('os.stat_result.st_mtime', mtime):
+            with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False,
+                                 with_ext_timestamps=True) as zipfp:
+                zipfp.write(TESTFN)
+
+            with zipfile.ZipFile(TESTFN2) as zipfp:
+                zinfo = zipfp.infolist()[0]
+
+            self.assertEqual(zinfo.date_time[0], 2038)
+
+            # Extended timestamp (0x5455)
+            ntfs_field_len = struct.calcsize('<HHLHHQQQ')
+            ut_field = struct.unpack_from('<HHBL', zinfo.extra, ntfs_field_len)
+            self.assertEqual(ut_field, (0x5455, 5, 1, int(mtime)))
+
+    def test_add_file_with_ext_timestamp_after_2106(self):
+        """Extended timestamp field should not exist for a timestamp after
+        2106-02-07T06:28:15Z."""
+        mtime = 4294967296.123456  # 2106-02-07T06:28:16.123456Z
+
+        with mock.patch('os.stat_result.st_mtime', mtime):
+            with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False,
+                                 with_ext_timestamps=True) as zipfp:
+                zipfp.write(TESTFN)
+
+            with zipfile.ZipFile(TESTFN2) as zipfp:
+                zinfo = zipfp.infolist()[0]
+
+            self.assertEqual(zinfo.date_time[0], 2106)
+
+            # Only an NTFS Extra Field (0x000a) exists
+            ntfs_field_len = struct.calcsize('<HHLHHQQQ')
+            self.assertEqual(len(zinfo.extra), ntfs_field_len)
+
 
 @requires_zlib()
 class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,
