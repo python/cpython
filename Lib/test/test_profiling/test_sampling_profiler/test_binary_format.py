@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from collections import defaultdict
 
+from test.support import captured_stderr
+
 try:
     import _remote_debugging
     from _remote_debugging import (
@@ -970,6 +972,83 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             w.write_sample(sample, i * 1000)
         w.close()
         self.assertEqual(w.total_samples, 0)
+
+    def test_binary_collector_stops_gracefully_on_overflow(self):
+        """OverflowError from the writer stops collection via the running
+        protocol instead of propagating and corrupting the file.
+        See gh-151292."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        collector = BinaryCollector(filename, 1000, compression="none")
+        self.assertTrue(collector.running)
+
+        sample = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+
+        # Collect real samples first, then hit the limit.
+        for i in range(3):
+            collector.collect(sample, timestamp_us=(i + 1) * 1000)
+        self.assertTrue(collector.running)
+
+        real_writer = collector._writer
+
+        class _OverflowingWriter:
+            def write_sample(self, stack_frames, timestamp_us):
+                raise OverflowError("too many samples for binary format")
+
+        collector._writer = _OverflowingWriter()
+        with captured_stderr() as stderr:
+            collector.collect(sample, timestamp_us=4000)
+
+        self.assertFalse(collector.running)
+        self.assertIn("too many samples", stderr.getvalue())
+
+        # The real writer can still be finalized into a valid file that
+        # keeps the samples collected before the limit was hit.
+        collector._writer = real_writer
+        collector.export(None)
+
+        with open(filename, "rb") as f:
+            header = f.read(32)
+        magic, version = struct.unpack_from("=II", header, 0)
+        self.assertEqual(magic, 0x54414348)  # "TACH"
+        self.assertEqual(version, 1)
+        (sample_count,) = struct.unpack_from("=I", header, 28)
+        self.assertEqual(sample_count, 3)
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(reader_collector), 3)
+
+    def test_interpreter_id_overflow_rejected(self):
+        """An interpreter_id wider than u32 raises OverflowError before any
+        writer state is mutated: subsequent valid samples are still accepted
+        and finalize produces a readable file."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        good = [
+            make_interpreter(0, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+        bad = [
+            make_interpreter(2**32, [make_thread(1, [make_frame("a.py", 1, "f")])])
+        ]
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        writer.write_sample(good, 1000)
+        with self.assertRaises(OverflowError):
+            writer.write_sample(bad, 2000)
+        writer.write_sample(good, 3000)
+        writer.finalize()
+        self.assertEqual(writer.total_samples, 2)
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.replay_samples(reader_collector), 2)
 
 
 class TestBinaryFormatValidation(BinaryFormatTestBase):
