@@ -1,0 +1,2 @@
+:mod:`imaplib` no longer fails when a server sends a spurious blank line
+after the counted data of a literal.  Such a blank line is now skipped.
