@@ -1019,10 +1019,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         from _testinternalcapi import _PyTime_FromSecondsObject
         for value in (float(PyTime_MAX), float(PyTime_MIN)):
             for time_rnd, _ in ROUNDING_MODES:
-                with self.assertRaisesRegex(
-                        OverflowError,
-                        "timestamp out of range for C PyTime_t"):
-                    _PyTime_FromSecondsObject(value, time_rnd)
+                with self.subTest(value=value, time_rnd=time_rnd):
+                    with self.assertRaisesRegex(
+                            OverflowError,
+                            "timestamp out of range for C PyTime_t"):
+                        _PyTime_FromSecondsObject(value, time_rnd)
 
     def test_AsSecondsDouble(self):
         from _testcapi import PyTime_AsSecondsDouble
