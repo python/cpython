@@ -561,7 +561,10 @@ def __getattr__(name):
     if name == "_TemporaryFileWrapper":
         _warnings._deprecated(
             "tempfile._TemporaryFileWrapper",
-            message="{name} is deprecated and will be removed in a future "
+            message=(
+                "{name!r} is deprecated and slated for removal in Python {remove}. "
+                "Use tempfile.TemporaryFileWrapper instead."
+            )
                     "version. Use tempfile.TemporaryFileWrapper instead.",
             remove=(3, 21),
         )
