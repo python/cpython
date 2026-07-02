@@ -324,6 +324,8 @@ The module :mod:`!curses` defines the following functions:
    Initialize the library. Return a :ref:`window <curses-window-objects>` object
    which represents the whole screen.
 
+   See :func:`setupterm` for a caveat about calling it before this function.
+
    .. note::
 
       If there is an error opening the terminal, the underlying curses library may
@@ -592,6 +594,13 @@ The module :mod:`!curses` defines the following functions:
    Raise a :exc:`curses.error` if the terminal could not be found or its
    terminfo database entry could not be read.  If the terminal has already
    been initialized, this function has no effect.
+
+   .. note::
+
+      Calling :func:`initscr` after :func:`setupterm`
+      leaks the terminal that :func:`setupterm` allocated:
+      the curses library keeps only a single current terminal
+      and does not free the previously allocated one.
 
 
 .. function:: start_color()
