@@ -1,0 +1,5 @@
+Added a new ``clear_display`` command in the REPL. ``Ctrl+Alt+L`` now clears
+the screen and, if possible, the terminal’s scrollback buffer, then redraws
+the current line at the top of the screen.
+
+Manually tested on Unix; Windows behavior not yet verified.

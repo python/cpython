@@ -166,6 +166,9 @@ class FakeConsole(Console):
     def clear(self) -> None:
         pass
 
+    def clear_all(self) -> None:
+        pass
+
     def finish(self) -> None:
         pass
 
