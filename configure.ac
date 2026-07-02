@@ -7042,12 +7042,12 @@ have_panel=no
 AC_MSG_CHECKING([for --disable-curses])
 AC_ARG_ENABLE([curses], [AS_HELP_STRING(
                 [--disable-curses],
-                [disable building curses module (default is no)])], [
-  AS_VAR_IF([enable_curses], [yes], [Py_CHECK_NCURSES=yes], [Py_CHECK_NCURSES=no])
-], [Py_CHECK_NCURSES=yes])
-AC_MSG_RESULT([$Py_CHECK_NCURSES])
+                [don't build the curses module (default: enabled)])], [
+  AS_VAR_IF([enable_curses], [no], [], [enable_curses=yes])
+], [enable_curses=yes])
+AC_MSG_RESULT([$enable_curses])
 
-if test "$Py_CHECK_NCURSES" = 'yes' ; then
+if test "$enable_curses" = 'yes' ; then
   dnl PY_CHECK_CURSES(LIBCURSES, LIBPANEL)
   dnl Sets 'have_curses' and 'have_panel'.
   dnl For the PKG_CHECK_MODULES() calls, we can safely reuse the first variable
