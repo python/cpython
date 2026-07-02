@@ -20,6 +20,9 @@
 
 #ifdef MS_WINDOWS
 #include <rpc.h>
+#ifndef RPC_S_OK
+#define RPC_S_OK 0L
+#endif
 #endif
 
 #ifndef MS_WINDOWS

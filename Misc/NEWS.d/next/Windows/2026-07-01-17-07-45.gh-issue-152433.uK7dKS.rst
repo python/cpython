@@ -1,0 +1,1 @@
+``_uuid`` module: improve UWP compatibility.
