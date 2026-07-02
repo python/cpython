@@ -7587,6 +7587,18 @@ class EvaluateForwardRefTests(BaseTestCase):
         typing.evaluate_forward_ref(
             fwdref_module.fw,)
 
+    def test_evaluate_forward_ref_string_format(self):
+        # Test evaluating forward references in STRING format
+        # does not 'leak' internal names
+        # See https://github.com/python/cpython/issues/150641
+
+        def f(arg: unknown | str | int | list[str] | tuple[int, ...]): ...
+
+        ref = annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF)['arg']
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref, format=annotationlib.Format.STRING),
+            "unknown | str | int | list[str] | tuple[int, ...]",
+        )
 
 class CollectionsAbcTests(BaseTestCase):
 
