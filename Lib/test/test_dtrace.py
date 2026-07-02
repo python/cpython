@@ -125,7 +125,8 @@ class TraceBackend:
             command += ["-c", subcommand]
         return command
 
-    def trace(self, script_file, subcommand=None, *, timeout=None):
+    def trace(self, script_file, subcommand=None, *, timeout=None,
+              check_returncode=False):
         command = self.generate_trace_command(script_file, subcommand)
         proc = create_process_group(command,
                                     stdout=subprocess.PIPE,
@@ -136,6 +137,11 @@ class TraceBackend:
         except subprocess.TimeoutExpired:
             kill_process_group(proc)
             raise
+        if check_returncode and proc.returncode:
+            raise AssertionError(
+                f"Command {' '.join(command)!r} failed "
+                f"with exit code {proc.returncode}: output={stdout!r}"
+            )
         return stdout
 
     def trace_python(self, script_file, python_file, optimize_python=None):
@@ -143,7 +149,8 @@ class TraceBackend:
         if optimize_python:
             python_flags.extend(["-O"] * optimize_python)
         subcommand = " ".join([sys.executable] + python_flags + [python_file])
-        return self.trace(script_file, subcommand, timeout=60)
+        return self.trace(script_file, subcommand, timeout=60,
+                          check_returncode=True)
 
     def assert_usable(self):
         try:
