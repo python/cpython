@@ -932,6 +932,29 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertEqual(writer_collector.total_samples, len(samples))
         self.assertEqual(writer_collector.total_samples, replayed)
 
+    def test_rle_buffer_flushes_before_finalize(self):
+        """RLE buffer flushes before the writer is destroyed during finalize()."""
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        frame = make_frame("rle_boundary.py", 1, "hot")
+        sample = [make_interpreter(0, [make_thread(1, [frame])])]
+
+        writer = _remote_debugging.BinaryWriter(filename, 1000, 0, compression=0)
+        for i in range(10_000):
+            writer.write_sample(sample, i * 1000)
+        self.assertGreater(writer.get_stats()["repeat_records"], 0)
+
+        writer.finalize()
+
+        reader_collector = RawCollector()
+        with BinaryReader(filename) as reader:
+            replayed = reader.replay_samples(reader_collector)
+
+        self.assertEqual(replayed, 10_000)
+        self.assertEqual(writer.total_samples, 10_000)
+
     def test_writer_total_samples_after_context_manager_matches_reader(self):
         """total_samples after `with BinaryWriter(...)` matches the reader's count.
 
