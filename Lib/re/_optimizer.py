@@ -108,7 +108,9 @@ def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
                     else:
                         charmap[av] = 1
                 elif op is RANGE:
-                    r = range(av[0], av[1]+1)
+                    start, end = av
+                    end += 1
+                    r = range(start, end)
                     if fixup: # IGNORECASE and not LOCALE
                         if fixes:
                             for i in map(fixup, r):
@@ -122,8 +124,10 @@ def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
                         if not hascased:
                             hascased = any(map(iscased, r))
                     else:
-                        for i in r:
-                            charmap[i] = 1
+                        if end > len(charmap):
+                            # Trigger the IndexError growth path below.
+                            raise IndexError
+                        charmap[start:end] = b'\x01' * (end - start)
                 elif op is NEGATE:
                     out.append((op, av))
                 elif op is CATEGORY and _allow_anyall and tail and (CATEGORY, CH_NEGATE[av]) in tail:
