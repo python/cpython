@@ -1175,6 +1175,49 @@ class TestBinaryEncodings(BinaryFormatTestBase):
         self.assertEqual(count, 100)
         self.assert_samples_equal(samples, collector)
 
+    def test_rle_alternating_status_batches_correctly(self):
+        """A repeat record whose status alternates every sample replays as N
+        single-status batches with the right cumulative timestamps."""
+        class BatchCollector:
+            def __init__(self):
+                self.batches = []
+
+            def collect(self, stack_frames, timestamps_us):
+                for interp in stack_frames:
+                    for thread in interp.threads:
+                        self.batches.append(
+                            (thread.status, list(timestamps_us))
+                        )
+
+            def export(self, filename):
+                pass
+
+        num_samples = 2000
+        frame = make_frame("rle.py", 42, "rle_func")
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        writer = BinaryCollector(filename, 1000, compression="none")
+        expected = []
+        for i in range(num_samples):
+            status = THREAD_STATUS_HAS_GIL if i % 2 else 0
+            ts = 1000 + i
+            expected.append((status, [ts]))
+            sample = [
+                make_interpreter(0, [make_thread(1, [frame], status)])
+            ]
+            writer.collect(sample, timestamp_us=ts)
+        writer.export(None)
+
+        collector = BatchCollector()
+        with BinaryReader(filename) as reader:
+            count = reader.replay_samples(collector)
+
+        self.assertEqual(count, num_samples)
+        self.assertEqual(len(collector.batches), num_samples)
+        self.assertEqual(collector.batches, expected)
+
 
 class TestBinaryStress(BinaryFormatTestBase):
     """Randomized stress tests for binary format."""
