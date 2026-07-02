@@ -271,6 +271,56 @@ class _LocaleTests(unittest.TestCase):
         if not tested:
             self.skipTest('no suitable locales')
 
+    @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
+    def test_nl_langinfo_encoding_independent(self):
+        # gh-152905: The LC_TIME text items are decoded independently of the
+        # LC_CTYPE encoding (on glibc via the wide nl_langinfo variants), so
+        # the same locale in different encodings yields identical strings.
+        self.addCleanup(setlocale, LC_TIME, setlocale(LC_TIME))
+        months = [getattr(locale, f'MON_{i}') for i in range(1, 13)]
+        items = months.copy()
+        items += [getattr(locale, f'ABMON_{i}') for i in range(1, 13)]
+        items += [getattr(locale, f'DAY_{i}') for i in range(1, 8)]
+        items += [getattr(locale, f'ABDAY_{i}') for i in range(1, 8)]
+        items += [locale.AM_STR, locale.PM_STR,
+                  locale.D_T_FMT, locale.D_FMT, locale.T_FMT]
+        if hasattr(locale, 'T_FMT_AMPM'):
+            items.append(locale.T_FMT_AMPM)
+        if hasattr(locale, 'ALT_DIGITS'):
+            items.append(locale.ALT_DIGITS)
+        # The same language in a Unicode and a legacy encoding.
+        variants = [
+            ('ja_JP.UTF-8', 'ja_JP.EUC-JP'),
+            ('fr_FR.UTF-8', 'fr_FR.ISO8859-1'),
+            ('el_GR.UTF-8', 'el_GR.ISO8859-7'),
+        ]
+        tested = False
+        for locs in variants:
+            values = []
+            avail = []
+            for loc in locs:
+                try:
+                    setlocale(LC_TIME, loc)
+                except Error:
+                    continue
+                avail.append(loc)
+                values.append([nl_langinfo(item) for item in items])
+            if len(values) < 2:
+                continue
+            with self.subTest(locales=avail):
+                for value in values[0]:
+                    self.assertIsInstance(value, str)
+                # Month names within a locale must be distinct, which guards
+                # against a broken narrow-to-wide constant mapping.
+                self.assertEqual(len(set(values[0][:12])), 12, values[0][:12])
+                # The result must not depend on the locale encoding.
+                for other in values[1:]:
+                    self.assertEqual(values[0], other)
+                tested = True
+        if not tested:
+            self.skipTest('no suitable locale pairs')
+
     def test_float_parsing(self):
         # Bug #1391872: Test whether float parsing is okay on European
         # locales.
