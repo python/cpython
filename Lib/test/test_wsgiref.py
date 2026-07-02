@@ -510,15 +510,28 @@ class HeaderTests(TestCase):
                 headers = Headers()
                 self.assertRaises(ValueError, headers.__setitem__, f"key{c0}", "val")
                 self.assertRaises(ValueError, headers.add_header, f"key{c0}", "val", param="param")
+                self.assertRaises(ValueError, Headers, [(f"key{c0}", "val")])
                 # HTAB (\x09) is allowed in values, not names.
                 if c0 == "\t":
                     headers["key"] = f"val{c0}"
                     headers.add_header("key", f"val{c0}")
                     headers.setdefault(f"key", f"val{c0}")
+                    Headers([("key", f"val{c0}")])
                 else:
                     self.assertRaises(ValueError, headers.__setitem__, "key", f"val{c0}")
                     self.assertRaises(ValueError, headers.add_header, "key", f"val{c0}", param="param")
                     self.assertRaises(ValueError, headers.add_header, "key", "val", param=f"param{c0}")
+                    self.assertRaises(ValueError, Headers, [("key", f"val{c0}")])
+
+    def testConstructorValidatesWithoutDebug(self):
+        # The constructor must reject control characters even under -O, where
+        # __debug__-guarded code is skipped; the headers it is given are stored
+        # and written to the response unchanged.
+        from test.support.script_helper import assert_python_failure
+        code = ("from wsgiref.headers import Headers\n"
+                "Headers([('Foo', 'bar\\r\\nSet-Cookie: evil')])\n")
+        rc, out, err = assert_python_failure('-O', '-c', code)
+        self.assertIn(b'ValueError', err)
 
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""
