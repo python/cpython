@@ -1,0 +1,3 @@
+zipfile: Write the correct minimum extract version indicating zip64 support
+is required to the local header when the archive exceeds the zip64 archive
+filesize or file count thresholds.
