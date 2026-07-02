@@ -1925,11 +1925,6 @@ class ZipFile:
         self._strict_timestamps = strict_timestamps
         self.metadata_encoding = metadata_encoding
 
-        # Check that we don't try to write with nonconforming codecs
-        if self.metadata_encoding and mode != 'r':
-            raise ValueError(
-                "metadata_encoding is only supported for reading files")
-
         # Check if we were passed a file-like object
         if isinstance(file, os.PathLike):
             file = os.fspath(file)
