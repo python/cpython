@@ -440,19 +440,25 @@ class WeakRefTest(unittest.TestCase):
         g = gen()
         frame = next(g)
         barrier = threading.Barrier(4)
+        # Collect failures instead of asserting in the workers: exceptions
+        # raised in threads don't propagate to the unittest result.
+        failures = []
         def work():
             barrier.wait()
             for _ in range(1000):
                 ref = weakref.ref(frame)
-                self.assertIs(ref(), frame)
+                if ref() is not frame:
+                    failures.append('shared ref dead while frame alive')
                 # Callback refs are not shared, so this concurrently adds
                 # to and removes from the frame's weakref list.
                 cb_ref = weakref.ref(frame, lambda r: None)
-                self.assertIs(cb_ref(), frame)
+                if cb_ref() is not frame:
+                    failures.append('callback ref dead while frame alive')
                 del ref, cb_ref
         threads = [threading.Thread(target=work) for _ in range(4)]
         with threading_helper.start_threads(threads):
             pass
+        self.assertEqual(failures, [])
         ref = weakref.ref(frame)
         del frame
         g.close()
