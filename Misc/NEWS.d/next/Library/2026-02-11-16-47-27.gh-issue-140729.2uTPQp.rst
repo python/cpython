@@ -1,0 +1,2 @@
+Fix a pickling error in the ``cProfile`` module when profiling a script that
+uses :class:`multiprocessing.Process` with the ``spawn`` start method.

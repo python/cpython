@@ -1,5 +1,4 @@
 """Test suite for the cProfile module."""
-
 import sys
 import unittest
 
@@ -191,6 +190,31 @@ class TestCommandLine(unittest.TestCase):
                 """))
             f.close()
             assert_python_ok('-m', "cProfile", f.name)
+
+    def test_process_run_pickle(self):
+        # gh-140729: test use Process in cProfile.
+        val = 10
+        with tempfile.NamedTemporaryFile("w+", delete_on_close=False) as f:
+            f.write(textwrap.dedent(
+                f'''\
+                import multiprocessing
+
+                def worker(x):
+                    print(__name__)
+                    exit(x ** 2)
+
+                if __name__ == "__main__":
+                    multiprocessing.set_start_method("spawn")
+                    p = multiprocessing.Process(target=worker, args=({val},))
+                    p.start()
+                    p.join()
+                    print("p.exitcode =", p.exitcode)
+                '''))
+            f.close()
+            _, out, err = assert_python_ok('-m', "cProfile", f.name)
+            self.assertIn(b"__mp_main__", out)
+            self.assertIn(bytes(f"exitcode = {val**2}", encoding='utf8'), out)
+            self.assertNotIn(b"Can't pickle", err)
 
 
 def main():
