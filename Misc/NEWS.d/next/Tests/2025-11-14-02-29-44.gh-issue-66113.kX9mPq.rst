@@ -1,0 +1,2 @@
+Add comprehensive GUI tests for the :mod:`turtle` module covering screen
+operations, turtle motion, drawing, and event handling.
