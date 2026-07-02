@@ -83,7 +83,7 @@ def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
     src = _strip_final_indent(unicodetext)
     try:
         code = console.compile(src, "<stdin>", "single")
-    except (OverflowError, SyntaxError, ValueError):
+    except (OverflowError, SyntaxError, ValueError, SystemError):
         lines = src.splitlines(keepends=True)
         if len(lines) == 1:
             return False
