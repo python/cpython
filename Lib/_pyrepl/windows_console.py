@@ -53,10 +53,10 @@ from .trace import trace, trace_text
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import get_last_error, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, WinDLL, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
-    from ctypes import CDLL as WinDLL, cdll as windll
+    from ctypes import CDLL as WinDLL
 
     def get_last_error() -> int:
         return 42
@@ -66,11 +66,14 @@ except:
             self.err = err
             self.descr = descr
 
-# declare nt optional to allow None assignment on other platforms
+# declare optional to allow None assignment on other platforms
+_winapi: types.ModuleType | None
 nt: types.ModuleType | None
 try:
+    import _winapi
     import nt
 except ImportError:
+    _winapi = None
     nt = None
 
 if TYPE_CHECKING:
@@ -122,7 +125,6 @@ ALT_ACTIVE = 0x01 | 0x02
 CTRL_ACTIVE = 0x04 | 0x08
 
 WAIT_TIMEOUT = 0x102
-WAIT_FAILED = 0xFFFFFFFF
 
 # from winbase.h
 INFINITE = 0xFFFFFFFF
@@ -696,10 +698,9 @@ class WindowsConsole(Console):
             timeout = INFINITE
         else:
             timeout = int(timeout)
-        ret = WaitForSingleObject(InHandle, timeout)
-        if ret == WAIT_FAILED:
-            raise WinError(get_last_error())
-        elif ret == WAIT_TIMEOUT:
+        assert _winapi is not None  # to make mypy happy
+        ret = _winapi.WaitForSingleObject(InHandle, timeout)
+        if ret == WAIT_TIMEOUT:
             return False
         return True
 
@@ -792,15 +793,9 @@ ENABLE_PROCESSED_OUTPUT = 0x01
 ENABLE_WRAP_AT_EOL_OUTPUT = 0x02
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
 
-STD_INPUT_HANDLE = -10
-STD_OUTPUT_HANDLE = -11
-
 if sys.platform == "win32":
+    assert _winapi is not None  # to make mypy happy
     _KERNEL32 = WinDLL("kernel32", use_last_error=True)
-
-    GetStdHandle = windll.kernel32.GetStdHandle
-    GetStdHandle.argtypes = [DWORD]
-    GetStdHandle.restype = HANDLE
 
     GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
     GetConsoleScreenBufferInfo.argtypes = [
@@ -836,24 +831,18 @@ if sys.platform == "win32":
     FlushConsoleInputBuffer.argtypes = [HANDLE]
     FlushConsoleInputBuffer.restype = BOOL
 
-    WaitForSingleObject = _KERNEL32.WaitForSingleObject
-    WaitForSingleObject.argtypes = [HANDLE, DWORD]
-    WaitForSingleObject.restype = DWORD
-
-    OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
-    InHandle = GetStdHandle(STD_INPUT_HANDLE)
+    OutHandle = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
+    InHandle = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
 else:
 
     def _win_only(*args, **kwargs):
         raise NotImplementedError("Windows only")
 
-    GetStdHandle = _win_only
     GetConsoleScreenBufferInfo = _win_only
     ScrollConsoleScreenBuffer = _win_only
     GetConsoleMode = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
     FlushConsoleInputBuffer = _win_only
-    WaitForSingleObject = _win_only
     OutHandle = 0
     InHandle = 0
