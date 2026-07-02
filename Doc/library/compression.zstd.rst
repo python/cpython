@@ -827,10 +827,43 @@ Miscellaneous
    The default compression level for Zstandard: ``3``.
 
 
-.. attribute:: zstd_version_info
+Information about the version of the zstd library in use is available through
+the following constants:
 
-   Version number of the runtime zstd library as a tuple of integers
-   (major, minor, release).
+
+.. data:: ZSTD_VERSION
+
+   The version string of the zstd library that was used for building the module.
+   This may be different from the zstd library actually used at runtime, which
+   is available as :const:`zstd_version`.
+
+   .. versionadded:: next
+
+
+.. data:: zstd_version
+
+   The version string of the zstd library actually loaded by the interpreter.
+
+
+.. data:: ZSTD_VERSION_INFO
+
+   A named tuple containing the four components of the zstd library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.  All values are integers.
+   The components can also be accessed by name, so ``zstd.ZSTD_VERSION_INFO[0]``
+   is equivalent to ``zstd.ZSTD_VERSION_INFO.major`` and so on.
+   This may be different from the zstd library actually used at runtime, which
+   is available as :const:`zstd_version_info`.
+
+   .. versionadded:: next
+
+
+.. data:: zstd_version_info
+
+   A named tuple containing the zstd library version actually loaded by the interpreter.
+
+   .. versionchanged:: next
+      It is now a named tuple.
 
 
 Examples

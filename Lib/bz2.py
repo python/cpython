@@ -5,7 +5,7 @@ This module provides a file interface, classes for incremental
 """
 
 __all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor",
-           "open", "compress", "decompress"]
+           "open", "compress", "decompress", "bzlib_version", "bzlib_version_info"]
 
 __author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
 
@@ -14,7 +14,7 @@ from compression._common import _streams
 import io
 import os
 
-from _bz2 import BZ2Compressor, BZ2Decompressor
+from _bz2 import BZ2Compressor, BZ2Decompressor, bzlib_version, bzlib_version_info
 
 
 # Value 0 no longer used

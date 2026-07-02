@@ -9,6 +9,7 @@ import unittest
 import tempfile
 import threading
 
+from test import support
 from test.support.import_helper import import_module
 from test.support import threading_helper
 from test.support import _1M
@@ -24,8 +25,6 @@ from compression.zstd import (
     ZstdDecompressor,
     ZstdDict,
     ZstdError,
-    zstd_version,
-    zstd_version_info,
     COMPRESSION_LEVEL_DEFAULT,
     get_frame_info,
     get_frame_size,
@@ -133,9 +132,33 @@ def setUpModule():
 
 class FunctionsTestCase(unittest.TestCase):
 
-    def test_version(self):
-        s = ".".join((str(i) for i in zstd_version_info))
-        self.assertEqual(s, zstd_version)
+    def _test_zstd_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+
+        self.assertEqual(string, '%d.%d.%d' % v)
+
+    def test_lzma_version(self):
+        if support.verbose:
+            print(f'ZSTD_VERSION = {zstd.ZSTD_VERSION}', flush=True)
+            print(f'zstd_version = {zstd.zstd_version}', flush=True)
+            print(f'ZSTD_VERSION_INFO = {zstd.ZSTD_VERSION_INFO}', flush=True)
+            print(f'zstd_version_info = {zstd.zstd_version_info}', flush=True)
+        self._test_zstd_version(zstd.ZSTD_VERSION_INFO, zstd.ZSTD_VERSION)
+        self._test_zstd_version(zstd.zstd_version_info, zstd.zstd_version)
+        self.assertEqual(zstd.ZSTD_VERSION_INFO[0], zstd.zstd_version_info[0])
 
     def test_compressionLevel_values(self):
         min, max = CompressionParameter.compression_level.bounds()

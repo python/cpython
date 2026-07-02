@@ -86,6 +86,23 @@ New modules
 Improved modules
 ================
 
+bz2
+---
+
+* Added constants :const:`~bz2.bzlib_version` and
+  :const:`~bz2.bzlib_version_info` which provide information about
+  the version of the bzip2 compression library in use.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
+
+compression.zstd
+----------------
+
+* Added constants :const:`~compression.zstd.ZSTD_VERSION` and
+  :const:`~compression.zstd.ZSTD_VERSION_INFO` which provide information
+  about the version of the zstd library that was used for building the module.
+  :const:`~compression.zstd.zstd_version_info` is now a named tuple.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
+
 curses
 ------
 
@@ -227,6 +244,11 @@ io
 * Add :meth:`io.BytesIO.peek` method to read without advancing position.
   (Contributed by Marcel Martin in :gh:`90533`.)
 
+
+* Added constants :const:`~lzma.LZMA_VERSION`, :const:`~lzma.lzma_version`,
+  :const:`~lzma.LZMA_VERSION_INFO`, and :const:`~lzma.lzma_version_info`,
+  which provide information about the version of the lzma library in use.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 logging
 -------
@@ -406,6 +428,17 @@ zipfile
   :meth:`ZipFile.repack() <zipfile.ZipFile.repack>` to reclaim the space used
   by the local file entries of removed members.
   (Contributed by Danny Lin in :gh:`51067`.)
+
+zlib
+----
+
+* Added constants :const:`~zlib.ZLIB_VERSION_INFO`,
+  :const:`~zlib.zlib_version_info`, and :const:`~zlib.ZLIBNG_VERSION_INFO`,
+  which provide information about the version of the zlib and the zlib-ng
+  libraries in use.
+  Added :const:`~zlib.zlib_version` as an alias of
+  :const:`~zlib.ZLIB_RUNTIME_VERSION`.
+  (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 
