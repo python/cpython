@@ -220,6 +220,38 @@ class ProactorTests(WindowsEventsTestCase):
         fut.cancel()
         fut.cancel()
 
+    def _poll_with_future_done_during_callback(self, callback_exception=None):
+        proactor = self.loop._proactor
+        ov = _overlapped.Overlapped(_winapi.NULL)
+        fut = windows_events._OverlappedFuture(ov, loop=self.loop)
+
+        class Obj:
+            pass
+
+        def callback(transferred, key, ov):
+            self.assertFalse(fut.done())
+            fut.cancel()
+            if callback_exception is not None:
+                raise callback_exception
+            return object()
+
+        proactor._cache[ov.address] = (fut, ov, Obj(), callback)
+        _overlapped.PostQueuedCompletionStatus(proactor._iocp, 0, 0,
+                                               ov.address)
+
+        proactor._poll(0)
+
+        self.assertTrue(fut.cancelled())
+        self.assertEqual(proactor._results, [])
+
+    def test_poll_skips_exception_if_future_done_during_callback(self):
+        exc = ConnectionResetError(_overlapped.ERROR_OPERATION_ABORTED,
+                                   "operation aborted")
+        self._poll_with_future_done_during_callback(exc)
+
+    def test_poll_skips_result_if_future_done_during_callback(self):
+        self._poll_with_future_done_during_callback()
+
     def test_read_self_pipe_restart(self):
         # Regression test for https://bugs.python.org/issue39010
         # Previously, restarting a proactor event loop in certain states
