@@ -1253,32 +1253,6 @@ mappingproxy_check_mapping(PyObject *mapping)
     return 0;
 }
 
-/*[clinic input]
-@classmethod
-mappingproxy.__new__ as mappingproxy_new
-
-    mapping: object
-
-Read-only proxy of a mapping.
-[clinic start generated code]*/
-
-static PyObject *
-mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
-/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
-{
-    mappingproxyobject *mappingproxy;
-
-    if (mappingproxy_check_mapping(mapping) == -1)
-        return NULL;
-
-    mappingproxy = PyObject_GC_New(mappingproxyobject, &PyDictProxy_Type);
-    if (mappingproxy == NULL)
-        return NULL;
-    mappingproxy->mapping = Py_NewRef(mapping);
-    _PyObject_GC_TRACK(mappingproxy);
-    return (PyObject *)mappingproxy;
-}
-
 PyObject *
 PyDictProxy_New(PyObject *mapping)
 {
@@ -1293,6 +1267,22 @@ PyDictProxy_New(PyObject *mapping)
         _PyObject_GC_TRACK(pp);
     }
     return (PyObject *)pp;
+}
+
+/*[clinic input]
+@classmethod
+mappingproxy.__new__ as mappingproxy_new
+
+    mapping: object
+
+Read-only proxy of a mapping.
+[clinic start generated code]*/
+
+static PyObject *
+mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
+{
+    return PyDictProxy_New(mapping);
 }
 
 

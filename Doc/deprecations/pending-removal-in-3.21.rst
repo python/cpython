@@ -18,7 +18,13 @@ Pending removal in Python 3.21
   * The ``dims`` property of ``ast.Tuple`` will be removed in Python 3.21. Use
     the ``ast.Tuple.elts`` property instead.
 
+* :mod:`struct`:
+
+  * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
+    deprecated.  These codes will be removed in Python 3.21.  Use instead
+    two-letter forms ``'Zf'`` and ``'Zd'``.
+
 * :mod:`tempfile`:
 
-  * ``tempfile._TemporaryFileWrapper`` will be removed. Use the public
-    :class:`tempfile.TemporaryFileWrapper` instead.
+  * ``tempfile._TemporaryFileWrapper`` will be removed in Python 3.21. Use the
+    public :class:`tempfile.TemporaryFileWrapper` instead.

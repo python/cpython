@@ -338,7 +338,7 @@ _PyErr_SetFromNTSTATUS(ULONG status)
 }
 #endif
 
-#if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
+#if defined(MS_WINDOWS_DESKTOP) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM(sourcecode)                                     \
 do {                                                                       \
     EXCEPTION_RECORD record;                                               \
@@ -364,7 +364,7 @@ do {                                                                       \
 } while (0)
 #endif
 
-#if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
+#if defined(MS_WINDOWS_DESKTOP) && !defined(DONT_USE_SEH)
 #define HANDLE_INVALID_MEM_METHOD(self, sourcecode)                           \
 do {                                                                          \
     EXCEPTION_RECORD record;                                                  \
@@ -806,20 +806,12 @@ mmap_mmap_size_impl(mmap_object *self)
 
 #ifdef MS_WINDOWS
     if (self->file_handle != INVALID_HANDLE_VALUE) {
-        DWORD low,high;
-        long long size;
-        low = GetFileSize(self->file_handle, &high);
-        if (low == INVALID_FILE_SIZE) {
-            /* It might be that the function appears to have failed,
-               when indeed its size equals INVALID_FILE_SIZE */
-            DWORD error = GetLastError();
-            if (error != NO_ERROR)
-                return PyErr_SetFromWindowsErr(error);
+        LARGE_INTEGER size;
+        if (!GetFileSizeEx(self->file_handle, &size)) {
+          DWORD error = GetLastError();
+          return PyErr_SetFromWindowsErr(error);
         }
-        if (!high && low < LONG_MAX)
-            return PyLong_FromLong((long)low);
-        size = (((long long)high)<<32) + low;
-        return PyLong_FromLongLong(size);
+        return PyLong_FromLongLong(size.QuadPart);
     }
 #endif /* MS_WINDOWS */
 
@@ -2127,18 +2119,14 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             m_obj->file_handle = fh;
         }
         if (!map_size) {
-            DWORD low,high;
-            low = GetFileSize(fh, &high);
-            /* low might just happen to have the value INVALID_FILE_SIZE;
-               so we need to check the last error also. */
-            if (low == INVALID_FILE_SIZE &&
-                (dwErr = GetLastError()) != NO_ERROR)
+            LARGE_INTEGER li;
+            if (!GetFileSizeEx(fh, &li))
             {
+                dwErr = GetLastError();
                 Py_DECREF(m_obj);
                 return PyErr_SetFromWindowsErr(dwErr);
             }
-
-            size = (((long long) high) << 32) + low;
+            size = li.QuadPart;
             if (size == 0) {
                 PyErr_SetString(PyExc_ValueError,
                                 "cannot mmap an empty file");
