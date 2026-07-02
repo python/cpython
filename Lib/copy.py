@@ -118,13 +118,18 @@ def deepcopy(x, memo=None):
     if cls in _atomic_types:
         return x
 
-    d = id(x)
     if memo is None:
         memo = {}
-    else:
-        y = memo.get(d, None)
-        if y is not None:
-            return y
+    return _deepcopy_fallback(x, memo, cls)
+
+
+def _deepcopy_fallback(x, memo, cls):
+    # Deep-copy a value already known to be non-atomic, with its type already
+    # computed by the caller, so type(x) is evaluated exactly once per element.
+    d = id(x)
+    y = memo.get(d, None)
+    if y is not None:
+        return y
 
     copier = _deepcopy_dispatch.get(cls)
     if copier is not None:
@@ -173,13 +178,18 @@ def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
     memo[id(x)] = y
     append = y.append
+    fallback = _deepcopy_fallback
+    atomic = _atomic_types
     for a in x:
-        append(deepcopy(a, memo))
+        cls = type(a)
+        append(a if cls in atomic else fallback(a, memo, cls))
     return y
 d[list] = _deepcopy_list
 
 def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
-    y = [deepcopy(a, memo) for a in x]
+    atomic = _atomic_types
+    fallback = _deepcopy_fallback
+    y = [a if (cls := type(a)) in atomic else fallback(a, memo, cls) for a in x]
     # We're not going to put the tuple in the memo, but it's still important we
     # check for it, in case the tuple contains recursive mutable structures.
     try:
@@ -198,15 +208,25 @@ d[tuple] = _deepcopy_tuple
 def _deepcopy_dict(x, memo, deepcopy=deepcopy):
     y = {}
     memo[id(x)] = y
+    atomic = _atomic_types
+    fallback = _deepcopy_fallback
     for key, value in x.items():
-        y[deepcopy(key, memo)] = deepcopy(value, memo)
+        kc = type(key)
+        vc = type(value)
+        y[key if kc in atomic else fallback(key, memo, kc)] = (
+            value if vc in atomic else fallback(value, memo, vc))
     return y
 d[dict] = _deepcopy_dict
 
 def _deepcopy_frozendict(x, memo, deepcopy=deepcopy):
     y = {}
+    atomic = _atomic_types
+    fallback = _deepcopy_fallback
     for key, value in x.items():
-        y[deepcopy(key, memo)] = deepcopy(value, memo)
+        kc = type(key)
+        vc = type(value)
+        y[key if kc in atomic else fallback(key, memo, kc)] = (
+            value if vc in atomic else fallback(value, memo, vc))
 
     # We're not going to put the frozendict in the memo, but it's still
     # important we check for it, in case the frozendict contains recursive
