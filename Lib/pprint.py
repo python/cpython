@@ -737,18 +737,13 @@ class PrettyPrinter:
 
     def _pprint_template(self, object, stream, indent, allowance, context, level):
         cls_name = object.__class__.__name__
-        if self._expand:
-            indent += self._indent_per_level
-        else:
-            indent += len(cls_name) + 1
 
-        items = (
-            ("strings", object.strings),
-            ("interpolations", object.interpolations),
-        )
+        if not self._expand:
+            indent += len(cls_name)
+
         stream.write(self._format_block_start(cls_name + "(", indent))
-        self._format_namespace_items(
-            items, stream, indent, allowance, context, level
+        self._format_items(
+            object, stream, indent, allowance, context, level
         )
         stream.write(
             self._format_block_end(")", indent - self._indent_per_level)
@@ -758,13 +753,15 @@ class PrettyPrinter:
         cls_name = object.__class__.__name__
         if self._expand:
             indent += self._indent_per_level
+            stream.write(self._format_block_start(cls_name + "(", indent))
             items = (
                 ("value", object.value),
                 ("expression", object.expression),
-                ("conversion", object.conversion),
-                ("format_spec", object.format_spec),
             )
-            stream.write(self._format_block_start(cls_name + "(", indent))
+            if object.conversion is not None or object.format_spec:
+                items += (("conversion", object.conversion),)
+                if object.format_spec:
+                    items += (("format_spec", object.format_spec),)
             self._format_namespace_items(
                 items, stream, indent, allowance, context, level
             )
@@ -773,13 +770,15 @@ class PrettyPrinter:
             )
         else:
             indent += len(cls_name)
+            stream.write(cls_name + "(")
             items = (
                 object.value,
                 object.expression,
-                object.conversion,
-                object.format_spec,
             )
-            stream.write(cls_name + "(")
+            if object.conversion is not None or object.format_spec:
+                items += (object.conversion,)
+                if object.format_spec:
+                    items += (object.format_spec,)
             self._format_items(
                 items, stream, indent, allowance, context, level
             )

@@ -112,9 +112,31 @@ static PyObject *
 interpolation_repr(PyObject *op)
 {
     interpolationobject *self = interpolationobject_CAST(op);
-    return PyUnicode_FromFormat("%s(%R, %R, %R, %R)",
-                                _PyType_Name(Py_TYPE(self)), self->value, self->expression,
-                                self->conversion, self->format_spec);
+
+    /* Only emit trailing arguments that differ from their default values
+       (conversion=None and format_spec=""). We never use keyword arguments, so
+       if 'format_spec' is non-default, 'conversion' has to be emitted too even
+       when it still has its default value. */
+    int show_format_spec = PyUnicode_GET_LENGTH(self->format_spec) > 0;
+    int show_conversion = show_format_spec || self->conversion != Py_None;
+
+    if (show_format_spec) {
+        return PyUnicode_FromFormat("%s(%R, %R, %R, %R)",
+                                    _PyType_Name(Py_TYPE(self)),
+                                    self->value, self->expression,
+                                    self->conversion, self->format_spec);
+    }
+    else if (show_conversion) {
+        return PyUnicode_FromFormat("%s(%R, %R, %R)",
+                                    _PyType_Name(Py_TYPE(self)),
+                                    self->value, self->expression,
+                                    self->conversion);
+    }
+    else {
+        return PyUnicode_FromFormat("%s(%R, %R)",
+                                    _PyType_Name(Py_TYPE(self)),
+                                    self->value, self->expression);
+    }
 }
 
 static PyMemberDef interpolation_members[] = {

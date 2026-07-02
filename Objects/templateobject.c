@@ -212,10 +212,73 @@ static PyObject *
 template_repr(PyObject *op)
 {
     templateobject *self = templateobject_CAST(op);
-    return PyUnicode_FromFormat("%s(strings=%R, interpolations=%R)",
-                                _PyType_Name(Py_TYPE(self)),
-                                self->strings,
-                                self->interpolations);
+
+    int res = Py_ReprEnter(op);
+    if (res != 0) {
+        if (res < 0)
+            return NULL;
+        else
+            return PyUnicode_FromFormat("%s(...)", _PyType_Name(Py_TYPE(self)));
+    }
+
+    Py_ssize_t stringslen = PyTuple_GET_SIZE(self->strings);
+    Py_ssize_t interpolationslen = PyTuple_GET_SIZE(self->interpolations);
+
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(10);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    if (PyUnicodeWriter_WriteUTF8(writer, _PyType_Name(Py_TYPE(self)), -1) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+        goto error;
+    }
+
+    /* Render the strings and interpolations in the order they appeared in the
+       constructor call, i.e. interleaved and skipping empty strings. This
+       matches the order produced by templateiter_next. */
+    int first = 1;
+    for (Py_ssize_t i = 0; i < stringslen; i++) {
+        PyObject *string = PyTuple_GET_ITEM(self->strings, i);
+        if (PyUnicode_GET_LENGTH(string) > 0) {
+            if (!first) {
+                if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                    goto error;
+                }
+            }
+            if (PyUnicodeWriter_WriteRepr(writer, string) < 0) {
+                goto error;
+            }
+            first = 0;
+        }
+        if (i < interpolationslen) {
+            PyObject *interpolation = PyTuple_GET_ITEM(self->interpolations, i);
+            if (!first) {
+                if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                    goto error;
+                }
+            }
+            if (PyUnicodeWriter_WriteRepr(writer, interpolation) < 0) {
+                goto error;
+            }
+            first = 0;
+        }
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+        goto error;
+    }
+
+    Py_ReprLeave(op);
+
+    return PyUnicodeWriter_Finish(writer);
+
+error:
+    Py_ReprLeave(op);
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
 }
 
 static PyObject *
