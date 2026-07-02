@@ -29,6 +29,7 @@ import unittest
 from unittest import mock
 import _imp
 
+from test import support
 from test.support import os_helper
 from test.support import (
     STDLIB_DIR,
@@ -424,6 +425,27 @@ class ImportTests(unittest.TestCase):
             from os.path import i_dont_exist
         self.assertIn(cm.exception.name, {'posixpath', 'ntpath'})
         self.assertIsNotNone(cm.exception)
+
+    @support.requires_subprocess()
+    def test_from_import_module_attr_from_non_package(self):
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            module_name = 'test_from_import_module_attr_from_non_package'
+            child_name = f'{module_name}.child'
+            module = types.ModuleType(module_name)
+            child = types.ModuleType(child_name)
+            module.child = child
+            sys.modules[module_name] = module
+
+            # A plain module can expose a module-valued attribute without
+            # being a package, so from-import must return the attribute as-is.
+            from test_from_import_module_attr_from_non_package import child as imported
+            assert imported is child
+            assert child_name not in sys.modules, child_name
+        """)
+        script_helper.assert_python_ok("-c", code)
 
     def test_from_import_star_invalid_type(self):
         with ready_to_import() as (name, path):

@@ -3152,6 +3152,79 @@ error:
     return res;
 }
 
+static PyObject *
+import_from_resolve_module_attr(PyThreadState *tstate, PyObject *package_name,
+                                PyObject *name, PyObject *attr)
+{
+    if (!PyModule_Check(attr) || package_name == NULL
+        || !PyUnicode_Check(package_name)) {
+        return Py_NewRef(attr);
+    }
+
+    /* Only packages can legitimately republish importable submodules here.
+       Plain modules may expose arbitrary module-valued attributes. */
+    PyObject *package = PyImport_GetModule(package_name);
+    if (package == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return NULL;
+        }
+        return Py_NewRef(attr);
+    }
+
+    int is_package = PyObject_HasAttrWithError(package, &_Py_ID(__path__));
+    Py_DECREF(package);
+    if (is_package <= 0) {
+        if (is_package < 0) {
+            return NULL;
+        }
+        return Py_NewRef(attr);
+    }
+
+    PyObject *fullmodname = PyUnicode_FromFormat("%U.%U", package_name, name);
+    if (fullmodname == NULL) {
+        return NULL;
+    }
+
+    PyObject *attr_name;
+    if (PyObject_GetOptionalAttr(attr, &_Py_ID(__name__), &attr_name) < 0) {
+        Py_DECREF(fullmodname);
+        return NULL;
+    }
+
+    int matches = (attr_name != NULL && PyUnicode_Check(attr_name))
+        ? PyObject_RichCompareBool(attr_name, fullmodname, Py_EQ)
+        : 0;
+    Py_XDECREF(attr_name);
+    if (matches <= 0) {
+        /* Not the canonical submodule (matches == 0), or compare failed
+           (matches < 0, exception set). */
+        Py_DECREF(fullmodname);
+        return matches < 0 ? NULL : Py_NewRef(attr);
+    }
+
+    /* If the package still caches a submodule object after its entry was
+       removed from sys.modules, import the canonical submodule again. */
+    PyObject *submod = PyImport_GetModule(fullmodname);
+    if (submod == NULL && !_PyErr_Occurred(tstate)) {
+        PyObject *imported = PyImport_ImportModuleLevelObject(
+            fullmodname, NULL, NULL, NULL, 0);
+        if (imported == NULL) {
+            Py_DECREF(fullmodname);
+            return NULL;
+        }
+        Py_DECREF(imported);
+        submod = PyImport_GetModule(fullmodname);
+    }
+    Py_DECREF(fullmodname);
+    if (submod != NULL) {
+        return submod;
+    }
+    if (_PyErr_Occurred(tstate)) {
+        return NULL;
+    }
+    return Py_NewRef(attr);
+}
+
 PyObject *
 _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
@@ -3159,6 +3232,19 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     PyObject *fullmodname, *mod_name, *origin, *mod_name_or_unknown, *errmsg, *spec;
 
     if (PyObject_GetOptionalAttr(v, name, &x) != 0) {
+        if (x != NULL && PyModule_Check(x)) {
+            PyObject *resolved;
+            if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &mod_name) < 0) {
+                Py_DECREF(x);
+                return NULL;
+            }
+            /* If this is a cached submodule, resolve it through sys.modules
+               so from-import repairs stale package entries. */
+            resolved = import_from_resolve_module_attr(tstate, mod_name, name, x);
+            Py_XDECREF(mod_name);
+            Py_DECREF(x);
+            return resolved;
+        }
         return x;
     }
     /* Issue #17636: in case this failed because of a circular relative
@@ -3330,8 +3416,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     PyLazyImportObject *d = (PyLazyImportObject *)v;
     PyObject *mod = PyImport_GetModule(d->lz_from);
     if (mod != NULL) {
-        // Check if the module already has the attribute, if so, resolve it
-        // eagerly.
+        /* If the parent is already imported, resolve any module-valued
+           attribute through the same stale-submodule check. */
         if (PyModule_Check(mod)) {
             PyObject *mod_dict = PyModule_GetDict(mod);
             if (mod_dict != NULL) {
@@ -3340,8 +3426,11 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
                     return NULL;
                 }
                 if (ret != NULL) {
+                    PyObject *resolved = import_from_resolve_module_attr(
+                        tstate, d->lz_from, name, ret);
+                    Py_DECREF(ret);
                     Py_DECREF(mod);
-                    return ret;
+                    return resolved;
                 }
             }
         }
