@@ -20,7 +20,6 @@ Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/pickletools.rst
 Doc/library/pyexpat.rst
-Doc/library/select.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
 Doc/library/termios.rst
