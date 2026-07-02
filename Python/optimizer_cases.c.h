@@ -5046,10 +5046,119 @@
         /* _DO_CALL_KW is not a viable micro-op for tier 2 */
 
         case _PY_FRAME_KW: {
+            JitOptRef kwnames;
+            JitOptRef *args;
+            JitOptRef self_or_null;
             JitOptRef callable;
             JitOptRef new_frame;
+            kwnames = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            self_or_null = stack_pointer[-2 - oparg];
             callable = stack_pointer[-3 - oparg];
-            new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, NULL, 0));
+            bool valid = false;
+            PyObject *func_o = sym_get_const(ctx, callable);
+            PyObject *kwnames_o = sym_get_const(ctx, kwnames);
+            bool has_self = sym_is_not_null(self_or_null);
+            PyCodeObject *co = NULL;
+            Py_ssize_t total_args = 0;
+            int desired[256];
+            JitOptRef frame_args[257];
+            if ((has_self || sym_is_null(self_or_null)) &&
+                func_o != NULL && PyFunction_Check(func_o) &&
+                kwnames_o != NULL && PyTuple_CheckExact(kwnames_o) &&
+                oparg <= 256)
+            {
+                PyFunctionObject *func = (PyFunctionObject *)func_o;
+                co = (PyCodeObject *)func->func_code;
+                Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames_o);
+                total_args = oparg + has_self;
+                Py_ssize_t positional_args = total_args - kwcount;
+                Py_ssize_t positional_stack_args = positional_args - has_self;
+                if ((co->co_flags & (CO_OPTIMIZED | CO_VARARGS | CO_VARKEYWORDS)) == CO_OPTIMIZED &&
+                    co->co_kwonlyargcount == 0 &&
+                    co->co_argcount == total_args &&
+                    positional_args >= has_self)
+                {
+                    int source_for_local[257];
+                    for (int i = 0; i < total_args; i++) {
+                        source_for_local[i] = -1;
+                    }
+                    if (has_self) {
+                        source_for_local[0] = -2;
+                    }
+                    for (int i = 0; i < positional_stack_args; i++) {
+                        source_for_local[has_self + i] = i;
+                    }
+                    valid = true;
+                    for (Py_ssize_t i = 0; valid && i < kwcount; i++) {
+                        PyObject *keyword = PyTuple_GET_ITEM(kwnames_o, i);
+                        if (!PyUnicode_CheckExact(keyword)) {
+                            valid = false;
+                            break;
+                        }
+                        int target = -1;
+                        for (int j = co->co_posonlyargcount; j < co->co_argcount; j++) {
+                            PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, j);
+                            if (keyword == varname || PyUnicode_Equal(keyword, varname)) {
+                                target = j;
+                                break;
+                            }
+                        }
+                        if (target < has_self || target < 0 || source_for_local[target] != -1) {
+                            valid = false;
+                            break;
+                        }
+                        source_for_local[target] = (int)(positional_stack_args + i);
+                    }
+                    if (has_self) {
+                        frame_args[0] = self_or_null;
+                    }
+                    for (int local = 0; valid && local < co->co_argcount; local++) {
+                        if (source_for_local[local] == -1) {
+                            valid = false;
+                            break;
+                        }
+                        if (local >= has_self) {
+                            int source = source_for_local[local];
+                            desired[local - has_self] = source;
+                            frame_args[local] = args[source];
+                        }
+                    }
+                }
+            }
+            if (!valid) {
+                new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, NULL, 0));
+            }
+            else {
+                int current[256];
+                for (int i = 0; i < oparg; i++) {
+                    current[i] = i;
+                }
+                ADD_OP(_CHECK_STACK_SPACE_OPERAND, 0, co->co_framesize);
+                ADD_OP(_POP_TOP, 0, 0);
+                for (int pos = 0; pos < oparg - 1; pos++) {
+                    int source = desired[pos];
+                    int source_pos = pos;
+                    while (current[source_pos] != source) {
+                        source_pos++;
+                    }
+                    if (source_pos != pos) {
+                        int top = oparg - 1;
+                        if (source_pos != top) {
+                            ADD_OP(_SWAP, oparg - source_pos, 0);
+                            int temp = current[source_pos];
+                            current[source_pos] = current[top];
+                            current[top] = temp;
+                        }
+                        ADD_OP(_SWAP, oparg - pos, 0);
+                        int temp = current[pos];
+                        current[pos] = current[top];
+                        current[top] = temp;
+                    }
+                }
+                ADD_OP(_INIT_CALL_PY_EXACT_ARGS, oparg, 0);
+                new_frame = PyJitRef_WrapInvalid(frame_new_from_symbol(ctx, callable, frame_args, (int)total_args));
+            }
             CHECK_STACK_BOUNDS(-2 - oparg);
             stack_pointer[-3 - oparg] = new_frame;
             stack_pointer += -2 - oparg;
