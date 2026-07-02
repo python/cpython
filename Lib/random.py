@@ -828,7 +828,10 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
-                y += _floor(_log2(random()) / c) + 1
+                try:  
+                     y += _floor(_log2(random()) / c) + 1 
+                except ValueError: 
+                    continue
                 if y > n:
                     return x
                 x += 1
