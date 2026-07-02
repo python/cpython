@@ -123,20 +123,29 @@ class SampleProfiler:
         """Return a single stack snapshot from the target process."""
         return self._get_stack_trace(async_aware=async_aware)
 
-    def sample(self, collector, duration_sec=None, *, async_aware=False):
+    def sample(
+        self,
+        collector,
+        duration_sec=None,
+        *,
+        async_aware=False,
+        control_server=None,
+    ):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
         num_samples = 0
         errors = 0
         interrupted = False
         running_time_sec = 0
-        start_time = next_time = time.perf_counter()
-        last_sample_time = start_time
+        enabled_time_sec = 0
         realtime_update_interval = 1.0  # Update every second
-        last_realtime_update = start_time
+        start_time = next_time = time.perf_counter()
+        enabled_since = last_sample_time = last_realtime_update = next_control_poll = start_time
         aggregating = getattr(collector, 'aggregating', False) is True
         prev_stack = None
         pending_count = 0
         pending_timestamps = [] if aggregating else None
+
+        control = control_server.control if control_server is not None else None
 
         def flush_pending():
             nonlocal pending_count, pending_timestamps
@@ -149,11 +158,29 @@ class SampleProfiler:
 
         try:
             while duration_sec is None or running_time_sec < duration_sec:
-                # Check if live collector wants to stop
-                if hasattr(collector, 'running') and not collector.running:
-                    break
-
                 current_time = time.perf_counter()
+                if control_server is not None and current_time >= next_control_poll:
+                    control_server.poll(timeout=0)
+                    next_control_poll = current_time + 0.001
+                # Check if live collector or runtime control wants to stop
+                if not getattr(control, 'running', True) or not getattr(collector, 'running', True):
+                    break
+                enabled = getattr(control, 'enabled', True)
+
+                if not enabled:
+                    if enabled_since is not None:
+                        enabled_time_sec += current_time - enabled_since
+                        enabled_since = None
+                    time.sleep(sample_interval_sec)
+                    running_time_sec = time.perf_counter() - start_time
+                    continue
+
+                if enabled_since is None:
+                    enabled_since = current_time
+                    next_time = current_time + sample_interval_sec
+                    last_sample_time = current_time
+                    last_realtime_update = current_time
+
                 current_time_us = int(current_time * 1_000_000)
                 if next_time > current_time:
                     sleep_time = (next_time - current_time) * 0.9
@@ -211,18 +238,27 @@ class SampleProfiler:
                 running_time_sec = time.perf_counter() - start_time
         except KeyboardInterrupt:
             interrupted = True
-            running_time_sec = time.perf_counter() - start_time
+            now = time.perf_counter()
+            running_time_sec = now - start_time
+            if enabled_since is not None:
+                enabled_time_sec += now - enabled_since
             print("Interrupted by user.")
         finally:
             flush_pending()
+
+        if not interrupted:
+            final_time = time.perf_counter()
+            if enabled_since is not None:
+                enabled_time_sec += final_time - enabled_since
+            running_time_sec = final_time - start_time
 
         # Clear real-time stats line if it was being displayed
         if self.realtime_stats and len(self.sample_intervals) > 0:
             print()  # Add newline after real-time stats
 
-        sample_rate = num_samples / running_time_sec if running_time_sec > 0 else 0
+        sample_rate = num_samples / enabled_time_sec if enabled_time_sec > 0 else 0
         error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
-        expected_samples = int(running_time_sec / sample_interval_sec)
+        expected_samples = int(enabled_time_sec / sample_interval_sec)
         missed_samples = (expected_samples - num_samples) / expected_samples * 100 if expected_samples > 0 else 0
 
         # Don't print stats for live mode (curses is handling display)
@@ -475,6 +511,7 @@ def sample(
     gc=True,
     opcodes=False,
     blocking=False,
+    control_server=None,
 ):
     """Sample a process using the provided collector.
 
@@ -522,7 +559,12 @@ def sample(
     profiler.realtime_stats = realtime_stats
 
     # Run the sampling
-    profiler.sample(collector, duration_sec, async_aware=async_aware)
+    profiler.sample(
+        collector,
+        duration_sec,
+        async_aware=async_aware,
+        control_server=control_server,
+    )
 
     return collector
 
@@ -571,6 +613,7 @@ def sample_live(
     gc=True,
     opcodes=False,
     blocking=False,
+    control_server=None,
 ):
     """Sample a process in live/interactive mode with curses TUI.
 
@@ -592,6 +635,8 @@ def sample_live(
         The collector with collected samples
     """
     import curses
+
+    control = control_server.control if control_server is not None else None
 
     # Check if process is alive before doing any heavy initialization
     if not _is_process_running(pid):
@@ -624,7 +669,12 @@ def sample_live(
     def curses_wrapper_func(stdscr):
         collector.init_curses(stdscr)
         try:
-            profiler.sample(collector, duration_sec, async_aware=async_aware)
+            profiler.sample(
+                collector,
+                duration_sec,
+                async_aware=async_aware,
+                control_server=control_server,
+            )
             # If too few samples were collected, exit cleanly without showing TUI
             if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
                 # Clear screen before exiting to avoid visual artifacts
@@ -634,7 +684,7 @@ def sample_live(
             # Mark as finished and keep the TUI running until user presses 'q'
             collector.mark_finished()
             # Keep processing input until user quits
-            while collector.running:
+            while collector.running and (control is None or control.running):
                 collector._handle_input()
                 time.sleep(0.05)  # Small sleep to avoid busy waiting
         finally:
