@@ -1,0 +1,2 @@
+Documented *headers* parameter for
+:func:`urllib.request.http_error_auth_reqed`.
