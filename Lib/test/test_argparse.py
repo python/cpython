@@ -7869,6 +7869,32 @@ class TestColorized(TestCase):
         self.assertIn(f'type: {interp}int{reset}', help_text)
         self.assertIn(f'choices: {interp}a, b{reset}', help_text)
 
+    def test_colored_help_wraps_like_plain_help(self):
+        # gh-142035: ANSI color escapes in the help text (around the
+        # interpolated "(default: ...)" value) must not change where lines
+        # wrap. Stripping the colors must yield exactly the plain layout.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env["COLUMNS"] = "70"
+
+        def build(color):
+            parser = argparse.ArgumentParser(
+                prog="PROG",
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                color=color,
+            )
+            parser.add_argument(
+                "--verbose",
+                action="store_true",
+                help="A l o n g d e s c r i p t i o n f o r t h e v e r b "
+                "o s e f l a g t o d e m o n s t r a t e w r a p p i n g",
+            )
+            parser.add_argument("--input", default="input.txt", help="Input file path")
+            return parser
+
+        colored = build(color=True).format_help()
+        plain = build(color=False).format_help()
+        self.assertEqual(_colorize.decolor(colored), plain)
+
     def test_print_help_uses_target_file_for_color_decision(self):
         parser = argparse.ArgumentParser(prog='PROG', color=True)
         parser.add_argument('--opt')

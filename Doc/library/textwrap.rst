@@ -19,7 +19,7 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, max_lines=None, \
-                   placeholder=' [...]')
+                   placeholder=' [...]', text_len=len)
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
@@ -37,7 +37,7 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, \
-                   max_lines=None, placeholder=' [...]')
+                   max_lines=None, placeholder=' [...]', text_len=len)
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::
@@ -50,7 +50,7 @@ functions should be good enough; otherwise, you should use an instance of
 
 .. function:: shorten(text, width, *, fix_sentence_endings=False, \
                       break_long_words=True, break_on_hyphens=True, \
-                      placeholder=' [...]')
+                      placeholder=' [...]', text_len=len)
 
    Collapse and truncate the given *text* to fit in the given *width*.
 
@@ -291,6 +291,27 @@ hyphenated words; only then will long words be broken if necessary, unless
       text if it has been truncated.
 
       .. versionadded:: 3.4
+
+
+   .. attribute:: text_len
+
+      (default: :func:`len`) Callable used to measure the visible width of a
+      string when deciding where to wrap.  Override the default to account for
+      characters that are not a single column wide, such as zero-width or
+      double-width characters, or invisible ANSI escape sequences::
+
+         >>> import re, textwrap
+         >>> visible_len = lambda s: len(re.sub(r'\x1b\[[0-9;]*m', '', s))
+         >>> colored = 'normal \x1b[31mcolored\x1b[0m words here'
+         >>> lines = textwrap.wrap(colored, width=14, text_len=visible_len)
+         >>> [re.sub(r'\x1b\[[0-9;]*m', '', line) for line in lines]
+         ['normal colored', 'words here']
+
+      The callable must return a non-negative integer.  It is assumed to be
+      additive over the whitespace- and hyphen-delimited chunks that wrapping
+      produces; a chunk that is too long to fit is split by visible width.
+
+      .. versionadded:: 3.16
 
 
    :class:`TextWrapper` also provides some public methods, analogous to the
