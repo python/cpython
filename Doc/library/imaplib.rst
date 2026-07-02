@@ -97,6 +97,13 @@ There's also a subclass for secure connections:
    (potentially long-lived) structure.  Please read :ref:`ssl-security` for
    best practices.
 
+   .. note::
+
+      With the default *ssl_context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    The optional *timeout* parameter specifies a timeout in seconds for the
    connection attempt. If timeout is not given or is ``None``, the global default
    socket timeout is used.
@@ -588,6 +595,13 @@ An :class:`IMAP4` instance has the following methods:
    and should be a :class:`ssl.SSLContext` object.  This will enable
    encryption on the IMAP connection.  Please read :ref:`ssl-security` for
    best practices.
+
+   .. note::
+
+      With the default *ssl_context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
 
    .. versionadded:: 3.2
 
