@@ -1,0 +1,5 @@
+Fix ctypes callback return handling for subclassed simple types.
+
+Returning a ctypes instance (e.g. a subclass of c_int) from a CFUNCTYPE
+callback no longer raises an unraisable TypeError or leaves the result
+buffer uninitialized.

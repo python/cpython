@@ -328,6 +328,17 @@ class SampleCallbacksTestCase(unittest.TestCase):
                              f"of ctypes callback function {func!r}")
             self.assertIsNone(cm.unraisable.object)
 
+    def test_callback_return_subclass(self):
+        class MyInt(ctypes.c_int):
+            pass
+
+        @ctypes.CFUNCTYPE(MyInt, MyInt)
+        def identity(x):
+            return x
+
+        result = identity(MyInt(42))
+        assert isinstance(result, MyInt)
+        assert result.value == 42
 
 if __name__ == '__main__':
     unittest.main()

@@ -239,7 +239,19 @@ static void _CallPythonObject(ctypes_state *st,
            be the result.  EXCEPT when restype is py_object - Python
            itself knows how to manage the refcount of these objects.
         */
-        PyObject *keep = setfunc(mem, result, restype->size);
+        PyObject *value = result;   /* borrowed */
+        PyObject *unwrapped = NULL; /* new ref if created */
+        if (value != NULL && PyObject_TypeCheck(value, st->PyCData_Type)) {
+            unwrapped = PyObject_GetAttrString(value, "value");
+            if (unwrapped != NULL) {
+                value = unwrapped;
+            } else {
+                /* fallback: clear error and keep original */
+                PyErr_Clear();
+            }
+        }
+
+        PyObject *keep = setfunc(mem, value, restype->size);
 
         if (keep == NULL) {
             /* Could not convert callback result. */
