@@ -1,0 +1,5 @@
+Fix an issue where the EFS flag is not set when a file with ASCII
+filename and UTF-8 comment is written through :mod:`zipfile`.  Also
+preserves the original encoding and EFS flag for a file read from an
+archive and rewritten through the ``'a'`` mode.  Additionallly allows
+the ``metadata_encoding`` parameter in all modes.
