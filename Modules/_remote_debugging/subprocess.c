@@ -96,7 +96,7 @@ pid_array_contains(pid_array_t *arr, pid_t pid)
 /* Find child PIDs using BFS traversal of the pid->ppid mapping.
  * all_pids and ppids must have the same count (parallel arrays).
  * Returns 0 on success, -1 on error. */
-static int
+UNUSED static int
 find_children_bfs(pid_t target_pid, int recursive,
                   pid_t *all_pids, pid_t *ppids, size_t pid_count,
                   pid_array_t *result)
