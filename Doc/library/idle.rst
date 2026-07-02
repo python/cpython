@@ -170,6 +170,13 @@ Show Call Tip
 Show Surrounding Parens
    Highlight the surrounding parenthesis.
 
+Character Browser
+   Open a window to browse Unicode blocks and search for characters by name or code point.
+   Double-click a character, or select it and press Insert, to insert it into the current window.
+   Press Copy character to copy it to the clipboard.
+   The detail tabs show the character's representations, such as escapes, UTF-8 bytes, XML and HTML references, and normalization forms.
+   Click a highlighted value to copy it, or double-click it to insert it.
+
 .. _format-menu:
 
 Format menu (Editor window only)
