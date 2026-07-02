@@ -138,8 +138,9 @@ The :mod:`!urllib.request` module defines the following functions:
    If the Python installation has SSL support (i.e., if the :mod:`ssl` module
    can be imported), :class:`HTTPSHandler` will also be added.
 
-   A :class:`BaseHandler` subclass may also change its :attr:`handler_order`
-   attribute to modify its position in the handlers list.
+   A :class:`BaseHandler` subclass may also change its
+   :attr:`~BaseHandler.handler_order` attribute to modify its position in the
+   handlers list.
 
 
 .. function:: pathname2url(path, *, add_scheme=False)
@@ -358,10 +359,12 @@ The following classes are provided:
 
    To disable autodetected proxy pass an empty dictionary.
 
-   The :envvar:`no_proxy` environment variable can be used to specify hosts
-   which shouldn't be reached via proxy; if set, it should be a comma-separated
-   list of hostname suffixes, optionally with ``:port`` appended, for example
-   ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
+   .. envvar:: no_proxy
+
+      This variable can be used to specify hosts which shouldn't be reached via
+      proxy; if set, it should be a comma-separated list of hostname suffixes,
+      optionally with ``:port`` appended, for example
+      ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
 
    .. note::
 
@@ -667,9 +670,9 @@ OpenerDirector Objects
    *handler* should be an instance of :class:`BaseHandler`.  The following methods
    are searched, and added to the possible chains (note that HTTP errors are a
    special case).  Note that, in the following, *protocol* should be replaced
-   with the actual protocol to handle, for example :meth:`http_response` would
+   with the actual protocol to handle, for example :meth:`!http_response` would
    be the HTTP protocol response handler.  Also *type* should be replaced with
-   the actual HTTP code, for example :meth:`http_error_404` would handle HTTP
+   the actual HTTP code, for example :meth:`!http_error_404` would handle HTTP
    404 errors.
 
    * :meth:`!<protocol>_open` --- signal that the handler knows how to open *protocol*
@@ -695,10 +698,10 @@ OpenerDirector Objects
 
      See |protocol_response|_ for more information.
 
-.. |protocol_open| replace:: :meth:`BaseHandler.<protocol>_open`
-.. |http_error_nnn| replace:: :meth:`BaseHandler.http_error_\<nnn\>`
-.. |protocol_request| replace:: :meth:`BaseHandler.<protocol>_request`
-.. |protocol_response| replace:: :meth:`BaseHandler.<protocol>_response`
+.. |protocol_open| replace:: :meth:`!BaseHandler.<protocol>_open`
+.. |http_error_nnn| replace:: :meth:`!BaseHandler.http_error_\<nnn\>`
+.. |protocol_request| replace:: :meth:`!BaseHandler.<protocol>_request`
+.. |protocol_response| replace:: :meth:`!BaseHandler.<protocol>_response`
 
 .. method:: OpenerDirector.open(url, data=None[, timeout])
 
@@ -782,6 +785,11 @@ The following attribute and methods should only be used by classes derived from
 
    A valid :class:`OpenerDirector`, which can be used to open using a different
    protocol, or handle errors.
+
+
+.. attribute:: BaseHandler.handler_order
+
+   The order in which the handler is called within an opener chain.
 
 
 .. method:: BaseHandler.default_open(req)

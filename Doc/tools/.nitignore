@@ -25,8 +25,6 @@ Doc/library/socket.rst
 Doc/library/ssl.rst
 Doc/library/termios.rst
 Doc/library/test.rst
-Doc/library/urllib.parse.rst
-Doc/library/urllib.request.rst
 Doc/library/wsgiref.rst
 Doc/library/xml.dom.minidom.rst
 Doc/library/xml.dom.pulldom.rst
