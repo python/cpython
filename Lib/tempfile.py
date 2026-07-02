@@ -563,7 +563,7 @@ def __getattr__(name):
             "tempfile._TemporaryFileWrapper",
             message="{name} is deprecated and will be removed in a future "
                     "version. Use tempfile.TemporaryFileWrapper instead.",
-            remove=(3, 16),
+            remove=(3, 21),
         )
         return TemporaryFileWrapper
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
