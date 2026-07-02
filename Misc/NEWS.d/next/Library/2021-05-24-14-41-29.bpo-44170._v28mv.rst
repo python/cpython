@@ -1,0 +1,1 @@
+Fix UnicodeDecodeError with multibyte utf8 characters in ShareableList.
