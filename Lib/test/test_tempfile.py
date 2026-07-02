@@ -1207,7 +1207,6 @@ class TestNamedTemporaryFile(BaseTestCase):
 
     # How to test the mode and bufsize parameters?
 
-
 class TestSpooledTemporaryFile(BaseTestCase):
     """Test SpooledTemporaryFile()."""
 
