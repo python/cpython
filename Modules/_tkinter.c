@@ -40,7 +40,7 @@ Copyright (C) 1994 Steen Lumholt.
 #define CHECK_SIZE(size, elemsize) \
     ((size_t)(size) <= Py_MIN((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
 
-/* If Tcl is compiled for threads, we must also define TCL_THREAD. We define
+/* If Tcl is compiled for threads, we must also define TCL_THREADS. We define
    it always; if Tcl is not threaded, the thread functions in
    Tcl are empty.  */
 #define TCL_THREADS
@@ -283,21 +283,16 @@ Tkinter_TkInit(Tcl_Interp *interp)
    the command invocation will block.
 
    In addition, for a threaded Tcl, a single global tcl_tstate won't
-   be sufficient anymore, since multiple Tcl interpreters may
-   simultaneously dispatch in different threads. So we use the Tcl TLS
-   API.
+   be sufficient, since multiple Tcl interpreters may simultaneously
+   dispatch in different threads. So we use the Tcl TLS API.
 
 */
 
 static PyThread_type_lock tcl_lock = 0;
 
-#ifdef TCL_THREADS
 static Tcl_ThreadDataKey state_key;
 #define tcl_tstate \
     (*(PyThreadState**)Tcl_GetThreadData(&state_key, sizeof(PyThreadState*)))
-#else
-static PyThreadState *tcl_tstate = NULL;
-#endif
 
 #define ENTER_TCL \
     { PyThreadState *tstate = PyThreadState_Get(); \
@@ -642,14 +637,6 @@ Tkapp_New(const char *screenName, const char *className,
     v->dispatching = 0;
     v->trace = NULL;
 
-#ifndef TCL_THREADS
-    if (v->threaded) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Tcl is threaded but _tkinter is not");
-        Py_DECREF(v);
-        return 0;
-    }
-#endif
     if (v->threaded && tcl_lock) {
         /* If Tcl is threaded, we don't need the lock. */
         PyThread_free_lock(tcl_lock);
