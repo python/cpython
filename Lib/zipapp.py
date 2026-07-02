@@ -50,6 +50,16 @@ def _write_file_prefix(f, interpreter):
         f.write(shebang)
 
 
+def _make_executable(path):
+    mode = os.stat(path).st_mode
+    executable = (
+        (mode & stat.S_IRUSR) >> 2
+        | (mode & stat.S_IRGRP) >> 2
+        | (mode & stat.S_IROTH) >> 2
+    )
+    os.chmod(path, mode | executable)
+
+
 def _copy_archive(archive, new_archive, interpreter=None):
     """Copy an application archive, modifying the shebang line."""
     with _maybe_open(archive, 'rb') as src:
@@ -69,8 +79,8 @@ def _copy_archive(archive, new_archive, interpreter=None):
             dst.write(first_2)
             shutil.copyfileobj(src, dst)
 
-    if interpreter and isinstance(new_archive, str):
-        os.chmod(new_archive, os.stat(new_archive).st_mode | stat.S_IEXEC)
+    if interpreter and isinstance(new_archive, (str, os.PathLike)):
+        _make_executable(new_archive)
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
@@ -169,7 +179,7 @@ def create_archive(source, target=None, interpreter=None, main=None,
                 z.writestr('__main__.py', main_py.encode('utf-8'))
 
     if interpreter and not hasattr(target, 'write'):
-        target.chmod(target.stat().st_mode | stat.S_IEXEC)
+        _make_executable(target)
 
 
 def get_interpreter(archive):
