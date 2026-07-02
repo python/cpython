@@ -168,7 +168,8 @@ The module defines the following user-callable items:
    .. note::
 
       ``tempfile._TemporaryFileWrapper`` is kept as a backwards compatible
-      alias for this class.
+      deprecated alias for this class.
+      It will be removed in Python 3.21
 
    .. versionadded:: next
 
