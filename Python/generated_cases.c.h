@@ -1927,7 +1927,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2453,7 +2453,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2546,7 +2546,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2635,7 +2635,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2746,7 +2746,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2860,7 +2860,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -3191,7 +3191,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -3703,7 +3703,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4122,7 +4122,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4242,7 +4242,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4364,7 +4364,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4499,7 +4499,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4576,7 +4576,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4880,7 +4880,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4958,7 +4958,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -7221,7 +7221,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -7403,7 +7403,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
