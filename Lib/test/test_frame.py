@@ -309,6 +309,7 @@ class WeakRefTest(unittest.TestCase):
         support.gc_collect()
         self.assertIsNone(ref())
 
+    @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
     def test_weakref_live_frame(self):
         refs = []
         def func():
@@ -357,6 +358,7 @@ class WeakRefTest(unittest.TestCase):
             self.assertIsNone(ref())
         self.assertEqual({id(r) for r in called}, {id(refs[3]), id(refs[4])})
 
+    @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
     def test_weak_key_dictionary(self):
         wkd = weakref.WeakKeyDictionary()
         def _fill():
@@ -367,6 +369,7 @@ class WeakRefTest(unittest.TestCase):
         support.gc_collect()
         self.assertEqual(len(wkd), 0)
 
+    @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
     def test_weak_value_dictionary(self):
         wvd = weakref.WeakValueDictionary()
         def _fill():
@@ -377,6 +380,7 @@ class WeakRefTest(unittest.TestCase):
         support.gc_collect()
         self.assertEqual(len(wvd), 0)
 
+    @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
     def test_weakref_traceback_frames(self):
         # Frames that participate in reference cycles are cleaned up
         # by the cyclic garbage collector.
