@@ -1,0 +1,2 @@
+Avoid raising :exc:`asyncio.InvalidStateError` from the Windows proactor event
+loop when an overlapped future becomes done while handling an I/O completion.

@@ -804,11 +804,13 @@ class IocpProactor:
                 try:
                     value = callback(transferred, key, ov)
                 except OSError as e:
-                    f.set_exception(e)
-                    self._results.append(f)
+                    if not f.done():
+                        f.set_exception(e)
+                        self._results.append(f)
                 else:
-                    f.set_result(value)
-                    self._results.append(f)
+                    if not f.done():
+                        f.set_result(value)
+                        self._results.append(f)
                 finally:
                     f = None
 
