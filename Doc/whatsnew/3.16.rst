@@ -297,6 +297,14 @@ shlex
   (Contributed by Jay Berry in :gh:`148846`.)
 
 
+socket
+------
+
+* Unix domain sockets (:const:`~socket.AF_UNIX`) are now supported on Windows,
+  which requires Windows 10 version 1803 or newer.
+  (Contributed by An Long in :gh:`77589`.)
+
+
 tkinter
 -------
 
