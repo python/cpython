@@ -524,6 +524,7 @@ async def _wait(fs, timeout, return_when, loop):
             timeout_handle.cancel()
         for f in fs:
             f.remove_done_callback(_on_completion)
+            futures.future_discard_from_awaited_by(f, cur_task)
 
     done, pending = set(), set()
     for f in fs:
