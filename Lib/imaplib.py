@@ -253,7 +253,11 @@ class IMAP4:
         elif 'OK' in self.untagged_responses:
             self.state = 'NONAUTH'
         else:
-            raise self.error(self.welcome)
+            # A continuation ('+') greeting is returned as None; report its
+            # raw line, still held by the last match (gh-108280).
+            greeting = (self.welcome or self.mo.string).decode(
+                self._encoding, 'replace')
+            raise self.error('invalid greeting: ' + greeting)
 
         self._refresh_capabilities()
         if __debug__:
