@@ -361,13 +361,10 @@ The following classes are provided:
 
    .. envvar:: no_proxy
 
-      A comma-separated list of hostname suffixes, optionally with ``:port``
-      appended, which shouldn't be reached via proxy.
-
-   The :envvar:`no_proxy` environment variable can be used to specify hosts
-   which shouldn't be reached via proxy; if set, it should be a comma-separated
-   list of hostname suffixes, optionally with ``:port`` appended, for example
-   ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
+      This variable can be used to specify hosts which shouldn't be reached via
+      proxy; if set, it should be a comma-separated list of hostname suffixes,
+      optionally with ``:port`` appended, for example
+      ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
 
    .. note::
 
@@ -673,38 +670,38 @@ OpenerDirector Objects
    *handler* should be an instance of :class:`BaseHandler`.  The following methods
    are searched, and added to the possible chains (note that HTTP errors are a
    special case).  Note that, in the following, *protocol* should be replaced
-   with the actual protocol to handle, for example ``http_response`` would be
-   the :ref:`protocol response handler <protocol_response>`.  Also *type*
-   should be replaced with the actual HTTP code, for example
-   ``http_error_404`` would handle HTTP 404 errors as described by the
-   :ref:`HTTP error handler pattern <http_error_nnn>`.
+   with the actual protocol to handle, for example :meth:`!http_response` would
+   be the HTTP protocol response handler.  Also *type* should be replaced with
+   the actual HTTP code, for example :meth:`!http_error_404` would handle HTTP
+   404 errors.
 
-   * ``<protocol>_open`` --- signal that the handler knows how to open
-     *protocol* URLs.
+   * :meth:`!<protocol>_open` --- signal that the handler knows how to open *protocol*
+     URLs.
 
-     See :ref:`the protocol open method pattern <protocol_open>` for more
-     information.
+     See |protocol_open|_ for more information.
 
-   * ``http_error_<type>`` --- signal that the handler knows how to handle HTTP
+   * :meth:`!http_error_\<type\>` --- signal that the handler knows how to handle HTTP
      errors with HTTP error code *type*.
 
-     See :ref:`the HTTP error handler pattern <http_error_nnn>` for more
-     information.
+     See |http_error_nnn|_ for more information.
 
-   * ``<protocol>_error`` --- signal that the handler knows how to handle errors
+   * :meth:`!<protocol>_error` --- signal that the handler knows how to handle errors
      from (non-\ ``http``) *protocol*.
 
-   * ``<protocol>_request`` --- signal that the handler knows how to pre-process
+   * :meth:`!<protocol>_request` --- signal that the handler knows how to pre-process
      *protocol* requests.
 
-     See :ref:`the protocol request method pattern <protocol_request>` for more
-     information.
+     See |protocol_request|_ for more information.
 
-   * ``<protocol>_response`` --- signal that the handler knows how to
+   * :meth:`!<protocol>_response` --- signal that the handler knows how to
      post-process *protocol* responses.
 
-     See :ref:`the protocol response method pattern <protocol_response>` for
-     more information.
+     See |protocol_response|_ for more information.
+
+.. |protocol_open| replace:: :meth:`!BaseHandler.<protocol>_open`
+.. |http_error_nnn| replace:: :meth:`!BaseHandler.http_error_\<nnn\>`
+.. |protocol_request| replace:: :meth:`!BaseHandler.<protocol>_request`
+.. |protocol_response| replace:: :meth:`!BaseHandler.<protocol>_response`
 
 .. method:: OpenerDirector.open(url, data=None[, timeout])
 

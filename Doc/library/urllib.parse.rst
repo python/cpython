@@ -125,7 +125,7 @@ or on combining URL components into a URL string.
 
    If the *allow_fragments* argument is false, fragment identifiers are not
    recognized.  Instead, they are parsed as part of the path
-   or query component, and :attr:`fragment <SplitResult.fragment>` is set to
+   or query component, and :attr:`~SplitResult.fragment` is set to
    ``None`` or the empty
    string (depending on the value of *missing_as_none*) in the return value.
 
@@ -158,16 +158,16 @@ or on combining URL components into a URL string.
 
    .. [1] Depending on the value of the *missing_as_none* argument.
 
-   Reading the :attr:`port <SplitResult.port>` attribute will raise a
+   Reading the :attr:`~SplitResult.port` attribute will raise a
    :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
    :ref:`urlparse-result-object` for more information on the result object.
 
-   Unmatched square brackets in the :attr:`netloc <SplitResult.netloc>`
+   Unmatched square brackets in the :attr:`~SplitResult.netloc`
    attribute will raise a
    :exc:`ValueError`.
 
-   Characters in the :attr:`netloc <SplitResult.netloc>` attribute that
+   Characters in the :attr:`~SplitResult.netloc` attribute that
    decompose under NFKC
    normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
    ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
@@ -512,15 +512,15 @@ byte values will trigger :exc:`UnicodeDecodeError`.
 
 To support easier conversion of result objects between :class:`str` and
 :class:`bytes`, all return values from URL parsing functions provide
-either an :meth:`encode <DefragResult.encode>` method (when the result contains
-:class:`str` data) or a :meth:`decode <DefragResultBytes.decode>` method (when
+either an :meth:`~DefragResult.encode` method (when the result contains
+:class:`str` data) or a :meth:`~DefragResultBytes.decode` method (when
 the result contains :class:`bytes`
 data). The signatures of these methods match those of the corresponding
 :class:`str` and :class:`bytes` methods (except that the default encoding
 is ``'ascii'`` rather than ``'utf-8'``). Each produces a value of a
 corresponding type that contains either :class:`bytes` data (for
-:meth:`encode <DefragResult.encode>` methods) or :class:`str` data (for
-:meth:`decode <DefragResultBytes.decode>` methods).
+:meth:`~DefragResult.encode` methods) or :class:`str` data (for
+:meth:`~DefragResultBytes.decode` methods).
 
 Applications that need to operate on potentially improperly quoted URLs
 that may contain non-ASCII data will need to do their own decoding from
@@ -546,17 +546,17 @@ These subclasses add the attributes listed in the documentation for
 those functions, the encoding and decoding support described in the
 previous section, as well as additional methods:
 
-.. |split-scheme| replace:: :attr:`scheme <SplitResult.scheme>`
-.. |split-netloc| replace:: :attr:`netloc <SplitResult.netloc>`
-.. |split-path| replace:: :attr:`path <SplitResult.path>`
-.. |split-query| replace:: :attr:`query <SplitResult.query>`
-.. |split-frag| replace:: :attr:`fragment <SplitResult.fragment>`
-.. |split-username| replace:: :attr:`username <SplitResult.username>`
-.. |split-password| replace:: :attr:`password <SplitResult.password>`
-.. |split-hostname| replace:: :attr:`hostname <SplitResult.hostname>`
-.. |split-port| replace:: :attr:`port <SplitResult.port>`
-.. |defrag-url| replace:: :attr:`url <DefragResult.url>`
-.. |defrag-frag| replace:: :attr:`fragment <DefragResult.fragment>`
+.. |split-scheme| replace:: :attr:`~SplitResult.scheme`
+.. |split-netloc| replace:: :attr:`~SplitResult.netloc`
+.. |split-path| replace:: :attr:`~SplitResult.path`
+.. |split-query| replace:: :attr:`~SplitResult.query`
+.. |split-frag| replace:: :attr:`~SplitResult.fragment`
+.. |split-username| replace:: :attr:`~SplitResult.username`
+.. |split-password| replace:: :attr:`~SplitResult.password`
+.. |split-hostname| replace:: :attr:`~SplitResult.hostname`
+.. |split-port| replace:: :attr:`~SplitResult.port`
+.. |defrag-url| replace:: :attr:`~DefragResult.url`
+.. |defrag-frag| replace:: :attr:`~DefragResult.fragment`
 
 .. method:: SplitResult._replace(**kwargs)
 
