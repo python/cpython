@@ -3369,7 +3369,10 @@ codegen_nameop(compiler *c, location loc,
             }
             break;
         case Store: op = STORE_GLOBAL; break;
-        case Del: op = DELETE_GLOBAL; break;
+        case Del:
+            ADDOP(c, loc, PUSH_NULL);
+            op = STORE_GLOBAL;
+            break;
         }
         break;
     case COMPILE_OP_NAME:
@@ -3381,7 +3384,10 @@ codegen_nameop(compiler *c, location loc,
                 : LOAD_NAME;
             break;
         case Store: op = STORE_NAME; break;
-        case Del: op = DELETE_NAME; break;
+        case Del:
+            ADDOP(c, loc, PUSH_NULL);
+            op = STORE_NAME;
+            break;
         }
         break;
     }

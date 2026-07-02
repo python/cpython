@@ -2020,10 +2020,6 @@
             break;
         }
 
-        case _DELETE_NAME: {
-            break;
-        }
-
         case _UNPACK_SEQUENCE: {
             JitOptRef *values;
             JitOptRef *top;
@@ -2164,10 +2160,6 @@
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _DELETE_GLOBAL: {
             break;
         }
 
@@ -3938,6 +3930,10 @@
         }
 
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
+            break;
+        }
+
+        case _GUARD_KEYS_VERSION: {
             break;
         }
 

@@ -1,0 +1,1 @@
+Deprecate using ``'F'`` and ``'D'`` type codes in the :mod:`struct` module.
