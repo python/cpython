@@ -137,9 +137,11 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
     def _send_tagged(self, tag, code, message):
         self._send_textline(' '.join((tag, code, message)))
 
+    welcome = '* OK IMAP4rev1'
+
     def handle(self):
         # Send a welcome message.
-        self._send_textline('* OK IMAP4rev1')
+        self._send_textline(self.welcome)
         while 1:
             # Gather up input until we receive a line terminator or we timeout.
             # Accumulate read(1) because it's simpler to handle the differences
@@ -524,6 +526,71 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(data[0], b'LOGIN completed')
         self.assertEqual(client.state, 'AUTH')
+
+    def test_login_capabilities(self):
+        # A server may advertise new capabilities after login (as an
+        # untagged CAPABILITY response); imaplib must refresh its cached
+        # capability list (gh-63121, gh-103451).
+        class CapabilityLoginHandler(SimpleIMAPHandler):
+            def cmd_LOGIN(self, tag, args):
+                self.server.logged = args[0]
+                self._send_textline('* CAPABILITY IMAP4rev1 ENABLE UTF8=ACCEPT')
+                self._send_tagged(tag, 'OK', 'LOGIN completed')
+            def cmd_ENABLE(self, tag, args):
+                self._send_tagged(tag, 'OK', 'ENABLE completed')
+
+        client, _ = self._setup(CapabilityLoginHandler)
+        self.assertNotIn('ENABLE', client.capabilities)
+        client.login('user', 'pass')
+        self.assertIn('ENABLE', client.capabilities)
+        self.assertIn('UTF8=ACCEPT', client.capabilities)
+        typ, _ = client.enable('UTF8=ACCEPT')
+        self.assertEqual(typ, 'OK')
+
+    def test_authenticate_capabilities(self):
+        # Capabilities are also refreshed after AUTHENTICATE, here from a
+        # CAPABILITY response code in the tagged OK response.
+        class CapabilityAuthHandler(SimpleIMAPHandler):
+            def cmd_AUTHENTICATE(self, tag, args):
+                self._send_textline('+')
+                self.server.response = yield
+                self._send_tagged(
+                    tag, 'OK',
+                    '[CAPABILITY IMAP4rev1 ENABLE] AUTHENTICATE completed')
+
+        client, _ = self._setup(CapabilityAuthHandler)
+        self.assertNotIn('ENABLE', client.capabilities)
+        client.authenticate('MYAUTH', lambda x: b'fake')
+        self.assertIn('ENABLE', client.capabilities)
+
+    def test_greeting_capabilities(self):
+        # Capabilities advertised in the greeting are used directly,
+        # without sending a separate CAPABILITY command.
+        class GreetingHandler(SimpleIMAPHandler):
+            welcome = '* OK [CAPABILITY IMAP4rev1 ENABLE] Server ready'
+            def cmd_CAPABILITY(self, tag, args):
+                self.server.capability_queried = True
+                super().cmd_CAPABILITY(tag, args)
+
+        client, server = self._setup(GreetingHandler)
+        self.assertEqual(client.capabilities, ('IMAP4REV1', 'ENABLE'))
+        self.assertFalse(getattr(server, 'capability_queried', False))
+
+    def test_login_requery_capabilities(self):
+        # If the server does not advertise capabilities after login,
+        # imaplib re-queries them (as it does after STARTTLS), so a
+        # capability that becomes available only after authentication is
+        # still recognized (gh-63121).
+        class RequeryHandler(SimpleIMAPHandler):
+            def cmd_CAPABILITY(self, tag, args):
+                caps = 'IMAP4rev1 ENABLE' if self.server.logged else 'IMAP4rev1'
+                self._send_textline('* CAPABILITY ' + caps)
+                self._send_tagged(tag, 'OK', 'CAPABILITY completed')
+
+        client, _ = self._setup(RequeryHandler)
+        self.assertNotIn('ENABLE', client.capabilities)
+        client.login('user', 'pass')
+        self.assertIn('ENABLE', client.capabilities)
 
     def test_logout(self):
         client, _ = self._setup(SimpleIMAPHandler)
