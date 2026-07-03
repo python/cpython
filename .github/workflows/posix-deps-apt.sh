@@ -5,6 +5,7 @@ apt-get -yq --no-install-recommends install \
     build-essential \
     pkg-config \
     cmake \
+    curl \
     gdb \
     lcov \
     libb2-dev \
@@ -18,8 +19,6 @@ apt-get -yq --no-install-recommends install \
     libsqlite3-dev \
     libssl-dev \
     libzstd-dev \
-    lzma \
-    lzma-dev \
     strace \
     tk-dev \
     uuid-dev \
