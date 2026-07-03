@@ -351,7 +351,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: JAVA_HOME="${JAVA_HOME_21_X64:-$JAVA_HOME_21_arm64}" ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-wasi:
     name: 'WASI'
