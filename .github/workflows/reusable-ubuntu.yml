@@ -50,6 +50,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
+      INSTALL_HASHES_FILE: install-hashes-${{ inputs.os }}-${{ case(inputs.free-threading, 't', '')}}${{ case(inputs.debug, 'd', '') }}
       OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
@@ -131,43 +132,44 @@ jobs:
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount "$CPYTHON_RO_SRCDIR" -oremount,rw
     - name: Tests
-      if: ${{ inputs.test }}
+      if: inputs.test
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: xvfb-run make ci EXTRATESTOPTS="${TEST_OPTS}"
       env:
         TEST_OPTS: ${{ inputs.test-opts }}
     - name: Install Python
-      if: ${{ inputs.upload-install-hashes }}
+      if: inputs.upload-install-hashes
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make install DESTDIR=build/install
-    - name: Install some test packages in the Python
-      if: ${{ inputs.upload-install-hashes }}
+      run: make install DESTDIR=install
+    - name: Install test C extension
+      if: inputs.upload-install-hashes
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: |
-        CPYTHON_TEST_EXT_NAME=c_mod \
-          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
-        CPYTHON_TEST_LIMITED=1 CPYTHON_TEST_EXT_NAME=abi3_mod \
-          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
-        CPYTHON_TEST_ABI3T=1 CPYTHON_TEST_EXT_NAME=abi3t_mod \
-          build/install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
-        # Until https://github.com/pypa/setuptools/pull/5193 is released
-        if [ ${{ fromJSON(inputs.free-threading) && '1' || '0' }} = '0' ]; then \
-          (cd build/install/usr/lib/python*/site-packages && \
-            mv abi3t_mod.abi3.so abi3t_mod.abi3t.so); \
-        fi
-    - name: Generate the install hashes filename
-      if: ${{ inputs.upload-install-hashes }}
-      run: |
-        echo "INSTALL_HASHES_FILE=install-hashes-${{ runner.arch }}-${{ case(inputs.free-threading, 't', '')}}${{ case(inputs.debug, 'd', '') }}" >> "$GITHUB_ENV"
+      env:
+        CPYTHON_TEST_EXT_NAME: c_mod
+      run: install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+    - name: Install test stable ABI extension
+      if: inputs.upload-install-hashes && !inputs.free-threading
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      env:
+        CPYTHON_TEST_EXT_NAME: abi3_mod
+        CPYTHON_TEST_LIMITED: 1
+      run: install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
+    - name: Install test free-threaded stable ABI extension
+      if: inputs.upload-install-hashes
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      env:
+        CPYTHON_TEST_EXT_NAME: abi3t_mod
+        CPYTHON_TEST_ABI3T: 1
+      run: install/usr/bin/python3 -m pip install ../cpython-ro-srcdir/Lib/test/test_cext
     - name: Hash the installed Python
-      if: ${{ inputs.upload-install-hashes }}
+      if: inputs.upload-install-hashes
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: >-
-        build/install/usr/bin/python3
+        install/usr/bin/python3
         ../cpython-ro-srcdir/Tools/coinstall-check/hash-r.py
-        build/install > "$INSTALL_HASHES_FILE"
-    - name: Upload the hashes
-      if: ${{ inputs.upload-install-hashes }}
+        install > "$INSTALL_HASHES_FILE"
+    - name: Upload the installed Python hashes
+      if: inputs.upload-install-hashes
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       with:
         name: ${{ env.INSTALL_HASHES_FILE }}
