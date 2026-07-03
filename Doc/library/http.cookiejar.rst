@@ -188,7 +188,7 @@ contained :class:`Cookie` objects.
 
    The *response* object (usually the result of a call to
    :meth:`urllib.request.urlopen`, or similar) should support an
-   :meth:`~urllib.response.addinfourl.info` method, which returns an
+   :meth:`~http.client.HTTPResponse.info` method, which returns an
    :class:`email.message.Message` instance.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
@@ -266,9 +266,9 @@ contained :class:`Cookie` objects.
    method unimplemented.
 
    *filename* is the name of file in which to save cookies.  If *filename* is not
-   specified, :attr:`~FileCookieJar.filename` is used (whose default is the
+   specified, :attr:`!self.filename` is used (whose default is the
    value passed to the constructor, if any); if
-   :attr:`~FileCookieJar.filename` is ``None``,
+   :attr:`!self.filename` is ``None``,
    :exc:`ValueError` is raised.
 
    *ignore_discard*: save even cookies set to be discarded. *ignore_expires*: save
