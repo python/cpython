@@ -162,7 +162,7 @@ def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     pos = 0
     out = Output()
     header: Key = ()
-    # Resolve the current section once so per-key work does not re-walk `header`.
+    # Resolve the section once; per-key work is then relative to it.
     header_flags = out.flags.resolve(header)
     header_nest = out.data.get_or_create_nest(header)
     parse_float = make_safe_parse_float(parse_float)
@@ -273,9 +273,8 @@ class Flags:
         *,
         start: tuple[dict[Any, Any], dict[Any, Any] | None] | None = None,
     ) -> bool:
-        # `start` is a section anchor from resolve(); `key` is then relative to
-        # it. create_dict_rule/create_list_rule reject a frozen section before
-        # resolve() runs, so an anchored walk sees the same flags as from root.
+        # `key` is relative to the section anchor `start`; the section is never
+        # frozen when resolve() runs, so this matches a walk from the root.
         if start is None:
             cont: dict[Any, Any] = self._flags
             inner: dict[Any, Any] | None = None
@@ -321,8 +320,7 @@ class NestedDict:
         access_lists: bool = True,
         start: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        # `start` anchors the walk at the current section's nest so `key` can be
-        # the part relative to the header instead of the absolute path.
+        # `start` anchors the walk so `key` is relative to the section's nest.
         cont: Any = self.dict if start is None else start
         for k in key:
             if k not in cont:

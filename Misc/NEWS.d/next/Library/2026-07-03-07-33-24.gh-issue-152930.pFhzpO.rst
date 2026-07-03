@@ -1,3 +1,2 @@
-:mod:`tomllib` no longer parses a deep table header in time proportional to
-its depth for every key in the section, avoiding quadratic parse time on
-documents with a deep header followed by many keys. Patch by tonghuaroot.
+:mod:`tomllib` now parses each table section in linear time instead of
+re-walking the section header for every key. Patch by tonghuaroot.
