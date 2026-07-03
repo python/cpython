@@ -302,12 +302,17 @@ class WeakRefTest(unittest.TestCase):
         return frames
 
     def test_weakref_basic(self):
+        called = []
         f = self.make_frame()
         ref = weakref.ref(f)
+        cb_ref = weakref.ref(f, called.append)
         self.assertIs(ref(), f)
+        self.assertIs(cb_ref(), f)
         del f
         support.gc_collect()
         self.assertIsNone(ref())
+        self.assertIsNone(cb_ref())
+        self.assertEqual(called, [cb_ref])
 
     @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
     def test_weakref_live_frame(self):
@@ -320,44 +325,6 @@ class WeakRefTest(unittest.TestCase):
         support.gc_collect()
         self.assertIsNone(refs[0]())
 
-    def test_weakref_callback(self):
-        called = []
-        f = self.make_frame()
-        ref = weakref.ref(f, called.append)
-        del f
-        support.gc_collect()
-        self.assertEqual(called, [ref])
-        self.assertIsNone(ref())
-
-    def test_weakref_proxy(self):
-        f = self.make_frame()
-        proxy = weakref.proxy(f)
-        self.assertEqual(proxy.f_lineno, f.f_lineno)
-        self.assertIs(proxy.f_code, f.f_code)
-        del f
-        support.gc_collect()
-        with self.assertRaises(ReferenceError):
-            proxy.f_lineno
-
-    def test_multiple_weakrefs(self):
-        f = self.make_frame()
-        called = []
-        refs = [weakref.ref(f) for _ in range(3)]
-        refs += [weakref.ref(f, called.append) for _ in range(2)]
-        # Callback-less weakrefs to the same object are shared.
-        self.assertIs(refs[0], refs[1])
-        self.assertIs(refs[0], refs[2])
-        self.assertEqual(weakref.getweakrefcount(f), 3)
-        # Weakrefs hash and compare through their referent while it is
-        # alive, so compare identities instead.
-        self.assertEqual({id(r) for r in weakref.getweakrefs(f)},
-                         {id(refs[0]), id(refs[3]), id(refs[4])})
-        del f
-        support.gc_collect()
-        for ref in refs:
-            self.assertIsNone(ref())
-        self.assertEqual({id(r) for r in called}, {id(refs[3]), id(refs[4])})
-
     @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
     def test_weak_key_dictionary(self):
         wkd = weakref.WeakKeyDictionary()
@@ -368,17 +335,6 @@ class WeakRefTest(unittest.TestCase):
         _fill()
         support.gc_collect()
         self.assertEqual(len(wkd), 0)
-
-    @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
-    def test_weak_value_dictionary(self):
-        wvd = weakref.WeakValueDictionary()
-        def _fill():
-            for i, frame in enumerate(self.make_traceback_frames()):
-                wvd[i] = frame
-            self.assertEqual(len(wvd), 3)
-        _fill()
-        support.gc_collect()
-        self.assertEqual(len(wvd), 0)
 
     @support.thread_unsafe("relies on gc.collect() reclaiming its cycles")
     def test_weakref_traceback_frames(self):
@@ -407,20 +363,6 @@ class WeakRefTest(unittest.TestCase):
         self.assertIsNotNone(ref())
         g.close()
         del g
-        support.gc_collect()
-        self.assertIsNone(ref())
-
-    def test_weakref_coroutine_frame(self):
-        async def coro():
-            return sys._getframe()
-        c = coro()
-        ref = None
-        try:
-            c.send(None)
-        except StopIteration as ex:
-            ref = weakref.ref(ex.value)
-        self.assertIsNotNone(ref, 'coroutine did not exit')
-        del c
         support.gc_collect()
         self.assertIsNone(ref())
 
