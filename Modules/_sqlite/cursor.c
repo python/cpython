@@ -143,18 +143,6 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     return 0;
 }
 
-static PyObject *
-pysqlite_cursor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    pysqlite_Cursor *self = (pysqlite_Cursor *)type->tp_alloc(type, 0);
-    if (self == NULL) {
-        return NULL;
-    }
-    // row_factory should never be uninitialized, even if tp_init is bypassed.
-    self->row_factory = Py_NewRef(Py_None);
-    return (PyObject *)self;
-}
-
 static inline int
 stmt_reset(pysqlite_Statement *self)
 {
@@ -425,9 +413,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 }
 
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
-                PyObject *text_factory = self->connection->text_factory;
-                if (text_factory == NULL ||
-                    text_factory == (PyObject*)&PyUnicode_Type) {
+                if (self->connection->text_factory == (PyObject*)&PyUnicode_Type) {
                     converted = PyUnicode_FromStringAndSize(text, nbytes);
                     if (!converted && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
                         PyErr_Clear();
@@ -448,12 +434,12 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                             Py_DECREF(error_msg);
                         }
                     }
-                } else if (text_factory == (PyObject*)&PyBytes_Type) {
+                } else if (self->connection->text_factory == (PyObject*)&PyBytes_Type) {
                     converted = PyBytes_FromStringAndSize(text, nbytes);
-                } else if (text_factory == (PyObject*)&PyByteArray_Type) {
+                } else if (self->connection->text_factory == (PyObject*)&PyByteArray_Type) {
                     converted = PyByteArray_FromStringAndSize(text, nbytes);
                 } else {
-                    converted = PyObject_CallFunction(text_factory, "y#", text, nbytes);
+                    converted = PyObject_CallFunction(self->connection->text_factory, "y#", text, nbytes);
                 }
             } else {
                 /* coltype == SQLITE_BLOB */
@@ -1190,7 +1176,7 @@ pysqlite_cursor_iternext(PyObject *op)
         }
         return NULL;
     }
-    if (self->row_factory != NULL && !Py_IsNone(self->row_factory)) {
+    if (!Py_IsNone(self->row_factory)) {
         PyObject *factory = self->row_factory;
         PyObject *args[] = { op, row, };
         PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
@@ -1422,8 +1408,7 @@ static PyObject *
 cursor_get_row_factory(PyObject *op, void *closure)
 {
     pysqlite_Cursor *self = (pysqlite_Cursor *)op;
-    PyObject *row_factory = self->row_factory;
-    return Py_NewRef(row_factory != NULL ? row_factory : Py_None);
+    return Py_NewRef(self->row_factory);
 }
 
 static int
@@ -1456,7 +1441,6 @@ static PyType_Slot cursor_slots[] = {
     {Py_tp_methods, cursor_methods},
     {Py_tp_members, cursor_members},
     {Py_tp_getset, cursor_getsets},
-    {Py_tp_new, pysqlite_cursor_new},
     {Py_tp_init, pysqlite_cursor_init},
     {Py_tp_traverse, cursor_traverse},
     {Py_tp_clear, cursor_clear},
