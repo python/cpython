@@ -1674,9 +1674,20 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
 static int
 suggest_missing_self(PyFunctionObject *func, PyCodeObject *co, _PyStackRef const *args, Py_ssize_t argcount)
 {
-    if ((co->co_argcount + 1) != argcount || argcount == 0) {
+    if (
+        ((co->co_argcount + 1) != argcount) ||
+        argcount == 0 // When no args are passed, its not about self
+    ) {
         return 0;
     }
+    if (co->co_argcount > 0) {
+        PyObject *first_parameter_name = PyTuple_GET_ITEM(co->co_localsplusnames, 0);
+        if (PyUnicode_CompareWithASCIIString(first_parameter_name, "self") == 0) {
+            // if its already named self, hint won't make sense to the user.
+            return 0;
+        }
+    }
+
     PyObject *first_argument = PyStackRef_AsPyObjectBorrow(args[0]);
     PyTypeObject *self_cls = Py_TYPE(first_argument);
     PyFunctionObject *possibly_current_function = (PyFunctionObject *) _PyType_Lookup(self_cls, co->co_name);
