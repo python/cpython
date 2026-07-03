@@ -933,7 +933,7 @@ class Dog:
     def register_breed(dog_type):
         pass
 
-class DogMeta(type):
+class AnimalMeta(type):
     def register_pack(dog_type):
         pass
 
@@ -948,7 +948,7 @@ class DogMeta(type):
     def tag_pack(label):
         pass
 
-class Poodle(metaclass=DogMeta):
+class Poodle(metaclass=AnimalMeta):
     pass
 
 @cpython_only
@@ -1040,25 +1040,25 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
 
     def test_metaclass_missing_receiver_does_not_suggest_missing_self(self):
         """A metaclass receiver error should not suggest an instance self."""
-        msg = "DogMeta.register_pack() takes 1 positional argument but 2 were given"
+        msg = "AnimalMeta.register_pack() takes 1 positional argument but 2 were given"
         with self.check_raises_type_error(msg):
             Poodle.register_pack("standard")
 
     def test_metaclass_method_too_many_args_does_not_suggest_missing_self(self):
         """A metaclass method with too many arguments should not suggest self."""
-        msg = "DogMeta.track_pack() takes 2 positional arguments but 3 were given"
+        msg = "AnimalMeta.track_pack() takes 2 positional arguments but 3 were given"
         with self.check_raises_type_error(msg):
             Poodle.track_pack("trail", "river")
 
     def test_metaclass_classmethod_does_not_suggest_missing_self(self):
         """A classmethod on a metaclass should not suggest instance self."""
-        msg = "DogMeta.classify_pack() takes 1 positional argument but 2 were given"
+        msg = "AnimalMeta.classify_pack() takes 1 positional argument but 2 were given"
         with self.check_raises_type_error(msg):
             Poodle.classify_pack("standard")
 
     def test_metaclass_staticmethod_does_not_suggest_missing_self(self):
         """A staticmethod on a metaclass should not suggest instance self."""
-        msg = "DogMeta.tag_pack() takes 1 positional argument but 2 were given"
+        msg = "AnimalMeta.tag_pack() takes 1 positional argument but 2 were given"
         with self.check_raises_type_error(msg):
             Poodle.tag_pack("show", "working")
 
