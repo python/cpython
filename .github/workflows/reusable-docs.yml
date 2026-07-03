@@ -17,7 +17,7 @@ env:
 jobs:
   build-doc:
     name: 'Docs'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       branch_base: 'origin/${{ github.event.pull_request.base.ref }}'
@@ -121,7 +121,7 @@ jobs:
 
   check-epub:
     name: 'Check EPUB'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

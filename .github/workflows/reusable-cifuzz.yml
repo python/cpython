@@ -19,7 +19,7 @@ permissions:
 jobs:
   cifuzz:
     name: ${{ inputs.oss-fuzz-project-name }} (${{ inputs.sanitizer }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - name: Build fuzzers (${{ inputs.sanitizer }})

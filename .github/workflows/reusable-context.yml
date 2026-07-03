@@ -60,7 +60,7 @@ permissions:
 jobs:
   compute-changes:
     name: Create context from changed files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     outputs:
       run-android: ${{ steps.changes.outputs.run-android }}

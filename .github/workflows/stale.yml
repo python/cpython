@@ -10,7 +10,7 @@ permissions:
 jobs:
   stale:
     if: github.repository_owner == 'python'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       actions: write
       pull-requests: write

@@ -12,7 +12,7 @@ env:
 jobs:
   check-html-ids:
     name: 'Check for removed HTML IDs'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
       - name: 'Check out PR head'
