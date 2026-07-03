@@ -33,42 +33,37 @@ def hash_tree(base: Path, algorithm: str = "sha512") -> dict[str, str]:
             # Only libraries are multi-arch co-installed, only one arch can
             # have binaries in /usr/bin at a time.
             continue
+        in_usr_include = relative_dirpath.is_relative_to("usr/include")
+        in_usr_lib = relative_dirpath.is_relative_to("usr/lib")
+        in_pkgconfig = in_usr_lib and relative_dirpath.name == "pkgconfig"
+        in_dist_info = relative_dirpath.name.endswith(".dist-info")
+        in_site_packages = relative_dirpath.name == "site-packages"
 
         for file in filenames:
-            if relative_dirpath.is_relative_to("usr/include") and file == "pyconfig.h":
+            if in_usr_include and file == "pyconfig.h":
                 # Varies according to config, installed into a tag-specific
                 # include directory
                 continue
 
-            if (
-                relative_dirpath.is_relative_to("usr/lib")
-                and relative_dirpath.name == "pkgconfig"
-                and file in ("python3.pc", "python3-embed.pc")
-            ):
+            if in_pkgconfig and file in ("python3.pc", "python3-embed.pc"):
                 # Only the tag-suffixed .pc files are co-installable
                 continue
 
             if (
-                relative_dirpath.is_relative_to("usr/lib")
-                and relative_dirpath.name == "pkgconfig"
+                in_pkgconfig
                 and flags  # non-default install
                 and file in (f"python-{version}.pc", f"python-{version}-embed.pc")
             ):
                 # Only the tag-suffixed .pc files are co-installable
                 continue
 
-            if relative_dirpath.name.endswith(".dist-info") and file in (
-                "RECORD",
-                "WHEEL",
-            ):
+            if in_dist_info and file in ("RECORD", "WHEEL"):
                 # RECORD: Contains hashes, not co-installable.
                 # WHEEL: Contains arch and version tags. Tags can be merged but
                 # not architectures.
                 continue
 
-            if relative_dirpath.name == "site-packages" and file.endswith(
-                (".abi3.so", ".abi3t.so")
-            ):
+            if in_site_packages and file.endswith((".abi3.so", ".abi3t.so")):
                 # abi3 and abi3t are not current co-installable (#122931)
                 continue
 
