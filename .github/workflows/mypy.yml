@@ -49,7 +49,7 @@ concurrency:
 jobs:
   mypy:
     name: Run mypy on ${{ matrix.target }}
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
