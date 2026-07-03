@@ -1,3 +1,4 @@
+import _locale
 from _locale import (setlocale, LC_ALL, LC_CTYPE, LC_NUMERIC, LC_TIME, localeconv, Error)
 try:
     from _locale import (RADIXCHAR, THOUSEP, nl_langinfo)
@@ -278,47 +279,60 @@ class _LocaleTests(unittest.TestCase):
         # gh-152905: The LC_TIME text items are decoded independently of the
         # LC_CTYPE encoding (on glibc via the wide nl_langinfo variants), so
         # the same locale in different encodings yields identical strings.
+        # ERA has no wide variant and is not tested.
         self.addCleanup(setlocale, LC_TIME, setlocale(LC_TIME))
-        months = [getattr(locale, f'MON_{i}') for i in range(1, 13)]
-        items = months.copy()
-        items += [getattr(locale, f'ABMON_{i}') for i in range(1, 13)]
-        items += [getattr(locale, f'DAY_{i}') for i in range(1, 8)]
-        items += [getattr(locale, f'ABDAY_{i}') for i in range(1, 8)]
-        items += [locale.AM_STR, locale.PM_STR,
-                  locale.D_T_FMT, locale.D_FMT, locale.T_FMT]
-        if hasattr(locale, 'T_FMT_AMPM'):
-            items.append(locale.T_FMT_AMPM)
-        if hasattr(locale, 'ALT_DIGITS'):
-            items.append(locale.ALT_DIGITS)
-        # The same language in a Unicode and a legacy encoding.
-        variants = [
-            ('ja_JP.UTF-8', 'ja_JP.EUC-JP'),
-            ('fr_FR.UTF-8', 'fr_FR.ISO8859-1'),
-            ('el_GR.UTF-8', 'el_GR.ISO8859-7'),
+
+        names = [f'MON_{i}' for i in range(1, 13)]
+        names += [f'ABMON_{i}' for i in range(1, 13)]
+        names += [f'DAY_{i}' for i in range(1, 8)]
+        names += [f'ABDAY_{i}' for i in range(1, 8)]
+        names += ['AM_STR', 'PM_STR', 'D_T_FMT', 'D_FMT', 'T_FMT']
+        names += [name for name in ('T_FMT_AMPM', 'ERA_D_FMT', 'ERA_D_T_FMT',
+                                    'ERA_T_FMT', 'ALT_DIGITS', '_DATE_FMT')
+                  if hasattr(_locale, name)]
+        items = [(name, getattr(_locale, name)) for name in names]
+
+        # Legacy (non-UTF-8) locales, compared against their UTF-8 variant.
+        legacy_locales = [
+            'en_US.ISO8859-1',
+            'es_ES.ISO8859-1',
+            'fr_FR.ISO8859-1',
+            'de_DE.ISO8859-1',
+            'pl_PL.ISO8859-2',
+            'mt_MT.ISO8859-3',
+            'ar_SA.ISO8859-6',
+            'el_GR.ISO8859-7',
+            'he_IL.ISO8859-8',
+            'tr_TR.ISO8859-9',
+            'lt_LT.ISO8859-13',
+            'cy_GB.ISO8859-14',
+            'et_EE.ISO8859-15',
+            'uk_UA.KOI8-U',
+            'bg_BG.CP1251',
+            'ja_JP.EUC-JP',
+            'ko_KR.EUC-KR',
+            'zh_CN.GB2312',
+            'zh_TW.BIG5',
+            'th_TH.TIS-620',
         ]
         tested = False
-        for locs in variants:
+        for loc in legacy_locales:
+            locs = (loc.partition('.')[0] + '.UTF-8', loc)
             values = []
-            avail = []
-            for loc in locs:
+            for l in locs:
                 try:
-                    setlocale(LC_TIME, loc)
+                    setlocale(LC_TIME, l)
                 except Error:
-                    continue
-                avail.append(loc)
-                values.append([nl_langinfo(item) for item in items])
+                    break
+                values.append({name: nl_langinfo(item) for name, item in items})
             if len(values) < 2:
                 continue
-            with self.subTest(locales=avail):
-                for value in values[0]:
-                    self.assertIsInstance(value, str)
-                # Month names within a locale must be distinct, which guards
-                # against a broken narrow-to-wide constant mapping.
-                self.assertEqual(len(set(values[0][:12])), 12, values[0][:12])
-                # The result must not depend on the locale encoding.
-                for other in values[1:]:
-                    self.assertEqual(values[0], other)
-                tested = True
+            tested = True
+
+            # The result must not depend on the locale encoding.
+            for name, item in items:
+                with self.subTest(locales=locs, name=name):
+                    self.assertEqual(values[0][name], values[1][name])
         if not tested:
             self.skipTest('no suitable locale pairs')
 

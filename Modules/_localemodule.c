@@ -722,13 +722,13 @@ restore_locale(char *oldloc)
 
 #ifdef __GLIBC__
 static PyObject *
-decode_strings(const char *result, size_t max_count)
+decode_strings(const char *result)
 {
     /* Convert a sequence of NUL-separated C strings to a Python string
      * containing semicolon separated items. */
     size_t i = 0;
     size_t count = 0;
-    for (; count < max_count && result[i]; count++) {
+    for (; result[i]; count++) {
         i += strlen(result + i) + 1;
     }
     char *buf = PyMem_Malloc(i);
@@ -835,7 +835,7 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
              * a sequence of semicolon-separated strings.
              * But in Glibc they are NUL-separated. */
             if (item == ERA && *result) {
-                pyresult = decode_strings(result, SIZE_MAX);
+                pyresult = decode_strings(result);
             }
             else
 #endif
