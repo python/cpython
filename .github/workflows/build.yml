@@ -260,6 +260,7 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
       test-opts: ${{ matrix.test-opts || '' }}
+      upload-install-hashes: ${{ !matrix.bolt }}
 
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
@@ -608,40 +609,10 @@ jobs:
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
-  linux-install-build:
-    name: >-
-      Ubuntu Install
-      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
-      ${{ fromJSON(matrix.debug) && '(debug)' || '' }}
-    needs: build-context
-    if: needs.build-context.outputs.run-ubuntu == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        free-threading:
-          - false
-          - true
-        debug:
-          - false
-          - true
-        os:
-          - ubuntu-24.04
-        include:
-          - free-threading: false
-            debug: false
-            os: ubuntu-24.04-arm
-    uses: ./.github/workflows/reusable-ubuntu.yml
-    with:
-      debug: ${{ matrix.debug }}
-      free-threading: ${{ matrix.free-threading }}
-      os: ${{ matrix.os }}
-      test: false
-      upload-install-hashes: true
-
   linux-install-compare:
     name: Ubuntu Co-install comparison
     runs-on: ubuntu-latest
-    needs: linux-install-build
+    needs: build-ubuntu
     steps:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
