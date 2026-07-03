@@ -517,7 +517,7 @@ The following classes are provided:
 
 .. _request-objects:
 
-Request Objects
+Request objects
 ---------------
 
 The following methods describe :class:`Request`'s public interface,
@@ -659,7 +659,7 @@ request.
 
 .. _opener-director-objects:
 
-OpenerDirector Objects
+OpenerDirector objects
 ----------------------
 
 :class:`OpenerDirector` instances have the following methods:
@@ -754,7 +754,7 @@ sorting the handler instances.
 
 .. _base-handler-objects:
 
-BaseHandler Objects
+BaseHandler objects
 -------------------
 
 :class:`BaseHandler` objects provide a couple of methods that are directly
@@ -889,7 +889,7 @@ The following attribute and methods should only be used by classes derived from
 
 .. _http-redirect-handler:
 
-HTTPRedirectHandler Objects
+HTTPRedirectHandler objects
 ---------------------------
 
 .. note::
@@ -956,7 +956,7 @@ HTTPRedirectHandler Objects
 
 .. _http-cookie-processor:
 
-HTTPCookieProcessor Objects
+HTTPCookieProcessor objects
 ---------------------------
 
 :class:`HTTPCookieProcessor` instances have one attribute:
@@ -968,7 +968,7 @@ HTTPCookieProcessor Objects
 
 .. _proxy-handler:
 
-ProxyHandler Objects
+ProxyHandler objects
 --------------------
 
 
@@ -984,7 +984,7 @@ ProxyHandler Objects
 
 .. _http-password-mgr:
 
-HTTPPasswordMgr Objects
+HTTPPasswordMgr objects
 -----------------------
 
 These methods are available on :class:`HTTPPasswordMgr` and
@@ -1010,7 +1010,7 @@ These methods are available on :class:`HTTPPasswordMgr` and
 
 .. _http-password-mgr-with-prior-auth:
 
-HTTPPasswordMgrWithPriorAuth Objects
+HTTPPasswordMgrWithPriorAuth objects
 ------------------------------------
 
 This password manager extends :class:`HTTPPasswordMgrWithDefaultRealm` to support
@@ -1046,7 +1046,7 @@ tracking URIs for which authentication credentials should always be sent.
 
 .. _abstract-basic-auth-handler:
 
-AbstractBasicAuthHandler Objects
+AbstractBasicAuthHandler objects
 --------------------------------
 
 
@@ -1066,7 +1066,7 @@ AbstractBasicAuthHandler Objects
 
 .. _http-basic-auth-handler:
 
-HTTPBasicAuthHandler Objects
+HTTPBasicAuthHandler objects
 ----------------------------
 
 
@@ -1077,7 +1077,7 @@ HTTPBasicAuthHandler Objects
 
 .. _proxy-basic-auth-handler:
 
-ProxyBasicAuthHandler Objects
+ProxyBasicAuthHandler objects
 -----------------------------
 
 
@@ -1088,7 +1088,7 @@ ProxyBasicAuthHandler Objects
 
 .. _abstract-digest-auth-handler:
 
-AbstractDigestAuthHandler Objects
+AbstractDigestAuthHandler objects
 ---------------------------------
 
 
@@ -1102,7 +1102,7 @@ AbstractDigestAuthHandler Objects
 
 .. _http-digest-auth-handler:
 
-HTTPDigestAuthHandler Objects
+HTTPDigestAuthHandler objects
 -----------------------------
 
 
@@ -1113,7 +1113,7 @@ HTTPDigestAuthHandler Objects
 
 .. _proxy-digest-auth-handler:
 
-ProxyDigestAuthHandler Objects
+ProxyDigestAuthHandler objects
 ------------------------------
 
 
@@ -1124,7 +1124,7 @@ ProxyDigestAuthHandler Objects
 
 .. _http-handler-objects:
 
-HTTPHandler Objects
+HTTPHandler objects
 -------------------
 
 
@@ -1136,7 +1136,7 @@ HTTPHandler Objects
 
 .. _https-handler-objects:
 
-HTTPSHandler Objects
+HTTPSHandler objects
 --------------------
 
 
@@ -1148,7 +1148,7 @@ HTTPSHandler Objects
 
 .. _file-handler-objects:
 
-FileHandler Objects
+FileHandler objects
 -------------------
 
 
@@ -1164,7 +1164,7 @@ FileHandler Objects
 
 .. _data-handler-objects:
 
-DataHandler Objects
+DataHandler objects
 -------------------
 
 .. method:: DataHandler.data_open(req)
@@ -1179,7 +1179,7 @@ DataHandler Objects
 
 .. _ftp-handler-objects:
 
-FTPHandler Objects
+FTPHandler objects
 ------------------
 
 
@@ -1191,7 +1191,7 @@ FTPHandler Objects
 
 .. _cacheftp-handler-objects:
 
-CacheFTPHandler Objects
+CacheFTPHandler objects
 -----------------------
 
 :class:`CacheFTPHandler` objects are :class:`FTPHandler` objects with the
@@ -1210,7 +1210,7 @@ following additional methods:
 
 .. _unknown-handler-objects:
 
-UnknownHandler Objects
+UnknownHandler objects
 ----------------------
 
 
@@ -1221,7 +1221,7 @@ UnknownHandler Objects
 
 .. _http-error-processor-objects:
 
-HTTPErrorProcessor Objects
+HTTPErrorProcessor objects
 --------------------------
 
 .. method:: HTTPErrorProcessor.http_response(request, response)
@@ -1497,7 +1497,7 @@ some point in the future.
    calls to :func:`urlretrieve`.
 
 
-:mod:`!urllib.request` Restrictions
+:mod:`!urllib.request` restrictions
 -----------------------------------
 
 .. index::

@@ -44,7 +44,7 @@ which was introduced in :rfc:`1808`. However, this term has been obsoleted by
 :rfc:`3986`, which introduced the term ``authority`` as its replacement.
 The use of ``netloc`` is continued for backward compatibility.
 
-URL Parsing
+URL parsing
 -----------
 
 The URL parsing functions focus on splitting a URL string into its components,
@@ -492,7 +492,7 @@ to be very cautious about making API behavior changes.
 
 .. _parsing-ascii-encoded-bytes:
 
-Parsing ASCII Encoded Bytes
+Parsing ASCII encoded bytes
 ---------------------------
 
 The URL parsing functions were originally designed to operate on character
@@ -537,7 +537,7 @@ individual URL quoting functions.
 
 .. _urlparse-result-object:
 
-Structured Parse Results
+Structured parse results
 ------------------------
 
 The result objects from the :func:`urlsplit`, :func:`urlparse`  and
@@ -705,7 +705,7 @@ operating on :class:`bytes` or :class:`bytearray` objects:
    .. versionadded:: 3.2
 
 
-URL Quoting
+URL quoting
 -----------
 
 The URL quoting functions focus on taking program data and making it safe
