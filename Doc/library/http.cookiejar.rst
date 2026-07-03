@@ -266,9 +266,9 @@ contained :class:`Cookie` objects.
    method unimplemented.
 
    *filename* is the name of file in which to save cookies.  If *filename* is not
-   specified, :attr:`!self.filename` is used (whose default is the
-   value passed to the constructor, if any); if
-   :attr:`!self.filename` is ``None``,
+   specified, :attr:`self.filename <FileCookieJar.filename>` is used (whose
+   default is the value passed to the constructor, if any); if
+   :attr:`self.filename <FileCookieJar.filename>` is ``None``,
    :exc:`ValueError` is raised.
 
    *ignore_discard*: save even cookies set to be discarded. *ignore_expires*: save
