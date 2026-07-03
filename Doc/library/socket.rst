@@ -1372,7 +1372,7 @@ The :mod:`!socket` module also offers various network-related services:
 
    .. audit-event:: socket.sethostname name socket.sethostname
 
-   .. availability:: Unix, not Android.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 

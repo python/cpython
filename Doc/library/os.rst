@@ -574,7 +574,7 @@ process and user.
    the groups of which the specified username is a member, plus the specified
    group id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
    .. versionadded:: 3.2
 
@@ -610,21 +610,21 @@ process and user.
 
    Set the current process's effective group id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: seteuid(euid, /)
 
    Set the current process's effective user id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setgid(gid, /)
 
    Set the current process' group id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setgroups(groups, /)
@@ -718,14 +718,14 @@ process and user.
 
    Set the current process's real and effective group ids.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: setresgid(rgid, egid, sgid, /)
 
    Set the current process's real, effective, and saved group ids.
 
-   .. availability:: Unix, not WASI, not Android, not macOS, not iOS.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -734,7 +734,7 @@ process and user.
 
    Set the current process's real, effective, and saved user ids.
 
-   .. availability:: Unix, not WASI, not Android, not macOS, not iOS.
+   .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
 
@@ -743,7 +743,7 @@ process and user.
 
    Set the current process's real and effective user ids.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
 
 .. function:: getsid(pid, /)
@@ -766,7 +766,7 @@ process and user.
 
    Set the current process's user id.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
 
 .. placed in this section since it relates to errno.... a little weak
@@ -2304,7 +2304,7 @@ features:
 
    Change the root directory of the current process to *path*.
 
-   .. availability:: Unix, not WASI, not Android.
+   .. availability:: Unix, not WASI.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
