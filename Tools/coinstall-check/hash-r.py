@@ -8,13 +8,15 @@
 from argparse import ArgumentParser
 from hashlib import file_digest
 from pathlib import Path
+from typing import Any, cast
 import json
 
 
-def load_build_details(base: Path):
+def load_build_details(base: Path) -> dict[str, Any]:
     for path in base.glob("usr/lib/python*/build-details*.json"):
         with path.open("rb") as f:
-            return json.load(f)
+            return cast(dict[str, Any], json.load(f))
+    raise AssertionError(f"build-details.json not found in {base}")
 
 
 def hash_tree(base: Path, algorithm: str = "sha512") -> dict[str, str]:
