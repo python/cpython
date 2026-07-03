@@ -743,6 +743,7 @@ jobs:
             build-asan,
             build-san,
             cross-build-linux,
+            linux-install-compare,
             '
             || ''
           }}
