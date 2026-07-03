@@ -691,13 +691,11 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     if (op->func_old_codes == NULL) {
         op->func_old_codes = PyList_New(0);
         if (op->func_old_codes == NULL) {
-            PyErr_NoMemory();
             return -1;
         }
     }
 
     if (PyList_Append(op->func_old_codes, op->func_code) < 0) {
-            PyErr_NoMemory();
         return -1;
     }
 
