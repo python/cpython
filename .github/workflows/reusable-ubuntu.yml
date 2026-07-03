@@ -63,7 +63,7 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Install Clang and BOLT
-      if: ${{ fromJSON(inputs.bolt-optimizations) }}
+      if: fromJSON(inputs.bolt-optimizations)
       run: |
         sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
         sudo apt-get install --no-install-recommends bolt-19
@@ -108,7 +108,7 @@ jobs:
         ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
         ${{ fromJSON(inputs.upload-install-hashes) && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
     - name: Build CPython out-of-tree
-      if: ${{ inputs.free-threading }}
+      if: inputs.free-threading
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j
     - name: Build CPython out-of-tree (for compiler warning check)
