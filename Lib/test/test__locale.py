@@ -7,7 +7,7 @@ except ImportError:
 import locale
 import sys
 import unittest
-from platform import uname
+from platform import uname, libc_ver
 
 from test import support
 
@@ -272,7 +272,8 @@ class _LocaleTests(unittest.TestCase):
             self.skipTest('no suitable locales')
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
-    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipUnless(libc_ver()[0] == 'glibc',
+                         "wide nl_langinfo variants are glibc-specific")
     def test_nl_langinfo_encoding_independent(self):
         # gh-152905: The LC_TIME text items are decoded independently of the
         # LC_CTYPE encoding (on glibc via the wide nl_langinfo variants), so
