@@ -93,7 +93,7 @@ def run_readelf(cmd):
 
     if proc.returncode:
         raise AssertionError(
-            f"Command {' '.join(cmd)!r} failed "
+            f"Command {shlex.join(cmd)!r} failed "
             f"with exit code {proc.returncode}: "
             f"stdout={stdout!r} stderr={stderr!r}"
         )
@@ -140,7 +140,7 @@ class TraceBackend:
             raise
         if check_returncode and proc.returncode:
             raise AssertionError(
-                f"Command {' '.join(command)!r} failed "
+                f"Command {shlex.join(command)!r} failed "
                 f"with exit code {proc.returncode}: output={stdout!r}"
             )
         return stdout
