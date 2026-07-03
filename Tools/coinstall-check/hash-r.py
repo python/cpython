@@ -14,8 +14,8 @@ import json
 
 def load_build_details(base: Path) -> dict[str, Any]:
     for path in base.glob("usr/lib/python*/build-details*.json"):
-        with path.open("rb") as f:
-            return cast(dict[str, Any], json.load(f))
+        details = json.loads(path.read_bytes())
+        return cast(dict[str, Any], details)
     raise AssertionError(f"build-details.json not found in {base}")
 
 
