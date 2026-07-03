@@ -98,6 +98,7 @@ menudefs = [
    ]),
 
  ('browse', [
+   ('_Token Browser', '<<open-token-browser>>'),
    ]),
 
  ('options', [

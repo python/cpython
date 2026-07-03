@@ -166,6 +166,7 @@ class EditorWindow:
             text.bind("<<close-all-windows>>", self.flist.close_all_callback)
             text.bind("<<open-class-browser>>", self.open_module_browser)
             text.bind("<<open-path-browser>>", self.open_path_browser)
+            text.bind("<<open-token-browser>>", self.open_token_browser)
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
         self.set_status_bar()
@@ -740,6 +741,11 @@ class EditorWindow:
     def open_path_browser(self, event=None):
         from idlelib import pathbrowser
         pathbrowser.PathBrowser(self.root)
+        return "break"
+
+    def open_token_browser(self, event=None):
+        from idlelib import tokenbrowser
+        tokenbrowser.open(self)
         return "break"
 
     def open_turtle_demo(self, event = None):
