@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 from hashlib import file_digest
 from pathlib import Path
 from typing import Any, cast
+import gzip
 import json
 
 
@@ -21,52 +22,8 @@ def load_build_details(base: Path) -> dict[str, Any]:
 
 def hash_tree(base: Path, algorithm: str = "sha512") -> dict[str, str]:
     hashes: dict[str, str] = {}
-    build_details = load_build_details(base)
-    flags = build_details["abi"]["flags"]
-    version = build_details["language"]["version"]
     for dirpath, dirnames, filenames in base.walk():
-        if dirpath.name == "__pycache__":
-            # Includes a timestamp, we expect a mismatch
-            continue
-        relative_dirpath = dirpath.relative_to(base)
-        if relative_dirpath.is_relative_to("usr/bin"):
-            # Only libraries are multi-arch co-installed, only one arch can
-            # have binaries in /usr/bin at a time.
-            continue
-        in_usr_include = relative_dirpath.is_relative_to("usr/include")
-        in_usr_lib = relative_dirpath.is_relative_to("usr/lib")
-        in_pkgconfig = in_usr_lib and relative_dirpath.name == "pkgconfig"
-        in_dist_info = relative_dirpath.name.endswith(".dist-info")
-        in_site_packages = relative_dirpath.name == "site-packages"
-
         for file in filenames:
-            if in_usr_include and file == "pyconfig.h":
-                # Varies according to config, installed into a tag-specific
-                # include directory
-                continue
-
-            if in_pkgconfig and file in ("python3.pc", "python3-embed.pc"):
-                # Only the tag-suffixed .pc files are co-installable
-                continue
-
-            if (
-                in_pkgconfig
-                and flags  # non-default install
-                and file in (f"python-{version}.pc", f"python-{version}-embed.pc")
-            ):
-                # Only the tag-suffixed .pc files are co-installable
-                continue
-
-            if in_dist_info and file in ("RECORD", "WHEEL"):
-                # RECORD: Contains hashes, not co-installable.
-                # WHEEL: Contains arch and version tags. Tags can be merged but
-                # not architectures.
-                continue
-
-            if in_site_packages and file.endswith((".abi3.so", ".abi3t.so")):
-                # abi3 and abi3t are not current co-installable (#122931)
-                continue
-
             filepath = dirpath / file
             with filepath.open("rb") as f:
                 digest = file_digest(f, algorithm)
@@ -74,17 +31,31 @@ def hash_tree(base: Path, algorithm: str = "sha512") -> dict[str, str]:
     return hashes
 
 
+def write_json(destdir: Path, output: Path) -> None:
+    """Hash the Python install at destdir, write gzipped JSON to output."""
+    data = {
+        "build_details": load_build_details(destdir),
+        "hashes": hash_tree(destdir),
+    }
+    with gzip.open(output, "wt") as f:
+        f.write(json.dumps(data))
+
+
 def main() -> None:
     p = ArgumentParser("Hash a python install for comparison later")
+    p.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Output file (gzipped)",
+    )
     p.add_argument(
         "destdir",
         type=Path,
         help="Directory below which Python is installed",
     )
     args = p.parse_args()
-    hashes = hash_tree(args.destdir)
-    for path, digest in sorted(hashes.items()):
-        print(f"{digest}\t{path}")  # compatible with sha512sum
+    write_json(args.destdir, args.output)
 
 
 if __name__ == "__main__":
