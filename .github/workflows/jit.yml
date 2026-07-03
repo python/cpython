@@ -160,8 +160,7 @@ jobs:
           sudo ./.github/workflows/posix-deps-apt.sh
       - name: Build
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          # On ubuntu-26.04 image, clang is clang-21 by default
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
       - name: Test
@@ -202,8 +201,7 @@ jobs:
           sudo ./.github/workflows/posix-deps-apt.sh
       - name: Build
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          # On ubuntu-26.04 image, clang is clang-21 by default
           if [ "${{ matrix.use_clang }}" = "true" ]; then
             export CC=clang-${{ env.LLVM_VERSION }}
           fi
