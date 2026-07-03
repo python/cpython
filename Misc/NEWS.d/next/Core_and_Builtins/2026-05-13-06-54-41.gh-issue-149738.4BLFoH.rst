@@ -1,2 +1,2 @@
-:mod:`sqlite3`: Prevent crashes caused by ``row_factory`` or ``text_factory`` being uninitialized, either
-by skipping ``__init__`` or by deleting the attributes.
+:mod:`sqlite3`: Disallow removing ``row_factory`` and ``text_factory`` attributes
+of a connection or cursor to prevent a crash on a query.

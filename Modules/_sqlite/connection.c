@@ -300,9 +300,8 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->thread_ident = PyThread_get_thread_ident();
     self->statement_cache = statement_cache;
     self->blobs = blobs;
-    // re-initialize the factory members here, as tp_clear() is called above in some cases
-    Py_XSETREF(self->row_factory, Py_NewRef(Py_None));
-    Py_XSETREF(self->text_factory, Py_NewRef((PyObject *)&PyUnicode_Type));
+    self->row_factory = Py_NewRef(Py_None);
+    self->text_factory = Py_NewRef(&PyUnicode_Type);
     self->trace_ctx = NULL;
     self->progress_ctx = NULL;
     self->authorizer_ctx = NULL;
@@ -338,19 +337,6 @@ error:
     rc = sqlite3_close(db);
     assert(rc == SQLITE_OK);
     return -1;
-}
-
-static PyObject *
-pysqlite_connection_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    pysqlite_Connection *self = (pysqlite_Connection *)type->tp_alloc(type, 0);
-    if (self == NULL) {
-        return NULL;
-    }
-    // row_factory and text_factory should never be uninitialized, even if tp_init is bypassed.
-    self->row_factory = Py_NewRef(Py_None);
-    self->text_factory = Py_NewRef((PyObject *)&PyUnicode_Type);
-    return (PyObject *)self;
 }
 
 /*[clinic input]
@@ -563,7 +549,7 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
         return NULL;
     }
 
-    if (cursor && self->row_factory != NULL && !Py_IsNone(self->row_factory)) {
+    if (cursor && self->row_factory != Py_None) {
         Py_INCREF(self->row_factory);
         Py_XSETREF(((pysqlite_Cursor *)cursor)->row_factory, self->row_factory);
     }
@@ -575,8 +561,7 @@ static PyObject *
 connection_get_row_factory(PyObject *op, void *closure)
 {
     pysqlite_Connection *self = (pysqlite_Connection *)op;
-    PyObject *row_factory = self->row_factory;
-    return Py_NewRef(row_factory != NULL ? row_factory : Py_None);
+    return Py_NewRef(self->row_factory);
 }
 
 static int
@@ -596,9 +581,7 @@ static PyObject *
 connection_get_text_factory(PyObject *op, void *closure)
 {
     pysqlite_Connection *self = (pysqlite_Connection *)op;
-    PyObject *text_factory = self->text_factory;
-    return Py_NewRef(text_factory != NULL ? text_factory
-                                          : (PyObject *)&PyUnicode_Type);
+    return Py_NewRef(self->text_factory);
 }
 
 static int
@@ -2739,7 +2722,6 @@ static PyType_Slot connection_slots[] = {
     {Py_tp_methods, connection_methods},
     {Py_tp_members, connection_members},
     {Py_tp_getset, connection_getset},
-    {Py_tp_new, pysqlite_connection_new},
     {Py_tp_init, pysqlite_connection_init},
     {Py_tp_call, pysqlite_connection_call},
     {Py_tp_traverse, connection_traverse},
