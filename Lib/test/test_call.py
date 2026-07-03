@@ -907,6 +907,10 @@ class A:
         pass
 
     @staticmethod
+    def static_one(arg):
+        pass
+
+    @staticmethod
     def positional_only(arg, /):
         pass
 
@@ -919,6 +923,25 @@ class A:
     def missing_self_no_args():
         pass
 
+    def method_with_self_arg(x, self):
+        pass
+
+    def zero_args_self(self):
+        pass
+
+    @classmethod
+    def missing_cls(x):
+        pass
+
+class Meta(type):
+    def missing_meta_cls(x):
+        pass
+
+    def method(cls, x):
+        pass
+
+class B(metaclass=Meta):
+    pass
 
 @cpython_only
 class TestErrorMessagesUseQualifiedName(unittest.TestCase):
@@ -929,16 +952,19 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         self.assertEqual(str(cm.exception), message)
 
     def test_too_many_positional_with_self_does_not_suggest_missing_self(self):
-       msg = "A.method_with_self() takes 2 positional arguments but 3 were given"
-       with self.check_raises_type_error(msg):
-           A().method_with_self(1, 2)
+        """A regular method with self should keep the normal too-many-args error."""
+        msg = "A.method_with_self() takes 2 positional arguments but 3 were given"
+        with self.check_raises_type_error(msg):
+            A().method_with_self(1, 2)
 
     def test_too_many_positional_but_missing_self(self):
+        """A bound instance method missing self should get the targeted hint."""
         msg = "A.missing_self() takes 1 positional argument but 2 were given. Did you forget the 'self' parameter in the function definition?"
         with self.check_raises_type_error(msg):
             A().missing_self("another_arg")
 
     def test_too_many_positional_but_missing_self_no_args(self):
+        """A zero-argument method called through an instance should get the hint."""
         msg = "A.missing_self_no_args() takes 0 positional arguments but 1 was given. Did you forget the 'self' parameter in the function definition?"
         with self.check_raises_type_error(msg):
             A().missing_self_no_args()
@@ -967,6 +993,54 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         msg = "A.method_two_args() got multiple values for argument 'x'"
         with self.check_raises_type_error(msg):
             A().method_two_args("x", "y", x="oops")
+
+    def test_self_in_wrong_position_keeps_missing_argument_error(self):
+        """A parameter named self in the wrong position is a missing-arg error."""
+        msg = "A.method_with_self_arg() missing 1 required positional argument: 'self'"
+        with self.check_raises_type_error(msg):
+            A().method_with_self_arg()
+
+    def test_unbound_method_with_self_keeps_missing_argument_error(self):
+        """Calling an unbound method without self should keep the missing-arg error."""
+        msg = "A.zero_args_self() missing 1 required positional argument: 'self'"
+        with self.check_raises_type_error(msg):
+            A.zero_args_self()
+
+    def test_classmethod_missing_cls_does_not_suggest_missing_self(self):
+        """A classmethod missing cls conceptually should not suggest self."""
+        msg = "A.missing_cls() takes 1 positional argument but 2 were given"
+        with self.check_raises_type_error(msg):
+            A.missing_cls(1)
+
+    def test_classmethod_missing_cls_via_instance_does_not_suggest_missing_self(self):
+        """A classmethod called through an instance should not suggest self."""
+        msg = "A.missing_cls() takes 1 positional argument but 2 were given"
+        with self.check_raises_type_error(msg):
+            A().missing_cls(1)
+
+    def test_staticmethod_too_many_args_does_not_suggest_missing_self(self):
+        """A staticmethod with too many arguments should not suggest self."""
+        msg = "A.static_one() takes 1 positional argument but 2 were given"
+        with self.check_raises_type_error(msg):
+            A.static_one(1, 2)
+
+    def test_staticmethod_too_many_args_via_instance_does_not_suggest_missing_self(self):
+        """A staticmethod called through an instance should not suggest self."""
+        msg = "A.static_one() takes 1 positional argument but 2 were given"
+        with self.check_raises_type_error(msg):
+            A().static_one(1, 2)
+
+    def test_metaclass_missing_receiver_does_not_suggest_missing_self(self):
+        """A metaclass receiver error should not suggest an instance self."""
+        msg = "Meta.missing_meta_cls() takes 1 positional argument but 2 were given"
+        with self.check_raises_type_error(msg):
+            B.missing_meta_cls(1)
+
+    def test_metaclass_method_too_many_args_does_not_suggest_missing_self(self):
+        """A metaclass method with too many arguments should not suggest self."""
+        msg = "Meta.method() takes 2 positional arguments but 3 were given"
+        with self.check_raises_type_error(msg):
+            B.method(1, 2)
 
 @cpython_only
 class TestErrorMessagesSuggestions(unittest.TestCase):

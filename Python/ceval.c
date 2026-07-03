@@ -1610,7 +1610,8 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     int plural;
     Py_ssize_t kwonly_given = 0;
     Py_ssize_t i;
-    PyObject *sig, *kwonly_sig, *self_hint = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+    PyObject *sig, *kwonly_sig;
+    const char *self_hint = "";
     Py_ssize_t co_argcount = co->co_argcount;
 
     assert((co->co_flags & CO_VARARGS) == 0);
@@ -1649,14 +1650,11 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
         assert(kwonly_sig != NULL);
     }
     if (should_suggest_missing_self) {
-        self_hint = PyUnicode_FromString(
-            ". Did you forget the 'self' parameter in the function definition?");
-        if (self_hint == NULL) {
-            self_hint = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
-        }
+        self_hint = ". Did you forget the 'self' parameter "
+                    "in the function definition?";
     }
     _PyErr_Format(tstate, PyExc_TypeError,
-                  "%U() takes %U positional argument%s but %zd%U %s given%U",
+                  "%U() takes %U positional argument%s but %zd%U %s given%s",
                   qualname,
                   sig,
                   plural ? "s" : "",
@@ -1665,31 +1663,35 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                   given == 1 && !kwonly_given ? "was" : "were",
                   self_hint
                 );
-    Py_DECREF(self_hint);
     Py_DECREF(sig);
     Py_DECREF(kwonly_sig);
 }
 
 static int
-suggest_missing_self(PyFunctionObject *func, PyCodeObject *co, _PyStackRef const *args, Py_ssize_t argcount)
+suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
+                     _PyStackRef const *args, Py_ssize_t argcount)
 {
-    if (
-        ((co->co_argcount + 1) != argcount) ||
-        argcount == 0 // When no args are passed, its not about self
-    ) {
+    if ((co->co_argcount + 1) != argcount || argcount == 0) {
         return 0;
     }
+
+    PyObject *first_argument = PyStackRef_AsPyObjectBorrow(args[0]);
+    if (first_argument == NULL || PyType_Check(first_argument)) {
+        return 0;
+    }
+
     if (co->co_argcount > 0) {
         PyObject *first_parameter_name = PyTuple_GET_ITEM(co->co_localsplusnames, 0);
-        if (PyUnicode_CompareWithASCIIString(first_parameter_name, "self") == 0) {
-            // if its already named self, hint won't make sense to the user.
+        if (PyUnicode_CompareWithASCIIString(first_parameter_name, "self") == 0 ||
+            PyUnicode_CompareWithASCIIString(first_parameter_name, "cls") == 0)
+        {
             return 0;
         }
     }
 
-    PyObject *first_argument = PyStackRef_AsPyObjectBorrow(args[0]);
     PyTypeObject *self_cls = Py_TYPE(first_argument);
-    PyFunctionObject *possibly_current_function = (PyFunctionObject *) _PyType_Lookup(self_cls, co->co_name);
+    PyFunctionObject *possibly_current_function =
+        (PyFunctionObject *)_PyType_Lookup(self_cls, co->co_name);
     return possibly_current_function == func;
 }
 
