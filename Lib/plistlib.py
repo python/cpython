@@ -243,6 +243,9 @@ class _PlistParser:
         self.stack.pop()
 
     def end_key(self):
+        if not self.stack:
+            raise InvalidFileException("'key' element found outside of a 'dict' at line %d" %
+                                       self.parser.CurrentLineNumber)
         if self.current_key or not isinstance(self.stack[-1], dict):
             raise ValueError("unexpected key at line %d" %
                              self.parser.CurrentLineNumber)
