@@ -81,6 +81,16 @@ AboutDialog_spec = {
            "Verify x.y.z versions and test each button, including Close.\n "
     }
 
+_bytecode_browser_spec = {
+    'file': 'bytecodebrowser',
+    'kwds': {},
+    'msg': "Expand code objects in the tree and select instructions; verify\n"
+           "the matching source regions are highlighted in the sample editor\n"
+           "above.  Select text in the editor and verify the instructions\n"
+           "built from it are selected.  Double-click a row and verify the\n"
+           "editor cursor jumps to it and the editor gets focus."
+    }
+
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',

@@ -98,6 +98,7 @@ menudefs = [
    ]),
 
  ('browse', [
+   ('_Bytecode Browser', '<<open-bytecode-browser>>'),
    ]),
 
  ('options', [

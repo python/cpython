@@ -295,6 +295,25 @@ Stack Viewer
 Auto-open Stack Viewer
    Toggle automatically opening the stack viewer on an unhandled exception.
 
+Browse menu (Shell and Editor)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Bytecode Browser
+   Open a window showing the disassembled bytecode of the editor content
+   (or, in the Shell, the current input), or of the selection if there is one.
+   Each code object is a collapsible row of its instructions,
+   colored by the kind of operand they use;
+   the one holding the cursor is opened and its instructions selected.
+   Selecting an instruction highlights the matching region in the editor
+   and moves the cursor there;
+   selecting text or moving the cursor in the editor
+   selects the instructions built from it.
+   Double-click a row, or press :kbd:`Escape`,
+   to hide the browser and return to the editor at the instruction.
+   While the debugger is stopped, the browser follows it instead of the
+   editor, showing the code object that is executing
+   and marking the current instruction.
+
 Options menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
