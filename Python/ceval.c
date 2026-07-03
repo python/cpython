@@ -1672,6 +1672,7 @@ static int
 suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
                      _PyStackRef const *args, Py_ssize_t argcount)
 {
+    /* Missing self shows up as exactly one extra positional argument. */
     if ((co->co_argcount + 1) != argcount || argcount == 0) {
         return 0;
     }
@@ -1683,6 +1684,7 @@ suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
 
     if (co->co_argcount > 0) {
         PyObject *first_parameter_name = PyTuple_GET_ITEM(co->co_localsplusnames, 0);
+        /* If the receiver parameter is already declared, another hint would be misleading. */
         if (PyUnicode_CompareWithASCIIString(first_parameter_name, "self") == 0 ||
             PyUnicode_CompareWithASCIIString(first_parameter_name, "cls") == 0)
         {
