@@ -910,7 +910,7 @@ class A:
     def positional_only(arg, /):
         pass
 
-    def method_with_self(self, arg, kwarg=1):
+    def method_with_self(self, arg):
         pass
 
     def missing_self(another_arg):
@@ -918,6 +918,7 @@ class A:
 
     def missing_self_no_args():
         pass
+
 
 @cpython_only
 class TestErrorMessagesUseQualifiedName(unittest.TestCase):
@@ -927,8 +928,10 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
             yield
         self.assertEqual(str(cm.exception), message)
 
-    def test_happy_path(self):
-        self.assertIs(None, A().method_with_self(1, kwarg=2))
+    def test_too_many_positional_with_self_does_not_suggest_missing_self(self):
+       msg = "A.method_with_self() takes 2 positional arguments but 3 were given"
+       with self.check_raises_type_error(msg):
+           A().method_with_self(1, 2)
 
     def test_too_many_positional_but_missing_self(self):
         msg = "A.missing_self() takes 1 positional argument but 2 were given. Did you forget the 'self' parameter in the function definition?"
