@@ -98,6 +98,7 @@ menudefs = [
    ]),
 
  ('browse', [
+   ('_AST Browser', '<<open-ast-browser>>'),
    ]),
 
  ('options', [
