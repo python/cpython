@@ -43,10 +43,9 @@ except ImportError:
     _interpreters = None
 
 if _interpreters:
-    lazy from .interpreter import InterpreterPoolExecutor
+    lazy from .interpreter import InterpreterPoolExecutor  # noqa: F401
     __all__.append('InterpreterPoolExecutor')
 
 
 def __dir__():
     return __all__ + ['__author__', '__doc__']
-
