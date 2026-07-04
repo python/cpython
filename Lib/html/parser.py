@@ -387,9 +387,11 @@ class HTMLParser(_markupbase.ParserBase):
     def parse_comment(self, i, report=True):
         rawdata = self.rawdata
         assert rawdata.startswith('<!--', i), 'unexpected call to parse_comment()'
-        match = commentclose.search(rawdata, i+4)
+        # An empty comment is abruptly closed by the first ">" or "->",
+        # taking priority over a later "-->" or "--!>" close.
+        match = commentabruptclose.match(rawdata, i+4)
         if not match:
-            match = commentabruptclose.match(rawdata, i+4)
+            match = commentclose.search(rawdata, i+4)
             if not match:
                 return -1
         if report:

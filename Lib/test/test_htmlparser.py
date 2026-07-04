@@ -116,6 +116,11 @@ class TestCaseBase(unittest.TestCase):
                    *, collector=None, convert_charrefs=False):
         if collector is None:
             collector = self.get_collector(convert_charrefs=convert_charrefs)
+            if isinstance(source, str):
+                # Also feed the whole string at once, not just character by
+                # character (below), to exercise different input buffering.
+                self._run_check([source], expected_events,
+                                convert_charrefs=convert_charrefs)
         parser = collector
         for s in source:
             parser.feed(s)
@@ -593,6 +598,9 @@ text
                 '<!-- <!-- nested --> -->'
                 '<!--<!-->'
                 '<!--<!--!>'
+                # abruptly closed empty comment must not swallow later text
+                '<!-->x-->'
+                '<!--->y-->'
         )
         expected = [('comment', " I'm a valid comment "),
                     ('comment', 'me too!'),
@@ -613,6 +621,8 @@ text
                     ('comment', ' <!-- nested '), ('data', ' -->'),
                     ('comment', '<!'),
                     ('comment', '<!'),
+                    ('comment', ''), ('data', 'x-->'),
+                    ('comment', ''), ('data', 'y-->'),
         ]
         self._run_check(html, expected)
 
