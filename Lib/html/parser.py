@@ -177,10 +177,10 @@ class HTMLParser(_markupbase.ParserBase):
             self._pending.append(data)
         else:
             if not self._pending:
-                self.rawdata = self.rawdata + data
+                self.rawdata += data
             else:
                 self._pending.append(data)
-                self.rawdata = self.rawdata + ''.join(self._pending)
+                self.rawdata += ''.join(self._pending)
                 self._pending.clear()
             self._pending_len = 0
             n = len(self.rawdata)
@@ -195,7 +195,7 @@ class HTMLParser(_markupbase.ParserBase):
     def close(self):
         """Handle any buffered data."""
         if self._pending:
-            self.rawdata = self.rawdata + ''.join(self._pending)
+            self.rawdata += ''.join(self._pending)
             self._pending.clear()
             self._pending_len = 0
         self.goahead(1)
