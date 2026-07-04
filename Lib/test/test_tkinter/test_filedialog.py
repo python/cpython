@@ -37,6 +37,39 @@ class NativeDialogTest(AbstractTkTest, unittest.TestCase):
         self.check(filedialog.Directory, 'tk_chooseDirectory')
 
 
+class CancelResultTest(AbstractTkTest, unittest.TestCase):
+    # On cancellation Tcl may report the empty result as '', () or b''
+    # (gh-103878).  _fixresult() normalizes it to the documented empty value:
+    # '' for the filename dialogs and () for the multiple-selection dialog.
+
+    def check(self, dialog, expected):
+        for empty in ('', (), b''):
+            with self.subTest(empty=empty):
+                result = dialog._fixresult(self.root, empty)
+                self.assertEqual(result, expected)
+                self.assertIs(type(result), type(expected))
+
+    def test_open(self):
+        self.check(filedialog.Open(self.root), '')
+
+    def test_saveas(self):
+        self.check(filedialog.SaveAs(self.root), '')
+
+    def test_directory(self):
+        self.check(filedialog.Directory(self.root), '')
+
+    def test_openfilenames(self):
+        self.check(filedialog.Open(self.root, multiple=1), ())
+
+    def test_results_preserved(self):
+        # A real selection is returned unchanged.
+        single = filedialog.Open(self.root)
+        self.assertEqual(single._fixresult(self.root, '/a/spam'), '/a/spam')
+        multiple = filedialog.Open(self.root, multiple=1)
+        self.assertEqual(multiple._fixresult(self.root, ('/a', '/b')),
+                         ('/a', '/b'))
+
+
 class FileDialogTest(AbstractTkTest, unittest.TestCase):
     # The pure-Python FileDialog runs its own modal loop in go(); its logic is
     # exercised here without entering the loop.

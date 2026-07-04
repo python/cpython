@@ -182,6 +182,18 @@ curses
   :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
   (Contributed by Serhiy Storchaka in :gh:`152260`.)
 
+* Add the soft-label-key functions to the :mod:`curses` module, which manage a
+  row of labels along the bottom line of the screen:
+  :func:`~curses.slk_init`, :func:`~curses.slk_set`, :func:`~curses.slk_label`,
+  :func:`~curses.slk_refresh`, :func:`~curses.slk_noutrefresh`,
+  :func:`~curses.slk_clear`, :func:`~curses.slk_restore`,
+  :func:`~curses.slk_touch`, the attribute functions
+  :func:`~curses.slk_attron`, :func:`~curses.slk_attroff`,
+  :func:`~curses.slk_attrset`, :func:`~curses.slk_attr`,
+  :func:`~curses.slk_attr_on`, :func:`~curses.slk_attr_off`,
+  :func:`~curses.slk_attr_set`, and :func:`~curses.slk_color`.
+  (Contributed by Serhiy Storchaka in :gh:`152263`.)
+
 * Add the :func:`curses.term_attrs` function, which returns the supported
   video attributes as :ref:`WA_* <curses-wa-constants>` values, the
   counterpart of :func:`curses.termattrs`.
@@ -538,6 +550,13 @@ New deprecations
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
+* :mod:`struct`:
+
+  * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
+    deprecated.  These codes will be removed in Python 3.21.  Use instead
+    two-letter forms ``'Zf'`` and ``'Zd'``.
+    (Contributed by Sergey B Kirpichev in :gh:`121249`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
@@ -558,6 +577,14 @@ Porting to Python 3.16
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+* In :mod:`tkinter`, the *name* parameter of the
+  :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
+  :meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
+  :meth:`!setvar` are now required.  Calling these methods without
+  them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
+  :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka in :gh:`152587`.)
 
 
 Build changes

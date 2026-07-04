@@ -159,7 +159,8 @@ listed below:
 The below functions when called create a modal, native look-and-feel dialog,
 wait for the user's selection, and return it.
 The exact return value depends on the function (see below); when the dialog is
-cancelled it is an empty string, an empty tuple, an empty list or ``None``.
+cancelled it is the empty value documented for that function -- an empty
+string, an empty tuple, an empty list or ``None``.
 
 .. function:: askopenfile(mode="r", **options)
               askopenfiles(mode="r", **options)

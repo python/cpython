@@ -533,7 +533,8 @@ class CodeTest(unittest.TestCase):
                 ("PUSH_EXC_INFO", None),
                 ("LOAD_COMMON_CONSTANT", None), # artificial 'None'
                 ("STORE_NAME", "e"),  # XX: we know the location for this
-                ("DELETE_NAME", "e"),
+                ("PUSH_NULL", None),
+                ("STORE_NAME", "e"),
                 ("RERAISE", 1),
                 ("COPY", 3),
                 ("POP_EXCEPT", None),
