@@ -109,9 +109,6 @@ static_assert(FILE_FOOTER_SIZE == 32,
 /* Maximum stack depth we'll buffer for delta encoding */
 #define MAX_STACK_DEPTH         256
 
-/* Initial capacity for RLE pending buffer */
-#define INITIAL_RLE_CAPACITY    64
-
 /* Initial capacities for dynamic arrays - sized to reduce reallocations */
 #define INITIAL_STRING_CAPACITY 4096
 #define INITIAL_FRAME_CAPACITY  4096
@@ -226,12 +223,6 @@ typedef struct {
     uint8_t opcode;
 } FrameKey;
 
-/* Pending RLE sample - buffered for run-length encoding */
-typedef struct {
-    uint64_t timestamp_delta;
-    uint8_t status;
-} PendingRLESample;
-
 /* Thread entry - tracks per-thread state for delta encoding */
 typedef struct {
     uint64_t thread_id;
@@ -244,10 +235,9 @@ typedef struct {
     size_t prev_stack_capacity;
 
     /* RLE pending buffer - samples waiting to be written as a repeat group */
-    PendingRLESample *pending_rle;
-    size_t pending_rle_count;
-    size_t pending_rle_capacity;
-    int has_pending_rle;  /* Flag: do we have buffered repeats? */
+    uint8_t *pending_rle;
+    size_t pending_rle_bytes;
+    size_t pending_rle_samples;
 } ThreadEntry;
 
 /* Main binary writer structure */
