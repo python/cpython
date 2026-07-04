@@ -735,6 +735,7 @@ blake2_blake2b_copy_locked(Blake2Object *self, Blake2Object *cpy)
     // Ensure that the implementation type is consistent with the HACL* state.
     // See https://github.com/python/cpython/issues/152851 for details.
     cpy->impl = self->impl;
+
     switch (self->impl) {
 #if _Py_HACL_CAN_COMPILE_VEC256
         case Blake2b_256: {
