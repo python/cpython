@@ -27,14 +27,14 @@ class RobotFileParser:
 
     """
 
-    def __init__(self, url=''):
+    def __init__(self, url_or_request=''):
         self.entries = []
         self.groups = {}
         self.sitemaps = []
         self.default_entry = None
         self.disallow_all = False
         self.allow_all = False
-        self.set_url(url)
+        self.set_url(url_or_request)
         self.last_checked = 0
 
     def mtime(self):
@@ -54,15 +54,17 @@ class RobotFileParser:
         import time
         self.last_checked = time.time()
 
-    def set_url(self, url):
-        """Sets the URL referring to a robots.txt file."""
-        self.url = url
+    def set_url(self, url_or_request):
+        """Sets the URL referring to a robots.txt file. 
+        url_or_request can be a string or a Request object.
+        """
+        self.url = url_or_request
 
-        if isinstance(url, urllib.request.Request):
-            self.host = url.host
-            self.path = url.selector
+        if isinstance(url_or_request, urllib.request.Request):
+            self.host = url_or_request.host
+            self.path = url_or_request.selector
         else:
-            self.host, self.path = urllib.parse.urlparse(url)[1:3]
+            self.host, self.path = urllib.parse.urlparse(url_or_request)[1:3]
 
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
