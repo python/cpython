@@ -335,11 +335,15 @@ PyThread_GetInfo(void)
 #ifdef HAVE_PTHREAD_STUBS
     value = Py_NewRef(Py_None);
 #else
-    value = PyUnicode_FromString("pymutex");
+#ifdef MS_WINDOWS
+    value = Py_NewRef(Py_None);
+#else
+    value = PyUnicode_FromString("semaphore");
     if (value == NULL) {
         Py_DECREF(threadinfo);
         return NULL;
     }
+#endif
 #endif
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 
