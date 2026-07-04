@@ -191,23 +191,27 @@ _PyLazyImport_FinishResolve(PyObject *op, PyObject *resolved)
     PyObject *globals = NULL;
     PyObject *key = NULL;
     Py_hash_t key_hash = -1;
+    int err = 0;
+    int already_resolved = 0;
 
     assert(PyLazyImport_CheckExact(op));
     assert(!PyLazyImport_CheckExact(resolved));
 
     Py_BEGIN_CRITICAL_SECTION(op);
     if (m->lz_resolved != NULL) {
-        Py_END_CRITICAL_SECTION();
-        return 0;
+        already_resolved = 1;
     }
-    if (m->lz_globals != NULL && m->lz_key != NULL) {
+    else if (m->lz_globals != NULL && m->lz_key != NULL) {
         globals = Py_NewRef(m->lz_globals);
         key = Py_NewRef(m->lz_key);
         key_hash = m->lz_key_hash;
     }
     Py_END_CRITICAL_SECTION();
 
-    int err = 0;
+    if (already_resolved) {
+        return 0;
+    }
+
     PyObject *current = NULL;
 
     if (globals != NULL) {
