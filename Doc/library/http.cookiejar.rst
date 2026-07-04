@@ -165,8 +165,8 @@ contained :class:`Cookie` objects.
    :meth:`~urllib.request.Request.get_header`,
    :meth:`~urllib.request.Request.header_items`,
    :meth:`~urllib.request.Request.add_unredirected_header`
-   and the attributes :attr:`~urllib.request.Request.host`, :attr:`!type`,
-   :attr:`~urllib.request.Request.unverifiable`
+   and the attributes :attr:`~urllib.request.Request.host`,
+   :attr:`~urllib.request.Request.type`, :attr:`~urllib.request.Request.unverifiable`
    and :attr:`~urllib.request.Request.origin_req_host` as documented by
    :mod:`urllib.request`.
 
