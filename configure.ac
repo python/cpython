@@ -3915,8 +3915,14 @@ AC_CHECK_LIB([dld], [shl_load])    # Dynamic linking for HP-UX
 
 dnl Check for a working iconv() for the iconv codec.  On glibc it is part of
 dnl the C library; on some systems it lives in a separate libiconv.
+dnl The wasm platforms (Emscripten, WASI) ship a non-conforming iconv() that
+dnl does not report unencodable characters, which would make the iconv codec
+dnl silently lossy, so treat iconv as unavailable there.
 AC_CHECK_HEADERS([iconv.h])
-if test "$ac_cv_header_iconv_h" = yes; then
+AS_CASE([$ac_sys_system],
+  [Emscripten|WASI], [py_have_iconv=no],
+  [py_have_iconv=$ac_cv_header_iconv_h])
+if test "$py_have_iconv" = yes; then
   AC_CACHE_CHECK([for iconv], [ac_cv_have_iconv], [
     ac_cv_have_iconv=no
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[

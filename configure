@@ -14647,7 +14647,13 @@ then :
 
 fi
 
-if test "$ac_cv_header_iconv_h" = yes; then
+case $ac_sys_system in #(
+  Emscripten|WASI) :
+    py_have_iconv=no ;; #(
+  *) :
+    py_have_iconv=$ac_cv_header_iconv_h ;;
+esac
+if test "$py_have_iconv" = yes; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for iconv" >&5
 printf %s "checking for iconv... " >&6; }
 if test ${ac_cv_have_iconv+y}
