@@ -3897,6 +3897,12 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     // Acquire the global import lock to serialize reification
     _PyImport_AcquireLock(interp);
 
+    obj = _PyLazyImport_GetResolved(lazy_import);
+    if (obj != NULL) {
+        _PyImport_ReleaseLock(interp);
+        return obj;
+    }
+
     // Check if we are already importing this module, if so, then we want to
     // return an error that indicates we've hit a cycle which will indicate
     // the value isn't yet available.
@@ -4092,6 +4098,13 @@ error:
 ok:
     if (PySet_Discard(importing, lazy_import) < 0) {
         Py_CLEAR(obj);
+    }
+    else if (obj != NULL) {
+        // Cache the result and update the original global before releasing
+        // the import lock, so competing reification cannot import again.
+        if (_PyLazyImport_FinishResolve(lazy_import, obj) < 0) {
+            Py_CLEAR(obj);
+        }
     }
 
     // Release the global import lock.

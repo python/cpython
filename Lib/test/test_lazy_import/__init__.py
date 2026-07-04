@@ -1119,6 +1119,106 @@ class GlobalsAndDictTests(LazyImportTestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
+    def test_resolve_method_caches_copied_proxy(self):
+        """Repeated resolve() on a copied proxy should not import again."""
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None, level=0):
+                if name == "target_module":
+                    index = len(calls) + 1
+                    calls.append(name)
+                    module = types.ModuleType(name)
+                    module.VALUE = f"value-{index}"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                def test_resolve():
+                    g = globals()
+                    lazy_obj = g["target"]
+                    g["alias"] = lazy_obj
+
+                    resolved = lazy_obj.resolve()
+                    again = g["alias"].resolve()
+
+                    assert again is resolved
+                    assert resolved.VALUE == "value-1"
+                    assert g["target"] is resolved
+                    assert g["alias"] is lazy_obj
+                    return True
+
+                assert test_resolve()
+                assert calls == ["target_module"], calls
+            finally:
+                builtins.__import__ = real_import
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_resolve_method_does_not_reclaim_stale_binding(self):
+        """A stale owner binding should not be retargeted by a later resolve."""
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+            sentinel = object()
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None, level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    module = types.ModuleType(name)
+                    module.VALUE = "resolved"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                def test_resolve():
+                    g = globals()
+                    lazy_obj = g["target"]
+                    g["target"] = sentinel
+
+                    resolved = lazy_obj.resolve()
+                    assert g["target"] is sentinel
+
+                    g["target"] = lazy_obj
+                    again = lazy_obj.resolve()
+                    assert again is resolved
+                    assert g["target"] is lazy_obj
+                    return True
+
+                assert test_resolve()
+                assert calls == ["target_module"], calls
+            finally:
+                builtins.__import__ = real_import
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
     def test_add_lazy_to_globals(self):
         code = textwrap.dedent("""
             import sys
