@@ -3283,22 +3283,25 @@ features:
 
    .. attribute:: st_atime_ns
 
-      Time of most recent access expressed in nanoseconds since the Unix epoch
-      as an integer.
+      Time of most recent access expressed in
+      :ref:`nanoseconds since the Unix epoch <stat-result-timestamps>` as an
+      integer.
 
       .. versionadded:: 3.3
 
    .. attribute:: st_mtime_ns
 
-      Time of most recent content modification expressed in nanoseconds since
-      the Unix epoch as an integer.
+      Time of most recent content modification expressed in
+      :ref:`nanoseconds since the Unix epoch <stat-result-timestamps>` as an
+      integer.
 
       .. versionadded:: 3.3
 
    .. attribute:: st_ctime_ns
 
-      Time of most recent metadata change expressed in nanoseconds since the
-      Unix epoch as an integer.
+      Time of most recent metadata change expressed in
+      :ref:`nanoseconds since the Unix epoch <stat-result-timestamps>` as an
+      integer.
 
       .. versionadded:: 3.3
 
@@ -3319,7 +3322,8 @@ features:
 
    .. attribute:: st_birthtime_ns
 
-      Time of file creation expressed in nanoseconds since the Unix epoch as an
+      Time of file creation expressed in
+      :ref:`nanoseconds since the Unix epoch <stat-result-timestamps>` as an
       integer. This attribute is not always available, and may raise
       :exc:`AttributeError`.
 
@@ -3350,11 +3354,11 @@ features:
 
       These timestamps are seconds (or nanoseconds for the ``*_ns`` variants)
       since the Unix epoch (00:00:00 UTC, January 1, 1970), and are compatible
-      with :func:`time.time`. To convert a timestamp ``ts`` to a
-      :class:`datetime.datetime`, use
-      :func:`datetime.datetime.fromtimestamp` for local time or
+      with :func:`time.time`. To convert a timestamp ``ts`` (in seconds) to a
+      :class:`datetime.datetime`, use :func:`datetime.datetime.fromtimestamp`
+      for local time or
       ``datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc)`` for
-      UTC.
+      UTC. For ``*_ns`` timestamps, divide by ``1_000_000_000`` first.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
