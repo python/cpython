@@ -3688,13 +3688,21 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
     PyObject *res_o = PyStackRef_AsPyObjectBorrow(*writeto);
     if (res_o != NULL && PyLazyImport_CheckExact(res_o)) {
         PyObject *l_v = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), res_o);
-        PyStackRef_CLOSE(writeto[0]);
         if (l_v == NULL) {
             assert(PyErr_Occurred());
+            PyStackRef_CLOSE(writeto[0]);
             *writeto = PyStackRef_NULL;
             return;
         }
-        int err = PyDict_SetItem(globals, name, l_v);
+        int err;
+        if (PyDict_CheckExact(globals)) {
+            err = _PyLazyImport_ReplaceDictItemIfCurrent(
+                res_o, globals, name, l_v);
+        }
+        else {
+            err = PyDict_SetItem(globals, name, l_v);
+        }
+        PyStackRef_CLOSE(writeto[0]);
         if (err < 0) {
             Py_DECREF(l_v);
             *writeto = PyStackRef_NULL;

@@ -10334,10 +10334,20 @@
                     _PyFrame_StackPointerInvalidate(frame);
                     JUMP_TO_LABEL(error);
                 }
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                int err = PyDict_SetItem(GLOBALS(), name, l_v);
-                _PyFrame_StackPointerInvalidate(frame);
+                int err;
+                if (PyDict_CheckExact(GLOBALS())) {
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    err = _PyLazyImport_ReplaceDictItemIfCurrent(
+                        v_o, GLOBALS(), name, l_v);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
+                else {
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    err = PyDict_SetItem(GLOBALS(), name, l_v);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
                 if (err < 0) {
                     assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                     _PyFrame_StackPointerValidate(frame);

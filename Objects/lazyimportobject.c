@@ -184,6 +184,49 @@ _PyLazyImport_SetGlobalBindingAndDictItem(PyObject *op, PyObject *globals,
     return err;
 }
 
+static int
+lazy_import_replace_dict_item_if_current(PyObject *op, PyObject *globals,
+                                         PyObject *key, Py_hash_t key_hash,
+                                         PyObject *resolved)
+{
+    assert(PyLazyImport_CheckExact(op));
+    assert(PyDict_CheckExact(globals));
+    assert(!PyLazyImport_CheckExact(resolved));
+
+    PyObject *current = NULL;
+    int err = 0;
+
+    Py_BEGIN_CRITICAL_SECTION(globals);
+    int found = _PyDict_GetItemRef_KnownHash_LockHeld(
+        (PyDictObject *)globals, key, key_hash, &current);
+    if (found < 0) {
+        err = -1;
+    }
+    else if (found && current == op) {
+        err = _PyDict_SetItem_KnownHash_LockHeld(
+            (PyDictObject *)globals, key, resolved, key_hash);
+    }
+    Py_END_CRITICAL_SECTION();
+
+    Py_XDECREF(current);
+    return err;
+}
+
+int
+_PyLazyImport_ReplaceDictItemIfCurrent(PyObject *op, PyObject *globals,
+                                       PyObject *key, PyObject *resolved)
+{
+    assert(PyLazyImport_CheckExact(op));
+    assert(PyDict_CheckExact(globals));
+
+    Py_hash_t key_hash = PyObject_Hash(key);
+    if (key_hash == -1) {
+        return -1;
+    }
+    return lazy_import_replace_dict_item_if_current(
+        op, globals, key, key_hash, resolved);
+}
+
 int
 _PyLazyImport_FinishResolve(PyObject *op, PyObject *resolved)
 {
@@ -212,25 +255,12 @@ _PyLazyImport_FinishResolve(PyObject *op, PyObject *resolved)
         return 0;
     }
 
-    PyObject *current = NULL;
-
     if (globals != NULL) {
         assert(key != NULL);
         assert(PyDict_CheckExact(globals));
 
-        Py_BEGIN_CRITICAL_SECTION(globals);
-        int found = _PyDict_GetItemRef_KnownHash_LockHeld(
-            (PyDictObject *)globals, key, key_hash, &current);
-        if (found < 0) {
-            err = -1;
-        }
-        else if (found && current == op) {
-            err = _PyDict_SetItem_KnownHash_LockHeld(
-                (PyDictObject *)globals, key, resolved, key_hash);
-        }
-        Py_END_CRITICAL_SECTION();
-
-        Py_XDECREF(current);
+        err = lazy_import_replace_dict_item_if_current(
+            op, globals, key, key_hash, resolved);
         if (err < 0) {
             Py_DECREF(globals);
             Py_DECREF(key);

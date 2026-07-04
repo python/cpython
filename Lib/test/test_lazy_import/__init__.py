@@ -1244,6 +1244,127 @@ class GlobalsAndDictTests(LazyImportTestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
+    def test_load_global_respects_rebound_global_during_reification(self):
+        """LOAD_GLOBAL should not overwrite a global rebound by the import hook."""
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+            sentinel = object()
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None, level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    globals["target"] = sentinel
+                    module = types.ModuleType(name)
+                    module.VALUE = "resolved"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                def trigger_load_global():
+                    return target
+
+                resolved = trigger_load_global()
+                assert resolved.VALUE == "resolved"
+                assert globals()["target"] is sentinel
+                assert calls == ["target_module"], calls
+            finally:
+                builtins.__import__ = real_import
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_load_name_respects_deleted_global_during_reification(self):
+        """LOAD_NAME should not recreate a global deleted by the import hook."""
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+
+            lazy import target_module as target
+
+            def custom_import(name, globals=None, locals=None, fromlist=None, level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    del globals["target"]
+                    module = types.ModuleType(name)
+                    module.VALUE = "resolved"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                resolved = target
+                assert resolved.VALUE == "resolved"
+                assert "target" not in globals()
+                assert calls == ["target_module"], calls
+            finally:
+                builtins.__import__ = real_import
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_module_attr_respects_rebound_global_during_reification(self):
+        """Module attribute access should not overwrite a rebound lazy binding."""
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+            sentinel = object()
+            holder = types.ModuleType("holder")
+            holder.__dict__["__builtins__"] = builtins
+
+            exec("lazy import target_module as target", holder.__dict__)
+
+            def custom_import(name, globals=None, locals=None, fromlist=None, level=0):
+                if name == "target_module":
+                    calls.append(name)
+                    holder.__dict__["target"] = sentinel
+                    module = types.ModuleType(name)
+                    module.VALUE = "resolved"
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            builtins.__import__ = custom_import
+            try:
+                resolved = holder.target
+                assert resolved.VALUE == "resolved"
+                assert holder.__dict__["target"] is sentinel
+                assert calls == ["target_module"], calls
+            finally:
+                builtins.__import__ = real_import
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
     def test_add_lazy_to_globals(self):
         code = textwrap.dedent("""
             import sys

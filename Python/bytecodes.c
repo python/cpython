@@ -2264,7 +2264,14 @@ dummy_func(
                     Py_DECREF(v_o);
                     ERROR_IF(true);
                 }
-                int err = PyDict_SetItem(GLOBALS(), name, l_v);
+                int err;
+                if (PyDict_CheckExact(GLOBALS())) {
+                    err = _PyLazyImport_ReplaceDictItemIfCurrent(
+                        v_o, GLOBALS(), name, l_v);
+                }
+                else {
+                    err = PyDict_SetItem(GLOBALS(), name, l_v);
+                }
                 if (err < 0) {
                     Py_DECREF(v_o);
                     Py_DECREF(l_v);

@@ -1368,7 +1368,9 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                 return NULL;
             }
 
-            if (PyDict_SetItem(m->md_dict, name, new_value) < 0) {
+            if (_PyLazyImport_ReplaceDictItemIfCurrent(
+                    attr, m->md_dict, name, new_value) < 0)
+            {
                 Py_CLEAR(new_value);
             }
             Py_DECREF(attr);

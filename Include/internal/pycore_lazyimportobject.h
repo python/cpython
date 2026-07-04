@@ -33,6 +33,9 @@ PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
 PyAPI_FUNC(PyObject *) _PyLazyImport_GetResolved(PyObject *lazy_import);
 PyAPI_FUNC(int) _PyLazyImport_FinishResolve(
     PyObject *lazy_import, PyObject *resolved);
+PyAPI_FUNC(int) _PyLazyImport_ReplaceDictItemIfCurrent(
+    PyObject *lazy_import, PyObject *dict, PyObject *name,
+    PyObject *resolved);
 PyAPI_FUNC(int) _PyLazyImport_SetGlobalBindingAndDictItem(
     PyObject *lazy_import, PyObject *globals, PyObject *name);
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
