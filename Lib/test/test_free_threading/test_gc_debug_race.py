@@ -1,10 +1,7 @@
-# gh-153014: data race on the GC debug flag in free-threading builds.
-#
-# gc.set_debug() stores gcstate->debug with a plain write (no lock, unlike
-# gc_set_threshold() which runs under stop-the-world), while gc.get_debug() and
-# the collector read it without synchronisation.  Under a free-threading build
-# with ThreadSanitizer this is a data race; the flag is only an int, so it stays
-# benign at the Python level, which lets this double as a regression test.
+# gh-153014: gc.set_debug() writes gcstate->debug without a lock, racing
+# gc.get_debug() and the collector.  The flag is an int, so the race stays
+# benign, which lets this stress test double as a regression test under a
+# free-threading ThreadSanitizer build.
 
 import gc
 import threading
@@ -25,8 +22,7 @@ def _stress_debug_race(num_writers=NUM_WRITERS, num_readers=NUM_READERS,
     def writer():
         try:
             for _ in range(iterations):
-                # DEBUG_SAVEALL has no stderr side effect (unlike DEBUG_STATS);
-                # the collector still reads gcstate->debug either way.
+                # DEBUG_SAVEALL avoids the stderr spam DEBUG_STATS would emit.
                 gc.set_debug(gc.DEBUG_SAVEALL)
                 gc.set_debug(0)
         finally:
@@ -37,7 +33,6 @@ def _stress_debug_race(num_writers=NUM_WRITERS, num_readers=NUM_READERS,
             gc.get_debug()
 
     def collector():
-        # The collector reads gcstate->debug while walking the graph.
         while not done.is_set():
             a = {}
             b = {}
@@ -54,8 +49,6 @@ def _stress_debug_race(num_writers=NUM_WRITERS, num_readers=NUM_READERS,
 @threading_helper.requires_working_threading()
 class TestGCDebugRace(unittest.TestCase):
     def setUp(self):
-        # gc.set_debug() mutates process-global state; DEBUG_SAVEALL also parks
-        # unreachable objects in gc.garbage.  Restore both afterwards.
         self.addCleanup(gc.garbage.clear)
         self.addCleanup(gc.set_debug, gc.get_debug())
 
