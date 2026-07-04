@@ -486,8 +486,8 @@ class PackageTests(LazyImportTestCase):
                 modules = HidingModules(original_modules)
                 sys.modules = modules
                 sys.path.insert(0, tmpdir)
+                lazy import lazy_sysmodules_pkg.sub
                 try:
-                    lazy import lazy_sysmodules_pkg.sub
                     modules.hide_name = "lazy_sysmodules_pkg.sub"
                     modules.hide = True
 
