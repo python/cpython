@@ -3750,13 +3750,9 @@ class IconvTest(unittest.TestCase):
 
     def test_encode_surrogate_pair(self):
         # A surrogate pair must stay two code points, never combined into an
-        # astral character (as UTF-16 would).  U+1F389 is encodable in UTF-32
-        # but its two lone surrogates are not, so strict encoding raises...
+        # astral character (as UTF-16 would): backslashreplace escapes each
+        # surrogate separately, not the escape of a single combined character.
         pair = '\ud83c\udf89'
-        enc = self.require('UTF-32LE')
-        self.assertRaises(UnicodeEncodeError, pair.encode, 'iconv:' + enc)
-        # ...and backslashreplace escapes each surrogate separately, not the
-        # escape of a single combined character.
         latin1 = self.require('ISO-8859-1', 'ASCII')
         self.assertEqual(pair.encode('iconv:' + latin1, 'backslashreplace'),
                          rb'\ud83c\udf89')

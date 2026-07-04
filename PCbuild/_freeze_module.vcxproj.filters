@@ -561,6 +561,9 @@
     <None Include="..\Lib\encodings\_win_cp_codecs.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\encodings\_iconv_codecs.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\io.py">
       <Filter>Python Files</Filter>
     </None>
