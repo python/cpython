@@ -457,6 +457,62 @@ class PackageTests(LazyImportTestCase):
         self.assertIs(pkg.__dict__["bar"], sys.modules["test.test_lazy_import.data.pkg.bar"])
         self.assertIn("BAR_MODULE_LOADED", out.getvalue())
 
+    @support.requires_subprocess()
+    def test_lazy_submodule_missing_from_sys_modules_raises_key_error(self):
+        """A sys.modules race after import should surface the hard error."""
+        code = textwrap.dedent("""
+            import os
+            import sys
+            import tempfile
+
+            class HidingModules(dict):
+                hide = False
+                hide_name = None
+
+                def __getitem__(self, name):
+                    if self.hide and name == self.hide_name:
+                        raise KeyError(name)
+                    return super().__getitem__(name)
+
+            with tempfile.TemporaryDirectory() as tmpdir:
+                pkg_dir = os.path.join(tmpdir, "lazy_sysmodules_pkg")
+                os.mkdir(pkg_dir)
+                with open(os.path.join(pkg_dir, "__init__.py"), "w", encoding="utf-8") as f:
+                    f.write("")
+                with open(os.path.join(pkg_dir, "sub.py"), "w", encoding="utf-8") as f:
+                    f.write("VALUE = 42\\n")
+
+                original_modules = sys.modules
+                modules = HidingModules(original_modules)
+                sys.modules = modules
+                sys.path.insert(0, tmpdir)
+                try:
+                    lazy import lazy_sysmodules_pkg.sub
+                    modules.hide_name = "lazy_sysmodules_pkg.sub"
+                    modules.hide = True
+
+                    try:
+                        lazy_sysmodules_pkg.sub
+                    except KeyError as exc:
+                        assert exc.args == ("lazy_sysmodules_pkg.sub",), exc
+                    else:
+                        raise AssertionError("KeyError was not raised")
+                finally:
+                    sys.path.remove(tmpdir)
+                    sys.modules = original_modules
+                    for name in ("lazy_sysmodules_pkg", "lazy_sysmodules_pkg.sub"):
+                        sys.modules.pop(name, None)
+
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
     def test_lazy_import_pkg_cross_import(self):
         """Cross-imports within package should preserve lazy imports."""
         import test.test_lazy_import.data.pkg.c

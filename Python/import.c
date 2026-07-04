@@ -4458,7 +4458,8 @@ _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
 {
     *result = NULL;
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
     PyObject *lazy_pending = LAZY_PENDING_SUBMODULES(interp);
     if (lazy_pending == NULL) {
         return 0;
@@ -4499,11 +4500,17 @@ _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
     Py_DECREF(mod);
 
     PyObject *submod = PyImport_GetModule(full_name);
-    Py_DECREF(full_name);
     if (submod == NULL) {
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_Format(tstate, PyExc_KeyError,
+                          "%R not in sys.modules as expected",
+                          full_name);
+        }
+        Py_DECREF(full_name);
         Py_DECREF(pending_set);
         return -1;
     }
+    Py_DECREF(full_name);
 
     if (PyDict_SetItem(mod_dict, attr_name, submod) < 0) {
         Py_DECREF(pending_set);
