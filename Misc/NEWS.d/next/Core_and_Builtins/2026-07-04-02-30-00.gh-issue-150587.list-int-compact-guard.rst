@@ -1,0 +1,3 @@
+Fix specialized list subscript and store-subscript paths so they fall back for
+non-compact ``int`` indices instead of passing them to
+``_PyLong_CompactValue()``.

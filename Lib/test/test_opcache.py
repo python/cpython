@@ -1879,6 +1879,19 @@ class TestSpecializer(TestBase):
                                 "BINARY_OP_SUBSCR_LIST_INT")
         self.assert_no_opcode(binary_subscr_list_int, "BINARY_OP")
 
+        def binary_subscr_list_int_noncompact(index):
+            a = [1, 2, 3]
+            return a[index]
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(binary_subscr_list_int_noncompact(0), 1)
+        self.assert_specialized(binary_subscr_list_int_noncompact,
+                                "BINARY_OP_SUBSCR_LIST_INT")
+        # 2**30 + 2 is non-compact, but its low digit is 2. The specialized
+        # path must fall back instead of reading the low digit as the index.
+        with self.assertRaises(IndexError):
+            binary_subscr_list_int_noncompact(2**30 + 2)
+
         def binary_subscr_tuple_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 a = (1, 2, 3)
@@ -1995,6 +2008,19 @@ class TestSpecializer(TestBase):
     @cpython_only
     @requires_specialization
     def test_store_subscr(self):
+        def store_subscr_list_int(index):
+            a = [None]
+            a[index] = 1
+            return a
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(store_subscr_list_int(0), [1])
+        self.assert_specialized(store_subscr_list_int, "STORE_SUBSCR_LIST_INT")
+        # 2**30 + 2 is non-compact, but its low digit is 2. The specialized
+        # path must fall back instead of writing through the low digit index.
+        with self.assertRaises(IndexError):
+            store_subscr_list_int(2**30 + 2)
+
         def store_subscr_dict():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 a = {1: 2, 2: 3}
