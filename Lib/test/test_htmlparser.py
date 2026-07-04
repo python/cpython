@@ -1041,6 +1041,26 @@ text
         check("<![CDATA[" * 9 * n)
         check("<!doctype" * 35 * n)
 
+    @support.requires_resource('cpu')
+    def test_incremental_no_quadratic_complexity(self):
+        # An unterminated construct fed in many small chunks used to take
+        # quadratic time, both to rescan and to concatenate the buffer.
+        # Now it takes a fraction of a second.
+        def check(prefix, chunk, suffix):
+            parser = html.parser.HTMLParser()
+            parser.feed(prefix)
+            for _ in range(200_000):
+                parser.feed(chunk)
+            parser.feed(suffix)
+            parser.close()
+        chunk = "a" * 64
+        check("<!--", chunk, "-->")       # comment
+        check("<?", chunk, ">")           # processing instruction
+        check("<!doctype ", chunk, ">")   # doctype
+        check("<![CDATA[", chunk, "]]>")  # CDATA section
+        check("<a href='", chunk, "'>")   # start tag
+        check("<script>", chunk, "</script>")  # RAWTEXT element
+
 
 class AttributesTestCase(TestCaseBase):
 
