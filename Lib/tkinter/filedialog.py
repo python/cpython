@@ -311,7 +311,9 @@ class _Dialog(commondialog.Dialog):
             pass
 
     def _fixresult(self, widget, result):
-        if result:
+        if not result:
+            result = ''  # normalize the cancelled result (gh-103878)
+        else:
             # keep directory and filename until next time
             # convert Tcl path objects to strings
             try:
@@ -335,17 +337,16 @@ class Open(_Dialog):
     command = "tk_getOpenFile"
 
     def _fixresult(self, widget, result):
-        if isinstance(result, tuple):
-            # multiple results:
+        if self.options.get("multiple"):
+            # multiple results: a tuple of filenames
+            if not isinstance(result, tuple):
+                result = widget.tk.splitlist(result)
             result = tuple([getattr(r, "string", r) for r in result])
             if result:
                 path, file = os.path.split(result[0])
                 self.options["initialdir"] = path
                 # don't set initialfile or filename, as we have multiple of these
             return result
-        if not widget.tk.wantobjects() and "multiple" in self.options:
-            # Need to split result explicitly
-            return self._fixresult(widget, widget.tk.splitlist(result))
         return _Dialog._fixresult(self, widget, result)
 
 
@@ -362,7 +363,9 @@ class Directory(commondialog.Dialog):
     command = "tk_chooseDirectory"
 
     def _fixresult(self, widget, result):
-        if result:
+        if not result:
+            result = ''  # normalize the cancelled result (gh-103878)
+        else:
             # convert Tcl path objects to strings
             try:
                 result = result.string
@@ -420,12 +423,7 @@ def askopenfiles(mode = "r", **options):
     """
 
     files = askopenfilenames(**options)
-    if files:
-        ofiles=[]
-        for filename in files:
-            ofiles.append(open(filename, mode))
-        files=ofiles
-    return files
+    return [open(filename, mode) for filename in files]
 
 
 def asksaveasfile(mode = "w", **options):

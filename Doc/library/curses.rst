@@ -68,85 +68,119 @@ The module :mod:`!curses` defines the following exception:
 The module :mod:`!curses` defines the following functions:
 
 
-.. function:: assume_default_colors(fg, bg, /)
+Initialization and termination
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Allow use of default values for colors on terminals supporting this feature.
-   Use this to support transparency in your application.
+.. function:: initscr()
 
-   * Assign terminal default foreground/background colors to color number ``-1``.
-     So ``init_pair(x, COLOR_RED, -1)`` will initialize pair *x* as red
-     on default background and ``init_pair(x, -1, COLOR_BLUE)`` will
-     initialize pair *x* as default foreground on blue.
+   Initialize the library. Return a :ref:`window <curses-window-objects>` object
+   which represents the whole screen.
 
-   * Change the definition of the color-pair ``0`` to ``(fg, bg)``.
+   See :func:`setupterm` for a caveat about calling it before this function.
 
-   This is an ncurses extension.
+   .. note::
 
-   .. versionadded:: 3.14
+      If there is an error opening the terminal, the underlying curses library may
+      cause the interpreter to exit.
 
+.. function:: endwin()
 
-.. function:: alloc_pair(fg, bg)
+   De-initialize the library, and return terminal to normal status.
 
-   Allocate a color pair for foreground color *fg* and background color *bg*,
-   and return its number.  If a color pair for the same combination of colors
-   already exists, return its number.  Otherwise allocate a new color pair and
-   return its number.
+.. function:: isendwin()
 
-   This function is only available if Python was built against a wide-character
-   version of the underlying curses library with extended-color support (see
-   :func:`has_extended_color_support`).
+   Return ``True`` if :func:`endwin` has been called (that is, the  curses library has
+   been deinitialized).
+
+.. function:: newterm(type=None, fd=None, infd=None, /)
+
+   Initialize a new terminal in addition to the one initialized by
+   :func:`initscr`,
+   and return a :ref:`screen <curses-screen-objects>` for it.
+   This allows a program to drive more than one terminal.
+
+   *type* is the terminal name, as in :func:`setupterm`;
+   if ``None``, the value of the :envvar:`TERM` environment variable is used.
+   *fd* and *infd* are the output and input files for the terminal:
+   either a file object or a file descriptor.
+   They default to :data:`sys.stdout` and :data:`sys.stdin`.
+
+   The new screen becomes the current one.
+   Use :func:`set_term` to switch between screens.
+
+   See :func:`setupterm` for a caveat about calling it before this function.
 
    .. versionadded:: next
 
+.. function:: new_prescr()
 
-.. function:: baudrate()
+   Return a new :ref:`screen <curses-screen-objects>`
+   that can be used to call functions that affect global state
+   before :func:`initscr` or :func:`newterm` is called.
 
-   Return the output speed of the terminal in bits per second.  On software
-   terminal emulators it will have a fixed high value. Included for historical
-   reasons; in former times, it was used to  write output loops for time delays and
-   occasionally to change interfaces depending on the line speed.
+   Availability: if the underlying curses library provides ``new_prescr()``.
 
+   .. versionadded:: next
 
-.. function:: beep()
+.. function:: set_term(screen, /)
 
-   Emit a short attention sound.
+   Make *screen*, a :ref:`screen <curses-screen-objects>` returned by
+   :func:`newterm`, the current terminal,
+   and return the previously current screen.
+   Returns ``None`` if the previous screen was the one created by
+   :func:`initscr`.
 
+   .. versionadded:: next
 
-.. function:: can_change_color()
+.. function:: wrapper(func, /, *args, **kwargs)
 
-   Return ``True`` or ``False``, depending on whether the programmer can change the colors
-   displayed by the terminal.
-
-
-.. function:: cbreak()
-
-   Enter cbreak mode.  In cbreak mode (sometimes called "rare" mode) normal tty
-   line buffering is turned off and characters are available to be read one by one.
-   However, unlike raw mode, special characters (interrupt, quit, suspend, and flow
-   control) retain their effects on the tty driver and calling program.  Calling
-   first :func:`raw` then :func:`cbreak` leaves the terminal in cbreak mode.
-
-
-.. function:: color_content(color_number)
-
-   Return the intensity of the red, green, and blue (RGB) components in the color
-   *color_number*, which must be between ``0`` and ``COLORS - 1``.  Return a 3-tuple,
-   containing the R,G,B values for the given color, which will be between
-   ``0`` (no component) and ``1000`` (maximum amount of component).  Raise an
-   exception if the color is not supported.
+   Initialize curses and call another callable object, *func*, which should be the
+   rest of your curses-using application.  If the application raises an exception,
+   this function will restore the terminal to a sane state before re-raising the
+   exception and generating a traceback.  The callable object *func* is then passed
+   the main window 'stdscr' as its first argument, followed by any other arguments
+   passed to :func:`!wrapper`.  Before calling *func*, :func:`!wrapper` turns on
+   cbreak mode, turns off echo, enables the terminal keypad, and initializes colors
+   if the terminal has color support.  On exit (whether normally or by exception)
+   it restores cooked mode, turns on echo, and disables the terminal keypad.
 
 
-.. function:: color_pair(pair_number)
+Terminal mode control
+~~~~~~~~~~~~~~~~~~~~~
 
-   Return the attribute value for displaying text in the specified color pair.
-   Only color pairs that fit in the color-pair field of the returned value can
-   be represented (usually the first 256); a larger *pair_number* raises
-   :exc:`OverflowError` rather than being silently masked to a different pair.
-   Use :meth:`~window.color_set` or :meth:`~window.attr_set` to display higher
-   pairs.  This attribute value can be combined with :const:`A_STANDOUT`,
-   :const:`A_REVERSE`, and the other :const:`!A_\*` attributes.
-   :func:`pair_number` is the counterpart to this function.
+.. function:: def_prog_mode()
 
+   Save the current terminal mode as the "program" mode, the mode when the running
+   program is using curses.  (Its counterpart is the "shell" mode, for when the
+   program is not in curses.)  Subsequent calls to :func:`reset_prog_mode` will
+   restore this mode.
+
+.. function:: def_shell_mode()
+
+   Save the current terminal mode as the "shell" mode, the mode when the running
+   program is not using curses.  (Its counterpart is the "program" mode, when the
+   program is using curses capabilities.) Subsequent calls to
+   :func:`reset_shell_mode` will restore this mode.
+
+.. function:: reset_prog_mode()
+
+   Restore the  terminal  to "program" mode, as previously saved  by
+   :func:`def_prog_mode`.
+
+.. function:: reset_shell_mode()
+
+   Restore the  terminal  to "shell" mode, as previously saved  by
+   :func:`def_shell_mode`.
+
+.. function:: savetty()
+
+   Save the current state of the terminal modes in a buffer, usable by
+   :func:`resetty`.
+
+.. function:: resetty()
+
+   Restore the state of the terminal modes to what it was at the last call to
+   :func:`savetty`.
 
 .. function:: curs_set(visibility)
 
@@ -156,27 +190,15 @@ The module :mod:`!curses` defines the following functions:
    terminals, the "visible" mode is an underline cursor and the "very visible" mode
    is a block cursor.
 
+.. function:: getsyx()
 
-.. function:: def_prog_mode()
+   Return the current coordinates of the virtual screen cursor as a tuple
+   ``(y, x)``.  If :meth:`leaveok <window.leaveok>` is currently ``True``, then return ``(-1, -1)``.
 
-   Save the current terminal mode as the "program" mode, the mode when the running
-   program is using curses.  (Its counterpart is the "shell" mode, for when the
-   program is not in curses.)  Subsequent calls to :func:`reset_prog_mode` will
-   restore this mode.
+.. function:: setsyx(y, x)
 
-
-.. function:: def_shell_mode()
-
-   Save the current terminal mode as the "shell" mode, the mode when the running
-   program is not using curses.  (Its counterpart is the "program" mode, when the
-   program is using curses capabilities.) Subsequent calls to
-   :func:`reset_shell_mode` will restore this mode.
-
-
-.. function:: delay_output(ms)
-
-   Insert an *ms* millisecond pause in output.
-
+   Set the virtual screen cursor to *y*, *x*. If *y* and *x* are both ``-1``, then
+   :meth:`leaveok <window.leaveok>` is set ``True``.
 
 .. function:: doupdate()
 
@@ -193,91 +215,218 @@ The module :mod:`!curses` defines the following functions:
    followed by a single :func:`!doupdate`.
 
 
+Input options
+~~~~~~~~~~~~~
+
+.. function:: cbreak()
+
+   Enter cbreak mode.  In cbreak mode (sometimes called "rare" mode) normal tty
+   line buffering is turned off and characters are available to be read one by one.
+   However, unlike raw mode, special characters (interrupt, quit, suspend, and flow
+   control) retain their effects on the tty driver and calling program.  Calling
+   first :func:`raw` then :func:`cbreak` leaves the terminal in cbreak mode.
+
+.. function:: nocbreak()
+
+   Leave cbreak mode.  Return to normal "cooked" mode with line buffering.
+
 .. function:: echo()
 
    Enter echo mode.  In echo mode, each character input is echoed to the screen as
    it is entered.
 
+.. function:: noecho()
 
-.. function:: endwin()
+   Leave echo mode.  Echoing of input characters is turned off.
 
-   De-initialize the library, and return terminal to normal status.
+.. function:: raw()
 
+   Enter raw mode.  In raw mode, normal line buffering and  processing of
+   interrupt, quit, suspend, and flow control keys are turned off; characters are
+   presented to curses input functions one by one.
 
-.. function:: erasechar()
+.. function:: noraw()
 
-   Return the user's current erase character as a raw byte, a :class:`bytes`
-   object of length 1.  See also :func:`erasewchar`.
+   Leave raw mode. Return to normal "cooked" mode with line buffering.
 
+.. function:: halfdelay(tenths)
 
-.. function:: erasewchar()
+   Used for half-delay mode, which is similar to cbreak mode in that characters
+   typed by the user are immediately available to the program. However, after
+   blocking for *tenths* tenths of seconds, raise an exception if nothing has
+   been typed.  The value of *tenths* must be a number between ``1`` and ``255``.  Use
+   :func:`nocbreak` to leave half-delay mode.
 
-   Return the user's current erase character as a one-character :class:`str`.
-   Under Unix operating systems this is a property of the controlling tty of the
-   curses program, and is not set by the curses library itself.
+.. function:: meta(flag)
+
+   If *flag* is ``True``, allow 8-bit characters to be input.  If
+   *flag* is ``False``,  allow only 7-bit chars.
+
+.. function:: nl(flag=True)
+
+   Enter newline mode.  This mode translates the return key into newline on input,
+   and translates newline into return and line-feed on output. Newline mode is
+   initially on.
+
+   If *flag* is ``False``, the effect is the same as calling :func:`nonl`.
+
+.. function:: nonl()
+
+   Leave newline mode.  Disable translation of return into newline on input, and
+   disable low-level translation of newline into newline/return on output (but this
+   does not change the behavior of ``addch('\n')``, which always does the
+   equivalent of return and line feed on the virtual screen).  With translation
+   off, curses can sometimes speed up vertical motion a little; also, it will be
+   able to detect the return key on input.
+
+.. function:: intrflush(flag)
+
+   If *flag* is ``True``, pressing an interrupt key (interrupt, break, or quit)
+   will flush all output in the terminal driver queue.  If *flag* is ``False``,
+   no flushing is done.
+
+.. function:: qiflush([flag])
+
+   If *flag* is ``False``, the effect is the same as calling :func:`noqiflush`. If
+   *flag* is ``True``, or no argument is provided, the queues will be flushed when
+   these control characters are read.
+
+.. function:: noqiflush()
+
+   When the :func:`!noqiflush` routine is used, normal flush of input and output queues
+   associated with the ``INTR``, ``QUIT`` and ``SUSP`` characters will not be done.  You may
+   want to call :func:`!noqiflush` in a signal handler if you want output to
+   continue as though the interrupt had not occurred, after the handler exits.
+
+.. function:: typeahead(fd)
+
+   Specify that the file descriptor *fd* be used for typeahead checking.  If *fd*
+   is ``-1``, then no typeahead checking is done.
+
+   The curses library does "line-breakout optimization" by looking for typeahead
+   periodically while updating the screen.  If input is found, and it is coming
+   from a tty, the current update is postponed until refresh or doupdate is called
+   again, allowing faster response to commands typed in advance. This function
+   allows specifying a different file descriptor for typeahead checking.
+
+.. function:: is_cbreak()
+
+   Return ``True`` if cbreak mode (see :func:`cbreak`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+.. function:: is_echo()
+
+   Return ``True`` if echo mode (see :func:`echo`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+.. function:: is_nl()
+
+   Return ``True`` if nl mode (see :func:`nl`) is enabled, ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
+
+   .. versionadded:: next
+
+.. function:: is_raw()
+
+   Return ``True`` if raw mode (see :func:`raw`) is enabled,
+   ``False`` otherwise.
+   Availability: ncurses 6.5 or later.
 
    .. versionadded:: next
 
 
-.. function:: filter()
+Keyboard input
+~~~~~~~~~~~~~~
 
-   The :func:`.filter` routine, if used, must be called before :func:`initscr` is
-   called.  The effect is that, during the initialization, :envvar:`LINES` is set to ``1``; the
-   capabilities ``clear``, ``cup``, ``cud``, ``cud1``, ``cuu1``, ``cuu``, ``vpa`` are disabled; and the ``home``
-   string is set to the value of ``cr``. The effect is that the cursor is confined to
-   the current line, and so are screen updates.  This may be used for enabling
-   character-at-a-time  line editing without touching the rest of the screen.
+.. function:: ungetch(ch)
 
+   Push *ch* so the next :meth:`~window.getch` or :meth:`~window.get_wch` will
+   return it.
 
-.. function:: nofilter()
+   *ch* may be an integer (a key code or character code), a byte, or a string of
+   length 1.  A one-character string is pushed like :func:`unget_wch`; on a
+   narrow build it must encode to a single byte.
 
-   Undo the effect of a previous :func:`.filter` call.
-   Like :func:`.filter`, it must be called before :func:`initscr` (or
-   :func:`newterm`) so that the next initialization uses the full screen
-   again.
+   .. note::
 
-   Availability: if the underlying curses library provides ``nofilter()``.
+      Only one *ch* can be pushed before :meth:`!getch` is called.
 
-   .. versionadded:: next
+   .. versionchanged:: next
+      A one-character string argument is no longer required to encode to a single
+      byte, except on a narrow build.
 
+.. function:: unget_wch(ch)
 
-.. function:: find_pair(fg, bg)
+   Push *ch* so the next :meth:`~window.get_wch` will return it.
 
-   Return the number of a color pair for foreground color *fg* and background
-   color *bg*, or ``-1`` if no color pair for this combination of colors has
-   been allocated.
+   .. note::
 
-   This function is only available if Python was built against a wide-character
-   version of the underlying curses library with extended-color support (see
-   :func:`has_extended_color_support`).
+      Only one *ch* can be pushed before :meth:`!get_wch` is called.
 
-   .. versionadded:: next
+   .. versionadded:: 3.3
 
-
-.. function:: flash()
-
-   Flash the screen.  That is, change it to reverse-video and then change it back
-   in a short interval.  Some people prefer such as 'visible bell' to the audible
-   attention signal produced by :func:`beep`.
-
+   .. versionchanged:: next
+      Also available on a narrow build, where *ch* must encode to a single byte
+      (an 8-bit locale).
 
 .. function:: flushinp()
 
    Flush all input buffers.  This throws away any  typeahead  that  has been typed
    by the user and has not yet been processed by the program.
 
+.. function:: has_key(ch)
 
-.. function:: free_pair(pair_number)
+   Take a key value *ch*, and return ``True`` if the current terminal type recognizes
+   a key with that value.
 
-   Free the color pair *pair_number*, which must have been allocated by
-   :func:`alloc_pair`.  The pair must not be in use.
+.. function:: keyname(k)
 
-   This function is only available if Python was built against a wide-character
-   version of the underlying curses library with extended-color support (see
-   :func:`has_extended_color_support`).
+   Return the name of the key numbered *k* as a bytes object.  The name of a key generating printable
+   ASCII character is the key's character.  The name of a control-key combination
+   is a two-byte bytes object consisting of a caret (``b'^'``) followed by the corresponding
+   printable ASCII character.  The name of an alt-key combination (128--255) is a
+   bytes object consisting of the prefix ``b'M-'`` followed by the name of the corresponding
+   ASCII character.
+
+   Raise a :exc:`ValueError` if *k* is negative.
+
+.. function:: define_key(definition, keycode)
+
+   Define an escape sequence *definition*, a string, as a key that generates
+   the key code *keycode*, so that :mod:`curses` interprets it like one of the
+   keys predefined in the terminal database.
+
+   If *definition* is ``None``, any existing binding for *keycode* is removed.
+   If *keycode* is zero or negative, any existing binding for *definition* is
+   removed.
 
    .. versionadded:: next
 
+.. function:: key_defined(definition)
+
+   Return the key code bound to the escape sequence *definition*, a string,
+   ``0`` if no key code is bound to it, or ``-1`` if *definition* is a prefix
+   of a longer bound sequence (and so is ambiguous).
+
+   .. versionadded:: next
+
+.. function:: keyok(keycode, enable)
+
+   Enable (if *enable* is true) or disable (otherwise) interpretation of the
+   key code *keycode*.  Unlike :meth:`window.keypad`, this affects a single
+   key code rather than all of them.
+
+   .. versionadded:: next
+
+
+Mouse
+~~~~~
 
 .. function:: getmouse()
 
@@ -296,20 +445,49 @@ The module :mod:`!curses` defines the following functions:
       The ``BUTTON5_*`` constants are now exposed if they are provided by the
       underlying curses library.
 
+.. function:: ungetmouse(id, x, y, z, bstate)
 
-.. function:: getsyx()
+   Push a :const:`KEY_MOUSE` event onto the input queue, associating the given
+   state data with it.
 
-   Return the current coordinates of the virtual screen cursor as a tuple
-   ``(y, x)``.  If :meth:`leaveok <window.leaveok>` is currently ``True``, then return ``(-1, -1)``.
+.. function:: mousemask(mousemask)
+
+   Set the mouse events to be reported, and return a tuple ``(availmask,
+   oldmask)``.   *availmask* indicates which of the specified mouse events can be
+   reported; on complete failure it returns ``0``.  *oldmask* is the previous value of
+   the mouse event mask.  If this function is never called, no mouse
+   events are ever reported.
+
+.. function:: mouseinterval(interval)
+
+   Set the maximum time in milliseconds that can elapse between press and release
+   events in order for them to be recognized as a click, and return the previous
+   interval value.  The default value is 166 milliseconds, or one sixth of a second.
+   Use a negative *interval* to obtain the interval value without changing it.
+
+.. function:: has_mouse()
+
+   Return ``True`` if the mouse driver has been successfully initialized.
+
+   Availability: if the underlying curses library provides ``has_mouse()``.
+
+   .. versionadded:: next
 
 
-.. function:: getwin(file)
+Color
+~~~~~
 
-   Read window-related data stored in the file by an earlier :meth:`window.putwin` call.
-   The routine then creates and initializes a new window using that data, returning
-   the new window object.  The *file* argument must be a file object opened for
-   reading in binary mode.
+.. function:: start_color()
 
+   Must be called if the programmer wants to use colors, and before any other color
+   manipulation routine is called.  It is good practice to call this routine right
+   after :func:`initscr`.
+
+   :func:`start_color` initializes eight basic colors (black, red,  green, yellow,
+   blue, magenta, cyan, and white), and two global variables in the :mod:`!curses`
+   module, :const:`COLORS` and :const:`COLOR_PAIRS`, containing the maximum number
+   of colors and color-pairs the terminal can support.  It also restores the colors
+   on the terminal to the values they had when the terminal was just turned on.
 
 .. function:: has_colors()
 
@@ -325,73 +503,10 @@ The module :mod:`!curses` defines the following functions:
 
    .. versionadded:: 3.10
 
-.. function:: has_ic()
+.. function:: can_change_color()
 
-   Return ``True`` if the terminal has insert- and delete-character capabilities.
-   This function is included for historical reasons only, as all modern software
-   terminal emulators have such capabilities.
-
-
-.. function:: has_il()
-
-   Return ``True`` if the terminal has insert- and delete-line capabilities, or can
-   simulate  them  using scrolling regions. This function is included for
-   historical reasons only, as all modern software terminal emulators have such
-   capabilities.
-
-
-.. function:: has_key(ch)
-
-   Take a key value *ch*, and return ``True`` if the current terminal type recognizes
-   a key with that value.
-
-
-.. function:: has_mouse()
-
-   Return ``True`` if the mouse driver has been successfully initialized.
-
-   .. versionadded:: next
-
-
-.. function:: define_key(definition, keycode)
-
-   Define an escape sequence *definition*, a string, as a key that generates
-   the key code *keycode*, so that :mod:`curses` interprets it like one of the
-   keys predefined in the terminal database.
-
-   If *definition* is ``None``, any existing binding for *keycode* is removed.
-   If *keycode* is zero or negative, any existing binding for *definition* is
-   removed.
-
-   .. versionadded:: next
-
-
-.. function:: key_defined(definition)
-
-   Return the key code bound to the escape sequence *definition*, a string,
-   ``0`` if no key code is bound to it, or ``-1`` if *definition* is a prefix
-   of a longer bound sequence (and so is ambiguous).
-
-   .. versionadded:: next
-
-
-.. function:: keyok(keycode, enable)
-
-   Enable (if *enable* is true) or disable (otherwise) interpretation of the
-   key code *keycode*.  Unlike :meth:`window.keypad`, this affects a single
-   key code rather than all of them.
-
-   .. versionadded:: next
-
-
-.. function:: halfdelay(tenths)
-
-   Used for half-delay mode, which is similar to cbreak mode in that characters
-   typed by the user are immediately available to the program. However, after
-   blocking for *tenths* tenths of seconds, raise an exception if nothing has
-   been typed.  The value of *tenths* must be a number between ``1`` and ``255``.  Use
-   :func:`nocbreak` to leave half-delay mode.
-
+   Return ``True`` or ``False``, depending on whether the programmer can change the colors
+   displayed by the terminal.
 
 .. function:: init_color(color_number, r, g, b)
 
@@ -403,6 +518,13 @@ The module :mod:`!curses` defines the following functions:
    screen immediately change to the new definition.  This function is a no-op on
    most terminals; it is active only if :func:`can_change_color` returns ``True``.
 
+.. function:: color_content(color_number)
+
+   Return the intensity of the red, green, and blue (RGB) components in the color
+   *color_number*, which must be between ``0`` and ``COLORS - 1``.  Return a 3-tuple,
+   containing the R,G,B values for the given color, which will be between
+   ``0`` (no component) and ``1000`` (maximum amount of component).  Raise an
+   exception if the color is not supported.
 
 .. function:: init_pair(pair_number, fg, bg)
 
@@ -418,133 +540,106 @@ The module :mod:`!curses` defines the following functions:
    refreshed and all occurrences of that color-pair are changed to the new
    definition.
 
+.. function:: pair_content(pair_number)
 
-.. function:: initscr()
+   Return a tuple ``(fg, bg)`` containing the colors for the requested color pair.
+   The value of *pair_number* must be between ``0`` and ``COLOR_PAIRS - 1``.
 
-   Initialize the library. Return a :ref:`window <curses-window-objects>` object
-   which represents the whole screen.
+.. function:: color_pair(pair_number)
 
-   .. note::
+   Return the attribute value for displaying text in the specified color pair.
+   Only color pairs that fit in the color-pair field of the returned value can
+   be represented (usually the first 256); a larger *pair_number* raises
+   :exc:`OverflowError` rather than being silently masked to a different pair.
+   Use :meth:`~window.color_set` or :meth:`~window.attr_set` to display higher
+   pairs.  This attribute value can be combined with :const:`A_STANDOUT`,
+   :const:`A_REVERSE`, and the other :const:`!A_\*` attributes.
+   :func:`pair_number` is the counterpart to this function.
 
-      If there is an error opening the terminal, the underlying curses library may
-      cause the interpreter to exit.
+.. function:: pair_number(attr)
 
+   Return the number of the color-pair set by the attribute value *attr*.
+   :func:`color_pair` is the counterpart to this function.
 
-.. function:: intrflush(flag)
+.. function:: use_default_colors()
 
-   If *flag* is ``True``, pressing an interrupt key (interrupt, break, or quit)
-   will flush all output in the terminal driver queue.  If *flag* is ``False``,
-   no flushing is done.
+   Equivalent to ``assume_default_colors(-1, -1)``.
 
+.. function:: assume_default_colors(fg, bg, /)
 
-.. function:: is_cbreak()
+   Allow use of default values for colors on terminals supporting this feature.
+   Use this to support transparency in your application.
 
-   Return ``True`` if cbreak mode (see :func:`cbreak`) is enabled,
-   ``False`` otherwise.
-   Availability: ncurses 6.5 or later.
+   * Assign terminal default foreground/background colors to color number ``-1``.
+     So ``init_pair(x, COLOR_RED, -1)`` will initialize pair *x* as red
+     on default background and ``init_pair(x, -1, COLOR_BLUE)`` will
+     initialize pair *x* as default foreground on blue.
+
+   * Change the definition of the color-pair ``0`` to ``(fg, bg)``.
+
+   This is an ncurses extension.
+
+   .. versionadded:: 3.14
+
+.. function:: alloc_pair(fg, bg)
+
+   Allocate a color pair for foreground color *fg* and background color *bg*,
+   and return its number.  If a color pair for the same combination of colors
+   already exists, return its number.  Otherwise allocate a new color pair and
+   return its number.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+.. function:: free_pair(pair_number)
+
+   Free the color pair *pair_number*, which must have been allocated by
+   :func:`alloc_pair`.  The pair must not be in use.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+.. function:: find_pair(fg, bg)
+
+   Return the number of a color pair for foreground color *fg* and background
+   color *bg*, or ``-1`` if no color pair for this combination of colors has
+   been allocated.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
+
+   .. versionadded:: next
+
+.. function:: reset_color_pairs()
+
+   Discard all color-pair definitions, releasing the color pairs allocated by
+   :func:`init_pair` and :func:`alloc_pair`.
+
+   This function is only available if Python was built against a wide-character
+   version of the underlying curses library with extended-color support (see
+   :func:`has_extended_color_support`).
 
    .. versionadded:: next
 
 
-.. function:: is_echo()
+Windows and pads
+~~~~~~~~~~~~~~~~
 
-   Return ``True`` if echo mode (see :func:`echo`) is enabled,
-   ``False`` otherwise.
-   Availability: ncurses 6.5 or later.
+.. function:: newwin(nlines, ncols)
+              newwin(nlines, ncols, begin_y, begin_x)
 
-   .. versionadded:: next
+   Return a new :ref:`window <curses-window-objects>`, whose left-upper corner
+   is at  ``(begin_y, begin_x)``, and whose height/width is  *nlines*/*ncols*.
 
-
-.. function:: is_nl()
-
-   Return ``True`` if nl mode (see :func:`nl`) is enabled, ``False`` otherwise.
-   Availability: ncurses 6.5 or later.
-
-   .. versionadded:: next
-
-
-.. function:: is_raw()
-
-   Return ``True`` if raw mode (see :func:`raw`) is enabled,
-   ``False`` otherwise.
-   Availability: ncurses 6.5 or later.
-
-   .. versionadded:: next
-
-
-.. function:: is_term_resized(nlines, ncols)
-
-   Return ``True`` if :func:`resize_term` would modify the window structure,
-   ``False`` otherwise.
-
-
-.. function:: isendwin()
-
-   Return ``True`` if :func:`endwin` has been called (that is, the  curses library has
-   been deinitialized).
-
-
-.. function:: keyname(k)
-
-   Return the name of the key numbered *k* as a bytes object.  The name of a key generating printable
-   ASCII character is the key's character.  The name of a control-key combination
-   is a two-byte bytes object consisting of a caret (``b'^'``) followed by the corresponding
-   printable ASCII character.  The name of an alt-key combination (128--255) is a
-   bytes object consisting of the prefix ``b'M-'`` followed by the name of the corresponding
-   ASCII character.
-
-   Raise a :exc:`ValueError` if *k* is negative.
-
-
-.. function:: killchar()
-
-   Return the user's current line kill character as a raw byte, a :class:`bytes`
-   object of length 1.  See also :func:`killwchar`.
-
-
-.. function:: killwchar()
-
-   Return the user's current line kill character as a one-character :class:`str`.
-   Under Unix operating systems this is a property of the controlling tty of the
-   curses program, and is not set by the curses library itself.
-
-   .. versionadded:: next
-
-
-.. function:: longname()
-
-   Return a bytes object containing the terminfo long name field describing the current
-   terminal.  The maximum length of a verbose description is 128 characters.  It is
-   defined only after the call to :func:`initscr`.
-
-
-.. function:: meta(flag)
-
-   If *flag* is ``True``, allow 8-bit characters to be input.  If
-   *flag* is ``False``,  allow only 7-bit chars.
-
-
-.. function:: mouseinterval(interval)
-
-   Set the maximum time in milliseconds that can elapse between press and release
-   events in order for them to be recognized as a click, and return the previous
-   interval value.  The default value is 166 milliseconds, or one sixth of a second.
-   Use a negative *interval* to obtain the interval value without changing it.
-
-
-.. function:: mousemask(mousemask)
-
-   Set the mouse events to be reported, and return a tuple ``(availmask,
-   oldmask)``.   *availmask* indicates which of the specified mouse events can be
-   reported; on complete failure it returns ``0``.  *oldmask* is the previous value of
-   the mouse event mask.  If this function is never called, no mouse
-   events are ever reported.
-
-
-.. function:: napms(ms)
-
-   Sleep for *ms* milliseconds.
-
+   By default, the window will extend from the  specified position to the lower
+   right corner of the screen.
 
 .. function:: newpad(nlines, ncols)
 
@@ -564,174 +659,140 @@ The module :mod:`!curses` defines the following functions:
    is to be displayed.
 
 
-.. function:: newwin(nlines, ncols)
-              newwin(nlines, ncols, begin_y, begin_x)
+Soft labels
+~~~~~~~~~~~
 
-   Return a new :ref:`window <curses-window-objects>`, whose left-upper corner
-   is at  ``(begin_y, begin_x)``, and whose height/width is  *nlines*/*ncols*.
+.. _curses-slk:
 
-   By default, the window will extend from the  specified position to the lower
-   right corner of the screen.
+The following functions manage *soft-label keys*, a row of labels displayed
+along the bottom line of the screen, typically used to label a row of function
+keys.  :func:`slk_init` must be called before :func:`initscr` or
+:func:`newterm`; it takes one screen line away from the standard window for the
+labels.
 
 
-.. function:: newterm(type=None, fd=None, infd=None, /)
+.. function:: slk_init(fmt=0)
 
-   Initialize a new terminal in addition to the one initialized by
-   :func:`initscr`,
-   and return a :ref:`screen <curses-screen-objects>` for it.
-   This allows a program to drive more than one terminal.
+   Reserve a screen line for the soft labels and choose their layout.  *fmt*
+   selects the arrangement: ``0`` for 3-2-3 (eight labels), ``1`` for 4-4
+   (eight labels).  Where the underlying curses library supports them, ``2``
+   gives 4-4-4 (twelve labels) and ``3`` gives 4-4-4 with an index line.
 
-   *type* is the terminal name, as in :func:`setupterm`;
-   if ``None``, the value of the :envvar:`TERM` environment variable is used.
-   *fd* and *infd* are the output and input files for the terminal:
-   either a file object or a file descriptor.
-   They default to :data:`sys.stdout` and :data:`sys.stdin`.
-
-   The new screen becomes the current one.
-   Use :func:`set_term` to switch between screens.
+   Must be called before :func:`initscr` or :func:`newterm`.
 
    .. versionadded:: next
 
 
-.. function:: new_prescr()
+.. function:: slk_set(labnum, label, justify)
 
-   Return a new :ref:`screen <curses-screen-objects>`
-   that can be used to call functions that affect global state
-   before :func:`initscr` or :func:`newterm` is called.
-
-   Availability: if the underlying curses library provides ``new_prescr()``.
+   Set the text of soft label number *labnum*, in the range ``1`` through ``8``
+   (or ``12`` in a twelve-label layout).  *justify* controls how *label* is
+   placed within the label: ``0`` for left, ``1`` for centered, ``2`` for right.
 
    .. versionadded:: next
 
 
-.. function:: nl(flag=True)
+.. function:: slk_label(labnum)
 
-   Enter newline mode.  This mode translates the return key into newline on input,
-   and translates newline into return and line-feed on output. Newline mode is
-   initially on.
-
-   If *flag* is ``False``, the effect is the same as calling :func:`nonl`.
-
-
-.. function:: nocbreak()
-
-   Leave cbreak mode.  Return to normal "cooked" mode with line buffering.
-
-
-.. function:: noecho()
-
-   Leave echo mode.  Echoing of input characters is turned off.
-
-
-.. function:: nonl()
-
-   Leave newline mode.  Disable translation of return into newline on input, and
-   disable low-level translation of newline into newline/return on output (but this
-   does not change the behavior of ``addch('\n')``, which always does the
-   equivalent of return and line feed on the virtual screen).  With translation
-   off, curses can sometimes speed up vertical motion a little; also, it will be
-   able to detect the return key on input.
-
-
-.. function:: noqiflush()
-
-   When the :func:`!noqiflush` routine is used, normal flush of input and output queues
-   associated with the ``INTR``, ``QUIT`` and ``SUSP`` characters will not be done.  You may
-   want to call :func:`!noqiflush` in a signal handler if you want output to
-   continue as though the interrupt had not occurred, after the handler exits.
-
-
-.. function:: noraw()
-
-   Leave raw mode. Return to normal "cooked" mode with line buffering.
-
-
-.. function:: pair_content(pair_number)
-
-   Return a tuple ``(fg, bg)`` containing the colors for the requested color pair.
-   The value of *pair_number* must be between ``0`` and ``COLOR_PAIRS - 1``.
-
-
-.. function:: pair_number(attr)
-
-   Return the number of the color-pair set by the attribute value *attr*.
-   :func:`color_pair` is the counterpart to this function.
-
-
-.. function:: putp(str)
-
-   Equivalent to ``tputs(str, 1, putchar)``; emit the value of a specified
-   terminfo capability for the current terminal.  Note that the output of :func:`putp`
-   always goes to standard output.
-
-   :func:`setupterm` (or :func:`initscr`) must be called first.
-
-
-.. function:: qiflush([flag])
-
-   If *flag* is ``False``, the effect is the same as calling :func:`noqiflush`. If
-   *flag* is ``True``, or no argument is provided, the queues will be flushed when
-   these control characters are read.
-
-
-.. function:: raw()
-
-   Enter raw mode.  In raw mode, normal line buffering and  processing of
-   interrupt, quit, suspend, and flow control keys are turned off; characters are
-   presented to curses input functions one by one.
-
-
-.. function:: reset_color_pairs()
-
-   Discard all color-pair definitions, releasing the color pairs allocated by
-   :func:`init_pair` and :func:`alloc_pair`.
-
-   This function is only available if Python was built against a wide-character
-   version of the underlying curses library with extended-color support (see
-   :func:`has_extended_color_support`).
+   Return the current text of soft label number *labnum*, justified as it was
+   set, or an empty string if it has no label.
 
    .. versionadded:: next
 
 
-.. function:: reset_prog_mode()
+.. function:: slk_refresh()
 
-   Restore the  terminal  to "program" mode, as previously saved  by
-   :func:`def_prog_mode`.
+   Update the soft labels on the physical screen, like
+   :meth:`~curses.window.refresh` for a window.
 
-
-.. function:: reset_shell_mode()
-
-   Restore the  terminal  to "shell" mode, as previously saved  by
-   :func:`def_shell_mode`.
+   .. versionadded:: next
 
 
-.. function:: resetty()
+.. function:: slk_noutrefresh()
 
-   Restore the state of the terminal modes to what it was at the last call to
-   :func:`savetty`.
+   Update the soft labels on the virtual screen, like
+   :meth:`window.noutrefresh`.  Use it together with :func:`doupdate` to batch
+   screen updates.
 
-
-.. function:: resize_term(nlines, ncols)
-
-   Backend function used by :func:`resizeterm`, performing most of the work;
-   when resizing the windows, :func:`resize_term` blank-fills the areas that are
-   extended.  The calling application should fill in these areas with
-   appropriate data.  The :func:`!resize_term` function attempts to resize all
-   windows.  However, due to the calling convention of pads, it is not possible
-   to resize these without additional interaction with the application.
+   .. versionadded:: next
 
 
-.. function:: resizeterm(nlines, ncols)
+.. function:: slk_clear()
 
-   Resize the standard and current windows to the specified dimensions, and
-   adjusts other bookkeeping data used by the curses library that record the
-   window dimensions (in particular the SIGWINCH handler).
+   Remove the soft labels from the screen.
+
+   .. versionadded:: next
 
 
-.. function:: savetty()
+.. function:: slk_restore()
 
-   Save the current state of the terminal modes in a buffer, usable by
-   :func:`resetty`.
+   Restore the soft labels to the screen after a :func:`slk_clear`.
+
+   .. versionadded:: next
+
+
+.. function:: slk_touch()
+
+   Force all the soft labels to be redrawn by the next :func:`slk_refresh` or
+   :func:`slk_noutrefresh`.
+
+   .. versionadded:: next
+
+
+.. function:: slk_attron(attr)
+              slk_attroff(attr)
+              slk_attrset(attr)
+
+   Add, remove, or set the attributes used to display the soft labels, given as
+   packed ``A_*`` attributes.
+
+   .. versionadded:: next
+
+
+.. function:: slk_attr()
+
+   Return the current attributes of the soft labels as packed ``A_*``
+   attributes.  Availability depends on the underlying curses library.
+
+   .. versionadded:: next
+
+
+.. function:: slk_attr_on(attr)
+              slk_attr_off(attr)
+
+   Turn the given attributes on or off without affecting any others.  Like the
+   ``attr_*`` window methods, these work with the
+   :ref:`WA_* attributes <curses-wa-constants>` rather than packed ``A_*``
+   attributes.
+
+   .. versionadded:: next
+
+
+.. function:: slk_attr_set(attr, pair=0)
+
+   Set the attributes and color pair of the soft labels.  *attr* is given as
+   :ref:`WA_* attributes <curses-wa-constants>` and *pair* as a color pair
+   number.
+
+   .. versionadded:: next
+
+
+.. function:: slk_color(pair)
+
+   Set the color pair of the soft labels to color pair number *pair*.
+
+   .. versionadded:: next
+
+
+Saving and restoring
+~~~~~~~~~~~~~~~~~~~~
+
+.. function:: getwin(file)
+
+   Read window-related data stored in the file by an earlier :meth:`window.putwin` call.
+   The routine then creates and initializes a new window using that data, returning
+   the new window object.  The *file* argument must be a file object opened for
+   reading in binary mode.
 
 .. function:: scr_dump(filename)
 
@@ -767,6 +828,242 @@ The module :mod:`!curses` defines the following functions:
 
    .. versionadded:: next
 
+
+Querying the terminal
+~~~~~~~~~~~~~~~~~~~~~
+
+.. function:: baudrate()
+
+   Return the output speed of the terminal in bits per second.  On software
+   terminal emulators it will have a fixed high value. Included for historical
+   reasons; in former times, it was used to  write output loops for time delays and
+   occasionally to change interfaces depending on the line speed.
+
+.. function:: erasechar()
+
+   Return the user's current erase character as a raw byte, a :class:`bytes`
+   object of length 1.  See also :func:`erasewchar`.
+
+.. function:: erasewchar()
+
+   Return the user's current erase character as a one-character :class:`str`.
+   Under Unix operating systems this is a property of the controlling tty of the
+   curses program, and is not set by the curses library itself.
+
+   .. versionadded:: next
+
+.. function:: killchar()
+
+   Return the user's current line kill character as a raw byte, a :class:`bytes`
+   object of length 1.  See also :func:`killwchar`.
+
+.. function:: killwchar()
+
+   Return the user's current line kill character as a one-character :class:`str`.
+   Under Unix operating systems this is a property of the controlling tty of the
+   curses program, and is not set by the curses library itself.
+
+   .. versionadded:: next
+
+.. function:: termname()
+
+   Return the value of the environment variable :envvar:`TERM`, as a bytes object,
+   truncated to 14 characters.
+
+.. function:: longname()
+
+   Return a bytes object containing the terminfo long name field describing the current
+   terminal.  The maximum length of a verbose description is 128 characters.  It is
+   defined only after the call to :func:`initscr`.
+
+.. function:: termattrs()
+
+   Return a logical OR of all video attributes supported by the terminal.  This
+   information is useful when a curses program needs complete control over the
+   appearance of the screen.
+
+.. function:: term_attrs()
+
+   Like :func:`termattrs`, but return the attributes as :ref:`WA_*
+   <curses-wa-constants>` values rather than ``A_*`` values.
+
+   .. versionadded:: next
+
+.. function:: has_ic()
+
+   Return ``True`` if the terminal has insert- and delete-character capabilities.
+   This function is included for historical reasons only, as all modern software
+   terminal emulators have such capabilities.
+
+.. function:: has_il()
+
+   Return ``True`` if the terminal has insert- and delete-line capabilities, or can
+   simulate  them  using scrolling regions. This function is included for
+   historical reasons only, as all modern software terminal emulators have such
+   capabilities.
+
+
+Bell and screen flash
+~~~~~~~~~~~~~~~~~~~~~
+
+.. function:: beep()
+
+   Emit a short attention sound.
+
+.. function:: flash()
+
+   Flash the screen.  That is, change it to reverse-video and then change it back
+   in a short interval.  Some people prefer such as 'visible bell' to the audible
+   attention signal produced by :func:`beep`.
+
+
+Terminal resizing
+~~~~~~~~~~~~~~~~~
+
+.. function:: resizeterm(nlines, ncols)
+
+   Resize the standard and current windows to the specified dimensions, and
+   adjusts other bookkeeping data used by the curses library that record the
+   window dimensions (in particular the SIGWINCH handler).
+
+.. function:: resize_term(nlines, ncols)
+
+   Backend function used by :func:`resizeterm`, performing most of the work;
+   when resizing the windows, :func:`resize_term` blank-fills the areas that are
+   extended.  The calling application should fill in these areas with
+   appropriate data.  The :func:`!resize_term` function attempts to resize all
+   windows.  However, due to the calling convention of pads, it is not possible
+   to resize these without additional interaction with the application.
+
+.. function:: is_term_resized(nlines, ncols)
+
+   Return ``True`` if :func:`resize_term` would modify the window structure,
+   ``False`` otherwise.
+
+.. function:: update_lines_cols()
+
+   Update the :const:`LINES` and :const:`COLS` module variables.
+   Useful for detecting manual screen resize.
+
+   .. versionadded:: 3.5
+
+
+Terminfo database
+~~~~~~~~~~~~~~~~~
+
+.. function:: setupterm(term=None, fd=-1)
+
+   Initialize the terminal.  *term* is a string giving
+   the terminal name, or ``None``; if omitted or ``None``, the value of the
+   :envvar:`TERM` environment variable will be used.  *fd* is the
+   file descriptor to which any initialization sequences will be sent; if not
+   supplied or ``-1``, the file descriptor for ``sys.stdout`` will be used.
+
+   Raise a :exc:`curses.error` if the terminal could not be found or its
+   terminfo database entry could not be read.  If the terminal has already
+   been initialized, this function has no effect.
+
+   .. note::
+
+      Calling :func:`initscr` or :func:`newterm` after :func:`setupterm`
+      leaks the terminal that :func:`setupterm` allocated:
+      the curses library keeps only a single current terminal
+      and does not free the previously allocated one.
+
+.. function:: tigetflag(capname)
+
+   Return the value of the Boolean capability corresponding to the terminfo
+   capability name *capname* as an integer.  Return the value ``-1`` if *capname* is not a
+   Boolean capability, or ``0`` if it is canceled or absent from the terminal
+   description.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
+.. function:: tigetnum(capname)
+
+   Return the value of the numeric capability corresponding to the terminfo
+   capability name *capname* as an integer.  Return the value ``-2`` if *capname* is not a
+   numeric capability, or ``-1`` if it is canceled or absent from the terminal
+   description.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
+.. function:: tigetstr(capname)
+
+   Return the value of the string capability corresponding to the terminfo
+   capability name *capname* as a bytes object.  Return ``None`` if *capname*
+   is not a terminfo "string capability", or is canceled or absent from the
+   terminal description.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
+.. function:: tparm(str[, ...])
+
+   Instantiate the bytes object *str* with the supplied parameters, where *str* should
+   be a parameterized string obtained from the terminfo database.  For example,
+   ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
+   result depending on terminal type.  Up to nine integer parameters may be supplied.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
+.. function:: putp(str)
+
+   Equivalent to ``tputs(str, 1, putchar)``; emit the value of a specified
+   terminfo capability for the current terminal.  Note that the output of :func:`putp`
+   always goes to standard output.
+
+   :func:`setupterm` (or :func:`initscr`) must be called first.
+
+
+Utilities
+~~~~~~~~~
+
+.. function:: unctrl(ch)
+
+   Return a bytes object which is a printable representation of the character *ch*.
+   *ch* cannot be a character that does not fit in a single byte; use
+   :func:`wunctrl` for those.
+
+.. function:: wunctrl(ch)
+
+   Return a string which is a printable representation of the character *ch*;
+   any attributes and color pair are ignored.
+   ASCII control characters are represented as a caret followed by a character,
+   for example as ``'^C'``.  Printing characters, including non-ASCII characters
+   printable in the locale, are left as they are.  The representation of other
+   characters is defined by the underlying curses library.
+
+   .. versionadded:: next
+
+.. function:: filter()
+
+   The :func:`.filter` routine, if used, must be called before :func:`initscr` is
+   called.  The effect is that, during the initialization, :envvar:`LINES` is set to ``1``; the
+   capabilities ``clear``, ``cup``, ``cud``, ``cud1``, ``cuu1``, ``cuu``, ``vpa`` are disabled; and the ``home``
+   string is set to the value of ``cr``. The effect is that the cursor is confined to
+   the current line, and so are screen updates.  This may be used for enabling
+   character-at-a-time  line editing without touching the rest of the screen.
+
+.. function:: nofilter()
+
+   Undo the effect of a previous :func:`.filter` call.
+   Like :func:`.filter`, it must be called before :func:`initscr` (or
+   :func:`newterm`) so that the next initialization uses the full screen
+   again.
+
+   Availability: if the underlying curses library provides ``nofilter()``.
+
+   .. versionadded:: next
+
+.. function:: use_env(flag)
+
+   If used, this function should be called before :func:`initscr` or newterm are
+   called.  When *flag* is ``False``, the values of lines and columns specified in the
+   terminfo database will be used, even if environment variables :envvar:`LINES`
+   and :envvar:`COLUMNS` (used by default) are set, or if curses is running in a
+   window (in which case default behavior would be to use the window size if
+   :envvar:`LINES` and :envvar:`COLUMNS` are not set).
+
 .. function:: get_escdelay()
 
    Retrieves the value set by :func:`set_escdelay`.
@@ -794,215 +1091,13 @@ The module :mod:`!curses` defines the following functions:
 
    .. versionadded:: 3.9
 
+.. function:: napms(ms)
 
-.. function:: set_term(screen, /)
+   Sleep for *ms* milliseconds.
 
-   Make *screen*, a :ref:`screen <curses-screen-objects>` returned by
-   :func:`newterm`, the current terminal,
-   and return the previously current screen.
-   Returns ``None`` if the previous screen was the one created by
-   :func:`initscr`.
+.. function:: delay_output(ms)
 
-   .. versionadded:: next
-
-.. function:: setsyx(y, x)
-
-   Set the virtual screen cursor to *y*, *x*. If *y* and *x* are both ``-1``, then
-   :meth:`leaveok <window.leaveok>` is set ``True``.
-
-
-.. function:: setupterm(term=None, fd=-1)
-
-   Initialize the terminal.  *term* is a string giving
-   the terminal name, or ``None``; if omitted or ``None``, the value of the
-   :envvar:`TERM` environment variable will be used.  *fd* is the
-   file descriptor to which any initialization sequences will be sent; if not
-   supplied or ``-1``, the file descriptor for ``sys.stdout`` will be used.
-
-   Raise a :exc:`curses.error` if the terminal could not be found or its
-   terminfo database entry could not be read.  If the terminal has already
-   been initialized, this function has no effect.
-
-
-.. function:: start_color()
-
-   Must be called if the programmer wants to use colors, and before any other color
-   manipulation routine is called.  It is good practice to call this routine right
-   after :func:`initscr`.
-
-   :func:`start_color` initializes eight basic colors (black, red,  green, yellow,
-   blue, magenta, cyan, and white), and two global variables in the :mod:`!curses`
-   module, :const:`COLORS` and :const:`COLOR_PAIRS`, containing the maximum number
-   of colors and color-pairs the terminal can support.  It also restores the colors
-   on the terminal to the values they had when the terminal was just turned on.
-
-
-.. function:: termattrs()
-
-   Return a logical OR of all video attributes supported by the terminal.  This
-   information is useful when a curses program needs complete control over the
-   appearance of the screen.
-
-
-.. function:: term_attrs()
-
-   Like :func:`termattrs`, but return the attributes as :ref:`WA_*
-   <curses-wa-constants>` values rather than ``A_*`` values.
-
-   .. versionadded:: next
-
-
-.. function:: termname()
-
-   Return the value of the environment variable :envvar:`TERM`, as a bytes object,
-   truncated to 14 characters.
-
-
-.. function:: tigetflag(capname)
-
-   Return the value of the Boolean capability corresponding to the terminfo
-   capability name *capname* as an integer.  Return the value ``-1`` if *capname* is not a
-   Boolean capability, or ``0`` if it is canceled or absent from the terminal
-   description.
-
-   :func:`setupterm` (or :func:`initscr`) must be called first.
-
-
-.. function:: tigetnum(capname)
-
-   Return the value of the numeric capability corresponding to the terminfo
-   capability name *capname* as an integer.  Return the value ``-2`` if *capname* is not a
-   numeric capability, or ``-1`` if it is canceled or absent from the terminal
-   description.
-
-   :func:`setupterm` (or :func:`initscr`) must be called first.
-
-
-.. function:: tigetstr(capname)
-
-   Return the value of the string capability corresponding to the terminfo
-   capability name *capname* as a bytes object.  Return ``None`` if *capname*
-   is not a terminfo "string capability", or is canceled or absent from the
-   terminal description.
-
-   :func:`setupterm` (or :func:`initscr`) must be called first.
-
-
-.. function:: tparm(str[, ...])
-
-   Instantiate the bytes object *str* with the supplied parameters, where *str* should
-   be a parameterized string obtained from the terminfo database.  For example,
-   ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
-   result depending on terminal type.  Up to nine integer parameters may be supplied.
-
-   :func:`setupterm` (or :func:`initscr`) must be called first.
-
-
-.. function:: typeahead(fd)
-
-   Specify that the file descriptor *fd* be used for typeahead checking.  If *fd*
-   is ``-1``, then no typeahead checking is done.
-
-   The curses library does "line-breakout optimization" by looking for typeahead
-   periodically while updating the screen.  If input is found, and it is coming
-   from a tty, the current update is postponed until refresh or doupdate is called
-   again, allowing faster response to commands typed in advance. This function
-   allows specifying a different file descriptor for typeahead checking.
-
-
-.. function:: unctrl(ch)
-
-   Return a bytes object which is a printable representation of the character *ch*.
-   *ch* cannot be a character that does not fit in a single byte; use
-   :func:`wunctrl` for those.
-
-
-.. function:: wunctrl(ch)
-
-   Return a string which is a printable representation of the character *ch*;
-   any attributes and color pair are ignored.
-   ASCII control characters are represented as a caret followed by a character,
-   for example as ``'^C'``.  Printing characters, including non-ASCII characters
-   printable in the locale, are left as they are.  The representation of other
-   characters is defined by the underlying curses library.
-
-   .. versionadded:: next
-
-
-.. function:: ungetch(ch)
-
-   Push *ch* so the next :meth:`~window.getch` or :meth:`~window.get_wch` will
-   return it.
-
-   *ch* may be an integer (a key code or character code), a byte, or a string of
-   length 1.  A one-character string is pushed like :func:`unget_wch`; on a
-   narrow build it must encode to a single byte.
-
-   .. note::
-
-      Only one *ch* can be pushed before :meth:`!getch` is called.
-
-   .. versionchanged:: next
-      A one-character string argument is no longer required to encode to a single
-      byte, except on a narrow build.
-
-
-.. function:: update_lines_cols()
-
-   Update the :const:`LINES` and :const:`COLS` module variables.
-   Useful for detecting manual screen resize.
-
-   .. versionadded:: 3.5
-
-
-.. function:: unget_wch(ch)
-
-   Push *ch* so the next :meth:`~window.get_wch` will return it.
-
-   .. note::
-
-      Only one *ch* can be pushed before :meth:`!get_wch` is called.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: next
-      Also available on a narrow build, where *ch* must encode to a single byte
-      (an 8-bit locale).
-
-
-.. function:: ungetmouse(id, x, y, z, bstate)
-
-   Push a :const:`KEY_MOUSE` event onto the input queue, associating the given
-   state data with it.
-
-
-.. function:: use_env(flag)
-
-   If used, this function should be called before :func:`initscr` or newterm are
-   called.  When *flag* is ``False``, the values of lines and columns specified in the
-   terminfo database will be used, even if environment variables :envvar:`LINES`
-   and :envvar:`COLUMNS` (used by default) are set, or if curses is running in a
-   window (in which case default behavior would be to use the window size if
-   :envvar:`LINES` and :envvar:`COLUMNS` are not set).
-
-
-.. function:: use_default_colors()
-
-   Equivalent to ``assume_default_colors(-1, -1)``.
-
-
-.. function:: wrapper(func, /, *args, **kwargs)
-
-   Initialize curses and call another callable object, *func*, which should be the
-   rest of your curses-using application.  If the application raises an exception,
-   this function will restore the terminal to a sane state before re-raising the
-   exception and generating a traceback.  The callable object *func* is then passed
-   the main window 'stdscr' as its first argument, followed by any other arguments
-   passed to :func:`!wrapper`.  Before calling *func*, :func:`!wrapper` turns on
-   cbreak mode, turns off echo, enables the terminal keypad, and initializes colors
-   if the terminal has color support.  On exit (whether normally or by exception)
-   it restores cooked mode, turns on echo, and disables the terminal keypad.
-
+   Insert an *ms* millisecond pause in output.
 
 .. _curses-window-objects:
 
@@ -1014,6 +1109,9 @@ Window objects
    Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
    the following methods and attributes:
 
+
+Adding and inserting text
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. method:: window.addch(ch[, attr])
             window.addch(y, x, ch[, attr])
@@ -1035,18 +1133,6 @@ Window objects
       A character may now be given as a string of a base character followed
       by combining characters, instead of only a single character, or as a
       :class:`complexchar` cell.
-
-
-.. method:: window.addnstr(str, n[, attr])
-            window.addnstr(y, x, str, n[, attr])
-
-   Paint at most *n* characters of the character string *str* at
-   ``(y, x)`` with attributes
-   *attr*, overwriting anything previously on the display.
-
-   .. versionchanged:: next
-      *str* may now also be a :class:`complexstr`; see :meth:`addstr`.
-
 
 .. method:: window.addstr(str[, attr])
             window.addstr(y, x, str[, attr])
@@ -1074,24 +1160,239 @@ Window objects
    .. versionchanged:: next
       *str* may now also be a :class:`complexstr`, as described above.
 
+.. method:: window.addnstr(str, n[, attr])
+            window.addnstr(y, x, str, n[, attr])
+
+   Paint at most *n* characters of the character string *str* at
+   ``(y, x)`` with attributes
+   *attr*, overwriting anything previously on the display.
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`; see :meth:`addstr`.
+
+.. method:: window.echochar(ch[, attr])
+
+   Add character *ch* with attribute *attr*, and immediately  call :meth:`refresh`
+   on the window.
+
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
+
+.. method:: window.insch(ch[, attr])
+            window.insch(y, x, ch[, attr])
+
+   Insert character *ch* with attributes *attr* before the character under the
+   cursor, or at ``(y, x)`` if specified.  All characters to the right of the
+   cursor are shifted one position right, with the rightmost character on the
+   line being lost.  The cursor position does not change.
+
+   .. versionchanged:: next
+      Wide and combining characters, and :class:`complexchar` cells, are now
+      accepted.
+
+.. method:: window.insstr(str[, attr])
+            window.insstr(y, x, str[, attr])
+
+   Insert a character string (as many characters as will fit on the line) before
+   the character under the cursor.  All characters to the right of the cursor are
+   shifted right, with the rightmost characters on the line being lost.  The cursor
+   position does not change (after moving to *y*, *x*, if specified).
+
+   *str* may also be a :class:`complexstr`, in which case each cell carries its
+   own attributes and color pair, so *attr* must not be given.
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`, as described above.
+
+.. method:: window.insnstr(str, n[, attr])
+            window.insnstr(y, x, str, n[, attr])
+
+   Insert a character string (as many characters as will fit on the line) before
+   the character under the cursor, up to *n* characters.   If *n* is zero or
+   negative, the entire string is inserted. All characters to the right of the
+   cursor are shifted right, with the rightmost characters on the line being lost.
+   The cursor position does not change (after moving to *y*, *x*, if specified).
+
+   .. versionchanged:: next
+      *str* may now also be a :class:`complexstr`; see :meth:`insstr`.
+
+
+Deleting and inserting lines
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. method:: window.delch([y, x])
+
+   Delete the character under the cursor, or at ``(y, x)`` if specified.  All
+   characters to the right on the same line are shifted one position left.
+
+.. method:: window.deleteln()
+
+   Delete the line under the cursor. All following lines are moved up by one line.
+
+.. method:: window.insertln()
+
+   Insert a blank line under the cursor. All following lines are moved down by one
+   line.
+
+.. method:: window.insdelln(nlines)
+
+   Insert *nlines* lines into the specified window above the current line.  The
+   *nlines* bottom lines are lost.  For negative *nlines*, delete *nlines* lines
+   starting with the one under the cursor, and move the remaining lines up.  The
+   bottom *nlines* lines are cleared.  The current cursor position remains the
+   same.
+
+
+Reading input
+~~~~~~~~~~~~~
+
+.. method:: window.getch([y, x])
+
+   Get a character. Note that the integer returned does *not* have to be in ASCII
+   range: function keys, keypad keys and so on are represented by numbers higher
+   than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
+   wait until a key is pressed.
+   A multibyte character is returned as its encoded bytes one at a time; use
+   :meth:`get_wch` to read it as a single character.
+
+.. method:: window.get_wch([y, x])
+
+   Get a wide character. Return a character for most keys, or an integer for
+   function keys, keypad keys, and other special keys.  Unlike :meth:`getch`, an
+   ordinary key is returned as a one-character :class:`str`.
+   In no-delay mode, raise an exception if there is no input.
+
+   .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      Also available on a narrow build, where only a character representable as a
+      single byte (an 8-bit locale) can be returned.
+
+.. method:: window.getkey([y, x])
+
+   Get a character, returning a string instead of an integer, as :meth:`getch`
+   does. Function keys, keypad keys and other special keys return a multibyte
+   string containing the key name.  In no-delay mode, raise an exception if
+   there is no input.
+
+.. method:: window.getstr()
+            window.getstr(n)
+            window.getstr(y, x)
+            window.getstr(y, x, n)
+
+   Read a bytes object from the user, with primitive line editing capacity.
+   At most *n* characters are read;
+   *n* defaults to and cannot exceed 2047.
+   A multibyte character is returned as its encoded bytes; use :meth:`get_wstr`
+   to read the input as a :class:`str`.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
+
+.. method:: window.get_wstr()
+            window.get_wstr(n)
+            window.get_wstr(y, x)
+            window.get_wstr(y, x, n)
+
+   Read a string from the user, with primitive line editing capacity.
+   Unlike :meth:`getstr`, it can return characters that are not representable in
+   the window's encoding.
+   At most *n* characters are read; *n* defaults to and cannot exceed 2047.
+
+   .. versionadded:: next
+
+.. method:: window.getdelay()
+
+   Return the window's read timeout in milliseconds,
+   as set by :meth:`nodelay` or :meth:`timeout`:
+   ``-1`` for blocking, ``0`` for non-blocking,
+   or a positive number of milliseconds.
+
+   .. versionadded:: next
+
+
+Reading window contents
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. method:: window.inch([y, x])
+
+   Return the character at the given position in the window.
+   The bottom 8 bits are the character proper and the upper bits are the attributes;
+   extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
+   and the color pair with :func:`pair_number`.
+   It cannot represent a cell holding combining characters, a character that does
+   not fit in a single byte, or a color pair outside the :func:`color_pair`
+   range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
+
+.. method:: window.in_wch([y, x])
+
+   Return the complex character at the given position in the window as a
+   :class:`complexchar`.  Unlike :meth:`inch`, the returned object carries the
+   cell's text (a spacing character optionally followed by combining characters)
+   together with its attributes and color pair.
+
+   .. versionadded:: next
+
+.. method:: window.instr([n])
+            window.instr(y, x[, n])
+
+   Return a bytes object of characters, extracted from the window starting at the
+   current cursor position, or at *y*, *x* if specified, and stopping at the end
+   of the line. Attributes and color information are stripped
+   from the characters.  If *n* is specified, :meth:`instr` returns a string
+   at most *n* characters long (exclusive of the trailing NUL).
+   The maximum value for *n* is 2047.
+   A character not representable in the window's encoding cannot be returned;
+   use :meth:`in_wstr` for those.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
+
+.. method:: window.in_wstr([n])
+            window.in_wstr(y, x[, n])
+
+   Return a string of characters, extracted from the window starting at the
+   current cursor position, or at *y*, *x* if specified.  Unlike :meth:`instr`,
+   it can return characters that are not representable in the window's encoding.
+   Attributes and color information are stripped from the characters.  The
+   maximum value for *n* is 2047.
+
+   .. versionadded:: next
+
+.. method:: window.in_wchstr([n])
+            window.in_wchstr(y, x[, n])
+
+   Return a :class:`complexstr` of the styled cells extracted from the window
+   starting at the current cursor position, or at *y*, *x* if specified, and
+   stopping at the end of the line.  This is the variant of :meth:`instr` and
+   :meth:`in_wstr` that *keeps* each cell's attributes and color pair (those
+   methods strip the rendition).  If *n* is specified, at most *n* cells are
+   returned.  The maximum value for *n* is 2047.
+
+   The result can be written back unchanged with :meth:`addstr` (a read and a
+   re-write is a round-trip that preserves every cell's rendition).
+
+   .. versionadded:: next
+
+
+Attributes
+~~~~~~~~~~
 
 .. method:: window.attroff(attr)
 
    Remove attribute *attr* from the "background" set applied to all writes to the
    current window.
 
-
 .. method:: window.attron(attr)
 
    Add attribute *attr* to the "background" set applied to all writes to the
    current window.
 
-
 .. method:: window.attrset(attr)
 
    Set the "background" set of attributes to *attr*.  This set is initially
    ``0`` (no attributes).
-
 
 .. method:: window.attr_get()
 
@@ -1106,13 +1407,11 @@ Window objects
 
    .. versionadded:: next
 
-
 .. method:: window.attr_set(attr, pair=0)
 
    Set the window's rendition to the attributes *attr* and the color pair *pair*.
 
    .. versionadded:: next
-
 
 .. method:: window.attr_on(attr)
 
@@ -1120,13 +1419,11 @@ Window objects
 
    .. versionadded:: next
 
-
 .. method:: window.attr_off(attr)
 
    Turn off the attributes *attr* without affecting any others.
 
    .. versionadded:: next
-
 
 .. method:: window.color_set(pair)
 
@@ -1134,13 +1431,36 @@ Window objects
 
    .. versionadded:: next
 
-
 .. method:: window.getattrs()
 
    Return the window's current attributes.
 
    .. versionadded:: next
 
+.. method:: window.standout()
+
+   Turn on attribute *A_STANDOUT*.
+
+.. method:: window.standend()
+
+   Turn off the standout attribute.  On some terminals this has the side effect of
+   turning off all attributes.
+
+.. method:: window.chgat(attr)
+            window.chgat(num, attr)
+            window.chgat(y, x, attr)
+            window.chgat(y, x, num, attr)
+
+   Set the attributes of *num* characters at the current cursor position, or at
+   position ``(y, x)`` if supplied. If *num* is not given or is ``-1``,
+   the attribute will be set on all the characters to the end of the line.  This
+   function moves cursor to position ``(y, x)`` if supplied. The changed line
+   will be touched using the :meth:`touchline` method so that the contents will
+   be redisplayed by the next window refresh.
+
+
+Background
+~~~~~~~~~~
 
 .. method:: window.bkgd(ch[, attr])
 
@@ -1158,7 +1478,6 @@ Window objects
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.
 
-
 .. method:: window.bkgdset(ch[, attr])
 
    Set the window's background.  A window's background consists of a character and
@@ -1172,6 +1491,47 @@ Window objects
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.
 
+.. method:: window.getbkgd()
+
+   Return the given window's current background character/attribute pair.
+   Its components can be extracted like those of :meth:`inch`.
+   It cannot represent a background set with a wide character or with a color
+   pair outside the :func:`color_pair` range; use :meth:`getbkgrnd` for those.
+
+.. method:: window.getbkgrnd()
+
+   Return the given window's current background as a :class:`complexchar`.
+   Unlike :meth:`getbkgd`, the returned object carries the background character
+   together with its attributes and color pair, and the color pair is not limited
+   to the value that fits in a :func:`color_pair`.
+
+   .. versionadded:: next
+
+
+Clearing and erasing
+~~~~~~~~~~~~~~~~~~~~
+
+.. method:: window.erase()
+
+   Clear the window.
+
+.. method:: window.clear()
+
+   Like :meth:`erase`, but also cause the whole window to be repainted upon next
+   call to :meth:`refresh`.
+
+.. method:: window.clrtobot()
+
+   Erase from cursor to the end of the window: all lines below the cursor are
+   deleted, and then the equivalent of :meth:`clrtoeol` is performed.
+
+.. method:: window.clrtoeol()
+
+   Erase from cursor to the end of the line.
+
+
+Borders and lines
+~~~~~~~~~~~~~~~~~
 
 .. method:: window.border([ls[, rs[, ts[, bs[, tl[, tr[, bl[, br]]]]]]]])
 
@@ -1210,7 +1570,6 @@ Window objects
       accepted.  A single call cannot mix
       them with integer or byte characters.
 
-
 .. method:: window.box([vertch, horch])
 
    Similar to :meth:`border`, but both *ls* and *rs* are *vertch* and both *ts* and
@@ -1220,255 +1579,6 @@ Window objects
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.  A single call cannot mix
       them with integer or byte characters.
-
-
-.. method:: window.chgat(attr)
-            window.chgat(num, attr)
-            window.chgat(y, x, attr)
-            window.chgat(y, x, num, attr)
-
-   Set the attributes of *num* characters at the current cursor position, or at
-   position ``(y, x)`` if supplied. If *num* is not given or is ``-1``,
-   the attribute will be set on all the characters to the end of the line.  This
-   function moves cursor to position ``(y, x)`` if supplied. The changed line
-   will be touched using the :meth:`touchline` method so that the contents will
-   be redisplayed by the next window refresh.
-
-
-.. method:: window.clear()
-
-   Like :meth:`erase`, but also cause the whole window to be repainted upon next
-   call to :meth:`refresh`.
-
-
-.. method:: window.clearok(flag)
-
-   If *flag* is ``True``, the next call to :meth:`refresh` will clear the window
-   completely.
-
-
-.. method:: window.clrtobot()
-
-   Erase from cursor to the end of the window: all lines below the cursor are
-   deleted, and then the equivalent of :meth:`clrtoeol` is performed.
-
-
-.. method:: window.clrtoeol()
-
-   Erase from cursor to the end of the line.
-
-
-.. method:: window.cursyncup()
-
-   Update the current cursor position of all the ancestors of the window to
-   reflect the current cursor position of the window.
-
-
-.. method:: window.delch([y, x])
-
-   Delete the character under the cursor, or at ``(y, x)`` if specified.  All
-   characters to the right on the same line are shifted one position left.
-
-
-.. method:: window.deleteln()
-
-   Delete the line under the cursor. All following lines are moved up by one line.
-
-
-.. method:: window.derwin(begin_y, begin_x)
-            window.derwin(nlines, ncols, begin_y, begin_x)
-
-   An abbreviation for "derive window", :meth:`derwin` is the same as calling
-   :meth:`subwin`, except that *begin_y* and *begin_x* are relative to the origin
-   of the window, rather than relative to the entire screen.  Return a window
-   object for the derived window.
-
-
-.. method:: window.dupwin()
-
-   Return a new window that is an exact duplicate of the window: it has the same
-   size, position, contents and attributes.  Unlike a window created by
-   :meth:`subwin` or :meth:`derwin`, the duplicate is independent of the
-   original -- it has its own cell buffer, so later changes to one do not affect
-   the other.
-
-   .. versionadded:: next
-
-
-.. method:: window.echochar(ch[, attr])
-
-   Add character *ch* with attribute *attr*, and immediately  call :meth:`refresh`
-   on the window.
-
-   .. versionchanged:: next
-      Wide and combining characters, and :class:`complexchar` cells, are now
-      accepted.
-
-
-.. method:: window.enclose(y, x)
-
-   Test whether the given pair of screen-relative character-cell coordinates are
-   enclosed by the given window, returning ``True`` or ``False``.  It is useful for
-   determining what subset of the screen windows enclose the location of a mouse
-   event.
-
-   .. versionchanged:: 3.10
-      Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
-
-
-.. method:: window.mouse_trafo(y, x, to_screen)
-
-   Convert between window-relative and screen-relative (``stdscr``-relative) character-cell coordinates.
-   If *to_screen* is true, convert the window-relative coordinates *y*, *x* to screen-relative coordinates;
-   otherwise convert in the opposite direction.
-   The two coordinate systems differ when lines are reserved on the screen, for example for soft labels.
-
-   Return the converted coordinates as a ``(y, x)`` tuple, or ``None`` if they lie outside the window.
-
-   .. versionadded:: next
-
-
-.. attribute:: window.encoding
-
-   Encoding used to encode method arguments (Unicode strings and characters).
-   The encoding attribute is inherited from the parent window when a subwindow
-   is created, for example with :meth:`window.subwin`.
-   By default, current locale encoding is used (see :func:`locale.getencoding`).
-
-   .. versionadded:: 3.3
-
-
-.. method:: window.erase()
-
-   Clear the window.
-
-
-.. method:: window.getbegyx()
-
-   Return a tuple ``(y, x)`` of coordinates of upper-left corner.
-
-
-.. method:: window.getbkgd()
-
-   Return the given window's current background character/attribute pair.
-   Its components can be extracted like those of :meth:`inch`.
-   It cannot represent a background set with a wide character or with a color
-   pair outside the :func:`color_pair` range; use :meth:`getbkgrnd` for those.
-
-
-.. method:: window.getbkgrnd()
-
-   Return the given window's current background as a :class:`complexchar`.
-   Unlike :meth:`getbkgd`, the returned object carries the background character
-   together with its attributes and color pair, and the color pair is not limited
-   to the value that fits in a :func:`color_pair`.
-
-   .. versionadded:: next
-
-
-.. method:: window.getch([y, x])
-
-   Get a character. Note that the integer returned does *not* have to be in ASCII
-   range: function keys, keypad keys and so on are represented by numbers higher
-   than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
-   wait until a key is pressed.
-   A multibyte character is returned as its encoded bytes one at a time; use
-   :meth:`get_wch` to read it as a single character.
-
-
-.. method:: window.get_wch([y, x])
-
-   Get a wide character. Return a character for most keys, or an integer for
-   function keys, keypad keys, and other special keys.  Unlike :meth:`getch`, an
-   ordinary key is returned as a one-character :class:`str`.
-   In no-delay mode, raise an exception if there is no input.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: next
-      Also available on a narrow build, where only a character representable as a
-      single byte (an 8-bit locale) can be returned.
-
-
-.. method:: window.getdelay()
-
-   Return the window's read timeout in milliseconds,
-   as set by :meth:`nodelay` or :meth:`timeout`:
-   ``-1`` for blocking, ``0`` for non-blocking,
-   or a positive number of milliseconds.
-
-   .. versionadded:: next
-
-
-.. method:: window.getkey([y, x])
-
-   Get a character, returning a string instead of an integer, as :meth:`getch`
-   does. Function keys, keypad keys and other special keys return a multibyte
-   string containing the key name.  In no-delay mode, raise an exception if
-   there is no input.
-
-
-.. method:: window.getmaxyx()
-
-   Return a tuple ``(y, x)`` of the height and width of the window.
-
-
-.. method:: window.getparent()
-
-   Return the parent window of this subwindow,
-   or ``None`` if this window is not a subwindow.
-
-   .. versionadded:: next
-
-
-.. method:: window.getparyx()
-
-   Return the beginning coordinates of this window relative to its parent window
-   as a tuple ``(y, x)``.  Return ``(-1, -1)`` if this window has no
-   parent.
-
-
-.. method:: window.getscrreg()
-
-   Return a tuple ``(top, bottom)`` of the window's current scrolling region,
-   as set by :meth:`setscrreg`.
-
-   .. versionadded:: next
-
-
-.. method:: window.getstr()
-            window.getstr(n)
-            window.getstr(y, x)
-            window.getstr(y, x, n)
-
-   Read a bytes object from the user, with primitive line editing capacity.
-   At most *n* characters are read;
-   *n* defaults to and cannot exceed 2047.
-   A multibyte character is returned as its encoded bytes; use :meth:`get_wstr`
-   to read the input as a :class:`str`.
-
-   .. versionchanged:: 3.14
-      The maximum value for *n* was increased from 1023 to 2047.
-
-
-.. method:: window.get_wstr()
-            window.get_wstr(n)
-            window.get_wstr(y, x)
-            window.get_wstr(y, x, n)
-
-   Read a string from the user, with primitive line editing capacity.
-   Unlike :meth:`getstr`, it can return characters that are not representable in
-   the window's encoding.
-   At most *n* characters are read; *n* defaults to and cannot exceed 2047.
-
-   .. versionadded:: next
-
-
-.. method:: window.getyx()
-
-   Return a tuple ``(y, x)`` of current cursor position  relative to the window's
-   upper-left corner.
-
 
 .. method:: window.hline(ch, n[, attr])
             window.hline(y, x, ch, n[, attr])
@@ -1481,274 +1591,88 @@ Window objects
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.
 
+.. method:: window.vline(ch, n[, attr])
+            window.vline(y, x, ch, n[, attr])
 
-.. method:: window.idcok(flag)
-
-   If *flag* is ``False``, curses no longer considers using the hardware insert/delete
-   character feature of the terminal; if *flag* is ``True``, use of character insertion
-   and deletion is enabled.  When curses is first initialized, use of character
-   insert/delete is enabled by default.
-
-
-.. method:: window.idlok(flag)
-
-   If *flag* is ``True``, :mod:`!curses` will try to use hardware line
-   editing facilities.  Otherwise, curses will not use them.
-
-
-.. method:: window.immedok(flag)
-
-   If *flag* is ``True``, any change in the window image automatically causes the
-   window to be refreshed; you no longer have to call :meth:`refresh` yourself.
-   However, it may degrade performance considerably, due to repeated calls to
-   wrefresh.  This option is disabled by default.
-
-
-.. method:: window.inch([y, x])
-
-   Return the character at the given position in the window.
-   The bottom 8 bits are the character proper and the upper bits are the attributes;
-   extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
-   and the color pair with :func:`pair_number`.
-   It cannot represent a cell holding combining characters, a character that does
-   not fit in a single byte, or a color pair outside the :func:`color_pair`
-   range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
-
-
-.. method:: window.in_wch([y, x])
-
-   Return the complex character at the given position in the window as a
-   :class:`complexchar`.  Unlike :meth:`inch`, the returned object carries the
-   cell's text (a spacing character optionally followed by combining characters)
-   together with its attributes and color pair.
-
-   .. versionadded:: next
-
-
-.. method:: window.insch(ch[, attr])
-            window.insch(y, x, ch[, attr])
-
-   Insert character *ch* with attributes *attr* before the character under the
-   cursor, or at ``(y, x)`` if specified.  All characters to the right of the
-   cursor are shifted one position right, with the rightmost character on the
-   line being lost.  The cursor position does not change.
+   Display a vertical line starting at ``(y, x)`` with length *n* consisting of the
+   character *ch* with attributes *attr*.
 
    .. versionchanged:: next
       Wide and combining characters, and :class:`complexchar` cells, are now
       accepted.
 
 
-.. method:: window.insdelln(nlines)
-
-   Insert *nlines* lines into the specified window above the current line.  The
-   *nlines* bottom lines are lost.  For negative *nlines*, delete *nlines* lines
-   starting with the one under the cursor, and move the remaining lines up.  The
-   bottom *nlines* lines are cleared.  The current cursor position remains the
-   same.
-
-
-.. method:: window.insertln()
-
-   Insert a blank line under the cursor. All following lines are moved down by one
-   line.
-
-
-.. method:: window.insnstr(str, n[, attr])
-            window.insnstr(y, x, str, n[, attr])
-
-   Insert a character string (as many characters as will fit on the line) before
-   the character under the cursor, up to *n* characters.   If *n* is zero or
-   negative, the entire string is inserted. All characters to the right of the
-   cursor are shifted right, with the rightmost characters on the line being lost.
-   The cursor position does not change (after moving to *y*, *x*, if specified).
-
-   .. versionchanged:: next
-      *str* may now also be a :class:`complexstr`; see :meth:`insstr`.
-
-
-.. method:: window.insstr(str[, attr])
-            window.insstr(y, x, str[, attr])
-
-   Insert a character string (as many characters as will fit on the line) before
-   the character under the cursor.  All characters to the right of the cursor are
-   shifted right, with the rightmost characters on the line being lost.  The cursor
-   position does not change (after moving to *y*, *x*, if specified).
-
-   *str* may also be a :class:`complexstr`, in which case each cell carries its
-   own attributes and color pair, so *attr* must not be given.
-
-   .. versionchanged:: next
-      *str* may now also be a :class:`complexstr`, as described above.
-
-
-.. method:: window.instr([n])
-            window.instr(y, x[, n])
-
-   Return a bytes object of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified, and stopping at the end
-   of the line. Attributes and color information are stripped
-   from the characters.  If *n* is specified, :meth:`instr` returns a string
-   at most *n* characters long (exclusive of the trailing NUL).
-   The maximum value for *n* is 2047.
-   A character not representable in the window's encoding cannot be returned;
-   use :meth:`in_wstr` for those.
-
-   .. versionchanged:: 3.14
-      The maximum value for *n* was increased from 1023 to 2047.
-
-
-.. method:: window.in_wstr([n])
-            window.in_wstr(y, x[, n])
-
-   Return a string of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified.  Unlike :meth:`instr`,
-   it can return characters that are not representable in the window's encoding.
-   Attributes and color information are stripped from the characters.  The
-   maximum value for *n* is 2047.
-
-   .. versionadded:: next
-
-
-.. method:: window.in_wchstr([n])
-            window.in_wchstr(y, x[, n])
-
-   Return a :class:`complexstr` of the styled cells extracted from the window
-   starting at the current cursor position, or at *y*, *x* if specified, and
-   stopping at the end of the line.  This is the variant of :meth:`instr` and
-   :meth:`in_wstr` that *keeps* each cell's attributes and color pair (those
-   methods strip the rendition).  If *n* is specified, at most *n* cells are
-   returned.  The maximum value for *n* is 2047.
-
-   The result can be written back unchanged with :meth:`addstr` (a read and a
-   re-write is a round-trip that preserves every cell's rendition).
-
-   .. versionadded:: next
-
-
-.. method:: window.is_cleared()
-
-   Return the current value set by :meth:`clearok`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_idcok()
-
-   Return the current value set by :meth:`idcok`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_idlok()
-
-   Return the current value set by :meth:`idlok`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_immedok()
-
-   Return the current value set by :meth:`immedok`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_keypad()
-
-   Return the current value set by :meth:`keypad`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_leaveok()
-
-   Return the current value set by :meth:`leaveok`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_linetouched(line)
-
-   Return ``True`` if the specified line was modified since the last call to
-   :meth:`refresh`; otherwise return ``False``.  Raise a :exc:`curses.error`
-   exception if *line* is not valid for the given window.
-
-
-.. method:: window.is_nodelay()
-
-   Return the current value set by :meth:`nodelay`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_notimeout()
-
-   Return the current value set by :meth:`notimeout`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_pad()
-
-   Return ``True`` if the window is a pad created by :func:`newpad`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_scrollok()
-
-   Return the current value set by :meth:`scrollok`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_subwin()
-
-   Return ``True`` if the window is a subwindow created by :meth:`subwin`
-   or :meth:`derwin`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_syncok()
-
-   Return the current value set by :meth:`syncok`.
-
-   .. versionadded:: next
-
-
-.. method:: window.is_wintouched()
-
-   Return ``True`` if the specified window was modified since the last call to
-   :meth:`refresh`; otherwise return ``False``.
-
-
-.. method:: window.keypad(flag)
-
-   If *flag* is ``True``, escape sequences generated by some keys (keypad,  function keys)
-   will be interpreted by :mod:`!curses`. If *flag* is ``False``, escape sequences will be
-   left as is in the input stream.
-
-
-.. method:: window.leaveok(flag)
-
-   If *flag* is ``True``, cursor is left where it is on update, instead of being at "cursor
-   position."  This reduces cursor movement where possible.
-
-   If *flag* is ``False``, cursor will always be at "cursor position" after an update.
-
+Cursor position and window geometry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. method:: window.move(new_y, new_x)
 
    Move cursor to ``(new_y, new_x)``.
 
+.. method:: window.getyx()
 
-.. method:: window.mvderwin(y, x)
+   Return a tuple ``(y, x)`` of current cursor position  relative to the window's
+   upper-left corner.
 
-   Move the window inside its parent window.  The screen-relative parameters of
-   the window are not changed.  This routine is used to display different parts of
-   the parent window at the same physical position on the screen.
+.. method:: window.getbegyx()
 
+   Return a tuple ``(y, x)`` of coordinates of upper-left corner.
+
+.. method:: window.getmaxyx()
+
+   Return a tuple ``(y, x)`` of the height and width of the window.
+
+.. method:: window.getparyx()
+
+   Return the beginning coordinates of this window relative to its parent window
+   as a tuple ``(y, x)``.  Return ``(-1, -1)`` if this window has no
+   parent.
+
+.. method:: window.getparent()
+
+   Return the parent window of this subwindow,
+   or ``None`` if this window is not a subwindow.
+
+   .. versionadded:: next
+
+
+Creating and resizing windows
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. method:: window.subwin(begin_y, begin_x)
+            window.subwin(nlines, ncols, begin_y, begin_x)
+
+   Return a sub-window, whose upper-left corner is at the screen-relative
+   coordinates ``(begin_y, begin_x)``, and whose width/height is *ncols*/*nlines*.
+
+   By default, the sub-window will extend from the specified position to the lower
+   right corner of the window.
+
+.. method:: window.derwin(begin_y, begin_x)
+            window.derwin(nlines, ncols, begin_y, begin_x)
+
+   An abbreviation for "derive window", :meth:`derwin` is the same as calling
+   :meth:`subwin`, except that *begin_y* and *begin_x* are relative to the origin
+   of the window, rather than relative to the entire screen.  Return a window
+   object for the derived window.
+
+.. method:: window.subpad(begin_y, begin_x)
+            window.subpad(nlines, ncols, begin_y, begin_x)
+
+   Return a sub-pad, whose upper-left corner is at ``(begin_y, begin_x)``, and
+   whose width/height is *ncols*/*nlines*.  The coordinates are relative to the
+   parent pad (unlike :meth:`subwin`, which uses screen coordinates).  This
+   method is only available for pads created with :func:`newpad`.
+
+.. method:: window.dupwin()
+
+   Return a new window that is an exact duplicate of the window: it has the same
+   size, position, contents and attributes.  Unlike a window created by
+   :meth:`subwin` or :meth:`derwin`, the duplicate is independent of the
+   original -- it has its own cell buffer, so later changes to one do not affect
+   the other.
+
+   .. versionadded:: next
 
 .. method:: window.mvwin(new_y, new_x)
 
@@ -1757,75 +1681,22 @@ Window objects
    Moving the window so that any part of it would be off the screen is an error:
    the window is not moved and :exc:`curses.error` is raised.
 
+.. method:: window.mvderwin(y, x)
 
-.. method:: window.nodelay(flag)
+   Move the window inside its parent window.  The screen-relative parameters of
+   the window are not changed.  This routine is used to display different parts of
+   the parent window at the same physical position on the screen.
 
-   If *flag* is ``True``, :meth:`getch` will be non-blocking.
+.. method:: window.resize(nlines, ncols)
 
-
-.. method:: window.notimeout(flag)
-
-   If *flag* is ``True``, escape sequences will not be timed out.
-
-   If *flag* is ``False``, after a few milliseconds, an escape sequence will not be
-   interpreted, and will be left in the input stream as is.
-
-
-.. method:: window.noutrefresh()
-            window.noutrefresh(pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol)
-
-   Mark for refresh but wait.  This function updates the data structure
-   representing the desired state of the window, but does not force an update of
-   the physical screen.  To accomplish that, call  :func:`doupdate`.
-
-   The 6 arguments can only be specified, and are then required, when the window
-   is a pad created with :func:`newpad`; they have the same meaning as for
-   :meth:`refresh`.
+   Reallocate storage for a curses window to adjust its dimensions to the
+   specified values.  If either dimension is larger than the current values, the
+   window's data is filled with blanks that have the current background
+   rendition (as set by :meth:`bkgdset`) merged into them.
 
 
-.. method:: window.overlay(destwin[, sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol])
-
-   Overlay the window on top of *destwin*. The windows need not be the same size,
-   only the overlapping region is copied. This copy is non-destructive, which means
-   that the current background character does not overwrite the old contents of
-   *destwin*.
-
-   To get fine-grained control over the copied region, the second form of
-   :meth:`overlay` can be used. *sminrow* and *smincol* are the upper-left
-   coordinates of the source window, and the other variables mark a rectangle in
-   the destination window.
-
-
-.. method:: window.overwrite(destwin[, sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol])
-
-   Overwrite the window on top of *destwin*. The windows need not be the same size,
-   in which case only the overlapping region is copied. This copy is destructive,
-   which means that the current background character overwrites the old contents of
-   *destwin*.
-
-   To get fine-grained control over the copied region, the second form of
-   :meth:`overwrite` can be used. *sminrow* and *smincol* are the upper-left
-   coordinates of the source window, the other variables mark a rectangle in the
-   destination window.
-
-
-.. method:: window.putwin(file)
-
-   Write all data associated with the window into the provided file object.  This
-   information can be later retrieved using the :func:`getwin` function.
-
-
-.. method:: window.redrawln(beg, num)
-
-   Indicate that the *num* screen lines, starting at line *beg*, are corrupted and
-   should be completely redrawn on the next :meth:`refresh` call.
-
-
-.. method:: window.redrawwin()
-
-   Touch the entire window, causing it to be completely redrawn on the next
-   :meth:`refresh` call.
-
+Refreshing and redrawing
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. method:: window.refresh([pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol])
 
@@ -1843,21 +1714,61 @@ Window objects
    within their respective structures.  Negative values of *pminrow*, *pmincol*,
    *sminrow*, or *smincol* are treated as if they were zero.
 
+.. method:: window.noutrefresh()
+            window.noutrefresh(pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol)
 
-.. method:: window.resize(nlines, ncols)
+   Mark for refresh but wait.  This function updates the data structure
+   representing the desired state of the window, but does not force an update of
+   the physical screen.  To accomplish that, call  :func:`doupdate`.
 
-   Reallocate storage for a curses window to adjust its dimensions to the
-   specified values.  If either dimension is larger than the current values, the
-   window's data is filled with blanks that have the current background
-   rendition (as set by :meth:`bkgdset`) merged into them.
+   The 6 arguments can only be specified, and are then required, when the window
+   is a pad created with :func:`newpad`; they have the same meaning as for
+   :meth:`refresh`.
+
+.. method:: window.redrawln(beg, num)
+
+   Indicate that the *num* screen lines, starting at line *beg*, are corrupted and
+   should be completely redrawn on the next :meth:`refresh` call.
+
+.. method:: window.redrawwin()
+
+   Touch the entire window, causing it to be completely redrawn on the next
+   :meth:`refresh` call.
 
 
-.. method:: window.scroll([lines=1])
+Output options
+~~~~~~~~~~~~~~
 
-   Scroll the screen or scrolling region.  Scroll upward by *lines* lines if
-   *lines* is positive, or downward if it is negative.  Scrolling has no effect
-   unless it has been enabled for the window with :meth:`scrollok`.
+.. method:: window.clearok(flag)
 
+   If *flag* is ``True``, the next call to :meth:`refresh` will clear the window
+   completely.
+
+.. method:: window.idlok(flag)
+
+   If *flag* is ``True``, :mod:`!curses` will try to use hardware line
+   editing facilities.  Otherwise, curses will not use them.
+
+.. method:: window.idcok(flag)
+
+   If *flag* is ``False``, curses no longer considers using the hardware insert/delete
+   character feature of the terminal; if *flag* is ``True``, use of character insertion
+   and deletion is enabled.  When curses is first initialized, use of character
+   insert/delete is enabled by default.
+
+.. method:: window.immedok(flag)
+
+   If *flag* is ``True``, any change in the window image automatically causes the
+   window to be refreshed; you no longer have to call :meth:`refresh` yourself.
+   However, it may degrade performance considerably, due to repeated calls to
+   wrefresh.  This option is disabled by default.
+
+.. method:: window.leaveok(flag)
+
+   If *flag* is ``True``, cursor is left where it is on update, instead of being at "cursor
+   position."  This reduces cursor movement where possible.
+
+   If *flag* is ``False``, cursor will always be at "cursor position" after an update.
 
 .. method:: window.scrollok(flag)
 
@@ -1868,49 +1779,23 @@ Window objects
    one line.  Note that in order to get the physical scrolling effect on the
    terminal, it is also necessary to call :meth:`idlok`.
 
+.. method:: window.scroll([lines=1])
+
+   Scroll the screen or scrolling region.  Scroll upward by *lines* lines if
+   *lines* is positive, or downward if it is negative.  Scrolling has no effect
+   unless it has been enabled for the window with :meth:`scrollok`.
 
 .. method:: window.setscrreg(top, bottom)
 
    Set the scrolling region from line *top* to line *bottom*. All scrolling actions
    will take place in this region.
 
+.. method:: window.getscrreg()
 
-.. method:: window.standend()
+   Return a tuple ``(top, bottom)`` of the window's current scrolling region,
+   as set by :meth:`setscrreg`.
 
-   Turn off the standout attribute.  On some terminals this has the side effect of
-   turning off all attributes.
-
-
-.. method:: window.standout()
-
-   Turn on attribute *A_STANDOUT*.
-
-
-.. method:: window.subpad(begin_y, begin_x)
-            window.subpad(nlines, ncols, begin_y, begin_x)
-
-   Return a sub-pad, whose upper-left corner is at ``(begin_y, begin_x)``, and
-   whose width/height is *ncols*/*nlines*.  The coordinates are relative to the
-   parent pad (unlike :meth:`subwin`, which uses screen coordinates).  This
-   method is only available for pads created with :func:`newpad`.
-
-
-.. method:: window.subwin(begin_y, begin_x)
-            window.subwin(nlines, ncols, begin_y, begin_x)
-
-   Return a sub-window, whose upper-left corner is at the screen-relative
-   coordinates ``(begin_y, begin_x)``, and whose width/height is *ncols*/*nlines*.
-
-   By default, the sub-window will extend from the specified position to the lower
-   right corner of the window.
-
-
-.. method:: window.syncdown()
-
-   Touch each location in the window that has been touched in any of its ancestor
-   windows.  This routine is called by :meth:`refresh`, so it should almost never
-   be necessary to call it manually.
-
+   .. versionadded:: next
 
 .. method:: window.syncok(flag)
 
@@ -1918,11 +1803,25 @@ Window objects
    whenever there is a change in the window.
 
 
-.. method:: window.syncup()
+Input options
+~~~~~~~~~~~~~
 
-   Touch all locations in ancestors of the window that have been changed in  the
-   window.
+.. method:: window.keypad(flag)
 
+   If *flag* is ``True``, escape sequences generated by some keys (keypad,  function keys)
+   will be interpreted by :mod:`!curses`. If *flag* is ``False``, escape sequences will be
+   left as is in the input stream.
+
+.. method:: window.nodelay(flag)
+
+   If *flag* is ``True``, :meth:`getch` will be non-blocking.
+
+.. method:: window.notimeout(flag)
+
+   If *flag* is ``True``, escape sequences will not be timed out.
+
+   If *flag* is ``False``, after a few milliseconds, an escape sequence will not be
+   interpreted, and will be left in the input stream as is.
 
 .. method:: window.timeout(delay)
 
@@ -1934,24 +1833,107 @@ Window objects
    still no input at the end of that time.
 
 
+Overlapping and touch
+~~~~~~~~~~~~~~~~~~~~~
+
+.. method:: window.overlay(destwin[, sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol])
+
+   Overlay the window on top of *destwin*. The windows need not be the same size,
+   only the overlapping region is copied. This copy is non-destructive, which means
+   that the current background character does not overwrite the old contents of
+   *destwin*.
+
+   To get fine-grained control over the copied region, the second form of
+   :meth:`overlay` can be used. *sminrow* and *smincol* are the upper-left
+   coordinates of the source window, and the other variables mark a rectangle in
+   the destination window.
+
+.. method:: window.overwrite(destwin[, sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol])
+
+   Overwrite the window on top of *destwin*. The windows need not be the same size,
+   in which case only the overlapping region is copied. This copy is destructive,
+   which means that the current background character overwrites the old contents of
+   *destwin*.
+
+   To get fine-grained control over the copied region, the second form of
+   :meth:`overwrite` can be used. *sminrow* and *smincol* are the upper-left
+   coordinates of the source window, the other variables mark a rectangle in the
+   destination window.
+
 .. method:: window.touchline(start, count[, changed])
 
    Pretend *count* lines have been changed, starting with line *start*.  If
    *changed* is supplied, it specifies whether the affected lines are marked as
    having been changed (*changed*\ ``=True``) or unchanged (*changed*\ ``=False``).
 
-
 .. method:: window.touchwin()
 
    Pretend the whole window has been changed, for purposes of drawing
    optimizations.
-
 
 .. method:: window.untouchwin()
 
    Mark all lines in  the  window  as unchanged since the last call to
    :meth:`refresh`.
 
+.. method:: window.syncup()
+
+   Touch all locations in ancestors of the window that have been changed in  the
+   window.
+
+.. method:: window.syncdown()
+
+   Touch each location in the window that has been touched in any of its ancestor
+   windows.  This routine is called by :meth:`refresh`, so it should almost never
+   be necessary to call it manually.
+
+.. method:: window.cursyncup()
+
+   Update the current cursor position of all the ancestors of the window to
+   reflect the current cursor position of the window.
+
+
+Coordinate conversion
+~~~~~~~~~~~~~~~~~~~~~
+
+.. method:: window.enclose(y, x)
+
+   Test whether the given pair of screen-relative character-cell coordinates are
+   enclosed by the given window, returning ``True`` or ``False``.  It is useful for
+   determining what subset of the screen windows enclose the location of a mouse
+   event.
+
+   .. versionchanged:: 3.10
+      Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
+
+.. method:: window.mouse_trafo(y, x, to_screen)
+
+   Convert between window-relative and screen-relative (``stdscr``-relative) character-cell coordinates.
+   If *to_screen* is true, convert the window-relative coordinates *y*, *x* to screen-relative coordinates;
+   otherwise convert in the opposite direction.
+   The two coordinate systems differ when lines are reserved on the screen, for example for soft labels.
+
+   Return the converted coordinates as a ``(y, x)`` tuple, or ``None`` if they lie outside the window.
+
+   .. versionadded:: next
+
+
+Other
+~~~~~
+
+.. attribute:: window.encoding
+
+   Encoding used to encode method arguments (Unicode strings and characters).
+   The encoding attribute is inherited from the parent window when a subwindow
+   is created, for example with :meth:`window.subwin`.
+   By default, current locale encoding is used (see :func:`locale.getencoding`).
+
+   .. versionadded:: 3.3
+
+.. method:: window.putwin(file)
+
+   Write all data associated with the window into the provided file object.  This
+   information can be later retrieved using the :func:`getwin` function.
 
 .. method:: window.use(func, /, *args, **kwargs)
 
@@ -1965,16 +1947,92 @@ Window objects
    .. versionadded:: next
 
 
-.. method:: window.vline(ch, n[, attr])
-            window.vline(y, x, ch, n[, attr])
+State queries
+~~~~~~~~~~~~~
 
-   Display a vertical line starting at ``(y, x)`` with length *n* consisting of the
-   character *ch* with attributes *attr*.
+.. method:: window.is_cleared()
 
-   .. versionchanged:: next
-      Wide and combining characters, and :class:`complexchar` cells, are now
-      accepted.
+   Return the current value set by :meth:`clearok`.
 
+   .. versionadded:: next
+
+.. method:: window.is_idcok()
+
+   Return the current value set by :meth:`idcok`.
+
+   .. versionadded:: next
+
+.. method:: window.is_idlok()
+
+   Return the current value set by :meth:`idlok`.
+
+   .. versionadded:: next
+
+.. method:: window.is_immedok()
+
+   Return the current value set by :meth:`immedok`.
+
+   .. versionadded:: next
+
+.. method:: window.is_keypad()
+
+   Return the current value set by :meth:`keypad`.
+
+   .. versionadded:: next
+
+.. method:: window.is_leaveok()
+
+   Return the current value set by :meth:`leaveok`.
+
+   .. versionadded:: next
+
+.. method:: window.is_linetouched(line)
+
+   Return ``True`` if the specified line was modified since the last call to
+   :meth:`refresh`; otherwise return ``False``.  Raise a :exc:`curses.error`
+   exception if *line* is not valid for the given window.
+
+.. method:: window.is_nodelay()
+
+   Return the current value set by :meth:`nodelay`.
+
+   .. versionadded:: next
+
+.. method:: window.is_notimeout()
+
+   Return the current value set by :meth:`notimeout`.
+
+   .. versionadded:: next
+
+.. method:: window.is_pad()
+
+   Return ``True`` if the window is a pad created by :func:`newpad`.
+
+   .. versionadded:: next
+
+.. method:: window.is_scrollok()
+
+   Return the current value set by :meth:`scrollok`.
+
+   .. versionadded:: next
+
+.. method:: window.is_subwin()
+
+   Return ``True`` if the window is a subwindow created by :meth:`subwin`
+   or :meth:`derwin`.
+
+   .. versionadded:: next
+
+.. method:: window.is_syncok()
+
+   Return the current value set by :meth:`syncok`.
+
+   .. versionadded:: next
+
+.. method:: window.is_wintouched()
+
+   Return ``True`` if the specified window was modified since the last call to
+   :meth:`refresh`; otherwise return ``False``.
 
 .. _curses-screen-objects:
 
@@ -2115,6 +2173,9 @@ Complex character objects
 Constants
 ---------
 
+General
+~~~~~~~
+
 The :mod:`!curses` module defines the following data members:
 
 
@@ -2170,6 +2231,9 @@ The :mod:`!curses` module defines the following data members:
    Updated by :func:`update_lines_cols`, :func:`resizeterm` and
    :func:`resize_term`.
 
+
+Attributes
+~~~~~~~~~~
 
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.
@@ -2250,10 +2314,11 @@ by some methods.
 |                         | color-pair field information  |
 +-------------------------+-------------------------------+
 
+Keys
+~~~~
+
 Keys are referred to by integer constants with names starting with  ``KEY_``.
 The exact keycaps available are system dependent.
-
-.. XXX this table is far too large! should it be alphabetized?
 
 +-------------------------+--------------------------------------------+
 | Key constant            | Key                                        |
@@ -2472,6 +2537,9 @@ keys); also, the following keypad mappings are standard:
 | :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
+Alternate character set
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. _curses-acs-codes:
 
 The following table lists characters from the alternate character set. These are
@@ -2573,6 +2641,9 @@ falls back on a crude printable ASCII approximation.
 | .. data:: ACS_VLINE    | vertical line                            |
 +------------------------+------------------------------------------+
 
+Mouse buttons
+~~~~~~~~~~~~~
+
 The following table lists mouse button constants used by :meth:`getmouse`:
 
 +----------------------------------+---------------------------------------------+
@@ -2598,6 +2669,9 @@ The following table lists mouse button constants used by :meth:`getmouse`:
 .. versionchanged:: 3.10
    The ``BUTTON5_*`` constants are now exposed if they are provided by the
    underlying curses library.
+
+Colors
+~~~~~~
 
 The following table lists the predefined colors:
 

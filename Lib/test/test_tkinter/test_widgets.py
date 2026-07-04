@@ -1994,7 +1994,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         lb = self.create(selectmode='browse', exportselection=False)
         lb.insert(0, *('el%d' % i for i in range(5)))
         lb.pack()
-        lb.update()
+        self.require_mapped(lb)
         events = []
         lb.bind('<<ListboxSelect>>', lambda e: events.append(lb.curselection()))
         lb.focus_force()

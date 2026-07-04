@@ -80,6 +80,12 @@ def requires_colors(test):
 term = os.environ.get('TERM')
 SHORT_MAX = 0x7fff
 
+# ncurses before 6.5 can crash on repeated newterm().  Fall back to initscr()
+# and skip the tests that need several screens.
+_ncurses_version = getattr(curses, 'ncurses_version', None)
+BROKEN_NEWTERM = _ncurses_version is not None and _ncurses_version < (6, 5)
+USE_NEWTERM = hasattr(curses, 'newterm') and not BROKEN_NEWTERM
+
 # newterm() is used when available (it reports errors instead of exiting), but
 # initscr() is still the fallback, and an unusable $TERM has no terminal to
 # drive either way.
@@ -139,7 +145,7 @@ class TestCurses(unittest.TestCase):
             sys.stderr.flush()
             sys.stdout.flush()
             print(file=self.output, flush=True)
-        if hasattr(curses, 'newterm'):
+        if USE_NEWTERM:
             # Use newterm() rather than initscr(): it reports errors instead of
             # exiting, and gives each test a fresh screen, which also lets
             # ScreenTests run newterm()/set_term() in the same process.
@@ -157,7 +163,11 @@ class TestCurses(unittest.TestCase):
             self.addCleanup(setattr, self, 'screen', None)
             self.addCleanup(setattr, self, 'stdscr', None)
         else:
+            # Tests share one initscr() screen; clear the rendition and
+            # background so a previous test's does not bleed in.
             self.stdscr = curses.initscr()
+            self.stdscr.attrset(curses.A_NORMAL)
+            self.stdscr.bkgdset(' ')
         if self.isatty:
             curses.savetty()
             self.addCleanup(curses.endwin)
@@ -1563,7 +1573,8 @@ class TestCurses(unittest.TestCase):
         self.assertIsInstance(curses.has_ic(), bool)
         self.assertIsInstance(curses.has_il(), bool)
         self.assertIsInstance(curses.termattrs(), int)
-        self.assertIsInstance(curses.term_attrs(), int)
+        if hasattr(curses, 'term_attrs'):
+            self.assertIsInstance(curses.term_attrs(), int)
 
         c = curses.killchar()
         self.assertIsInstance(c, bytes)
@@ -2025,6 +2036,7 @@ class TestCurses(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(curses.screen, 'use'),
                          'requires screen.use()')
+    @unittest.skipUnless(USE_NEWTERM, 'no screen object without newterm()')
     def test_use_screen(self):
         screen = self.screen
         self.assertEqual(
@@ -2331,27 +2343,36 @@ class TestCurses(unittest.TestCase):
     def test_textbox_unicode(self):
         # Like test_textbox_8bit, but characters are entered as strings -- the
         # way do_command() receives get_wch() input -- rather than integer
-        # bytes.  Each string is used only if encodable in the current locale.
+        # bytes.  Each string is used only if encodable in the current locale;
+        # a narrow build stores one byte per cell, so multi-byte characters
+        # additionally need a wide build.
         for text in ['abc', 'héšλ', 'café', 'naïve ¤', 'soupçon €Š', 'дякую єі']:
-            if self._encodable(text):
-                with self.subTest(text=text):
-                    box, win = self._make_textbox(1, 12)
-                    for ch in text:
-                        box.do_command(ch)
-                    self.assertEqual(box.gather(), text + ' ')
+            if not self._encodable(text):
+                continue
+            if not WIDE_BUILD and len(text.encode(self.stdscr.encoding)) != len(text):
+                continue
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 12)
+                for ch in text:
+                    box.do_command(ch)
+                self.assertEqual(box.gather(), text + ' ')
 
     def test_textbox_unicode_insert_mode(self):
         # Like test_textbox_8bit_insert, but the character is entered as a string
-        # (get_wch() input).  Each string is used only if encodable.
+        # (get_wch() input).  Each string is used only if encodable; multi-byte
+        # characters additionally need a wide build (one byte per cell otherwise).
         for text in ['abcd', 'aβλc', 'aéàc', 'a¤½c', 'a€Šc', 'aдві']:
-            if self._encodable(text):
-                with self.subTest(text=text):
-                    box, win = self._make_textbox(1, 10, insert_mode=True)
-                    for ch in text[0] + text[2:]:    # all but the 2nd character
-                        box.do_command(ch)
-                    win.move(0, 1)
-                    box.do_command(text[1])          # insert it at position 1
-                    self.assertEqual(box.gather(), text + ' ')
+            if not self._encodable(text):
+                continue
+            if not WIDE_BUILD and len(text.encode(self.stdscr.encoding)) != len(text):
+                continue
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 10, insert_mode=True)
+                for ch in text[0] + text[2:]:    # all but the 2nd character
+                    box.do_command(ch)
+                win.move(0, 1)
+                box.do_command(text[1])          # insert it at position 1
+                self.assertEqual(box.gather(), text + ' ')
 
     @requires_wide_build
     def test_textbox_combining(self):
@@ -2365,15 +2386,19 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(box.gather(), text + ' ')
 
     def test_textbox_edit_wide(self):
-        # edit() reads characters through get_wch().  Each is used only if
-        # encodable in the current locale.
+        # edit() reads characters through get_wch().  Each character is pushed
+        # with unget_wch(), which on a narrow build requires it to encode to a
+        # single byte, so a non-ASCII case needs a wide build or an 8-bit locale.
         for ch in ['A', 'é', '¤', '€', 'д']:
-            if self._encodable(ch):
-                with self.subTest(ch=ch):
-                    box, win = self._make_textbox(1, 10)
-                    for c in reversed(['a', ch, chr(curses.ascii.BEL)]):
-                        curses.unget_wch(c)
-                    self.assertEqual(box.edit(), 'a' + ch + ' ')
+            if not self._encodable(ch):
+                continue
+            if not WIDE_BUILD and len(ch.encode(self.stdscr.encoding)) != 1:
+                continue
+            with self.subTest(ch=ch):
+                box, win = self._make_textbox(1, 10)
+                for c in reversed(['a', ch, chr(curses.ascii.BEL)]):
+                    curses.unget_wch(c)
+                self.assertEqual(box.edit(), 'a' + ch + ' ')
 
     def test_textbox_movement(self):
         box, win = self._make_textbox(3, 10)
@@ -2838,16 +2863,12 @@ class TextboxTest(unittest.TestCase):
         self.mock_win.reset_mock()
 
 
-@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
-@unittest.skipIf(not term or term == 'unknown',
-                 "$TERM=%r, newterm() may not work" % term)
-@unittest.skipIf(sys.platform == "cygwin",
-                 "cygwin's curses mostly just hangs")
-class ScreenTests(unittest.TestCase):
-    # newterm()/set_term() mutate global curses state, but each test drives its
-    # own pseudo-terminal(s) and never touches the screen shared by TestCurses,
-    # whose setUp() makes that screen current again.  So these can run in this
-    # process, without a real terminal and without a subprocess.
+class NewtermTestBase(unittest.TestCase):
+    # Shared plumbing for tests that drive newterm() over their own
+    # pseudo-terminal(s).  newterm()/set_term() mutate global curses state, but
+    # each test never touches the screen shared by TestCurses, whose setUp()
+    # makes that screen current again.  So these can run in this process,
+    # without a real terminal and without a subprocess.
 
     def setUp(self):
         # newterm() may install signal handlers; restore them afterwards.
@@ -2900,6 +2921,15 @@ class ScreenTests(unittest.TestCase):
         self.addCleanup(os.close, slave)
         self.addCleanup(stop_reader)
         return slave
+
+
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(BROKEN_NEWTERM, 'ncurses < 6.5 mishandles repeated newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 f"$TERM={term!r}, newterm() may not work")
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class ScreenTests(NewtermTestBase):
 
     def test_newterm(self):
         s = self.make_pty()
@@ -2972,6 +3002,102 @@ class ScreenTests(unittest.TestCase):
     def test_disallow_instantiation(self):
         # The screen type cannot be instantiated directly (bpo-43916).
         check_disallow_instantiation(self, curses.screen)
+
+
+@unittest.skipUnless(hasattr(curses, 'slk_init'), 'requires curses.slk_init()')
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(BROKEN_NEWTERM, 'ncurses < 6.5 mishandles repeated newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 f"$TERM={term!r}, newterm() may not work")
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class SLKTests(NewtermTestBase):
+    # Soft-label keys reserve the bottom screen line for a row of labels.
+    # slk_init() must run before newterm()/initscr(), so each test sets up its
+    # own screen rather than reusing the one TestCurses builds in setUp().
+
+    def make_slk_screen(self, fmt=0):
+        s = self.make_pty()
+        curses.slk_init(fmt)
+        return curses.newterm('xterm', s, s)
+
+    def test_init_reserves_a_line(self):
+        # Every layout takes the bottom line for the labels; the index-line
+        # layout (3) takes a second line for the index.  Layouts 0 and 1 are
+        # standard; 2 and 3 are ncurses extensions that other curses
+        # implementations reject (slk_init() then returns an error).
+        ncurses = hasattr(curses, 'ncurses_version')
+        for fmt, lines in [(0, 23), (1, 23), (2, 23), (3, 22)]:
+            with self.subTest(fmt=fmt):
+                try:
+                    screen = self.make_slk_screen(fmt)
+                except curses.error:
+                    if ncurses or fmt < 2:
+                        raise
+                    continue
+                self.assertEqual(screen.stdscr.getmaxyx()[0], lines)
+                curses.endwin()
+
+    def test_init_bad_format(self):
+        for fmt in (-1, 4):
+            self.assertRaises(ValueError, curses.slk_init, fmt)
+
+    def test_set_and_label(self):
+        self.make_slk_screen()
+        curses.slk_set(1, 'Help', 0)
+        curses.slk_set(2, 'Save', 1)
+        curses.slk_set(3, 'Quit', 2)
+        self.assertEqual(curses.slk_label(1), 'Help')
+        self.assertEqual(curses.slk_label(2), 'Save')
+        self.assertEqual(curses.slk_label(3), 'Quit')
+
+    def test_set_wide(self):
+        screen = self.make_slk_screen()
+        label = 'Ångström'
+        try:
+            label.encode(screen.stdscr.encoding)
+        except UnicodeEncodeError:
+            self.skipTest('the locale cannot encode %r' % label)
+        curses.slk_set(1, label, 0)
+        self.assertEqual(curses.slk_label(1), label)
+
+    def test_set_bad_justify(self):
+        self.make_slk_screen()
+        for justify in (-1, 3):
+            self.assertRaises(ValueError, curses.slk_set, 1, 'x', justify)
+
+    def test_refresh(self):
+        self.make_slk_screen()
+        curses.slk_set(1, 'Help', 0)
+        curses.slk_noutrefresh()
+        curses.slk_refresh()
+        curses.slk_clear()
+        curses.slk_restore()
+        curses.slk_touch()
+
+    def test_attributes(self):
+        self.make_slk_screen()
+        curses.slk_attron(curses.A_BOLD)
+        curses.slk_attrset(curses.A_UNDERLINE)
+        curses.slk_attroff(curses.A_BOLD)
+        if hasattr(curses, 'slk_attr'):
+            self.assertIsInstance(curses.slk_attr(), int)
+
+    def test_attr_on_off(self):
+        self.make_slk_screen()
+        curses.slk_attr_on(curses.A_BOLD)
+        curses.slk_attr_off(curses.A_BOLD)
+
+    def test_color(self):
+        # slk_attr_set() and slk_color() act on a color pair, so the color
+        # subsystem must be started first.
+        self.make_slk_screen()
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        curses.slk_attr_set(curses.A_BOLD)
+        curses.slk_attr_set(curses.A_BOLD, 0)
+        curses.slk_color(0)
 
 
 if __name__ == '__main__':
