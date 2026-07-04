@@ -151,7 +151,7 @@ def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
 
     Optional output_charset is the character set that the output should be
     in.  Conversions will proceed from input charset, to Unicode, to the
-    output charset when the method Charset.convert() is called.  The default
+    output charset when the method Charset.body_encode() is called.  The default
     is to output in the same character set as the input.
 
     Both input_charset and output_charset must have Unicode codec entries in
