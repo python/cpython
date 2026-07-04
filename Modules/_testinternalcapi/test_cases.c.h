@@ -12525,10 +12525,20 @@
                 }
             }
             else {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyFrame_StackPointerValidate(frame);
-                err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
-                _PyFrame_StackPointerInvalidate(frame);
+                PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+                if (PyLazyImport_CheckExact(value)) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    err = _PyLazyImport_SetGlobalBindingAndDictItem(
+                        value, GLOBALS(), name);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
+                else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    err = PyDict_SetItem(GLOBALS(), name, value);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
