@@ -1,0 +1,3 @@
+Fix an inconsistency where calling ``__lazy_import__`` with a string
+``fromlist`` would return a :class:`types.LazyImportType` that resolves to
+the named member, rather than the module being imported.

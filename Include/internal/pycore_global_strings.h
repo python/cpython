@@ -517,7 +517,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(generation)
         STRUCT_FOR_ID(get)
         STRUCT_FOR_ID(get_debug)
-        STRUCT_FOR_ID(get_event_loop)
         STRUCT_FOR_ID(get_loop)
         STRUCT_FOR_ID(get_source)
         STRUCT_FOR_ID(getattr)

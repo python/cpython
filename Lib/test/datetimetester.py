@@ -3758,6 +3758,10 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45-00:90:00', # Time zone field out from range
             '2009-04-19T12:30:45-00:00:90', # Time zone field out from range
             '2020-2020',                    # Ambiguous 9-char date portion
+            '2009-04-19T12:30:45.+05:00',   # Empty fraction before offset
+            '2009-04-19T12:30:45.-05:00',   # Empty fraction before offset
+            '2009-04-19T12:30:45.Z',        # Empty fraction before Z
+            '2009-04-19T12:30:45,+05:00',   # Empty fraction (comma) before offset
         ]
 
         for bad_str in bad_strs:
@@ -4119,6 +4123,11 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
         self.assertEqual(t.strftime('\0%I%p%Z\0%X'), f'\0{s1}\0{s2}')
         self.assertEqual(t.strftime('%I%p%Z\0%X\0'), f'{s1}\0{s2}\0')
+        # gh-152305: the year directives must not raise on a time.
+        for directive, expected in (('%Y', '1900'), ('%G', '1900'),
+                                    ('%C', '19'), ('%F', '1900-01-01')):
+            with self.subTest(directive=directive):
+                self.assertEqual(t.strftime(directive), expected)
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
@@ -5029,6 +5038,10 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '24:01:00.000000',          # Has non-zero minutes on 24:00
             '12:30:45+00:90:00',        # Time zone field out from range
             '12:30:45+00:00:90',        # Time zone field out from range
+            '12:30:45.+05:00',          # Empty fraction before offset
+            '12:30:45.-05:00',          # Empty fraction before offset
+            '12:30:45.Z',               # Empty fraction before Z
+            '12:30:45,+05:00',          # Empty fraction (comma) before offset
         ]
 
         for bad_str in bad_strs:

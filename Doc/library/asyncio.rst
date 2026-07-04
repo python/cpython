@@ -117,7 +117,6 @@ for full functionality and the latest features.
    asyncio-eventloop.rst
    asyncio-future.rst
    asyncio-protocol.rst
-   asyncio-policy.rst
    asyncio-platforms.rst
    asyncio-extending.rst
 
