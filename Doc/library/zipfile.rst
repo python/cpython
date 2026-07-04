@@ -15,7 +15,7 @@ defined in `PKZIP Application Note`_.
 
 This module does not handle multipart ZIP files.
 It can handle ZIP files that use the ZIP64 extensions
-(that is ZIP files that are more than 4 GiB in size).  It supports
+(mostly for ZIP files larger than 4 GiB).  It supports
 decryption of encrypted files in ZIP archives, but it cannot
 create an encrypted file.  Decryption is extremely slow as it is
 implemented in native Python rather than C.
