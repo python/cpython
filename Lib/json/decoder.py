@@ -370,6 +370,8 @@ class JSONDecoder(object):
         have extraneous data at the end.
 
         """
+        s = s.lstrip()
+
         try:
             obj, end = self.scan_once(s, idx)
         except StopIteration as err:
