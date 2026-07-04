@@ -793,7 +793,7 @@ class GlobalsAndDictTests(LazyImportTestCase):
     """Tests for globals() and __dict__ behavior with lazy imports.
 
     PEP 810: "Calling globals() or accessing a module's __dict__ does not trigger
-    reification - they return the module's dictionary, and accessing lazy objects
+    reification – they return the module's dictionary, and accessing lazy objects
     through that dictionary still returns lazy proxy objects."
     """
 

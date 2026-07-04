@@ -126,54 +126,89 @@ _PyLazyImport_GetName(PyObject *op)
 }
 
 int
-_PyLazyImport_SetGlobalBinding(PyObject *op, PyObject *globals, PyObject *name)
+_PyLazyImport_SetGlobalBindingAndDictItem(PyObject *op, PyObject *globals,
+                                          PyObject *name)
 {
     assert(PyLazyImport_CheckExact(op));
+    assert(PyDict_CheckExact(globals));
 
     PyLazyImportObject *m = PyLazyImportObject_CAST(op);
-    if (m->lz_key != NULL) {
-        return 0;
-    }
-
-    assert(PyDict_CheckExact(globals));
     Py_hash_t hash = PyObject_Hash(name);
     if (hash == -1) {
         return -1;
     }
 
-    m->lz_globals = Py_NewRef(globals);
-    m->lz_key = Py_NewRef(name);
-    m->lz_key_hash = hash;
-    return 0;
+    PyObject *discard_globals = NULL;
+    PyObject *discard_key = NULL;
+    int err;
+    int recorded = 0;
+
+    Py_BEGIN_CRITICAL_SECTION2(op, globals);
+    if (m->lz_key == NULL) {
+        // Record the owner binding before publishing the proxy.  resolve()
+        // may update only this key; aliases must not retarget it.
+        m->lz_globals = Py_NewRef(globals);
+        m->lz_key = Py_NewRef(name);
+        m->lz_key_hash = hash;
+        recorded = 1;
+    }
+    err = _PyDict_SetItem_KnownHash_LockHeld(
+        (PyDictObject *)globals, name, op, hash);
+    if (err < 0 && recorded) {
+        discard_globals = m->lz_globals;
+        discard_key = m->lz_key;
+        m->lz_globals = NULL;
+        m->lz_key = NULL;
+        m->lz_key_hash = -1;
+    }
+    Py_END_CRITICAL_SECTION2();
+
+    Py_XDECREF(discard_globals);
+    Py_XDECREF(discard_key);
+    return err;
 }
 
 static int
 lazy_import_replace_global_binding(PyObject *op, PyObject *resolved)
 {
     PyLazyImportObject *m = PyLazyImportObject_CAST(op);
-    if (m->lz_globals == NULL || m->lz_key == NULL) {
+    PyObject *globals = NULL;
+    PyObject *key = NULL;
+    Py_hash_t key_hash = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    if (m->lz_globals != NULL && m->lz_key != NULL) {
+        globals = Py_NewRef(m->lz_globals);
+        key = Py_NewRef(m->lz_key);
+        key_hash = m->lz_key_hash;
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (globals == NULL) {
         return 0;
     }
 
-    assert(PyDict_CheckExact(m->lz_globals));
+    assert(key != NULL);
+    assert(PyDict_CheckExact(globals));
 
     int err = 0;
     PyObject *current = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(m->lz_globals);
+    Py_BEGIN_CRITICAL_SECTION(globals);
     int found = _PyDict_GetItemRef_KnownHash_LockHeld(
-        (PyDictObject *)m->lz_globals, m->lz_key, m->lz_key_hash, &current);
+        (PyDictObject *)globals, key, key_hash, &current);
     if (found < 0) {
         err = -1;
     }
     else if (found && current == op) {
         err = _PyDict_SetItem_KnownHash_LockHeld(
-            (PyDictObject *)m->lz_globals, m->lz_key, resolved,
-            m->lz_key_hash);
+            (PyDictObject *)globals, key, resolved, key_hash);
     }
     Py_END_CRITICAL_SECTION();
 
     Py_XDECREF(current);
+    Py_DECREF(globals);
+    Py_DECREF(key);
     return err;
 }
 

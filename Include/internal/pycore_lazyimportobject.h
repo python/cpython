@@ -29,7 +29,7 @@ typedef struct {
 
 
 PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
-PyAPI_FUNC(int) _PyLazyImport_SetGlobalBinding(
+PyAPI_FUNC(int) _PyLazyImport_SetGlobalBindingAndDictItem(
     PyObject *lazy_import, PyObject *globals, PyObject *name);
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
     struct _PyInterpreterFrame *frame, PyObject *import_func, PyObject *from, PyObject *attr);

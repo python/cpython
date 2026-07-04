@@ -19,7 +19,7 @@
 #include "pycore_instruments.h"
 #include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
-#include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact(), _PyLazyImport_SetGlobalBinding()
+#include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact(), _PyLazyImport_SetGlobalBindingAndDictItem()
 #include "pycore_long.h"          // _PyLong_ExactDealloc(), _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -2006,11 +2006,12 @@ dummy_func(
                 ERROR_IF(true);
             }
             if (PyDict_CheckExact(ns)) {
-                err = PyDict_SetItem(ns, name, value);
-                if (err == 0 && ns == GLOBALS() &&
-                    PyLazyImport_CheckExact(value))
-                {
-                    err = _PyLazyImport_SetGlobalBinding(value, ns, name);
+                if (ns == GLOBALS() && PyLazyImport_CheckExact(value)) {
+                    err = _PyLazyImport_SetGlobalBindingAndDictItem(
+                        value, ns, name);
+                }
+                else {
+                    err = PyDict_SetItem(ns, name, value);
                 }
             }
             else {
@@ -2196,11 +2197,13 @@ dummy_func(
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *value = PyStackRef_AsPyObjectBorrow(v);
-            int err = PyDict_SetItem(GLOBALS(), name, value);
-            if (err == 0 && PyDict_CheckExact(GLOBALS()) &&
-                PyLazyImport_CheckExact(value))
-            {
-                err = _PyLazyImport_SetGlobalBinding(value, GLOBALS(), name);
+            int err;
+            if (PyDict_CheckExact(GLOBALS()) && PyLazyImport_CheckExact(value)) {
+                err = _PyLazyImport_SetGlobalBindingAndDictItem(
+                    value, GLOBALS(), name);
+            }
+            else {
+                err = PyDict_SetItem(GLOBALS(), name, value);
             }
             PyStackRef_CLOSE(v);
             ERROR_IF(err);
