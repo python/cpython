@@ -494,7 +494,9 @@ class PackageTests(LazyImportTestCase):
                     try:
                         lazy_sysmodules_pkg.sub
                     except KeyError as exc:
-                        assert exc.args == ("lazy_sysmodules_pkg.sub",), exc
+                        assert exc.args == (
+                            "'lazy_sysmodules_pkg.sub' not in sys.modules as expected",
+                        ), exc
                     else:
                         raise AssertionError("KeyError was not raised")
                 finally:
