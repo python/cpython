@@ -335,12 +335,19 @@ PyThread_GetInfo(void)
 #ifdef HAVE_PTHREAD_STUBS
     value = Py_NewRef(Py_None);
 #else
+#ifdef MS_WINDOWS
+    value = Py_NewRef(Py_None);
+#elif defined(__wasi__)
+    value = Py_NewRef(Py_None);
+#else
     value = PyUnicode_FromString("pymutex");
     if (value == NULL) {
         Py_DECREF(threadinfo);
         return NULL;
     }
 #endif
+#endif
+
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 
 #if (defined(_POSIX_THREADS) && defined(HAVE_CONFSTR) \
@@ -360,7 +367,6 @@ PyThread_GetInfo(void)
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;
 }
-
 
 void
 _PyThread_FiniType(PyInterpreterState *interp)
