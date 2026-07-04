@@ -1,0 +1,3 @@
+Improve :exc:`SyntaxError` message when an :ref:`assignment expression
+<assignment-expressions>` is used inside the ``if`` clause of a
+:ref:`conditional expression <if_expr>`. Patch by Brian Schubert.

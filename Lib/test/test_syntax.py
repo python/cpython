@@ -180,6 +180,10 @@ SyntaxError: expected expression before 'if', but statement is given
 Traceback (most recent call last):
 SyntaxError: expected expression before 'if', but statement is given
 
+>>> 1 if x := True else 2
+Traceback (most recent call last):
+SyntaxError: assignment expression must be parenthesized inside conditional expression
+
 >>> if True:
 ...     print("Hello"
 ...
