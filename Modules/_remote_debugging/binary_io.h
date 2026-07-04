@@ -91,6 +91,10 @@ static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
 static_assert(FILE_FOOTER_SIZE == 32,
              "FILE_FOOTER_SIZE must remain 32");
 
+/* Minimum on-disk bytes of a string (1) and frame (7) table entry. */
+#define MIN_STRING_ENTRY_SIZE 1
+#define MIN_FRAME_ENTRY_SIZE  7
+
 /* Buffer sizes: 512KB balances syscall amortization against memory use,
  * and aligns well with filesystem block sizes and zstd dictionary windows */
 #define WRITE_BUFFER_SIZE       (512 * 1024)
