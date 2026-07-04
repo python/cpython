@@ -123,6 +123,16 @@ class BytecodeBrowserWindowTest(GuiTest):
         item = self.instr_at(("4.11", "4.12"))
         self.assertEqual(self.window.tree.set(item, "arg"), "x")
 
+    def test_form_feed_does_not_shift_lines(self):
+        # gh-152966: a form feed breaks str.splitlines() but not the compiler,
+        # so it must not shift source_lines and misplace later instructions.
+        window = self.window
+        self.text.delete("1.0", "end")
+        self.text.insert("1.0", "a = 1\f\nb = 22\n")   # form feed ends line 1.
+        window.populate()
+        ranges = [window.ranges[it] for it in window.instr_items]
+        self.assertIn(("2.4", "2.6"), ranges)          # the load of 22.
+
     def code_node(self, qualname):
         "Return the top-level code-object row named qualname."
         tree = self.window.tree

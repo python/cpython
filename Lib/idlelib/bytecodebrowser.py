@@ -218,7 +218,8 @@ class BytecodeBrowserWindow(Toplevel):
                 first, scope = "1.0", "text"
         self.base = tuple(int(i) for i in first.split("."))
         source = text.get(first, last)
-        self.source_lines = source.splitlines()
+        # Split at "\n" only; str.splitlines() would also break at "\f" etc.
+        self.source_lines = source.split("\n")
         error = None
         try:
             code = compile(source, "<bytecode>", "exec")
@@ -346,7 +347,7 @@ class BytecodeBrowserWindow(Toplevel):
         # Positions map to the editor only when it shows this frame's file.
         self.map_source = self.editor_shows(code.co_filename)
         if self.map_source:
-            self.source_lines = self.text.get("1.0", "end-1c").splitlines()
+            self.source_lines = self.text.get("1.0", "end-1c").split("\n")
         self.add_code(code)   # The frame's own code is the first top-level row.
         self.mark_current(offset)
         self.status.configure(
