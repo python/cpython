@@ -20,6 +20,8 @@ typedef struct {
     PyObject *lz_from;
     PyObject *lz_attr;
     PyObject *lz_globals;
+    PyObject *lz_key;
+    Py_hash_t lz_key_hash;
     // Frame information for the original import location.
     PyCodeObject *lz_code;     // Code object where the lazy import was created.
     int lz_instr_offset;       // Instruction offset where the lazy import was created.
@@ -27,6 +29,8 @@ typedef struct {
 
 
 PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
+PyAPI_FUNC(int) _PyLazyImport_SetGlobalBinding(
+    PyObject *lazy_import, PyObject *globals, PyObject *name);
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
     struct _PyInterpreterFrame *frame, PyObject *import_func, PyObject *from, PyObject *attr);
 

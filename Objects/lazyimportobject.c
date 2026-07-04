@@ -36,15 +36,14 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
     m->lz_from = Py_NewRef(name);
     m->lz_attr = Py_XNewRef(fromlist);
     m->lz_globals = NULL;
+    m->lz_key = NULL;
+    m->lz_key_hash = -1;
 
     // Capture frame information for the original import location.
     m->lz_code = NULL;
     m->lz_instr_offset = -1;
 
     if (frame != NULL) {
-        if (frame->f_globals != NULL) {
-            m->lz_globals = Py_NewRef(frame->f_globals);
-        }
         PyCodeObject *code = _PyFrame_GetCode(frame);
         if (code != NULL) {
             m->lz_code = (PyCodeObject *)Py_NewRef(code);
@@ -65,6 +64,7 @@ lazy_import_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(m->lz_from);
     Py_VISIT(m->lz_attr);
     Py_VISIT(m->lz_globals);
+    Py_VISIT(m->lz_key);
     Py_VISIT(m->lz_code);
     return 0;
 }
@@ -77,6 +77,7 @@ lazy_import_clear(PyObject *op)
     Py_CLEAR(m->lz_from);
     Py_CLEAR(m->lz_attr);
     Py_CLEAR(m->lz_globals);
+    Py_CLEAR(m->lz_key);
     Py_CLEAR(m->lz_code);
     return 0;
 }
@@ -124,31 +125,55 @@ _PyLazyImport_GetName(PyObject *op)
     return lazy_import_name(lazy_import);
 }
 
-static int
-lazy_import_replace_globals(PyObject *op, PyObject *resolved)
+int
+_PyLazyImport_SetGlobalBinding(PyObject *op, PyObject *globals, PyObject *name)
 {
+    assert(PyLazyImport_CheckExact(op));
+
     PyLazyImportObject *m = PyLazyImportObject_CAST(op);
-    if (m->lz_globals == NULL || !PyDict_Check(m->lz_globals)) {
+    if (m->lz_key != NULL) {
         return 0;
     }
 
+    assert(PyDict_CheckExact(globals));
+    Py_hash_t hash = PyObject_Hash(name);
+    if (hash == -1) {
+        return -1;
+    }
+
+    m->lz_globals = Py_NewRef(globals);
+    m->lz_key = Py_NewRef(name);
+    m->lz_key_hash = hash;
+    return 0;
+}
+
+static int
+lazy_import_replace_global_binding(PyObject *op, PyObject *resolved)
+{
+    PyLazyImportObject *m = PyLazyImportObject_CAST(op);
+    if (m->lz_globals == NULL || m->lz_key == NULL) {
+        return 0;
+    }
+
+    assert(PyDict_CheckExact(m->lz_globals));
+
     int err = 0;
-    Py_ssize_t pos = 0;
-    PyObject *key, *value;
-    Py_hash_t hash;
+    PyObject *current = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(m->lz_globals);
-    while (_PyDict_Next(m->lz_globals, &pos, &key, &value, &hash)) {
-        if (value == op) {
-            err = _PyDict_SetItem_KnownHash_LockHeld(
-                (PyDictObject *)m->lz_globals, key, resolved, hash);
-            if (err < 0) {
-                break;
-            }
-        }
+    int found = _PyDict_GetItemRef_KnownHash_LockHeld(
+        (PyDictObject *)m->lz_globals, m->lz_key, m->lz_key_hash, &current);
+    if (found < 0) {
+        err = -1;
+    }
+    else if (found && current == op) {
+        err = _PyDict_SetItem_KnownHash_LockHeld(
+            (PyDictObject *)m->lz_globals, m->lz_key, resolved,
+            m->lz_key_hash);
     }
     Py_END_CRITICAL_SECTION();
 
+    Py_XDECREF(current);
     return err;
 }
 
@@ -159,7 +184,7 @@ lazy_import_resolve(PyObject *self, PyObject *args)
     if (resolved == NULL) {
         return NULL;
     }
-    if (lazy_import_replace_globals(self, resolved) < 0) {
+    if (lazy_import_replace_global_binding(self, resolved) < 0) {
         Py_DECREF(resolved);
         return NULL;
     }

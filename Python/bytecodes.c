@@ -19,7 +19,7 @@
 #include "pycore_instruments.h"
 #include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
-#include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact()
+#include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact(), _PyLazyImport_SetGlobalBinding()
 #include "pycore_long.h"          // _PyLong_ExactDealloc(), _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -1997,6 +1997,7 @@ dummy_func(
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
+            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
             int err;
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
@@ -2005,10 +2006,15 @@ dummy_func(
                 ERROR_IF(true);
             }
             if (PyDict_CheckExact(ns)) {
-                err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                err = PyDict_SetItem(ns, name, value);
+                if (err == 0 && ns == GLOBALS() &&
+                    PyLazyImport_CheckExact(value))
+                {
+                    err = _PyLazyImport_SetGlobalBinding(value, ns, name);
+                }
             }
             else {
-                err = PyObject_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));
+                err = PyObject_SetItem(ns, name, value);
             }
             PyStackRef_CLOSE(v);
             ERROR_IF(err);
@@ -2189,7 +2195,13 @@ dummy_func(
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
+            PyObject *value = PyStackRef_AsPyObjectBorrow(v);
+            int err = PyDict_SetItem(GLOBALS(), name, value);
+            if (err == 0 && PyDict_CheckExact(GLOBALS()) &&
+                PyLazyImport_CheckExact(value))
+            {
+                err = _PyLazyImport_SetGlobalBinding(value, GLOBALS(), name);
+            }
             PyStackRef_CLOSE(v);
             ERROR_IF(err);
         }
