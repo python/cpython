@@ -1090,10 +1090,8 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
         max_frames = (size - frame_off) // self.MIN_FRAME_ENTRY_SIZE
         self._patch_footer_count(filename, self.FTR_OFF_FRAMES, 0xFFFFFFFF)
 
-        # 0xFFFFFFFF frames exceed the file on every platform.  On a 32-bit
-        # build it also overflows the allocation size, so the size_t overflow
-        # guard (OverflowError) fires before the count-vs-file-size guard
-        # (ValueError); either rejection is correct.
+        # On a 32-bit build this count overflows the allocation size, so the
+        # size_t overflow guard (OverflowError) fires before the count check.
         with self.assertRaises((ValueError, OverflowError)) as cm:
             with BinaryReader(filename):
                 pass
