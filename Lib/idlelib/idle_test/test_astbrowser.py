@@ -98,6 +98,15 @@ class ASTBrowserWindowTest(unittest.TestCase):
         item = self.find("Name(id='x'")
         self.assertEqual(self.window.ranges[item], ("4.11", "4.12"))
 
+    def test_form_feed_does_not_shift_lines(self):
+        # gh-152942: a form feed breaks str.splitlines() but not the parser,
+        # so it must not shift source_lines and misplace later nodes.
+        self.text.delete("1.0", "end")
+        self.text.insert("1.0", "x = 1\f\ny = 22\n")   # form feed ends line 1.
+        self.window.populate()
+        item = self.find("Constant(value=22)")
+        self.assertEqual(self.window.ranges[item], ("2.4", "2.6"))
+
     def test_selection_scope(self):
         self.text.tag_add("sel", "4.11", "4.16")   # 'x + 1' on line 4.
         self.window.populate()

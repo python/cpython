@@ -149,7 +149,8 @@ class ASTBrowserWindow(Toplevel):
                 first, scope = "1.0", "text"
         self.base = tuple(int(i) for i in first.split("."))
         source = text.get(first, last)
-        self.source_lines = source.splitlines()
+        # Split at "\n" only; str.splitlines() would also break at "\f" etc.
+        self.source_lines = source.split("\n")
         error = count = None
         try:
             tree = ast.parse(source)
