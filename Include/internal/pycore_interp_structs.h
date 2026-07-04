@@ -236,9 +236,9 @@ struct _gc_runtime_state {
     struct gc_generation permanent_generation;
     struct gc_stats *generation_stats;
 #ifdef Py_GIL_DISABLED
-    /* Serializes access to generation_stats between gc_get_stats_impl()
-       (reader) and gc_collect_main() (writer) so they can run concurrently
-       under free-threading without a data race (gh-151646). */
+    /* Protects generation_stats between gc_get_stats_impl() (reader) and
+       gc_collect_main() (writer); both resolve the stats slot (buffer index)
+       under this lock so they agree on which slot to touch (gh-151646). */
     PyMutex stats_mutex;
 #endif
     /* true if we are currently running the collector */

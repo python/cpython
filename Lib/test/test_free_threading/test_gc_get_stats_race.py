@@ -43,49 +43,41 @@ from test.support import threading_helper
 
 
 # One thread hammers gc.collect() (the writer side); enough reader threads run
-# gc.get_stats() concurrently to make the race easy to observe.  The iteration
-# counts are deliberately fixed and finite so the script always terminates.
-NUM_COLLECTORS = 1
-NUM_READERS = 8
-ITERATIONS = 50_000
+# gc.get_stats() concurrently to make the race easy to observe.  Readers run
+# until the writer is done so the test duration is controlled by the collection
+# count rather than by reader loop counts.
+NUM_READERS = 4
+ITERATIONS = 50
 
 
-def _stress_get_stats_race(num_collectors=NUM_COLLECTORS,
-                           num_readers=NUM_READERS,
-                           iterations=ITERATIONS):
-    """Race gc.collect() against gc.get_stats() and return collected stats."""
+def _stress_get_stats_race(num_readers=NUM_READERS, iterations=ITERATIONS):
+    """Race gc.collect() against gc.get_stats()."""
 
-    # Synchronise the start so collectors and readers overlap for as long as
+    # Synchronise the start so the writer and readers overlap for as long as
     # possible, maximising the chance of the read and write landing on the
     # statistics struct at the same time.
-    barrier = threading.Barrier(num_collectors + num_readers)
+    done = threading.Event()
 
     def collector():
-        barrier.wait()
-        for _ in range(iterations):
-            # Writer: each full collection updates gcstate->generation_stats.
-            gc.collect()
+        try:
+            for _ in range(iterations):
+                # Writer: each full collection updates gcstate->generation_stats.
+                gc.collect()
+        finally:
+            done.set()
 
     def reader():
-        barrier.wait()
-        for _ in range(iterations):
+        while not done.is_set():
             # Reader: copies the per-generation stats structs with no lock.
             gc.get_stats()
 
-    threads = [threading.Thread(target=collector) for _ in range(num_collectors)]
-    threads += [threading.Thread(target=reader) for _ in range(num_readers)]
-
-    with threading_helper.start_threads(threads):
-        pass
+    threading_helper.run_concurrently([collector] + [reader] * num_readers)
 
 
 @threading_helper.requires_working_threading()
 class TestGCGetStatsRace(unittest.TestCase):
     def test_get_stats_collect_race(self):
-        # Use a reduced iteration count under the regular test suite so the test
-        # stays reasonably quick while still exercising the race; the standalone
-        # __main__ path below uses the full ITERATIONS for a reliable repro.
-        _stress_get_stats_race(iterations=2_000)
+        _stress_get_stats_race()
 
         # The race is benign at the Python level: gc.get_stats() must still
         # return well-formed data and the interpreter must not crash.
@@ -98,10 +90,10 @@ class TestGCGetStatsRace(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # Standalone reproduction: run the full-size race and exit cleanly so the
-    # script can be reused as a regression check once the fix lands.
-    print(f"Racing {NUM_COLLECTORS} gc.collect() thread(s) against "
-          f"{NUM_READERS} gc.get_stats() thread(s), {ITERATIONS} iterations each...")
+    # Standalone reproduction: run the race and exit cleanly so the script can
+    # be reused as a regression check once the fix lands.
+    print(f"Racing 1 gc.collect() thread against "
+          f"{NUM_READERS} gc.get_stats() thread(s), {ITERATIONS} collections...")
     _stress_get_stats_race()
     print("Done (no Python-level crash). "
           "Run under a free-threading + TSAN build to observe the data race.")

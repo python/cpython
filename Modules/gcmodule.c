@@ -375,8 +375,6 @@ gc_get_stats_impl(PyObject *module)
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
 #ifdef Py_GIL_DISABLED
-    /* Hold stats_mutex so the snapshot is consistent with a concurrent
-       collector updating the same struct (gh-151646). */
     PyMutex_Lock(&gcstate->stats_mutex);
 #endif
     stats[0] = gcstate->generation_stats->young.items[gcstate->generation_stats->young.index];
