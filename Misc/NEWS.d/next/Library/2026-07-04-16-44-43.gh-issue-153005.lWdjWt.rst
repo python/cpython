@@ -1,0 +1,3 @@
+Fix :meth:`concurrent.interpreters.Queue.get` and
+:meth:`concurrent.interpreters.Queue.put` truncating a floating-point *timeout*
+to whole seconds.  A negative or NaN timeout now raises :exc:`ValueError`.

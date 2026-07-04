@@ -217,15 +217,15 @@ class Queue:
         else:
             unboundop, = _serialize_unbound(unbounditems)
         if timeout is not None:
-            timeout = int(timeout)
-            if timeout < 0:
-                raise ValueError(f'timeout value must be non-negative')
-            end = time.time() + timeout
+            timeout = float(timeout)
+            if not timeout >= 0:  # also rejects NaN
+                raise ValueError('timeout value must be non-negative')
+            end = time.monotonic() + timeout
         while True:
             try:
                 _queues.put(self._id, obj, unboundop)
             except QueueFull:
-                if timeout is not None and time.time() >= end:
+                if timeout is not None and time.monotonic() >= end:
                     raise  # re-raise
                 time.sleep(_delay)
             else:
@@ -252,15 +252,15 @@ class Queue:
         if not block:
             return self.get_nowait()
         if timeout is not None:
-            timeout = int(timeout)
-            if timeout < 0:
-                raise ValueError(f'timeout value must be non-negative')
-            end = time.time() + timeout
+            timeout = float(timeout)
+            if not timeout >= 0:  # also rejects NaN
+                raise ValueError('timeout value must be non-negative')
+            end = time.monotonic() + timeout
         while True:
             try:
                 obj, unboundop = _queues.get(self._id)
             except QueueEmpty:
-                if timeout is not None and time.time() >= end:
+                if timeout is not None and time.monotonic() >= end:
                     raise  # re-raise
                 time.sleep(_delay)
             else:

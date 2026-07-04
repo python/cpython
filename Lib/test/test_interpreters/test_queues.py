@@ -1,6 +1,7 @@
 import importlib
 import pickle
 import threading
+import time
 from textwrap import dedent
 import unittest
 
@@ -353,6 +354,42 @@ class TestQueueOps(TestBase):
             queue.get(timeout=0.1)
         with self.assertRaises(queues.QueueEmpty):
             queue.get(HUGE_TIMEOUT, 0.1)
+
+    def test_put_timeout_fractional(self):
+        # A fractional timeout must not be truncated to whole seconds.
+        queue = queues.create(1)
+        queue.put(None)
+        start = time.monotonic()
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, timeout=0.1)
+        self.assertGreaterEqual(time.monotonic() - start, 0.05)
+
+    def test_get_timeout_fractional(self):
+        # A fractional timeout must not be truncated to whole seconds.
+        queue = queues.create()
+        start = time.monotonic()
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(timeout=0.1)
+        self.assertGreaterEqual(time.monotonic() - start, 0.05)
+
+    def test_timeout_zero_does_not_block(self):
+        queue = queues.create(1)
+        queue.put(None)
+        start = time.monotonic()
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, timeout=0)
+        self.assertLess(time.monotonic() - start, 1.0)
+        empty = queues.create()
+        with self.assertRaises(queues.QueueEmpty):
+            empty.get(timeout=0)
+
+    def test_timeout_invalid(self):
+        queue = queues.create()
+        for bad in (-0.5, float('nan')):
+            with self.assertRaisesRegex(ValueError, 'non-negative'):
+                queue.get(timeout=bad)
+            with self.assertRaisesRegex(ValueError, 'non-negative'):
+                queue.put(None, timeout=bad)
 
     def test_get_nowait(self):
         queue = queues.create()
