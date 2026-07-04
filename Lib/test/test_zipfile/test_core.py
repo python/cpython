@@ -5674,6 +5674,7 @@ class TestExecutablePrependedZip(unittest.TestCase):
 
 class EncodedMetadataTests(unittest.TestCase):
     file_names = ['\u4e00', '\u4e8c', '\u4e09']  # Han 'one', 'two', 'three'
+    file_codecs = ['shift_jis', 'shift_jis', 'utf-8']
     file_content = [
         "This is pure ASCII.\n".encode('ascii'),
         # This is modern Japanese. (UTF-8)
@@ -5689,18 +5690,14 @@ class EncodedMetadataTests(unittest.TestCase):
         # The ASCII names are arbitrary as long as they are length 2 and
         # not otherwise contained in the zip file.
         # Data elements are encoded bytes (ascii, utf-8, shift_jis).
-        placeholders = ["n1", "n2"] + self.file_names[2:]
-        with zipfile.ZipFile(TESTFN, mode="w") as tf:
-            for temp, content in zip(placeholders, self.file_content):
-                tf.writestr(temp, content, zipfile.ZIP_STORED)
-        # Hack in the Shift JIS names with flag bit 11 (UTF-8) unset.
-        with open(TESTFN, "rb") as tf:
-            data = tf.read()
-        for name, temp in zip(self.file_names, placeholders[:2]):
-            data = data.replace(temp.encode('ascii'),
-                                name.encode('shift_jis'))
-        with open(TESTFN, "wb") as tf:
-            tf.write(data)
+        def mock_encode(zi):
+            idx = self.file_names.index(zi.filename)
+            return (zi.filename.encode(self.file_codecs[idx]), zi.flag_bits | (
+                zipfile._MASK_UTF_FILENAME if self.file_codecs[idx] == 'utf-8' else 0))
+        with mock.patch('zipfile.ZipInfo._encodeFilenameFlags', mock_encode), \
+             zipfile.ZipFile(TESTFN, mode="w") as tf:
+            for name, content in zip(self.file_names, self.file_content):
+                tf.writestr(name, content, zipfile.ZIP_STORED)
 
     def _test_read(self, zipfp, expected_names, expected_content,
                    expected_comments=None, expected_efs_flags=None):
