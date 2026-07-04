@@ -1090,14 +1090,19 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
         max_frames = (size - frame_off) // self.MIN_FRAME_ENTRY_SIZE
         self._patch_footer_count(filename, self.FTR_OFF_FRAMES, 0xFFFFFFFF)
 
-        with self.assertRaises(ValueError) as cm:
+        # 0xFFFFFFFF frames exceed the file on every platform.  On a 32-bit
+        # build it also overflows the allocation size, so the size_t overflow
+        # guard (OverflowError) fires before the count-vs-file-size guard
+        # (ValueError); either rejection is correct.
+        with self.assertRaises((ValueError, OverflowError)) as cm:
             with BinaryReader(filename):
                 pass
-        self.assertEqual(
-            str(cm.exception),
-            f"Invalid frame count 4294967295 exceeds maximum "
-            f"possible {max_frames}",
-        )
+        if isinstance(cm.exception, ValueError):
+            self.assertEqual(
+                str(cm.exception),
+                f"Invalid frame count 4294967295 exceeds maximum "
+                f"possible {max_frames}",
+            )
 
     def test_open_accepts_frame_count_at_capacity_boundary(self):
         """A frame count at the file-size cap opens; one more is rejected."""
