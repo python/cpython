@@ -5801,9 +5801,9 @@ class EncodedMetadataTests(unittest.TestCase):
         efs_flags = [True, True, False, False]
 
         def mock_encode(self):
-            if efs_flags[i]:
-                zinfo.flag_bits |= zipfile._MASK_UTF_FILENAME
-            return (self.filename.encode('ascii'), self.flag_bits)
+            idx = names.index(self.filename)
+            return (self.filename.encode('ascii'), self.flag_bits | (
+                zipfile._MASK_UTF_FILENAME if efs_flags[idx] else 0))
 
         with mock.patch('zipfile.ZipInfo._encodeFilenameFlags', mock_encode), \
              zipfile.ZipFile(TESTFN, "w") as zipfp:
