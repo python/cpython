@@ -1313,14 +1313,11 @@ try_load_lazy_submodule(PyModuleObject *m, PyObject *name)
         Py_DECREF(mod_name);
         return NULL;
     }
-    PyObject *result = _PyImport_TryLoadLazySubmodule(mod_name, name);
+    PyObject *result = _PyImport_TryLoadLazySubmodule(
+        mod_name, name, m->md_dict);
     Py_DECREF(mod_name);
     if (result == NULL) {
         PyErr_Clear();
-        return NULL;
-    }
-    if (PyDict_SetItem(m->md_dict, name, result) < 0) {
-        Py_DECREF(result);
         return NULL;
     }
     return result;

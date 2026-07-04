@@ -4453,7 +4453,8 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
 }
 
 PyObject *
-_PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name)
+_PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
+                               PyObject *mod_dict)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *lazy_pending = LAZY_PENDING_SUBMODULES(interp);
@@ -4488,15 +4489,25 @@ _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name)
     }
     Py_DECREF(mod);
 
+    PyObject *submod = PyImport_GetModule(full_name);
+    Py_DECREF(full_name);
+    if (submod == NULL) {
+        Py_DECREF(pending_set);
+        return NULL;
+    }
+
+    if (PyDict_SetItem(mod_dict, attr_name, submod) < 0) {
+        Py_DECREF(pending_set);
+        Py_DECREF(submod);
+        return NULL;
+    }
+
     if (PySet_Discard(pending_set, attr_name) < 0) {
         Py_DECREF(pending_set);
-        Py_DECREF(full_name);
+        Py_DECREF(submod);
         return NULL;
     }
     Py_DECREF(pending_set);
-
-    PyObject *submod = PyImport_GetModule(full_name);
-    Py_DECREF(full_name);
     return submod;
 }
 

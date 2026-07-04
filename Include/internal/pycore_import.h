@@ -40,7 +40,7 @@ extern PyObject * _PyImport_GetAbsName(
 PyAPI_FUNC(PyObject *) _PyImport_LoadLazyImportTstate(
     PyThreadState *tstate, PyObject *lazy_import);
 extern PyObject * _PyImport_TryLoadLazySubmodule(
-    PyObject *mod_name, PyObject *attr_name);
+    PyObject *mod_name, PyObject *attr_name, PyObject *mod_dict);
 extern PyObject * _PyImport_LazyImportModuleLevelObject(
     PyThreadState *tstate, PyObject *name, PyObject *builtins,
     PyObject *globals, PyObject *locals, PyObject *fromlist, int level);
