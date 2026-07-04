@@ -787,25 +787,27 @@ class ErrorHandlingTests(LazyImportTestCase):
         """
         code = textwrap.dedent("""
             import sys
-            import types
 
             lazy import test.test_lazy_import.data.broken_module
 
             # First access - should fail
             try:
                 x = test.test_lazy_import.data.broken_module
-            except AttributeError:
-                pass
+            except ValueError as exc:
+                assert str(exc) == "This module always fails to import", exc
+            else:
+                raise AssertionError("ValueError was not raised")
 
-            # The lazy object should still be a lazy proxy (not reified)
-            g = globals()
-            lazy_obj = g['test']
-            # The root 'test' binding should still allow retry
+            assert "test.test_lazy_import.data.broken_module" not in sys.modules
+
             # Second access - should also fail (retry the import)
             try:
                 x = test.test_lazy_import.data.broken_module
-            except AttributeError:
+            except ValueError as exc:
+                assert str(exc) == "This module always fails to import", exc
                 print("OK - retry worked")
+            else:
+                raise AssertionError("ValueError was not raised")
         """)
         result = subprocess.run(
             [sys.executable, "-c", code],
@@ -823,9 +825,11 @@ class ErrorHandlingTests(LazyImportTestCase):
 
             try:
                 _ = test.test_lazy_import.data.broken_module
-                print("FAIL - should have raised")
-            except AttributeError:
+            except ValueError as exc:
+                assert str(exc) == "This module always fails to import", exc
                 print("OK")
+            else:
+                raise AssertionError("ValueError was not raised")
         """)
         result = subprocess.run(
             [sys.executable, "-c", code],

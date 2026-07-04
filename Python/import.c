@@ -4452,6 +4452,37 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
     return res;
 }
 
+static int
+is_module_not_found_for_name(PyThreadState *tstate, PyObject *name)
+{
+    // Return true only for "name itself was not found", consuming the current
+    // exception so callers can continue normal attribute fallback.
+    if (!_PyErr_ExceptionMatches(tstate, PyExc_ModuleNotFoundError)) {
+        return 0;
+    }
+
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    PyObject *missing_name = PyObject_GetAttr(exc, &_Py_ID(name));
+    if (missing_name == NULL) {
+        PyErr_Clear();
+        _PyErr_SetRaisedException(tstate, exc);
+        return 0;
+    }
+
+    int is_same = PyObject_RichCompareBool(missing_name, name, Py_EQ);
+    Py_DECREF(missing_name);
+    if (is_same <= 0) {
+        if (is_same < 0) {
+            PyErr_Clear();
+        }
+        _PyErr_SetRaisedException(tstate, exc);
+        return 0;
+    }
+
+    Py_DECREF(exc);
+    return 1;
+}
+
 int
 _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
                                PyObject *mod_dict, PyObject **result)
@@ -4493,6 +4524,11 @@ _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
     PyObject *mod = PyImport_ImportModuleLevelObject(
         full_name, NULL, NULL, NULL, 0);
     if (mod == NULL) {
+        if (is_module_not_found_for_name(tstate, full_name)) {
+            Py_DECREF(pending_set);
+            Py_DECREF(full_name);
+            return 0;
+        }
         Py_DECREF(pending_set);
         Py_DECREF(full_name);
         return -1;
