@@ -43,7 +43,7 @@ typedef struct {
     PyObject *func_annotations; /* Annotations, a dict or NULL */
     PyObject *func_annotate;    /* Callable to fill the annotations dictionary */
     PyObject *func_typeparams;  /* Tuple of active type variables or NULL */
-    PyObject *func_old_codes;
+    PyObject *func_old_codes;   /* NULL or list of past code objects */
     vectorcallfunc vectorcall;
     /* Version number for use by specializer.
      * Can set to non-zero when we want to specialize.

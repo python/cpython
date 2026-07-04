@@ -160,6 +160,13 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     }
 }
 
+/* Generator frames need a strong reference to the code object */
+static inline void _PyFrame_CopyForGenerators(_PyInterpreterFrame *old_frame, _PyInterpreterFrame *gen_frame) {
+    _PyFrame_Copy(old_frame, gen_frame);
+    gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
+    gen_frame->f_executable = PyStackRef_MakeHeapSafe(gen_frame->f_executable);
+}
+
 #ifdef Py_GIL_DISABLED
 static inline void
 _PyFrame_InitializeTLBC(PyThreadState *tstate, _PyInterpreterFrame *frame,
