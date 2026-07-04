@@ -703,6 +703,12 @@
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
 
+/* Define if you have a working iconv() function. */
+#undef HAVE_ICONV
+
+/* Define to 1 if you have the <iconv.h> header file. */
+#undef HAVE_ICONV_H
+
 /* Define to 1 if you have the 'if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
