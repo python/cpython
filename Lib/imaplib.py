@@ -130,8 +130,8 @@ Untagged_status = re.compile(
 _Literal = br'.*{(?P<size>\d+)}$'
 _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
 _control_chars = re.compile(b'[\x00-\x1F\x7F]')
-_non_astring_char = re.compile(br'[(){ \x00-\x1f\x7f%*\\"]')
-_non_list_char = re.compile(br'[(){ \x00-\x1f\x7f\\"]')
+_non_astring_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff%*\\"]')
+_non_list_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff\\"]')
 _quoted = re.compile(br'"(?:[^"\\]|\\.)*+"')
 
 
@@ -651,7 +651,7 @@ class IMAP4:
         """
         name = 'FETCH'
         typ, dat = self._simple_command(name, self._sequence_set(message_set),
-                                        self._set_quote(message_parts))
+                                        self._fetch_parts(message_parts))
         return self._untagged_response(typ, dat, name)
 
 
@@ -1036,7 +1036,7 @@ class IMAP4:
         elif command == 'FETCH':
             message_set, message_parts = args
             args = (self._sequence_set(message_set),
-                    self._set_quote(message_parts))
+                    self._fetch_parts(message_parts))
         elif command == 'STORE':
             message_set, op, flags = args
             args = (self._sequence_set(message_set), op,
@@ -1441,6 +1441,13 @@ class IMAP4:
         if arg and arg[0] == '(' and arg[-1] == ')':
             return arg
         return '(' + arg + ')'
+
+    def _fetch_parts(self, arg):
+        # "ALL", "FULL" and "FAST" are macros, not data item names;
+        # they cannot be enclosed in parentheses.
+        if arg.upper() in ('ALL', 'FULL', 'FAST'):
+            return arg
+        return self._set_quote(arg)
 
     def _quote(self, arg):
         if isinstance(arg, str):

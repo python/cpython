@@ -190,6 +190,11 @@ class TestImaplib(unittest.TestCase):
         self.assertEqual(m._astring('"a" SELECT evil "'),
                          b'"\\"a\\" SELECT evil \\""')
         self.assertEqual(m._astring('"'), b'"\\""')
+        # Non-ASCII names are only allowed in a quoted string or a
+        # literal, never in an atom (RFC 6855).
+        m._encoding = 'utf-8'
+        self.assertEqual(m._astring('Entwürfe'), '"Entwürfe"'.encode())
+        self.assertEqual(m._astring(b'Entw\xc3\xbcrfe'), b'"Entw\xc3\xbcrfe"')
 
     def test_astring_idempotent(self):
         # Quoting an already quoted argument should not change it, so that
@@ -198,7 +203,7 @@ class TestImaplib(unittest.TestCase):
         m._encoding = 'ascii'
         for arg in ['INBOX', 'New folder', 'a"b', 'a\\b', '', '*', '%',
                     '"New folder"', '""', '"a\\b"', '"a" SELECT evil "',
-                    '"', 'a\tb', 'a\rb', '\x7f', '(a)']:
+                    '"', 'a\tb', 'a\rb', '\x7f', '(a)', b'Entw\xc3\xbcrfe']:
             with self.subTest(arg=arg):
                 once = m._astring(arg)
                 self.assertEqual(m._astring(once), once)
@@ -215,6 +220,11 @@ class TestImaplib(unittest.TestCase):
         # But spaces still require quoting.
         self.assertEqual(m._list_mailbox('New folder'), b'"New folder"')
         self.assertEqual(m._list_mailbox('"New folder"'), b'"New folder"')
+        # As do non-ASCII names; wildcards keep their meaning inside a
+        # quoted string.
+        m._encoding = 'utf-8'
+        self.assertEqual(m._list_mailbox('Entwürfe/%'),
+                         '"Entwürfe/%"'.encode())
 
 
 if ssl:
@@ -577,6 +587,26 @@ class NewIMAPTestsMixin:
         self.assertTrue(client.utf8_enabled)
         with self.assertRaisesRegex(imaplib.IMAP4.error, 'charset.*UTF8'):
             client.search('foo', 'bar')
+
+    def test_utf8_mailbox_name(self):
+        class UTF8Server(SimpleIMAPHandler):
+            capabilities = 'AUTH ENABLE UTF8=ACCEPT'
+            def cmd_ENABLE(self, tag, args):
+                self._send_tagged(tag, 'OK', 'ENABLE successful')
+            def cmd_AUTHENTICATE(self, tag, args):
+                self._send_textline('+')
+                self.server.response = yield
+                self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
+        client, server = self._setup(UTF8Server)
+        typ, _ = client.authenticate('MYAUTH', lambda x: b'fake')
+        self.assertEqual(typ, 'OK')
+        typ, _ = client.enable('UTF8=ACCEPT')
+        self.assertEqual(typ, 'OK')
+        # A non-ASCII mailbox name is only allowed in a quoted string
+        # or a literal, never in an atom (RFC 6855).
+        typ, _ = client.select('Entwürfe')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.is_selected, ['"Entwürfe"'])
 
     def test_bad_auth_name(self):
         class MyServer(SimpleIMAPHandler):
@@ -1208,6 +1238,14 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['2:4', '(FLAGS)'])
 
+        # But the macros are not, as they are not data item names.
+        typ, data = client.fetch('2:4', 'ALL')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['2:4', 'ALL'])
+        typ, data = client.fetch('2:4', 'fast')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['2:4', 'fast'])
+
     def test_uid_fetch(self):
         client, server = self._setup(make_simple_handler('UID', [
             r'* 23 FETCH (FLAGS (\Seen) UID 4827313)',
@@ -1228,6 +1266,10 @@ class NewIMAPTestsMixin:
         typ, data = client.uid('fetch', '4827313:4828442', 'FLAGS')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['FETCH', '4827313:4828442', '(FLAGS)'])
+
+        typ, data = client.uid('fetch', '4827313:4828442', 'ALL')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['FETCH', '4827313:4828442', 'ALL'])
 
     def test_partial(self):
         client, server = self._setup(make_simple_handler('PARTIAL',
