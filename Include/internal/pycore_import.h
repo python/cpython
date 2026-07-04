@@ -39,8 +39,10 @@ extern PyObject * _PyImport_GetAbsName(
 // Symbol is exported for the JIT on Windows builds.
 PyAPI_FUNC(PyObject *) _PyImport_LoadLazyImportTstate(
     PyThreadState *tstate, PyObject *lazy_import);
-extern PyObject * _PyImport_TryLoadLazySubmodule(
-    PyObject *mod_name, PyObject *attr_name, PyObject *mod_dict);
+// Returns 1 with a new reference in result, 0 if not pending, or -1 on error.
+extern int _PyImport_TryLoadLazySubmodule(
+    PyObject *mod_name, PyObject *attr_name, PyObject *mod_dict,
+    PyObject **result);
 extern PyObject * _PyImport_LazyImportModuleLevelObject(
     PyThreadState *tstate, PyObject *name, PyObject *builtins,
     PyObject *globals, PyObject *locals, PyObject *fromlist, int level);

@@ -4452,32 +4452,41 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
     return res;
 }
 
-PyObject *
+int
 _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
-                               PyObject *mod_dict)
+                               PyObject *mod_dict, PyObject **result)
 {
+    *result = NULL;
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *lazy_pending = LAZY_PENDING_SUBMODULES(interp);
     if (lazy_pending == NULL) {
-        return NULL;
+        return 0;
     }
 
     PyObject *pending_set;
     int rc = PyDict_GetItemRef(lazy_pending, mod_name, &pending_set);
-    if (rc <= 0) {
-        return NULL;
+    if (rc < 0) {
+        return -1;
+    }
+    if (rc == 0) {
+        return 0;
     }
 
     int contains = PySet_Contains(pending_set, attr_name);
-    if (contains <= 0) {
+    if (contains < 0) {
         Py_DECREF(pending_set);
-        return NULL;
+        return -1;
+    }
+    if (contains == 0) {
+        Py_DECREF(pending_set);
+        return 0;
     }
 
     PyObject *full_name = PyUnicode_FromFormat("%U.%U", mod_name, attr_name);
     if (full_name == NULL) {
         Py_DECREF(pending_set);
-        return NULL;
+        return -1;
     }
 
     PyObject *mod = PyImport_ImportModuleLevelObject(
@@ -4485,7 +4494,7 @@ _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
     if (mod == NULL) {
         Py_DECREF(pending_set);
         Py_DECREF(full_name);
-        return NULL;
+        return -1;
     }
     Py_DECREF(mod);
 
@@ -4493,22 +4502,23 @@ _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
     Py_DECREF(full_name);
     if (submod == NULL) {
         Py_DECREF(pending_set);
-        return NULL;
+        return -1;
     }
 
     if (PyDict_SetItem(mod_dict, attr_name, submod) < 0) {
         Py_DECREF(pending_set);
         Py_DECREF(submod);
-        return NULL;
+        return -1;
     }
 
     if (PySet_Discard(pending_set, attr_name) < 0) {
         Py_DECREF(pending_set);
         Py_DECREF(submod);
-        return NULL;
+        return -1;
     }
     Py_DECREF(pending_set);
-    return submod;
+    *result = submod;
+    return 1;
 }
 
 PyObject *
