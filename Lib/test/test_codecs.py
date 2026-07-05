@@ -1401,6 +1401,73 @@ class PunycodeTest(unittest.TestCase):
                     self.assertEqual(puny.decode("punycode", errors), expected)
 
 
+imap4_utf_7_testcases = [
+    # (unicode, modified UTF-7)
+    ('', b''),
+    ('INBOX', b'INBOX'),
+    # Printable US-ASCII represents itself.
+    ('abcABC123 !#$%()*+,-./:;<=>?@[]^_`{|}~', b'abcABC123 !#$%()*+,-./:;<=>?@[]^_`{|}~'),
+    # "&" is escaped as "&-".
+    ('&', b'&-'),
+    ('&&', b'&-&-'),
+    ('A&B', b'A&-B'),
+    # RFC 3501 section 5.1.3 example.
+    ('~peter/mail/台北/日本語',
+     b'~peter/mail/&U,BTFw-/&ZeVnLIqe-'),
+    # Non-printable ASCII (including TAB) is Base64-encoded, not direct.
+    ('a\tb', b'a&AAk-b'),
+    ('\x00', b'&AAA-'),
+    ('Entw\xfcrfe', b'Entw&APw-rfe'),
+    ('☃', b'&JgM-'),                     # snowman
+    ('\U0001f600', b'&2D3eAA-'),              # non-BMP (surrogate pair)
+    ('Sent &\N{DELETE}', b'Sent &-&AH8-'),
+]
+
+class Imap4Utf7Test(unittest.TestCase):
+    def test_encode(self):
+        for uni, encoded in imap4_utf_7_testcases:
+            with self.subTest(uni=uni):
+                self.assertEqual(uni.encode('imap4-utf-7'), encoded)
+
+    def test_decode(self):
+        for uni, encoded in imap4_utf_7_testcases:
+            with self.subTest(encoded=encoded):
+                self.assertEqual(encoded.decode('imap4-utf-7'), uni)
+
+    def test_decode_invalid(self):
+        # position of the first offending byte in each case
+        testcases = [
+            (b'&AAk', 0),           # unterminated shift sequence
+            (b'&Jgg', 0),           # unterminated shift sequence
+            (b'&AB-', 0),           # Base64 length not a multiple of a code unit
+            (b'&@@@-', 0),          # invalid Base64
+            (b'&====-', 0),         # invalid Base64
+            (b'a\x80b', 1),         # 8-bit byte outside a shift sequence
+            (b'a\x1fb', 1),         # control byte outside a shift sequence
+        ]
+        for encoded, start in testcases:
+            with self.subTest(encoded=encoded):
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    encoded.decode('imap4-utf-7')
+                self.assertEqual(cm.exception.encoding, 'imap4-utf-7')
+                self.assertEqual(cm.exception.start, start)
+
+    def test_encode_lone_surrogate(self):
+        with self.assertRaises(UnicodeEncodeError):
+            '\ud800'.encode('imap4-utf-7')
+
+    def test_only_strict_errors(self):
+        with self.assertRaises(UnicodeError):
+            'x'.encode('imap4-utf-7', 'replace')
+        with self.assertRaises(UnicodeError):
+            b'x'.decode('imap4-utf-7', 'ignore')
+
+    def test_stateless(self):
+        # The codec is registered and exposes the standard interface.
+        info = codecs.lookup('imap4-utf-7')
+        self.assertEqual(info.name, 'imap4-utf-7')
+
+
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
 nameprep_tests = [
     # 3.1 Map to nothing.

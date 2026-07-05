@@ -1384,6 +1384,14 @@ encodings.
 |                    |         | Only ``errors='strict'``  |
 |                    |         | is supported.             |
 +--------------------+---------+---------------------------+
+| imap4-utf-7        |         | Modified UTF-7 encoding   |
+|                    |         | of :rfc:`3501` for IMAP4  |
+|                    |         | mailbox names.  Only      |
+|                    |         | ``errors='strict'`` is    |
+|                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. versionadded:: next    |
++--------------------+---------+---------------------------+
 | mbcs               | ansi,   | Windows only: Encode the  |
 |                    | dbcs    | operand according to the  |
 |                    |         | ANSI codepage (CP_ACP).   |
