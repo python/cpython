@@ -328,6 +328,19 @@ An :class:`IMAP4` instance has the following methods:
    of the IMAP4 QUOTA extension defined in rfc2087.
 
 
+.. method:: IMAP4.id(fields=None)
+
+   Send client identification information to the server
+   and return the identification information sent back by the server
+   (the ``ID`` command, defined in :rfc:`2971`).
+   *fields* is a mapping of field names to values
+   (for example, ``{'name': 'myclient', 'version': '1.0'}``);
+   a value can be ``None``.
+   The server must support the ``ID`` capability.
+
+   .. versionadded:: next
+
+
 .. method:: IMAP4.idle(duration=None)
 
    Return an :class:`!Idler`: an iterable context manager implementing the

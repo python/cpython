@@ -231,6 +231,10 @@ io
 imaplib
 -------
 
+* Add the :meth:`~imaplib.IMAP4.id` method,
+  a wrapper for the ``ID`` command (:rfc:`2971`).
+  (Contributed by Serhiy Storchaka in :gh:`98092`.)
+
 * Add the :meth:`~imaplib.IMAP4.move` method,
   a wrapper for the ``MOVE`` command (:rfc:`6851`).
   (Contributed by Serhiy Storchaka in :gh:`77508`.)

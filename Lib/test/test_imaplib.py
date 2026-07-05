@@ -1701,6 +1701,24 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['"New folder"'])
 
+    def test_id(self):
+        client, server = self._setup(make_simple_handler('ID',
+            ['* ID ("name" "Cyrus" "version" "1.5")']))
+        typ, data = client.id({'name': 'imaplib', 'version': '3.16'})
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'("name" "Cyrus" "version" "1.5")'])
+        self.assertEqual(server.args, ['("name" "imaplib" "version" "3.16")'])
+
+        typ, data = client.id()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['NIL'])
+
+        # Fields and values are quoted strings; a None value is sent
+        # as NIL.
+        typ, data = client.id({'name': 'my "client"', 'os': None})
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, [r'("name" "my \"client\"" "os" NIL)'])
+
     def test_setquota(self):
         client, server = self._setup(make_simple_handler('SETQUOTA',
             ['* QUOTA "" (STORAGE 512)']))

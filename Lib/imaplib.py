@@ -73,6 +73,7 @@ Commands = {
         'GETANNOTATION':('AUTH', 'SELECTED'),
         'GETQUOTA':     ('AUTH', 'SELECTED'),
         'GETQUOTAROOT': ('AUTH', 'SELECTED'),
+        'ID':           ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'IDLE':         ('AUTH', 'SELECTED'),
         'MYRIGHTS':     ('AUTH', 'SELECTED'),
         'LIST':         ('AUTH', 'SELECTED'),
@@ -695,6 +696,28 @@ class IMAP4:
         typ, quota = self._untagged_response(typ, dat, 'QUOTA')
         typ, quotaroot = self._untagged_response(typ, dat, 'QUOTAROOT')
         return typ, [quotaroot, quota]
+
+
+    def id(self, fields=None):
+        """Send client identification information to the server.
+
+        (typ, [data]) = <instance>.id(fields)
+
+        'fields' is a mapping of field names to values; a value can be
+        None.  'data' is the identification information sent back by
+        the server, in the same parenthesized list form.
+        """
+        name = 'ID'
+        if fields:
+            items = []
+            for field, value in fields.items():
+                items.append(self._quote(field))
+                items.append(b'NIL' if value is None else self._quote(value))
+            arg = b'(' + b' '.join(items) + b')'
+        else:
+            arg = 'NIL'
+        typ, dat = self._simple_command(name, arg)
+        return self._untagged_response(typ, dat, name)
 
 
     def idle(self, duration=None):
