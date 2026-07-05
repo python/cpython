@@ -2347,8 +2347,15 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str,
-                                  format=annotation_format)
+    try:
+        annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str,
+                                      format=annotation_format)
+    except (NameError, AttributeError, ImportError):
+        if annotation_format == Format.VALUE:
+            annotations = get_annotations(func, globals=globals, locals=locals, eval_str=False,
+                                          format=Format.FORWARDREF)
+        else:
+            raise
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 

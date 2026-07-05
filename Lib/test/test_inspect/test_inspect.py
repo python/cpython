@@ -1392,12 +1392,12 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      kwonlyargs_e=['e', 'f'],
                                      kwonlydefaults_e={'e': 4, 'f': 5})
 
-    def get_getfullargspec_with_undefined_names_in_annotations(self):
+    def test_getfullargspec_with_undefined_names_in_annotations(self):
         def my_func(a: undefined_name):
             pass
 
-        with self.assertRaises(NameError):
-            inspect.getfullargspec(my_func)
+        arg_spec = inspect.getfullargspec(my_func)
+        self.assertIsInstance(arg_spec.annotations['a'], ForwardRef)
 
         self.assertFullArgSpecEquals(my_func, ['a'], ann_e={'a': 'undefined_name'},
                                      annotation_format=Format.STRING)
@@ -3106,6 +3106,18 @@ class TestSignatureObject(unittest.TestCase):
                                     for param in sig.parameters.values()),
                 (... if sig.return_annotation is sig.empty
                                             else sig.return_annotation))
+
+    def test_signature_on_type_checking_only_annotations(self):
+        # Issue #152835: inspect.signature should fall back to FORWARDREF format
+        # when annotations fail to evaluate due to NameError/AttributeError/ImportError.
+        def f(arg: UndefinedName, arg2: sys.NonExistentAttribute):
+            pass
+
+        sig = inspect.signature(f)
+        self.assertIsInstance(sig.parameters['arg'].annotation, ForwardRef)
+        self.assertEqual(sig.parameters['arg'].annotation.__forward_arg__, 'UndefinedName')
+        self.assertIsInstance(sig.parameters['arg2'].annotation, ForwardRef)
+        self.assertEqual(sig.parameters['arg2'].annotation.__forward_arg__, 'sys.NonExistentAttribute')
 
     def test_signature_object(self):
         S = inspect.Signature
@@ -5389,10 +5401,14 @@ class TestSignatureObject(unittest.TestCase):
                     signature_func(ida.f, annotation_format=Format.FORWARDREF),
                     sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
                 )
-                with self.assertRaisesRegex(NameError, "undefined"):
-                    signature_func(ida.f, annotation_format=Format.VALUE)
-                with self.assertRaisesRegex(NameError, "undefined"):
-                    signature_func(ida.f)
+                self.assertEqual(
+                    signature_func(ida.f, annotation_format=Format.VALUE),
+                    sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
+                )
+                self.assertEqual(
+                    signature_func(ida.f),
+                    sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
+                )
 
     def test_signature_deferred_annotations(self):
         def f(x: undef):
