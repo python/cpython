@@ -482,7 +482,8 @@ such as using different index file names by overriding the class attribute
    the other common server configuration is to treat special extensions as
    denoting CGI scripts.
 
-   The :func:`do_GET` and :func:`do_HEAD` functions are modified to run CGI scripts
+   The :func:`~SimpleHTTPRequestHandler.do_GET` and
+   :func:`~SimpleHTTPRequestHandler.do_HEAD` functions are modified to run CGI scripts
    and serve the output, instead of serving files, if the request leads to
    somewhere below the ``cgi_directories`` path.
 
