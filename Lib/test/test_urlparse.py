@@ -6,6 +6,7 @@ import unittest
 import urllib.parse
 from urllib.parse import urldefrag, urlparse, urlsplit, urlunparse, urlunsplit
 from test import support
+from string import ascii_letters, digits
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
@@ -1646,6 +1647,15 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix]v6a.ip[suffix')
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix]v6a.ip')
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip[suffix')
+        # unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+        unreserved = ascii_letters + digits + "-" + "." + "_" + "~"
+        zoneid_authorized_characters = unreserved
+        removed_characters = "\t\n\r"
+        for character in range(256):
+            character = chr(character)
+            if character in zoneid_authorized_characters or character in removed_characters:
+                continue
+            self.assertRaises(ValueError, urllib.parse.urlsplit, f'scheme://[::1%invalid{character}invalid]/')
 
     def test_splitting_bracketed_hosts(self):
         p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]:1234/path?query')
