@@ -453,7 +453,7 @@ instantiation, of which this module provides three different variants:
       path relative to the current working directory.
 
       If the request was mapped to a directory, the directory is checked for a
-      file named ``index.html`` or ``index.htm`` (in that order). If found, the
+      an index page as specified by :attr:`index_pages`. If found, the
       file's contents are returned; otherwise a directory listing is generated
       by calling the :meth:`list_directory` method. This method uses
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
@@ -483,8 +483,6 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
 
-   The :class:`SimpleHTTPRequestHandler` class defines the following helpers:
-
    .. method:: list_directory(path)
 
       Helper to list the contents of *path* when no index page is present.
@@ -501,9 +499,8 @@ instantiation, of which this module provides three different variants:
       a MIME Content-type header.
 
       The default implementation looks the file's extension up in
-      :attr:`extensions_map`, falling back to
-      :func:`mimetypes.guess_file_type` and then to
-      :attr:`default_content_type`.
+      :attr:`extensions_map` and :func:`mimetypes.guess_file_type`,
+      using :attr:`default_content_type` as defaults.
 
       .. versionchanged:: 3.13
          Add :func:`mimetypes.guess_file_type` as a fallback.
