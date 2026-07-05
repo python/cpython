@@ -29,7 +29,7 @@ not by actually invoking a subshell.
    The pathnames are returned in no particular order.  If you need a specific
    order, sort the results.
 
-Files beginning with a dot (``.``) can only be matched by
+By default, files beginning with a dot (``.``) can only be matched by
 patterns that also start with a dot,
 unlike :func:`fnmatch.fnmatch` or :func:`pathlib.Path.glob`.
 For tilde and shell variable expansion, use :func:`os.path.expanduser` and
@@ -132,7 +132,7 @@ The :mod:`!glob` module defines the following functions:
    Escape all special characters (``'?'``, ``'*'`` and ``'['``).
    This is useful if you want to match an arbitrary literal string that may
    have special characters in it.  Special characters in drive/UNC
-   sharepoints are not escaped, e.g. on Windows
+   sharepoints are not escaped, for example on Windows
    ``escape('//?/c:/Quo vadis?.txt')`` returns ``'//?/c:/Quo vadis[?].txt'``.
 
    .. versionadded:: 3.4
