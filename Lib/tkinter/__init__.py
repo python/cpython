@@ -818,12 +818,62 @@ class Misc:
         else:
             return self.tk.getint(self.tk.call(args))
 
-    def wait_variable(self, name):
+    def wait_variable(self, name, *, timeout=None):
         """Wait until the variable is modified.
 
         A parameter of type IntVar, StringVar, DoubleVar or
-        BooleanVar must be given."""
-        self.tk.call('tkwait', 'variable', name)
+        BooleanVar must be given.
+
+        If timeout is given, it specifies the maximum time to wait in
+        seconds.  Return True if the variable was modified, or False if
+        the timeout elapsed before that (or the application was destroyed
+        while waiting).  Without a timeout the call blocks until the
+        variable is modified and always returns True."""
+        if timeout is None:
+            self.tk.call('tkwait', 'variable', name)
+            return True
+
+        name = str(name)
+        done = []
+        timed_out = []
+        cb = self.register(lambda *args: done.append(True))
+        try:
+            self.tk.call('trace', 'add', 'variable', name,
+                         ('write', 'unset'), (cb,))
+            try:
+                # A one-shot timer guarantees that dooneevent() wakes up at the
+                # deadline even if no other event arrives.
+                timer = self.after(max(int(timeout * 1000), 1),
+                                   lambda: timed_out.append(True))
+                try:
+                    while not done and not timed_out:
+                        self.tk.dooneevent(_tkinter.ALL_EVENTS)
+                        # Stop instead of blocking forever if the application was
+                        # destroyed (which also cancels our timer) while waiting.
+                        if not self.tk.getboolean(
+                                self.tk.call('winfo', 'exists', '.')):
+                            break
+                    return bool(done)
+                except TclError:
+                    # the interpreter or application was torn down
+                    return bool(done)
+                finally:
+                    # Cleanup may fail if the application was torn down.
+                    try:
+                        self.after_cancel(timer)
+                    except TclError:
+                        pass
+            finally:
+                try:
+                    self.tk.call('trace', 'remove', 'variable', name,
+                                ('write', 'unset'), cb)
+                except TclError:
+                    pass
+        finally:
+            try:
+                self.deletecommand(cb)
+            except TclError:
+                pass
     waitvar = wait_variable # XXX b/w compat
 
     def wait_window(self, window=None):

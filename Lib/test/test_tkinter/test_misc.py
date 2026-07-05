@@ -3,6 +3,7 @@ import functools
 import platform
 import sys
 import textwrap
+import time
 import unittest
 import weakref
 import tkinter
@@ -603,10 +604,25 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         var = tkinter.StringVar(self.root)
         self.assertEqual(self.root.waitvar, self.root.wait_variable)
         self.root.after(1, var.set, 'done')
-        self.root.wait_variable(var)  # Returns once the variable is set.
+        self.assertIs(self.root.wait_variable(var), True)  # Returns once set.
         self.assertEqual(var.get(), 'done')
         # The name is required (gh-152587).
         self.assertRaises(TypeError, self.root.wait_variable)
+
+    def test_wait_variable_timeout(self):
+        var = tkinter.StringVar(self.root)
+        # The variable is set before the timeout elapses.
+        self.root.after(1, var.set, 'done')
+        self.assertIs(
+            self.root.wait_variable(var, timeout=support.SHORT_TIMEOUT), True)
+        self.assertEqual(var.get(), 'done')
+        # The variable is never set: give up when the timeout elapses instead
+        # of blocking forever (gh-40440).
+        var.set('')
+        start = time.monotonic()
+        self.assertIs(self.root.wait_variable(var, timeout=0.2), False)
+        self.assertGreaterEqual(time.monotonic() - start, 0.2)
+        self.assertEqual(var.get(), '')
 
     def test_wait_window(self):
         top = tkinter.Toplevel(self.root)
