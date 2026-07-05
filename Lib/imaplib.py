@@ -1,6 +1,6 @@
 """IMAP4 client.
 
-Based on RFC 2060.
+Based on RFC 3501.
 
 Public class:           IMAP4
 Public variable:        Debug
@@ -43,8 +43,8 @@ IMAP4_SSL_PORT = 993
 AllowedVersions = ('IMAP4REV1', 'IMAP4')        # Most recent first
 
 # Maximal line length when calling readline(). This is to prevent
-# reading arbitrary length lines. RFC 3501 and 2060 (IMAP 4rev1)
-# don't specify a line length. RFC 2683 suggests limiting client
+# reading arbitrary length lines. RFC 3501 (IMAP 4rev1)
+# doesn't specify a line length. RFC 2683 suggests limiting client
 # command lines to 1000 octets and that servers should be prepared
 # to accept command lines up to 8000 octets, so we used to use 10K here.
 # In the modern world (eg: gmail) the response to, for example, a
@@ -130,7 +130,9 @@ Untagged_status = re.compile(
 # We compile these in _mode_xxx.
 _Literal = br'.*{(?P<size>\d+)}$'
 _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
-_control_chars = re.compile(b'[\x00-\x1F\x7F]')
+# Only NUL, CR and LF are unsafe (they cannot be represented even in
+# a quoted string); other control characters are sent quoted.
+_control_chars = re.compile(b'[\x00\r\n]')
 _non_astring_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff%*\\"]')
 _non_list_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff\\"]')
 _quoted = re.compile(br'"(?:[^"\\]|\\.)*+"')
@@ -810,6 +812,14 @@ class IMAP4:
                                         self._list_mailbox(pattern))
         return self._untagged_response(typ, dat, name)
 
+    def move(self, message_set, new_mailbox):
+        """Move 'message_set' messages onto end of 'new_mailbox'.
+
+        (typ, [data]) = <instance>.move(message_set, new_mailbox)
+        """
+        return self._simple_command('MOVE', self._sequence_set(message_set),
+                                    self._astring(new_mailbox))
+
     def myrights(self, mailbox):
         """Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
 
@@ -1052,7 +1062,7 @@ class IMAP4:
                              (command, self.state,
                               ', '.join(Commands[command])))
         name = 'UID'
-        if command == 'COPY':
+        if command in ('COPY', 'MOVE'):
             message_set, new_mailbox = args
             args = (self._sequence_set(message_set),
                     self._astring(new_mailbox))
@@ -1193,7 +1203,7 @@ class IMAP4:
             if isinstance(arg, str):
                 arg = bytes(arg, self._encoding)
             if _control_chars.search(arg):
-                raise ValueError("Control characters not allowed in commands")
+                raise ValueError("NUL, CR and LF not allowed in commands")
             data = data + b' ' + arg
 
         literal = self.literal

@@ -1173,6 +1173,35 @@ class NewIMAPTestsMixin:
         self.assertEqual(data, [None])
         self.assertEqual(server.args, ['COPY', '4827313:4828442', '"New folder"'])
 
+    def test_move(self):
+        client, server = self._setup(make_simple_handler('MOVE'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.move('2:4', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', 'MEETING'])
+
+        typ, data = client.move('2:4', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', '"New folder"'])
+
+    def test_uid_move(self):
+        client, server = self._setup(make_simple_handler('UID',
+            completed='UID MOVE completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.uid('move', '4827313:4828442', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', 'MEETING'])
+
+        typ, data = client.uid('move', '4827313:4828442', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', '"New folder"'])
+
     def test_store(self):
         client, server = self._setup(make_simple_handler('STORE', [
             r'* 2 FETCH (FLAGS (\Deleted \Seen))',
@@ -1769,10 +1798,20 @@ class NewIMAPTestsMixin:
             client.NONEXISTENT
 
     def test_control_characters(self):
-        client, _ = self._setup(SimpleIMAPHandler)
-        for c0 in support.control_characters_c0():
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for c in '\0\r\n':
             with self.assertRaises(ValueError):
-                client.login(f'user{c0}', 'pass')
+                client.select(f'a{c}b')
+        # Other control characters are valid in a quoted string and can
+        # occur in mailbox names returned by the server, so the client
+        # must be able to send them back.
+        for c in support.control_characters_c0():
+            if c in '\0\r\n':
+                continue
+            typ, _ = client.select(f'a{c}b')
+            self.assertEqual(typ, 'OK')
+            self.assertEqual(server.is_selected, [f'"a{c}b"'])
 
     # property tests
 
@@ -1913,8 +1952,8 @@ class ThreadedNetworkedTests(unittest.TestCase):
     @threading_helper.reap_threads
     def test_bracket_flags(self):
 
-        # This violates RFC 3501, which disallows ']' characters in tag names,
-        # but imaplib has allowed producing such tags forever, other programs
+        # This violates RFC 3501, which disallows ']' characters in flags,
+        # but imaplib has allowed producing such flags forever, other programs
         # also produce them (eg: OtherInbox's Organizer app as of 20140716),
         # and Gmail, for example, accepts them and produces them.  So we
         # support them.  See issue #21815.
