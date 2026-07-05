@@ -232,14 +232,15 @@ import_name[stmt_ty]:
 
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
+    | invalid_import_from
     | lazy="lazy" 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
         CHECK_VERSION(stmt_ty, 15, "Lazy imports are",
-            _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), lazy, EXTRA)) }
+            _PyPegen_checked_from_import(p, a, b, c, lazy, EXTRA)) }
     | "lazy" 'from' a=('.' | '...')+ 'import' b=import_from_targets {
         CHECK_VERSION(stmt_ty, 15, "Lazy imports are",
             _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), 1, EXTRA)) }
     | 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), 0, EXTRA) }
+        _PyPegen_checked_from_import(p, a, b, c, NULL, EXTRA) }
     | 'from' a=('.' | '...')+ 'import' b=import_from_targets {
         _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), 0, EXTRA) }
 
@@ -1454,6 +1455,11 @@ invalid_import_from_as_name:
     | NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) a=expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
+
+invalid_import_from:
+    | 'from' ('.' | '...')* dotted_name a="lazy" 'import' import_from_targets {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
+            "use 'lazy from ... ' instead of 'from ... lazy import'") }
 
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {

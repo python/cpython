@@ -1503,7 +1503,7 @@ odict_tp_clear(PyObject *op)
 static PyObject *
 odict_richcompare_lock_held(PyObject *v, PyObject *w, int op)
 {
-    if (!PyODict_Check(v) || !PyDict_Check(w)) {
+    if (!PyODict_Check(v) || !PyAnyDict_Check(w)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -2370,7 +2370,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     /* now handle kwargs */
-    assert(kwargs == NULL || PyDict_Check(kwargs));
+    assert(kwargs == NULL || PyAnyDict_Check(kwargs));
     if (kwargs != NULL && PyDict_GET_SIZE(kwargs)) {
         PyObject *items = PyDict_Items(kwargs);
         if (items == NULL)

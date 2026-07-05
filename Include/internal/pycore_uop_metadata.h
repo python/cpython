@@ -178,7 +178,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
     [_LOAD_BUILD_CLASS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_DELETE_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_TWO_TUPLE] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE] = 0,
@@ -190,7 +189,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_DELETE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_DELETE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_LOCALS] = HAS_ERROR_FLAG,
     [_LOAD_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -286,7 +284,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_EXC_INFO] = 0,
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = HAS_EXIT_FLAG,
     [_GUARD_KEYS_VERSION] = HAS_EXIT_FLAG,
     [_LOAD_ATTR_METHOD_WITH_VALUES] = HAS_ARG_FLAG,
     [_LOAD_ATTR_METHOD_NO_DICT] = HAS_ARG_FLAG,
@@ -1736,15 +1733,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_DELETE_NAME] = {
-        .best = { 0, 0, 0, 0 },
-        .entries = {
-            { 0, 0, _DELETE_NAME_r00 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
     [_UNPACK_SEQUENCE] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -1840,15 +1828,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 0, 1, _STORE_GLOBAL_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
-    [_DELETE_GLOBAL] = {
-        .best = { 0, 0, 0, 0 },
-        .entries = {
-            { 0, 0, _DELETE_GLOBAL_r00 },
-            { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2706,15 +2685,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 1, _PUSH_EXC_INFO_r12 },
             { 3, 2, _PUSH_EXC_INFO_r23 },
             { -1, -1, -1 },
-        },
-    },
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 1, 0, _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r01 },
-            { 1, 1, _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11 },
-            { 2, 2, _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22 },
-            { 3, 3, _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33 },
         },
     },
     [_GUARD_KEYS_VERSION] = {
@@ -4326,7 +4296,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LOAD_COMMON_CONSTANT_r23] = _LOAD_COMMON_CONSTANT,
     [_LOAD_BUILD_CLASS_r01] = _LOAD_BUILD_CLASS,
     [_STORE_NAME_r10] = _STORE_NAME,
-    [_DELETE_NAME_r00] = _DELETE_NAME,
     [_UNPACK_SEQUENCE_r10] = _UNPACK_SEQUENCE,
     [_UNPACK_SEQUENCE_TWO_TUPLE_r12] = _UNPACK_SEQUENCE_TWO_TUPLE,
     [_UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE_r02] = _UNPACK_SEQUENCE_UNIQUE_TWO_TUPLE,
@@ -4341,7 +4310,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_STORE_ATTR_r20] = _STORE_ATTR,
     [_DELETE_ATTR_r10] = _DELETE_ATTR,
     [_STORE_GLOBAL_r10] = _STORE_GLOBAL,
-    [_DELETE_GLOBAL_r00] = _DELETE_GLOBAL,
     [_LOAD_LOCALS_r01] = _LOAD_LOCALS,
     [_LOAD_LOCALS_r12] = _LOAD_LOCALS,
     [_LOAD_LOCALS_r23] = _LOAD_LOCALS,
@@ -4539,10 +4507,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_PUSH_EXC_INFO_r02] = _PUSH_EXC_INFO,
     [_PUSH_EXC_INFO_r12] = _PUSH_EXC_INFO,
     [_PUSH_EXC_INFO_r23] = _PUSH_EXC_INFO,
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r01] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33] = _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT,
     [_GUARD_KEYS_VERSION_r01] = _GUARD_KEYS_VERSION,
     [_GUARD_KEYS_VERSION_r11] = _GUARD_KEYS_VERSION,
     [_GUARD_KEYS_VERSION_r22] = _GUARD_KEYS_VERSION,
@@ -5207,10 +5171,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_DELETE_DEREF_r00] = "_DELETE_DEREF_r00",
     [_DELETE_FAST] = "_DELETE_FAST",
     [_DELETE_FAST_r00] = "_DELETE_FAST_r00",
-    [_DELETE_GLOBAL] = "_DELETE_GLOBAL",
-    [_DELETE_GLOBAL_r00] = "_DELETE_GLOBAL_r00",
-    [_DELETE_NAME] = "_DELETE_NAME",
-    [_DELETE_NAME_r00] = "_DELETE_NAME_r00",
     [_DELETE_SUBSCR] = "_DELETE_SUBSCR",
     [_DELETE_SUBSCR_r20] = "_DELETE_SUBSCR_r20",
     [_DEOPT] = "_DEOPT",
@@ -5416,11 +5376,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_DORV_NO_DICT_r11] = "_GUARD_DORV_NO_DICT_r11",
     [_GUARD_DORV_NO_DICT_r22] = "_GUARD_DORV_NO_DICT_r22",
     [_GUARD_DORV_NO_DICT_r33] = "_GUARD_DORV_NO_DICT_r33",
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r01] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r01",
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r11",
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r22",
-    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_r33",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
     [_GUARD_GLOBALS_VERSION_r00] = "_GUARD_GLOBALS_VERSION_r00",
     [_GUARD_GLOBALS_VERSION_r11] = "_GUARD_GLOBALS_VERSION_r11",
@@ -6510,8 +6465,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _STORE_NAME:
             return 1;
-        case _DELETE_NAME:
-            return 0;
         case _UNPACK_SEQUENCE:
             return 1;
         case _UNPACK_SEQUENCE_TWO_TUPLE:
@@ -6534,8 +6487,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _STORE_GLOBAL:
             return 1;
-        case _DELETE_GLOBAL:
-            return 0;
         case _LOAD_LOCALS:
             return 0;
         case _LOAD_NAME:
@@ -6726,8 +6677,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _PUSH_EXC_INFO:
             return 1;
-        case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT:
-            return 0;
         case _GUARD_KEYS_VERSION:
             return 0;
         case _LOAD_ATTR_METHOD_WITH_VALUES:
