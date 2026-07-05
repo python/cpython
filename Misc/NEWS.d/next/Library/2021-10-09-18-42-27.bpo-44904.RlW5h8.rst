@@ -1,3 +1,0 @@
-Fix bug in the :mod:`doctest` module that caused it to fail if a docstring
-included an example with a ``classmethod`` ``property``. Patch by Alex
-Waygood.

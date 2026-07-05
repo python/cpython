@@ -1,3 +1,0 @@
-The ``configure`` script now checks whether OpenSSL headers and libraries
-provide required APIs. Most common APIs are verified. The check detects
-outdated or missing OpenSSL. Failures do not stop configure.

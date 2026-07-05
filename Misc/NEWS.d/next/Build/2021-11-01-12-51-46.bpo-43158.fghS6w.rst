@@ -1,2 +1,0 @@
-``setup.py`` now uses values from configure script to build the ``_uuid``
-extension module. Configure now detects util-linux's ``libuuid``, too.

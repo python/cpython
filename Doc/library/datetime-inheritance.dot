@@ -1,0 +1,31 @@
+// Used to generate datetime-inheritance.svg with Graphviz
+// (https://graphviz.org/) for the datetime documentation.
+
+digraph {
+    comment="Generated with datetime-inheritance.dot"
+    graph [
+        bgcolor="transparent"
+        fontnames="svg"
+        layout="dot"
+        ranksep=0.5
+        nodesep=0.5
+        splines=line
+    ]
+    node [
+        fontname="Courier"
+        fontsize=14.0
+        shape=box
+        style=rounded
+        margin="0.15,0.07"
+    ]
+    edge [
+        arrowhead=none
+    ]
+
+    object -> tzinfo
+    object -> timedelta
+    object -> time
+    object -> date
+    tzinfo -> timezone
+    date -> datetime
+}
