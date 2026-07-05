@@ -752,6 +752,19 @@ class TestFrozenSet(TestJointOps, unittest.TestCase):
     thetype = frozenset
     basetype = frozenset
 
+    def test_literal(self):
+        s = ${1, 2, 3}
+        self.assertIs(type(s), frozenset)
+        self.assertEqual(s, frozenset({1, 2, 3}))
+
+        s = ${0, *s, 4}
+        self.assertIs(type(s), frozenset)
+        self.assertEqual(s, frozenset({0, 1, 2, 3, 4}))
+
+        s = ${*i for i in [${1}, [2], {3}]}
+        self.assertIs(type(s), frozenset)
+        self.assertEqual(s, frozenset({1, 2, 3}))
+
     def test_init(self):
         s = self.thetype(self.word)
         s.__init__(self.otherword)

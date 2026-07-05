@@ -37,10 +37,12 @@
 
 #include <stdbool.h>
 
-#define COMP_GENEXP   0
-#define COMP_LISTCOMP 1
-#define COMP_SETCOMP  2
-#define COMP_DICTCOMP 3
+#define COMP_GENEXP         0
+#define COMP_LISTCOMP       1
+#define COMP_SETCOMP        2
+#define COMP_DICTCOMP       3
+#define COMP_FROZENSETCOMP  4
+#define COMP_FROZENDICTCOMP 5
 
 #undef SUCCESS
 #undef ERROR
@@ -3591,7 +3593,17 @@ codegen_set(compiler *c, expr_ty e)
 }
 
 static int
-codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
+codegen_frozenset(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    return starunpack_helper(c, loc, e->v.FrozenSet.elts, 0,
+                             BUILD_FROZENSET, SET_ADD, SET_UPDATE, 0);
+}
+
+static int
+codegen_subdict(compiler *c, expr_ty e,
+                asdl_expr_seq *keys, asdl_expr_seq *values,
+                Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
     int big = n*2 > _PY_STACK_USE_GUIDELINE;
@@ -3600,8 +3612,8 @@ codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
         ADDOP_I(c, loc, BUILD_MAP, 0);
     }
     for (i = begin; i < end; i++) {
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(keys, i));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(values, i));
         if (big) {
             ADDOP_I(c, loc, MAP_ADD, 1);
         }
@@ -3613,20 +3625,22 @@ codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 }
 
 static int
-codegen_dict(compiler *c, expr_ty e)
+dict_codegen_impl(compiler *c, expr_ty e,
+                  asdl_expr_seq *keys, asdl_expr_seq *values,
+                  int is_frozen)
 {
     location loc = LOC(e);
     Py_ssize_t i, n, elements;
     int have_dict;
     int is_unpacking = 0;
-    n = asdl_seq_LEN(e->v.Dict.values);
+    n = asdl_seq_LEN(values);
     have_dict = 0;
     elements = 0;
     for (i = 0; i < n; i++) {
-        is_unpacking = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i) == NULL;
+        is_unpacking = (expr_ty)asdl_seq_GET(keys, i) == NULL;
         if (is_unpacking) {
             if (elements) {
-                RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i));
+                RETURN_IF_ERROR(codegen_subdict(c, e, keys, values, i - elements, i));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
                 }
@@ -3637,12 +3651,12 @@ codegen_dict(compiler *c, expr_ty e)
                 ADDOP_I(c, loc, BUILD_MAP, 0);
                 have_dict = 1;
             }
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(values, i));
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
         else {
             if (elements*2 > _PY_STACK_USE_GUIDELINE) {
-                RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i + 1));
+                RETURN_IF_ERROR(codegen_subdict(c, e, keys, values, i - elements, i + 1));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
                 }
@@ -3655,7 +3669,7 @@ codegen_dict(compiler *c, expr_ty e)
         }
     }
     if (elements) {
-        RETURN_IF_ERROR(codegen_subdict(c, e, n - elements, n));
+        RETURN_IF_ERROR(codegen_subdict(c, e, keys, values, n - elements, n));
         if (have_dict) {
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
@@ -3664,7 +3678,24 @@ codegen_dict(compiler *c, expr_ty e)
     if (!have_dict) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
     }
+    if (is_frozen) {
+        ADDOP(c, loc, BUILD_FROZENDICT);
+    }
     return SUCCESS;
+}
+
+static int
+codegen_dict(compiler *c, expr_ty e)
+{
+    return dict_codegen_impl(c, e, e->v.Dict.keys, e->v.Dict.values, 0);
+}
+
+static int
+codegen_frozendict(compiler *c, expr_ty e)
+{
+    return dict_codegen_impl(c, e,
+                             e->v.FrozenDict.keys,
+                             e->v.FrozenDict.values, /* is_frozen */ 1);
 }
 
 static int
@@ -4675,6 +4706,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                 ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             }
             break;
+        case COMP_FROZENSETCOMP: _Py_FALLTHROUGH;
         case COMP_SETCOMP:
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
@@ -4685,6 +4717,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                 ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             }
             break;
+        case COMP_FROZENDICTCOMP: _Py_FALLTHROUGH;
         case COMP_DICTCOMP:
             if (val == NULL) {
                 /* unpacking (**) case */
@@ -4818,6 +4851,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                 ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             }
             break;
+        case COMP_FROZENSETCOMP: _Py_FALLTHROUGH;
         case COMP_SETCOMP:
             if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
@@ -4828,6 +4862,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                 ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             }
             break;
+        case COMP_FROZENDICTCOMP: _Py_FALLTHROUGH;
         case COMP_DICTCOMP:
             if (val == NULL) {
                 /* unpacking (**) case */
@@ -5067,7 +5102,13 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         case COMP_SETCOMP:
             op = BUILD_SET;
             break;
+        case COMP_FROZENSETCOMP:
+            op = BUILD_FROZENSET;
+            break;
         case COMP_DICTCOMP:
+            op = BUILD_MAP;
+            break;
+        case COMP_FROZENDICTCOMP:
             op = BUILD_MAP;
             break;
         default:
@@ -5084,6 +5125,10 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     if (codegen_comprehension_generator(c, loc, generators, 0, 0,
                                         elt, val, type, iter_state) < 0) {
         goto error_in_scope;
+    }
+
+    if (type == COMP_FROZENDICTCOMP) {
+        ADDOP(c, LOC(e), BUILD_FROZENDICT);
     }
 
     if (is_inlined) {
@@ -5168,6 +5213,15 @@ codegen_setcomp(compiler *c, expr_ty e)
                                  e->v.SetComp.elt, NULL);
 }
 
+static int
+codegen_frozensetcomp(compiler *c, expr_ty e)
+{
+    assert(e->kind == FrozenSetComp_kind);
+    _Py_DECLARE_STR(anon_frozensetcomp, "<frozensetcomp>");
+    return codegen_comprehension(c, e, COMP_FROZENSETCOMP, &_Py_STR(anon_frozensetcomp),
+                                 e->v.FrozenSetComp.generators,
+                                 e->v.FrozenSetComp.elt, NULL);
+}
 
 static int
 codegen_dictcomp(compiler *c, expr_ty e)
@@ -5177,6 +5231,16 @@ codegen_dictcomp(compiler *c, expr_ty e)
     return codegen_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
                                  e->v.DictComp.generators,
                                  e->v.DictComp.key, e->v.DictComp.value);
+}
+
+static int
+codegen_frozendictcomp(compiler *c, expr_ty e)
+{
+    assert(e->kind == FrozenDictComp_kind);
+    _Py_DECLARE_STR(anon_frozendictcomp, "<frozendictcomp>");
+    return codegen_comprehension(c, e, COMP_FROZENDICTCOMP, &_Py_STR(anon_frozendictcomp),
+                                 e->v.FrozenDictComp.generators,
+                                 e->v.FrozenDictComp.key, e->v.FrozenDictComp.value);
 }
 
 
@@ -5462,16 +5526,24 @@ codegen_visit_expr(compiler *c, expr_ty e)
         return codegen_ifexp(c, e);
     case Dict_kind:
         return codegen_dict(c, e);
+    case FrozenDict_kind:
+        return codegen_frozendict(c, e);
     case Set_kind:
         return codegen_set(c, e);
+    case FrozenSet_kind:
+        return codegen_frozenset(c, e);
     case GeneratorExp_kind:
         return codegen_genexp(c, e);
     case ListComp_kind:
         return codegen_listcomp(c, e);
     case SetComp_kind:
         return codegen_setcomp(c, e);
+    case FrozenSetComp_kind:
+        return codegen_frozensetcomp(c, e);
     case DictComp_kind:
         return codegen_dictcomp(c, e);
+    case FrozenDictComp_kind:
+        return codegen_frozendictcomp(c, e);
     case Yield_kind:
         if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
             return _PyCompile_Error(c, loc, "'yield' outside function");

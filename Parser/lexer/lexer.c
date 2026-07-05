@@ -1281,7 +1281,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     {
         int c2 = tok_nextc(tok);
         int current_token = _PyToken_TwoChars(c, c2);
-        if (current_token != OP) {
+        if (current_token == LDOLLARBRACE) {
+            // Analyze the parentheses first.
+            // The token itself will be created later on.
+            c = '{';  // fallback for the existing analysis.
+            goto parentheses;
+        }
+        else if (current_token != OP) {
             int c3 = tok_nextc(tok);
             int current_token3 = _PyToken_ThreeChars(c, c2, c3);
             if (current_token3 != OP) {
@@ -1297,6 +1303,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         tok_backup(tok, c2);
     }
 
+  parentheses:
     /* Keep track of parentheses nesting level */
     switch (c) {
     case '(':
@@ -1373,6 +1380,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         break;
     default:
         break;
+    }
+
+    if (*tok->start == '$' && c == '{') {
+        p_start = tok->start;
+        p_end = tok->cur;
+        return MAKE_TOKEN(LDOLLARBRACE);
     }
 
     if (!Py_UNICODE_ISPRINTABLE(c)) {

@@ -544,8 +544,15 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
         CALL_SEQ(astfold_expr, expr, node_->v.Dict.keys);
         CALL_SEQ(astfold_expr, expr, node_->v.Dict.values);
         break;
+    case FrozenDict_kind:
+        CALL_SEQ(astfold_expr, expr, node_->v.FrozenDict.keys);
+        CALL_SEQ(astfold_expr, expr, node_->v.FrozenDict.values);
+        break;
     case Set_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Set.elts);
+        break;
+    case FrozenSet_kind:
+        CALL_SEQ(astfold_expr, expr, node_->v.FrozenSet.elts);
         break;
     case ListComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.ListComp.elt);
@@ -555,12 +562,23 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
         CALL(astfold_expr, expr_ty, node_->v.SetComp.elt);
         CALL_SEQ(astfold_comprehension, comprehension, node_->v.SetComp.generators);
         break;
+    case FrozenSetComp_kind:
+        CALL(astfold_expr, expr_ty, node_->v.FrozenSetComp.elt);
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.FrozenSetComp.generators);
+        break;
     case DictComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.DictComp.key);
         if (node_->v.DictComp.value != NULL){
             CALL(astfold_expr, expr_ty, node_->v.DictComp.value);
         }
         CALL_SEQ(astfold_comprehension, comprehension, node_->v.DictComp.generators);
+        break;
+    case FrozenDictComp_kind:
+        CALL(astfold_expr, expr_ty, node_->v.FrozenDictComp.key);
+        if (node_->v.FrozenDictComp.value != NULL){
+            CALL(astfold_expr, expr_ty, node_->v.FrozenDictComp.value);
+        }
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.FrozenDictComp.generators);
         break;
     case GeneratorExp_kind:
         CALL(astfold_expr, expr_ty, node_->v.GeneratorExp.elt);

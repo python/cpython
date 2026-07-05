@@ -31,6 +31,8 @@ extern "C" {
 struct _Py_global_strings {
     struct {
         STRUCT_FOR_STR(anon_dictcomp, "<dictcomp>")
+        STRUCT_FOR_STR(anon_frozendictcomp, "<frozendictcomp>")
+        STRUCT_FOR_STR(anon_frozensetcomp, "<frozensetcomp>")
         STRUCT_FOR_STR(anon_genexpr, "<genexpr>")
         STRUCT_FOR_STR(anon_lambda, "<lambda>")
         STRUCT_FOR_STR(anon_listcomp, "<listcomp>")

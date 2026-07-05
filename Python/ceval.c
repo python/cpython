@@ -958,6 +958,26 @@ cleanup:
     return res;
 }
 
+int
+_Py_BuildSet_StackRefSteal(
+    PyObject *set_o,
+    _PyStackRef *values,
+    int oparg)
+{
+    int err = 0;
+    for (Py_ssize_t i = 0; i < oparg; i++) {
+        _PyStackRef value = values[i];
+        values[i] = PyStackRef_NULL;
+        if (err == 0) {
+            err = _PySet_AddTakeRef((PySetObject *)set_o, PyStackRef_AsPyObjectSteal(value));
+        }
+        else {
+            PyStackRef_CLOSE(value);
+        }
+    }
+    return err;
+}
+
 _PyStackRef
 _Py_LoadAttr_StackRefSteal(
     PyThreadState *tstate, _PyStackRef owner,

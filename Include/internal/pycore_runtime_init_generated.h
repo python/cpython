@@ -1306,6 +1306,8 @@ extern "C" {
 
 #define _Py_str_literals_INIT { \
     INIT_STR(anon_dictcomp, "<dictcomp>"), \
+    INIT_STR(anon_frozendictcomp, "<frozendictcomp>"), \
+    INIT_STR(anon_frozensetcomp, "<frozensetcomp>"), \
     INIT_STR(anon_genexpr, "<genexpr>"), \
     INIT_STR(anon_lambda, "<lambda>"), \
     INIT_STR(anon_listcomp, "<listcomp>"), \

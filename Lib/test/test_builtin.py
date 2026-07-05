@@ -603,6 +603,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''def f():  await arange(10)\n''',
             '''def f():  [x async for x in arange(10)]\n''',
             '''def f():  [await x async for x in arange(10)]\n''',
+            '''def f():  f{await x async for x in arange(10)}\n''',
             '''def f():
                    async for i in arange(1):
                        a = 1

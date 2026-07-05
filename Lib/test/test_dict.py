@@ -1819,6 +1819,22 @@ class FrozenDictSlots(frozendict):
 
 
 class FrozenDictTests(unittest.TestCase):
+    def test_literal(self):
+        d = ${}
+        self.assertIs(type(d), frozendict)
+        self.assertEqual(d, frozendict())
+
+        d = ${'a': 1, 'b': 2, 'c': 3}
+        self.assertIs(type(d), frozendict)
+        self.assertEqual(d, frozendict(a=1, b=2, c=3))
+        self.assertEqual(${**d}, d)
+        self.assertNotEqual(${**d, 'a': 2}, d)
+        self.assertEqual(${'a': 1, **d, 'c': 3}, d)
+
+        d = ${**i for i in [{'a': 1}, {'b': 2}, {'c': 3}]}
+        self.assertIs(type(d), frozendict)
+        self.assertEqual(d, frozendict(a=1, b=2, c=3))
+
     def test_constructor(self):
         # frozendict.__init__() has no effect
         d = frozendict(a=1, b=2, c=3)
@@ -1928,6 +1944,8 @@ class FrozenDictTests(unittest.TestCase):
             frozendict(y=2, x=1),
             frozendict(a=False, b=True, c=True),
             frozendict.fromkeys('abc'),
+            ${},
+            ${1: 2, 3: 4},
         ):
             with self.subTest(fd=fd):
                 self.assertEqual(hash(fd), hash(frozenset(fd.items())))

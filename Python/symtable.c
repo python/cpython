@@ -262,7 +262,9 @@ static int symtable_visit_type_param(struct symtable *st, type_param_ty s);
 static int symtable_visit_genexp(struct symtable *st, expr_ty s);
 static int symtable_visit_listcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_setcomp(struct symtable *st, expr_ty s);
+static int symtable_visit_frozensetcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_dictcomp(struct symtable *st, expr_ty s);
+static int symtable_visit_frozendictcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_arguments(struct symtable *st, arguments_ty);
 static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty);
 static int symtable_visit_alias(struct symtable *st, alias_ty);
@@ -300,7 +302,9 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
     switch (ste->ste_comprehension) {
         case ListComprehension: comptype = " ListComprehension"; break;
         case DictComprehension: comptype = " DictComprehension"; break;
+        case FrozenDictComprehension: comptype = " FrozenDictComprehension"; break;
         case SetComprehension: comptype = " SetComprehension"; break;
+        case FrozenSetComprehension: comptype = " FrozenSetComprehension"; break;
         case GeneratorExpression: comptype = " GeneratorExpression"; break;
         case NoComprehension: break;
     }
@@ -2527,8 +2531,15 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ_WITH_NULL(st, expr, e->v.Dict.keys);
         VISIT_SEQ(st, expr, e->v.Dict.values);
         break;
+    case FrozenDict_kind:
+        VISIT_SEQ_WITH_NULL(st, expr, e->v.FrozenDict.keys);
+        VISIT_SEQ(st, expr, e->v.FrozenDict.values);
+        break;
     case Set_kind:
         VISIT_SEQ(st, expr, e->v.Set.elts);
+        break;
+    case FrozenSet_kind:
+        VISIT_SEQ(st, expr, e->v.FrozenSet.elts);
         break;
     case GeneratorExp_kind:
         if (!symtable_visit_genexp(st, e))
@@ -2542,8 +2553,16 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (!symtable_visit_setcomp(st, e))
             return 0;
         break;
+    case FrozenSetComp_kind:
+        if (!symtable_visit_frozensetcomp(st, e))
+            return 0;
+        break;
     case DictComp_kind:
         if (!symtable_visit_dictcomp(st, e))
+            return 0;
+        break;
+    case FrozenDictComp_kind:
+        if (!symtable_visit_frozendictcomp(st, e))
             return 0;
         break;
     case Yield_kind:
@@ -3105,8 +3124,14 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         case SetComp_kind:
             st->st_cur->ste_comprehension = SetComprehension;
             break;
+        case FrozenSetComp_kind:
+            st->st_cur->ste_comprehension = FrozenSetComprehension;
+            break;
         case DictComp_kind:
             st->st_cur->ste_comprehension = DictComprehension;
+            break;
+        case FrozenDictComp_kind:
+            st->st_cur->ste_comprehension = FrozenDictComprehension;
             break;
         default:
             st->st_cur->ste_comprehension = GeneratorExpression;
@@ -3177,12 +3202,29 @@ symtable_visit_setcomp(struct symtable *st, expr_ty e)
 }
 
 static int
+symtable_visit_frozensetcomp(struct symtable *st, expr_ty e)
+{
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_frozensetcomp),
+                                         e->v.FrozenSetComp.generators,
+                                         e->v.FrozenSetComp.elt, NULL);
+}
+
+static int
 symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 {
     return symtable_handle_comprehension(st, e, &_Py_STR(anon_dictcomp),
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
+}
+
+static int
+symtable_visit_frozendictcomp(struct symtable *st, expr_ty e)
+{
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_frozendictcomp),
+                                         e->v.FrozenDictComp.generators,
+                                         e->v.FrozenDictComp.key,
+                                         e->v.FrozenDictComp.value);
 }
 
 static int
@@ -3219,7 +3261,9 @@ symtable_raise_if_comprehension_block(struct symtable *st, expr_ty e) {
     PyErr_SetString(PyExc_SyntaxError,
             (type == ListComprehension) ? "'yield' inside list comprehension" :
             (type == SetComprehension) ? "'yield' inside set comprehension" :
+            (type == FrozenSetComprehension) ? "'yield' inside frozenset comprehension" :
             (type == DictComprehension) ? "'yield' inside dict comprehension" :
+            (type == FrozenDictComprehension) ? "'yield' inside frozendict comprehension" :
             "'yield' inside generator expression");
     SET_ERROR_LOCATION(st->st_filename, LOCATION(e));
     return 0;
