@@ -1,0 +1,40 @@
+ThreadSanitizer:DEADLYSIGNAL
+==89267==ERROR: ThreadSanitizer: SEGV on unknown address 0x00000000000c (pc 0x000104f40c50 bp 0x00016ee5e140 sp 0x00016ee5e110 T24825894)
+==89267==The signal is caused by a READ memory access.
+==89267==Hint: address points to the zero page.
+    #0 __tsan_atomic32_load <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x58c50)
+    #1 tee_next itertoolsmodule.c:968 (python.exe:arm64+0x10042ff3c)
+    #2 _PyEval_EvalFrameDefault generated_cases.c.h:6379 (python.exe:arm64+0x1002a2f44)
+    #3 _PyEval_Vector ceval.c:2171 (python.exe:arm64+0x10028e358)
+    #4 _PyFunction_Vectorcall call.c (python.exe:arm64+0x100090468)
+    #5 _PyObject_VectorcallPrepend call.c:855 (python.exe:arm64+0x100091c18)
+    #6 method_vectorcall classobject.c:55 (python.exe:arm64+0x100094fa8)
+    #7 context_run context.c:731 (python.exe:arm64+0x1002dba98)
+    #8 method_vectorcall_FASTCALL_KEYWORDS descrobject.c:421 (python.exe:arm64+0x1000a7798)
+    #9 PyObject_Vectorcall call.c:327 (python.exe:arm64+0x10008fe2c)
+    #10 _Py_VectorCallInstrumentation_StackRefSteal ceval.c:768 (python.exe:arm64+0x10028ee24)
+    #11 _PyEval_EvalFrameDefault generated_cases.c.h:1906 (python.exe:arm64+0x10029c124)
+    #12 _PyEval_Vector ceval.c:2171 (python.exe:arm64+0x10028e358)
+    #13 _PyFunction_Vectorcall call.c (python.exe:arm64+0x100090468)
+    #14 _PyObject_VectorcallPrepend call.c:855 (python.exe:arm64+0x100091c18)
+    #15 method_vectorcall classobject.c:55 (python.exe:arm64+0x100094fa8)
+    #16 _PyObject_Call call.c:348 (python.exe:arm64+0x1000900e0)
+    #17 PyObject_Call call.c:373 (python.exe:arm64+0x100090154)
+    #18 thread_run _threadmodule.c:388 (python.exe:arm64+0x10044c40c)
+    #19 pythread_wrapper thread_pthread.h:234 (python.exe:arm64+0x100389c88)
+    #20 __tsan_thread_start_func <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x2f678)
+    #21 _pthread_start <null> (libsystem_pthread.dylib:arm64e+0x6c04)
+    #22 thread_start <null> (libsystem_pthread.dylib:arm64e+0x1ba4)
+
+==89267==Register values:
+ x[0] = 0x000000010eaf8000   x[1] = 0x0000100000000010   x[2] = 0x00000000fdb92ef0   x[3] = 0x0000000000000004  
+ x[4] = 0x0000000000000003   x[5] = 0x0000000000000000   x[6] = 0x0000000000000005   x[7] = 0x0000000000000000  
+ x[8] = 0x000000010eaf8034   x[9] = 0x000000000000002e  x[10] = 0x00000000c0000000  x[11] = 0x0000000000000000  
+x[12] = 0x000000011595f6c8  x[13] = 0x0000100000000010  x[14] = 0x0000000000000002  x[15] = 0x0000000000004010  
+x[16] = 0x0000000000000000  x[17] = 0x0000000104f909f8  x[18] = 0x0000000000000000  x[19] = 0x000000000000000c  
+x[20] = 0x000000010eaf8000  x[21] = 0x000000010447bf40  x[22] = 0x0000000000000000  x[23] = 0x0000000000000028  
+x[24] = 0x0000000000000000  x[25] = 0x000000016ee5e150  x[26] = 0x000000016ee5e160  x[27] = 0x000000010eafc2b8  
+x[28] = 0x0000000000000003     fp = 0x000000016ee5e140     lr = 0x0000000104f40c44     sp = 0x000000016ee5e110  
+ThreadSanitizer can not provide additional info.
+SUMMARY: ThreadSanitizer: SEGV itertoolsmodule.c:968 in tee_next
+==89267==ABORTING
