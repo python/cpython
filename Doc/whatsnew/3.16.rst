@@ -391,6 +391,11 @@ tkinter
   them.
   (Contributed by Serhiy Storchaka in :gh:`59396`.)
 
+* :class:`tkinter.scrolledtext.ScrolledText` gained a *use_ttk* parameter to use
+  the themed :mod:`tkinter.ttk` frame and scroll bar instead of the classic
+  :mod:`tkinter` widgets.
+  (Contributed by Serhiy Storchaka in :gh:`59396`.)
+
 xml
 ---
 
