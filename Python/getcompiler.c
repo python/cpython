@@ -24,7 +24,6 @@
 
 #endif /* !COMPILER */
 
-
 const char *
 Py_GetCompiler(void)
 {
