@@ -1,0 +1,3 @@
+Clarify the description of the *include_hidden* parameter in
+:func:`glob.glob`, :func:`glob.iglob`, and the :mod:`glob` module
+documentation.
