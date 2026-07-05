@@ -26,7 +26,7 @@ structure of :file:`robots.txt` files, see :rfc:`9309`.
    This class provides methods to read, parse and answer questions about the
    :file:`robots.txt` file at *url* or a :class:`urllib.request.Request` object.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
      *url* parameter can be a :class:`urllib.request.Request` object.
 
    .. method:: set_url(url)
