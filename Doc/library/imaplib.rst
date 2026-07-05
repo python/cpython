@@ -437,18 +437,20 @@ An :class:`IMAP4` instance has the following methods:
       An :exc:`IMAP4.error` is raised if MD5 support is not available.
 
 
-.. method:: IMAP4.login_plain(login, password)
+.. method:: IMAP4.login_plain(user, password)
 
-    Authenticate using PLAIN SASL mechanism.
+   Authenticate using the ``PLAIN`` SASL mechanism (:rfc:`4616`).
 
-    This is a plain-text authentication mechanism that can be used
-    instead of :meth:`IMAP4.login()` when UTF-8 support is required.
-    See :RFC:`6855`, page 5.
+   This is a plaintext authentication mechanism that can be used instead
+   of :meth:`login` when UTF-8 support is required (see :rfc:`6855`).
+   Since the credentials are only base64-encoded, not encrypted, this
+   method should only be used over a TLS-protected connection, such as
+   :class:`IMAP4_SSL` or after :meth:`starttls`.
 
-    It will only work if the server ``CAPABILITY`` response includes
-    the phrase ``AUTH=PLAIN``.
+   It will only work if the server ``CAPABILITY`` response includes
+   the phrase ``AUTH=PLAIN``.
 
-    .. versionadded:: 3.11
+   .. versionadded:: next
 
 
 .. method:: IMAP4.logout()

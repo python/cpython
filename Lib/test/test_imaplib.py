@@ -420,6 +420,15 @@ class AuthHandler_CRAM_MD5(SimpleIMAPHandler):
             self._send_tagged(tag, 'NO', 'No access')
 
 
+class AuthHandler_PLAIN(SimpleIMAPHandler):
+    capabilities = 'LOGINDISABLED AUTH=PLAIN'
+    def cmd_AUTHENTICATE(self, tag, args):
+        self.server.auth_args = args
+        self._send_textline('+')
+        self.server.response = yield
+        self._send_tagged(tag, 'OK', 'Logged in.')
+
+
 class NewIMAPTestsMixin:
     client = None
 
@@ -693,34 +702,33 @@ class NewIMAPTestsMixin:
             client.login_cram_md5("tim", b"tanstaaftanstaaf")
 
     def test_login_plain_ascii(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=PLAIN'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+')
-                r = yield
-                if r == b'cHJlbQBwcmVtAHBhc3M=\r\n':
-                    self._send_tagged(tag, 'OK', 'Logged in.')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=PLAIN' in client.capabilities)
+        client, server = self._setup(AuthHandler_PLAIN)
+        self.assertIn('AUTH=PLAIN', client.capabilities)
         ret, _ = client.login_plain("prem", "pass")
         self.assertEqual(ret, "OK")
+        self.assertEqual(server.auth_args, ['PLAIN'])
+        self.assertEqual(server.response, b'AHByZW0AcGFzcw==\r\n')
 
     def test_login_plain_utf8(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=PLAIN'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+')
-                r = yield
-                if r == b'cHLEmW0AcHLEmW0AxbzDs8WCxIc=\r\n':
-                    self._send_tagged(tag, 'OK', 'Logged in.')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=PLAIN' in client.capabilities)
+        client, server = self._setup(AuthHandler_PLAIN)
+        self.assertIn('AUTH=PLAIN', client.capabilities)
         ret, _ = client.login_plain("pręm", "żółć")
         self.assertEqual(ret, "OK")
+        self.assertEqual(server.response, b'AHByxJltAMW8w7PFgsSH\r\n')
+
+    def test_login_plain_bytes(self):
+        # bytes are accepted and sent verbatim (not re-encoded).
+        client, server = self._setup(AuthHandler_PLAIN)
+        ret, _ = client.login_plain(b'pr\xc4\x99m', b'\xc5\xbc\xc3\xb3\xc5\x82\xc4\x87')
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.response, b'AHByxJltAMW8w7PFgsSH\r\n')
+
+    def test_login_plain_nul(self):
+        client, _ = self._setup(AuthHandler_PLAIN)
+        with self.assertRaises(ValueError):
+            client.login_plain('user\0', 'pass')
+        with self.assertRaises(ValueError):
+            client.login_plain('user', b'pa\0ss')
 
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
