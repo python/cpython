@@ -1,0 +1,2 @@
+Fix a race in :class:`string.Template` where concurrent first use of a
+template on the free-threaded build could raise a spurious :exc:`ValueError`.

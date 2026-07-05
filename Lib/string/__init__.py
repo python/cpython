@@ -84,6 +84,9 @@ class Template:
         import re  # deferred import, for performance
 
         pattern = cls.__dict__.get('pattern', _TemplatePattern)
+        if isinstance(pattern, re.Pattern):
+            # Already compiled; reuse it (re.compile() rejects flags on a Pattern).
+            return pattern
         if pattern is _TemplatePattern:
             delim = re.escape(cls.delimiter)
             id = cls.idpattern
