@@ -501,8 +501,11 @@ instantiation, of which this module provides three different variants:
       a MIME Content-type header.
 
       The default implementation looks the file's extension up in
-      :attr:`extensions_map`, using ``"application/octet-stream"``
-      as a default.
+      :attr:`extensions_map` and :func:`mimetypes.guess_file_type`,
+      using :attr:`default_content_type` as defaults.
+
+      .. versionchanged:: 3.13
+         Add :func:`mimetypes.guess_file_type` as a fallback.
 
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
