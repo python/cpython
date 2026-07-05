@@ -2180,6 +2180,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       may be replaced with file-like objects like :class:`io.StringIO` which
       do not support the :attr:`!buffer` attribute.
 
+      At interpreter shutdown, the ``stdout`` and ``stderr`` streams are
+      flushed, so objects used to replace them should provide a ``flush()``
+      method.
+
 
 .. data:: __stdin__
           __stdout__
