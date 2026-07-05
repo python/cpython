@@ -8677,10 +8677,10 @@
             (void)(opcode);
             #endif
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR);
             PREDICTED_LOAD_ATTR:;
-            _Py_CODEUNIT* const this_instr = next_instr - 10;
+            _Py_CODEUNIT* const this_instr = next_instr - 11;
             (void)this_instr;
             _PyStackRef owner;
             _PyStackRef attr;
@@ -8704,7 +8704,7 @@
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
-            /* Skip 8 cache entries */
+            /* Skip 9 cache entries */
             // _LOAD_ATTR
             {
                 self_or_null = &stack_pointer[0];
@@ -8750,9 +8750,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_CLASS);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef *null;
@@ -8774,10 +8774,10 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            /* Skip 3 cache entries */
             // _LOAD_ATTR_CLASS
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                PyObject *descr = read_obj(&this_instr[7].cache);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
@@ -8809,9 +8809,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef *null;
@@ -8828,9 +8828,10 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
+            /* Skip 1 cache entry */
             // _CHECK_ATTR_CLASS
             {
-                uint32_t type_version = read_u32(&this_instr[4].cache);
+                uint32_t type_version = read_u32(&this_instr[5].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 if (!PyType_Check(owner_o)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
@@ -8846,7 +8847,7 @@
             }
             // _LOAD_ATTR_CLASS
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                PyObject *descr = read_obj(&this_instr[7].cache);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
@@ -8878,9 +8879,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef new_frame;
             /* Skip 1 cache entry */
@@ -8904,10 +8905,11 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME
             {
-                uint32_t func_version = read_u32(&this_instr[4].cache);
-                PyObject *getattribute = read_obj(&this_instr[6].cache);
+                uint32_t func_version = read_u32(&this_instr[5].cache);
+                PyObject *getattribute = read_obj(&this_instr[7].cache);
                 assert((oparg & 1) == 0);
                 assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
                 PyFunctionObject *f = (PyFunctionObject *)getattribute;
@@ -8973,9 +8975,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_INSTANCE_VALUE);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef o;
@@ -8996,10 +8998,12 @@
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
+                uint16_t value_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                uint8_t *valid_ptr = (uint8_t *)owner_o + value_offset;
+                if (!FT_ATOMIC_LOAD_UINT8(*valid_ptr)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
@@ -9007,7 +9011,7 @@
             }
             // _LOAD_ATTR_INSTANCE_VALUE
             {
-                uint16_t offset = read_u16(&this_instr[4].cache);
+                uint16_t offset = read_u16(&this_instr[5].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
                 PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
@@ -9061,9 +9065,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_LAZY_DICT);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef self;
@@ -9080,9 +9084,10 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
+            /* Skip 1 cache entry */
             // _CHECK_ATTR_METHOD_LAZY_DICT
             {
-                uint16_t dictoffset = read_u16(&this_instr[4].cache);
+                uint16_t dictoffset = read_u16(&this_instr[5].cache);
                 char *ptr = ((char *)PyStackRef_AsPyObjectBorrow(owner)) + MANAGED_DICT_OFFSET + dictoffset;
                 PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*(PyObject **)ptr);
                 if (dict != NULL) {
@@ -9094,7 +9099,7 @@
             /* Skip 1 cache entry */
             // _LOAD_ATTR_METHOD_LAZY_DICT
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                PyObject *descr = read_obj(&this_instr[7].cache);
                 assert(oparg & 1);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
@@ -9117,9 +9122,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_NO_DICT);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef self;
@@ -9136,10 +9141,10 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            /* Skip 3 cache entries */
             // _LOAD_ATTR_METHOD_NO_DICT
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                PyObject *descr = read_obj(&this_instr[7].cache);
                 assert(oparg & 1);
                 assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
                 STAT_INC(LOAD_ATTR, hit);
@@ -9163,9 +9168,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_WITH_VALUES);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef self;
@@ -9184,10 +9189,12 @@
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
+                uint16_t value_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                uint8_t *valid_ptr = (uint8_t *)owner_o + value_offset;
+                if (!FT_ATOMIC_LOAD_UINT8(*valid_ptr)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
@@ -9195,7 +9202,7 @@
             }
             // _GUARD_KEYS_VERSION
             {
-                uint32_t keys_version = read_u32(&this_instr[4].cache);
+                uint32_t keys_version = read_u32(&this_instr[5].cache);
                 PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
                 PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
                 PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
@@ -9207,7 +9214,7 @@
             }
             // _LOAD_ATTR_METHOD_WITH_VALUES
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                PyObject *descr = read_obj(&this_instr[7].cache);
                 assert(oparg & 1);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
@@ -9230,9 +9237,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_MODULE);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef o;
@@ -9291,7 +9298,7 @@
                 PyStackRef_XCLOSE(value);
                 _PyFrame_StackPointerInvalidate(frame);
             }
-            /* Skip 5 cache entries */
+            /* Skip 6 cache entries */
             // _PUSH_NULL_CONDITIONAL
             {
                 null = &stack_pointer[0];
@@ -9312,9 +9319,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_NONDESCRIPTOR_NO_DICT);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             /* Skip 1 cache entry */
@@ -9330,10 +9337,10 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            /* Skip 3 cache entries */
             // _LOAD_ATTR_NONDESCRIPTOR_NO_DICT
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                PyObject *descr = read_obj(&this_instr[7].cache);
                 assert((oparg & 1) == 0);
                 assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
                 STAT_INC(LOAD_ATTR, hit);
@@ -9360,9 +9367,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             /* Skip 1 cache entry */
@@ -9380,10 +9387,12 @@
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
+                uint16_t value_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                uint8_t *valid_ptr = (uint8_t *)owner_o + value_offset;
+                if (!FT_ATOMIC_LOAD_UINT8(*valid_ptr)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
@@ -9391,7 +9400,7 @@
             }
             // _GUARD_KEYS_VERSION
             {
-                uint32_t keys_version = read_u32(&this_instr[4].cache);
+                uint32_t keys_version = read_u32(&this_instr[5].cache);
                 PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
                 PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
                 PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
@@ -9403,7 +9412,7 @@
             }
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
-                PyObject *descr = read_obj(&this_instr[6].cache);
+                PyObject *descr = read_obj(&this_instr[7].cache);
                 assert((oparg & 1) == 0);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
@@ -9429,9 +9438,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_PROPERTY);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef new_frame;
             /* Skip 1 cache entry */
@@ -9455,10 +9464,11 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_PROPERTY_FRAME
             {
-                uint32_t func_version = read_u32(&this_instr[4].cache);
-                PyObject *fget = read_obj(&this_instr[6].cache);
+                uint32_t func_version = read_u32(&this_instr[5].cache);
+                PyObject *fget = read_obj(&this_instr[7].cache);
                 assert((oparg & 1) == 0);
                 assert(Py_IS_TYPE(fget, &PyFunction_Type));
                 PyFunctionObject *f = (PyFunctionObject *)fget;
@@ -9519,9 +9529,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_SLOT);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef o;
@@ -9573,7 +9583,7 @@
                 PyStackRef_XCLOSE(value);
                 _PyFrame_StackPointerInvalidate(frame);
             }
-            /* Skip 5 cache entries */
+            /* Skip 6 cache entries */
             // _PUSH_NULL_CONDITIONAL
             {
                 null = &stack_pointer[0];
@@ -9594,9 +9604,9 @@
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
-            next_instr += 10;
+            next_instr += 11;
             INSTRUCTION_STATS(LOAD_ATTR_WITH_HINT);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 10, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef o;
@@ -9691,7 +9701,7 @@
                 PyStackRef_XCLOSE(value);
                 _PyFrame_StackPointerInvalidate(frame);
             }
-            /* Skip 5 cache entries */
+            /* Skip 6 cache entries */
             // _PUSH_NULL_CONDITIONAL
             {
                 null = &stack_pointer[0];

@@ -2866,7 +2866,7 @@ dummy_func(
 
         macro(LOAD_ATTR) =
             _SPECIALIZE_LOAD_ATTR +
-            unused/8 +
+            unused/9 +
             _LOAD_ATTR;
 
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
@@ -2890,11 +2890,12 @@ dummy_func(
             EXIT_IF(tp != (PyTypeObject *)type);
         }
 
-        op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
+        op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (value_offset/1, owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            EXIT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
+            uint8_t *valid_ptr = (uint8_t *)owner_o + value_offset;
+            EXIT_IF(!FT_ATOMIC_LOAD_UINT8(*valid_ptr));
         }
 
         op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, o)) {
@@ -2954,7 +2955,7 @@ dummy_func(
             unused/1 +
             _LOAD_ATTR_MODULE +
             POP_TOP +
-            unused/5 +
+            unused/6 +
             _PUSH_NULL_CONDITIONAL;
 
         op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, o)) {
@@ -3003,7 +3004,7 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_WITH_HINT +
             POP_TOP +
-            unused/5 +
+            unused/6 +
             _PUSH_NULL_CONDITIONAL;
 
         op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, o)) {
@@ -3029,7 +3030,7 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
             POP_TOP +
-            unused/5 +
+            unused/6 +
             _PUSH_NULL_CONDITIONAL;
 
         op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
@@ -3051,7 +3052,7 @@ dummy_func(
             unused/1 +
             _RECORD_TOS +
             _CHECK_ATTR_CLASS +
-            unused/2 +
+            unused/3 +
             _LOAD_ATTR_CLASS +
             _PUSH_NULL_CONDITIONAL;
 
@@ -3059,6 +3060,7 @@ dummy_func(
             unused/1 +
             _RECORD_TOS +
             _GUARD_TYPE_VERSION +
+            unused/1 +
             _CHECK_ATTR_CLASS +
             _LOAD_ATTR_CLASS +
             _PUSH_NULL_CONDITIONAL;
@@ -3082,6 +3084,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_PEP_523 +
+            unused/1 +
             _LOAD_ATTR_PROPERTY_FRAME +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -3110,6 +3113,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_PEP_523 +
+            unused/1 +
             _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN_FRAME +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -4276,7 +4280,7 @@ dummy_func(
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
-            unused/2 +
+            unused/3 +
             _LOAD_ATTR_METHOD_NO_DICT;
 
         op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {
@@ -4308,7 +4312,7 @@ dummy_func(
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
-            unused/2 +
+            unused/3 +
             _LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
 
         op(_CHECK_ATTR_METHOD_LAZY_DICT, (dictoffset/1, owner -- owner)) {
@@ -4332,6 +4336,7 @@ dummy_func(
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
+            unused/1 +
             _CHECK_ATTR_METHOD_LAZY_DICT +
             unused/1 +
             _LOAD_ATTR_METHOD_LAZY_DICT;
