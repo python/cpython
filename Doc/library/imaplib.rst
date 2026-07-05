@@ -447,8 +447,9 @@ An :class:`IMAP4` instance has the following methods:
    method should only be used over a TLS-protected connection, such as
    :class:`IMAP4_SSL` or after :meth:`starttls`.
 
-   It will only work if the server ``CAPABILITY`` response includes
-   the phrase ``AUTH=PLAIN``.
+   It will only work if the server supports the ``PLAIN`` mechanism,
+   which it need not advertise as ``AUTH=PLAIN`` in its ``CAPABILITY``
+   response.
 
    .. versionadded:: next
 
