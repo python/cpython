@@ -24,14 +24,15 @@ structure of :file:`robots.txt` files, see :rfc:`9309`.
 .. class:: RobotFileParser(url_or_request='')
 
    This class provides methods to read, parse and answer questions about the
-   :file:`robots.txt` file at *url* or a :class:`Request` object with additional
-   user-agent headers populated.
+   :file:`robots.txt` file at *url* or a :class:`urllib.request.Request` object
+   with additional user-agent headers populated.
 
 
    .. method:: set_url(url_or_request)
 
-      Sets the URL referring to a :file:`robots.txt` file or a :class:`Request`
-      object with additional user-agent headers populated.
+      Sets the URL referring to a :file:`robots.txt` file or a
+      :class:`urllib.request.Request` object with additional user-agent headers
+      populated.
 
    .. method:: read()
 
@@ -107,7 +108,8 @@ class::
    False
 
 
-The following example demonstrates use of a :class:`Request` object with additional user-agent headers populated::
+The following example demonstrates use of a :class:`urllib.request.Request`
+object with additional user-agent headers populated::
 
    >>> import urllib.robotparser
    >>> import urllib.request

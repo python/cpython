@@ -55,7 +55,7 @@ class RobotFileParser:
         self.last_checked = time.time()
 
     def set_url(self, url_or_request):
-        """Sets the URL referring to a robots.txt file. 
+        """Sets the URL referring to a robots.txt file.
         url_or_request can be a string or a Request object.
         """
         self.url = url_or_request
