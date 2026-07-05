@@ -1895,8 +1895,8 @@ class ThreadedNetworkedTests(unittest.TestCase):
     @threading_helper.reap_threads
     def test_bracket_flags(self):
 
-        # This violates RFC 3501, which disallows ']' characters in tag names,
-        # but imaplib has allowed producing such tags forever, other programs
+        # This violates RFC 3501, which disallows ']' characters in flags,
+        # but imaplib has allowed producing such flags forever, other programs
         # also produce them (eg: OtherInbox's Organizer app as of 20140716),
         # and Gmail, for example, accepts them and produces them.  So we
         # support them.  See issue #21815.
