@@ -501,8 +501,9 @@ instantiation, of which this module provides three different variants:
       a MIME Content-type header.
 
       The default implementation looks the file's extension up in
-      :attr:`extensions_map` and :func:`mimetypes.guess_file_type`,
-      using :attr:`default_content_type` as defaults.
+      :attr:`extensions_map`, falling back to
+      :func:`mimetypes.guess_file_type` and then to
+      :attr:`default_content_type`.
 
       .. versionchanged:: 3.13
          Add :func:`mimetypes.guess_file_type` as a fallback.
