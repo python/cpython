@@ -193,6 +193,7 @@ LOCAL(Py_ssize_t)
 SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
 {
     SRE_CODE chr;
+    SRE_CODE arg;
     SRE_CHAR c;
     const SRE_CHAR* ptr = (const SRE_CHAR *)state->ptr;
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
@@ -299,6 +300,13 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
         chr = pattern[1];
         TRACE(("|%p|%p|COUNT NOT_LITERAL_LOC_IGNORE %d\n", pattern, ptr, chr));
         while (ptr < end && !char_loc_ignore(chr, *ptr))
+            ptr++;
+        break;
+
+    case SRE_OP_CATEGORY:
+        arg = pattern[1];
+        TRACE(("|%p|%p|COUNT CATEGORY %d\n", pattern, ptr, arg));
+        while (ptr < end && sre_category(arg, *ptr))
             ptr++;
         break;
 

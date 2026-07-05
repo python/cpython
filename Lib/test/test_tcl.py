@@ -55,7 +55,7 @@ class TclTest(unittest.TestCase):
     def test_eval_surrogates_in_result(self):
         tcl = self.interp
         result = tcl.eval(r'set a "<\ud83d\udcbb>"')
-        if sys.platform == 'win32':
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
             self.assertEqual('<\ud83d\udcbb>', result)
         else:
             self.assertEqual('<\U0001f4bb>', result)
@@ -294,7 +294,7 @@ class TclTest(unittest.TestCase):
             """)
         tcl.evalfile(filename)
         result = tcl.eval('set b')
-        if sys.platform == 'win32':
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
             self.assertEqual('<\ud83d\udcbb>', result)
         else:
             self.assertEqual('<\U0001f4bb>', result)

@@ -89,6 +89,13 @@ There's also a subclass for secure connections:
    (potentially long-lived) structure.  Please read :ref:`ssl-security` for
    best practices.
 
+   .. note::
+
+      With the default *ssl_context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    The optional *timeout* parameter specifies a timeout in seconds for the
    connection attempt. If timeout is not given or is ``None``, the global default
    socket timeout is used.
@@ -181,6 +188,9 @@ enclosed with either parentheses or double quotes) each string is quoted.
 However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
+In general, pass arguments unquoted and let the module quote them as needed.
+An argument that is already enclosed in double quotes is left unchanged,
+so that code which quotes arguments itself keeps working.
 
 Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
@@ -197,7 +207,7 @@ upper bound (``'3:*'``).
 An :class:`IMAP4` instance has the following methods:
 
 
-.. method:: IMAP4.append(mailbox, flags, date_time, message)
+.. method:: IMAP4.append(mailbox, flags, date_time, message, *, translate_line_endings=True)
 
    Append *message* to named mailbox.
 
@@ -205,6 +215,17 @@ An :class:`IMAP4` instance has the following methods:
    flags are separated by spaces, for example ``r'\Seen \Answered'``.
    If *flags* is not already enclosed in parentheses, parentheses are
    added automatically.
+
+   If *translate_line_endings* is true (the default),
+   line endings in *message* are translated to CRLF.
+   Pass ``False`` to send the message literal exactly as given,
+   which is required to preserve messages that contain bare CR or LF.
+   In that case *message* must already use CRLF line endings as required
+   by :rfc:`3501`; for example, serialize :mod:`email` messages using
+   :class:`email.policy.SMTP`.
+
+   .. versionchanged:: next
+      Added the *translate_line_endings* parameter.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
@@ -394,7 +415,7 @@ An :class:`IMAP4` instance has the following methods:
    .. versionadded:: 3.14
 
 
-.. method:: IMAP4.list([directory[, pattern]])
+.. method:: IMAP4.list(directory='', pattern='*')
 
    List mailbox names in *directory* matching *pattern*.  *directory* defaults to
    the top-level mail folder, and *pattern* defaults to match anything.  Returned
@@ -424,7 +445,7 @@ An :class:`IMAP4` instance has the following methods:
       The method no longer ignores silently arbitrary exceptions.
 
 
-.. method:: IMAP4.lsub(directory='""', pattern='*')
+.. method:: IMAP4.lsub(directory='', pattern='*')
 
    List subscribed mailbox names in directory matching pattern. *directory*
    defaults to the top level directory and *pattern* defaults to match any mailbox.
@@ -588,6 +609,13 @@ An :class:`IMAP4` instance has the following methods:
    encryption on the IMAP connection.  Please read :ref:`ssl-security` for
    best practices.
 
+   .. note::
+
+      With the default *ssl_context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
@@ -731,3 +759,11 @@ retrieves and prints all messages::
        print('Message %s\n%s\n' % (num, data[0][1]))
    M.close()
    M.logout()
+
+.. note::
+
+   A ``FETCH`` response may contain additional or unsolicited data
+   (see :rfc:`3501`, section 7.4.2),
+   so production code should inspect the whole response
+   rather than rely on ``data[0][1]``.
+

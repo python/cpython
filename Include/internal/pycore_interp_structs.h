@@ -235,6 +235,12 @@ struct _gc_runtime_state {
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_stats *generation_stats;
+#ifdef Py_GIL_DISABLED
+    /* Protects generation_stats between gc_get_stats_impl() (reader) and
+       gc_collect_main() (writer); both resolve the stats slot (buffer index)
+       under this lock so they agree on which slot to touch (gh-151646). */
+    PyMutex stats_mutex;
+#endif
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when
@@ -308,8 +314,6 @@ struct _import_runtime_state {
            Modules are added there and looked up in _imp.find_extension(). */
         struct _Py_hashtable_t *hashtable;
     } extensions;
-    /* Package context -- the full module name for package imports */
-    const char * pkgcontext;
 };
 
 struct _import_state {
@@ -349,7 +353,15 @@ struct _import_state {
     int lazy_imports_mode;
     PyObject *lazy_imports_filter;
     PyObject *lazy_importing_modules;
+    // The set stored in sys.lazy_modules if values that have been
+    // lazily imported. This value is only for debugging/introspection
+    // purposes and is not used by the runtime.
     PyObject *lazy_modules;
+    // A dict mapping package names to a set of submodule names that
+    // have been imported lazily from packages which have been imported
+    // lazily. When the package is reified we need to add a
+    // LazyImportObject which refers to the submodule on the module.
+    PyObject *lazy_pending_submodules;
 #ifdef Py_GIL_DISABLED
     PyMutex lazy_mutex;
 #endif
@@ -1001,7 +1013,7 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    PyObject *common_consts[NUM_COMMON_CONSTANTS];
+    _PyStackRef common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     bool compiling;
 

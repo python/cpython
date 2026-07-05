@@ -1,4 +1,4 @@
-:mod:`!tkinter.scrolledtext` --- Scrolled Text Widget
+:mod:`!tkinter.scrolledtext` --- Scrolled text widget
 =====================================================
 
 .. module:: tkinter.scrolledtext
@@ -13,10 +13,12 @@ implements a basic text widget which has a vertical scroll bar configured to do
 the "right thing."  Using the :class:`ScrolledText` class is a lot easier than
 setting up a text widget and scroll bar directly.
 
-The text widget and scrollbar are packed together in a :class:`Frame`, and the
-methods of the :class:`Grid` and :class:`Pack` geometry managers are acquired
-from the :class:`Frame` object.  This allows the :class:`ScrolledText` widget to
-be used directly to achieve most normal geometry management behavior.
+The text widget and scrollbar are packed together in a :class:`~tkinter.Frame`,
+and the methods of the :class:`~tkinter.Pack`, :class:`~tkinter.Grid` and
+:class:`~tkinter.Place` geometry managers are acquired from the
+:class:`~tkinter.Frame` object.
+This allows the :class:`ScrolledText` widget to be used directly to achieve
+most normal geometry management behavior.
 
 Should more specific control be necessary, the following attributes are
 available:

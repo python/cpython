@@ -146,9 +146,9 @@ purposes.
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
    default CA certificates.
 
-   When :attr:`~SSLContext.keylog_filename` is supported and the environment
-   variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
-   enables key logging.
+   When the environment variable :envvar:`!SSLKEYLOGFILE` is set,
+   :func:`create_default_context` enables key logging by setting
+   :attr:`~SSLContext.keylog_filename` to the variable's value.
 
    The default settings for this context include
    :data:`VERIFY_X509_PARTIAL_CHAIN` and :data:`VERIFY_X509_STRICT`.
@@ -1121,7 +1121,7 @@ SSL sockets
       :meth:`SSLContext.wrap_socket` to wrap a socket.
 
    .. versionchanged:: 3.7
-      :class:`SSLSocket` instances must to created with
+      :class:`SSLSocket` instances must be created with
       :meth:`~SSLContext.wrap_socket`. In earlier versions, it was possible
       to create instances directly. This was never documented or officially
       supported.
@@ -2076,7 +2076,7 @@ to speed up repeated connections from the same clients.
    :attr:`~SSLContext.minimum_version` and
    :attr:`SSLContext.options` all affect the supported SSL
    and TLS versions of the context. The implementation does not prevent
-   invalid combination. For example a context with
+   invalid combinations. For example a context with
    :attr:`OP_NO_TLSv1_2` in :attr:`~SSLContext.options` and
    :attr:`~SSLContext.maximum_version` set to :attr:`TLSVersion.TLSv1_2`
    will not be able to establish a TLS 1.2 connection.
@@ -2473,79 +2473,67 @@ Visual inspection shows that the certificate does identify the desired service
 (that is, the HTTPS host ``www.python.org``)::
 
    >>> pprint.pprint(cert)
-   {
-       'OCSP': ('http://ocsp.digicert.com',),
-       'caIssuers': ('http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt',),
-       'crlDistributionPoints': (
-           'http://crl3.digicert.com/sha2-ev-server-g1.crl',
-           'http://crl4.digicert.com/sha2-ev-server-g1.crl',
-       ),
-       'issuer': (
-           (('countryName', 'US'),),
-           (('organizationName', 'DigiCert Inc'),),
-           (('organizationalUnitName', 'www.digicert.com'),),
-           (('commonName', 'DigiCert SHA2 Extended Validation Server CA'),),
-       ),
-       'notAfter': 'Sep  9 12:00:00 2016 GMT',
-       'notBefore': 'Sep  5 00:00:00 2014 GMT',
-       'serialNumber': '01BB6F00122B177F36CAB49CEA8B6B26',
-       'subject': (
-           (('businessCategory', 'Private Organization'),),
-           (('1.3.6.1.4.1.311.60.2.1.3', 'US'),),
-           (('1.3.6.1.4.1.311.60.2.1.2', 'Delaware'),),
-           (('serialNumber', '3359300'),),
-           (('streetAddress', '16 Allen Rd'),),
-           (('postalCode', '03894-4801'),),
-           (('countryName', 'US'),),
-           (('stateOrProvinceName', 'NH'),),
-           (('localityName', 'Wolfeboro'),),
-           (('organizationName', 'Python Software Foundation'),),
-           (('commonName', 'www.python.org'),),
-       ),
-       'subjectAltName': (
-           ('DNS', 'www.python.org'),
-           ('DNS', 'python.org'),
-           ('DNS', 'pypi.org'),
-           ('DNS', 'docs.python.org'),
-           ('DNS', 'testpypi.org'),
-           ('DNS', 'bugs.python.org'),
-           ('DNS', 'wiki.python.org'),
-           ('DNS', 'hg.python.org'),
-           ('DNS', 'mail.python.org'),
-           ('DNS', 'packaging.python.org'),
-           ('DNS', 'pythonhosted.org'),
-           ('DNS', 'www.pythonhosted.org'),
-           ('DNS', 'test.pythonhosted.org'),
-           ('DNS', 'us.pycon.org'),
-           ('DNS', 'id.python.org'),
-       ),
-       'version': 3,
-   }
+   {'OCSP': ('http://ocsp.digicert.com',),
+    'caIssuers': ('http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt',),
+    'crlDistributionPoints': ('http://crl3.digicert.com/sha2-ev-server-g1.crl',
+                              'http://crl4.digicert.com/sha2-ev-server-g1.crl'),
+    'issuer': ((('countryName', 'US'),),
+               (('organizationName', 'DigiCert Inc'),),
+               (('organizationalUnitName', 'www.digicert.com'),),
+               (('commonName', 'DigiCert SHA2 Extended Validation Server CA'),)),
+    'notAfter': 'Sep  9 12:00:00 2016 GMT',
+    'notBefore': 'Sep  5 00:00:00 2014 GMT',
+    'serialNumber': '01BB6F00122B177F36CAB49CEA8B6B26',
+    'subject': ((('businessCategory', 'Private Organization'),),
+                (('1.3.6.1.4.1.311.60.2.1.3', 'US'),),
+                (('1.3.6.1.4.1.311.60.2.1.2', 'Delaware'),),
+                (('serialNumber', '3359300'),),
+                (('streetAddress', '16 Allen Rd'),),
+                (('postalCode', '03894-4801'),),
+                (('countryName', 'US'),),
+                (('stateOrProvinceName', 'NH'),),
+                (('localityName', 'Wolfeboro'),),
+                (('organizationName', 'Python Software Foundation'),),
+                (('commonName', 'www.python.org'),)),
+    'subjectAltName': (('DNS', 'www.python.org'),
+                       ('DNS', 'python.org'),
+                       ('DNS', 'pypi.org'),
+                       ('DNS', 'docs.python.org'),
+                       ('DNS', 'testpypi.org'),
+                       ('DNS', 'bugs.python.org'),
+                       ('DNS', 'wiki.python.org'),
+                       ('DNS', 'hg.python.org'),
+                       ('DNS', 'mail.python.org'),
+                       ('DNS', 'packaging.python.org'),
+                       ('DNS', 'pythonhosted.org'),
+                       ('DNS', 'www.pythonhosted.org'),
+                       ('DNS', 'test.pythonhosted.org'),
+                       ('DNS', 'us.pycon.org'),
+                       ('DNS', 'id.python.org')),
+    'version': 3}
 
 Now the SSL channel is established and the certificate verified, you can
 proceed to talk with the server::
 
    >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
    >>> pprint.pprint(conn.recv(1024).split(b"\r\n"))
-   [
-       b'HTTP/1.1 200 OK',
-       b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
-       b'Server: nginx',
-       b'Content-Type: text/html; charset=utf-8',
-       b'X-Frame-Options: SAMEORIGIN',
-       b'Content-Length: 45679',
-       b'Accept-Ranges: bytes',
-       b'Via: 1.1 varnish',
-       b'Age: 2188',
-       b'X-Served-By: cache-lcy1134-LCY',
-       b'X-Cache: HIT',
-       b'X-Cache-Hits: 11',
-       b'Vary: Cookie',
-       b'Strict-Transport-Security: max-age=63072000; includeSubDomains',
-       b'Connection: close',
-       b'',
-       b'',
-   ]
+   [b'HTTP/1.1 200 OK',
+    b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
+    b'Server: nginx',
+    b'Content-Type: text/html; charset=utf-8',
+    b'X-Frame-Options: SAMEORIGIN',
+    b'Content-Length: 45679',
+    b'Accept-Ranges: bytes',
+    b'Via: 1.1 varnish',
+    b'Age: 2188',
+    b'X-Served-By: cache-lcy1134-LCY',
+    b'X-Cache: HIT',
+    b'X-Cache-Hits: 11',
+    b'Vary: Cookie',
+    b'Strict-Transport-Security: max-age=63072000; includeSubDomains',
+    b'Connection: close',
+    b'',
+    b'']
 
 See the discussion of :ref:`ssl-security` below.
 
@@ -2891,11 +2879,11 @@ disabled by default.
 ::
 
    >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_2
    >>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
 
-The SSL context created above will only allow TLSv1.3 and later (if
+The SSL client context created above will only allow TLSv1.2 and TLSv1.3 (if
 supported by your system) connections to a server. :const:`PROTOCOL_TLS_CLIENT`
 implies certificate validation and hostname checks by default. You have to
 load certificates into the context.

@@ -1704,19 +1704,10 @@ def get_accelerator(keydefs, eventname):
     return s
 
 
-def fixwordbreaks(root):
-    # On Windows, tcl/tk breaks 'words' only on spaces, as in Command Prompt.
-    # We want Motif style everywhere. See #21474, msg218992 and followup.
-    tk = root.tk
-    tk.call('tcl_wordBreakAfter', 'a b', 0) # make sure word.tcl is loaded
-    tk.call('set', 'tcl_wordchars', r'\w')
-    tk.call('set', 'tcl_nonwordchars', r'\W')
-
-
-def _editor_window(parent):  # htest #
-    # error if close master window first - timer event, after script
-    root = parent
-    fixwordbreaks(root)
+def _editor_window(root):  # htest #
+    # Error if close master window first - timer event, after script
+    from util import fix_word_breaks
+    fix_word_breaks(root)
     if sys.argv[1:]:
         filename = sys.argv[1]
     else:
