@@ -4101,7 +4101,7 @@ ok:
     }
     else if (obj != NULL) {
         // Cache the result and update the original global before releasing
-        // the import lock, so competing reification cannot import again.
+        // the import lock, so later reification through this proxy reuses it.
         if (_PyLazyImport_FinishResolve(lazy_import, obj) < 0) {
             Py_CLEAR(obj);
         }
@@ -4455,8 +4455,10 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
 static int
 is_module_not_found_for_name(PyThreadState *tstate, PyObject *name)
 {
-    // Return true only for "name itself was not found", consuming the current
-    // exception so callers can continue normal attribute fallback.
+    // Return true only for the importlib._handle_fromlist() compatibility
+    // case where "name itself was not found" and sys.modules[name] is not the
+    // None sentinel. Consume the current exception so callers can continue
+    // normal attribute fallback.
     if (!_PyErr_ExceptionMatches(tstate, PyExc_ModuleNotFoundError)) {
         return 0;
     }
@@ -4479,6 +4481,18 @@ is_module_not_found_for_name(PyThreadState *tstate, PyObject *name)
         return 0;
     }
 
+    PyObject *mod = import_get_module(tstate, name);
+    if (mod == Py_None) {
+        Py_DECREF(mod);
+        _PyErr_SetRaisedException(tstate, exc);
+        return 0;
+    }
+    if (mod == NULL && _PyErr_Occurred(tstate)) {
+        PyErr_Clear();
+        _PyErr_SetRaisedException(tstate, exc);
+        return 0;
+    }
+    Py_XDECREF(mod);
     Py_DECREF(exc);
     return 1;
 }
@@ -4554,7 +4568,12 @@ _PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
         return -1;
     }
 
-    if (PySet_Discard(pending_set, attr_name) < 0) {
+    // This completes the successful lazy-submodule publish. pending_set is an
+    // internal set and attr_name is a Unicode attribute name, so discard is not
+    // expected to fail after the parent dict has been updated.
+    int discard_rc = PySet_Discard(pending_set, attr_name);
+    assert(discard_rc >= 0);
+    if (discard_rc < 0) {
         Py_DECREF(pending_set);
         Py_DECREF(submod);
         return -1;

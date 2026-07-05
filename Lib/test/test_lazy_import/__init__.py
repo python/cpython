@@ -515,6 +515,47 @@ class PackageTests(LazyImportTestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
+    @support.requires_subprocess()
+    def test_lazy_submodule_sys_modules_none_sentinel_raises(self):
+        """The sys.modules None sentinel should preserve import failure."""
+        code = textwrap.dedent("""
+            import os
+            import sys
+            import tempfile
+
+            with tempfile.TemporaryDirectory() as tmpdir:
+                pkg_dir = os.path.join(tmpdir, "lazy_sentinel_pkg")
+                os.mkdir(pkg_dir)
+                with open(os.path.join(pkg_dir, "__init__.py"), "w", encoding="utf-8") as f:
+                    f.write("")
+                with open(os.path.join(pkg_dir, "sub.py"), "w", encoding="utf-8") as f:
+                    f.write("VALUE = 42\\n")
+
+                sys.path.insert(0, tmpdir)
+                lazy import lazy_sentinel_pkg.sub
+                try:
+                    sys.modules["lazy_sentinel_pkg.sub"] = None
+                    try:
+                        lazy_sentinel_pkg.sub
+                    except ModuleNotFoundError as exc:
+                        assert exc.name == "lazy_sentinel_pkg.sub", exc
+                    else:
+                        raise AssertionError("ModuleNotFoundError was not raised")
+                finally:
+                    sys.path.remove(tmpdir)
+                    for name in ("lazy_sentinel_pkg", "lazy_sentinel_pkg.sub"):
+                        sys.modules.pop(name, None)
+
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
     def test_lazy_import_pkg_cross_import(self):
         """Cross-imports within package should preserve lazy imports."""
         import test.test_lazy_import.data.pkg.c
