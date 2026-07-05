@@ -294,8 +294,9 @@ was translated to ::
 
 This means the exception must be assigned to a different name to be able to
 refer to it after the :keyword:`!except` clause.
-Exceptions are cleared because their attached tracebacks form a reference cycle with the stack
-frame, keeping all locals in that frame alive until the next garbage collection occurs.
+Exceptions are cleared because with the
+traceback attached to them, they form a reference cycle with the stack frame,
+keeping all locals in that frame alive until the next garbage collection occurs.
 
 .. index::
    pair: module; sys
