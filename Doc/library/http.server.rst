@@ -39,7 +39,17 @@ handler.  Code to create and run the server looks like this::
    This class builds on the :class:`~socketserver.TCPServer` class by storing
    the server address as instance variables named :attr:`server_name` and
    :attr:`server_port`. The server is accessible by the handler, typically
-   through the handler's :attr:`server` instance variable.
+   through the handler's :attr:`~socketserver.BaseRequestHandler.server`
+   instance variable.
+
+   .. attribute:: server_name
+
+      The HTTP server's fully qualified domain name.
+
+   .. attribute:: server_port
+
+      The HTTP server's port number obtained from *server_address*.
+
 
 .. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
@@ -402,6 +412,14 @@ instantiation, of which this module provides three different variants:
 
       .. versionadded:: 3.15
 
+   .. attribute:: index_pages
+
+      Specifies the filenames that are treated as directory index pages.
+
+      Defaults to ``("index.html", "index.htm")``.
+
+      .. versionadded:: 3.12
+
    .. attribute:: extensions_map
 
       A dictionary mapping suffixes into MIME types, contains custom overrides
@@ -464,6 +482,30 @@ instantiation, of which this module provides three different variants:
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
+
+   The :class:`SimpleHTTPRequestHandler` class defines the following helpers:
+
+   .. method:: list_directory()
+
+      Helper to produce a directory listing (absent index.html).
+
+      This returns either a :ref:`file-like <file-like object>` object (which
+      must be closed by the caller) or ``None`` to indicate an error, in which
+      case the caller has nothing further to do. In either case, the headers
+      are sent.
+
+   .. method:: guess_type(path)
+
+      Guess the type of the file of given *path*.
+
+      This returns a string of the form ``type/subtype``, usable for
+      a MIME Content-type header.
+
+      The default implementation looks the file's extension up in
+      :attr:`extensions_map`, using ``"application/octet-stream"``
+      as a default.
+
+
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
