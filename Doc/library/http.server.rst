@@ -525,7 +525,7 @@ the current directory::
 
 :class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
 such as using different index file names by overriding the class attribute
-:attr:`index_pages`.
+:attr:`~SimpleHTTPRequestHandler.index_pages`.
 
 
 .. _http-server-cli:
