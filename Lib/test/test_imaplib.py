@@ -1173,6 +1173,35 @@ class NewIMAPTestsMixin:
         self.assertEqual(data, [None])
         self.assertEqual(server.args, ['COPY', '4827313:4828442', '"New folder"'])
 
+    def test_move(self):
+        client, server = self._setup(make_simple_handler('MOVE'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.move('2:4', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', 'MEETING'])
+
+        typ, data = client.move('2:4', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', '"New folder"'])
+
+    def test_uid_move(self):
+        client, server = self._setup(make_simple_handler('UID',
+            completed='UID MOVE completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.uid('move', '4827313:4828442', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', 'MEETING'])
+
+        typ, data = client.uid('move', '4827313:4828442', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', '"New folder"'])
+
     def test_store(self):
         client, server = self._setup(make_simple_handler('STORE', [
             r'* 2 FETCH (FLAGS (\Deleted \Seen))',

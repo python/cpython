@@ -789,6 +789,14 @@ class IMAP4:
                                         self._list_mailbox(pattern))
         return self._untagged_response(typ, dat, name)
 
+    def move(self, message_set, new_mailbox):
+        """Move 'message_set' messages onto end of 'new_mailbox'.
+
+        (typ, [data]) = <instance>.move(message_set, new_mailbox)
+        """
+        return self._simple_command('MOVE', self._sequence_set(message_set),
+                                    self._astring(new_mailbox))
+
     def myrights(self, mailbox):
         """Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
 
@@ -1031,7 +1039,7 @@ class IMAP4:
                              (command, self.state,
                               ', '.join(Commands[command])))
         name = 'UID'
-        if command == 'COPY':
+        if command in ('COPY', 'MOVE'):
             message_set, new_mailbox = args
             args = (self._sequence_set(message_set),
                     self._astring(new_mailbox))

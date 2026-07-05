@@ -452,6 +452,15 @@ An :class:`IMAP4` instance has the following methods:
    Returned data are tuples of message part envelope and data.
 
 
+.. method:: IMAP4.move(message_set, new_mailbox)
+
+   Move *message_set* messages onto end of *new_mailbox*.
+
+   The server must support the ``MOVE`` capability (:rfc:`6851`).
+
+   .. versionadded:: next
+
+
 .. method:: IMAP4.myrights(mailbox)
 
    Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
