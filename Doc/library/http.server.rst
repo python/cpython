@@ -391,7 +391,7 @@ provides three different variants:
       The request is mapped to a local file by interpreting the request as a
       path relative to the current working directory.
 
-      If the request was mapped to a directory, the directory is checked for a
+      If the request was mapped to a directory, the directory is checked for
       an index page as specified by :attr:`index_pages`. If found, the
       file's contents are returned; otherwise a directory listing is generated
       by calling the :meth:`list_directory` method. This method uses
