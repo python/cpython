@@ -489,7 +489,7 @@ instantiation, of which this module provides three different variants:
 
       Helper to produce a directory listing (absent index.html).
 
-      This returns either a :ref:`file-like <file-like object>` object (which
+      This returns either a :term:`file-like object` (which
       must be closed by the caller) or ``None`` to indicate an error, in which
       case the caller has nothing further to do. In either case, the headers
       are sent.
