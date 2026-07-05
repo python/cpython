@@ -302,8 +302,6 @@ class TestTemplate(unittest.TestCase):
     def test_precompiled_pattern(self):
         # A subclass may supply an already-compiled pattern; it must be reused,
         # not recompiled (re.compile() rejects flags on a compiled pattern).
-        # This is the non-threaded form of the free-threading lazy-compile race
-        # where a thread observes the pattern another thread just compiled.
         import re
         compiled = re.compile(
             r'\$(?:(?P<escaped>\$)|(?P<named>[a-z]+)|'
