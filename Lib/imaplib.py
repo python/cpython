@@ -762,6 +762,30 @@ class IMAP4:
         return typ, dat
 
 
+    def login_plain(self, user, password):
+        """Authenticate using the PLAIN SASL mechanism (RFC 4616).
+
+        This is a plaintext authentication mechanism that can be used
+        instead of login() when UTF-8 support is required.  Since the
+        credentials are only base64-encoded, not encrypted, it should
+        only be used over a TLS-protected connection.
+
+        'user' and 'password' can be strings (encoded to UTF-8) or
+        bytes-like objects.
+        """
+        if isinstance(user, str):
+            user = user.encode('utf-8')
+        if isinstance(password, str):
+            password = password.encode('utf-8')
+        if b'\0' in user or b'\0' in password:
+            raise ValueError("NUL is not allowed in user name or password")
+        # An empty authorization identity (RFC 4616) makes the server
+        # derive it from the authentication identity; a non-empty one
+        # requests proxy authorization and is often rejected.
+        response = b'\0' + bytes(user) + b'\0' + bytes(password)
+        return self.authenticate("PLAIN", lambda _: response)
+
+
     def login_cram_md5(self, user, password):
         """ Force use of CRAM-MD5 authentication.
 
