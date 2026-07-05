@@ -130,6 +130,9 @@ Untagged_status = re.compile(
 _Literal = br'.*{(?P<size>\d+)}$'
 _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
 _control_chars = re.compile(b'[\x00-\x1F\x7F]')
+_non_astring_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff%*\\"]')
+_non_list_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff\\"]')
+_quoted = re.compile(br'"(?:[^"\\]|\\.)*+"')
 
 
 class IMAP4:
@@ -498,8 +501,7 @@ class IMAP4:
         if not mailbox:
             mailbox = 'INBOX'
         if flags:
-            if (flags[0],flags[-1]) != ('(',')'):
-                flags = '(%s)' % flags
+            flags = self._set_quote(flags)
         else:
             flags = None
         if date_time:
@@ -508,7 +510,7 @@ class IMAP4:
             date_time = None
         literal = MapCRLF.sub(CRLF, message)
         self.literal = literal
-        return self._simple_command(name, mailbox, flags, date_time)
+        return self._simple_command(name, self._astring(mailbox), flags, date_time)
 
 
     def authenticate(self, mechanism, authobject):
@@ -533,7 +535,7 @@ class IMAP4:
         #if not cap in self.capabilities:       # Let the server decide!
         #    raise self.error("Server doesn't allow %s authentication." % mech)
         self.literal = _Authenticator(authobject).process
-        typ, dat = self._simple_command('AUTHENTICATE', mech)
+        typ, dat = self._simple_command('AUTHENTICATE', self._atom(mech))
         if typ != 'OK':
             raise self.error(dat[-1].decode('utf-8', 'replace'))
         self.state = 'AUTH'
@@ -578,7 +580,8 @@ class IMAP4:
 
         (typ, [data]) = <instance>.copy(message_set, new_mailbox)
         """
-        return self._simple_command('COPY', message_set, new_mailbox)
+        return self._simple_command('COPY', self._sequence_set(message_set),
+                                    self._astring(new_mailbox))
 
 
     def create(self, mailbox):
@@ -586,7 +589,7 @@ class IMAP4:
 
         (typ, [data]) = <instance>.create(mailbox)
         """
-        return self._simple_command('CREATE', mailbox)
+        return self._simple_command('CREATE', self._astring(mailbox))
 
 
     def delete(self, mailbox):
@@ -594,14 +597,15 @@ class IMAP4:
 
         (typ, [data]) = <instance>.delete(mailbox)
         """
-        return self._simple_command('DELETE', mailbox)
+        return self._simple_command('DELETE', self._astring(mailbox))
 
     def deleteacl(self, mailbox, who):
         """Delete the ACLs (remove any rights) set for who on mailbox.
 
         (typ, [data]) = <instance>.deleteacl(mailbox, who)
         """
-        return self._simple_command('DELETEACL', mailbox, who)
+        return self._simple_command('DELETEACL', self._astring(mailbox),
+                                    self._astring(who))
 
     def enable(self, capability):
         """Send an RFC5161 enable string to the server.
@@ -640,7 +644,8 @@ class IMAP4:
         'data' are tuples of message part envelope and data.
         """
         name = 'FETCH'
-        typ, dat = self._simple_command(name, message_set, message_parts)
+        typ, dat = self._simple_command(name, self._sequence_set(message_set),
+                                        self._fetch_parts(message_parts))
         return self._untagged_response(typ, dat, name)
 
 
@@ -649,7 +654,7 @@ class IMAP4:
 
         (typ, [data]) = <instance>.getacl(mailbox)
         """
-        typ, dat = self._simple_command('GETACL', mailbox)
+        typ, dat = self._simple_command('GETACL', self._astring(mailbox))
         return self._untagged_response(typ, dat, 'ACL')
 
 
@@ -657,7 +662,8 @@ class IMAP4:
         """(typ, [data]) = <instance>.getannotation(mailbox, entry, attribute)
         Retrieve ANNOTATIONs."""
 
-        typ, dat = self._simple_command('GETANNOTATION', mailbox, entry, attribute)
+        typ, dat = self._simple_command('GETANNOTATION', self._astring(mailbox),
+                                        entry, attribute)
         return self._untagged_response(typ, dat, 'ANNOTATION')
 
 
@@ -668,7 +674,7 @@ class IMAP4:
 
         (typ, [data]) = <instance>.getquota(root)
         """
-        typ, dat = self._simple_command('GETQUOTA', root)
+        typ, dat = self._simple_command('GETQUOTA', self._astring(root))
         return self._untagged_response(typ, dat, 'QUOTA')
 
 
@@ -677,7 +683,7 @@ class IMAP4:
 
         (typ, [[QUOTAROOT responses...], [QUOTA responses]]) = <instance>.getquotaroot(mailbox)
         """
-        typ, dat = self._simple_command('GETQUOTAROOT', mailbox)
+        typ, dat = self._simple_command('GETQUOTAROOT', self._astring(mailbox))
         typ, quota = self._untagged_response(typ, dat, 'QUOTA')
         typ, quotaroot = self._untagged_response(typ, dat, 'QUOTAROOT')
         return typ, [quotaroot, quota]
@@ -696,15 +702,16 @@ class IMAP4:
         return Idler(self, duration)
 
 
-    def list(self, directory='""', pattern='*'):
+    def list(self, directory='', pattern='*'):
         """List mailbox names in directory matching pattern.
 
-        (typ, [data]) = <instance>.list(directory='""', pattern='*')
+        (typ, [data]) = <instance>.list(directory='', pattern='*')
 
         'data' is list of LIST responses.
         """
         name = 'LIST'
-        typ, dat = self._simple_command(name, directory, pattern)
+        typ, dat = self._simple_command(name, self._astring(directory),
+                                        self._list_mailbox(pattern))
         return self._untagged_response(typ, dat, name)
 
 
@@ -715,7 +722,8 @@ class IMAP4:
 
         NB: 'password' will be quoted.
         """
-        typ, dat = self._simple_command('LOGIN', user, self._quote(password))
+        typ, dat = self._simple_command('LOGIN', self._astring(user),
+                                        self._quote(password))
         if typ != 'OK':
             raise self.error(dat[-1].decode('UTF-8', 'replace'))
         self.state = 'AUTH'
@@ -761,15 +769,16 @@ class IMAP4:
         return typ, dat
 
 
-    def lsub(self, directory='""', pattern='*'):
+    def lsub(self, directory='', pattern='*'):
         """List 'subscribed' mailbox names in directory matching pattern.
 
-        (typ, [data, ...]) = <instance>.lsub(directory='""', pattern='*')
+        (typ, [data, ...]) = <instance>.lsub(directory='', pattern='*')
 
         'data' are tuples of message part envelope and data.
         """
         name = 'LSUB'
-        typ, dat = self._simple_command(name, directory, pattern)
+        typ, dat = self._simple_command(name, self._astring(directory),
+                                        self._list_mailbox(pattern))
         return self._untagged_response(typ, dat, name)
 
     def myrights(self, mailbox):
@@ -777,7 +786,7 @@ class IMAP4:
 
         (typ, [data]) = <instance>.myrights(mailbox)
         """
-        typ,dat = self._simple_command('MYRIGHTS', mailbox)
+        typ,dat = self._simple_command('MYRIGHTS', self._astring(mailbox))
         return self._untagged_response(typ, dat, 'MYRIGHTS')
 
     def namespace(self):
@@ -823,7 +832,7 @@ class IMAP4:
         """
 
         name = 'PROXYAUTH'
-        return self._simple_command(name, user)
+        return self._simple_command(name, self._astring(user))
 
 
     def rename(self, oldmailbox, newmailbox):
@@ -831,7 +840,8 @@ class IMAP4:
 
         (typ, [data]) = <instance>.rename(oldmailbox, newmailbox)
         """
-        return self._simple_command('RENAME', oldmailbox, newmailbox)
+        return self._simple_command('RENAME', self._astring(oldmailbox),
+                                    self._astring(newmailbox))
 
 
     def search(self, charset, *criteria):
@@ -843,10 +853,11 @@ class IMAP4:
         If UTF8 is enabled, charset MUST be None.
         """
         name = 'SEARCH'
-        if charset:
+        if charset is not None:
             if self.utf8_enabled:
                 raise IMAP4.error("Non-None charset not valid in UTF8 mode")
-            typ, dat = self._simple_command(name, 'CHARSET', charset, *criteria)
+            typ, dat = self._simple_command(name,
+                    'CHARSET', self._astring(charset), *criteria)
         else:
             typ, dat = self._simple_command(name, *criteria)
         return self._untagged_response(typ, dat, name)
@@ -870,7 +881,7 @@ class IMAP4:
             name = 'EXAMINE'
         else:
             name = 'SELECT'
-        typ, dat = self._simple_command(name, mailbox)
+        typ, dat = self._simple_command(name, self._astring(mailbox))
         if typ != 'OK':
             self.state = 'AUTH'     # Might have been 'SELECTED'
             return typ, dat
@@ -889,14 +900,15 @@ class IMAP4:
 
         (typ, [data]) = <instance>.setacl(mailbox, who, what)
         """
-        return self._simple_command('SETACL', mailbox, who, what)
+        return self._simple_command('SETACL', self._astring(mailbox),
+                                    self._astring(who), self._astring(what))
 
 
-    def setannotation(self, *args):
+    def setannotation(self, mailbox, *args):
         """(typ, [data]) = <instance>.setannotation(mailbox[, entry, attribute]+)
         Set ANNOTATIONs."""
 
-        typ, dat = self._simple_command('SETANNOTATION', *args)
+        typ, dat = self._simple_command('SETANNOTATION', self._astring(mailbox), *args)
         return self._untagged_response(typ, dat, 'ANNOTATION')
 
 
@@ -905,7 +917,8 @@ class IMAP4:
 
         (typ, [data]) = <instance>.setquota(root, limits)
         """
-        typ, dat = self._simple_command('SETQUOTA', root, limits)
+        typ, dat = self._simple_command('SETQUOTA', self._astring(root),
+                                        self._set_quote(limits))
         return self._untagged_response(typ, dat, 'QUOTA')
 
 
@@ -917,8 +930,9 @@ class IMAP4:
         name = 'SORT'
         #if not name in self.capabilities:      # Let the server decide!
         #       raise self.error('unimplemented extension command: %s' % name)
-        if (sort_criteria[0],sort_criteria[-1]) != ('(',')'):
-            sort_criteria = '(%s)' % sort_criteria
+        sort_criteria = self._set_quote(sort_criteria)
+        if charset is not None:
+            charset = self._astring(charset)
         typ, dat = self._simple_command(name, sort_criteria, charset, *search_criteria)
         return self._untagged_response(typ, dat, name)
 
@@ -955,7 +969,8 @@ class IMAP4:
         name = 'STATUS'
         #if self.PROTOCOL_VERSION == 'IMAP4':   # Let the server decide!
         #    raise self.error('%s unimplemented in IMAP4 (obtain IMAP4rev1 server, or re-code)' % name)
-        typ, dat = self._simple_command(name, mailbox, names)
+        typ, dat = self._simple_command(name, self._astring(mailbox),
+                                        self._set_quote(names))
         return self._untagged_response(typ, dat, name)
 
 
@@ -964,9 +979,9 @@ class IMAP4:
 
         (typ, [data]) = <instance>.store(message_set, command, flags)
         """
-        if (flags[0],flags[-1]) != ('(',')'):
-            flags = '(%s)' % flags  # Avoid quoting the flags
-        typ, dat = self._simple_command('STORE', message_set, command, flags)
+        flags = self._set_quote(flags)
+        typ, dat = self._simple_command('STORE', self._sequence_set(message_set),
+                                        command, flags)
         return self._untagged_response(typ, dat, 'FETCH')
 
 
@@ -975,7 +990,7 @@ class IMAP4:
 
         (typ, [data]) = <instance>.subscribe(mailbox)
         """
-        return self._simple_command('SUBSCRIBE', mailbox)
+        return self._simple_command('SUBSCRIBE', self._astring(mailbox))
 
 
     def thread(self, threading_algorithm, charset, *search_criteria):
@@ -984,7 +999,10 @@ class IMAP4:
         (type, [data]) = <instance>.thread(threading_algorithm, charset, search_criteria, ...)
         """
         name = 'THREAD'
-        typ, dat = self._simple_command(name, threading_algorithm, charset, *search_criteria)
+        if charset is not None:
+            charset = self._astring(charset)
+        typ, dat = self._simple_command(name, self._atom(threading_algorithm),
+                                        charset, *search_criteria)
         return self._untagged_response(typ, dat, name)
 
 
@@ -1005,7 +1023,31 @@ class IMAP4:
                              (command, self.state,
                               ', '.join(Commands[command])))
         name = 'UID'
-        typ, dat = self._simple_command(name, command, *args)
+        if command == 'COPY':
+            message_set, new_mailbox = args
+            args = (self._sequence_set(message_set),
+                    self._astring(new_mailbox))
+        elif command == 'FETCH':
+            message_set, message_parts = args
+            args = (self._sequence_set(message_set),
+                    self._fetch_parts(message_parts))
+        elif command == 'STORE':
+            message_set, op, flags = args
+            args = (self._sequence_set(message_set), op,
+                    self._set_quote(flags))
+        elif command == 'SORT':
+            sort_criteria, charset, *search_criteria = args
+            if charset is not None:
+                charset = self._astring(charset)
+            args = (self._set_quote(sort_criteria), charset,
+                    *search_criteria)
+        elif command == 'THREAD':
+            threading_algorithm, charset, *search_criteria = args
+            if charset is not None:
+                charset = self._astring(charset)
+            args = (self._atom(threading_algorithm), charset,
+                    *search_criteria)
+        typ, dat = self._simple_command(name, self._atom(command), *args)
         if command in ('SEARCH', 'SORT', 'THREAD'):
             name = command
         else:
@@ -1018,7 +1060,7 @@ class IMAP4:
 
         (typ, [data]) = <instance>.unsubscribe(mailbox)
         """
-        return self._simple_command('UNSUBSCRIBE', mailbox)
+        return self._simple_command('UNSUBSCRIBE', self._astring(mailbox))
 
 
     def unselect(self):
@@ -1387,13 +1429,53 @@ class IMAP4:
         return tag
 
 
+    def _atom(self, arg):
+        return arg
+
+    def _sequence_set(self, arg):
+        return arg
+
+    def _set_quote(self, arg):
+        if arg and arg[0] == '(' and arg[-1] == ')':
+            return arg
+        return '(' + arg + ')'
+
+    def _fetch_parts(self, arg):
+        # "ALL", "FULL" and "FAST" are macros, not data item names;
+        # they cannot be enclosed in parentheses.
+        if arg.upper() in ('ALL', 'FULL', 'FAST'):
+            return arg
+        return self._set_quote(arg)
+
     def _quote(self, arg):
+        if isinstance(arg, str):
+            arg = bytes(arg, self._encoding)
+        arg = arg.replace(b'\\', br'\\')
+        arg = arg.replace(b'"', br'\"')
+        return b'"' + arg + b'"'
 
-        arg = arg.replace('\\', '\\\\')
-        arg = arg.replace('"', '\\"')
+    # For backward compatibility, an argument already enclosed in double
+    # quotes is left unquoted, so that code which quotes arguments itself
+    # keeps working.  New code should pass arguments unquoted and let the
+    # module quote them as needed.
 
-        return '"' + arg + '"'
+    def _astring(self, arg):
+        if isinstance(arg, str):
+            arg = bytes(arg, self._encoding)
+        if _quoted.fullmatch(arg):
+            return arg
+        if arg and _non_astring_char.search(arg) is None:
+            return arg
+        return self._quote(arg)
 
+    def _list_mailbox(self, arg):
+        if isinstance(arg, str):
+            arg = bytes(arg, self._encoding)
+        if _quoted.fullmatch(arg):
+            return arg
+        if arg and _non_list_char.search(arg) is None:
+            return arg
+        return self._quote(arg)
 
     def _simple_command(self, name, *args):
 

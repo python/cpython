@@ -186,6 +186,9 @@ enclosed with either parentheses or double quotes) each string is quoted.
 However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
+In general, pass arguments unquoted and let the module quote them as needed.
+An argument that is already enclosed in double quotes is left unchanged,
+so that code which quotes arguments itself keeps working.
 
 Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
@@ -394,7 +397,7 @@ An :class:`IMAP4` instance has the following methods:
    .. versionadded:: 3.14
 
 
-.. method:: IMAP4.list([directory[, pattern]])
+.. method:: IMAP4.list(directory='', pattern='*')
 
    List mailbox names in *directory* matching *pattern*.  *directory* defaults to
    the top-level mail folder, and *pattern* defaults to match anything.  Returned
@@ -424,7 +427,7 @@ An :class:`IMAP4` instance has the following methods:
       The method no longer ignores silently arbitrary exceptions.
 
 
-.. method:: IMAP4.lsub(directory='""', pattern='*')
+.. method:: IMAP4.lsub(directory='', pattern='*')
 
    List subscribed mailbox names in directory matching pattern. *directory*
    defaults to the top level directory and *pattern* defaults to match any mailbox.
