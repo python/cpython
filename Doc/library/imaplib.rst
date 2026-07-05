@@ -89,6 +89,13 @@ There's also a subclass for secure connections:
    (potentially long-lived) structure.  Please read :ref:`ssl-security` for
    best practices.
 
+   .. note::
+
+      With the default *ssl_context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    The optional *timeout* parameter specifies a timeout in seconds for the
    connection attempt. If timeout is not given or is ``None``, the global default
    socket timeout is used.
@@ -195,9 +202,25 @@ upper bound (``'3:*'``).
 An :class:`IMAP4` instance has the following methods:
 
 
-.. method:: IMAP4.append(mailbox, flags, date_time, message)
+.. method:: IMAP4.append(mailbox, flags, date_time, message, *, translate_line_endings=True)
 
    Append *message* to named mailbox.
+
+   *flags* may be ``None`` or a string of IMAP flag tokens.  Multiple
+   flags are separated by spaces, for example ``r'\Seen \Answered'``.
+   If *flags* is not already enclosed in parentheses, parentheses are
+   added automatically.
+
+   If *translate_line_endings* is true (the default),
+   line endings in *message* are translated to CRLF.
+   Pass ``False`` to send the message literal exactly as given,
+   which is required to preserve messages that contain bare CR or LF.
+   In that case *message* must already use CRLF line endings as required
+   by :rfc:`3501`; for example, serialize :mod:`email` messages using
+   :class:`email.policy.SMTP`.
+
+   .. versionchanged:: next
+      Added the *translate_line_endings* parameter.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
@@ -581,6 +604,13 @@ An :class:`IMAP4` instance has the following methods:
    encryption on the IMAP connection.  Please read :ref:`ssl-security` for
    best practices.
 
+   .. note::
+
+      With the default *ssl_context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
@@ -695,6 +725,16 @@ The following attributes are defined on instances of :class:`IMAP4`:
    .. versionadded:: 3.5
 
 
+.. property:: IMAP4.file
+
+   Internal :class:`~io.BufferedReader` associated with the underlying socket.
+   This property is documented for legacy purposes but not part of the public
+   interface. The caller is responsible to ensure that the current file is
+   closed before changing it.
+
+   .. deprecated-removed:: 3.15 3.19
+
+
 .. _imap4-example:
 
 IMAP4 Example
@@ -714,4 +754,11 @@ retrieves and prints all messages::
        print('Message %s\n%s\n' % (num, data[0][1]))
    M.close()
    M.logout()
+
+.. note::
+
+   A ``FETCH`` response may contain additional or unsolicited data
+   (see :rfc:`3501`, section 7.4.2),
+   so production code should inspect the whole response
+   rather than rely on ``data[0][1]``.
 

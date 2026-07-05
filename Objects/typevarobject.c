@@ -1340,20 +1340,12 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
-    if (bound != NULL) {
-        bound = type_check(bound, "Bound must be a type.");
-        if (bound == NULL) {
-            return NULL;
-        }
-    }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *ps = (PyObject *)paramspec_alloc(
         name, bound, default_value, covariant, contravariant, infer_variance, module);
-    Py_XDECREF(bound);
     Py_DECREF(module);
     return ps;
 }
@@ -1634,23 +1626,12 @@ typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
-    if (Py_IsNone(bound)) {
-        bound = NULL;
-    }
-    if (bound != NULL) {
-        bound = type_check(bound, "Bound must be a type.");
-        if (bound == NULL) {
-            return NULL;
-        }
-    }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *result = (PyObject *)typevartuple_alloc(
         name, bound, default_value, covariant, contravariant, infer_variance, module);
-    Py_XDECREF(bound);
     Py_DECREF(module);
     return result;
 }
@@ -1983,8 +1964,12 @@ static PyObject *
 typealias_module(PyObject *self, void *Py_UNUSED(closure))
 {
     typealiasobject *ta = typealiasobject_CAST(self);
-    if (ta->module != NULL) {
-        return Py_NewRef(ta->module);
+    PyObject *module;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    module = Py_XNewRef(ta->module);
+    Py_END_CRITICAL_SECTION();
+    if (module != NULL) {
+        return module;
     }
     if (ta->compute_value != NULL) {
         PyObject* mod = PyFunction_GetModule(ta->compute_value);
@@ -1998,12 +1983,25 @@ typealias_module(PyObject *self, void *Py_UNUSED(closure))
     Py_RETURN_NONE;
 }
 
+static int
+typealias_set_module(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
+{
+    PyObject *old;
+    typealiasobject *ta = typealiasobject_CAST(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    old = ta->module;
+    ta->module = Py_XNewRef(value);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old);
+    return 0;
+}
+
 static PyGetSetDef typealias_getset[] = {
     {"__parameters__", typealias_parameters, NULL, NULL, NULL},
     {"__type_params__", typealias_type_params, NULL, NULL, NULL},
     {"__value__", typealias_value, NULL, NULL, NULL},
     {"evaluate_value", typealias_evaluate_value, NULL, NULL, NULL},
-    {"__module__", typealias_module, NULL, NULL, NULL},
+    {"__module__", typealias_module, typealias_set_module, NULL, NULL},
     {0}
 };
 
@@ -2203,7 +2201,9 @@ type checkers.\n\
 At runtime, Alias is an instance of TypeAliasType. The __name__\n\
 attribute holds the name of the type alias. The value of the type alias\n\
 is stored in the __value__ attribute. It is evaluated lazily, so the\n\
-value is computed only if the attribute is accessed.\n\
+value is computed only if the attribute is accessed. The __module__\n\
+attribute holds the name of the module in which the type alias was\n\
+defined; it can be assigned to.\n\
 \n\
 Type aliases can also be generic::\n\
 \n\
@@ -2292,8 +2292,9 @@ PyDoc_STRVAR(generic_class_getitem_doc,
 "Parameterizes a generic class.\n\
 \n\
 At least, parameterizing a generic class is the *main* thing this\n\
-method does. For example, for some generic class `Foo`, this is called\n\
-when we do `Foo[int]` - there, with `cls=Foo` and `params=int`.\n\
+method does.  For example, for some generic class `Foo`, this is\n\
+called when we do `Foo[int]` - there, with `cls=Foo` and\n\
+`params=int`.\n\
 \n\
 However, note that this method is also called when defining generic\n\
 classes in the first place with `class Foo[T]: ...`.\n\

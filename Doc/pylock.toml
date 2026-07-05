@@ -23,9 +23,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/b4/03/374bd9e31b58e8a
 
 [[packages]]
 name = "certifi"
-version = "2026.2.25"
-sdist = { url = "https://files.pythonhosted.org/packages/af/2d/7bf41579a8986e348fa033a31cdd0e4121114f6bce2457e8876010b092dd/certifi-2026.2.25.tar.gz", upload-time = 2026-02-25T02:54:17Z, size = 155029, hashes = { sha256 = "e887ab5cee78ea814d3472169153c2d12cd43b14bd03329a39a9c6e2e80bfba7" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/9a/3c/c17fb3ca2d9c3acff52e30b309f538586f9f5b9c9cf454f3845fc9af4881/certifi-2026.2.25-py3-none-any.whl", upload-time = 2026-02-25T02:54:15Z, size = 153684, hashes = { sha256 = "027692e4402ad994f1c42e52a4997a9763c646b73e4096e4d5d6db8af1d6f0fa" } }]
+version = "2026.4.22"
+sdist = { url = "https://files.pythonhosted.org/packages/25/ee/6caf7a40c36a1220410afe15a1cc64993a1f864871f698c0f93acb72842a/certifi-2026.4.22.tar.gz", upload-time = 2026-04-22T11:26:11Z, size = 137077, hashes = { sha256 = "8d455352a37b71bf76a79caa83a3d6c25afee4a385d632127b6afb3963f1c580" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/22/30/7cd8fdcdfbc5b869528b079bfb76dcdf6056b1a2097a662e5e8c04f42965/certifi-2026.4.22-py3-none-any.whl", upload-time = 2026-04-22T11:26:09Z, size = 135707, hashes = { sha256 = "3cb2210c8f88ba2318d29b0388d1023c8492ff72ecdde4ebdaddbb13a31b1c4a" } }]
 
 [[packages]]
 name = "charset-normalizer"
@@ -114,9 +114,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/8f/d7/9322c609343d929
 
 [[packages]]
 name = "idna"
-version = "3.11"
-sdist = { url = "https://files.pythonhosted.org/packages/6f/6d/0703ccc57f3a7233505399edb88de3cbd678da106337b9fcde432b65ed60/idna-3.11.tar.gz", upload-time = 2025-10-12T14:55:20Z, size = 194582, hashes = { sha256 = "795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/0e/61/66938bbb5fc52dbdf84594873d5b51fb1f7c7794e9c0f5bd885f30bc507b/idna-3.11-py3-none-any.whl", upload-time = 2025-10-12T14:55:18Z, size = 71008, hashes = { sha256 = "771a87f49d9defaf64091e6e6fe9c18d4833f140bd19464795bc32d966ca37ea" } }]
+version = "3.13"
+sdist = { url = "https://files.pythonhosted.org/packages/ce/cc/762dfb036166873f0059f3b7de4565e1b5bc3d6f28a414c13da27e442f99/idna-3.13.tar.gz", upload-time = 2026-04-22T16:42:42Z, size = 194210, hashes = { sha256 = "585ea8fe5d69b9181ec1afba340451fba6ba764af97026f92a91d4eef164a242" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/5d/13/ad7d7ca3808a898b4612b6fe93cde56b53f3034dcde235acb1f0e1df24c6/idna-3.13-py3-none-any.whl", upload-time = 2026-04-22T16:42:40Z, size = 68629, hashes = { sha256 = "892ea0cde124a99ce773decba204c5552b69c3c67ffd5f232eb7696135bc8bb3" } }]
 
 [[packages]]
 name = "imagesize"
@@ -132,9 +132,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f
 
 [[packages]]
 name = "linklint"
-version = "0.4.1"
-sdist = { url = "https://files.pythonhosted.org/packages/61/bc/9972ace8643a04a74210942717fd20c1c34d96079b59fd7790b4db56df7d/linklint-0.4.1.tar.gz", upload-time = 2026-03-27T10:48:40Z, size = 20588, hashes = { sha256 = "a5d291a0d8a7ab8b1f96f62bb7e1d9d2c79d8eceb934e2efc0235d6b2e77f19b" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/af/88/9c4865cdbd6f73fff668706072c421a329de79c3b69e0aa511679a2ff4f3/linklint-0.4.1-py3-none-any.whl", upload-time = 2026-03-27T10:48:38Z, size = 12186, hashes = { sha256 = "78ff4d23ff3d3c62837fa34f0dcb909593dea52a2a1f426307264f081a8b41b5" } }]
+version = "1.0.0"
+sdist = { url = "https://files.pythonhosted.org/packages/f3/59/a2bb261b3fc0e3bfdc9d3e6f8a37bdf1fb6eca8d992f23f55a83bf19acb1/linklint-1.0.0.tar.gz", upload-time = 2026-05-02T11:39:39Z, size = 21310, hashes = { sha256 = "52dc292f27b7eb4f3825d23ec1222d4a17bd116945b77c486406d97bb936e6c2" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/7b/78/98e52e4262416060a0eedc2e5514035cfcfc2fd962d09b84e27848c1aef3/linklint-1.0.0-py3-none-any.whl", upload-time = 2026-05-02T11:39:37Z, size = 12521, hashes = { sha256 = "bbb3f589ab65709cf23655ef6097bdc25180f80c0d42a4d9a1714366d2d3edab" } }]
 
 [[packages]]
 name = "markupsafe"

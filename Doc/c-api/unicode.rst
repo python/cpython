@@ -676,7 +676,8 @@ APIs:
 
    Append the string *right* to the end of *p_left*.
    *p_left* must point to a :term:`strong reference` to a Unicode object;
-   :c:func:`!PyUnicode_Append` releases ("steals") this reference.
+   :c:func:`!PyUnicode_Append` releases (":term:`steals <steal>`")
+   this reference.
 
    On error, set *\*p_left* to ``NULL`` and set an exception.
 
@@ -762,7 +763,7 @@ APIs:
    The string must not have been “used” yet.
    See :c:func:`PyUnicode_New` for details.
 
-   Return the number of written character, or return ``-1`` and raise an
+   Return the number of written characters, or return ``-1`` and raise an
    exception on error.
 
    .. versionadded:: 3.3
@@ -1174,7 +1175,7 @@ These are the UTF-8 codec APIs:
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      The return type is now ``const char *`` rather of ``char *``.
+      The return type is now ``const char *`` rather than ``char *``.
 
    .. versionchanged:: 3.10
       This function is a part of the :ref:`limited API <limited-c-api>`.
@@ -1196,7 +1197,7 @@ These are the UTF-8 codec APIs:
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      The return type is now ``const char *`` rather of ``char *``.
+      The return type is now ``const char *`` rather than ``char *``.
 
 
 UTF-32 Codecs
@@ -1953,7 +1954,7 @@ The following API is deprecated.
       whether you selected a "narrow" or "wide" Unicode version of Python at
       build time.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
 
 
 .. c:function:: int PyUnicode_READY(PyObject *unicode)

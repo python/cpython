@@ -117,7 +117,6 @@ for full functionality and the latest features.
    asyncio-eventloop.rst
    asyncio-future.rst
    asyncio-protocol.rst
-   asyncio-policy.rst
    asyncio-platforms.rst
    asyncio-extending.rst
 
@@ -128,6 +127,7 @@ for full functionality and the latest features.
    asyncio-api-index.rst
    asyncio-llapi-index.rst
    asyncio-dev.rst
+   asyncio-threading.rst
 
 .. note::
    The source code for asyncio can be found in :source:`Lib/asyncio/`.

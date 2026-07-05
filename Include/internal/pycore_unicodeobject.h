@@ -33,6 +33,7 @@ extern PyObject* _PyUnicode_ResizeCompact(
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
 PyAPI_FUNC(PyObject*) _PyUnicode_BinarySlice(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyUnicode_Repeat(PyObject *str, Py_ssize_t len);
 
 
 /* Generic helper macro to convert characters of different types.

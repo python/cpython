@@ -1288,6 +1288,15 @@ class GCTests(unittest.TestCase):
         # Use n // 2 just in case some other objects were collected.
         self.assertTrue(new_count - count > (n // 2))
 
+    @requires_gil_enabled('need generational GC')
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_heap_size(self):
+        count = _testinternalcapi.get_tracked_heap_size()
+        l = []
+        self.assertEqual(count + 1, _testinternalcapi.get_tracked_heap_size())
+        del l
+        self.assertEqual(count, _testinternalcapi.get_tracked_heap_size())
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):

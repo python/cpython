@@ -24,6 +24,30 @@ class TestDeque(unittest.TestCase):
 
         threading_helper.run_concurrently([mutate, copy_loop])
 
+    def test_index_race_in_ac(self):
+        # gh-150750: There was a c_default specified as `Py_SIZE(self)`,
+        # it was used without a critical section.
+
+        d = deque(range(100))
+
+        def index():
+            for _ in range(10000):
+                try:
+                    d.index(50)
+                except ValueError:
+                    pass
+
+        def mutate():
+            for _ in range(10000):
+                d.append(0)
+                d.clear()
+                d.extend(range(100))
+                d.appendleft(-1)
+
+        threading_helper.run_concurrently(
+            [index, *[mutate for _ in range(3)]],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

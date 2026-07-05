@@ -174,6 +174,7 @@ new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
 {
     compiler *c = PyMem_Calloc(1, sizeof(compiler));
     if (c == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     if (compiler_setup(c, mod, filename, pflags, optimize, arena, module) < 0) {
@@ -893,12 +894,15 @@ compiler_mod(compiler *c, mod_ty mod)
 {
     PyCodeObject *co = NULL;
     int addNone = mod->kind != Expression_kind;
+    assert(c->u == NULL);
     if (compiler_codegen(c, mod) < 0) {
         goto finally;
     }
     co = _PyCompile_OptimizeAndAssemble(c, addNone);
 finally:
-    _PyCompile_ExitScope(c);
+    if (c->u != NULL) {
+        _PyCompile_ExitScope(c);
+    }
     return co;
 }
 

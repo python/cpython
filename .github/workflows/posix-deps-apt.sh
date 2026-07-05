@@ -27,7 +27,7 @@ apt-get -yq --no-install-recommends install \
     zlib1g-dev
 
 # Workaround missing libmpdec-dev on ubuntu 24.04 by building mpdecimal
-# from source. ppa:ondrej/php (launchpad.net) are unreliable 
+# from source. ppa:ondrej/php (launchpad.net) are unreliable
 # (https://status.canonical.com) so fetch the tarball directly
 # from the upstream host.
 # https://www.bytereef.org/mpdecimal/

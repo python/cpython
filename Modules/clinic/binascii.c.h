@@ -372,7 +372,8 @@ PyDoc_STRVAR(binascii_a2b_ascii85__doc__,
 "  foldspaces\n"
 "    Allow \'y\' as a short form encoding four spaces.\n"
 "  adobe\n"
-"    Expect data to be wrapped in \'<~\' and \'~>\' as in Adobe Ascii85.\n"
+"    Expect data to be terminated with \'~>\' as in Adobe Ascii85, and\n"
+"    optionally accept leading \'<~\'.\n"
 "  ignorechars\n"
 "    A byte string containing characters to ignore from the input.\n"
 "  canonical\n"
@@ -492,7 +493,7 @@ PyDoc_STRVAR(binascii_b2a_ascii85__doc__,
 "  wrapcol\n"
 "    Split result into lines of provided width.\n"
 "  pad\n"
-"    Pad input to a multiple of 4 before encoding.\n"
+"    Retain zero-padding bytes at end of output.\n"
 "  adobe\n"
 "    Wrap result in \'<~\' and \'~>\' as in Adobe Ascii85.");
 
@@ -709,7 +710,7 @@ PyDoc_STRVAR(binascii_b2a_base85__doc__,
 "Base85-code line of data.\n"
 "\n"
 "  pad\n"
-"    Pad input to a multiple of 4 before encoding.");
+"    Retain zero-padding bytes at end of output.");
 
 #define BINASCII_B2A_BASE85_METHODDEF    \
     {"b2a_base85", _PyCFunction_CAST(binascii_b2a_base85), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base85__doc__},
@@ -1684,4 +1685,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b41544f39b0ef681 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=42dd48f323cbb118 input=a9049054013a1b77]*/

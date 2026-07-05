@@ -819,6 +819,7 @@ is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, I
 
 bitwise_or[expr_ty]:
     | a=bitwise_or '|' b=bitwise_xor { _PyAST_BinOp(a, BitOr, b, EXTRA) }
+    | invalid_bitwise_or
     | bitwise_xor
 
 bitwise_xor[expr_ty]:
@@ -827,6 +828,7 @@ bitwise_xor[expr_ty]:
 
 bitwise_and[expr_ty]:
     | a=bitwise_and '&' b=shift_expr { _PyAST_BinOp(a, BitAnd, b, EXTRA) }
+    | invalid_bitwise_and
     | shift_expr
 
 shift_expr[expr_ty]:
@@ -1638,3 +1640,17 @@ invalid_type_params:
         RAISE_SYNTAX_ERROR_STARTING_FROM(
             token,
             "Type parameter list cannot be empty")}
+
+invalid_bitwise_and:
+    | a=bitwise_and b='&' c='&' {
+        _PyPegen_tokens_are_adjacent(b, c)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'and' or '&' instead of '&&'?")
+        : NULL
+    }
+
+invalid_bitwise_or:
+    | a=bitwise_or b='|' c='|' {
+        _PyPegen_tokens_are_adjacent(b, c)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?")
+        : NULL
+    }

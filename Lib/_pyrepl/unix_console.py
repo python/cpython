@@ -34,7 +34,7 @@ import platform
 from collections.abc import Callable
 from dataclasses import dataclass
 from fcntl import ioctl
-from typing import TYPE_CHECKING, cast, overload
+from typing import TYPE_CHECKING, overload
 
 from . import terminfo
 from .console import Console, Event

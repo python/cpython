@@ -16,6 +16,8 @@ from .module_utils import extract_module_name, get_python_path_info
 
 
 class StackTraceCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
@@ -62,6 +64,7 @@ class CollapsedStackCollector(StackTraceCollector):
             for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")
+        return True
 
 
 class FlamegraphCollector(StackTraceCollector):
@@ -159,7 +162,7 @@ class FlamegraphCollector(StackTraceCollector):
             print(
                 "Warning: No functions found in profiling data. Check if sampling captured any data."
             )
-            return
+            return False
 
         html_content = self._create_flamegraph_html(flamegraph_data)
 
@@ -167,6 +170,7 @@ class FlamegraphCollector(StackTraceCollector):
             f.write(html_content)
 
         print(f"Flamegraph saved to: {filename}")
+        return True
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
@@ -698,6 +702,8 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         func_key = self._extract_func_key(node, self._baseline_collector._string_table)
         current_path = path + (func_key,) if func_key else path
 
+        baseline_self = 0
+        baseline_total = 0
         if func_key and current_path in baseline_stats:
             baseline_data = baseline_stats[current_path]
             baseline_self = baseline_data["self"] * scale

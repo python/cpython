@@ -253,9 +253,13 @@ class IMAP4:
         elif 'OK' in self.untagged_responses:
             self.state = 'NONAUTH'
         else:
-            raise self.error(self.welcome)
+            # A continuation ('+') greeting is returned as None; report its
+            # raw line, still held by the last match (gh-108280).
+            greeting = (self.welcome or self.mo.string).decode(
+                self._encoding, 'replace')
+            raise self.error('invalid greeting: ' + greeting)
 
-        self._get_capabilities()
+        self._refresh_capabilities()
         if __debug__:
             if self.debug >= 3:
                 self._mesg('CAPABILITIES: %r' % (self.capabilities,))
@@ -313,25 +317,34 @@ class IMAP4:
         self.host = host
         self.port = port
         self.sock = self._create_socket(timeout)
-        self._file = self.sock.makefile('rb')
-
+        # Since IMAP4 implements its own read() and readline() buffering,
+        # the '_imaplib_file' attribute is unused. Nonetheless it is kept
+        # and exposed solely for backward compatibility purposes.
+        self._imaplib_file = self.sock.makefile('rb')
 
     @property
     def file(self):
-        # The old 'file' attribute is no longer used now that we do our own
-        # read() and readline() buffering, with which it conflicts.
-        # As an undocumented interface, it should never have been accessed by
-        # external code, and therefore does not warrant deprecation.
-        # Nevertheless, we provide this property for now, to avoid suddenly
-        # breaking any code in the wild that might have been using it in a
-        # harmless way.
         import warnings
-        warnings.warn(
-            'IMAP4.file is unsupported, can cause errors, and may be removed.',
-            RuntimeWarning,
-            stacklevel=2)
-        return self._file
+        warnings._deprecated("IMAP4.file", remove=(3, 19))
+        return self._imaplib_file
 
+    @file.setter
+    def file(self, value):
+        import warnings
+        warnings._deprecated("IMAP4.file", remove=(3, 19))
+        # Ideally, we would want to close the previous file,
+        # but since we do not know how subclasses will use
+        # that setter, it is probably better to leave it to
+        # the caller.
+        self._imaplib_file = value
+
+    def _close_imaplib_file(self):
+        file = self._imaplib_file
+        if file is not None:
+            try:
+                file.close()
+            except OSError:
+                pass
 
     def read(self, size):
         """Read 'size' bytes from remote."""
@@ -417,7 +430,7 @@ class IMAP4:
 
     def shutdown(self):
         """Close I/O established in "open"."""
-        self._file.close()
+        self._close_imaplib_file()
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
         except OSError as exc:
@@ -474,12 +487,17 @@ class IMAP4:
     #       IMAP4 commands
 
 
-    def append(self, mailbox, flags, date_time, message):
+    def append(self, mailbox, flags, date_time, message, *,
+               translate_line_endings=True):
         """Append message to named mailbox.
 
         (typ, [data]) = <instance>.append(mailbox, flags, date_time, message)
 
                 All args except 'message' can be None.
+
+        If 'translate_line_endings' is true (the default), line endings in
+        'message' are translated to CRLF.  Pass false to send the message
+        literal exactly as given.
         """
         name = 'APPEND'
         if not mailbox:
@@ -493,8 +511,9 @@ class IMAP4:
             date_time = Time2Internaldate(date_time)
         else:
             date_time = None
-        literal = MapCRLF.sub(CRLF, message)
-        self.literal = literal
+        if translate_line_endings:
+            message = MapCRLF.sub(CRLF, message)
+        self.literal = message
         return self._simple_command(name, mailbox, flags, date_time)
 
 
@@ -524,6 +543,7 @@ class IMAP4:
         if typ != 'OK':
             raise self.error(dat[-1].decode('utf-8', 'replace'))
         self.state = 'AUTH'
+        self._refresh_capabilities()
         return typ, dat
 
 
@@ -703,8 +723,9 @@ class IMAP4:
         """
         typ, dat = self._simple_command('LOGIN', user, self._quote(password))
         if typ != 'OK':
-            raise self.error(dat[-1])
+            raise self.error(dat[-1].decode('UTF-8', 'replace'))
         self.state = 'AUTH'
+        self._refresh_capabilities()
         return typ, dat
 
 
@@ -921,9 +942,10 @@ class IMAP4:
             ssl_context = ssl._create_stdlib_context()
         typ, dat = self._simple_command(name)
         if typ == 'OK':
+            self._close_imaplib_file()
             self.sock = ssl_context.wrap_socket(self.sock,
                                                 server_hostname=self.host)
-            self._file = self.sock.makefile('rb')
+            self._imaplib_file = self.sock.makefile('rb')
             self._tls_established = True
             self._get_capabilities()
         else:
@@ -1191,6 +1213,15 @@ class IMAP4:
         self.capabilities = tuple(dat.split())
 
 
+    def _refresh_capabilities(self):
+        # Use a CAPABILITY response sent by the server, or ask for it.
+        if 'CAPABILITY' in self.untagged_responses:
+            dat = self.untagged_responses.pop('CAPABILITY')[-1]
+            self.capabilities = tuple(str(dat, self._encoding).upper().split())
+        else:
+            self._get_capabilities()
+
+
     def _get_response(self, start_timeout=False):
 
         # Read response and store.
@@ -1269,6 +1300,10 @@ class IMAP4:
                 # Read trailer - possibly containing another literal
 
                 dat = self._get_line()
+
+                # Skip a blank line that some servers send after a literal.
+                if dat == b'':
+                    dat = self._get_line()
 
             self._append_untagged(typ, dat)
 
@@ -1680,7 +1715,7 @@ class IMAP4_stream(IMAP4):
         self.host = None        # For compatibility with parent class
         self.port = None
         self.sock = None
-        self._file = None
+        self._imaplib_file = None
         self.process = subprocess.Popen(self.command,
             bufsize=DEFAULT_BUFFER_SIZE,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -1834,9 +1869,8 @@ def Time2Internaldate(date_time):
         dt = datetime.fromtimestamp(date_time,
                                     timezone.utc).astimezone()
     elif isinstance(date_time, tuple):
-        try:
-            gmtoff = date_time.tm_gmtoff
-        except AttributeError:
+        gmtoff = getattr(date_time, "tm_gmtoff", None)
+        if gmtoff is None:
             if time.daylight:
                 dst = date_time[8]
                 if dst == -1:

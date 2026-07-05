@@ -14,6 +14,14 @@ used to wrap these libraries in pure Python.
 
 .. include:: ../includes/optional-module.rst
 
+.. warning::
+
+   :mod:`!ctypes` provides low-level access to native libraries and the
+   process's memory, bypassing Python's safety mechanisms and allowing
+   execution of arbitrary native code.
+   Incorrect use can corrupt data and objects, reveal sensitive information,
+   cause crashes, or otherwise compromise the running process.
+
 
 .. _ctypes-ctypes-tutorial:
 
@@ -198,10 +206,8 @@ argument values::
    OSError: exception: access violation reading 0x00000020
    >>>
 
-There are, however, enough ways to crash Python with :mod:`!ctypes`, so you
-should be careful anyway.  The :mod:`faulthandler` module can be helpful in
-debugging crashes (e.g. from segmentation faults produced by erroneous C library
-calls).
+The :mod:`faulthandler` module can help debug crashes,
+such as segmentation faults produced by erroneous C library calls.
 
 ``None``, integers, bytes objects and (unicode) strings are the only native
 Python objects that can directly be used as parameters in these function calls.
@@ -370,15 +376,19 @@ in both C and ``libffi``, the following complex types are available:
    * - :class:`c_float_complex`
      - :c:expr:`float complex`
      - :py:class:`complex`
-     - ``'F'``
+     - ``'Zf'``
    * - :class:`c_double_complex`
      - :c:expr:`double complex`
      - :py:class:`complex`
-     - ``'D'``
+     - ``'Zd'``
    * - :class:`c_longdouble_complex`
      - :c:expr:`long double complex`
      - :py:class:`complex`
-     - ``'G'``
+     - ``'Zg'``
+
+.. versionchanged:: 3.15
+   The :py:attr:`~_SimpleCData._type_` types ``F``, ``D`` and ``G`` have been
+   replaced with ``Zf``, ``Zd`` and ``Zg``.
 
 
 All these types can be created by calling them with an optional initializer of
@@ -541,7 +551,7 @@ object with an :attr:`!_as_parameter_` attribute::
    >>>
 
 If you don't want to store the instance's data in the :attr:`!_as_parameter_`
-instance variable, you could define a :class:`property` which makes the
+instance variable, you could define a :deco:`property` which makes the
 attribute available on request.
 
 
@@ -2568,8 +2578,7 @@ Fundamental data types
 
    .. attribute:: _type_
 
-      Class attribute that contains an internal type code, as a
-      single-character string.
+      Class attribute that contains an internal type code, as a string.
       See :ref:`ctypes-fundamental-data-types` for a summary.
 
       Types marked \* in the summary may be (or always are) aliases of a
@@ -2583,7 +2592,7 @@ Fundamental data types
 
       .. seealso::
 
-         The :mod:`array` and :ref:`struct <format-characters>` modules,
+         The :mod:`array` and :ref:`struct <type-codes>` modules,
          as well as third-party modules like `numpy <https://numpy.org/doc/stable/reference/arrays.interface.html#object.__array_interface__>`__,
          use similar -- but slightly different -- type codes.
 
@@ -3167,6 +3176,8 @@ Arrays and pointers
    Array elements can be read and written using standard
    subscript and slice accesses; for slice reads, the resulting object is
    *not* itself an :class:`Array`.
+
+   Arrays are :ref:`generic <generics>` over the type of their elements.
 
 
    .. attribute:: _length_

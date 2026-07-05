@@ -191,6 +191,8 @@ struct gc_generation_stats {
     Py_ssize_t candidates;
     // Total duration of the collection in seconds:
     double duration;
+    /* heap_size on the start of the collection */
+    Py_ssize_t heap_size;
 };
 
 #ifdef Py_GIL_DISABLED
@@ -226,7 +228,6 @@ struct _gc_runtime_state {
     /* linked lists of container objects */
 #ifndef Py_GIL_DISABLED
     struct gc_generation generations[NUM_GENERATIONS];
-    PyGC_Head *generation0;
 #else
     struct gc_generation young;
     struct gc_generation old[2];
@@ -234,6 +235,12 @@ struct _gc_runtime_state {
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_stats *generation_stats;
+#ifdef Py_GIL_DISABLED
+    /* Protects generation_stats between gc_get_stats_impl() (reader) and
+       gc_collect_main() (writer); both resolve the stats slot (buffer index)
+       under this lock so they agree on which slot to touch (gh-151646). */
+    PyMutex stats_mutex;
+#endif
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when
@@ -243,6 +250,9 @@ struct _gc_runtime_state {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
+
+    /* The number of live objects. */
+    Py_ssize_t heap_size;
 
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
@@ -259,16 +269,8 @@ struct _gc_runtime_state {
 #ifdef Py_GIL_DISABLED
     /* True if gc.freeze() has been used. */
     int freeze_active;
-
-    /* Memory usage of the process (RSS + swap) after last GC. */
-    Py_ssize_t last_mem;
-
-    /* This accumulates the new object count whenever collection is deferred
-       due to the RSS increase condition not being meet.  Reset on collection. */
-    Py_ssize_t deferred_count;
-
-    /* Mutex held for gc_should_collect_mem_usage(). */
-    PyMutex mutex;
+#else
+    PyGC_Head *generation0;
 #endif
 };
 
@@ -278,7 +280,8 @@ struct _gc_runtime_state {
         { .threshold = 2000, }, \
         { .threshold = 10, }, \
         { .threshold = 10, }, \
-    },
+    }, \
+    .heap_size = 0,
 #else
 #define GC_GENERATION_INIT \
     .young = { .threshold = 2000, }, \
@@ -311,8 +314,6 @@ struct _import_runtime_state {
            Modules are added there and looked up in _imp.find_extension(). */
         struct _Py_hashtable_t *hashtable;
     } extensions;
-    /* Package context -- the full module name for package imports */
-    const char * pkgcontext;
 };
 
 struct _import_state {
@@ -352,7 +353,15 @@ struct _import_state {
     int lazy_imports_mode;
     PyObject *lazy_imports_filter;
     PyObject *lazy_importing_modules;
+    // The set stored in sys.lazy_modules if values that have been
+    // lazily imported. This value is only for debugging/introspection
+    // purposes and is not used by the runtime.
     PyObject *lazy_modules;
+    // A dict mapping package names to a set of submodule names that
+    // have been imported lazily from packages which have been imported
+    // lazily. When the package is reified we need to add a
+    // LazyImportObject which refers to the submodule on the module.
+    PyObject *lazy_pending_submodules;
 #ifdef Py_GIL_DISABLED
     PyMutex lazy_mutex;
 #endif
@@ -827,6 +836,8 @@ struct _Py_unique_id_pool {
 
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
+#define _PyInterpreterGuard_GUARDS_NOT_ALLOWED UINTPTR_MAX
+
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
@@ -1002,7 +1013,7 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    PyObject *common_consts[NUM_COMMON_CONSTANTS];
+    _PyStackRef common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     bool compiling;
 
@@ -1052,6 +1063,11 @@ struct _is {
     PyMutex pystats_mutex;
 #endif
 #endif
+
+    // The number of remaining finalization guards.
+    // If this is _PyInterpreterGuard_GUARDS_NOT_ALLOWED, then finalization
+    // guards can no longer be created.
+    uintptr_t finalization_guards;
 
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;

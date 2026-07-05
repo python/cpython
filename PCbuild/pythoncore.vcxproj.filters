@@ -228,6 +228,12 @@
     <ClInclude Include="..\Include\sliceobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\slots.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\slots_generated.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\stats.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -844,6 +850,12 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_slots.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_slots_generated.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_strhex.h">
@@ -1481,6 +1493,9 @@
     <ClCompile Include="..\Python\jit.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\jit_publish.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1573,6 +1588,12 @@
     </ClCompile>
     <ClCompile Include="..\Python\specialize.c">
       <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\slots.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\slots_generated.c">
+      <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\structmember.c">
       <Filter>Python</Filter>

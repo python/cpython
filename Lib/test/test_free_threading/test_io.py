@@ -67,6 +67,10 @@ class ThreadSafetyMixin:
             barrier.wait()
             b.readinto(into)
 
+        def peek(barrier, b, *ignore):
+            barrier.wait()
+            b.peek()
+
         def close(barrier, b, *ignore):
             barrier.wait()
             b.close()
@@ -103,6 +107,7 @@ class ThreadSafetyMixin:
         self.check([truncate] + [readline] * 10, self.ioclass(b'0\n'*20480))
         self.check([truncate] + [readlines] * 10, self.ioclass(b'0\n'*20480))
         self.check([truncate] + [readinto] * 10, self.ioclass(b'0\n'*204800), bytearray(b'0\n'*204800))
+        self.check([truncate] + [peek] * 10, self.ioclass(b'0\n'*204800))
         self.check([close] + [write] * 10, self.ioclass())
         self.check([truncate] + [getvalue] * 10, self.ioclass(b'0\n'*204800))
         self.check([truncate] + [getbuffer] * 10, self.ioclass(b'0\n'*204800))

@@ -743,6 +743,10 @@ _PyCode_New(struct _PyCodeConstructor *con)
         return NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    co->_co_unique_id = _Py_INVALID_UNIQUE_ID;
+#endif
+
     if (init_code(co, con) < 0) {
         Py_DECREF(co);
         return NULL;
@@ -2128,10 +2132,6 @@ code_returns_only_none(PyCodeObject *co)
     int len = (int)Py_SIZE(co);
     assert(len > 0);
 
-    // The last instruction either returns or raises.  We can take advantage
-    // of that for a quick exit.
-    _Py_CODEUNIT final = _Py_GetBaseCodeUnit(co, len-1);
-
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
     int none_index = 0;
@@ -2140,45 +2140,25 @@ code_returns_only_none(PyCodeObject *co)
             break;
         }
     }
-    if (none_index == nconsts) {
-        // None wasn't there, which means there was no implicit return,
-        // "return", or "return None".
-
-        // That means there must be
-        // an explicit return (non-None), or it only raises.
-        if (IS_RETURN_OPCODE(final.op.code)) {
-            // It was an explicit return (non-None).
-            return 0;
+    /* We don't worry about EXTENDED_ARG for now. */
+    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+        if (!IS_RETURN_OPCODE(inst.op.code)) {
+            continue;
         }
-        // It must end with a raise then.  We still have to walk the
-        // bytecode to see if there's any explicit return (non-None).
-        assert(IS_RAISE_OPCODE(final.op.code));
-        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
-            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-            if (IS_RETURN_OPCODE(inst.op.code)) {
-                // We alraedy know it isn't returning None.
-                return 0;
-            }
+        assert(i != 0);
+        _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
+        if (prev.op.code == LOAD_COMMON_CONSTANT &&
+            prev.op.arg == CONSTANT_NONE)
+        {
+            continue;
         }
-        // It must only raise.
-    }
-    else {
-        // Walk the bytecode, looking for RETURN_VALUE.
-        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
-            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-            if (IS_RETURN_OPCODE(inst.op.code)) {
-                assert(i != 0);
-                // Ignore it if it returns None.
-                _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
-                if (prev.op.code == LOAD_CONST) {
-                    // We don't worry about EXTENDED_ARG for now.
-                    if (prev.op.arg == none_index) {
-                        continue;
-                    }
-                }
-                return 0;
-            }
+        if (none_index < nconsts && prev.op.code == LOAD_CONST
+            && prev.op.arg == none_index)
+        {
+            continue;
         }
+        return 0;
     }
     return 1;
 }
@@ -2473,15 +2453,17 @@ code_dealloc(PyObject *self)
     FT_CLEAR_WEAKREFS(self, co->co_weakreflist);
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
-    // The first element always points to the mutable bytecode at the end of
-    // the code object, which will be freed when the code object is freed.
-    for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
-        char *entry = co->co_tlbc->entries[i];
-        if (entry != NULL) {
-            PyMem_Free(entry);
+    if (co->co_tlbc != NULL) {
+        // The first element always points to the mutable bytecode at the end of
+        // the code object, which will be freed when the code object is freed.
+        for (Py_ssize_t i = 1; i < co->co_tlbc->size; i++) {
+            char *entry = co->co_tlbc->entries[i];
+            if (entry != NULL) {
+                PyMem_Free(entry);
+            }
         }
+        PyMem_Free(co->co_tlbc);
     }
-    PyMem_Free(co->co_tlbc);
 #endif
     PyObject_Free(co);
 }
@@ -2864,12 +2846,13 @@ code._varname_from_oparg
 
 (internal-only) Return the local variable name for the given oparg.
 
-WARNING: this method is for internal use only and may change or go away.
+WARNING: this method is for internal use only and may change or go
+away.
 [clinic start generated code]*/
 
 static PyObject *
 code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
-/*[clinic end generated code: output=1fd1130413184206 input=c5fa3ee9bac7d4ca]*/
+/*[clinic end generated code: output=1fd1130413184206 input=6ba7d6df0d566463]*/
 {
     PyObject *name = PyTuple_GetItem(self->co_localsplusnames, oparg);
     if (name == NULL) {

@@ -1937,7 +1937,6 @@ def _main(args=None):
     import pprint
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files',
-        color=True,
     )
     parser.add_argument(
         'pickle_file',

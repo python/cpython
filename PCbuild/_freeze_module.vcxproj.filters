@@ -265,6 +265,9 @@
     <ClCompile Include="..\Python\jit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\jit_publish.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\lazyimportobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -413,6 +416,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\remote_debugging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\slots.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\slots_generated.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\specialize.c">
