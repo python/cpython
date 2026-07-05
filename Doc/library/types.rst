@@ -398,10 +398,9 @@ Standard names are defined for the following types:
       ``MappingProxyType`` is a wrapper around a mapping that renders
       the mapping immutable to the viewer of the proxy
       without affecting the underlying container.
-      ``MappingProxyType`` can expose its internal mapping in some rare cases.
+      ``MappingProxyType`` can expose its internal mutable mapping in some rare cases.
 
-      While ``frozendict`` is a concrete container type
-      that actually holds data that cannot be changed in any way.
+      On the other hand, ``frozendict`` is a concrete immutable mapping.
 
    .. versionadded:: 3.3
 
