@@ -505,7 +505,6 @@ instantiation, of which this module provides three different variants:
       as a default.
 
 
-
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
 the current directory::
