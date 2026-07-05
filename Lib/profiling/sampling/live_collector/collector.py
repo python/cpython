@@ -9,7 +9,7 @@ import site
 import sys
 import sysconfig
 import time
-import _colorize
+lazy import _colorize
 
 from ..collector import Collector, extract_lineno
 from ..constants import (
@@ -18,9 +18,6 @@ from ..constants import (
     THREAD_STATUS_UNKNOWN,
     THREAD_STATUS_GIL_REQUESTED,
     THREAD_STATUS_HAS_EXCEPTION,
-    PROFILING_MODE_CPU,
-    PROFILING_MODE_GIL,
-    PROFILING_MODE_WALL,
 )
 from .constants import (
     MICROSECONDS_PER_SECOND,

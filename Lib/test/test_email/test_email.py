@@ -4970,6 +4970,128 @@ class TestCharset(unittest.TestCase):
         except KeyError:
             pass
 
+    def test_attributes(self):
+        from email import charset
+        c = Charset()
+        self.assertEqual(c.input_charset, 'us-ascii')
+        self.assertEqual(c.header_encoding, None)
+        self.assertEqual(c.body_encoding, None)
+        self.assertEqual(c.output_charset, 'us-ascii')
+        self.assertEqual(c.input_codec, None)
+        self.assertEqual(c.output_codec, None)
+
+        c = Charset('us-ascii')
+        self.assertEqual(c.input_charset, 'us-ascii')
+        self.assertEqual(c.header_encoding, None)
+        self.assertEqual(c.body_encoding, None)
+        self.assertEqual(c.output_charset, 'us-ascii')
+        self.assertEqual(c.input_codec, None)
+        self.assertEqual(c.output_codec, None)
+
+        c = Charset('utf8')
+        self.assertEqual(c.input_charset, 'utf-8')
+        self.assertEqual(c.header_encoding, charset.SHORTEST)
+        self.assertEqual(c.body_encoding, charset.BASE64)
+        self.assertEqual(c.output_charset, 'utf-8')
+        self.assertEqual(c.input_codec, 'utf-8')
+        self.assertEqual(c.output_codec, 'utf-8')
+
+        c = Charset('latin1')
+        self.assertEqual(c.input_charset, 'iso-8859-1')
+        self.assertEqual(c.header_encoding, charset.QP)
+        self.assertEqual(c.body_encoding, charset.QP)
+        self.assertEqual(c.output_charset, 'iso-8859-1')
+        self.assertEqual(c.input_codec, 'iso-8859-1')
+        self.assertEqual(c.output_codec, 'iso-8859-1')
+
+        c = Charset('latin9')
+        self.assertEqual(c.input_charset, 'iso-8859-15')
+        self.assertEqual(c.header_encoding, charset.QP)
+        self.assertEqual(c.body_encoding, charset.QP)
+        self.assertEqual(c.output_charset, 'iso-8859-15')
+        self.assertEqual(c.input_codec, 'iso-8859-15')
+        self.assertEqual(c.output_codec, 'iso-8859-15')
+
+        c = Charset('cyrillic')
+        self.assertEqual(c.input_charset, 'iso-8859-5')
+        self.assertEqual(c.header_encoding, charset.SHORTEST)
+        self.assertEqual(c.body_encoding, charset.BASE64)
+        self.assertEqual(c.output_charset, 'iso-8859-5')
+        self.assertEqual(c.input_codec, 'iso-8859-5')
+        self.assertEqual(c.output_codec, 'iso-8859-5')
+
+        c = Charset('cp1251')
+        self.assertEqual(c.input_charset, 'windows-1251')
+        self.assertEqual(c.header_encoding, charset.SHORTEST)
+        self.assertEqual(c.body_encoding, charset.BASE64)
+        self.assertEqual(c.output_charset, 'windows-1251')
+        self.assertEqual(c.input_codec, 'windows-1251')
+        self.assertEqual(c.output_codec, 'windows-1251')
+
+        c = Charset('cp1252')
+        self.assertEqual(c.input_charset, 'windows-1252')
+        self.assertEqual(c.header_encoding, charset.QP)
+        self.assertEqual(c.body_encoding, charset.QP)
+        self.assertEqual(c.output_charset, 'windows-1252')
+        self.assertEqual(c.input_codec, 'windows-1252')
+        self.assertEqual(c.output_codec, 'windows-1252')
+
+        c = Charset('eucjp')
+        self.assertEqual(c.input_charset, 'euc-jp')
+        self.assertEqual(c.header_encoding, charset.BASE64)
+        self.assertEqual(c.body_encoding, None)
+        self.assertEqual(c.output_charset, 'iso-2022-jp')
+        self.assertEqual(c.input_codec, 'euc-jp')
+        self.assertEqual(c.output_codec, 'iso-2022-jp')
+
+        c = Charset('cp949')
+        self.assertEqual(c.input_charset, 'ks_c_5601-1987')
+        self.assertEqual(c.header_encoding, charset.SHORTEST)
+        self.assertEqual(c.body_encoding, charset.BASE64)
+        self.assertEqual(c.output_charset, 'ks_c_5601-1987')
+        self.assertEqual(c.input_codec, 'ks_c_5601-1987')
+        self.assertEqual(c.output_codec, 'ks_c_5601-1987')
+
+        c = Charset('gb2312')
+        self.assertEqual(c.input_charset, 'gb2312')
+        self.assertEqual(c.header_encoding, charset.BASE64)
+        self.assertEqual(c.body_encoding, charset.BASE64)
+        self.assertEqual(c.output_charset, 'gb2312')
+        self.assertEqual(c.input_codec, 'gb2312')
+        self.assertEqual(c.output_codec, 'gb2312')
+
+        c = Charset('big5')
+        self.assertEqual(c.input_charset, 'big5')
+        self.assertEqual(c.header_encoding, charset.BASE64)
+        self.assertEqual(c.body_encoding, charset.BASE64)
+        self.assertEqual(c.output_charset, 'big5')
+        self.assertEqual(c.input_codec, 'big5')
+        self.assertEqual(c.output_codec, 'big5')
+
+    def test_user_charsets(self):
+        from email import charset
+        c = Charset('fake0')
+        self.assertEqual(c.input_charset, 'fake0')
+        self.assertEqual(c.header_encoding, charset.SHORTEST)
+        self.assertEqual(c.body_encoding, charset.BASE64)
+        self.assertEqual(c.output_charset, 'fake0')
+        self.assertEqual(c.input_codec, 'fake0')
+        self.assertEqual(c.output_codec, 'fake0')
+
+        charset.add_alias('fake1', 'mime-fake')
+        charset.add_alias('output-mime-fake', 'output-mime-fake-alias')
+        charset.add_codec('mime-fake', 'fakecodec')
+        charset.add_codec('output-mime-fake-alias', 'outputfakecodec')
+        charset.add_charset('mime-fake', charset.QP, None, 'output-mime-fake')
+
+        c = Charset('fake1')
+        self.assertEqual(c.input_charset, 'mime-fake')
+        self.assertEqual(c.header_encoding, charset.QP)
+        self.assertEqual(c.body_encoding, None)
+        self.assertEqual(c.output_charset, 'output-mime-fake-alias')
+        self.assertEqual(c.input_codec, 'fakecodec')
+        self.assertEqual(c.output_codec, 'outputfakecodec')
+
     def test_codec_encodeable(self):
         eq = self.assertEqual
         # Make sure us-ascii = no Unicode conversion
@@ -4995,15 +5117,8 @@ class TestCharset(unittest.TestCase):
         # Try the convert argument, where input codec != output codec
         c = Charset('euc-jp')
         # With apologies to Tokio Kikuchi ;)
-        # XXX FIXME
-##         try:
-##             eq('\x1b$B5FCO;~IW\x1b(B',
-##                c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7'))
-##             eq('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7',
-##                c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7', False))
-##         except LookupError:
-##             # We probably don't have the Japanese codecs installed
-##             pass
+        eq('\x1b$B5FCO;~IW\x1b(B',
+           c.body_encode('\u83ca\u5730\u6642\u592b'))
         # Testing SF bug #625509, which we have to fake, since there are no
         # built-in encodings where the header encoding is QP but the body
         # encoding is not.
@@ -5016,6 +5131,11 @@ class TestCharset(unittest.TestCase):
         charset = Charset('us-ascii')
         self.assertEqual(str(charset), 'us-ascii')
         self.assertRaises(errors.CharsetError, Charset, 'asc\xffii')
+
+    def test_bytes_charset_name(self):
+        charset = Charset(b'us-ascii')
+        self.assertEqual(str(charset), 'us-ascii')
+        self.assertRaises(errors.CharsetError, Charset, b'asc\xffii')
 
 
 

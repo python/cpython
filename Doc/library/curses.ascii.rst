@@ -114,7 +114,7 @@ C library:
 
 .. function:: isblank(c)
 
-   Checks for an ASCII whitespace character; space or horizontal tab.
+   Checks for an ASCII blank character; space or horizontal tab.
 
 
 .. function:: iscntrl(c)
@@ -130,7 +130,7 @@ C library:
 
 .. function:: isgraph(c)
 
-   Checks for ASCII any printable character except space.
+   Checks for any ASCII printable character except space.
 
 
 .. function:: islower(c)
@@ -145,7 +145,7 @@ C library:
 
 .. function:: ispunct(c)
 
-   Checks for any printable ASCII character which is not a space or an alphanumeric
+   Checks for any ASCII printable character which is not a space or an alphanumeric
    character.
 
 
@@ -168,7 +168,8 @@ C library:
 
 .. function:: isctrl(c)
 
-   Checks for an ASCII control character (ordinal values 0 to 31).
+   Checks for an ASCII control character (ordinal values 0 to 31).  Unlike
+   :func:`iscntrl`, this does not include the delete character (0x7f).
 
 
 .. function:: ismeta(c)
