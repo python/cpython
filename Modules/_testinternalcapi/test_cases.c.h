@@ -1995,7 +1995,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2521,7 +2521,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2614,7 +2614,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2703,7 +2703,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2814,7 +2814,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -2928,7 +2928,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -3259,7 +3259,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -3771,7 +3771,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4190,7 +4190,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4310,7 +4310,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4432,7 +4432,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4567,7 +4567,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4644,7 +4644,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -4948,7 +4948,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -5026,7 +5026,7 @@
             {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -7289,7 +7289,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -7471,7 +7471,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                int err = check_periodics(tstate);
+                int err = check_periodics_at_end(tstate, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (err != 0) {
                     JUMP_TO_LABEL(error);
@@ -9250,12 +9250,12 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
+            // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                PyDictValues *ivs = _PyObject_InlineValues(owner_o);
-                if (!FT_ATOMIC_LOAD_UINT8(ivs->valid)) {
+                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
@@ -9446,12 +9446,12 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
+            // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                PyDictValues *ivs = _PyObject_InlineValues(owner_o);
-                if (!FT_ATOMIC_LOAD_UINT8(ivs->valid)) {
+                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
