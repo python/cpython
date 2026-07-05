@@ -5197,7 +5197,7 @@ os_listdrives_impl(PyObject *module)
 
 #endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listvolumes
@@ -5260,7 +5260,7 @@ os_listvolumes_impl(PyObject *module)
     return result;
 }
 
-#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
