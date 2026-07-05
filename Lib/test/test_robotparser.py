@@ -773,51 +773,23 @@ class HttpErrorsTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         self.assertFalse(parser.can_fetch("*", url + '/path/file.html'))
 
 
-class UserAgentRobotHandler(BaseHTTPRequestHandler):
+class UserAgentSiteTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
 
-    def do_GET(self):
-        if self.headers.get('User-Agent').startswith('Python-urllib'):
-            self.send_error(403, "Forbidden access")
-        else:
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"User-agent: *\nDisallow:")
+    class RobotHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.headers.get('User-Agent').startswith('Python-urllib'):
+                self.send_error(403, "Forbidden access")
+            else:
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"User-agent: *\nDisallow:")
 
-    def log_message(self, format, *args):
-        pass
+        def log_message(self, format, *args):
+            pass
 
-
-@unittest.skipUnless(
-    support.has_socket_support,
-    "Socket server requires working socket."
-)
-class UserAgentSiteTestCase(unittest.TestCase):
-
-    def setUp(self):
-        # clear _opener global variable
-        self.addCleanup(urllib.request.urlcleanup)
-
-        self.server = HTTPServer((socket_helper.HOST, 0), UserAgentRobotHandler)
-
-        self.t = threading.Thread(
-            name='HTTPServer serving',
-            target=self.server.serve_forever,
-            # Short poll interval to make the test finish quickly.
-            # Time between requests is short enough that we won't wake
-            # up spuriously too many times.
-            kwargs={'poll_interval':0.01})
-        self.t.daemon = True  # In case this function raises.
-        self.t.start()
-
-    def tearDown(self):
-        self.server.shutdown()
-        self.t.join()
-        self.server.server_close()
-
-    @threading_helper.reap_threads
     def testUserAgentFilteringSite(self):
         addr = self.server.server_address
-        url = 'http://' + socket_helper.HOST + ':' + str(addr[1])
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
         robots_url = url + "/robots.txt"
         file_url = url + "/document"
         parser = urllib.robotparser.RobotFileParser()

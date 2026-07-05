@@ -21,18 +21,21 @@ website that published the :file:`robots.txt` file.  For more details on the
 structure of :file:`robots.txt` files, see :rfc:`9309`.
 
 
-.. class:: RobotFileParser(url_or_request='')
+.. class:: RobotFileParser(url='')
 
    This class provides methods to read, parse and answer questions about the
-   :file:`robots.txt` file at *url* or a :class:`urllib.request.Request` object
-   with additional user-agent headers populated.
+   :file:`robots.txt` file at *url* or a :class:`urllib.request.Request` object.
 
+   .. versionchanged:: 3.16
+     *url* parameter can be a :class:`urllib.request.Request` object.
 
-   .. method:: set_url(url_or_request)
+   .. method:: set_url(url)
 
       Sets the URL referring to a :file:`robots.txt` file or a
-      :class:`urllib.request.Request` object with additional user-agent headers
-      populated.
+      :class:`urllib.request.Request` object.
+
+      .. versionchanged:: 3.16
+        *url* parameter can be a :class:`urllib.request.Request` object.
 
    .. method:: read()
 
@@ -114,9 +117,9 @@ object with additional user-agent headers populated::
    >>> import urllib.robotparser
    >>> import urllib.request
    >>> rp = urllib.robotparser.RobotFileParser()
-   >>> rp.set_url(urllib.request.Request("http://en.wikipedia.org/robots.txt", headers={"User-Agent": "IsraBot"}))
+   >>> rp.set_url(urllib.request.Request("http://www.pythontest.net/robots.txt", headers={"User-Agent": "IsraBot"}))
    >>> rp.read()
-   >>> rp.can_fetch("*", "https://en.wikipedia.org/")
+   >>> rp.can_fetch("*", "http://www.pythontest.net/")
    True
-   >>> rp.can_fetch("*", "https://en.wikipedia.org/trap/")
+   >>> rp.can_fetch("*", "https://www.pythontest.net/no-robots-here/")
    False
