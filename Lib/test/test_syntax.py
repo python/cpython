@@ -324,7 +324,7 @@ SyntaxError: did you forget parentheses around the comprehension target?
 Traceback (most recent call last):
 SyntaxError: did you forget parentheses around the comprehension target?
 
->>> f{x,y for x,y in range(100)}
+>>> ${x,y for x,y in range(100)}
 Traceback (most recent call last):
 SyntaxError: did you forget parentheses around the comprehension target?
 
@@ -1550,71 +1550,63 @@ Incomplete dictionary literals
 
 Incomplete frozen dictionary literals
 
-   >>> f{1:2, 3:4, 5}
+   >>> ${1:2, 3:4, 5}
    Traceback (most recent call last):
    SyntaxError: ':' expected after dictionary key
 
-   >>> f{1:2, 3:4, 5:}
+   >>> ${1:2, 3:4, 5:}
    Traceback (most recent call last):
    SyntaxError: expression expected after dictionary key and ':'
 
-   >>> f{1: *12+1, 23: 1}
+   >>> ${1: *12+1, 23: 1}
    Traceback (most recent call last):
    SyntaxError: cannot use a starred expression in a dictionary value
 
-   >>> f{1: *12+1}
+   >>> ${1: *12+1}
    Traceback (most recent call last):
    SyntaxError: cannot use a starred expression in a dictionary value
 
-   >>> f{1: 23, 1: *12+1}
+   >>> ${1: 23, 1: *12+1}
    Traceback (most recent call last):
    SyntaxError: cannot use a starred expression in a dictionary value
 
-   >>> f{1:}
+   >>> ${1:}
    Traceback (most recent call last):
    SyntaxError: expression expected after dictionary key and ':'
 
    # Ensure that the error is not raised for syntax errors that happen after sets
 
-   >>> f{1} $
+   >>> ${1} $
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
    # Ensure that the error is not raised for invalid expressions
 
-   >>> f{1: 2, 3: foo(,), 4: 5}
+   >>> ${1: 2, 3: foo(,), 4: 5}
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
-   >>> f{1: $, 2: 3}
+   >>> ${1: $, 2: 3}
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
 Specific errors for frozen literals:
 
-   >>> f {}
+   >>> $ {}
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
-   >>> f {1}
+   >>> $ {1}
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
-   >>> f {1: 2}
+   >>> $ {1: 2}
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
-   >>> f{1)
+   >>> ${1)
    Traceback (most recent call last):
    SyntaxError: closing parenthesis ')' does not match opening parenthesis '{'
-
-   >>> F{1}  # big `F` is not allowed, unlike `f` strings
-   Traceback (most recent call last):
-   SyntaxError: frozen literals must start from lower case 'f'
-
-   >>> F{1: 2}  # big `F` is not allowed, unlike `f` strings
-   Traceback (most recent call last):
-   SyntaxError: frozen literals must start from lower case 'f'
 
 Specialized indentation errors:
 
@@ -2017,11 +2009,11 @@ SyntaxError: cannot assign to set display here. Maybe you meant '==' instead of 
 Traceback (most recent call last):
 SyntaxError: cannot assign to dict literal here. Maybe you meant '==' instead of '='?
 
->>> f{1, 2, 3} = 42
+>>> ${1, 2, 3} = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to frozenset display here. Maybe you meant '==' instead of '='?
 
->>> f{1: 2, 3: 4} = 42
+>>> ${1: 2, 3: 4} = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to frozendict literal here. Maybe you meant '==' instead of '='?
 

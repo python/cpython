@@ -59,7 +59,7 @@ RARROW = 51
 ELLIPSIS = 52
 COLONEQUAL = 53
 EXCLAMATION = 54
-LFBRACE = 55
+LDOLLARBRACE = 55
 OP = 56
 TYPE_IGNORE = 57
 TYPE_COMMENT = 58
@@ -87,6 +87,7 @@ __all__.extend(tok_name.values())
 EXACT_TOKEN_TYPES = {
     '!': EXCLAMATION,
     '!=': NOTEQUAL,
+    '${': LDOLLARBRACE,
     '%': PERCENT,
     '%=': PERCENTEQUAL,
     '&': AMPER,
@@ -128,7 +129,6 @@ EXACT_TOKEN_TYPES = {
     ']': RSQB,
     '^': CIRCUMFLEX,
     '^=': CIRCUMFLEXEQUAL,
-    'f{': LFBRACE,
     '{': LBRACE,
     '|': VBAR,
     '|=': VBAREQUAL,

@@ -348,7 +348,7 @@ append_ast_ ## NAME(PyUnicodeWriter *writer, expr_ty e) \
 }
 
 DICT_LIKE(Dict, "{")
-DICT_LIKE(FrozenDict, "f{")
+DICT_LIKE(FrozenDict, "${")
 #undef DICT_LIKE
 
 #define SET_LIKE(NAME, START) \
@@ -366,7 +366,7 @@ append_ast_ ## NAME(PyUnicodeWriter *writer, expr_ty e) \
 }
 
 SET_LIKE(Set, "{")
-SET_LIKE(FrozenSet, "f{")
+SET_LIKE(FrozenSet, "${")
 #undef SET_LIKE
 
 static int
@@ -467,7 +467,7 @@ append_ast_ ## NAME(PyUnicodeWriter *writer, expr_ty e) \
 }
 
 SETCOMP(SetComp, "{")
-SETCOMP(FrozenSetComp, "f{")
+SETCOMP(FrozenSetComp, "${")
 #undef SETCOMP
 
 #define DICTCOMP(NAME, START) \
@@ -489,7 +489,7 @@ append_ast_ ## NAME(PyUnicodeWriter *writer, expr_ty e) \
 }
 
 DICTCOMP(DictComp, "{")
-DICTCOMP(FrozenDictComp, "f{")
+DICTCOMP(FrozenDictComp, "${")
 #undef DICTCOMP
 
 static int

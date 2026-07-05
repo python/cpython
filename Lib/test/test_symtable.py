@@ -445,10 +445,10 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(repr(class_A.lookup('x')),
                          "<symbol 'x': LOCAL, DEF_LOCAL|DEF_FREE_CLASS>")
 
-        st4 = symtable.symtable("f{x for x in [1]}", "?", "exec")
+        st4 = symtable.symtable("${x for x in [1]}", "?", "exec")
         self.assertEqual(repr(st4.lookup("x")),
                          "<symbol 'x': LOCAL, USE|DEF_LOCAL|DEF_COMP_ITER>")
-        st5 = symtable.symtable("f{x: 1 for x in [1]}", "?", "exec")
+        st5 = symtable.symtable("${x: 1 for x in [1]}", "?", "exec")
         self.assertEqual(repr(st5.lookup("x")),
                          "<symbol 'x': LOCAL, USE|DEF_LOCAL|DEF_COMP_ITER>")
 

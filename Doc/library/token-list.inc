@@ -102,5 +102,5 @@
      - ``":="``
    * - .. data:: EXCLAMATION
      - ``"!"``
-   * - .. data:: LFBRACE
-     - ``"f{"``
+   * - .. data:: LDOLLARBRACE
+     - ``"${"``

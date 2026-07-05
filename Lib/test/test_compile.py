@@ -2117,7 +2117,7 @@ class TestSourcePositions(unittest.TestCase):
 
     def test_multiline_frozenset_comprehension(self):
         snippet = textwrap.dedent("""\
-            f{(x,
+            ${(x,
                 2*x)
                 for x
                 in [1,2,3] if (x > 0
@@ -2158,7 +2158,7 @@ class TestSourcePositions(unittest.TestCase):
     def test_multiline_async_frozenset_comprehension(self):
         snippet = textwrap.dedent("""\
             async def f():
-                f{(x,
+                ${(x,
                     2*x)
                     async for x
                     in [1,2,3] if (x > 0
@@ -2197,7 +2197,7 @@ class TestSourcePositions(unittest.TestCase):
 
     def test_multiline_frozendict_comprehension(self):
         snippet = textwrap.dedent("""\
-            f{x:
+            ${x:
                 2*x
                 for x
                 in [1,2,3] if (x > 0
@@ -2238,7 +2238,7 @@ class TestSourcePositions(unittest.TestCase):
     def test_multiline_async_frozendict_comprehension(self):
         snippet = textwrap.dedent("""\
             async def f():
-                f{x:
+                ${x:
                     2*x
                     async for x
                     in [1,2,3] if (x > 0

@@ -740,7 +740,7 @@ class Unparser(NodeVisitor):
             self._set_comp(node)
 
     def visit_FrozenSetComp(self, node):
-        with self.delimit("f{", "}"):
+        with self.delimit("${", "}"):
             self._set_comp(node)
 
     def _dict_comp(self, node):
@@ -759,7 +759,7 @@ class Unparser(NodeVisitor):
             self._dict_comp(node)
 
     def visit_FrozenDictComp(self, node):
-        with self.delimit("f{", "}"):
+        with self.delimit("${", "}"):
             self._dict_comp(node)
 
     def visit_comprehension(self, node):
@@ -799,7 +799,7 @@ class Unparser(NodeVisitor):
         self._set_like(node, "{")
 
     def visit_FrozenSet(self, node):
-        self._set_like(node, "f{")
+        self._set_like(node, "${")
 
     def _dict_like(self, node, delimit_start):
         def write_key_value_pair(k, v):
@@ -827,7 +827,7 @@ class Unparser(NodeVisitor):
         self._dict_like(node, "{")
 
     def visit_FrozenDict(self, node):
-        self._dict_like(node, "f{")
+        self._dict_like(node, "${")
 
     def visit_Tuple(self, node):
         with self.delimit_if(

@@ -1857,7 +1857,7 @@ class CoroutineTest(unittest.TestCase):
             return {await c for c in [f(1), f(41)]}
 
         async def run_frozenset():
-            return f{await c for c in [f(1), f(41)]}
+            return ${await c for c in [f(1), f(41)]}
 
         async def run_dict1():
             return {await c: 'a' for c in [f(1), f(41)]}
@@ -1866,18 +1866,18 @@ class CoroutineTest(unittest.TestCase):
             return {i: await c for i, c in enumerate([f(1), f(41)])}
 
         async def run_frozendict1():
-            return f{await c: 'a' for c in [f(1), f(41)]}
+            return ${await c: 'a' for c in [f(1), f(41)]}
 
         async def run_frozendict2():
-            return f{i: await c for i, c in enumerate([f(1), f(41)])}
+            return ${i: await c for i, c in enumerate([f(1), f(41)])}
 
         self.assertEqual(run_async(run_list()), ([], [1, 41]))
         self.assertEqual(run_async(run_set(), set), ([], {1, 41}))
-        self.assertEqual(run_async(run_frozenset(), frozenset), ([], f{1, 41}))
+        self.assertEqual(run_async(run_frozenset(), frozenset), ([], ${1, 41}))
         self.assertEqual(run_async(run_dict1(), dict), ([], {1: 'a', 41: 'a'}))
         self.assertEqual(run_async(run_dict2(), dict), ([], {0: 1, 1: 41}))
-        self.assertEqual(run_async(run_frozendict1(), frozendict), ([], f{1: 'a', 41: 'a'}))
-        self.assertEqual(run_async(run_frozendict2(), frozendict), ([], f{0: 1, 1: 41}))
+        self.assertEqual(run_async(run_frozendict1(), frozendict), ([], ${1: 'a', 41: 'a'}))
+        self.assertEqual(run_async(run_frozendict2(), frozendict), ([], ${0: 1, 1: 41}))
 
     def test_comp_2(self):
         async def f(i):
@@ -1912,7 +1912,7 @@ class CoroutineTest(unittest.TestCase):
             ([], {10, 20}))
 
         async def run_frozenset():
-            return f{d
+            return ${d
                      for c in [f([f([10, 30]),
                                   f([20])])]
                      for s in await c
@@ -1920,16 +1920,16 @@ class CoroutineTest(unittest.TestCase):
 
         self.assertEqual(
             run_async(run_frozenset(), frozenset),
-            ([], f{10, 20, 30}))
+            ([], ${10, 20, 30}))
 
         async def run_frozenset2():
-            return f{await s
+            return ${await s
                      for c in [f([f(10), f(20)])]
                      for s in await c}
 
         self.assertEqual(
             run_async(run_frozenset2(), frozenset),
-            ([], f{10, 20}))
+            ([], ${10, 20}))
 
     def test_comp_3(self):
         async def f(it):
@@ -1949,10 +1949,10 @@ class CoroutineTest(unittest.TestCase):
             ([], {11, 21}))
 
         async def run_frozenset():
-            return f{i + 1 async for i in f([10, 20])}
+            return ${i + 1 async for i in f([10, 20])}
         self.assertEqual(
             run_async(run_frozenset(), frozenset),
-            ([], f{11, 21}))
+            ([], ${11, 21}))
 
         async def run_dict():
             return {i + 1: i + 2 async for i in f([10, 20])}
@@ -1961,10 +1961,10 @@ class CoroutineTest(unittest.TestCase):
             ([], {11: 12, 21: 22}))
 
         async def run_frozendict():
-            return f{i + 1: i + 2 async for i in f([10, 20])}
+            return ${i + 1: i + 2 async for i in f([10, 20])}
         self.assertEqual(
             run_async(run_frozendict(), frozendict),
-            ([], f{11: 12, 21: 22}))
+            ([], ${11: 12, 21: 22}))
 
         async def run_gen():
             gen = (i + 1 async for i in f([10, 20]))
@@ -1991,11 +1991,11 @@ class CoroutineTest(unittest.TestCase):
             ([], {21}))
 
         async def run_frozenset():
-            return f{i + 1 async for i in f([10, 20]) if i > 10}
+            return ${i + 1 async for i in f([10, 20]) if i > 10}
         res = run_async(run_frozenset())
         self.assertEqual(
             res,
-            ([], f{21}))
+            ([], ${21}))
         self.assertIs(type(res[1]), frozenset)
 
         async def run_dict():
@@ -2005,11 +2005,11 @@ class CoroutineTest(unittest.TestCase):
             ([], {21: 22}))
 
         async def run_frozendict():
-            return f{i + 1: i + 2 async for i in f([10, 20]) if i > 10}
+            return ${i + 1: i + 2 async for i in f([10, 20]) if i > 10}
         res = run_async(run_frozendict())
         self.assertEqual(
             res,
-            ([], f{21: 22}))
+            ([], ${21: 22}))
         self.assertIs(type(res[1]), frozendict)
 
         async def run_gen():
@@ -2037,7 +2037,7 @@ class CoroutineTest(unittest.TestCase):
             ([], {11, 12, 13}))
 
         async def run_set():
-            return f{i + 10 async for i in f(range(5)) if 0 < i < 4}
+            return ${i + 10 async for i in f(range(5)) if 0 < i < 4}
         self.assertEqual(
             run_async(run_set()),
             ([], {11, 12, 13}))
@@ -2135,10 +2135,10 @@ class CoroutineTest(unittest.TestCase):
             ([], [{11, 12}, {21, 22}]))
 
         async def run_frozenset_inside_list():
-            return [f{i + j async for i in asynciter([1, 2])} for j in [10, 20]]
+            return [${i + j async for i in asynciter([1, 2])} for j in [10, 20]]
         self.assertEqual(
             run_async(run_frozenset_inside_list()),
-            ([], [f{11, 12}, f{21, 22}]))
+            ([], [${11, 12}, ${21, 22}]))
 
         async def run_list_inside_set():
             return {sum([i async for i in asynciter(range(j))]) for j in [3, 5]}
@@ -2153,10 +2153,10 @@ class CoroutineTest(unittest.TestCase):
             ([], {10: {1: 11, 2: 12}, 20: {1: 21, 2: 22}}))
 
         async def run_frozendict_inside_dict():
-            return {j: f{i: i + j async for i in asynciter([1, 2])} for j in [10, 20]}
+            return {j: ${i: i + j async for i in asynciter([1, 2])} for j in [10, 20]}
         self.assertEqual(
             run_async(run_frozendict_inside_dict()),
-            ([], {10: f{1: 11, 2: 12}, 20: f{1: 21, 2: 22}}))
+            ([], {10: ${1: 11, 2: 12}, 20: ${1: 21, 2: 22}}))
 
         async def run_list_inside_gen():
             gen = ([i + j async for i in asynciter([1, 2])] for j in [10, 20])

@@ -1838,7 +1838,7 @@ class TestTokenize(TestCase):
         self.assertExactTypeEqual('.', token.DOT)
         self.assertExactTypeEqual('%', token.PERCENT)
         self.assertExactTypeEqual('{}', token.LBRACE, token.RBRACE)
-        self.assertExactTypeEqual('f{}', token.LFBRACE, token.RBRACE)
+        self.assertExactTypeEqual('${}', token.LDOLLARBRACE, token.RBRACE)
         self.assertExactTypeEqual('==', token.EQEQUAL)
         self.assertExactTypeEqual('!=', token.NOTEQUAL)
         self.assertExactTypeEqual('<=', token.LESSEQUAL)
@@ -1880,8 +1880,8 @@ class TestTokenize(TestCase):
                                   token.NUMBER, token.COMMA,
                                   token.NUMBER,
                                   token.RBRACE)
-        self.assertExactTypeEqual('f{1, 2, 3}',
-                                  token.LFBRACE,
+        self.assertExactTypeEqual('${1, 2, 3}',
+                                  token.LDOLLARBRACE,
                                   token.NUMBER, token.COMMA,
                                   token.NUMBER, token.COMMA,
                                   token.NUMBER,
@@ -2564,17 +2564,17 @@ c"""', """\
     FSTRING_END '"'           (1, 8) (1, 9)
     """)
 
-        self.check_tokenize('fR"a{f{b}}c"', """\
+        self.check_tokenize('fR"a{${b}}c"', """\
     FSTRING_START \'fR"\'         (1, 0) (1, 3)
     FSTRING_MIDDLE 'a'           (1, 3) (1, 4)
     LBRACE     '{'           (1, 4) (1, 5)
-    LFBRACE    'f{'          (1, 5) (1, 7)
+    LDOLLARBRACE '${'          (1, 5) (1, 7)
     NAME       'b'           (1, 7) (1, 8)
     RBRACE     '}'           (1, 8) (1, 9)
     RBRACE     '}'           (1, 9) (1, 10)
     FSTRING_MIDDLE 'c'           (1, 10) (1, 11)
     FSTRING_END \'"\'           (1, 11) (1, 12)
-    """)
+""")
 
         self.check_tokenize('f"""abc"""', """\
     FSTRING_START 'f\"""'        (1, 0) (1, 4)
@@ -2646,17 +2646,17 @@ f'''__{
     """)
 
     def test_frozen_objects(self):
-        self.check_tokenize('f{}', """\
-    LFBRACE    'f{'          (1, 0) (1, 2)
+        self.check_tokenize('${}', """\
+    LDOLLARBRACE '${'          (1, 0) (1, 2)
     RBRACE     '}'           (1, 2) (1, 3)
 """)
-        self.check_tokenize('f{1}', """\
-    LFBRACE    'f{'          (1, 0) (1, 2)
+        self.check_tokenize('${1}', """\
+    LDOLLARBRACE '${'          (1, 0) (1, 2)
     NUMBER     '1'           (1, 2) (1, 3)
     RBRACE     '}'           (1, 3) (1, 4)
 """)
-        self.check_tokenize('f{1: 2}', """\
-    LFBRACE    'f{'          (1, 0) (1, 2)
+        self.check_tokenize('${1: 2}', """\
+    LDOLLARBRACE '${'          (1, 0) (1, 2)
     NUMBER     '1'           (1, 2) (1, 3)
     COLON      ':'           (1, 3) (1, 4)
     NUMBER     '2'           (1, 5) (1, 6)

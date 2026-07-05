@@ -780,9 +780,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 }
                 goto letter_quote;
             }
-            if (saw_f && c == '{') {
-                goto parentheses;
-            }
         }
         while (is_potential_identifier_char(c)) {
             if (c >= 128) {
@@ -1284,7 +1281,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     {
         int c2 = tok_nextc(tok);
         int current_token = _PyToken_TwoChars(c, c2);
-        if (current_token != OP) {
+        if (current_token == LDOLLARBRACE) {
+            // Analyze the parentheses first.
+            // The token itself will be created later on.
+            c = '{';  // fallback for the existing analysis.
+            goto parentheses;
+        }
+        else if (current_token != OP) {
             int c3 = tok_nextc(tok);
             int current_token3 = _PyToken_ThreeChars(c, c2, c3);
             if (current_token3 != OP) {
@@ -1379,19 +1382,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         break;
     }
 
-    if (*tok->start == 'f' && c == '{') {
+    if (*tok->start == '$' && c == '{') {
         p_start = tok->start;
         p_end = tok->cur;
-
-        return MAKE_TOKEN(LFBRACE);
-    }
-    else if (*tok->start == 'F' && c == '{') {
-        // We don't allow `F{}` notation:
-        p_start = tok->start;
-        p_end = tok->cur;
-
-        return MAKE_TOKEN(_PyTokenizer_syntaxerror(
-            tok, "frozen literals must start from lower case 'f'"));
+        return MAKE_TOKEN(LDOLLARBRACE);
     }
 
     if (!Py_UNICODE_ISPRINTABLE(c)) {

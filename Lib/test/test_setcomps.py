@@ -13,7 +13,7 @@ Test simple loop with conditional
     >>> sum({i*i for i in range(100) if i&1 == 1})
     166650
 
-    >>> sum(f{i*i for i in range(100) if i&1 == 1})
+    >>> sum(${i*i for i in range(100) if i&1 == 1})
     166650
 
 Test simple case
@@ -21,7 +21,7 @@ Test simple case
     >>> {2*y + x + 1 for x in (0,) for y in (1,)}
     {3}
 
-    >>> f{2*y + x + 1 for x in (0,) for y in (1,)}
+    >>> ${2*y + x + 1 for x in (0,) for y in (1,)}
     frozenset({3})
 
 Test simple nesting
@@ -59,7 +59,7 @@ Make sure the induction variable is not exposed
     >>> i
     20
 
-    >>> sum(f{i*i for i in range(100)})
+    >>> sum(${i*i for i in range(100)})
     328350
 
     >>> i
@@ -105,7 +105,7 @@ Make sure that None is a valid return value
     >>> {None for i in range(10)}
     {None}
 
-    >>> f{None for i in range(10)}
+    >>> ${None for i in range(10)}
     frozenset({None})
 
 ########### Tests for various scoping corner cases ############
@@ -136,9 +136,9 @@ And confirm that a closure can jump over the list comp scope
     >>> {x() for x in items}
     {2}
 
-    >>> items = f{(lambda: y) for i in range(5)}
+    >>> items = ${(lambda: y) for i in range(5)}
     >>> y = 2
-    >>> f{x() for x in items}
+    >>> ${x() for x in items}
     frozenset({2})
 
 We also repeat each of the above scoping tests inside a function
@@ -221,19 +221,19 @@ class FrozenSetComprehensionTest(BaseComprehensionTest, unittest.TestCase):
 
         def init_raises():
             try:
-                f{x for x in BrokenIter(init_raises=True)}
+                ${x for x in BrokenIter(init_raises=True)}
             except Exception as e:
                 return e
 
         def next_raises():
             try:
-                f{x for x in BrokenIter(next_raises=True)}
+                ${x for x in BrokenIter(next_raises=True)}
             except Exception as e:
                 return e
 
         def iter_raises():
             try:
-                f{x for x in BrokenIter(iter_raises=True)}
+                ${x for x in BrokenIter(iter_raises=True)}
             except Exception as e:
                 return e
 

@@ -68,7 +68,7 @@ extern "C" {
 #define ELLIPSIS        52
 #define COLONEQUAL      53
 #define EXCLAMATION     54
-#define LFBRACE         55
+#define LDOLLARBRACE    55
 #define OP              56
 #define TYPE_IGNORE     57
 #define TYPE_COMMENT    58

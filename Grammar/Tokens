@@ -59,7 +59,7 @@ RARROW                  '->'
 ELLIPSIS                '...'
 COLONEQUAL              ':='
 EXCLAMATION             '!'
-LFBRACE                 'f{'
+LDOLLARBRACE            '${'
 
 OP
 TYPE_IGNORE
