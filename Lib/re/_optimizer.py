@@ -125,7 +125,8 @@ def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
                             hascased = any(map(iscased, r))
                     else:
                         if end > len(charmap):
-                            # Trigger the IndexError growth path below.
+                            if len(charmap) == 0x10000 and start < 0x10000:
+                                charmap[start:0x10000] = b'\x01' * (0x10000 - start)
                             raise IndexError
                         charmap[start:end] = b'\x01' * (end - start)
                 elif op is NEGATE:
