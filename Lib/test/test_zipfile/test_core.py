@@ -5766,6 +5766,8 @@ class EncodedMetadataTests(unittest.TestCase):
             zipfile.ZipFile(TESTFN, "a", metadata_encoding='utf-8')
 
     def test_read_after_append(self):
+        """Files loaded from an archive should keep original filenames and encodings
+        when rewritten to central directory in append mode."""
         newname = '\u56db'  # Han 'four'
         newname2 = 'fünf'  # representable in cp437, but still stored as UTF-8
         expected_names = [*self.file_names, newname, newname2]
@@ -5789,7 +5791,7 @@ class EncodedMetadataTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, "a", metadata_encoding='shift_jis') as zipfp:
             self._test_read(zipfp, expected_names, expected_content)
 
-    def test_append_keep_efs_flag(self):
+    def test_append_keep_efs(self):
         """Files loaded from an archive should keep original EFS flags when
         rewritten to central directory in append mode."""
         names = ['file1', 'file2', 'file3', 'file4']
@@ -5808,45 +5810,41 @@ class EncodedMetadataTests(unittest.TestCase):
                 zinfo = zipfile.ZipInfo(name)
                 zinfo.comment = comments[i]
                 zipfp.writestr(zinfo, contents[i])
+            self.assertEqual(zipfp.namelist(), names)
 
         with zipfile.ZipFile(TESTFN, "a") as zipfp:
+            self._test_read(zipfp, names, contents, comments, efs_flags)
             # trigger archive rewriting
             zipfp.comment = b'comment'
 
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
-            self.assertEqual(zipfp.comment, b'comment')
             self._test_read(zipfp, names, contents, comments, efs_flags)
 
-    def test_write_enforce_efs_flag(self):
-        """New files should enforce EFS flag if filename or comment is not ASCII."""
+    def test_write_enforce_efs_on_demand(self):
+        """New files should enforce EFS flag if filename or comment is not ASCII,
+        regardless of mode or metadata_encoding."""
         names = ['\u4e00', '\u4e8c', 'file3', 'file4']
         contents = [b'content1', b'content2', b'content3', b'content4']
         comments = ['\u4e00'.encode('utf-8'), b'foo', '\u4e8c'.encode('utf-8'), b'bar']
         expected_efs_flags = [True, True, True, False]
 
-        with zipfile.ZipFile(TESTFN, "w") as zipfp:
-            for i, name in enumerate(names):
-                zinfo = zipfile.ZipInfo(name)
-                zinfo.comment = comments[i]
-                zipfp.writestr(zinfo, contents[i])
-            self.assertEqual(zipfp.namelist(), names)
+        def sub_test():
+            with zipfile.ZipFile(TESTFN, mode=mode,
+                                 metadata_encoding=encoding) as zipfp:
+                for i, name in enumerate(names):
+                    zinfo = zipfile.ZipInfo(name)
+                    zinfo.comment = comments[i]
+                    zipfp.writestr(zinfo, contents[i])
+                self.assertEqual(zipfp.namelist(), names)
 
-        with zipfile.ZipFile(TESTFN, "r") as zipfp:
-            self._test_read(zipfp, names, contents, comments, expected_efs_flags)
-
-    def test_write_with_metadata_encoding(self):
-        """metadata_encoding should not affect the encoding of new files."""
-        names = ['\u4e00', 'file2']
-        contents = ['\u4e00'.encode('utf-8'), '\u4e8c'.encode('utf-8')]
-        expected_efs_flags = [True, False]
+            with zipfile.ZipFile(TESTFN, "r") as zipfp:
+                self._test_read(zipfp, names, contents, comments, expected_efs_flags)
 
         for mode in ("w", "x", "a"):
-            unlink(TESTFN)
-            with zipfile.ZipFile(TESTFN, mode, metadata_encoding='shift_jis') as zipfp:
-                for i, name in enumerate(names):
-                    zipfp.writestr(name, contents[i])
-            with zipfile.ZipFile(TESTFN, 'r') as zipfp:
-                self._test_read(zipfp, names, contents, None, expected_efs_flags)
+            for encoding in (None, 'shift_jis'):
+                unlink(TESTFN)
+                with self.subTest(mode=mode, metadata_encoding=encoding):
+                    sub_test()
 
     def test_add_comment(self):
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
