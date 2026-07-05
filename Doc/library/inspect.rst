@@ -1670,10 +1670,9 @@ for arbitrary getset descriptors invoking these may trigger
 code execution::
 
    import types
-   descriptor_types = (types.MemberDescriptorType, types.GetSetDescriptorType, types.WrapperDescriptorType)
 
    result = getattr_static(some_object, 'foo')
-   if isinstance(result, descriptor_types):
+   if isinstance(result, (types.MemberDescriptorType, types.GetSetDescriptorType, types.WrapperDescriptorType)):
        try:
            result = result.__get__(some_object)
        except AttributeError:
