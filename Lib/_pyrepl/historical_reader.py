@@ -222,7 +222,7 @@ class isearch_bracketed_paste(commands.Command):
             data += ev.data
         paste_content = data.replace(done, "")
         r.isearch_term += paste_content
-        r.dirty = True
+        r.invalidate_prompt()
         if "".join(b[r.pos:r.pos+len(r.isearch_term)]) != r.isearch_term:
             r.isearch_next()
 
