@@ -568,7 +568,7 @@ jobs:
 
   cross-build-linux:
     name: Cross build Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
