@@ -408,6 +408,17 @@ def restart_line(width, filename):  # See bpo-38141.
         return tag[:-2]  # Remove ' ='.
 
 
+def fix_user_path(path):
+    """Return path without the idlelib directory (gh-134300).
+
+    That directory is on sys.path when idle.py is run as a script.
+    Otherwise user code could import idlelib submodules as top-level
+    modules, such as "import help".
+    """
+    idlelib_dir = os.path.dirname(os.path.abspath(__file__))
+    return [p for p in path if p != idlelib_dir]
+
+
 class ModifiedInterpreter(InteractiveInterpreter):
 
     def __init__(self, tkconsole):
@@ -568,6 +579,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             path.extend(sys.path)
         else:
             path = sys.path
+        path = fix_user_path(path)  # gh-134300
 
         self.runcommand("""if 1:
         import sys as _sys

@@ -67,6 +67,9 @@
     )
 )
 
+@rem ensure nuget.org source exist
+@"%_Py_NUGET%" sources add -Name nuget.org -Source https://api.nuget.org/v3/index.json >nul 2>nul
+
 @if not "%_Py_Quiet%"=="1" @echo Installing Python via nuget...
 @if not "%_Py_Quiet%"=="1" (
     @"%_Py_NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%_Py_EXTERNALS_DIR%"
