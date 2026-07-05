@@ -70,7 +70,7 @@ The :mod:`!glob` module defines the following functions:
    pattern is followed by an :data:`os.sep` or :data:`os.altsep` then files will not
    match.
 
-   If *include_hidden* is true, wildcards can match path components that
+   If *include_hidden* is true, wildcards can match path segments that
    begin with a dot (``.``).
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
