@@ -27,7 +27,9 @@ enum _frameowner {
 };
 
 struct _PyInterpreterFrame {
-    _PyStackRef f_executable; /* Borrowed reference (code object or None) */
+    /* Borrowed reference (code object or None) */
+    /* Strong reference for generators */
+    _PyStackRef f_executable;
     struct _PyInterpreterFrame *previous;
     _PyStackRef f_funcobj; /* Deferred or strong reference. Only valid if not on C stack */
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
