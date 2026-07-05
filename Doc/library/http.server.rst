@@ -70,7 +70,7 @@ handler.  Code to create and run the server looks like this::
    object fails with a :exc:`RuntimeError`.
 
    The *certfile* argument is the path to the SSL certificate chain file,
-   and the *keyfile* is the path to file containing the private key.
+   and the *keyfile* is the path to the file containing the private key.
 
    A *password* can be specified for files protected and wrapped with PKCS#8,
    but beware that this could possibly expose hardcoded passwords in clear.
@@ -150,7 +150,7 @@ instantiation, of which this module provides three different variants:
 
    .. attribute:: path
 
-      Contains the request path. If query component of the URL is present,
+      Contains the request path. If the query component of the URL is present,
       then ``path`` includes the query. Using the terminology of :rfc:`3986`,
       ``path`` here includes ``hier-part`` and the ``query``.
 
@@ -200,7 +200,7 @@ instantiation, of which this module provides three different variants:
       Specifies a format string that should be used by :meth:`send_error` method
       for building an error response to the client. The string is filled by
       default with variables from :attr:`responses` based on the status code
-      that passed to :meth:`send_error`.
+      passed to :meth:`send_error`.
 
    .. attribute:: error_content_type
 
@@ -248,8 +248,8 @@ instantiation, of which this module provides three different variants:
    .. method:: handle_expect_100()
 
       When an HTTP/1.1 conformant server receives an ``Expect: 100-continue``
-      request header it responds back with a ``100 Continue`` followed by ``200
-      OK`` headers.
+      request header it responds with a ``100 Continue`` followed by ``200 OK``
+      headers.
       This method can be overridden to raise an error if the server does not
       want the client to continue.  For example, the server can choose to send ``417
       Expectation Failed`` as a response header and ``return False``.
@@ -305,8 +305,8 @@ instantiation, of which this module provides three different variants:
    .. method:: send_response_only(code, message=None)
 
       Sends the response header only, used for the purposes when ``100
-      Continue`` response is sent by the server to the client. The headers not
-      buffered and sent directly the output stream.If the *message* is not
+      Continue`` response is sent by the server to the client. The headers are
+      not buffered and sent directly the output stream. If the *message* is not
       specified, the HTTP message corresponding the response *code*  is sent.
 
       This method does not reject *message* containing CRLF sequences.
@@ -348,7 +348,7 @@ instantiation, of which this module provides three different variants:
       to create custom error logging mechanisms. The *format* argument is a
       standard printf-style format string, where the additional arguments to
       :meth:`log_message` are applied as inputs to the formatting. The client
-      ip address and current date and time are prefixed to every message logged.
+      IP address and current date and time are prefixed to every message logged.
 
    .. method:: version_string()
 
@@ -452,7 +452,7 @@ instantiation, of which this module provides three different variants:
       The request is mapped to a local file by interpreting the request as a
       path relative to the current working directory.
 
-      If the request was mapped to a directory, the directory is checked for a
+      If the request was mapped to a directory, the directory is checked for
       an index page as specified by :attr:`index_pages`. If found, the
       file's contents are returned; otherwise a directory listing is generated
       by calling the :meth:`list_directory` method. This method uses
@@ -507,9 +507,8 @@ instantiation, of which this module provides three different variants:
          Add :func:`mimetypes.guess_file_type` as a fallback.
 
 
-The :class:`SimpleHTTPRequestHandler` class can be used in the following
-manner in order to create a very basic webserver serving files relative to
-the current directory::
+The :class:`SimpleHTTPRequestHandler` class can be used to create a very basic
+webserver serving files relative to the current directory as follows::
 
    import http.server
    import socketserver
@@ -641,8 +640,8 @@ The following options are accepted:
 
 .. option:: -H, --header <header> <value>
 
-   Specify an additional extra HTTP Response Header to send on successful HTTP
-   200 responses. Can be used multiple times to send additional custom response
+   Specify an additional HTTP Response Header to send on successful HTTP 200
+   responses. Can be used multiple times to send additional custom response
    headers. Headers that are sent automatically by the server (for instance
    Content-Type) will not be overwritten by the server.
 
@@ -657,13 +656,13 @@ Security considerations
 .. index:: pair: http.server; security
 
 :class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
-requests, this makes it possible for files outside of the specified directory
+requests which makes it possible for files outside of the specified directory
 to be served.
 
 Methods :meth:`BaseHTTPRequestHandler.send_header` and
 :meth:`BaseHTTPRequestHandler.send_response_only` assume sanitized input
 and do not perform input validation such as checking for the presence of CRLF
-sequences. Untrusted input may result in HTTP Header injection attacks.
+sequences. Untrusted input may result in HTTP header injection attacks.
 
 Earlier versions of Python did not scrub control characters from the
 log messages emitted to stderr from ``python -m http.server`` or the
