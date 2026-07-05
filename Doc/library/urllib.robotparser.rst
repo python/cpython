@@ -34,7 +34,7 @@ structure of :file:`robots.txt` files, see :rfc:`9309`.
       Sets the URL referring to a :file:`robots.txt` file or a
       :class:`urllib.request.Request` object.
 
-      .. versionchanged:: 3.16
+      .. versionchanged:: next
         *url* parameter can be a :class:`urllib.request.Request` object.
 
    .. method:: read()
