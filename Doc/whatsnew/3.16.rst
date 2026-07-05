@@ -553,7 +553,7 @@ New deprecations
 * :mod:`tkinter`:
 
   * :func:`tkinter.filedialog.askopenfiles` is deprecated and slated for
-    removal in Python 3.18.  Opening several files at once is error-prone, and
+    removal in Python 3.19.  Opening several files at once is error-prone, and
     the returned list cannot be used in a :keyword:`with` statement.  Iterate
     over the names returned by :func:`~tkinter.filedialog.askopenfilenames` and
     open them one by one instead.

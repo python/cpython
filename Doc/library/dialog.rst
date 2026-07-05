@@ -176,7 +176,7 @@ specific value.
    objects, or an empty tuple if cancelled.
    The files are opened in mode *mode* (read-only ``'r'`` by default).
 
-   .. deprecated-removed:: next 3.18
+   .. deprecated-removed:: next 3.19
       Opening several files at once is error-prone, and the returned list
       cannot be used in a :keyword:`with` statement.
       Iterate over the names returned by :func:`askopenfilenames` and open

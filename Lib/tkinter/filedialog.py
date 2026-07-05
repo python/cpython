@@ -423,7 +423,7 @@ def askopenfiles(mode = "r", **options):
         "tkinter.filedialog.askopenfiles",
         message=f"{warnings._DEPRECATED_MSG}; iterate over the names returned "
                 "by askopenfilenames() and open them instead",
-        remove=(3, 18))
+        remove=(3, 19))
 
     files = askopenfilenames(**options)
     if files:
