@@ -39,7 +39,17 @@ handler.  Code to create and run the server looks like this::
    This class builds on the :class:`~socketserver.TCPServer` class by storing
    the server address as instance variables named :attr:`server_name` and
    :attr:`server_port`. The server is accessible by the handler, typically
-   through the handler's :attr:`server` instance variable.
+   through the handler's :attr:`~socketserver.BaseRequestHandler.server`
+   instance variable.
+
+   .. attribute:: server_name
+
+      The HTTP server's fully qualified domain name.
+
+   .. attribute:: server_port
+
+      The HTTP server's port number obtained from *server_address*.
+
 
 .. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
@@ -402,6 +412,14 @@ instantiation, of which this module provides three different variants:
 
       .. versionadded:: 3.15
 
+   .. attribute:: index_pages
+
+      Specifies the filenames that are treated as directory index pages.
+
+      Defaults to ``("index.html", "index.htm")``.
+
+      .. versionadded:: 3.12
+
    .. attribute:: extensions_map
 
       A dictionary mapping suffixes into MIME types, contains custom overrides
@@ -435,7 +453,7 @@ instantiation, of which this module provides three different variants:
       path relative to the current working directory.
 
       If the request was mapped to a directory, the directory is checked for a
-      file named ``index.html`` or ``index.htm`` (in that order). If found, the
+      an index page as specified by :attr:`index_pages`. If found, the
       file's contents are returned; otherwise a directory listing is generated
       by calling the :meth:`list_directory` method. This method uses
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
@@ -465,6 +483,30 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
 
+   .. method:: list_directory(path)
+
+      Helper to list the contents of *path* when no index page is present.
+
+      This returns either a :term:`file-like object` (which must be closed
+      by the caller) or ``None`` to indicate an error, in which case the
+      caller has nothing further to do. In either case, the headers are sent.
+
+   .. method:: guess_type(path)
+
+      Guess the type of the file at the given *path*.
+
+      This returns a string of the form ``type/subtype``, usable for
+      a MIME Content-type header.
+
+      The default implementation looks the file's extension up in
+      :attr:`extensions_map`, falling back to
+      :func:`mimetypes.guess_file_type` and then to
+      :attr:`default_content_type`.
+
+      .. versionchanged:: 3.13
+         Add :func:`mimetypes.guess_file_type` as a fallback.
+
+
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
 the current directory::
@@ -483,7 +525,7 @@ the current directory::
 
 :class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
 such as using different index file names by overriding the class attribute
-:attr:`index_pages`.
+:attr:`~SimpleHTTPRequestHandler.index_pages`.
 
 
 .. _http-server-cli:
