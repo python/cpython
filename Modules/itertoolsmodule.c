@@ -951,6 +951,24 @@ tee_next(PyObject *op)
     teeobject *to = teeobject_CAST(op);
     PyObject *value;
 
+#ifndef Py_GIL_DISABLED
+    /* The GIL already serializes access, so keep the simple path without the
+       snapshot and revalidation that the free-threaded build needs. */
+    if (to->index >= LINKCELLS) {
+        PyObject *link = teedataobject_jumplink(to->state, to->dataobj);
+        if (link == NULL) {
+            return NULL;
+        }
+        Py_SETREF(to->dataobj, (teedataobject *)link);
+        to->index = 0;
+    }
+    value = teedataobject_getitem(to->dataobj, to->index);
+    if (value == NULL) {
+        return NULL;
+    }
+    to->index++;
+    return value;
+#else
     for (;;) {
         teedataobject *dataobj;
         int index;
@@ -991,6 +1009,7 @@ tee_next(PyObject *op)
         Py_XDECREF(link);
         Py_DECREF(dataobj);
     }
+#endif
 }
 
 static int
