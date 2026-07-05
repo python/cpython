@@ -485,14 +485,13 @@ instantiation, of which this module provides three different variants:
 
    The :class:`SimpleHTTPRequestHandler` class defines the following helpers:
 
-   .. method:: list_directory()
+   .. method:: list_directory(path)
 
-      Helper to produce a directory listing (absent index.html).
+      Helper to list the contents of *path* when no index page is present.
 
-      This returns either a :term:`file-like object` (which
-      must be closed by the caller) or ``None`` to indicate an error, in which
-      case the caller has nothing further to do. In either case, the headers
-      are sent.
+      This returns either a :term:`file-like object` (which must be closed
+      by the caller) or ``None`` to indicate an error, in which case the
+      caller has nothing further to do. In either case, the headers are sent.
 
    .. method:: guess_type(path)
 
