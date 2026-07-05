@@ -643,12 +643,6 @@ dummy_func(
             EXIT_IF(!_PyLong_CheckExactAndCompact(value_o));
         }
 
-        op(_GUARD_TOS_NON_NEGATIVE_COMPACT_INT, (value -- value)) {
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            assert(PyLong_CheckExact(value_o));
-            EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o));
-        }
-
         op(_GUARD_NOS_OVERFLOWED, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(Py_TYPE(left_o) == &PyLong_Type);
@@ -1417,6 +1411,12 @@ dummy_func(
         }
 
         macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + _STORE_SUBSCR;
+
+        op(_GUARD_TOS_NON_NEGATIVE_COMPACT_INT, (value -- value)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            assert(PyLong_CheckExact(value_o));
+            EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o));
+        }
 
         macro(STORE_SUBSCR_LIST_INT) =
             _GUARD_TOS_INT + _GUARD_TOS_NON_NEGATIVE_COMPACT_INT + _GUARD_NOS_LIST +

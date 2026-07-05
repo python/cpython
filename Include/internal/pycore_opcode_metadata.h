@@ -1532,7 +1532,7 @@ _PyOpcode_macro_expansion[256] = {
     [STORE_SLICE] = { .nuops = 1, .uops = { { _STORE_SLICE, OPARG_SIMPLE, 0 } } },
     [STORE_SUBSCR] = { .nuops = 1, .uops = { { _STORE_SUBSCR, OPARG_SIMPLE, 0 } } },
     [STORE_SUBSCR_DICT] = { .nuops = 4, .uops = { { _RECORD_NOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_NOS_DICT_STORE_SUBSCRIPT, OPARG_SIMPLE, 0 }, { _STORE_SUBSCR_DICT, OPARG_SIMPLE, 1 }, { _POP_TOP, OPARG_SIMPLE, 1 } } },
-    [STORE_SUBSCR_LIST_INT] = { .nuops = 5, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_LIST, OPARG_SIMPLE, 0 }, { _STORE_SUBSCR_LIST_INT, OPARG_SIMPLE, 1 }, { _POP_TOP_INT, OPARG_SIMPLE, 1 }, { _POP_TOP, OPARG_SIMPLE, 1 } } },
+    [STORE_SUBSCR_LIST_INT] = { .nuops = 6, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _GUARD_TOS_NON_NEGATIVE_COMPACT_INT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_LIST, OPARG_SIMPLE, 0 }, { _STORE_SUBSCR_LIST_INT, OPARG_SIMPLE, 1 }, { _POP_TOP_INT, OPARG_SIMPLE, 1 }, { _POP_TOP, OPARG_SIMPLE, 1 } } },
     [SWAP] = { .nuops = 1, .uops = { { _SWAP, OPARG_SIMPLE, 0 } } },
     [TO_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL, OPARG_SIMPLE, 2 } } },
     [TO_BOOL_ALWAYS_TRUE] = { .nuops = 4, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 1 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _REPLACE_WITH_TRUE, OPARG_SIMPLE, 3 }, { _POP_TOP, OPARG_SIMPLE, 3 } } },
