@@ -360,7 +360,7 @@ class _ExecutorManagerThread(threading.Thread):
                 if executor := self.executor_reference():
                     if process_exited:
                         with self.shutdown_lock:
-                            executor._adjust_process_count()
+                            executor._replace_dead_worker()
                     else:
                         executor._idle_worker_semaphore.release()
                     del executor
@@ -751,6 +751,30 @@ class ProcessPoolExecutor(_base.Executor):
             _threads_wakeups[self._executor_manager_thread] = \
                 self._executor_manager_thread_wakeup
 
+    def _replace_dead_worker(self):
+        # gh-132969: avoid error when state is reset and executor is still running,
+        # which will happen when shutdown(wait=False) is called.
+        if self._processes is None:
+            return
+
+        # A replacement is pointless when shutting down with nothing left
+        # to run.  Both attributes are read under _shutdown_lock, which
+        # shutdown() holds while setting _shutdown_thread.
+        assert self._shutdown_lock.locked()
+        if self._shutdown_thread and not self._pending_work_items:
+            return
+
+        # gh-115634: A worker exited after reaching max_tasks_per_child and
+        # has been removed from self._processes.  Do not consult
+        # _idle_worker_semaphore here: it counts task completions, not idle
+        # workers, so it can hold a stale token released by the now-dead
+        # worker.  Trusting such a token would leave the pool a worker short,
+        # deadlocking once all workers reach their task limit.  Spawning is
+        # safe from this (manager) thread despite gh-90622 because
+        # max_tasks_per_child is rejected for the "fork" start method.
+        if len(self._processes) < self._max_workers:
+            self._spawn_process()
+
     def _adjust_process_count(self):
         # gh-132969: avoid error when state is reset and executor is still running,
         # which will happen when shutdown(wait=False) is called.
@@ -763,12 +787,12 @@ class ProcessPoolExecutor(_base.Executor):
 
         process_count = len(self._processes)
         if process_count < self._max_workers:
-            # Assertion disabled as this codepath is also used to replace a
-            # worker that unexpectedly dies, even when using the 'fork' start
-            # method. That means there is still a potential deadlock bug. If a
-            # 'fork' mp_context worker dies, we'll be forking a new one when
-            # we know a thread is running (self._executor_manager_thread).
-            #assert self._safe_to_dynamically_spawn_children or not self._executor_manager_thread, 'https://github.com/python/cpython/issues/90622'
+            # gh-90622: spawning a child via fork while another thread is
+            # running can deadlock in the child.  submit() only calls this
+            # method when using a non-fork start method.
+            assert (self._safe_to_dynamically_spawn_children
+                    or not self._executor_manager_thread), (
+                    'https://github.com/python/cpython/issues/90622')
             self._spawn_process()
 
     def _launch_processes(self):

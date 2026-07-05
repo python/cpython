@@ -285,11 +285,6 @@ in a REPL or a lambda should not be expected to work.
    default in absence of a *mp_context* parameter. This feature is incompatible
    with the "fork" start method.
 
-   .. note::
-      Bugs have been reported when using the *max_tasks_per_child* feature that
-      can result in the :class:`ProcessPoolExecutor` hanging in some
-      circumstances. Follow its eventual resolution in :gh:`115634`.
-
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
       :exc:`~concurrent.futures.process.BrokenProcessPool` error is now raised.
@@ -326,6 +321,11 @@ in a REPL or a lambda should not be expected to work.
    .. versionchanged:: 3.13
       *max_workers* uses :func:`os.process_cpu_count` by default, instead of
       :func:`os.cpu_count`.
+
+   .. versionchanged:: next
+      Fixed a deadlock (:gh:`115634`) where the executor could hang after
+      a worker process exited upon reaching its *max_tasks_per_child*
+      limit while tasks remained queued.
 
 .. _processpoolexecutor-example:
 
