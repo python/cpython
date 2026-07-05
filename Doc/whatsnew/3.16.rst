@@ -673,12 +673,6 @@ re
   (Contributed by Serhiy Storchaka in :gh:`152033` and Pieter Eendebak in
   :gh:`152056`.)
 
-module_name
------------
-
-* TODO
-
-
 
 Removed
 ========
