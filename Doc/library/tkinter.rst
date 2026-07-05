@@ -1544,7 +1544,7 @@ Base and mixin classes
       This is typically used to wait for the user to finish interacting with a
       dialog box.
 
-   .. method:: wait_visibility(window=None)
+   .. method:: wait_visibility(window=None, *, timeout=None)
 
       Wait until the visibility state of *window* changes, for example when it
       first appears on the screen, continuing to process events in the
@@ -1552,6 +1552,13 @@ Base and mixin classes
       If *window* is omitted, this widget is used.
       This is typically used to wait for a newly created window to become
       visible before acting on it.
+
+      If *timeout* is given, it is the maximum time to wait in seconds.
+      Return ``True`` once *window* is viewable, or ``False`` if the timeout elapsed before that (or *window* was destroyed while waiting).
+      Without a *timeout* the call blocks until the visibility of *window* changes and always returns ``True``.
+
+      .. versionchanged:: next
+         Added the *timeout* parameter and the return value.
 
    The methods with the ``focus_`` prefix manage the keyboard focus.
 
