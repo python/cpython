@@ -24,7 +24,7 @@
 This module defines three classes, :class:`IMAP4`, :class:`IMAP4_SSL` and
 :class:`IMAP4_stream`, which encapsulate a connection to an IMAP4 server and
 implement a large subset of the IMAP4rev1 client protocol as defined in
-:rfc:`2060`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
+:rfc:`3501`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
 note that the ``STATUS`` command is not supported in IMAP4.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -629,7 +629,7 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.store(message_set, command, flag_list)
 
    Alters flag dispositions for messages in mailbox.  *command* is specified by
-   section 6.4.6 of :rfc:`2060` as being one of "FLAGS", "+FLAGS", or "-FLAGS",
+   section 6.4.6 of :rfc:`3501` as being one of "FLAGS", "+FLAGS", or "-FLAGS",
    optionally with a suffix of ".SILENT".
 
    For example, to set the delete flag on all messages::
@@ -643,11 +643,11 @@ An :class:`IMAP4` instance has the following methods:
 
       Creating flags containing ']' (for example: "[test]") violates
       :rfc:`3501` (the IMAP protocol).  However, imaplib has historically
-      allowed creation of such tags, and popular IMAP servers, such as Gmail,
+      allowed creation of such flags, and popular IMAP servers, such as Gmail,
       accept and produce such flags.  There are non-Python programs which also
-      create such tags.  Although it is an RFC violation and IMAP clients and
+      create such flags.  Although it is an RFC violation and IMAP clients and
       servers are supposed to be strict, imaplib still continues to allow
-      such tags to be created for backward compatibility reasons, and as of
+      such flags to be created for backward compatibility reasons, and as of
       Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
 
