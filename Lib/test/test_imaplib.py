@@ -1740,6 +1740,16 @@ class NewIMAPTestsMixin:
         self.assertEqual(data, [b'MYCOMMAND completed'])
         self.assertEqual(server.args, ['arg1', 'arg2'])
 
+    def test_uppercase_command_names(self):
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        self.assertEqual(client.CAPABILITY, client.capability)
+        self.assertEqual(client.SELECT, client.select)
+        typ, data = client.CAPABILITY()
+        self.assertEqual(typ, 'OK')
+        with self.assertRaises(AttributeError):
+            client.NONEXISTENT
+
     def test_control_characters(self):
         client, _ = self._setup(SimpleIMAPHandler)
         for c0 in support.control_characters_c0():
