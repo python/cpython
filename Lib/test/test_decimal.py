@@ -4968,6 +4968,14 @@ class CFunctionality(unittest.TestCase):
         self.assertEqual(c._traps, C.DecRounded)
 
     @requires_extra_functionality
+    def test_c_context_apply(self):
+        c = C.Context(prec=3)
+        self.assertEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
+        # A higher precision won't see them as equal.
+        c = C.Context(prec=5)
+        self.assertNotEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
+
+    @requires_extra_functionality
     def test_constants(self):
         # Condition flags
         cond = (

@@ -143,6 +143,15 @@ class TestImaplib(unittest.TestCase):
             internal = imaplib.Time2Internaldate(t)
             self.assertEqual(internal, expected)
 
+    @run_with_tz('STD-1DST,M3.2.0,M11.1.0')
+    def test_Time2Internaldate_datetime_timetuple(self):
+        date_time = datetime.fromtimestamp(2000000000).timetuple()
+        self.assertIsNone(date_time.tm_gmtoff)
+        self.assertEqual(
+            imaplib.Time2Internaldate(date_time),
+            '"18-May-2033 05:33:20 +0200"',
+        )
+
     def test_that_Time2Internaldate_returns_a_result(self):
         # Without tzset, we can check only that it successfully
         # produces a result, not the correctness of the result itself,
@@ -976,6 +985,23 @@ class NewIMAPTestsMixin:
         typ, data = client.lsub('New folder', '%')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['"New folder"', '%'])
+
+    def test_extra_blank_line_after_literal(self):
+        # Some buggy servers send an extra blank line after the counted
+        # literal data.  imaplib should skip it instead of failing.
+        class BlankLineHandler(SimpleIMAPHandler):
+            def cmd_FETCH(self, tag, args):
+                self._send(b'* 1 FETCH (BODY[HEADER] {13}\r\n')
+                self._send(b'Subject: test')       # 13-byte literal
+                self._send(b'\r\n)\r\n')            # stray blank line, then ')'
+                self._send_tagged(tag, 'OK', 'FETCH completed')
+        client, _ = self._setup(BlankLineHandler)
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.fetch('1', '(BODY[HEADER])')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [(b'1 (BODY[HEADER] {13}', b'Subject: test'),
+                                b')'])
 
     def test_unselect(self):
         client, server = self._setup(SimpleIMAPHandler)
