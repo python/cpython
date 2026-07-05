@@ -433,6 +433,9 @@ An :class:`IMAP4` instance has the following methods:
    the password. It will only work if the server ``CAPABILITY`` response includes
    the phrase ``AUTH=CRAM-MD5``.
 
+   .. versionchanged:: 3.15
+      An :exc:`IMAP4.error` is raised if MD5 support is not available.
+
 
 .. method:: IMAP4.login_plain(login, password)
 
@@ -446,9 +449,6 @@ An :class:`IMAP4` instance has the following methods:
     the phrase ``AUTH=PLAIN``.
 
     .. versionadded:: 3.11
-
-   .. versionchanged:: 3.15
-      An :exc:`IMAP4.error` is raised if MD5 support is not available.
 
 
 .. method:: IMAP4.logout()
