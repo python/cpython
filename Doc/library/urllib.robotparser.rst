@@ -121,5 +121,5 @@ object with additional user-agent headers populated::
    >>> rp.read()
    >>> rp.can_fetch("*", "http://www.pythontest.net/")
    True
-   >>> rp.can_fetch("*", "https://www.pythontest.net/no-robots-here/")
+   >>> rp.can_fetch("*", "http://www.pythontest.net/no-robots-here/")
    False
