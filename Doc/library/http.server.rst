@@ -493,7 +493,7 @@ instantiation, of which this module provides three different variants:
 
    .. method:: guess_type(path)
 
-      Guess the type of the file of given *path*.
+      Guess the type of the file at the given *path*.
 
       This returns a string of the form ``type/subtype``, usable for
       a MIME Content-type header.
