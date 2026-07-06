@@ -9,11 +9,13 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import _2G
 from test.support import subTests
+from test.support.script_helper import assert_python_ok
 import weakref
 import pickle
 import operator
 import struct
 import sys
+import textwrap
 
 import array
 from array import _array_reconstructor as array_reconstructor
@@ -34,6 +36,23 @@ class MiscTest(unittest.TestCase):
     def test_array_is_sequence(self):
         self.assertIsInstance(array.array("B"), collections.abc.MutableSequence)
         self.assertIsInstance(array.array("B"), collections.abc.Reversible)
+
+    @support.cpython_only
+    def test_module_init_mutablesequence_register_failure(self):
+        # gh-153210: Check that when collections.abc.MutableSequence is unavailable
+        # The refcount of ArrayType is decremented correctly.
+        # This test only catches the issue in a debug build.
+        script = textwrap.dedent("""
+            import collections.abc
+            del collections.abc.MutableSequence
+            try:
+                import array
+            except AttributeError:
+                pass
+            else:
+                raise SystemExit("import array should have failed")
+        """)
+        assert_python_ok("-c", script)
 
     def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)

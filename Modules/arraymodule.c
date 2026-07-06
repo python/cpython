@@ -3409,14 +3409,12 @@ array_modexec(PyObject *m)
     PyObject *mutablesequence = PyImport_ImportModuleAttrString(
             "collections.abc", "MutableSequence");
     if (!mutablesequence) {
-        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
     PyObject *res = PyObject_CallMethod(mutablesequence, "register", "O",
                                         (PyObject *)state->ArrayType);
     Py_DECREF(mutablesequence);
     if (!res) {
-        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
     Py_DECREF(res);
