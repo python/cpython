@@ -2238,6 +2238,16 @@ SyntaxError: only single target (not tuple) can be annotated
 Traceback (most recent call last):
 SyntaxError: only single target (not list) can be annotated
 
+>>> 1: int
+Traceback (most recent call last):
+SyntaxError: illegal target for annotation
+>>> -x: int = 1
+Traceback (most recent call last):
+SyntaxError: illegal target for annotation
+>>> (x for x in y): int
+Traceback (most recent call last):
+SyntaxError: illegal target for annotation
+
 # 'not' after operators:
 
 >>> 3 + not 3
