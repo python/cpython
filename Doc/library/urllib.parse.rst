@@ -67,7 +67,7 @@ or on combining URL components into a URL string.
    attributes added to the returned object: username, password, hostname, and
    port.
 
-   % escapes are not decoded.
+   Percent-encoded sequences are not decoded.
 
    For example:
 
