@@ -1,0 +1,4 @@
+Optimize :meth:`dict.fromkeys` when the source iterable is a compact combined
+dict by cloning the underlying ``PyDictKeysObject`` in a single ``memcpy``
+and filling values in one pass, instead of calling ``insertdict()`` for every
+key. This avoids O(n) hash lookups and collision probing on the target dict.
