@@ -110,8 +110,8 @@ def _optimize_charset_segment(charset, iscased=None, fixup=None, fixes=None,
                 elif op is RANGE:
                     start, end = av
                     end += 1
-                    r = range(start, end)
                     if fixup: # IGNORECASE and not LOCALE
+                        r = range(start, end)
                         if fixes:
                             for i in map(fixup, r):
                                 charmap[i] = 1
