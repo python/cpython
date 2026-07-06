@@ -414,6 +414,11 @@ tkinter
   :meth:`~tkinter.font.Font.measure` and :meth:`~tkinter.font.Font.metrics`.
   (Contributed by Serhiy Storchaka in :gh:`143990`.)
 
+* Added the :mod:`tkinter.fontchooser` module which provides the
+  :class:`~tkinter.fontchooser.FontChooser` class as an interface to the
+  native font selection dialog.
+  (Contributed by Serhiy Storchaka in :gh:`72880`.)
+
 xml
 ---
 

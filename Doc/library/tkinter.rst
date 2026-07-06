@@ -146,6 +146,9 @@ The modules that provide Tk support include:
 :mod:`tkinter.font`
    Utilities to help work with fonts.
 
+:mod:`tkinter.fontchooser`
+   Dialog to let the user choose a font.
+
 :mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
 
