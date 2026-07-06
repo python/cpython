@@ -21,7 +21,7 @@ from generators_common import (
 )
 from stack import Stack
 from cwriter import CWriter
-from typing import Callable, List, TextIO
+from typing import Callable, TextIO
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
 
