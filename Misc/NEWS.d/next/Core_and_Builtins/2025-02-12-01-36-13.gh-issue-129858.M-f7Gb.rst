@@ -1,1 +1,0 @@
-``elif`` statements that follow an ``else`` block now have a specific error message.

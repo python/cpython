@@ -97,11 +97,6 @@ static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
 }
 #define PyFunction_GET_GLOBALS(func) PyFunction_GET_GLOBALS(_PyObject_CAST(func))
 
-static inline PyObject* PyFunction_GET_BUILTINS(PyObject *func) {
-    return _PyFunction_CAST(func)->func_builtins;
-}
-#define PyFunction_GET_BUILTINS(func) PyFunction_GET_BUILTINS(_PyObject_CAST(func))
-
 static inline PyObject* PyFunction_GET_MODULE(PyObject *func) {
     return _PyFunction_CAST(func)->func_module;
 }
@@ -139,7 +134,8 @@ PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
     V(DESTROY)                   \
     V(MODIFY_CODE)               \
     V(MODIFY_DEFAULTS)           \
-    V(MODIFY_KWDEFAULTS)
+    V(MODIFY_KWDEFAULTS)         \
+    V(MODIFY_QUALNAME)
 
 typedef enum {
     #define PY_DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,

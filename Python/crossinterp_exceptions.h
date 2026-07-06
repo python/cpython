@@ -7,13 +7,6 @@ _ensure_current_cause(PyThreadState *tstate, PyObject *cause)
     }
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     assert(exc != NULL);
-    PyObject *ctx = PyException_GetContext(exc);
-    if (ctx == NULL) {
-        PyException_SetContext(exc, Py_NewRef(cause));
-    }
-    else {
-        Py_DECREF(ctx);
-    }
     assert(PyException_GetCause(exc) == NULL);
     PyException_SetCause(exc, Py_NewRef(cause));
     _PyErr_SetRaisedException(tstate, exc);
@@ -24,7 +17,7 @@ _ensure_current_cause(PyThreadState *tstate, PyObject *cause)
 
 static PyTypeObject _PyExc_InterpreterError = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "interpreters.InterpreterError",
+    .tp_name = "concurrent.interpreters.InterpreterError",
     .tp_doc = PyDoc_STR("A cross-interpreter operation failed"),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     //.tp_traverse = ((PyTypeObject *)PyExc_Exception)->tp_traverse,
@@ -37,7 +30,7 @@ PyObject *PyExc_InterpreterError = (PyObject *)&_PyExc_InterpreterError;
 
 static PyTypeObject _PyExc_InterpreterNotFoundError = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "interpreters.InterpreterNotFoundError",
+    .tp_name = "concurrent.interpreters.InterpreterNotFoundError",
     .tp_doc = PyDoc_STR("An interpreter was not found"),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     //.tp_traverse = ((PyTypeObject *)PyExc_Exception)->tp_traverse,
@@ -51,7 +44,7 @@ PyObject *PyExc_InterpreterNotFoundError = (PyObject *)&_PyExc_InterpreterNotFou
 static int
 _init_notshareableerror(exceptions_t *state)
 {
-    const char *name = "interpreters.NotShareableError";
+    const char *name = "concurrent.interpreters.NotShareableError";
     PyObject *base = PyExc_TypeError;
     PyObject *ns = NULL;
     PyObject *exctype = PyErr_NewException(name, base, ns);

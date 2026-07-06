@@ -3,12 +3,10 @@
 
 TSAN_TESTS = [
     'test_asyncio',
-    # TODO: enable more of test_capi once bugs are fixed (GH-116908, GH-116909).
-    'test_capi.test_mem',
-    'test_capi.test_pyatomic',
+    'test_capi',
     'test_code',
     'test_ctypes',
-    # 'test_concurrent_futures',  # gh-130605: too many data races
+    'test_concurrent_futures',
     'test_enum',
     'test_functools',
     'test_httpservers',
@@ -31,6 +29,7 @@ TSAN_TESTS = [
     'test_threadsignals',
     'test_weakref',
     'test_free_threading',
+    'test_embed',
 ]
 
 # Tests that should be run with `--parallel-threads=N` under TSAN. These tests

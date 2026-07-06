@@ -123,6 +123,24 @@ Operating System Utilities
    This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
    not call those functions directly!
 
+
+.. c:function:: int PyOS_InterruptOccurred(void)
+
+   Check if a :c:macro:`!SIGINT` signal has been received.
+
+   Returns ``1`` if a :c:macro:`!SIGINT` has occurred and clears the signal flag,
+   or ``0`` otherwise.
+
+   In most cases, you should prefer :c:func:`PyErr_CheckSignals` over this function.
+   :c:func:`!PyErr_CheckSignals` invokes the appropriate signal handlers
+   for all pending signals, allowing Python code to handle the signal properly.
+   This function only detects :c:macro:`!SIGINT` and does not invoke any Python
+   signal handlers.
+
+   This function is async-signal-safe and this function cannot fail.
+   The caller must hold an :term:`attached thread state`.
+
+
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
    .. warning::
@@ -258,24 +276,63 @@ These are utility functions that make functionality from the :mod:`sys` module
 accessible to C code.  They all work with the current interpreter thread's
 :mod:`sys` module's dict, which is contained in the internal thread state structure.
 
+.. c:function:: PyObject *PySys_GetAttr(PyObject *name)
+
+   Get the attribute *name* of the :mod:`sys` module.
+   Return a :term:`strong reference`.
+   Raise :exc:`RuntimeError` and return ``NULL`` if it does not exist or
+   if the :mod:`sys` module cannot be found.
+
+   If the non-existing object should not be treated as a failure, you can use
+   :c:func:`PySys_GetOptionalAttr` instead.
+
+   .. versionadded:: 3.15
+
+.. c:function:: PyObject *PySys_GetAttrString(const char *name)
+
+   This is the same as :c:func:`PySys_GetAttr`, but *name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   If the non-existing object should not be treated as a failure, you can use
+   :c:func:`PySys_GetOptionalAttrString` instead.
+
+   .. versionadded:: 3.15
+
+.. c:function:: int PySys_GetOptionalAttr(PyObject *name, PyObject **result)
+
+   Variant of :c:func:`PySys_GetAttr` which doesn't raise
+   exception if the object does not exist.
+
+   * Set *\*result* to a new :term:`strong reference` to the object and
+     return ``1`` if the object exists.
+   * Set *\*result* to ``NULL`` and return ``0`` without setting an exception
+     if the object does not exist.
+   * Set an exception, set *\*result* to ``NULL``, and return ``-1``,
+     if an error occurred.
+
+   .. versionadded:: 3.15
+
+.. c:function:: int PySys_GetOptionalAttrString(const char *name, PyObject **result)
+
+   This is the same as :c:func:`PySys_GetOptionalAttr`, but *name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.15
+
 .. c:function:: PyObject *PySys_GetObject(const char *name)
 
-   Return the object *name* from the :mod:`sys` module or ``NULL`` if it does
-   not exist, without setting an exception.
+   Similar to :c:func:`PySys_GetAttrString`, but return a :term:`borrowed
+   reference` and return ``NULL`` *without* setting exception on failure.
+
+   Preserves exception that was set before the call.
 
 .. c:function:: int PySys_SetObject(const char *name, PyObject *v)
 
    Set *name* in the :mod:`sys` module to *v* unless *v* is ``NULL``, in which
    case *name* is deleted from the sys module. Returns ``0`` on success, ``-1``
    on error.
-
-.. c:function:: void PySys_ResetWarnOptions()
-
-   Reset :data:`sys.warnoptions` to an empty list. This function may be
-   called prior to :c:func:`Py_Initialize`.
-
-   .. deprecated-removed:: 3.13 3.15
-      Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
 
 .. c:function:: void PySys_WriteStdout(const char *format, ...)
 

@@ -1,2 +1,0 @@
-When PDB is attached to a remote process, do a better job of intercepting
-Ctrl+C and forwarding it to the remote process.

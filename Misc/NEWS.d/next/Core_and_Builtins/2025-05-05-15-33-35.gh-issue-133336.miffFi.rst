@@ -1,2 +1,0 @@
-:option:`!-J` is no longer reserved for use by Jython.
-Patch by Adam Turner.

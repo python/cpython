@@ -1,1 +1,0 @@
-Add :data:`!socket.IP_FREEBIND` constant on Linux 2.4 and later.

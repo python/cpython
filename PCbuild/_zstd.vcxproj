@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="..\Modules\_zstd\_zstdmodule.h" />
     <ClInclude Include="..\Modules\_zstd\buffer.h" />
+    <ClInclude Include="..\Modules\_zstd\zstddict.h" />
     <ClInclude Include="$(zstdDir)lib\common\bitstream.h" />
     <ClInclude Include="$(zstdDir)lib\common\error_private.h" />
     <ClInclude Include="$(zstdDir)lib\common\fse.h" />

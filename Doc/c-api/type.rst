@@ -3,7 +3,7 @@
 .. _typeobjects:
 
 Type Objects
-------------
+============
 
 .. index:: pair: object; type
 
@@ -110,8 +110,27 @@ Type Objects
    :c:func:`!_PyType_Lookup` is not called on *type* between the modifications;
    this is an implementation detail and subject to change.)
 
+   The callback is also invoked when a watched heap type is deallocated.
+
    An extension should never call ``PyType_Watch`` with a *watcher_id* that was
    not returned to it by a previous call to :c:func:`PyType_AddWatcher`.
+
+   .. versionadded:: 3.12
+
+   .. versionchanged:: 3.15
+      The callback is now also invoked when a watched heap type is deallocated.
+
+
+.. c:function:: int PyType_Unwatch(int watcher_id, PyObject *type)
+
+   Mark *type* as not watched. This undoes a previous call to
+   :c:func:`PyType_Watch`. *type* must not be ``NULL``.
+
+   An extension should never call this function with a *watcher_id* that was
+   not returned to it by a previous call to :c:func:`PyType_AddWatcher`.
+
+   On success, this function returns ``0``. On failure, this function returns
+   ``-1`` with an exception set.
 
    .. versionadded:: 3.12
 
@@ -124,13 +143,34 @@ Type Objects
    called on *type* or any type in its MRO; violating this rule could cause
    infinite recursion.
 
+   The callback may be called during type deallocation. In this case, the type
+   object is temporarily resurrected (its reference count is at least 1) and all
+   its attributes are still valid. However, the callback should not store new
+   strong references to the type, as this would resurrect the object and prevent
+   its deallocation.
+
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.15
+      The callback may now be called during deallocation of a watched heap type.
 
 
 .. c:function:: int PyType_HasFeature(PyTypeObject *o, int feature)
 
    Return non-zero if the type object *o* sets the feature *feature*.
    Type features are denoted by single bit flags.
+
+
+.. c:function:: int PyType_FastSubclass(PyTypeObject *type, int flag)
+
+   Return non-zero if the type object *type* sets the subclass flag *flag*.
+   Subclass flags are denoted by
+   :c:macro:`Py_TPFLAGS_*_SUBCLASS <Py_TPFLAGS_LONG_SUBCLASS>`.
+   This function is used by many ``_Check`` functions for common types.
+
+   .. seealso::
+       :c:func:`PyObject_TypeCheck`, which is used as a slower alternative in
+       ``_Check`` functions for types that don't come with subclass flags.
 
 
 .. c:function:: int PyType_IS_GC(PyTypeObject *o)
@@ -151,14 +191,31 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
-   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type object.  Use
-   Python's default memory allocation mechanism to allocate a new instance and
-   initialize all its contents to ``NULL``.
+   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type
+   object.  Uses Python's default memory allocation mechanism to allocate memory
+   for a new instance, zeros the memory, then initializes the memory as if by
+   calling :c:func:`PyObject_Init` or :c:func:`PyObject_InitVar`.
+
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
+
+   For types that support garbage collection (i.e., the
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set), this function behaves like
+   :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar` (except the
+   memory is guaranteed to be zeroed before initialization), and should be
+   paired with :c:func:`PyObject_GC_Del` in :c:member:`~PyTypeObject.tp_free`.
+   Otherwise, it behaves like :c:macro:`PyObject_New` or
+   :c:macro:`PyObject_NewVar` (except the memory is guaranteed to be zeroed
+   before initialization) and should be paired with :c:func:`PyObject_Free` in
+   :c:member:`~PyTypeObject.tp_free`.
+
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
-   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type object.  Create a
-   new instance using the type's :c:member:`~PyTypeObject.tp_alloc` slot.
+   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type
+   object.  Creates a new instance using the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot and returns the resulting object.
+
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
@@ -176,12 +233,14 @@ Type Objects
        GC protocol itself by at least implementing the
        :c:member:`~PyTypeObject.tp_traverse` handle.
 
+
 .. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
    Return the type's name. Equivalent to getting the type's
    :attr:`~type.__name__` attribute.
 
    .. versionadded:: 3.11
+
 
 .. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
 
@@ -198,12 +257,14 @@ Type Objects
 
    .. versionadded:: 3.13
 
+
 .. c:function:: PyObject* PyType_GetModuleName(PyTypeObject *type)
 
    Return the type's module name. Equivalent to getting the
    :attr:`type.__module__` attribute.
 
    .. versionadded:: 3.13
+
 
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
@@ -221,10 +282,15 @@ Type Objects
       :c:func:`PyType_GetSlot` can now accept all types.
       Previously, it was limited to :ref:`heap types <heap-types>`.
 
+
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
    Return the module object associated with the given type when the type was
    created using :c:func:`PyType_FromModuleAndSpec`.
+
+   The returned reference is :term:`borrowed <borrowed reference>` from *type*,
+   and will be valid as long as you hold a reference to *type*.
+   Do not release it with :c:func:`Py_DECREF` or similar.
 
    If no module is associated with the given type, sets :py:class:`TypeError`
    and returns ``NULL``.
@@ -235,10 +301,11 @@ Type Objects
    ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
    are not necessarily defined in the same module as their superclass.
    See :c:type:`PyCMethod` to get the class that defines the method.
-   See :c:func:`PyType_GetModuleByDef` for cases when :c:type:`!PyCMethod` cannot
-   be used.
+   See :c:func:`PyType_GetModuleByToken` for cases when :c:type:`!PyCMethod`
+   cannot be used.
 
    .. versionadded:: 3.9
+
 
 .. c:function:: void* PyType_GetModuleState(PyTypeObject *type)
 
@@ -254,10 +321,11 @@ Type Objects
 
    .. versionadded:: 3.9
 
-.. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 
-   Find the first superclass whose module was created from
-   the given :c:type:`PyModuleDef` *def*, and return that module.
+.. c:function:: PyObject* PyType_GetModuleByToken(PyTypeObject *type, const void *mod_token)
+
+   Find the first superclass whose module has the given
+   :ref:`module token <ext-module-token>`, and return that module.
 
    If no module is found, raises a :py:class:`TypeError` and returns ``NULL``.
 
@@ -267,12 +335,34 @@ Type Objects
    and other places where a method's defining class cannot be passed using the
    :c:type:`PyCMethod` calling convention.
 
+   .. versionadded:: 3.15
+
+
+.. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+
+   Find the first superclass whose module was created from the given
+   :c:type:`PyModuleDef` *def*, or whose :ref:`module token <ext-module-token>`
+   is equal to *def*, and return that module.
+
+   Note that modules created from a :c:type:`PyModuleDef` always have their
+   token set to the :c:type:`PyModuleDef`'s address.
+   In other words, this function is equivalent to
+   :c:func:`PyType_GetModuleByToken`, except that it:
+
+   - returns a borrowed reference, and
+   - has a non-``void*`` argument type (which is a cosmetic difference in C).
+
+   The returned reference is :term:`borrowed <borrowed reference>` from *type*,
+   and will be valid as long as you hold a reference to *type*.
+   Do not release it with :c:func:`Py_DECREF` or similar.
+
    .. versionadded:: 3.11
 
-.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+
+.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *tp_token, PyTypeObject **result)
 
    Find the first superclass in *type*'s :term:`method resolution order` whose
-   :c:macro:`Py_tp_token` token is equal to the given one.
+   :c:macro:`Py_tp_token` token is equal to *tp_token*.
 
    * If found, set *\*result* to a new :term:`strong reference`
      to it and return ``1``.
@@ -283,9 +373,10 @@ Type Objects
    The *result* argument may be ``NULL``, in which case *\*result* is not set.
    Use this if you need only the return value.
 
-   The *token* argument may not be ``NULL``.
+   The *tp_token* argument may not be ``NULL``.
 
    .. versionadded:: 3.14
+
 
 .. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 
@@ -297,36 +388,29 @@ Type Objects
    .. versionadded:: 3.12
 
 
+.. c:function:: int PyType_SUPPORTS_WEAKREFS(PyTypeObject *type)
+
+   Return true if instances of *type* support creating weak references, false
+   otherwise. This function always succeeds. *type* must not be ``NULL``.
+
+   .. seealso::
+      * :ref:`weakrefobjects`
+      * :py:mod:`weakref`
+
+
+.. _creating-heap-types:
+
 Creating Heap-Allocated Types
-.............................
+-----------------------------
 
-The following functions and structs are used to create
-:ref:`heap types <heap-types>`.
+The following function is used to create :ref:`heap types <heap-types>`:
 
-.. c:function:: PyObject* PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases)
+.. c:function:: PyObject *PyType_FromSlots(const PySlot *slots)
 
-   Create and return a :ref:`heap type <heap-types>` from the *spec*
-   (see :c:macro:`Py_TPFLAGS_HEAPTYPE`).
-
-   The metaclass *metaclass* is used to construct the resulting type object.
-   When *metaclass* is ``NULL``, the metaclass is derived from *bases*
-   (or *Py_tp_base[s]* slots if *bases* is ``NULL``, see below).
-
-   Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
-   supported, except if ``tp_new`` is ``NULL``.
-
-   The *bases* argument can be used to specify base classes; it can either
-   be only one class or a tuple of classes.
-   If *bases* is ``NULL``, the *Py_tp_bases* slot is used instead.
-   If that also is ``NULL``, the *Py_tp_base* slot is used instead.
-   If that also is ``NULL``, the new type derives from :class:`object`.
-
-   The *module* argument can be used to record the module in which the new
-   class is defined. It must be a module object or ``NULL``.
-   If not ``NULL``, the module is associated with the new type and can later be
-   retrieved with :c:func:`PyType_GetModule`.
-   The associated module is not inherited by subclasses; it must be specified
-   for each class individually.
+   Create and return a :ref:`heap type <heap-types>` from a :c:type:`!PySlot`
+   array.
+   See :ref:`capi-slots` for general information on slots,
+   and :ref:`pyslot_type_slot_ids` for slots specific to type creation.
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
@@ -343,74 +427,36 @@ The following functions and structs are used to create
    * :py:meth:`~object.__init_subclass__` is not called on any bases.
    * :py:meth:`~object.__set_name__` is not called on new descriptors.
 
-   .. versionadded:: 3.12
+   Slots are typically defined as a global static constant arrays.
+   However, sometimes slot values are not statically known at compile time.
+   For example, slots like :c:data:`Py_tp_bases`, :c:data:`Py_tp_metaclass`
+   and :c:data:`Py_tp_module` require live Python objects.
+   In this case, it is recommended to put such slots on the stack,
+   and use :c:macro:`Py_slot_subslots` to refer to an array of static slots.
+   For example::
 
-.. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+      static const PySlot my_slots[] = {
+         PySlot_STATIC_DATA(Py_tp_name, "MyClass"),
+         PySlot_FUNC(Py_tp_repr, my_repr_func),
+         ...
+         PySlot_END
+      };
 
-   Equivalent to ``PyType_FromMetaclass(NULL, module, spec, bases)``.
+      PyObject *make_my_class(PyObject *module) {
+         PySlot all_slots[] = {
+            PySlot_STATIC_DATA(Py_slot_subslots, my_slots),
+            PySlot_DATA(Py_tp_module, module),
+            PySlot_END
+         };
+         return PyType_FromSlots(all_slots);
+      }
 
-   .. versionadded:: 3.9
-
-   .. versionchanged:: 3.10
-
-      The function now accepts a single class as the *bases* argument and
-      ``NULL`` as the ``tp_doc`` slot.
-
-   .. versionchanged:: 3.12
-
-      The function now finds and uses a metaclass corresponding to the provided
-      base classes.  Previously, only :class:`type` instances were returned.
-
-      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
-      which may result in incomplete initialization.
-      Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated.
-
-   .. versionchanged:: 3.14
-
-      Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
-
-.. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
-
-   Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, bases)``.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.12
-
-      The function now finds and uses a metaclass corresponding to the provided
-      base classes.  Previously, only :class:`type` instances were returned.
-
-      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
-      which may result in incomplete initialization.
-      Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated.
-
-   .. versionchanged:: 3.14
-
-      Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
-
-.. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
-
-   Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, NULL)``.
-
-   .. versionchanged:: 3.12
-
-      The function now finds and uses a metaclass corresponding to the
-      base classes provided in *Py_tp_base[s]* slots.
-      Previously, only :class:`type` instances were returned.
-
-      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
-      which may result in incomplete initialization.
-      Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is deprecated.
-
-   .. versionchanged:: 3.14
-
-      Creating classes whose metaclass overrides
-      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
+Heap types created without the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag may be
+modified, for example by setting attributes on them, as with classes defined
+in Python code.
+Sometimes, such modifications are necessary to fully initialize a type,
+but you may wish to prevent users from changing the type after
+the initialization is done:
 
 .. c:function:: int PyType_Freeze(PyTypeObject *type)
 
@@ -426,171 +472,286 @@ The following functions and structs are used to create
 
    .. versionadded:: 3.14
 
-.. raw:: html
 
-   <!-- Keep old URL fragments working (see gh-97908) -->
-   <span id='c.PyType_Spec.PyType_Spec.name'></span>
-   <span id='c.PyType_Spec.PyType_Spec.basicsize'></span>
-   <span id='c.PyType_Spec.PyType_Spec.itemsize'></span>
-   <span id='c.PyType_Spec.PyType_Spec.flags'></span>
-   <span id='c.PyType_Spec.PyType_Spec.slots'></span>
+.. _pyslot_type_slot_ids:
 
-.. c:type:: PyType_Spec
+Type slot IDs
+.............
 
-   Structure defining a type's behavior.
+Most type slot IDs are named like the field names of the structures
+:c:type:`PyTypeObject`, :c:type:`PyNumberMethods`,
+:c:type:`PySequenceMethods`, :c:type:`PyMappingMethods` and
+:c:type:`PyAsyncMethods` with an added ``Py_`` prefix.
+For example, use:
 
-   .. c:member:: const char* name
+* :c:data:`Py_tp_dealloc` to set :c:member:`PyTypeObject.tp_dealloc`
+* :c:data:`Py_nb_add` to set :c:member:`PyNumberMethods.nb_add`
+* :c:data:`Py_sq_length` to set :c:member:`PySequenceMethods.sq_length`
 
-      Name of the type, used to set :c:member:`PyTypeObject.tp_name`.
+The following slots need additional considerations when specified as slots:
 
-   .. c:member:: int basicsize
+* :c:data:`Py_tp_name`
+* :c:data:`Py_tp_basicsize` and :c:data:`Py_tp_extra_basicsize`
+* :c:data:`Py_tp_itemsize`
+* :c:data:`Py_tp_flags`
 
-      If positive, specifies the size of the instance in bytes.
-      It is used to set :c:member:`PyTypeObject.tp_basicsize`.
+Additional slots do not directly correspond to a :c:type:`!PyTypeObject`
+struct field:
 
-      If zero, specifies that :c:member:`~PyTypeObject.tp_basicsize`
-      should be inherited.
+* :c:data:`Py_tp_token`
+* :c:data:`Py_tp_metaclass`
+* :c:data:`Py_tp_module`
 
-      If negative, the absolute value specifies how much space instances of the
-      class need *in addition* to the superclass.
-      Use :c:func:`PyObject_GetTypeData` to get a pointer to subclass-specific
-      memory reserved this way.
-      For negative :c:member:`!basicsize`, Python will insert padding when
-      needed to meet :c:member:`~PyTypeObject.tp_basicsize`'s alignment
-      requirements.
+The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
-      .. versionchanged:: 3.12
+* :c:member:`~PyTypeObject.tp_weaklistoffset`
+  (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
+* :c:member:`~PyTypeObject.tp_dictoffset`
+  (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
+* :c:member:`~PyTypeObject.tp_vectorcall_offset`
+  (use ``"__vectorcalloffset__"`` in :ref:`PyMemberDef <pymemberdef-offsets>`)
 
-         Previously, this field could not be negative.
+If it is not possible to switch to a ``MANAGED`` flag (for example,
+for vectorcall or to support Python older than 3.12), specify the
+offset in :c:data:`Py_tp_members`.
+See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
+for details.
 
-   .. c:member:: int itemsize
+The following internal fields cannot be set at all when creating a heap
+type:
 
-      Size of one element of a variable-size type, in bytes.
-      Used to set :c:member:`PyTypeObject.tp_itemsize`.
-      See ``tp_itemsize`` documentation for caveats.
+* :c:member:`~PyTypeObject.tp_dict`,
+  :c:member:`~PyTypeObject.tp_mro`,
+  :c:member:`~PyTypeObject.tp_cache`,
+  :c:member:`~PyTypeObject.tp_subclasses`, and
+  :c:member:`~PyTypeObject.tp_weaklist`.
 
-      If zero, :c:member:`~PyTypeObject.tp_itemsize` is inherited.
-      Extending arbitrary variable-sized classes is dangerous,
-      since some types use a fixed offset for variable-sized memory,
-      which can then overlap fixed-sized memory used by a subclass.
-      To help prevent mistakes, inheriting ``itemsize`` is only possible
-      in the following situations:
+The :c:data:`Py_tp_base` slot is equivalent to :c:data:`Py_tp_bases`;
+both may be set either to a type or a tuple of types.
+If both are specified, the value of :c:data:`Py_tp_bases`
+is used.
 
-      - The base is not variable-sized (its
-        :c:member:`~PyTypeObject.tp_itemsize`).
-      - The requested :c:member:`PyType_Spec.basicsize` is positive,
-        suggesting that the memory layout of the base class is known.
-      - The requested :c:member:`PyType_Spec.basicsize` is zero,
-        suggesting that the subclass does not access the instance's memory
-        directly.
-      - With the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag.
+Slot values may not be ``NULL``, except for the following:
 
-   .. c:member:: unsigned int flags
+* :c:data:`Py_tp_doc`
+* :c:data:`Py_tp_token` (for clarity, prefer :c:data:`Py_TP_USE_SPEC`
+  rather than ``NULL``)
 
-      Type flags, used to set :c:member:`PyTypeObject.tp_flags`.
+.. versionchanged:: 3.9
+   Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
 
-      If the ``Py_TPFLAGS_HEAPTYPE`` flag is not set,
-      :c:func:`PyType_FromSpecWithBases` sets it automatically.
+.. versionchanged:: 3.11
+   :c:member:`~PyBufferProcs.bf_getbuffer` and
+   :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
+   under the :ref:`limited API <limited-c-api>`.
 
-   .. c:member:: PyType_Slot *slots
+.. versionchanged:: 3.14
+   The field :c:member:`~PyTypeObject.tp_vectorcall` can now be set
+   using :c:data:`Py_tp_vectorcall`.  See the field's documentation
+   for details.
 
-      Array of :c:type:`PyType_Slot` structures.
-      Terminated by the special slot value ``{0, NULL}``.
+.. versionchanged:: 3.15
+   The :c:data:`Py_tp_bases` slot may be set to a single type object,
+   making it equivalent to the :c:data:`Py_tp_base` slot.
+   Previously, a tuple of types was required.
 
-      Each slot ID should be specified at most once.
+The following slots correspond to fields in the underlying type structure,
+but need extra remarks for use as slots:
 
-.. raw:: html
+.. c:macro:: Py_tp_name
 
-   <!-- Keep old URL fragments working (see gh-97908) -->
-   <span id='c.PyType_Slot.PyType_Slot.slot'></span>
-   <span id='c.PyType_Slot.PyType_Slot.pfunc'></span>
+   :c:member:`Slot ID <PySlot.sl_id>` for the name of the type,
+   used to set :c:member:`PyTypeObject.tp_name`.
 
-.. c:type:: PyType_Slot
+   This slot (or :c:member:`PyType_Spec.name`) is required to create a type.
 
-   Structure defining optional functionality of a type, containing a slot ID
-   and a value pointer.
+   This may not be used in :c:member:`PyType_Spec.slots`.
+   Use :c:member:`PyType_Spec.name` instead.
 
-   .. c:member:: int slot
+   .. impl-detail::
 
-      A slot ID.
+      CPython processes slots in order.
+      It is recommended to put ``Py_tp_name`` at the beginning of the slots
+      array, so that if processing of a later slots fails, error messages
+      can include the name.
 
-      Slot IDs are named like the field names of the structures
-      :c:type:`PyTypeObject`, :c:type:`PyNumberMethods`,
-      :c:type:`PySequenceMethods`, :c:type:`PyMappingMethods` and
-      :c:type:`PyAsyncMethods` with an added ``Py_`` prefix.
-      For example, use:
+   .. versionadded:: 3.15
 
-      * ``Py_tp_dealloc`` to set :c:member:`PyTypeObject.tp_dealloc`
-      * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
-      * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
+.. c:macro:: Py_tp_basicsize
 
-      An additional slot is supported that does not correspond to a
-      :c:type:`!PyTypeObject` struct field:
+   :c:member:`Slot ID <PySlot.sl_id>` for the size of the instance in bytes.
+   It is used to set :c:member:`PyTypeObject.tp_basicsize`.
 
-      * :c:data:`Py_tp_token`
+   The value must be positive.
 
-      The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
+   This may not be used in :c:member:`PyType_Spec.slots`.
+   Use :c:member:`PyType_Spec.basicsize` instead.
 
-      * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
-      * :c:member:`~PyTypeObject.tp_dictoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
-      * :c:member:`~PyTypeObject.tp_vectorcall_offset`
-        (use ``"__vectorcalloffset__"`` in
-        :ref:`PyMemberDef <pymemberdef-offsets>`)
+   This slot may not be used with :c:func:`PyType_GetSlot`.
+   Use :c:member:`PyTypeObject.tp_basicsize` instead if needed, but be aware
+   that a type's size is often considered an implementation detail.
 
-      If it is not possible to switch to a ``MANAGED`` flag (for example,
-      for vectorcall or to support Python older than 3.12), specify the
-      offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
-      See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
-      for details.
+   .. versionadded:: 3.15
 
-      The following internal fields cannot be set at all when creating a heap
-      type:
+.. c:macro:: Py_tp_extra_basicsize
 
-      * :c:member:`~PyTypeObject.tp_dict`,
-        :c:member:`~PyTypeObject.tp_mro`,
-        :c:member:`~PyTypeObject.tp_cache`,
-        :c:member:`~PyTypeObject.tp_subclasses`, and
-        :c:member:`~PyTypeObject.tp_weaklist`.
+   :c:member:`Slot ID <PySlot.sl_id>` for type data size in bytes, that is,
+   how much space instances of the class need *in addition*
+   to space needed for superclasses.
 
-      Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
-      problematic on some platforms.
-      To avoid issues, use the *bases* argument of
-      :c:func:`PyType_FromSpecWithBases` instead.
+   The value is used, together with the size of superclasses, to set
+   :c:member:`PyTypeObject.tp_basicsize`.
+   Python will insert padding as needed to meet
+   :c:member:`!tp_basicsize`'s alignment requirements.
 
-      .. versionchanged:: 3.9
-         Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
+   Use :c:func:`PyObject_GetTypeData` to get a pointer to subclass-specific
+   memory reserved this way.
 
-      .. versionchanged:: 3.11
-         :c:member:`~PyBufferProcs.bf_getbuffer` and
-         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
-         under the :ref:`limited API <limited-c-api>`.
+   The value must be positive.
+   To specify that instances need no additional size (that is, size should be
+   inherited), omit the :c:macro:`!Py_tp_extra_basicsize` slot rather than
+   set it to zero.
 
-      .. versionchanged:: 3.14
-         The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
-         using ``Py_tp_vectorcall``.  See the field's documentation
-         for details.
+   Specifying both :c:macro:`Py_tp_basicsize` and
+   :c:macro:`!Py_tp_extra_basicsize` is an error.
 
-   .. c:member:: void *pfunc
+   This may not be used in :c:member:`PyType_Spec.slots`.
+   Use negative :c:member:`PyType_Spec.basicsize` instead.
 
-      The desired value of the slot. In most cases, this is a pointer
-      to a function.
+   This slot may not be used with :c:func:`PyType_GetSlot`.
 
-      *pfunc* values may not be ``NULL``, except for the following slots:
+   .. versionadded:: 3.15
 
-      * ``Py_tp_doc``
-      * :c:data:`Py_tp_token` (for clarity, prefer :c:data:`Py_TP_USE_SPEC`
-        rather than ``NULL``)
+.. c:macro:: Py_tp_itemsize
+
+   :c:member:`Slot ID <PySlot.sl_id>` for the size of one element of a
+   variable-size type, in bytes.
+   Used to set :c:member:`PyTypeObject.tp_itemsize`.
+   See :c:member:`!tp_itemsize` documentation for caveats.
+
+   The value must be positive.
+
+   If this slot is missing, :c:member:`~PyTypeObject.tp_itemsize` is inherited.
+   Extending arbitrary variable-sized classes is dangerous,
+   since some types use a fixed offset for variable-sized memory,
+   which can then overlap fixed-sized memory used by a subclass.
+   To help prevent mistakes, inheriting ``itemsize`` is only possible
+   in the following situations:
+
+   - The base is not variable-sized (its
+     :c:member:`~PyTypeObject.tp_itemsize` is zero).
+   - The requested :c:member:`PyType_Spec.basicsize` is positive,
+     suggesting that the memory layout of the base class is known.
+   - The requested :c:member:`PyType_Spec.basicsize` is zero,
+     suggesting that the subclass does not access the instance's memory
+     directly.
+   - With the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag.
+
+   This may not be used in :c:member:`PyType_Spec.slots`.
+   Use :c:member:`PyType_Spec.itemsize` instead.
+
+   This slot may not be used with :c:func:`PyType_GetSlot`.
+
+   .. versionadded:: 3.15
+
+.. c:macro:: Py_tp_flags
+
+   :c:member:`Slot ID <PySlot.sl_id>` for type flags, used to set
+   :c:member:`PyTypeObject.tp_flags`.
+
+   The ``Py_TPFLAGS_HEAPTYPE`` flag is not set,
+   :c:func:`PyType_FromSpecWithBases` sets it automatically.
+
+   This may not be used in :c:member:`PyType_Spec.slots`.
+   Use negative :c:member:`PyType_Spec.basicsize` instead.
+
+   This slot may not be used with :c:func:`PyType_GetSlot`.
+   Use :c:func:`PyType_GetFlags` instead.
+
+   .. versionadded:: 3.15
+
+.. c:macro:: Py_tp_bases
+
+   :c:member:`Slot ID <PySlot.sl_id>` for type flags, used to set
+   :c:member:`PyTypeObject.tp_bases`.
+
+   The slot can be set to a tuple of type objects which the newly created
+   type should inherit from, like the "positional arguments" of
+   a Python :ref:`class definition <class>`.
+
+   Alternately, the slot can be set to a single type object to specify
+   a single base.
+   The effect is the same as specifying a one-element tuple.
+
+   .. versionchanged:: 3.15
+
+      Previously, :c:macro:`!Py_tp_bases` required a tuple of types.
+
+.. c:macro:: Py_tp_base
+
+   Equivalent to :c:macro:`Py_tp_bases` (with ``s`` at the end).
+   If both are specified, :c:macro:`!Py_tp_bases` takes priority and
+   this slot is ignored.
+
+   .. versionchanged:: 3.15
+
+      Previously, :c:macro:`!Py_tp_base` required a single type, not a tuple.
+
+   .. soft-deprecated:: 3.15
+
+      When not targetting older Python versions, pefer :c:macro:`!Py_tp_bases`.
+
+The following slots do not correspond to public fields in the
+underlying structures:
+
+.. c:macro:: Py_tp_metaclass
+
+   :c:member:`Slot ID <PySlot.sl_id>` for the metaclass used to construct
+   the resulting type object.
+   When omitted the metaclass is derived from bases
+   (:c:macro:`Py_tp_bases` or the *bases* argument of
+   :c:func:`PyType_FromMetaclass`).
+
+   Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
+   supported, except if ``tp_new`` is ``NULL``.
+
+   This may not be used in :c:member:`PyType_Spec.slots`.
+   Use :c:func:`PyType_FromMetaclass` to specify a metaclass with
+   :c:type:`!PyType_Spec`.
+
+   This slot may not be used with :c:func:`PyType_GetSlot`.
+   Use :c:func:`Py_TYPE` on the type object instead.
+
+   .. versionadded:: 3.15
+
+.. c:macro:: Py_tp_module
+
+   :c:member:`Slot ID <PySlot.sl_id>` for recording the module in which
+   the new class is defined.
+
+   The value must be a module object.
+   The module is associated with the new type and can later be
+   retrieved with :c:func:`PyType_GetModule`.
+   The associated module is not inherited by subclasses; it must be specified
+   for each class individually.
+
+   This may not be used in :c:member:`PyType_Spec.slots`.
+   Use :c:func:`PyType_FromMetaclass` to specify a module with
+   :c:type:`!PyType_Spec`.
+
+   This slot may not be used with :c:func:`PyType_GetSlot`.
+   Use :c:func:`PyType_GetModule` instead.
+
+   .. versionadded:: 3.15
 
 .. c:macro:: Py_tp_token
 
-   A :c:member:`~PyType_Slot.slot` that records a static memory layout ID
+   :c:member:`Slot ID <PySlot.sl_id>` for recording a static memory layout ID
    for a class.
 
-   If the :c:type:`PyType_Spec` of the class is statically
-   allocated, the token can be set to the spec using the special value
-   :c:data:`Py_TP_USE_SPEC`:
+   If the class is defined using a :c:type:`PyType_Spec`, and that spec is
+   statically allocated, the token can be set to the spec using the special
+   value :c:data:`Py_TP_USE_SPEC`:
 
    .. code-block:: c
 
@@ -618,6 +779,219 @@ The following functions and structs are used to create
 
       Used as a value with :c:data:`Py_tp_token` to set the token to the
       class's :c:type:`PyType_Spec`.
+      May only be used for classes defined using :c:type:`!PyType_Spec`.
+
       Expands to ``NULL``.
 
       .. versionadded:: 3.14
+
+.. c:macro:: Py_tp_slots
+
+   :c:member:`Slot ID <PySlot.sl_id>` that works like
+   :c:macro:`Py_slot_subslots`, except it specifies an array of
+   :c:type:`PyType_Slot` structures.
+
+   .. versionadded:: 3.15
+
+
+Soft-deprecated API
+-------------------
+
+The following functions are :term:`soft deprecated`.
+They will continue to work, but new features will be added as slots for
+:c:func:`PyType_FromSlots`, not as arguments to new ``PyType_From*`` functions.
+
+.. c:function:: PyObject* PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module, PyType_Spec *spec, PyObject *bases)
+
+   Create and return a :ref:`heap type <heap-types>` from the *spec*
+   (see :c:macro:`Py_TPFLAGS_HEAPTYPE`).
+
+   A non-``NULL`` *metaclass* argument corresponds to the
+   :c:macro:`Py_tp_metaclass` slot.
+
+   A non-``NULL`` *bases* argument corresponds to the :c:data:`Py_tp_bases`
+   slot, and takes precedence over :c:data:`Py_tp_bases` and
+   :c:data:`Py_tp_bases` slots.
+
+   A non-``NULL`` *module* argument corresponds to the
+   :c:macro:`Py_tp_module` slot.
+
+   This function calls :c:func:`PyType_Ready` on the new type.
+
+   Note that this function does *not* fully match the behavior of
+   calling :py:class:`type() <type>` or using the :keyword:`class` statement.
+   See the note in :c:func:`PyType_FromSlots` documentation for details.
+
+   .. versionadded:: 3.12
+
+   .. soft-deprecated:: next
+
+      Prefer :c:func:`PyType_FromSlots` in new code.
+
+
+.. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+
+   Equivalent to ``PyType_FromMetaclass(NULL, module, spec, bases)``.
+
+   .. versionadded:: 3.9
+
+   .. versionchanged:: 3.10
+
+      The function now accepts a single class as the *bases* argument and
+      ``NULL`` as the ``tp_doc`` slot.
+
+   .. versionchanged:: 3.12
+
+      The function now finds and uses a metaclass corresponding to the provided
+      base classes.  Previously, only :class:`type` instances were returned.
+
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
+
+   .. soft-deprecated:: next
+
+      Prefer :c:func:`PyType_FromSlots` in new code.
+
+
+.. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+
+   Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, bases)``.
+
+   .. versionadded:: 3.3
+
+   .. versionchanged:: 3.12
+
+      The function now finds and uses a metaclass corresponding to the provided
+      base classes.  Previously, only :class:`type` instances were returned.
+
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
+
+   .. soft-deprecated:: next
+
+      Prefer :c:func:`PyType_FromSlots` in new code.
+
+
+.. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
+
+   Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, NULL)``.
+
+   .. versionchanged:: 3.12
+
+      The function now finds and uses a metaclass corresponding to the
+      base classes provided in *Py_tp_base[s]* slots.
+      Previously, only :class:`type` instances were returned.
+
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated.
+
+   .. versionchanged:: 3.14
+
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is no longer allowed.
+
+   .. soft-deprecated:: next
+
+      Prefer :c:func:`PyType_FromSlots` in new code.
+
+.. raw:: html
+
+   <!-- Keep old URL fragments working (see gh-97908) -->
+   <span id='c.PyType_Spec.PyType_Spec.name'></span>
+   <span id='c.PyType_Spec.PyType_Spec.basicsize'></span>
+   <span id='c.PyType_Spec.PyType_Spec.itemsize'></span>
+   <span id='c.PyType_Spec.PyType_Spec.flags'></span>
+   <span id='c.PyType_Spec.PyType_Spec.slots'></span>
+
+.. c:type:: PyType_Spec
+
+   Structure defining a type's behavior, used for soft-deprecated functions
+   like :c:func:`PyType_FromMetaclass`.
+
+   This structure contains several members that can instead be specified
+   as :ref:`slots <pyslot_type_slot_ids>` for :c:func:`PyType_FromSlots`,
+   and an array of slot entries with a simpler structure.
+
+   .. c:member:: const char* name
+
+      Corresponds to :c:macro:`Py_tp_name`.
+
+   .. c:member:: int basicsize
+
+      If positive, corresponds to :c:macro:`Py_tp_basicsize`.
+
+      If negative, corresponds to :c:macro:`Py_tp_extra_basicsize` set to
+      the absolute value.
+
+      .. versionchanged:: 3.12
+
+         Previously, this field could not be negative.
+
+   .. c:member:: int itemsize
+
+      Corresponds to :c:macro:`Py_tp_itemsize`.
+
+   .. c:member:: unsigned int flags
+
+      Corresponds to :c:macro:`Py_tp_flags`.
+
+   .. c:member:: PyType_Slot *slots
+
+      Array of :c:type:`PyType_Slot` (not :c:type:`PySlot`) structures.
+
+      Terminated by the special slot value ``{0, NULL}``.
+      Each slot ID should be specified at most once.
+
+      .. c:namespace:: NULL
+
+      .. raw:: html
+
+         <!-- Keep old URL fragments working (see gh-97908) -->
+         <span id='c.PyType_Slot.PyType_Slot.slot'></span>
+         <span id='c.PyType_Slot.PyType_Slot.pfunc'></span>
+
+      .. c:type:: PyType_Slot
+
+         Structure defining optional functionality of a type, used for
+         soft-deprecated functions like :c:func:`PyType_FromMetaclass`.
+
+         Note that a :c:type:`!PyType_Slot` array may be included in a
+         :c:type:`!PySlot` array using :c:macro:`Py_tp_slots`,
+         and vice versa using :c:macro:`Py_slot_subslots`.
+
+         Each :c:type:`!PyType_Slot` structure ``tpslot`` is interpreted
+         as the following :c:type:`PySlot` structure::
+
+            (PySlot){
+               .sl_id=tpslot.slot,
+               .sl_flags=PySlot_INTPTR | sub_static,
+               .sl_ptr=tpslot.func
+            }
+
+         where ``sub_static`` is ``PySlot_STATIC`` if the slot requires
+         the flag (such as for :c:macro:`Py_tp_methods`), or if this flag
+         is present on the "parent" :c:macro:`!Py_tp_slots` slot (if any).
+
+         .. c:member:: int slot
+
+            Corresponds to :c:member:`PySlot.sl_id`.
+
+         .. c:member:: void *pfunc
+
+            Corresponds to :c:member:`PySlot.sl_ptr`.

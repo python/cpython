@@ -1,2 +1,0 @@
-Allow the JIT to remove unicode guards after ``_BINARY_OP_SUBSCR_STR_INT``
-by setting the return type to string.

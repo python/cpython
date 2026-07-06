@@ -383,6 +383,12 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
                          decompress(bytes()), b'')
 
+    def test_riscv_filter_constant_exists(self):
+        self.assertTrue(lzma.FILTER_RISCV)
+
+    def test_arm64_filter_constant_exists(self):
+        self.assertTrue(lzma.FILTER_ARM64)
+
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):
 
@@ -1025,12 +1031,12 @@ class FileTestCase(unittest.TestCase):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             result = f.peek()
             self.assertGreater(len(result), 0)
-            self.assertTrue(INPUT.startswith(result))
+            self.assertStartsWith(INPUT, result)
             self.assertEqual(f.read(), INPUT)
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             result = f.peek(10)
             self.assertGreater(len(result), 0)
-            self.assertTrue(INPUT.startswith(result))
+            self.assertStartsWith(INPUT, result)
             self.assertEqual(f.read(), INPUT)
 
     def test_peek_bad_args(self):

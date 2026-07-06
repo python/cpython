@@ -247,12 +247,11 @@ class SimpleStmt(Stmt):
 @dataclass
 class StackEffect(Node):
     name: str = field(compare=False)  # __eq__ only uses type, cond, size
-    type: str = ""  # Optional `:type`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
     def __repr__(self) -> str:
-        items = [self.name, self.type, self.size]
+        items = [self.name, self.size]
         while items and items[-1] == "":
             del items[-1]
         return f"StackEffect({', '.join(repr(item) for item in items)})"
@@ -380,9 +379,13 @@ class Parser(PLexer):
         while anno := self.expect(lx.ANNOTATION):
             if anno.text == "replicate":
                 self.require(lx.LPAREN)
-                times = self.require(lx.NUMBER)
+                stop = self.require(lx.NUMBER)
+                start_text = "0"
+                if self.expect(lx.COLON):
+                    start_text = stop.text
+                    stop = self.require(lx.NUMBER)
                 self.require(lx.RPAREN)
-                annotations.append(f"replicate({times.text})")
+                annotations.append(f"replicate({start_text}:{stop.text})")
             else:
                 annotations.append(anno.text)
         tkn = self.expect(lx.INST)
@@ -463,20 +466,13 @@ class Parser(PLexer):
         # IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
-            type_text = ""
-            if self.expect(lx.COLON):
-                type_text = self.require(lx.IDENTIFIER).text.strip()
-                if self.expect(lx.TIMES):
-                    type_text += " *"
             size_text = ""
             if self.expect(lx.LBRACKET):
-                if type_text:
-                    raise self.make_syntax_error("Unexpected [")
                 if not (size := self.expression()):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type_text, size_text)
+            return StackEffect(tkn.text, size_text)
         return None
 
     @contextual

@@ -1,2 +1,0 @@
-The ``k`` and ``K`` formats in :c:func:`PyArg_Parse` now support the
-:meth:`~object.__index__` special method, like all other integer formats.

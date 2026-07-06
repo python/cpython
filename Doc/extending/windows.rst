@@ -47,9 +47,6 @@ things manually, it may be instructive to study the project file for the
 Differences Between Unix and Windows
 ====================================
 
-.. sectionauthor:: Chris Phoenix <cphoenix@best.com>
-
-
 Unix and Windows use completely different paradigms for run-time loading of
 code.  Before you try to build a module that can be dynamically loaded, be aware
 of how your system works.
@@ -109,9 +106,6 @@ separate copy.
 Using DLLs in Practice
 ======================
 
-.. sectionauthor:: Chris Phoenix <cphoenix@best.com>
-
-
 Windows Python is built in Microsoft Visual C++; using other compilers may or
 may not work.  The rest of this section is MSVC++ specific.
 
@@ -121,7 +115,7 @@ When creating DLLs in Windows, you can use the CPython library in two ways:
    :file:`Python.h` triggers an implicit, configure-aware link with the
    library.  The header file chooses :file:`pythonXY_d.lib` for Debug,
    :file:`pythonXY.lib` for Release, and :file:`pythonX.lib` for Release with
-   the `Limited API <stable-application-binary-interface>`_ enabled.
+   the :ref:`Limited API <stable-application-binary-interface>` enabled.
 
    To build two DLLs, spam and ni (which uses C functions found in spam), you
    could use these commands::

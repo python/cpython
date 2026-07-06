@@ -1,4 +1,0 @@
-Move :func:`ctypes.POINTER` types cache from a global internal cache
-(``_pointer_type_cache``) to the :attr:`ctypes._CData.__pointer_type__`
-attribute of the corresponding :mod:`ctypes` types.
-This will stop the cache from growing without limits in some situations.

@@ -1,6 +1,7 @@
 """Introspection utils for tasks call graphs."""
 
 import dataclasses
+import io
 import sys
 import types
 
@@ -15,9 +16,6 @@ __all__ = (
     'FrameCallGraphEntry',
     'FutureCallGraph',
 )
-
-if False:  # for type checkers
-    from typing import TextIO
 
 # Sadly, we can't re-use the traceback module's datastructures as those
 # are tailored for error reporting, whereas we need to represent an
@@ -114,13 +112,13 @@ def capture_call_graph(
     optional keyword-only 'depth' argument can be used to skip the specified
     number of frames from top of the stack.
 
-    If the optional keyword-only 'limit' argument is provided, each call stack
-    in the resulting graph is truncated to include at most ``abs(limit)``
-    entries. If 'limit' is positive, the entries left are the closest to
-    the invocation point. If 'limit' is negative, the topmost entries are
-    left. If 'limit' is omitted or None, all entries are present.
-    If 'limit' is 0, the call stack is not captured at all, only
-    "awaited by" information is present.
+    If the optional keyword-only 'limit' argument is provided, each call
+    stack in the resulting graph is truncated to include at most
+    ``abs(limit)`` entries.  If 'limit' is positive, the entries left are
+    the closest to the invocation point.  If 'limit' is negative, the
+    topmost entries are left.  If 'limit' is omitted or None, all entries
+    are present.  If 'limit' is 0, the call stack is not captured at all,
+    only "awaited by" information is present.
     """
 
     loop = events._get_running_loop()
@@ -270,7 +268,7 @@ def print_call_graph(
     future: futures.Future | None = None,
     /,
     *,
-    file: TextIO | None = None,
+    file: io.Writer[str] | None = None,
     depth: int = 1,
     limit: int | None = None,
 ) -> None:

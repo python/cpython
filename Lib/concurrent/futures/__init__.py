@@ -17,7 +17,10 @@ from concurrent.futures._base import (FIRST_COMPLETED,
                                       wait,
                                       as_completed)
 
-__all__ = (
+lazy from .process import ProcessPoolExecutor
+lazy from .thread import ThreadPoolExecutor
+
+__all__ = [
     'FIRST_COMPLETED',
     'FIRST_EXCEPTION',
     'ALL_COMPLETED',
@@ -29,36 +32,20 @@ __all__ = (
     'Executor',
     'wait',
     'as_completed',
-    'InterpreterPoolExecutor',
     'ProcessPoolExecutor',
     'ThreadPoolExecutor',
-)
+]
+
+
+try:
+    import _interpreters
+except ImportError:
+    _interpreters = None
+
+if _interpreters:
+    lazy from .interpreter import InterpreterPoolExecutor  # noqa: F401
+    __all__.append('InterpreterPoolExecutor')
 
 
 def __dir__():
-    return __all__ + ('__author__', '__doc__')
-
-
-def __getattr__(name):
-    global ProcessPoolExecutor, ThreadPoolExecutor, InterpreterPoolExecutor
-
-    if name == 'ProcessPoolExecutor':
-        from .process import ProcessPoolExecutor as pe
-        ProcessPoolExecutor = pe
-        return pe
-
-    if name == 'ThreadPoolExecutor':
-        from .thread import ThreadPoolExecutor as te
-        ThreadPoolExecutor = te
-        return te
-
-    if name == 'InterpreterPoolExecutor':
-        try:
-            from .interpreter import InterpreterPoolExecutor as ie
-        except ModuleNotFoundError:
-            ie = InterpreterPoolExecutor = None
-        else:
-            InterpreterPoolExecutor = ie
-        return ie
-
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    return __all__ + ['__author__', '__doc__']

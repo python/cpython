@@ -820,7 +820,7 @@ Fix possible undefined behavior division by zero in :class:`complex`'s
 .. date: 2024-11-23-04-54-42
 .. gh-issue: 127133
 .. nonce: WMoJjF
-.. section: Core and Builtins
+.. section: Library
 
 Calling :meth:`argparse.ArgumentParser.add_argument_group` on an argument
 group, and calling :meth:`argparse.ArgumentParser.add_argument_group` or

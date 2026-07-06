@@ -4,11 +4,6 @@
 .. module:: heapq
    :synopsis: Heap queue algorithm (a.k.a. priority queue).
 
-.. moduleauthor:: Kevin O'Connor
-.. sectionauthor:: Guido van Rossum <guido@python.org>
-.. sectionauthor:: François Pinard
-.. sectionauthor:: Raymond Hettinger
-
 **Source code:** :source:`Lib/heapq.py`
 
 --------------
@@ -58,6 +53,11 @@ functions, respectively.
 The following functions are provided for min-heaps:
 
 
+.. function:: heapify(x)
+
+   Transform list *x* into a min-heap, in-place, in linear time.
+
+
 .. function:: heappush(heap, item)
 
    Push the value *item* onto the *heap*, maintaining the min-heap invariant.
@@ -75,11 +75,6 @@ The following functions are provided for min-heaps:
    Push *item* on the heap, then pop and return the smallest item from the
    *heap*.  The combined action runs more efficiently than :func:`heappush`
    followed by a separate call to :func:`heappop`.
-
-
-.. function:: heapify(x)
-
-   Transform list *x* into a min-heap, in-place, in linear time.
 
 
 .. function:: heapreplace(heap, item)
@@ -105,7 +100,7 @@ For max-heaps, the following functions are provided:
 
    Transform list *x* into a max-heap, in-place, in linear time.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: heappush_max(heap, item)
@@ -113,7 +108,7 @@ For max-heaps, the following functions are provided:
    Push the value *item* onto the max-heap *heap*, maintaining the max-heap
    invariant.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: heappop_max(heap)
@@ -122,7 +117,7 @@ For max-heaps, the following functions are provided:
    max-heap invariant.  If the max-heap is empty, :exc:`IndexError` is raised.
    To access the largest item without popping it, use ``maxheap[0]``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: heappushpop_max(heap, item)
@@ -132,7 +127,7 @@ For max-heaps, the following functions are provided:
    The combined action runs more efficiently than :func:`heappush_max`
    followed by a separate call to :func:`heappop_max`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: heapreplace_max(heap, item)
@@ -145,7 +140,7 @@ For max-heaps, the following functions are provided:
    The value returned may be smaller than the *item* added.  Refer to the
    analogous function :func:`heapreplace` for detailed usage notes.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 The module also offers three general purpose functions based on heaps.
@@ -231,6 +226,42 @@ Heap elements can be tuples.  This is useful for assigning comparison values
     (1, 'write spec')
 
 
+Other Applications
+------------------
+
+`Medians <https://en.wikipedia.org/wiki/Median>`_ are a measure of
+central tendency for a set of numbers.  In distributions skewed by
+outliers, the median provides a more stable estimate than an average
+(arithmetic mean).  A running median is an `online algorithm
+<https://en.wikipedia.org/wiki/Online_algorithm>`_ that updates
+continuously as new data arrives.
+
+A running median can be efficiently implemented by balancing two heaps,
+a max-heap for values at or below the midpoint and a min-heap for values
+above the midpoint.  When the two heaps have the same size, the new
+median is the average of the tops of the two heaps; otherwise, the
+median is at the top of the larger heap::
+
+    def running_median(iterable):
+        "Yields the cumulative median of values seen so far."
+
+        lo = []  # max-heap
+        hi = []  # min-heap (same size as or one smaller than lo)
+
+        for x in iterable:
+            if len(lo) == len(hi):
+                heappush_max(lo, heappushpop(hi, x))
+                yield lo[0]
+            else:
+                heappush(hi, heappushpop_max(lo, x))
+                yield (lo[0] + hi[0]) / 2
+
+For example::
+
+    >>> list(running_median([5.0, 9.0, 4.0, 12.0, 8.0, 9.0]))
+    [5.0, 7.0, 5.0, 7.0, 8.0, 8.5]
+
+
 Priority Queue Implementation Notes
 -----------------------------------
 
@@ -312,17 +343,12 @@ elements are considered to be infinite.  The interesting property of a heap is
 that ``a[0]`` is always its smallest element.
 
 The strange invariant above is meant to be an efficient memory representation
-for a tournament.  The numbers below are *k*, not ``a[k]``::
+for a tournament.  The numbers below are *k*, not ``a[k]``:
 
-                                  0
-
-                 1                                 2
-
-         3               4                5               6
-
-     7       8       9       10      11      12      13      14
-
-   15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30
+.. figure:: heapq-binary-tree.svg
+   :class: invert-in-dark-mode
+   :align: center
+   :alt: Example (min-heap) binary tree.
 
 In the tree above, each cell *k* is topping ``2*k+1`` and ``2*k+2``. In a usual
 binary tournament we see in sports, each cell is the winner over the two cells

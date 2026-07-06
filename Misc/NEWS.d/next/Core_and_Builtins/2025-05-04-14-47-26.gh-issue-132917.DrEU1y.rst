@@ -1,3 +1,0 @@
-For the free-threaded build, check the process memory usage increase before
-triggering a full automatic garbage collection.  If the memory used has not
-increased 10% since the last collection then defer it.
