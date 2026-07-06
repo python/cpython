@@ -325,28 +325,6 @@ class FunctionTest(unittest.TestCase):
         with self.assertRaises(SystemError):
             _testcapi.function_get_annotations(None)
 
-    def test_function_old_codes(self):
-        def f():
-            pass
-
-        def g():
-            pass
-
-        def h():
-            pass
-
-        old_codes = _testcapi.function_get_old_codes(f)
-        self.assertIsNone(old_codes)
-
-        f.__code__ = g.__code__
-        old_codes = _testcapi.function_get_old_codes(f)
-        self.assertIsInstance(old_codes, list)
-        self.assertEqual(len(old_codes), 1)
-
-        f.__code__ = h.__code__
-        old_codes = _testcapi.function_get_old_codes(f)
-        self.assertEqual(len(old_codes), 2)
-
     # TODO: test PyFunction_New()
     # TODO: test PyFunction_NewWithQualName()
     # TODO: test PyFunction_SetVectorcall()

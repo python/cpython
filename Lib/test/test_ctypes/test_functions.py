@@ -463,6 +463,35 @@ class FunctionTestCase(unittest.TestCase):
         callback = proto(callback)
         self.assertRaises(ArgumentError, lambda: callback((1, 2, 3, 4), POINT()))
 
+    def test_reassign_code_while_running(self):
+        freevar1 = None
+        freevar2 = None
+
+        def replacement():
+            freevar1
+            freevar2
+            return "replacement"
+
+        def original():
+            original.__code__ = replacement.__code__
+            return "original"
+
+        self.assertEqual(original(), "original")
+        self.assertEqual(original(), "replacement")
+
+    def test_function_code_object_memory_leak(self):
+        def get_function(i):
+            ns = {}
+            exec(f"def f(): return {i}", ns)
+            return ns["f"]
+
+        def f(): pass
+
+        for i in range(1000):
+            f.__code__ = get_function(i).__code__
+
+        self.assertEqual(f(), 999)
+
 
 if __name__ == '__main__':
     unittest.main()
