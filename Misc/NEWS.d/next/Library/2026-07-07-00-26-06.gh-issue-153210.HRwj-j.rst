@@ -1,0 +1,2 @@
+:mod:`array`: Fix incorrect handling of reference counts when errors occur
+during module import
