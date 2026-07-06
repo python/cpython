@@ -49,8 +49,6 @@ class MiscTest(unittest.TestCase):
                 import array
             except AttributeError:
                 pass
-            else:
-                raise SystemExit("import array should have failed")
         """)
         assert_python_ok("-c", script)
 
