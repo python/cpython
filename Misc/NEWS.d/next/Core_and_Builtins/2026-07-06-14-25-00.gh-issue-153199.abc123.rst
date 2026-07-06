@@ -1,0 +1,1 @@
+Optimize set and frozenset membership lookup by inlining ``set_do_lookup`` and adding a ``PyUnicode_CheckExact`` fast path to ``set_compare_frozenset``.
