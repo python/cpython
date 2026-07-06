@@ -30,11 +30,17 @@ import __main__
 import tkinter  # Use tcl and, if startup fails, messagebox.
 if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
     # Undo modifications of tkinter by idlelib imports; see bpo-25507.
+    # Which of these submodules got imported (and thus added as a tkinter
+    # attribute) depends on what idlelib pulled in, so tolerate missing
+    # ones rather than assuming a fixed set; see gh-59396.
     for mod in ('simpledialog', 'messagebox', 'font',
                 'dialog', 'filedialog', 'commondialog',
                 'ttk'):
-        delattr(tkinter, mod)
-        del sys.modules['tkinter.' + mod]
+        try:
+            delattr(tkinter, mod)
+            del sys.modules['tkinter.' + mod]
+        except (AttributeError, KeyError):
+            pass
     # Avoid AttributeError if run again; see bpo-37038.
     sys.modules['idlelib.run'].firstrun = False
 

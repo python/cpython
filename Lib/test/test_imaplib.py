@@ -2,6 +2,7 @@ from test import support
 from test.support import socket_helper
 
 from contextlib import contextmanager
+from email.message import EmailMessage
 import imaplib
 import os.path
 import socketserver
@@ -9,6 +10,7 @@ import time
 import calendar
 import threading
 import re
+import select
 import socket
 
 from test.support import verbose, run_with_tz, run_with_locale, cpython_only
@@ -25,6 +27,80 @@ support.requires_working_socket(module=True)
 
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
+
+_quoted_string = re.compile(r'"(?:[^"\\]|\\.)*"')
+
+
+def splitargs(line):
+    # Split a command line into IMAP arguments: quoted strings, balanced
+    # (possibly nested) parenthesized lists, and bare atoms.
+    args = []
+    i, n = 0, len(line)
+    while i < n:
+        if line[i] == ' ':
+            i += 1
+            continue
+        start = i
+        depth = 0
+        while i < n and (depth or line[i] != ' '):
+            c = line[i]
+            if c == '"':
+                i = _quoted_string.match(line, i).end()
+                continue
+            elif c == '(':
+                depth += 1
+            elif c == ')':
+                depth -= 1
+            i += 1
+        args.append(line[start:i])
+    return args
+
+
+def parse_seq_number(s, maxmsg):
+    if s == '*':
+        return maxmsg
+    return int(s)
+
+
+def parse_sequence_set(arg, maxmsg):
+    for s in arg.split(','):
+        if ':' in s:
+            lo, hi = s.split(':')
+            lo = parse_seq_number(lo, maxmsg)
+            hi = parse_seq_number(hi, maxmsg)
+            yield from range(min(lo, hi), max(lo, hi) + 1)
+        else:
+            yield parse_seq_number(s, maxmsg)
+
+
+def make_simple_handler(command, untagged_response=(),
+                        completed=None):
+    if completed is None:
+        completed = f'{command} completed'
+    def cmd(self, tag, args):
+        for msg in untagged_response:
+            self._send_textline(msg)
+        self._send_tagged(tag, 'OK', completed)
+    cmd.__name__ = 'cmd_' + command
+    class Handler(SimpleIMAPHandler):
+        pass
+    Handler.__name__ = command.title() + 'Handler'
+    setattr(Handler, cmd.__name__, cmd)
+    Handler.__qualname__ = Handler.__name__
+    cmd.__qualname__ = Handler.__qualname__ + '.' + cmd.__name__
+    return Handler
+
+
+def _read_literal(handler, marker):
+    # Read one literal, a raw octet sequence, by its count from the marker
+    # ('{N}', or '(~{N}' in UTF8 mode).
+    size = int(re.search(r'\{(\d+)\}', marker).group(1))
+    # The client must wait for the continuation, so nothing should be readable.
+    if select.select([handler.connection], [], [], 0)[0]:
+        raise AssertionError('client sent the literal before the '
+                             'continuation request')
+    handler._send_textline('+')
+    return handler.rfile.read(size)
 
 
 class TestImaplib(unittest.TestCase):
@@ -67,6 +143,15 @@ class TestImaplib(unittest.TestCase):
             internal = imaplib.Time2Internaldate(t)
             self.assertEqual(internal, expected)
 
+    @run_with_tz('STD-1DST,M3.2.0,M11.1.0')
+    def test_Time2Internaldate_datetime_timetuple(self):
+        date_time = datetime.fromtimestamp(2000000000).timetuple()
+        self.assertIsNone(date_time.tm_gmtoff)
+        self.assertEqual(
+            imaplib.Time2Internaldate(date_time),
+            '"18-May-2033 05:33:20 +0200"',
+        )
+
     def test_that_Time2Internaldate_returns_a_result(self):
         # Without tzset, we can check only that it successfully
         # produces a result, not the correctness of the result itself,
@@ -90,6 +175,65 @@ class TestImaplib(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             imaplib.IMAP4()
         self.assertIn(cm.exception.errno, expected_errnos)
+
+    def test_astring(self):
+        m = imaplib.IMAP4.__new__(imaplib.IMAP4)
+        m._encoding = 'ascii'
+        # Plain atoms are left unquoted.
+        self.assertEqual(m._astring('INBOX'), b'INBOX')
+        self.assertEqual(m._astring(b'INBOX'), b'INBOX')
+        # Names with protocol-sensitive characters are quoted.
+        self.assertEqual(m._astring('New folder'), b'"New folder"')
+        self.assertEqual(m._astring('a"b'), b'"a\\"b"')
+        self.assertEqual(m._astring('a\\b'), b'"a\\\\b"')
+        self.assertEqual(m._astring(''), b'""')
+        self.assertEqual(m._astring('*'), b'"*"')
+        # A well-formed quoted string is passed through unchanged.
+        self.assertEqual(m._astring('"New folder"'), b'"New folder"')
+        self.assertEqual(m._astring('""'), b'""')
+        # Including a lenient (non-RFC) backslash escape, which the server
+        # may accept.
+        self.assertEqual(m._astring('"a\\b"'), b'"a\\b"')
+        # A string that only looks quoted but is not a single token is
+        # quoted as data, closing the argument injection vector.
+        self.assertEqual(m._astring('"a" SELECT evil "'),
+                         b'"\\"a\\" SELECT evil \\""')
+        self.assertEqual(m._astring('"'), b'"\\""')
+        # Non-ASCII names are only allowed in a quoted string or a
+        # literal, never in an atom (RFC 6855).
+        m._encoding = 'utf-8'
+        self.assertEqual(m._astring('Entwürfe'), '"Entwürfe"'.encode())
+        self.assertEqual(m._astring(b'Entw\xc3\xbcrfe'), b'"Entw\xc3\xbcrfe"')
+
+    def test_astring_idempotent(self):
+        # Quoting an already quoted argument should not change it, so that
+        # quoting twice gives the same result as quoting once.
+        m = imaplib.IMAP4.__new__(imaplib.IMAP4)
+        m._encoding = 'ascii'
+        for arg in ['INBOX', 'New folder', 'a"b', 'a\\b', '', '*', '%',
+                    '"New folder"', '""', '"a\\b"', '"a" SELECT evil "',
+                    '"', 'a\tb', 'a\rb', '\x7f', '(a)', b'Entw\xc3\xbcrfe']:
+            with self.subTest(arg=arg):
+                once = m._astring(arg)
+                self.assertEqual(m._astring(once), once)
+                twice = m._list_mailbox(arg)
+                self.assertEqual(m._list_mailbox(twice), twice)
+
+    def test_list_mailbox(self):
+        m = imaplib.IMAP4.__new__(imaplib.IMAP4)
+        m._encoding = 'ascii'
+        # Wildcards are not quoted in a list pattern.
+        self.assertEqual(m._list_mailbox('*'), b'*')
+        self.assertEqual(m._list_mailbox('%'), b'%')
+        self.assertEqual(m._list_mailbox('foo/%'), b'foo/%')
+        # But spaces still require quoting.
+        self.assertEqual(m._list_mailbox('New folder'), b'"New folder"')
+        self.assertEqual(m._list_mailbox('"New folder"'), b'"New folder"')
+        # As do non-ASCII names; wildcards keep their meaning inside a
+        # quoted string.
+        m._encoding = 'utf-8'
+        self.assertEqual(m._list_mailbox('Entwürfe/%'),
+                         '"Entwürfe/%"'.encode())
 
 
 if ssl:
@@ -119,7 +263,7 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
 
     def setup(self):
         super().setup()
-        self.server.is_selected = False
+        self.server.is_selected = None
         self.server.logged = None
 
     def _send(self, message):
@@ -136,9 +280,11 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
     def _send_tagged(self, tag, code, message):
         self._send_textline(' '.join((tag, code, message)))
 
+    welcome = '* OK IMAP4rev1'
+
     def handle(self):
         # Send a welcome message.
-        self._send_textline('* OK IMAP4rev1')
+        self._send_textline(self.welcome)
         while 1:
             # Gather up input until we receive a line terminator or we timeout.
             # Accumulate read(1) because it's simpler to handle the differences
@@ -165,10 +311,11 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
                 except StopIteration:
                     self.continuation = None
                 continue
-            splitline = line.decode('ASCII').split()
+            splitline = splitargs(line.decode().removesuffix('\r\n'))
             tag = splitline[0]
             cmd = splitline[1]
             args = splitline[2:]
+            self.server.args = args
 
             if hasattr(self, 'cmd_' + cmd):
                 continuation = getattr(self, 'cmd_' + cmd)(tag, args)
@@ -191,17 +338,22 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
         self._send_tagged(tag, 'OK', 'LOGOUT completed')
 
     def cmd_LOGIN(self, tag, args):
-        self.server.logged = args[0]
+        self.server.logged = args
         self._send_tagged(tag, 'OK', 'LOGIN completed')
 
     def cmd_SELECT(self, tag, args):
-        self.server.is_selected = True
+        self.server.is_selected = args
         self._send_line(b'* 2 EXISTS')
         self._send_tagged(tag, 'OK', '[READ-WRITE] SELECT completed.')
 
+    def cmd_EXAMINE(self, tag, args):
+        self.server.is_selected = args
+        self._send_line(b'* 2 EXISTS')
+        self._send_tagged(tag, 'OK', '[READ-ONLY] EXAMINE completed.')
+
     def cmd_UNSELECT(self, tag, args):
-        if self.server.is_selected:
-            self.server.is_selected = False
+        if self.server.is_selected is not None:
+            self.server.is_selected = None
             self._send_tagged(tag, 'OK', 'Returned to authenticated state. (Success)')
         else:
             self._send_tagged(tag, 'BAD', 'No mailbox selected')
@@ -268,6 +420,15 @@ class AuthHandler_CRAM_MD5(SimpleIMAPHandler):
             self._send_tagged(tag, 'NO', 'No access')
 
 
+class AuthHandler_PLAIN(SimpleIMAPHandler):
+    capabilities = 'LOGINDISABLED AUTH=PLAIN'
+    def cmd_AUTHENTICATE(self, tag, args):
+        self.server.auth_args = args
+        self._send_textline('+')
+        self.server.response = yield
+        self._send_tagged(tag, 'OK', 'Logged in.')
+
+
 class NewIMAPTestsMixin:
     client = None
 
@@ -329,6 +490,39 @@ class NewIMAPTestsMixin:
         self.assertRaises(imaplib.IMAP4.abort, self.imap_class,
                           *server.server_address)
 
+    def test_invalid_greeting(self):
+        # An invalid greeting, e.g. from a POP3 server on the IMAP port,
+        # must not fail with "error: None" but report the server's line
+        # (gh-108280).
+        class Pop3Handler(socketserver.StreamRequestHandler):
+            def handle(self):
+                self.wfile.write(b'+OK POP3 server ready\r\n')
+        _, server = self._setup(Pop3Handler, connect=False)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                                    r'invalid greeting: \+OK POP3 server ready'):
+            self.imap_class(*server.server_address)
+
+    def test_invalid_greeting_untagged(self):
+        # An untagged greeting that is neither OK nor PREAUTH (e.g. BYE)
+        # is reported as is (gh-108280).
+        class ByeHandler(socketserver.StreamRequestHandler):
+            def handle(self):
+                self.wfile.write(b'* BYE Server unavailable\r\n')
+        _, server = self._setup(ByeHandler, connect=False)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                                    r'invalid greeting: \* BYE Server unavailable'):
+            self.imap_class(*server.server_address)
+
+    def test_invalid_greeting_bare_continuation(self):
+        # A bare continuation greeting is still reported (gh-108280).
+        class BareHandler(socketserver.StreamRequestHandler):
+            def handle(self):
+                self.wfile.write(b'+\r\n')
+        _, server = self._setup(BareHandler, connect=False)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                                    r'invalid greeting: \+'):
+            self.imap_class(*server.server_address)
+
     def test_line_termination(self):
         class BadNewlineHandler(SimpleIMAPHandler):
             def cmd_CAPABILITY(self, tag, args):
@@ -371,10 +565,8 @@ class NewIMAPTestsMixin:
                 self.server.response = yield
                 self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
             def cmd_APPEND(self, tag, args):
-                self._send_textline('+')
                 self.server.response = args
-                literal = yield
-                self.server.response.append(literal)
+                self.server.response.append(_read_literal(self, args[-1]))
                 literal = yield
                 self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
@@ -386,6 +578,7 @@ class NewIMAPTestsMixin:
         code, _ = client.enable('UTF8=ACCEPT')
         self.assertEqual(code, 'OK')
         self.assertEqual(client._encoding, 'utf-8')
+        self.assertEqual(server.args, ['UTF8=ACCEPT'])
         msg_string = 'Subject: üñí©öðé'
         typ, data = client.append(
             None, None, None, (msg_string + '\n').encode('utf-8'))
@@ -412,6 +605,26 @@ class NewIMAPTestsMixin:
         self.assertTrue(client.utf8_enabled)
         with self.assertRaisesRegex(imaplib.IMAP4.error, 'charset.*UTF8'):
             client.search('foo', 'bar')
+
+    def test_utf8_mailbox_name(self):
+        class UTF8Server(SimpleIMAPHandler):
+            capabilities = 'AUTH ENABLE UTF8=ACCEPT'
+            def cmd_ENABLE(self, tag, args):
+                self._send_tagged(tag, 'OK', 'ENABLE successful')
+            def cmd_AUTHENTICATE(self, tag, args):
+                self._send_textline('+')
+                self.server.response = yield
+                self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
+        client, server = self._setup(UTF8Server)
+        typ, _ = client.authenticate('MYAUTH', lambda x: b'fake')
+        self.assertEqual(typ, 'OK')
+        typ, _ = client.enable('UTF8=ACCEPT')
+        self.assertEqual(typ, 'OK')
+        # A non-ASCII mailbox name is only allowed in a quoted string
+        # or a literal, never in an atom (RFC 6855).
+        typ, _ = client.select('Entwürfe')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.is_selected, ['"Entwürfe"'])
 
     def test_bad_auth_name(self):
         class MyServer(SimpleIMAPHandler):
@@ -488,6 +701,35 @@ class NewIMAPTestsMixin:
         with self.assertRaisesRegex(imaplib.IMAP4.error, msg):
             client.login_cram_md5("tim", b"tanstaaftanstaaf")
 
+    def test_login_plain_ascii(self):
+        client, server = self._setup(AuthHandler_PLAIN)
+        self.assertIn('AUTH=PLAIN', client.capabilities)
+        ret, _ = client.login_plain("prem", "pass")
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.auth_args, ['PLAIN'])
+        self.assertEqual(server.response, b'AHByZW0AcGFzcw==\r\n')
+
+    def test_login_plain_utf8(self):
+        client, server = self._setup(AuthHandler_PLAIN)
+        self.assertIn('AUTH=PLAIN', client.capabilities)
+        ret, _ = client.login_plain("pręm", "żółć")
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.response, b'AHByxJltAMW8w7PFgsSH\r\n')
+
+    def test_login_plain_bytes(self):
+        # bytes are accepted and sent verbatim (not re-encoded).
+        client, server = self._setup(AuthHandler_PLAIN)
+        ret, _ = client.login_plain(b'pr\xc4\x99m', b'\xc5\xbc\xc3\xb3\xc5\x82\xc4\x87')
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.response, b'AHByxJltAMW8w7PFgsSH\r\n')
+
+    def test_login_plain_nul(self):
+        client, _ = self._setup(AuthHandler_PLAIN)
+        with self.assertRaises(ValueError):
+            client.login_plain('user\0', 'pass')
+        with self.assertRaises(ValueError):
+            client.login_plain('user', b'pa\0ss')
+
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
             def cmd_AUTHENTICATE(self, tag, args):
@@ -545,7 +787,7 @@ class NewIMAPTestsMixin:
         _, server = self._setup(SimpleIMAPHandler, connect=False)
         with self.imap_class(*server.server_address) as imap:
             imap.login('user', 'pass')
-            self.assertEqual(server.logged, 'user')
+            self.assertEqual(server.logged, ['user', '"pass"'])
         self.assertIsNone(server.logged)
 
     def test_with_statement_logout(self):
@@ -553,7 +795,7 @@ class NewIMAPTestsMixin:
         _, server = self._setup(SimpleIMAPHandler, connect=False)
         with self.imap_class(*server.server_address) as imap:
             imap.login('user', 'pass')
-            self.assertEqual(server.logged, 'user')
+            self.assertEqual(server.logged, ['user', '"pass"'])
             imap.logout()
             self.assertIsNone(server.logged)
         self.assertIsNone(server.logged)
@@ -628,11 +870,130 @@ class NewIMAPTestsMixin:
             self.fail('multi-packet response was corrupted by idle timeout')
 
     def test_login(self):
-        client, _ = self._setup(SimpleIMAPHandler)
+        client, server = self._setup(SimpleIMAPHandler)
         typ, data = client.login('user', 'pass')
         self.assertEqual(typ, 'OK')
         self.assertEqual(data[0], b'LOGIN completed')
         self.assertEqual(client.state, 'AUTH')
+        # The user name is quoted only when necessary, but the password
+        # is always quoted.
+        self.assertEqual(server.logged, ['user', '"pass"'])
+        self.assertRaises(imaplib.IMAP4.error, client.login, 'user', 'pass')
+
+    def test_login_quoted(self):
+        client, server = self._setup(SimpleIMAPHandler)
+        typ, data = client.login('us*r', 'p%ss')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'LOGIN completed')
+        self.assertEqual(client.state, 'AUTH')
+        self.assertEqual(server.logged, ['"us*r"', '"p%ss"'])
+
+    def test_login_quoted2(self):
+        # An already quoted user name is passed through unchanged, rather
+        # than being quoted a second time; the password is always quoted.
+        client, server = self._setup(SimpleIMAPHandler)
+        typ, data = client.login('"user"', '"pass"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'LOGIN completed')
+        self.assertEqual(client.state, 'AUTH')
+        self.assertEqual(server.logged, ['"user"', r'"\"pass\""'])
+
+    def test_append_translate_line_endings(self):
+        # By default line endings are normalized to CRLF; False sends the
+        # literal exactly (gh-49680).
+        class AppendHandler(SimpleIMAPHandler):
+            def cmd_APPEND(self, tag, args):
+                self.server.response = _read_literal(self, args[-1])
+                yield  # read the trailer line
+                self._send_tagged(tag, 'OK', 'APPEND completed')
+        client, server = self._setup(AppendHandler)
+        client.login('user', 'pass')
+        message = b'a\rb\nc\r\nd'
+        client.append('INBOX', None, None, message)
+        self.assertEqual(server.response, b'a\r\nb\r\nc\r\nd')
+        client.append('INBOX', None, None, message,
+                      translate_line_endings=False)
+        self.assertEqual(server.response, message)
+
+        # An email message uses bare LF by default; False sends it verbatim.
+        message = EmailMessage()
+        message['Subject'] = 'line endings'
+        message.set_content('body line\n')
+        message = message.as_bytes()
+        self.assertNotIn(b'\r\n', message)
+        client.append('INBOX', None, None, message,
+                      translate_line_endings=False)
+        self.assertEqual(server.response, message)
+
+        # The mailbox is quoted and the flags are wrapped in parentheses
+        # when necessary.
+        client.append('New folder', r'\Seen', None, b'data')
+        self.assertEqual(server.args, ['"New folder"', r'(\Seen)', '{4}'])
+
+    def test_login_capabilities(self):
+        # A server may advertise new capabilities after login (as an
+        # untagged CAPABILITY response); imaplib must refresh its cached
+        # capability list (gh-63121, gh-103451).
+        class CapabilityLoginHandler(SimpleIMAPHandler):
+            def cmd_LOGIN(self, tag, args):
+                self.server.logged = args[0]
+                self._send_textline('* CAPABILITY IMAP4rev1 ENABLE UTF8=ACCEPT')
+                self._send_tagged(tag, 'OK', 'LOGIN completed')
+            def cmd_ENABLE(self, tag, args):
+                self._send_tagged(tag, 'OK', 'ENABLE completed')
+
+        client, _ = self._setup(CapabilityLoginHandler)
+        self.assertNotIn('ENABLE', client.capabilities)
+        client.login('user', 'pass')
+        self.assertIn('ENABLE', client.capabilities)
+        self.assertIn('UTF8=ACCEPT', client.capabilities)
+        typ, _ = client.enable('UTF8=ACCEPT')
+        self.assertEqual(typ, 'OK')
+
+    def test_authenticate_capabilities(self):
+        # Capabilities are also refreshed after AUTHENTICATE, here from a
+        # CAPABILITY response code in the tagged OK response.
+        class CapabilityAuthHandler(SimpleIMAPHandler):
+            def cmd_AUTHENTICATE(self, tag, args):
+                self._send_textline('+')
+                self.server.response = yield
+                self._send_tagged(
+                    tag, 'OK',
+                    '[CAPABILITY IMAP4rev1 ENABLE] AUTHENTICATE completed')
+
+        client, _ = self._setup(CapabilityAuthHandler)
+        self.assertNotIn('ENABLE', client.capabilities)
+        client.authenticate('MYAUTH', lambda x: b'fake')
+        self.assertIn('ENABLE', client.capabilities)
+
+    def test_greeting_capabilities(self):
+        # Capabilities advertised in the greeting are used directly,
+        # without sending a separate CAPABILITY command.
+        class GreetingHandler(SimpleIMAPHandler):
+            welcome = '* OK [CAPABILITY IMAP4rev1 ENABLE] Server ready'
+            def cmd_CAPABILITY(self, tag, args):
+                self.server.capability_queried = True
+                super().cmd_CAPABILITY(tag, args)
+
+        client, server = self._setup(GreetingHandler)
+        self.assertEqual(client.capabilities, ('IMAP4REV1', 'ENABLE'))
+        self.assertFalse(getattr(server, 'capability_queried', False))
+
+    def test_login_requery_capabilities(self):
+        # If the server does not advertise capabilities after login,
+        # imaplib re-queries them (as it does after STARTTLS), so a
+        # capability that becomes available only after authentication is
+        # still recognized (gh-63121).
+        class RequeryHandler(SimpleIMAPHandler):
+            def cmd_CAPABILITY(self, tag, args):
+                caps = 'IMAP4rev1 ENABLE' if self.server.logged else 'IMAP4rev1'
+                self._send_textline('* CAPABILITY ' + caps)
+                self._send_tagged(tag, 'OK', 'CAPABILITY completed')
+
+        client, _ = self._setup(RequeryHandler)
+        self.assertNotIn('ENABLE', client.capabilities)
+        client.login('user', 'pass')
+        self.assertIn('ENABLE', client.capabilities)
 
     def test_logout(self):
         client, _ = self._setup(SimpleIMAPHandler)
@@ -645,18 +1006,43 @@ class NewIMAPTestsMixin:
         self.assertEqual(client.state, 'LOGOUT')
 
     def test_lsub(self):
-        class LsubCmd(SimpleIMAPHandler):
-            def cmd_LSUB(self, tag, args):
-                self._send_textline('* LSUB () "." directoryA')
-                return self._send_tagged(tag, 'OK', 'LSUB completed')
-        client, _ = self._setup(LsubCmd)
+        client, server = self._setup(make_simple_handler('LSUB',
+            ['* LSUB () "." directoryA', '* LSUB () "." directoryB']))
         client.login('user', 'pass')
         typ, data = client.lsub()
         self.assertEqual(typ, 'OK')
-        self.assertEqual(data[0], b'() "." directoryA')
+        self.assertEqual(data, [b'() "." directoryA', b'() "." directoryB'])
+        self.assertEqual(server.args, ['""', '*'])
+
+        typ, data = client.lsub('~/Mail/', '%')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['~/Mail/', '%'])
+
+        # The directory is quoted when necessary; wildcards in the pattern
+        # are preserved.
+        typ, data = client.lsub('New folder', '%')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"', '%'])
+
+    def test_extra_blank_line_after_literal(self):
+        # Some buggy servers send an extra blank line after the counted
+        # literal data.  imaplib should skip it instead of failing.
+        class BlankLineHandler(SimpleIMAPHandler):
+            def cmd_FETCH(self, tag, args):
+                self._send(b'* 1 FETCH (BODY[HEADER] {13}\r\n')
+                self._send(b'Subject: test')       # 13-byte literal
+                self._send(b'\r\n)\r\n')            # stray blank line, then ')'
+                self._send_tagged(tag, 'OK', 'FETCH completed')
+        client, _ = self._setup(BlankLineHandler)
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.fetch('1', '(BODY[HEADER])')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [(b'1 (BODY[HEADER] {13}', b'Subject: test'),
+                                b')'])
 
     def test_unselect(self):
-        client, _ = self._setup(SimpleIMAPHandler)
+        client, server = self._setup(SimpleIMAPHandler)
         client.login('user', 'pass')
         typ, data = client.select()
         self.assertEqual(typ, 'OK')
@@ -666,12 +1052,804 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
         self.assertEqual(client.state, 'AUTH')
+        self.assertIsNone(server.is_selected)
+
+    def test_enable(self):
+        class EnableHandler(SimpleIMAPHandler):
+            capabilities = 'IMAP4rev1 ID LITERAL+ ENABLE X-GOOD-IDEA'
+            def cmd_ENABLE(self, tag, args):
+                capabilities = self.capabilities.split()
+                for arg in args:
+                    if arg in capabilities:
+                        self._send_textline('* ENABLED ' + arg)
+                self._send_tagged(tag, 'OK', 'foo')
+
+        client, server = self._setup(EnableHandler)
+        client.login('user', 'pass')
+        code, data = client.enable('CONDSTORE X-GOOD-IDEA')
+        self.assertEqual(code, 'OK')
+        self.assertEqual(data, [b'foo'])
+        self.assertEqual(server.args, ['CONDSTORE', 'X-GOOD-IDEA'])
+
+    def test_select(self):
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        typ, data = client.select()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'2')
+        self.assertEqual(server.is_selected, ['INBOX'])
+
+        typ, data = client.select('Archive')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.is_selected, ['Archive'])
+
+        # readonly=True issues EXAMINE instead of SELECT
+        # (there is no separate examine() method).
+        typ, data = client.select(readonly=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'2')
+        self.assertEqual(server.is_selected, ['INBOX'])
+        self.assertTrue(client.is_readonly)
+
+        typ, data = client.select('New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.is_selected, ['"New folder"'])
+
+    def test_expunge(self):
+        client, server = self._setup(make_simple_handler('EXPUNGE',
+            ['* 3 EXPUNGE', '* 3 EXPUNGE', '* 5 EXPUNGE', '* 8 EXPUNGE']))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.expunge()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'3', b'3', b'5', b'8'])
+
+    def test_close(self):
+        client, server = self._setup(make_simple_handler('CLOSE'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.close()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(client.state, 'AUTH')
+
+    def test_check(self):
+        client, server = self._setup(make_simple_handler('CHECK'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.check()
+        self.assertEqual(typ, 'OK')
+
+    def test_noop(self):
+        client, server = self._setup(make_simple_handler('NOOP',
+            ['* 4 EXISTS']))
+        client.login('user', 'pass')
+        typ, data = client.noop()
+        self.assertEqual(typ, 'OK')
+        # NOOP is used to pick up server-pushed untagged responses.
+        self.assertEqual(client.untagged_responses['EXISTS'], [b'4'])
+
+    def test_namespace(self):
+        client, server = self._setup(make_simple_handler('NAMESPACE',
+            ['* NAMESPACE (("" "/")) NIL NIL']))
+        client.login('user', 'pass')
+        typ, data = client.namespace()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'(("" "/")) NIL NIL')
+
+    def test_capability(self):
+        client, server = self._setup(make_simple_handler('CAPABILITY',
+            ['* CAPABILITY IMAP4rev1 IDLE NAMESPACE']))
+        client.login('user', 'pass')
+        typ, data = client.capability()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'IMAP4rev1 IDLE NAMESPACE'])
+
+    def test_recent(self):
+        # recent() prods the server with NOOP if no RECENT was seen yet.
+        client, server = self._setup(make_simple_handler('NOOP',
+            ['* 5 RECENT']))
+        client.login('user', 'pass')
+        typ, data = client.recent()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'5'])
+
+    def test_response(self):
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        client.select()  # the handler answers with '* 2 EXISTS'
+        typ, data = client.response('EXISTS')
+        self.assertEqual(typ, 'EXISTS')
+        self.assertEqual(data, [b'2'])
+        # The value is cleared once read.
+        typ, data = client.response('EXISTS')
+        self.assertEqual(data, [None])
+
+    def test_create(self):
+        client, server = self._setup(make_simple_handler('CREATE'))
+        client.login('user', 'pass')
+        typ, data = client.create('owatagusiam/')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'CREATE completed'])
+        self.assertEqual(server.args, ['owatagusiam/'])
+
+        typ, data = client.create('owatagusiam/blurdybloop')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'CREATE completed'])
+        self.assertEqual(server.args, ['owatagusiam/blurdybloop'])
+
+        typ, data = client.create('New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'CREATE completed'])
+        self.assertEqual(server.args, ['"New folder"'])
+
+    def test_copy(self):
+        client, server = self._setup(make_simple_handler('COPY'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.copy('2:4', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'COPY completed'])
+        self.assertEqual(server.args, ['2:4', 'MEETING'])
+
+        typ, data = client.copy('2:4', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'COPY completed'])
+        self.assertEqual(server.args, ['2:4', '"New folder"'])
+
+    def test_uid_copy(self):
+        client, server = self._setup(make_simple_handler('UID',
+            completed='UID COPY completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.uid('copy', '4827313:4828442', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['COPY', '4827313:4828442', 'MEETING'])
+
+        typ, data = client.uid('copy', '4827313:4828442', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['COPY', '4827313:4828442', '"New folder"'])
+
+    def test_move(self):
+        client, server = self._setup(make_simple_handler('MOVE'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.move('2:4', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', 'MEETING'])
+
+        typ, data = client.move('2:4', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', '"New folder"'])
+
+    def test_uid_move(self):
+        client, server = self._setup(make_simple_handler('UID',
+            completed='UID MOVE completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.uid('move', '4827313:4828442', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', 'MEETING'])
+
+        typ, data = client.uid('move', '4827313:4828442', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', '"New folder"'])
+
+    def test_store(self):
+        client, server = self._setup(make_simple_handler('STORE', [
+            r'* 2 FETCH (FLAGS (\Deleted \Seen))',
+            r'* 3 FETCH (FLAGS (\Deleted))',
+            r'* 4 FETCH (FLAGS (\Deleted \Flagged \Seen))',
+        ]))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.store('2:4', '+FLAGS', r'(\Deleted)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'2 (FLAGS (\Deleted \Seen))',
+            br'3 (FLAGS (\Deleted))',
+            br'4 (FLAGS (\Deleted \Flagged \Seen))',
+        ])
+        self.assertEqual(server.args, ['2:4', '+FLAGS', r'(\Deleted)'])
+
+        typ, data = client.store('2:4', '+FLAGS', r'\Deleted')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['2:4', '+FLAGS', r'(\Deleted)'])
+
+    def test_uid_store(self):
+        client, server = self._setup(make_simple_handler('UID', [
+            r'* 23 FETCH (FLAGS (\Deleted \Seen) UID 4827313)',
+            r'* 24 FETCH (FLAGS (\Deleted) UID 4827943)',
+            r'* 25 FETCH (FLAGS (\Deleted \Flagged \Seen) UID 4828442)',
+        ], 'UID STORE completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.uid('store', '4827313:4828442', '+FLAGS', r'(\Deleted)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'23 (FLAGS (\Deleted \Seen) UID 4827313)',
+            br'24 (FLAGS (\Deleted) UID 4827943)',
+            br'25 (FLAGS (\Deleted \Flagged \Seen) UID 4828442)',
+        ])
+        self.assertEqual(server.args, ['STORE', '4827313:4828442', '+FLAGS', r'(\Deleted)'])
+
+        typ, data = client.uid('store', '4827313:4828442', '+FLAGS', r'\Deleted')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['STORE', '4827313:4828442', '+FLAGS', r'(\Deleted)'])
+
+    def test_fetch(self):
+        # The handler expands the requested sequence set and answers for
+        # exactly those messages, so the test exercises the round trip of
+        # the message set, not just a canned reply.
+        class FetchHandler(SimpleIMAPHandler):
+            messages = 4
+            def cmd_SELECT(self, tag, args):
+                self.server.is_selected = args
+                self._send_line(b'* %d EXISTS' % self.messages)
+                self._send_tagged(tag, 'OK', '[READ-WRITE] SELECT completed.')
+            def cmd_FETCH(self, tag, args):
+                for n in parse_sequence_set(args[0], self.messages):
+                    self._send_textline(r'* %d FETCH (FLAGS (\Seen))' % n)
+                self._send_tagged(tag, 'OK', 'FETCH completed')
+
+        client, server = self._setup(FetchHandler)
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.fetch('2:4', '(FLAGS)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'2 (FLAGS (\Seen))',
+            br'3 (FLAGS (\Seen))',
+            br'4 (FLAGS (\Seen))',
+        ])
+        self.assertEqual(server.args, ['2:4', '(FLAGS)'])
+
+        # A comma-separated set with an open range up to '*'.
+        typ, data = client.fetch('1,3:*', '(FLAGS)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'1 (FLAGS (\Seen))',
+            br'3 (FLAGS (\Seen))',
+            br'4 (FLAGS (\Seen))',
+        ])
+        self.assertEqual(server.args, ['1,3:*', '(FLAGS)'])
+
+        # An item with nested parentheses is sent (and parsed) as a
+        # single argument.
+        typ, data = client.fetch('1', '(BODY[HEADER.FIELDS (DATE FROM)])')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br'1 (FLAGS (\Seen))'])
+        self.assertEqual(server.args, ['1', '(BODY[HEADER.FIELDS (DATE FROM)])'])
+
+        # message_parts is wrapped in parentheses if it is not already.
+        typ, data = client.fetch('2:4', 'FLAGS')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['2:4', '(FLAGS)'])
+
+        # But the macros are not, as they are not data item names.
+        typ, data = client.fetch('2:4', 'ALL')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['2:4', 'ALL'])
+        typ, data = client.fetch('2:4', 'fast')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['2:4', 'fast'])
+
+    def test_uid_fetch(self):
+        client, server = self._setup(make_simple_handler('UID', [
+            r'* 23 FETCH (FLAGS (\Seen) UID 4827313)',
+            r'* 24 FETCH (FLAGS (\Seen) UID 4827943)',
+            r'* 25 FETCH (FLAGS (\Seen) UID 4828442)',
+        ], 'UID FETCH completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.uid('fetch', '4827313:4828442', '(FLAGS)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'23 (FLAGS (\Seen) UID 4827313)',
+            br'24 (FLAGS (\Seen) UID 4827943)',
+            br'25 (FLAGS (\Seen) UID 4828442)',
+        ])
+        self.assertEqual(server.args, ['FETCH', '4827313:4828442', '(FLAGS)'])
+
+        typ, data = client.uid('fetch', '4827313:4828442', 'FLAGS')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['FETCH', '4827313:4828442', '(FLAGS)'])
+
+        typ, data = client.uid('fetch', '4827313:4828442', 'ALL')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['FETCH', '4827313:4828442', 'ALL'])
+
+    def test_partial(self):
+        client, server = self._setup(make_simple_handler('PARTIAL',
+            ['* 1 FETCH (RFC822.TEXT<0.10> "0123456789")']))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.partial('1', 'RFC822.TEXT', '0', '10')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'1 (RFC822.TEXT<0.10> "0123456789")'])
+        self.assertEqual(server.args, ['1', 'RFC822.TEXT', '0', '10'])
+
+    def test_search(self):
+        response = []
+        client, server = self._setup(make_simple_handler('SEARCH', response))
+        client.login('user', 'pass')
+        client.select()
+        response[:] = ['* SEARCH 2 84 882']
+        typ, data = client.search(None, 'FLAGGED', 'SINCE', '1-Feb-1994', 'NOT', 'FROM', '"Smith"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'2 84 882'])
+        self.assertEqual(server.args, ['FLAGGED', 'SINCE', '1-Feb-1994', 'NOT', 'FROM', '"Smith"'])
+
+        response[:] = ['* SEARCH']
+        typ, data = client.search(None, 'TEXT', '"string not in mailbox"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b''])
+        self.assertEqual(server.args, ['TEXT', '"string not in mailbox"'])
+
+        response[:] = ['* SEARCH 43']
+        typ, data = client.search('UTF-8', 'TEXT', 'XXXXXX')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'43'])
+        self.assertEqual(server.args, ['CHARSET', 'UTF-8', 'TEXT', 'XXXXXX'])
+
+        typ, data = client.search('NF_Z_62-010_(1973)', 'TEXT', 'XXXXXX')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['CHARSET', '"NF_Z_62-010_(1973)"', 'TEXT', 'XXXXXX'])
+
+    def test_uid_search(self):
+        response = []
+        client, server = self._setup(make_simple_handler('UID', response,
+            'UID SEARCH completed'))
+        client.login('user', 'pass')
+        client.select()
+        response[:] = ['* SEARCH 2 84 882']
+        typ, data = client.uid('SEARCH', 'FLAGGED', 'SINCE', '1-Feb-1994', 'NOT', 'FROM', '"Smith"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'2 84 882'])
+        self.assertEqual(server.args, ['SEARCH', 'FLAGGED', 'SINCE', '1-Feb-1994', 'NOT', 'FROM', '"Smith"'])
+
+        response[:] = ['* SEARCH']
+        typ, data = client.uid('SEARCH', 'TEXT', '"string not in mailbox"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b''])
+        self.assertEqual(server.args, ['SEARCH', 'TEXT', '"string not in mailbox"'])
+
+        response[:] = ['* SEARCH 43']
+        typ, data = client.uid('SEARCH', 'CHARSET', 'UTF-8', 'TEXT', 'XXXXXX')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'43'])
+        self.assertEqual(server.args, ['SEARCH', 'CHARSET', 'UTF-8', 'TEXT', 'XXXXXX'])
+
+        typ, data = client.uid('SEARCH', 'CHARSET', '"NF_Z_62-010_(1973)"', 'TEXT', 'XXXXXX')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['SEARCH', 'CHARSET', '"NF_Z_62-010_(1973)"', 'TEXT', 'XXXXXX'])
+
+    def test_sort(self):
+        response = []
+        client, server = self._setup(make_simple_handler('SORT', response))
+        client.login('user', 'pass')
+        client.select()
+        response[:] = ['* SORT 2 84 882']
+        typ, data = client.sort('(SUBJECT)', 'UTF-8', 'SINCE', '1-Feb-1994')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br'2 84 882'])
+        self.assertEqual(server.args, ['(SUBJECT)', 'UTF-8', 'SINCE', '1-Feb-1994'])
+
+        response[:] = ['* SORT 5 3 4 1 2']
+        typ, data = client.sort('(SUBJECT REVERSE DATE)', 'UTF-8', 'ALL')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br'5 3 4 1 2'])
+        self.assertEqual(server.args, ['(SUBJECT REVERSE DATE)', 'UTF-8', 'ALL'])
+
+        response[:] = ['* SORT']
+        typ, data = client.sort('(SUBJECT)', 'US-ASCII', 'TEXT', '"not in mailbox"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br''])
+        self.assertEqual(server.args, ['(SUBJECT)', 'US-ASCII', 'TEXT', '"not in mailbox"'])
+
+        typ, data = client.sort('SUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"not in mailbox"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['(SUBJECT)', '"NF_Z_62-010_(1973)"', 'TEXT', '"not in mailbox"'])
+
+    def test_uid_sort(self):
+        response = []
+        client, server = self._setup(make_simple_handler('UID', response,
+            'UID SORT completed'))
+        client.login('user', 'pass')
+        client.select()
+        response[:] = ['* SORT 2 84 882']
+        typ, data = client.uid('sort', '(SUBJECT)', 'UTF-8', 'SINCE', '1-Feb-1994')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br'2 84 882'])
+        self.assertEqual(server.args, ['SORT', '(SUBJECT)', 'UTF-8', 'SINCE', '1-Feb-1994'])
+
+        response[:] = ['* SORT 5 3 4 1 2']
+        typ, data = client.uid('sort', '(SUBJECT REVERSE DATE)', 'UTF-8', 'ALL')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br'5 3 4 1 2'])
+        self.assertEqual(server.args, ['SORT', '(SUBJECT REVERSE DATE)', 'UTF-8', 'ALL'])
+
+        response[:] = ['* SORT']
+        typ, data = client.uid('sort', '(SUBJECT)', 'US-ASCII', 'TEXT', '"not in mailbox"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br''])
+        self.assertEqual(server.args, ['SORT', '(SUBJECT)', 'US-ASCII', 'TEXT', '"not in mailbox"'])
+
+        typ, data = client.uid('sort', 'SUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"not in mailbox"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['SORT', '(SUBJECT)', '"NF_Z_62-010_(1973)"', 'TEXT', '"not in mailbox"'])
+
+    def test_thread(self):
+        response = []
+        client, server = self._setup(make_simple_handler('THREAD', response))
+        client.login('user', 'pass')
+        client.select()
+        response[:] = [
+            '* THREAD (166)(167)(168)(169)(172)(170)(171)'
+            '(173)(174 (175)(176)(178)(181)(180))(179)(177 '
+            '(183)(182)(188)(184)(185)(186)(187)(189))(190)'
+            '(191)(192)(193)(194 195)(196 (197)(198))(199)'
+            '(200 202)(201)(203)(204)(205)(206 207)(208)']
+        typ, data = client.thread('ORDEREDSUBJECT', 'UTF-8', 'SINCE', '5-MAR-2000')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            b'(166)(167)(168)(169)(172)(170)(171)'
+            b'(173)(174 (175)(176)(178)(181)(180))(179)(177 '
+            b'(183)(182)(188)(184)(185)(186)(187)(189))(190)'
+            b'(191)(192)(193)(194 195)(196 (197)(198))(199)'
+            b'(200 202)(201)(203)(204)(205)(206 207)(208)'])
+        self.assertEqual(server.args, ['ORDEREDSUBJECT', 'UTF-8', 'SINCE', '5-MAR-2000'])
+
+        response[:] = [
+            '* THREAD (166)(167)(168)(169)(172)((170)(179))'
+            '(171)(173)((174)(175)(176)(178)(181)(180))'
+            '((177)(183)(182)(188 (184)(189))(185 186)(187))'
+            '(190)(191)(192)(193)((194)(195 196))(197 198)'
+            '(199)(200 202)(201)(203)(204)(205 206 207)(208)']
+        typ, data = client.thread('ORDEREDSUBJECT', 'US-ASCII', 'TEXT', '"gewp"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            b'(166)(167)(168)(169)(172)((170)(179))'
+            b'(171)(173)((174)(175)(176)(178)(181)(180))'
+            b'((177)(183)(182)(188 (184)(189))(185 186)(187))'
+            b'(190)(191)(192)(193)((194)(195 196))(197 198)'
+            b'(199)(200 202)(201)(203)(204)(205 206 207)(208)'])
+        self.assertEqual(server.args, ['ORDEREDSUBJECT', 'US-ASCII', 'TEXT', '"gewp"'])
+
+        typ, data = client.thread('ORDEREDSUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"gewp"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['ORDEREDSUBJECT', '"NF_Z_62-010_(1973)"', 'TEXT', '"gewp"'])
+
+    def test_uid_thread(self):
+        response = []
+        client, server = self._setup(make_simple_handler('UID', response,
+            'UID THREAD completed'))
+        client.login('user', 'pass')
+        client.select()
+        response[:] = [
+            '* THREAD (166)(167)(168)(169)(172)(170)(171)'
+            '(173)(174 (175)(176)(178)(181)(180))(179)(177 '
+            '(183)(182)(188)(184)(185)(186)(187)(189))(190)'
+            '(191)(192)(193)(194 195)(196 (197)(198))(199)'
+            '(200 202)(201)(203)(204)(205)(206 207)(208)']
+        typ, data = client.uid('THREAD', 'ORDEREDSUBJECT', 'UTF-8', 'SINCE', '5-MAR-2000')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            b'(166)(167)(168)(169)(172)(170)(171)'
+            b'(173)(174 (175)(176)(178)(181)(180))(179)(177 '
+            b'(183)(182)(188)(184)(185)(186)(187)(189))(190)'
+            b'(191)(192)(193)(194 195)(196 (197)(198))(199)'
+            b'(200 202)(201)(203)(204)(205)(206 207)(208)'])
+        self.assertEqual(server.args, ['THREAD', 'ORDEREDSUBJECT', 'UTF-8', 'SINCE', '5-MAR-2000'])
+
+        response[:] = [
+            '* THREAD (166)(167)(168)(169)(172)((170)(179))'
+            '(171)(173)((174)(175)(176)(178)(181)(180))'
+            '((177)(183)(182)(188 (184)(189))(185 186)(187))'
+            '(190)(191)(192)(193)((194)(195 196))(197 198)'
+            '(199)(200 202)(201)(203)(204)(205 206 207)(208)']
+        typ, data = client.uid('THREAD', 'ORDEREDSUBJECT', 'US-ASCII', 'TEXT', '"gewp"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            b'(166)(167)(168)(169)(172)((170)(179))'
+            b'(171)(173)((174)(175)(176)(178)(181)(180))'
+            b'((177)(183)(182)(188 (184)(189))(185 186)(187))'
+            b'(190)(191)(192)(193)((194)(195 196))(197 198)'
+            b'(199)(200 202)(201)(203)(204)(205 206 207)(208)'])
+        self.assertEqual(server.args, ['THREAD', 'ORDEREDSUBJECT', 'US-ASCII', 'TEXT', '"gewp"'])
+
+        typ, data = client.uid('THREAD', 'ORDEREDSUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"gewp"')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['THREAD', 'ORDEREDSUBJECT', '"NF_Z_62-010_(1973)"', 'TEXT', '"gewp"'])
+
+    def test_delete(self):
+        client, server = self._setup(make_simple_handler('DELETE'))
+        client.login('user', 'pass')
+        typ, data = client.delete('blurdybloop')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'DELETE completed'])
+        self.assertEqual(server.args, ['blurdybloop'])
+
+        typ, data = client.delete('foo/bar')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['foo/bar'])
+
+        typ, data = client.delete('New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"'])
+
+    def test_rename(self):
+        client, server = self._setup(make_simple_handler('RENAME'))
+        client.login('user', 'pass')
+        typ, data = client.rename('blurdybloop', 'sarasoop')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'RENAME completed'])
+        self.assertEqual(server.args, ['blurdybloop', 'sarasoop'])
+
+        typ, data = client.rename('Old folder', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"Old folder"', '"New folder"'])
+
+    def test_subscribe(self):
+        client, server = self._setup(make_simple_handler('SUBSCRIBE'))
+        client.login('user', 'pass')
+        typ, data = client.subscribe('#news.comp.mail.mime')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'SUBSCRIBE completed'])
+        self.assertEqual(server.args, ['#news.comp.mail.mime'])
+
+        typ, data = client.subscribe('New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"'])
+
+    def test_unsubscribe(self):
+        client, server = self._setup(make_simple_handler('UNSUBSCRIBE'))
+        client.login('user', 'pass')
+        typ, data = client.unsubscribe('#news.comp.mail.mime')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'UNSUBSCRIBE completed'])
+        self.assertEqual(server.args, ['#news.comp.mail.mime'])
+
+        typ, data = client.unsubscribe('New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"'])
+
+    def test_list(self):
+        client, server = self._setup(make_simple_handler('LIST',
+            [r'* LIST (\Noselect) "/" ""',
+             r'* LIST (\Unmarked) "/" "~/Mail/foo"']))
+        client.login('user', 'pass')
+        typ, data = client.list()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br'(\Noselect) "/" ""',
+                                br'(\Unmarked) "/" "~/Mail/foo"'])
+        self.assertEqual(server.args, ['""', '*'])
+
+        typ, data = client.list('~/Mail/', '%')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['~/Mail/', '%'])
+
+        typ, data = client.list('New folder', '*')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"', '*'])
+
+        # A pattern without wildcards is quoted when necessary.
+        typ, data = client.list('~/Mail/', 'My Folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['~/Mail/', '"My Folder"'])
+
+    def test_status(self):
+        client, server = self._setup(make_simple_handler('STATUS',
+            ['* STATUS blurdybloop (MESSAGES 231 UIDNEXT 44292)']))
+        client.login('user', 'pass')
+        typ, data = client.status('blurdybloop', '(UIDNEXT MESSAGES)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'blurdybloop (MESSAGES 231 UIDNEXT 44292)'])
+        self.assertEqual(server.args, ['blurdybloop', '(UIDNEXT MESSAGES)'])
+
+        # The names argument is wrapped in parentheses if it is not already.
+        typ, data = client.status('New folder', 'UIDNEXT MESSAGES')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"', '(UIDNEXT MESSAGES)'])
+
+    def test_getacl(self):
+        client, server = self._setup(make_simple_handler('GETACL',
+            ['* ACL INBOX Fred rwipslxetad']))
+        client.login('user', 'pass')
+        typ, data = client.getacl('INBOX')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'INBOX Fred rwipslxetad'])
+        self.assertEqual(server.args, ['INBOX'])
+
+        typ, data = client.getacl('New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"'])
+
+    def test_setacl(self):
+        client, server = self._setup(make_simple_handler('SETACL'))
+        client.login('user', 'pass')
+        typ, data = client.setacl('INBOX', 'Fred', 'rwipslxetad')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'SETACL completed'])
+        self.assertEqual(server.args, ['INBOX', 'Fred', 'rwipslxetad'])
+
+        typ, data = client.setacl('New folder', 'Fred', '+lr')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"', 'Fred', '+lr'])
+
+        # The identifier and the rights are quoted when necessary too.
+        typ, data = client.setacl('INBOX', 'John Doe', 'a b')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['INBOX', '"John Doe"', '"a b"'])
+
+    def test_deleteacl(self):
+        client, server = self._setup(make_simple_handler('DELETEACL'))
+        client.login('user', 'pass')
+        typ, data = client.deleteacl('INBOX', 'Fred')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'DELETEACL completed'])
+        self.assertEqual(server.args, ['INBOX', 'Fred'])
+
+        # The identifier is quoted when necessary too.
+        typ, data = client.deleteacl('New folder', 'John Doe')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"', '"John Doe"'])
+
+    def test_myrights(self):
+        client, server = self._setup(make_simple_handler('MYRIGHTS',
+            ['* MYRIGHTS INBOX rwiptsldaex']))
+        client.login('user', 'pass')
+        typ, data = client.myrights('INBOX')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'INBOX rwiptsldaex'])
+        self.assertEqual(server.args, ['INBOX'])
+
+        typ, data = client.myrights('New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"'])
+
+    def test_getquota(self):
+        client, server = self._setup(make_simple_handler('GETQUOTA',
+            ['* QUOTA "" (STORAGE 10 512)']))
+        client.login('user', 'pass')
+        typ, data = client.getquota('#news')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'"" (STORAGE 10 512)'])
+        self.assertEqual(server.args, ['#news'])
+
+        typ, data = client.getquota('')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['""'])
+
+    def test_getquotaroot(self):
+        client, server = self._setup(make_simple_handler('GETQUOTAROOT',
+            ['* QUOTAROOT INBOX ""', '* QUOTA "" (STORAGE 10 512)']))
+        client.login('user', 'pass')
+        typ, data = client.getquotaroot('INBOX')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [[b'INBOX ""'], [b'"" (STORAGE 10 512)']])
+        self.assertEqual(server.args, ['INBOX'])
+
+        typ, data = client.getquotaroot('New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"'])
+
+    def test_id(self):
+        client, server = self._setup(make_simple_handler('ID',
+            ['* ID ("name" "Cyrus" "version" "1.5")']))
+        typ, data = client.id({'name': 'imaplib', 'version': '3.16'})
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'("name" "Cyrus" "version" "1.5")'])
+        self.assertEqual(server.args, ['("name" "imaplib" "version" "3.16")'])
+
+        typ, data = client.id()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['NIL'])
+
+        # Fields and values are quoted strings; a None value is sent
+        # as NIL.
+        typ, data = client.id({'name': 'my "client"', 'os': None})
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, [r'("name" "my \"client\"" "os" NIL)'])
+
+    def test_setquota(self):
+        client, server = self._setup(make_simple_handler('SETQUOTA',
+            ['* QUOTA "" (STORAGE 512)']))
+        client.login('user', 'pass')
+        typ, data = client.setquota('#news', '(STORAGE 512)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'"" (STORAGE 512)'])
+        self.assertEqual(server.args, ['#news', '(STORAGE 512)'])
+
+        typ, data = client.setquota('', '(STORAGE 512)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['""', '(STORAGE 512)'])
+
+        # The limits argument is wrapped in parentheses if it is not already.
+        typ, data = client.setquota('', 'STORAGE 512')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['""', '(STORAGE 512)'])
+
+    def test_getannotation(self):
+        client, server = self._setup(make_simple_handler('GETANNOTATION',
+            ['* ANNOTATION INBOX "/comment" ("value.shared" "Hello")']))
+        client.login('user', 'pass')
+        typ, data = client.getannotation('INBOX', '/comment', 'value.shared')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'INBOX "/comment" ("value.shared" "Hello")'])
+        self.assertEqual(server.args, ['INBOX', '/comment', 'value.shared'])
+
+        typ, data = client.getannotation('New folder', '/comment', 'value.shared')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"New folder"', '/comment', 'value.shared'])
+
+    def test_setannotation(self):
+        client, server = self._setup(make_simple_handler('SETANNOTATION'))
+        client.login('user', 'pass')
+        typ, data = client.setannotation('INBOX', '/comment',
+                                         '("value.shared" "My comment")')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args,
+                         ['INBOX', '/comment', '("value.shared" "My comment")'])
+
+        typ, data = client.setannotation('New folder', '/comment',
+                                         '("value.shared" "My comment")')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args,
+            ['"New folder"', '/comment', '("value.shared" "My comment")'])
+
+    def test_proxyauth(self):
+        client, server = self._setup(make_simple_handler('PROXYAUTH'))
+        client.login('user', 'pass')
+        typ, data = client.proxyauth('user')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'PROXYAUTH completed'])
+        self.assertEqual(server.args, ['user'])
+
+        typ, data = client.proxyauth('us er')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['"us er"'])
+
+    def test_xatom(self):
+        client, server = self._setup(make_simple_handler('MYCOMMAND',
+            completed='MYCOMMAND completed'))
+        client.login('user', 'pass')
+        self.addCleanup(imaplib.Commands.pop, 'MYCOMMAND', None)
+        typ, data = client.xatom('MYCOMMAND', 'arg1', 'arg2')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MYCOMMAND completed'])
+        self.assertEqual(server.args, ['arg1', 'arg2'])
+
+    def test_uppercase_command_names(self):
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        self.assertEqual(client.CAPABILITY, client.capability)
+        self.assertEqual(client.SELECT, client.select)
+        typ, data = client.CAPABILITY()
+        self.assertEqual(typ, 'OK')
+        with self.assertRaises(AttributeError):
+            client.NONEXISTENT
 
     def test_control_characters(self):
-        client, _ = self._setup(SimpleIMAPHandler)
-        for c0 in support.control_characters_c0():
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for c in '\0\r\n':
             with self.assertRaises(ValueError):
-                client.login(f'user{c0}', 'pass')
+                client.select(f'a{c}b')
+        # Other control characters are valid in a quoted string and can
+        # occur in mailbox names returned by the server, so the client
+        # must be able to send them back.
+        for c in support.control_characters_c0():
+            if c in '\0\r\n':
+                continue
+            typ, _ = client.select(f'a{c}b')
+            self.assertEqual(typ, 'OK')
+            self.assertEqual(server.is_selected, [f'"a{c}b"'])
 
     # property tests
 
@@ -812,8 +1990,8 @@ class ThreadedNetworkedTests(unittest.TestCase):
     @threading_helper.reap_threads
     def test_bracket_flags(self):
 
-        # This violates RFC 3501, which disallows ']' characters in tag names,
-        # but imaplib has allowed producing such tags forever, other programs
+        # This violates RFC 3501, which disallows ']' characters in flags,
+        # but imaplib has allowed producing such flags forever, other programs
         # also produce them (eg: OtherInbox's Organizer app as of 20140716),
         # and Gmail, for example, accepts them and produces them.  So we
         # support them.  See issue #21815.
@@ -925,10 +2103,8 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
         class UTF8AppendServer(self.UTF8Server):
             def cmd_APPEND(self, tag, args):
-                self._send_textline('+')
                 self.server.response = args
-                literal = yield
-                self.server.response.append(literal)
+                self.server.response.append(_read_literal(self, args[-1]))
                 literal = yield
                 self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
@@ -942,6 +2118,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             code, _ = client.enable('UTF8=ACCEPT')
             self.assertEqual(code, 'OK')
             self.assertEqual(client._encoding, 'utf-8')
+            self.assertEqual(server.args, ['UTF8=ACCEPT'])
             msg_string = 'Subject: üñí©öðé'
             typ, data = client.append(
                 None, None, None, (msg_string + '\n').encode('utf-8'))
@@ -1097,7 +2274,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
         with self.reaped_server(SimpleIMAPHandler) as server:
             with self.imap_class(*server.server_address) as imap:
                 imap.login('user', 'pass')
-                self.assertEqual(server.logged, 'user')
+                self.assertEqual(server.logged, ['user', '"pass"'])
             self.assertIsNone(server.logged)
 
     @threading_helper.reap_threads
@@ -1106,7 +2283,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
         with self.reaped_server(SimpleIMAPHandler) as server:
             with self.imap_class(*server.server_address) as imap:
                 imap.login('user', 'pass')
-                self.assertEqual(server.logged, 'user')
+                self.assertEqual(server.logged, ['user', '"pass"'])
                 imap.logout()
                 self.assertIsNone(server.logged)
             self.assertIsNone(server.logged)
