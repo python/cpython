@@ -1939,7 +1939,7 @@ frame_dealloc(PyObject *op)
 
     /* Kill all local variables including specials, if we own them */
     if (f->f_frame == frame && frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
-        PyStackRef_CLEAR(frame->f_executable);
+        frame->f_executable = NULL;
         PyStackRef_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
         _PyStackRef *locals = _PyFrame_GetLocalsArray(frame);

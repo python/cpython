@@ -1272,7 +1272,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.f_globals = (PyObject*)0xaaa3;
     entry.frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry.frame.f_executable = PyStackRef_None;
+    entry.frame.f_executable = NULL;
     entry.frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry.frame.stackpointer = entry.stack;
     entry.frame.owner = FRAME_OWNED_BY_INTERPRETER;
@@ -1982,7 +1982,7 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
         tstate->datastack_top);
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
-    PyStackRef_CLEAR(frame->f_executable);
+    frame->f_executable = NULL;
     _PyThreadState_PopFrame(tstate, frame);
 }
 

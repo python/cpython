@@ -9436,7 +9436,7 @@
             FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE && defined(Py_DEBUG)
-            if (!PyStackRef_IsNone(frame->f_executable)) {
+            if (frame->f_executable != NULL) {
                 Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                 assert(i >= 0 && i <= INT_MAX);
                 int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
@@ -24052,7 +24052,7 @@
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 if (true) {
@@ -24071,7 +24071,7 @@
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 if (true) {
@@ -24093,7 +24093,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 if (true) {
@@ -24118,7 +24118,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 if (true) {
@@ -24142,7 +24142,7 @@
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
@@ -24162,7 +24162,7 @@
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
@@ -24185,7 +24185,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
@@ -24211,7 +24211,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
@@ -24236,7 +24236,7 @@
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -24256,7 +24256,7 @@
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -24279,7 +24279,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -24305,7 +24305,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -24330,7 +24330,7 @@
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -24350,7 +24350,7 @@
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -24373,7 +24373,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
@@ -24399,7 +24399,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
             uint32_t version = (uint32_t)CURRENT_OPERAND0_32();
-            PyObject *code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            PyObject *code = frame->f_executable;
             assert(PyCode_Check(code));
             if (((PyCodeObject *)code)->co_version != version) {
                 frame->instr_ptr += frame->return_offset;
