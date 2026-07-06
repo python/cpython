@@ -1706,6 +1706,9 @@ except Exception:
         with self.assertRaisesRegex(SyntaxError,
                                     "f-string: expecting '=', or '!', or ':', or '}'"):
             compile("f'{a $ b}'", "?", "exec")
+        with self.assertRaisesRegex(SyntaxError,
+                                    "f-string: expecting '!', or ':', or '}'"):
+            compile("f'{a=b}'", "?", "exec")
 
     def test_with_two_commas_in_format_specifier(self):
         error_msg = re.escape("Cannot specify ',' with ','.")

@@ -116,9 +116,10 @@ All the :mod:`!ttk` Widgets accept the following options:
 |           | read-only, and may only be specified when the window is      |
 |           | created.                                                     |
 +-----------+--------------------------------------------------------------+
-| cursor    | Specifies the mouse cursor to be used for the widget. If set |
-|           | to the empty string (the default), the cursor is inherited   |
-|           | from the parent widget.                                      |
+| cursor    | Specifies the mouse cursor to be used for the widget.  See   |
+|           | the *cursor* option type under :ref:`Tk-option-data-types`.  |
+|           | If set to the empty string (the default), the cursor is      |
+|           | inherited from the parent widget.                            |
 +-----------+--------------------------------------------------------------+
 | takefocus | Determines whether the window accepts the focus during       |
 |           | keyboard traversal. 0, 1 or an empty string is returned.     |
@@ -462,6 +463,9 @@ ttk.Spinbox
 ^^^^^^^^^^^^
 
 .. class:: Spinbox
+
+   With a non-integer increment, see :ref:`numeric values and the locale
+   <tkinter-numeric-locale>`.
 
    .. versionadded:: 3.8
 
@@ -2014,6 +2018,16 @@ If you don't know the class name of a widget, use the method
    .. method:: theme_names()
 
       Returns a tuple of all known themes.
+
+
+   .. method:: theme_styles(themename=None)
+
+      Returns a tuple of all styles in *themename*.
+      If *themename* is not given, the current theme is used.
+
+      .. versionadded:: next
+
+      Availability: Tk 9.0.
 
 
    .. method:: theme_use(themename=None)

@@ -5493,6 +5493,7 @@ type_from_slots_or_spec(
     Py_ssize_t name_buf_len = strlen(it.name) + 1;
     _ht_tpname = PyMem_Malloc(name_buf_len);
     if (_ht_tpname == NULL) {
+        PyErr_NoMemory();
         goto finally;
     }
     memcpy(_ht_tpname, it.name, name_buf_len);
@@ -5779,7 +5780,7 @@ type_from_slots_or_spec(
     ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
 #endif
 
- finally:
+finally:
     if (PyErr_Occurred()) {
         Py_CLEAR(res);
     }
@@ -7025,7 +7026,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     if (et->ht_cached_keys) {
-        _PyDict_RemoveKeysForClass(et);
+        _PyDictKeys_DecRef(et->ht_cached_keys);
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
