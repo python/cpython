@@ -4,21 +4,18 @@
 .. module:: subprocess
    :synopsis: Subprocess management.
 
-.. moduleauthor:: Peter Åstrand <astrand@lysator.liu.se>
-.. sectionauthor:: Peter Åstrand <astrand@lysator.liu.se>
-
 **Source code:** :source:`Lib/subprocess.py`
 
 --------------
 
-The :mod:`subprocess` module allows you to spawn new processes, connect to their
+The :mod:`!subprocess` module allows you to spawn new processes, connect to their
 input/output/error pipes, and obtain their return codes.  This module intends to
 replace several older modules and functions::
 
    os.system
    os.spawn*
 
-Information about how the :mod:`subprocess` module can be used to replace these
+Information about how the :mod:`!subprocess` module can be used to replace these
 modules and functions can be found in the following sections.
 
 .. seealso::
@@ -27,8 +24,8 @@ modules and functions can be found in the following sections.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
-Using the :mod:`subprocess` Module
-----------------------------------
+Using the :mod:`!subprocess` Module
+-----------------------------------
 
 The recommended approach to invoking subprocesses is to use the :func:`run`
 function for all use cases it can handle. For more advanced use cases, the
@@ -630,6 +627,12 @@ functions.
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
+   .. note::
+
+      Specifying *user* will not drop existing supplementary group memberships!
+      The caller must also pass ``extra_groups=()`` to reduce the group membership
+      of the child process for security purposes.
+
    .. availability:: POSIX
    .. versionadded:: 3.9
 
@@ -967,6 +970,11 @@ Reassigning them to new values is unsupported:
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
 
+   When ``shell=True``, the return code reflects the exit status of the shell
+   itself (e.g. ``/bin/sh``), which may map signals to codes such as
+   ``128+N``. See the documentation of the shell (for example, the Bash
+   manual's Exit Status) for details.
+
 
 Windows Popen Helpers
 ---------------------
@@ -1056,7 +1064,7 @@ on Windows.
 Windows Constants
 ^^^^^^^^^^^^^^^^^
 
-The :mod:`subprocess` module exposes the following constants.
+The :mod:`!subprocess` module exposes the following constants.
 
 .. data:: STD_INPUT_HANDLE
 
@@ -1345,8 +1353,8 @@ calls these functions.
 
 .. _subprocess-replacements:
 
-Replacing Older Functions with the :mod:`subprocess` Module
------------------------------------------------------------
+Replacing Older Functions with the :mod:`!subprocess` Module
+------------------------------------------------------------
 
 In this section, "a becomes b" means that b can be used as a replacement for a.
 
@@ -1362,7 +1370,7 @@ In this section, "a becomes b" means that b can be used as a replacement for a.
    :attr:`~CalledProcessError.output` attribute of the raised exception.
 
 In the following examples, we assume that the relevant functions have already
-been imported from the :mod:`subprocess` module.
+been imported from the :mod:`!subprocess` module.
 
 
 Replacing :program:`/bin/sh` shell command substitution
@@ -1422,7 +1430,7 @@ Notes:
 
 * The :func:`os.system` function ignores SIGINT and SIGQUIT signals while
   the command is running, but the caller must do this separately when
-  using the :mod:`subprocess` module.
+  using the :mod:`!subprocess` module.
 
 A more realistic example would look like this::
 
@@ -1606,7 +1614,7 @@ runtime):
 Disable use of ``posix_spawn()``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
+On Linux, :mod:`!subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 

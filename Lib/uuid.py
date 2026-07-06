@@ -955,22 +955,21 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Generate a UUID using the selected UUID function.",
-        color=True,
     )
     parser.add_argument("-u", "--uuid",
                         choices=uuid_funcs.keys(),
                         default="uuid4",
                         help="function to generate the UUID")
     parser.add_argument("-n", "--namespace",
-                        choices=["any UUID", *namespaces.keys()],
-                        help="uuid3/uuid5 only: "
+                        metavar=f"{{any UUID,{','.join(namespaces)}}}",
+                        help="`uuid3`/`uuid5` only: "
                         "a UUID, or a well-known predefined UUID addressed "
                         "by namespace name")
     parser.add_argument("-N", "--name",
-                        help="uuid3/uuid5 only: "
+                        help="`uuid3`/`uuid5` only: "
                         "name used as part of generating the UUID")
     parser.add_argument("-C", "--count", metavar="NUM", type=int, default=1,
-                        help="generate NUM fresh UUIDs")
+                        help="generate `NUM` fresh UUIDs")
 
     args = parser.parse_args()
     uuid_func = uuid_funcs[args.uuid]
@@ -984,7 +983,13 @@ def main():
                 f"{args.uuid} requires a namespace and a name. "
                 "Run 'python -m uuid -h' for more information."
             )
-        namespace = namespaces[namespace] if namespace in namespaces else UUID(namespace)
+        if namespace in namespaces:
+            namespace = namespaces[namespace]
+        else:
+            try:
+                namespace = UUID(namespace)
+            except ValueError as exc:
+                parser.error(f"{exc}: {args.namespace!r}")
         for _ in range(args.count):
             print(uuid_func(namespace, name))
     else:

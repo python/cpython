@@ -412,7 +412,7 @@ an error value).
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
 
-   Function similar to :c:func:`PyErr_WarnEx`, but use
+   Function similar to :c:func:`PyErr_WarnEx`, but uses
    :c:func:`PyUnicode_FromFormat` to format the warning message.  *format* is
    an ASCII-encoded string.
 
@@ -503,7 +503,8 @@ Querying the error indicator
 
    .. warning::
 
-      This call steals a reference to *exc*, which must be a valid exception.
+      This call ":term:`steals <steal>`" a reference to *exc*,
+      which must be a valid exception.
 
    .. versionadded:: 3.12
 
@@ -641,7 +642,8 @@ Querying the error indicator
 
    Set the exception info, as known from ``sys.exc_info()``.  This refers
    to an exception that was *already caught*, not to an exception that was
-   freshly raised.  This function steals the references of the arguments.
+   freshly raised.  This function ":term:`steals <steal>`" the references
+   of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
    This function is kept for backwards compatibility. Prefer using
    :c:func:`PyErr_SetHandledException`.
@@ -658,8 +660,8 @@ Querying the error indicator
    .. versionchanged:: 3.11
       The ``type`` and ``traceback`` arguments are no longer used and
       can be NULL. The interpreter now derives them from the exception
-      instance (the ``value`` argument). The function still steals
-      references of all three arguments.
+      instance (the ``value`` argument). The function still
+      ":term:`steals <steal>`" references of all three arguments.
 
 
 Signal Handling
@@ -673,28 +675,51 @@ Signal Handling
       single: SIGINT (C macro)
       single: KeyboardInterrupt (built-in exception)
 
-   This function interacts with Python's signal handling.
+   Handle external interruptions, such as signals or activating a debugger,
+   whose processing has been delayed until it is safe
+   to run Python code and/or raise exceptions.
 
-   If the function is called from the main thread and under the main Python
-   interpreter, it checks whether a signal has been sent to the processes
-   and if so, invokes the corresponding signal handler.  If the :mod:`signal`
-   module is supported, this can invoke a signal handler written in Python.
+   For example, pressing :kbd:`Ctrl-C` causes a terminal to send the
+   :py:data:`signal.SIGINT` signal.
+   This function executes the corresponding Python signal handler, which,
+   by default, raises the :exc:`KeyboardInterrupt` exception.
 
-   The function attempts to handle all pending signals, and then returns ``0``.
-   However, if a Python signal handler raises an exception, the error
-   indicator is set and the function returns ``-1`` immediately (such that
-   other pending signals may not have been handled yet: they will be on the
-   next :c:func:`PyErr_CheckSignals()` invocation).
+   :c:func:`!PyErr_CheckSignals` should be called by long-running C code
+   frequently enough so that the response appears immediate to humans.
 
-   If the function is called from a non-main thread, or under a non-main
-   Python interpreter, it does nothing and returns ``0``.
+   Handlers invoked by this function currently include:
 
-   This function can be called by long-running C code that wants to
-   be interruptible by user requests (such as by pressing Ctrl-C).
+   - Signal handlers, including Python functions registered using
+     the :mod:`signal` module.
 
-   .. note::
-      The default Python signal handler for :c:macro:`!SIGINT` raises the
-      :exc:`KeyboardInterrupt` exception.
+     Signal handlers are only run in the main thread of the main interpreter.
+
+     (This is where the function got the name: originally, signals
+     were the only way to interrupt the interpreter.)
+
+   - Running the garbage collector, if necessary.
+
+   - Executing a pending :ref:`remote debugger <remote-debugging>` script.
+
+   - Raise the exception set by :c:func:`PyThreadState_SetAsyncExc`.
+
+   If any handler raises an exception, immediately return ``-1`` with that
+   exception set.
+   Any remaining interruptions are left to be processed on the next
+   :c:func:`PyErr_CheckSignals()` invocation, if appropriate.
+
+   If all handlers finish successfully, or there are no handlers to run,
+   return ``0``.
+
+   .. versionchanged:: 3.12
+      This function may now invoke the garbage collector.
+
+   .. versionchanged:: 3.14
+      This function may now execute a remote debugger script, if remote
+      debugging is enabled.
+
+   .. versionchanged:: 3.15
+      The exception set by :c:func:`PyThreadState_SetAsyncExc` is now raised.
 
 
 .. c:function:: void PyErr_SetInterrupt()
@@ -795,13 +820,15 @@ Exception Classes
 
 .. c:macro:: PyException_HEAD
 
-   This is a :term:`soft deprecated` macro including the base fields for an
+   This is a macro including the base fields for an
    exception object.
 
    This was included in Python's C API by mistake and is not designed for use
    in extensions. For creating custom exception objects, use
    :c:func:`PyErr_NewException` or otherwise create a class inheriting from
    :c:data:`PyExc_BaseException`.
+
+   .. soft-deprecated:: 3.15
 
 
 Exception Objects
@@ -844,7 +871,7 @@ Exception Objects
 
    Set the context associated with the exception to *ctx*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *ctx* is an exception instance.
-   This steals a reference to *ctx*.
+   This ":term:`steals <steal>`" a reference to *ctx*.
 
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
@@ -859,7 +886,8 @@ Exception Objects
 
    Set the cause associated with the exception to *cause*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *cause* is either an exception
-   instance or ``None``.  This steals a reference to *cause*.
+   instance or ``None``.
+   This ":term:`steals <steal>`" a reference to *cause*.
 
    The :attr:`~BaseException.__suppress_context__` attribute is implicitly set
    to ``True`` by this function.
@@ -1013,7 +1041,7 @@ Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requ
 special recursion handling.  In addition to protecting the stack,
 :c:member:`~PyTypeObject.tp_repr` also needs to track objects to prevent cycles.  The
 following two functions facilitate this functionality.  Effectively,
-these are the C equivalent to :func:`reprlib.recursive_repr`.
+these are the C equivalent to :deco:`reprlib.recursive_repr`.
 
 .. c:function:: int Py_ReprEnter(PyObject *object)
 
@@ -1119,6 +1147,8 @@ Exception types
      * :exc:`FloatingPointError`
    * * .. c:var:: PyObject *PyExc_GeneratorExit
      * :exc:`GeneratorExit`
+   * * .. c:var:: PyObject *PyExc_ImportCycleError
+     * :exc:`ImportCycleError`
    * * .. c:var:: PyObject *PyExc_ImportError
      * :exc:`ImportError`
    * * .. c:var:: PyObject *PyExc_IndentationError
@@ -1321,3 +1351,67 @@ Tracebacks
 
    This function returns ``0`` on success, and returns ``-1`` with an
    exception set on failure.
+
+.. c:function:: const char* PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
+
+   Write a trace of the Python stack in *tstate* into the file *fd*.  The format
+   looks like::
+
+      Traceback (most recent call first):
+        File "xxx", line xxx in <xxx>
+        File "xxx", line xxx in <xxx>
+        ...
+        File "xxx", line xxx in <xxx>
+
+   This function is meant to debug situations such as segfaults, fatal errors,
+   and similar. The file and function names it outputs are encoded to ASCII with
+   backslashreplace and truncated to 500 characters. It writes only the first
+   100 frames; further frames are truncated with the line ``...``.
+
+   This function will return ``NULL`` on success, or an error message on error.
+
+   This function is intended for use in crash scenarios such as signal handlers
+   for SIGSEGV, where the interpreter may be in an inconsistent state. Given
+   that it reads interpreter data structures that may be partially modified, the
+   function might produce incomplete output or it may even crash itself.
+
+   The caller does not need to hold an :term:`attached thread state`, nor does
+   *tstate* need to be attached.
+
+   .. versionadded:: 3.15
+
+.. c:function:: const char* PyUnstable_DumpTracebackThreads(int fd, PyInterpreterState *interp, PyThreadState *current_tstate, Py_ssize_t max_threads)
+
+   Write the traces of all Python threads in *interp* into the file *fd*.
+
+   If *interp* is ``NULL`` then this function will try to identify the current
+   interpreter using thread-specific storage. If it cannot, it will return an
+   error.
+
+   If *current_tstate* is not ``NULL`` then it will be used to identify what the
+   current thread is in the written output. If it is ``NULL`` then this function
+   will identify the current thread using thread-specific storage. It is not an
+   error if the function is unable to get the current Python thread state.
+
+   This function will return ``NULL`` on success, or an error message on error.
+
+   This function is meant to debug situations such as segfaults, fatal
+   errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each
+   thread. It only writes the tracebacks of the first *max_threads* threads,
+   further output is truncated with the line ``...``. If *max_threads* is 0, the
+   function will use a default value of 100 for the argument.
+
+   This function is intended for use in crash scenarios such as signal handlers
+   for SIGSEGV, where the interpreter may be in an inconsistent state. Given
+   that it reads interpreter data structures that may be partially modified, the
+   function might produce incomplete output or it may even crash itself.
+
+   The caller does not need to hold an :term:`attached thread state`, nor does
+   *current_tstate* need to be attached.
+
+   .. warning::
+      On the :term:`free-threaded build`, this function is not thread-safe. If
+      another thread deletes its :term:`thread state` while this function is being
+      called, the process will likely crash.
+
+   .. versionadded:: 3.15

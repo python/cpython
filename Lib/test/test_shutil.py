@@ -10,6 +10,7 @@ import os
 import os.path
 import errno
 import functools
+import socket
 import subprocess
 import random
 import string
@@ -29,7 +30,7 @@ except ImportError:
     posix = None
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
@@ -1550,12 +1551,49 @@ class TestCopy(BaseTest, unittest.TestCase):
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
         try:
-            self.assertRaises(shutil.SpecialFileError,
-                                shutil.copyfile, TESTFN, TESTFN2)
-            self.assertRaises(shutil.SpecialFileError,
-                                shutil.copyfile, __file__, TESTFN)
+            self.assertRaisesRegex(shutil.SpecialFileError, 'is a named pipe',
+                                   shutil.copyfile, TESTFN, TESTFN2)
+            self.assertRaisesRegex(shutil.SpecialFileError, 'is a named pipe',
+                                   shutil.copyfile, __file__, TESTFN)
         finally:
             os.remove(TESTFN)
+
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_copyfile_socket(self):
+        sock_path = os.path.join(self.mkdtemp(), 'sock')
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        try:
+            socket_helper.bind_unix_socket(sock, sock_path)
+        except OSError as e:
+            # AF_UNIX path too long (e.g. on iOS)
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
+        self.addCleanup(os_helper.unlink, sock_path)
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
+                               shutil.copyfile, sock_path, sock_path + '.copy')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
+                               shutil.copyfile, __file__, sock_path)
+
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_character_device(self):
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
+                               shutil.copyfile, '/dev/null', TESTFN)
+        src_file = os.path.join(self.mkdtemp(), 'src')
+        create_file(src_file, 'foo')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
+                               shutil.copyfile, src_file, '/dev/null')
+
+    def test_copyfile_block_device(self):
+        block_dev = None
+        for dev in ['/dev/loop0', '/dev/sda', '/dev/vda', '/dev/disk0']:
+            if os.path.exists(dev) and stat.S_ISBLK(os.stat(dev).st_mode):
+                if os.access(dev, os.R_OK):
+                    block_dev = dev
+                    break
+        if block_dev is None:
+            self.skipTest('no accessible block device found')
+        self.assertRaisesRegex(shutil.SpecialFileError, 'is a block device',
+                               shutil.copyfile, block_dev, TESTFN)
 
     def test_copyfile_return_value(self):
         # copytree returns its destination path.
@@ -2042,6 +2080,32 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
 
+    def test_make_archive_pathlike_cwd_default(self):
+        called_args = []
+        def archiver(base_name, base_dir, **kw):
+            called_args.append((base_name, kw.get('root_dir')))
+
+        register_archive_format('xxx', archiver, [], 'xxx file')
+        self.addCleanup(unregister_archive_format, 'xxx')
+        with no_chdir:
+            make_archive(FakePath('basename'), 'xxx')
+        self.assertEqual(called_args, [('basename', None)])
+
+    def test_make_archive_pathlike_cwd_supports_root_dir(self):
+        root_dir = self.mkdtemp()
+        called_args = []
+        def archiver(base_name, base_dir, **kw):
+            called_args.append((base_name, base_dir, kw.get('root_dir')))
+        archiver.supports_root_dir = True
+
+        register_archive_format('xxx', archiver, [], 'xxx file')
+        self.addCleanup(unregister_archive_format, 'xxx')
+        with no_chdir:
+            make_archive(FakePath('basename'), 'xxx',
+                         root_dir=FakePath(root_dir),
+                         base_dir=FakePath('basedir'))
+        self.assertEqual(called_args, [('basename', 'basedir', root_dir)])
+
     def test_register_archive_format(self):
 
         self.assertRaises(TypeError, register_archive_format, 'xxx', 1)
@@ -2110,8 +2174,6 @@ class TestArchives(BaseTest, unittest.TestCase):
     def check_unpack_archive(self, format, **kwargs):
         self.check_unpack_archive_with_converter(
             format, lambda path: path, **kwargs)
-        self.check_unpack_archive_with_converter(
-            format, FakePath, **kwargs)
         self.check_unpack_archive_with_converter(format, FakePath, **kwargs)
 
     def check_unpack_archive_with_converter(self, format, converter, **kwargs):
@@ -2167,6 +2229,71 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive('zip')
         with self.assertRaises(TypeError):
             self.check_unpack_archive('zip', filter='data')
+
+    def test_unpack_archive_zip_badpaths(self):
+        srcdir = self.mkdtemp()
+        zipname = os.path.join(srcdir, 'test.zip')
+        abspath = os.path.join(srcdir, 'abspath')
+        with zipfile.ZipFile(zipname, 'w') as zf:
+            zf.writestr(abspath, 'badfile')
+            zf.writestr(os.sep + abspath, 'badfile')
+            zf.writestr('/abspath', 'badfile')
+            zf.writestr('C:/abspath', 'badfile')
+            zf.writestr('D:\\abspath', 'badfile')
+            zf.writestr('E:abspath', 'badfile')
+            zf.writestr('F:/G:/abspath', 'badfile')
+            zf.writestr('//server/share/abspath', 'badfile')
+            zf.writestr('\\\\server2\\share\\abspath', 'badfile')
+            zf.writestr('../relpath', 'badfile')
+            zf.writestr(os.pardir + os.sep + 'relpath2', 'badfile')
+            zf.writestr('good/file', 'goodfile')
+            zf.writestr('good..file', 'goodfile')
+
+        dstdir = os.path.join(self.mkdtemp(), 'dst')
+        unpack_archive(zipname, dstdir)
+        self.assertTrue(os.path.isfile(os.path.join(dstdir, 'good', 'file')))
+        self.assertTrue(os.path.isfile(os.path.join(dstdir, 'good..file')))
+        self.assertFalse(os.path.exists(abspath))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'abspath')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'G_')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'server')))
+        if os.name != 'nt':
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'C:', 'abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'D:\\abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'E:abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, 'F:', 'G:', 'abspath')))
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, '\\\\server2\\share\\abspath')))
+        if os.pardir == '..':
+            self.assertFalse(os.path.exists(os.path.join(dstdir, '..', 'relpath')))
+            self.assertFalse(os.path.exists(os.path.join(dstdir, 'relpath')))
+        else:
+            self.assertTrue(os.path.isfile(os.path.join(dstdir, '..', 'relpath')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, os.pardir, 'relpath2')))
+        self.assertFalse(os.path.exists(os.path.join(dstdir, 'relpath2')))
+
+        dstdir2 = os.path.join(self.mkdtemp(), 'dst')
+        os.mkdir(dstdir2)
+        with os_helper.change_cwd(dstdir2):
+            unpack_archive(zipname, '')
+            self.assertTrue(os.path.isfile(os.path.join('good', 'file')))
+            self.assertTrue(os.path.isfile('good..file'))
+            self.assertFalse(os.path.exists(abspath))
+            self.assertFalse(os.path.exists('abspath'))
+            self.assertFalse(os.path.exists('C_'))
+            self.assertFalse(os.path.exists('server'))
+            if os.name != 'nt':
+                self.assertTrue(os.path.isfile(os.path.join('C:', 'abspath')))
+                self.assertTrue(os.path.isfile('D:\\abspath'))
+                self.assertTrue(os.path.isfile('E:abspath'))
+                self.assertTrue(os.path.isfile(os.path.join('F:', 'G:', 'abspath')))
+                self.assertTrue(os.path.isfile('\\\\server2\\share\\abspath'))
+            if os.pardir == '..':
+                self.assertFalse(os.path.exists(os.path.join('..', 'relpath')))
+                self.assertFalse(os.path.exists('relpath'))
+            else:
+                self.assertTrue(os.path.isfile(os.path.join('..', 'relpath')))
+            self.assertFalse(os.path.exists(os.path.join(os.pardir, 'relpath2')))
+            self.assertFalse(os.path.exists('relpath2'))
 
     def test_unpack_registry(self):
 
@@ -2824,6 +2951,23 @@ class TestMove(BaseTest, unittest.TestCase):
                             'dst (%s) is in src (%s)' % (dst, src))
         finally:
             os_helper.rmtree(TESTFN)
+
+    @os_helper.skip_unless_symlink
+    def test_destinsrc_symlink_bypass(self):
+        tmp = self.mkdtemp()
+        src = os.path.join(tmp, 'src')
+        os.makedirs(src)
+        # tmp/link -> tmp (one level up)
+        link = os.path.join(tmp, 'link')
+        os.symlink(tmp, link)
+        # raw path: tmp/link/src/sub - no src prefix in string space
+        # real path: tmp/src/sub     - physically inside src
+        dst = os.path.join(link, 'src', 'sub')
+        self.assertTrue(
+            shutil._destinsrc(src, dst),
+            msg='_destinsrc failed to detect dst inside src via symlink '
+                '(dst=%s, src=%s)' % (dst, src),
+        )
 
     @os_helper.skip_unless_symlink
     @mock_rename
@@ -3491,8 +3635,6 @@ class PublicAPITests(unittest.TestCase):
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
-        with self.assertWarns(DeprecationWarning):
-            from shutil import ExecError  # noqa: F401
 
 
 if __name__ == '__main__':

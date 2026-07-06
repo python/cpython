@@ -29,7 +29,7 @@
         
         <ComponentGroup Id="freethreaded_exe">
             <Component Id="freethreaded_python.exe" Directory="InstallDirectory" Guid="$(var.FreethreadedPythonExeComponentGuid)">
-                <File Name="python$(var.ShortVersion)t.exe" KeyPath="yes" />
+                <File Name="python$(var.ShortVersion)t.exe" Source="!(bindpath.build_t)\python.exe" KeyPath="yes" />
                 
                 <RegistryKey Root="HKMU" Key="[FREETHREADED_REGISTRYKEY]">
                     <RegistryValue Key="InstallPath" Type="string" Value="[InstallDirectory]" KeyPath="no" />
@@ -37,68 +37,72 @@
                 </RegistryKey>
             </Component>
             <Component Id="freethreaded_pythonw.exe" Directory="InstallDirectory" Guid="$(var.FreethreadedPythonwExeComponentGuid)">
-                <File Name="pythonw$(var.ShortVersion)t.exe" KeyPath="yes" />
+                <File Name="pythonw$(var.ShortVersion)t.exe" Source="!(bindpath.build_t)\pythonw.exe" KeyPath="yes" />
                 <RegistryKey Root="HKMU" Key="[FREETHREADED_REGISTRYKEY]">
                     <RegistryValue Key="InstallPath" Name="WindowedExecutablePath" Type="string" Value="[#pythonw$(var.ShortVersion)t.exe]" KeyPath="no" />
                 </RegistryKey>
             </Component>
             <Component Id="freethreaded_python_stable.dll" Directory="InstallDirectory" Guid="*">
-                <File Id="freethreaded_python_stable.dll" Name="python$(var.MajorVersionNumber)t.dll" KeyPath="yes" />
+                <File Id="freethreaded_python_stable.dll" Name="python$(var.MajorVersionNumber)t.dll" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)t.dll" KeyPath="yes" />
             </Component>
             <Component Id="freethreaded_python.dll" Directory="InstallDirectory" Guid="*">
-                <File Id="freethreaded_python.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.dll" KeyPath="yes" />
+                <File Id="freethreaded_python.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.dll" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.dll" KeyPath="yes" />
             </Component>
             <Component Id="freethreaded_python_stable.lib" Directory="libs" Guid="*">
-                <File Id="freethreaded_python_stable.lib" Name="python$(var.MajorVersionNumber)t.lib" KeyPath="yes" />
+                <File Id="freethreaded_python_stable.lib" Name="python$(var.MajorVersionNumber)t.lib" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)t.lib" KeyPath="yes" />
             </Component>
             <Component Id="freethreaded_python.lib" Directory="libs" Guid="*">
-                <File Id="freethreaded_python.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.lib" KeyPath="yes" />
+                <File Id="freethreaded_python.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.lib" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.lib" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
         <ComponentGroup Id="freethreaded_symbols">
             <Component Id="freethreaded_python_dll.pdb" Directory="InstallDirectory" Guid="*">
-                <File Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.pdb" KeyPath="yes" />
+                <File Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.pdb" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.pdb" KeyPath="yes" />
             </Component>
+            <!--
+            Renaming the PDB like this will break automatic connection by debuggers,
+            but short of making people stop using this installer there's no real option.
+            -->
             <Component Id="freethreaded_python.pdb" Directory="InstallDirectory" Guid="*">
-                <File Name="python$(var.ShortVersion)t.pdb" />
+                <File Name="python$(var.ShortVersion)t.pdb" Source="!(bindpath.build_t)\python.pdb" />
             </Component>
             <Component Id="freethreaded_pythonw.pdb" Directory="InstallDirectory" Guid="*">
-                <File Name="pythonw$(var.ShortVersion)t.pdb" />
+                <File Name="pythonw$(var.ShortVersion)t.pdb" Source="!(bindpath.build_t)\pythonw.pdb" />
             </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
         <ComponentGroup Id="freethreaded_dll_d">
             <Component Id="freethreaded_python_stable_d.dll" Directory="InstallDirectory" Guid="*">
-                <File Id="freethreaded_python_stable_d.dll" Name="python$(var.MajorVersionNumber)t_d.dll" KeyPath="yes" />
+                <File Id="freethreaded_python_stable_d.dll" Name="python$(var.MajorVersionNumber)t_d.dll" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)t_d.dll" KeyPath="yes" />
             </Component>
             <Component Id="freethreaded_python_d.dll" Directory="InstallDirectory" Guid="*">
-                <File Id="freethreaded_python_d.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.dll" KeyPath="yes" />
-                <File Id="freethreaded_python_d.pdb" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.pdb" KeyPath="no" />
+                <File Id="freethreaded_python_d.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.dll" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.dll" KeyPath="yes" />
+                <File Id="freethreaded_python_d.pdb" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.pdb" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.pdb" KeyPath="no" />
             </Component>
             <Component Id="freethreaded_python_stable_d.lib" Directory="libs" Guid="*">
-                <File Id="freethreaded_python_stable_d.lib" Name="python$(var.MajorVersionNumber)t_d.lib" KeyPath="yes" />
+                <File Id="freethreaded_python_stable_d.lib" Name="python$(var.MajorVersionNumber)t_d.lib" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)t_d.lib" KeyPath="yes" />
             </Component>
             <Component Id="freethreaded_python_d.lib" Directory="libs" Guid="*">
-                <File Id="freethreaded_python_d.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.lib" KeyPath="yes" />
+                <File Id="freethreaded_python_d.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.lib" Source="!(bindpath.build_t)\python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.lib" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
         <ComponentGroup Id="freethreaded_exe_d">
             <Component Id="freethreaded_python_d.exe" Directory="InstallDirectory" Guid="*">
-                <File Name="python$(var.ShortVersion)t_d.exe" />
+                <File Name="python$(var.ShortVersion)t_d.exe" Source="!(bindpath.build_t)python_d.exe" />
             </Component>
             <Component Id="freethreaded_python_d.pdb" Directory="InstallDirectory" Guid="*">
-                <File Name="python$(var.ShortVersion)t_d.pdb" />
+                <File Name="python$(var.ShortVersion)t_d.pdb" Source="!(bindpath.build_t)python_d.pdb" />
             </Component>
             <Component Id="freethreaded_pythonw_d.exe" Directory="InstallDirectory" Guid="*">
-                <File Name="pythonw$(var.ShortVersion)t_d.exe" />
+                <File Name="pythonw$(var.ShortVersion)t_d.exe" Source="!(bindpath.build_t)pythonw_d.exe" />
             </Component>
             <Component Id="freethreaded_pythonw_d.pdb" Directory="InstallDirectory" Guid="*">
-                <File Name="pythonw$(var.ShortVersion)t_d.pdb" />
+                <File Name="pythonw$(var.ShortVersion)t_d.pdb" Source="!(bindpath.build_t)pythonw_d.pdb" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -111,16 +115,16 @@
             <?foreach ext in $(var.exts)?>
         
             <Component Id="freethreaded_$(var.ext).pyd" Directory="DLLs" Guid="*">
-                <File Name="$(var.ext)$(var.FreethreadedPydTag).pyd" KeyPath="yes" />
+                <File Name="$(var.ext)$(var.FreethreadedPydTag).pyd" Source="!(bindpath.build_t)\$(var.ext)$(var.FreethreadedPydTag).pyd" KeyPath="yes" />
             </Component>
             
             <?endforeach ?>
             
             <Component Id="venvlaunchert.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Name="venvlaunchert.exe" KeyPath="yes" />
+                <File Name="venvlaunchert.exe" Source="!(bindpath.build_t)\venvlaunchert.exe" KeyPath="yes" />
             </Component>
             <Component Id="venvwlaunchert.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Name="venvwlaunchert.exe" KeyPath="yes" />
+                <File Name="venvwlaunchert.exe" Source="!(bindpath.build_t)\venvwlaunchert.exe" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -132,16 +136,16 @@
             <?foreach ext in $(var.exts)?>
             
             <Component Id="freethreaded_$(var.ext).pdb" Directory="DLLs" Guid="*">
-                <File Name="$(var.ext)$(var.FreethreadedPydTag).pdb" />
+                <File Name="$(var.ext)$(var.FreethreadedPydTag).pdb" Source="!(bindpath.build_t)\$(var.ext)$(var.FreethreadedPydTag).pdb" />
             </Component>
             
             <?endforeach ?>
             
             <Component Id="venvlaunchert.pdb" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Name="venvlaunchert.pdb" KeyPath="yes" />
+                <File Name="venvlaunchert.pdb" Source="!(bindpath.build_t)\venvlaunchert.pdb" KeyPath="yes" />
             </Component>
             <Component Id="venvwlaunchert.pdb" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Name="venvwlaunchert.pdb" KeyPath="yes" />
+                <File Name="venvwlaunchert.pdb" Source="!(bindpath.build_t)\venvwlaunchert.pdb" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -151,21 +155,21 @@
             <?foreach ext in $(var.exts)?>
             
             <Component Id="freethreaded_$(var.ext)_d.pyd" Directory="DLLs" Guid="*">
-                <File Name="$(var.ext)_d$(var.FreethreadedPydTag).pyd" />
+                <File Name="$(var.ext)_d$(var.FreethreadedPydTag).pyd" Source="!(bindpath.build_t)\$(var.ext)_d$(var.FreethreadedPydTag).pyd" />
             </Component>
             <Component Id="freethreaded_$(var.ext)_d.pdb" Directory="DLLs" Guid="*">
-                <File Name="$(var.ext)_d$(var.FreethreadedPydTag).pdb" />
+                <File Name="$(var.ext)_d$(var.FreethreadedPydTag).pdb" Source="!(bindpath.build_t)\$(var.ext)_d$(var.FreethreadedPydTag).pdb" />
             </Component>
             
             <?endforeach ?>
             
             <Component Id="venvlaunchert_d.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Name="venvlaunchert_d.exe" KeyPath="yes" />
-                <File Name="venvlaunchert_d.pdb" />
+                <File Name="venvlaunchert_d.exe" Source="!(bindpath.build_t)\venvlaunchert_d.exe" KeyPath="yes" />
+                <File Name="venvlaunchert_d.pdb" Source="!(bindpath.build_t)\venvlaunchert_d.pdb" />
             </Component>
             <Component Id="venvwlaunchert_d.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Name="venvwlaunchert_d.exe" KeyPath="yes" />
-                <File Name="venvwlaunchert_d.pdb" />
+                <File Name="venvwlaunchert_d.exe" Source="!(bindpath.build_t)\venvwlaunchert_d.exe" KeyPath="yes" />
+                <File Name="venvwlaunchert_d.pdb" Source="!(bindpath.build_t)\venvwlaunchert_d.pdb" />
             </Component>
         </ComponentGroup>
     </Fragment>

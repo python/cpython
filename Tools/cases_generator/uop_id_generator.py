@@ -51,6 +51,8 @@ def generate_uop_ids(
         for name, uop in sorted(uops):
             if uop.properties.tier == 1:
                 continue
+            if uop.properties.records_value:
+                continue
             for inputs, outputs, _ in sorted(get_uop_cache_depths(uop)):
                 out.emit(f"#define {name}_r{inputs}{outputs} {next_id}\n")
                 next_id += 1

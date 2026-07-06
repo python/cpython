@@ -4,14 +4,6 @@
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic Specification.
 
-.. moduleauthor:: Eric Price <eprice at tjhsst.edu>
-.. moduleauthor:: Facundo Batista <facundo at taniquetil.com.ar>
-.. moduleauthor:: Raymond Hettinger <python at rcn.com>
-.. moduleauthor:: Aahz <aahz at pobox.com>
-.. moduleauthor:: Tim Peters <tim.one at comcast.net>
-.. moduleauthor:: Stefan Krah <skrah at bytereef.org>
-.. sectionauthor:: Raymond D. Hettinger <python at rcn.com>
-
 **Source code:** :source:`Lib/decimal.py`
 
 .. import modules for testing inline doctests with the Sphinx doctest builder
@@ -30,7 +22,7 @@
 
 --------------
 
-The :mod:`decimal` module provides support for fast correctly rounded
+The :mod:`!decimal` module provides support for fast correctly rounded
 decimal floating-point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
@@ -289,7 +281,7 @@ For more advanced work, it may be useful to create alternate contexts using the
 :meth:`Context` constructor.  To make an alternate active, use the :func:`setcontext`
 function.
 
-In accordance with the standard, the :mod:`decimal` module provides two ready to
+In accordance with the standard, the :mod:`!decimal` module provides two ready to
 use standard contexts, :const:`BasicContext` and :const:`ExtendedContext`. The
 former is especially useful for debugging because many of the traps are
 enabled:
@@ -1847,7 +1839,7 @@ properties of addition:
    >>> u * (v+w)
    Decimal('0.0060000')
 
-The :mod:`decimal` module makes it possible to restore the identities by
+The :mod:`!decimal` module makes it possible to restore the identities by
 expanding the precision sufficiently to avoid loss of significance:
 
 .. doctest:: newcontext
@@ -1869,7 +1861,7 @@ expanding the precision sufficiently to avoid loss of significance:
 Special values
 ^^^^^^^^^^^^^^
 
-The number system for the :mod:`decimal` module provides special values
+The number system for the :mod:`!decimal` module provides special values
 including ``NaN``, ``sNaN``, ``-Infinity``, ``Infinity``,
 and two zeros, ``+0`` and ``-0``.
 

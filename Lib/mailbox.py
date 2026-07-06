@@ -39,6 +39,13 @@ class Mailbox:
         self._path = os.path.abspath(os.path.expanduser(path))
         self._factory = factory
 
+    def __enter__(self):
+        self.lock()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def add(self, message):
         """Add message and return assigned key."""
         raise NotImplementedError('Method must be implemented by subclass')

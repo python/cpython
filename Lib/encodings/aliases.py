@@ -43,6 +43,7 @@ aliases = {
 
     # big5hkscs codec
     'big5_hkscs'         : 'big5hkscs',
+    'csbig5hkscs'        : 'big5hkscs',
     'hkscs'              : 'big5hkscs',
 
     # bz2_codec codec
@@ -71,42 +72,56 @@ aliases = {
 
     # cp1140 codec
     '1140'               : 'cp1140',
+    'ccsid01140'         : 'cp1140',
+    'cp01140'            : 'cp1140',
+    'csibm01140'         : 'cp1140',
+    'ebcdic_us_37_euro'  : 'cp1140',
+    'ibm01140'           : 'cp1140',
     'ibm1140'            : 'cp1140',
 
     # cp1250 codec
     '1250'               : 'cp1250',
+    'cswindows1250'      : 'cp1250',
     'windows_1250'       : 'cp1250',
 
     # cp1251 codec
     '1251'               : 'cp1251',
+    'cswindows1251'      : 'cp1251',
     'windows_1251'       : 'cp1251',
 
     # cp1252 codec
     '1252'               : 'cp1252',
+    'cswindows1252'      : 'cp1252',
     'windows_1252'       : 'cp1252',
 
     # cp1253 codec
     '1253'               : 'cp1253',
+    'cswindows1253'      : 'cp1253',
     'windows_1253'       : 'cp1253',
 
     # cp1254 codec
     '1254'               : 'cp1254',
+    'cswindows1254'      : 'cp1254',
     'windows_1254'       : 'cp1254',
 
     # cp1255 codec
     '1255'               : 'cp1255',
+    'cswindows1255'      : 'cp1255',
     'windows_1255'       : 'cp1255',
 
     # cp1256 codec
     '1256'               : 'cp1256',
+    'cswindows1256'      : 'cp1256',
     'windows_1256'       : 'cp1256',
 
     # cp1257 codec
     '1257'               : 'cp1257',
+    'cswindows1257'      : 'cp1257',
     'windows_1257'       : 'cp1257',
 
     # cp1258 codec
     '1258'               : 'cp1258',
+    'cswindows1258'      : 'cp1258',
     'windows_1258'       : 'cp1258',
 
     # cp273 codec
@@ -159,8 +174,13 @@ aliases = {
 
     # cp858 codec
     '858'                : 'cp858',
+    'ccsid00858'         : 'cp858',
+    'cp00858'            : 'cp858',
+    'csibm00858'         : 'cp858',
     'csibm858'           : 'cp858',
+    'ibm00858'           : 'cp858',
     'ibm858'             : 'cp858',
+    'pc_multilingual_850_euro' : 'cp858',
 
     # cp860 codec
     '860'                : 'cp860',
@@ -206,11 +226,13 @@ aliases = {
 
     # cp874 codec
     '874'                : 'cp874',
+    'cswindows874'       : 'cp874',
     'ms874'              : 'cp874',
     'windows_874'        : 'cp874',
 
     # cp932 codec
     '932'                : 'cp932',
+    'cswindows31j'       : 'cp932',
     'ms932'              : 'cp932',
     'mskanji'            : 'cp932',
     'ms_kanji'           : 'cp932',
@@ -218,6 +240,16 @@ aliases = {
 
     # cp949 codec
     '949'                : 'cp949',
+    'csksc56011987'      : 'cp949',
+    'iso_ir_149'         : 'cp949',
+    'korean'             : 'cp949',
+    'ks_c_5601_1987'     : 'cp949',
+    'ks_c_5601_1989'     : 'cp949',
+    'ksc5601'            : 'cp949',
+    'ks_c_5601'          : 'cp949',
+    'ksc_5601'           : 'cp949',
+    'ksx1001'            : 'cp949',
+    'ks_x_1001'          : 'cp949',
     'ms949'              : 'cp949',
     'uhc'                : 'cp949',
 
@@ -234,47 +266,47 @@ aliases = {
     'eucjisx0213'        : 'euc_jisx0213',
 
     # euc_jp codec
+    'cseucpkdfmtjapanese' : 'euc_jp',
     'eucjp'              : 'euc_jp',
     'ujis'               : 'euc_jp',
     'u_jis'              : 'euc_jp',
 
     # euc_kr codec
-    'euckr'              : 'euc_kr',
-    'korean'             : 'euc_kr',
-    'ksc5601'            : 'euc_kr',
-    'ks_c_5601'          : 'euc_kr',
-    'ks_c_5601_1987'     : 'euc_kr',
-    'ksx1001'            : 'euc_kr',
-    'ks_x_1001'          : 'euc_kr',
     'cseuckr'            : 'euc_kr',
+    'euckr'              : 'euc_kr',
 
     # gb18030 codec
+    'csgb18030'          : 'gb18030',
     'gb18030_2000'       : 'gb18030',
 
     # gb2312 codec
     'chinese'            : 'gb2312',
+    'csgb2312'           : 'gb2312',
     'csiso58gb231280'    : 'gb2312',
     'euc_cn'             : 'gb2312',
     'euccn'              : 'gb2312',
     'eucgb2312_cn'       : 'gb2312',
     'gb2312_1980'        : 'gb2312',
     'gb2312_80'          : 'gb2312',
+    'gb_2312_80'         : 'gb2312',
     'iso_ir_58'          : 'gb2312',
 
     # gbk codec
     '936'                : 'gbk',
     'cp936'              : 'gbk',
+    'csgbk'              : 'gbk',
     'ms936'              : 'gbk',
+    'windows_936'        : 'gbk',
 
     # hex_codec codec
     'hex'                : 'hex_codec',
 
     # hp_roman8 codec
-    'roman8'             : 'hp_roman8',
-    'r8'                 : 'hp_roman8',
-    'csHPRoman8'         : 'hp_roman8',
     'cp1051'             : 'hp_roman8',
+    'cshproman8'         : 'hp_roman8',
     'ibm1051'            : 'hp_roman8',
+    'r8'                 : 'hp_roman8',
+    'roman8'             : 'hp_roman8',
 
     # hz codec
     'hzgb'               : 'hz',
@@ -291,6 +323,7 @@ aliases = {
     'iso_2022_jp_1'      : 'iso2022_jp_1',
 
     # iso2022_jp_2 codec
+    'csiso2022jp2'       : 'iso2022_jp_2',
     'iso2022jp_2'        : 'iso2022_jp_2',
     'iso_2022_jp_2'      : 'iso2022_jp_2',
 
@@ -326,12 +359,14 @@ aliases = {
     'iso_8859_11_2001'   : 'iso8859_11',
 
     # iso8859_13 codec
+    'csiso885913'        : 'iso8859_13',
     'iso_8859_13'        : 'iso8859_13',
     'l7'                 : 'iso8859_13',
     'latin7'             : 'iso8859_13',
     'latin_7'            : 'iso8859_13',
 
     # iso8859_14 codec
+    'csiso885914'        : 'iso8859_14',
     'iso_8859_14'        : 'iso8859_14',
     'iso_8859_14_1998'   : 'iso8859_14',
     'iso_celtic'         : 'iso8859_14',
@@ -341,12 +376,14 @@ aliases = {
     'latin_8'            : 'iso8859_14',
 
     # iso8859_15 codec
+    'csiso885915'        : 'iso8859_15',
     'iso_8859_15'        : 'iso8859_15',
     'l9'                 : 'iso8859_15',
     'latin9'             : 'iso8859_15',
     'latin_9'            : 'iso8859_15',
 
     # iso8859_16 codec
+    'csiso885916'        : 'iso8859_16',
     'iso_8859_16'        : 'iso8859_16',
     'iso_8859_16_2001'   : 'iso8859_16',
     'iso_ir_226'         : 'iso8859_16',
@@ -408,6 +445,8 @@ aliases = {
     'iso_ir_126'         : 'iso8859_7',
 
     # iso8859_8 codec
+    'csiso88598e'        : 'iso8859_8',
+    'csiso88598i'        : 'iso8859_8',
     'csisolatinhebrew'   : 'iso8859_8',
     'hebrew'             : 'iso8859_8',
     'iso_8859_8'         : 'iso8859_8',
@@ -432,7 +471,11 @@ aliases = {
     # koi8_r codec
     'cskoi8r'            : 'koi8_r',
 
+    # koi8_u codec
+    'cskoi8u'            : 'koi8_u',
+
     # kz1048 codec
+    'cskz1048'          : 'kz1048',
     'kz_1048'           : 'kz1048',
     'rk1048'            : 'kz1048',
     'strk1048_2002'     : 'kz1048',
@@ -472,7 +515,9 @@ aliases = {
     'maclatin2'          : 'mac_latin2',
 
     # mac_roman codec
+    'csmacintosh'        : 'mac_roman',
     'macintosh'          : 'mac_roman',
+    'mac'                : 'mac_roman',
     'macroman'           : 'mac_roman',
 
     # mac_turkish codec
@@ -513,6 +558,7 @@ aliases = {
     's_jisx0213'         : 'shift_jisx0213',
 
     # tis_620 codec
+    'cstis620'           : 'tis_620',
     'tis620'             : 'tis_620',
     'tis_620_0'          : 'tis_620',
     'tis_620_2529_0'     : 'tis_620',
@@ -520,33 +566,42 @@ aliases = {
     'iso_ir_166'         : 'tis_620',
 
     # utf_16 codec
+    'csutf16'            : 'utf_16',
     'u16'                : 'utf_16',
     'utf16'              : 'utf_16',
 
     # utf_16_be codec
+    'csutf16be'          : 'utf_16_be',
     'unicodebigunmarked' : 'utf_16_be',
     'utf_16be'           : 'utf_16_be',
 
     # utf_16_le codec
+    'csutf16le'          : 'utf_16_le',
     'unicodelittleunmarked' : 'utf_16_le',
     'utf_16le'           : 'utf_16_le',
 
     # utf_32 codec
+    'csutf32'            : 'utf_32',
     'u32'                : 'utf_32',
     'utf32'              : 'utf_32',
 
     # utf_32_be codec
+    'csutf32be'          : 'utf_32_be',
     'utf_32be'           : 'utf_32_be',
 
     # utf_32_le codec
+    'csutf32le'          : 'utf_32_le',
     'utf_32le'           : 'utf_32_le',
 
     # utf_7 codec
+    'csunicode11utf7'    : 'utf_7',
+    'csutf7'             : 'utf_7',
     'u7'                 : 'utf_7',
     'utf7'               : 'utf_7',
     'unicode_1_1_utf_7'  : 'utf_7',
 
     # utf_8 codec
+    'csutf8'             : 'utf_8',
     'u8'                 : 'utf_8',
     'utf'                : 'utf_8',
     'utf8'               : 'utf_8',

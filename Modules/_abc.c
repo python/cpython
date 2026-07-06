@@ -915,14 +915,14 @@ _abc.get_cache_token
 
 Returns the current ABC cache token.
 
-The token is an opaque object (supporting equality testing) identifying the
-current version of the ABC cache for virtual subclasses. The token changes
-with every call to register() on any ABC.
+The token is an opaque object (supporting equality testing) identifying
+the current version of the ABC cache for virtual subclasses.  The token
+changes with every call to register() on any ABC.
 [clinic start generated code]*/
 
 static PyObject *
 _abc_get_cache_token_impl(PyObject *module)
-/*[clinic end generated code: output=c7d87841e033dacc input=70413d1c423ad9f9]*/
+/*[clinic end generated code: output=c7d87841e033dacc input=d87acc04492f6bf3]*/
 {
     _abcmodule_state *state = get_abc_state(module);
     return PyLong_FromUnsignedLongLong(get_invalidation_counter(state));
@@ -976,6 +976,7 @@ _abcmodule_free(void *module)
 }
 
 static PyModuleDef_Slot _abcmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _abcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

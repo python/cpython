@@ -207,7 +207,7 @@ Describing Warning Filters
 The warnings filter is initialized by :option:`-W` options passed to the Python
 interpreter command line and the :envvar:`PYTHONWARNINGS` environment variable.
 The interpreter saves the arguments for all supplied entries without
-interpretation in :data:`sys.warnoptions`; the :mod:`warnings` module parses these
+interpretation in :data:`sys.warnoptions`; the :mod:`!warnings` module parses these
 when it is first imported (invalid options are ignored, after printing a
 message to :data:`sys.stderr`).
 
@@ -626,13 +626,32 @@ Available Context Managers
     If the *record* argument is :const:`False` (the default) the context manager
     returns :class:`None` on entry. If *record* is :const:`True`, a list is
     returned that is progressively populated with objects as seen by a custom
-    :func:`showwarning` function (which also suppresses output to ``sys.stdout``).
-    Each object in the list has attributes with the same names as the arguments to
-    :func:`showwarning`.
+    :func:`showwarning` function (which also suppresses output to ``sys.stderr``).
+    Each object in the list is guaranteed to have the following attributes:
+
+      - ``message``: the warning message (an instance of :exc:`Warning`)
+      - ``category``: the warning category (a subclass of :exc:`Warning`)
+      - ``filename``: the file name where the warning occurred (:class:`str`)
+      - ``lineno``: the line number in the file (:class:`int`)
+      - ``file``: the file object used for output (if any), or ``None``
+      - ``line``: the line of source code (if available), or ``None``
+      - ``source``: the original object that generated the warning (if
+        available), or ``None``
+      - ``module``: the module name where the warning occurred
+        (:class:`str`), or ``None``
+
+    .. versionchanged:: 3.6
+      The ``source`` attribute was added.
+
+    .. versionchanged:: 3.15
+      The ``module`` attribute was added.
+
+    The type of these objects is not specified and may change; only the
+    presence of these attributes is guaranteed.
 
     The *module* argument takes a module that will be used instead of the
-    module returned when you import :mod:`warnings` whose filter will be
-    protected. This argument exists primarily for testing the :mod:`warnings`
+    module returned when you import :mod:`!warnings` whose filter will be
+    protected. This argument exists primarily for testing the :mod:`!warnings`
     module itself.
 
     If the *action* argument is not ``None``, the remaining arguments are
@@ -669,7 +688,7 @@ to true for free-threaded builds and false otherwise.
 
 If the :data:`~sys.flags.context_aware_warnings` flag is false, then
 :class:`catch_warnings` will modify the global attributes of the
-:mod:`warnings` module.  This is not safe if used within a concurrent program
+:mod:`!warnings` module.  This is not safe if used within a concurrent program
 (using multiple threads or using asyncio coroutines).  For example, if two
 or more threads use the :class:`catch_warnings` class at the same time, the
 behavior is undefined.

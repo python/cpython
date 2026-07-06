@@ -345,6 +345,21 @@ class TestHeatmapCollectorProcessFrames(unittest.TestCase):
         # Check that edge count is tracked
         self.assertGreater(len(collector.edge_samples), 0)
 
+    def test_process_frames_weight_applies_to_identical_samples(self):
+        collector = HeatmapCollector(sample_interval_usec=100)
+
+        frames = [
+            ('callee.py', (5, 5, -1, -1), 'callee', None),
+            ('caller.py', (10, 10, -1, -1), 'caller', None),
+        ]
+
+        collector.process_frames(frames, thread_id=1, weight=5)
+
+        edge_key = (('caller.py', 10), ('callee.py', 5))
+        self.assertEqual(collector.edge_samples[edge_key], 5)
+        self.assertEqual(collector.line_samples[('callee.py', 5)], 5)
+        self.assertEqual(collector.line_samples[('caller.py', 10)], 5)
+
     def test_process_frames_handles_empty_frames(self):
         """Test that process_frames handles empty frame list."""
         collector = HeatmapCollector(sample_interval_usec=100)

@@ -28,13 +28,13 @@ transferred using only 7-bit ASCII characters, so a slew of RFCs have been
 written describing how to encode email containing non-ASCII characters into
 :rfc:`2822`\ -compliant format. These RFCs include :rfc:`2045`, :rfc:`2046`,
 :rfc:`2047`, and :rfc:`2231`. The :mod:`email` package supports these standards
-in its :mod:`email.header` and :mod:`email.charset` modules.
+in its :mod:`!email.header` and :mod:`email.charset` modules.
 
 If you want to include non-ASCII characters in your email headers, say in the
 :mailheader:`Subject` or :mailheader:`To` fields, you should use the
 :class:`Header` class and assign the field in the :class:`~email.message.Message`
 object to an instance of :class:`Header` instead of using a string for the header
-value.  Import the :class:`Header` class from the :mod:`email.header` module.
+value.  Import the :class:`Header` class from the :mod:`!email.header` module.
 For example::
 
    >>> from email.message import Message
@@ -170,7 +170,7 @@ Here is the :class:`Header` class description:
       This method allows you to compare two :class:`Header` instances for
       inequality.
 
-The :mod:`email.header` module also provides the following convenient functions.
+The :mod:`!email.header` module also provides the following convenient functions.
 
 
 .. function:: decode_header(header)

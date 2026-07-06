@@ -23,15 +23,15 @@
  * ============================================================================ */
 
 /* Sample header sizes */
-#define SAMPLE_HEADER_FIXED_SIZE 13      /* thread_id(8) + interpreter_id(4) + encoding(1) */
 #define SAMPLE_HEADER_MAX_SIZE 26        /* fixed + max_varint(10) + status(1) + margin */
 #define MAX_VARINT_SIZE 10               /* Maximum bytes for a varint64 */
 #define MAX_VARINT_SIZE_U32 5            /* Maximum bytes for a varint32 */
 /* Frame buffer: depth varint (max 2 bytes for 256) + 256 frames * 5 bytes/varint + margin */
 #define MAX_FRAME_BUFFER_SIZE ((MAX_STACK_DEPTH * MAX_VARINT_SIZE_U32) + MAX_VARINT_SIZE_U32 + 16)
 
-/* File structure sizes */
-#define FILE_FOOTER_SIZE 32
+/* RLE pending buffer (per thread): one entry is a u64 delta varint + status byte */
+#define MAX_RLE_BUF_SIZE        (16 * 1024)
+#define MAX_RLE_ENTRY_SIZE      (MAX_VARINT_SIZE + sizeof(uint8_t))
 
 /* Helper macro: convert PyLong to int32, using default_val if conversion fails */
 #define PYLONG_TO_INT32_OR_DEFAULT(obj, var, default_val) \
@@ -112,7 +112,15 @@ fwrite_checked_allow_threads(const void *data, size_t size, FILE *fp)
     written = fwrite(data, 1, size, fp);
     Py_END_ALLOW_THREADS
     if (written != size) {
-        PyErr_SetFromErrno(PyExc_IOError);
+        int err = errno;
+        if (ferror(fp) && err != 0) {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            PyErr_Format(PyExc_IOError,
+                "short write: wrote %zu of %zu bytes", written, size);
+        }
         return -1;
     }
     return 0;
@@ -127,15 +135,6 @@ writer_write_varint_u32(BinaryWriter *writer, uint32_t value)
 {
     uint8_t buf[MAX_VARINT_SIZE];
     size_t len = encode_varint_u32(buf, value);
-    return writer_write_bytes(writer, buf, len);
-}
-
-/* Encode and write a varint u64 - returns 0 on success, -1 on error */
-static inline int
-writer_write_varint_u64(BinaryWriter *writer, uint64_t value)
-{
-    uint8_t buf[MAX_VARINT_SIZE];
-    size_t len = encode_varint_u64(buf, value);
     return writer_write_bytes(writer, buf, len);
 }
 
@@ -370,6 +369,11 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
         return 0;
     }
 
+    if (writer->string_count >= UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many strings for binary format");
+        return -1;
+    }
     if (writer->string_count >= writer->string_capacity) {
         if (grow_parallel_arrays((void **)&writer->strings,
                                   (void **)&writer->string_lengths,
@@ -382,6 +386,12 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
     Py_ssize_t str_len;
     const char *str_data = PyUnicode_AsUTF8AndSize(string, &str_len);
     if (!str_data) {
+        return -1;
+    }
+    if ((uintmax_t)str_len > UINT32_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+            "string length %zd exceeds binary format maximum %u",
+            str_len, UINT32_MAX);
         return -1;
     }
 
@@ -426,6 +436,11 @@ writer_intern_frame(BinaryWriter *writer, const FrameEntry *entry, uint32_t *ind
         return 0;
     }
 
+    if (writer->frame_count >= UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many frames for binary format");
+        return -1;
+    }
     if (GROW_ARRAY(writer->frame_entries, writer->frame_count,
                    writer->frame_capacity, FrameEntry) < 0) {
         return -1;
@@ -470,6 +485,11 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
         }
     }
 
+    if (writer->thread_count >= UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many threads for binary format");
+        return NULL;
+    }
     if (writer->thread_count >= writer->thread_capacity) {
         ThreadEntry *new_entries = grow_array(writer->thread_entries,
                                               &writer->thread_capacity,
@@ -486,17 +506,9 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
     entry->interpreter_id = interpreter_id;
     entry->prev_timestamp = writer->start_time_us;
     entry->prev_stack_capacity = MAX_STACK_DEPTH;
-    entry->pending_rle_capacity = INITIAL_RLE_CAPACITY;
 
-    entry->prev_stack = PyMem_Malloc(entry->prev_stack_capacity * sizeof(uint32_t));
+    entry->prev_stack = PyMem_Calloc(entry->prev_stack_capacity, sizeof(uint32_t));
     if (!entry->prev_stack) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    entry->pending_rle = PyMem_Malloc(entry->pending_rle_capacity * sizeof(PendingRLESample));
-    if (!entry->pending_rle) {
-        PyMem_Free(entry->prev_stack);
         PyErr_NoMemory();
         return NULL;
     }
@@ -589,9 +601,9 @@ static inline int
 write_sample_header(BinaryWriter *writer, ThreadEntry *entry, uint8_t encoding)
 {
     uint8_t header[SAMPLE_HEADER_FIXED_SIZE];
-    memcpy(header, &entry->thread_id, 8);
-    memcpy(header + 8, &entry->interpreter_id, 4);
-    header[12] = encoding;
+    memcpy(header + SMP_OFF_THREAD_ID, &entry->thread_id, SMP_SIZE_THREAD_ID);
+    memcpy(header + SMP_OFF_INTERPRETER_ID, &entry->interpreter_id, SMP_SIZE_INTERPRETER_ID);
+    header[SMP_OFF_ENCODING] = encoding;
     return writer_write_bytes(writer, header, SAMPLE_HEADER_FIXED_SIZE);
 }
 
@@ -601,7 +613,7 @@ write_sample_header(BinaryWriter *writer, ThreadEntry *entry, uint8_t encoding)
 static int
 flush_pending_rle(BinaryWriter *writer, ThreadEntry *entry)
 {
-    if (!entry->has_pending_rle || entry->pending_rle_count == 0) {
+    if (entry->pending_rle_samples == 0) {
         return 0;
     }
 
@@ -614,27 +626,21 @@ flush_pending_rle(BinaryWriter *writer, ThreadEntry *entry)
         return -1;
     }
 
-    if (writer_write_varint_u32(writer, (uint32_t)entry->pending_rle_count) < 0) {
+    if (writer_write_varint_u32(writer, (uint32_t)entry->pending_rle_samples) < 0) {
         return -1;
     }
 
-    for (size_t i = 0; i < entry->pending_rle_count; i++) {
-        if (writer_write_varint_u64(writer, entry->pending_rle[i].timestamp_delta) < 0) {
-            return -1;
-        }
-        if (writer_write_bytes(writer, &entry->pending_rle[i].status, 1) < 0) {
-            return -1;
-        }
-        writer->total_samples++;
+    if (writer_write_bytes(writer, entry->pending_rle, entry->pending_rle_bytes) < 0) {
+        return -1;
     }
 
     writer->stats.repeat_records++;
-    writer->stats.repeat_samples += entry->pending_rle_count;
+    writer->stats.repeat_samples += entry->pending_rle_samples;
     /* Each RLE sample saves writing the entire stack */
-    writer->stats.frames_saved += entry->pending_rle_count * entry->prev_stack_depth;
+    writer->stats.frames_saved += entry->pending_rle_samples * entry->prev_stack_depth;
 
-    entry->pending_rle_count = 0;
-    entry->has_pending_rle = 0;
+    entry->pending_rle_bytes = 0;
+    entry->pending_rle_samples = 0;
 
     return 0;
 }
@@ -650,13 +656,16 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
 {
     /* Header: thread_id(8) + interpreter_id(4) + encoding(1) + delta(varint) + status(1) */
     uint8_t header_buf[SAMPLE_HEADER_MAX_SIZE];
-    memcpy(header_buf, &entry->thread_id, 8);
-    memcpy(header_buf + 8, &entry->interpreter_id, 4);
-    header_buf[12] = (uint8_t)encoding_type;
-    size_t varint_len = encode_varint_u64(header_buf + 13, timestamp_delta);
-    header_buf[13 + varint_len] = status;
+    memcpy(header_buf + SMP_OFF_THREAD_ID, &entry->thread_id, SMP_SIZE_THREAD_ID);
+    memcpy(header_buf + SMP_OFF_INTERPRETER_ID, &entry->interpreter_id, SMP_SIZE_INTERPRETER_ID);
+    header_buf[SMP_OFF_ENCODING] = (uint8_t)encoding_type;
+    size_t varint_len = encode_varint_u64(
+        header_buf + SAMPLE_HEADER_FIXED_SIZE,
+        timestamp_delta);
+    header_buf[SAMPLE_HEADER_FIXED_SIZE + varint_len] = status;
 
-    if (writer_write_bytes(writer, header_buf, 14 + varint_len) < 0) {
+    if (writer_write_bytes(writer, header_buf,
+                           SAMPLE_HEADER_FIXED_SIZE + varint_len + 1) < 0) {
         return -1;
     }
 
@@ -713,12 +722,11 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
     }
 
     writer->stats.total_frames_written += frames_written;
-    writer->total_samples++;
     return 0;
 }
 
 BinaryWriter *
-binary_writer_create(const char *filename, uint64_t sample_interval_us, int compression_type,
+binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compression_type,
                      uint64_t start_time_us)
 {
     BinaryWriter *writer = PyMem_Calloc(1, sizeof(BinaryWriter));
@@ -726,14 +734,6 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         PyErr_NoMemory();
         return NULL;
     }
-
-    writer->filename = PyMem_Malloc(strlen(filename) + 1);
-    if (!writer->filename) {
-        PyMem_Free(writer);
-        PyErr_NoMemory();
-        return NULL;
-    }
-    strcpy(writer->filename, filename);
 
     writer->start_time_us = start_time_us;
     writer->sample_interval_us = sample_interval_us;
@@ -800,9 +800,8 @@ binary_writer_create(const char *filename, uint64_t sample_interval_us, int comp
         }
     }
 
-    writer->fp = fopen(filename, "wb");
+    writer->fp = Py_fopen(path, "wb");
     if (!writer->fp) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
         goto error;
     }
 
@@ -925,6 +924,12 @@ static int
 process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
                       uint32_t interpreter_id, uint64_t timestamp_us)
 {
+    if (writer->total_samples >= UINT32_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+            "too many samples for binary format");
+        return -1;
+    }
+
     PyObject *thread_id_obj = PyStructSequence_GET_ITEM(thread_info, 0);
     PyObject *status_obj = PyStructSequence_GET_ITEM(thread_info, 1);
     PyObject *frame_list = PyStructSequence_GET_ITEM(thread_info, 2);
@@ -939,9 +944,8 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
     }
     uint8_t status = (uint8_t)status_long;
 
-    int is_new_thread = 0;
     ThreadEntry *entry = writer_get_or_create_thread_entry(
-        writer, thread_id, interpreter_id, &is_new_thread);
+        writer, thread_id, interpreter_id, NULL);
     if (!entry) {
         return -1;
     }
@@ -964,22 +968,34 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
         curr_stack, curr_depth,
         &shared_count, &pop_count, &push_count);
 
-    if (encoding == STACK_REPEAT && !is_new_thread) {
-        /* Buffer this sample for RLE */
-        if (GROW_ARRAY(entry->pending_rle, entry->pending_rle_count,
-                       entry->pending_rle_capacity, PendingRLESample) < 0) {
-            return -1;
-        }
-        entry->pending_rle[entry->pending_rle_count].timestamp_delta = delta;
-        entry->pending_rle[entry->pending_rle_count].status = status;
-        entry->pending_rle_count++;
-        entry->has_pending_rle = 1;
-    } else {
-        /* Stack changed - flush any pending RLE first */
-        if (entry->has_pending_rle) {
-            if (flush_pending_rle(writer, entry) < 0) {
+    if (encoding == STACK_REPEAT) {
+        /* Buffer this sample for RLE.
+         *
+         * STACK_REPEAT also covers the "first sample for a fresh thread,
+         * empty stack" case: a new ThreadEntry has prev_stack_depth == 0
+         * and a zero-initialized prev_stack, so compare_stacks() returns
+         * STACK_REPEAT against an empty curr_stack (depth 0). Buffering
+         * it here is correct; the RLE flush path emits it as a normal
+         * STACK_REPEAT record. */
+        if (entry->pending_rle == NULL) {
+            entry->pending_rle = PyMem_Malloc(MAX_RLE_BUF_SIZE);
+            if (!entry->pending_rle) {
+                PyErr_NoMemory();
                 return -1;
             }
+        }
+        if (entry->pending_rle_bytes + MAX_RLE_ENTRY_SIZE > MAX_RLE_BUF_SIZE
+                && flush_pending_rle(writer, entry) < 0) {
+            return -1;
+        }
+        entry->pending_rle_bytes += encode_varint_u64(
+            entry->pending_rle + entry->pending_rle_bytes, delta);
+        entry->pending_rle[entry->pending_rle_bytes++] = status;
+        entry->pending_rle_samples++;
+    } else {
+        /* Stack changed - flush any pending RLE first */
+        if (flush_pending_rle(writer, entry) < 0) {
+            return -1;
         }
 
         if (write_sample_with_encoding(writer, entry, delta, status, encoding,
@@ -992,6 +1008,7 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
         entry->prev_stack_depth = curr_depth;
     }
 
+    writer->total_samples++;
     return 0;
 }
 
@@ -1039,10 +1056,8 @@ int
 binary_writer_finalize(BinaryWriter *writer)
 {
     for (size_t i = 0; i < writer->thread_count; i++) {
-        if (writer->thread_entries[i].has_pending_rle) {
-            if (flush_pending_rle(writer, &writer->thread_entries[i]) < 0) {
-                return -1;
-            }
+        if (flush_pending_rle(writer, &writer->thread_entries[i]) < 0) {
+            return -1;
         }
     }
 
@@ -1143,17 +1158,17 @@ binary_writer_finalize(BinaryWriter *writer)
         PyErr_SetFromErrno(PyExc_IOError);
         return -1;
     }
-    uint64_t file_size = (uint64_t)footer_offset + 32;
-    uint8_t footer[32] = {0};
+    uint64_t file_size = (uint64_t)footer_offset + FILE_FOOTER_SIZE;
+    uint8_t footer[FILE_FOOTER_SIZE] = {0};
     /* Cast size_t to uint32_t before memcpy to ensure correct bytes are copied
      * on both little-endian and big-endian systems (size_t is 8 bytes on 64-bit) */
     uint32_t string_count_u32 = (uint32_t)writer->string_count;
     uint32_t frame_count_u32 = (uint32_t)writer->frame_count;
-    memcpy(footer + 0, &string_count_u32, 4);
-    memcpy(footer + 4, &frame_count_u32, 4);
-    memcpy(footer + 8, &file_size, 8);
-    /* bytes 16-31: checksum placeholder (zeros) */
-    if (fwrite_checked_allow_threads(footer, 32, writer->fp) < 0) {
+    memcpy(footer + FTR_OFF_STRINGS, &string_count_u32, FTR_SIZE_STRINGS);
+    memcpy(footer + FTR_OFF_FRAMES, &frame_count_u32, FTR_SIZE_FRAMES);
+    memcpy(footer + FTR_OFF_FILE_SIZE, &file_size, FTR_SIZE_FILE_SIZE);
+    /* checksum (FTR_OFF_CHECKSUM..FILE_FOOTER_SIZE-1): placeholder zeros */
+    if (fwrite_checked_allow_threads(footer, FILE_FOOTER_SIZE, writer->fp) < 0) {
         return -1;
     }
 
@@ -1188,7 +1203,7 @@ binary_writer_finalize(BinaryWriter *writer)
         return -1;
     }
 
-    if (fclose(writer->fp) != 0) {
+    if (Py_fclose(writer->fp) != 0) {
         writer->fp = NULL;
         PyErr_SetFromErrno(PyExc_IOError);
         return -1;
@@ -1206,10 +1221,9 @@ binary_writer_destroy(BinaryWriter *writer)
     }
 
     if (writer->fp) {
-        fclose(writer->fp);
+        Py_fclose(writer->fp);
     }
 
-    PyMem_Free(writer->filename);
     PyMem_Free(writer->write_buffer);
 
 #ifdef HAVE_ZSTD

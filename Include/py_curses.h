@@ -36,6 +36,13 @@
 #define NCURSES_OPAQUE 0
 #endif
 
+/* PDCurses exposes its ncurses-compatible mouse API, the one this module uses,
+   only when this is defined before the curses header is included below.
+   Ignored by other curses implementations. */
+#ifndef PDC_NCMOUSE
+#  define PDC_NCMOUSE
+#endif
+
 #if defined(HAVE_NCURSESW_NCURSES_H)
 #  include <ncursesw/ncurses.h>
 #elif defined(HAVE_NCURSESW_CURSES_H)
@@ -80,7 +87,17 @@ typedef struct PyCursesWindowObject {
     WINDOW *win;
     char *encoding;
     struct PyCursesWindowObject *orig;
+    PyObject *screen;        /* the screen the window belongs to, or NULL,
+                                kept alive for the lifetime of the window */
 } PyCursesWindowObject;
+
+typedef struct {
+    PyObject_HEAD
+    SCREEN *screen;          /* NULL after the screen has been deleted */
+    FILE *outfp;             /* owned output stream, or NULL */
+    FILE *infp;              /* owned input stream, or NULL */
+    PyObject *stdscr_win;    /* the screen's standard window, or NULL */
+} PyCursesScreenObject;
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"
 

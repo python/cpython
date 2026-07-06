@@ -1,1 +1,0 @@
-Fix :meth:`io.BufferedReader.read1` state cleanup on buffer allocation failure.
