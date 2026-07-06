@@ -1015,9 +1015,8 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
 
     def test_FromSecondsObject_float_overflow_message(self):
         # Float path must report a PyTime_t overflow, like the integer path.
-        from _testcapi import PyTime_MIN, PyTime_MAX
         from _testinternalcapi import _PyTime_FromSecondsObject
-        for value in (float(PyTime_MAX), float(PyTime_MIN)):
+        for value in (PyTime_MAX, PyTime_MIN):
             for time_rnd, _ in ROUNDING_MODES:
                 with self.subTest(value=value, time_rnd=time_rnd):
                     with self.assertRaisesRegex(
