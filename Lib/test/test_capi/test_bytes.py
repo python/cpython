@@ -226,6 +226,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(OverflowError, decodeescape, b'abc', NULL, PY_SSIZE_T_MAX)
         self.assertRaises(OverflowError, decodeescape, NULL, NULL, PY_SSIZE_T_MAX)
 
+        # INVALID decodeescape(NULL)
         # CRASHES decodeescape(b'abc', NULL, -1)
         # CRASHES decodeescape(NULL, NULL, 1)
 
