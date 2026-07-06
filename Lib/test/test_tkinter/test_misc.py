@@ -599,6 +599,15 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # Resetting the timer returns None and does not raise.
         self.assertIsNone(self.root.tk_inactive(reset=True))
 
+    def test_tk_print(self):
+        # tk print supports only canvas and text widgets, so tk_print is a
+        # method of Canvas and Text only.  Calling it opens the print
+        # dialog, so the behavior itself cannot be tested here.
+        self.assertHasAttr(tkinter.Canvas, 'tk_print')
+        self.assertHasAttr(tkinter.Text, 'tk_print')
+        self.assertNotHasAttr(tkinter.Frame, 'tk_print')
+        self.assertNotHasAttr(tkinter.Misc, 'tk_print')
+
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
         self.assertEqual(self.root.waitvar, self.root.wait_variable)

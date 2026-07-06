@@ -3546,6 +3546,13 @@ Widget classes
    A newly created item is placed at the top of the list; the order can be
    changed with :meth:`tag_raise` and :meth:`tag_lower`.
 
+   .. method:: tk_print()
+
+      Print the contents of the canvas using the native print dialog.
+      Requires Tk 8.7/9.0 or newer.
+
+      .. versionadded:: next
+
    .. method:: create_arc(*args, **kw)
                create_bitmap(*args, **kw)
                create_image(*args, **kw)
@@ -5356,6 +5363,13 @@ Widget classes
    ``'lineend'``, ``'wordstart'`` or ``'wordend'`` adjusts the index relative
    to its base; several modifiers may be combined and are applied from left to
    right, for example ``'insert wordstart - 1 c'``.
+
+   .. method:: tk_print()
+
+      Print the contents of the text widget using the native print dialog.
+      Requires Tk 8.7/9.0 or newer.
+
+      .. versionadded:: next
 
    .. method:: insert(index, chars, *args)
 

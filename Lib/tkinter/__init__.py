@@ -3127,6 +3127,12 @@ class Canvas(Widget, XView, YView):
         yscrollcommand, yscrollincrement."""
         Widget.__init__(self, master, 'canvas', cnf, kw)
 
+    def tk_print(self):
+        """Print the contents of the canvas using the native print dialog.
+
+        Requires Tk 8.7/9.0 or newer."""
+        self.tk.call('tk', 'print', self._w)
+
     def addtag(self, *args):
         """Internal function."""
         self.tk.call((self._w, 'addtag') + args)
@@ -4067,6 +4073,12 @@ class Text(Widget, XView, YView):
 
         """
         Widget.__init__(self, master, 'text', cnf, kw)
+
+    def tk_print(self):
+        """Print the contents of the text widget using the native print dialog.
+
+        Requires Tk 8.7/9.0 or newer."""
+        self.tk.call('tk', 'print', self._w)
 
     def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of (x,y,width,height) which gives the bounding
