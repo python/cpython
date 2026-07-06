@@ -908,13 +908,13 @@ _PyImport_SwapPackageContext(const char *newcontext)
 int
 _PyImport_GetDLOpenFlags(PyInterpreterState *interp)
 {
-    return DLOPENFLAGS(interp);
+    return FT_ATOMIC_LOAD_INT_RELAXED(DLOPENFLAGS(interp));
 }
 
 void
 _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val)
 {
-    DLOPENFLAGS(interp) = new_val;
+    FT_ATOMIC_STORE_INT_RELAXED(DLOPENFLAGS(interp), new_val);
 }
 #endif  // HAVE_DLOPEN
 

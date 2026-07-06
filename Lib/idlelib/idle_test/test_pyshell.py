@@ -2,6 +2,7 @@
 # Plus coverage of test_warning.  Was 20% with test_openshell.
 
 from idlelib import pyshell
+import os
 import unittest
 from test.support import requires
 from tkinter import Tk
@@ -27,6 +28,14 @@ class FunctionTest(unittest.TestCase):
             with self.subTest(width=width):
                 self.assertEqual(pyshell.restart_line(width, ''), expect)
         self.assertEqual(pyshell.restart_line(taglen+2, ''), expect+' =')
+
+    def test_fix_user_path(self):
+        # gh-134300: the idlelib directory is removed, other entries kept.
+        eq = self.assertEqual
+        idlelib_dir = os.path.dirname(os.path.abspath(pyshell.__file__))
+        eq(pyshell.fix_user_path(['', '/a', idlelib_dir, '/b']), ['', '/a', '/b'])
+        eq(pyshell.fix_user_path(['/a', '/b']), ['/a', '/b'])
+        eq(pyshell.fix_user_path([idlelib_dir]), [])
 
 
 class PyShellFileListTest(unittest.TestCase):

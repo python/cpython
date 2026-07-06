@@ -228,6 +228,23 @@ io
   (Contributed by Marcel Martin in :gh:`90533`.)
 
 
+imaplib
+-------
+
+* Add the :meth:`~imaplib.IMAP4.id` method,
+  a wrapper for the ``ID`` command (:rfc:`2971`).
+  (Contributed by Serhiy Storchaka in :gh:`98092`.)
+
+* Add the :meth:`~imaplib.IMAP4.move` method,
+  a wrapper for the ``MOVE`` command (:rfc:`6851`).
+  (Contributed by Serhiy Storchaka in :gh:`77508`.)
+
+* Add the :meth:`~imaplib.IMAP4.login_plain` method, which authenticates
+  using the ``PLAIN`` SASL mechanism (:rfc:`4616`) and supports non-ASCII
+  user names and passwords.
+  (Contributed by Przemysław Buczkowski and Serhiy Storchaka in :gh:`89869`.)
+
+
 logging
 -------
 
@@ -381,6 +398,14 @@ tkinter
   gained *bitmap* and
   *detail* parameters, draws the standard icons with themed images in the
   ttk version, and accepts mappings of button options as *buttons* entries.
+  (Contributed by Serhiy Storchaka in :gh:`59396`.)
+
+* The :class:`!tkinter.filedialog.FileDialog` dialog and its
+  :class:`!tkinter.filedialog.LoadFileDialog` and
+  :class:`!tkinter.filedialog.SaveFileDialog` subclasses are now built from the
+  themed :mod:`tkinter.ttk` widgets by default instead of the classic
+  :mod:`tkinter` widgets, and gained a *use_ttk* parameter to select between
+  them.
   (Contributed by Serhiy Storchaka in :gh:`59396`.)
 
 xml
