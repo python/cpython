@@ -1188,6 +1188,9 @@ PyObject *_PyBytes_DecodeEscape2(const char *s,
     *first_invalid_escape_char = -1;
     *first_invalid_escape_ptr = NULL;
 
+    if (len == 0) {
+        return PyBytesWriter_FinishWithPointer(writer, p);
+    }
     const char *end = s + len;
     while (s < end) {
         if (*s != '\\') {
