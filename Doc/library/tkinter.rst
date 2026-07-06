@@ -155,6 +155,9 @@ The modules that provide Tk support include:
 :mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
 
+:mod:`tkinter.systray`
+   System tray icon and desktop notifications.
+
 :mod:`tkinter.ttk`
    Themed widget set introduced in Tk 8.5, providing modern alternatives
    for many of the classic widgets in the main :mod:`!tkinter` module.

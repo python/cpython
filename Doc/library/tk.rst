@@ -36,6 +36,7 @@ alternative `GUI frameworks and tools <https://wiki.python.org/moin/GuiProgrammi
    dialog.rst
    tkinter.messagebox.rst
    tkinter.scrolledtext.rst
+   tkinter.systray.rst
    tkinter.dnd.rst
    tkinter.ttk.rst
    idle.rst
