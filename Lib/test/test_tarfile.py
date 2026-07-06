@@ -3961,7 +3961,6 @@ class TestExtractionFilters(unittest.TestCase):
                     st_mode = cc.outerdir.stat().st_mode
                     self.assertNotEqual(st_mode & 0o777, 0o777)
 
-    @symlink_test
     @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
     @unittest.skipUnless(hasattr(os, 'lchown'), "missing os.lchown")
     @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
@@ -3997,7 +3996,6 @@ class TestExtractionFilters(unittest.TestCase):
                 ])
                 mock_lchown.assert_not_called()
 
-    @symlink_test
     @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
     @unittest.skipUnless(hasattr(os, 'lchown'), "missing os.lchown")
     @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
@@ -4050,7 +4048,7 @@ class TestExtractionFilters(unittest.TestCase):
         with os_helper.temp_dir(tempdir), arc.open() as tar:
             tar.extract("link", path=tempdir, filter=testing_filter)
             path = tempdir / 'link'
-            if os_helper.can_chmod():
+            if sys.platform != 'win32':
                 self.assertFalse(path.stat().st_mode & stat.S_IWUSR)
 
     def test_link_fallback_normalizes(self):
