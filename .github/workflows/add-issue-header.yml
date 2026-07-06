@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   add-header:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       issues: write
     timeout-minutes: 5

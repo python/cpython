@@ -27,7 +27,7 @@ jobs:
         && ' (free-threading)'
         || ''
       }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -38,14 +38,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
-        # Install clang
-        wget https://apt.llvm.org/llvm.sh
-        chmod +x llvm.sh
-        sudo ./llvm.sh 21
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-21 100
-        sudo update-alternatives --set clang /usr/bin/clang-21
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-21 100
-        sudo update-alternatives --set clang++ /usr/bin/clang++-21
+        # On ubuntu-26.04 image, clang is clang-21 by default
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: TSan option setup
