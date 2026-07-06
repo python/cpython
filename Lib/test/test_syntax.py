@@ -2268,6 +2268,22 @@ SyntaxError: 'not' after an operator must be parenthesized
 Traceback (most recent call last):
 SyntaxError: 'not' after an operator must be parenthesized
 
+>>> 1 << 2 + not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> 1 >> 2 * not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> 3 * + not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> 3 ** - not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
 # Check that we don't introduce misleading errors
 >>> not 1 */ 2
 Traceback (most recent call last):

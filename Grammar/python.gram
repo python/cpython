@@ -835,7 +835,6 @@ bitwise_and[expr_ty]:
 shift_expr[expr_ty]:
     | a=shift_expr '<<' b=sum { _PyAST_BinOp(a, LShift, b, EXTRA) }
     | a=shift_expr '>>' b=sum { _PyAST_BinOp(a, RShift, b, EXTRA) }
-    | invalid_arithmetic
     | sum
 
 # Arithmetic operators
@@ -844,6 +843,7 @@ shift_expr[expr_ty]:
 sum[expr_ty]:
     | a=sum '+' b=term { _PyAST_BinOp(a, Add, b, EXTRA) }
     | a=sum '-' b=term { _PyAST_BinOp(a, Sub, b, EXTRA) }
+    | invalid_arithmetic
     | term
 
 term[expr_ty]:
@@ -852,7 +852,6 @@ term[expr_ty]:
     | a=term '//' b=factor { _PyAST_BinOp(a, FloorDiv, b, EXTRA) }
     | a=term '%' b=factor { _PyAST_BinOp(a, Mod, b, EXTRA) }
     | a=term '@' b=factor { CHECK_VERSION(expr_ty, 5, "The '@' operator is", _PyAST_BinOp(a, MatMult, b, EXTRA)) }
-    | invalid_factor
     | factor
 
 factor[expr_ty] (memo):
@@ -860,6 +859,7 @@ factor[expr_ty] (memo):
     | '-' a=factor { _PyAST_UnaryOp(USub, a, EXTRA) }
     | '~' a=factor { _PyAST_UnaryOp(Invert, a, EXTRA) }
     | power
+    | invalid_factor
 
 power[expr_ty]:
     | a=await_primary '**' b=factor { _PyAST_BinOp(a, Pow, b, EXTRA) }
