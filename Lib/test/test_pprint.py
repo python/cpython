@@ -1039,6 +1039,24 @@ frozenset2({0,
         self.assertEqual(pprint.pformat(nested_dict, depth=1), lv1_dict)
         self.assertEqual(pprint.pformat(nested_list, depth=1), lv1_list)
 
+    def test_depth_with_narrow_width(self):
+        # gh-89774: a narrow width must not override the depth limit.
+        nested_dict = {1: {2: {3: 3}}}
+        nested_list = [1, [2, [3, [4]]]]
+        nested_tuple = (1, (2, (3,)))
+        self.assertEqual(pprint.pformat(nested_dict, depth=1, width=5),
+                         '{1: {...}}')
+        self.assertEqual(pprint.pformat(nested_dict, depth=2, width=5),
+                         '{1: {2: {...}}}')
+        self.assertEqual(pprint.pformat(nested_list, depth=1, width=6),
+                         '[1,\n [...]]')
+        self.assertEqual(pprint.pformat(nested_tuple, depth=1, width=6),
+                         '(1,\n (...))')
+        # Depth folding is independent of width: a narrow width folds at the
+        # same level as the default wide width.
+        self.assertEqual(pprint.pformat(nested_dict, depth=1, width=5),
+                         pprint.pformat(nested_dict, depth=1))
+
     def test_sort_unorderable_values(self):
         # Issue 3976:  sorted pprints fail for unorderable values.
         n = 20
