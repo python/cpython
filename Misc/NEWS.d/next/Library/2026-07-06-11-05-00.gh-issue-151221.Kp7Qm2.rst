@@ -1,0 +1,3 @@
+:mod:`plistlib` now raises :exc:`ValueError` instead of an obscure
+:exc:`TypeError` when loading an invalid ``<date>`` value (for example
+``2024-06Z``) from an XML plist.

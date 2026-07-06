@@ -876,6 +876,17 @@ class TestPlistlib(unittest.TestCase):
         self.assertRaises(ValueError, plistlib.loads,
                           b"<plist><integer>not real</integer></plist>")
 
+    def test_invaliddate(self):
+        for xml in (b"<plist><date>not a date</date></plist>",
+                    b"<plist><date></date></plist>",
+                    b"<plist><date>2024Z</date></plist>",
+                    b"<plist><date>2024-06Z</date></plist>",
+                    b"<plist><date>2024-13-01T00:00:00Z</date></plist>"):
+            with self.subTest(xml=xml):
+                self.assertRaises(ValueError, plistlib.loads, xml)
+                self.assertRaises(ValueError, plistlib.loads, xml,
+                                  aware_datetime=True)
+
     def test_integer_notations(self):
         pl = b"<plist><integer>456</integer></plist>"
         value = plistlib.loads(pl)

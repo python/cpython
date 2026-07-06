@@ -81,6 +81,11 @@ This module defines the following functions:
    .. versionchanged:: 3.13
       The keyword-only parameter *aware_datetime* has been added.
 
+   .. versionchanged:: next
+      A :exc:`ValueError` is now raised for an invalid ``<date>`` value in an
+      XML plist (for example ``2024-06Z``).  Previously such values raised an
+      unspecified :exc:`TypeError`.
+
 
 .. function:: loads(data, *, fmt=None, dict_type=dict, aware_datetime=False)
 
