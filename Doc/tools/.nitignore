@@ -12,7 +12,6 @@ Doc/library/email.parser.rst
 Doc/library/importlib.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
-Doc/library/lzma.rst
 Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/optparse.rst

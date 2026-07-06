@@ -29,6 +29,178 @@ from multiple threads, it is necessary to protect it with a lock.
    decompression, or while initializing the compressor/decompressor state.
 
 
+.. _lzma-format-constants:
+
+Format constants
+----------------
+
+.. data:: FORMAT_XZ
+
+   The ``.xz`` container format.  This is the default format.
+
+.. data:: FORMAT_ALONE
+
+   The legacy ``.lzma`` container format.  This format is more limited than
+   ``.xz`` -- it does not support integrity checks or multiple filters.
+
+.. data:: FORMAT_RAW
+
+   A raw data stream, not using any container format.  This format specifier
+   does not support integrity checks, and requires that you always specify a
+   custom filter chain (for both compression and decompression).  Additionally,
+   data compressed in this manner cannot be decompressed using
+   :const:`FORMAT_AUTO`.
+
+.. data:: FORMAT_AUTO
+
+   Automatically determine the container format when decompressing.  This is
+   the default for :class:`LZMADecompressor` and :func:`decompress`.
+
+
+.. _lzma-check-constants:
+
+Check constants
+---------------
+
+.. data:: CHECK_NONE
+
+   No integrity check.  This is the default (and the only acceptable value)
+   for :const:`FORMAT_ALONE` and :const:`FORMAT_RAW`.
+
+.. data:: CHECK_CRC32
+
+   32-bit Cyclic Redundancy Check.
+
+.. data:: CHECK_CRC64
+
+   64-bit Cyclic Redundancy Check.  This is the default for
+   :const:`FORMAT_XZ`.
+
+.. data:: CHECK_SHA256
+
+   256-bit Secure Hash Algorithm.
+
+.. data:: CHECK_UNKNOWN
+
+   Used by :attr:`LZMADecompressor.check` when the integrity check type
+   has not yet been determined.
+
+.. data:: CHECK_ID_MAX
+
+   Maximum valid check ID.
+
+
+.. _lzma-filter-constants:
+
+Filter constants
+----------------
+
+.. data:: FILTER_LZMA1
+
+   For use with :const:`FORMAT_ALONE`.
+
+.. data:: FILTER_LZMA2
+
+   For use with :const:`FORMAT_XZ` and :const:`FORMAT_RAW`.
+
+.. data:: FILTER_DELTA
+
+   Delta filter.
+
+.. data:: FILTER_X86
+
+   Branch-Call-Jump filter for x86.
+
+.. data:: FILTER_IA64
+
+   Branch-Call-Jump filter for IA-64.
+
+.. data:: FILTER_ARM
+
+   Branch-Call-Jump filter for ARM.
+
+.. data:: FILTER_ARMTHUMB
+
+   Branch-Call-Jump filter for ARM Thumb.
+
+.. data:: FILTER_POWERPC
+
+   Branch-Call-Jump filter for PowerPC.
+
+.. data:: FILTER_SPARC
+
+   Branch-Call-Jump filter for SPARC.
+
+.. data:: FILTER_ARM64
+
+   Branch-Call-Jump filter for ARM64.  Only works if the lzma version
+   is 5.4.0 or later.
+
+   .. versionadded:: next
+
+.. data:: FILTER_RISCV
+
+   Branch-Call-Jump filter for RISC-V.  Only works if the lzma version
+   is 5.6.0 or later.
+
+   .. versionadded:: next
+
+
+.. _lzma-preset-constants:
+
+Preset constants
+----------------
+
+.. data:: PRESET_DEFAULT
+
+   Default compression preset (level ``6``).
+
+.. data:: PRESET_EXTREME
+
+   Extreme compression preset flag.  Can be OR-ed with a preset level
+   (0--9) to use extreme mode.
+
+
+.. _lzma-mode-constants:
+
+Mode constants
+--------------
+
+.. data:: MODE_FAST
+
+   Fast compression mode.
+
+.. data:: MODE_NORMAL
+
+   Normal compression mode.
+
+
+.. _lzma-mf-constants:
+
+Match finder constants
+----------------------
+
+.. data:: MF_HC3
+
+   Hash Chain with 3 bytes hash.
+
+.. data:: MF_HC4
+
+   Hash Chain with 4 bytes hash.
+
+.. data:: MF_BT2
+
+   Binary Tree with 2 bytes hash.
+
+.. data:: MF_BT3
+
+   Binary Tree with 3 bytes hash.
+
+.. data:: MF_BT4
+
+   Binary Tree with 4 bytes hash.
+
+
 Reading and writing compressed files
 ------------------------------------
 
@@ -236,7 +408,7 @@ Compressing and decompressing data in memory
    :const:`FORMAT_ALONE`, and :const:`FORMAT_RAW`.
 
    The *memlimit* argument specifies a limit (in bytes) on the amount of memory
-   that the decompressor can use. When this argument is used, decompression will
+   that the decompressor can use. When this argument is used, decomposition will
    fail with an :class:`LZMAError` if it is not possible to decompress the input
    within the given memory limit.
 
@@ -356,22 +528,22 @@ options. Valid filter IDs are as follows:
 
 * Branch-Call-Jump (BCJ) filters:
 
-  * :const:`!FILTER_X86`
-  * :const:`!FILTER_IA64`
-  * :const:`!FILTER_ARM`
-  * :const:`!FILTER_ARMTHUMB`
-  * :const:`!FILTER_POWERPC`
-  * :const:`!FILTER_SPARC`
+  * :const:`FILTER_X86`
+  * :const:`FILTER_IA64`
+  * :const:`FILTER_ARM`
+  * :const:`FILTER_ARMTHUMB`
+  * :const:`FILTER_POWERPC`
+  * :const:`FILTER_SPARC`
 
     The above work on all lzma runtime library versions.
 
-  * :const:`!FILTER_ARM64`
+  * :const:`FILTER_ARM64`
 
     Only works if the lzma version is 5.4.0 or later.
 
     .. versionadded:: next
 
-  * :const:`!FILTER_RISCV`
+  * :const:`FILTER_RISCV`
 
     Only works if the lzma version is 5.6.0 or later.
 
