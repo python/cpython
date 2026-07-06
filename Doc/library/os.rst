@@ -2078,6 +2078,11 @@ features:
 
    .. audit-event:: os.chdir path os.chdir
 
+   .. seealso::
+
+      The :func:`contextlib.chdir` context manager, which changes the current
+      working directory on entering and restores the previous one on exit.
+
    .. versionchanged:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
