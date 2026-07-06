@@ -665,6 +665,13 @@ shared libraries (e.g. ``.so`` files). When supported by the :mod:`zipimport`
 module in the standard library, the default path entry finders also handle
 loading all of these file types (other than shared libraries) from zipfiles.
 
+Within a single file system path entry, the default finder checks for regular
+packages before same-named modules. For example, if the same directory contains
+both ``spam/__init__.py`` and ``spam.py``, ``import spam`` will import the
+package from ``spam/__init__.py``. This does not override the order of
+:data:`sys.path`: a module found in an earlier path entry still takes precedence
+over a package found in a later one.
+
 Path entries need not be limited to file system locations.  They can refer to
 URLs, database queries, or any other location that can be specified as a
 string.
