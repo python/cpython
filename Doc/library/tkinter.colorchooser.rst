@@ -37,3 +37,4 @@ the :class:`~tkinter.commondialog.Dialog` class.
 
    Module :mod:`tkinter.commondialog`
       Tkinter standard dialog module
+

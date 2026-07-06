@@ -151,3 +151,4 @@ and tries again. When the producer is done it calls
 :meth:`~queue.Queue.shutdown`, which causes subsequent
 :meth:`~queue.Queue.get_nowait` calls to raise :exc:`queue.ShutDown`
 so the consumer can exit cleanly.
+
