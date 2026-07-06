@@ -1,0 +1,1 @@
+Fix a crash when defining a class in low memory conditions.
