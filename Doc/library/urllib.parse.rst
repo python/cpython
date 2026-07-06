@@ -56,11 +56,18 @@ or on combining URL components into a URL string.
    :class:`SplitResult` or :class:`SplitResultBytes`.
    This corresponds to the general structure of a URL:
    ``scheme://netloc/path?query#fragment``.
-   Each tuple item is a string, possibly empty. The components are not broken up
-   into smaller parts (for example, the network location is a single string), and %
-   escapes are not expanded. The delimiters as shown above are not part of the
-   result, except for a leading slash in the *path* component, which is retained if
-   present.  For example:
+   Each tuple item is a string, possibly empty.
+
+   The delimiters as shown above are not part of the result, except for a
+   leading slash in the *path* component, which is retained if present.
+
+   Additionally, the netloc property is broken down into these additional
+   attributes added to the returned object: username, password, hostname, and
+   port.
+
+   Percent-encoded sequences are not decoded.
+
+   For example:
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
