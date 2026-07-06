@@ -663,44 +663,6 @@ is_terminator(const _PyUOpInstruction *uop)
     );
 }
 
-static PyObject *
-record_trace_transform_to_type(PyObject *value)
-{
-    PyObject *tp = Py_NewRef((PyObject *)Py_TYPE(value));
-    Py_DECREF(value);
-    return tp;
-}
-
-/* _RECORD_NOS_GEN_FUNC and _RECORD_3OS_GEN_FUNC record the raw receiver.
- * If it is a generator, return its function object; otherwise return NULL.
- */
-static PyObject *
-record_trace_transform_gen_func(PyObject *value)
-{
-    PyObject *func = NULL;
-    if (PyGen_Check(value)) {
-        _PyStackRef f = ((PyGenObject *)value)->gi_iframe.f_funcobj;
-        if (!PyStackRef_IsNull(f)) {
-            func = Py_NewRef(PyStackRef_AsPyObjectBorrow(f));
-        }
-    }
-    Py_DECREF(value);
-    return func;
-}
-
-/* _RECORD_BOUND_METHOD records the raw callable.
- * Keep it only for bound methods; otherwise return NULL.
- */
-static PyObject *
-record_trace_transform_bound_method(PyObject *value)
-{
-    if (Py_TYPE(value) == &PyMethod_Type) {
-        return value;
-    }
-    Py_DECREF(value);
-    return NULL;
-}
-
 /* Returns 1 on success (added to trace), 0 on trace end.
  */
 // gh-142543: inlining this function causes stack overflows
@@ -994,10 +956,15 @@ _PyJit_translate_single_bytecode_to_trace(
                     case OPARG_REPLACED:
                         uop = _PyUOp_Replacements[uop];
                         assert(uop != 0);
-
                         uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                         if (uop == _TIER2_RESUME_CHECK) {
-                            target = next_inst;
+                            if (this_instr[-1].op.code == LOAD_SPECIAL) {
+                                // Don't check eval breaker immediately after LOAD_SPECIAL
+                                uop = _NOP;
+                            }
+                            else {
+                                target = next_inst;
+                            }
                         }
                         else {
                             int extended_arg = orig_oparg > 255;
