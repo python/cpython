@@ -367,6 +367,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_getvar(self):
         self.root.setvar('test_var', 'hello')
         self.assertEqual(self.root.getvar('test_var'), 'hello')
+        # The name and value are required (gh-152587).
+        self.assertRaises(TypeError, self.root.getvar)
+        self.assertRaises(TypeError, self.root.setvar)
+        self.assertRaises(TypeError, self.root.setvar, 'test_var')
 
     def test_register(self):
         result = []
@@ -588,7 +592,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         ms = self.root.tk_inactive()
         self.assertIsInstance(ms, int)
         # A count of milliseconds, or -1 if the windowing system lacks support.
-        self.assertGreaterEqual(ms, -1)
+        if self.root._windowingsystem != 'win32':
+            # On Windows the value can overflow to a negative number
+            # (Tk ticket 3cb7c4ac72d4).
+            self.assertGreaterEqual(ms, -1)
         # Resetting the timer returns None and does not raise.
         self.assertIsNone(self.root.tk_inactive(reset=True))
 
@@ -598,6 +605,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.after(1, var.set, 'done')
         self.root.wait_variable(var)  # Returns once the variable is set.
         self.assertEqual(var.get(), 'done')
+        # The name is required (gh-152587).
+        self.assertRaises(TypeError, self.root.wait_variable)
 
     def test_wait_window(self):
         top = tkinter.Toplevel(self.root)

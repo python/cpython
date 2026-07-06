@@ -7185,6 +7185,30 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_CURSES_VAR(VARIABLE)
+dnl Like PY_CHECK_CURSES_FUNC, but for an integer variable (or macro), such as
+dnl ESCDELAY, which a function probe cannot detect.
+AC_DEFUN([PY_CHECK_CURSES_VAR],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
+  AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AC_CACHE_CHECK(
+    [for curses variable $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
+        int x = $1; (void)x;
+      ])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' variable.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
+
 PY_CHECK_CURSES_FUNC([is_pad])
 PY_CHECK_CURSES_FUNC([is_term_resized])
 PY_CHECK_CURSES_FUNC([resize_term])
@@ -7195,11 +7219,38 @@ PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
 PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
+PY_CHECK_CURSES_FUNC([has_mouse])
+PY_CHECK_CURSES_FUNC([is_keypad])
+PY_CHECK_CURSES_FUNC([is_leaveok])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
 PY_CHECK_CURSES_FUNC([new_prescr])
 PY_CHECK_CURSES_FUNC([use_screen])
 PY_CHECK_CURSES_FUNC([use_window])
+PY_CHECK_CURSES_FUNC([key_defined])
+PY_CHECK_CURSES_FUNC([term_attrs])
+PY_CHECK_CURSES_FUNC([define_key])
+PY_CHECK_CURSES_FUNC([keyok])
+PY_CHECK_CURSES_FUNC([set_escdelay])
+PY_CHECK_CURSES_FUNC([set_tabsize])
+PY_CHECK_CURSES_VAR([ESCDELAY])
+PY_CHECK_CURSES_VAR([TABSIZE])
+
+dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
+dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
+AC_CACHE_CHECK([for ncurses-style curses function getmouse],
+  [ac_cv_lib_curses_getmouse],
+  [AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(_CURSES_INCLUDES, [MEVENT event; (void)getmouse(&event);])],
+    [ac_cv_lib_curses_getmouse=yes],
+    [ac_cv_lib_curses_getmouse=no])])
+AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
+  [AC_DEFINE([HAVE_CURSES_GETMOUSE], [1],
+    [Define if you have the 'getmouse' function with the X/Open signature.])])
+
+dnl scr_dump and its companions scr_restore/scr_init/scr_set are an inseparable
+dnl group; probing scr_dump alone gates the whole family.
+PY_CHECK_CURSES_FUNC([scr_dump])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

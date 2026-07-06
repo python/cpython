@@ -1977,7 +1977,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.insert(parent, 'end')
         item2 = self.tv.insert('', 'end')
         self.tv.pack()
-        self.tv.update()
+        self.require_mapped(self.tv)
         selects, opens, closes = [], [], []
         self.tv.bind('<<TreeviewSelect>>',
                      lambda e: selects.append(self.tv.selection()))

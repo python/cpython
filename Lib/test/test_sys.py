@@ -2282,8 +2282,8 @@ this is invalid python code
     def test_remote_exec_deleted_static_executable(self):
         """Test remote exec when the target static executable was deleted."""
         build_dir = sysconfig.get_config_var('abs_builddir')
-        srcdir = sysconfig.get_config_var('srcdir')
-        if not build_dir or not srcdir:
+        stdlib_dir = os.path.dirname(os.path.abspath(os.__file__))
+        if not build_dir or not os.path.isdir(stdlib_dir):
             self.skipTest('cannot determine build-tree locations')
 
         pybuilddir_txt = os.path.join(build_dir, 'pybuilddir.txt')
@@ -2300,8 +2300,7 @@ this is invalid python code
             copied_build_dir = os.path.join(copied_root, 'build')
             copied_pybuilddir = os.path.join(copied_build_dir, pybuilddir)
             os.makedirs(os.path.dirname(copied_pybuilddir))
-            os.symlink(os.path.join(srcdir, 'Lib'),
-                       os.path.join(copied_root, 'Lib'))
+            os.symlink(stdlib_dir, os.path.join(copied_root, 'Lib'))
             os.symlink(source_ext_dir, copied_pybuilddir)
             shutil.copy2(pybuilddir_txt,
                          os.path.join(copied_build_dir, 'pybuilddir.txt'))
