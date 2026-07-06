@@ -2183,7 +2183,8 @@ features:
    .. seealso::
 
       Context manager :func:`contextlib.chdir`
-         Changes the working directory and restores the previous one on exit.
+         Changes the working directory on entering and restores the previous one
+         on exit.
 
    .. versionchanged:: 3.3
       Added support for specifying *path* as a file descriptor
