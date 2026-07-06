@@ -182,6 +182,11 @@ set_compare_frozenset(PySetObject *so, setentry *table, setentry *ep,
     }
     Py_ssize_t ep_hash = ep->hash;
     if (ep_hash == hash) {
+        if (PyUnicode_CheckExact(startkey)
+            && PyUnicode_CheckExact(key)
+            && unicode_eq(startkey, key)) {
+            return SET_LOOKKEY_FOUND;
+        }
         int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
         if (cmp < 0) {
             return SET_LOOKKEY_ERROR;
@@ -217,7 +222,7 @@ set_zero_table(setentry *table, size_t size)
 /* This must be >= 1 */
 #define PERTURB_SHIFT 5
 
-static int
+static inline Py_ALWAYS_INLINE int
 set_do_lookup(PySetObject *so, setentry *table, size_t mask, PyObject *key,
               Py_hash_t hash, setentry **epp, compare_func compare_entry)
 {
