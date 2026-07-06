@@ -1054,6 +1054,67 @@ clone_combined_dict_keys(PyDictObject *orig)
     return keys;
 }
 
+/* Like clone_combined_dict_keys but replaces every active entry's value
+   with a new reference to `fill_value`.  Used by dict.fromkeys() to skip
+   per-key insertdict() calls when the source dict is clean and combined. */
+static PyDictKeysObject *
+clone_combined_dict_keys_with_value(PyDictObject *orig, PyObject *fill_value)
+{
+    assert(PyAnyDict_Check(orig));
+    assert(Py_TYPE(orig)->tp_iter == dict_iter);
+    assert(orig->ma_values == NULL);
+    assert(orig->ma_keys != Py_EMPTY_KEYS);
+    assert(orig->ma_keys->dk_refcnt == 1);
+
+    if (!PyFrozenDict_Check(orig)) {
+        ASSERT_DICT_LOCKED(orig);
+    }
+
+    size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
+    PyDictKeysObject *keys = PyMem_Malloc(keys_size);
+    if (keys == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    memcpy(keys, orig->ma_keys, keys_size);
+
+    /* Walk every entry: incref the key and replace the value with
+       fill_value (incref'd per active slot). */
+    PyObject **pkey, **pvalue;
+    size_t offs;
+    if (DK_IS_UNICODE(orig->ma_keys)) {
+        PyDictUnicodeEntry *ep0 = DK_UNICODE_ENTRIES(keys);
+        pkey = &ep0->me_key;
+        pvalue = &ep0->me_value;
+        offs = sizeof(PyDictUnicodeEntry) / sizeof(PyObject*);
+    }
+    else {
+        PyDictKeyEntry *ep0 = DK_ENTRIES(keys);
+        pkey = &ep0->me_key;
+        pvalue = &ep0->me_value;
+        offs = sizeof(PyDictKeyEntry) / sizeof(PyObject*);
+    }
+
+    Py_ssize_t n = keys->dk_nentries;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        if (*pvalue != NULL) {
+            /* Active entry: incref key and replace value with fill_value. */
+            Py_INCREF(*pkey);
+            Py_INCREF(fill_value);
+            *pvalue = fill_value;
+        }
+        pvalue += offs;
+        pkey += offs;
+    }
+
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+    return keys;
+}
+
+
 PyObject *
 PyDict_New(void)
 {
@@ -3365,11 +3426,44 @@ dict_dict_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
 {
     assert(can_modify_dict(mp));
 
+    PyDictObject *other = (PyDictObject *)iterable;
+    PyDictKeysObject *okeys = other->ma_keys;
+
+    /* Fast path: if the source dict is combined, compact (no deleted entries),
+     * and target is a freshly-allocated empty combined dict, skip the per-key
+     * insertdict() loop entirely.  Instead, clone the source keys structure
+     * (which copies the hash table and entry array in one memcpy) and fill
+     * every active slot's value with a new reference to `value`.
+     * This avoids repeated hash lookups + collision probing on the target.
+     */
+    if (mp->ma_used == 0 &&
+        mp->ma_values == NULL &&
+        other->ma_values == NULL &&
+        other->ma_used > 0 &&
+        other->ma_used == okeys->dk_nentries &&
+        Py_TYPE(other)->tp_iter == dict_iter &&
+        (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
+         USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used))
+    {
+        PyDictKeysObject *keys = clone_combined_dict_keys_with_value(other, value);
+        if (keys == NULL) {
+            Py_DECREF(mp);
+            return NULL;
+        }
+        ensure_shared_on_resize(mp);
+        dictkeys_decref(mp->ma_keys, IS_DICT_SHARED(mp));
+        set_keys(mp, keys);
+        STORE_USED(mp, other->ma_used);
+        ASSERT_CONSISTENT(mp);
+        return mp;
+    }
+
+    /* Slow path: source is sparse, split, or has deleted entries. */
     PyObject *oldvalue;
     Py_ssize_t pos = 0;
     PyObject *key;
     Py_hash_t hash;
-    int unicode = DK_IS_UNICODE(((PyDictObject*)iterable)->ma_keys);
+    int unicode = DK_IS_UNICODE(okeys);
     uint8_t new_size = Py_MAX(
         estimate_log2_keysize(PyDict_GET_SIZE(iterable)),
         DK_LOG_SIZE(mp->ma_keys));
