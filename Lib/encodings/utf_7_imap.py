@@ -13,7 +13,10 @@ It differs from UTF-7 (RFC 2152) as follows:
 
 import binascii
 import codecs
-from base64 import b64encode, b64decode
+
+# The modified Base64 alphabet of RFC 3501: standard Base64 but with "," in
+# place of "/".
+_alphabet = binascii.BASE64_ALPHABET[:-1] + b','
 
 ### Codec APIs
 
@@ -26,8 +29,9 @@ def utf_7_imap_encode(input, errors='strict'):
     def flush(end):
         if start < end:
             if b64run:
-                b64 = b64encode(input[start:end].encode('utf-16-be'),
-                                altchars=b'+,', padded=False)
+                b64 = binascii.b2a_base64(input[start:end].encode('utf-16-be'),
+                                          alphabet=_alphabet, padded=False,
+                                          newline=False)
                 res.extend(b'&' + b64 + b'-')
             else:
                 res.extend(input[start:end].encode('ascii'))
@@ -74,8 +78,8 @@ def utf_7_imap_decode(input, errors='strict'):
             else:
                 b64 = input[i + 1:j]
                 try:
-                    data = b64decode(b64, altchars=b'+,',
-                                     validate=True, padded=False)
+                    data = binascii.a2b_base64(b64, alphabet=_alphabet,
+                                               strict_mode=True, padded=False)
                 except binascii.Error:
                     data = b''
                 if not data or len(data) % 2:

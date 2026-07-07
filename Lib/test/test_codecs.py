@@ -1421,7 +1421,7 @@ utf_7_imap_testcases = [
     ('a\tb', b'a&AAk-b'),
     ('\x00', b'&AAA-'),
     ('Entw\xfcrfe', b'Entw&APw-rfe'),
-    ('ϰ', b'&A,A-'),                     # "," in the modified Base64 alphabet
+    ('ϰ', b'&A,A-'),                     # "," in the Base64 alphabet ("&A/A-" is invalid)
     ('☃', b'&JgM-'),                     # snowman
     ('\U0001f600', b'&2D3eAA-'),              # non-BMP (surrogate pair)
     ('Sent &\N{DELETE}', b'Sent &-&AH8-'),
@@ -1441,6 +1441,7 @@ class Utf7ImapTest(unittest.TestCase):
         (b'x&', 1),             # "&" just before the end, unterminated
         (b'&AAAA', 0),          # unterminated, though the Base64 is valid
         (b'&AB-', 0),           # Base64 length not a multiple of a code unit
+        (b'&A/A-', 0),          # "/" not in the alphabet ("&A,A-" is valid)
         (b'&@@@-', 0),          # invalid Base64
         (b'a\x80b', 1),         # 8-bit byte outside a shift sequence
         (b'a\x1fb', 1),         # control byte outside a shift sequence
