@@ -494,7 +494,7 @@ The following functions and structs are used to create
       in the following situations:
 
       - The base is not variable-sized (its
-        :c:member:`~PyTypeObject.tp_itemsize`).
+        :c:member:`~PyTypeObject.tp_itemsize` is zero).
       - The requested :c:member:`PyType_Spec.basicsize` is positive,
         suggesting that the memory layout of the base class is known.
       - The requested :c:member:`PyType_Spec.basicsize` is zero,
