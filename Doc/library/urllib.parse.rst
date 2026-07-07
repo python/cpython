@@ -56,7 +56,7 @@ or on combining URL components into a URL string.
    :class:`SplitResult` or :class:`SplitResultBytes`.
    This corresponds to the general structure of a URL:
    ``scheme://netloc/path?query#fragment``.
-   Each tuple item is a string, possibly empty. 
+   Each tuple item is a string, possibly empty.
 
    The delimiters as shown above are not part of the result, except for a
    leading slash in the *path* component, which is retained if present.
