@@ -1219,8 +1219,6 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None, context=None):
 
-        # gh-153133: close the socket if the transport is never created.
-        transport = None
         try:
             sock.setblocking(False)
             context = context if context is not None else contextvars.copy_context()
@@ -1237,13 +1235,15 @@ class BaseEventLoop(events.AbstractEventLoop):
                     context=context)
             else:
                 transport = self._make_socket_transport(sock, protocol, waiter, context=context)
+        except:
+            # gh-153133: close the socket if the transport is never created.
+            sock.close()
+            raise
 
+        try:
             await waiter
         except:
-            if transport is None:
-                sock.close()
-            else:
-                transport.close()
+            transport.close()
             raise
 
         return transport, protocol
