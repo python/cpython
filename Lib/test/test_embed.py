@@ -598,21 +598,17 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         return "\n".join(filtered_err_lines)
 
     def test_init_run_main_code_exitcode(self):
-        env = dict(os.environ)
-        env['TEST_CODE'] = CODE_EXITCODE_123
+        code = CODE_EXITCODE_123
         self.run_embedded_interpreter("test_init_run_main_code_exitcode",
-                                      env=env)
+                                      code)
 
     def test_init_run_main_script_exitcode(self):
-        filename = os.path.abspath(os_helper.TESTFN + '.py')
-        with open(filename, 'x', encoding='utf8') as fp:
-            fp.write(CODE_EXITCODE_123)
-        self.addCleanup(os_helper.unlink, filename)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py') as tmp:
+            tmp.write(CODE_EXITCODE_123)
+            tmp.flush()
 
-        env = dict(os.environ)
-        env['TEST_SCRIPT'] = filename
-        self.run_embedded_interpreter("test_init_run_main_script_exitcode",
-                                      env=env)
+            self.run_embedded_interpreter("test_init_run_main_script_exitcode",
+                                          tmp.name)
 
     def test_init_run_main_interactive_exitcode(self):
         code = CODE_EXITCODE_123
@@ -620,16 +616,16 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       input=code)
 
     def test_init_run_main_module_exitcode(self):
-        modname = '_testembed_testmodule'
-        filename = os.path.abspath(modname + '.py')
-        with open(filename, 'x', encoding='utf8') as fp:
-            fp.write(CODE_EXITCODE_123)
-        self.addCleanup(os_helper.unlink, filename)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            modname = '_testembed_testmodule'
+            filename = os.path.join(tmpdir, modname + '.py')
+            with open(filename, 'x', encoding='utf8') as fp:
+                fp.write(CODE_EXITCODE_123)
 
-        env = dict(os.environ)
-        env['TEST_MODULE'] = modname
-        self.run_embedded_interpreter("test_init_run_main_module_exitcode",
-                                      env=env)
+            env = dict(os.environ)
+            env['PYTHONPATH'] = tmpdir
+            self.run_embedded_interpreter("test_init_run_main_module_exitcode",
+                                          modname, env=env)
 
 
 def config_dev_mode(preconfig, config):

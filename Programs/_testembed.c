@@ -64,17 +64,47 @@ static void error(const char *msg)
 }
 
 
+static void error_fmt(const char *format, ...)
+{
+    va_list vargs;
+    va_start(vargs, format);
+    fprintf(stderr, "ERROR: ");
+    vfprintf(stderr, format, vargs);
+    fprintf(stderr, "\n");
+    va_end(vargs);
+    fflush(stderr);
+}
+
+
 static wchar_t* py_getenv(const char *name)
 {
     const char *env = getenv(name);
     if (env == NULL) {
-        fprintf(stderr, "ERROR: need %s env var\n", name);
+        error_fmt("need %s env var", name);
         return NULL;
     }
 
     wchar_t *result = Py_DecodeLocale(env, NULL);
     if (result == NULL) {
         error("Py_DecodeLocale() failed");
+        return NULL;
+    }
+    return result;
+}
+
+
+static wchar_t* get_cmdline_arg(const char *arg_name)
+{
+    if (main_argc < 3) {
+        const char *test = main_argv[1];
+        fprintf(stderr, "usage: %s %s %s\n", PROGRAM, test, arg_name);
+        return NULL;
+    }
+    const char *arg = main_argv[2];
+
+    wchar_t *result = Py_DecodeLocale(arg, NULL);
+    if (result == NULL) {
+        error_fmt("failed to decode %s command line argument", arg_name);
         return NULL;
     }
     return result;
@@ -2003,8 +2033,7 @@ static int test_init_run_main_exitcode(Py_ssize_t argc, wchar_t * const *argv)
 
     int exitcode = Py_RunMain();
     if (exitcode != 123) {
-        fprintf(stderr, "ERROR: Py_RunMain() returned %i, expected 123\n",
-                exitcode);
+        error_fmt("Py_RunMain() returned %i, expected 123", exitcode);
         return 1;
     }
 
@@ -2014,7 +2043,7 @@ static int test_init_run_main_exitcode(Py_ssize_t argc, wchar_t * const *argv)
 
 static int test_init_run_main_script_exitcode(void)
 {
-    wchar_t *filename = py_getenv("TEST_SCRIPT");
+    wchar_t *filename = get_cmdline_arg("FILENAME");
     if (filename == NULL) {
         return 1;
     }
@@ -2029,7 +2058,7 @@ static int test_init_run_main_script_exitcode(void)
 
 static int test_init_run_main_module_exitcode(void)
 {
-    wchar_t *module = py_getenv("TEST_MODULE");
+    wchar_t *module = get_cmdline_arg("MODULE");
     if (module == NULL) {
         return 1;
     }
@@ -2051,7 +2080,7 @@ static int test_init_run_main_interactive_exitcode(void)
 
 static int test_init_run_main_code_exitcode(void)
 {
-    wchar_t *code = py_getenv("TEST_CODE");
+    wchar_t *code = get_cmdline_arg("CODE");
     if (code == NULL) {
         return 1;
     }
