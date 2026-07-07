@@ -603,12 +603,13 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       code)
 
     def test_init_run_main_script_exitcode(self):
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py') as tmp:
-            tmp.write(CODE_EXITCODE_123)
-            tmp.flush()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, 'script.py')
+            with open(filename, 'w') as fp:
+                fp.write(CODE_EXITCODE_123)
 
             self.run_embedded_interpreter("test_init_run_main_script_exitcode",
-                                          tmp.name)
+                                          filename)
 
     def test_init_run_main_interactive_exitcode(self):
         code = CODE_EXITCODE_123
