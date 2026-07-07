@@ -1458,7 +1458,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if prefix is None:
             prefix = config['config']['prefix']
         if exec_prefix is None:
-            exec_prefix = config['config']['prefix']
+            exec_prefix = config['config']['exec_prefix']
         if MS_WINDOWS:
             return config['config']['module_search_paths']
         else:
@@ -1614,8 +1614,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths[1 if MS_WINDOWS else 2] = os.path.normpath(
                 os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0]))
         if not MS_WINDOWS:
-            # PREFIX (default) is set when running in build directory
-            prefix = exec_prefix = sys.prefix
+            # PREFIX and EXEC_PREFIX (defaults) are set when running in the
+            # build directory and may differ with --exec-prefix (gh-151096).
+            prefix = sys.prefix
+            exec_prefix = sys.exec_prefix
             # stdlib calculation (/Lib) is not yet supported
             expected_paths[0] = self.module_search_paths(prefix=prefix)[0]
             config.update(prefix=prefix, base_prefix=prefix,

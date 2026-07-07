@@ -27,6 +27,7 @@ WHITESPACE = frozenset(" \t\n\r\v\f")
 
 _REPEATCODES = frozenset({MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT})
 _UNITCODES = frozenset({ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY})
+_SETITEMCODES = frozenset({LITERAL, CATEGORY})
 
 ESCAPES = {
     r"\a": (LITERAL, ord("\a")),
@@ -43,12 +44,12 @@ CATEGORIES = {
     r"\A": (AT, AT_BEGINNING_STRING), # start of string
     r"\b": (AT, AT_BOUNDARY),
     r"\B": (AT, AT_NON_BOUNDARY),
-    r"\d": (IN, [(CATEGORY, CATEGORY_DIGIT)]),
-    r"\D": (IN, [(CATEGORY, CATEGORY_NOT_DIGIT)]),
-    r"\s": (IN, [(CATEGORY, CATEGORY_SPACE)]),
-    r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
-    r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
-    r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
+    r"\d": (CATEGORY, CATEGORY_DIGIT),
+    r"\D": (CATEGORY, CATEGORY_NOT_DIGIT),
+    r"\s": (CATEGORY, CATEGORY_SPACE),
+    r"\S": (CATEGORY, CATEGORY_NOT_SPACE),
+    r"\w": (CATEGORY, CATEGORY_WORD),
+    r"\W": (CATEGORY, CATEGORY_NOT_WORD),
     r"\z": (AT, AT_END_STRING), # end of string
     r"\Z": (AT, AT_END_STRING), # end of string (obsolete)
 }
@@ -309,13 +310,25 @@ class Tokenizer:
             msg = "bad character in group name %r" % name
             raise self.error(msg, len(name) + offset)
 
+def _property_escape(source, escape):
+    # handle \p{...} and \P{...} (UTS #18 1.2.4, "Property Syntax")
+    from . import _properties
+    if not source.match('{'):
+        raise source.error("missing {, expected property name")
+    name = source.getuntil('}', 'property name')
+    code = _properties.parse_property(name, escape[1] == 'P')
+    if code is None:
+        raise source.error("unknown property name %r" % name,
+                           len(name) + len(r'\p{}'))
+    return code
+
 def _class_escape(source, escape):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
     if code:
         return code
     code = CATEGORIES.get(escape)
-    if code and code[0] is IN:
+    if code and code[0] is CATEGORY:
         return code
     try:
         c = escape[1:2]
@@ -351,6 +364,8 @@ def _class_escape(source, escape):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
+        elif c in "pP" and source.istext:
+            return _property_escape(source, escape)
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
             escape += source.getwhile(2, OCTDIGITS)
@@ -411,6 +426,8 @@ def _escape(source, escape, state):
                 raise source.error("undefined character name %r" % charname,
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
+        elif c in "pP" and source.istext:
+            return _property_escape(source, escape)
         elif c == "0":
             # octal escape
             escape += source.getwhile(2, OCTDIGITS)
@@ -493,7 +510,7 @@ def _parse_sub(source, state, verbose, nested):
         if len(item) != 1:
             break
         op, av = item[0]
-        if op is LITERAL:
+        if op in _SETITEMCODES:
             set.append((op, av))
         elif op is IN and av[0][0] is not NEGATE:
             set.extend(av)
@@ -507,6 +524,223 @@ def _parse_sub(source, state, verbose, nested):
 
     subpattern.append((BRANCH, (None, items)))
     return subpattern
+
+def _charset_node(items):
+    # One element matching a character in the union `items`.  A lone LITERAL or
+    # CATEGORY is already a one-character matcher and needs no IN wrapper.
+    if len(items) == 1 and items[0][0] in _SETITEMCODES:
+        return items[0]
+    return (IN, items)
+
+def _flat_items(elements, complement=False):
+    # The items if `elements` is a single flat charset, else None -- the dual
+    # of _charset_node: a lone LITERAL or CATEGORY is an item.  A complemented
+    # charset (a NEGATE-bearing IN) qualifies only when `complement` is true.
+    if len(elements) == 1:
+        op, av = elements[0]
+        if op in _SETITEMCODES:
+            return [elements[0]]
+        if op is IN:
+            if not complement:
+                for o, _av in av:
+                    if o is NEGATE:
+                        return None
+            return av
+    return None
+
+def _union(left, right, state):
+    # A || B: merge two flat character classes into one charset where possible,
+    # else alternate the one-character matchers.
+    left_items = _flat_items(left)
+    right_items = _flat_items(right)
+    if left_items is not None and right_items is not None:
+        return [_charset_node(_uniq(left_items + right_items))]
+    return [(BRANCH, (None, [SubPattern(state, left),
+                             SubPattern(state, right)]))]
+
+def _intersect(left, right, state):
+    # A && B: A, then require the same character to also match B (lookbehind).
+    return left + [(ASSERT, (-1, SubPattern(state, right)))]
+
+def _difference(left, right, state):
+    # A -- B: A, then require the character not to match B (lookbehind).
+    return left + [(ASSERT_NOT, (-1, SubPattern(state, right)))]
+
+# Map a set-operator token to the function combining the accumulated result
+# with the next operand.
+_SETOPS = {'||': _union, '&&': _intersect, '--': _difference}
+
+def _operand_elements(set, compound, negated, state):
+    # The operand's elements: a standalone nested set, else the member union,
+    # with any negated-property members alternated in (see addmember).
+    if compound is not None:
+        return compound
+    result = [_charset_node(_uniq(set))] if set or not negated else None
+    for neg in negated:
+        result = [neg] if result is None else _union(result, [neg], state)
+    return result
+
+def _parse_operand(source, state, nested, here, allow_nested):
+    # Read one operand, stopping at a set operator or the closing ']'.  An
+    # operand is either a union of members/ranges/escapes or, when allow_nested,
+    # a single nested set ([...]) -- not a mix.  Return (elements, terminator),
+    # where terminator is the operator that ended the operand, or None at the end
+    # of the class.
+    _ord = ord
+    sourceget = source.get
+    sourcematch = source.match
+    set = []
+    setappend = set.append
+    negated = []        # \P{...} negated-range props, alternated in at the end
+    def addmember(code):
+        # Flatten a \p{...} property's IN into the member set; a negated one is a
+        # complemented charset, set aside to _union in (it can't join the union).
+        if code[0] is IN:
+            if code[1][0][0] is NEGATE:
+                negated.append(code)
+            else:
+                set.extend(code[1])
+        else:
+            setappend(code)
+    compound = None     # elements of a standalone nested-set operand
+    if allow_nested and sourcematch("["):
+        # A nested set after an operator is the whole operand, used as-is (not
+        # wrapped in a group); it cannot be combined with loose members.
+        compound = _parse_charset(source, state, nested + 1)
+    while True:
+        this = sourceget()
+        if this is None:
+            raise source.error("unterminated character set",
+                               source.tell() - here)
+        if set or compound is not None or negated:
+            if this == "]":
+                return _operand_elements(set, compound, negated, state), None
+            if this in '-&|~' and source.next == this:
+                if this == '~':
+                    import warnings
+                    warnings.warn(
+                        'Possible set symmetric difference at position %d'
+                        % (source.tell() - 1),
+                        FutureWarning, stacklevel=nested + 8
+                    )
+                else:
+                    # '--', '&&' or '||' ends this operand and starts the next.
+                    sourceget()  # consume the second operator character
+                    return _operand_elements(set, compound, negated, state), this + this
+        if this[0] == "\\":
+            code1 = _class_escape(source, this)
+        else:
+            code1 = LITERAL, _ord(this)
+        if compound is not None:
+            # A standalone nested set cannot be combined with other members.
+            raise source.error("unsupported nested set operand",
+                               source.tell() - here)
+        # Past this point the operand is a plain member set (compound is None).
+        if sourcematch("-"):
+            # potential range
+            that = sourceget()
+            if that is None:
+                raise source.error("unterminated character set",
+                                   source.tell() - here)
+            if that == "]":
+                # A trailing '-' is a literal.
+                addmember(code1)
+                setappend((LITERAL, _ord("-")))
+                return _operand_elements(set, None, negated, state), None
+            if that == "-":
+                # 'X--': difference, not a range.  '--' after a single member
+                # lands here because the range probe consumed the first '-'.
+                addmember(code1)
+                return _operand_elements(set, None, negated, state), "--"
+            if that[0] == "\\":
+                code2 = _class_escape(source, that)
+            else:
+                code2 = LITERAL, _ord(that)
+            if code1[0] != LITERAL or code2[0] != LITERAL:
+                msg = "bad character range %s-%s" % (this, that)
+                raise source.error(msg, len(this) + 1 + len(that))
+            lo = code1[1]
+            hi = code2[1]
+            if hi < lo:
+                msg = "bad character range %s-%s" % (this, that)
+                raise source.error(msg, len(this) + 1 + len(that))
+            setappend((RANGE, (lo, hi)))
+        else:
+            addmember(code1)
+
+def _complement(elements, state):
+    # The complement of `elements` (a single matcher, or a set operation as a
+    # head followed by lookbehind assertions).  De Morgan pushes the negation in
+    # -- recursively through nested set operations -- so no lookahead is needed.
+    op, av = elements[0]
+    if op is LITERAL:
+        result = [(NOT_LITERAL, av)]
+    elif op is NOT_LITERAL:
+        result = [(LITERAL, av)]
+    elif op is CATEGORY:
+        result = [(CATEGORY, CH_NEGATE[av])]
+    elif op is IN:
+        # Negate by toggling a leading NEGATE: a doubly negated set flips back
+        # to positive instead of stacking a second NEGATE.
+        if av[0][0] is NEGATE:
+            result = [(IN, av[1:])]
+        else:
+            result = [(IN, [(NEGATE, None)] + av)]
+    else:
+        # An un-merged union (A||B as an alternation).  De Morgan:
+        # ~(A | B | ...) = ~A & ~B & ... -- intersect the operand complements.
+        assert op is BRANCH
+        branches = av[1]
+        result = _complement(branches[0].data, state)
+        for sub in branches[1:]:
+            result = _intersect(result, _complement(sub.data, state), state)
+    # A set operation: a head followed by lookbehind assertions.  De Morgan:
+    #   ~(head & ~B & C ...) = ~head | B | ~C ...
+    for op, av in elements[1:]:
+        if op is ASSERT_NOT:      # '--' operand B: union with B
+            result = _union(result, av[1].data, state)
+        else:                     # '&&' operand B (ASSERT): union with [^B]
+            result = _union(result, _complement(av[1].data, state), state)
+    return result
+
+def _parse_charset(source, state, nested):
+    # Parse a character set, assuming the opening '[' has been consumed, up to
+    # and including the closing ']'.  Return a list of subpattern elements that
+    # together consume exactly one character.
+    #
+    # A set operation (UTS #18 RL1.3) maps to assertions on, or alternatives of,
+    # the matched character:
+    #   [A--B]  ->  A (?<![B])           difference
+    #   [A&&B]  ->  A (?<=[B])           intersection
+    #   [A||B]  ->  [AB] or (?:A|B)      union
+    # A flat-operand difference [A--B] is later fused back into a single charset
+    # by Lib/re/_optimizer.py (see that module).
+    # Operators chain left-to-right with no precedence.  A leading '^' negates by
+    # De Morgan, pushing the negation into the operands (no lookahead needed):
+    #   [^A--B] -> [^A] | B ; [^A&&B] -> [^A] | [^B] ; [^A||B] -> [^A] && [^B]
+    # Each operand compiles in its own flag context, so this is IGNORECASE-safe.
+    here = source.tell() - 1
+    if source.next == '[':
+        # A '[' at the start of a class stays a literal (the first operand never
+        # needs grouping), but the position is reserved -- keep warning.
+        import warnings
+        warnings.warn(
+            'Possible nested set at position %d' % source.tell(),
+            FutureWarning, stacklevel=nested + 7
+        )
+    negate = source.match("^")
+    result, term = _parse_operand(source, state, nested, here, False)
+    while term is not None:
+        combine = _SETOPS[term]
+        operand, term = _parse_operand(source, state, nested, here, True)
+        result = combine(result, operand, state)
+    if negate:
+        # Push the negation into the operands by De Morgan (see above).
+        result = _complement(result, state)
+
+    # A single one-character matcher, or a set operation (head + assertions);
+    # the caller groups a multi-element result if a quantifier could follow.
+    return result
 
 def _parse(source, state, verbose, nested, first=False):
     # parse a simple pattern
@@ -547,93 +781,15 @@ def _parse(source, state, verbose, nested, first=False):
             subpatternappend((LITERAL, _ord(this)))
 
         elif this == "[":
-            here = source.tell() - 1
-            # character set
-            set = []
-            setappend = set.append
-##          if sourcematch(":"):
-##              pass # handle character classes
-            if source.next == '[':
-                import warnings
-                warnings.warn(
-                    'Possible nested set at position %d' % source.tell(),
-                    FutureWarning, stacklevel=nested + 6
-                )
-            negate = sourcematch("^")
-            # check remaining characters
-            while True:
-                this = sourceget()
-                if this is None:
-                    raise source.error("unterminated character set",
-                                       source.tell() - here)
-                if this == "]" and set:
-                    break
-                elif this[0] == "\\":
-                    code1 = _class_escape(source, this)
-                else:
-                    if set and this in '-&~|' and source.next == this:
-                        import warnings
-                        warnings.warn(
-                            'Possible set %s at position %d' % (
-                                'difference' if this == '-' else
-                                'intersection' if this == '&' else
-                                'symmetric difference' if this == '~' else
-                                'union',
-                                source.tell() - 1),
-                            FutureWarning, stacklevel=nested + 6
-                        )
-                    code1 = LITERAL, _ord(this)
-                if sourcematch("-"):
-                    # potential range
-                    that = sourceget()
-                    if that is None:
-                        raise source.error("unterminated character set",
-                                           source.tell() - here)
-                    if that == "]":
-                        if code1[0] is IN:
-                            code1 = code1[1][0]
-                        setappend(code1)
-                        setappend((LITERAL, _ord("-")))
-                        break
-                    if that[0] == "\\":
-                        code2 = _class_escape(source, that)
-                    else:
-                        if that == '-':
-                            import warnings
-                            warnings.warn(
-                                'Possible set difference at position %d' % (
-                                    source.tell() - 2),
-                                FutureWarning, stacklevel=nested + 6
-                            )
-                        code2 = LITERAL, _ord(that)
-                    if code1[0] != LITERAL or code2[0] != LITERAL:
-                        msg = "bad character range %s-%s" % (this, that)
-                        raise source.error(msg, len(this) + 1 + len(that))
-                    lo = code1[1]
-                    hi = code2[1]
-                    if hi < lo:
-                        msg = "bad character range %s-%s" % (this, that)
-                        raise source.error(msg, len(this) + 1 + len(that))
-                    setappend((RANGE, (lo, hi)))
-                else:
-                    if code1[0] is IN:
-                        code1 = code1[1][0]
-                    setappend(code1)
-
-            set = _uniq(set)
-            # XXX: <fl> should move set optimization to compiler!
-            if _len(set) == 1 and set[0][0] is LITERAL:
-                # optimization
-                if negate:
-                    subpatternappend((NOT_LITERAL, set[0][1]))
-                else:
-                    subpatternappend(set[0])
+            charset = _parse_charset(source, state, nested)
+            if len(charset) == 1:
+                code = charset[0]
             else:
-                if negate:
-                    set.insert(0, (NEGATE, None))
-                # charmap optimization can't be added here because
-                # global flags still are not known
-                subpatternappend((IN, set))
+                # Wrap a multi-element set operation in a non-capturing group so
+                # a following quantifier (e.g. [a-z--[aeiou]]+) binds the whole
+                # operation, not just its trailing assertion.
+                code = (SUBPATTERN, (None, 0, 0, SubPattern(state, charset)))
+            subpatternappend(code)
 
         elif this in REPEAT_CHARS:
             # repeat previous item

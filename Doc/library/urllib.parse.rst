@@ -60,11 +60,16 @@ or on combining URL components into a URL string.
    *missing_as_none* is true.
    Not defined component are represented an empty string (by default) or
    ``None`` if *missing_as_none* is true.
-   The components are not broken up
-   into smaller parts (for example, the network location is a single string), and %
-   escapes are not expanded. The delimiters as shown above are not part of the
-   result, except for a leading slash in the *path* component, which is retained if
-   present.  For example:
+   The delimiters as shown above are not part of the result, except for a
+   leading slash in the *path* component, which is retained if present.
+
+   Additionally, the netloc property is broken down into these additional
+   attributes added to the returned object: username, password, hostname, and
+   port.
+
+   Percent-encoded sequences are not decoded.
+
+   For example:
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE

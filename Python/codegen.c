@@ -3369,7 +3369,10 @@ codegen_nameop(compiler *c, location loc,
             }
             break;
         case Store: op = STORE_GLOBAL; break;
-        case Del: op = DELETE_GLOBAL; break;
+        case Del:
+            ADDOP(c, loc, PUSH_NULL);
+            op = STORE_GLOBAL;
+            break;
         }
         break;
     case COMPILE_OP_NAME:
@@ -3381,7 +3384,10 @@ codegen_nameop(compiler *c, location loc,
                 : LOAD_NAME;
             break;
         case Store: op = STORE_NAME; break;
-        case Del: op = DELETE_NAME; break;
+        case Del:
+            ADDOP(c, loc, PUSH_NULL);
+            op = STORE_NAME;
+            break;
         }
         break;
     }
@@ -5528,18 +5534,21 @@ codegen_visit_expr(compiler *c, expr_ty e)
             }
         }
         RETURN_IF_ERROR(_PyCompile_MaybeAddStaticAttributeToClass(c, e));
-        VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
         switch (e->v.Attribute.ctx) {
         case Load:
+            VISIT(c, expr, e->v.Attribute.value);
             ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
+            VISIT(c, expr, e->v.Attribute.value);
             ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
-            ADDOP_NAME(c, loc, DELETE_ATTR, e->v.Attribute.attr, names);
+            ADDOP(c, loc, PUSH_NULL);
+            VISIT(c, expr, e->v.Attribute.value);
+            ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         }
         break;
