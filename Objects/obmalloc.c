@@ -211,8 +211,10 @@ _PyMem_mi_page_reclaimed(mi_page_t *page)
     if (page->qsbr_goal != 0) {
         if (mi_page_all_free(page)) {
             assert(page->qsbr_node.next == NULL);
+            // We may be reclaiming a page belonging to a different thread
+            // during a stop-the-world event. Find the _PyThreadStateImpl for
+            // the page.
             _PyThreadStateImpl *tstate = tstate_from_heap(mi_page_heap(page));
-            assert(tstate == (_PyThreadStateImpl *)_PyThreadState_GET());
             page->retire_expire = 0;
             llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         }
