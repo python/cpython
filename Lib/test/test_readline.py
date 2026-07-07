@@ -414,7 +414,7 @@ readline.write_history_file(history_file)
         # See TestHistoryManipulation for the full test.
 
     def test_environment_is_not_modified(self):
-        # os.environ contains enviroment at the time "os" module was loaded, so
+        # os.environ contains environment at the time "os" module was loaded, so
         # before the "readline" module is loaded.
         original_env = dict(os.environ)
 
