@@ -22,7 +22,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_FdIsInteractive()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
+#include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoop()
 #include "pycore_sysmodule.h"     // _PySys_SetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
@@ -41,7 +41,7 @@
 #  include "windows.h"
 #endif
 
-/* Forward */
+/* Forward declarations */
 static void flush_io(void);
 static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
                           PyCompilerFlags *, PyArena *, PyObject*, int);
@@ -55,16 +55,20 @@ static PyObject *
 _PyRun_StringFlagsWithName(const char *str, PyObject* name, int start,
                            PyObject *globals, PyObject *locals, PyCompilerFlags *flags,
                            int generate_new_source);
+static int _PyErr_PrintWithExitcode(int *exitcode);
+
 
 int
-_PyRun_AnyFileObject(FILE *fp, PyObject *filename, int closeit,
-                     PyCompilerFlags *flags)
+_PyRun_AnyFile(FILE *fp, PyObject *filename, int closeit,
+               PyCompilerFlags *flags, int *exitcode)
 {
     int decref_filename = 0;
     if (filename == NULL) {
         filename = PyUnicode_FromString("???");
         if (filename == NULL) {
-            PyErr_Print();
+            if (_PyErr_PrintWithExitcode(exitcode)) {
+                return E_EXITCODE;
+            }
             return -1;
         }
         decref_filename = 1;
@@ -72,13 +76,13 @@ _PyRun_AnyFileObject(FILE *fp, PyObject *filename, int closeit,
 
     int res;
     if (_Py_FdIsInteractive(fp, filename)) {
-        res = _PyRun_InteractiveLoopObject(fp, filename, flags);
+        res = _PyRun_InteractiveLoop(fp, filename, flags, exitcode);
         if (closeit) {
             fclose(fp);
         }
     }
     else {
-        res = _PyRun_SimpleFileObject(fp, filename, closeit, flags);
+        res = _PyRun_SimpleFile(fp, filename, closeit, flags, exitcode);
     }
 
     if (decref_filename) {
@@ -99,14 +103,15 @@ PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
             return -1;
         }
     }
-    int res = _PyRun_AnyFileObject(fp, filename_obj, closeit, flags);
+    int res = _PyRun_AnyFile(fp, filename_obj, closeit, flags, NULL);
     Py_XDECREF(filename_obj);
     return res;
 }
 
 
 int
-_PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
+_PyRun_InteractiveLoop(FILE *fp, PyObject *filename,
+                       PyCompilerFlags *flags, int *exitcode)
 {
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     if (flags == NULL) {
@@ -115,8 +120,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
 
     PyObject *v;
     if (PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
-        PyErr_Print();
-        return -1;
+        goto error;
     }
     if (v == NULL) {
         v = PyUnicode_FromString(">>> ");
@@ -129,8 +133,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
     }
     Py_XDECREF(v);
     if (PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
-        PyErr_Print();
-        return -1;
+        goto error;
     }
     if (v == NULL) {
         v = PyUnicode_FromString("... ");
@@ -164,7 +167,10 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
             } else {
                 nomem_count = 0;
             }
-            PyErr_Print();
+            if (_PyErr_PrintWithExitcode(exitcode)) {
+                err = E_EXITCODE;
+                break;
+            }
             flush_io();
         } else {
             nomem_count = 0;
@@ -176,6 +182,12 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
 #endif
     } while (ret != E_EOF);
     return err;
+
+error:
+    if (_PyErr_PrintWithExitcode(exitcode)) {
+        return E_EXITCODE;
+    }
+    return -1;
 }
 
 
@@ -188,7 +200,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
         return -1;
     }
 
-    int err = _PyRun_InteractiveLoopObject(fp, filename_obj, flags);
+    int err = _PyRun_InteractiveLoop(fp, filename_obj, flags, NULL);
     Py_DECREF(filename_obj);
     return err;
 
@@ -459,8 +471,8 @@ set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
 
 
 int
-_PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
-                        PyCompilerFlags *flags)
+_PyRun_SimpleFile(FILE *fp, PyObject *filename, int closeit,
+                  PyCompilerFlags *flags, int *exitcode)
 {
     int ret = -1;
 
@@ -521,7 +533,9 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
     flush_io();
     if (v == NULL) {
         Py_CLEAR(main_module);
-        PyErr_Print();
+        if (_PyErr_PrintWithExitcode(exitcode)) {
+            ret = E_EXITCODE;
+        }
         goto done;
     }
     Py_DECREF(v);
@@ -530,7 +544,9 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
   done:
     if (set_file_name) {
         if (PyDict_PopString(dict, "__file__", NULL) < 0) {
-            PyErr_Print();
+            if (_PyErr_PrintWithExitcode(exitcode)) {
+                ret = E_EXITCODE;
+            }
         }
     }
     Py_XDECREF(main_module);
@@ -546,14 +562,16 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     if (filename_obj == NULL) {
         return -1;
     }
-    int res = _PyRun_SimpleFileObject(fp, filename_obj, closeit, flags);
+    int res = _PyRun_SimpleFile(fp, filename_obj, closeit, flags, NULL);
     Py_DECREF(filename_obj);
     return res;
 }
 
 
 int
-_PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags) {
+_PyRun_SimpleString(const char *command, const char* name,
+                    PyCompilerFlags *flags, int *exitcode)
+{
     PyObject *main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL) {
         return -1;
@@ -566,8 +584,10 @@ _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompil
     } else {
         PyObject* the_name = PyUnicode_FromString(name);
         if (!the_name) {
-            PyErr_Print();
             Py_DECREF(main_module);
+            if (_PyErr_PrintWithExitcode(exitcode)) {
+                return E_EXITCODE;
+            }
             return -1;
         }
         res = _PyRun_StringFlagsWithName(command, the_name, Py_file_input, dict, dict, flags, 0);
@@ -575,7 +595,9 @@ _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompil
     }
     Py_DECREF(main_module);
     if (res == NULL) {
-        PyErr_Print();
+        if (_PyErr_PrintWithExitcode(exitcode)) {
+            return E_EXITCODE;
+        }
         return -1;
     }
 
@@ -586,7 +608,7 @@ _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompil
 int
 PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 {
-    return _PyRun_SimpleStringFlagsWithName(command, NULL, flags);
+    return _PyRun_SimpleString(command, NULL, flags, NULL);
 }
 
 static int
@@ -675,21 +697,36 @@ _Py_HandleSystemExitAndKeyboardInterrupt(int *exitcode_p)
 }
 
 
-static void
-handle_system_exit(void)
+static int
+handle_system_exit(int *exitcode_p)
 {
-    int exitcode;
-    if (_Py_HandleSystemExitAndKeyboardInterrupt(&exitcode)) {
-        Py_Exit(exitcode);
+    if (exitcode_p != NULL) {
+        if (_Py_HandleSystemExitAndKeyboardInterrupt(exitcode_p)) {
+            return 1;
+        }
     }
+    else {
+        int exitcode;
+        if (_Py_HandleSystemExitAndKeyboardInterrupt(&exitcode)) {
+            Py_Exit(exitcode);
+        }
+    }
+    return 0;
 }
 
 
-static void
-_PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
+// Print the current exception.
+// Return 1 if the exitcode is not NULL and was set to a value.
+// Return 0 otherwise.
+static int
+_PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars, int *exitcode)
 {
+    int res = 0;
+
     PyObject *typ = NULL, *tb = NULL, *hook = NULL;
-    handle_system_exit();
+    if (handle_system_exit(exitcode)) {
+        return 1;
+    }
 
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     if (exc == NULL) {
@@ -732,7 +769,9 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
         PyObject* args[3] = {typ, exc, tb};
         PyObject *result = PyObject_Vectorcall(hook, args, 3, NULL);
         if (result == NULL) {
-            handle_system_exit();
+            if (handle_system_exit(exitcode)) {
+                res = 1;
+            }
 
             PyObject *exc2 = _PyErr_GetRaisedException(tstate);
             assert(exc2 && PyExceptionInstance_Check(exc2));
@@ -757,19 +796,27 @@ done:
     Py_XDECREF(typ);
     Py_XDECREF(exc);
     Py_XDECREF(tb);
+    return res;
+}
+
+static int
+_PyErr_PrintWithExitcode(int *exitcode)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_PrintEx(tstate, 1, exitcode);
 }
 
 void
 _PyErr_Print(PyThreadState *tstate)
 {
-    _PyErr_PrintEx(tstate, 1);
+    (void)_PyErr_PrintEx(tstate, 1, NULL);
 }
 
 void
 PyErr_PrintEx(int set_sys_last_vars)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyErr_PrintEx(tstate, set_sys_last_vars);
+    (void)_PyErr_PrintEx(tstate, set_sys_last_vars, NULL);
 }
 
 void

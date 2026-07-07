@@ -68,6 +68,9 @@ STDLIB_INSTALL = os.path.join(sys.prefix, sys.platlibdir,
 if not os.path.isfile(os.path.join(STDLIB_INSTALL, 'os.py')):
     STDLIB_INSTALL = None
 
+CODE_EXITCODE_123 = 'raise SystemExit(123)'
+
+
 def debug_build(program):
     program = os.path.basename(program)
     name = os.path.splitext(program)[0]
@@ -140,12 +143,16 @@ class EmbeddingTestsMixin:
             env = env.copy()
             env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
 
-        p = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             universal_newlines=True,
-                             env=env,
-                             cwd=cwd)
+        kwargs = dict(
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            env=env,
+            cwd=cwd,
+        )
+        if input is not None:
+            kwargs['stdin'] = subprocess.PIPE
+        p = subprocess.Popen(cmd, **kwargs)
         try:
             (out, err) = p.communicate(input=input, timeout=timeout)
         except:
@@ -589,6 +596,40 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             if expected_runtime_warning not in line
         ]
         return "\n".join(filtered_err_lines)
+
+    def test_init_run_main_code_exitcode(self):
+        env = dict(os.environ)
+        env['TEST_CODE'] = CODE_EXITCODE_123
+        self.run_embedded_interpreter("test_init_run_main_code_exitcode",
+                                      env=env)
+
+    def test_init_run_main_script_exitcode(self):
+        filename = os.path.abspath(os_helper.TESTFN + '.py')
+        with open(filename, 'x', encoding='utf8') as fp:
+            fp.write(CODE_EXITCODE_123)
+        self.addCleanup(os_helper.unlink, filename)
+
+        env = dict(os.environ)
+        env['TEST_SCRIPT'] = filename
+        self.run_embedded_interpreter("test_init_run_main_script_exitcode",
+                                      env=env)
+
+    def test_init_run_main_interactive_exitcode(self):
+        code = CODE_EXITCODE_123
+        self.run_embedded_interpreter("test_init_run_main_interactive_exitcode",
+                                      input=code)
+
+    def test_init_run_main_module_exitcode(self):
+        modname = '_testembed_testmodule'
+        filename = os.path.abspath(modname + '.py')
+        with open(filename, 'x', encoding='utf8') as fp:
+            fp.write(CODE_EXITCODE_123)
+        self.addCleanup(os_helper.unlink, filename)
+
+        env = dict(os.environ)
+        env['TEST_MODULE'] = modname
+        self.run_embedded_interpreter("test_init_run_main_module_exitcode",
+                                      env=env)
 
 
 def config_dev_mode(preconfig, config):

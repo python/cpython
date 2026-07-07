@@ -8,22 +8,25 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern int _PyRun_SimpleFileObject(
+extern int _PyRun_SimpleFile(
     FILE *fp,
     PyObject *filename,
     int closeit,
-    PyCompilerFlags *flags);
+    PyCompilerFlags *flags,
+    int *exitcode);
 
-extern int _PyRun_AnyFileObject(
+extern int _PyRun_AnyFile(
     FILE *fp,
     PyObject *filename,
     int closeit,
-    PyCompilerFlags *flags);
+    PyCompilerFlags *flags,
+    int *exitcode);
 
-extern int _PyRun_InteractiveLoopObject(
+extern int _PyRun_InteractiveLoop(
     FILE *fp,
     PyObject *filename,
-    PyCompilerFlags *flags);
+    PyCompilerFlags *flags,
+    int *exitcode);
 
 extern int _PyObject_SupportedAsScript(PyObject *);
 extern const char* _Py_SourceAsString(

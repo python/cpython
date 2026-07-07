@@ -1,6 +1,8 @@
 /* Python interpreter main program */
 
 #include "Python.h"
+#include "errcode.h"              // E_EXITCODE
+
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_fileutils.h"     // struct _Py_stat_struct
 #include "pycore_import.h"        // _PyImport_Fini2()
@@ -10,7 +12,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_pythonrun.h"     // _PyRun_AnyFileObject()
+#include "pycore_pythonrun.h"     // _PyRun_AnyFile()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Dedent()
 
@@ -259,8 +261,14 @@ pymain_run_command(wchar_t *command)
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
-    ret = _PyRun_SimpleStringFlagsWithName(PyBytes_AsString(bytes), "<string>", &cf);
+    int exitcode = 0;
+    ret = _PyRun_SimpleString(PyBytes_AsString(bytes), "<string>",
+                              &cf, &exitcode);
     Py_DECREF(bytes);
+
+    if (ret == E_EXITCODE) {
+        return exitcode;
+    }
     return (ret != 0);
 
 error:
@@ -270,7 +278,7 @@ error:
 
 
 static int
-pymain_start_pyrepl(int pythonstartup)
+pymain_run_pyrepl(int pythonstartup)
 {
     int res = 0;
     PyObject *console = NULL;
@@ -282,37 +290,37 @@ pymain_start_pyrepl(int pythonstartup)
     PyObject *pyrepl = PyImport_ImportModule("_pyrepl.main");
     if (pyrepl == NULL) {
         fprintf(stderr, "Could not import _pyrepl.main\n");
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
     console = PyObject_GetAttrString(pyrepl, "interactive_console");
     if (console == NULL) {
         fprintf(stderr, "Could not access _pyrepl.main.interactive_console\n");
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
     empty_tuple = PyTuple_New(0);
     if (empty_tuple == NULL) {
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
     kwargs = PyDict_New();
     if (kwargs == NULL) {
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
     main_module = PyImport_AddModuleRef("__main__");
     if (main_module == NULL) {
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
-    if (!PyDict_SetItemString(kwargs, "mainmodule", main_module)
-        && !PyDict_SetItemString(kwargs, "pythonstartup", pythonstartup ? Py_True : Py_False)) {
-        console_result = PyObject_Call(console, empty_tuple, kwargs);
-        if (console_result == NULL) {
-            res = pymain_exit_err_print();
-        }
+    PyObject *pythonstartup_obj = pythonstartup ? Py_True : Py_False;
+    if (PyDict_SetItemString(kwargs, "mainmodule", main_module) < 0
+        || PyDict_SetItemString(kwargs, "pythonstartup", pythonstartup_obj) < 0)
+    {
+        goto error;
     }
+
+    console_result = PyObject_Call(console, empty_tuple, kwargs);
+    if (console_result == NULL) {
+        goto error;
+    }
+
 done:
     Py_XDECREF(console_result);
     Py_XDECREF(kwargs);
@@ -321,6 +329,10 @@ done:
     Py_XDECREF(pyrepl);
     Py_XDECREF(main_module);
     return res;
+
+error:
+    res = pymain_exit_err_print();
+    goto done;
 }
 
 
@@ -329,19 +341,19 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
 {
     PyObject *module, *runmodule, *runargs, *result;
     if (PySys_Audit("cpython.run_module", "u", modname) < 0) {
-        return pymain_exit_err_print();
+        goto error;
     }
     runmodule = PyImport_ImportModuleAttrString("runpy",
                                                 "_run_module_as_main");
     if (runmodule == NULL) {
         fprintf(stderr, "Could not import runpy._run_module_as_main\n");
-        return pymain_exit_err_print();
+        goto error;
     }
     module = PyUnicode_FromWideChar(modname, -1);
     if (module == NULL) {
         fprintf(stderr, "Could not convert module name to unicode\n");
         Py_DECREF(runmodule);
-        return pymain_exit_err_print();
+        goto error;
     }
     runargs = _PyTuple_FromPair(module, set_argv0 ? Py_True : Py_False);
     if (runargs == NULL) {
@@ -349,17 +361,20 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
             "Could not create arguments for runpy._run_module_as_main\n");
         Py_DECREF(runmodule);
         Py_DECREF(module);
-        return pymain_exit_err_print();
+        goto error;
     }
     result = PyObject_Call(runmodule, runargs, NULL);
     Py_DECREF(runmodule);
     Py_DECREF(module);
     Py_DECREF(runargs);
     if (result == NULL) {
-        return pymain_exit_err_print();
+        goto error;
     }
     Py_DECREF(result);
     return 0;
+
+error:
+    return pymain_exit_err_print();
 }
 
 
@@ -406,9 +421,13 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
-    /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
+    /* _PyRun_AnyFile(closeit=1) calls fclose(fp) before running code */
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    int run = _PyRun_AnyFileObject(fp, filename, 1, &cf);
+    int exitcode = 0;
+    int run = _PyRun_AnyFile(fp, filename, 1, &cf, &exitcode);
+    if (run == E_EXITCODE) {
+        return exitcode;
+    }
     return (run != 0);
 }
 
@@ -417,14 +436,12 @@ pymain_run_file(const PyConfig *config)
 {
     PyObject *filename = PyUnicode_FromWideChar(config->run_filename, -1);
     if (filename == NULL) {
-        PyErr_Print();
-        return -1;
+        return pymain_exit_err_print();
     }
     PyObject *program_name = PyUnicode_FromWideChar(config->program_name, -1);
     if (program_name == NULL) {
         Py_DECREF(filename);
-        PyErr_Print();
-        return -1;
+        return pymain_exit_err_print();
     }
 
     int res = pymain_run_file_obj(program_name, filename,
@@ -478,7 +495,7 @@ pymain_run_startup(PyConfig *config, int *exitcode)
     }
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    (void) _PyRun_SimpleFileObject(fp, startup, 0, &cf);
+    (void) _PyRun_SimpleFile(fp, startup, 0, &cf, NULL);
     PyErr_Clear();
     fclose(fp);
     ret = 0;
@@ -538,6 +555,49 @@ _Py_COMP_DIAG_POP
 
 
 static int
+pymain_run_repl(PyConfig *config, int pythonstartup)
+{
+    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
+        goto error;
+    }
+
+    if (isatty(fileno(stdin))
+        && !_Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL"))
+    {
+        PyObject *pyrepl = PyImport_ImportModule("_pyrepl");
+        if (pyrepl != NULL) {
+            int run = pymain_run_pyrepl(pythonstartup);
+            Py_DECREF(pyrepl);
+            return run;
+        }
+
+        if (!PyErr_ExceptionMatches(PyExc_ModuleNotFoundError)) {
+            fprintf(stderr, "Could not import _pyrepl.main\n");
+            goto error;
+        }
+        PyErr_Clear();
+    }
+
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    PyObject *filename = PyUnicode_FromString("<stdin>");
+    if (filename == NULL) {
+        goto error;
+    }
+
+    int exitcode = 0;
+    int run = _PyRun_AnyFile(stdin, filename, 0, &cf, &exitcode);
+    Py_DECREF(filename);
+    if (run == E_EXITCODE) {
+        return exitcode;
+    }
+    return (run != 0);
+
+error:
+    return pymain_exit_err_print();
+}
+
+
+static int
 pymain_run_stdin(PyConfig *config)
 {
     if (stdin_is_interactive(config)) {
@@ -559,29 +619,7 @@ pymain_run_stdin(PyConfig *config)
         return pymain_exit_err_print();
     }
 
-    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
-        return pymain_exit_err_print();
-    }
-
-    int run;
-    if (isatty(fileno(stdin))
-        && !_Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
-        PyObject *pyrepl = PyImport_ImportModule("_pyrepl");
-        if (pyrepl != NULL) {
-            run = pymain_start_pyrepl(0);
-            Py_DECREF(pyrepl);
-            return run;
-        }
-        if (!PyErr_ExceptionMatches(PyExc_ModuleNotFoundError)) {
-            fprintf(stderr, "Could not import _pyrepl.main\n");
-            return pymain_exit_err_print();
-        }
-        PyErr_Clear();
-    }
-
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-    return (run != 0);
+    return pymain_run_repl(config, 0);
 }
 
 
@@ -595,38 +633,17 @@ pymain_repl(PyConfig *config, int *exitcode)
     }
 
     if (!(config->inspect && stdin_is_interactive(config) && config_run_code(config))) {
+        // leave exitcode unchanged
         return;
     }
 
     pymain_set_inspect(config, 0);
     if (pymain_run_interactive_hook(exitcode)) {
+        // leave exitcode unchanged
         return;
     }
 
-    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
-        return;
-    }
-
-    if (isatty(fileno(stdin))
-        && !_Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
-        PyObject *pyrepl = PyImport_ImportModule("_pyrepl");
-        if (pyrepl != NULL) {
-            int run = pymain_start_pyrepl(1);
-            *exitcode = (run != 0);
-            Py_DECREF(pyrepl);
-            return;
-        }
-        if (!PyErr_ExceptionMatches(PyExc_ModuleNotFoundError)) {
-            PyErr_Clear();
-            fprintf(stderr, "Could not import _pyrepl.main\n");
-            return;
-        }
-        PyErr_Clear();
-    }
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-    *exitcode = (run != 0);
-    return;
+    *exitcode = pymain_run_repl(config, 1);
 }
 
 
@@ -789,10 +806,9 @@ pymain_exit_error(PyStatus status)
 int
 Py_RunMain(void)
 {
-    int exitcode = 0;
-
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
+    int exitcode = 0;
     pymain_run_python(&exitcode);
 
     if (Py_FinalizeEx() < 0) {
