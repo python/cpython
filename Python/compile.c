@@ -7872,7 +7872,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
     metadata = PyDict_New();
     if (metadata == NULL) {
-        return NULL;
+        goto finally;
     }
 
     if (compiler_enter_anonymous_scope(c, mod) < 0) {
