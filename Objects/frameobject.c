@@ -9,6 +9,7 @@
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
 #include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
@@ -636,9 +637,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
                 goto error;
             }
 
-            int rc = PyList_Append(items, pair);
-            Py_DECREF(pair);
-            if (rc < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
                 goto error;
             }
         }
@@ -655,9 +654,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
                 goto error;
             }
 
-            int rc = PyList_Append(items, pair);
-            Py_DECREF(pair);
-            if (rc < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
                 goto error;
             }
         }
@@ -1117,7 +1114,7 @@ frame_back_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=3a84c22a55a63c79 input=9e528570d0e1f44a]*/
 {
     PyObject *res = (PyObject *)PyFrame_GetBack(self);
-    if (res == NULL) {
+    if (res == NULL && !PyErr_Occurred()) {
         Py_RETURN_NONE;
     }
     return res;
@@ -1890,6 +1887,7 @@ frame_trace_set_impl(PyFrameObject *self, PyObject *value)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 @getter
 frame.f_generator as frame_generator
@@ -1899,7 +1897,7 @@ Return the generator or coroutine associated with this frame, or None.
 
 static PyObject *
 frame_generator_get_impl(PyFrameObject *self)
-/*[clinic end generated code: output=97aeb2392562e55b input=00a2bd008b239ab0]*/
+/*[clinic end generated code: output=97aeb2392562e55b input=3ffba57ba10f84be]*/
 {
     if (self->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(self->f_frame);
@@ -2404,6 +2402,9 @@ PyFrame_GetBack(PyFrameObject *frame)
         prev = _PyFrame_GetFirstComplete(prev);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
+            if (back == NULL) {
+                return NULL;
+            }
         }
     }
     return (PyFrameObject*)Py_XNewRef(back);

@@ -299,8 +299,15 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
+    @unittest.skipIf(support.is_wasm32, "wasm ABI is incompatible with test expectations")
     def _test_issue18060(self, Vector):
         # Regression tests for gh-62260
+
+        # This test passes a struct of two doubles by value to atan2(), whose C
+        # signature is atan2(double, double), so it only works on platforms
+        # where the abi of a function that takes a struct with two doubles
+        # matches the abi of a function that takes two doubles. The wasm32 ABI
+        # does not satisfy this condition and the test breaks.
 
         # The call to atan2() should succeed if the
         # class fields were correctly cloned in the

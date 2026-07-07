@@ -194,15 +194,15 @@ def as_completed(fs, timeout=None):
     """An iterator over the given futures that yields each as it completes.
 
     Args:
-        fs: The sequence of Futures (possibly created by different Executors) to
-            iterate over.
-        timeout: The maximum number of seconds to wait. If None, then there
-            is no limit on the wait time.
+        fs: The sequence of Futures (possibly created by different
+            Executors) to iterate over.
+        timeout: The maximum number of seconds to wait.  If None, then
+            there is no limit on the wait time.
 
     Returns:
-        An iterator that yields the given Futures as they complete (finished or
-        cancelled). If any given Futures are duplicated, they will be returned
-        once.
+        An iterator that yields the given Futures as they complete
+        (finished or cancelled).  If any given Futures are duplicated,
+        they will be returned once.
 
     Raises:
         TimeoutError: If the entire result iterator could not be generated
@@ -258,19 +258,20 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the futures in the given sequence to complete.
 
     Args:
-        fs: The sequence of Futures (possibly created by different Executors) to
-            wait upon.
-        timeout: The maximum number of seconds to wait. If None, then there
-            is no limit on the wait time.
-        return_when: Indicates when this function should return. The options
-            are:
+        fs: The sequence of Futures (possibly created by different
+            Executors) to wait upon.
+        timeout: The maximum number of seconds to wait.  If None, then
+            there is no limit on the wait time.
+        return_when: Indicates when this function should return.
+            The options are:
 
             FIRST_COMPLETED - Return when any future finishes or is
                               cancelled.
             FIRST_EXCEPTION - Return when any future finishes by raising an
-                              exception. If no future raises an exception
+                              exception.  If no future raises an exception
                               then it is equivalent to ALL_COMPLETED.
-            ALL_COMPLETED -   Return when all futures finish or are cancelled.
+            ALL_COMPLETED -   Return when all futures finish or are
+                              cancelled.
 
     Returns:
         A named 2-tuple of sets. The first set, named 'done', contains the
@@ -404,11 +405,12 @@ class Future(object):
 
         Args:
             fn: A callable that will be called with this future as its only
-                argument when the future completes or is cancelled. The callable
-                will always be called by a thread in the same process in which
-                it was added. If the future has already completed or been
-                cancelled then the callable will be called immediately. These
-                callables are called in the order that they were added.
+                argument when the future completes or is cancelled.  The
+                callable will always be called by a thread in the same
+                process in which it was added.  If the future has already
+                completed or been cancelled then the callable will be
+                called immediately.  These callables are called in the
+                order that they were added.
         """
         with self._condition:
             if self._state not in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:
@@ -423,17 +425,19 @@ class Future(object):
         """Return the result of the call that the future represents.
 
         Args:
-            timeout: The number of seconds to wait for the result if the future
-                isn't done. If None, then there is no limit on the wait time.
+            timeout: The number of seconds to wait for the result if the
+                future isn't done.  If None, then there is no limit on the
+                wait time.
 
         Returns:
             The result of the call that the future represents.
 
         Raises:
             CancelledError: If the future was cancelled.
-            TimeoutError: If the future didn't finish executing before the given
-                timeout.
-            Exception: If the call raised then that exception will be raised.
+            TimeoutError: If the future didn't finish executing before the
+                given timeout.
+            Exception: If the call raised then that exception will be
+                raised.
         """
         try:
             with self._condition:
@@ -459,17 +463,17 @@ class Future(object):
 
         Args:
             timeout: The number of seconds to wait for the exception if the
-                future isn't done. If None, then there is no limit on the wait
-                time.
+                future isn't done.  If None, then there is no limit on the
+                wait time.
 
         Returns:
-            The exception raised by the call that the future represents or None
-            if the call completed without raising.
+            The exception raised by the call that the future represents or
+            None if the call completed without raising.
 
         Raises:
             CancelledError: If the future was cancelled.
-            TimeoutError: If the future didn't finish executing before the given
-                timeout.
+            TimeoutError: If the future didn't finish executing before the
+                given timeout.
         """
 
         with self._condition:
@@ -494,22 +498,23 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
 
         If the future has been cancelled (cancel() was called and returned
-        True) then any threads waiting on the future completing (though calls
-        to as_completed() or wait()) are notified and False is returned.
+        True) then any threads waiting on the future completing (though
+        calls to as_completed() or wait()) are notified and False is
+        returned.
 
         If the future was not cancelled then it is put in the running state
         (future calls to running() will return True) and True is returned.
 
         This method should be called by Executor implementations before
-        executing the work associated with this future. If this method returns
-        False then the work should not be executed.
+        executing the work associated with this future. If this method
+        returns False then the work should not be executed.
 
         Returns:
             False if the Future was cancelled, True otherwise.
 
         Raises:
-            RuntimeError: if this method was already called or if set_result()
-                or set_exception() was called.
+            RuntimeError: if this method was already called or if
+                set_result() or set_exception() was called.
         """
         with self._condition:
             if self._state == CANCELLED:
@@ -593,8 +598,9 @@ class Executor(object):
     def submit(self, fn, /, *args, **kwargs):
         """Submits a callable to be executed with the given arguments.
 
-        Schedules the callable to be executed as fn(*args, **kwargs) and returns
-        a Future instance representing the execution of the callable.
+        Schedules the callable to be executed as fn(*args, **kwargs) and
+        returns a Future instance representing the execution of the
+        callable.
 
         Returns:
             A Future representing the given call.
@@ -607,25 +613,25 @@ class Executor(object):
         Args:
             fn: A callable that will take as many arguments as there are
                 passed iterables.
-            timeout: The maximum number of seconds to wait. If None, then there
-                is no limit on the wait time.
-            chunksize: The size of the chunks the iterable will be broken into
-                before being passed to a child process. This argument is only
-                used by ProcessPoolExecutor; it is ignored by
+            timeout: The maximum number of seconds to wait. If None, then
+                there is no limit on the wait time.
+            chunksize: The size of the chunks the iterable will be broken
+                into before being passed to a child process.  This argument
+                is only used by ProcessPoolExecutor; it is ignored by
                 ThreadPoolExecutor.
             buffersize: The number of submitted tasks whose results have not
-                yet been yielded. If the buffer is full, iteration over the
+                yet been yielded.  If the buffer is full, iteration over the
                 iterables pauses until a result is yielded from the buffer.
-                If None, all input elements are eagerly collected, and a task is
-                submitted for each.
+                If None, all input elements are eagerly collected, and
+                a task is submitted for each.
 
         Returns:
-            An iterator equivalent to: map(func, *iterables) but the calls may
-            be evaluated out-of-order.
+            An iterator equivalent to: map(func, *iterables) but the calls
+            may be evaluated out-of-order.
 
         Raises:
-            TimeoutError: If the entire result iterator could not be generated
-                before the given timeout.
+            TimeoutError: If the entire result iterator could not be
+                generated before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
         if buffersize is not None and not isinstance(buffersize, int):
@@ -679,8 +685,8 @@ class Executor(object):
 
         Args:
             wait: If True then shutdown will not return until all running
-                futures have finished executing and the resources used by the
-                executor have been reclaimed.
+                futures have finished executing and the resources used by
+                the executor have been reclaimed.
             cancel_futures: If True then shutdown will cancel all pending
                 futures. Futures that are completed or running will not be
                 cancelled.

@@ -266,12 +266,6 @@ _Py_REF_IS_MERGED(Py_ssize_t ob_ref_shared)
     return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_MERGED;
 }
 
-static inline int
-_Py_REF_IS_QUEUED(Py_ssize_t ob_ref_shared)
-{
-    return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_QUEUED;
-}
-
 // Merge the local and shared reference count fields and add `extra` to the
 // refcount when merging.
 Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
@@ -836,9 +830,14 @@ _PyObject_IS_GC(PyObject *obj)
             && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
-// Fast inlined version of PyObject_Hash()
-static inline Py_hash_t
-_PyObject_HashFast(PyObject *op)
+// Fast inlined version of PyObject_Hash(). Dictionaries are very
+// likely to include string keys (class and instance attributes,
+// json, ...) so we include a fast path for strings.
+// This function should not be used in a collection if str is not
+// very likely, since it is slower than PyObject_Hash() on types
+// other than str. See gh-137759.
+static inline Py_ALWAYS_INLINE Py_hash_t
+_PyObject_HashDictKey(PyObject *op)
 {
     if (PyUnicode_CheckExact(op)) {
         Py_hash_t hash = PyUnstable_Unicode_GET_CACHED_HASH(op);

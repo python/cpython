@@ -354,7 +354,7 @@ clear_module_state(module_state *state)
 #define ERR_CHANNEL_INTERP_CLOSED -4
 #define ERR_CHANNEL_EMPTY -5
 #define ERR_CHANNEL_NOT_EMPTY -6
-#define ERR_CHANNEL_MUTEX_INIT -7
+#define ERR_CHANNEL_MUTEX_INIT -7  // currently unused
 #define ERR_CHANNELS_MUTEX_INIT -8
 #define ERR_NO_NEXT_CHANNEL_ID -9
 #define ERR_CHANNEL_CLOSED_WAITING -10
@@ -426,10 +426,6 @@ handle_channel_error(int err, PyObject *mod, int64_t cid)
                      "channel %" PRId64 " may not be closed "
                      "if not empty (try force=True)",
                      cid);
-    }
-    else if (err == ERR_CHANNEL_MUTEX_INIT) {
-        PyErr_SetString(state->ChannelError,
-                        "can't initialize mutex for new channel");
     }
     else if (err == ERR_CHANNELS_MUTEX_INIT) {
         PyErr_SetString(state->ChannelError,
@@ -921,7 +917,8 @@ static _channelends *
 _channelends_new(void)
 {
     _channelends *ends = GLOBAL_MALLOC(_channelends);
-    if (ends== NULL) {
+    if (ends == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     ends->numsendopen = 0;
@@ -1115,6 +1112,7 @@ _channel_new(PyThread_type_lock mutex, struct _channeldefaults defaults)
     assert(check_unbound(defaults.unboundop));
     _channel_state *chan = GLOBAL_MALLOC(_channel_state);
     if (chan == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     chan->mutex = mutex;
@@ -1313,6 +1311,7 @@ _channelref_new(int64_t cid, _channel_state *chan)
 {
     _channelref *ref = GLOBAL_MALLOC(_channelref);
     if (ref == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     ref->cid = cid;
@@ -1698,6 +1697,7 @@ _channel_set_closing(_channelref *ref, PyThread_type_lock mutex) {
     }
     chan->closing = GLOBAL_MALLOC(struct _channel_closing);
     if (chan->closing == NULL) {
+        PyErr_NoMemory();
         goto done;
     }
     chan->closing->ref = ref;
@@ -1740,7 +1740,8 @@ channel_create(_channels *channels, struct _channeldefaults defaults)
 {
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
-        return ERR_CHANNEL_MUTEX_INIT;
+        PyErr_NoMemory();
+        return -1;
     }
     _channel_state *chan = _channel_new(mutex, defaults);
     if (chan == NULL) {
@@ -2934,7 +2935,7 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     int64_t cid = channel_create(&_globals.channels, defaults);
     if (cid < 0) {
-        (void)handle_channel_error(-1, self, cid);
+        (void)handle_channel_error(cid, self, cid);
         return NULL;
     }
     module_state *state = get_module_state(self);
@@ -2947,10 +2948,8 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
                            &cidobj);
     if (handle_channel_error(err, self, cid)) {
         assert(cidobj == NULL);
-        err = channel_destroy(&_globals.channels, cid);
-        if (handle_channel_error(err, self, cid)) {
-            // XXX issue a warning?
-        }
+        assert(PyErr_Occurred());
+        (void)channel_destroy(&_globals.channels, cid);
         return NULL;
     }
     assert(cidobj != NULL);
