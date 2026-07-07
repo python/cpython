@@ -1214,19 +1214,24 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None):
 
-        sock.setblocking(False)
+        try:
+            sock.setblocking(False)
 
-        protocol = protocol_factory()
-        waiter = self.create_future()
-        if ssl:
-            sslcontext = None if isinstance(ssl, bool) else ssl
-            transport = self._make_ssl_transport(
-                sock, protocol, sslcontext, waiter,
-                server_side=server_side, server_hostname=server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout,
-                ssl_shutdown_timeout=ssl_shutdown_timeout)
-        else:
-            transport = self._make_socket_transport(sock, protocol, waiter)
+            protocol = protocol_factory()
+            waiter = self.create_future()
+            if ssl:
+                sslcontext = None if isinstance(ssl, bool) else ssl
+                transport = self._make_ssl_transport(
+                    sock, protocol, sslcontext, waiter,
+                    server_side=server_side, server_hostname=server_hostname,
+                    ssl_handshake_timeout=ssl_handshake_timeout,
+                    ssl_shutdown_timeout=ssl_shutdown_timeout)
+            else:
+                transport = self._make_socket_transport(sock, protocol, waiter)
+        except:
+            # gh-153133: close the socket if the transport is never created.
+            sock.close()
+            raise
 
         try:
             await waiter
