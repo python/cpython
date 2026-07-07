@@ -82,7 +82,7 @@ The different font weights and slants are:
       .. note::
 
          :meth:`!cget` and :meth:`configure` operate on a named font and raise
-         :exc:`TclError` for a wrapped font description.
+         :exc:`~tkinter.TclError` for a wrapped font description.
          Use :meth:`actual` to query the attributes of the latter.
 
    .. method:: config(**options)
