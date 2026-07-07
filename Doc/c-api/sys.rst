@@ -435,11 +435,6 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`RuntimeError` (other errors will not be silenced).
 
-   .. versionchanged:: 3.8.1
-
-      Exceptions derived from :class:`Exception` but not :class:`RuntimeError`
-      are no longer suppressed.
-
    The hook function is always called with an :term:`attached thread state` by
    the Python interpreter that raised the event.
 
@@ -466,6 +461,11 @@ accessible to C code.  They all work with the current interpreter thread's
       *userData* is the argument passed to PySys_AddAuditHook().
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.8.1
+
+      Exceptions derived from :class:`Exception` but not :class:`RuntimeError`
+      are no longer suppressed.
 
 
 .. _processcontrol:
