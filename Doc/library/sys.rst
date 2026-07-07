@@ -2240,9 +2240,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       The name of the lock implementation:
 
-      * ``"semaphore"``: a lock uses a semaphore
-      * ``"mutex+cond"``: a lock uses a mutex and a condition variable
-      * ``None`` if this information is unknown
+      * ``"pymutex"``: a lock uses the PyMutex implementation.
+      * ``None`` if the lock implementation is not exposed (e.g.:on Windows and WASI)
 
    .. attribute:: thread_info.version
 
