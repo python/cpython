@@ -1399,6 +1399,14 @@ encodings.
 | punycode           |         | Implement :rfc:`3492`.    |
 |                    |         | Stateful codecs are not   |
 |                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. warning::              |
+|                    |         |                           |
+|                    |         |    The decoding and       |
+|                    |         |    encoding algorithms    |
+|                    |         |    scale poorly, so       |
+|                    |         |    limit the length of    |
+|                    |         |    untrusted input.       |
 +--------------------+---------+---------------------------+
 | raw_unicode_escape |         | Latin-1 encoding with     |
 |                    |         | :samp:`\\u{XXXX}` and     |

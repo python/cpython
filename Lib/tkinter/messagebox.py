@@ -99,24 +99,24 @@ def showerror(title=None, message=None, **options):
 
 
 def askquestion(title=None, message=None, **options):
-    "Ask a question"
+    "Ask a question; return the symbolic name of the selected button"
     return _show(title, message, QUESTION, YESNO, **options)
 
 
 def askokcancel(title=None, message=None, **options):
-    "Ask if operation should proceed; return true if the answer is ok"
+    "Ask if operation should proceed; return True if the answer is ok"
     s = _show(title, message, QUESTION, OKCANCEL, **options)
     return s == OK
 
 
 def askyesno(title=None, message=None, **options):
-    "Ask a question; return true if the answer is yes"
+    "Ask a question; return True if the answer is yes"
     s = _show(title, message, QUESTION, YESNO, **options)
     return s == YES
 
 
 def askyesnocancel(title=None, message=None, **options):
-    "Ask a question; return true if the answer is yes, None if cancelled."
+    "Ask a question; return True if the answer is yes, None if cancelled"
     s = _show(title, message, QUESTION, YESNOCANCEL, **options)
     # s might be a Tcl index object, so convert it to a string
     s = str(s)
@@ -126,7 +126,7 @@ def askyesnocancel(title=None, message=None, **options):
 
 
 def askretrycancel(title=None, message=None, **options):
-    "Ask if operation should be retried; return true if the answer is yes"
+    "Ask if operation should be retried; return True if the answer is retry"
     s = _show(title, message, WARNING, RETRYCANCEL, **options)
     return s == RETRY
 

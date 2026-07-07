@@ -1481,6 +1481,21 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    They hold the legacy representation of ``sys.last_exc``, as returned
    from :func:`exc_info` above.
 
+
+.. data:: lazy_modules
+
+   A :class:`set` of fully qualified module name strings that have been lazily
+   imported in the current interpreter but not yet loaded.  When a
+   lazily imported module is accessed for the first time, its name is removed
+   from this set.
+
+   This attribute is intended for debugging and introspection.
+
+   See also :func:`set_lazy_imports` and :pep:`810`.
+
+   .. versionadded:: 3.15
+
+
 .. data:: maxsize
 
    An integer giving the maximum value a variable of type :c:type:`Py_ssize_t` can

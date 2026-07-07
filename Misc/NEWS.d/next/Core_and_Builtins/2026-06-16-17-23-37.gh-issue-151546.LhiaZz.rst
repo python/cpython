@@ -1,0 +1,3 @@
+Fix the stack limit check if Python is linked to musl (ex: Alpine Linux).
+Use the stack size set by the linker to compute the stack limits. Patch by
+Victor Stinner.

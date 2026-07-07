@@ -550,6 +550,53 @@ class CommonReadTest(ReadTest):
             self.assertIs(fobj.seekable(), True)
 
 
+class ReadSizeRecorder(io.BytesIO):
+    # Records the largest size ever passed to read(), so a test can check
+    # that tarfile does not request far more data than the archive holds
+    # (which on a real file would pre-allocate it).
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max_read_size = 0
+
+    def read(self, size=-1):
+        if size is not None and size >= 0:
+            self.max_read_size = max(self.max_read_size, size)
+        return super().read(size)
+
+
+@support.cpython_only
+class ExtendedHeaderMemoryTest(unittest.TestCase):
+    # gh-151497: the size of a GNU long name/link or a pax extended header is
+    # read from the archive and is untrusted.  A crafted header can claim a
+    # size far larger than the file actually contains; opening such an archive
+    # must not try to read (and so pre-allocate) the claimed size in one go.
+
+    def crafted_archive(self, hdrtype):
+        tarinfo = tarfile.TarInfo("A")
+        tarinfo.type = hdrtype
+        tarinfo.size = 0xFFFFFFFF  # ~4 GiB claimed in a 512-byte header
+        return tarinfo.tobuf(format=tarfile.GNU_FORMAT)
+
+    def check(self, hdrtype):
+        fobj = ReadSizeRecorder(self.crafted_archive(hdrtype))
+        try:
+            with tarfile.open(fileobj=fobj, mode="r:") as tar:
+                tar.getmembers()
+        except tarfile.ReadError:
+            pass  # a truncated header is fine; we only check the allocation
+        # The bogus ~4 GiB size must never reach a single read() call.
+        self.assertLessEqual(fobj.max_read_size, tarfile._EXTHEADER_READ_CHUNK)
+
+    def test_gnu_longname_oversized_size(self):
+        self.check(tarfile.GNUTYPE_LONGNAME)
+
+    def test_gnu_longlink_oversized_size(self):
+        self.check(tarfile.GNUTYPE_LONGLINK)
+
+    def test_pax_header_oversized_size(self):
+        self.check(tarfile.XHDTYPE)
+
+
 class MiscReadTestBase(CommonReadTest):
     is_stream = False
 
@@ -4414,6 +4461,30 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_file("c", symlink_to='b')
 
     @symlink_test
+    def test_sneaky_hardlink_fallback_deep(self):
+        # (CVE-2026-11940)
+        with ArchiveMaker() as arc:
+            arc.add("a/b/s", symlink_to=os.path.join("..", "escape"))
+            arc.add("s", hardlink_to=os.path.join("a", "b", "s"))
+
+        with self.check_context(arc.open(), 'data'):
+            e = self.expect_exception(
+                tarfile.LinkFallbackError,
+                "link 's' would be extracted as a copy of "
+                + "'a/b/s', which was rejected")
+            self.assertIsInstance(e.__cause__,
+                                  tarfile.LinkOutsideDestinationError)
+
+        for filter in 'tar', 'fully_trusted':
+            with self.subTest(filter), self.check_context(arc.open(), filter):
+                if not os_helper.can_symlink():
+                    self.expect_file("a/")
+                    self.expect_file("a/b/")
+                else:
+                    self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
+                    self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
+
+    @symlink_test
     def test_exfiltration_via_symlink(self):
         # (CVE-2025-4138)
         # Test changing symlinks that result in a symlink pointing outside
@@ -4467,6 +4538,98 @@ class TestExtractionFilters(unittest.TestCase):
                 if sys.platform != "win32":
                     st_mode = cc.outerdir.stat().st_mode
                     self.assertNotEqual(st_mode & 0o777, 0o777)
+
+    @symlink_test
+    @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
+    @unittest.skipUnless(hasattr(os, 'lchown'), "missing os.lchown")
+    @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
+    @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
+    def test_chown_links_on_extract(self, link_type):
+        with ArchiveMaker() as arc:
+            arc.add("test.txt",
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+            arc.add("link",
+                    type=link_type,
+                    linkname='test.txt',
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+
+        with (
+            os_helper.temp_dir() as tmpdir,
+            arc.open() as tar,
+            unittest.mock.patch("os.chown") as mock_chown,
+            unittest.mock.patch("os.lchown") as mock_lchown,
+            unittest.mock.patch("os.geteuid") as mock_geteuid,
+        ):
+            # Set UID to 0 so chown() is attempted.
+            mock_geteuid.return_value = 0
+            tar.extract("link", path=tmpdir, filter='data')
+            extract_path = os.path.join(tmpdir, "link")
+
+            if link_type == tarfile.SYMTYPE:
+                mock_chown.assert_not_called()
+                mock_lchown.assert_called_once_with(extract_path, -1, -1)
+            else:
+                mock_chown.assert_has_calls([
+                    unittest.mock.call(extract_path, -1, -1),
+                    unittest.mock.call(extract_path, -1, -1)
+                ])
+                mock_lchown.assert_not_called()
+
+    @symlink_test
+    @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
+    @unittest.skipUnless(hasattr(os, 'lchown'), "missing os.lchown")
+    @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
+    @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
+    def test_chown_links_on_extractall(self, link_type):
+        with ArchiveMaker() as arc:
+            arc.add("test.txt",
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+            arc.add("link",
+                    type=link_type,
+                    linkname='test.txt',
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+
+        with (
+            os_helper.temp_dir() as tmpdir,
+            arc.open() as tar,
+            unittest.mock.patch("os.chown") as mock_chown,
+            unittest.mock.patch("os.lchown") as mock_lchown,
+            unittest.mock.patch("os.geteuid") as mock_geteuid,
+        ):
+            # Set UID to 0 so chown() is attempted.
+            mock_geteuid.return_value = 0
+            tar.extractall(path=tmpdir, filter='data')
+            extract_link_path = os.path.join(tmpdir, "link")
+            extract_file_path = os.path.join(tmpdir, "test.txt")
+
+            if link_type == tarfile.SYMTYPE:
+                mock_chown.assert_called_once_with(extract_file_path, -1, -1)
+                mock_lchown.assert_called_once_with(extract_link_path, -1, -1)
+            else:
+                mock_chown.assert_has_calls([
+                    unittest.mock.call(extract_file_path, -1, -1),
+                    unittest.mock.call(extract_link_path, -1, -1)
+                ])
+                mock_lchown.assert_not_called()
+
+    def test_extract_filters_target(self):
+        # Test that when extract() falls back to extracting (rather than
+        # linking) a hardlink target, it filters the target.
+        with ArchiveMaker() as arc:
+            arc.add("target")
+            arc.add("link", hardlink_to="target")
+        def testing_filter(member, path):
+            if member.name == 'target':
+                # target: set read-only
+                return member.replace(mode=stat.S_IRUSR)
+            # link: don't overwrite the mode
+            return member.replace(mode=None)
+        tempdir = pathlib.Path(TEMPDIR) / 'extract'
+        with os_helper.temp_dir(tempdir), arc.open() as tar:
+            tar.extract("link", path=tempdir, filter=testing_filter)
+            path = tempdir / 'link'
+            if os_helper.can_chmod():
+                self.assertFalse(path.stat().st_mode & stat.S_IWUSR)
 
     def test_link_fallback_normalizes(self):
         # Make sure hardlink fallbacks work for non-normalized paths for all
@@ -4830,6 +4993,22 @@ class TestExtractionFilters(unittest.TestCase):
 
         with self.check_context(arc.open(errorlevel='boo!'), filtererror_filter):
             self.expect_exception(TypeError)  # errorlevel is not int
+
+    @support.subTests('format', [tarfile.GNU_FORMAT, tarfile.PAX_FORMAT])
+    def test_getmembers_big_size(self, format):
+        # gh-151981: A loop in seek() for streaming files tried to read the
+        # declared number of blocks even at EOF
+        tinfo = tarfile.TarInfo("huge-file")
+        tinfo.size = 1 << 64
+        bio = io.BytesIO()
+        # Write header without data
+        bio.write(tinfo.tobuf(format))
+
+        # Reset & try to get contents
+        bio.seek(0)
+        with tarfile.open(fileobj=bio, mode="r|") as tar:
+            with self.assertRaises(tarfile.ReadError):
+                tar.getmembers()
 
 
 class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):

@@ -4641,7 +4641,8 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
 
         if (strcmp(spec->name, "int_max_str_digits") == 0) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
-            return PyLong_FromLong(interp->long_state.max_str_digits);
+            int maxdigits = _Py_atomic_load_int(&interp->long_state.max_str_digits);
+            return PyLong_FromLong(maxdigits);
         }
     }
 

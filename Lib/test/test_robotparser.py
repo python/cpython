@@ -773,6 +773,37 @@ class HttpErrorsTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         self.assertFalse(parser.can_fetch("*", url + '/path/file.html'))
 
 
+class UserAgentSiteTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
+
+    class RobotHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.headers.get('User-Agent').startswith('Python-urllib'):
+                self.send_error(403, "Forbidden access")
+            else:
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"User-agent: *\nDisallow:")
+
+        def log_message(self, format, *args):
+            pass
+
+    def testUserAgentFilteringSite(self):
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        file_url = url + "/document"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(robots_url)
+        parser.read()
+        self.assertTrue(parser.disallow_all)
+        self.assertFalse(parser.can_fetch("*", file_url))
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(urllib.request.Request(robots_url, headers={'User-Agent': 'cybermapper'}))
+        parser.read()
+        self.assertFalse(parser.disallow_all)
+        self.assertTrue(parser.can_fetch("*", file_url))
+
+
 @support.requires_working_socket()
 class NetworkTestCase(unittest.TestCase):
 

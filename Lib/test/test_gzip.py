@@ -351,6 +351,17 @@ class TestGzip(BaseTest):
             self.assertEqual(dataRead, data1)
             self.assertEqual(fRead.mtime, mtime)
 
+    def test_mtime_with_open(self):
+        mtime = 123456789
+        with gzip.open(self.filename, "wb", mtime=mtime) as fWrite:
+            fWrite.write(data1)
+        with gzip.open(self.filename, "rb") as fRead:
+            self.assertTrue(hasattr(fRead, 'mtime'))
+            self.assertIsNone(fRead.mtime)
+            dataRead = fRead.read()
+            self.assertEqual(dataRead, data1)
+            self.assertEqual(fRead.mtime, mtime)
+
     def test_mtime_out_of_range(self):
         for mtime in (-1, 2**32):
             with gzip.GzipFile(self.filename, 'w', mtime=mtime) as fWrite:

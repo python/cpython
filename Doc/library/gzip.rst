@@ -28,7 +28,7 @@ Note that additional file formats which can be decompressed by the
 The module defines the following items:
 
 
-.. function:: open(filename, mode='rb', compresslevel=6, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode='rb', compresslevel=6, encoding=None, errors=None, newline=None, *, mtime=None)
 
    Open a gzip-compressed file in binary or text mode, returning a :term:`file
    object`.
@@ -43,9 +43,12 @@ The module defines the following items:
    The *compresslevel* argument is an integer from 0 to 9, as for the
    :class:`GzipFile` constructor.
 
+   The keyword-only argument *mtime* represents a Unix timestamp.
+
    For binary mode, this function is equivalent to the :class:`GzipFile`
-   constructor: ``GzipFile(filename, mode, compresslevel)``. In this case, the
-   *encoding*, *errors* and *newline* arguments must not be provided.
+   constructor: ``GzipFile(filename, mode, compresslevel, mtime=mtime)``.
+   In this case, the *encoding*, *errors* and *newline* arguments must not
+   be provided.
 
    For text mode, a :class:`GzipFile` object is created, and wrapped in an
    :class:`io.TextIOWrapper` instance with the specified encoding, error
@@ -65,6 +68,10 @@ The module defines the following items:
       The default compression level was reduced to 6 (down from 9).
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
+
+   .. versionchanged:: next
+      Added keyword-only argument *mtime* which is passed to the class
+      constructor of :class:`~gzip.GzipFile`.
 
 .. exception:: BadGzipFile
 

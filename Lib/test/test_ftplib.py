@@ -8,6 +8,7 @@ import socket
 import io
 import errno
 import os
+import sys
 import threading
 import time
 import unittest
@@ -590,6 +591,8 @@ class TestFTPClass(TestCase):
         # Ensure the connection gets closed; sock attribute should be None
         self.assertEqual(self.client.sock, None)
 
+    @unittest.skipIf(sys.platform == 'cygwin',
+                     "MSG_OOB doesn't work properly on Cygwin")
     def test_abort(self):
         self.client.abort()
 

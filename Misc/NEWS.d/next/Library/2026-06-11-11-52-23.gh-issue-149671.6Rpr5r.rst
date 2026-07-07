@@ -1,0 +1,3 @@
+Restore compatibility with setuptools ``-nspkg.pth`` files in the :mod:`site`
+module. Inject ``sitedir`` variable in the frame which executes pth code.
+Patch by Victor Stinner.

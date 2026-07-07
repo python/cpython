@@ -40,6 +40,9 @@ def main():
     build_python = subcommands.add_parser(
         "build-python", help="Build the build Python"
     )
+    pythoninfo_build = subcommands.add_parser(
+        "pythoninfo-build", help="Display build info of the build Python"
+    )
     configure_host = subcommands.add_parser(
         "configure-host",
         help="Run `configure` for the "
@@ -53,6 +56,9 @@ def main():
     build_host = subcommands.add_parser(
         "build-host", help="Build the host/WASI Python"
     )
+    pythoninfo_host = subcommands.add_parser(
+        "pythoninfo-host", help="Display build info of the host/WASI Python"
+    )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
@@ -61,8 +67,10 @@ def main():
         configure_build,
         make_build,
         build_python,
+        pythoninfo_build,
         configure_host,
         make_host,
+        pythoninfo_host,
         build_host,
     ):
         subcommand.add_argument(
@@ -118,7 +126,13 @@ def main():
             help="Command template for running the WASI host; defaults to "
             f"`{default_host_runner}`",
         )
-    for subcommand in build, configure_host, make_host, build_host:
+    for subcommand in (
+        build,
+        configure_host,
+        make_host,
+        build_host,
+        pythoninfo_host,
+    ):
         subcommand.add_argument(
             "--host-triple",
             action="store",
@@ -137,6 +151,8 @@ def main():
         case "build-python":
             _build.configure_build_python(context)
             _build.make_build_python(context)
+        case "pythoninfo-build":
+            _build.pythoninfo_build_python(context)
         case "configure-host":
             _build.configure_wasi_python(context)
         case "make-host":
@@ -144,13 +160,22 @@ def main():
         case "build-host":
             _build.configure_wasi_python(context)
             _build.make_wasi_python(context)
+        case "pythoninfo-host":
+            _build.pythoninfo_wasi_python(context)
         case "build":
+            # Configure and build the build Python
             _build.configure_build_python(context)
             _build.make_build_python(context)
+            _build.pythoninfo_build_python(context)
+
+            # Configure and build the host/WASI Python
             _build.configure_wasi_python(context)
             _build.make_wasi_python(context)
+            _build.pythoninfo_wasi_python(context)
         case "clean":
             _build.clean_contents(context)
+        case None:
+            parser.print_help()
         case _:
             raise ValueError(f"Unknown subcommand {context.subcommand!r}")
 

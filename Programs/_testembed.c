@@ -41,8 +41,13 @@ char **main_argv;
 #define PROGRAM "test_embed"
 
 /* Use path starting with "./" avoids a search along the PATH */
-#define PROGRAM_NAME L"./_testembed"
-#define PROGRAM_NAME_UTF8 "./_testembed"
+#ifdef __CYGWIN__
+#  define PROGRAM_NAME L"./_testembed.exe"
+#  define PROGRAM_NAME_UTF8 "./_testembed.exe"
+#else
+#  define PROGRAM_NAME L"./_testembed"
+#  define PROGRAM_NAME_UTF8 "./_testembed"
+#endif
 
 #define INIT_LOOPS 4
 
@@ -2710,8 +2715,8 @@ do_tstate_ensure(void *arg)
     PyThreadState_Release(tokens[2]);
     PyThreadState_Release(tokens[1]);
     PyThreadState_Release(tokens[0]);
-    PyInterpreterGuard_Close(guard);
     _Py_atomic_store_int(&data->done, 1);
+    PyInterpreterGuard_Close(guard);
 }
 
 static int

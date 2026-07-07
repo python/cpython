@@ -1939,8 +1939,11 @@ class FrozenDictTests(unittest.TestCase):
         # Subclass which overrides the constructor
         created = frozendict(x=1)
         class FrozenDictSubclass(frozendict):
-            def __new__(self):
-                return created
+            def __new__(cls, *args, **kwargs):
+                if args or kwargs:
+                    return super().__new__(cls, *args, **kwargs)
+                else:
+                    return created
 
         fd = FrozenDictSubclass.fromkeys("abc")
         self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
@@ -1952,6 +1955,20 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(type(fd), FrozenDictSubclass)
         self.assertEqual(created, frozendict(x=1))
 
+        # Dict subclass with a constructor which returns a frozendict
+        # by default
+        class DictSubclass(dict):
+            def __new__(cls, *args, **kwargs):
+                if args or kwargs:
+                    return super().__new__(cls, *args, **kwargs)
+                else:
+                    return created
+
+        fd = DictSubclass.fromkeys("abc")
+        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
+        self.assertEqual(type(fd), DictSubclass)
+        self.assertEqual(created, frozendict(x=1))
+
         # Subclass which doesn't override the constructor
         class FrozenDictSubclass2(frozendict):
             pass
@@ -1959,16 +1976,6 @@ class FrozenDictTests(unittest.TestCase):
         fd = FrozenDictSubclass2.fromkeys("abc")
         self.assertEqual(fd, frozendict(a=None, b=None, c=None))
         self.assertEqual(type(fd), FrozenDictSubclass2)
-
-        # Dict subclass which overrides the constructor
-        class DictSubclass(dict):
-            def __new__(self):
-                return created
-
-        fd = DictSubclass.fromkeys("abc")
-        self.assertEqual(fd, frozendict(x=1, a=None, b=None, c=None))
-        self.assertEqual(type(fd), DictSubclass)
-        self.assertEqual(created, frozendict(x=1))
 
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
