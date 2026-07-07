@@ -655,14 +655,14 @@ specialize_dict_access_inline(
         return 0;
     }
     if (base_op == LOAD_ATTR) {
-        Py_ssize_t valid_offset = (char *)&values->valid - (char *)owner;
-        if (valid_offset != (uint16_t)valid_offset) {
+        Py_ssize_t validity_offset = (char *)&values->valid - (char *)owner;
+        if (validity_offset != (uint16_t)validity_offset) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
             return 0;
         }
         _PyLoadAttrInstanceValueCache *iv_cache =
             (_PyLoadAttrInstanceValueCache *)cache;
-        iv_cache->value_offset = (uint16_t)valid_offset;
+        iv_cache->validity_offset = (uint16_t)validity_offset;
         iv_cache->index = (uint16_t)offset;
         write_u32(iv_cache->version, tp_version);
     }
@@ -1304,13 +1304,6 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
         }
-        Py_ssize_t valid_offset =
-            (char *)&_PyObject_InlineValues(owner)->valid - (char *)owner;
-        if (valid_offset != (uint16_t)valid_offset) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
-            return 0;
-        }
-        cache->value_offset = (uint16_t)valid_offset;
         write_u32(cache->keys_version, shared_keys_version);
         specialize(instr, is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
     }

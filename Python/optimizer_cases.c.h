@@ -2640,6 +2640,10 @@
             break;
         }
 
+        case _CHECK_MANAGED_OBJECT_HAS_VALUES_OFFSET: {
+            break;
+        }
+
         case _LOAD_ATTR_INSTANCE_VALUE: {
             JitOptRef owner;
             JitOptRef attr;

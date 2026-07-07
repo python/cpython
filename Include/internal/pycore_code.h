@@ -108,7 +108,6 @@ typedef struct {
 typedef struct {
     _Py_BackoffCounter counter;
     uint16_t type_version[2];
-    uint16_t value_offset;
     union {
         uint16_t keys_version[2];
         uint16_t dict_offset;
@@ -125,7 +124,7 @@ typedef struct {
 typedef struct {
     _Py_BackoffCounter counter;
     uint16_t version[2];
-    uint16_t value_offset;
+    uint16_t validity_offset;
     uint16_t index;
 } _PyLoadAttrInstanceValueCache;
 
