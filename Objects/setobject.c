@@ -166,8 +166,7 @@ set_compare_entry_lock_held(PySetObject *so, setentry *table, setentry *entry,
 
 // This is similar to set_compare_entry_lock_held() but we don't need to
 // incref startkey before comparing and we don't need to check if the set has
-// changed.  This also omits the PyUnicode_CheckExact() special case since it
-// doesn't help much for frozensets.
+// changed.
 static inline Py_ALWAYS_INLINE int
 set_compare_frozenset(PySetObject *so, setentry *table, setentry *ep,
                                  PyObject *key, Py_hash_t hash)
