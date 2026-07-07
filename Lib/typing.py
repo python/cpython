@@ -991,7 +991,7 @@ def evaluate_forward_ref(
 
     """
     if format == _lazy_annotationlib.Format.STRING:
-        return forward_ref.__forward_arg__
+        return forward_ref.__resolved_str__
     if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
 
