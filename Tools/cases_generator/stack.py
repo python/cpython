@@ -228,7 +228,8 @@ class Stack:
         for i, name in enumerate(cached_items):
             out.start_line()
             if (op_name == "_CALL_TYPE_1" and outputs == 2) \
-                or (op_name == "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW" and outputs == 3):
+                or (op_name == "_SHUFFLE_3_LOAD_CONST_INLINE_BORROW" and outputs == 3) \
+                or (op_name == "_RROT_3" and outputs == 3):
                 out.emit("Py_GCC_ATTRIBUTE((unused))\n")
             out.emit(f"_PyStackRef _stack_item_{i} = {name};\n")
             self.push(Local.register(f"_stack_item_{i}"))
