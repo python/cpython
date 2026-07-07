@@ -420,6 +420,15 @@ class AuthHandler_CRAM_MD5(SimpleIMAPHandler):
             self._send_tagged(tag, 'NO', 'No access')
 
 
+class AuthHandler_PLAIN(SimpleIMAPHandler):
+    capabilities = 'LOGINDISABLED AUTH=PLAIN'
+    def cmd_AUTHENTICATE(self, tag, args):
+        self.server.auth_args = args
+        self._send_textline('+')
+        self.server.response = yield
+        self._send_tagged(tag, 'OK', 'Logged in.')
+
+
 class NewIMAPTestsMixin:
     client = None
 
@@ -691,6 +700,35 @@ class NewIMAPTestsMixin:
         msg = re.escape("CRAM-MD5 authentication is not supported")
         with self.assertRaisesRegex(imaplib.IMAP4.error, msg):
             client.login_cram_md5("tim", b"tanstaaftanstaaf")
+
+    def test_login_plain_ascii(self):
+        client, server = self._setup(AuthHandler_PLAIN)
+        self.assertIn('AUTH=PLAIN', client.capabilities)
+        ret, _ = client.login_plain("prem", "pass")
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.auth_args, ['PLAIN'])
+        self.assertEqual(server.response, b'AHByZW0AcGFzcw==\r\n')
+
+    def test_login_plain_utf8(self):
+        client, server = self._setup(AuthHandler_PLAIN)
+        self.assertIn('AUTH=PLAIN', client.capabilities)
+        ret, _ = client.login_plain("pręm", "żółć")
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.response, b'AHByxJltAMW8w7PFgsSH\r\n')
+
+    def test_login_plain_bytes(self):
+        # bytes are accepted and sent verbatim (not re-encoded).
+        client, server = self._setup(AuthHandler_PLAIN)
+        ret, _ = client.login_plain(b'pr\xc4\x99m', b'\xc5\xbc\xc3\xb3\xc5\x82\xc4\x87')
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.response, b'AHByxJltAMW8w7PFgsSH\r\n')
+
+    def test_login_plain_nul(self):
+        client, _ = self._setup(AuthHandler_PLAIN)
+        with self.assertRaises(ValueError):
+            client.login_plain('user\0', 'pass')
+        with self.assertRaises(ValueError):
+            client.login_plain('user', b'pa\0ss')
 
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
@@ -1172,6 +1210,35 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(data, [None])
         self.assertEqual(server.args, ['COPY', '4827313:4828442', '"New folder"'])
+
+    def test_move(self):
+        client, server = self._setup(make_simple_handler('MOVE'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.move('2:4', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', 'MEETING'])
+
+        typ, data = client.move('2:4', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', '"New folder"'])
+
+    def test_uid_move(self):
+        client, server = self._setup(make_simple_handler('UID',
+            completed='UID MOVE completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.uid('move', '4827313:4828442', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', 'MEETING'])
+
+        typ, data = client.uid('move', '4827313:4828442', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', '"New folder"'])
 
     def test_store(self):
         client, server = self._setup(make_simple_handler('STORE', [
@@ -1672,6 +1739,24 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['"New folder"'])
 
+    def test_id(self):
+        client, server = self._setup(make_simple_handler('ID',
+            ['* ID ("name" "Cyrus" "version" "1.5")']))
+        typ, data = client.id({'name': 'imaplib', 'version': '3.16'})
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'("name" "Cyrus" "version" "1.5")'])
+        self.assertEqual(server.args, ['("name" "imaplib" "version" "3.16")'])
+
+        typ, data = client.id()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['NIL'])
+
+        # Fields and values are quoted strings; a None value is sent
+        # as NIL.
+        typ, data = client.id({'name': 'my "client"', 'os': None})
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, [r'("name" "my \"client\"" "os" NIL)'])
+
     def test_setquota(self):
         client, server = self._setup(make_simple_handler('SETQUOTA',
             ['* QUOTA "" (STORAGE 512)']))
@@ -1751,10 +1836,20 @@ class NewIMAPTestsMixin:
             client.NONEXISTENT
 
     def test_control_characters(self):
-        client, _ = self._setup(SimpleIMAPHandler)
-        for c0 in support.control_characters_c0():
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for c in '\0\r\n':
             with self.assertRaises(ValueError):
-                client.login(f'user{c0}', 'pass')
+                client.select(f'a{c}b')
+        # Other control characters are valid in a quoted string and can
+        # occur in mailbox names returned by the server, so the client
+        # must be able to send them back.
+        for c in support.control_characters_c0():
+            if c in '\0\r\n':
+                continue
+            typ, _ = client.select(f'a{c}b')
+            self.assertEqual(typ, 'OK')
+            self.assertEqual(server.is_selected, [f'"a{c}b"'])
 
     # property tests
 
@@ -1895,8 +1990,8 @@ class ThreadedNetworkedTests(unittest.TestCase):
     @threading_helper.reap_threads
     def test_bracket_flags(self):
 
-        # This violates RFC 3501, which disallows ']' characters in tag names,
-        # but imaplib has allowed producing such tags forever, other programs
+        # This violates RFC 3501, which disallows ']' characters in flags,
+        # but imaplib has allowed producing such flags forever, other programs
         # also produce them (eg: OtherInbox's Organizer app as of 20140716),
         # and Gmail, for example, accepts them and produces them.  So we
         # support them.  See issue #21815.

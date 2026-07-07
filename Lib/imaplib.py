@@ -1,6 +1,6 @@
 """IMAP4 client.
 
-Based on RFC 2060.
+Based on RFC 3501.
 
 Public class:           IMAP4
 Public variable:        Debug
@@ -43,8 +43,8 @@ IMAP4_SSL_PORT = 993
 AllowedVersions = ('IMAP4REV1', 'IMAP4')        # Most recent first
 
 # Maximal line length when calling readline(). This is to prevent
-# reading arbitrary length lines. RFC 3501 and 2060 (IMAP 4rev1)
-# don't specify a line length. RFC 2683 suggests limiting client
+# reading arbitrary length lines. RFC 3501 (IMAP 4rev1)
+# doesn't specify a line length. RFC 2683 suggests limiting client
 # command lines to 1000 octets and that servers should be prepared
 # to accept command lines up to 8000 octets, so we used to use 10K here.
 # In the modern world (eg: gmail) the response to, for example, a
@@ -73,6 +73,7 @@ Commands = {
         'GETANNOTATION':('AUTH', 'SELECTED'),
         'GETQUOTA':     ('AUTH', 'SELECTED'),
         'GETQUOTAROOT': ('AUTH', 'SELECTED'),
+        'ID':           ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
         'IDLE':         ('AUTH', 'SELECTED'),
         'MYRIGHTS':     ('AUTH', 'SELECTED'),
         'LIST':         ('AUTH', 'SELECTED'),
@@ -129,7 +130,9 @@ Untagged_status = re.compile(
 # We compile these in _mode_xxx.
 _Literal = br'.*{(?P<size>\d+)}$'
 _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
-_control_chars = re.compile(b'[\x00-\x1F\x7F]')
+# Only NUL, CR and LF are unsafe (they cannot be represented even in
+# a quoted string); other control characters are sent quoted.
+_control_chars = re.compile(b'[\x00\r\n]')
 _non_astring_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff%*\\"]')
 _non_list_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff\\"]')
 _quoted = re.compile(br'"(?:[^"\\]|\\.)*+"')
@@ -695,6 +698,28 @@ class IMAP4:
         return typ, [quotaroot, quota]
 
 
+    def id(self, fields=None):
+        """Send client identification information to the server.
+
+        (typ, [data]) = <instance>.id(fields)
+
+        'fields' is a mapping of field names to values; a value can be
+        None.  'data' is the identification information sent back by
+        the server, in the same parenthesized list form.
+        """
+        name = 'ID'
+        if fields:
+            items = []
+            for field, value in fields.items():
+                items.append(self._quote(field))
+                items.append(b'NIL' if value is None else self._quote(value))
+            arg = b'(' + b' '.join(items) + b')'
+        else:
+            arg = 'NIL'
+        typ, dat = self._simple_command(name, arg)
+        return self._untagged_response(typ, dat, name)
+
+
     def idle(self, duration=None):
         """Return an iterable IDLE context manager producing untagged responses.
         If the argument is not None, limit iteration to 'duration' seconds.
@@ -735,6 +760,30 @@ class IMAP4:
         self.state = 'AUTH'
         self._refresh_capabilities()
         return typ, dat
+
+
+    def login_plain(self, user, password):
+        """Authenticate using the PLAIN SASL mechanism (RFC 4616).
+
+        This is a plaintext authentication mechanism that can be used
+        instead of login() when UTF-8 support is required.  Since the
+        credentials are only base64-encoded, not encrypted, it should
+        only be used over a TLS-protected connection.
+
+        'user' and 'password' can be strings (encoded to UTF-8) or
+        bytes-like objects.
+        """
+        if isinstance(user, str):
+            user = user.encode('utf-8')
+        if isinstance(password, str):
+            password = password.encode('utf-8')
+        if b'\0' in user or b'\0' in password:
+            raise ValueError("NUL is not allowed in user name or password")
+        # An empty authorization identity (RFC 4616) makes the server
+        # derive it from the authentication identity; a non-empty one
+        # requests proxy authorization and is often rejected.
+        response = b'\0' + bytes(user) + b'\0' + bytes(password)
+        return self.authenticate("PLAIN", lambda _: response)
 
 
     def login_cram_md5(self, user, password):
@@ -786,6 +835,14 @@ class IMAP4:
         typ, dat = self._simple_command(name, self._astring(directory),
                                         self._list_mailbox(pattern))
         return self._untagged_response(typ, dat, name)
+
+    def move(self, message_set, new_mailbox):
+        """Move 'message_set' messages onto end of 'new_mailbox'.
+
+        (typ, [data]) = <instance>.move(message_set, new_mailbox)
+        """
+        return self._simple_command('MOVE', self._sequence_set(message_set),
+                                    self._astring(new_mailbox))
 
     def myrights(self, mailbox):
         """Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
@@ -1029,7 +1086,7 @@ class IMAP4:
                              (command, self.state,
                               ', '.join(Commands[command])))
         name = 'UID'
-        if command == 'COPY':
+        if command in ('COPY', 'MOVE'):
             message_set, new_mailbox = args
             args = (self._sequence_set(message_set),
                     self._astring(new_mailbox))
@@ -1170,7 +1227,7 @@ class IMAP4:
             if isinstance(arg, str):
                 arg = bytes(arg, self._encoding)
             if _control_chars.search(arg):
-                raise ValueError("Control characters not allowed in commands")
+                raise ValueError("NUL, CR and LF not allowed in commands")
             data = data + b' ' + arg
 
         literal = self.literal
