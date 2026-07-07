@@ -53,7 +53,7 @@ jobs:
     name: 'Check if Autoconf files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     container:
       image: ghcr.io/python/autoconf:2025.01.02.12581854023
     timeout-minutes: 60
@@ -96,7 +96,7 @@ jobs:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
@@ -239,18 +239,18 @@ jobs:
         - false
         - true
         os:
-        - ubuntu-24.04
-        - ubuntu-24.04-arm
+        - ubuntu-26.04
+        - ubuntu-26.04-arm
         exclude:
         # Do not test BOLT with free-threading, to conserve resources
         - bolt: true
           free-threading: true
         # BOLT currently crashes during instrumentation on aarch64
-        - os: ubuntu-24.04-arm
+        - os: ubuntu-26.04-arm
           bolt: true
         include:
         # Enable CPU-intensive tests on ARM (default build only)
-        - os: ubuntu-24.04-arm
+        - os: ubuntu-26.04-arm
           bolt: false
           free-threading: false
           test-opts: '-u cpu'
@@ -270,7 +270,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-26.04]
         ssllib:
           # See Tools/ssl/make_ssl_data.py for notes on adding a new version
           ## OpenSSL
@@ -346,7 +346,7 @@ jobs:
           - arch: aarch64
             runs-on: macos-26
           - arch: x86_64
-            runs-on: ubuntu-24.04
+            runs-on: ubuntu-26.04
 
     runs-on: ${{ matrix.runs-on }}
     steps:
@@ -393,7 +393,7 @@ jobs:
 
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
@@ -504,7 +504,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-26.04]
     env:
       OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
@@ -568,7 +568,7 @@ jobs:
 
   cross-build-linux:
     name: Cross build Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'

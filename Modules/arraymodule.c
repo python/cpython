@@ -3401,22 +3401,15 @@ array_modexec(PyObject *m)
     CREATE_TYPE(m, state->ArrayIterType, &arrayiter_spec);
     Py_SET_TYPE(state->ArrayIterType, &PyType_Type);
 
-    if (PyModule_AddObjectRef(m, "ArrayType",
-                              (PyObject *)state->ArrayType) < 0) {
-        return -1;
-    }
-
     PyObject *mutablesequence = PyImport_ImportModuleAttrString(
             "collections.abc", "MutableSequence");
     if (!mutablesequence) {
-        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
     PyObject *res = PyObject_CallMethod(mutablesequence, "register", "O",
                                         (PyObject *)state->ArrayType);
     Py_DECREF(mutablesequence);
     if (!res) {
-        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
     Py_DECREF(res);

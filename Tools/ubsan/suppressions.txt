@@ -20,6 +20,3 @@ pointer-overflow:Modules/_zstd/decompressor.c
 
 # Modules/_io/stringio.c:350:24: runtime error: addition of unsigned offset to 0x7fd01ec25850 overflowed to 0x7fd01ec2584c
 pointer-overflow:Modules/_io/stringio.c
-
-# Objects/bytesobject.c:1190:25: runtime error: applying zero offset to null pointer
-pointer-overflow:Objects/bytesobject.c
