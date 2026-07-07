@@ -91,6 +91,10 @@ static_assert(SAMPLE_HEADER_FIXED_SIZE == 13,
 static_assert(FILE_FOOTER_SIZE == 32,
              "FILE_FOOTER_SIZE must remain 32");
 
+/* Minimum on-disk bytes of a string (1) and frame (7) table entry. */
+#define MIN_STRING_ENTRY_SIZE 1
+#define MIN_FRAME_ENTRY_SIZE  7
+
 /* Buffer sizes: 512KB balances syscall amortization against memory use,
  * and aligns well with filesystem block sizes and zstd dictionary windows */
 #define WRITE_BUFFER_SIZE       (512 * 1024)
@@ -108,9 +112,6 @@ static_assert(FILE_FOOTER_SIZE == 32,
 
 /* Maximum stack depth we'll buffer for delta encoding */
 #define MAX_STACK_DEPTH         256
-
-/* Initial capacity for RLE pending buffer */
-#define INITIAL_RLE_CAPACITY    64
 
 /* Initial capacities for dynamic arrays - sized to reduce reallocations */
 #define INITIAL_STRING_CAPACITY 4096
@@ -226,12 +227,6 @@ typedef struct {
     uint8_t opcode;
 } FrameKey;
 
-/* Pending RLE sample - buffered for run-length encoding */
-typedef struct {
-    uint64_t timestamp_delta;
-    uint8_t status;
-} PendingRLESample;
-
 /* Thread entry - tracks per-thread state for delta encoding */
 typedef struct {
     uint64_t thread_id;
@@ -244,10 +239,9 @@ typedef struct {
     size_t prev_stack_capacity;
 
     /* RLE pending buffer - samples waiting to be written as a repeat group */
-    PendingRLESample *pending_rle;
-    size_t pending_rle_count;
-    size_t pending_rle_capacity;
-    int has_pending_rle;  /* Flag: do we have buffered repeats? */
+    uint8_t *pending_rle;
+    size_t pending_rle_bytes;
+    size_t pending_rle_samples;
 } ThreadEntry;
 
 /* Main binary writer structure */

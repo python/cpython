@@ -96,7 +96,7 @@ typedef struct {
     SCREEN *screen;          /* NULL after the screen has been deleted */
     FILE *outfp;             /* owned output stream, or NULL */
     FILE *infp;              /* owned input stream, or NULL */
-    PyObject *stdscr;        /* the screen's standard window, or NULL */
+    PyObject *stdscr_win;    /* the screen's standard window, or NULL */
 } PyCursesScreenObject;
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"

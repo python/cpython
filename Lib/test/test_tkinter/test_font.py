@@ -44,6 +44,70 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(TypeError, self.font.cget)
         self.assertRaises(TypeError, self.font.cget, 'size', 'weight')
 
+    def test_create(self):
+        sizetype = int if self.wantobjects else str
+
+        # A new named font is created from the font description...
+        f = font.Font(root=self.root, font=('Times', 20, 'bold'))
+        self.assertIn(f.name, font.names(self.root))
+        self.assertEqual(f.actual('weight'), 'bold')
+        self.assertEqual(f.cget('size'), sizetype(20))
+
+        # ... or from the keyword options.
+        f = font.Font(root=self.root, family='Times', size=20, weight='bold')
+        self.assertIn(f.name, font.names(self.root))
+        self.assertEqual(f.actual('weight'), 'bold')
+        self.assertEqual(f.cget('size'), sizetype(20))
+
+        # Explicit options override the corresponding settings of *font*.
+        f = font.Font(root=self.root, font=('Times', 20, 'bold'), weight='normal')
+        self.assertEqual(f.actual('weight'), 'normal')
+        self.assertEqual(f.cget('size'), sizetype(20))
+
+        # The new font can be given an explicit name.
+        f = font.Font(root=self.root, name='testfont', font=('Times', 20))
+        self.assertEqual(f.name, 'testfont')
+        self.assertIn('testfont', font.names(self.root))
+        self.assertEqual(f.cget('size'), sizetype(20))
+        # Reusing the name of an existing font fails.
+        self.assertRaises(tkinter.TclError, font.Font, root=self.root,
+                          name='testfont', font=('Times', 10))
+
+    def test_existing(self):
+        sizetype = int if self.wantobjects else str
+
+        # With a name, refer to the existing named font.
+        named = font.Font(root=self.root, name='existingfont', family='Times', size=20)
+        f = font.Font(root=self.root, name='existingfont', exists=True)
+        self.assertEqual(f.name, 'existingfont')
+        self.assertEqual(f.cget('size'), sizetype(20))
+        # Referring to a non-existent named font fails.
+        self.assertRaises(tkinter.TclError, font.Font, root=self.root,
+                          name='nosuchfont', exists=True)
+        # A name and options reconfigure the existing font.
+        font.Font(root=self.root, name='existingfont', exists=True, size=8)
+        self.assertEqual(f.cget('size'), sizetype(8))
+
+        # With a description and no name, the description is wrapped without
+        # creating a new named font (gh-143990), so that it is used without
+        # loss of precision by actual(), measure() and metrics().
+        f = font.Font(root=self.root, font=('Times', 20, 'bold'), exists=True)
+        self.assertEqual(f.name, ('Times', 20, 'bold'))
+        self.assertEqual(str(f), 'Times 20 bold')
+        self.assertNotIn(f.name, font.names(self.root))
+        self.assertEqual(f.actual('weight'), 'bold')
+        self.assertEqual(f.actual('size'), sizetype(20))
+        # It can be used as a widget option, with the same effect as the
+        # description itself (gh-143990).
+        self.assertEqual(tkinter.Label(self.root, font=f).cget('font'),
+                         tkinter.Label(self.root, font=f.name).cget('font'))
+
+        # Options cannot be combined with a wrapped description.
+        self.assertRaises(TypeError, font.Font, root=self.root,
+                          font=('Times', 20), exists=True, weight='bold')
+        # A name or a description is required.
+        self.assertRaises(TypeError, font.Font, root=self.root, exists=True)
+
     def test_copy(self):
         f = font.Font(root=self.root, family='Times', size=10, weight='bold')
         copied = f.copy()
@@ -60,10 +124,7 @@ class FontTest(AbstractTkTest, unittest.TestCase):
 
     def test_unicode_family(self):
         family = 'MS \u30b4\u30b7\u30c3\u30af'
-        try:
-            f = font.Font(root=self.root, family=family, exists=True)
-        except tkinter.TclError:
-            f = font.Font(root=self.root, family=family, exists=False)
+        f = font.Font(root=self.root, family=family)
         self.assertEqual(f.cget('family'), family)
         del f
         gc_collect()
@@ -95,6 +156,19 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertIsNot(font1, font2)
         self.assertEqual(font1, font2)
         self.assertNotEqual(font1, font1.copy())
+
+        # Wrapped descriptions (gh-143990) compare by the description.
+        w1 = font.Font(root=self.root, font=('Times', 20, 'bold'), exists=True)
+        w2 = font.Font(root=self.root, font=('Times', 20, 'bold'), exists=True)
+        self.assertIsNot(w1, w2)
+        self.assertEqual(w1, w2)
+        w3 = font.Font(root=self.root, font=('Times', 12), exists=True)
+        self.assertNotEqual(w1, w3)
+        # A wrapped description never equals a named font, even one whose name
+        # is the string form of the description.
+        named = font.Font(root=self.root, name=str(w1), family='Courier')
+        self.assertNotEqual(w1, named)
+        self.assertNotEqual(named, w1)
 
         self.assertNotEqual(font1, 0)
         self.assertEqual(font1, ALWAYS_EQ)
