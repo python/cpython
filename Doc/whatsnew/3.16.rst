@@ -217,7 +217,7 @@ curses
 encodings
 ---------
 
-* Add the ``imap4-utf-7`` codec, implementing the modified UTF-7 encoding
+* Add the ``utf-7-imap`` codec, implementing the modified UTF-7 encoding
   used for international IMAP4 mailbox names (:rfc:`3501`).
   (Contributed by Serhiy Storchaka in :gh:`66788`.)
 

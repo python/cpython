@@ -17,7 +17,7 @@ from base64 import b64encode, b64decode
 
 ### Codec APIs
 
-def imap4_utf_7_encode(input, errors='strict'):
+def utf_7_imap_encode(input, errors='strict'):
     if errors != 'strict':
         raise UnicodeError(f"Unsupported error handling: {errors}")
     res = bytearray()
@@ -50,7 +50,7 @@ def imap4_utf_7_encode(input, errors='strict'):
     flush(len(input))
     return res.take_bytes(), len(input)
 
-def imap4_utf_7_decode(input, errors='strict'):
+def utf_7_imap_decode(input, errors='strict'):
     if errors != 'strict':
         raise UnicodeError(f"Unsupported error handling: {errors}")
     input = bytes(input)
@@ -67,7 +67,7 @@ def imap4_utf_7_decode(input, errors='strict'):
             flush(i)
             j = input.find(b'-', i + 1)
             if j < 0:
-                raise UnicodeDecodeError('imap4-utf-7', input, i, n,
+                raise UnicodeDecodeError('utf-7-imap', input, i, n,
                                          'unterminated shift sequence')
             if j == i + 1:          # '&-'
                 res.append('&')
@@ -79,7 +79,7 @@ def imap4_utf_7_decode(input, errors='strict'):
                 except binascii.Error:
                     data = b''
                 if not data or len(data) % 2:
-                    raise UnicodeDecodeError('imap4-utf-7', input, i, j + 1,
+                    raise UnicodeDecodeError('utf-7-imap', input, i, j + 1,
                                              'invalid shift sequence')
                 res.append(data.decode('utf-16-be'))
             i = j + 1
@@ -87,24 +87,24 @@ def imap4_utf_7_decode(input, errors='strict'):
         elif b' '[0] <= c <= b'~'[0]:
             i += 1
         else:
-            raise UnicodeDecodeError('imap4-utf-7', input, i, i + 1,
+            raise UnicodeDecodeError('utf-7-imap', input, i, i + 1,
                                      'unexpected byte')
     flush(n)
     return ''.join(res), len(input)
 
 class Codec(codecs.Codec):
     def encode(self, input, errors='strict'):
-        return imap4_utf_7_encode(input, errors)
+        return utf_7_imap_encode(input, errors)
     def decode(self, input, errors='strict'):
-        return imap4_utf_7_decode(input, errors)
+        return utf_7_imap_decode(input, errors)
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        return imap4_utf_7_encode(input, self.errors)[0]
+        return utf_7_imap_encode(input, self.errors)[0]
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        return imap4_utf_7_decode(input, self.errors)[0]
+        return utf_7_imap_decode(input, self.errors)[0]
 
 class StreamWriter(Codec, codecs.StreamWriter):
     pass
@@ -116,7 +116,7 @@ class StreamReader(Codec, codecs.StreamReader):
 
 def getregentry():
     return codecs.CodecInfo(
-        name='imap4-utf-7',
+        name='utf-7-imap',
         encode=Codec().encode,
         decode=Codec().decode,
         incrementalencoder=IncrementalEncoder,

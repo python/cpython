@@ -1384,14 +1384,6 @@ encodings.
 |                    |         | Only ``errors='strict'``  |
 |                    |         | is supported.             |
 +--------------------+---------+---------------------------+
-| imap4-utf-7        |         | Modified UTF-7 encoding   |
-|                    |         | of :rfc:`3501` for IMAP4  |
-|                    |         | mailbox names.  Only      |
-|                    |         | ``errors='strict'`` is    |
-|                    |         | supported.                |
-|                    |         |                           |
-|                    |         | .. versionadded:: next    |
-+--------------------+---------+---------------------------+
 | mbcs               | ansi,   | Windows only: Encode the  |
 |                    | dbcs    | operand according to the  |
 |                    |         | ANSI codepage (CP_ACP).   |
@@ -1445,6 +1437,14 @@ encodings.
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
++--------------------+---------+---------------------------+
+| utf-7-imap         | mUTF-7  | Modified UTF-7 encoding   |
+|                    |         | of :rfc:`3501` for IMAP4  |
+|                    |         | mailbox names.  Only      |
+|                    |         | ``errors='strict'`` is    |
+|                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. versionadded:: next    |
 +--------------------+---------+---------------------------+
 
 .. versionchanged:: 3.8
