@@ -1,5 +1,5 @@
-Fixes a crash, when modifing :class:`types.MappingProxyType` exposed via a
-rich-compare operation with :func:`vars` function. It was possible to mutate
-the internals of builtins types via this technique.
-
-Now we pass not the original :class:`dict` instance, but its copy.
+Do not expose the internal mapping of :class:`types.MappingProxyType`
+when performing rich-compare operations with non-stdlib types.
+Previously, it was possible to mutate the internal mapping of a proxy there.
+Now we pass not the original :class:`dict` instance, but its copy,
+when dealing with custom types.
