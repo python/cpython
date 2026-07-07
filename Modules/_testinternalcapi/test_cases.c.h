@@ -9166,18 +9166,7 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _GUARD_KEYS_VERSION
-            {
-                uint32_t keys_version = read_u32(&this_instr[4].cache);
-                PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
-                PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-                PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
-                if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
-                    UPDATE_MISS_STATS(LOAD_ATTR);
-                    assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
-                }
-            }
+            /* Skip 2 cache entries */
             // _LOAD_ATTR_METHOD_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -9362,18 +9351,7 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _GUARD_KEYS_VERSION
-            {
-                uint32_t keys_version = read_u32(&this_instr[4].cache);
-                PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
-                PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-                PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
-                if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
-                    UPDATE_MISS_STATS(LOAD_ATTR);
-                    assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
-                }
-            }
+            /* Skip 2 cache entries */
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
