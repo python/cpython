@@ -369,6 +369,18 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
 
 .. versionadded:: 3.4
 
+.. class:: AddressFamily
+
+   An :class:`.IntEnum` collection whose members are the ``AF_*`` address
+   family constants.  This class can be used in type annotations and
+   documentation cross-references.
+
+.. class:: SocketKind
+
+   An :class:`.IntEnum` collection whose members are the ``SOCK_*`` socket
+   type constants.  This class can be used in type annotations and
+   documentation cross-references.
+
 .. data:: AF_UNIX
           AF_INET
           AF_INET6
