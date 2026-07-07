@@ -2620,8 +2620,7 @@ class ZipFile:
         # gh-81954: Warn if ZipFile is implicitly closed with unwritten end
         # records. GC cleanup order is non-deterministic and can result in data
         # loss.
-        if (self.fp is not None and self.mode in ('w', 'x', 'a')
-                and self._didModify):
+        if self.fp is not None and self.mode in ('w', 'x', 'a'):
             warnings.warn(f"unclosed ZipFile {self!r}",
                           ResourceWarning, source=self, stacklevel=2)
         self.close()
