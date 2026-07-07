@@ -71,13 +71,17 @@ class FontChooserTest(AbstractTkTest, unittest.TestCase):
 
     def test_configure_font_instance(self):
         # A Font instance can be passed as the font, both to the
-        # constructor and to configure().
+        # constructor and to configure().  The dialog may store it as
+        # the font name or as a resolved description depending on the
+        # platform, so compare the actual attributes.
+        def actual(spec):
+            return font.Font(self.root, spec, exists=True).actual()
         f = font.Font(self.root, family='Courier', size=14, weight='bold')
         fc = FontChooser(self.root, font=f)
-        self.assertEqual(str(fc.cget('font')), str(f))
+        self.assertEqual(actual(fc.cget('font')), f.actual())
         f2 = font.Font(self.root, family='Times', size=11)
         fc.configure(font=f2)
-        self.assertEqual(str(fc.cget('font')), str(f2))
+        self.assertEqual(actual(fc.cget('font')), f2.actual())
 
     def test_configure_visible_readonly(self):
         with self.assertRaises(tkinter.TclError):
@@ -101,7 +105,7 @@ class FontChooserTest(AbstractTkTest, unittest.TestCase):
         # The description is wrapped without creating a named font.
         self.assertEqual(str(selected), 'Courier 10')
         self.assertFalse(selected.delete_font)
-        self.assertEqual(selected.actual('size'), 10)
+        self.assertEqual(int(selected.actual('size')), 10)
         # Replacing the callback deletes the old Tcl command.
         self.fc.configure(command=lambda font: None)
         self.assertNotEqual(self.fc._command_name, name)
