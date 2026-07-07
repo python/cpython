@@ -3262,7 +3262,13 @@ array_modexec(PyObject *m)
     CREATE_TYPE(m, state->ArrayIterType, &arrayiter_spec);
     Py_SET_TYPE(state->ArrayIterType, &PyType_Type);
 
-    PyObject *mutablesequence = _PyImport_GetModuleAttrString(
+    // Older undocumented alias:
+    if (PyModule_AddObjectRef(m, "ArrayType",
+                              (PyObject *)state->ArrayType) < 0) {
+        return -1;
+    }
+
+    PyObject *mutablesequence = _PyImport_ImportModuleAttrString(
             "collections.abc", "MutableSequence");
     if (!mutablesequence) {
         return -1;
