@@ -418,6 +418,15 @@ def _sanitize_filename(filename):
         filename = filename.replace(os.altsep, "/")
     return filename
 
+def _read_local_file_header(fp):
+    fheader = fp.read(sizeFileHeader)
+    if len(fheader) != sizeFileHeader:
+        raise BadZipFile("Truncated file header")
+    fheader = struct.unpack(structFileHeader, fheader)
+    if fheader[_FH_SIGNATURE] != stringFileHeader:
+        raise BadZipFile("Bad magic number for file header")
+    return fheader
+
 
 class ZipInfo:
     """Class with attributes describing each file in the ZIP archive."""
@@ -1648,7 +1657,7 @@ class _ZipRepacker:
     def _validate_local_file_entry(self, fp, offset, end_offset):
         fp.seek(offset)
         try:
-            fheader = self._read_local_file_header(fp)
+            fheader = _read_local_file_header(fp)
         except BadZipFile:
             return None
 
@@ -1713,15 +1722,6 @@ class _ZipRepacker:
             return None
 
         return entry_size
-
-    def _read_local_file_header(self, fp):
-        fheader = fp.read(sizeFileHeader)
-        if len(fheader) != sizeFileHeader:
-            raise BadZipFile("Truncated file header")
-        fheader = struct.unpack(structFileHeader, fheader)
-        if fheader[_FH_SIGNATURE] != stringFileHeader:
-            raise BadZipFile("Bad magic number for file header")
-        return fheader
 
     def _scan_data_descriptor(self, fp, offset, end_offset, zip64):
         dd_fmt = '<LLQQ' if zip64 else '<LLLL'
@@ -1825,7 +1825,7 @@ class _ZipRepacker:
 
     def _calc_local_file_entry_size(self, fp, zinfo):
         fp.seek(zinfo.header_offset)
-        fheader = self._read_local_file_header(fp)
+        fheader = _read_local_file_header(fp)
 
         if zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
             zip64 = fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff
@@ -2215,12 +2215,7 @@ class ZipFile:
                                self._fpclose, self._lock, lambda: self._writing)
         try:
             # Skip the file header:
-            fheader = zef_file.read(sizeFileHeader)
-            if len(fheader) != sizeFileHeader:
-                raise BadZipFile("Truncated file header")
-            fheader = struct.unpack(structFileHeader, fheader)
-            if fheader[_FH_SIGNATURE] != stringFileHeader:
-                raise BadZipFile("Bad magic number for file header")
+            fheader = _read_local_file_header(zef_file)
 
             fname = zef_file.read(fheader[_FH_FILENAME_LENGTH])
             if fheader[_FH_EXTRA_FIELD_LENGTH]:
