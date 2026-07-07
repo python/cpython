@@ -1626,6 +1626,22 @@ class NewIMAPTestsMixin:
         with self.assertRaises(AttributeError):
             client.NONEXISTENT
 
+    def test_control_characters(self):
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for c in '\0\r\n':
+            with self.assertRaises(ValueError):
+                client.select(f'a{c}b')
+        # Other control characters are valid in a quoted string and can
+        # occur in mailbox names returned by the server, so the client
+        # must be able to send them back.
+        for c in support.control_characters_c0():
+            if c in '\0\r\n':
+                continue
+            typ, _ = client.select(f'a{c}b')
+            self.assertEqual(typ, 'OK')
+            self.assertEqual(server.is_selected, [f'"a{c}b"'])
+
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = imaplib.IMAP4
