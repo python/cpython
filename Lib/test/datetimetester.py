@@ -3582,10 +3582,10 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45.400 ',        # Trailing space (gh-130959)
             '2009-04-19T12:30:45. 400',        # Space before fraction (gh-130959)
             '2020-2020',                       # Ambiguous 9-char date portion
-            '2009-04-19T12:30:45.+05:00',   # Empty fraction before offset
-            '2009-04-19T12:30:45.-05:00',   # Empty fraction before offset
-            '2009-04-19T12:30:45.Z',        # Empty fraction before Z
-            '2009-04-19T12:30:45,+05:00',   # Empty fraction (comma) before offset
+            '2009-04-19T12:30:45.+05:00',      # Empty fraction before offset
+            '2009-04-19T12:30:45.-05:00',      # Empty fraction before offset
+            '2009-04-19T12:30:45.Z',           # Empty fraction before Z
+            '2009-04-19T12:30:45,+05:00',      # Empty fraction (comma) before offset
         ]
 
         for bad_str in bad_strs:
