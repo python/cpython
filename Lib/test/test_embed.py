@@ -658,6 +658,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'cpu_count': -1,
         'faulthandler': False,
         'tracemalloc': 0,
+        'tracemalloc_sample_interval': 0,
         'perf_profiling': 0,
         'import_time': 0,
         'lazy_imports': -1,

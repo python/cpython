@@ -542,11 +542,16 @@ Miscellaneous options
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
-     tracing with a traceback limit of *NFRAME* frames.
+     tracing with a traceback limit of *NFRAME* frames.  Use
+     ``-X tracemalloc=NFRAME:INTERVAL`` to enable Poisson sampling with a
+     mean interval of *INTERVAL* bytes, which can reduce tracing overhead.
      See :func:`tracemalloc.start` and :envvar:`PYTHONTRACEMALLOC`
      for more information.
 
      .. versionadded:: 3.4
+
+     .. versionchanged:: 3.16
+        Added sampling support via ``NFRAME:INTERVAL`` syntax.
 
    * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
      length limitation <int_max_str_digits>`.  See also
@@ -1033,11 +1038,16 @@ conflict.
    Python memory allocations using the :mod:`tracemalloc` module. The value of
    the variable is the maximum number of frames stored in a traceback of a
    trace. For example, ``PYTHONTRACEMALLOC=1`` stores only the most recent
-   frame.
+   frame.  Use ``PYTHONTRACEMALLOC=NFRAME:INTERVAL`` to enable Poisson
+   sampling with a mean interval of *INTERVAL* bytes (e.g.
+   ``PYTHONTRACEMALLOC=1:524288`` for 512 KB sampling).
    See the :func:`tracemalloc.start` function for more information.
    This is equivalent to setting the :option:`-X` ``tracemalloc`` option.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.16
+      Added ``NFRAME:INTERVAL`` syntax for sampling support.
 
 
 .. envvar:: PYTHONPROFILEIMPORTTIME

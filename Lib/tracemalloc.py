@@ -276,7 +276,11 @@ class Trace:
     __slots__ = ("_trace",)
 
     def __init__(self, trace):
-        # trace is a tuple: (domain: int, size: int, traceback: tuple).
+        # trace is a tuple: (domain: int, size: int, traceback: tuple,
+        #   total_nframe: int[, real_size: int]).
+        # size is the effective size: in exact mode it equals real_size;
+        # in sampled mode it is an upscaled estimate of the bytes represented
+        # by the sample.
         # See Traceback constructor for the format of the traceback tuple.
         self._trace = trace
 
@@ -286,11 +290,22 @@ class Trace:
 
     @property
     def size(self):
+        """Effective size in bytes.
+
+        In exact mode this equals real_size.  In sampled mode this is an
+        upscaled estimate of the bytes represented by the sample."""
         return self._trace[1]
 
     @property
+    def real_size(self):
+        """Actual allocation size in bytes."""
+        if len(self._trace) > 4:
+            return self._trace[4]
+        return self._trace[1]  # old pickled snapshots
+
+    @property
     def traceback(self):
-        return Traceback(*self._trace[2:])
+        return Traceback(*self._trace[2:4])
 
     def __eq__(self, other):
         if not isinstance(other, Trace):
@@ -388,7 +403,7 @@ class Filter(BaseFilter):
             return self._match_frame(filename, lineno)
 
     def _match(self, trace):
-        domain, size, traceback, total_nframe = trace
+        domain, size, traceback, total_nframe = trace[:4]
         res = self._match_traceback(traceback)
         if self.domain is not None:
             if self.inclusive:
@@ -408,7 +423,7 @@ class DomainFilter(BaseFilter):
         return self._domain
 
     def _match(self, trace):
-        domain, size, traceback, total_nframe = trace
+        domain, size, traceback, total_nframe = trace[:4]
         return (domain == self.domain) ^ (not self.inclusive)
 
 
@@ -485,7 +500,7 @@ class Snapshot:
         tracebacks = {}
         if not cumulative:
             for trace in self.traces._traces:
-                domain, size, trace_traceback, total_nframe = trace
+                domain, size, trace_traceback, total_nframe = trace[:4]
                 try:
                     traceback = tracebacks[trace_traceback]
                 except KeyError:
@@ -506,7 +521,7 @@ class Snapshot:
         else:
             # cumulative statistics
             for trace in self.traces._traces:
-                domain, size, trace_traceback, total_nframe = trace
+                domain, size, trace_traceback, total_nframe = trace[:4]
                 for frame in trace_traceback:
                     try:
                         traceback = tracebacks[frame]

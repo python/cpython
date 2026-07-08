@@ -89,6 +89,7 @@ class CAPITests(unittest.TestCase):
             ("stdio_errors", str, None),
             ("stdlib_dir", str | None, "_stdlib_dir"),
             ("tracemalloc", int, None),
+            ("tracemalloc_sample_interval", int, None),
             ("use_environment", bool, None),
             ("use_frozen_modules", bool, None),
             ("use_hash_seed", bool, None),

@@ -363,12 +363,28 @@ Functions
     See also :func:`start` and :func:`stop` functions.
 
 
-.. function:: start(nframe: int=1)
+.. function:: start(nframe: int=1, sample_interval: int=0)
 
    Start tracing Python memory allocations: install hooks on Python memory
    allocators. Collected tracebacks of traces will be limited to *nframe*
    frames. By default, a trace of a memory block only stores the most recent
    frame: the limit is ``1``. *nframe* must be greater or equal to ``1``.
+
+   If *sample_interval* is ``0`` (the default), every allocation is traced.
+   If *sample_interval* is greater than zero, allocations are sampled using
+   a `Poisson process <https://en.wikipedia.org/wiki/Poisson_point_process>`_
+   with a mean inter-arrival of *sample_interval* bytes.  Sampling can
+   significantly reduce overhead while producing useful aggregate estimates.
+   In sampled mode, :attr:`Trace.size` is an upscaled estimate of the bytes
+   represented by the sample, while :attr:`Trace.real_size` is the actual
+   allocation size.
+
+   Both *nframe* and *sample_interval* can be passed by keyword:
+
+   .. code-block:: python
+
+      tracemalloc.start(sample_interval=512 * 1024)
+      tracemalloc.start(nframe=25, sample_interval=512 * 1024)
 
    You can still read the original number of total frames that composed the
    traceback by looking at the :attr:`Traceback.total_nframe` attribute.
@@ -382,11 +398,16 @@ Functions
    to measure how much memory is used by the :mod:`!tracemalloc` module.
 
    The :envvar:`PYTHONTRACEMALLOC` environment variable
-   (``PYTHONTRACEMALLOC=NFRAME``) and the :option:`-X` ``tracemalloc=NFRAME``
+   (``PYTHONTRACEMALLOC=NFRAME`` or ``PYTHONTRACEMALLOC=NFRAME:INTERVAL``)
+   and the :option:`-X` ``tracemalloc=NFRAME[:INTERVAL]``
    command line option can be used to start tracing at startup.
 
    See also :func:`stop`, :func:`is_tracing` and :func:`get_traceback_limit`
    functions.
+
+   .. versionchanged:: 3.16
+      Added the *sample_interval* parameter.  Both arguments can now be
+      passed by keyword.
 
 
 .. function:: stop()
@@ -697,7 +718,17 @@ Trace
 
    .. attribute:: size
 
-      Size of the memory block in bytes (``int``).
+      Size of the memory block in bytes (``int``).  When sampling is enabled,
+      this is an upscaled estimate of the total bytes the trace represents.
+      Use this value for aggregation.
+
+   .. attribute:: real_size
+
+      Actual allocation size in bytes (``int``).  In exact mode
+      (``sample_interval=0``), this equals :attr:`size`.  In sampled mode,
+      this is the real number of bytes requested by the allocation call.
+
+      .. versionadded:: 3.16
 
    .. attribute:: traceback
 
