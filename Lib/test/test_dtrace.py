@@ -51,6 +51,17 @@ def get_probe_binary():
     return binary
 
 
+def truncate_output(output, *, max_lines=3, max_chars=500):
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    omitted = len(lines) - max_lines
+    output = "; ".join(lines[:max_lines])
+    if omitted > 0:
+        output += f"; ... ({omitted} lines omitted)"
+    if len(output) > max_chars:
+        output = output[:max_chars - 3] + "..."
+    return output
+
+
 def normalize_trace_output(output):
     """Normalize DTrace output for comparison.
 
@@ -121,7 +132,8 @@ def run_readelf(cmd):
         raise AssertionError(
             f"Command {shlex.join(cmd)!r} failed "
             f"with exit code {proc.returncode}: "
-            f"stdout={stdout!r} stderr={stderr!r}"
+            f"stdout={truncate_output(stdout)!r} "
+            f"stderr={truncate_output(stderr)!r}"
         )
 
     return stdout
@@ -167,7 +179,8 @@ class TraceBackend:
         if check_returncode and proc.returncode:
             raise AssertionError(
                 f"Command {shlex.join(command)!r} failed "
-                f"with exit code {proc.returncode}: output={stdout!r}"
+                f"with exit code {proc.returncode}: "
+                f"output={truncate_output(stdout)!r}"
             )
         return stdout
 
@@ -192,7 +205,9 @@ class TraceBackend:
             output = str(fnfe)
         if output != "probe: success":
             raise unittest.SkipTest(
-                "{}(1) failed: {}".format(self.COMMAND[0], output)
+                "{}(1) failed: {}".format(
+                    self.COMMAND[0], truncate_output(output)
+                )
             )
 
 
@@ -354,7 +369,8 @@ gc__done:1""",
 
         if proc.returncode != 0:
             raise AssertionError(
-                f"bpftrace failed with code {proc.returncode}:\n{stderr}"
+                f"bpftrace failed with code {proc.returncode}: "
+                f"{truncate_output(stderr)}"
             )
 
         stdout = self._filter_probe_rows(stdout)
@@ -394,12 +410,15 @@ gc__done:1""",
         # Check for permission errors (bpftrace usually requires root)
         if proc.returncode != 0:
             raise unittest.SkipTest(
-                f"bpftrace(1) failed with code {proc.returncode}: {stderr}"
+                f"bpftrace(1) failed with code {proc.returncode}: "
+                f"{truncate_output(stderr)}"
             )
 
         if "probe: success" not in stdout:
             raise unittest.SkipTest(
-                f"bpftrace(1) failed: stdout={stdout!r} stderr={stderr!r}"
+                f"bpftrace(1) failed: "
+                f"stdout={truncate_output(stdout)!r} "
+                f"stderr={truncate_output(stderr)!r}"
             )
 
 
