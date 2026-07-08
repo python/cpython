@@ -6729,9 +6729,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         # The creation time, used to compute the rollover time, cannot be
         # changed, so the rollover cannot be forced by back-dating the file.
         # Wait until the clock reaches a rollover time set one second ahead.
-        stat = os.stat(self.fn)
-        file_time = int(min(getattr(stat, 'st_birthtime', stat.st_ctime), stat.st_mtime))
-        rollover = max(int(time.time()), file_time) + 1
+        rollover = int(time.time()) + 1
         atTime = datetime.datetime.fromtimestamp(rollover).time()
         while time.time() < rollover:
             time.sleep(rollover - time.time())
