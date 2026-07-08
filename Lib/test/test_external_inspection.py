@@ -3909,12 +3909,17 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
 
             async def chain(n):
                 if n <= 0:
-                    sock.sendall(b"ready")
                     await asyncio.sleep(10_000)
                     return
                 await chain(n - 1)
 
-            asyncio.run(chain({self.CHAIN_DEPTH}))
+            async def main():
+                task = asyncio.create_task(chain({self.CHAIN_DEPTH}))
+                await asyncio.sleep(0)
+                sock.sendall(b"ready")
+                await task
+
+            asyncio.run(main())
             """
         with self._target_process(script_body) as (p, client_socket, _):
             _wait_for_signal(client_socket, b"ready")
