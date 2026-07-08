@@ -1,0 +1,1 @@
+Add the HTTP QUERY method (RFC 10008) to http.HTTPMethod.
