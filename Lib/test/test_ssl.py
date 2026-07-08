@@ -5048,7 +5048,7 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
 
-    @support.skip_if_sanitizer("gh-137583: OpenSSL races on SSL->rwstate and "
+    @support.skip_if_sanitizer("gh-150191: OpenSSL races on SSL->rwstate and "
                                "the socket BIO flags with concurrent read "
                                "and write", thread=True)
     def test_thread_recv_while_main_thread_sends(self):
