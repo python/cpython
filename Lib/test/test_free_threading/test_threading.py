@@ -12,10 +12,7 @@ class TestRlock(unittest.TestCase):
 
         def repr_thread():
             for _ in range(2000):
-                try:
-                    repr(r)
-                except Exception:
-                    pass
+                repr(r)
 
         def mutate_thread():
             for _ in range(2000):
