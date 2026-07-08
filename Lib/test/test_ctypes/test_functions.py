@@ -6,9 +6,10 @@ from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
                     c_char, c_wchar, c_byte, c_char_p, c_wchar_p,
                     c_short, c_int, c_long, c_longlong, c_void_p,
                     c_float, c_double, c_longdouble)
-from test.support import import_helper
+from test.support import import_helper, refcount_test
 _ctypes_test = import_helper.import_module("_ctypes_test")
 from _ctypes import _Pointer,  _SimpleCData
+import gc
 
 
 try:
@@ -479,18 +480,28 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(original(), "original")
         self.assertEqual(original(), "replacement")
 
+    @refcount_test
     def test_function_code_object_memory_leak(self):
-        def get_function(i):
+        def get_code(i):
             ns = {}
             exec(f"def f(): return {i}", ns)
-            return ns["f"]
+            return ns["f"].__code__
 
-        def f(): pass
+        codes = [get_code(i) for i in range(100)]
+        refcounts = [sys.getrefcount(code) for code in codes]
 
-        for i in range(1000):
-            f.__code__ = get_function(i).__code__
+        def f():
+            pass
 
-        self.assertEqual(f(), 999)
+        for i, code in enumerate(codes):
+            f.__code__ = code
+            self.assertEqual(f(), i)
+
+        del f
+        gc.collect()
+
+        for code, refcount in zip(codes, refcounts):
+            self.assertEqual(sys.getrefcount(code), refcount)
 
 
 if __name__ == '__main__':
