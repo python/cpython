@@ -179,7 +179,7 @@ class HeaderTests(TestCase):
         # Here, we're testing that methods expecting a body get a
         # content-length set to zero if the body is empty (either None or '')
         bodies = (None, '')
-        methods_with_body = ('PUT', 'POST', 'PATCH')
+        methods_with_body = ('PUT', 'POST', 'PATCH', 'QUERY')
         for method, body in itertools.product(methods_with_body, bodies):
             conn = client.HTTPConnection('example.com')
             conn.sock = FakeSocket(None)
