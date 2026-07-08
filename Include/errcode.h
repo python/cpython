@@ -6,7 +6,7 @@
 // the parser only returns E_EOF when it hits EOF immediately, and it
 // never returns E_OK.
 //
-// The public PyRun_InteractiveOneObjectEx() function can return E_EOF,
+// The public PyRun_InteractiveOneObject() function can return E_EOF,
 // same as its variants:
 //
 // * PyRun_InteractiveOneObject()

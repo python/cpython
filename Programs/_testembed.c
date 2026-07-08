@@ -2037,6 +2037,9 @@ static int test_init_run_main_exitcode(Py_ssize_t argc, wchar_t * const *argv)
         return 1;
     }
 
+    // If Py_RunMain() calls Py_Exit(), this message is not written to stdout
+    printf("ok! Py_RunMain() returned 123\n");
+
     return 0;
 }
 

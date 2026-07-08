@@ -597,10 +597,15 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         ]
         return "\n".join(filtered_err_lines)
 
+    def check_program_exitcode(self, *args, check_stderr=True, **kwargs):
+        out, err = self.run_embedded_interpreter(*args, **kwargs)
+        self.assertEqual(out.rstrip(), 'ok! Py_RunMain() returned 123')
+        if check_stderr:
+            self.assertEqual(err, '')
+
     def test_init_run_main_code_exitcode(self):
         code = CODE_EXITCODE_123
-        self.run_embedded_interpreter("test_init_run_main_code_exitcode",
-                                      code)
+        self.check_program_exitcode("test_init_run_main_code_exitcode", code)
 
     def test_init_run_main_script_exitcode(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -608,13 +613,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             with open(filename, 'w') as fp:
                 fp.write(CODE_EXITCODE_123)
 
-            self.run_embedded_interpreter("test_init_run_main_script_exitcode",
-                                          filename)
+            self.check_program_exitcode("test_init_run_main_script_exitcode",
+                                        filename)
 
     def test_init_run_main_interactive_exitcode(self):
         code = CODE_EXITCODE_123
-        self.run_embedded_interpreter("test_init_run_main_interactive_exitcode",
-                                      input=code)
+        self.check_program_exitcode("test_init_run_main_interactive_exitcode",
+                                    input=code,
+                                    check_stderr=False)
 
     def test_init_run_main_module_exitcode(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -625,8 +631,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
             env = dict(os.environ)
             env['PYTHONPATH'] = tmpdir
-            self.run_embedded_interpreter("test_init_run_main_module_exitcode",
-                                          modname, env=env)
+            self.check_program_exitcode("test_init_run_main_module_exitcode",
+                                        modname, env=env)
 
 
 def config_dev_mode(preconfig, config):
