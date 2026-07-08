@@ -857,8 +857,7 @@ init_keys_object(PyDictKeysObject* dk, uint8_t log2_size, int log2_bytes, int ki
     dk->dk_nentries = 0;
     dk->dk_usable = usable;
     dk->dk_version = 0;
-    size_t indices_size = (size_t)1 << log2_bytes;
-    memset(_DK_INDICES(dk), 0xff, indices_size);
+    memset(_DK_INDICES(dk), 0xff, ((size_t)1 << log2_bytes));
     memset(_DK_ENTRIES(dk), 0, entry_size * usable);
 }
 
@@ -7282,14 +7281,12 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
 {
     int log2_bytes = get_log2_bytes(NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
     Py_ssize_t usable = USABLE_FRACTION((size_t)1<<NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
-    size_t indices_size = (size_t)1 << log2_bytes;
-    size_t keys_size = sizeof(PyDictKeysObject) - sizeof(PyDictKeyEntry)
-                     + sizeof(PyDictUnicodeEntry) * usable;
 
     struct _instancekeysobject *shared_keys =
                           PyMem_Malloc(sizeof(struct _instancekeysobject)
-                          + indices_size
-                          + keys_size);
+                          + ((size_t)1 << log2_bytes)
+                          + sizeof(PyDictKeysObject) - sizeof(PyDictKeyEntry)
+                          + sizeof(PyDictUnicodeEntry) * usable);
     if (shared_keys == NULL) {
         PyErr_Clear();
         return NULL;

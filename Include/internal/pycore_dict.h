@@ -226,6 +226,7 @@ struct _dictkeysobject {
     } dk_entries;
 };
 
+/* The _dictkeysobject is allocated directly afterwards */
 struct _instancekeysobject {
     PyTypeObject* dsk_owning_type;
 };
