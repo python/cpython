@@ -12,8 +12,9 @@ instances of subclasses often miss CPython's internal fast paths.
 We use |big O notation|_ to describe how the running time of an operation grows
 with the size of its input. Generally, *n* is the number of elements currently
 in the container, and *k* is either the value of a parameter or the number of
-elements in the parameter. See Ned Batchelder's `Big-O: How Code Slows as Data
-Grows <https://nedbatchelder.com/text/bigo>`__ talk and blog post for more information.
+elements in the parameter. For a pragmatic approach to assessing time complexity,
+see Ned Batchelder's `Big-O: How Code Slows as Data Grows
+<https://nedbatchelder.com/text/bigo>`__ talk and blog post.
 
 .. |big O notation| replace:: Big *O* notation
 .. _big O notation: https://en.wikipedia.org/wiki/Big_O_notation
