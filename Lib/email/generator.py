@@ -392,7 +392,7 @@ class Generator:
         b = boundary
         counter = 0
         while True:
-            cre = cls._compile_re('^--' + re.escape(b) + '(--)?$', re.MULTILINE)
+            cre = cls._compile_re('^--' + re.escape(b) + '(--)?\r?$', re.MULTILINE)
             if not cre.search(text):
                 break
             b = boundary + '.' + str(counter)

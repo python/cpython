@@ -1,5 +1,4 @@
 import os.path
-import re, sys
 
 from . import common as _common
 from . import gcc as _gcc

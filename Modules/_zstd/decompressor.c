@@ -111,6 +111,7 @@ _zstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         int key_v = PyLong_AsInt(key);
         Py_DECREF(key);
         if (key_v == -1 && PyErr_Occurred()) {
+            Py_DECREF(value);
             return -1;
         }
 
@@ -468,7 +469,6 @@ error:
 
 
 /*[clinic input]
-@permit_long_docstring_body
 @classmethod
 _zstd.ZstdDecompressor.__new__ as _zstd_ZstdDecompressor_new
     zstd_dict: object = None
@@ -478,14 +478,14 @@ _zstd.ZstdDecompressor.__new__ as _zstd_ZstdDecompressor_new
 
 Create a decompressor object for decompressing data incrementally.
 
-Thread-safe at method level. For one-shot decompression, use the decompress()
-function instead.
+Thread-safe at method level.  For one-shot decompression, use the
+decompress() function instead.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
                                 PyObject *options)
-/*[clinic end generated code: output=590ca65c1102ff4a input=ed8891edfd14cdaa]*/
+/*[clinic end generated code: output=590ca65c1102ff4a input=73879de69bf89f59]*/
 {
     ZstdDecompressor* self = PyObject_GC_New(ZstdDecompressor, type);
     if (self == NULL) {
@@ -570,19 +570,19 @@ ZstdDecompressor_dealloc(PyObject *ob)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 @getter
 _zstd.ZstdDecompressor.unused_data
 
 A bytes object of un-consumed input data.
 
 When ZstdDecompressor object stops after a frame is
-decompressed, unused input data after the frame. Otherwise this will be b''.
+decompressed, unused input data after the frame.  Otherwise this
+will be b''.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
-/*[clinic end generated code: output=f3a20940f11b6b09 input=37c2c531ab56f914]*/
+/*[clinic end generated code: output=f3a20940f11b6b09 input=0462065c5e60ba01]*/
 {
     PyObject *ret;
 
@@ -612,7 +612,6 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 _zstd.ZstdDecompressor.decompress
 
     data: Py_buffer
@@ -624,25 +623,26 @@ _zstd.ZstdDecompressor.decompress
 
 Decompress *data*, returning uncompressed bytes if possible, or b'' otherwise.
 
-If *max_length* is nonnegative, returns at most *max_length* bytes of
-decompressed data. If this limit is reached and further output can be
-produced, *self.needs_input* will be set to ``False``. In this case, the next
-call to *decompress()* may provide *data* as b'' to obtain more of the output.
+If *max_length* is nonnegative, returns at most *max_length* bytes
+of decompressed data.  If this limit is reached and further output
+can be produced, *self.needs_input* will be set to ``False``.  In
+this case, the next call to *decompress()* may provide *data* as b''
+to obtain more of the output.
 
-If all of the input data was decompressed and returned (either because this
-was less than *max_length* bytes, or because *max_length* was negative),
-*self.needs_input* will be set to True.
+If all of the input data was decompressed and returned (either
+because this was less than *max_length* bytes, or because
+*max_length* was negative), *self.needs_input* will be set to True.
 
-Attempting to decompress data after the end of a frame is reached raises an
-EOFError. Any data found after the end of the frame is ignored and saved in
-the self.unused_data attribute.
+Attempting to decompress data after the end of a frame is reached
+raises an EOFError.  Any data found after the end of the frame is
+ignored and saved in the self.unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
                                        Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=a4302b3c940dbec6 input=e5c905a774df1553]*/
+/*[clinic end generated code: output=a4302b3c940dbec6 input=4ddda5a0bdd00673]*/
 {
     PyObject *ret;
     /* Thread-safe code */

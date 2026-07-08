@@ -3326,6 +3326,7 @@ class CTokenizerBufferTests(unittest.TestCase):
             run_test_script(file_name)
 
 
+@support.force_not_colorized_test_class
 class CommandLineTest(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()
