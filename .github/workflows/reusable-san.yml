@@ -17,6 +17,7 @@ permissions:
 
 env:
   FORCE_COLOR: 1
+  OPENSSL_VER: 3.5.7
 
 jobs:
   build-san-reusable:
@@ -28,8 +29,6 @@ jobs:
       }}
     runs-on: ubuntu-26.04
     timeout-minutes: 60
-    env:
-      OPENSSL_VER: 3.5.4
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
@@ -45,21 +44,27 @@ jobs:
     - name: TSan option setup
       if: inputs.sanitizer == 'TSan'
       run: |
-        # Reduce ASLR to avoid TSan crashing
-        sudo sysctl -w vm.mmap_rnd_bits=28
+        sudo sysctl -w vm.mmap_rnd_bits=28  # Reduce ASLR to avoid TSan crashing
+
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
         echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
-        echo "TSAN_OPTIONS=${SAN_LOG_OPTION} suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${{
+        echo "TSAN_OPTIONS=${SAN_LOG_OPTION} suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${SUPPRESSIONS_SUFFIX}.txt handle_segv=0" >> "$GITHUB_ENV"
+      env:
+        SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
+        SUPPRESSIONS_SUFFIX: >-
+          ${{
             fromJSON(inputs.free-threading)
             && '_free_threading'
             || ''
-          }}.txt handle_segv=0" >> "$GITHUB_ENV"
-      env:
-        SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
+          }}
     - name: UBSan option setup
       if: inputs.sanitizer != 'TSan'
-      run: |
-        echo "UBSAN_OPTIONS=${SAN_LOG_OPTION} halt_on_error=1 suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt" >> "$GITHUB_ENV"
+      run: >-
+        echo
+        "UBSAN_OPTIONS=${SAN_LOG_OPTION}
+        halt_on_error=1
+        suppressions=${GITHUB_WORKSPACE}/Tools/ubsan/suppressions.txt"
+        >> "$GITHUB_ENV"
       env:
         SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
     - name: Add ccache to PATH
@@ -73,8 +78,16 @@ jobs:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ env.IMAGE_OS_VERSION }}-multissl-openssl-tsan-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL (TSan)
-      if: steps.cache-openssl.outputs.cache-hit != 'true' && inputs.sanitizer == 'TSan'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux --tsan
+      if: >-
+        inputs.sanitizer == 'TSan'
+        && steps.cache-openssl.outputs.cache-hit != 'true'
+      run: >-
+        python3 Tools/ssl/multissltests.py
+        --steps=library
+        --base-directory="${MULTISSL_DIR}"
+        --openssl="${OPENSSL_VER}"
+        --system=Linux
+        --tsan
     - name: Configure CPython
       run: >-
         ./configure
