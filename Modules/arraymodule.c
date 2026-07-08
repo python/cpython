@@ -3268,7 +3268,7 @@ array_modexec(PyObject *m)
         return -1;
     }
 
-    PyObject *mutablesequence = _PyImport_ImportModuleAttrString(
+    PyObject *mutablesequence = _PyImport_GetModuleAttrString(
             "collections.abc", "MutableSequence");
     if (!mutablesequence) {
         return -1;
