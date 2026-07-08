@@ -6,10 +6,11 @@ from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
                     c_char, c_wchar, c_byte, c_char_p, c_wchar_p,
                     c_short, c_int, c_long, c_longlong, c_void_p,
                     c_float, c_double, c_longdouble)
-from test.support import import_helper, refcount_test
+from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 from _ctypes import _Pointer,  _SimpleCData
 import gc
+import weakref
 
 
 try:
@@ -480,28 +481,22 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(original(), "original")
         self.assertEqual(original(), "replacement")
 
-    @refcount_test
-    def test_function_code_object_memory_leak(self):
+    def test_function_code_object_no_leak(self):
         def get_code(i):
             ns = {}
             exec(f"def f(): return {i}", ns)
             return ns["f"].__code__
 
-        codes = [get_code(i) for i in range(100)]
-        refcounts = [sys.getrefcount(code) for code in codes]
-
-        def f():
-            pass
-
-        for i, code in enumerate(codes):
-            f.__code__ = code
+        refs = []
+        def f(): pass
+        for i in range(100):
+            f.__code__ = get_code(i)
+            refs.append(weakref.ref(f.__code__))
             self.assertEqual(f(), i)
 
         del f
         gc.collect()
-
-        for code, refcount in zip(codes, refcounts):
-            self.assertEqual(sys.getrefcount(code), refcount)
+        self.assertTrue(all(ref() is None for ref in refs))
 
 
 if __name__ == '__main__':
