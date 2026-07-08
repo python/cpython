@@ -531,6 +531,7 @@ pymain_set_inspect(PyConfig *config, int inspect)
 {
     PyObject *value = PyLong_FromLong(inspect);
     if (value == NULL || PyConfig_Set("inspect", value) < 0) {
+        fprintf(stderr, "Could not set the inspect flag\n");
         PyErr_Print();
     }
     else {
