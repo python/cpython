@@ -16821,6 +16821,11 @@ error:
 
 typedef struct {
     PyObject_HEAD
+#ifdef Py_GIL_DISABLED
+    // Protects scandir iterator state when a os.scandir() iterator is used
+    // from multiple threads.
+    PyMutex mutex;
+#endif
     path_t path;
 #ifdef MS_WINDOWS
     HANDLE handle;
@@ -16836,66 +16841,88 @@ typedef struct {
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
 
+#ifdef Py_GIL_DISABLED
+#  define SCANDIR_ITERATOR_LOCK(iterator) PyMutex_Lock(&(iterator)->mutex)
+#  define SCANDIR_ITERATOR_UNLOCK(iterator) PyMutex_Unlock(&(iterator)->mutex)
+#else
+#  define SCANDIR_ITERATOR_LOCK(iterator) ((void)0)
+#  define SCANDIR_ITERATOR_UNLOCK(iterator) ((void)0)
+#endif
+
 #ifdef MS_WINDOWS
 
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return iterator->handle == INVALID_HANDLE_VALUE;
+    SCANDIR_ITERATOR_LOCK(iterator);
+    int closed = iterator->handle == INVALID_HANDLE_VALUE;
+    SCANDIR_ITERATOR_UNLOCK(iterator);
+    return closed;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
+    SCANDIR_ITERATOR_LOCK(iterator);
     HANDLE handle = iterator->handle;
-
-    if (handle == INVALID_HANDLE_VALUE)
-        return;
-
     iterator->handle = INVALID_HANDLE_VALUE;
-    Py_BEGIN_ALLOW_THREADS
-    FindClose(handle);
-    Py_END_ALLOW_THREADS
+    SCANDIR_ITERATOR_UNLOCK(iterator);
+
+    if (handle != INVALID_HANDLE_VALUE) {
+        Py_BEGIN_ALLOW_THREADS
+        FindClose(handle);
+        Py_END_ALLOW_THREADS
+    }
 }
 
 static PyObject *
 ScandirIterator_iternext(PyObject *op)
 {
     ScandirIterator *iterator = ScandirIterator_CAST(op);
-    WIN32_FIND_DATAW *file_data = &iterator->file_data;
+    WIN32_FIND_DATAW file_data;
     BOOL success;
-    PyObject *entry;
+    DWORD error = ERROR_SUCCESS;
+    int found = 0;
 
+    SCANDIR_ITERATOR_LOCK(iterator);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (iterator->handle == INVALID_HANDLE_VALUE)
-        return NULL;
-
-    while (1) {
+    while (iterator->handle != INVALID_HANDLE_VALUE) {
         if (!iterator->first_time) {
             Py_BEGIN_ALLOW_THREADS
-            success = FindNextFileW(iterator->handle, file_data);
+            success = FindNextFileW(iterator->handle, &iterator->file_data);
+            if (!success) {
+                error = GetLastError();
+            }
             Py_END_ALLOW_THREADS
             if (!success) {
-                /* Error or no more files */
-                if (GetLastError() != ERROR_NO_MORE_FILES)
-                    path_error(&iterator->path);
                 break;
             }
         }
         iterator->first_time = 0;
 
         /* Skip over . and .. */
-        if (wcscmp(file_data->cFileName, L".") != 0 &&
-            wcscmp(file_data->cFileName, L"..") != 0)
+        if (wcscmp(iterator->file_data.cFileName, L".") != 0 &&
+            wcscmp(iterator->file_data.cFileName, L"..") != 0)
         {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_find_data(module, &iterator->path, file_data);
-            if (!entry)
-                break;
-            return entry;
+            file_data = iterator->file_data;
+            found = 1;
+            break;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
+    }
+    SCANDIR_ITERATOR_UNLOCK(iterator);
+
+    if (found) {
+        PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+        PyObject *entry = DirEntry_from_find_data(module, &iterator->path, &file_data);
+        if (entry != NULL) {
+            return entry;
+        }
+    }
+    else if (error != ERROR_SUCCESS && error != ERROR_NO_MORE_FILES) {
+        SetLastError(error);
+        path_error(&iterator->path);
     }
 
     /* Error or no more files */
@@ -16908,27 +16935,30 @@ ScandirIterator_iternext(PyObject *op)
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return !iterator->dirp;
+    SCANDIR_ITERATOR_LOCK(iterator);
+    int closed = iterator->dirp == NULL;
+    SCANDIR_ITERATOR_UNLOCK(iterator);
+    return closed;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
+    SCANDIR_ITERATOR_LOCK(iterator);
     DIR *dirp = iterator->dirp;
-
-    if (!dirp)
-        return;
-
     iterator->dirp = NULL;
-    Py_BEGIN_ALLOW_THREADS
+    SCANDIR_ITERATOR_UNLOCK(iterator);
+
+    if (dirp != NULL) {
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FDOPENDIR
-    if (iterator->path.is_fd) {
-        rewinddir(dirp);
-    }
+        if (iterator->path.is_fd) {
+            rewinddir(dirp);
+        }
 #endif
-    closedir(dirp);
-    Py_END_ALLOW_THREADS
-    return;
+        closedir(dirp);
+        Py_END_ALLOW_THREADS
+    }
 }
 
 static PyObject *
@@ -16936,24 +16966,29 @@ ScandirIterator_iternext(PyObject *op)
 {
     ScandirIterator *iterator = ScandirIterator_CAST(op);
     struct dirent *direntp;
-    Py_ssize_t name_len;
+    Py_ssize_t name_len = 0;
     int is_dot;
-    PyObject *entry;
+    int found = 0;
+    int error = 0;
+    int no_memory = 0;
+    char *name = NULL;
+    ino_t d_ino = 0;
+#ifdef HAVE_DIRENT_D_TYPE
+    unsigned char d_type = 0;
+#endif
 
+    SCANDIR_ITERATOR_LOCK(iterator);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (!iterator->dirp)
-        return NULL;
-
-    while (1) {
-        errno = 0;
+    while (iterator->dirp != NULL) {
         Py_BEGIN_ALLOW_THREADS
+        errno = 0;
         direntp = readdir(iterator->dirp);
+        if (direntp == NULL) {
+            error = errno;
+        }
         Py_END_ALLOW_THREADS
 
         if (!direntp) {
-            /* Error or no more files */
-            if (errno != 0)
-                path_error(&iterator->path);
             break;
         }
 
@@ -16962,20 +16997,45 @@ ScandirIterator_iternext(PyObject *op)
         is_dot = direntp->d_name[0] == '.' &&
                  (name_len == 1 || (direntp->d_name[1] == '.' && name_len == 2));
         if (!is_dot) {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_posix_info(module,
-                                             &iterator->path, direntp->d_name,
-                                             name_len, direntp->d_ino
-#ifdef HAVE_DIRENT_D_TYPE
-                                             , direntp->d_type
-#endif
-                                            );
-            if (!entry)
+            name = PyMem_RawMalloc(name_len + 1);
+            if (name == NULL) {
+                no_memory = 1;
                 break;
-            return entry;
+            }
+            memcpy(name, direntp->d_name, name_len);
+            name[name_len] = '\0';
+            d_ino = direntp->d_ino;
+#ifdef HAVE_DIRENT_D_TYPE
+            d_type = direntp->d_type;
+#endif
+            found = 1;
+            break;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
+    }
+    SCANDIR_ITERATOR_UNLOCK(iterator);
+
+    if (found) {
+        PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+        PyObject *entry = DirEntry_from_posix_info(module,
+                                                   &iterator->path, name,
+                                                   name_len, d_ino
+#ifdef HAVE_DIRENT_D_TYPE
+                                                   , d_type
+#endif
+                                                  );
+        PyMem_RawFree(name);
+        if (entry != NULL) {
+            return entry;
+        }
+    }
+    else if (no_memory) {
+        PyErr_NoMemory();
+    }
+    else if (error != 0) {
+        errno = error;
+        path_error(&iterator->path);
     }
 
     /* Error or no more files */
@@ -17114,6 +17174,9 @@ os_scandir_impl(PyObject *module, path_t *path)
     if (!iterator)
         return NULL;
 
+#ifdef Py_GIL_DISABLED
+    iterator->mutex = (PyMutex){0};
+#endif
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
 #else

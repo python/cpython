@@ -1,0 +1,2 @@
+Fix a crash when the same :func:`os.scandir` iterator is used concurrently
+from multiple threads on the :term:`free-threaded <free threading>` build.
