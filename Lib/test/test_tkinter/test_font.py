@@ -57,7 +57,6 @@ class FontTest(AbstractTkTest, unittest.TestCase):
                 self.assertEqual(f.cget('size'), sizetype(-20))
                 self.assertEqual(f.actual('family'), named.actual('family'))
                 self.assertEqual(f.actual('weight'), 'bold')
-        # (Options overriding the given font are only supported since 3.16.)
 
     def test_create_from_description(self):
         # gh-143990: a font created from a font description is resolved via
