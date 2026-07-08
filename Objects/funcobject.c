@@ -1171,8 +1171,12 @@ static PyObject*
 func_repr(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    return PyUnicode_FromFormat("<function %U at %p>",
-                                op->func_qualname, op);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = PyUnicode_FromFormat("<function %U at %p>",
+                                  op->func_qualname, op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
