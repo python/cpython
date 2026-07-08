@@ -592,27 +592,26 @@ proxy_unwrap(PyObject *obj)
 #define WRAP_TERNARY(method, generic) \
     static PyObject * \
     method(PyObject *proxy, PyObject *v, PyObject *w) { \
+        PyObject* res = NULL; \
         proxy = proxy_unwrap(proxy); \
         if (proxy == NULL) { \
             return NULL; \
         } \
         v = proxy_unwrap(v); \
         if (v == NULL) { \
-            Py_DECREF(proxy); \
-            return NULL; \
+            goto fail; \
         } \
         if (w != NULL) { \
             w = proxy_unwrap(w); \
             if (w == NULL) { \
-                Py_DECREF(proxy); \
-                Py_DECREF(v); \
-                return NULL; \
+                goto fail; \
             } \
         } \
-        PyObject* res = generic(proxy, v, w); \
-        Py_DECREF(proxy); \
-        Py_DECREF(v); \
+        res = generic(proxy, v, w); \
         Py_XDECREF(w); \
+    fail: \
+        Py_XDECREF(v); \
+        Py_XDECREF(proxy); \
         return res; \
     }
 
