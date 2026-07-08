@@ -1,0 +1,2 @@
+The ``readprofile`` method of :class:`tkinter.Tk` now reads the user's
+profile scripts using :func:`tokenize.open`.
