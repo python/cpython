@@ -8431,6 +8431,7 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
     const char *up = data;
     const char *uend = data + (size_t)ulen * unit;
     int flushing = 0;
+    int careful = 0;            /* feed one code point per iconv() call */
 
     /* A generous initial estimate for the output size. */
     writer = PyBytesWriter_Create(ulen + (ulen >> 1) + 16);
@@ -8443,6 +8444,11 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
     for (;;) {
         char *inptr = (char *)up;
         size_t inleft = (size_t)(uend - up);
+        /* One code point at a time, to pin a substitution to its position. */
+        if (careful && inleft > (size_t)unit) {
+            inleft = (size_t)unit;
+        }
+        char *out_before = out;
         size_t outleft = (size_t)(outend - out);
         /* When the whole string is converted, a final iconv() call with a
            NULL input flushes any pending shift sequence (e.g. ISO-2022). */
@@ -8452,21 +8458,42 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         }
 
         if (ret != (size_t)-1) {
-            if (flushing) {
+            /* A positive result counts nonreversible conversions: iconv()
+               substituted an unencodable character instead of failing with
+               EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
+               and re-run one code point at a time to locate it. */
+            if (ret > 0) {
+                if (!careful) {
+                    careful = 1;
+                    iconv(cd, NULL, NULL, NULL, NULL);
+                    out = PyBytesWriter_GetData(writer);
+                    outend = out + PyBytesWriter_GetSize(writer);
+                    up = ustart;
+                    continue;
+                }
+                /* This code point was substituted; drop it and report it. */
+                out = out_before;
+                up -= unit;
+            }
+            else if (flushing) {
                 break;
             }
-            /* All input consumed; switch to flushing the shift state. */
-            flushing = 1;
-            continue;
+            else if (careful && up < uend) {
+                continue;
+            }
+            else {
+                /* All input consumed; switch to flushing the shift state. */
+                flushing = 1;
+                continue;
+            }
         }
-
-        if (errno == E2BIG) {
+        else if (errno == E2BIG) {
             if (iconv_grow_writer(writer, &out, &outend) < 0) {
                 goto done;
             }
             continue;
         }
-        if (errno != EILSEQ && errno != EINVAL) {
+        else if (errno != EILSEQ && errno != EINVAL) {
             PyErr_SetFromErrno(PyExc_OSError);
             goto done;
         }
