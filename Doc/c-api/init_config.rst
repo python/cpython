@@ -1984,7 +1984,7 @@ PyConfig
 
       The :mod:`warnings` module adds :data:`sys.warnoptions` in the reverse
       order: the last :c:member:`PyConfig.warnoptions` item becomes the first
-      item of :attr:`warnings.filters` which is checked first (highest priority).
+      item of ``warnings.filters`` which is checked first (highest priority).
 
       The :option:`-W` command line options adds its value to
       :c:member:`~PyConfig.warnoptions`, it can be used multiple times.
