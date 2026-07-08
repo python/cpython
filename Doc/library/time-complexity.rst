@@ -1,0 +1,304 @@
+.. _time-complexity:
+
+===============================================
+Time complexity of operations on built-in types
+===============================================
+
+This page documents the time-complexity of various operations on built-in types
+in CPython. Other Python implementations may have different performance
+characteristics. Additionally, the listed costs assume exact built-in types as
+instances of subclasses often miss CPython's internal fast paths.
+
+We use |big O notation|_ to describe how the running time of an operation grows
+with the size of its input. Generally, *n* is the number of elements currently
+in the container, and *k* is either the value of a parameter or the number of
+elements in the parameter. See Ned Batchelder's `Big-O: How Code Slows as Data
+Grows <https://nedbatchelder.com/text/bigo>`__ talk and blog post for more information.
+
+.. |big O notation| replace:: Big *O* notation
+.. _big O notation: https://en.wikipedia.org/wiki/Big_O_notation
+
+
+:class:`!list`
+==============
+
+Lists are mutable sequences. Internally, a :class:`list` is represented as an
+array; for more detail see :ref:`how-are-lists-implemented`. The largest costs
+come from growing beyond the current allocation size (because everything must move),
+or from inserting or deleting somewhere near the beginning (because everything
+after that must move). If you need to add or remove at both ends,
+consider using a :class:`collections.deque` instead.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Operation
+     - Complexity
+   * - Copy
+     - *O*\ (*n*)
+   * - Append [1]_
+     - *O*\ (1)
+   * - Pop [1]_ [2]_
+     - *O*\ (*n* - *k*)
+   * - Insert [1]_ [2]_
+     - *O*\ (*n* - *k*)
+   * - Get item
+     - *O*\ (1)
+   * - Set item
+     - *O*\ (1)
+   * - Delete item [2]_
+     - *O*\ (*n* - *k*)
+   * - Iteration
+     - *O*\ (*n*)
+   * - Get slice
+     - *O*\ (*k*)
+   * - Set slice
+     - *O*\ (*k* + *n*)
+   * - Delete slice
+     - *O*\ (*n*)
+   * - Extend [1]_
+     - *O*\ (*k*)
+   * - Sort [3]_
+     - *O*\ (*n* log *n*)
+   * - Multiply
+     - *O*\ (*nk*)
+   * - ``x in s``
+     - *O*\ (*n*)
+   * - ``min(s)``, ``max(s)``
+     - *O*\ (*n*)
+   * - Get length [4]_
+     - *O*\ (1)
+
+
+:class:`!tuple`
+===============
+
+A :class:`tuple` is an :term:`immutable` sequence. Because a tuple can never
+change, there are no insertion or deletion costs, and making a copy is constant
+time as the same object is returned.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Operation
+     - Complexity
+   * - Copy
+     - *O*\ (1)
+   * - Get item
+     - *O*\ (1)
+   * - Get slice
+     - *O*\ (*k*)
+   * - Concatenate (``s + t``)
+     - *O*\ (*n* + *k*)
+   * - Multiply
+     - *O*\ (*nk*)
+   * - Iteration
+     - *O*\ (*n*)
+   * - ``x in s``
+     - *O*\ (*n*)
+   * - ``min(s)``, ``max(s)``
+     - *O*\ (*n*)
+   * - Get length [4]_
+     - *O*\ (1)
+
+
+:class:`!dict`, :class:`!frozendict`
+====================================
+
+The times listed for dict objects are average-case times, as they assume the
+hash function for the objects is sufficiently robust to make collisions
+uncommon; they also assume the keys used in parameters are selected uniformly
+at random from the set of all keys. In the worst case, when every key hashes
+to the same value, each of the *O*\ (1) operations below instead takes
+*O*\ (*n*) time. For more detail on the implementation, see
+:ref:`how-are-dictionaries-implemented`.
+
+A :class:`frozendict` is immutable, but the non-mutating operations below
+apply to it at the same costs.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Operation
+     - Complexity
+   * - ``k in d``
+     - *O*\ (1)
+   * - Copy [5]_ [6]_
+     - *O*\ (*n*)
+   * - Get item
+     - *O*\ (1)
+   * - Set item [1]_
+     - *O*\ (1)
+   * - Delete item
+     - *O*\ (1)
+   * - Iteration [6]_
+     - *O*\ (*n*)
+   * - Get length [4]_
+     - *O*\ (1)
+
+
+:class:`!set`, :class:`!frozenset`
+==================================
+
+See :class:`dict` -- the :class:`set` and :class:`frozenset` implementation is
+intentionally very similar, and the same hash collision caveat applies:
+in the worst case, *O*\ (1) operations instead take *O*\ (*n*) time,
+and operations that look up every element of an operand degrade accordingly.
+
+A frozenset is immutable, but the non-mutating operations below apply to it at
+the same costs.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Operation
+     - Complexity
+   * - ``x in s``
+     - *O*\ (1)
+   * - Add (``s.add(x)``) [1]_
+     - *O*\ (1)
+   * - Discard (``s.discard(x)``)
+     - *O*\ (1)
+   * - Union (``s | t``) [6]_
+     - *O*\ (len(*s*) + len(*t*))
+   * - Intersection (``s & t``, ``s.intersection(t)``) [6]_ [7]_
+     - *O*\ (min(len(*s*), len(*t*)))
+   * - Difference (``s - t``, ``s.difference(t)``) [6]_ [8]_
+     - *O*\ (len(*s*))
+   * - Difference update (``s.difference_update(t)``) [1]_ [6]_ [7]_
+     - *O*\ (min(len(*s*), len(*t*)))
+   * - Symmetric difference (``s ^ t``) [6]_
+     - *O*\ (len(*s*) + len(*t*))
+   * - Symmetric difference update (``s.symmetric_difference_update(t)``) [1]_ [6]_
+     - *O*\ (len(*t*))
+   * - Get length [4]_
+     - *O*\ (1)
+
+
+:class:`!str`, :class:`!bytes`, :class:`!bytearray`
+===================================================
+
+:class:`str` and :class:`bytes` objects are immutable sequences of characters and
+bytes respectively; as with tuples, copying one returns the original object.
+A :class:`bytearray` is mutable, and additionally supports the mutating operations
+of :class:`list` (except :meth:`!sort`), at the same costs. However, deleting at
+the front only advances the start of the buffer instead of moving the remaining
+bytes, and is amortized *O*\ (1).
+
+.. list-table::
+   :header-rows: 1
+
+   * - Operation
+     - Complexity
+   * - Get item
+     - *O*\ (1)
+   * - Get slice
+     - *O*\ (*k*)
+   * - Concatenate (``s + t``)
+     - *O*\ (*n* + *k*)
+   * - Multiply
+     - *O*\ (*nk*)
+   * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``) [9]_
+     - *O*\ (*n*)
+   * - Encode or decode
+     - *O*\ (*n*)
+   * - Iteration
+     - *O*\ (*n*)
+   * - Get length [4]_
+     - *O*\ (1)
+
+
+:class:`!memoryview`
+====================
+
+:class:`memoryview` objects allow Python code to access the internal data
+of an object that supports the :ref:`buffer protocol <bufferobjects>` without
+copying. In particular, slicing a memory view returns a new view onto the same
+buffer.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Operation
+     - Complexity
+   * - Create
+     - *O*\ (1)
+   * - Get item
+     - *O*\ (1)
+   * - Get slice
+     - *O*\ (1)
+   * - Convert to bytes (``v.tobytes()``, ``bytes(v)``)
+     - *O*\ (*n*)
+   * - Get length [4]_
+     - *O*\ (1)
+
+
+:class:`!range`
+===============
+
+A :class:`range` object computes its items on demand from its *start*, *stop* and
+*step* values, so most operations do not depend on the length of the range.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Operation
+     - Complexity
+   * - Get item
+     - *O*\ (1)
+   * - Get slice
+     - *O*\ (1)
+   * - ``x in s`` [10]_
+     - *O*\ (1)
+   * - Index and count (``s.index(x)``, ``s.count(x)``) [10]_
+     - *O*\ (1)
+   * - Iteration
+     - *O*\ (*n*)
+   * - ``min(s)``, ``max(s)``
+     - *O*\ (*n*)
+   * - Get length [4]_
+     - *O*\ (1)
+
+
+Notes
+=====
+
+.. [1] Amortized. An individual operation may occasionally be *O*\ (*n*)
+   when the underlying storage is resized, but this cost is spread over
+   many operations, depending on the history of the container.
+
+.. [2] Popping or deleting the element at index *k* of a list of size *n*
+   shifts all elements after *k* one slot to the left, moving *n* - *k* - 1
+   elements; inserting at index *k* shifts the elements from *k* onwards one
+   slot to the right, moving *n* - *k* elements. The worst case is index 0,
+   where the whole rest of the list has to be moved; the average case, an
+   index in the middle of the list, takes *O*\ (*n*/2) = *O*\ (*n*)
+   operations; and operating at the end of the list moves nothing and is
+   *O*\ (1).
+
+.. [3] This is the worst case scenario. Sorting is adaptive and input that is
+   already sorted or reverse-sorted takes only *O*\ (*n*) comparisons; see
+   :source:`Objects/listsort.txt` for more information.
+
+.. [4] The number of elements is stored in the object, so ``len()`` does
+   not need to count them.
+
+.. [5] Copying a :class:`frozendict` is *O*\ (1) as it returns the original object.
+
+.. [6] These operations scan the container's internal hash table, which is
+   not shrunk when elements are removed. After removing most elements, they
+   still take time proportional to the container's former size, until a
+   later insertion triggers a resize.
+
+.. [7] *O*\ (len(*t*)) if *t* is not a set.
+
+.. [8] *O*\ (len(*s*) + len(*t*)) if *t* is not a set.
+
+.. [9] A naive substring search would need *O*\ (*nk*) comparisons in the
+   worst case, where *k* is the length of the substring searched for, but
+   CPython uses search algorithms with a linear worst case for forward
+   searches; see :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`
+   for details.
+
+.. [10] Assuming :class:`int` or :class:`bool` arguments. For other types,
+   the range is searched like any other sequence in *O*\ (*n*) time.
