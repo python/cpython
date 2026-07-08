@@ -1,6 +1,7 @@
 import functools
 import inspect
 import os
+import platform
 import select
 import string
 import sys
@@ -85,6 +86,18 @@ SHORT_MAX = 0x7fff
 _ncurses_version = getattr(curses, 'ncurses_version', None)
 BROKEN_NEWTERM = _ncurses_version is not None and _ncurses_version < (6, 5)
 USE_NEWTERM = hasattr(curses, 'newterm') and not BROKEN_NEWTERM
+
+# Older macOS reports a variation selector as a spacing character (wcwidth()
+# == 1) rather than a combining mark, so it cannot share a cell with its base.
+# The failure is confirmed on 14.2 and gone by 26, so skip below 26.
+def _broken_variation_selector_width():
+    if sys.platform == 'darwin':
+        mac_ver = platform.mac_ver()[0]
+        if mac_ver:
+            return tuple(map(int, mac_ver.split('.'))) < (26,)
+    return False
+
+BROKEN_VARIATION_SELECTOR_WIDTH = _broken_variation_selector_width()
 
 # newterm() is used when available (it reports errors instead of exiting), but
 # initscr() is still the fallback, and an unusable $TERM has no terminal to
@@ -411,7 +424,8 @@ class TestCurses(unittest.TestCase):
         stdscr = self.stdscr
         if self._encodable('\U0001f600'):
             stdscr.addch(0, 0, '\U0001f600')          # single emoji
-        if self._encodable('\u263a\ufe0f'):
+        # Skip the variation selector where the platform reports it as spacing.
+        if not BROKEN_VARIATION_SELECTOR_WIDTH and self._encodable('\u263a\ufe0f'):
             stdscr.addch(1, 0, '\u263a\ufe0f')        # WHITE SMILING FACE + VS-16
         # An emoji ZWJ sequence or an emoji with a modifier is more than one
         # spacing character and cannot share a single cell.
