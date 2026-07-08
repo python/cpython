@@ -214,6 +214,14 @@ curses
   wide-character support.
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
+encodings
+---------
+
+* Add the ``utf-7-imap`` codec, implementing the modified UTF-7 encoding
+  used for international IMAP4 mailbox names (:rfc:`3501`).
+  (Contributed by Serhiy Storchaka in :gh:`66788`.)
+
+
 gzip
 ----
 
@@ -243,6 +251,14 @@ imaplib
   using the ``PLAIN`` SASL mechanism (:rfc:`4616`) and supports non-ASCII
   user names and passwords.
   (Contributed by Przemysław Buczkowski and Serhiy Storchaka in :gh:`89869`.)
+
+
+ipaddress
+---------
+
+Add :meth:`~ipaddress.IPv4Network.next_network` and
+:meth:`~ipaddress.IPv6Network.next_network` methods to find the next nearest
+network with a specific prefix size.
 
 
 logging
