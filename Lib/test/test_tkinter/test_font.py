@@ -43,17 +43,49 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(TypeError, self.font.cget)
         self.assertRaises(TypeError, self.font.cget, 'size', 'weight')
 
+    def test_create_from_named_font(self):
+        # gh-143990: a font created from a named font copies its configured
+        # options, preserving a size specified in pixels (a negative size).
+        sizetype = int if self.wantobjects else str
+        named = font.Font(root=self.root, name='my named font',  # name with spaces
+                          family='Times', size=-20, weight='bold')
+        # The source is the name of a named font or a Font representing one.
+        for source in ['my named font', named]:
+            with self.subTest(source=source):
+                f = font.Font(root=self.root, font=source)
+                self.assertEqual(f.cget('size'), sizetype(-20))
+                self.assertEqual(f.actual('family'), named.actual('family'))
+                self.assertEqual(f.actual('weight'), 'bold')
+
+    def test_create_from_description(self):
+        # gh-143990: a font created from a font description is resolved via
+        # "font actual", so a size in pixels (negative) becomes a size in points.
+        descriptions = [
+            ('Times', -20),                     # tuple
+            ('Times', -20, 'bold'),             # tuple with a style
+            'Times -20',                        # string
+            'Times -20 bold',                   # string with a style
+            '{Times New Roman} -20',            # string, family with spaces
+        ]
+        for desc in descriptions:
+            with self.subTest(font=desc):
+                f = font.Font(root=self.root, font=desc)
+                self.assertGreater(int(f.cget('size')), 0)  # pixels -> points
+
     def test_copy(self):
-        f = font.Font(root=self.root, family='Times', size=10, weight='bold')
+        # size=-20 (pixels): copy() copies the configured options, so the
+        # size is preserved rather than resolved (gh-143990).
+        f = font.Font(root=self.root, family='Times', size=-20, weight='bold')
         copied = f.copy()
         self.assertIsInstance(copied, font.Font)
         self.assertIsNot(copied, f)
         self.assertNotEqual(copied.name, f.name)
         self.assertEqual(copied.actual(), f.actual())
-        # The copy is independent of the original.
         sizetype = int if self.wantobjects else str
+        self.assertEqual(copied.cget('size'), sizetype(-20))
+        # The copy is independent of the original.
         copied.configure(size=20)
-        self.assertEqual(f.cget('size'), sizetype(10))
+        self.assertEqual(f.cget('size'), sizetype(-20))
         self.assertEqual(copied.cget('size'), sizetype(20))
         self.assertRaises(TypeError, f.copy, 'x')
 
