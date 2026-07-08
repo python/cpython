@@ -188,6 +188,44 @@ The module also offers three general purpose functions based on heaps.
    ``key=str.lower``).  Equivalent to:  ``sorted(iterable, key=key)[:n]``.
 
 
+.. class:: MinHeap(iterable=None)
+
+   Return a new min-heap, initialized with the items from *iterable* if provided.
+   This provides an object-oriented interface to the heap functions.
+
+   .. method:: push(item)
+
+      Push the value *item* onto the heap, maintaining the heap invariant.
+
+   .. method:: pop()
+
+      Pop and return the smallest item from the heap, maintaining the heap invariant.
+      If the heap is empty, :exc:`IndexError` is raised.
+
+   .. method:: pushpop(item)
+
+      Push *item* on the heap, then pop and return the smallest item from the heap.
+
+   .. method:: replace(item)
+
+      Pop and return the smallest item from the heap, and also push the new *item*.
+
+   .. method:: peek()
+
+      Return the smallest item without popping it from the heap. Raises :exc:`IndexError` if the heap is empty.
+
+   .. method:: clear()
+
+      Remove all elements from the heap.
+
+   .. note::
+      Iterating over the heap and its representation (``__repr__``) yield items in the order of the underlying heap array, which is not necessarily sorted.
+
+.. class:: MaxHeap(iterable=None)
+
+   Similar to :class:`MinHeap` but implements a max-heap where the largest element is at the root.
+
+
 The latter two functions perform best for smaller values of *n*.  For larger
 values, it is more efficient to use the :func:`sorted` function.  Also, when
 ``n==1``, it is more efficient to use the built-in :func:`min` and :func:`max`

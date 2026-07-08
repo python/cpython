@@ -1,0 +1,1 @@
+Add :class:`MinHeap` and :class:`MaxHeap` classes to the :mod:`heapq` module, providing an object-oriented interface.

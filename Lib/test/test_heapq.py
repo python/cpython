@@ -637,5 +637,80 @@ class TestErrorHandlingC(TestErrorHandling, TestCase):
     module = c_heapq
 
 
+class TestMinHeap:
+    def test_init(self):
+        h = self.module.MinHeap()
+        self.assertEqual(len(h), 0)
+        self.assertFalse(h)
+
+        h = self.module.MinHeap([3, 1, 2])
+        self.assertEqual(len(h), 3)
+        self.assertTrue(h)
+        self.assertEqual(h.peek(), 1)
+
+    def test_push_pop(self):
+        h = self.module.MinHeap()
+        h.push(3)
+        h.push(1)
+        h.push(2)
+        self.assertEqual(h.pop(), 1)
+        self.assertEqual(h.pop(), 2)
+        self.assertEqual(h.pop(), 3)
+        with self.assertRaises(IndexError):
+            h.pop()
+
+    def test_pushpop_replace(self):
+        h = self.module.MinHeap([2, 3])
+        self.assertEqual(h.pushpop(1), 1)
+        self.assertEqual(len(h), 2)
+
+        self.assertEqual(h.replace(4), 2)
+        self.assertEqual(h.peek(), 3)
+
+    def test_peek(self):
+        h = self.module.MinHeap([1, 2, 3])
+        self.assertEqual(h.peek(), 1)
+        h.pop()
+        self.assertEqual(h.peek(), 2)
+        h.clear()
+        with self.assertRaises(IndexError):
+            h.peek()
+
+    def test_clear_contains_iter(self):
+        h = self.module.MinHeap([3, 1, 2])
+        self.assertIn(1, h)
+        self.assertNotIn(4, h)
+
+        items = list(h)
+        self.assertEqual(len(items), 3)
+
+        h.clear()
+        self.assertEqual(len(h), 0)
+        self.assertFalse(h)
+
+class TestMinHeapPython(TestMinHeap, TestCase):
+    module = py_heapq
+
+@skipUnless(c_heapq, 'requires _heapq')
+class TestMinHeapC(TestMinHeap, TestCase):
+    module = c_heapq
+
+class TestMaxHeap:
+    def test_push_pop(self):
+        h = self.module.MaxHeap()
+        h.push(1)
+        h.push(3)
+        h.push(2)
+        self.assertEqual(h.pop(), 3)
+        self.assertEqual(h.pop(), 2)
+        self.assertEqual(h.pop(), 1)
+
+class TestMaxHeapPython(TestMaxHeap, TestCase):
+    module = py_heapq
+
+@skipUnless(c_heapq, 'requires _heapq')
+class TestMaxHeapC(TestMaxHeap, TestCase):
+    module = c_heapq
+
 if __name__ == "__main__":
     unittest.main()

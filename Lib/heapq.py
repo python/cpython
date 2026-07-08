@@ -128,7 +128,8 @@ From all times, sorting has always been a Great Art! :-)
 
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'heappushpop',
            'heappush_max', 'heappop_max', 'heapify_max', 'heapreplace_max',
-           'heappushpop_max', 'nlargest', 'nsmallest', 'merge']
+           'heappushpop_max', 'nlargest', 'nsmallest', 'merge',
+           'MinHeap', 'MaxHeap']
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -591,6 +592,94 @@ def nlargest(n, iterable, key=None):
             order -= 1
     result.sort(reverse=True)
     return [elem for (k, order, elem) in result]
+
+class MinHeap:
+    __slots__ = ('_heap',)
+
+    def __init__(self, iterable=None):
+        if iterable is None:
+            self._heap = []
+        else:
+            self._heap = list(iterable)
+            heapify(self._heap)
+
+    def push(self, item):
+        heappush(self._heap, item)
+
+    def pop(self):
+        return heappop(self._heap)
+
+    def pushpop(self, item):
+        return heappushpop(self._heap, item)
+
+    def replace(self, item):
+        return heapreplace(self._heap, item)
+
+    def peek(self):
+        return self._heap[0]
+
+    def clear(self):
+        self._heap.clear()
+
+    def __len__(self):
+        return len(self._heap)
+
+    def __bool__(self):
+        return bool(self._heap)
+
+    def __contains__(self, item):
+        return item in self._heap
+
+    def __iter__(self):
+        return iter(self._heap)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self._heap!r})'
+
+
+class MaxHeap:
+    __slots__ = ('_heap',)
+
+    def __init__(self, iterable=None):
+        if iterable is None:
+            self._heap = []
+        else:
+            self._heap = list(iterable)
+            heapify_max(self._heap)
+
+    def push(self, item):
+        heappush_max(self._heap, item)
+
+    def pop(self):
+        return heappop_max(self._heap)
+
+    def pushpop(self, item):
+        return heappushpop_max(self._heap, item)
+
+    def replace(self, item):
+        return heapreplace_max(self._heap, item)
+
+    def peek(self):
+        return self._heap[0]
+
+    def clear(self):
+        self._heap.clear()
+
+    def __len__(self):
+        return len(self._heap)
+
+    def __bool__(self):
+        return bool(self._heap)
+
+    def __contains__(self, item):
+        return item in self._heap
+
+    def __iter__(self):
+        return iter(self._heap)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self._heap!r})'
+
 
 # If available, use C implementation
 try:
