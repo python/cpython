@@ -452,6 +452,44 @@ class FreeThreadingTest(unittest.TestCase):
         with threading_helper.start_threads(threads):
             pass
 
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_get_completer(self):
+        def completer(b):
+            b.wait()
+            for _ in range(100):
+                readline.get_completer()
+                readline.set_completer(lambda text, state: None)
+                readline.set_completer(None)
+                readline.get_completer()
+
+        count   = 40
+        barrier = threading.Barrier(count)
+        threads = [threading.Thread(target=completer, args=(barrier,)) for _ in range(count)]
+
+        with threading_helper.start_threads(threads):
+            pass
+
+    @unittest.skipUnless(hasattr(readline, "get_pre_input_hook"),
+                         "get_pre_input_hook not available")
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_get_pre_input_hook(self):
+        def pre_input_hook(b):
+            b.wait()
+            for _ in range(100):
+                readline.get_pre_input_hook()
+                readline.set_pre_input_hook(lambda: None)
+                readline.set_pre_input_hook(None)
+                readline.get_pre_input_hook()
+
+        count   = 40
+        barrier = threading.Barrier(count)
+        threads = [threading.Thread(target=pre_input_hook, args=(barrier,)) for _ in range(count)]
+
+        with threading_helper.start_threads(threads):
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()
