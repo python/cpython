@@ -339,6 +339,40 @@ class RemoteInspectionTestBase(unittest.TestCase):
             finally:
                 _cleanup_sockets(client_socket, server_socket)
 
+    @contextmanager
+    def _target_process(self, script_body):
+        """Context manager for running a target process with socket sync."""
+        port = find_unused_port()
+        script = f"""\
+import socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', {port}))
+{textwrap.dedent(script_body)}
+"""
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = _create_server_socket(port)
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+
+            try:
+                with _managed_subprocess([sys.executable, script_name]) as p:
+                    client_socket, _ = server_socket.accept()
+                    server_socket.close()
+                    server_socket = None
+
+                    def make_unwinder(cache_frames=True):
+                        return RemoteUnwinder(
+                            p.pid, all_threads=True, cache_frames=cache_frames
+                        )
+
+                    yield p, client_socket, make_unwinder
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
     def _find_frame_in_trace(self, stack_trace, predicate):
         """
         Find a frame matching predicate in stack trace.
@@ -2927,40 +2961,6 @@ class TestFrameCaching(RemoteInspectionTestBase):
     All tests verify cache reuse via object identity checks (assertIs).
     """
 
-    @contextmanager
-    def _target_process(self, script_body):
-        """Context manager for running a target process with socket sync."""
-        port = find_unused_port()
-        script = f"""\
-import socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', {port}))
-{textwrap.dedent(script_body)}
-"""
-
-        with os_helper.temp_dir() as work_dir:
-            script_dir = os.path.join(work_dir, "script_pkg")
-            os.mkdir(script_dir)
-
-            server_socket = _create_server_socket(port)
-            script_name = _make_test_script(script_dir, "script", script)
-            client_socket = None
-
-            try:
-                with _managed_subprocess([sys.executable, script_name]) as p:
-                    client_socket, _ = server_socket.accept()
-                    server_socket.close()
-                    server_socket = None
-
-                    def make_unwinder(cache_frames=True):
-                        return RemoteUnwinder(
-                            p.pid, all_threads=True, cache_frames=cache_frames
-                        )
-
-                    yield p, client_socket, make_unwinder
-            finally:
-                _cleanup_sockets(client_socket, server_socket)
-
     def _get_frames_with_retry(self, unwinder, required_funcs):
         """Get frames containing required_funcs, with retry for transient errors."""
         for _ in range(MAX_TRIES):
@@ -3802,6 +3802,126 @@ recurse({depth})
                 unwinder.get_stats()
 
             client_socket.sendall(b"done")
+
+
+@requires_remote_subprocess_debugging()
+class TestFrameChainLimits(RemoteInspectionTestBase):
+    """Frame chain walks abort instead of looping/overflowing on deep chains."""
+
+    CHAIN_DEPTH = 1024 + 512 + 1
+
+    def _assert_unwinder_limit_error(self, unwind, expected_substring):
+        """Call unwind() until it raises the frame chain limit error.
+
+        unwind must construct the RemoteUnwinder and call it, so that
+        transient RuntimeErrors from either step are retried; a successful
+        call means the limit never triggered and fails immediately.
+        """
+        last_error = None
+        for _ in busy_retry(SHORT_TIMEOUT, error=False):
+            try:
+                unwind()
+            except TRANSIENT_ERRORS as e:
+                if expected_substring in str(e):
+                    return
+                last_error = e
+                continue
+            self.fail(
+                "frame chain limit did not trigger; call returned a result"
+            )
+        self.fail(
+            f"frame chain limit never raised; last transient error: "
+            f"{last_error!r}"
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_stack_trace_deep_frame_chain_aborts(self):
+        """Test that a frame chain deeper than the limit aborts the
+        synchronous stack walk instead of walking it indefinitely."""
+        script_body = f"""\
+            import sys
+            sys.setrecursionlimit({self.CHAIN_DEPTH * 2})
+
+            def recurse(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
+                recurse(n - 1)
+
+            recurse({self.CHAIN_DEPTH})
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_stack_trace(),
+                "Too many stack frames",
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_async_stack_trace_deep_frame_chain_aborts(self):
+        """Test that a frame chain deeper than the limit aborts the async
+        stack walk instead of walking it indefinitely."""
+        script_body = f"""\
+            import sys, asyncio
+            sys.setrecursionlimit({self.CHAIN_DEPTH * 2})
+
+            def recurse(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
+                recurse(n - 1)
+
+            async def deep():
+                recurse({self.CHAIN_DEPTH})
+
+            asyncio.run(deep())
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_async_stack_trace(),
+                "Too many async stack frames",
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_all_awaited_by_deep_coro_chain_aborts(self):
+        """Test that a coroutine await chain deeper than the limit aborts
+        the walk instead of overflowing the C stack."""
+        script_body = f"""\
+            import sys, asyncio
+            sys.setrecursionlimit({self.CHAIN_DEPTH * 2})
+
+            async def chain(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    await asyncio.sleep(10_000)
+                    return
+                await chain(n - 1)
+
+            asyncio.run(chain({self.CHAIN_DEPTH}))
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_all_awaited_by(),
+                "Too many coroutine frames",
+            )
 
 
 if __name__ == "__main__":
