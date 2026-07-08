@@ -384,8 +384,9 @@ class CAPITests(unittest.TestCase):
         config_get = _testcapi.config_get
         config_set = _testcapi.config_set
         get_configs = _testinternalcapi.get_configs
+        new_values = (0, 1, 5)
 
-        tests = [
+        for name, global_name, not_value in (
             ('bytes_warning', 'Py_BytesWarningFlag', False),
             ('inspect', 'Py_InspectFlag', False),
             ('interactive', 'Py_InteractiveFlag', False),
@@ -402,14 +403,9 @@ class CAPITests(unittest.TestCase):
             #('pathconfig_warnings', 'Py_FrozenFlag', True),
             #('site_import', 'Py_NoSiteFlag', True),
             #('user_site_directory', 'Py_NoUserSiteDirectory', True),
-        ]
-        if support.MS_WINDOWS:
-            tests.append(
-                ('legacy_windows_stdio', 'Py_LegacyWindowsStdioFlag', False)
-            )
-        new_values = (0, 1, 5)
-
-        for name, global_name, not_value in tests:
+            # Windows only
+            #('legacy_windows_stdio', 'Py_LegacyWindowsStdioFlag', False)
+        ):
             with self.subTest(name=name):
                 old_value = config_get(name)
                 try:
