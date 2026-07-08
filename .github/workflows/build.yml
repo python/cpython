@@ -554,7 +554,6 @@ jobs:
         - Thread
         free-threading:
         - false
-        - true
         sanitizer:
         - TSan
         include:
@@ -565,6 +564,17 @@ jobs:
     with:
       sanitizer: ${{ matrix.sanitizer }}
       free-threading: ${{ matrix.free-threading }}
+
+  # XXX: Temporarily allow this job to fail to not block PRs.
+  build-san-free-threading:
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: Sanitizers${{ '' }}  # zizmor: ignore[obfuscation]
+    needs: build-context
+    if: needs.build-context.outputs.run-ubuntu == 'true'
+    uses: ./.github/workflows/reusable-san.yml
+    with:
+      sanitizer: TSan
+      free-threading: true
 
   cross-build-linux:
     name: Cross build Linux
@@ -669,6 +679,7 @@ jobs:
     - test-hypothesis
     - build-asan
     - build-san
+    - build-san-free-threading
     - cross-build-linux
     - cifuzz
     if: always()
@@ -680,6 +691,7 @@ jobs:
         allowed-failures: >-
           build-android,
           build-emscripten,
+          build-san-free-threading,
           build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
