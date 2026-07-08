@@ -147,6 +147,7 @@ typedef enum _WIN32_THREADSTATE {
 #define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
 #define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
 #define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
+#define MAX_FRAME_CHAIN_DEPTH (1024 + 512)  /* Iteration bound for frame chain walks */
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
