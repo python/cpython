@@ -4405,7 +4405,7 @@ os_chroot_impl(PyObject *module, path_t *path)
     // rather than returning a permission error.
     if (getuid() != 0) {
         errno = EPERM;
-        return path_error(path);
+        return posix_error();
     }
 #endif
     int res;
@@ -9868,7 +9868,7 @@ os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
     // rather than returning a permission error.
     if (getuid() != 0) {
         errno = EPERM;
-        return PyErr_SetFromErrno(PyExc_OSError);
+        return posix_error();
     }
 #endif
     const char *username = PyBytes_AS_STRING(oname);
