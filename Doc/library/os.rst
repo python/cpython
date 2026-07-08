@@ -578,6 +578,9 @@ process and user.
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.16
+      Support for Android now exists.
+
 
 .. function:: putenv(key, value, /)
 
@@ -612,6 +615,9 @@ process and user.
 
    .. availability:: Unix, not WASI.
 
+   .. versionchanged:: 3.16
+      Support for Android now exists.
+
 
 .. function:: seteuid(euid, /)
 
@@ -619,12 +625,18 @@ process and user.
 
    .. availability:: Unix, not WASI.
 
+   .. versionchanged:: 3.16
+      Support for Android now exists.
+
 
 .. function:: setgid(gid, /)
 
    Set the current process' group id.
 
    .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: setgroups(groups, /)
@@ -720,6 +732,9 @@ process and user.
 
    .. availability:: Unix, not WASI.
 
+   .. versionchanged:: 3.16
+      Support for Android now exists.
+
 
 .. function:: setresgid(rgid, egid, sgid, /)
 
@@ -728,6 +743,9 @@ process and user.
    .. availability:: Unix, not WASI, not macOS, not iOS.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: setresuid(ruid, euid, suid, /)
@@ -738,12 +756,18 @@ process and user.
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.16
+      Support for Android now exists.
+
 
 .. function:: setreuid(ruid, euid, /)
 
    Set the current process's real and effective user ids.
 
    .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: getsid(pid, /)
@@ -767,6 +791,9 @@ process and user.
    Set the current process's user id.
 
    .. availability:: Unix, not WASI.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. placed in this section since it relates to errno.... a little weak
@@ -2308,6 +2335,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: fchdir(fd)

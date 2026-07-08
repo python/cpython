@@ -1376,6 +1376,9 @@ The :mod:`!socket` module also offers various network-related services:
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.16
+      Support for Android now exists.
+
 
 .. function:: if_nameindex()
 
