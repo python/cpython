@@ -588,6 +588,13 @@ New deprecations
     two-letter forms ``'Zf'`` and ``'Zd'``.
     (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
+* :mod:`tempfile`
+
+  * The private ``tempfile._TemporaryFileWrapper`` name is deprecated
+    and is slated for removal in Python 3.21.
+    Use the new public :class:`tempfile.TemporaryFileWrapper` instead,
+    which is the return type of :func:`tempfile.NamedTemporaryFile`.
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
