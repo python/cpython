@@ -290,13 +290,20 @@ class CAPITest(unittest.TestCase):
 
     def check_run_interactive(self, run, encode_filename, use_loop=False):
         # Redirect stderr to a temporary file to hide '>>> ' from the REPL
-        stderr_copy = os.dup(STDERR_FD)
-        with tempfile.TemporaryFile() as tmp:
-            try:
-                os.dup2(tmp.fileno(), STDERR_FD)
-                self._check_run_interactive(run, encode_filename, use_loop)
-            finally:
-                os.dup2(stderr_copy, STDERR_FD)
+        try:
+            stderr_copy = os.dup(STDERR_FD)
+        except OSError:
+            # On WASI, dup(STDERR_FD) fails with "OSError: [Errno 58] Not
+            # supported". In this case, run the test without redirecting
+            # stderr to a temporary file.
+            self._check_run_interactive(run, encode_filename, use_loop)
+        else:
+            with tempfile.TemporaryFile() as tmp:
+                try:
+                    os.dup2(tmp.fileno(), STDERR_FD)
+                    self._check_run_interactive(run, encode_filename, use_loop)
+                finally:
+                    os.dup2(stderr_copy, STDERR_FD)
 
     def test_run_interactiveone(self):
         # Test PyRun_InteractiveOne()
