@@ -1,0 +1,2 @@
+Fix data race on assigning ``__name__`` and ``__qualname__`` attrs to
+function objects on FT builds.

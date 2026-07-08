@@ -4,7 +4,7 @@ import inspect
 from threading import Barrier
 from unittest import TestCase
 
-from test.support import threading_helper, Py_GIL_DISABLED
+from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
 
@@ -25,11 +25,48 @@ def set_func_annotation(f, b):
     return f.__annotations__
 
 
-@unittest.skipUnless(Py_GIL_DISABLED, "Enable only in FT build")
-class TestFTFuncAnnotations(TestCase):
+class TestFunction(TestCase):
     NUM_THREADS = 4
 
-    def test_concurrent_read(self):
+    def test_name_attribute_race(self):
+        # gh-153297
+        def shared_func():
+            return 1
+
+        def setter():
+            for i in range(2000):
+                shared_func.__name__ = "q_%d_%d" % (id(i), i & 15)
+
+        def reader():
+            for _ in range(2000):
+                _ = shared_func.__name__
+                repr(shared_func)
+
+        threading_helper.run_concurrently([
+            *[setter for _ in range(6)],
+            *[reader for _ in range(4)],
+        ])
+
+    def test_qualname_attribute_race(self):
+        # gh-153297
+        def shared_func():
+            return 1
+
+        def setter():
+            for i in range(2000):
+                shared_func.__qualname__ = "q_%d_%d" % (id(i), i & 15)
+
+        def reader():
+            for _ in range(2000):
+                _ = shared_func.__qualname__
+                repr(shared_func)
+
+        threading_helper.run_concurrently([
+            *[setter for _ in range(6)],
+            *[reader for _ in range(4)],
+        ])
+
+    def test_concurrent_read_annotations(self):
         def f(x: int) -> int:
             return x + 1
 
@@ -50,7 +87,7 @@ class TestFTFuncAnnotations(TestCase):
                     self.assertIsNotNone(annotate)
                     self.assertEqual(annotate, {'x': int, 'return': int})
 
-    def test_concurrent_write(self):
+    def test_concurrent_write_annotations(self):
         def bar(x: int, y: float) -> float:
             return y ** x
 

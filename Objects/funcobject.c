@@ -690,17 +690,29 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__name__
+[clinic start generated code]*/
+
 static PyObject *
-func_get_name(PyObject *self, void *Py_UNUSED(ignored))
+function___name___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=436852c5b4f6d259 input=3f1d1304d3fd103b]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_name);
+    return Py_NewRef(self->func_name);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__name__
+[clinic start generated code]*/
+
 static int
-func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___name___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=2c571635b003b9cc input=705634aafaa00198]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
     /* Not legal to del f.func_name or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -708,21 +720,33 @@ func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->func_name, Py_NewRef(value));
+    Py_XSETREF(self->func_name, Py_NewRef(value));
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__qualname__
+[clinic start generated code]*/
+
 static PyObject *
-func_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
+function___qualname___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=8fbd60e64464da5f input=761d5ab45fc13493]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_qualname);
+    return Py_NewRef(self->func_qualname);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__qualname__
+[clinic start generated code]*/
+
 static int
-func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___qualname___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=4cc5e270fd55f139 input=c803ac4dfdf04c87]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
     /* Not legal to del f.__qualname__ or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -730,8 +754,8 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
-    Py_XSETREF(op->func_qualname, Py_NewRef(value));
+    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, self, value);
+    Py_XSETREF(self->func_qualname, Py_NewRef(value));
     return 0;
 }
 
@@ -976,8 +1000,8 @@ static PyGetSetDef func_getsetlist[] = {
     FUNCTION___ANNOTATIONS___GETSETDEF
     FUNCTION___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {"__name__", func_get_name, func_set_name},
-    {"__qualname__", func_get_qualname, func_set_qualname},
+    FUNCTION___NAME___GETSETDEF
+    FUNCTION___QUALNAME___GETSETDEF
     FUNCTION___TYPE_PARAMS___GETSETDEF
     {NULL} /* Sentinel */
 };
