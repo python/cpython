@@ -1,1 +1,1 @@
-Add the HTTP QUERY method (RFC 10008) to http.HTTPMethod.
+Add the HTTP QUERY method (:rfc:`10008`) to http.HTTPMethod.
