@@ -791,7 +791,7 @@ parse_async_frame_chain(
     size_t frame_count = 0;
     while ((void*)address_of_current_frame != NULL) {
         if (++frame_count > MAX_FRAME_CHAIN_DEPTH) {
-            PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
+            PyErr_SetString(PyExc_RuntimeError, "Too many async stack frames (possible infinite loop)");
             set_exception_cause(unwinder, PyExc_RuntimeError, "Async frame chain iteration limit exceeded");
             return -1;
         }
