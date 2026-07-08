@@ -7281,10 +7281,11 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
 {
     int log2_bytes = get_log2_bytes(NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
     Py_ssize_t usable = USABLE_FRACTION((size_t)1<<NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
+    size_t indices_size = (size_t)1 << log2_bytes;
 
     struct _instancekeysobject *shared_keys =
                           PyMem_Malloc(sizeof(struct _instancekeysobject)
-                          + ((size_t)1 << log2_bytes)
+                          + indices_size
                           + sizeof(PyDictKeysObject) - sizeof(PyDictKeyEntry)
                           + sizeof(PyDictUnicodeEntry) * usable);
     if (shared_keys == NULL) {
