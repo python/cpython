@@ -16847,15 +16847,14 @@ ScandirIterator_is_closed(ScandirIterator *iterator)
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
+    // gh-152754: close under the critical section so it can't race iternext.
+    Py_BEGIN_CRITICAL_SECTION(iterator);
     HANDLE handle = iterator->handle;
-
-    if (handle == INVALID_HANDLE_VALUE)
-        return;
-
-    iterator->handle = INVALID_HANDLE_VALUE;
-    Py_BEGIN_ALLOW_THREADS
-    FindClose(handle);
-    Py_END_ALLOW_THREADS
+    if (handle != INVALID_HANDLE_VALUE) {
+        iterator->handle = INVALID_HANDLE_VALUE;
+        FindClose(handle);
+    }
+    Py_END_CRITICAL_SECTION();
 }
 
 static PyObject *
@@ -16864,17 +16863,14 @@ ScandirIterator_iternext(PyObject *op)
     ScandirIterator *iterator = ScandirIterator_CAST(op);
     WIN32_FIND_DATAW *file_data = &iterator->file_data;
     BOOL success;
-    PyObject *entry;
+    PyObject *entry = NULL;
 
+    // gh-152754: iterate under the critical section so close can't invalidate handle mid-use.
+    Py_BEGIN_CRITICAL_SECTION(iterator);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (iterator->handle == INVALID_HANDLE_VALUE)
-        return NULL;
-
-    while (1) {
+    while (iterator->handle != INVALID_HANDLE_VALUE) {
         if (!iterator->first_time) {
-            Py_BEGIN_ALLOW_THREADS
             success = FindNextFileW(iterator->handle, file_data);
-            Py_END_ALLOW_THREADS
             if (!success) {
                 /* Error or no more files */
                 if (GetLastError() != ERROR_NO_MORE_FILES)
@@ -16890,13 +16886,16 @@ ScandirIterator_iternext(PyObject *op)
         {
             PyObject *module = PyType_GetModule(Py_TYPE(iterator));
             entry = DirEntry_from_find_data(module, &iterator->path, file_data);
-            if (!entry)
-                break;
-            return entry;
+            break;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
+
+    Py_END_CRITICAL_SECTION();
+
+    if (entry != NULL)
+        return entry;
 
     /* Error or no more files */
     ScandirIterator_closedir(iterator);
@@ -16914,21 +16913,19 @@ ScandirIterator_is_closed(ScandirIterator *iterator)
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
+    // gh-152754: close under the critical section so it can't race iternext.
+    Py_BEGIN_CRITICAL_SECTION(iterator);
     DIR *dirp = iterator->dirp;
-
-    if (!dirp)
-        return;
-
-    iterator->dirp = NULL;
-    Py_BEGIN_ALLOW_THREADS
+    if (dirp != NULL) {
+        iterator->dirp = NULL;
 #ifdef HAVE_FDOPENDIR
-    if (iterator->path.is_fd) {
-        rewinddir(dirp);
-    }
+        if (iterator->path.is_fd) {
+            rewinddir(dirp);
+        }
 #endif
-    closedir(dirp);
-    Py_END_ALLOW_THREADS
-    return;
+        closedir(dirp);
+    }
+    Py_END_CRITICAL_SECTION();
 }
 
 static PyObject *
@@ -16938,17 +16935,14 @@ ScandirIterator_iternext(PyObject *op)
     struct dirent *direntp;
     Py_ssize_t name_len;
     int is_dot;
-    PyObject *entry;
+    PyObject *entry = NULL;
 
+    // gh-152754: iterate under the critical section so close can't free dirp mid-use.
+    Py_BEGIN_CRITICAL_SECTION(iterator);
     /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (!iterator->dirp)
-        return NULL;
-
-    while (1) {
+    while (iterator->dirp != NULL) {
         errno = 0;
-        Py_BEGIN_ALLOW_THREADS
         direntp = readdir(iterator->dirp);
-        Py_END_ALLOW_THREADS
 
         if (!direntp) {
             /* Error or no more files */
@@ -16970,13 +16964,15 @@ ScandirIterator_iternext(PyObject *op)
                                              , direntp->d_type
 #endif
                                             );
-            if (!entry)
-                break;
-            return entry;
+            break;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
+    Py_END_CRITICAL_SECTION();
+
+    if (entry != NULL)
+        return entry;
 
     /* Error or no more files */
     ScandirIterator_closedir(iterator);
