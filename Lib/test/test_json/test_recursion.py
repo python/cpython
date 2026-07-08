@@ -68,6 +68,7 @@ class TestRecursion:
             self.fail("didn't raise ValueError on default recursion")
 
 
+    @support.skip_if_pgo_task  # fails during PGO training w/ some stack sizes
     @support.skip_if_unlimited_stack_size
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()

@@ -14,9 +14,10 @@ PyDoc_STRVAR(_codecs_register__doc__,
 "\n"
 "Register a codec search function.\n"
 "\n"
-"Search functions are expected to take one argument, the encoding name in\n"
-"all lower case letters, and either return None, or a tuple of functions\n"
-"(encoder, decoder, stream_reader, stream_writer) (or a CodecInfo object).");
+"Search functions are expected to take one argument, the encoding\n"
+"name in all lower case letters, and either return None, or a tuple\n"
+"of functions (encoder, decoder, stream_reader, stream_writer) (or\n"
+"a CodecInfo object).");
 
 #define _CODECS_REGISTER_METHODDEF    \
     {"register", (PyCFunction)_codecs_register, METH_O, _codecs_register__doc__},
@@ -76,10 +77,10 @@ PyDoc_STRVAR(_codecs_encode__doc__,
 "Encodes obj using the codec registered for encoding.\n"
 "\n"
 "The default encoding is \'utf-8\'.  errors may be given to set a\n"
-"different error handling scheme.  Default is \'strict\' meaning that encoding\n"
-"errors raise a ValueError.  Other possible values are \'ignore\', \'replace\'\n"
-"and \'backslashreplace\' as well as any other name registered with\n"
-"codecs.register_error that can handle ValueErrors.");
+"different error handling scheme.  Default is \'strict\' meaning that\n"
+"encoding errors raise a ValueError.  Other possible values are \'ignore\',\n"
+"\'replace\' and \'backslashreplace\' as well as any other name registered\n"
+"with codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_ENCODE_METHODDEF    \
     {"encode", _PyCFunction_CAST(_codecs_encode), METH_FASTCALL|METH_KEYWORDS, _codecs_encode__doc__},
@@ -179,10 +180,10 @@ PyDoc_STRVAR(_codecs_decode__doc__,
 "Decodes obj using the codec registered for encoding.\n"
 "\n"
 "Default encoding is \'utf-8\'.  errors may be given to set a\n"
-"different error handling scheme.  Default is \'strict\' meaning that encoding\n"
-"errors raise a ValueError.  Other possible values are \'ignore\', \'replace\'\n"
-"and \'backslashreplace\' as well as any other name registered with\n"
-"codecs.register_error that can handle ValueErrors.");
+"different error handling scheme.  Default is \'strict\' meaning that\n"
+"encoding errors raise a ValueError.  Other possible values are \'ignore\',\n"
+"\'replace\' and \'backslashreplace\' as well as any other name registered\n"
+"with codecs.register_error that can handle ValueErrors.");
 
 #define _CODECS_DECODE_METHODDEF    \
     {"decode", _PyCFunction_CAST(_codecs_decode), METH_FASTCALL|METH_KEYWORDS, _codecs_decode__doc__},
@@ -2649,8 +2650,9 @@ PyDoc_STRVAR(_codecs_register_error__doc__,
 "Register the specified error handler under the name errors.\n"
 "\n"
 "handler must be a callable object, that will be called with an exception\n"
-"instance containing information about the location of the encoding/decoding\n"
-"error and must return a (replacement, new position) tuple.");
+"instance containing information about the location of the\n"
+"encoding/decoding error and must return a (replacement, new position)\n"
+"tuple.");
 
 #define _CODECS_REGISTER_ERROR_METHODDEF    \
     {"register_error", _PyCFunction_CAST(_codecs_register_error), METH_FASTCALL, _codecs_register_error__doc__},
@@ -2745,8 +2747,8 @@ PyDoc_STRVAR(_codecs_lookup_error__doc__,
 "\n"
 "lookup_error(errors) -> handler\n"
 "\n"
-"Return the error handler for the specified error handling name or raise a\n"
-"LookupError, if no handler exists under this name.");
+"Return the error handler for the specified error handling name or raise\n"
+"a LookupError, if no handler exists under this name.");
 
 #define _CODECS_LOOKUP_ERROR_METHODDEF    \
     {"lookup_error", (PyCFunction)_codecs_lookup_error, METH_O, _codecs_lookup_error__doc__},
@@ -2866,4 +2868,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=a968c493bb28be3e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=505edef891a06329 input=a9049054013a1b77]*/

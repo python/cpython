@@ -494,7 +494,7 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 struct tagPyCArgObject {
     PyObject_HEAD
     ffi_type *pffi_type;
-    char tag;
+    const char *tag;
     union {
         char c;
         char b;
@@ -511,7 +511,7 @@ struct tagPyCArgObject {
         long double G[2];
     } value;
     PyObject *obj;
-    Py_ssize_t size; /* for the 'V' tag */
+    Py_ssize_t size; /* for the "V" tag */
 };
 
 #define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
