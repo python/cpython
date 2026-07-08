@@ -312,7 +312,7 @@ HTTPConnection Objects
    but there is a request body, one of those
    header fields will be added automatically.  If
    *body* is ``None``, the Content-Length header is set to ``0`` for
-   methods that expect a body (``PUT``, ``POST``, and ``PATCH``).  If
+   methods that expect a body (``PUT``, ``POST``, ``PATCH``, and ``QUERY``).  If
    *body* is a string or a bytes-like object that is not also a
    :term:`file <file object>`, the Content-Length header is
    set to its length.  Any other type of *body* (files
@@ -368,6 +368,9 @@ HTTPConnection Objects
 
       *continue_timeout* value must be greater than zero, otherwise
       :exc:`ValueError` is raised.
+
+   .. versionchanged:: next
+      ``QUERY`` was added to the methods that expect a body.
 
 .. method:: HTTPConnection.getresponse(support_continue=False)
 
