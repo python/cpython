@@ -192,6 +192,7 @@ class HTTPMethod:
 
         * RFC 9110: HTTP Semantics, obsoletes 7231, which obsoleted 2616
         * RFC 5789: PATCH Method for HTTP
+        * RFC 10008: The HTTP QUERY Method
     """
     def __new__(cls, value, description):
         obj = str.__new__(cls, value)
@@ -210,4 +211,5 @@ class HTTPMethod:
     PATCH = 'PATCH', 'Apply partial modifications to a target.'
     POST = 'POST', 'Perform target-specific processing with the request payload.'
     PUT = 'PUT', 'Replace the target with the request payload.'
+    QUERY = 'QUERY', 'Query the target with the request payload.'
     TRACE = 'TRACE', 'Perform a message loop-back test along the path to the target.'
