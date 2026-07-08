@@ -379,8 +379,8 @@ class CAPITests(unittest.TestCase):
                 finally:
                     config_set(name, old_value)
 
-    def test_config_set_sys_flag(self):
-        # Test PyConfig_Set() with global variables
+    def test_config_set_global_vars(self):
+        # Test PyConfig_Set() with global configuration variables
         config_get = _testcapi.config_get
         config_set = _testcapi.config_set
         get_configs = _testinternalcapi.get_configs
