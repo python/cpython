@@ -872,7 +872,8 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
     return (type->tp_weaklistoffset != 0);
 }
 
-extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+// Export for 'array' shared extension.
+PyAPI_FUNC(PyObject*) _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 PyAPI_FUNC(PyObject *) _PyType_NewManagedObject(PyTypeObject *type);
 
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);

@@ -816,16 +816,12 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
 }
 
 
-static PyDictKeysObject*
-new_keys_object(uint8_t log2_size, bool unicode)
+static inline int
+get_log2_bytes(uint8_t log2_size)
 {
-    Py_ssize_t usable;
     int log2_bytes;
-    size_t entry_size = unicode ? sizeof(PyDictUnicodeEntry) : sizeof(PyDictKeyEntry);
-
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
-    usable = USABLE_FRACTION((size_t)1<<log2_size);
     if (log2_size < 8) {
         log2_bytes = log2_size;
     }
@@ -841,8 +837,40 @@ new_keys_object(uint8_t log2_size, bool unicode)
         log2_bytes = log2_size + 2;
     }
 
+    return log2_bytes;
+}
+
+static inline void
+init_keys_object(PyDictKeysObject* dk, uint8_t log2_size, int log2_bytes, int kind,
+                 Py_ssize_t usable, Py_ssize_t entry_size)
+{
+#ifdef Py_REF_DEBUG
+    _Py_IncRefTotal(_PyThreadState_GET());
+#endif
+    dk->dk_refcnt = 1;
+    dk->dk_log2_size = log2_size;
+    dk->dk_log2_index_bytes = log2_bytes;
+    dk->dk_kind = kind;
+#ifdef Py_GIL_DISABLED
+    dk->dk_mutex = (PyMutex){0};
+#endif
+    dk->dk_nentries = 0;
+    dk->dk_usable = usable;
+    dk->dk_version = 0;
+    size_t indices_size = (size_t)1 << log2_bytes;
+    memset(_DK_INDICES(dk), 0xff, indices_size);
+    memset(_DK_ENTRIES(dk), 0, entry_size * usable);
+}
+
+static PyDictKeysObject*
+new_keys_object(uint8_t log2_size, bool unicode)
+{
+    Py_ssize_t usable = USABLE_FRACTION((size_t)1<<log2_size);
+    size_t entry_size = unicode ? sizeof(PyDictUnicodeEntry) : sizeof(PyDictKeyEntry);
+
+    int log2_bytes = get_log2_bytes(log2_size);
+    size_t indices_size = (size_t)1 << log2_bytes;
     void *base = NULL;
-    const size_t indices_size = (size_t)1 << log2_bytes;
     if (log2_size == PyDict_LOG_MINSIZE && unicode) {
         base = _Py_FREELIST_POP_MEM(dictkeys);
     }
@@ -854,42 +882,37 @@ new_keys_object(uint8_t log2_size, bool unicode)
             return NULL;
         }
     }
-
     PyDictKeysObject *dk = _DK_FROM_BASE(base, indices_size);
-
-#ifdef Py_REF_DEBUG
-    _Py_IncRefTotal(_PyThreadState_GET());
-#endif
-    dk->dk_refcnt = 1;
-    dk->dk_log2_size = log2_size;
-    dk->dk_log2_index_bytes = log2_bytes;
-    dk->dk_kind = unicode ? DICT_KEYS_UNICODE : DICT_KEYS_GENERAL;
-#ifdef Py_GIL_DISABLED
-    dk->dk_mutex = (PyMutex){0};
-#endif
-    dk->dk_nentries = 0;
-    dk->dk_usable = usable;
-    dk->dk_version = 0;
-    memset(_DK_INDICES(dk), 0xff, indices_size);
-    memset(&dk->dk_entries, 0, entry_size * usable);
+    init_keys_object(dk, log2_size, log2_bytes,
+                     unicode ? DICT_KEYS_UNICODE : DICT_KEYS_GENERAL,
+                     usable, entry_size);
     return dk;
 }
 
 static void
 free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
 {
-    void *base = _DK_INDICES(keys);
+    void *ptr = _DK_INDICES(keys);
+#ifdef Py_GIL_DISABLED
+    size_t size = _PyDict_KeysSize(keys);
+#endif
+    if (keys->dk_kind == DICT_KEYS_SPLIT) {
+        ptr = _PyDictKeys_AsSharedKeys(keys);
+#ifdef Py_GIL_DISABLED
+        size += sizeof(struct _instancekeysobject);
+#endif
+    }
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeDelayed(base, _PyDict_KeysSize(keys));
+        _PyMem_FreeDelayed(ptr, size);
         return;
     }
 #endif
     if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE && keys->dk_kind == DICT_KEYS_UNICODE) {
-        _Py_FREELIST_FREE(dictkeys, base, PyMem_Free);
+        _Py_FREELIST_FREE(dictkeys, ptr, PyMem_Free);
     }
     else {
-        PyMem_Free(base);
+        PyMem_Free(ptr);
     }
 }
 
@@ -1950,6 +1973,12 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     if (ix >= 0) {
         return ix;
     }
+
+    // We need to acquire the type lock before the keys mutex. Another lock
+    // is never acquired below the keys mutex but a keys mutex can be acquired
+    // elsewhere while we hold the types lock. To avoid deadlocks we must always
+    // acquire the type lock first.
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&_PyInterpreterState_GET()->types.mutex);
 #endif
 
     LOCK_KEYS(keys);
@@ -1957,6 +1986,12 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     if (ix == DKIX_EMPTY && keys->dk_usable > 0) {
         // Insert into new slot
         FT_ATOMIC_STORE_UINT32_RELAXED(keys->dk_version, 0);
+        struct _instancekeysobject *shared_keys = _PyDictKeys_AsSharedKeys(keys);
+        PyTypeObject *type = FT_ATOMIC_LOAD_PTR_ACQUIRE(shared_keys->dsk_owning_type);
+        if (type) {
+            // we acquired the type lock above
+            _PyType_Modified_Unlocked(type);
+        }
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         dictkeys_set_index(keys, hashpos, ix);
@@ -1966,6 +2001,10 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
     }
     assert (ix < SHARED_KEYS_MAX_SIZE);
     UNLOCK_KEYS(keys);
+
+#ifdef Py_GIL_DISABLED
+    Py_END_CRITICAL_SECTION();
+#endif
     return ix;
 }
 
@@ -7241,16 +7280,28 @@ dictvalues_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDictKeysObject *
 _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
 {
-    PyDictKeysObject *keys = new_keys_object(NEXT_LOG2_SHARED_KEYS_MAX_SIZE, 1);
-    if (keys == NULL) {
+    int log2_bytes = get_log2_bytes(NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
+    Py_ssize_t usable = USABLE_FRACTION((size_t)1<<NEXT_LOG2_SHARED_KEYS_MAX_SIZE);
+    size_t indices_size = (size_t)1 << log2_bytes;
+    size_t keys_size = sizeof(PyDictKeysObject) - sizeof(PyDictKeyEntry)
+                     + sizeof(PyDictUnicodeEntry) * usable;
+
+    struct _instancekeysobject *shared_keys =
+                          PyMem_Malloc(sizeof(struct _instancekeysobject)
+                          + indices_size
+                          + keys_size);
+    if (shared_keys == NULL) {
         PyErr_Clear();
+        return NULL;
     }
-    else {
-        assert(keys->dk_nentries == 0);
-        /* Set to max size+1 as it will shrink by one before each new object */
-        keys->dk_usable = SHARED_KEYS_MAX_SIZE;
-        keys->dk_kind = DICT_KEYS_SPLIT;
-    }
+
+    shared_keys->dsk_owning_type = (PyTypeObject *)cls;
+    PyDictKeysObject* keys = _DK_FROM_BASE((char *)shared_keys + sizeof(struct _instancekeysobject),
+                                           indices_size);
+    init_keys_object(keys, NEXT_LOG2_SHARED_KEYS_MAX_SIZE, log2_bytes, DICT_KEYS_SPLIT,
+                     SHARED_KEYS_MAX_SIZE, sizeof(PyDictUnicodeEntry));
+    assert(keys->dk_nentries == 0);
+    /* Set to max size+1 as it will shrink by one before each new object */
     if (cls->ht_type.tp_dict) {
         PyObject *attrs = PyDict_GetItem(cls->ht_type.tp_dict, &_Py_ID(__static_attributes__));
         if (attrs != NULL && PyTuple_Check(attrs)) {
@@ -7266,6 +7317,15 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
         }
     }
     return keys;
+}
+
+void
+_PyDict_RemoveKeysForClass(PyHeapTypeObject *cls)
+{
+    struct _instancekeysobject *shared_keys = _PyDictKeys_AsSharedKeys(cls->ht_cached_keys);
+    FT_ATOMIC_STORE_PTR_RELEASE(shared_keys->dsk_owning_type, NULL);
+
+    _PyDictKeys_DecRef(cls->ht_cached_keys);
 }
 
 void

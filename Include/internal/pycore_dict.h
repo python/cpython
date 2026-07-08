@@ -90,6 +90,7 @@ typedef struct {
 } PyDictUnicodeEntry;
 
 extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
+extern void _PyDict_RemoveKeysForClass(PyHeapTypeObject *);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Implementations of the `|` and `|=` operators for dict, used by the
@@ -224,6 +225,19 @@ struct _dictkeysobject {
         PyDictUnicodeEntry unicode_entries[1];
     } dk_entries;
 };
+
+struct _instancekeysobject {
+    PyTypeObject* dsk_owning_type;
+};
+
+static inline struct _instancekeysobject *_PyDictKeys_AsSharedKeys(struct _dictkeysobject *keys)
+{
+    assert(keys->dk_kind == DICT_KEYS_SPLIT);
+    size_t index_bytes = (size_t)1 << keys->dk_log2_index_bytes;
+    return (struct _instancekeysobject *)((char *)keys
+                                          - index_bytes
+                                          - sizeof(struct _instancekeysobject));
+}
 
 /* This must be no more than 250, for the prefix size to fit in one byte. */
 #define SHARED_KEYS_MAX_SIZE 30

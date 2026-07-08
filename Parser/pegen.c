@@ -940,6 +940,11 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     assert(p->level == 0);
+    if (res != NULL && PyErr_Occurred()) {
+        // Discard a result returned with an exception still pending
+        // (e.g. a MemoryError from a recovered-from allocation failure).
+        return NULL;
+    }
     if (res == NULL) {
         if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
             PyErr_Clear();
@@ -995,7 +1000,10 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     if (tok == NULL) {
         if (PyErr_Occurred()) {
             _PyTokenizer_raise_init_error(filename_ob);
-            return NULL;
+        }
+        else {
+            // The only silent tokenizer init failure is a failed allocation.
+            PyErr_NoMemory();
         }
         return NULL;
     }
@@ -1053,6 +1061,10 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     if (tok == NULL) {
         if (PyErr_Occurred()) {
             _PyTokenizer_raise_init_error(filename_ob);
+        }
+        else {
+            // The only silent tokenizer init failure is a failed allocation.
+            PyErr_NoMemory();
         }
         return NULL;
     }
