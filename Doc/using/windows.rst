@@ -165,7 +165,8 @@ Runtimes from other distributors may require the *company* to be included as
 well. This should be separated from the tag by a slash, and may be a prefix.
 Specifying the company is optional when it is ``PythonCore``, and specifying the
 tag is optional (but not the slash) when you want the latest release from a
-specific company.
+specific company. The following examples are illustrative and may use either
+``/`` or ``\``.
 
 .. code::
 
