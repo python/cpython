@@ -1,0 +1,2 @@
+Add limits to frame and coroutine-chain walks in the Tachyon sampling
+profiler. This avoids potential hangs. Patch by Maurycy Pawłowski-Wieroński.
