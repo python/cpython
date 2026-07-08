@@ -715,6 +715,26 @@ class HeapClassSanityTest:
         self.assertEqual(h.replace(new_item), expected)
         self.assertEqual(len(h), len(self.ordered))
 
+    def test_nsmallest(self):
+        data = [random.randrange(1000) for _ in range(100)]
+        h = self.cls(data)
+        self.assertEqual(h.nsmallest(10), sorted(data)[:10])
+        # the heap is not modified
+        self.assertEqual(len(h), len(data))
+
+    def test_nlargest(self):
+        data = [random.randrange(1000) for _ in range(100)]
+        h = self.cls(data)
+        self.assertEqual(h.nlargest(10), sorted(data, reverse=True)[:10])
+        # the heap is not modified
+        self.assertEqual(len(h), len(data))
+
+    def test_nsmallest_nlargest_with_key(self):
+        data = ['a', 'ee', 'ddd', 'bbbb', 'ccccc']
+        h = self.cls(data)
+        self.assertEqual(h.nsmallest(2, key=len), ['a', 'ee'])
+        self.assertEqual(h.nlargest(2, key=len), ['ccccc', 'bbbb'])
+
     def test_repr(self):
         h = self.cls(self.ordered)
         self.assertEqual(repr(h), f'{self.cls.__name__}({self.ordered!r})')
@@ -790,6 +810,18 @@ class HeapClassDelegationTest:
         with mock.patch.object(py_heapq, self.replace_func) as m:
             h.replace(42)
         m.assert_called_once_with(h._queue, 42)
+
+    def test_nsmallest_delegates(self):
+        h = self.cls([1, 2, 3])
+        with mock.patch.object(py_heapq, 'nsmallest') as m:
+            h.nsmallest(2, key=str)
+        m.assert_called_once_with(2, h._queue, key=str)
+
+    def test_nlargest_delegates(self):
+        h = self.cls([1, 2, 3])
+        with mock.patch.object(py_heapq, 'nlargest') as m:
+            h.nlargest(2, key=str)
+        m.assert_called_once_with(2, h._queue, key=str)
 
 
 class TestMinHeapDelegation(HeapClassDelegationTest, TestCase):

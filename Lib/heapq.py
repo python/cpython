@@ -644,6 +644,22 @@ class MinHeap:
         """
         return heapreplace(self._queue, item)
 
+    def nsmallest(self, n, key=None):
+        """Return a list of the n smallest items, smallest first.
+
+        The heap is left unchanged.  If *key* is given, it is applied to
+        each item to determine the ordering.
+        """
+        return nsmallest(n, self._queue, key=key)
+
+    def nlargest(self, n, key=None):
+        """Return a list of the n largest items, largest first.
+
+        The heap is left unchanged.  If *key* is given, it is applied to
+        each item to determine the ordering.
+        """
+        return nlargest(n, self._queue, key=key)
+
     def __len__(self):
         return len(self._queue)
 
@@ -703,6 +719,22 @@ class MaxHeap:
         the value returned may be smaller than item.
         """
         return heapreplace_max(self._queue, item)
+
+    def nsmallest(self, n, key=None):
+        """Return a list of the n smallest items, smallest first.
+
+        The heap is left unchanged.  If *key* is given, it is applied to
+        each item to determine the ordering.
+        """
+        return nsmallest(n, self._queue, key=key)
+
+    def nlargest(self, n, key=None):
+        """Return a list of the n largest items, largest first.
+
+        The heap is left unchanged.  If *key* is given, it is applied to
+        each item to determine the ordering.
+        """
+        return nlargest(n, self._queue, key=key)
 
     def __len__(self):
         return len(self._queue)
