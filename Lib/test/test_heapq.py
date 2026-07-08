@@ -17,6 +17,8 @@ func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace']
 # Add max-heap variants
 func_names += [func + '_max' for func in func_names]
 
+class_names = ['MinHeap', 'MaxHeap']
+
 class TestModules(TestCase):
     def test_py_functions(self):
         for fname in func_names:
@@ -26,6 +28,15 @@ class TestModules(TestCase):
     def test_c_functions(self):
         for fname in func_names:
             self.assertEqual(getattr(c_heapq, fname).__module__, '_heapq', fname)
+
+    def test_py_classes(self):
+        # MinHeap and MaxHeap are only implemented in pure Python; there is no
+        # C accelerator for them.  They rely on the module-level functions,
+        # which are the C versions when _heapq is available.
+        for cname in class_names:
+            self.assertEqual(getattr(py_heapq, cname).__module__, 'heapq')
+            if c_heapq is not None:
+                self.assertEqual(getattr(c_heapq, cname).__module__, 'heapq')
 
 
 def load_tests(loader, tests, ignore):
@@ -696,6 +707,9 @@ class HeapClassSanityTest:
         h.push(1)
         self.assertEqual(len(h), 1)
         self.assertTrue(h)
+
+    def test_construct_non_iterable_raises(self):
+        self.assertRaises(TypeError, self.cls, 10)
 
     def test_pop_empty_raises(self):
         h = self.cls()
