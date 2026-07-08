@@ -2,7 +2,6 @@ import concurrent.futures
 import unittest
 import inspect
 from threading import Barrier
-from unittest import TestCase
 
 from test.support import threading_helper
 
@@ -25,7 +24,7 @@ def set_func_annotation(f, b):
     return f.__annotations__
 
 
-class TestFunction(TestCase):
+class TestFunction(unittest.TestCase):
     NUM_THREADS = 4
 
     def test_name_attribute_race(self):
