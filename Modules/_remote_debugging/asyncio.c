@@ -252,7 +252,8 @@ handle_yield_from_frame(
     RemoteUnwinderObject *unwinder,
     uintptr_t gi_iframe_addr,
     uintptr_t gen_type_addr,
-    PyObject *render_to
+    PyObject *render_to,
+    size_t depth
 ) {
     // Read the entire interpreter frame at once
     char iframe[SIZEOF_INTERP_FRAME];
@@ -309,7 +310,8 @@ handle_yield_from_frame(
                    doesn't match the type of whatever it points to
                    in its cr_await.
                 */
-                err = parse_coro_chain(unwinder, gi_await_addr, render_to);
+                err = parse_coro_chain(unwinder, gi_await_addr, render_to,
+                                       depth + 1);
                 if (err) {
                     set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain in yield_from");
                     return -1;
@@ -325,9 +327,18 @@ int
 parse_coro_chain(
     RemoteUnwinderObject *unwinder,
     uintptr_t coro_address,
-    PyObject *render_to
+    PyObject *render_to,
+    size_t depth
 ) {
     assert((void*)coro_address != NULL);
+
+    if (depth >= MAX_FRAME_CHAIN_DEPTH) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "Too many coroutine frames (possible infinite loop)");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "Coroutine chain depth limit exceeded");
+        return -1;
+    }
 
     // Read the entire generator object at once
     char gen_object[SIZEOF_GEN_OBJ];
@@ -371,7 +382,8 @@ parse_coro_chain(
     Py_DECREF(name);
 
     if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
-        return handle_yield_from_frame(unwinder, gi_iframe_addr, gen_type_addr, render_to);
+        return handle_yield_from_frame(unwinder, gi_iframe_addr, gen_type_addr,
+                                       render_to, depth);
     }
 
     return 0;
@@ -417,7 +429,7 @@ create_task_result(
     coro_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
 
     if ((void*)coro_addr != NULL) {
-        if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
+        if (parse_coro_chain(unwinder, coro_addr, call_stack, 0) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain");
             goto error;
         }

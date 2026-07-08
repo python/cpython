@@ -733,7 +733,8 @@ extern int parse_task(
 extern int parse_coro_chain(
     RemoteUnwinderObject *unwinder,
     uintptr_t coro_address,
-    PyObject *render_to
+    PyObject *render_to,
+    size_t depth
 );
 
 extern int parse_async_frame_chain(
