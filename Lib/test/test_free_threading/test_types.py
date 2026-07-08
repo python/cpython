@@ -1,5 +1,4 @@
 import unittest
-import types
 from typing import TypeVar
 from test.support import threading_helper
 
@@ -7,7 +6,7 @@ threading_helper.requires_working_threading(module=True)
 
 
 class TestGenericAlias(unittest.TestCase):
-    def test_repr_race(self):
+    def test_parameters_race(self):
         # gh-153298
 
         T = TypeVar('T')
