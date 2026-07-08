@@ -818,6 +818,92 @@ class Misc:
         else:
             return self.tk.getint(self.tk.call(args))
 
+    # Accessibility support for assistive technologies such as screen
+    # readers.  Requires Tk 9.1 or newer.  If no assistive technology
+    # is active when the application starts, all these calls (except
+    # tk_check_screenreader()) have no effect and return 0.
+
+    def tk_check_screenreader(self):
+        """Return whether a screen reader is currently running.
+
+        Requires Tk 9.1 or newer."""
+        return self.tk.getboolean(self.tk.call(
+                'tk', 'accessible', 'check_screenreader'))
+
+    def tk_set_acc_role(self, value):
+        """Set the accessible role of the widget."""
+        self.tk.call('tk', 'accessible', 'set_acc_role', self._w, value)
+
+    def tk_get_acc_role(self):
+        """Return the accessible role of the widget."""
+        return self.tk.call('tk', 'accessible', 'get_acc_role', self._w)
+
+    def tk_set_acc_name(self, value):
+        """Set the accessible name of the widget."""
+        self.tk.call('tk', 'accessible', 'set_acc_name', self._w, value)
+
+    def tk_get_acc_name(self):
+        """Return the accessible name of the widget."""
+        return self.tk.call('tk', 'accessible', 'get_acc_name', self._w)
+
+    def tk_set_acc_description(self, value):
+        """Set the accessible description of the widget."""
+        self.tk.call('tk', 'accessible', 'set_acc_description',
+                     self._w, value)
+
+    def tk_get_acc_description(self):
+        """Return the accessible description of the widget."""
+        return self.tk.call('tk', 'accessible', 'get_acc_description',
+                            self._w)
+
+    def tk_set_acc_value(self, value):
+        """Set the accessible value of the widget."""
+        self.tk.call('tk', 'accessible', 'set_acc_value', self._w, value)
+
+    def tk_get_acc_value(self):
+        """Return the accessible value of the widget."""
+        return self.tk.call('tk', 'accessible', 'get_acc_value', self._w)
+
+    def tk_set_acc_state(self, value):
+        """Set the accessible state of the widget."""
+        self.tk.call('tk', 'accessible', 'set_acc_state', self._w, value)
+
+    def tk_get_acc_state(self):
+        """Return the accessible state of the widget."""
+        return self.tk.call('tk', 'accessible', 'get_acc_state', self._w)
+
+    def tk_set_acc_action(self, value):
+        """Set the accessible action of the widget."""
+        self.tk.call('tk', 'accessible', 'set_acc_action', self._w, value)
+
+    def tk_get_acc_action(self):
+        """Return the accessible action of the widget."""
+        return self.tk.call('tk', 'accessible', 'get_acc_action', self._w)
+
+    def tk_set_acc_help(self, value):
+        """Set the accessible help text of the widget."""
+        self.tk.call('tk', 'accessible', 'set_acc_help', self._w, value)
+
+    def tk_get_acc_help(self):
+        """Return the accessible help text of the widget."""
+        return self.tk.call('tk', 'accessible', 'get_acc_help', self._w)
+
+    def tk_add_acc_object(self):
+        """Register the widget with the platform accessibility API."""
+        self.tk.call('tk', 'accessible', 'add_acc_object', self._w)
+
+    def tk_emit_selection_change(self):
+        """Notify the platform accessibility API that the selection
+        in the widget has changed."""
+        self.tk.call('tk', 'accessible', 'emit_selection_change', self._w)
+
+    def tk_emit_focus_change(self):
+        """Notify the platform accessibility API that the widget has
+        received focus.
+
+        Not available on macOS."""
+        self.tk.call('tk', 'accessible', 'emit_focus_change', self._w)
+
     def wait_variable(self, name):
         """Wait until the variable is modified.
 

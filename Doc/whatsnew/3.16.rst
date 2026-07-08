@@ -374,6 +374,18 @@ tkinter
   report the user idle time.
   (Contributed by Serhiy Storchaka in :gh:`151881`.)
 
+* Added :mod:`tkinter` support for the Tk 9.1 accessibility API: the
+  :meth:`~tkinter.Misc.tk_set_acc_role` and
+  :meth:`~tkinter.Misc.tk_get_acc_role` families of methods which set and
+  return the accessible attributes of a widget, the
+  :meth:`~tkinter.Misc.tk_add_acc_object`,
+  :meth:`~tkinter.Misc.tk_emit_selection_change` and
+  :meth:`~tkinter.Misc.tk_emit_focus_change` methods which register custom
+  widgets with the platform accessibility API, and the
+  :meth:`~tkinter.Misc.tk_check_screenreader` method which reports whether
+  a screen reader is running.
+  (Contributed by Serhiy Storchaka in :gh:`145578`.)
+
 * Added new window-management methods :meth:`~tkinter.Misc.winfo_isdark`
   (dark mode detection), :meth:`~tkinter.Wm.wm_iconbadge` (application icon
   badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).

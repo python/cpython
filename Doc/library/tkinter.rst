@@ -1894,6 +1894,75 @@ Base and mixin classes
 
       .. versionadded:: next
 
+   The following methods support assistive technologies such as screen
+   readers.
+   They require Tk 9.1 or newer.
+   Tk automatically exposes the standard widgets to the platform
+   accessibility API;
+   these methods allow overriding the exposed attributes and registering
+   custom widgets.
+   If no assistive technology is active when the application starts,
+   all these calls (except :meth:`!tk_check_screenreader`)
+   have no effect and return ``0``.
+
+   .. method:: tk_check_screenreader()
+
+      Return whether a screen reader is currently running.
+
+      .. versionadded:: next
+
+   .. method:: tk_set_acc_role(value)
+               tk_set_acc_name(value)
+               tk_set_acc_description(value)
+               tk_set_acc_value(value)
+               tk_set_acc_state(value)
+               tk_set_acc_action(value)
+               tk_set_acc_help(value)
+
+      Set an accessible attribute of the widget.
+      The supported roles are ``Button``, ``Canvas``, ``Checkbutton``,
+      ``Combobox``, ``Entry``, ``Label``, ``Listbox``, ``Menu``,
+      ``Notebook``, ``Progressbar``, ``Scale``, ``Scrollbar``,
+      ``Spinbox``, ``Table``, ``Text`` and ``Tree``.
+
+      .. versionadded:: next
+
+   .. method:: tk_get_acc_role()
+               tk_get_acc_name()
+               tk_get_acc_description()
+               tk_get_acc_value()
+               tk_get_acc_state()
+               tk_get_acc_action()
+               tk_get_acc_help()
+
+      Return an accessible attribute of the widget.
+      Raise :exc:`~tkinter.TclError` if the attribute has not been set.
+
+      .. versionadded:: next
+
+   .. method:: tk_add_acc_object()
+
+      Register the widget with the platform accessibility API.
+      This is only needed for custom widgets;
+      the standard widgets are registered automatically.
+
+      .. versionadded:: next
+
+   .. method:: tk_emit_selection_change()
+
+      Notify the platform accessibility API that the selection in the
+      widget has changed.
+
+      .. versionadded:: next
+
+   .. method:: tk_emit_focus_change()
+
+      Notify the platform accessibility API that the widget has received
+      focus.
+      Not available on macOS.
+
+      .. versionadded:: next
+
    The methods with the ``busy_`` prefix manage the busy state of a window,
    which shows a busy cursor and ignores user input.
 

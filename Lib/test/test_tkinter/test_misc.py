@@ -599,6 +599,35 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # Resetting the timer returns None and does not raise.
         self.assertIsNone(self.root.tk_inactive(reset=True))
 
+    @requires_tk(9, 1)
+    def test_accessibility(self):
+        # Without an active screen reader every "tk accessible" call is
+        # a no-op returning 0, so only test that the calls do not raise
+        # and check the values when a screen reader is active.
+        try:
+            sr = self.root.tk_check_screenreader()
+        except tkinter.TclError:
+            # Tk 9.1a0 or Tk compiled without accessibility support
+            # (e.g. without ATK on X11).
+            self.skipTest('the "tk accessible" command is not supported')
+        self.assertIsInstance(sr, bool)
+        f = tkinter.Frame(self.root)
+        for attr in ('name', 'description', 'value', 'state',
+                     'action', 'help'):
+            with self.subTest(attr=attr):
+                getattr(f, f'tk_set_acc_{attr}')('spam')
+                result = getattr(f, f'tk_get_acc_{attr}')()
+                if sr:
+                    self.assertEqual(result, 'spam')
+        f.tk_set_acc_role('Label')
+        result = f.tk_get_acc_role()
+        if sr:
+            self.assertEqual(result, 'Label')
+        f.tk_add_acc_object()
+        f.tk_emit_selection_change()
+        if self.root._windowingsystem != 'aqua':
+            f.tk_emit_focus_change()
+
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
         self.assertEqual(self.root.waitvar, self.root.wait_variable)
