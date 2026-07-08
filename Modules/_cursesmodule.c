@@ -5125,7 +5125,7 @@ static PyType_Spec PyCursesWindow_Type_spec = {
 
 static PyObject *
 PyCursesScreen_New(cursesmodule_state *state, SCREEN *screen,
-                   FILE *outfp, FILE *infp, PyObject *stdscr)
+                   FILE *outfp, FILE *infp, PyObject *stdscr_win)
 {
     PyCursesScreenObject *so = PyObject_GC_New(PyCursesScreenObject,
                                                state->screen_type);
@@ -5135,7 +5135,7 @@ PyCursesScreen_New(cursesmodule_state *state, SCREEN *screen,
     so->screen = screen;
     so->outfp = outfp;
     so->infp = infp;
-    so->stdscr = Py_XNewRef(stdscr);
+    so->stdscr_win = Py_XNewRef(stdscr_win);
     PyObject_GC_Track((PyObject *)so);
     return (PyObject *)so;
 }
@@ -5169,17 +5169,17 @@ static PyObject *
 PyCursesScreen_get_stdscr(PyObject *self, void *Py_UNUSED(closure))
 {
     PyCursesScreenObject *so = _PyCursesScreenObject_CAST(self);
-    if (so->stdscr == NULL) {
+    if (so->stdscr_win == NULL) {
         Py_RETURN_NONE;
     }
-    return Py_NewRef(so->stdscr);
+    return Py_NewRef(so->stdscr_win);
 }
 
 static int
 PyCursesScreen_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(_PyCursesScreenObject_CAST(self)->stdscr);
+    Py_VISIT(_PyCursesScreenObject_CAST(self)->stdscr_win);
     return 0;
 }
 
@@ -5194,10 +5194,10 @@ PyCursesScreen_clear(PyObject *self)
        detach it from its wrapper first: the wrapper must not delwin() a window
        that delscreen() frees.  Any further use of the wrapper operates on a
        NULL window and fails cleanly. */
-    if (so->stdscr != NULL) {
-        ((PyCursesWindowObject *)so->stdscr)->win = NULL;
+    if (so->stdscr_win != NULL) {
+        ((PyCursesWindowObject *)so->stdscr_win)->win = NULL;
     }
-    Py_CLEAR(so->stdscr);
+    Py_CLEAR(so->stdscr_win);
     return 0;
 }
 
@@ -6724,7 +6724,7 @@ _curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
         Py_DECREF(screenobj);
         return NULL;
     }
-    ((PyCursesScreenObject *)screenobj)->stdscr = Py_NewRef(win);
+    ((PyCursesScreenObject *)screenobj)->stdscr_win = Py_NewRef(win);
     Py_DECREF(win);
     Py_XSETREF(state->topscreen, Py_NewRef(screenobj));
     return screenobj;

@@ -26,7 +26,7 @@ jobs:
         && ' (free-threading)'
         || ''
       }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -37,14 +37,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
-        # Install clang
-        wget https://apt.llvm.org/llvm.sh
-        chmod +x llvm.sh
-        sudo ./llvm.sh 21
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-21 100
-        sudo update-alternatives --set clang /usr/bin/clang-21
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-21 100
-        sudo update-alternatives --set clang++ /usr/bin/clang++-21
+        # On ubuntu-26.04 image, clang is clang-21 by default
 
         if [ "${SANITIZER}" = "TSan" ]; then
           # Reduce ASLR to avoid TSan crashing
