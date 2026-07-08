@@ -138,6 +138,12 @@ _non_list_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff\\"]')
 _quoted = re.compile(br'"(?:[^"\\]|\\.)*+"')
 
 
+def _paren_depth(data, depth=0):
+    # Net parenthesis nesting of data, ignoring parentheses in quoted strings.
+    data = _quoted.sub(b'', data)
+    return depth + data.count(b'(') - data.count(b')')
+
+
 class IMAP4:
 
     r"""IMAP4 client class.
@@ -1345,6 +1351,11 @@ class IMAP4:
         else:
             resp = self._get_line()
 
+        # Skip spurious blank lines between responses (some servers send one
+        # after a literal that ends a response).
+        while resp == b'':
+            resp = self._get_line()
+
         # Command completion response?
 
         if self._match(self.tagre, resp):
@@ -1382,6 +1393,7 @@ class IMAP4:
 
             # Is there a literal to come?
 
+            depth = 0                   # open parenthesis nesting so far
             while self._match(self.Literal, dat):
 
                 # Read literal direct from connection.
@@ -1395,13 +1407,15 @@ class IMAP4:
                 # Store response with literal as tuple
 
                 self._append_untagged(typ, (dat, data))
+                depth = _paren_depth(dat, depth)
 
                 # Read trailer - possibly containing another literal
 
                 dat = self._get_line()
 
-                # Skip a blank line that some servers send after a literal.
-                if dat == b'':
+                # Skip spurious blank lines after a literal, but only inside an
+                # unclosed parenthesis (at top level they end the response).
+                while dat == b'' and depth > 0:
                     dat = self._get_line()
 
             self._append_untagged(typ, dat)

@@ -214,6 +214,14 @@ curses
   wide-character support.
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
+encodings
+---------
+
+* Add the ``utf-7-imap`` codec, implementing the modified UTF-7 encoding
+  used for international IMAP4 mailbox names (:rfc:`3501`).
+  (Contributed by Serhiy Storchaka in :gh:`66788`.)
+
+
 gzip
 ----
 
@@ -243,6 +251,14 @@ imaplib
   using the ``PLAIN`` SASL mechanism (:rfc:`4616`) and supports non-ASCII
   user names and passwords.
   (Contributed by Przemysław Buczkowski and Serhiy Storchaka in :gh:`89869`.)
+
+
+ipaddress
+---------
+
+Add :meth:`~ipaddress.IPv4Network.next_network` and
+:meth:`~ipaddress.IPv6Network.next_network` methods to find the next nearest
+network with a specific prefix size.
 
 
 logging
@@ -407,6 +423,12 @@ tkinter
   :mod:`tkinter` widgets, and gained a *use_ttk* parameter to select between
   them.
   (Contributed by Serhiy Storchaka in :gh:`59396`.)
+
+* :class:`tkinter.font.Font` can now wrap a font description without creating a
+  new named font, by passing it as *font* with ``exists=True`` and no *name*.
+  This avoids a loss of precision in :meth:`~tkinter.font.Font.actual`,
+  :meth:`~tkinter.font.Font.measure` and :meth:`~tkinter.font.Font.metrics`.
+  (Contributed by Serhiy Storchaka in :gh:`143990`.)
 
 xml
 ---
@@ -581,6 +603,13 @@ New deprecations
     deprecated.  These codes will be removed in Python 3.21.  Use instead
     two-letter forms ``'Zf'`` and ``'Zd'``.
     (Contributed by Sergey B Kirpichev in :gh:`121249`.)
+
+* :mod:`tempfile`
+
+  * The private ``tempfile._TemporaryFileWrapper`` name is deprecated
+    and is slated for removal in Python 3.21.
+    Use the new public :class:`tempfile.TemporaryFileWrapper` instead,
+    which is the return type of :func:`tempfile.NamedTemporaryFile`.
 
 .. Add deprecations above alphabetically, not here at the end.
 
