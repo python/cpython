@@ -1,2 +1,2 @@
 Add new backwards-compatible optional keyword parameter ``max_entries`` to
-:class:`ZipFile`.
+:class:`zipfile.ZipFile`.
