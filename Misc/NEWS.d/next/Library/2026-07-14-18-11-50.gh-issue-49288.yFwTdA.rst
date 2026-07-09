@@ -1,0 +1,5 @@
+Fix :mod:`urllib.request` HTTP authentication retries sending an empty POST
+body when :attr:`~urllib.request.Request.data` is a file-like object.  The body
+is now rewound to the position it was in before the original request was sent;
+if it is not seekable, the retry is abandoned and the ``401`` response is
+returned to the caller instead.
