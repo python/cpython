@@ -335,6 +335,9 @@ HTTPConnection Objects
       No attempt is made to determine the Content-Length for file
       objects.
 
+   .. versionchanged:: next
+      ``QUERY`` was added to the methods that expect a body.
+
 .. method:: HTTPConnection.getresponse()
 
    Should be called after a request is sent to get the response from the server.

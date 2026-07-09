@@ -305,6 +305,13 @@ gzip
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
 
+
+http
+----
+
+* Add the ``QUERY`` HTTP method (:rfc:`10008`) to :class:`~http.HTTPMethod`.
+  (Contributed by Michiel W. Beijen in :gh:`153309`.)
+
 io
 --
 
