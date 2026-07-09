@@ -984,13 +984,10 @@ class WmTest(AbstractTkTest, unittest.TestCase):
             and sys.platform == 'darwin'
             and platform.machine() == 'x86_64'
             and platform.mac_ver()[0].startswith('26.')
-            and (
-                patchlevel[:3] <= (8, 6, 17)
-                or (9, 0) <= patchlevel[:3] <= (9, 0, 3)
-            )
         ):
             # https://github.com/python/cpython/issues/146531
             # Tk bug 4a2070f0d3a99aa412bc582d386d575ca2f37323
+            # Not fixed as of Tk 8.6.18 and 9.0.4.
             self.skipTest('wm iconbitmap hangs on macOS 26 Intel')
 
         self.assertEqual(t.wm_iconbitmap(), '')
