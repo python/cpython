@@ -3125,7 +3125,6 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
 static void
 clear_common(PyDictObject *mp)
 {
-    /* Empty the dict... */
     _PyDict_NotifyEvent(PyDict_EVENT_CLEARED, mp, NULL, NULL);
     // We don't inc ref empty keys because they're immortal
     ensure_shared_on_resize(mp);
@@ -3150,6 +3149,7 @@ clear_lock_held(PyObject *op)
     if (oldkeys == Py_EMPTY_KEYS) {
         return;
     }
+    /* Empty the dict... */
     clear_common(mp);
     if (oldvalues == NULL) {
         set_keys(mp, Py_EMPTY_KEYS);
