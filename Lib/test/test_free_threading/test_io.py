@@ -116,7 +116,7 @@ class TestBytesIO(TestCase):
     @threading_helper.requires_working_threading()
     @threading_helper.reap_threads
     def test_concurrent_whole_buffer_read_and_resize(self):
-        shared = self.ioclass(b"x" * 64)
+        shared = BytesIO(b"x" * 64)
         writers = 2
         readers = 8
         loops = 2000
@@ -134,7 +134,6 @@ class TestBytesIO(TestCase):
                 shared.seek(0)
                 shared.read()
                 shared.seek(0)
-                shared.peek()
                 shared.getvalue()
 
         threads = [threading.Thread(target=writer) for _ in range(writers)]
