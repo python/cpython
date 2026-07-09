@@ -738,7 +738,11 @@ def parse_value(
     # char, so needs to be located after handling of dates and times.
     number_match = RE_NUMBER.match(src, pos)
     if number_match:
-        return number_match.end(), match_to_number(number_match, parse_float)
+        try:
+            number = match_to_number(number_match, parse_float)
+        except ValueError as e:
+            raise TOMLDecodeError("Invalid number", src, pos) from e
+        return number_match.end(), number
 
     # Special floats
     first_three = src[pos : pos + 3]

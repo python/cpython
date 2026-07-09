@@ -34,6 +34,16 @@ class TestError(unittest.TestCase):
             tomllib.loads("\n\nfwfw=")
         self.assertEqual(str(exc_info.exception), "Invalid value (at end of document)")
 
+    def test_overlong_integer(self):
+        # An integer with more digits than the int-to-str conversion limit
+        # must raise TOMLDecodeError, not the bare ValueError from int().
+        from test.support import adjust_int_max_str_digits
+        with adjust_int_max_str_digits(1000):
+            digits = "9" * 1001
+            for src in (f"x = {digits}", f"x = -{digits}"):
+                with self.assertRaises(tomllib.TOMLDecodeError):
+                    tomllib.loads(src)
+
     def test_invalid_char_quotes(self):
         with self.assertRaises(tomllib.TOMLDecodeError) as exc_info:
             tomllib.loads("v = '\n'")

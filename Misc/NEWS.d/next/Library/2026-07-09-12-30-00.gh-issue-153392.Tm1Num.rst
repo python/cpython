@@ -1,0 +1,3 @@
+:func:`tomllib.loads` now raises :exc:`tomllib.TOMLDecodeError` instead of
+:exc:`ValueError` when a document contains an integer with more digits than the
+interpreter's integer string conversion limit.
