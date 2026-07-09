@@ -53,7 +53,6 @@ class TestDeque(unittest.TestCase):
 class TestCounter(unittest.TestCase):
     def test_update_concurrent(self):
         # gh-151633: concurrent Counter.update calls must not cause use-after-free
-        # under free-threading.
         NTHREADS = 4
         PER_THREAD = 5000
         c = Counter()
