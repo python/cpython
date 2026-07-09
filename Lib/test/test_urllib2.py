@@ -1005,8 +1005,9 @@ class HandlerTests(unittest.TestCase):
 
             sent_headers = dict(http.req_headers)
             self.assertEqual(sent_headers[key], regular)
-            self.assertEqual(req.get_header(key), regular)
-            self.assertEqual(dict(req.header_items())[key], regular)
+            # key is capitalized by add_header() and add_unredirected_header() calls
+            self.assertEqual(req.get_header(key.capitalize()), regular)
+            self.assertEqual(dict(req.header_items())[key.capitalize()], regular)
 
     def test_http_body_file(self):
         # A regular file - chunked encoding is used unless Content Length is
