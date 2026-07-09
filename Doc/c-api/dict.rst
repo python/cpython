@@ -510,13 +510,17 @@ Dictionary objects
 .. c:function:: PyObject* PyDict_AsFrozenDictAndClear(PyObject *dict)
 
    Return a new :class:`frozendict` created
-   from the existing :c:type:`PyDictObject` instance.
+   from the existing :class:`dict` instance.
    Expects *dict* to be an exact :class:`dict` instance.
 
    Transfers all keys and values from *dict*
-   to the newly allocated :class:`!frozendict` with O(1) complexity.
+   to the newly allocated :class:`!frozendict`.
    Clears the input *dict* on success.
    Returns ``NULL`` with the exception set on error.
+
+   .. impl-detail::
+
+      Works with O(1) complexity.
 
    .. versionadded:: next
 

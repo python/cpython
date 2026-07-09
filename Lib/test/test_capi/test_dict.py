@@ -611,18 +611,18 @@ class CAPITest(unittest.TestCase):
 
     def test_dict_as_frozendict_and_clear(self):
         # Test PyDict_AsFrozenDictAndClear()
-        check = _testcapi.dict_as_frozendict_and_clear
+        as_frozendict = _testcapi.dict_as_frozendict_and_clear
         d = {1: 2, 'a': 'b'}
-        f = check(d)
+        f = as_frozendict(d)
         self.assertIs(type(f), frozendict)
         self.assertEqual(f, frozendict({1: 2, 'a': 'b'}))
         self.assertIs(type(d), dict)
         self.assertEqual(d, {})
 
         d = {}
-        f = check(d)
+        f = as_frozendict(d)
         self.assertIs(type(f), frozendict)
-        self.assertEqual(f, {})
+        self.assertEqual(f, frozendict())
         self.assertIs(type(d), dict)
         self.assertEqual(d, {})
         # CRASHES check([])
