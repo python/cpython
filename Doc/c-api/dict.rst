@@ -514,7 +514,7 @@ Dictionary objects
    Expects *dict* to be an exact :class:`dict` instance.
 
    Transfers all keys and values from *dict*
-   to the newly allocated :c:type:`PyFrozenDict` with O(1) complexity.
+   to the newly allocated :class:`!frozendict` with O(1) complexity.
    Clears the input *dict* on success.
    Returns ``NULL`` with the exception set on error.
 
