@@ -625,9 +625,13 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(f, frozendict())
         self.assertIs(type(d), dict)
         self.assertEqual(d, {})
-        # CRASHES check([])
-        # CRASHES check(frozendict())
-        # CRASHES check(NULL)
+
+        class DictSubtype(dict): ...
+
+        for wrong_input in (frozendict(), DictSubtype(), [], None):
+            with self.subTest(wrong_input=wrong_input):
+                with self.assertRaises(SystemError):
+                    as_frozendict(wrong_input)
 
     def test_frozendict_check(self):
         # Test PyFrozenDict_Check()

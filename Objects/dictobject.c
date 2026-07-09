@@ -8532,33 +8532,40 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
 {
-
     PyDictObject *new = (PyDictObject *)res;
     PyDictObject *old = (PyDictObject *)dict;
+    assert(can_modify_dict(old));
+
     // Fast path: do nothing on an empty dict:
     if (old->ma_keys == Py_EMPTY_KEYS) {
         return;
     }
 
-    // Transfer keys and values from dict to res:
-    STORE_USED(new, old->ma_used);
-    set_keys(new, old->ma_keys);
-    set_values(new, old->ma_values);
-    ASSERT_CONSISTENT(new);
+    Py_ssize_t used = old->ma_used;
+    PyDictKeysObject *keys = old->ma_keys;
+    PyDictValues *values = old->ma_values;
 
-    // Now, clear the old dict keys and values, but do not decref them:
+    // Clear the old dict keys and values, but do not decref them:
     clear_common((PyDictObject *)dict);
     set_keys(old, Py_EMPTY_KEYS);
     set_values(old, NULL);
-    ASSERT_CONSISTENT(dict);
+    ASSERT_CONSISTENT(old);
+
+    // Transfer keys and values from dict to frozendict:
+    new->ma_used = used;
+    new->ma_keys = keys;
+    new->ma_values = values;
+    ASSERT_CONSISTENT(new);
 }
 
 PyObject *
 PyDict_AsFrozenDictAndClear(PyObject *dict)
 {
-    assert(dict != NULL);
-    assert(PyDict_CheckExact(dict));
-    assert(can_modify_dict((PyDictObject *)dict));
+    if (dict == NULL || !PyDict_CheckExact(dict)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
     PyObject *res = frozendict_new_untracked(&PyFrozenDict_Type);
     if (res == NULL) {
         return NULL;
