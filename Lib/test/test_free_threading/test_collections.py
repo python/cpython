@@ -56,7 +56,7 @@ class TestCounter(unittest.TestCase):
         NTHREADS = 4
         PER_THREAD = 5000
         c = Counter()
-        data = ['x'] * PER_THREAD
+        data = ('x',) * PER_THREAD
         threads = [threading.Thread(target=c.update, args=(data,))
                    for _ in range(NTHREADS)]
         for t in threads:
