@@ -1195,12 +1195,7 @@ def _generic_class_getitem(cls, args):
         for param in parameters:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:
-                try:
-                    args = prepare(cls, args)
-                except NameError:
-                    default = annotationlib.call_evaluate_function(
-                        param.evaluate_default, annotationlib.Format.FORWARDREF)
-                    args = (*args, default)
+                args = prepare(cls, args)
         _check_generic_specialization(cls, args)
 
         new_args = []
