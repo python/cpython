@@ -8546,7 +8546,7 @@ transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
     PyDictValues *values = old->ma_values;
 
     // Clear the old dict keys and values, but do not decref them:
-    clear_common((PyDictObject *)dict);
+    clear_common(old);
     set_keys(old, Py_EMPTY_KEYS);
     set_values(old, NULL);
     ASSERT_CONSISTENT(old);
