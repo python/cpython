@@ -14,7 +14,6 @@ import codeop
 import keyword
 import tokenize
 import io
-import _colorize
 import dis
 import importlib.util
 import pathlib
