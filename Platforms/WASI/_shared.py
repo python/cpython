@@ -17,6 +17,9 @@ import tomllib
 
 
 class Context:
+
+    clean = False
+
     def __init__(self):
         self.here = pathlib.Path(__file__).parent
 

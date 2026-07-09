@@ -152,7 +152,7 @@ def make_build_python(context, _working_dir):
     """Make/build the build Python."""
     call(["make", "--jobs", str(cpu_count()), "all"], context=context)
 
-    binary = context.build_python_interpreter()
+    binary = context.build_python_interpreter
     cmd = [
         binary,
         "-c",
@@ -228,7 +228,7 @@ def configure_wasi_python(context, working_dir):
             )
     host_runner = context.host_runner.format_map(args)
     env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner}
-    build_python = os.fsdecode(context.build_python_path)
+    build_python = os.fsdecode(context.build_python_interpreter)
     # The path to `configure` MUST be relative, else `python.wasm` is unable
     # to find the stdlib due to Python not recognizing that it's being
     # executed from within context.checkout.
@@ -277,6 +277,7 @@ def make_wasi_python(context, working_dir):
 
 def clean_contents(context):
     """Delete all files created by this script."""
+    context.clean = True
     if context.cross_build_path.exists():
         _shared.log("🧹", f"Deleting {context.cross_build_path} ...")
         shutil.rmtree(context.cross_build_path)
