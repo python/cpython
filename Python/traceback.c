@@ -71,7 +71,7 @@ class traceback "PyTracebackObject *" "&PyTraceback_Type"
 
 
 #ifdef MS_WINDOWS
-typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
+typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PWSTR*);
 static PF_GET_THREAD_DESCRIPTION pGetThreadDescription = NULL;
 #endif
 

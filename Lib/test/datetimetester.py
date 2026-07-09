@@ -3758,6 +3758,10 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45-00:90:00', # Time zone field out from range
             '2009-04-19T12:30:45-00:00:90', # Time zone field out from range
             '2020-2020',                    # Ambiguous 9-char date portion
+            '2009-04-19T12:30:45.+05:00',   # Empty fraction before offset
+            '2009-04-19T12:30:45.-05:00',   # Empty fraction before offset
+            '2009-04-19T12:30:45.Z',        # Empty fraction before Z
+            '2009-04-19T12:30:45,+05:00',   # Empty fraction (comma) before offset
         ]
 
         for bad_str in bad_strs:
@@ -5034,6 +5038,10 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '24:01:00.000000',          # Has non-zero minutes on 24:00
             '12:30:45+00:90:00',        # Time zone field out from range
             '12:30:45+00:00:90',        # Time zone field out from range
+            '12:30:45.+05:00',          # Empty fraction before offset
+            '12:30:45.-05:00',          # Empty fraction before offset
+            '12:30:45.Z',               # Empty fraction before Z
+            '12:30:45,+05:00',          # Empty fraction (comma) before offset
         ]
 
         for bad_str in bad_strs:

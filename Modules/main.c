@@ -529,11 +529,15 @@ error:
 static void
 pymain_set_inspect(PyConfig *config, int inspect)
 {
-    config->inspect = inspect;
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    Py_InspectFlag = inspect;
-_Py_COMP_DIAG_POP
+    PyObject *value = PyLong_FromLong(inspect);
+    if (value == NULL || PyConfig_Set("inspect", value) < 0) {
+        fprintf(stderr, "Could not set the inspect flag\n");
+        PyErr_Print();
+    }
+    else {
+        assert(config->inspect == inspect);
+    }
+    Py_XDECREF(value);
 }
 
 
@@ -635,7 +639,7 @@ pymain_run_python(int *exitcode)
 {
     PyObject *main_importer_path = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    /* pymain_run_stdin() modify the config */
+    /* pymain_repl() and pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
 
     /* ensure path config is written into global variables */
