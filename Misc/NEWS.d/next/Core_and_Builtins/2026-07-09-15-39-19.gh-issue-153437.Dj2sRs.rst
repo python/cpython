@@ -1,0 +1,2 @@
+Fix an issue where some grammar rules tried to continue parsing after an
+error

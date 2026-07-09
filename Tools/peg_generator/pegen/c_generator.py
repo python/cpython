@@ -658,10 +658,12 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             )
             if is_repeat1:
                 self.print("if (_n == 0 || p->error_indicator) {")
-                with self.indent():
-                    self.print("PyMem_Free(_children);")
-                    self.add_return("NULL")
-                self.print("}")
+            else:
+                self.print("if (p->error_indicator) {")
+            with self.indent():
+                self.print("PyMem_Free(_children);")
+                self.add_return("NULL")
+            self.print("}")
             self.print("asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);")
             self.out_of_memory_return("!_seq", cleanup_code="PyMem_Free(_children);")
             self.print("for (Py_ssize_t i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);")

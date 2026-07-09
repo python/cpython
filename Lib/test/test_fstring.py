@@ -604,6 +604,19 @@ except Exception:
 '''
         assert_python_ok('-c', script)
 
+    def test_memoryerror_during_concat_does_not_crash(self):
+        # gh-153182: Recursion/Memory errors parsing f-strings should be properly unwound
+        # and the parser should not attempt to continue parsing after the error. (In this case,
+        # a SyntaxWarning will subsequently be raised for the invalid escape, triggering a debug assert
+        # from the existing Exception)
+        script = r'''
+try:
+    compile('(x""f"\\{0}"<' * 1276, "<test>", "exec")
+except MemoryError:
+    pass
+'''
+        assert_python_ok('-c', script)
+
     def test_literal(self):
         self.assertEqual(f'', '')
         self.assertEqual(f'a', 'a')
