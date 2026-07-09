@@ -1,1 +1,1 @@
-Add the HTTP QUERY method (:rfc:`10008`) to :class:`http.HTTPMethod`.
+:mod:`http`: Add the HTTP QUERY method (:rfc:`10008`) to :class:`~http.HTTPMethod`.
