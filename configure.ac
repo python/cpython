@@ -6826,6 +6826,17 @@ AS_VAR_IF([with_readline], [no], [
       AC_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
     ])
 
+    # rl_change_environment is in readline 6.3, but not in editline
+    AC_CACHE_CHECK([for rl_change_environment in -l$LIBREADLINE], [ac_cv_readline_rl_change_environment], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [int x = rl_change_environment])],
+        [ac_cv_readline_rl_change_environment=yes], [ac_cv_readline_rl_change_environment=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_change_environment], [yes], [
+      AC_DEFINE([HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
+    ])
+
     # check for readline 4.2
     AC_CACHE_CHECK([for rl_completion_matches in -l$LIBREADLINE], [ac_cv_readline_rl_completion_matches], [
       AC_LINK_IFELSE(

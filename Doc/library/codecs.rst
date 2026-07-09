@@ -1438,6 +1438,14 @@ encodings.
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
 +--------------------+---------+---------------------------+
+| utf-7-imap         | mUTF-7  | Modified UTF-7 encoding   |
+|                    |         | of :rfc:`3501` for IMAP4  |
+|                    |         | mailbox names.  Only      |
+|                    |         | ``errors='strict'`` is    |
+|                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. versionadded:: next    |
++--------------------+---------+---------------------------+
 
 .. versionchanged:: 3.8
    "unicode_internal" codec is removed.

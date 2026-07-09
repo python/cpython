@@ -28638,6 +28638,57 @@ printf "%s\n" "#define HAVE_RL_RESIZE_TERMINAL 1" >>confdefs.h
 
 fi
 
+    # rl_change_environment is in readline 6.3, but not in editline
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for rl_change_environment in -l$LIBREADLINE" >&5
+printf %s "checking for rl_change_environment in -l$LIBREADLINE... " >&6; }
+if test ${ac_cv_readline_rl_change_environment+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
+int
+main (void)
+{
+int x = rl_change_environment
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_readline_rl_change_environment=yes
+else case e in #(
+  e) ac_cv_readline_rl_change_environment=no
+       ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+     ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_readline_rl_change_environment" >&5
+printf "%s\n" "$ac_cv_readline_rl_change_environment" >&6; }
+    if test "x$ac_cv_readline_rl_change_environment" = xyes
+then :
+
+
+printf "%s\n" "#define HAVE_RL_CHANGE_ENVIRONMENT 1" >>confdefs.h
+
+
+fi
+
     # check for readline 4.2
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for rl_completion_matches in -l$LIBREADLINE" >&5
 printf %s "checking for rl_completion_matches in -l$LIBREADLINE... " >&6; }
