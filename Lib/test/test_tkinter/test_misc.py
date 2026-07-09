@@ -905,13 +905,26 @@ class WinfoTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(name, str)
             self.assertIsInstance(depth, int)
 
+    def test_winfo_exists(self):
+        f = tkinter.Frame(self.root)
+        self.assertIs(f.winfo_exists(), True)
+        f.destroy()
+        self.assertIs(f.winfo_exists(), False)
+
+    def test_winfo_ismapped(self):
+        f = tkinter.Frame(self.root)
+        self.assertIs(f.winfo_ismapped(), False)
+        f.pack()
+        self.root.update()
+        self.assertIs(f.winfo_ismapped(), True)
+
     def test_winfo_viewable(self):
         f = tkinter.Frame(self.root)
-        self.assertFalse(f.winfo_viewable())
+        self.assertIs(f.winfo_viewable(), False)
         f.pack()
         f.wait_visibility()
         self.root.update()
-        self.assertTrue(f.winfo_viewable())
+        self.assertIs(f.winfo_viewable(), True)
 
     @requires_tk(9, 1)
     def test_winfo_isdark(self):
