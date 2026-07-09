@@ -16,7 +16,7 @@
 This module defines three classes, :class:`IMAP4`, :class:`IMAP4_SSL` and
 :class:`IMAP4_stream`, which encapsulate a connection to an IMAP4 server and
 implement a large subset of the IMAP4rev1 client protocol as defined in
-:rfc:`2060`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
+:rfc:`3501`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
 note that the ``STATUS`` command is not supported in IMAP4.
 
 .. include:: ../includes/wasm-notavail.rst
@@ -127,11 +127,11 @@ The second subclass allows for connections created by a child process:
 The following utility functions are defined:
 
 
-.. function:: Internaldate2tuple(datestr)
+.. function:: Internaldate2tuple(resp)
 
-   Parse an IMAP4 ``INTERNALDATE`` string and return corresponding local
-   time.  The return value is a :class:`time.struct_time` tuple or
-   ``None`` if the string has wrong format.
+   Parse a :term:`bytes-like object` containing an IMAP4 ``INTERNALDATE``
+   response and return the corresponding local time.  The return value is a
+   :class:`time.struct_time` tuple or ``None`` if the input has wrong format.
 
 .. function:: Int2AP(num)
 
@@ -139,9 +139,11 @@ The following utility functions are defined:
    [``A`` .. ``P``].
 
 
-.. function:: ParseFlags(flagstr)
+.. function:: ParseFlags(resp)
 
-   Converts an IMAP4 ``FLAGS`` response to a tuple of individual flags.
+   Converts a :term:`bytes-like object` containing an IMAP4 ``FLAGS`` response
+   to a tuple of individual flags as :class:`bytes`.  The return value is an
+   empty tuple if the input has wrong format.
 
 
 .. function:: Time2Internaldate(date_time)
@@ -186,6 +188,9 @@ enclosed with either parentheses or double quotes) each string is quoted.
 However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
+In general, pass arguments unquoted and let the module quote them as needed.
+An argument that is already enclosed in double quotes is left unchanged,
+so that code which quotes arguments itself keeps working.
 
 Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
@@ -323,6 +328,19 @@ An :class:`IMAP4` instance has the following methods:
    of the IMAP4 QUOTA extension defined in rfc2087.
 
 
+.. method:: IMAP4.id(fields=None)
+
+   Send client identification information to the server
+   and return the identification information sent back by the server
+   (the ``ID`` command, defined in :rfc:`2971`).
+   *fields* is a mapping of field names to values
+   (for example, ``{'name': 'myclient', 'version': '1.0'}``);
+   a value can be ``None``.
+   The server must support the ``ID`` capability.
+
+   .. versionadded:: next
+
+
 .. method:: IMAP4.idle(duration=None)
 
    Return an :class:`!Idler`: an iterable context manager implementing the
@@ -410,7 +428,7 @@ An :class:`IMAP4` instance has the following methods:
    .. versionadded:: 3.14
 
 
-.. method:: IMAP4.list([directory[, pattern]])
+.. method:: IMAP4.list(directory='', pattern='*')
 
    List mailbox names in *directory* matching *pattern*.  *directory* defaults to
    the top-level mail folder, and *pattern* defaults to match anything.  Returned
@@ -425,11 +443,28 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.login_cram_md5(user, password)
 
    Force use of ``CRAM-MD5`` authentication when identifying the client to protect
-   the password.  Will only work if the server ``CAPABILITY`` response includes the
-   phrase ``AUTH=CRAM-MD5``.
+   the password. It will only work if the server ``CAPABILITY`` response includes
+   the phrase ``AUTH=CRAM-MD5``.
 
    .. versionchanged:: 3.15
       An :exc:`IMAP4.error` is raised if MD5 support is not available.
+
+
+.. method:: IMAP4.login_plain(user, password)
+
+   Authenticate using the ``PLAIN`` SASL mechanism (:rfc:`4616`).
+
+   This is a plaintext authentication mechanism that can be used instead
+   of :meth:`login` when UTF-8 support is required (see :rfc:`6855`).
+   Since the credentials are only base64-encoded, not encrypted, this
+   method should only be used over a TLS-protected connection, such as
+   :class:`IMAP4_SSL` or after :meth:`starttls`.
+
+   It will only work if the server supports the ``PLAIN`` mechanism,
+   which it need not advertise as ``AUTH=PLAIN`` in its ``CAPABILITY``
+   response.
+
+   .. versionadded:: next
 
 
 .. method:: IMAP4.logout()
@@ -440,11 +475,20 @@ An :class:`IMAP4` instance has the following methods:
       The method no longer ignores silently arbitrary exceptions.
 
 
-.. method:: IMAP4.lsub(directory='""', pattern='*')
+.. method:: IMAP4.lsub(directory='', pattern='*')
 
    List subscribed mailbox names in directory matching pattern. *directory*
    defaults to the top level directory and *pattern* defaults to match any mailbox.
    Returned data are tuples of message part envelope and data.
+
+
+.. method:: IMAP4.move(message_set, new_mailbox)
+
+   Move *message_set* messages onto end of *new_mailbox*.
+
+   The server must support the ``MOVE`` capability (:rfc:`6851`).
+
+   .. versionadded:: next
 
 
 .. method:: IMAP4.myrights(mailbox)
@@ -627,7 +671,7 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.store(message_set, command, flag_list)
 
    Alters flag dispositions for messages in mailbox.  *command* is specified by
-   section 6.4.6 of :rfc:`2060` as being one of "FLAGS", "+FLAGS", or "-FLAGS",
+   section 6.4.6 of :rfc:`3501` as being one of "FLAGS", "+FLAGS", or "-FLAGS",
    optionally with a suffix of ".SILENT".
 
    For example, to set the delete flag on all messages::
@@ -641,11 +685,11 @@ An :class:`IMAP4` instance has the following methods:
 
       Creating flags containing ']' (for example: "[test]") violates
       :rfc:`3501` (the IMAP protocol).  However, imaplib has historically
-      allowed creation of such tags, and popular IMAP servers, such as Gmail,
+      allowed creation of such flags, and popular IMAP servers, such as Gmail,
       accept and produce such flags.  There are non-Python programs which also
-      create such tags.  Although it is an RFC violation and IMAP clients and
+      create such flags.  Although it is an RFC violation and IMAP clients and
       servers are supposed to be strict, imaplib still continues to allow
-      such tags to be created for backward compatibility reasons, and as of
+      such flags to be created for backward compatibility reasons, and as of
       Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
 

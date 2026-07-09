@@ -1153,6 +1153,9 @@
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
 
+/* Define if you have readline 6.3 */
+#undef HAVE_RL_CHANGE_ENVIRONMENT
+
 /* Define to 1 if the system has the type 'rl_compdisp_func_t'. */
 #undef HAVE_RL_COMPDISP_FUNC_T
 
