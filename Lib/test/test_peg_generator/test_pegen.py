@@ -755,6 +755,30 @@ class TestPegen(unittest.TestCase):
             ],
         )
 
+    def test_cut_is_local_in_rule(self) -> None:
+        grammar = """
+        start:
+            | inner
+            | 'x' { "ok" }
+        inner:
+            | 'x' ~ 'y'
+            | 'x'
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("x", parser_class)
+        self.assertEqual(node, 'ok')
+
+    def test_cut_is_local_in_parens(self) -> None:
+        # we currently don't guarantee this behavior, see gh-143054
+        grammar = """
+        start:
+            | ('x' ~ 'y' | 'x')
+            | 'x' { "ok" }
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("x", parser_class)
+        self.assertEqual(node, 'ok')
+
     def test_dangling_reference(self) -> None:
         grammar = """
         start: foo ENDMARKER

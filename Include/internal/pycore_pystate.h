@@ -266,6 +266,8 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
     PyMutex_LockFlags(&(runtime)->interpreters.mutex, _Py_LOCK_DONT_DETACH)
 #define HEAD_UNLOCK(runtime) \
     PyMutex_Unlock(&(runtime)->interpreters.mutex)
+#define ASSERT_HEAD_IS_LOCKED(runtime) \
+    assert(PyMutex_IsLocked(&(runtime)->interpreters.mutex))
 
 #define _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t) \
     for (PyThreadState *t = interp->threads.head; t; t = t->next)
@@ -314,15 +316,20 @@ static uintptr_t return_pointer_as_int(char* p) {
 
 static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
-#if _Py__has_builtin(__builtin_frame_address) || defined(__GNUC__)
-    return (uintptr_t)__builtin_frame_address(0);
-#elif defined(_MSC_VER)
-    return (uintptr_t)_AddressOfReturnAddress();
+    uintptr_t result;
+#if defined(_M_ARM64)
+    result = __getReg(31);
+#elif defined(_M_X64) || defined(_M_IX86)
+    result = (uintptr_t)_AddressOfReturnAddress();
+#elif defined(__aarch64__)
+    __asm__ ("mov %0, sp" : "=r" (result));
+#elif defined(__x86_64__)
+    __asm__("{movq %%rsp, %0" : "=r" (result));
 #else
     char here;
-    /* Avoid compiler warning about returning stack address */
-    return return_pointer_as_int(&here);
+    result = (uintptr_t)&here;
 #endif
+    return result;
 }
 
 static inline intptr_t
@@ -331,8 +338,26 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     assert(_tstate->c_stack_hard_limit != 0);
     intptr_t here_addr = _Py_get_machine_stack_pointer();
+#if _Py_STACK_GROWS_DOWN
     return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, here_addr - (intptr_t)_tstate->c_stack_soft_limit, _PyOS_STACK_MARGIN_SHIFT);
+#else
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (intptr_t)_tstate->c_stack_soft_limit - here_addr, _PyOS_STACK_MARGIN_SHIFT);
+#endif
 }
+
+/* PEP 788 structures. */
+
+struct PyInterpreterGuard {
+    PyInterpreterState *interp;
+};
+
+struct PyInterpreterView {
+    int64_t id;
+};
+
+// Exports for '_testinternalcapi' shared extension
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_GuardCountdown(PyInterpreterState *interp);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterGuard_GetInterpreter(PyInterpreterGuard *guard);
 
 #ifdef __cplusplus
 }

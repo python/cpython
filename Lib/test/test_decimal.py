@@ -3963,15 +3963,21 @@ class ContextFlags:
         d.update(c.flags)
         self.assertEqual(d, c.flags)
         self.assertEqual(c.flags, d)
+        self.assertEqual(frozendict(d), c.flags)
+        self.assertEqual(c.flags, frozendict(d))
 
         d[Inexact] = True
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
+        self.assertNotEqual(frozendict(d), c.flags)
+        self.assertNotEqual(c.flags, frozendict(d))
 
         # Invalid SignalDict
         d = {Inexact:False}
         self.assertNotEqual(d, c.flags)
         self.assertNotEqual(c.flags, d)
+        self.assertNotEqual(frozendict(d), c.flags)
+        self.assertNotEqual(c.flags, frozendict(d))
 
         d = ["xyz"]
         self.assertNotEqual(d, c.flags)
@@ -4960,6 +4966,14 @@ class CFunctionality(unittest.TestCase):
         c = Context(flags=C.DecClamped, traps=C.DecRounded)
         self.assertEqual(c._flags, C.DecClamped)
         self.assertEqual(c._traps, C.DecRounded)
+
+    @requires_extra_functionality
+    def test_c_context_apply(self):
+        c = C.Context(prec=3)
+        self.assertEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
+        # A higher precision won't see them as equal.
+        c = C.Context(prec=5)
+        self.assertNotEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
 
     @requires_extra_functionality
     def test_constants(self):

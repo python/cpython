@@ -40,12 +40,15 @@ else:
 openssl_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
 
 try:
-    from _hashlib import HASH, HASHXOF, openssl_md_meth_names, get_fips_mode
+    import _hashlib
 except ImportError:
-    HASH = None
-    HASHXOF = None
-    openssl_md_meth_names = frozenset()
-
+    _hashlib = None
+# The extension module may exist but only define some of these. gh-141907
+HASH = getattr(_hashlib, 'HASH', None)
+HASHXOF = getattr(_hashlib, 'HASHXOF', None)
+openssl_md_meth_names = getattr(_hashlib, 'openssl_md_meth_names', frozenset())
+get_fips_mode = getattr(_hashlib, 'get_fips_mode', None)
+if not get_fips_mode:
     def get_fips_mode():
         return 0
 
@@ -131,8 +134,11 @@ class HashLibTestCase(unittest.TestCase):
             algorithms.add(algorithm.lower())
 
         _blake2 = self._conditional_import_module('_blake2')
+        blake2_hashes = {'blake2b', 'blake2s'}
         if _blake2:
-            algorithms.update({'blake2b', 'blake2s'})
+            algorithms.update(blake2_hashes)
+        else:
+            algorithms.difference_update(blake2_hashes)
 
         self.constructors_to_test = {}
         for algorithm in algorithms:
@@ -229,7 +235,12 @@ class HashLibTestCase(unittest.TestCase):
         # all available algorithms must be loadable, bpo-47101
         self.assertNotIn("undefined", hashlib.algorithms_available)
         for name in hashlib.algorithms_available:
-            digest = hashlib.new(name, usedforsecurity=False)
+            with self.subTest(name):
+                try:
+                    _ = hashlib.new(name, usedforsecurity=False)
+                except ValueError as exc:
+                    self.skip_if_blake2_not_builtin(name, exc)
+                    raise
 
     def test_usedforsecurity_true(self):
         hashlib.new("sha256", usedforsecurity=True)
@@ -501,6 +512,7 @@ class HashLibTestCase(unittest.TestCase):
         self.assertEqual(h.hexdigest(), "e2d4535e3b613135c14f2fe4e026d7ad8d569db44901740beffa30d430acb038")
 
     @requires_resource('cpu')
+    @requires_blake2
     def test_blake2_update_over_4gb(self):
         # blake2s or blake2b doesn't matter based on how our C code is structured, this tests the
         # common loop macro logic.
@@ -631,9 +643,14 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test[name]
         for hash_object_constructor in constructors:
             m = hash_object_constructor()
-            if HASH is not None and isinstance(m, HASH):
-                # _hashopenssl's variant does not have extra SHA3 attributes
-                continue
+            if name.startswith('shake_'):
+                if HASHXOF is not None and isinstance(m, HASHXOF):
+                    # _hashopenssl's variant does not have extra SHA3 attributes
+                    continue
+            else:
+                if HASH is not None and isinstance(m, HASH):
+                    # _hashopenssl's variant does not have extra SHA3 attributes
+                    continue
             self.assertEqual(capacity + rate, 1600)
             self.assertEqual(m._capacity_bits, capacity)
             self.assertEqual(m._rate_bits, rate)
@@ -789,6 +806,12 @@ class HashLibTestCase(unittest.TestCase):
         self.check('sha512', b"a" * 1000000,
           "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"+
           "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b")
+
+    def skip_if_blake2_not_builtin(self, name, skip_reason):
+        # blake2 builtins may be absent if python built with
+        # a subset of --with-builtin-hashlib-hashes or none.
+        if "blake2" in name and "blake2" not in builtin_hashes:
+            self.skipTest(skip_reason)
 
     def check_blake2(self, constructor, salt_size, person_size, key_size,
                      digest_size, max_offset):
@@ -1072,10 +1095,16 @@ class HashLibTestCase(unittest.TestCase):
     def test_threaded_hashing_fast(self):
         # Same as test_threaded_hashing_slow() but only tests some functions
         # since otherwise test_hashlib.py becomes too slow during development.
-        for name in ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']:
+        algos = ['md5', 'sha1', 'sha256', 'sha3_256', 'blake2s']
+        for name in algos:
             if constructor := getattr(hashlib, name, None):
                 with self.subTest(name):
-                    self.do_test_threaded_hashing(constructor, is_shake=False)
+                    try:
+                        self.do_test_threaded_hashing(constructor, is_shake=False)
+                    except ValueError as exc:
+                        self.skip_if_blake2_not_builtin(name, exc)
+                        raise
+
         if shake_128 := getattr(hashlib, 'shake_128', None):
             self.do_test_threaded_hashing(shake_128, is_shake=True)
 
@@ -1156,7 +1185,8 @@ class HashLibTestCase(unittest.TestCase):
     def test_hash_disallow_instantiation(self):
         # internal types like _hashlib.HASH are not constructable
         support.check_disallow_instantiation(self, HASH)
-        support.check_disallow_instantiation(self, HASHXOF)
+        if HASHXOF is not None:
+            support.check_disallow_instantiation(self, HASHXOF)
 
     def test_readonly_types(self):
         for algorithm, constructors in self.constructors_to_test.items():

@@ -273,19 +273,19 @@ char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     char a = 'A';
-    char b = '\x07';
-    char c = '\x08';
+    char b = '\a';
+    char c = '\b';
     char d = '\t';
     char e = '\n';
-    char f = '\x0b';
-    char g = '\x0c';
+    char f = '\v';
+    char g = '\f';
     char h = '\r';
     char i = '"';
     char j = '\'';
     char k = '?';
     char l = '\\';
-    char m = '\x00';
-    char n = '\xff';
+    char m = '\0';
+    char n = '\377';
 
     if (!_PyArg_CheckPositional("char_converter", nargs, 0, 14)) {
         goto exit;
@@ -879,7 +879,7 @@ exit:
 }
 
 PyDoc_STRVAR(int_converter__doc__,
-"int_converter($module, a=12, b=34, c=45, /)\n"
+"int_converter($module, a=12, b=34, c=\'-\', /)\n"
 "--\n"
 "\n");
 
@@ -895,7 +895,7 @@ int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int a = 12;
     int b = 34;
-    int c = 45;
+    int c = '-';
 
     if (!_PyArg_CheckPositional("int_converter", nargs, 0, 3)) {
         goto exit;
@@ -4600,4 +4600,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=290d2e346ea7bfa1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9971dbbc5f62b8d2 input=a9049054013a1b77]*/

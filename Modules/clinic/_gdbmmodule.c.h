@@ -138,9 +138,9 @@ PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
 "\n"
 "Return the starting key for the traversal.\n"
 "\n"
-"It\'s possible to loop over every key in the database using this method\n"
-"and the nextkey() method.  The traversal is ordered by GDBM\'s internal\n"
-"hash values, and won\'t be sorted by the key values.");
+"It\'s possible to loop over every key in the database using this\n"
+"method and the nextkey() method.  The traversal is ordered by GDBM\'s\n"
+"internal hash values, and won\'t be sorted by the key values.");
 
 #define _GDBM_GDBM_FIRSTKEY_METHODDEF    \
     {"firstkey", _PyCFunction_CAST(_gdbm_gdbm_firstkey), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_firstkey__doc__},
@@ -171,8 +171,8 @@ PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
 "\n"
 "Returns the key that follows key in the traversal.\n"
 "\n"
-"The following code prints every key in the database db, without having\n"
-"to create a list in memory that contains them all:\n"
+"The following code prints every key in the database db, without\n"
+"having to create a list in memory that contains them all:\n"
 "\n"
 "      k = db.firstkey()\n"
 "      while k is not None:\n"
@@ -226,9 +226,9 @@ PyDoc_STRVAR(_gdbm_gdbm_reorganize__doc__,
 "\n"
 "If you have carried out a lot of deletions and would like to shrink\n"
 "the space used by the GDBM file, this routine will reorganize the\n"
-"database.  GDBM will not shorten the length of a database file except\n"
-"by using this reorganization; otherwise, deleted file space will be\n"
-"kept and reused as new (key,value) pairs are added.");
+"database.  GDBM will not shorten the length of a database file\n"
+"except by using this reorganization; otherwise, deleted file space\n"
+"will be kept and reused as new (key,value) pairs are added.");
 
 #define _GDBM_GDBM_REORGANIZE_METHODDEF    \
     {"reorganize", _PyCFunction_CAST(_gdbm_gdbm_reorganize), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_reorganize__doc__},
@@ -389,4 +389,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8bca34ce9d4493dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=429b5db24568292e input=a9049054013a1b77]*/

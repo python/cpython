@@ -102,6 +102,7 @@ struct tok_state {
     int parenlinenostack[MAXLEVEL];
     int parencolstack[MAXLEVEL];
     PyObject *filename;
+    PyObject *module;
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */

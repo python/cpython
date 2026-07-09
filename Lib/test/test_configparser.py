@@ -526,6 +526,17 @@ boolean {0[0]} NO
             cf.get(self.default_section, "Foo"), "Bar",
             "could not locate option, expecting case-insensitive defaults")
 
+    def test_crlf_normalization(self):
+        cf = self.newconfig({"key1": "a\nb","key2": "a\rb", "key3": "a\r\nb", "key4": "a\r\nb"})
+        buf = io.StringIO()
+        cf.write(buf)
+        cf_str = buf.getvalue()
+        self.assertNotIn("\r", cf_str)
+        self.assertNotIn("\r\n", cf_str)
+        self.assertEqual(cf_str.count("\n"), 10)
+        self.assertEqual(cf_str.count("\n\t"), 4)
+        self.assertTrue(cf_str.endswith("\n\n"))
+
     def test_parse_errors(self):
         cf = self.newconfig()
         self.parse_error(cf, configparser.ParsingError,
@@ -1729,6 +1740,19 @@ class ExceptionPicklingTestCase(unittest.TestCase):
             self.assertEqual(e1.message, e2.message)
             self.assertEqual(repr(e1), repr(e2))
 
+    def test_combine_error_linear_complexity(self):
+        # Ensure that ParsingError.combine() has linear complexity.
+        # See https://github.com/python/cpython/issues/148370.
+        n = 50000
+        s = '[*]\n' + (err_line := '=\n') * n
+        p = configparser.ConfigParser(strict=False)
+        with self.assertRaises(configparser.ParsingError) as cm:
+            p.read_string(s)
+        errlines = cm.exception.message.splitlines()
+        self.assertEqual(len(errlines), n + 1)
+        self.assertStartsWith(errlines[0], "Source contains parsing errors: ")
+        self.assertEqual(errlines[42], f"\t[line {43:2d}]: {err_line!r}")
+
     def test_nosectionerror(self):
         import pickle
         e1 = configparser.NoSectionError('section')
@@ -2215,6 +2239,16 @@ class SectionlessTestCase(unittest.TestCase):
         cfg.add_section(configparser.UNNAMED_SECTION)
         cfg.set(configparser.UNNAMED_SECTION, 'a', '1')
         self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), 'a = 1\n\n')
+
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg[configparser.UNNAMED_SECTION] = {'a': '1'}
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), 'a = 1\n\n')
 
     def test_disabled_error(self):
         with self.assertRaises(configparser.MissingSectionHeaderError):
@@ -2222,6 +2256,9 @@ class SectionlessTestCase(unittest.TestCase):
 
         with self.assertRaises(configparser.UnnamedSectionDisabledError):
             configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
+
+        with self.assertRaises(configparser.UnnamedSectionDisabledError):
+            configparser.ConfigParser()[configparser.UNNAMED_SECTION] = {'a': '1'}
 
     def test_multiple_configs(self):
         cfg = configparser.ConfigParser(allow_unnamed_section=True)
@@ -2255,6 +2292,26 @@ class InvalidInputTestCase(unittest.TestCase):
         with self.assertRaises(configparser.InvalidWriteError):
             cfg.write(output)
         output.close()
+
+
+class ReDoSTestCase(unittest.TestCase):
+    """Regression tests for quadratic regex backtracking (gh-146333)."""
+
+    def test_option_regex_does_not_backtrack(self):
+        # A line with many spaces between non-delimiter characters
+        # should be parsed in linear time, not quadratic.
+        parser = configparser.RawConfigParser()
+        content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
+        # This should complete almost instantly. Before the fix,
+        # it would take over a minute due to catastrophic backtracking.
+        with self.assertRaises(configparser.ParsingError):
+            parser.read_string(content)
+
+    def test_option_regex_no_value_does_not_backtrack(self):
+        parser = configparser.RawConfigParser(allow_no_value=True)
+        content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
+        parser.read_string(content)
+        self.assertTrue(parser.has_option("section", "x" + " " * 40000 + "y"))
 
 
 class MiscTestCase(unittest.TestCase):

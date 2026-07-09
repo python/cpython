@@ -1,1 +1,0 @@
-Fix race when updating :attr:`!type.__bases__` that could allow a read of :attr:`!type.__base__` to observe an inconsistent value on the free threaded build.

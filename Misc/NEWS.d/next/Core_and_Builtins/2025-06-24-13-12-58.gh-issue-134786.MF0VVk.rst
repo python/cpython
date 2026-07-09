@@ -1,2 +1,0 @@
-If :c:macro:`Py_TPFLAGS_MANAGED_DICT` and :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
-are used, then :c:macro:`Py_TPFLAGS_HAVE_GC` must be used as well.

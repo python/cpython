@@ -108,6 +108,19 @@ decode_str(const char *input, int single, struct tok_state *tok, int preserve_cr
     else if (!_PyTokenizer_ensure_utf8(str, tok, 1)) {
         return _PyTokenizer_error_ret(tok);
     }
+    if (utf8 != NULL) {
+        char *translated = _PyTokenizer_translate_newlines(
+            str, single, preserve_crlf, tok);
+        if (translated == NULL) {
+            Py_DECREF(utf8);
+            return _PyTokenizer_error_ret(tok);
+        }
+        PyMem_Free(tok->input);
+        tok->input = translated;
+        str = translated;
+        Py_CLEAR(utf8);
+    }
+    tok->str = str;
     assert(tok->decoding_buffer == NULL);
     tok->decoding_buffer = utf8; /* CAUTION */
     return str;

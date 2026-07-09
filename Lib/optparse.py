@@ -407,10 +407,12 @@ def _parse_num(val, type):
 def _parse_int(val):
     return _parse_num(val, int)
 
-_builtin_cvt = { "int" : (_parse_int, _("integer")),
-                 "long" : (_parse_int, _("integer")),
-                 "float" : (float, _("floating-point")),
-                 "complex" : (complex, _("complex")) }
+_builtin_cvt = frozendict({
+    "int": (_parse_int, _("integer")),
+    "long": (_parse_int, _("integer")),
+    "float": (float, _("floating-point")),
+    "complex": (complex, _("complex")),
+})
 
 def check_builtin(option, opt, value):
     (cvt, what) = _builtin_cvt[option.type]
@@ -1372,7 +1374,7 @@ class OptionParser (OptionContainer):
         self.values = values
 
         try:
-            stop = self._process_args(largs, rargs, values)
+            self._process_args(largs, rargs, values)
         except (BadOptionError, OptionValueError) as err:
             self.error(str(err))
 

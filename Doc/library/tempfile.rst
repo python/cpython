@@ -4,8 +4,6 @@
 .. module:: tempfile
    :synopsis: Generate temporary files and directories.
 
-.. sectionauthor:: Zack Weinberg <zack@codesourcery.com>
-
 **Source code:** :source:`Lib/tempfile.py`
 
 .. index::
@@ -16,10 +14,11 @@
 
 This module creates temporary files and directories.  It works on all
 supported platforms. :class:`TemporaryFile`, :class:`NamedTemporaryFile`,
-:class:`TemporaryDirectory`, and :class:`SpooledTemporaryFile` are high-level
-interfaces which provide automatic cleanup and can be used as
-:term:`context managers <context manager>`. :func:`mkstemp` and
-:func:`mkdtemp` are lower-level functions which require manual cleanup.
+:class:`TemporaryFileWrapper`, :class:`TemporaryDirectory`, and
+:class:`SpooledTemporaryFile` are high-level interfaces which provide
+automatic cleanup and can be used as :term:`context managers
+<context manager>`. :func:`mkstemp` and :func:`mkdtemp` are lower-level
+functions which require manual cleanup.
 
 All the user-callable functions and constructors take additional arguments which
 allow direct control over the location and name of temporary files and
@@ -86,13 +85,13 @@ The module defines the following user-callable items:
      :func:`TemporaryFile` with *delete* and *delete_on_close* parameters that
      determine whether and how the named file should be automatically deleted.
 
-   The returned object is always a :term:`file-like object` whose :attr:`!file`
-   attribute is the underlying true file object. This file-like object
-   can be used in a :keyword:`with` statement, just like a normal file.  The
-   name of the temporary file can be retrieved from the :attr:`!name` attribute
-   of the returned file-like object. On Unix, unlike with the
-   :func:`TemporaryFile`, the directory entry does not get unlinked immediately
-   after the file creation.
+   The returned object is always a :class:`TemporaryFileWrapper` instance
+   (a :term:`file-like object`) whose :attr:`~TemporaryFileWrapper.file` attribute is the underlying
+   true file object. This file-like object can be used in a :keyword:`with`
+   statement, just like a normal file.  The name of the temporary file can be
+   retrieved from the :attr:`!name` attribute of the returned file-like object.
+   On Unix, unlike with the :func:`TemporaryFile`, the directory entry does not
+   get unlinked immediately after the file creation.
 
    If *delete* is true (the default) and *delete_on_close* is true (the
    default), the file is deleted as soon as it is closed. If *delete* is true
@@ -141,6 +140,34 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.12
       Added *delete_on_close* parameter.
+
+.. class:: TemporaryFileWrapper(file, name, delete=True, delete_on_close=True)
+
+   A mutable wrapper returned by :func:`NamedTemporaryFile`. It wraps the
+   underlying file object, delegating attribute access to it, and ensures
+   the temporary file is deleted when appropriate.
+
+   .. attribute:: file
+
+      The underlying :term:`file-like object`.
+
+   .. attribute:: name
+
+      The file name of the temporary file.
+
+   .. method:: close()
+
+      Close the temporary file, possibly deleting it depending on the
+      *delete* and *delete_on_close* arguments passed to
+      :func:`NamedTemporaryFile`.
+
+   .. note::
+
+      ``tempfile._TemporaryFileWrapper`` is kept as a backwards compatible
+      deprecated alias for this class.
+      It will be removed in Python 3.21
+
+   .. versionadded:: next
 
 
 .. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
@@ -225,8 +252,9 @@ The module defines the following user-callable items:
    properly implements the :const:`os.O_EXCL` flag for :func:`os.open`.  The
    file is readable and writable only by the creating user ID.  If the
    platform uses permission bits to indicate whether a file is executable,
-   the file is executable by no one.  The file descriptor is not inherited
-   by child processes.
+   the file is executable by no one.
+
+   The file descriptor is :ref:`not inherited by child processes <fd_inheritance>`.
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
    for deleting the temporary file when done with it.
@@ -385,7 +413,7 @@ not surprise other unsuspecting code by changing global API behavior.
 Examples
 --------
 
-Here are some examples of typical usage of the :mod:`tempfile` module::
+Here are some examples of typical usage of the :mod:`!tempfile` module::
 
     >>> import tempfile
 

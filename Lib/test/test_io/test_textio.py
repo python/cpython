@@ -686,6 +686,25 @@ class TextIOWrapperTest:
         self.assertEqual(f.tell(), p1)
         f.close()
 
+    def test_tell_after_readline_with_cr(self):
+        # Test for gh-141314: TextIOWrapper.tell() assertion failure
+        # when dealing with standalone carriage returns
+        data = b'line1\r'
+        with self.open(os_helper.TESTFN, "wb") as f:
+            f.write(data)
+
+        with self.open(os_helper.TESTFN, "r") as f:
+            # Read line that ends with \r
+            line = f.readline()
+            self.assertEqual(line, "line1\n")
+            # This should not cause an assertion failure
+            pos = f.tell()
+            # Verify we can seek back to this position
+            f.seek(pos)
+            remaining = f.read()
+            self.assertEqual(remaining, "")
+
+
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")
         f.write("\u00e6\u0300")
@@ -1524,6 +1543,72 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
 
         self.assertEqual([b"abcdef", b"middle", b"g"*chunk_size],
                          buf._write_stack)
+
+    def test_issue142594(self):
+        wrapper = None
+        detached = False
+        class ReentrantRawIO(self.RawIOBase):
+            @property
+            def closed(self):
+                nonlocal detached
+                if wrapper is not None and not detached:
+                    detached = True
+                    wrapper.detach()
+                return False
+
+        raw = ReentrantRawIO()
+        wrapper = self.TextIOWrapper(raw)
+        wrapper.close()  # should not crash
+
+    def test_reentrant_detach_during_flush(self):
+        # gh-143008: Reentrant detach() during flush should not crash.
+
+        class DetachOnce(self.BufferedRandom):
+            wrapper = None
+
+            def detach_once(self):
+                original = self.wrapper
+                self.wrapper = None
+                if original is not None:
+                    original.detach()
+                    original.flush()
+
+        class DetachOnFlush(DetachOnce):
+            def flush(self):
+                self.detach_once()
+
+        class DetachOnWrite(DetachOnce):
+            def write(self, b):
+                self.detach_once()
+                return len(b)
+
+        # Separate reference for after detach_once.
+        wrapper = None
+
+        def make_text(buffer):
+            nonlocal wrapper
+            buffer.wrapper = self.TextIOWrapper(buffer, encoding='utf-8')
+            wrapper = buffer.wrapper
+
+        # Many calls could result in the same null self->buffer crash.
+        tests = [
+            ('truncate', lambda: wrapper.truncate(0)),
+            ('close', lambda: wrapper.close()),
+            ('detach', lambda: wrapper.detach()),
+            ('seek', lambda: wrapper.seek(0)),
+            ('tell', lambda: wrapper.tell()),
+            ('reconfigure', lambda: wrapper.reconfigure(line_buffering=True)),
+        ]
+        for name, method in tests:
+            with self.subTest(name):
+                make_text(DetachOnFlush(self.MockRawIO()))
+                self.assertRaisesRegex(ValueError, "detached", method)
+
+        # Should not crash.
+        with self.subTest('read via writeflush'):
+            make_text(DetachOnWrite(self.MockRawIO()))
+            wrapper.write('x')
+            self.assertRaisesRegex(ValueError, "detached", wrapper.read)
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):

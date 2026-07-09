@@ -1,7 +1,8 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import verbose, requires_IEEE_754
+from test.support import (verbose, requires_IEEE_754,
+                          skip_if_double_rounding)
 from test import support
 import unittest
 import fractions
@@ -22,11 +23,6 @@ INF = float('inf')
 NINF = float('-inf')
 FLOAT_MAX = sys.float_info.max
 FLOAT_MIN = sys.float_info.min
-
-# detect evidence of double-rounding: fsum is not always correctly
-# rounded on machines that suffer from double rounding.
-x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
-HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 # locate file with test values
 if __name__ == '__main__':
@@ -79,7 +75,7 @@ def parse_mtestfile(fname):
     -- starts a comment
     blank lines, or lines containing only a comment, are ignored
     other lines are expected to have the form
-      id fn arg -> expected [flag]*
+      id fn arg... -> expected [flag]*
 
     """
     with open(fname, encoding="utf-8") as fp:
@@ -91,12 +87,12 @@ def parse_mtestfile(fname):
                 continue
 
             lhs, rhs = line.split('->')
-            id, fn, arg = lhs.split()
+            id, fn, *args = lhs.split()
             rhs_pieces = rhs.split()
             exp = rhs_pieces[0]
             flags = rhs_pieces[1:]
 
-            yield (id, fn, float(arg), float(exp), flags)
+            yield (id, fn, [float(arg) for arg in args], float(exp), flags)
 
 
 def parse_testfile(fname):
@@ -189,6 +185,22 @@ class MyIndexable(object):
     def __index__(self):
         return self.value
 
+class IndexableFloatLike:
+    def __init__(self, float_value, index_value):
+        self.float_value = float_value
+        self.index_value = index_value
+
+    def __float__(self):
+        if isinstance(self.float_value, BaseException):
+            raise self.float_value
+        return self.float_value
+
+    def __index__(self):
+        if isinstance(self.index_value, BaseException):
+            raise self.index_value
+        return self.index_value
+
+
 class BadDescr:
     def __get__(self, obj, objtype=None):
         raise ValueError
@@ -275,6 +287,8 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.atanh, NINF)
         self.assertTrue(math.isnan(math.atanh(NAN)))
 
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "skipping, see gh-138573")
     def testAtan2(self):
         self.assertRaises(TypeError, math.atan2)
         self.ftest('atan2(-1, 0)', math.atan2(-1, 0), -math.pi/2)
@@ -665,8 +679,7 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.frexp(NAN)[0]))
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                         "fsum is not exact on machines with double rounding")
+    @skip_if_double_rounding
     def testFsum(self):
         # math.fsum relies on exact rounding for correct operation.
         # There's a known problem with IA32 floating-point that causes
@@ -902,8 +915,8 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.hypot, *([1.0]*18), 'spam')
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                     "hypot() loses accuracy on machines with double rounding")
+    @skip_if_double_rounding
+    @support.skip_on_newlib
     def testHypotAccuracy(self):
         # Verify improved accuracy in cases that were known to be inaccurate.
         #
@@ -1192,12 +1205,31 @@ class MathTests(unittest.TestCase):
         self.ftest('log(10**40, 10**20)', math.log(10**40, 10**20), 2)
         self.ftest('log(10**1000)', math.log(10**1000),
                    2302.5850929940457)
+        self.ftest('log(10**2000, 10**1000)', math.log(10**2000, 10**1000), 2)
+        self.ftest('log(MyIndexable(32), MyIndexable(2))',
+                   math.log(MyIndexable(32), MyIndexable(2)), 5)
+        self.ftest('log(MyIndexable(10**1000))',
+                   math.log(MyIndexable(10**1000)),
+                   2302.5850929940457)
+        self.ftest('log(MyIndexable(10**2000), MyIndexable(10**1000))',
+                   math.log(MyIndexable(10**2000), MyIndexable(10**1000)),
+                   2)
+        self.assertRaises(ValueError, math.log, 0.0)
+        self.assertRaises(ValueError, math.log, 0)
+        self.assertRaises(ValueError, math.log, MyIndexable(0))
         self.assertRaises(ValueError, math.log, -1.5)
+        self.assertRaises(ValueError, math.log, -1)
+        self.assertRaises(ValueError, math.log, MyIndexable(-1))
         self.assertRaises(ValueError, math.log, -10**1000)
+        self.assertRaises(ValueError, math.log, MyIndexable(-10**1000))
         self.assertRaises(ValueError, math.log, 10, -10)
         self.assertRaises(ValueError, math.log, NINF)
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log(NAN)))
+
+        self.assertEqual(math.log(IndexableFloatLike(math.e, 10**1000)), 1.0)
+        self.assertAlmostEqual(math.log(IndexableFloatLike(OverflowError(), 10**1000)),
+                               2302.5850929940457)
 
     def testLog1p(self):
         self.assertRaises(TypeError, math.log1p)
@@ -1214,24 +1246,37 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log2(1), 0.0)
         self.assertEqual(math.log2(2), 1.0)
         self.assertEqual(math.log2(4), 2.0)
+        self.assertEqual(math.log2(MyIndexable(4)), 2.0)
 
-        # Large integer values
-        self.assertEqual(math.log2(2**1023), 1023.0)
-        self.assertEqual(math.log2(2**1024), 1024.0)
-        self.assertEqual(math.log2(2**2000), 2000.0)
-
+        self.assertRaises(ValueError, math.log2, 0.0)
+        self.assertRaises(ValueError, math.log2, 0)
+        self.assertRaises(ValueError, math.log2, MyIndexable(0))
         self.assertRaises(ValueError, math.log2, -1.5)
+        self.assertRaises(ValueError, math.log2, -1)
+        self.assertRaises(ValueError, math.log2, MyIndexable(-1))
+        self.assertRaises(ValueError, math.log2, -2**2000)
+        self.assertRaises(ValueError, math.log2, MyIndexable(-2**2000))
         self.assertRaises(ValueError, math.log2, NINF)
         self.assertTrue(math.isnan(math.log2(NAN)))
+
+        self.assertEqual(math.log2(IndexableFloatLike(8.0, 2**2000)), 3.0)
+        self.assertEqual(math.log2(IndexableFloatLike(OverflowError(), 2**2000)), 2000.0)
 
     @requires_IEEE_754
     # log2() is not accurate enough on Mac OS X Tiger (10.4)
     @support.requires_mac_ver(10, 5)
+    @support.skip_on_newlib
     def testLog2Exact(self):
         # Check that we get exact equality for log2 of powers of 2.
         actual = [math.log2(math.ldexp(1.0, n)) for n in range(-1074, 1024)]
         expected = [float(n) for n in range(-1074, 1024)]
         self.assertEqual(actual, expected)
+
+        # Large integer values
+        self.assertEqual(math.log2(2**1023), 1023.0)
+        self.assertEqual(math.log2(2**1024), 1024.0)
+        self.assertEqual(math.log2(2**2000), 2000.0)
+        self.assertEqual(math.log2(MyIndexable(2**2000)), 2000.0)
 
     def testLog10(self):
         self.assertRaises(TypeError, math.log10)
@@ -1239,11 +1284,23 @@ class MathTests(unittest.TestCase):
         self.ftest('log10(1)', math.log10(1), 0)
         self.ftest('log10(10)', math.log10(10), 1)
         self.ftest('log10(10**1000)', math.log10(10**1000), 1000.0)
+        self.ftest('log10(MyIndexable(10))', math.log10(MyIndexable(10)), 1)
+        self.ftest('log10(MyIndexable(10**1000))',
+                   math.log10(MyIndexable(10**1000)), 1000.0)
+        self.assertRaises(ValueError, math.log10, 0.0)
+        self.assertRaises(ValueError, math.log10, 0)
+        self.assertRaises(ValueError, math.log10, MyIndexable(0))
         self.assertRaises(ValueError, math.log10, -1.5)
+        self.assertRaises(ValueError, math.log10, -1)
+        self.assertRaises(ValueError, math.log10, MyIndexable(-1))
         self.assertRaises(ValueError, math.log10, -10**1000)
+        self.assertRaises(ValueError, math.log10, MyIndexable(-10**1000))
         self.assertRaises(ValueError, math.log10, NINF)
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log10(NAN)))
+
+        self.assertEqual(math.log10(IndexableFloatLike(100.0, 10**1000)), 2.0)
+        self.assertEqual(math.log10(IndexableFloatLike(OverflowError(), 10**1000)), 1000.0)
 
     @support.bigmemtest(2**32, memuse=0.2)
     def test_log_huge_integer(self, size):
@@ -1349,8 +1406,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(sumprod(*args), 0.0)
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                         "sumprod() accuracy not guaranteed on machines with double rounding")
+    @skip_if_double_rounding
     @support.cpython_only    # Other implementations may choose a different algorithm
     def test_sumprod_accuracy(self):
         sumprod = math.sumprod
@@ -1435,8 +1491,7 @@ class MathTests(unittest.TestCase):
                         )
 
     @requires_IEEE_754
-    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
-                         "sumprod() accuracy not guaranteed on machines with double rounding")
+    @skip_if_double_rounding
     @support.cpython_only    # Other implementations may choose a different algorithm
     @support.requires_resource('cpu')
     def test_sumprod_extended_precision_accuracy(self):
@@ -2086,10 +2141,10 @@ class MathTests(unittest.TestCase):
 
     @requires_IEEE_754
     def test_mtestfile(self):
-        fail_fmt = "{}: {}({!r}): {}"
+        fail_fmt = "{}: {}{!r}: {}"
 
         failures = []
-        for id, fn, arg, expected, flags in parse_mtestfile(math_testcases):
+        for id, fn, args, expected, flags in parse_mtestfile(math_testcases):
             func = getattr(math, fn)
 
             if 'invalid' in flags or 'divide-by-zero' in flags:
@@ -2098,7 +2153,7 @@ class MathTests(unittest.TestCase):
                 expected = 'OverflowError'
 
             try:
-                got = func(arg)
+                got = func(*args)
             except ValueError:
                 got = 'ValueError'
             except OverflowError:
@@ -2121,7 +2176,7 @@ class MathTests(unittest.TestCase):
                 # general.
                 abs_tol = 1e-15
 
-            elif fn == 'erfc' and arg >= 0.0:
+            elif fn == 'erfc' and (arg := args[0]) >= 0.0:
                 # erfc has less-than-ideal accuracy for large
                 # arguments (x ~ 25 or so), mainly due to the
                 # error involved in computing exp(-x*x).
@@ -2144,7 +2199,7 @@ class MathTests(unittest.TestCase):
             if failure is None:
                 continue
 
-            msg = fail_fmt.format(id, fn, arg, failure)
+            msg = fail_fmt.format(id, fn, args, failure)
             failures.append(msg)
 
         if failures:
@@ -2554,6 +2609,7 @@ class FMATests(unittest.TestCase):
                 self.assertIsNaN(math.fma(a, math.nan, b))
                 self.assertIsNaN(math.fma(a, b, math.nan))
 
+    @support.skip_on_newlib
     def test_fma_infinities(self):
         # Cases involving infinite inputs or results.
         positives = [1e-300, 2.3, 1e300, math.inf]
@@ -2624,7 +2680,7 @@ class FMATests(unittest.TestCase):
     # gh-73468: On some platforms, libc fma() doesn't implement IEE 754-2008
     # properly: it doesn't use the right sign when the result is zero.
     @unittest.skipIf(
-        sys.platform.startswith(("freebsd", "wasi", "netbsd", "emscripten"))
+        sys.platform.startswith(("freebsd", "wasi", "netbsd", "emscripten", "cygwin"))
         or (sys.platform == "android" and platform.machine() == "x86_64")
         or support.linked_to_musl(),  # gh-131032
         f"this platform doesn't implement IEE 754-2008 properly")
@@ -2682,6 +2738,7 @@ class FMATests(unittest.TestCase):
         self.assertIsNegativeZero(math.fma(y-x, -(x+y), -z))
         self.assertIsPositiveZero(math.fma(x-y, -(x+y), z))
 
+    @support.skip_on_newlib
     def test_fma_overflow(self):
         a = b = float.fromhex('0x1p512')
         c = float.fromhex('0x1p1023')
@@ -2715,11 +2772,13 @@ class FMATests(unittest.TestCase):
         c = float.fromhex('0x1.fffffffffffffp+1023')
         self.assertEqual(math.fma(a, b, -c), c)
 
+    @support.skip_on_newlib
     def test_fma_single_round(self):
         a = float.fromhex('0x1p-50')
         self.assertEqual(math.fma(a - 1.0, a + 1.0, 1.0), a*a)
 
-    def test_random(self):
+    @support.skip_on_newlib
+    def test_fma_random(self):
         # A collection of randomly generated inputs for which the naive FMA
         # (with two rounds) gives a different result from a singly-rounded FMA.
 

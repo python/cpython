@@ -11,6 +11,7 @@
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // _PyRun_AnyFileObject()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Dedent()
 
 /* Includes for exit_sigint() */
@@ -342,7 +343,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         Py_DECREF(runmodule);
         return pymain_exit_err_print();
     }
-    runargs = PyTuple_Pack(2, module, set_argv0 ? Py_True : Py_False);
+    runargs = _PyTuple_FromPair(module, set_argv0 ? Py_True : Py_False);
     if (runargs == NULL) {
         fprintf(stderr,
             "Could not create arguments for runpy._run_module_as_main\n");
@@ -506,6 +507,7 @@ pymain_run_interactive_hook(int *exitcode)
     }
 
     if (PySys_Audit("cpython.run_interactivehook", "O", hook) < 0) {
+        Py_DECREF(hook);
         goto error;
     }
 
@@ -527,11 +529,15 @@ error:
 static void
 pymain_set_inspect(PyConfig *config, int inspect)
 {
-    config->inspect = inspect;
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    Py_InspectFlag = inspect;
-_Py_COMP_DIAG_POP
+    PyObject *value = PyLong_FromLong(inspect);
+    if (value == NULL || PyConfig_Set("inspect", value) < 0) {
+        fprintf(stderr, "Could not set the inspect flag\n");
+        PyErr_Print();
+    }
+    else {
+        assert(config->inspect == inspect);
+    }
+    Py_XDECREF(value);
 }
 
 
@@ -561,13 +567,25 @@ pymain_run_stdin(PyConfig *config)
         return pymain_exit_err_print();
     }
 
-    if (!isatty(fileno(stdin))
-        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
-        PyCompilerFlags cf = _PyCompilerFlags_INIT;
-        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-        return (run != 0);
+    int run;
+    if (isatty(fileno(stdin))
+        && !_Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
+        PyObject *pyrepl = PyImport_ImportModule("_pyrepl");
+        if (pyrepl != NULL) {
+            run = pymain_start_pyrepl(0);
+            Py_DECREF(pyrepl);
+            return run;
+        }
+        if (!PyErr_ExceptionMatches(PyExc_ModuleNotFoundError)) {
+            fprintf(stderr, "Could not import _pyrepl.main\n");
+            return pymain_exit_err_print();
+        }
+        PyErr_Clear();
     }
-    return pymain_start_pyrepl(0);
+
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
+    return (run != 0);
 }
 
 
@@ -593,14 +611,24 @@ pymain_repl(PyConfig *config, int *exitcode)
         return;
     }
 
-    if (!isatty(fileno(stdin))
-        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
-        PyCompilerFlags cf = _PyCompilerFlags_INIT;
-        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-        *exitcode = (run != 0);
-        return;
+    if (isatty(fileno(stdin))
+        && !_Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
+        PyObject *pyrepl = PyImport_ImportModule("_pyrepl");
+        if (pyrepl != NULL) {
+            int run = pymain_start_pyrepl(1);
+            *exitcode = (run != 0);
+            Py_DECREF(pyrepl);
+            return;
+        }
+        if (!PyErr_ExceptionMatches(PyExc_ModuleNotFoundError)) {
+            PyErr_Clear();
+            fprintf(stderr, "Could not import _pyrepl.main\n");
+            return;
+        }
+        PyErr_Clear();
     }
-    int run = pymain_start_pyrepl(1);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
     *exitcode = (run != 0);
     return;
 }
@@ -611,7 +639,7 @@ pymain_run_python(int *exitcode)
 {
     PyObject *main_importer_path = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    /* pymain_run_stdin() modify the config */
+    /* pymain_repl() and pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
 
     /* ensure path config is written into global variables */

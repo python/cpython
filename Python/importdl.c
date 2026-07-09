@@ -10,27 +10,6 @@
 #include "pycore_runtime.h"       // _Py_ID()
 
 
-/* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
-   supported on this platform. configure will then compile and link in one
-   of the dynload_*.c files, as appropriate. We will call a function in
-   those modules to get a function pointer to the module's init function.
-*/
-#ifdef HAVE_DYNAMIC_LOADING
-
-#ifdef MS_WINDOWS
-extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
-                                                     const char *shortname,
-                                                     PyObject *pathname,
-                                                     FILE *fp);
-#else
-extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
-                                              const char *shortname,
-                                              const char *pathname, FILE *fp);
-#endif
-
-#endif /* HAVE_DYNAMIC_LOADING */
-
-
 /***********************************/
 /* module info to use when loading */
 /***********************************/
@@ -177,7 +156,6 @@ _Py_ext_module_loader_info_init_for_builtin(
                             PyObject *name)
 {
     assert(PyUnicode_Check(name));
-    assert(PyUnicode_FindChar(name, '.', 0, PyUnicode_GetLength(name), -1) == -1);
     assert(PyUnicode_GetLength(name) > 0);
 
     PyObject *name_encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
@@ -413,6 +391,9 @@ _PyImport_GetModuleExportHooks(
     if (exportfunc) {
         *modexport = (PyModExportFunction)exportfunc;
         return 2;
+    }
+    if (PyErr_Occurred()) {
+        return -1;
     }
 
     exportfunc = findfuncptr(

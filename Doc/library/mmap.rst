@@ -212,7 +212,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Writable :term:`bytes-like object` is now accepted.
 
 
-   .. method:: flush([offset[, size]])
+   .. method:: flush([offset[, size]], *, flags=MS_SYNC)
 
       Flushes changes made to the in-memory copy of a file back to disk. Without
       use of this call there is no guarantee that changes are written back before
@@ -220,6 +220,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       changes to the given range of bytes will be flushed to disk; otherwise, the
       whole extent of the mapping is flushed.  *offset* must be a multiple of the
       :const:`PAGESIZE` or :const:`ALLOCATIONGRANULARITY`.
+
+      The *flags* parameter specifies the synchronization behavior.
+      *flags* must be one of the :ref:`MS_* constants <ms-constants>` available
+      on the system.
+
+      On Windows, the *flags* parameter is ignored.
 
       ``None`` is returned to indicate success.  An exception is raised when the
       call failed.
@@ -234,6 +240,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          and *size* parameters were required together. Now *offset* can be
          specified alone, and the flush operation will extend from *offset*
          to the end of the mmap.
+
+      .. versionchanged:: 3.15
+         Added *flags* parameter to control synchronization behavior.
 
 
    .. method:: madvise(option[, start[, length]])
@@ -327,6 +336,17 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       Return whether the file supports seeking, and the return value is always ``True``.
 
       .. versionadded:: 3.13
+
+   .. method:: set_name(name, /)
+
+      Annotate the memory mapping with the given *name* for easier identification
+      in ``/proc/<pid>/maps`` if the kernel supports the feature and :option:`-X dev <-X>` is passed
+      to Python or if Python is built in :ref:`debug mode <debug-build>`.
+      The length of *name* must not exceed 67 bytes including the ``'\0'`` terminator.
+
+      .. availability:: Linux >= 5.17 (kernel built with ``CONFIG_ANON_VMA_NAME`` option)
+
+      .. versionadded:: 3.15
 
    .. method:: size()
 
@@ -450,3 +470,22 @@ MAP_* Constants
        :data:`MAP_TPRO`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`, and
        :data:`MAP_UNIX03` constants.
 
+.. _ms-constants:
+
+MS_* Constants
+++++++++++++++
+
+.. data:: MS_SYNC
+          MS_ASYNC
+          MS_INVALIDATE
+
+    These flags control the synchronization behavior for :meth:`mmap.flush`:
+
+    * :data:`MS_SYNC` - Synchronous flush: writes are scheduled and the call
+      blocks until they are physically written to storage.
+    * :data:`MS_ASYNC` - Asynchronous flush: writes are scheduled but the call
+      returns immediately without waiting for completion.
+    * :data:`MS_INVALIDATE` - Invalidate cached data: invalidates other mappings
+      of the same file so they can see the changes.
+
+    .. versionadded:: 3.15

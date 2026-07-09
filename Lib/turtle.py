@@ -486,6 +486,7 @@ class TurtleScreenBase(object):
         self.canvwidth = w
         self.canvheight = h
         self.xscale = self.yscale = 1.0
+        self._updating = False
 
     def _createpoly(self):
         """Create an invisible polygon item on canvas self.cv)
@@ -555,7 +556,16 @@ class TurtleScreenBase(object):
     def _update(self):
         """Redraw graphics items on canvas
         """
-        self.cv.update()
+        if self._updating:
+            # Reentrant call (e.g. a drag handler moving the turtle,
+            # gh-50966): flush drawing without reprocessing input.
+            self.cv.update_idletasks()
+            return
+        self._updating = True
+        try:
+            self.cv.update()
+        finally:
+            self._updating = False
 
     def _delay(self, delay):
         """Delay subsequent canvas actions for delay ms."""
@@ -565,7 +575,7 @@ class TurtleScreenBase(object):
         """Check if the string color is a legal Tkinter color string.
         """
         try:
-            rgb = self.cv.winfo_rgb(color)
+            self.cv.winfo_rgb(color)
             ok = True
         except TK.TclError:
             ok = False
@@ -989,8 +999,8 @@ class TurtleScreen(TurtleScreenBase):
             # the Turtle window will show behind the Terminal window when you
             # start the demo from the command line.
             rootwindow = cv.winfo_toplevel()
-            rootwindow.call('wm', 'attributes', '.', '-topmost', '1')
-            rootwindow.call('wm', 'attributes', '.', '-topmost', '0')
+            rootwindow.wm_attributes(topmost=True)
+            rootwindow.wm_attributes(topmost=False)
 
     def clear(self):
         """Delete all drawings and all turtles from the TurtleScreen.
@@ -3747,7 +3757,7 @@ class RawTurtle(TPen, TNavigator):
         if action == "rot":
             angle, degPAU = data
             self._rotate(-angle*degPAU/self._degreesPerAU)
-            dummy = self.undobuffer.pop()
+            self.undobuffer.pop()
         elif action == "stamp":
             stitem = data[0]
             self.clearstamp(stitem)

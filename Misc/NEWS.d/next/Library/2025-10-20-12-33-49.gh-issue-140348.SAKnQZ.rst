@@ -1,3 +1,0 @@
-Fix regression in Python 3.14.0 where using the ``|`` operator on a
-:class:`typing.Union` object combined with an object that is not a type
-would raise an error.

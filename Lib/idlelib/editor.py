@@ -35,19 +35,6 @@ from idlelib.help import _get_dochome
 TK_TABWIDTH_DEFAULT = 8
 darwin = sys.platform == 'darwin'
 
-def _sphinx_version():
-    "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
-    major, minor, micro, level, serial = sys.version_info
-    # TODO remove unneeded function since .chm no longer installed
-    release = f'{major}{minor}'
-    release += f'{micro}'
-    if level == 'candidate':
-        release += f'rc{serial}'
-    elif level != 'final':
-        release += f'{level[0]}{serial}'
-    return release
-
-
 class EditorWindow:
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
@@ -324,6 +311,9 @@ class EditorWindow:
             text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
         else:
             self.update_menu_state('options', '*ine*umbers', 'disabled')
+
+        self.mtime = self.last_mtime()
+        text_frame.bind('<FocusIn>', self.focus_in_event)
 
     def handle_winconfig(self, event=None):
         self.set_width()
@@ -870,9 +860,8 @@ class EditorWindow:
             self.text.event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
-            if xkeydefs:
-                for event, keylist in xkeydefs.items():
-                    self.text.event_delete(event, *keylist)
+            for event, keylist in xkeydefs.items():
+                self.text.event_delete(event, *keylist)
 
     def ApplyKeybindings(self):
         """Apply the virtual, configurable keybindings.
@@ -1040,6 +1029,8 @@ class EditorWindow:
 
     def set_saved(self, flag):
         self.undo.set_saved(flag)
+        if flag:
+            self.mtime = self.last_mtime()
 
     def reset_undo(self):
         self.undo.reset_undo()
@@ -1124,6 +1115,21 @@ class EditorWindow:
         if self.close_hook:
             # unless override: unregister from flist, terminate if last window
             self.close_hook()
+
+    def last_mtime(self):
+        file = self.io.filename
+        return os.path.getmtime(file) if file else 0
+
+    def focus_in_event(self, event):
+        mtime = self.last_mtime()
+        if self.mtime != mtime:
+            self.mtime = mtime
+            if self. askyesno(
+              'Reload', '"%s"\n\nThis script has been modified by another program.'
+              '\nDo you want to reload it?' % self.io.filename, parent=self.text):
+                self.io.loadfile(self.io.filename)
+            else:
+                self.set_saved(False)
 
     def load_extensions(self):
         self.extensions = {}
@@ -1698,19 +1704,10 @@ def get_accelerator(keydefs, eventname):
     return s
 
 
-def fixwordbreaks(root):
-    # On Windows, tcl/tk breaks 'words' only on spaces, as in Command Prompt.
-    # We want Motif style everywhere. See #21474, msg218992 and followup.
-    tk = root.tk
-    tk.call('tcl_wordBreakAfter', 'a b', 0) # make sure word.tcl is loaded
-    tk.call('set', 'tcl_wordchars', r'\w')
-    tk.call('set', 'tcl_nonwordchars', r'\W')
-
-
-def _editor_window(parent):  # htest #
-    # error if close master window first - timer event, after script
-    root = parent
-    fixwordbreaks(root)
+def _editor_window(root):  # htest #
+    # Error if close master window first - timer event, after script
+    from util import fix_word_breaks
+    fix_word_breaks(root)
     if sys.argv[1:]:
         filename = sys.argv[1]
     else:
