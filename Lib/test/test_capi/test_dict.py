@@ -628,7 +628,14 @@ class CAPITest(unittest.TestCase):
 
         class DictSubtype(dict): ...
 
-        for wrong_input in (frozendict(), DictSubtype(), [], None):
+        d = DictSubtype({'x': None})
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict({'x': None}))
+        self.assertIs(type(d), DictSubtype)
+        self.assertEqual(d, DictSubtype({}))
+
+        for wrong_input in (frozendict(), [], None):
             with self.subTest(wrong_input=wrong_input):
                 with self.assertRaises(SystemError):
                     as_frozendict(wrong_input)

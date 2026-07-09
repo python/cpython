@@ -8561,7 +8561,7 @@ transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
 PyObject *
 PyDict_AsFrozenDictAndClear(PyObject *dict)
 {
-    if (dict == NULL || !PyDict_CheckExact(dict)) {
+    if (dict == NULL || !PyDict_Check(dict)) {
         PyErr_BadInternalCall();
         return NULL;
     }
