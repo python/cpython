@@ -741,6 +741,9 @@ def parse_value(
         try:
             number = match_to_number(number_match, parse_float)
         except ValueError as e:
+            if number_match.group("floatpart"):
+                # A failing parse_float raises its own error unchanged.
+                raise
             raise TOMLDecodeError("Invalid number", src, pos) from e
         return number_match.end(), number
 
