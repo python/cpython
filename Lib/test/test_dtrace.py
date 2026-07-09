@@ -1,6 +1,7 @@
 import dis
 import os.path
 import re
+import shlex
 import signal
 import subprocess
 import sys
@@ -86,7 +87,7 @@ def run_readelf(cmd):
 
     if proc.returncode:
         raise AssertionError(
-            f"Command {' '.join(cmd)!r} failed "
+            f"Command {shlex.join(cmd)!r} failed "
             f"with exit code {proc.returncode}: "
             f"stdout={stdout!r} stderr={stderr!r}"
         )
@@ -133,7 +134,7 @@ class TraceBackend:
             raise
         if check_returncode and proc.returncode:
             raise AssertionError(
-                f"Command {' '.join(command)!r} failed "
+                f"Command {shlex.join(command)!r} failed "
                 f"with exit code {proc.returncode}: output={stdout!r}"
             )
         return stdout
@@ -142,7 +143,7 @@ class TraceBackend:
         python_flags = []
         if optimize_python:
             python_flags.extend(["-O"] * optimize_python)
-        subcommand = " ".join([sys.executable] + python_flags + [python_file])
+        subcommand = shlex.join([sys.executable] + python_flags + [python_file])
         return self.trace(script_file, subcommand, timeout=60,
                           check_returncode=True)
 
