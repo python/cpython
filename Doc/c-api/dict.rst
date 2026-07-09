@@ -511,7 +511,6 @@ Dictionary objects
 
    Return a new :class:`frozendict` created
    from the existing :class:`dict` instance.
-   Expects *dict* to be an exact :class:`dict` instance.
 
    Transfers all keys and values from *dict*
    to the newly allocated :class:`!frozendict`.
