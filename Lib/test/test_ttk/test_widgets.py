@@ -1680,9 +1680,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.get_children(item_id), ())
 
     def test_exists(self):
-        self.assertEqual(self.tv.exists('something'), False)
-        self.assertEqual(self.tv.exists(''), True)
-        self.assertEqual(self.tv.exists({}), False)
+        self.assertIs(self.tv.exists('something'), False)
+        self.assertIs(self.tv.exists(''), True)
+        self.assertIs(self.tv.exists({}), False)
 
         # the following will make a tk.call equivalent to
         # tk.call(treeview, "exists") which should result in an error
