@@ -164,7 +164,7 @@ omitted in cases where the tag refers to an official release and starts with
 Runtimes from other distributors may require the *company* to be included as
 well.
 It should be separated from the tag by a slash (either ``/`` or ``\``),
-and both the company and the tag may be shortened to any prefix of their full value.
+and may be shortened to any prefix of its full value.
 Specifying the company is optional when it is ``PythonCore``, and specifying the
 tag is optional (but not the slash) when you want the latest release from a
 specific company.
