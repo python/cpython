@@ -15,6 +15,7 @@ import _shared
 
 # ☐ bin
 #   ☐ pythonN.M.wasmtime
+#   ☐ pythonN.M.config
 #   ❌ idleN.M
 #   ❌ pydocN.M
 # ✅ include/pythonN.Md?
@@ -28,7 +29,7 @@ import _shared
 #     ✅ Stuff from build/lib.* (build_dir_files())
 #     ✅ Lib/
 # ✅ share/man/man1/
-# ☐ python.wasm
+# ✅ python.wasm
 
 
 def python_version(context, debug_ok=False):
@@ -192,12 +193,15 @@ def wasmtime_config_file(context):
 
 def wasm_file(context):
     """Have python.wasm end up at lib/pythonXY/lib-wasm/pythonX.Yd?.wasm."""
-    XXX
+    return (
+        lib_python(context) / "lib-wasm" / f"python{python_version(context, debug_ok=True)}.wasm",
+        context.wasi_build_path / "python.wasm",
+    )
 
 
 def python_wasmtime_script(context):
     """Create bin/pythonN.Md?.wasmtime."""
-    XXX
+    # XXX set executable bit
 
 
 def python_wasmtime_symlink(context):
@@ -257,6 +261,10 @@ def package(context):
     copy_files(build_dir_files(context), base)
     _shared.log("📄", "**/*.py", spacing=indent * 4)
     copy_files(stdlib_files(context), base)
+    _shared.log("📁", "lib-wasm", spacing=indent * 4)
+    _shared.log("📄", "pythonN.Md?.wasm", spacing=indent * 5)
+    copy_files([wasm_file(context)], base)
+
     _shared.log("📁", "pkgconfig/", spacing=indent * 3)
     _shared.log("📄", "python*.pc", spacing=indent * 4)
     pkgconfig_paths = pkgconfig_files(context)
@@ -265,9 +273,9 @@ def package(context):
         pkgconfig_symlinks([path for path, _ in pkgconfig_paths], context),
         base,
     )
-    _shared.log("📁", "share", spacing=indent * 2)
-    _shared.log("📁", "man", spacing=indent * 3)
-    _shared.log("📁", "man1", spacing=indent * 4)
+    _shared.log("📁", "share/", spacing=indent * 2)
+    _shared.log("📁", "man/", spacing=indent * 3)
+    _shared.log("📁", "man1/", spacing=indent * 4)
     _shared.log("📄", "python*.1", spacing=indent * 5)
     man_path = man_file(context)
     copy_files([man_path], base)
