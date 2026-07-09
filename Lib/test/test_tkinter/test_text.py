@@ -18,10 +18,10 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         text = self.text
         olddebug = text.debug()
         try:
-            text.debug(0)
-            self.assertEqual(text.debug(), 0)
-            text.debug(1)
-            self.assertEqual(text.debug(), 1)
+            text.debug(False)
+            self.assertIs(text.debug(), False)
+            text.debug(True)
+            self.assertIs(text.debug(), True)
         finally:
             text.debug(olddebug)
             self.assertEqual(text.debug(), olddebug)
@@ -293,13 +293,13 @@ class TextTest(AbstractTkTest, unittest.TestCase):
 
     def test_edit_modified(self):
         text = self.text
-        self.assertEqual(text.edit_modified(), 0)
+        self.assertIs(text.edit_modified(), False)
         text.insert('1.0', 'spam')
-        self.assertEqual(text.edit_modified(), 1)
+        self.assertIs(text.edit_modified(), True)
         text.edit_modified(False)
-        self.assertEqual(text.edit_modified(), 0)
+        self.assertIs(text.edit_modified(), False)
         text.edit_modified(True)
-        self.assertEqual(text.edit_modified(), 1)
+        self.assertIs(text.edit_modified(), True)
 
     def test_edit_undo_redo(self):
         text = self.text
