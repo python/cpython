@@ -8,7 +8,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_pythonrun.h"     // _PyRun_AnyFileObject()
+#include "pycore_pythonrun.h"     // _PyRun_AnyFile()
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -231,7 +231,6 @@ static int
 pymain_run_command(wchar_t *command)
 {
     PyObject *unicode, *bytes;
-    int ret;
 
     unicode = PyUnicode_FromWideChar(command, -1);
     if (unicode == NULL) {
@@ -250,9 +249,18 @@ pymain_run_command(wchar_t *command)
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
-    ret = _PyRun_SimpleStringFlagsWithName(PyBytes_AsString(bytes), "<string>", &cf);
+    PyObject *result = NULL;
+    PyObject *string_obj = PyUnicode_FromString("<string>");
+    if (string_obj != NULL) {
+        result = _PyRun_SimpleString(PyBytes_AsString(bytes),
+                                     string_obj, &cf);
+        Py_DECREF(string_obj);
+    }
     Py_DECREF(bytes);
-    return (ret != 0);
+    if (result == NULL) {
+        return pymain_exit_err_print();
+    }
+    return 0;
 
 error:
     PySys_WriteStderr("Unable to decode the command from the command line:\n");
@@ -261,9 +269,9 @@ error:
 
 
 static int
-pymain_start_pyrepl_no_main(void)
+pymain_run_pyrepl(void)
 {
-    int res = 0;
+    int exitcode = 0;
     PyObject *console = NULL;
     PyObject *empty_tuple = NULL;
     PyObject *kwargs = NULL;
@@ -272,42 +280,53 @@ pymain_start_pyrepl_no_main(void)
     PyObject *pyrepl = PyImport_ImportModule("_pyrepl.main");
     if (pyrepl == NULL) {
         fprintf(stderr, "Could not import _pyrepl.main\n");
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
+
     console = PyObject_GetAttrString(pyrepl, "interactive_console");
     if (console == NULL) {
         fprintf(stderr, "Could not access _pyrepl.main.interactive_console\n");
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
+
     empty_tuple = PyTuple_New(0);
     if (empty_tuple == NULL) {
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
     kwargs = PyDict_New();
     if (kwargs == NULL) {
-        res = pymain_exit_err_print();
-        goto done;
+        goto error;
     }
-    if (!PyDict_SetItemString(kwargs, "pythonstartup", _PyLong_GetOne())) {
-        _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
-        console_result = PyObject_Call(console, empty_tuple, kwargs);
-        if (!console_result && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
-            _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
-        }
-        if (console_result == NULL) {
-            res = pymain_exit_err_print();
-        }
+
+    if (PyDict_SetItemString(kwargs, "pythonstartup", _PyLong_GetOne())) {
+        goto error;
     }
+
+    _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
+    console_result = PyObject_Call(console, empty_tuple, kwargs);
+    if (!console_result && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
+        _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
+    }
+    if (console_result == NULL) {
+        goto error;
+    }
+
+    console_result = PyObject_Call(console, empty_tuple, kwargs);
+    if (console_result == NULL) {
+        goto error;
+    }
+
 done:
     Py_XDECREF(console_result);
     Py_XDECREF(kwargs);
     Py_XDECREF(empty_tuple);
     Py_XDECREF(console);
     Py_XDECREF(pyrepl);
-    return res;
+    return exitcode;
+
+error:
+    exitcode = pymain_exit_err_print();
+    goto done;
 }
 
 
@@ -405,10 +424,14 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
-    /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
+    /* _PyRun_AnyFile(closeit=1) calls fclose(fp) before running code */
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    int run = _PyRun_AnyFileObject(fp, filename, 1, &cf);
-    return (run != 0);
+    PyObject *result = _PyRun_AnyFile(fp, filename, 1, &cf);
+    if (result == NULL) {
+        return pymain_exit_err_print();
+    }
+    Py_DECREF(result);
+    return 0;
 }
 
 static int
@@ -416,28 +439,26 @@ pymain_run_file(const PyConfig *config)
 {
     PyObject *filename = PyUnicode_FromWideChar(config->run_filename, -1);
     if (filename == NULL) {
-        PyErr_Print();
-        return -1;
+        return pymain_exit_err_print();
     }
     PyObject *program_name = PyUnicode_FromWideChar(config->program_name, -1);
     if (program_name == NULL) {
         Py_DECREF(filename);
-        PyErr_Print();
-        return -1;
+        return pymain_exit_err_print();
     }
 
-    int res = pymain_run_file_obj(program_name, filename,
-                                  config->skip_source_first_line);
+    int exitcode = pymain_run_file_obj(program_name, filename,
+                                       config->skip_source_first_line);
     Py_DECREF(filename);
     Py_DECREF(program_name);
-    return res;
+    return exitcode;
 }
 
 
 static int
 pymain_run_startup(PyConfig *config, int *exitcode)
 {
-    int ret;
+    int ret = 0;
     if (!config->use_environment) {
         return 0;
     }
@@ -477,10 +498,12 @@ pymain_run_startup(PyConfig *config, int *exitcode)
     }
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    (void) _PyRun_SimpleFileObject(fp, startup, 0, &cf);
-    PyErr_Clear();
+    PyObject *result = _PyRun_SimpleFile(fp, startup, 0, &cf);
     fclose(fp);
-    ret = 0;
+    if (result == NULL) {
+        goto error;
+    }
+    Py_DECREF(result);
 
 done:
     Py_XDECREF(startup);
@@ -542,6 +565,43 @@ _Py_COMP_DIAG_POP
 
 
 static int
+_pymain_run_repl(PyConfig *config, int startup)
+{
+    /* call pending calls like signal handlers (SIGINT) */
+    if (Py_MakePendingCalls() == -1) {
+        return pymain_exit_err_print();
+    }
+
+    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
+        return pymain_exit_err_print();
+    }
+
+    if (isatty(fileno(stdin))
+        && !_Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL"))
+    {
+        if (startup) {
+            return pymain_run_pyrepl();
+        }
+        else {
+            return pymain_run_module(L"_pyrepl", 0);
+        }
+    }
+
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    PyObject *result = NULL;
+    PyObject *stdin_obj = PyUnicode_FromString("<stdin>");
+    if (stdin_obj != NULL) {
+        result = _PyRun_AnyFile(stdin, stdin_obj, 0, &cf);
+        Py_DECREF(stdin_obj);
+    }
+    if (result == NULL) {
+        return pymain_exit_err_print();
+    }
+    Py_DECREF(result);
+    return 0;
+}
+
+static int
 pymain_run_stdin(PyConfig *config)
 {
     if (stdin_is_interactive(config)) {
@@ -558,22 +618,7 @@ pymain_run_stdin(PyConfig *config)
         }
     }
 
-    /* call pending calls like signal handlers (SIGINT) */
-    if (Py_MakePendingCalls() == -1) {
-        return pymain_exit_err_print();
-    }
-
-    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
-        return pymain_exit_err_print();
-    }
-
-    if (!isatty(fileno(stdin))
-        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
-        PyCompilerFlags cf = _PyCompilerFlags_INIT;
-        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-        return (run != 0);
-    }
-    return pymain_run_module(L"_pyrepl", 0);
+    return _pymain_run_repl(config, 0);
 }
 
 
@@ -595,20 +640,7 @@ pymain_repl(PyConfig *config, int *exitcode)
         return;
     }
 
-    if (PySys_Audit("cpython.run_stdin", NULL) < 0) {
-        return;
-    }
-
-    if (!isatty(fileno(stdin))
-        || _Py_GetEnv(config->use_environment, "PYTHON_BASIC_REPL")) {
-        PyCompilerFlags cf = _PyCompilerFlags_INIT;
-        int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
-        *exitcode = (run != 0);
-        return;
-    }
-    int run = pymain_start_pyrepl_no_main();
-    *exitcode = (run != 0);
-    return;
+    *exitcode = _pymain_run_repl(config, 1);
 }
 
 

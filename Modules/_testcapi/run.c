@@ -129,9 +129,6 @@ run_simplefile(PyObject *mod, PyObject *args)
     assert(_Py_IsValidFD(fd));
     fclose(fp);
 
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
@@ -203,9 +200,6 @@ run_simplefileex(PyObject *mod, PyObject *args)
         return NULL;
     }
 
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
@@ -243,9 +237,6 @@ run_simplefileexflags(PyObject *mod, PyObject *args)
         return NULL;
     }
 
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
@@ -272,9 +263,6 @@ run_anyfile(PyObject *mod, PyObject *args)
     assert(_Py_IsValidFD(fd));
     fclose(fp);
 
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
@@ -310,9 +298,6 @@ run_anyfileflags(PyObject *mod, PyObject *args)
     assert(_Py_IsValidFD(fd));
     fclose(fp);
 
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
@@ -342,9 +327,6 @@ run_anyfileex(PyObject *mod, PyObject *args)
         return NULL;
     }
 
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
@@ -382,9 +364,6 @@ run_anyfileexflags(PyObject *mod, PyObject *args)
         return NULL;
     }
 
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
@@ -664,9 +643,6 @@ run_simplestring(PyObject *mod, PyObject *args)
     }
 
     int res = PyRun_SimpleString(str);
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
@@ -689,9 +665,6 @@ run_simplestringflags(PyObject *mod, PyObject *args)
     }
 
     int res = PyRun_SimpleStringFlags(str, pflags);
-    if (res == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     assert(!PyErr_Occurred());
     return PyLong_FromLong(res);
 }
