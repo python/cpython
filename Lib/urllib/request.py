@@ -920,6 +920,23 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
                     return self.authenticated[uri]
 
 
+def _rewind_auth_retry_body(request):
+    """Rewind a streaming body before resending it on an auth retry.
+
+    Returns True if the request may be retried. If Request.data is a file-like
+    object, it is rewound to the position it was in before the original request
+    was sent (recorded by AbstractHTTPHandler.do_open). If that position is
+    unknown (the body is not seekable), returns False.
+    """
+    data = request.data
+    if data is None or not hasattr(data, 'read'):
+        return True
+    start_pos = getattr(request, '_body_start_pos', None)
+    if start_pos is None:
+        return False
+    data.seek(start_pos)
+    return True
+
 class AbstractBasicAuthHandler:
 
     # XXX this allows for multiple auth-schemes, but will stupidly pick
@@ -1000,6 +1017,8 @@ class AbstractBasicAuthHandler:
             raw = "%s:%s" % (user, pw)
             auth = "Basic " + base64.b64encode(raw.encode()).decode("ascii")
             if req.get_header(self.auth_header, None) == auth:
+                return None
+            if not _rewind_auth_retry_body(req):
                 return None
             req.add_unredirected_header(self.auth_header, auth)
             return self.parent.open(req, timeout=req.timeout)
@@ -1112,6 +1131,8 @@ class AbstractDigestAuthHandler:
         if auth:
             auth_val = 'Digest %s' % auth
             if req.headers.get(self.auth_header, None) == auth_val:
+                return None
+            if not _rewind_auth_retry_body(req):
                 return None
             req.add_unredirected_header(self.auth_header, auth_val)
             resp = self.parent.open(req, timeout=req.timeout)
@@ -1329,6 +1350,17 @@ class AbstractHTTPHandler(BaseHandler):
                 # server.
                 del headers[proxy_auth_hdr]
             h.set_tunnel(req._tunnel_host, headers=tunnel_headers)
+
+        # Record the body's starting position so that, if this request is
+        # retried.
+        data = req.data
+        if data is not None and hasattr(data, 'read') and hasattr(data, 'seek'):
+            try:
+                req._body_start_pos = data.tell()
+            except (OSError, ValueError):
+                req._body_start_pos = None
+        else:
+            req._body_start_pos = None
 
         try:
             try:

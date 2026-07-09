@@ -1076,6 +1076,9 @@ HTTPBasicAuthHandler Objects
 
    Retry the request with authentication information, if available.
 
+   The :attr:`Request.data` of a POST or PUT request is resent. However,
+   if it is a file-like object that is not seekable, the retry is
+   abandoned and the ``401`` response is returned to the caller instead.
 
 .. _proxy-basic-auth-handler:
 
@@ -1114,6 +1117,10 @@ HTTPDigestAuthHandler Objects
 .. method:: HTTPDigestAuthHandler.http_error_401(req, fp, code,  msg, hdrs)
 
    Retry the request with authentication information, if available.
+
+   The :attr:`Request.data` of a POST or PUT request is resent. However,
+   if it is a file-like object that is not seekable, the retry is
+   abandoned and the ``401`` response is returned to the caller instead.
 
 
 .. _proxy-digest-auth-handler:
