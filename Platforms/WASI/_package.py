@@ -179,6 +179,37 @@ def man_symlink(man_path, context):
     return (man_path.parent / f"python{major}.1", man_path)
 
 
+def wasmtime_config_file(context):
+    """Have wasmtime.toml end up in etc/pythonXY/."""
+    config = context.checkout / "Platforms" / "WASI" / "wasmtime.toml"
+    return (
+        pathlib.PurePath("etc")
+        / f"python{python_version(context)}"
+        / "wasmtime.toml",
+        config,
+    )
+
+
+def wasm_file(context):
+    """Have python.wasm end up at lib/pythonXY/lib-wasm/pythonX.Yd?.wasm."""
+    XXX
+
+
+def python_wasmtime_script(context):
+    """Create bin/pythonN.Md?.wasmtime."""
+    XXX
+
+
+def python_wasmtime_symlink(context):
+    """Symlink bin/pythonN.Md?.wasmtime.
+
+    - bin/pythonN.M.wasmtime (if debug build)
+    - bin/pythonNd?.wasmtime
+    - bin/pythonN.wasmtime (if debug build)
+    """
+    # XXX
+
+
 def filename_stem(context):
     """Calculate the stem of the archive file name."""
     version_info = context.wasi_build_details["language"]["version_info"]
@@ -241,3 +272,8 @@ def package(context):
     man_path = man_file(context)
     copy_files([man_path], base)
     symlink_files([man_symlink(man_path[0], context)], base)
+
+    _shared.log("📁", "etc/", spacing=indent * 2)
+    _shared.log("📁", "pythonN.M/", spacing=indent * 3)
+    _shared.log("📄", "wasmtime.toml", spacing=indent * 4)
+    copy_files([wasmtime_config_file(context)], base)
