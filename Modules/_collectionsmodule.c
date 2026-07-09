@@ -2547,7 +2547,6 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
 /*[clinic end generated code: output=7e0c1789636b3d8f input=e79fad04534a0b45]*/
 {
     PyObject *it, *oldval;
-    PyObject *newval = NULL;
     PyObject *key = NULL;
     PyObject *bound_get = NULL;
     PyObject *mapping_get;
@@ -2596,6 +2595,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
 
             int found;
             int cs_err = 0;
+            PyObject *newval = NULL;
             Py_BEGIN_CRITICAL_SECTION(mapping);
             found = _PyDict_GetItemRef_KnownHash_LockHeld(
                         (PyDictObject *)mapping, key, hash, &oldval);
@@ -2640,6 +2640,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
             if (oldval == NULL)
                 break;
+            PyObject *newval;
             if (oldval == zero) {
                 newval = Py_NewRef(one);
             } else {
@@ -2648,9 +2649,10 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
-            if (PyObject_SetItem(mapping, key, newval) < 0)
+            int status = PyObject_SetItem(mapping, key, newval);
+            Py_DECREF(newval);
+            if (status < 0)
                 break;
-            Py_CLEAR(newval);
             Py_DECREF(key);
         }
     }
@@ -2660,7 +2662,6 @@ done:
     Py_XDECREF(mapping_setitem);
     Py_DECREF(it);
     Py_XDECREF(key);
-    Py_XDECREF(newval);
     Py_XDECREF(bound_get);
     if (PyErr_Occurred())
         return NULL;
