@@ -1,0 +1,5 @@
+Fix the happy-eyeballs tests in ``test.test_asyncio.test_base_events``
+raising ``TypeError`` in a callback on Windows. The tests now use a
+selector event loop explicitly instead of the platform default, as the
+Windows proactor event loop registers the mocked test socket with a real
+I/O completion port.
