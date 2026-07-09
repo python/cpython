@@ -47,7 +47,7 @@ def make_pat():
         r"(?P<TYPE_SOFTKW>type)" +
         r"(?=[ \t]+[A-Za-z_])"
     )
-    lazy_softkw = (
+    lazy_softkw = (  # lazy new in 3.15 (+ 2 lines below).
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<LAZY_SOFTKW>lazy)" +
         r"(?=[ \t]+(?:import|from)\b)"  # followed by 'import' or 'from'

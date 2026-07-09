@@ -1399,6 +1399,14 @@ encodings.
 | punycode           |         | Implement :rfc:`3492`.    |
 |                    |         | Stateful codecs are not   |
 |                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. warning::              |
+|                    |         |                           |
+|                    |         |    The decoding and       |
+|                    |         |    encoding algorithms    |
+|                    |         |    scale poorly, so       |
+|                    |         |    limit the length of    |
+|                    |         |    untrusted input.       |
 +--------------------+---------+---------------------------+
 | raw_unicode_escape |         | Latin-1 encoding with     |
 |                    |         | :samp:`\\u{XXXX}` and     |
@@ -1429,6 +1437,14 @@ encodings.
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
++--------------------+---------+---------------------------+
+| utf-7-imap         | mUTF-7  | Modified UTF-7 encoding   |
+|                    |         | of :rfc:`3501` for IMAP4  |
+|                    |         | mailbox names.  Only      |
+|                    |         | ``errors='strict'`` is    |
+|                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. versionadded:: next    |
 +--------------------+---------+---------------------------+
 
 .. versionchanged:: 3.8
