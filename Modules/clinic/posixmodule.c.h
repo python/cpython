@@ -6330,7 +6330,7 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WAIT) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if defined(_Py_HAVE_PIDFD_OPEN)
 
 PyDoc_STRVAR(os_pidfd_open__doc__,
 "pidfd_open($module, /, pid, flags=0)\n"
@@ -6405,9 +6405,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_open) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* defined(_Py_HAVE_PIDFD_OPEN) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
+#if defined(_Py_HAVE_PIDFD_GETFD)
 
 PyDoc_STRVAR(os_pidfd_getfd__doc__,
 "pidfd_getfd($module, /, pidfd, targetfd, *, flags=0)\n"
@@ -6492,7 +6492,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_getfd) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
+#endif /* defined(_Py_HAVE_PIDFD_GETFD) */
 
 #if defined(HAVE_SETNS)
 
@@ -8853,7 +8853,7 @@ exit:
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
 
-#if defined(HAVE_COPY_FILE_RANGE)
+#if defined(_Py_HAVE_COPY_FILE_RANGE)
 
 PyDoc_STRVAR(os_copy_file_range__doc__,
 "copy_file_range($module, /, src, dst, count, offset_src=None,\n"
@@ -8969,7 +8969,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_COPY_FILE_RANGE) */
+#endif /* defined(_Py_HAVE_COPY_FILE_RANGE) */
 
 #if ((defined(HAVE_SPLICE) && !defined(_AIX)))
 
@@ -11547,7 +11547,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MEMFD_CREATE)
+#if defined(_Py_HAVE_MEMFD_CREATE)
 
 PyDoc_STRVAR(os_memfd_create__doc__,
 "memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
@@ -11633,7 +11633,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MEMFD_CREATE) */
+#endif /* defined(_Py_HAVE_MEMFD_CREATE) */
 
 #if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
@@ -13734,4 +13734,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=d641f02a97057666 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4b482c3fbf860008 input=a9049054013a1b77]*/

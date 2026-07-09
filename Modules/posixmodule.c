@@ -46,6 +46,8 @@
 #include <stdio.h>                // ctermid()
 #include <stdlib.h>               // system()
 
+#include "posixshims.h"           // _Py_copy_file_range()
+
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // symlink()
 #endif
@@ -10798,8 +10800,7 @@ os_wait_impl(PyObject *module)
 
 
 // This system call always crashes on older Android versions.
-#if defined(__linux__) && defined(__NR_pidfd_open) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#ifdef _Py_HAVE_PIDFD_OPEN
 /*[clinic input]
 os.pidfd_open
   pid: pid_t
@@ -10815,7 +10816,7 @@ static PyObject *
 os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 /*[clinic end generated code: output=5c7252698947dc41 input=03058b32c389f874]*/
 {
-    int fd = syscall(__NR_pidfd_open, pid, flags);
+    int fd = _Py_pidfd_open(pid, flags);
     if (fd < 0) {
         return posix_error();
     }
@@ -10824,8 +10825,7 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
-#if defined(__linux__) && defined(__NR_pidfd_getfd) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#ifdef _Py_HAVE_PIDFD_GETFD
 /*[clinic input]
 os.pidfd_getfd
   pidfd: int
@@ -10844,7 +10844,7 @@ os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
                     unsigned int flags)
 /*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
 {
-    int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
+    int fd = _Py_pidfd_getfd(pidfd, targetfd, flags);
     if (fd < 0) {
         return posix_error();
     }
@@ -13044,7 +13044,7 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 }
 #endif /* HAVE_PWRITEV */
 
-#ifdef HAVE_COPY_FILE_RANGE
+#ifdef _Py_HAVE_COPY_FILE_RANGE
 /*[clinic input]
 
 os.copy_file_range
@@ -13096,7 +13096,7 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
     do {
         Py_BEGIN_ALLOW_THREADS
-        ret = copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
+        ret = _Py_copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
@@ -13106,7 +13106,7 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 
     return PyLong_FromSsize_t(ret);
 }
-#endif /* HAVE_COPY_FILE_RANGE*/
+#endif /* _Py_HAVE_COPY_FILE_RANGE */
 
 #if (defined(HAVE_SPLICE) && !defined(_AIX))
 /*[clinic input]
@@ -15808,7 +15808,7 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     return PyBytesWriter_Finish(writer);
 }
 
-#ifdef HAVE_MEMFD_CREATE
+#ifdef _Py_HAVE_MEMFD_CREATE
 /*[clinic input]
 os.memfd_create
 
@@ -15824,7 +15824,7 @@ os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
     int fd;
     const char *bytes = PyBytes_AS_STRING(name);
     Py_BEGIN_ALLOW_THREADS
-    fd = memfd_create(bytes, flags);
+    fd = _Py_memfd_create(bytes, flags);
     Py_END_ALLOW_THREADS
     if (fd == -1) {
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -18433,7 +18433,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
 #endif
-#ifdef HAVE_MEMFD_CREATE
+#ifdef _Py_HAVE_MEMFD_CREATE
     if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
     if (PyModule_AddIntMacro(m, MFD_ALLOW_SEALING)) return -1;
 #ifdef MFD_HUGETLB
@@ -18481,7 +18481,7 @@ all_ins(PyObject *m)
 #ifdef MFD_HUGE_16GB
     if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
 #endif
-#endif /* HAVE_MEMFD_CREATE */
+#endif /* _Py_HAVE_MEMFD_CREATE */
 
 #if defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)
     if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
