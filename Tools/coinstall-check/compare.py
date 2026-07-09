@@ -12,7 +12,10 @@ import json
 
 
 def compare_trees(base: Path) -> bool:
-    seen: dict[str, str] = {}
+    """Compare all json manifests inside the directory at base."""
+    hashes_seen: dict[str, str] = {}
+    tags_seen_by_platform: dict[str, set[frozenset[str]]] = {}
+
     success: bool = True
     for tree in base.iterdir():
         if not tree.is_file():
@@ -24,17 +27,33 @@ def compare_trees(base: Path) -> bool:
             data = json.load(f)
         build_details = data["build_details"]
         hashes = data["hashes"]
+        tags_seen_by_platform.setdefault(build_details["platform"], set()).add(frozenset(build_details["abi"]["flags"]))
 
         for path, digest in hashes.items():
             if is_ignored(path, build_details):
                 continue
-            if path not in seen:
-                seen[path] = digest
+            if path not in hashes_seen:
+                hashes_seen[path] = digest
                 continue
-            if digest != seen[path]:
+            if digest != hashes_seen[path]:
                 print(f"Mismatch found in {tree}: {path}")
-                print(f"{digest} != {seen[path]}")
+                print(f"{digest} != {hashes_seen[path]}")
                 success = False
+
+    # Did we see enough builds to make a useful comparison?
+    if len(tags_seen_by_platform) < 2:
+        print(
+            "Insufficient platforms (architectures) to compare. Expected >= 2"
+        )
+        success = False
+
+    for platform, tagsets in tags_seen_by_platform.items():
+        if len(tagsets) >= 2:
+            break
+    else:
+        print("Insufficient configuration variants tested. Expected >= 2")
+        success = False
+
     return success
 
 
