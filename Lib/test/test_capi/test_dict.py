@@ -615,7 +615,7 @@ class CAPITest(unittest.TestCase):
         d = {1: 2, 'a': 'b'}
         f = check(d)
         self.assertIs(type(f), frozendict)
-        self.assertEqual(f, {1: 2, 'a': 'b'})
+        self.assertEqual(f, frozendict({1: 2, 'a': 'b'}))
         self.assertIs(type(d), dict)
         self.assertEqual(d, {})
 
