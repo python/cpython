@@ -1332,8 +1332,8 @@ class Misc:
         return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
 
     def winfo_exists(self):
-        """Return true if this widget exists."""
-        return self.tk.getint(
+        """Return True if this widget exists."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'exists', self._w))
 
     def winfo_fpixels(self, number):
@@ -1370,8 +1370,8 @@ class Misc:
             self.tk.call('winfo', 'isdark', self._w))
 
     def winfo_ismapped(self):
-        """Return true if this widget is mapped."""
-        return self.tk.getint(
+        """Return True if this widget is mapped."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'ismapped', self._w))
 
     def winfo_manager(self):
@@ -1498,8 +1498,8 @@ class Misc:
             'winfo', 'toplevel', self._w))
 
     def winfo_viewable(self):
-        """Return true if the widget and all its higher ancestors are mapped."""
-        return self.tk.getint(
+        """Return True if the widget and all its higher ancestors are mapped."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'viewable', self._w))
 
     def winfo_visual(self):
@@ -4207,6 +4207,8 @@ class Text(Widget, XView, YView):
         modified flag. If boolean is specified, sets the
         modified flag of the widget to arg.
         """
+        if arg is None:
+            return self.tk.getboolean(self.edit("modified"))
         return self.edit("modified", arg)
 
     def edit_redo(self):

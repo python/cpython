@@ -192,6 +192,19 @@ In general, pass arguments unquoted and let the module quote them as needed.
 An argument that is already enclosed in double quotes is left unchanged,
 so that code which quotes arguments itself keeps working.
 
+Mailbox names are encoded as modified UTF-7 (:rfc:`3501`, section 5.1.3),
+so a mailbox name containing non-ASCII characters can be passed as an
+ordinary :class:`str`.
+A :class:`str` that is already valid modified UTF-7 is left unchanged,
+so that a name obtained from :meth:`~IMAP4.list` (raw ``bytes`` decoded to
+text) round-trips; pass :class:`bytes` to send the exact bytes with no
+encoding.
+When ``UTF8=ACCEPT`` is enabled (see :meth:`~IMAP4.enable`), mailbox names
+are sent as UTF-8 instead.
+
+.. versionchanged:: next
+   Non-ASCII mailbox names are automatically encoded as modified UTF-7.
+
 Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
 or mandated results from the command. Each *data* is either a ``bytes``, or a

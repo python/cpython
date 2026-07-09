@@ -229,11 +229,37 @@ class TestImaplib(unittest.TestCase):
         # But spaces still require quoting.
         self.assertEqual(m._list_mailbox('New folder'), b'"New folder"')
         self.assertEqual(m._list_mailbox('"New folder"'), b'"New folder"')
-        # As do non-ASCII names; wildcards keep their meaning inside a
-        # quoted string.
+        # A non-ASCII pattern is encoded as modified UTF-7; the wildcards keep
+        # their meaning (they are printable ASCII, passed through directly).
+        self.assertEqual(m._list_mailbox('Entwürfe/%'), b'Entw&APw-rfe/%')
+        # Under UTF8=ACCEPT the name is sent as UTF-8 in a quoted string.
         m._encoding = 'utf-8'
         self.assertEqual(m._list_mailbox('Entwürfe/%'),
                          '"Entwürfe/%"'.encode())
+
+    def test_mailbox(self):
+        m = imaplib.IMAP4.__new__(imaplib.IMAP4)
+        m._encoding = 'ascii'
+        # A plain atom is left unquoted; bytes are sent verbatim.
+        self.assertEqual(m._mailbox('INBOX'), b'INBOX')
+        self.assertEqual(m._mailbox(b'Entw&APw-rfe'), b'Entw&APw-rfe')
+        # A non-ASCII name is encoded as modified UTF-7 (RFC 3501 5.1.3).
+        self.assertEqual(m._mailbox('Entwürfe'), b'Entw&APw-rfe')
+        # A str that is already valid modified UTF-7 is passed through, so a
+        # name obtained from LIST (raw bytes, decoded as ASCII) round-trips.
+        self.assertEqual(m._mailbox('Entw&APw-rfe'), b'Entw&APw-rfe')
+        self.assertEqual(m._mailbox('"Entw&APw-rfe"'), b'"Entw&APw-rfe"')
+        # A literal '&' (not a valid shift on its own) is encoded as '&-'.
+        self.assertEqual(m._mailbox('A&B'), b'A&-B')
+        # Names needing quoting are still quoted.
+        self.assertEqual(m._mailbox('New folder'), b'"New folder"')
+        self.assertEqual(m._mailbox(''), b'""')
+        # Control characters are Base64-encoded, never sent as raw bytes.
+        self.assertEqual(m._mailbox('a\x01b'), b'a&AAE-b')
+        # Under UTF8=ACCEPT a non-ASCII name is sent as UTF-8, quoted.
+        m._encoding = 'utf-8'
+        self.assertEqual(m._mailbox('Entwürfe'), '"Entwürfe"'.encode())
+        self.assertEqual(m._mailbox('Entw&APw-rfe'), b'Entw&APw-rfe')
 
 
 if ssl:
@@ -994,6 +1020,32 @@ class NewIMAPTestsMixin:
         self.assertNotIn('ENABLE', client.capabilities)
         client.login('user', 'pass')
         self.assertIn('ENABLE', client.capabilities)
+
+    def test_readonly_error_reports_mailbox(self):
+        # The read-only error reports the mailbox via repr(), which also
+        # avoids BytesWarning for a bytes mailbox under -bb.
+        class ReadOnlyHandler(SimpleIMAPHandler):
+            def cmd_SELECT(self, tag, args):
+                self._send_line(b'* 2 EXISTS')
+                self._send_tagged(tag, 'OK', '[READ-ONLY] SELECT completed.')
+        client, _ = self._setup(ReadOnlyHandler)
+        client.login('user', 'pass')
+        for mailbox, expected in [('INBOX', "'INBOX'"), (b'INBOX', r"b'INBOX'")]:
+            with self.subTest(mailbox=mailbox):
+                with self.assertRaisesRegex(imaplib.IMAP4.readonly,
+                                            r"%s is not writable" % expected):
+                    client.select(mailbox)
+
+    def test_uid_unknown_command_reports_command(self):
+        # The unknown-UID-command error reports the command via repr(), which
+        # also avoids BytesWarning for a bytes command under -bb.
+        client, _ = self._setup(SimpleIMAPHandler)
+        for command, expected in [('BOGUS', "'BOGUS'"), (b'BOGUS', r"b'BOGUS'")]:
+            with self.subTest(command=command):
+                with self.assertRaisesRegex(
+                        imaplib.IMAP4.error,
+                        r"Unknown IMAP4 UID command: %s" % expected):
+                    client.uid(command, '1')
 
     def test_logout(self):
         client, _ = self._setup(SimpleIMAPHandler)
@@ -1883,18 +1935,32 @@ class NewIMAPTestsMixin:
     def test_control_characters(self):
         client, server = self._setup(SimpleIMAPHandler)
         client.login('user', 'pass')
-        for c in '\0\r\n':
-            with self.assertRaises(ValueError):
-                client.select(f'a{c}b')
-        # Other control characters are valid in a quoted string and can
-        # occur in mailbox names returned by the server, so the client
-        # must be able to send them back.
+        # In the default (ASCII) mode a mailbox name is sent as modified UTF-7,
+        # which Base64-encodes every non-printable character (NUL, CR and LF
+        # included).  So a control character is never sent as a raw byte -- it
+        # cannot corrupt the command -- and the name round-trips.
         for c in support.control_characters_c0():
-            if c in '\0\r\n':
-                continue
-            typ, _ = client.select(f'a{c}b')
-            self.assertEqual(typ, 'OK')
-            self.assertEqual(server.is_selected, [f'"a{c}b"'])
+            with self.subTest(c=c):
+                typ, _ = client.select(f'a{c}b')
+                self.assertEqual(typ, 'OK')
+                [name] = server.is_selected
+                self.assertNotIn(c, name)
+                self.assertEqual(name.encode('ascii').decode('utf-7-imap'),
+                                 f'a{c}b')
+
+    def test_mutf7_mailbox_name(self):
+        # Without UTF8=ACCEPT a non-ASCII mailbox name is sent as modified
+        # UTF-7 (RFC 3501, 5.1.3).  A name that is already modified UTF-7 (e.g.
+        # obtained from a raw LIST response) is sent unchanged, whether as str
+        # or bytes, so it round-trips without being encoded again.
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for name in ['Entwürfe', 'Entw&APw-rfe', b'Entw&APw-rfe']:
+            with self.subTest(name=name):
+                server.is_selected = None
+                typ, _ = client.select(name)
+                self.assertEqual(typ, 'OK')
+                self.assertEqual(server.is_selected, ['Entw&APw-rfe'])
 
     # property tests
 

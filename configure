@@ -14440,7 +14440,13 @@ case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
     perf_trampoline=yes
                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o ;; #(
+  x86_64-linux-musl) :
+    perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o ;; #(
   aarch64-linux-gnu) :
+    perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o ;; #(
+  aarch64-linux-musl) :
     perf_trampoline=yes
                          PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o ;; #(
   darwin) :
@@ -14637,6 +14643,98 @@ then :
 
 fi
     # Dynamic linking for HP-UX
+
+ac_fn_c_check_header_compile "$LINENO" "iconv.h" "ac_cv_header_iconv_h" "$ac_includes_default"
+if test "x$ac_cv_header_iconv_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_ICONV_H 1" >>confdefs.h
+
+fi
+
+case $ac_sys_system in #(
+  Emscripten|WASI) :
+    py_have_iconv=no ;; #(
+  *) :
+    py_have_iconv=$ac_cv_header_iconv_h ;;
+esac
+if test "$py_have_iconv" = yes; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for iconv" >&5
+printf %s "checking for iconv... " >&6; }
+if test ${ac_cv_have_iconv+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+    ac_cv_have_iconv=no
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <iconv.h>
+
+int
+main (void)
+{
+
+      iconv_t cd = iconv_open("", "");
+      iconv(cd, NULL, NULL, NULL, NULL);
+      iconv_close(cd);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_have_iconv=yes
+else case e in #(
+  e)
+      py_save_LIBS="$LIBS"
+      LIBS="-liconv $LIBS"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <iconv.h>
+
+int
+main (void)
+{
+
+        iconv_t cd = iconv_open("", "");
+        iconv(cd, NULL, NULL, NULL, NULL);
+        iconv_close(cd);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_have_iconv=-liconv
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+      LIBS="$py_save_LIBS"
+     ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_iconv" >&5
+printf "%s\n" "$ac_cv_have_iconv" >&6; }
+  if test "$ac_cv_have_iconv" != no; then
+
+printf "%s\n" "#define HAVE_ICONV 1" >>confdefs.h
+
+    if test "$ac_cv_have_iconv" = -liconv; then
+      LIBS="-liconv $LIBS"
+    fi
+  fi
+fi
 
 
        for ac_header in execinfo.h link.h dlfcn.h
