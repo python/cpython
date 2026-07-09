@@ -1,0 +1,4 @@
+:meth:`csv.Sniffer.sniff` now raises :exc:`csv.Error` for an inconsistent
+guessed dialect, for example one whose delimiter equals its quote character,
+instead of returning it. :meth:`csv.Sniffer.has_header` now raises
+:exc:`csv.Error` instead of leaking a :exc:`ValueError`.

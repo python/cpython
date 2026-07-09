@@ -264,6 +264,14 @@ class Sniffer:
         dialect.quotechar = quotechar or '"'
         dialect.skipinitialspace = skipinitialspace
 
+        # A guess can be inconsistent (for example delimiter == quotechar).
+        # Building a reader validates it; re-raise the _csv ValueError as a
+        # csv.Error so callers see the module's own exception type.
+        try:
+            reader(StringIO(), dialect)
+        except ValueError as e:
+            raise Error(str(e)) from None
+
         return dialect
 
 

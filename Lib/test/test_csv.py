@@ -1463,6 +1463,16 @@ ghi\0jkl
         self.assertEqual(dialect.quotechar, "'")
         self.assertIs(dialect.skipinitialspace, False)
 
+    def test_sniff_delimiter_equals_quotechar(self):
+        # A sample that makes sniff() guess a dialect whose delimiter equals
+        # its quotechar is invalid; that must surface as csv.Error, not as a
+        # raw ValueError leaking from the _csv extension.
+        sniffer = csv.Sniffer()
+        for sample in ('"', '""', "''"):
+            with self.subTest(sample=sample):
+                self.assertRaises(csv.Error, sniffer.sniff, sample)
+                self.assertRaises(csv.Error, sniffer.has_header, sample)
+
     def test_delimiters(self):
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.sample3)
