@@ -60,6 +60,14 @@ _PyRun_File(FILE *fp, PyObject *filename, int start, PyObject *globals,
             PyObject *locals, int closeit, PyCompilerFlags *flags);
 
 
+// See also pymain_error()
+static void
+pyrun_error(const char *msg)
+{
+    PySys_FormatStderr("python: %s\n", msg);
+}
+
+
 PyObject*
 _PyRun_AnyFile(FILE *fp, PyObject *filename, int closeit,
                PyCompilerFlags *flags)
@@ -496,7 +504,7 @@ _PyRun_SimpleFile(FILE *fp, PyObject *filename, int closeit,
     }
     if (!has_file) {
         if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
-            fprintf(stderr, "python: failed to set __main__.__file__\n");
+            pyrun_error("failed to set __main__.__file__");
             goto done;
         }
         set_file_name = 1;
@@ -516,12 +524,12 @@ _PyRun_SimpleFile(FILE *fp, PyObject *filename, int closeit,
 
         pyc_fp = Py_fopen(filename, "rb");
         if (pyc_fp == NULL) {
-            fprintf(stderr, "python: Can't reopen .pyc file\n");
+            pyrun_error("Can't reopen .pyc file");
             goto done;
         }
 
         if (set_main_loader(dict, filename, "SourcelessFileLoader") < 0) {
-            fprintf(stderr, "python: failed to set __main__.__loader__\n");
+            pyrun_error("failed to set __main__.__loader__");
             fclose(pyc_fp);
             goto done;
         }
@@ -530,7 +538,7 @@ _PyRun_SimpleFile(FILE *fp, PyObject *filename, int closeit,
         /* When running from stdin, leave __main__.__loader__ alone */
         if ((!PyUnicode_Check(filename) || !PyUnicode_EqualToUTF8(filename, "<stdin>")) &&
             set_main_loader(dict, filename, "SourceFileLoader") < 0) {
-            fprintf(stderr, "python: failed to set __main__.__loader__\n");
+            pyrun_error("failed to set __main__.__loader__");
             goto done;
         }
         res = _PyRun_File(fp, filename, Py_file_input, dict, dict,
@@ -541,7 +549,7 @@ _PyRun_SimpleFile(FILE *fp, PyObject *filename, int closeit,
   done:
     if (set_file_name) {
         if (PyDict_PopString(dict, "__file__", NULL) < 0) {
-            fprintf(stderr, "python: failed to delete __main__.__file__\n");
+            pyrun_error("failed to delete __main__.__file__");
             Py_CLEAR(res);
         }
     }
