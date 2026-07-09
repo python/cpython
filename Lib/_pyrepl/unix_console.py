@@ -491,6 +491,7 @@ class UnixConsole(Console):
         raw.cc[termios.VMIN] = b"\x01"
         raw.cc[termios.VTIME] = b"\x00"
         self.__input_fd_set(raw)
+        self.__rawtermstate = raw
 
         # Apple Terminal will re-wrap lines for us unless we preempt the
         # damage.
@@ -731,7 +732,23 @@ class UnixConsole(Console):
         # avoid inline imports here so the repl doesn't get flooded
         # with import logging from -X importtime=2
         if posix is not None and posix._is_inputhook_installed():
-            return posix._inputhook
+            return self.__run_input_hook
+
+    def __run_input_hook(self):
+        # Input-hook callbacks (GUI toolkit event loops, and any warning,
+        # traceback or print they emit) expect normal cooked-mode output, but
+        # pyrepl runs with OPOST disabled so it can drive the cursor itself.
+        # Temporarily restore the terminal's saved output flags around the
+        # hook so that '\n' is translated to '\r\n' as it was under the
+        # readline REPL, then re-enter raw mode.  Only oflag is toggled --
+        # re-enabling ECHO/ICANON at the prompt would be wrong.  See gh-152907.
+        cooked = self.__rawtermstate.copy()
+        cooked.oflag = self.__svtermstate.oflag
+        self.__input_fd_set(cooked)
+        try:
+            posix._inputhook()
+        finally:
+            self.__input_fd_set(self.__rawtermstate)
 
     def __enable_bracketed_paste(self) -> None:
         os.write(self.output_fd, b"\x1b[?2004h")

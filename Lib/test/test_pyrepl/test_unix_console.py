@@ -1,9 +1,11 @@
 import errno
 import itertools
 import os
+import select
 import signal
 import sys
 import threading
+import time
 import unittest
 from functools import partial
 from _colorize import ANSIColors
@@ -424,3 +426,92 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         # EIO error should be handled gracefully in restore()
         console.restore()
+
+
+try:
+    import pty
+    import termios as _termios
+except ImportError:
+    pty = None
+
+
+@unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
+@unittest.skipUnless(pty, "requires pty")
+class TestUnixConsoleInputHook(TestCase):
+    # gh-152907: pyrepl runs with OPOST disabled so it can drive the cursor
+    # itself, but input-hook callbacks (GUI event loops, and any warning,
+    # traceback or print they emit) expect normal cooked-mode output.  The
+    # console must restore cooked output around the hook call so that '\n' is
+    # translated back to '\r\n', then re-enter raw mode.
+
+    def test_input_hook_output_is_cooked(self):
+        master_fd, slave_fd = pty.openpty()
+
+        # Continuously drain the master side, like a real terminal.  This is
+        # required because pyrepl switches the terminal mode with TCSADRAIN,
+        # which blocks until queued output has been consumed.
+        chunks = []
+        reading = True
+
+        def reader():
+            while reading:
+                r, _, _ = select.select([master_fd], [], [], 0.1)
+                if master_fd in r:
+                    try:
+                        data = os.read(master_fd, 4096)
+                    except OSError:
+                        break
+                    if not data:
+                        break
+                    chunks.append(data)
+
+        reader_thread = threading.Thread(target=reader)
+        reader_thread.start()
+
+        def cleanup():
+            nonlocal reading
+            reading = False
+            reader_thread.join()
+            os.close(master_fd)
+        self.addCleanup(cleanup)
+
+        # Establish a normal cooked terminal as the saved state so the fix has
+        # something to restore around the hook call.
+        attr = _termios.tcgetattr(slave_fd)
+        attr[1] |= _termios.OPOST | _termios.ONLCR
+        _termios.tcsetattr(slave_fd, _termios.TCSANOW, attr)
+
+        console = UnixConsole(slave_fd, slave_fd, term="xterm")
+        console.prepare()
+        try:
+            # pyrepl's own rendering runs with OPOST cleared.
+            self.assertFalse(_termios.tcgetattr(slave_fd)[1] & _termios.OPOST)
+
+            observed = {}
+
+            def fake_hook():
+                observed["oflag"] = _termios.tcgetattr(slave_fd)[1]
+                os.write(slave_fd, b"line1\nline2\n")
+                return 0
+
+            with patch("_pyrepl.unix_console.posix") as mock_posix:
+                mock_posix._is_inputhook_installed.return_value = True
+                mock_posix._inputhook.side_effect = fake_hook
+                hook = console.input_hook
+                self.assertIsNotNone(hook)
+                hook()
+
+            # The hook ran with cooked output (OPOST on)...
+            self.assertTrue(observed["oflag"] & _termios.OPOST)
+            # ...and raw mode was restored afterwards.
+            self.assertFalse(_termios.tcgetattr(slave_fd)[1] & _termios.OPOST)
+        finally:
+            console.restore()
+            os.close(slave_fd)
+
+        # Give the reader a moment to drain the hook's output.
+        time.sleep(0.2)
+        data = b"".join(chunks)
+        # The tty translated the hook's bare '\n' into '\r\n'.
+        self.assertIn(b"line1\r\nline2\r\n", data)
+        self.assertNotIn(b"line1\nline2\n", data)
