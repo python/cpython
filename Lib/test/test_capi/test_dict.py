@@ -609,6 +609,26 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
+    def test_dict_as_frozendict_and_clear(self):
+        # Test PyDict_AsFrozenDictAndClear()
+        check = _testcapi.dict_as_frozendict_and_clear
+        d = {1: 2, 'a': 'b'}
+        f = check(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, {1: 2, 'a': 'b'})
+        self.assertIs(type(d), dict)
+        self.assertEqual(d, {})
+
+        d = {}
+        f = check(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, {})
+        self.assertIs(type(d), dict)
+        self.assertEqual(d, {})
+        # CRASHES check([])
+        # CRASHES check(frozendict())
+        # CRASHES check(NULL)
+
     def test_frozendict_check(self):
         # Test PyFrozenDict_Check()
         check = _testcapi.frozendict_check

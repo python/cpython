@@ -3120,6 +3120,18 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
     }
 }
 
+// This function is used in both `PyDict_Clear`
+// and `PyDict_AsFrozenDictAndClear`, place all the common parts here.
+static void
+clear_common(PyDictObject *mp)
+{
+    /* Empty the dict... */
+    _PyDict_NotifyEvent(PyDict_EVENT_CLEARED, mp, NULL, NULL);
+    // We don't inc ref empty keys because they're immortal
+    ensure_shared_on_resize(mp);
+    STORE_USED(mp, 0);
+}
+
 static void
 clear_lock_held(PyObject *op)
 {
@@ -3138,11 +3150,7 @@ clear_lock_held(PyObject *op)
     if (oldkeys == Py_EMPTY_KEYS) {
         return;
     }
-    /* Empty the dict... */
-    _PyDict_NotifyEvent(PyDict_EVENT_CLEARED, mp, NULL, NULL);
-    // We don't inc ref empty keys because they're immortal
-    ensure_shared_on_resize(mp);
-    STORE_USED(mp, 0);
+    clear_common(mp);
     if (oldvalues == NULL) {
         set_keys(mp, Py_EMPTY_KEYS);
         assert(oldkeys->dk_refcnt == 1);
@@ -8519,6 +8527,50 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     _PyObject_GC_TRACK(d);
     return d;
+}
+
+static void
+transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
+{
+
+    PyDictObject *new = (PyDictObject *)res;
+    PyDictObject *old = (PyDictObject *)dict;
+    // Fast path: do nothing on an empty dict:
+    if (old->ma_keys == Py_EMPTY_KEYS) {
+        return;
+    }
+
+    // Transfer keys and values from dict to res:
+    STORE_USED(new, old->ma_used);
+    set_keys(new, old->ma_keys);
+    set_values(new, old->ma_values);
+    ASSERT_CONSISTENT(new);
+
+    // Now, clear the old dict keys and values, but do not decref them:
+    clear_common((PyDictObject *)dict);
+    set_keys(old, Py_EMPTY_KEYS);
+    set_values(old, NULL);
+    ASSERT_CONSISTENT(dict);
+}
+
+PyObject *
+PyDict_AsFrozenDictAndClear(PyObject *dict)
+{
+    assert(dict != NULL);
+    assert(PyDict_CheckExact(dict));
+    assert(can_modify_dict((PyDictObject *)dict));
+    PyObject *res = frozendict_new_untracked(&PyFrozenDict_Type);
+    if (res == NULL) {
+        return NULL;
+    }
+
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    transfer_keys_and_values_lock_held(res, dict);
+    Py_END_CRITICAL_SECTION();
+
+    _PyObject_GC_TRACK(res);
+    assert(_PyFrozenDictObject_CAST(res)->ma_hash == -1);
+    return res;
 }
 
 
