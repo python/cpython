@@ -1500,8 +1500,13 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_selectmode(self):
         widget = self.create()
-        self.checkEnumParam(widget, 'selectmode',
-                            'none', 'browse', 'extended')
+        if tk_version >= (9, 1):
+            self.checkEnumParam(widget, 'selectmode',
+                                'none', 'single', 'browse', 'extended',
+                                'multiple')
+        else:
+            self.checkEnumParam(widget, 'selectmode',
+                                'none', 'browse', 'extended')
 
     @requires_tk(8, 7)
     def test_configure_selecttype(self):
@@ -1784,6 +1789,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         commands = self.tv.master._tclCommands
         self.tv.heading('#0', command=str(self.tv.heading('#0', command=None)))
         self.assertEqual(commands, self.tv.master._tclCommands)
+        # Click elsewhere first, so the second heading click is not reported
+        # as a double click (which does not invoke the command).
+        simulate_mouse_click(self.tv, 5, 50)
         simulate_heading_click(5, 5)
         if not success:
             self.fail("The command associated to the treeview heading wasn't "
@@ -1892,10 +1900,11 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             value)
 
         # test for values which are not None
+        keep_type = self.wantobjects and tk_version >= (9, 1)
         itemid = self.tv.insert('', 'end', 0)
-        self.assertEqual(itemid, '0')
+        self.assertEqual(itemid, 0 if keep_type else '0')
         itemid = self.tv.insert('', 'end', 0.0)
-        self.assertEqual(itemid, '0.0')
+        self.assertEqual(itemid, 0.0 if keep_type else '0.0')
         # this is because False resolves to 0 and element with 0 iid is already present
         self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end', False)
         self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end', '')
@@ -1955,7 +1964,10 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
         self.tv.insert('', 'end', id=b'bytes\xe2\x82\xac')
         self.tv.selection_set(b'bytes\xe2\x82\xac')
-        self.assertEqual(self.tv.selection(), ('bytes\xe2\x82\xac',))
+        self.assertEqual(self.tv.selection(),
+                         (b'bytes\xe2\x82\xac',)
+                         if self.wantobjects and tk_version >= (9, 1)
+                         else ('bytes\xe2\x82\xac',))
 
         self.tv.selection_set()
         self.assertEqual(self.tv.selection(), ())
@@ -2004,14 +2016,19 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
     def test_set(self):
         self.tv['columns'] = ['A', 'B']
         item = self.tv.insert('', 'end', values=['a', 'b'])
-        self.assertEqual(self.tv.set(item), {'A': 'a', 'B': 'b'})
+        values = self.tv.set(item)
+        if tk_version >= (9, 1):
+            self.assertEqual(values.pop('#0'), '')
+        self.assertEqual(values, {'A': 'a', 'B': 'b'})
 
         self.tv.set(item, 'B', 'a')
         self.assertEqual(self.tv.item(item, values=None),
                          ('a', 'a') if self.wantobjects else 'a a')
 
         self.tv['columns'] = ['B']
-        self.assertEqual(self.tv.set(item), {'B': 'a'})
+        values = self.tv.set(item)
+        values.pop('#0', None)
+        self.assertEqual(values, {'B': 'a'})
 
         self.tv.set(item, 'B', 'b')
         self.assertEqual(self.tv.set(item, column='B'), 'b')
@@ -2023,7 +2040,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
                          123 if self.wantobjects else '123')
         self.assertEqual(self.tv.item(item, values=None),
                          (123, 'a') if self.wantobjects else '123 a')
-        self.assertEqual(self.tv.set(item),
+        values = self.tv.set(item)
+        values.pop('#0', None)
+        self.assertEqual(values,
                          {'B': 123} if self.wantobjects else {'B': '123'})
 
         # inexistent column
