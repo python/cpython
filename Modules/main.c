@@ -207,7 +207,7 @@ pymain_header(const PyConfig *config)
 }
 
 
-static void
+static int
 pymain_import_readline(const PyConfig *config)
 {
     if (pymain_check_signals() < 0) {
