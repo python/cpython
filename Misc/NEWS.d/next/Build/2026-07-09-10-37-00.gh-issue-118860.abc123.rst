@@ -1,1 +1,0 @@
-Clarify the use of ``Py_OutDir`` and ``PC/layout`` for customizing the build output directory in ``PCbuild/readme.txt``.
