@@ -1828,20 +1828,28 @@ Window_NoArgNoReturnFunction(wdeleteln)
 
 Window_NoArgTrueFalseFunction(is_wintouched)
 
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
 Window_NoArgTrueFalseFunction(is_cleared)
 Window_NoArgTrueFalseFunction(is_idcok)
 Window_NoArgTrueFalseFunction(is_idlok)
 Window_NoArgTrueFalseFunction(is_immedok)
-Window_NoArgTrueFalseFunction(is_keypad)
-Window_NoArgTrueFalseFunction(is_leaveok)
 Window_NoArgTrueFalseFunction(is_nodelay)
 Window_NoArgTrueFalseFunction(is_notimeout)
-Window_NoArgTrueFalseFunction(is_pad)
 Window_NoArgTrueFalseFunction(is_scrollok)
 Window_NoArgTrueFalseFunction(is_subwin)
 Window_NoArgTrueFalseFunction(is_syncok)
+#endif
+#if defined(HAVE_CURSES_IS_KEYPAD) || defined(PDCURSES)
+Window_NoArgTrueFalseFunction(is_keypad)
+#endif
+#if defined(HAVE_CURSES_IS_LEAVEOK) || defined(PDCURSES)
+Window_NoArgTrueFalseFunction(is_leaveok)
+#endif
+#if defined(HAVE_CURSES_IS_PAD) || defined(PDCURSES)
+Window_NoArgTrueFalseFunction(is_pad)
+#endif
 
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
 static PyObject *
 PyCursesWindow_getdelay(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
@@ -1872,7 +1880,7 @@ PyCursesWindow_getparent(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
     return Py_NewRef((PyObject *)self->orig);
 }
-#endif /* NCURSES_EXT_FUNCS */
+#endif /* NCURSES_EXT_FUNCS >= 20110404 || PDCURSES */
 
 Window_NoArgNoReturnVoidFunction(wsyncup)
 Window_NoArgNoReturnVoidFunction(wsyncdown)
@@ -2985,7 +2993,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
     return curses_window_check_err(self, rtn, funcname, "echochar");
 }
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
 /*[clinic input]
 @permit_long_summary
 _curses.window.enclose
@@ -3129,7 +3137,8 @@ _curses_window_getbkgrnd_impl(PyCursesWindowObject *self)
     curses_cell_t wcval = {0};
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
 #ifdef HAVE_NCURSESW
-    if (wgetbkgrnd(self->win, &wcval) == ERR) {
+    int rtn = wgetbkgrnd(self->win, &wcval);  /* avoid -Wunreachable-code on macOS */
+    if (rtn == ERR) {
         curses_window_set_error(self, "wgetbkgrnd", "getbkgrnd");
         return NULL;
     }
@@ -4881,7 +4890,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_GETCH_METHODDEF
     _CURSES_WINDOW_GETKEY_METHODDEF
     _CURSES_WINDOW_GET_WCH_METHODDEF
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
     {"getdelay", PyCursesWindow_getdelay, METH_NOARGS,
      "getdelay($self, /)\n--\n\n"
      "Return the window's read timeout in milliseconds.\n\n"
@@ -4890,7 +4899,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"getmaxyx", PyCursesWindow_getmaxyx, METH_NOARGS,
      "getmaxyx($self, /)\n--\n\n"
      "Return a tuple (y, x) of the window height and width."},
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
     {"getparent", PyCursesWindow_getparent, METH_NOARGS,
      "getparent($self, /)\n--\n\n"
      "Return the parent window, or None if this is not a subwindow."},
@@ -4898,7 +4907,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"getparyx", PyCursesWindow_getparyx, METH_NOARGS,
      "getparyx($self, /)\n--\n\n"
      "Return (y, x) relative to the parent window, or (-1, -1) if none."},
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
     {"getscrreg", PyCursesWindow_getscrreg, METH_NOARGS,
      "getscrreg($self, /)\n--\n\n"
      "Return a tuple (top, bottom) of the current scrolling region."},
@@ -4953,7 +4962,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"is_wintouched", PyCursesWindow_is_wintouched, METH_NOARGS,
      "is_wintouched($self, /)\n--\n\n"
      "Return True if the window changed since the last refresh()."},
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
     {"is_cleared", PyCursesWindow_is_cleared, METH_NOARGS,
      "is_cleared($self, /)\n--\n\n"
      "Return the current value set by clearok()."},
@@ -4966,21 +4975,12 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"is_immedok", PyCursesWindow_is_immedok, METH_NOARGS,
      "is_immedok($self, /)\n--\n\n"
      "Return the current value set by immedok()."},
-    {"is_keypad", PyCursesWindow_is_keypad, METH_NOARGS,
-     "is_keypad($self, /)\n--\n\n"
-     "Return the current value set by keypad()."},
-    {"is_leaveok", PyCursesWindow_is_leaveok, METH_NOARGS,
-     "is_leaveok($self, /)\n--\n\n"
-     "Return the current value set by leaveok()."},
     {"is_nodelay", PyCursesWindow_is_nodelay, METH_NOARGS,
      "is_nodelay($self, /)\n--\n\n"
      "Return the current value set by nodelay()."},
     {"is_notimeout", PyCursesWindow_is_notimeout, METH_NOARGS,
      "is_notimeout($self, /)\n--\n\n"
      "Return the current value set by notimeout()."},
-    {"is_pad", PyCursesWindow_is_pad, METH_NOARGS,
-     "is_pad($self, /)\n--\n\n"
-     "Return True if the window is a pad."},
     {"is_scrollok", PyCursesWindow_is_scrollok, METH_NOARGS,
      "is_scrollok($self, /)\n--\n\n"
      "Return the current value set by scrollok()."},
@@ -4990,6 +4990,21 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"is_syncok", PyCursesWindow_is_syncok, METH_NOARGS,
      "is_syncok($self, /)\n--\n\n"
      "Return the current value set by syncok()."},
+#endif
+#if defined(HAVE_CURSES_IS_KEYPAD) || defined(PDCURSES)
+    {"is_keypad", PyCursesWindow_is_keypad, METH_NOARGS,
+     "is_keypad($self, /)\n--\n\n"
+     "Return the current value set by keypad()."},
+#endif
+#if defined(HAVE_CURSES_IS_LEAVEOK) || defined(PDCURSES)
+    {"is_leaveok", PyCursesWindow_is_leaveok, METH_NOARGS,
+     "is_leaveok($self, /)\n--\n\n"
+     "Return the current value set by leaveok()."},
+#endif
+#if defined(HAVE_CURSES_IS_PAD) || defined(PDCURSES)
+    {"is_pad", PyCursesWindow_is_pad, METH_NOARGS,
+     "is_pad($self, /)\n--\n\n"
+     "Return True if the window is a pad."},
 #endif
     {"keypad", PyCursesWindow_keypad, METH_VARARGS,
      "keypad($self, flag, /)\n--\n\n"
@@ -5110,7 +5125,7 @@ static PyType_Spec PyCursesWindow_Type_spec = {
 
 static PyObject *
 PyCursesScreen_New(cursesmodule_state *state, SCREEN *screen,
-                   FILE *outfp, FILE *infp, PyObject *stdscr)
+                   FILE *outfp, FILE *infp, PyObject *stdscr_win)
 {
     PyCursesScreenObject *so = PyObject_GC_New(PyCursesScreenObject,
                                                state->screen_type);
@@ -5120,7 +5135,7 @@ PyCursesScreen_New(cursesmodule_state *state, SCREEN *screen,
     so->screen = screen;
     so->outfp = outfp;
     so->infp = infp;
-    so->stdscr = Py_XNewRef(stdscr);
+    so->stdscr_win = Py_XNewRef(stdscr_win);
     PyObject_GC_Track((PyObject *)so);
     return (PyObject *)so;
 }
@@ -5154,17 +5169,17 @@ static PyObject *
 PyCursesScreen_get_stdscr(PyObject *self, void *Py_UNUSED(closure))
 {
     PyCursesScreenObject *so = _PyCursesScreenObject_CAST(self);
-    if (so->stdscr == NULL) {
+    if (so->stdscr_win == NULL) {
         Py_RETURN_NONE;
     }
-    return Py_NewRef(so->stdscr);
+    return Py_NewRef(so->stdscr_win);
 }
 
 static int
 PyCursesScreen_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(_PyCursesScreenObject_CAST(self)->stdscr);
+    Py_VISIT(_PyCursesScreenObject_CAST(self)->stdscr_win);
     return 0;
 }
 
@@ -5179,10 +5194,10 @@ PyCursesScreen_clear(PyObject *self)
        detach it from its wrapper first: the wrapper must not delwin() a window
        that delscreen() frees.  Any further use of the wrapper operates on a
        NULL window and fails cleanly. */
-    if (so->stdscr != NULL) {
-        ((PyCursesWindowObject *)so->stdscr)->win = NULL;
+    if (so->stdscr_win != NULL) {
+        ((PyCursesWindowObject *)so->stdscr_win)->win = NULL;
     }
-    Py_CLEAR(so->stdscr);
+    Py_CLEAR(so->stdscr_win);
     return 0;
 }
 
@@ -5477,7 +5492,7 @@ _curses_cbreak_impl(PyObject *module, int flag)
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
 /* is_cbreak()/is_echo()/is_nl()/is_raw() were added in ncurses 6.5. */
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES)
 /*[clinic input]
 _curses.is_cbreak
 
@@ -5533,7 +5548,7 @@ _curses_is_raw_impl(PyObject *module)
     PyCursesStatefulInitialised(module);
     return PyBool_FromLong(is_raw());
 }
-#endif /* NCURSES_EXT_FUNCS */
+#endif /* NCURSES_EXT_FUNCS >= 20240427 || PDCURSES */
 
 /*[clinic input]
 _curses.color_content
@@ -5837,7 +5852,7 @@ _curses_getsyx_impl(PyObject *module)
 }
 #endif
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
 /*[clinic input]
 _curses.getmouse
 
@@ -6709,7 +6724,7 @@ _curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
         Py_DECREF(screenobj);
         return NULL;
     }
-    ((PyCursesScreenObject *)screenobj)->stdscr = Py_NewRef(win);
+    ((PyCursesScreenObject *)screenobj)->stdscr_win = Py_NewRef(win);
     Py_DECREF(win);
     Py_XSETREF(state->topscreen, Py_NewRef(screenobj));
     return screenobj;
@@ -7040,7 +7055,8 @@ _curses_meta_impl(PyObject *module, int yes)
     return curses_check_err(module, meta(stdscr, yes), "meta", NULL);
 }
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
+#if defined(HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES)
 /*[clinic input]
 _curses.has_mouse
 
@@ -7055,6 +7071,7 @@ _curses_has_mouse_impl(PyObject *module)
 
     return PyBool_FromLong(has_mouse());
 }
+#endif /* HAVE_CURSES_HAS_MOUSE || PDCURSES */
 
 /*[clinic input]
 _curses.mouseinterval
@@ -8288,7 +8305,7 @@ _curses_slk_attrset_impl(PyObject *module, long attr)
                             "slk_attrset", NULL);
 }
 
-#ifdef NCURSES_EXT_FUNCS
+#if defined(NCURSES_EXT_FUNCS) || defined(PDCURSES)
 /*[clinic input]
 _curses.slk_attr
 
@@ -9033,7 +9050,7 @@ cursesmodule_exec(PyObject *module)
     SetDictInt("COLOR_CYAN",        COLOR_CYAN);
     SetDictInt("COLOR_WHITE",       COLOR_WHITE);
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
     /* Mouse-related constants */
     SetDictInt("BUTTON1_PRESSED",          BUTTON1_PRESSED);
     SetDictInt("BUTTON1_RELEASED",         BUTTON1_RELEASED);
@@ -9059,7 +9076,7 @@ cursesmodule_exec(PyObject *module)
     SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
     SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
 
-#if NCURSES_MOUSE_VERSION > 1
+#ifdef BUTTON5_PRESSED
     SetDictInt("BUTTON5_PRESSED",          BUTTON5_PRESSED);
     SetDictInt("BUTTON5_RELEASED",         BUTTON5_RELEASED);
     SetDictInt("BUTTON5_CLICKED",          BUTTON5_CLICKED);

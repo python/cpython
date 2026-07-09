@@ -2411,10 +2411,6 @@ AS_CASE([$ac_sys_system],
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
 
-    dnl Workaround for a bug in Emscipten libc's getentropy. See
-    dnl __wrap_getentropy in Python/emscripten_syscalls.c.
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--wrap=getentropy"])
-
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
@@ -6834,6 +6830,17 @@ AS_VAR_IF([with_readline], [no], [
       AC_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
     ])
 
+    # rl_change_environment is in readline 6.3, but not in editline
+    AC_CACHE_CHECK([for rl_change_environment in -l$LIBREADLINE], [ac_cv_readline_rl_change_environment], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [int x = rl_change_environment])],
+        [ac_cv_readline_rl_change_environment=yes], [ac_cv_readline_rl_change_environment=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_change_environment], [yes], [
+      AC_DEFINE([HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
+    ])
+
     # check for readline 4.2
     AC_CACHE_CHECK([for rl_completion_matches in -l$LIBREADLINE], [ac_cv_readline_rl_completion_matches], [
       AC_LINK_IFELSE(
@@ -7223,6 +7230,9 @@ PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
 PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
+PY_CHECK_CURSES_FUNC([has_mouse])
+PY_CHECK_CURSES_FUNC([is_keypad])
+PY_CHECK_CURSES_FUNC([is_leaveok])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
 PY_CHECK_CURSES_FUNC([new_prescr])
@@ -7236,6 +7246,19 @@ PY_CHECK_CURSES_FUNC([set_escdelay])
 PY_CHECK_CURSES_FUNC([set_tabsize])
 PY_CHECK_CURSES_VAR([ESCDELAY])
 PY_CHECK_CURSES_VAR([TABSIZE])
+
+dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
+dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
+AC_CACHE_CHECK([for ncurses-style curses function getmouse],
+  [ac_cv_lib_curses_getmouse],
+  [AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(_CURSES_INCLUDES, [MEVENT event; (void)getmouse(&event);])],
+    [ac_cv_lib_curses_getmouse=yes],
+    [ac_cv_lib_curses_getmouse=no])])
+AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
+  [AC_DEFINE([HAVE_CURSES_GETMOUSE], [1],
+    [Define if you have the 'getmouse' function with the X/Open signature.])])
+
 dnl scr_dump and its companions scr_restore/scr_init/scr_set are an inseparable
 dnl group; probing scr_dump alone gates the whole family.
 PY_CHECK_CURSES_FUNC([scr_dump])
