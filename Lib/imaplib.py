@@ -960,7 +960,7 @@ class IMAP4:
             if __debug__:
                 if self.debug >= 1:
                     self._dump_ur(self.untagged_responses)
-            raise self.readonly('%s is not writable' % mailbox)
+            raise self.readonly('%r is not writable' % (mailbox,))
         return typ, self.untagged_responses.get('EXISTS', [None])
 
 
@@ -1085,7 +1085,7 @@ class IMAP4:
         """
         command = command.upper()
         if not command in Commands:
-            raise self.error("Unknown IMAP4 UID command: %s" % command)
+            raise self.error("Unknown IMAP4 UID command: %r" % (command,))
         if self.state not in Commands[command]:
             raise self.error("command %s illegal in state %s, "
                              "only allowed in states %s" %
