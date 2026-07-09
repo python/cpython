@@ -1,4 +1,3 @@
-import threading
 import unittest
 from collections import Counter, deque
 from copy import copy
@@ -57,12 +56,9 @@ class TestCounter(unittest.TestCase):
         PER_THREAD = 5000
         c = Counter()
         data = ('x',) * PER_THREAD
-        threads = [threading.Thread(target=c.update, args=(data,))
-                   for _ in range(NTHREADS)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        threading_helper.run_concurrently(
+            c.update, nthreads=NTHREADS, args=(data,)
+        )
 
 
 if __name__ == "__main__":
