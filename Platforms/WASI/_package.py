@@ -214,6 +214,24 @@ def python_wasmtime_symlink(context):
     # XXX
 
 
+def config_file(context):
+    """Have Misc/config.sh end up at bin/pythonN.Md?.config."""
+    return (
+        pathlib.PurePath("bin") / f"python{python_version(context, debug_ok=True)}-config",
+        context.wasi_build_path / "Misc" / "python-config.sh",
+    )
+
+
+def config_symlink(context):
+    """Symlink bin/pythonN.Md?.config.
+
+    - bin/pythonN.M.config (if debug build)
+    - bin/pythonNd?.config
+    - bin/pythonN.config (if debug build)
+    """
+    # XXX
+
+
 def filename_stem(context):
     """Calculate the stem of the archive file name."""
     version_info = context.wasi_build_details["language"]["version_info"]
@@ -247,23 +265,34 @@ def package(context):
     indent = "  "
     base = dist / filename_stem(context)
     _shared.log("📝", f"Copying files to {base} ...")
+
+    _shared.log("📁", "bin/", spacing=indent * 2)
+    _shared.log("📄", "pythonN.Md?-config", spacing=indent * 3)
+    copy_files([config_file(context)], base)
+
+    _shared.log("📁", "etc/", spacing=indent * 2)
+    _shared.log("📁", "pythonN.M/", spacing=indent * 3)
+    _shared.log("📄", "wasmtime.toml", spacing=indent * 4)
+    copy_files([wasmtime_config_file(context)], base)
+
     _shared.log("📁", "include/", spacing=indent * 2)
     _shared.log("📁", "pythonN.Md?/", spacing=indent * 3)
     _shared.log("📄", "pyconfig.h", spacing=indent * 4)
     copy_files([pyconfig_file(context)], base)
     _shared.log("📄", "**/*.h", spacing=indent * 4)
     copy_files(header_files(context), base)
+
     _shared.log("📁", "lib/", spacing=indent * 2)
     _shared.log("📁", "pythonN.M/", spacing=indent * 3)
-    _shared.log("📄", "LICENSE.txt", spacing=indent * 4)
-    copy_files([license_file(context)], base)
-    _shared.log("📄", "files in pybuilddir.txt", spacing=indent * 4)
-    copy_files(build_dir_files(context), base)
-    _shared.log("📄", "**/*.py", spacing=indent * 4)
-    copy_files(stdlib_files(context), base)
     _shared.log("📁", "lib-wasm", spacing=indent * 4)
     _shared.log("📄", "pythonN.Md?.wasm", spacing=indent * 5)
     copy_files([wasm_file(context)], base)
+    _shared.log("📄", "LICENSE.txt", spacing=indent * 4)
+    copy_files([license_file(context)], base)
+    _shared.log("📄", "files in `cat pybuilddir.txt`", spacing=indent * 4)
+    copy_files(build_dir_files(context), base)
+    _shared.log("📄", "**/*.py", spacing=indent * 4)
+    copy_files(stdlib_files(context), base)
 
     _shared.log("📁", "pkgconfig/", spacing=indent * 3)
     _shared.log("📄", "python*.pc", spacing=indent * 4)
@@ -280,8 +309,3 @@ def package(context):
     man_path = man_file(context)
     copy_files([man_path], base)
     symlink_files([man_symlink(man_path[0], context)], base)
-
-    _shared.log("📁", "etc/", spacing=indent * 2)
-    _shared.log("📁", "pythonN.M/", spacing=indent * 3)
-    _shared.log("📄", "wasmtime.toml", spacing=indent * 4)
-    copy_files([wasmtime_config_file(context)], base)
