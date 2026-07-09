@@ -12,31 +12,11 @@ from unittest.mock import patch
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 def interrupt_self():
     _thread.interrupt_main()
-
-
-class TestPolicy(asyncio.events._AbstractEventLoopPolicy):
-
-    def __init__(self, loop_factory):
-        self.loop_factory = loop_factory
-        self.loop = None
-
-    def get_event_loop(self):
-        # shouldn't ever be called by asyncio.run()
-        raise RuntimeError
-
-    def new_event_loop(self):
-        return self.loop_factory()
-
-    def set_event_loop(self, loop):
-        if loop is not None:
-            # we want to check if the loop is closed
-            # in BaseTest.tearDown
-            self.loop = loop
 
 
 class BaseTest(unittest.TestCase):
@@ -55,21 +35,26 @@ class BaseTest(unittest.TestCase):
             loop.shutdown_ag_run = True
         loop.shutdown_asyncgens = shutdown_asyncgens
 
+        # Track created loops so tearDown can assert they were closed and
+        # had their async generators shut down.
+        self._loops.append(loop)
         return loop
 
     def setUp(self):
         super().setUp()
 
-        policy = TestPolicy(self.new_loop)
-        asyncio.events._set_event_loop_policy(policy)
+        # Isolate the current thread's event loop and use ``new_loop`` as
+        # an explicit ``loop_factory`` in the tests.
+        self._loops = []
+        asyncio.set_event_loop(None)
 
     def tearDown(self):
-        policy = asyncio.events._get_event_loop_policy()
-        if policy.loop is not None:
-            self.assertTrue(policy.loop.is_closed())
-            self.assertTrue(policy.loop.shutdown_ag_run)
+        if self._loops:
+            loop = self._loops[-1]
+            self.assertTrue(loop.is_closed())
+            self.assertTrue(loop.shutdown_ag_run)
 
-        asyncio.events._set_event_loop_policy(None)
+        asyncio.set_event_loop(None)
         super().tearDown()
 
 
@@ -80,7 +65,7 @@ class RunTests(BaseTest):
             await asyncio.sleep(0)
             return 42
 
-        self.assertEqual(asyncio.run(main()), 42)
+        self.assertEqual(asyncio.run(main(), loop_factory=self.new_loop), 42)
 
     def test_asyncio_run_raises(self):
         async def main():
@@ -88,7 +73,7 @@ class RunTests(BaseTest):
             raise ValueError('spam')
 
         with self.assertRaisesRegex(ValueError, 'spam'):
-            asyncio.run(main())
+            asyncio.run(main(), loop_factory=self.new_loop)
 
     def test_asyncio_run_only_coro(self):
         for o in {1, lambda: None}:
@@ -102,26 +87,26 @@ class RunTests(BaseTest):
             loop = asyncio.get_event_loop()
             self.assertIs(loop.get_debug(), expected)
 
-        asyncio.run(main(False), debug=False)
-        asyncio.run(main(True), debug=True)
+        asyncio.run(main(False), debug=False, loop_factory=self.new_loop)
+        asyncio.run(main(True), debug=True, loop_factory=self.new_loop)
         with mock.patch('asyncio.coroutines._is_debug_mode', lambda: True):
-            asyncio.run(main(True))
-            asyncio.run(main(False), debug=False)
+            asyncio.run(main(True), loop_factory=self.new_loop)
+            asyncio.run(main(False), debug=False, loop_factory=self.new_loop)
         with mock.patch('asyncio.coroutines._is_debug_mode', lambda: False):
-            asyncio.run(main(True), debug=True)
-            asyncio.run(main(False))
+            asyncio.run(main(True), debug=True, loop_factory=self.new_loop)
+            asyncio.run(main(False), loop_factory=self.new_loop)
 
     def test_asyncio_run_from_running_loop(self):
         async def main():
             coro = main()
             try:
-                asyncio.run(coro)
+                asyncio.run(coro, loop_factory=self.new_loop)
             finally:
                 coro.close()  # Suppress ResourceWarning
 
         with self.assertRaisesRegex(RuntimeError,
                                     'cannot be called from a running'):
-            asyncio.run(main())
+            asyncio.run(main(), loop_factory=self.new_loop)
 
     def test_asyncio_run_cancels_hanging_tasks(self):
         lo_task = None
@@ -134,7 +119,7 @@ class RunTests(BaseTest):
             lo_task = asyncio.create_task(leftover())
             return 123
 
-        self.assertEqual(asyncio.run(main()), 123)
+        self.assertEqual(asyncio.run(main(), loop_factory=self.new_loop), 123)
         self.assertTrue(lo_task.done())
 
     def test_asyncio_run_reports_hanging_tasks_errors(self):
@@ -155,7 +140,7 @@ class RunTests(BaseTest):
             lo_task = asyncio.create_task(leftover())
             return 123
 
-        self.assertEqual(asyncio.run(main()), 123)
+        self.assertEqual(asyncio.run(main(), loop_factory=self.new_loop), 123)
         self.assertTrue(lo_task.done())
 
         call_exc_handler_mock.assert_called_with({
@@ -194,7 +179,7 @@ class RunTests(BaseTest):
             raise FancyExit
 
         with self.assertRaises(FancyExit):
-            asyncio.run(main())
+            asyncio.run(main(), loop_factory=self.new_loop)
 
         self.assertTrue(lazyboy.done())
 
@@ -208,10 +193,14 @@ class RunTests(BaseTest):
             await asyncio.sleep(0)
             return 42
 
-        policy = asyncio.events._get_event_loop_policy()
-        policy.set_event_loop = mock.Mock()
-        asyncio.run(main())
-        self.assertTrue(policy.set_event_loop.called)
+        # asyncio.run() must set the event loop for the running thread.
+        # This only happens when no explicit loop_factory is passed, so
+        # patch the default loop creation to use a mock loop and verify
+        # set_event_loop() is called.
+        with mock.patch('asyncio.events.new_event_loop', self.new_loop), \
+                mock.patch('asyncio.runners.events.set_event_loop') as set_event_loop:
+            asyncio.run(main())
+        self.assertTrue(set_event_loop.called)
 
     def test_asyncio_run_without_uncancel(self):
         # See https://github.com/python/cpython/issues/95097
@@ -259,9 +248,8 @@ class RunTests(BaseTest):
             loop.set_task_factory(Task)
             return loop
 
-        asyncio.events._set_event_loop_policy(TestPolicy(new_event_loop))
         with self.assertRaises(asyncio.CancelledError):
-            asyncio.run(main())
+            asyncio.run(main(), loop_factory=new_event_loop)
 
     def test_asyncio_run_loop_factory(self):
         factory = mock.Mock()
@@ -495,14 +483,17 @@ class RunnerTests(BaseTest):
         async def coro():
             pass
 
-        policy = asyncio.events._get_event_loop_policy()
-        policy.set_event_loop = mock.Mock()
-        runner = asyncio.Runner()
-        runner.run(coro())
-        runner.run(coro())
+        # The runner must call set_event_loop() exactly once even when
+        # run() is called multiple times.  This only happens on the
+        # implicit loop_factory path, so patch the default loop creation.
+        with mock.patch('asyncio.events.new_event_loop', self.new_loop), \
+                mock.patch('asyncio.runners.events.set_event_loop') as set_event_loop:
+            runner = asyncio.Runner()
+            runner.run(coro())
+            runner.run(coro())
 
-        self.assertEqual(1, policy.set_event_loop.call_count)
-        runner.close()
+            self.assertEqual(1, set_event_loop.call_count)
+            runner.close()
 
     def test_no_repr_is_call_on_the_task_result(self):
         # See https://github.com/python/cpython/issues/112559.

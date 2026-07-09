@@ -16,7 +16,6 @@ import struct
 import time
 import weakref
 
-from . import events
 from . import base_subprocess
 from . import futures
 from . import exceptions
@@ -29,8 +28,7 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
-    '_DefaultEventLoopPolicy', '_WindowsSelectorEventLoopPolicy',
-    '_WindowsProactorEventLoopPolicy', 'EventLoop',
+    'EventLoop',
 )
 
 
@@ -893,14 +891,4 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
 SelectorEventLoop = _WindowsSelectorEventLoop
 
-
-class _WindowsSelectorEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
-    _loop_factory = SelectorEventLoop
-
-
-class _WindowsProactorEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
-    _loop_factory = ProactorEventLoop
-
-
-_DefaultEventLoopPolicy = _WindowsProactorEventLoopPolicy
 EventLoop = ProactorEventLoop

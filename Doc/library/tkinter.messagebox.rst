@@ -113,7 +113,7 @@ Common message box styles and layouts include but are not limited to:
 .. function:: askretrycancel(title=None, message=None, **options)
 
    Ask if operation should be retried. Shows buttons :data:`RETRY` and :data:`CANCEL`.
-   Return ``True`` if the answer is yes and ``False`` otherwise.
+   Return ``True`` if the answer is retry and ``False`` otherwise.
 
 .. function:: askyesno(title=None, message=None, **options)
 
