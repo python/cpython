@@ -1894,6 +1894,31 @@ Base and mixin classes
 
       .. versionadded:: next
 
+   The following members support assistive technologies such as screen
+   readers.
+   They require Tk 9.1 or newer.
+   Tk automatically exposes the standard widgets to the platform
+   accessibility API;
+   the :attr:`!accessible` attributes allow overriding what is exposed,
+   and the :class:`Accessible` methods allow registering custom widgets.
+   If no assistive technology is active when the application starts,
+   setting the attributes has no effect,
+   reading them returns ``0``,
+   and the methods do nothing (except :meth:`!tk_check_screenreader`).
+
+   .. method:: tk_check_screenreader()
+
+      Return whether a screen reader is currently running.
+
+      .. versionadded:: next
+
+   .. attribute:: accessible
+
+      The accessible attributes of the widget,
+      as an :class:`Accessible` object.
+
+      .. versionadded:: next
+
    The methods with the ``busy_`` prefix manage the busy state of a window,
    which shows a busy cursor and ignores user input.
 
@@ -2322,6 +2347,51 @@ Base and mixin classes
 
       .. versionadded:: 3.11
 
+
+.. class:: Accessible()
+
+   The accessible attributes of a widget,
+   returned by the :attr:`~Misc.accessible` property of the widget.
+   The attributes are exposed to assistive technologies
+   such as screen readers.
+   Requires Tk 9.1 or newer.
+
+   Setting an attribute overrides what Tk exposes for the widget;
+   reading an attribute that has not been set raises
+   :exc:`~tkinter.TclError`.
+   The supported roles are ``Button``, ``Canvas``, ``Checkbutton``,
+   ``Combobox``, ``Entry``, ``Label``, ``Listbox``, ``Menu``,
+   ``Notebook``, ``Progressbar``, ``Scale``, ``Scrollbar``,
+   ``Spinbox``, ``Table``, ``Text`` and ``Tree``.
+
+   .. versionadded:: next
+
+   .. attribute:: role
+                  name
+                  description
+                  value
+                  state
+                  action
+                  help
+
+      The accessible attributes of the widget.
+
+   .. method:: add_object()
+
+      Register the widget with the platform accessibility API.
+      This is only needed for custom widgets;
+      the standard widgets are registered automatically.
+
+   .. method:: emit_selection_change()
+
+      Notify the platform accessibility API that the selection in the
+      widget has changed.
+
+   .. method:: emit_focus_change()
+
+      Notify the platform accessibility API that the widget has received
+      focus.
+      Not available on macOS.
 
 
 .. class:: Wm()

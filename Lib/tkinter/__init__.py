@@ -818,6 +818,25 @@ class Misc:
         else:
             return self.tk.getint(self.tk.call(args))
 
+    def tk_check_screenreader(self):
+        """Return whether a screen reader is currently running.
+
+        Requires Tk 9.1 or newer."""
+        return self.tk.getboolean(self.tk.call(
+                'tk', 'accessible', 'check_screenreader'))
+
+    @property
+    def accessible(self):
+        """The accessible attributes of the widget, as an Accessible
+        object.
+
+        Requires Tk 9.1 or newer."""
+        try:
+            return self._accessible_object
+        except AttributeError:
+            self._accessible_object = Accessible(self)
+            return self._accessible_object
+
     def wait_variable(self, name):
         """Wait until the variable is modified.
 
@@ -2305,6 +2324,67 @@ class YView:
         """Shift the y-view according to NUMBER which is measured in
         "units" or "pages" (WHAT)."""
         self.tk.call(self._w, 'yview', 'scroll', number, what)
+
+
+def _accessible_attribute(name):
+    """Internal function.  Create an Accessible attribute property."""
+    def getter(self):
+        widget = self._widget
+        return widget.tk.call('tk', 'accessible', 'get_acc_' + name,
+                              widget._w)
+    def setter(self, value):
+        widget = self._widget
+        widget.tk.call('tk', 'accessible', 'set_acc_' + name,
+                       widget._w, value)
+    return property(getter, setter,
+                    doc=f'The accessible {name} of the widget.')
+
+
+class Accessible:
+    """The accessible attributes of a widget.
+
+    Returned by the accessible property of a widget.  The attributes
+    are exposed to assistive technologies such as screen readers.
+    Requires Tk 9.1 or newer.
+
+    If no assistive technology is active when the application starts,
+    setting an attribute has no effect and reading it returns 0.
+    Reading an attribute that has not been set raises TclError.
+    """
+
+    def __init__(self, widget):
+        self._widget = widget
+
+    def __repr__(self):
+        return f'<Accessible object of {self._widget!r}>'
+
+    role = _accessible_attribute('role')
+    name = _accessible_attribute('name')
+    description = _accessible_attribute('description')
+    value = _accessible_attribute('value')
+    state = _accessible_attribute('state')
+    action = _accessible_attribute('action')
+    help = _accessible_attribute('help')
+
+    def add_object(self):
+        """Register the widget with the platform accessibility API."""
+        widget = self._widget
+        widget.tk.call('tk', 'accessible', 'add_acc_object', widget._w)
+
+    def emit_selection_change(self):
+        """Notify the platform accessibility API that the selection
+        in the widget has changed."""
+        widget = self._widget
+        widget.tk.call('tk', 'accessible', 'emit_selection_change',
+                       widget._w)
+
+    def emit_focus_change(self):
+        """Notify the platform accessibility API that the widget has
+        received focus.
+
+        Not available on macOS."""
+        widget = self._widget
+        widget.tk.call('tk', 'accessible', 'emit_focus_change', widget._w)
 
 
 class Wm:
