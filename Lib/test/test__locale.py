@@ -316,12 +316,12 @@ class _LocaleTests(unittest.TestCase):
             'th_TH.TIS-620',
         ]
         tested = False
-        for loc in legacy_locales:
-            locs = (loc.partition('.')[0] + '.UTF-8', loc)
+        for legacy_locale in legacy_locales:
+            locs = (legacy_locale.partition('.')[0] + '.UTF-8', legacy_locale)
             values = []
-            for l in locs:
+            for loc in locs:
                 try:
-                    setlocale(LC_TIME, l)
+                    setlocale(LC_TIME, loc)
                 except Error:
                     break
                 values.append({name: nl_langinfo(item) for name, item in items})
