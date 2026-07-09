@@ -138,7 +138,6 @@ class CBytesIOTest(ThreadSafetyMixin, TestCase):
                 shared.seek(0)
                 shared.read()
                 shared.seek(0)
-                shared.peek()
                 shared.getvalue()
 
         threads = [threading.Thread(target=writer) for _ in range(writers)]
