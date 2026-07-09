@@ -45,7 +45,14 @@ jobs:
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
-      INSTALL_HASHES_FILE: install-hashes-${{ inputs.os }}-${{ case(inputs.free-threading, 't', '')}}${{ case(inputs.debug, 'd', '') }}.json.gz
+      INSTALL_HASHES_FILE: >-
+        install-hashes-${{
+          inputs.os
+        }}-${{
+          case(inputs.free-threading, 't', '')
+        }}${{
+          case(inputs.debug, 'd', '')
+        }}.json.gz
       OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
