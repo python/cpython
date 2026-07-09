@@ -7,6 +7,7 @@ except ImportError:
 
 import locale
 import sys
+import unicodedata
 import unittest
 from platform import uname, libc_ver
 
@@ -315,6 +316,14 @@ class _LocaleTests(unittest.TestCase):
             'zh_TW.BIG5',
             'th_TH.TIS-620',
         ]
+
+        # An 8-bit locale substitutes an equivalent for a space it cannot
+        # encode (e.g. es_ES has U+202F in UTF-8 but U+00A0 in ISO-8859-1),
+        # so fold spaces before comparing.
+        def fold_spaces(s):
+            return ''.join(' ' if unicodedata.category(c) == 'Zs' else c
+                           for c in s)
+
         tested = False
         for legacy_locale in legacy_locales:
             locs = (legacy_locale.partition('.')[0] + '.UTF-8', legacy_locale)
@@ -332,7 +341,8 @@ class _LocaleTests(unittest.TestCase):
             # The result must not depend on the locale encoding.
             for name, item in items:
                 with self.subTest(locales=locs, name=name):
-                    self.assertEqual(values[0][name], values[1][name])
+                    self.assertEqual(fold_spaces(values[0][name]),
+                                     fold_spaces(values[1][name]))
         if not tested:
             self.skipTest('no suitable locale pairs')
 
