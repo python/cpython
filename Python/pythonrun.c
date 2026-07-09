@@ -290,6 +290,12 @@ static int
 PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
                              PyCompilerFlags *flags)
 {
+    if (!PyUnicode_Check(filename)) {
+        PyErr_Format(PyExc_TypeError, "expect str for filename, got %T",
+                     filename);
+        return -1;
+    }
+
     PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return -1;
