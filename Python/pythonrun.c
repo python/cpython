@@ -163,8 +163,7 @@ _PyRun_InteractiveLoop(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
              * MemoryError. */
             if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
                 if (++nomem_count > 16) {
-                    PyErr_Clear();
-                    break;
+                    return NULL;
                 }
             } else {
                 nomem_count = 0;
