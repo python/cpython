@@ -948,6 +948,32 @@ class NewIMAPTestsMixin:
         client.login('user', 'pass')
         self.assertIn('ENABLE', client.capabilities)
 
+    def test_readonly_error_reports_mailbox(self):
+        # The read-only error reports the mailbox via repr(), which also
+        # avoids BytesWarning for a bytes mailbox under -bb.
+        class ReadOnlyHandler(SimpleIMAPHandler):
+            def cmd_SELECT(self, tag, args):
+                self._send_line(b'* 2 EXISTS')
+                self._send_tagged(tag, 'OK', '[READ-ONLY] SELECT completed.')
+        client, _ = self._setup(ReadOnlyHandler)
+        client.login('user', 'pass')
+        for mailbox, expected in [('INBOX', "'INBOX'"), (b'INBOX', r"b'INBOX'")]:
+            with self.subTest(mailbox=mailbox):
+                with self.assertRaisesRegex(imaplib.IMAP4.readonly,
+                                            r"%s is not writable" % expected):
+                    client.select(mailbox)
+
+    def test_uid_unknown_command_reports_command(self):
+        # The unknown-UID-command error reports the command via repr(), which
+        # also avoids BytesWarning for a bytes command under -bb.
+        client, _ = self._setup(SimpleIMAPHandler)
+        for command, expected in [('BOGUS', "'BOGUS'"), (b'BOGUS', r"b'BOGUS'")]:
+            with self.subTest(command=command):
+                with self.assertRaisesRegex(
+                        imaplib.IMAP4.error,
+                        r"Unknown IMAP4 UID command: %s" % expected):
+                    client.uid(command, '1')
+
     def test_logout(self):
         client, _ = self._setup(SimpleIMAPHandler)
         typ, data = client.login('user', 'pass')
