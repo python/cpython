@@ -2903,7 +2903,8 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     int64_t cid = channel_create(&_globals.channels, unboundop);
     if (cid < 0) {
-        (void)handle_channel_error(cid, self, cid);
+        // Negative `cid` can't be too big for a downcast:
+        (void)handle_channel_error((int)cid, self, cid);
         return NULL;
     }
     module_state *state = get_module_state(self);
