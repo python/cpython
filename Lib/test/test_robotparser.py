@@ -246,6 +246,28 @@ Crawl-delay: pears
     bad = []
 
 
+class NonDecimalCrawlDelayTest(BaseRequestRateTest, unittest.TestCase):
+    # Non-decimal Unicode digits pass str.isdigit() but int() rejects
+    # them, so the directive must be silently ignored, not raise.
+    robots_txt = """\
+User-Agent: *
+Disallow: /.
+Crawl-delay: ²
+    """
+    good = ['/foo.html']
+    bad = []
+
+
+class NonDecimalRequestRateTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /tmp/
+Request-rate: ²/5
+    """
+    good = ['/foo.html']
+    bad = ['/tmp/']
+
+
 class AnotherInvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
     # also test that Allow and Diasallow works well with each other
     robots_txt = """\
