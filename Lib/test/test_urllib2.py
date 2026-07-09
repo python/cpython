@@ -984,18 +984,29 @@ class HandlerTests(unittest.TestCase):
         # gh-47005: regular headers set via add_header() must override
         # unredirected headers with the same name in do_open(), consistent
         # with get_header() and header_items().
+        cases = [
+            ("Content-Type", "application/json", "application/x-www-form-urlencoded"),
+            ("Content-Length", "99", "0"),
+            ("Host", "override.example.com", "internal.example.com"),
+            ("Authorization", "Bearer user-token", "Basic stale="),
+            ("Cookie", "a=1", "b=2"),
+            ("User-Agent", "MyApp/1.0", "Python-urllib/test"),
+        ]
         h = urllib.request.AbstractHTTPHandler()
         h.parent = MockOpener()
 
-        req = Request("http://example.com/", headers={"Content-Type": "application/json"})
-        req.timeout = None
-        req.add_unredirected_header("Content-Type", "application/x-www-form-urlencoded")
+        for key, regular, unredirected in cases:
+            req = Request("http://example.com/", headers={key: regular})
+            req.timeout = None
+            req.add_unredirected_header(key, unredirected)
 
-        http = MockHTTPClass()
-        h.do_open(http, req)
+            http = MockHTTPClass()
+            h.do_open(http, req)
 
-        sent_headers = dict(http.req_headers)
-        self.assertEqual(sent_headers["Content-Type"], "application/json")
+            sent_headers = dict(http.req_headers)
+            self.assertEqual(sent_headers[key], regular)
+            self.assertEqual(req.get_header(key), regular)
+            self.assertEqual(dict(req.header_items())[key], regular)
 
     def test_http_body_file(self):
         # A regular file - chunked encoding is used unless Content Length is
