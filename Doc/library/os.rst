@@ -3329,6 +3329,8 @@ features:
 
       .. versionadded:: 3.12
 
+   .. _stat-result-timestamps:
+
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
@@ -3348,14 +3350,10 @@ features:
       :attr:`st_atime_ns`, :attr:`st_mtime_ns`, :attr:`st_ctime_ns` and
       :attr:`st_birthtime_ns`.
 
-   .. _stat-result-timestamps:
-
-   .. note::
-
       These timestamps are seconds (or nanoseconds for the ``*_ns`` variants)
       since the Unix epoch (00:00:00 UTC, January 1, 1970), and are compatible
       with :func:`time.time`. To convert a timestamp ``ts`` (in seconds) to a
-      :class:`datetime.datetime`, use :func:`datetime.datetime.fromtimestamp`
+      :class:`datetime.datetime`, use :meth:`datetime.datetime.fromtimestamp`
       for local time or
       ``datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc)`` for
       UTC. For ``*_ns`` timestamps, divide by ``1_000_000_000`` first.
