@@ -823,16 +823,11 @@
             _PyStackRef res;
             _PyStackRef ls;
             _PyStackRef ss;
-            // _GUARD_TOS_NON_NEGATIVE_COMPACT_INT
+            // _GUARD_TOS_INT
             {
                 value = stack_pointer[-1];
                 PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!PyLong_CheckExact(value_o)) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
-                if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
+                if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
@@ -858,6 +853,9 @@
                 assert(PyLong_CheckExact(sub));
                 assert(PyList_CheckExact(list));
                 Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+                if (index < 0) {
+                    index += PyList_GET_SIZE(list);
+                }
                 #ifdef Py_GIL_DISABLED
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);

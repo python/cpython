@@ -6912,6 +6912,9 @@
             assert(PyLong_CheckExact(sub));
             assert(PyList_CheckExact(list));
             Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            if (index < 0) {
+                index += PyList_GET_SIZE(list);
+            }
             #ifdef Py_GIL_DISABLED
             stack_pointer[0] = list_st;
             stack_pointer[1] = sub_st;
