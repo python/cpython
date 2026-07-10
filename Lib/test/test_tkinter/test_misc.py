@@ -6,7 +6,7 @@ import textwrap
 import unittest
 import weakref
 import tkinter
-from tkinter import TclError
+from tkinter import TclError, ttk
 import enum
 from test import support
 from test.support import os_helper
@@ -14,7 +14,7 @@ from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
-                                       tcl_version)
+                                       tcl_version, tk_version)
 
 support.requires('gui')
 
@@ -2052,6 +2052,66 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 def _info_commands(widget, pattern=None):
     return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
+
+
+class TclObjTypeTest(AbstractTkTest, unittest.TestCase):
+    # See FromObj() in Modules/_tkinter.c: Tcl object types are converted to
+    # appropriate Python types.  These conversions only happen in the object
+    # mode, so skip when it is disabled.
+
+    def setUp(self):
+        super().setUp()
+        if not self.wantobjects:
+            self.skipTest('requires wantobjects')
+
+    def test_enum_option_returns_str(self):
+        # An "index" object (an enumeration keyword) is returned as a str.
+        w = ttk.Scale(self.root, orient='horizontal')
+        value = w.cget('orient')
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, 'horizontal')
+
+    def test_enum_option_is_interned(self):
+        # Equal "index" keywords share a single interned str object.
+        a = ttk.Scale(self.root, orient='horizontal').cget('orient')
+        b = ttk.Scale(self.root, orient='horizontal').cget('orient')
+        self.assertIs(a, b)
+
+    def test_window_option_returns_str(self):
+        # A "window" object is returned as a str.
+        label = tkinter.Label(self.root)
+        w = ttk.LabelFrame(self.root, labelwidget=label)
+        value = w.cget('labelwidget')
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, str(label))
+
+    def test_variable_option_returns_str(self):
+        # A "parsedVarName" object is returned as a str.
+        w = tkinter.Checkbutton(self.root)
+        self.assertIsInstance(w.cget('variable'), str)
+
+    def test_pixel_option_without_unit_returns_number(self):
+        # A screen distance with no unit suffix is already in pixels and thus
+        # screen independent, so it is returned as an int or a float.
+        w = tkinter.Frame(self.root)
+        w['borderwidth'] = 3
+        self.assertIsInstance(w.cget('borderwidth'), int)
+        self.assertEqual(w.cget('borderwidth'), 3)
+        if tk_version >= (9, 0):
+            # Tk < 9 rounds a fractional screen distance to an integer.
+            w['borderwidth'] = 2.5
+            self.assertIsInstance(w.cget('borderwidth'), float)
+            self.assertEqual(w.cget('borderwidth'), 2.5)
+
+    @requires_tk(9, 0)
+    def test_pixel_option_with_unit_is_not_a_number(self):
+        # A screen distance with an m/c/i/p suffix depends on the screen
+        # resolution, so it is not converted to a number here.  (Tk < 9 resolves
+        # it eagerly to an integer pixel count when the option is read.)
+        w = tkinter.Frame(self.root)
+        w['borderwidth'] = '3m'
+        self.assertNotIsInstance(w.cget('borderwidth'), (int, float))
+        self.assertEqual(str(w.cget('borderwidth')), '3m')
 
 
 if __name__ == "__main__":

@@ -445,6 +445,13 @@ tkinter
   :meth:`~tkinter.font.Font.measure` and :meth:`~tkinter.font.Font.metrics`.
   (Contributed by Serhiy Storchaka in :gh:`143990`.)
 
+* Values of several Tcl object types returned by :mod:`tkinter` are now
+  converted to the corresponding Python type instead of being wrapped in a
+  :class:`!_tkinter.Tcl_Obj`: ``index``, ``window``, ``nsName`` and
+  ``parsedVarName`` objects to :class:`str`, and ``pixel`` screen distances
+  with no unit suffix to :class:`int` or :class:`float`.
+  (Contributed by Serhiy Storchaka in :gh:`153513`.)
+
 xml
 ---
 
