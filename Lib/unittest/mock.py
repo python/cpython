@@ -37,7 +37,7 @@ from annotationlib import Format
 from dataclasses import fields, is_dataclass
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
-from functools import wraps, partial
+from functools import partialmethod, wraps, partial
 from threading import RLock
 
 
@@ -107,6 +107,20 @@ def _get_signature_object(func, as_instance, eat_self):
             eat_self = True
         # Use the original decorated method to extract the correct function signature
         func = func.__func__
+    elif isinstance(func, partialmethod):
+        # partialmethod always consumes `self` itself: real access binds it via the
+        # descriptor protocol (instance access resolves `self` before applying before
+        # applying the partialmethod's own bound args). When a mock stands in for the
+        # raw class attribute directly, there is no descriptor rebinding at all, so no
+        # caller ever supplies `self` either. Build the effective signature by dropping
+        # `self` from the wrapped function's signature and applying the partialmethod's
+        # own pre-bound positional / keyword arguments to what remains.
+        inner_sig = inspect.signature(func.func, annotation_format=Format.FORWARDREF)
+        params = list(inner_sig.parameters.values())[1:]
+        stub = lambda *args, **kwargs: None
+        stub.__signature__ = inner_sig.replace(parameters=params)
+        func = partial(stub, *func.args, **func.keywords)
+        eat_self = False
     elif not isinstance(func, FunctionTypes):
         # If we really want to model an instance of the passed type,
         # __call__ should be looked up, not __init__.
@@ -155,6 +169,13 @@ def _callable(obj):
         return True
     if isinstance(obj, (staticmethod, classmethod, MethodType)):
         return _callable(obj.__func__)
+    if isinstance(obj, partialmethod):
+        # partialmethod objects have no __call__ of their own, they are non-data
+        # descriptors that only become callable once resolved via the descriptor
+        # protocol (instance /class attribute access). Judge callability from the
+        # wrapped function instead, so autospeccing a partialmethod attribute doesn't
+        # produce an uncallable mock.
+        return _callable(obj.func)
     if getattr(obj, '__call__', None) is not None:
         return True
     return False
