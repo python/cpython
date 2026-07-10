@@ -688,7 +688,7 @@ process_task_and_waiters(
     PyObject *result,
     size_t depth
 ) {
-    if (depth >= MAX_FRAME_CHAIN_DEPTH) {
+    if (depth >= MAX_TASK_WAITER_CHAIN_DEPTH) {
         PyErr_SetString(PyExc_RuntimeError,
             "Too many task waiters (possible infinite loop)");
         set_exception_cause(unwinder, PyExc_RuntimeError,
