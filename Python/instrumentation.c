@@ -1779,7 +1779,7 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     }
     if (all_events.tools[PY_MONITORING_EVENT_INSTRUCTION]) {
         if (code->_co_monitoring->per_instruction_opcodes == NULL) {
-            code->_co_monitoring->per_instruction_opcodes = PyMem_New(_PyCoLineInstrumentationData, code_len);
+            code->_co_monitoring->per_instruction_opcodes = PyMem_New(uint8_t, code_len);
             if (code->_co_monitoring->per_instruction_opcodes == NULL) {
                 PyErr_NoMemory();
                 return -1;

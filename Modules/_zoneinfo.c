@@ -1047,7 +1047,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         PyErr_NoMemory();
         goto error;
     }
-    trans_idx = PyMem_New(Py_ssize_t, self->num_transitions);
+    trans_idx = PyMem_New(size_t, self->num_transitions);
     if (trans_idx == NULL) {
         PyErr_NoMemory();
         goto error;
