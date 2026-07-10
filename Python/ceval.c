@@ -1054,7 +1054,7 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject 
     PyObject **result;
     if (nargs > MAX_STACKREF_SCRATCH) {
         // +1 in case PY_VECTORCALL_ARGUMENTS_OFFSET is set.
-        result = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
+        result = PyMem_New(PyObject *, nargs + 1);
         if (result == NULL) {
             return NULL;
         }
@@ -2091,7 +2091,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
             newargs = stack_array;
         }
         else {
-            newargs = PyMem_Malloc(sizeof(_PyStackRef) *nargs);
+            newargs = PyMem_New(_PyStackRef, nargs);
             if (newargs == NULL) {
                 PyErr_NoMemory();
                 PyStackRef_CLOSE(func);
@@ -2141,7 +2141,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
         arguments = stack_array;
     }
     else {
-        arguments = PyMem_Malloc(sizeof(_PyStackRef) * total_args);
+        arguments = PyMem_New(_PyStackRef, total_args);
         if (arguments == NULL) {
             return PyErr_NoMemory();
         }
@@ -2205,7 +2205,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         if (kwnames == NULL) {
             goto fail;
         }
-        newargs = PyMem_Malloc(sizeof(PyObject *)*(kwcount+argcount));
+        newargs = PyMem_New(PyObject *, kwcount+argcount);
         if (newargs == NULL) {
             goto fail;
         }
