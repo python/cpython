@@ -1238,11 +1238,27 @@ void PyErr_DisplayException(PyObject *exc)
     PyErr_Display(NULL, exc, NULL);
 }
 
+static int
+check_start(int start)
+{
+    if (start == Py_single_input || start == Py_file_input
+        || start == Py_eval_input || start == Py_func_type_input)
+    {
+        return 0;
+    }
+    PyErr_SetString(PyExc_ValueError, "invalid start argument");
+    return -1;
+}
+
 static PyObject *
 _PyRun_String(const char *str, PyObject* name, int start,
               PyObject *globals, PyObject *locals, PyCompilerFlags *flags,
               int generate_new_source)
 {
+    if (check_start(start) < 0) {
+        return NULL;
+    }
+
     PyObject *ret = NULL;
     mod_ty mod;
     PyArena *arena;
@@ -1285,6 +1301,10 @@ static PyObject *
 _PyRun_File(FILE *fp, PyObject *filename, int start, PyObject *globals,
             PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
+    if (check_start(start) < 0) {
+        return NULL;
+    }
+
     PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
@@ -1519,6 +1539,10 @@ PyObject *
 Py_CompileStringObject(const char *str, PyObject *filename, int start,
                        PyCompilerFlags *flags, int optimize)
 {
+    if (check_start(start) < 0) {
+        return NULL;
+    }
+
     PyCodeObject *co;
     mod_ty mod;
     PyArena *arena = _PyArena_New();
@@ -1725,7 +1749,7 @@ Py_CompileString(const char *str, const char *p, int s)
 }
 
 #undef Py_CompileStringFlags
-PyAPI_FUNC(PyObject *)
+PyObject*
 Py_CompileStringFlags(const char *str, const char *p, int s,
                       PyCompilerFlags *flags)
 {
