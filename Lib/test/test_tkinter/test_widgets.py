@@ -266,7 +266,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
                 b = tkinter.Checkbutton(f, text=j)
                 b.pack()
                 buttons.append(b)
-        variables = [str(b['variable']) for b in buttons]
+        variables = [b['variable'] for b in buttons]
         self.assertEqual(len(set(variables)), 4, variables)
 
     def test_same_name(self):
@@ -442,14 +442,15 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
         # Menubutton options can be passed at construction (gh-101284).
         widget = tkinter.OptionMenu(self.root, None, 'b',
                                     width=10, direction='right')
+        # Menubutton -width is a string on Tk 8.6, an int on 9.0+.
         self.assertEqual(int(widget['width']), 10)
-        self.assertEqual(str(widget['direction']), 'right')
+        self.assertEqual(widget['direction'], 'right')
         # They override OptionMenu's own appearance defaults,
         widget = tkinter.OptionMenu(self.root, None, 'b', relief='flat')
-        self.assertEqual(str(widget['relief']), 'flat')
+        self.assertEqual(widget['relief'], 'flat')
         # which otherwise keep their historical values.
         widget = tkinter.OptionMenu(self.root, None, 'b')
-        self.assertEqual(str(widget['relief']), 'raised')
+        self.assertEqual(widget['relief'], 'raised')
 
     def test_bad_kwarg(self):
         with self.assertRaisesRegex(TclError, r'^unknown option "-spam"$'):
@@ -2472,9 +2473,9 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         v2 = tkinter.BooleanVar(self.root)
         m1.add_checkbutton(variable=v1, onvalue=True, offvalue=False,
                            label='Nonsense')
-        self.assertEqual(str(m1.entrycget(1, 'variable')), str(v1))
+        self.assertEqual(m1.entrycget(1, 'variable'), str(v1))
         m1.entryconfigure(1, variable=v2)
-        self.assertEqual(str(m1.entrycget(1, 'variable')), str(v2))
+        self.assertEqual(m1.entrycget(1, 'variable'), str(v2))
 
     def test_add(self):
         m = self.create(tearoff=False)

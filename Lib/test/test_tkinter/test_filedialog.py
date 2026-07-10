@@ -124,7 +124,7 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(d.ok_button.winfo_class(), 'Button')
         self.assertEqual(d.selection.winfo_class(), 'Entry')
         if d.top._windowingsystem == 'x11':
-            self.assertEqual(str(d.botframe.cget('relief')), 'raised')
+            self.assertEqual(d.botframe.cget('relief'), 'raised')
 
     def test_background(self):
         # The ttk dialog adopts the ttk background, even a customized one, while
@@ -145,18 +145,19 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
         # The buttons' "&" accelerators are parsed.
         d = self.open()
         self.assertEqual(str(d.ok_button.cget('text')), 'OK')
-        self.assertEqual(int(d.ok_button.cget('underline')), 0)
+        self.assertEqual(d.ok_button.cget('underline'),
+                         0 if self.wantobjects else '0')
 
     def test_default_ring(self):
         # The default ring follows the keyboard focus among the buttons.
         d = self.open()
-        self.assertEqual(str(d.cancel_button.cget('default')), 'normal')
+        self.assertEqual(d.cancel_button.cget('default'), 'normal')
         d.cancel_button.focus_force()
         d.top.update()
-        self.assertEqual(str(d.cancel_button.cget('default')), 'active')
+        self.assertEqual(d.cancel_button.cget('default'), 'active')
         d.ok_button.focus_force()
         d.top.update()
-        self.assertEqual(str(d.cancel_button.cget('default')), 'normal')
+        self.assertEqual(d.cancel_button.cget('default'), 'normal')
 
     def test_alt_key(self):
         # Alt + the underlined letter invokes the matching button.
@@ -182,8 +183,8 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
     def test_horizontal_scrollbars(self):
         # Each list has a horizontal scrollbar besides the vertical one.
         d = self.open()
-        self.assertEqual(str(d.dirshbar.cget('orient')), 'horizontal')
-        self.assertEqual(str(d.fileshbar.cget('orient')), 'horizontal')
+        self.assertEqual(d.dirshbar.cget('orient'), 'horizontal')
+        self.assertEqual(d.fileshbar.cget('orient'), 'horizontal')
         self.assertTrue(d.dirs.cget('xscrollcommand'))
         self.assertTrue(d.files.cget('xscrollcommand'))
 

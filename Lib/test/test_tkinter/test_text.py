@@ -508,10 +508,12 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(str(text.image_cget(name, 'image')), str(image))
         for value in ('top', 'center', 'bottom', 'baseline'):
             text.image_configure(name, align=value)
-            self.assertEqual(str(text.image_cget(name, 'align')), value)
+            self.assertEqual(text.image_cget(name, 'align'), value)
         text.image_configure(name, padx=3, pady=4)
-        self.assertEqual(text.tk.getint(text.image_cget(name, 'padx')), 3)
-        self.assertEqual(text.tk.getint(text.image_cget(name, 'pady')), 4)
+        self.assertEqual(text.image_cget(name, 'padx'),
+                         3 if self.wantobjects else '3')
+        self.assertEqual(text.image_cget(name, 'pady'),
+                         4 if self.wantobjects else '4')
 
         # Querying returns the full option set.
         cnf = text.image_configure(name)
@@ -528,10 +530,12 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.window_cget('1.1', 'window'), str(button))
         for value in ('top', 'center', 'bottom', 'baseline'):
             text.window_configure('1.1', align=value)
-            self.assertEqual(str(text.window_cget('1.1', 'align')), value)
+            self.assertEqual(text.window_cget('1.1', 'align'), value)
         text.window_configure('1.1', padx=3, pady=4)
-        self.assertEqual(text.tk.getint(text.window_cget('1.1', 'padx')), 3)
-        self.assertEqual(text.tk.getint(text.window_cget('1.1', 'pady')), 4)
+        self.assertEqual(text.window_cget('1.1', 'padx'),
+                         3 if self.wantobjects else '3')
+        self.assertEqual(text.window_cget('1.1', 'pady'),
+                         4 if self.wantobjects else '4')
         text.window_configure('1.1', stretch=True)
         self.assertIs(text.tk.getboolean(text.window_cget('1.1', 'stretch')),
                       True)
