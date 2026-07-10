@@ -225,10 +225,11 @@ class TestImaplib(unittest.TestCase):
         self.assertEqual(enc('SHIFT_JIS', (b'"already"',)), (b'"already"',))
         # The charset name may itself be bytes.
         self.assertEqual(enc(b'UTF-8', ('"café"',)), ('"café"'.encode('utf-8'),))
-        # A charset with no Python codec cannot encode str criteria; bytes
-        # criteria must be used with such server-only charsets.
-        self.assertRaises(LookupError, enc, 'NF_Z_62-010_(1973)', ('TEXT',))
-        self.assertEqual(enc('NF_Z_62-010_(1973)', (b'TEXT',)), (b'TEXT',))
+        # A charset with no codec at all (not even via the iconv codec) cannot
+        # encode str criteria; bytes criteria must be used with such
+        # server-only charsets.
+        self.assertRaises(LookupError, enc, 'no-such-charset', ('TEXT',))
+        self.assertEqual(enc('no-such-charset', (b'TEXT',)), (b'TEXT',))
 
     def test_astring_idempotent(self):
         # Quoting an already quoted argument should not change it, so that
@@ -1531,8 +1532,8 @@ class NewIMAPTestsMixin:
         self.assertIn(b'CHARSET KOI8-U ', server.line)
         self.assertIn('"Київ"'.encode('koi8-u'), server.line)
 
-        # bytes criteria: NF_Z_62-010 has no Python codec, so this exercises
-        # charset-name quoting without criteria encoding.
+        # bytes criteria keep this focused on charset-name quoting (the
+        # parentheses force the name to be quoted) without criteria encoding.
         typ, data = client.search('NF_Z_62-010_(1973)', b'TEXT', b'XXXXXX')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['CHARSET', '"NF_Z_62-010_(1973)"', 'TEXT', 'XXXXXX'])
