@@ -1,0 +1,1 @@
+Fix overflow vulnerabilities in PyMem_Malloc calls by systematically replacing them with PyMem_New or adding explicit PY_SSIZE_T_MAX checks.
