@@ -1729,7 +1729,7 @@ case $os in
 	# Likewise for "kernel-abi"
 	eabi* | gnueabi*)
 		;;
-	# VxWorks passes extra cpu info in the 4th filed.
+	# VxWorks passes extra cpu info in the 4th field.
 	simlinux | simwindows | spe)
 		;;
 	# See `case $cpu-$os` validation below
