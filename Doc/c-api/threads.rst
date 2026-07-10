@@ -708,7 +708,8 @@ Low-level APIs
 
    See also :c:func:`PyEval_GetFrame`.
 
-   *tstate* must not be ``NULL``, and must be :term:`attached <attached thread state>`.
+   *tstate* must not be ``NULL``, and must be the :term:`thread state`
+   :term:`attached <attached thread state>` to the current OS thread.
 
    .. versionadded:: 3.9
 
