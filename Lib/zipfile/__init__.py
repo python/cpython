@@ -793,7 +793,7 @@ class LZMADecompressor:
             return b''
 
     @property
-    def needs_input(self):
+    def _needs_input(self):
         # While the LZMA properties header is still being buffered, more input
         # is required; afterwards defer to the wrapped decompressor so a bounded
         # decompress() call can be drained across reads.
@@ -882,6 +882,13 @@ def _get_compressor(compress_type, compresslevel=None):
         return zstd.ZstdCompressor(level=compresslevel)
     else:
         return None
+
+
+def _decompressor_needs_input(decompressor):
+    # bz2/zstd expose the stdlib decompressor's public needs_input; the LZMA
+    # wrapper keeps it private (_needs_input) to avoid adding public API.
+    needs_input = getattr(decompressor, "needs_input", None)
+    return decompressor._needs_input if needs_input is None else needs_input
 
 
 def _get_decompressor(compress_type):
@@ -1191,7 +1198,7 @@ class ZipExtFile(io.BufferedIOBase):
         else:
             # bzip2/lzma/zstd: a bounded decompress() call may leave input
             # buffered inside the decompressor; drain that before reading more.
-            if self._decompressor.needs_input:
+            if _decompressor_needs_input(self._decompressor):
                 data = self._read2(n)
             else:
                 data = b''
@@ -1209,11 +1216,11 @@ class ZipExtFile(io.BufferedIOBase):
         else:
             # Bound the output of a single decompress() call (mirroring the
             # DEFLATE path above) so that a small compressed member cannot
-            # expand into one unbounded allocation (decompression bomb).
+            # expand into one unbounded read.
             data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
             self._eof = (self._decompressor.eof or
                          self._compress_left <= 0 and
-                         self._decompressor.needs_input)
+                         _decompressor_needs_input(self._decompressor))
 
         data = data[:self._left]
         self._left -= len(data)
