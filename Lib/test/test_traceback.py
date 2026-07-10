@@ -5111,20 +5111,20 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
 
     def test_name_error_do_not_suggest_builtin_name_in_delete(self):
         def func():
-            del next
+            exec("del next")
 
         actual = self.get_suggestion(func)
         self.assertNotIn("Did you mean: 'anext'", actual)
 
     def test_name_error_suggest_builtin_name_in_delete_if_not_delete_the_name_itself(self):
         def func1():
-            del nxt[1]
+            exec("del nxt[1]")
 
         actual = self.get_suggestion(func1)
         self.assertIn("Did you mean: 'next'", actual)
 
         def func2():
-            del nxt.__name__
+            exec("del nxt.__name__")
 
         actual = self.get_suggestion(func2)
         self.assertIn("Did you mean: 'next'", actual)
