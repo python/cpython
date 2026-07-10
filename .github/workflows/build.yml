@@ -272,9 +272,11 @@ jobs:
         free-threading:
         - false
         - true
+        # For BOLT jobs, https://apt.llvm.org/llvm.sh doesn't support LLVM 19
+        # on Ubuntu 26.04, so stick to Ubuntu 24.04 until LLVM is upgraded.
         os:
-        - ubuntu-26.04
-        - ubuntu-26.04-arm
+        - ubuntu-24.04
+        - ubuntu-24.04-arm
         exclude:
         # Do not test BOLT with free-threading, to conserve resources
         - bolt: true

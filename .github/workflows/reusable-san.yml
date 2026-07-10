@@ -27,7 +27,9 @@ jobs:
         && ' (free-threading)'
         || ''
       }}
-    runs-on: ubuntu-26.04
+    # https://apt.llvm.org/llvm.sh doesn't support LLVM 20 on Ubuntu 26.04,
+    # so stick to Ubuntu 24.04 until LLVM is upgraded.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
