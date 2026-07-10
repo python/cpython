@@ -3,15 +3,6 @@ import shutil
 
 import _shared
 
-# https://reproducible-builds.org/docs/archives/
-# https://sethmlarson.dev/security-developer-in-residence-weekly-report-14
-# - mtime
-# - uid
-# - gid
-# - uname
-# - gname
-# https://docs.python.org/3/library/tarfile.html#writing-examples
-
 
 def wasmtime_script(context):
     return f"""\
