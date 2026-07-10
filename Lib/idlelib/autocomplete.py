@@ -186,7 +186,7 @@ class AutoComplete:
                     bigl.extend(completion_kwds)
                     bigl.sort()
                     if "__all__" in bigl:
-                        smalll = sorted(eval("__all__", namespace))
+                        all_val = eval("__all__", namespace); smalll = sorted(all_val) if hasattr(all_val, "__iter__") else [s for s in bigl if s[:1] != "_"]
                     else:
                         smalll = [s for s in bigl if s[:1] != '_']
                 else:
@@ -195,7 +195,7 @@ class AutoComplete:
                         bigl = dir(entity)
                         bigl.sort()
                         if "__all__" in bigl:
-                            smalll = sorted(entity.__all__)
+                            all_val = entity.__all__; smalll = sorted(all_val) if hasattr(all_val, "__iter__") else [s for s in bigl if s[:1] != "_"]
                         else:
                             smalll = [s for s in bigl if s[:1] != '_']
                     except:
