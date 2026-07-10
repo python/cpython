@@ -482,7 +482,8 @@ typedef int (*thread_processor_func)(
 typedef int (*set_entry_processor_func)(
     RemoteUnwinderObject *unwinder,
     uintptr_t key_addr,
-    void *context
+    void *context,
+    size_t depth
 );
 
 typedef int (*interpreter_processor_func)(
@@ -749,7 +750,8 @@ extern int iterate_set_entries(
     RemoteUnwinderObject *unwinder,
     uintptr_t set_addr,
     set_entry_processor_func processor,
-    void *context
+    void *context,
+    size_t depth
 );
 
 /* Task awaited_by processing */
@@ -757,7 +759,8 @@ extern int process_task_awaited_by(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_address,
     set_entry_processor_func processor,
-    void *context
+    void *context,
+    size_t depth
 );
 
 extern int process_single_task_node(
@@ -770,7 +773,8 @@ extern int process_single_task_node(
 extern int process_task_and_waiters(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_addr,
-    PyObject *result
+    PyObject *result,
+    size_t depth
 );
 
 extern int find_running_task_in_thread(

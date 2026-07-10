@@ -121,7 +121,8 @@ iterate_set_entries(
     RemoteUnwinderObject *unwinder,
     uintptr_t set_addr,
     set_entry_processor_func processor,
-    void *context
+    void *context,
+    size_t depth
 ) {
     char set_object[SIZEOF_SET_OBJ];
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, set_addr,
@@ -161,7 +162,7 @@ iterate_set_entries(
 
             if (ref_cnt) {
                 // Process this valid set entry
-                if (processor(unwinder, key_addr, context) < 0) {
+                if (processor(unwinder, key_addr, context, depth) < 0) {
                     return -1;
                 }
                 els++;
@@ -526,15 +527,22 @@ error:
  * ============================================================================ */
 
 // Forward declaration for mutual recursion
-static int process_waiter_task(RemoteUnwinderObject *unwinder, uintptr_t key_addr, void *context);
+static int process_waiter_task(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t key_addr,
+    void *context,
+    size_t depth
+);
 
 // Processor function for parsing tasks in sets
 static int
 process_task_parser(
     RemoteUnwinderObject *unwinder,
     uintptr_t key_addr,
-    void *context
+    void *context,
+    size_t depth
 ) {
+    (void)depth;
     PyObject *awaited_by = (PyObject *)context;
     return parse_task(unwinder, key_addr, awaited_by);
 }
@@ -545,7 +553,8 @@ parse_task_awaited_by(
     uintptr_t task_address,
     PyObject *awaited_by
 ) {
-    return process_task_awaited_by(unwinder, task_address, process_task_parser, awaited_by);
+    return process_task_awaited_by(
+        unwinder, task_address, process_task_parser, awaited_by, 0);
 }
 
 int
@@ -553,7 +562,8 @@ process_task_awaited_by(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_address,
     set_entry_processor_func processor,
-    void *context
+    void *context,
+    size_t depth
 ) {
     // Read the entire TaskObj at once
     char task_obj[SIZEOF_TASK_OBJ];
@@ -572,10 +582,11 @@ process_task_awaited_by(
     char awaited_by_is_a_set = GET_MEMBER(char, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by_is_set);
 
     if (awaited_by_is_a_set) {
-        return iterate_set_entries(unwinder, task_ab_addr, processor, context);
+        return iterate_set_entries(
+            unwinder, task_ab_addr, processor, context, depth);
     } else {
         // Single task waiting
-        return processor(unwinder, task_ab_addr, context);
+        return processor(unwinder, task_ab_addr, context, depth);
     }
 }
 
@@ -674,15 +685,25 @@ int
 process_task_and_waiters(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_addr,
-    PyObject *result
+    PyObject *result,
+    size_t depth
 ) {
+    if (depth >= MAX_FRAME_CHAIN_DEPTH) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "Too many task waiters (possible infinite loop)");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "Task waiter chain depth limit exceeded");
+        return -1;
+    }
+
     // First, add this task to the result
     if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
         return -1;
     }
 
     // Now find all tasks that are waiting for this task and process them
-    return process_task_awaited_by(unwinder, task_addr, process_waiter_task, result);
+    return process_task_awaited_by(
+        unwinder, task_addr, process_waiter_task, result, depth + 1);
 }
 
 // Processor function for task waiters
@@ -690,10 +711,10 @@ static int
 process_waiter_task(
     RemoteUnwinderObject *unwinder,
     uintptr_t key_addr,
-    void *context
+    void *context,
+    size_t depth
 ) {
-    PyObject *result = (PyObject *)context;
-    return process_task_and_waiters(unwinder, key_addr, result);
+    return process_task_and_waiters(unwinder, key_addr, (PyObject *)context, depth);
 }
 
 /* ============================================================================
@@ -996,7 +1017,9 @@ process_running_task_chain(
     }
 
     // Now find all tasks that are waiting for this task and process them
-    if (process_task_awaited_by(unwinder, running_task_addr, process_waiter_task, result) < 0) {
+    if (process_task_awaited_by(
+            unwinder, running_task_addr, process_waiter_task, result, 1) < 0)
+    {
         return -1;
     }
 
