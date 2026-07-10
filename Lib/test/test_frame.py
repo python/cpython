@@ -408,7 +408,7 @@ class TestFrameLocals(unittest.TestCase):
         d |= {'y': 3}
         self.assertEqual(d['y'], 3)
         with self.assertRaisesRegex(RuntimeError, r"keys\(\) failed"):
-            operator.ior(d, FailingKeysDict())
+            d |= FailingKeysDict()
         with self.assertRaises(TypeError):
             d |= 3
         with self.assertRaises(TypeError):
