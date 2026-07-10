@@ -7018,8 +7018,12 @@
             PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
             assert(PyLong_CheckExact(sub));
             assert(PyUnicode_CheckExact(str));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (PyUnicode_GET_LENGTH(str) <= index) {
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            Py_ssize_t len = PyUnicode_GET_LENGTH(str);
+            if (index < 0) {
+                index += len;
+            }
+            if (index < 0 || len <= index) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = sub_st;
                 _tos_cache0 = str_st;
@@ -7057,8 +7061,12 @@
             PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
             assert(PyLong_CheckExact(sub));
             assert(PyUnicode_CheckExact(str));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (PyUnicode_GET_LENGTH(str) <= index) {
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            Py_ssize_t len = PyUnicode_GET_LENGTH(str);
+            if (index < 0) {
+                index += len;
+            }
+            if (index < 0 || len <= index) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = sub_st;
                 _tos_cache0 = str_st;
@@ -7271,8 +7279,12 @@
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
             assert(PyLong_CheckExact(sub));
             assert(PyTuple_CheckExact(tuple));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (index >= PyTuple_GET_SIZE(tuple)) {
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+            if (index < 0) {
+                index += len;
+            }
+            if (index < 0 || index >= len) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -7298,8 +7310,12 @@
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
             assert(PyLong_CheckExact(sub));
             assert(PyTuple_CheckExact(tuple));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (index >= PyTuple_GET_SIZE(tuple)) {
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+            if (index < 0) {
+                index += len;
+            }
+            if (index < 0 || index >= len) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = sub_st;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -7327,8 +7343,12 @@
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
             assert(PyLong_CheckExact(sub));
             assert(PyTuple_CheckExact(tuple));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (index >= PyTuple_GET_SIZE(tuple)) {
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+            if (index < 0) {
+                index += len;
+            }
+            if (index < 0 || index >= len) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = sub_st;
                 _tos_cache0 = tuple_st;
@@ -7356,8 +7376,12 @@
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
             assert(PyLong_CheckExact(sub));
             assert(PyTuple_CheckExact(tuple));
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (index >= PyTuple_GET_SIZE(tuple)) {
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            Py_ssize_t len = PyTuple_GET_SIZE(tuple);
+            if (index < 0) {
+                index += len;
+            }
+            if (index < 0 || index >= len) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = sub_st;
                 _tos_cache1 = tuple_st;
@@ -7388,7 +7412,10 @@
             assert(PyLong_CheckExact(sub));
             assert(PyTuple_CheckExact(tuple));
             STAT_INC(BINARY_OP, hit);
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            if (index < 0) {
+                index += PyTuple_GET_SIZE(tuple);
+            }
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
@@ -7420,7 +7447,10 @@
             assert(PyLong_CheckExact(sub));
             assert(PyTuple_CheckExact(tuple));
             STAT_INC(BINARY_OP, hit);
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            if (index < 0) {
+                index += PyTuple_GET_SIZE(tuple);
+            }
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
@@ -7453,7 +7483,10 @@
             assert(PyLong_CheckExact(sub));
             assert(PyTuple_CheckExact(tuple));
             STAT_INC(BINARY_OP, hit);
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            if (index < 0) {
+                index += PyTuple_GET_SIZE(tuple);
+            }
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
@@ -8307,11 +8340,7 @@
             _PyStackRef value;
             value = stack_pointer[-1];
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!PyLong_CheckExact(value_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                SET_CURRENT_CACHED_VALUES(0);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(PyLong_CheckExact(value_o));
             if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
@@ -8332,12 +8361,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             value = _stack_item_0;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!PyLong_CheckExact(value_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache0 = value;
-                SET_CURRENT_CACHED_VALUES(1);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(PyLong_CheckExact(value_o));
             if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = value;
@@ -8358,13 +8382,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             value = _stack_item_1;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!PyLong_CheckExact(value_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache1 = value;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(2);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(PyLong_CheckExact(value_o));
             if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = value;
@@ -8388,14 +8406,7 @@
             _PyStackRef _stack_item_2 = _tos_cache2;
             value = _stack_item_2;
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!PyLong_CheckExact(value_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache2 = value;
-                _tos_cache1 = _stack_item_1;
-                _tos_cache0 = _stack_item_0;
-                SET_CURRENT_CACHED_VALUES(3);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(PyLong_CheckExact(value_o));
             if (!_PyLong_IsNonNegativeCompact((PyLongObject *)value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = value;
@@ -8440,7 +8451,10 @@
                 JUMP_TO_JUMP_TARGET();
             }
             Py_ssize_t len = PyList_GET_SIZE(list);
-            if (index >= len) {
+            if (index < 0) {
+                index += len;
+            }
+            if (index < 0 || index >= len) {
                 UNLOCK_OBJECT(list);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
