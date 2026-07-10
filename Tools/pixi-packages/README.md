@@ -11,7 +11,7 @@ in a [Pixi workspace](https://pixi.sh/latest/first_workspace/), like:
 [dependencies]
 python.git = "https://github.com/python/cpython"
 python.subdirectory = "Tools/pixi-packages"
-python.flags = "asan"
+python.flags = ["asan"]
 ```
 
 This is particularly useful when developers need to build CPython from source

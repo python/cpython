@@ -7,7 +7,7 @@ if [[ "${PYTHON_VARIANT}" == "freethreading" ]]; then
 elif [[ "${PYTHON_VARIANT}" == "asan" ]]; then
     CONFIGURE_EXTRA="--with-address-sanitizer"
     export ASAN_OPTIONS="strict_init_order=true"
-elif [[ "${PYTHON_VARIANT}" == "tsan-freethreading" ]]; then
+elif [[ "${PYTHON_VARIANT}" == "tsan_freethreading" ]]; then
     CONFIGURE_EXTRA="--disable-gil --with-thread-sanitizer"
     export TSAN_OPTIONS="suppressions=${SRC_DIR}/Tools/tsan/suppressions_free_threading.txt"
 elif [[ "${PYTHON_VARIANT}" == "default" ]]; then
