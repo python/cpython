@@ -584,6 +584,14 @@ An :class:`IMAP4` instance has the following methods:
    the ``UTF8=ACCEPT`` capability was enabled using the :meth:`enable`
    command.
 
+   A criterion passed as :class:`str` is encoded to *charset* (which must name
+   a codec known to Python); pass :class:`bytes` to send a criterion that is
+   already encoded, for example when *charset* is one that Python does not
+   support.
+
+   .. versionchanged:: next
+      ``str`` search criteria are encoded to *charset*.
+
    Example::
 
       # M is a connected IMAP4 instance...
@@ -651,7 +659,13 @@ An :class:`IMAP4` instance has the following methods:
    the interpretation of strings in the searching criteria.  It then returns the
    numbers of matching messages.
 
+   As with :meth:`search`, a *search_criterion* passed as :class:`str` is
+   encoded to *charset*; pass :class:`bytes` to send one already encoded.
+
    This is an ``IMAP4rev1`` extension command.
+
+   .. versionchanged:: next
+      ``str`` search criteria are encoded to *charset*.
 
 
 .. method:: IMAP4.starttls(ssl_context=None)
@@ -729,7 +743,13 @@ An :class:`IMAP4` instance has the following methods:
    returns the matching messages threaded according to the specified threading
    algorithm.
 
+   As with :meth:`search`, a *search_criterion* passed as :class:`str` is
+   encoded to *charset*; pass :class:`bytes` to send one already encoded.
+
    This is an ``IMAP4rev1`` extension command.
+
+   .. versionchanged:: next
+      ``str`` search criteria are encoded to *charset*.
 
 
 .. method:: IMAP4.uid(command, arg[, ...])

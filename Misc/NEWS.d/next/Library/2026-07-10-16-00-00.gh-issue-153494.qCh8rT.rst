@@ -1,0 +1,6 @@
+:meth:`imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.sort` and
+:meth:`~imaplib.IMAP4.thread` (and the corresponding ``uid`` commands) now
+encode :class:`str` search criteria to the declared *charset*, so
+international search text can be passed as ordinary :class:`str`.  A criterion
+passed as :class:`bytes` is sent unchanged, for use with a charset that Python
+has no codec for.
