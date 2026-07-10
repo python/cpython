@@ -1201,6 +1201,25 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(data, [b'3', b'3', b'5', b'8'])
 
+        # A message set is only accepted with uid=True (UID EXPUNGE).
+        with self.assertRaises(imaplib.IMAP4.error):
+            client.expunge('3:8')
+
+    def test_uid_expunge(self):
+        client, server = self._setup(make_simple_handler('UID',
+            ['* 3 EXPUNGE', '* 3 EXPUNGE', '* 5 EXPUNGE', '* 8 EXPUNGE'],
+            'UID EXPUNGE completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.expunge('3:8', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'3', b'3', b'5', b'8'])
+        self.assertEqual(server.args, ['EXPUNGE', '3:8'])
+
+        # UID EXPUNGE requires a message set.
+        with self.assertRaises(imaplib.IMAP4.error):
+            client.expunge(uid=True)
+
     def test_close(self):
         client, server = self._setup(make_simple_handler('CLOSE'))
         client.login('user', 'pass')
@@ -1308,6 +1327,12 @@ class NewIMAPTestsMixin:
         self.assertEqual(data, [None])
         self.assertEqual(server.args, ['COPY', '4827313:4828442', '"New folder"'])
 
+        # The uid=True keyword is a shorthand for uid('COPY', ...).
+        typ, data = client.copy('4827313:4828442', 'MEETING', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'UID COPY completed'])
+        self.assertEqual(server.args, ['COPY', '4827313:4828442', 'MEETING'])
+
     def test_move(self):
         client, server = self._setup(make_simple_handler('MOVE'))
         client.login('user', 'pass')
@@ -1336,6 +1361,12 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(data, [None])
         self.assertEqual(server.args, ['MOVE', '4827313:4828442', '"New folder"'])
+
+        # The uid=True keyword is a shorthand for uid('MOVE', ...).
+        typ, data = client.move('4827313:4828442', 'MEETING', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'UID MOVE completed'])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', 'MEETING'])
 
     def test_store(self):
         client, server = self._setup(make_simple_handler('STORE', [
@@ -1377,6 +1408,17 @@ class NewIMAPTestsMixin:
 
         typ, data = client.uid('store', '4827313:4828442', '+FLAGS', r'\Deleted')
         self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['STORE', '4827313:4828442', '+FLAGS', r'(\Deleted)'])
+
+        # The uid=True keyword is a shorthand for uid('STORE', ...).
+        typ, data = client.store('4827313:4828442', '+FLAGS', r'(\Deleted)',
+                                 uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'23 (FLAGS (\Deleted \Seen) UID 4827313)',
+            br'24 (FLAGS (\Deleted) UID 4827943)',
+            br'25 (FLAGS (\Deleted \Flagged \Seen) UID 4828442)',
+        ])
         self.assertEqual(server.args, ['STORE', '4827313:4828442', '+FLAGS', r'(\Deleted)'])
 
     def test_fetch(self):
@@ -1461,6 +1503,16 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['FETCH', '4827313:4828442', 'ALL'])
 
+        # The uid=True keyword is a shorthand for uid('FETCH', ...).
+        typ, data = client.fetch('4827313:4828442', '(FLAGS)', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'23 (FLAGS (\Seen) UID 4827313)',
+            br'24 (FLAGS (\Seen) UID 4827943)',
+            br'25 (FLAGS (\Seen) UID 4828442)',
+        ])
+        self.assertEqual(server.args, ['FETCH', '4827313:4828442', '(FLAGS)'])
+
     def test_partial(self):
         client, server = self._setup(make_simple_handler('PARTIAL',
             ['* 1 FETCH (RFC822.TEXT<0.10> "0123456789")']))
@@ -1526,6 +1578,21 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['SEARCH', 'CHARSET', '"NF_Z_62-010_(1973)"', 'TEXT', 'XXXXXX'])
 
+        # The uid=True keyword is a shorthand for uid('SEARCH', ...).
+        response[:] = ['* SEARCH 2 84 882']
+        typ, data = client.search(None, 'FLAGGED', 'SINCE', '1-Feb-1994',
+                                  'NOT', 'FROM', '"Smith"', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'2 84 882'])
+        self.assertEqual(server.args,
+                ['SEARCH', 'FLAGGED', 'SINCE', '1-Feb-1994', 'NOT', 'FROM', '"Smith"'])
+
+        response[:] = ['* SEARCH 43']
+        typ, data = client.search('UTF-8', 'TEXT', 'XXXXXX', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'43'])
+        self.assertEqual(server.args, ['SEARCH', 'CHARSET', 'UTF-8', 'TEXT', 'XXXXXX'])
+
     def test_sort(self):
         response = []
         client, server = self._setup(make_simple_handler('SORT', response))
@@ -1580,6 +1647,13 @@ class NewIMAPTestsMixin:
         typ, data = client.uid('sort', 'SUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"not in mailbox"')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['SORT', '(SUBJECT)', '"NF_Z_62-010_(1973)"', 'TEXT', '"not in mailbox"'])
+
+        # The uid=True keyword is a shorthand for uid('SORT', ...).
+        response[:] = ['* SORT 2 84 882']
+        typ, data = client.sort('(SUBJECT)', 'UTF-8', 'SINCE', '1-Feb-1994', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br'2 84 882'])
+        self.assertEqual(server.args, ['SORT', '(SUBJECT)', 'UTF-8', 'SINCE', '1-Feb-1994'])
 
     def test_thread(self):
         response = []
@@ -1663,6 +1737,14 @@ class NewIMAPTestsMixin:
         typ, data = client.uid('THREAD', 'ORDEREDSUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"gewp"')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['THREAD', 'ORDEREDSUBJECT', '"NF_Z_62-010_(1973)"', 'TEXT', '"gewp"'])
+
+        # The uid=True keyword is a shorthand for uid('THREAD', ...).
+        response[:] = ['* THREAD (166)(167)(168)']
+        typ, data = client.thread('ORDEREDSUBJECT', 'UTF-8', 'SINCE', '5-MAR-2000',
+                                  uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'(166)(167)(168)'])
+        self.assertEqual(server.args, ['THREAD', 'ORDEREDSUBJECT', 'UTF-8', 'SINCE', '5-MAR-2000'])
 
     def test_delete(self):
         client, server = self._setup(make_simple_handler('DELETE'))
