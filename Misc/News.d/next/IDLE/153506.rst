@@ -1,0 +1,3 @@
+Fix IDLE shell crash when Tab-completing in a module with a non-iterable
+``__all__`` attribute (e.g. ``__all__ = None``). The shell now falls back
+to standard completion instead of raising :exc:`TypeError`.
