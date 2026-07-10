@@ -1224,7 +1224,10 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
             focus_identify_as = 'focus'
         else:
             focus_identify_as = 'focus' if tk_version < (8, 7) else 'padding'
-        self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
+        # identify() at (5, 5) needs the tab realized there; under focus
+        # contention the mapped size can lag, so wait for the full size.
+        if wait_until_mapped(self.nb, full_size=True):
+            self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
         simulate_mouse_click(self.nb, 5, 5)
         self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
@@ -1240,7 +1243,8 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.tab(self.child2, text='e', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
-        self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
+        if wait_until_mapped(self.nb, full_size=True):
+            self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
         simulate_mouse_click(self.nb, 5, 5)
         # on macOS Emacs-style keyboard shortcuts are region-dependent;
         # let's use the regular arrow keys instead
@@ -1681,9 +1685,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.get_children(item_id), ())
 
     def test_exists(self):
-        self.assertEqual(self.tv.exists('something'), False)
-        self.assertEqual(self.tv.exists(''), True)
-        self.assertEqual(self.tv.exists({}), False)
+        self.assertIs(self.tv.exists('something'), False)
+        self.assertIs(self.tv.exists(''), True)
+        self.assertIs(self.tv.exists({}), False)
 
         # the following will make a tk.call equivalent to
         # tk.call(treeview, "exists") which should result in an error
