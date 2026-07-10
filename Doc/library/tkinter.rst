@@ -656,6 +656,9 @@ method on it, and to change its value you call the :meth:`!set` method.
 If you follow this protocol, the widget will always track the value of the
 variable, with no further intervention on your part.
 
+Keep a reference to the variable for as long as a widget uses it, for example
+by storing it as an attribute (see :class:`Variable`).
+
 For example::
 
    import tkinter as tk
@@ -734,6 +737,8 @@ Here are some examples of typical usage::
    myapp.mainloop()
 
 
+.. _Tk-option-data-types:
+
 Tk option data types
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -767,12 +772,16 @@ color
    represent any legal hex digit.  See page 160 of Ousterhout's book for details.
 
 cursor
-   The standard X cursor names from :file:`cursorfont.h` can be used, without the
-   ``XC_`` prefix.  For example to get a hand cursor (``XC_hand2``), use the
-   string ``"hand2"``.  You can also specify a bitmap and mask file of your own.
+   The name of the mouse cursor to display while the pointer is over the widget.
+   Tk provides a portable set of cursor names available on all platforms
+   (for example ``"arrow"``, ``"watch"``, ``"cross"``, or ``"hand2"``);
+   the standard X cursor names from :file:`cursorfont.h` may also be used,
+   without the ``XC_`` prefix (so ``XC_hand2`` becomes ``"hand2"``).
+   The full list of names, including the platform-specific ones,
+   is given in the :manpage:`cursors(3tk)` manual page.
+   You can also specify a bitmap and mask file of your own.
    On Windows a cursor file (:file:`.cur` or :file:`.ani`) may be used directly,
    giving its path preceded with an ``@``, as in ``"@C:/cursors/bart.ani"``.
-   See page 179 of Ousterhout's book.
 
 distance
    Screen distances can be specified in either pixels or absolute distances.
@@ -2057,7 +2066,7 @@ Base and mixin classes
 
    .. method:: winfo_exists()
 
-      Return ``1`` if the widget exists, ``0`` otherwise.
+      Return ``True`` if the widget exists, ``False`` otherwise.
 
    .. method:: winfo_fpixels(number)
 
@@ -2071,6 +2080,7 @@ Base and mixin classes
 
       Return the geometry of the widget, in the form ``widthxheight+x+y``.
       All dimensions are in pixels.
+      An offset can be negative; see :meth:`~Wm.geometry`.
 
    .. method:: winfo_height()
 
@@ -2105,7 +2115,7 @@ Base and mixin classes
 
    .. method:: winfo_ismapped()
 
-      Return ``1`` if the widget is currently mapped, ``0`` otherwise.
+      Return ``True`` if the widget is currently mapped, ``False`` otherwise.
 
    .. method:: winfo_manager()
 
@@ -2236,8 +2246,8 @@ Base and mixin classes
 
    .. method:: winfo_viewable()
 
-      Return ``1`` if the widget and all of its ancestors up through the
-      nearest toplevel window are mapped, ``0`` otherwise.
+      Return ``True`` if the widget and all of its ancestors up through the
+      nearest toplevel window are mapped, ``False`` otherwise.
 
    .. method:: winfo_visual()
 
@@ -2541,6 +2551,8 @@ Base and mixin classes
       *width* and *height* are in pixels (or grid units for a gridded window);
       a position preceded by ``+`` is measured from the left or top edge of the
       screen and one preceded by ``-`` from the right or bottom edge.
+      An offset can be negative, as in ``'200x100+-9+-8'``, when the window
+      edge is positioned beyond the corresponding screen edge.
       An empty string cancels any user-specified geometry, letting the window
       revert to its natural size.
       With no argument, return the current geometry as a string of the form
@@ -5725,7 +5737,7 @@ Widget classes
    .. method:: edit_modified(arg=None)
 
       If *arg* is omitted, return the current state of the modified flag as
-      ``0`` or ``1``; the flag is set automatically whenever the text is
+      a :class:`bool`; the flag is set automatically whenever the text is
       inserted or deleted.
       Otherwise set the flag to the boolean *arg*.
 
@@ -5915,6 +5927,14 @@ Variable classes
    In most cases you should use one of the typed subclasses below --
    :class:`StringVar`, :class:`IntVar`, :class:`DoubleVar` or
    :class:`BooleanVar` -- rather than :class:`!Variable` directly.
+
+   .. note::
+
+      When a :class:`!Variable` is garbage collected, its Tcl variable is unset.
+      Keep a reference to it for as long as a widget is linked to it, for example
+      by storing it as an attribute rather than in a local variable.
+      Otherwise Tk recreates the Tcl variable to keep the widget working, but it
+      is never unset again, leaking one Tcl variable per dropped wrapper.
 
    .. versionchanged:: 3.10
       Two variables now compare equal (``==``) only when they have the same

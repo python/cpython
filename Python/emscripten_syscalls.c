@@ -293,26 +293,6 @@ int __syscall_poll(intptr_t fds, int nfds, int timeout) {
     return __block_for_int(p);
 }
 
-
-// Workaround for an Emscripten bug: getentropy(buffer, 1) returns the single
-// byte of entropy as the return code. Fixed upstream by
-// emscripten-core/emscripten#27122
-int __real_getentropy(void*, size_t);
-
-int __wrap_getentropy(void *buffer, size_t len) {
-    if (len != 1) {
-        return __real_getentropy(buffer, len);
-    }
-    // Length is 1. Workaround is to get two bytes of entropy and write the
-    // first one into the original target buffer.
-    uint8_t tmp[2];
-    int ret = __real_getentropy(tmp, 2);
-    if (ret == 0) {
-        *(uint8_t *)buffer = tmp[0];
-    }
-    return ret;
-}
-
 #include <sys/ioctl.h>
 
 int syscall_ioctl_orig(int fd, int request, void* varargs)
