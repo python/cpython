@@ -1,20 +1,27 @@
+import ast
 import os
 import sys
 import tempfile
+import textwrap
 import unittest
 from collections import UserDict
 from test import support
 from test.support import import_helper
 from test.support.os_helper import unlink, TESTFN, TESTFN_ASCII, TESTFN_UNDECODABLE
 
+_testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+
 
 NULL = None
-_testcapi = import_helper.import_module('_testcapi')
 Py_single_input = _testcapi.Py_single_input
 Py_file_input = _testcapi.Py_file_input
 Py_eval_input = _testcapi.Py_eval_input
+INVALID_START = Py_single_input - 1
 STDIN = '<stdin>'
 STDERR_FD = 2
+PyCF_ONLY_AST = _testcapi.PyCF_ONLY_AST
+PyCF_IGNORE_COOKIE = _testcapi.PyCF_IGNORE_COOKIE
 
 # Code raising a SyntaxError
 SYNTAX_ERROR = 'True = 1'
@@ -68,6 +75,9 @@ class CAPITest(unittest.TestCase):
             run(b'raise ValueError("BUG")', {})
         self.assertEqual(str(cm.exception), 'BUG')
 
+        with self.assertRaises(ValueError):
+            func(b'x = 1', INVALID_START, {})
+
         self.assertIsNone(run(b'a\n', dict(a=1)))
         self.assertIsNone(run(b'a\n', dict(a=1), {}))
         self.assertIsNone(run(b'a\n', {}, dict(a=1)))
@@ -117,6 +127,9 @@ class CAPITest(unittest.TestCase):
         if support_closeit:
             closeit = 1
             self.assertIsNone(run(dict(a=1), {}, closeit))
+
+        with self.assertRaises(ValueError):
+            func(filename, INVALID_START, {})
 
         self.assertRaises(NameError, run, {})
         self.assertRaises(NameError, run, {}, {})
@@ -356,6 +369,65 @@ class CAPITest(unittest.TestCase):
     def test_run_simplestringflags(self):
         # Test PyRun_SimpleStringFlags()
         self.check_run_simplestring(_testcapi.run_simplestringflags)
+
+    def check_compilestring(self, compilestring, has_flags, encode_filename=True):
+        filename_str = TESTFN
+        if encode_filename:
+            filename = os.fsencode(filename_str)
+        else:
+            filename = filename_str
+
+        def check_code(co, name, value):
+            ns = {}
+            exec(co, ns, ns)
+            self.assertEqual(ns[name], value)
+
+        co = compilestring(b'x = 1', filename, Py_file_input)
+        self.assertEqual(co.co_filename, filename_str)
+        check_code(co, 'x', 1)
+
+        if has_flags:
+            code = textwrap.dedent("""
+                # encoding: latin1
+                x = 'a\xe9'
+            """)
+            co = compilestring(code.encode(), filename, Py_file_input, PyCF_IGNORE_COOKIE)
+            self.assertEqual(co.co_filename, filename_str)
+            check_code(co, 'x', 'a\xe9')
+
+            co = compilestring(code.encode(), filename, Py_file_input)
+            self.assertEqual(co.co_filename, filename_str)
+            check_code(co, 'x', 'a\xc3\xa9')
+
+            tree = compilestring(b'x = 1', filename, Py_file_input, PyCF_ONLY_AST)
+            self.assertIsInstance(tree, ast.AST)
+
+        co = compilestring(b'raise ValueError("BUG")', filename, Py_file_input)
+        with self.assertRaises(ValueError):
+            exec(co, {})
+
+        with self.assertRaises(SyntaxError) as cm:
+            compilestring(SYNTAX_ERROR.encode(), filename, Py_file_input)
+
+        with self.assertRaises(ValueError):
+            compilestring(b'x = 1', filename, INVALID_START)
+
+    def test_compilestring(self):
+        # Test Py_CompileString()
+        self.check_compilestring(_testlimitedcapi.run_compilestring, False)
+
+    def test_compilestringflags(self):
+        # Test Py_CompileStringFlags()
+        self.check_compilestring(_testcapi.run_compilestringflags, True)
+
+    def test_compilestringexflags(self):
+        # Test Py_CompileStringExFlags()
+        self.check_compilestring(_testcapi.run_compilestringexflags, True)
+
+    def test_compilestringobject(self):
+        # Test Py_CompileStringObject()
+        self.check_compilestring(_testcapi.run_compilestringobject, True,
+                                 encode_filename=False)
 
 
 if __name__ == '__main__':
