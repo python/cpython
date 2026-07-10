@@ -1334,6 +1334,7 @@ char *
 _PyMem_Strdup(const char *str)
 {
     assert(str != NULL);
+    // TODO: should we check for an overflow?
     size_t size = strlen(str) + 1;
     char *copy = PyMem_Malloc(size);
     if (copy == NULL) {

@@ -574,7 +574,7 @@ _Py_VaBuildStack(PyObject **small_stack, Py_ssize_t small_stack_len,
         stack = small_stack;
     }
     else {
-        stack = PyMem_Malloc(n * sizeof(stack[0]));
+        stack = PyMem_New(PyObject *, n);
         if (stack == NULL) {
             PyErr_NoMemory();
             return NULL;
