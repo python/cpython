@@ -581,6 +581,14 @@
             break;
         }
 
+        case _GUARD_NOS_EXACT_INT: {
+            break;
+        }
+
+        case _GUARD_TOS_EXACT_INT: {
+            break;
+        }
+
         case _GUARD_NOS_OVERFLOWED: {
             break;
         }
@@ -764,9 +772,13 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 assert(PyLong_CheckExact(left_o));
                 assert(PyLong_CheckExact(right_o));
-                assert(_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
                 STAT_INC(BINARY_OP, hit);
-                res_stackref = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+                if (_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o)) {
+                    res_stackref = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
+                }
+                else {
+                    res_stackref = _PyLong_SubtractShrink((PyLongObject *)left_o, (PyLongObject *)right_o);
+                }
                 if (PyStackRef_IsNull(res_stackref )) {
                     ctx->done = true;
                     break;

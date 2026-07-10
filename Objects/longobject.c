@@ -3916,6 +3916,72 @@ _PyCompactLong_Subtract(PyLongObject *a, PyLongObject *b)
     return medium_from_stwodigits(v);
 }
 
+static inline _PyStackRef
+shrink_subtract_result(int sign, const digit *digits, Py_ssize_t size)
+{
+    while (size > 0 && digits[size - 1] == 0) {
+        --size;
+    }
+    if (size == 0) {
+        return PyStackRef_FromPyObjectBorrow(_PyLong_GetZero());
+    }
+    if (size == 1) {
+        stwodigits value = (stwodigits)digits[0];
+        if (sign < 0) {
+            value = -value;
+        }
+        return medium_from_stwodigits(value);
+    }
+    PyLongObject *result = PyObject_Malloc(
+        offsetof(PyLongObject, long_value.ob_digit) + size * sizeof(digit));
+    if (result == NULL) {
+        return PyStackRef_NULL;
+    }
+    _PyObject_Init((PyObject *)result, &PyLong_Type);
+    _PyLong_InitTag(result);
+    _PyLong_SetSignAndDigitCount(result, sign, size);
+    memcpy(result->long_value.ob_digit, digits, size * sizeof(digit));
+    return PyStackRef_FromPyObjectStealMortal((PyObject *)result);
+}
+
+_PyStackRef
+_PyLong_SubtractShrink(PyLongObject *left, PyLongObject *right)
+{
+    if (!_PyLong_IsShrinkSubtractPair(left, right)) {
+        return PyStackRef_NULL;
+    }
+    Py_ssize_t size = _PyLong_DigitCount(left);
+    assert(size >= 2 && size <= 3);
+
+    int sign = _PyLong_IsNegative(left) ? -1 : 1;
+    int cmp = 0;
+    for (Py_ssize_t i = size - 2; i >= 0; i--) {
+        digit left_digit = left->long_value.ob_digit[i];
+        digit right_digit = right->long_value.ob_digit[i];
+        if (left_digit != right_digit) {
+            cmp = left_digit > right_digit ? 1 : -1;
+            break;
+        }
+    }
+    if (cmp == 0) {
+        return PyStackRef_FromPyObjectBorrow(_PyLong_GetZero());
+    }
+
+    PyLongObject *larger = cmp > 0 ? left : right;
+    PyLongObject *smaller = cmp > 0 ? right : left;
+    digit out[3];
+    twodigits borrow = 0;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        twodigits lhs = (twodigits)larger->long_value.ob_digit[i];
+        twodigits rhs = (twodigits)smaller->long_value.ob_digit[i];
+        twodigits diff = lhs - rhs - borrow;
+        out[i] = (digit)(diff & PyLong_MASK);
+        borrow = lhs < rhs + borrow;
+    }
+    assert(borrow == 0);
+    return shrink_subtract_result(cmp > 0 ? sign : -sign, out, size);
+}
+
 static PyObject *
 long_sub_method(PyObject *a, PyObject *b)
 {

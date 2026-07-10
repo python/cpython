@@ -1,0 +1,2 @@
+Improve performance of binary ``int`` subtraction for shrinking wide exact
+integers.
