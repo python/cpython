@@ -1192,8 +1192,16 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.nb.select(0)
 
-        focus_identify_as = 'focus' if sys.platform != 'darwin' else ''
-        self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
+        if sys.platform == 'darwin':
+            focus_identify_as = ''
+        elif sys.platform == 'win32':
+            focus_identify_as = 'focus'
+        else:
+            focus_identify_as = 'focus' if tk_version < (8, 7) else 'padding'
+        # identify() at (5, 5) needs the tab realized there; under focus
+        # contention the mapped size can lag, so wait for the full size.
+        if wait_until_mapped(self.nb, full_size=True):
+            self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
         simulate_mouse_click(self.nb, 5, 5)
         self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
@@ -1209,7 +1217,8 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.tab(self.child2, text='e', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
-        self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
+        if wait_until_mapped(self.nb, full_size=True):
+            self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
         simulate_mouse_click(self.nb, 5, 5)
         # on macOS Emacs-style keyboard shortcuts are region-dependent;
         # let's use the regular arrow keys instead
