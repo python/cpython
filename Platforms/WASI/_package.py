@@ -1,4 +1,3 @@
-import json
 import pathlib
 import shutil
 
@@ -13,23 +12,22 @@ import _shared
 # - gname
 # https://docs.python.org/3/library/tarfile.html#writing-examples
 
-# ☐ bin
-#   ☐ pythonN.M.wasmtime
-#   ☐ pythonN.M.config
-#   ❌ idleN.M
-#   ❌ pydocN.M
-# ✅ include/pythonN.Md?
-#   ✅ pyconfig.h
-#   ✅ .h files
-# ✅ lib
-#   ✅ pkgconfig (from Misc/)
-#   ✅ pythonN.M
-#     ❌ lib-dynload
-#     ✅ LICENSE.txt (license_file())
-#     ✅ Stuff from build/lib.* (build_dir_files())
-#     ✅ Lib/
-# ✅ share/man/man1/
-# ✅ python.wasm
+def wasmtime_script(context):
+    return f"""\
+#!/bin/sh
+
+set -eu
+
+script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
+root=$(CDPATH= cd "$script_dir/.." && pwd -P)
+wasm_file="$root/lib/python{python_version(context)}/lib-wasm/python{python_version(context, debug_ok=True)}.wasm"
+
+exec wasmtime run \
+	--argv0 "$wasm_file" \
+	--config "$root/etc/python{python_version(context)}/wasmtime.toml" \
+    --dir "/" \
+	"$wasm_file" "$@"
+"""
 
 
 def python_version(context, debug_ok=False):
@@ -199,19 +197,30 @@ def wasm_file(context):
     )
 
 
-def python_wasmtime_script(context):
+def python_wasmtime_script(base, context):
     """Create bin/pythonN.Md?.wasmtime."""
-    # XXX set executable bit
+    script = wasmtime_script(context)
+    path = base / f"bin/python{python_version(context, debug_ok=True)}.wasmtime"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        f.write(script)
+    path.chmod(0o755)
+
+    return path
 
 
-def python_wasmtime_symlink(context):
+def python_wasmtime_symlink(path, context):
     """Symlink bin/pythonN.Md?.wasmtime.
 
     - bin/pythonN.M.wasmtime (if debug build)
-    - bin/pythonNd?.wasmtime
     - bin/pythonN.wasmtime (if debug build)
     """
-    # XXX
+    symlinks = [path.parent / f"python{context.wasi_build_details["language"]["version_info"]["major"]}.wasmtime"]
+    if context.is_debug:
+        # The file already has the debug name, so the missing symlink is the non-debug name.
+        symlinks.append(path.parent / f"python{python_version(context)}.wasmtime")
+
+    return [(symlink, path) for symlink in symlinks]
 
 
 def config_file(context):
@@ -222,14 +231,19 @@ def config_file(context):
     )
 
 
-def config_symlink(context):
-    """Symlink bin/pythonN.Md?.config.
+def config_symlink(config_path, context):
+    """Symlink bin/pythonN.Md?-config.
 
-    - bin/pythonN.M.config (if debug build)
-    - bin/pythonNd?.config
-    - bin/pythonN.config (if debug build)
+    - bin/pythonN.M-config (if debug build)
+    - bin/pythonNd?-config
+    - bin/pythonN-config (if debug build)
     """
-    # XXX
+    symlinks = [config_path.parent / f"python{context.wasi_build_details['language']['version_info']['major']}-config"]
+    if context.is_debug:
+        # The file already has the debug name, so the missing symlink is the non-debug name.
+        symlinks.append(config_path.parent / f"python{python_version(context)}-config")
+
+    return [(symlink, config_path) for symlink in symlinks]
 
 
 def filename_stem(context):
@@ -268,7 +282,13 @@ def package(context):
 
     _shared.log("📁", "bin/", spacing=indent * 2)
     _shared.log("📄", "pythonN.Md?-config", spacing=indent * 3)
-    copy_files([config_file(context)], base)
+    config_location = config_file(context)
+    copy_files([config_location], base)
+    symlink_files(config_symlink(config_location[0], context), base)
+
+    _shared.log("📄", "pythonN.Md?.wasmtime", spacing=indent * 3)
+    script_path = python_wasmtime_script(base, context)
+    symlink_files(python_wasmtime_symlink(script_path, context), base)
 
     _shared.log("📁", "etc/", spacing=indent * 2)
     _shared.log("📁", "pythonN.M/", spacing=indent * 3)
