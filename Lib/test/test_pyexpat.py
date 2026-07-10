@@ -1057,8 +1057,7 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
     def setUpClass(cls):
         cls.testcapi = import_helper.import_module('_testcapi')
 
-    @unittest.skipIf(support.Py_TRACE_REFS,
-                     'Py_TRACE_REFS conflicts with testcapi.set_nomemory')
+    @support.nomemtest
     def test_error_path_no_crash(self):
         # When an allocation inside ExternalEntityParserCreate fails,
         # the partially-initialized subparser is deallocated.  This

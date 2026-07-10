@@ -68,6 +68,9 @@ STDLIB_INSTALL = os.path.join(sys.prefix, sys.platlibdir,
 if not os.path.isfile(os.path.join(STDLIB_INSTALL, 'os.py')):
     STDLIB_INSTALL = None
 
+CODE_EXITCODE_123 = 'raise SystemExit(123)'
+
+
 def debug_build(program):
     program = os.path.basename(program)
     name = os.path.splitext(program)[0]
@@ -140,12 +143,16 @@ class EmbeddingTestsMixin:
             env = env.copy()
             env['SYSTEMROOT'] = os.environ['SYSTEMROOT']
 
-        p = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             universal_newlines=True,
-                             env=env,
-                             cwd=cwd)
+        kwargs = dict(
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            env=env,
+            cwd=cwd,
+        )
+        if input is not None:
+            kwargs['stdin'] = subprocess.PIPE
+        p = subprocess.Popen(cmd, **kwargs)
         try:
             (out, err) = p.communicate(input=input, timeout=timeout)
         except:
@@ -589,6 +596,55 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             if expected_runtime_warning not in line
         ]
         return "\n".join(filtered_err_lines)
+
+    def check_program_exitcode(self, *args, check_stderr=True, **kwargs):
+        out, err = self.run_embedded_interpreter(*args, **kwargs)
+        self.assertEqual(out.rstrip(), 'ok! Py_RunMain() returned 123')
+        if check_stderr:
+            self.assertEqual(err, '')
+
+    def test_init_run_main_code_exitcode(self):
+        code = CODE_EXITCODE_123
+        self.check_program_exitcode("test_init_run_main_code_exitcode", code)
+
+    def test_init_run_main_script_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, 'script.py')
+            with open(filename, 'w') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            self.check_program_exitcode("test_init_run_main_script_exitcode",
+                                        filename)
+
+    def test_init_run_main_interactive_exitcode(self):
+        code = CODE_EXITCODE_123
+        self.check_program_exitcode("test_init_run_main_interactive_exitcode",
+                                    input=code,
+                                    check_stderr=False)
+
+    def test_init_run_main_startup_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, 'startup.py')
+            with open(filename, 'x') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            env = dict(os.environ)
+            env['PYTHONSTARTUP'] = filename
+            self.check_program_exitcode("test_init_run_main_interactive_exitcode",
+                                        env=env,
+                                        check_stderr=False)
+
+    def test_init_run_main_module_exitcode(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            modname = '_testembed_testmodule'
+            filename = os.path.join(tmpdir, modname + '.py')
+            with open(filename, 'x', encoding='utf8') as fp:
+                fp.write(CODE_EXITCODE_123)
+
+            env = dict(os.environ)
+            env['PYTHONPATH'] = tmpdir
+            self.check_program_exitcode("test_init_run_main_module_exitcode",
+                                        modname, env=env)
 
 
 def config_dev_mode(preconfig, config):
@@ -1458,7 +1514,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if prefix is None:
             prefix = config['config']['prefix']
         if exec_prefix is None:
-            exec_prefix = config['config']['prefix']
+            exec_prefix = config['config']['exec_prefix']
         if MS_WINDOWS:
             return config['config']['module_search_paths']
         else:
@@ -1614,8 +1670,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             expected_paths[1 if MS_WINDOWS else 2] = os.path.normpath(
                 os.path.join(exedir, f'{f.read()}\n$'.splitlines()[0]))
         if not MS_WINDOWS:
-            # PREFIX (default) is set when running in build directory
-            prefix = exec_prefix = sys.prefix
+            # PREFIX and EXEC_PREFIX (defaults) are set when running in the
+            # build directory and may differ with --exec-prefix (gh-151096).
+            prefix = sys.prefix
+            exec_prefix = sys.exec_prefix
             # stdlib calculation (/Lib) is not yet supported
             expected_paths[0] = self.module_search_paths(prefix=prefix)[0]
             config.update(prefix=prefix, base_prefix=prefix,

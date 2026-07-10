@@ -44,6 +44,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(str(d.root.cget('background')),
                          ttk.Style(d.root).lookup('.', 'background'))
         # The bindings work with the themed buttons too.
+        self.require_mapped(d.root)
         d._buttons[0].focus_force()
         d.root.update()
         d.root.event_generate('<Return>')
@@ -139,6 +140,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # Alt + an underlined character (the "underline" button option) invokes
         # the matching button (cf. tk::AmpWidget in tk::MessageBox).
         d = self.create(buttons=['Yes', {'text': 'No', 'underline': 0}])
+        self.require_mapped(d.root)
         d._buttons[0].focus_force()
         d.root.update()
         d.root.event_generate('<Alt-n>')  # "No" -> underline 0 -> "N"
@@ -149,6 +151,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # <Return> invokes the button with the focus, even if it is not the
         # default and the focus was not moved by keyboard traversal.
         d = self.create(buttons=['Yes', 'No'])  # default 0
+        self.require_mapped(d.root)
         d._buttons[1].focus_force()
         d.root.update()
         d.root.event_generate('<Return>')
@@ -158,6 +161,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
     def test_focus_next_then_return(self):
         # <Tab> moves the focus to the next button; <Return> invokes it.
         d = self.create(buttons=['Yes', 'No'])
+        self.require_mapped(d.root)
         d._buttons[0].focus_force()
         d.root.update()
         d._buttons[0].event_generate('<Tab>')
@@ -169,6 +173,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
     def test_focus_prev_then_return(self):
         # <Shift-Tab> moves the focus to the previous button.
         d = self.create(buttons=['Yes', 'No'])
+        self.require_mapped(d.root)
         d._buttons[1].focus_force()
         d.root.update()
         d._buttons[1].event_generate('<Shift-Tab>')
@@ -180,6 +185,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
     def test_return_activates_default(self):
         # <Return> with the focus off the buttons invokes the default button.
         d = self.create()  # default 0
+        self.require_mapped(d.root)
         d.root.focus_force()  # the dialog, not a button, has the focus
         d.root.update()
         d.root.event_generate('<Return>')
@@ -190,6 +196,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # With no default button, <Return> off the buttons rings the bell and
         # leaves the dialog open instead of activating a button.
         d = self.create(default=None)
+        self.require_mapped(d.root)
         d.root.focus_force()  # the dialog, not a button, has the focus
         d.root.update()
         bells = []
