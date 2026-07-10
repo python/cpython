@@ -79,6 +79,12 @@ done:
 
 /* --- pymain_run_python() ---------------------------------------- */
 
+static int
+pymain_check_signals(void)
+{
+    return Py_MakePendingCalls();
+}
+
 /* Non-zero if filename, command (-c) or module (-m) is set
    on the command line */
 static inline int config_run_code(const PyConfig *config)
@@ -200,17 +206,21 @@ pymain_header(const PyConfig *config)
 }
 
 
-static void
+static int
 pymain_import_readline(const PyConfig *config)
 {
+    if (pymain_check_signals() < 0) {
+        return -1;
+    }
+
     if (config->isolated) {
-        return;
+        return 0;
     }
     if (!config->inspect && config_run_code(config)) {
-        return;
+        return 0;
     }
     if (!isatty(fileno(stdin))) {
-        return;
+        return 0;
     }
 
     PyObject *mod = PyImport_ImportModule("readline");
@@ -227,6 +237,7 @@ pymain_import_readline(const PyConfig *config)
     else {
         Py_DECREF(mod);
     }
+    return 0;
 }
 
 
@@ -415,8 +426,7 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return 1;
     }
 
-    // Call pending calls like signal handlers (SIGINT)
-    if (Py_MakePendingCalls() == -1) {
+    if (pymain_check_signals() < 0) {
         fclose(fp);
         return pymain_exit_err_print();
     }
@@ -566,8 +576,7 @@ pymain_set_inspect(PyConfig *config, int inspect)
 static int
 _pymain_run_repl(PyConfig *config, int startup)
 {
-    /* call pending calls like signal handlers (SIGINT) */
-    if (Py_MakePendingCalls() == -1) {
+    if (pymain_check_signals() < 0) {
         return pymain_exit_err_print();
     }
 
@@ -650,13 +659,17 @@ pymain_repl(PyConfig *config, int *exitcode)
 static void
 pymain_run_python(int *exitcode)
 {
+    int set_running_main = 0;
+
     PyObject *main_importer_path = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     /* pymain_repl() and pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
 
     /* ensure path config is written into global variables */
-    if (_PyStatus_EXCEPTION(_PyPathConfig_UpdateGlobal(config))) {
+    PyStatus status = _PyPathConfig_UpdateGlobal(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyErr_SetFromPyStatus(status);
         goto error;
     }
 
@@ -678,7 +691,9 @@ pymain_run_python(int *exitcode)
     }
 
     // import readline and rlcompleter before script dir is added to sys.path
-    pymain_import_readline(config);
+    if (pymain_import_readline(config) < 0) {
+        goto error;
+    }
 
     PyObject *path0 = NULL;
     if (main_importer_path != NULL) {
@@ -717,7 +732,12 @@ pymain_run_python(int *exitcode)
     pymain_header(config);
 
     _PyInterpreterState_SetRunningMain(interp);
+    set_running_main = 1;
     assert(!PyErr_Occurred());
+
+    if (pymain_check_signals() < 0) {
+        goto error;
+    }
 
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command);
@@ -735,6 +755,10 @@ pymain_run_python(int *exitcode)
         *exitcode = pymain_run_stdin(config);
     }
 
+    if (pymain_check_signals() < 0) {
+        goto error;
+    }
+
     pymain_repl(config, exitcode);
     goto done;
 
@@ -742,7 +766,9 @@ error:
     *exitcode = pymain_exit_err_print();
 
 done:
-    _PyInterpreterState_SetNotRunningMain(interp);
+    if (set_running_main) {
+        _PyInterpreterState_SetNotRunningMain(interp);
+    }
     Py_XDECREF(main_importer_path);
 }
 
