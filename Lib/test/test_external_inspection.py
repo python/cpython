@@ -3868,6 +3868,36 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_get_async_stack_trace_deep_task_waiter_chain_aborts(self):
+        """Test that a task waiter chain deeper than the limit aborts
+        the walk instead of overflowing the C stack."""
+        script_body = f"""\
+            import asyncio
+
+            async def chain(n):
+                if n <= 0:
+                    sock.sendall(b"ready")
+                    sock.recv(16)
+                    return
+
+                task = asyncio.create_task(chain(n - 1))
+                await task
+
+            asyncio.run(chain({self.CHAIN_DEPTH}))
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            self._assert_unwinder_limit_error(
+                lambda: RemoteUnwinder(p.pid).get_async_stack_trace(),
+                "Too many task waiters",
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_get_async_stack_trace_deep_frame_chain_aborts(self):
         """Test that a frame chain deeper than the limit aborts the async
         stack walk instead of walking it indefinitely."""
