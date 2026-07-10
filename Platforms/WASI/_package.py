@@ -221,8 +221,7 @@ def python_wasmtime_symlink(path, context):
     - bin/pythonN.wasmtime (if debug build)
     """
     symlinks = [
-        path.parent
-        / f"python{context.wasi_build_details['language']['version_info']['major']}.wasmtime"
+        path.parent / f"python{context.wasi_build_version['major']}.wasmtime"
     ]
     if context.is_debug:
         # The file already has the debug name, so the missing symlink is the non-debug name.
@@ -251,7 +250,7 @@ def config_symlink(config_path, context):
     """
     symlinks = [
         config_path.parent
-        / f"python{context.wasi_build_details['language']['version_info']['major']}-config"
+        / f"python{context.wasi_build_version['major']}-config"
     ]
     if context.is_debug:
         # The file already has the debug name, so the missing symlink is the non-debug name.

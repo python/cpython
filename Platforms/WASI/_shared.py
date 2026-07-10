@@ -103,6 +103,10 @@ class Context:
             return json.load(f)
 
     @functools.cached_property
+    def wasi_build_version(self):
+        return self.wasi_build_details["language"]["version_info"]
+
+    @functools.cached_property
     def wasi_sdk_path(self):
         if wasi_sdk_path := self._wasi_sdk_path:
             if not wasi_sdk_path.exists():
