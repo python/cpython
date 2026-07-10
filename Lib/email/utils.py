@@ -317,10 +317,13 @@ def parsedate_to_datetime(data):
     if parsed_date_tz is None:
         raise ValueError('Invalid date value or format "%s"' % str(data))
     *dtuple, tz = parsed_date_tz
-    if tz is None:
-        return datetime.datetime(*dtuple[:6])
-    return datetime.datetime(*dtuple[:6],
-            tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
+    try:
+        if tz is None:
+            return datetime.datetime(*dtuple[:6])
+        return datetime.datetime(*dtuple[:6],
+                tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
+    except OverflowError as exc:
+        raise ValueError('Invalid date value or format "%s"' % str(data)) from exc
 
 
 def parseaddr(addr, *, strict=True):
