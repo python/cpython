@@ -3809,7 +3809,8 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
     """Frame chain walks abort instead of looping/overflowing on deep chains."""
 
     CHAIN_DEPTH = 1024 + 512 + 1
-    TASK_WAITER_CHAIN_DEPTH = 512 + 1
+
+    TASK_WAITER_CHAIN_DEPTH = 256 + 1
 
     def _assert_unwinder_limit_error(self, unwind, expected_substring):
         """Call unwind() until it raises the frame chain limit error.
