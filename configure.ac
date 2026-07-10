@@ -2411,10 +2411,6 @@ AS_CASE([$ac_sys_system],
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
 
-    dnl Workaround for a bug in Emscipten libc's getentropy. See
-    dnl __wrap_getentropy in Python/emscripten_syscalls.c.
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--wrap=getentropy"])
-
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
@@ -3878,7 +3874,11 @@ PERF_TRAMPOLINE_OBJ=""
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes
                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o],
+  [x86_64-linux-musl], [perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o],
   [aarch64-linux-gnu], [perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o],
+  [aarch64-linux-musl], [perf_trampoline=yes
                          PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o],
   [darwin], [AS_CASE([$MACOSX_DEPLOYMENT_TARGET],
                 [[10.[0-9]|10.1[0-1]]], [perf_trampoline=no],
@@ -3912,6 +3912,48 @@ AC_SUBST([PERF_TRAMPOLINE_OBJ])
 AC_CHECK_LIB([sendfile], [sendfile])
 AC_CHECK_LIB([dl], [dlopen])       # Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB([dld], [shl_load])    # Dynamic linking for HP-UX
+
+dnl Check for a working iconv() for the iconv codec.  On glibc it is part of
+dnl the C library; on some systems it lives in a separate libiconv.
+dnl The wasm platforms (Emscripten, WASI) ship a non-conforming iconv() that
+dnl does not report unencodable characters, which would make the iconv codec
+dnl silently lossy, so treat iconv as unavailable there.
+AC_CHECK_HEADERS([iconv.h])
+AS_CASE([$ac_sys_system],
+  [Emscripten|WASI], [py_have_iconv=no],
+  [py_have_iconv=$ac_cv_header_iconv_h])
+if test "$py_have_iconv" = yes; then
+  AC_CACHE_CHECK([for iconv], [ac_cv_have_iconv], [
+    ac_cv_have_iconv=no
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+#include <iconv.h>
+    ]], [[
+      iconv_t cd = iconv_open("", "");
+      iconv(cd, NULL, NULL, NULL, NULL);
+      iconv_close(cd);
+    ]])], [ac_cv_have_iconv=yes], [
+      py_save_LIBS="$LIBS"
+      LIBS="-liconv $LIBS"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+#include <iconv.h>
+      ]], [[
+        iconv_t cd = iconv_open("", "");
+        iconv(cd, NULL, NULL, NULL, NULL);
+        iconv_close(cd);
+      ]])], [ac_cv_have_iconv=-liconv])
+      LIBS="$py_save_LIBS"
+    ])
+  ])
+  if test "$ac_cv_have_iconv" != no; then
+    AC_DEFINE([HAVE_ICONV], [1],
+              [Define if you have a working iconv() function.])
+    if test "$ac_cv_have_iconv" = -liconv; then
+      LIBS="-liconv $LIBS"
+    fi
+  fi
+fi
 
 
 dnl for faulthandler
@@ -6828,6 +6870,17 @@ AS_VAR_IF([with_readline], [no], [
     ])
     AS_VAR_IF([ac_cv_readline_rl_resize_terminal], [yes], [
       AC_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
+    ])
+
+    # rl_change_environment is in readline 6.3, but not in editline
+    AC_CACHE_CHECK([for rl_change_environment in -l$LIBREADLINE], [ac_cv_readline_rl_change_environment], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [int x = rl_change_environment])],
+        [ac_cv_readline_rl_change_environment=yes], [ac_cv_readline_rl_change_environment=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_change_environment], [yes], [
+      AC_DEFINE([HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
     ])
 
     # check for readline 4.2

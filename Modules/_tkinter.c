@@ -356,6 +356,15 @@ typedef struct {
     const Tcl_ObjType *StringType;
     const Tcl_ObjType *UTF32StringType;
     const Tcl_ObjType *PixelType;
+    const Tcl_ObjType *IndexType;
+    const Tcl_ObjType *ColorType;
+    const Tcl_ObjType *BorderType;
+    const Tcl_ObjType *FontType;
+    const Tcl_ObjType *CursorType;
+    const Tcl_ObjType *WindowType;
+    const Tcl_ObjType *NsNameType;
+    const Tcl_ObjType *ParsedVarNameType;
+    const Tcl_ObjType *DictType;
 } TkappObject;
 
 #define TkappObject_CAST(op)    ((TkappObject *)(op))
@@ -687,11 +696,22 @@ Tkapp_New(const char *screenName, const char *className,
         Tcl_DecrRefCount(value);
     }
     v->WideIntType = Tcl_GetObjType("wideInt");
-    v->BignumType = Tcl_GetObjType("bignum");
     v->ListType = Tcl_GetObjType("list");
     v->StringType = Tcl_GetObjType("string");
     v->UTF32StringType = Tcl_GetObjType("utf32string");
+    /* These types may not be registered until first used, so these may be NULL;
+       FromObj() caches them lazily on first encounter. */
+    v->BignumType = Tcl_GetObjType("bignum");
     v->PixelType = Tcl_GetObjType("pixel");
+    v->IndexType = Tcl_GetObjType("index");
+    v->ColorType = Tcl_GetObjType("color");
+    v->BorderType = Tcl_GetObjType("border");
+    v->FontType = Tcl_GetObjType("font");
+    v->CursorType = Tcl_GetObjType("cursor");
+    v->WindowType = Tcl_GetObjType("window");
+    v->NsNameType = Tcl_GetObjType("nsName");
+    v->ParsedVarNameType = Tcl_GetObjType("parsedVarName");
+    v->DictType = Tcl_GetObjType("dict");
 
     /* Delete the 'exit' command, which can screw things up */
     Tcl_DeleteCommand(v->interp, "exit");
@@ -1257,6 +1277,39 @@ fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
     return res;
 }
 
+/* Convert a "pixel" screen distance to a Python object.  A value with no unit
+   suffix is screen independent and is returned as an int or float.  A value with
+   an m/c/i/p suffix needs a Tk_Window to be resolved to pixels, which is not
+   available here, so it is kept as a Tcl_Obj.  Tcl_Get*FromObj() only set the
+   object's type on success, so a unit-bearing value does not shimmer. */
+static PyObject*
+fromPixelObj(TkappObject *tkapp, Tcl_Obj *value)
+{
+    PyObject *result = fromWideIntObj(tkapp, value);
+    if (result != NULL || PyErr_Occurred()) {
+        return result;
+    }
+    Tcl_ResetResult(Tkapp_Interp(tkapp));
+    double doubleValue;
+    if (Tcl_GetDoubleFromObj(NULL, value, &doubleValue) == TCL_OK) {
+        return PyFloat_FromDouble(doubleValue);
+    }
+    return newPyTclObject(value);
+}
+
+/* Convert an "index" object to a Python str.  Index values are enumeration
+   keywords from a small fixed set (e.g. "horizontal", "disabled"), so the result
+   is interned to share one str object per keyword. */
+static PyObject*
+fromIndexObj(TkappObject *tkapp, Tcl_Obj *value)
+{
+    PyObject *result = unicodeFromTclObj(tkapp, value);
+    if (result != NULL) {
+        PyUnicode_InternInPlace(&result);
+    }
+    return result;
+}
+
 static PyObject*
 FromObj(TkappObject *tkapp, Tcl_Obj *value)
 {
@@ -1327,19 +1380,96 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     }
 
     if (value->typePtr == tkapp->StringType ||
-        value->typePtr == tkapp->UTF32StringType ||
-        value->typePtr == tkapp->PixelType)
+        value->typePtr == tkapp->UTF32StringType)
     {
         return unicodeFromTclObj(tkapp, value);
     }
 
-    if (tkapp->BignumType == NULL &&
-        strcmp(value->typePtr->name, "bignum") == 0) {
-        /* bignum type is not registered in Tcl */
+    if (value->typePtr == tkapp->PixelType) {
+        return fromPixelObj(tkapp, value);
+    }
+
+    if (value->typePtr == tkapp->IndexType) {
+        return fromIndexObj(tkapp, value);
+    }
+
+    /* A dict is kept as a Tcl_Obj to preserve its structure for _splitdict(). */
+    if (value->typePtr == tkapp->DictType) {
+        return newPyTclObject(value);
+    }
+
+    /* Resource types are kept as a Tcl_Obj so that Tk can reuse the parsed
+       X/font resource when the object is passed back to it. */
+    if (value->typePtr == tkapp->ColorType ||
+        value->typePtr == tkapp->BorderType ||
+        value->typePtr == tkapp->FontType ||
+        value->typePtr == tkapp->CursorType) {
+        return newPyTclObject(value);
+    }
+
+    /* These types are context-bound lookups (a cached window or namespace
+       resolution, or a parsed variable name) with nothing worth preserving in
+       a Tcl_Obj, so they are returned as str. */
+    if (value->typePtr == tkapp->WindowType ||
+        value->typePtr == tkapp->NsNameType ||
+        value->typePtr == tkapp->ParsedVarNameType) {
+        return unicodeFromTclObj(tkapp, value);
+    }
+
+    /* The types below may not be registered until first used, so they are
+       matched by name and cached on first encounter; the pointer checks above
+       then catch them. */
+    const char *name = value->typePtr->name;
+
+    if (tkapp->BignumType == NULL && strcmp(name, "bignum") == 0) {
         tkapp->BignumType = value->typePtr;
         return fromBignumObj(tkapp, value);
     }
 
+    if (tkapp->DictType == NULL && strcmp(name, "dict") == 0) {
+        tkapp->DictType = value->typePtr;
+        return newPyTclObject(value);
+    }
+
+    if (tkapp->PixelType == NULL && strcmp(name, "pixel") == 0) {
+        tkapp->PixelType = value->typePtr;
+        return fromPixelObj(tkapp, value);
+    }
+
+    if (tkapp->IndexType == NULL && strcmp(name, "index") == 0) {
+        tkapp->IndexType = value->typePtr;
+        return fromIndexObj(tkapp, value);
+    }
+
+    if (tkapp->WindowType == NULL && strcmp(name, "window") == 0) {
+        tkapp->WindowType = value->typePtr;
+        return unicodeFromTclObj(tkapp, value);
+    }
+
+    if (tkapp->NsNameType == NULL && strcmp(name, "nsName") == 0) {
+        tkapp->NsNameType = value->typePtr;
+        return unicodeFromTclObj(tkapp, value);
+    }
+
+    if (tkapp->ParsedVarNameType == NULL && strcmp(name, "parsedVarName") == 0) {
+        tkapp->ParsedVarNameType = value->typePtr;
+        return unicodeFromTclObj(tkapp, value);
+    }
+
+    /* Any other type is returned as a Tcl_Obj.  Cache the resource types so the
+       pointer check above catches them next time. */
+    if (tkapp->ColorType == NULL && strcmp(name, "color") == 0) {
+        tkapp->ColorType = value->typePtr;
+    }
+    else if (tkapp->BorderType == NULL && strcmp(name, "border") == 0) {
+        tkapp->BorderType = value->typePtr;
+    }
+    else if (tkapp->FontType == NULL && strcmp(name, "font") == 0) {
+        tkapp->FontType = value->typePtr;
+    }
+    else if (tkapp->CursorType == NULL && strcmp(name, "cursor") == 0) {
+        tkapp->CursorType = value->typePtr;
+    }
     return newPyTclObject(value);
 }
 

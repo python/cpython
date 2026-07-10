@@ -205,6 +205,32 @@ class TestImaplib(unittest.TestCase):
         self.assertEqual(m._astring('Entwürfe'), '"Entwürfe"'.encode())
         self.assertEqual(m._astring(b'Entw\xc3\xbcrfe'), b'"Entw\xc3\xbcrfe"')
 
+    def test_encode_criteria(self):
+        m = imaplib.IMAP4.__new__(imaplib.IMAP4)
+        enc = m._encode_criteria
+        # No charset: criteria are returned unchanged.
+        self.assertEqual(enc(None, ('TEXT', 'x')), ('TEXT', 'x'))
+        # str criteria are encoded to the charset; ASCII is charset-independent.
+        self.assertEqual(enc('UTF-8', ('TEXT', 'XXXXXX')), (b'TEXT', b'XXXXXX'))
+        # Non-ASCII text is encoded to the declared charset, including charsets
+        # other than ASCII, Latin-1 and UTF-8.
+        self.assertEqual(enc('UTF-8', ('"café"',)), ('"café"'.encode('utf-8'),))
+        self.assertEqual(enc('ISO-8859-1', ('"café"',)),
+                         ('"café"'.encode('latin-1'),))
+        self.assertEqual(enc('KOI8-U', ('"Київ"',)),
+                         ('"Київ"'.encode('koi8-u'),))
+        self.assertEqual(enc('SHIFT_JIS', ('"日本"',)),
+                         ('"日本"'.encode('shift_jis'),))
+        # bytes criteria are already encoded and pass through unchanged.
+        self.assertEqual(enc('SHIFT_JIS', (b'"already"',)), (b'"already"',))
+        # The charset name may itself be bytes.
+        self.assertEqual(enc(b'UTF-8', ('"café"',)), ('"café"'.encode('utf-8'),))
+        # A charset with no codec at all (not even via the iconv codec) cannot
+        # encode str criteria; bytes criteria must be used with such
+        # server-only charsets.
+        self.assertRaises(LookupError, enc, 'no-such-charset', ('TEXT',))
+        self.assertEqual(enc('no-such-charset', (b'TEXT',)), (b'TEXT',))
+
     def test_astring_idempotent(self):
         # Quoting an already quoted argument should not change it, so that
         # quoting twice gives the same result as quoting once.
@@ -229,11 +255,37 @@ class TestImaplib(unittest.TestCase):
         # But spaces still require quoting.
         self.assertEqual(m._list_mailbox('New folder'), b'"New folder"')
         self.assertEqual(m._list_mailbox('"New folder"'), b'"New folder"')
-        # As do non-ASCII names; wildcards keep their meaning inside a
-        # quoted string.
+        # A non-ASCII pattern is encoded as modified UTF-7; the wildcards keep
+        # their meaning (they are printable ASCII, passed through directly).
+        self.assertEqual(m._list_mailbox('Entwürfe/%'), b'Entw&APw-rfe/%')
+        # Under UTF8=ACCEPT the name is sent as UTF-8 in a quoted string.
         m._encoding = 'utf-8'
         self.assertEqual(m._list_mailbox('Entwürfe/%'),
                          '"Entwürfe/%"'.encode())
+
+    def test_mailbox(self):
+        m = imaplib.IMAP4.__new__(imaplib.IMAP4)
+        m._encoding = 'ascii'
+        # A plain atom is left unquoted; bytes are sent verbatim.
+        self.assertEqual(m._mailbox('INBOX'), b'INBOX')
+        self.assertEqual(m._mailbox(b'Entw&APw-rfe'), b'Entw&APw-rfe')
+        # A non-ASCII name is encoded as modified UTF-7 (RFC 3501 5.1.3).
+        self.assertEqual(m._mailbox('Entwürfe'), b'Entw&APw-rfe')
+        # A str that is already valid modified UTF-7 is passed through, so a
+        # name obtained from LIST (raw bytes, decoded as ASCII) round-trips.
+        self.assertEqual(m._mailbox('Entw&APw-rfe'), b'Entw&APw-rfe')
+        self.assertEqual(m._mailbox('"Entw&APw-rfe"'), b'"Entw&APw-rfe"')
+        # A literal '&' (not a valid shift on its own) is encoded as '&-'.
+        self.assertEqual(m._mailbox('A&B'), b'A&-B')
+        # Names needing quoting are still quoted.
+        self.assertEqual(m._mailbox('New folder'), b'"New folder"')
+        self.assertEqual(m._mailbox(''), b'""')
+        # Control characters are Base64-encoded, never sent as raw bytes.
+        self.assertEqual(m._mailbox('a\x01b'), b'a&AAE-b')
+        # Under UTF8=ACCEPT a non-ASCII name is sent as UTF-8, quoted.
+        m._encoding = 'utf-8'
+        self.assertEqual(m._mailbox('Entwürfe'), '"Entwürfe"'.encode())
+        self.assertEqual(m._mailbox('Entw&APw-rfe'), b'Entw&APw-rfe')
 
 
 if ssl:
@@ -311,7 +363,11 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
                 except StopIteration:
                     self.continuation = None
                 continue
-            splitline = splitargs(line.decode().removesuffix('\r\n'))
+            self.server.line = line
+            # surrogateescape so a criterion encoded in a non-UTF-8 charset
+            # does not crash the handler; tests inspect server.line for bytes.
+            splitline = splitargs(line.decode('utf-8', 'surrogateescape')
+                                  .removesuffix('\r\n'))
             tag = splitline[0]
             cmd = splitline[1]
             args = splitline[2:]
@@ -418,6 +474,15 @@ class AuthHandler_CRAM_MD5(SimpleIMAPHandler):
             self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
         else:
             self._send_tagged(tag, 'NO', 'No access')
+
+
+class AuthHandler_PLAIN(SimpleIMAPHandler):
+    capabilities = 'LOGINDISABLED AUTH=PLAIN'
+    def cmd_AUTHENTICATE(self, tag, args):
+        self.server.auth_args = args
+        self._send_textline('+')
+        self.server.response = yield
+        self._send_tagged(tag, 'OK', 'Logged in.')
 
 
 class NewIMAPTestsMixin:
@@ -692,6 +757,35 @@ class NewIMAPTestsMixin:
         with self.assertRaisesRegex(imaplib.IMAP4.error, msg):
             client.login_cram_md5("tim", b"tanstaaftanstaaf")
 
+    def test_login_plain_ascii(self):
+        client, server = self._setup(AuthHandler_PLAIN)
+        self.assertIn('AUTH=PLAIN', client.capabilities)
+        ret, _ = client.login_plain("prem", "pass")
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.auth_args, ['PLAIN'])
+        self.assertEqual(server.response, b'AHByZW0AcGFzcw==\r\n')
+
+    def test_login_plain_utf8(self):
+        client, server = self._setup(AuthHandler_PLAIN)
+        self.assertIn('AUTH=PLAIN', client.capabilities)
+        ret, _ = client.login_plain("pręm", "żółć")
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.response, b'AHByxJltAMW8w7PFgsSH\r\n')
+
+    def test_login_plain_bytes(self):
+        # bytes are accepted and sent verbatim (not re-encoded).
+        client, server = self._setup(AuthHandler_PLAIN)
+        ret, _ = client.login_plain(b'pr\xc4\x99m', b'\xc5\xbc\xc3\xb3\xc5\x82\xc4\x87')
+        self.assertEqual(ret, "OK")
+        self.assertEqual(server.response, b'AHByxJltAMW8w7PFgsSH\r\n')
+
+    def test_login_plain_nul(self):
+        client, _ = self._setup(AuthHandler_PLAIN)
+        with self.assertRaises(ValueError):
+            client.login_plain('user\0', 'pass')
+        with self.assertRaises(ValueError):
+            client.login_plain('user', b'pa\0ss')
+
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
             def cmd_AUTHENTICATE(self, tag, args):
@@ -957,6 +1051,32 @@ class NewIMAPTestsMixin:
         client.login('user', 'pass')
         self.assertIn('ENABLE', client.capabilities)
 
+    def test_readonly_error_reports_mailbox(self):
+        # The read-only error reports the mailbox via repr(), which also
+        # avoids BytesWarning for a bytes mailbox under -bb.
+        class ReadOnlyHandler(SimpleIMAPHandler):
+            def cmd_SELECT(self, tag, args):
+                self._send_line(b'* 2 EXISTS')
+                self._send_tagged(tag, 'OK', '[READ-ONLY] SELECT completed.')
+        client, _ = self._setup(ReadOnlyHandler)
+        client.login('user', 'pass')
+        for mailbox, expected in [('INBOX', "'INBOX'"), (b'INBOX', r"b'INBOX'")]:
+            with self.subTest(mailbox=mailbox):
+                with self.assertRaisesRegex(imaplib.IMAP4.readonly,
+                                            r"%s is not writable" % expected):
+                    client.select(mailbox)
+
+    def test_uid_unknown_command_reports_command(self):
+        # The unknown-UID-command error reports the command via repr(), which
+        # also avoids BytesWarning for a bytes command under -bb.
+        client, _ = self._setup(SimpleIMAPHandler)
+        for command, expected in [('BOGUS', "'BOGUS'"), (b'BOGUS', r"b'BOGUS'")]:
+            with self.subTest(command=command):
+                with self.assertRaisesRegex(
+                        imaplib.IMAP4.error,
+                        r"Unknown IMAP4 UID command: %s" % expected):
+                    client.uid(command, '1')
+
     def test_logout(self):
         client, _ = self._setup(SimpleIMAPHandler)
         typ, data = client.login('user', 'pass')
@@ -1002,6 +1122,51 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(data, [(b'1 (BODY[HEADER] {13}', b'Subject: test'),
                                 b')'])
+
+    def test_literal_terminating_response(self):
+        # A literal ending a response (a LIST mailbox name sent as a literal)
+        # has an empty trailer that must not be swallowed.  Conforming case:
+        # no spurious blank lines.
+        names = [b'My (box)"', b'Another', b'Third']
+        class Handler(SimpleIMAPHandler):
+            def cmd_LIST(self, tag, args):
+                for name in names:
+                    self._send(b'* LIST (\\HasNoChildren) "/" {%d}\r\n'
+                               % len(name))
+                    self._send(name)
+                    self._send(b'\r\n')             # ends the response, no blank
+                self._send_tagged(tag, 'OK', 'LIST completed')
+        client, _ = self._setup(Handler)
+        client.login('user', 'pass')
+        typ, data = client.list()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            (b'(\\HasNoChildren) "/" {9}', b'My (box)"'), b'',
+            (b'(\\HasNoChildren) "/" {7}', b'Another'), b'',
+            (b'(\\HasNoChildren) "/" {5}', b'Third'), b'',
+        ])
+
+    def test_spurious_blank_lines_between_responses(self):
+        # A spurious blank line after each terminating literal falls between the
+        # untagged responses and must be skipped, even several in a row.
+        names = [b'My (box)"', b'Another', b'Third']
+        class Handler(SimpleIMAPHandler):
+            def cmd_LIST(self, tag, args):
+                for name in names:
+                    self._send(b'* LIST (\\HasNoChildren) "/" {%d}\r\n'
+                               % len(name))
+                    self._send(name)
+                    self._send(b'\r\n\r\n')     # ends the response, then a blank
+                self._send_tagged(tag, 'OK', 'LIST completed')
+        client, _ = self._setup(Handler)
+        client.login('user', 'pass')
+        typ, data = client.list()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            (b'(\\HasNoChildren) "/" {9}', b'My (box)"'), b'',
+            (b'(\\HasNoChildren) "/" {7}', b'Another'), b'',
+            (b'(\\HasNoChildren) "/" {5}', b'Third'), b'',
+        ])
 
     def test_unselect(self):
         client, server = self._setup(SimpleIMAPHandler)
@@ -1065,6 +1230,25 @@ class NewIMAPTestsMixin:
         typ, data = client.expunge()
         self.assertEqual(typ, 'OK')
         self.assertEqual(data, [b'3', b'3', b'5', b'8'])
+
+        # A message set is only accepted with uid=True (UID EXPUNGE).
+        with self.assertRaises(imaplib.IMAP4.error):
+            client.expunge('3:8')
+
+    def test_uid_expunge(self):
+        client, server = self._setup(make_simple_handler('UID',
+            ['* 3 EXPUNGE', '* 3 EXPUNGE', '* 5 EXPUNGE', '* 8 EXPUNGE'],
+            'UID EXPUNGE completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.expunge('3:8', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'3', b'3', b'5', b'8'])
+        self.assertEqual(server.args, ['EXPUNGE', '3:8'])
+
+        # UID EXPUNGE requires a message set.
+        with self.assertRaises(imaplib.IMAP4.error):
+            client.expunge(uid=True)
 
     def test_close(self):
         client, server = self._setup(make_simple_handler('CLOSE'))
@@ -1173,6 +1357,47 @@ class NewIMAPTestsMixin:
         self.assertEqual(data, [None])
         self.assertEqual(server.args, ['COPY', '4827313:4828442', '"New folder"'])
 
+        # The uid=True keyword is a shorthand for uid('COPY', ...).
+        typ, data = client.copy('4827313:4828442', 'MEETING', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'UID COPY completed'])
+        self.assertEqual(server.args, ['COPY', '4827313:4828442', 'MEETING'])
+
+    def test_move(self):
+        client, server = self._setup(make_simple_handler('MOVE'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.move('2:4', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', 'MEETING'])
+
+        typ, data = client.move('2:4', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'MOVE completed'])
+        self.assertEqual(server.args, ['2:4', '"New folder"'])
+
+    def test_uid_move(self):
+        client, server = self._setup(make_simple_handler('UID',
+            completed='UID MOVE completed'))
+        client.login('user', 'pass')
+        client.select()
+        typ, data = client.uid('move', '4827313:4828442', 'MEETING')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', 'MEETING'])
+
+        typ, data = client.uid('move', '4827313:4828442', 'New folder')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [None])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', '"New folder"'])
+
+        # The uid=True keyword is a shorthand for uid('MOVE', ...).
+        typ, data = client.move('4827313:4828442', 'MEETING', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'UID MOVE completed'])
+        self.assertEqual(server.args, ['MOVE', '4827313:4828442', 'MEETING'])
+
     def test_store(self):
         client, server = self._setup(make_simple_handler('STORE', [
             r'* 2 FETCH (FLAGS (\Deleted \Seen))',
@@ -1213,6 +1438,17 @@ class NewIMAPTestsMixin:
 
         typ, data = client.uid('store', '4827313:4828442', '+FLAGS', r'\Deleted')
         self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['STORE', '4827313:4828442', '+FLAGS', r'(\Deleted)'])
+
+        # The uid=True keyword is a shorthand for uid('STORE', ...).
+        typ, data = client.store('4827313:4828442', '+FLAGS', r'(\Deleted)',
+                                 uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'23 (FLAGS (\Deleted \Seen) UID 4827313)',
+            br'24 (FLAGS (\Deleted) UID 4827943)',
+            br'25 (FLAGS (\Deleted \Flagged \Seen) UID 4828442)',
+        ])
         self.assertEqual(server.args, ['STORE', '4827313:4828442', '+FLAGS', r'(\Deleted)'])
 
     def test_fetch(self):
@@ -1297,6 +1533,16 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['FETCH', '4827313:4828442', 'ALL'])
 
+        # The uid=True keyword is a shorthand for uid('FETCH', ...).
+        typ, data = client.fetch('4827313:4828442', '(FLAGS)', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            br'23 (FLAGS (\Seen) UID 4827313)',
+            br'24 (FLAGS (\Seen) UID 4827943)',
+            br'25 (FLAGS (\Seen) UID 4828442)',
+        ])
+        self.assertEqual(server.args, ['FETCH', '4827313:4828442', '(FLAGS)'])
+
     def test_partial(self):
         client, server = self._setup(make_simple_handler('PARTIAL',
             ['* 1 FETCH (RFC822.TEXT<0.10> "0123456789")']))
@@ -1330,7 +1576,17 @@ class NewIMAPTestsMixin:
         self.assertEqual(data, [b'43'])
         self.assertEqual(server.args, ['CHARSET', 'UTF-8', 'TEXT', 'XXXXXX'])
 
-        typ, data = client.search('NF_Z_62-010_(1973)', 'TEXT', 'XXXXXX')
+        # A non-ASCII str criterion is encoded to the declared charset (KOI8-U
+        # here, which is not UTF-8, so check the encoded bytes on the wire).
+        response[:] = ['* SEARCH 43']
+        typ, data = client.search('KOI8-U', 'SUBJECT', '"Київ"')
+        self.assertEqual(typ, 'OK')
+        self.assertIn(b'CHARSET KOI8-U ', server.line)
+        self.assertIn('"Київ"'.encode('koi8-u'), server.line)
+
+        # bytes criteria keep this focused on charset-name quoting (the
+        # parentheses force the name to be quoted) without criteria encoding.
+        typ, data = client.search('NF_Z_62-010_(1973)', b'TEXT', b'XXXXXX')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['CHARSET', '"NF_Z_62-010_(1973)"', 'TEXT', 'XXXXXX'])
 
@@ -1362,6 +1618,21 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['SEARCH', 'CHARSET', '"NF_Z_62-010_(1973)"', 'TEXT', 'XXXXXX'])
 
+        # The uid=True keyword is a shorthand for uid('SEARCH', ...).
+        response[:] = ['* SEARCH 2 84 882']
+        typ, data = client.search(None, 'FLAGGED', 'SINCE', '1-Feb-1994',
+                                  'NOT', 'FROM', '"Smith"', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'2 84 882'])
+        self.assertEqual(server.args,
+                ['SEARCH', 'FLAGGED', 'SINCE', '1-Feb-1994', 'NOT', 'FROM', '"Smith"'])
+
+        response[:] = ['* SEARCH 43']
+        typ, data = client.search('UTF-8', 'TEXT', 'XXXXXX', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'43'])
+        self.assertEqual(server.args, ['SEARCH', 'CHARSET', 'UTF-8', 'TEXT', 'XXXXXX'])
+
     def test_sort(self):
         response = []
         client, server = self._setup(make_simple_handler('SORT', response))
@@ -1385,9 +1656,15 @@ class NewIMAPTestsMixin:
         self.assertEqual(data, [br''])
         self.assertEqual(server.args, ['(SUBJECT)', 'US-ASCII', 'TEXT', '"not in mailbox"'])
 
-        typ, data = client.sort('SUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"not in mailbox"')
+        typ, data = client.sort('SUBJECT', 'NF_Z_62-010_(1973)', b'TEXT', b'"not in mailbox"')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['(SUBJECT)', '"NF_Z_62-010_(1973)"', 'TEXT', '"not in mailbox"'])
+
+        # A non-ASCII str criterion is encoded to the declared charset.
+        response[:] = ['* SORT']
+        typ, data = client.sort('(SUBJECT)', 'KOI8-U', 'TEXT', '"Київ"')
+        self.assertEqual(typ, 'OK')
+        self.assertIn('"Київ"'.encode('koi8-u'), server.line)
 
     def test_uid_sort(self):
         response = []
@@ -1413,9 +1690,22 @@ class NewIMAPTestsMixin:
         self.assertEqual(data, [br''])
         self.assertEqual(server.args, ['SORT', '(SUBJECT)', 'US-ASCII', 'TEXT', '"not in mailbox"'])
 
-        typ, data = client.uid('sort', 'SUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"not in mailbox"')
+        typ, data = client.uid('sort', 'SUBJECT', 'NF_Z_62-010_(1973)', b'TEXT', b'"not in mailbox"')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['SORT', '(SUBJECT)', '"NF_Z_62-010_(1973)"', 'TEXT', '"not in mailbox"'])
+
+        # A non-ASCII str criterion is encoded to the declared charset.
+        response[:] = ['* SORT']
+        typ, data = client.uid('sort', '(SUBJECT)', 'KOI8-U', 'TEXT', '"Київ"')
+        self.assertEqual(typ, 'OK')
+        self.assertIn('"Київ"'.encode('koi8-u'), server.line)
+
+        # The uid=True keyword is a shorthand for uid('SORT', ...).
+        response[:] = ['* SORT 2 84 882']
+        typ, data = client.sort('(SUBJECT)', 'UTF-8', 'SINCE', '1-Feb-1994', uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [br'2 84 882'])
+        self.assertEqual(server.args, ['SORT', '(SUBJECT)', 'UTF-8', 'SINCE', '1-Feb-1994'])
 
     def test_thread(self):
         response = []
@@ -1454,9 +1744,15 @@ class NewIMAPTestsMixin:
             b'(199)(200 202)(201)(203)(204)(205 206 207)(208)'])
         self.assertEqual(server.args, ['ORDEREDSUBJECT', 'US-ASCII', 'TEXT', '"gewp"'])
 
-        typ, data = client.thread('ORDEREDSUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"gewp"')
+        typ, data = client.thread('ORDEREDSUBJECT', 'NF_Z_62-010_(1973)', b'TEXT', b'"gewp"')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['ORDEREDSUBJECT', '"NF_Z_62-010_(1973)"', 'TEXT', '"gewp"'])
+
+        # A non-ASCII str criterion is encoded to the declared charset.
+        response[:] = ['* THREAD (1)']
+        typ, data = client.thread('ORDEREDSUBJECT', 'KOI8-U', 'TEXT', '"Київ"')
+        self.assertEqual(typ, 'OK')
+        self.assertIn('"Київ"'.encode('koi8-u'), server.line)
 
     def test_uid_thread(self):
         response = []
@@ -1496,9 +1792,23 @@ class NewIMAPTestsMixin:
             b'(199)(200 202)(201)(203)(204)(205 206 207)(208)'])
         self.assertEqual(server.args, ['THREAD', 'ORDEREDSUBJECT', 'US-ASCII', 'TEXT', '"gewp"'])
 
-        typ, data = client.uid('THREAD', 'ORDEREDSUBJECT', 'NF_Z_62-010_(1973)', 'TEXT', '"gewp"')
+        typ, data = client.uid('THREAD', 'ORDEREDSUBJECT', 'NF_Z_62-010_(1973)', b'TEXT', b'"gewp"')
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['THREAD', 'ORDEREDSUBJECT', '"NF_Z_62-010_(1973)"', 'TEXT', '"gewp"'])
+
+        # A non-ASCII str criterion is encoded to the declared charset.
+        response[:] = ['* THREAD (1)']
+        typ, data = client.uid('THREAD', 'ORDEREDSUBJECT', 'KOI8-U', 'TEXT', '"Київ"')
+        self.assertEqual(typ, 'OK')
+        self.assertIn('"Київ"'.encode('koi8-u'), server.line)
+
+        # The uid=True keyword is a shorthand for uid('THREAD', ...).
+        response[:] = ['* THREAD (166)(167)(168)']
+        typ, data = client.thread('ORDEREDSUBJECT', 'UTF-8', 'SINCE', '5-MAR-2000',
+                                  uid=True)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'(166)(167)(168)'])
+        self.assertEqual(server.args, ['THREAD', 'ORDEREDSUBJECT', 'UTF-8', 'SINCE', '5-MAR-2000'])
 
     def test_delete(self):
         client, server = self._setup(make_simple_handler('DELETE'))
@@ -1672,6 +1982,24 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.args, ['"New folder"'])
 
+    def test_id(self):
+        client, server = self._setup(make_simple_handler('ID',
+            ['* ID ("name" "Cyrus" "version" "1.5")']))
+        typ, data = client.id({'name': 'imaplib', 'version': '3.16'})
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [b'("name" "Cyrus" "version" "1.5")'])
+        self.assertEqual(server.args, ['("name" "imaplib" "version" "3.16")'])
+
+        typ, data = client.id()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, ['NIL'])
+
+        # Fields and values are quoted strings; a None value is sent
+        # as NIL.
+        typ, data = client.id({'name': 'my "client"', 'os': None})
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.args, [r'("name" "my \"client\"" "os" NIL)'])
+
     def test_setquota(self):
         client, server = self._setup(make_simple_handler('SETQUOTA',
             ['* QUOTA "" (STORAGE 512)']))
@@ -1751,10 +2079,34 @@ class NewIMAPTestsMixin:
             client.NONEXISTENT
 
     def test_control_characters(self):
-        client, _ = self._setup(SimpleIMAPHandler)
-        for c0 in support.control_characters_c0():
-            with self.assertRaises(ValueError):
-                client.login(f'user{c0}', 'pass')
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        # In the default (ASCII) mode a mailbox name is sent as modified UTF-7,
+        # which Base64-encodes every non-printable character (NUL, CR and LF
+        # included).  So a control character is never sent as a raw byte -- it
+        # cannot corrupt the command -- and the name round-trips.
+        for c in support.control_characters_c0():
+            with self.subTest(c=c):
+                typ, _ = client.select(f'a{c}b')
+                self.assertEqual(typ, 'OK')
+                [name] = server.is_selected
+                self.assertNotIn(c, name)
+                self.assertEqual(name.encode('ascii').decode('utf-7-imap'),
+                                 f'a{c}b')
+
+    def test_mutf7_mailbox_name(self):
+        # Without UTF8=ACCEPT a non-ASCII mailbox name is sent as modified
+        # UTF-7 (RFC 3501, 5.1.3).  A name that is already modified UTF-7 (e.g.
+        # obtained from a raw LIST response) is sent unchanged, whether as str
+        # or bytes, so it round-trips without being encoded again.
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for name in ['Entwürfe', 'Entw&APw-rfe', b'Entw&APw-rfe']:
+            with self.subTest(name=name):
+                server.is_selected = None
+                typ, _ = client.select(name)
+                self.assertEqual(typ, 'OK')
+                self.assertEqual(server.is_selected, ['Entw&APw-rfe'])
 
     # property tests
 
@@ -1895,8 +2247,8 @@ class ThreadedNetworkedTests(unittest.TestCase):
     @threading_helper.reap_threads
     def test_bracket_flags(self):
 
-        # This violates RFC 3501, which disallows ']' characters in tag names,
-        # but imaplib has allowed producing such tags forever, other programs
+        # This violates RFC 3501, which disallows ']' characters in flags,
+        # but imaplib has allowed producing such flags forever, other programs
         # also produce them (eg: OtherInbox's Organizer app as of 20140716),
         # and Gmail, for example, accepts them and produces them.  So we
         # support them.  See issue #21815.

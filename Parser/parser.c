@@ -360,7 +360,7 @@ static char *soft_keywords[] = {
 #define invalid_tstring_replacement_field_type 1271
 #define invalid_tstring_conversion_character_type 1272
 #define invalid_string_tstring_concat_type 1273
-#define invalid_arithmetic_type 1274
+#define invalid_arithmetic_type 1274  // Left-recursive
 #define invalid_factor_type 1275
 #define invalid_type_params_type 1276
 #define invalid_bitwise_and_type 1277  // Left-recursive
@@ -13933,7 +13933,7 @@ bitwise_and_raw(Parser *p)
 }
 
 // Left-recursive
-// shift_expr: shift_expr '<<' sum | shift_expr '>>' sum | invalid_arithmetic | sum
+// shift_expr: shift_expr '<<' sum | shift_expr '>>' sum | sum
 static expr_ty shift_expr_raw(Parser *);
 static expr_ty
 shift_expr_rule(Parser *p)
@@ -14068,25 +14068,6 @@ shift_expr_raw(Parser *p)
         D(fprintf(stderr, "%*c%s shift_expr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "shift_expr '>>' sum"));
     }
-    if (p->call_invalid_rules) { // invalid_arithmetic
-        if (p->error_indicator) {
-            p->level--;
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> shift_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_arithmetic"));
-        void *invalid_arithmetic_var;
-        if (
-            (invalid_arithmetic_var = invalid_arithmetic_rule(p))  // invalid_arithmetic
-        )
-        {
-            D(fprintf(stderr, "%*c+ shift_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_arithmetic"));
-            _res = invalid_arithmetic_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s shift_expr[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_arithmetic"));
-    }
     { // sum
         if (p->error_indicator) {
             p->level--;
@@ -14113,7 +14094,7 @@ shift_expr_raw(Parser *p)
 }
 
 // Left-recursive
-// sum: sum '+' term | sum '-' term | term
+// sum: sum '+' term | sum '-' term | invalid_arithmetic | term
 static expr_ty sum_raw(Parser *);
 static expr_ty
 sum_rule(Parser *p)
@@ -14248,6 +14229,25 @@ sum_raw(Parser *p)
         D(fprintf(stderr, "%*c%s sum[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "sum '-' term"));
     }
+    if (p->call_invalid_rules) { // invalid_arithmetic
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> sum[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_arithmetic"));
+        void *invalid_arithmetic_var;
+        if (
+            (invalid_arithmetic_var = invalid_arithmetic_rule(p))  // invalid_arithmetic
+        )
+        {
+            D(fprintf(stderr, "%*c+ sum[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_arithmetic"));
+            _res = invalid_arithmetic_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s sum[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_arithmetic"));
+    }
     { // term
         if (p->error_indicator) {
             p->level--;
@@ -14280,7 +14280,6 @@ sum_raw(Parser *p)
 //     | term '//' factor
 //     | term '%' factor
 //     | term '@' factor
-//     | invalid_factor
 //     | factor
 static expr_ty term_raw(Parser *);
 static expr_ty
@@ -14533,25 +14532,6 @@ term_raw(Parser *p)
         D(fprintf(stderr, "%*c%s term[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "term '@' factor"));
     }
-    if (p->call_invalid_rules) { // invalid_factor
-        if (p->error_indicator) {
-            p->level--;
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> term[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_factor"));
-        void *invalid_factor_var;
-        if (
-            (invalid_factor_var = invalid_factor_rule(p))  // invalid_factor
-        )
-        {
-            D(fprintf(stderr, "%*c+ term[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_factor"));
-            _res = invalid_factor_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s term[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_factor"));
-    }
     { // factor
         if (p->error_indicator) {
             p->level--;
@@ -14577,7 +14557,7 @@ term_raw(Parser *p)
     return _res;
 }
 
-// factor: '+' factor | '-' factor | '~' factor | power
+// factor: '+' factor | '-' factor | '~' factor | power | invalid_factor
 static expr_ty
 factor_rule(Parser *p)
 {
@@ -14729,6 +14709,25 @@ factor_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "power"));
+    }
+    if (p->call_invalid_rules) { // invalid_factor
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> factor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_factor"));
+        void *invalid_factor_var;
+        if (
+            (invalid_factor_var = invalid_factor_rule(p))  // invalid_factor
+        )
+        {
+            D(fprintf(stderr, "%*c+ factor[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_factor"));
+            _res = invalid_factor_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_factor"));
     }
     _res = NULL;
   done:
@@ -28410,6 +28409,7 @@ invalid_string_tstring_concat_rule(Parser *p)
     return _res;
 }
 
+// Left-recursive
 // invalid_arithmetic: sum ('+' | '-' | '*' | '/' | '%' | '//' | '@') 'not' inversion
 static void *
 invalid_arithmetic_rule(Parser *p)

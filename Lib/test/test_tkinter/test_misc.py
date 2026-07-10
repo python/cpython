@@ -6,7 +6,7 @@ import textwrap
 import unittest
 import weakref
 import tkinter
-from tkinter import TclError
+from tkinter import TclError, ttk
 import enum
 from test import support
 from test.support import os_helper
@@ -14,7 +14,7 @@ from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
-                                       tcl_version)
+                                       tcl_version, tk_version)
 
 support.requires('gui')
 
@@ -49,8 +49,27 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertNotEqual(str(f), str(f2))
         b = tkinter.Button(f2)
         b2 = Button2(f2)
-        for name in str(b).split('.') + str(b2).split('.'):
+        for w in (t, f, f2, b, b2):
+            # The full path name starts with a dot, the name of the root.
+            self.assertTrue(str(w).startswith('.'), msg=repr(str(w)))
+            name = w.winfo_name()
+            # A generated name is not empty and contains no dot, which would
+            # be interpreted as a path name component separator.
+            self.assertTrue(name, msg=repr(name))
+            self.assertNotIn('.', name, msg=repr(name))
+            # A generated name can be used not only as a window name, but also
+            # as a canvas or text tag, an option database pattern or a Tcl list
+            # element, so it must avoid characters that are special there.
+            # It is marked so as not to look like a user-chosen name.
             self.assertFalse(name.isidentifier(), msg=repr(name))
+            # A capital letter starts a class name in an option pattern.
+            self.assertFalse(name[0].isupper(), msg=repr(name))
+            # "!&|^()" are operators in canvas tag expressions (gh-143070),
+            # "*" separates words in an option pattern, and whitespace and
+            # "{}[]\\"$;" are special in Tcl lists and scripts.
+            self.assertNotRegex(name, r'[][!&|^()*\s{}"\\$;]', msg=repr(name))
+            # "-", "@" and "~" are special only as the first character.
+            self.assertNotIn(name[0], '-@~', msg=repr(name))
         b3 = tkinter.Button(f2)
         b4 = Button2(f2)
         self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
@@ -905,13 +924,26 @@ class WinfoTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(name, str)
             self.assertIsInstance(depth, int)
 
+    def test_winfo_exists(self):
+        f = tkinter.Frame(self.root)
+        self.assertIs(f.winfo_exists(), True)
+        f.destroy()
+        self.assertIs(f.winfo_exists(), False)
+
+    def test_winfo_ismapped(self):
+        f = tkinter.Frame(self.root)
+        self.assertIs(f.winfo_ismapped(), False)
+        f.pack()
+        self.root.update()
+        self.assertIs(f.winfo_ismapped(), True)
+
     def test_winfo_viewable(self):
         f = tkinter.Frame(self.root)
-        self.assertFalse(f.winfo_viewable())
+        self.assertIs(f.winfo_viewable(), False)
         f.pack()
         f.wait_visibility()
         self.root.update()
-        self.assertTrue(f.winfo_viewable())
+        self.assertIs(f.winfo_viewable(), True)
 
     @requires_tk(9, 1)
     def test_winfo_isdark(self):
@@ -1044,13 +1076,10 @@ class WmTest(AbstractTkTest, unittest.TestCase):
             and sys.platform == 'darwin'
             and platform.machine() == 'x86_64'
             and platform.mac_ver()[0].startswith('26.')
-            and (
-                patchlevel[:3] <= (8, 6, 17)
-                or (9, 0) <= patchlevel[:3] <= (9, 0, 3)
-            )
         ):
             # https://github.com/python/cpython/issues/146531
             # Tk bug 4a2070f0d3a99aa412bc582d386d575ca2f37323
+            # Not fixed as of Tk 8.6.18 and 9.0.4.
             self.skipTest('wm iconbitmap hangs on macOS 26 Intel')
 
         self.assertEqual(t.wm_iconbitmap(), '')
@@ -2042,6 +2071,66 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 def _info_commands(widget, pattern=None):
     return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
+
+
+class TclObjTypeTest(AbstractTkTest, unittest.TestCase):
+    # See FromObj() in Modules/_tkinter.c: Tcl object types are converted to
+    # appropriate Python types.  These conversions only happen in the object
+    # mode, so skip when it is disabled.
+
+    def setUp(self):
+        super().setUp()
+        if not self.wantobjects:
+            self.skipTest('requires wantobjects')
+
+    def test_enum_option_returns_str(self):
+        # An "index" object (an enumeration keyword) is returned as a str.
+        w = ttk.Scale(self.root, orient='horizontal')
+        value = w.cget('orient')
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, 'horizontal')
+
+    def test_enum_option_is_interned(self):
+        # Equal "index" keywords share a single interned str object.
+        a = ttk.Scale(self.root, orient='horizontal').cget('orient')
+        b = ttk.Scale(self.root, orient='horizontal').cget('orient')
+        self.assertIs(a, b)
+
+    def test_window_option_returns_str(self):
+        # A "window" object is returned as a str.
+        label = tkinter.Label(self.root)
+        w = ttk.LabelFrame(self.root, labelwidget=label)
+        value = w.cget('labelwidget')
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, str(label))
+
+    def test_variable_option_returns_str(self):
+        # A "parsedVarName" object is returned as a str.
+        w = tkinter.Checkbutton(self.root)
+        self.assertIsInstance(w.cget('variable'), str)
+
+    def test_pixel_option_without_unit_returns_number(self):
+        # A screen distance with no unit suffix is already in pixels and thus
+        # screen independent, so it is returned as an int or a float.
+        w = tkinter.Frame(self.root)
+        w['borderwidth'] = 3
+        self.assertIsInstance(w.cget('borderwidth'), int)
+        self.assertEqual(w.cget('borderwidth'), 3)
+        if tk_version >= (9, 0):
+            # Tk < 9 rounds a fractional screen distance to an integer.
+            w['borderwidth'] = 2.5
+            self.assertIsInstance(w.cget('borderwidth'), float)
+            self.assertEqual(w.cget('borderwidth'), 2.5)
+
+    @requires_tk(9, 0)
+    def test_pixel_option_with_unit_is_not_a_number(self):
+        # A screen distance with an m/c/i/p suffix depends on the screen
+        # resolution, so it is not converted to a number here.  (Tk < 9 resolves
+        # it eagerly to an integer pixel count when the option is read.)
+        w = tkinter.Frame(self.root)
+        w['borderwidth'] = '3m'
+        self.assertNotIsInstance(w.cget('borderwidth'), (int, float))
+        self.assertEqual(str(w.cget('borderwidth')), '3m')
 
 
 if __name__ == "__main__":

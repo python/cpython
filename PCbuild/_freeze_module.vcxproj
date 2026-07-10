@@ -334,6 +334,11 @@
       <IntFile>$(IntDir)encodings._win_cp_codecs.g.h</IntFile>
       <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings._win_cp_codecs.h</OutFile>
     </None>
+    <None Include="..\Lib\encodings\_iconv_codecs.py">
+      <ModName>encodings._iconv_codecs</ModName>
+      <IntFile>$(IntDir)encodings._iconv_codecs.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings._iconv_codecs.h</OutFile>
+    </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
       <IntFile>$(IntDir)io.g.h</IntFile>
