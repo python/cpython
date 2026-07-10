@@ -1981,7 +1981,7 @@ Base and mixin classes
 
    .. method:: winfo_exists()
 
-      Return ``1`` if the widget exists, ``0`` otherwise.
+      Return true if the widget exists, false otherwise.
 
    .. method:: winfo_fpixels(number)
 
@@ -2020,7 +2020,7 @@ Base and mixin classes
 
    .. method:: winfo_ismapped()
 
-      Return ``1`` if the widget is currently mapped, ``0`` otherwise.
+      Return true if the widget is currently mapped, false otherwise.
 
    .. method:: winfo_manager()
 
@@ -2151,8 +2151,8 @@ Base and mixin classes
 
    .. method:: winfo_viewable()
 
-      Return ``1`` if the widget and all of its ancestors up through the
-      nearest toplevel window are mapped, ``0`` otherwise.
+      Return true if the widget and all of its ancestors up through the
+      nearest toplevel window are mapped, false otherwise.
 
    .. method:: winfo_visual()
 
@@ -5526,7 +5526,7 @@ Widget classes
    .. method:: edit_modified(arg=None)
 
       If *arg* is omitted, return the current state of the modified flag as
-      ``0`` or ``1``; the flag is set automatically whenever the text is
+      true or false; the flag is set automatically whenever the text is
       inserted or deleted.
       Otherwise set the flag to the boolean *arg*.
 

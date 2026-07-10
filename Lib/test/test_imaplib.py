@@ -833,6 +833,32 @@ class NewIMAPTestsMixin:
         client.login('user', 'pass')
         self.assertIn('ENABLE', client.capabilities)
 
+    def test_readonly_error_reports_mailbox(self):
+        # The read-only error reports the mailbox via repr(), which also
+        # avoids BytesWarning for a bytes mailbox under -bb.
+        class ReadOnlyHandler(SimpleIMAPHandler):
+            def cmd_SELECT(self, tag, args):
+                self._send_line(b'* 2 EXISTS')
+                self._send_tagged(tag, 'OK', '[READ-ONLY] SELECT completed.')
+        client, _ = self._setup(ReadOnlyHandler)
+        client.login('user', 'pass')
+        for mailbox, expected in [('INBOX', "'INBOX'"), (b'INBOX', r"b'INBOX'")]:
+            with self.subTest(mailbox=mailbox):
+                with self.assertRaisesRegex(imaplib.IMAP4.readonly,
+                                            r"%s is not writable" % expected):
+                    client.select(mailbox)
+
+    def test_uid_unknown_command_reports_command(self):
+        # The unknown-UID-command error reports the command via repr(), which
+        # also avoids BytesWarning for a bytes command under -bb.
+        client, _ = self._setup(SimpleIMAPHandler)
+        for command, expected in [('BOGUS', "'BOGUS'"), (b'BOGUS', r"b'BOGUS'")]:
+            with self.subTest(command=command):
+                with self.assertRaisesRegex(
+                        imaplib.IMAP4.error,
+                        r"Unknown IMAP4 UID command: %s" % expected):
+                    client.uid(command, '1')
+
     def test_logout(self):
         client, _ = self._setup(SimpleIMAPHandler)
         typ, data = client.login('user', 'pass')
@@ -878,6 +904,51 @@ class NewIMAPTestsMixin:
         self.assertEqual(typ, 'OK')
         self.assertEqual(data, [(b'1 (BODY[HEADER] {13}', b'Subject: test'),
                                 b')'])
+
+    def test_literal_terminating_response(self):
+        # A literal ending a response (a LIST mailbox name sent as a literal)
+        # has an empty trailer that must not be swallowed.  Conforming case:
+        # no spurious blank lines.
+        names = [b'My (box)"', b'Another', b'Third']
+        class Handler(SimpleIMAPHandler):
+            def cmd_LIST(self, tag, args):
+                for name in names:
+                    self._send(b'* LIST (\\HasNoChildren) "/" {%d}\r\n'
+                               % len(name))
+                    self._send(name)
+                    self._send(b'\r\n')             # ends the response, no blank
+                self._send_tagged(tag, 'OK', 'LIST completed')
+        client, _ = self._setup(Handler)
+        client.login('user', 'pass')
+        typ, data = client.list()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            (b'(\\HasNoChildren) "/" {9}', b'My (box)"'), b'',
+            (b'(\\HasNoChildren) "/" {7}', b'Another'), b'',
+            (b'(\\HasNoChildren) "/" {5}', b'Third'), b'',
+        ])
+
+    def test_spurious_blank_lines_between_responses(self):
+        # A spurious blank line after each terminating literal falls between the
+        # untagged responses and must be skipped, even several in a row.
+        names = [b'My (box)"', b'Another', b'Third']
+        class Handler(SimpleIMAPHandler):
+            def cmd_LIST(self, tag, args):
+                for name in names:
+                    self._send(b'* LIST (\\HasNoChildren) "/" {%d}\r\n'
+                               % len(name))
+                    self._send(name)
+                    self._send(b'\r\n\r\n')     # ends the response, then a blank
+                self._send_tagged(tag, 'OK', 'LIST completed')
+        client, _ = self._setup(Handler)
+        client.login('user', 'pass')
+        typ, data = client.list()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data, [
+            (b'(\\HasNoChildren) "/" {9}', b'My (box)"'), b'',
+            (b'(\\HasNoChildren) "/" {7}', b'Another'), b'',
+            (b'(\\HasNoChildren) "/" {5}', b'Third'), b'',
+        ])
 
     def test_unselect(self):
         client, server = self._setup(SimpleIMAPHandler)
