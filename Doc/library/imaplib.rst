@@ -192,6 +192,19 @@ In general, pass arguments unquoted and let the module quote them as needed.
 An argument that is already enclosed in double quotes is left unchanged,
 so that code which quotes arguments itself keeps working.
 
+Mailbox names are encoded as modified UTF-7 (:rfc:`3501`, section 5.1.3),
+so a mailbox name containing non-ASCII characters can be passed as an
+ordinary :class:`str`.
+A :class:`str` that is already valid modified UTF-7 is left unchanged,
+so that a name obtained from :meth:`~IMAP4.list` (raw ``bytes`` decoded to
+text) round-trips; pass :class:`bytes` to send the exact bytes with no
+encoding.
+When ``UTF8=ACCEPT`` is enabled (see :meth:`~IMAP4.enable`), mailbox names
+are sent as UTF-8 instead.
+
+.. versionchanged:: next
+   Non-ASCII mailbox names are automatically encoded as modified UTF-7.
+
 Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
 or mandated results from the command. Each *data* is either a ``bytes``, or a
@@ -260,9 +273,15 @@ An :class:`IMAP4` instance has the following methods:
    mailbox. This is the recommended command before ``LOGOUT``.
 
 
-.. method:: IMAP4.copy(message_set, new_mailbox)
+.. method:: IMAP4.copy(message_set, new_mailbox, *, uid=False)
 
    Copy *message_set* messages onto end of *new_mailbox*.
+
+   If *uid* is true, *message_set* is a set of UIDs and the ``UID COPY``
+   command is used instead of ``COPY``.
+
+   .. versionchanged:: next
+      Added the *uid* parameter.
 
 
 .. method:: IMAP4.create(mailbox)
@@ -290,18 +309,32 @@ An :class:`IMAP4` instance has the following methods:
       The :meth:`enable` method itself, and :RFC:`6855` support.
 
 
-.. method:: IMAP4.expunge()
+.. method:: IMAP4.expunge(message_set=None, *, uid=False)
 
    Permanently remove deleted items from selected mailbox. Generates an ``EXPUNGE``
    response for each deleted message. Returned data contains a list of ``EXPUNGE``
    message numbers in order received.
 
+   If *uid* is true, the ``UID EXPUNGE`` command (:rfc:`4315`) is used to remove
+   only the messages that both are marked as deleted and have a UID in
+   *message_set*.  *message_set* is required in this case, and must be omitted
+   otherwise.
 
-.. method:: IMAP4.fetch(message_set, message_parts)
+   .. versionchanged:: next
+      Added the *message_set* and *uid* parameters.
+
+
+.. method:: IMAP4.fetch(message_set, message_parts, *, uid=False)
 
    Fetch (parts of) messages.  *message_parts* should be a string of message part
    names enclosed within parentheses, eg: ``"(UID BODY[TEXT])"``.  Returned data
    are tuples of message part envelope and data.
+
+   If *uid* is true, *message_set* is a set of UIDs and the message numbers in
+   the response are UIDs (``UID FETCH``).
+
+   .. versionchanged:: next
+      Added the *uid* parameter.
 
 
 .. method:: IMAP4.getacl(mailbox)
@@ -482,11 +515,14 @@ An :class:`IMAP4` instance has the following methods:
    Returned data are tuples of message part envelope and data.
 
 
-.. method:: IMAP4.move(message_set, new_mailbox)
+.. method:: IMAP4.move(message_set, new_mailbox, *, uid=False)
 
    Move *message_set* messages onto end of *new_mailbox*.
 
    The server must support the ``MOVE`` capability (:rfc:`6851`).
+
+   If *uid* is true, *message_set* is a set of UIDs and the ``UID MOVE``
+   command is used instead of ``MOVE``.
 
    .. versionadded:: next
 
@@ -562,7 +598,7 @@ An :class:`IMAP4` instance has the following methods:
    code, instead of the usual type.
 
 
-.. method:: IMAP4.search(charset, criterion[, ...])
+.. method:: IMAP4.search(charset, criterion[, ...], *, uid=False)
 
    Search mailbox for matching messages.  *charset* may be ``None``, in which case
    no ``CHARSET`` will be specified in the request to the server.  The IMAP
@@ -571,6 +607,9 @@ An :class:`IMAP4` instance has the following methods:
    the ``UTF8=ACCEPT`` capability was enabled using the :meth:`enable`
    command.
 
+   If *uid* is true, the message numbers in the response are UIDs
+   (``UID SEARCH``).
+
    Example::
 
       # M is a connected IMAP4 instance...
@@ -578,6 +617,9 @@ An :class:`IMAP4` instance has the following methods:
 
       # or:
       typ, msgnums = M.search(None, '(FROM "LDJ")')
+
+   .. versionchanged:: next
+      Added the *uid* parameter.
 
 
 .. method:: IMAP4.select(mailbox='INBOX', readonly=False)
@@ -623,7 +665,7 @@ An :class:`IMAP4` instance has the following methods:
    Returns socket instance used to connect to server.
 
 
-.. method:: IMAP4.sort(sort_criteria, charset, search_criterion[, ...])
+.. method:: IMAP4.sort(sort_criteria, charset, search_criterion[, ...], *, uid=False)
 
    The ``sort`` command is a variant of ``search`` with sorting semantics for the
    results.  Returned data contains a space separated list of matching message
@@ -638,7 +680,12 @@ An :class:`IMAP4` instance has the following methods:
    the interpretation of strings in the searching criteria.  It then returns the
    numbers of matching messages.
 
+   If *uid* is true, the message numbers in the response are UIDs (``UID SORT``).
+
    This is an ``IMAP4rev1`` extension command.
+
+   .. versionchanged:: next
+      Added the *uid* parameter.
 
 
 .. method:: IMAP4.starttls(ssl_context=None)
@@ -668,11 +715,14 @@ An :class:`IMAP4` instance has the following methods:
    Request named status conditions for *mailbox*.
 
 
-.. method:: IMAP4.store(message_set, command, flag_list)
+.. method:: IMAP4.store(message_set, command, flag_list, *, uid=False)
 
    Alters flag dispositions for messages in mailbox.  *command* is specified by
    section 6.4.6 of :rfc:`3501` as being one of "FLAGS", "+FLAGS", or "-FLAGS",
    optionally with a suffix of ".SILENT".
+
+   If *uid* is true, *message_set* is a set of UIDs and the ``UID STORE``
+   command is used instead of ``STORE``.
 
    For example, to set the delete flag on all messages::
 
@@ -693,12 +743,15 @@ An :class:`IMAP4` instance has the following methods:
       Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
 
+   .. versionchanged:: next
+      Added the *uid* parameter.
+
 .. method:: IMAP4.subscribe(mailbox)
 
    Subscribe to new mailbox.
 
 
-.. method:: IMAP4.thread(threading_algorithm, charset, search_criterion[, ...])
+.. method:: IMAP4.thread(threading_algorithm, charset, search_criterion[, ...], *, uid=False)
 
    The ``thread`` command is a variant of ``search`` with threading semantics for
    the results.  Returned data contains a space separated list of thread members.
@@ -716,7 +769,13 @@ An :class:`IMAP4` instance has the following methods:
    returns the matching messages threaded according to the specified threading
    algorithm.
 
+   If *uid* is true, the message numbers in the response are UIDs
+   (``UID THREAD``).
+
    This is an ``IMAP4rev1`` extension command.
+
+   .. versionchanged:: next
+      Added the *uid* parameter.
 
 
 .. method:: IMAP4.uid(command, arg[, ...])

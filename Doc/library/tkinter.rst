@@ -790,6 +790,15 @@ distance
    millimetres, ``p`` for printer's points.  For example, 3.5 inches is expressed
    as ``"3.5i"``.
 
+   When a screen distance option is read back (for example with :meth:`!cget`),
+   a distance with no unit suffix is returned as an :class:`int` or a :class:`float`.
+   A distance with a unit suffix depends on the screen resolution
+   and is returned as an opaque Tcl object that can be passed back to Tk.
+
+   .. versionchanged:: next
+      Screen distances with no unit suffix are returned as an :class:`int`
+      or a :class:`float`.
+
 font
    Tk uses a font description such as ``{courier 10 bold}``; in
    :mod:`!tkinter` this is most naturally passed as a tuple of

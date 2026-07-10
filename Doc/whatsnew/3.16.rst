@@ -86,6 +86,16 @@ New modules
 Improved modules
 ================
 
+codecs
+------
+
+* On platforms that provide the C library's :manpage:`iconv(3)` function,
+  every encoding known to ``iconv`` for which Python has no built-in codec
+  is now available (for example ``cp1133``).
+  Prefixing an encoding name with ``iconv:`` forces the ``iconv``-based codec
+  even when a built-in codec of the same name exists.
+  (Contributed by Serhiy Storchaka in :gh:`152997`.)
+
 curses
 ------
 
@@ -251,6 +261,20 @@ imaplib
   using the ``PLAIN`` SASL mechanism (:rfc:`4616`) and supports non-ASCII
   user names and passwords.
   (Contributed by Przemysław Buczkowski and Serhiy Storchaka in :gh:`89869`.)
+
+* Non-ASCII mailbox names are now automatically encoded as modified UTF-7
+  (:rfc:`3501`, section 5.1.3), so international mailbox names can be passed
+  as ordinary :class:`str`.
+  (Contributed by Serhiy Storchaka in :gh:`49555`.)
+
+* The :meth:`~imaplib.IMAP4.copy`, :meth:`~imaplib.IMAP4.move`,
+  :meth:`~imaplib.IMAP4.fetch`, :meth:`~imaplib.IMAP4.store`,
+  :meth:`~imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.sort`,
+  :meth:`~imaplib.IMAP4.thread` and :meth:`~imaplib.IMAP4.expunge` methods
+  now accept a keyword-only *uid* argument that selects the corresponding
+  ``UID`` command, as a more convenient alternative to
+  :meth:`~imaplib.IMAP4.uid`.
+  (Contributed by Serhiy Storchaka in :gh:`153502`.)
 
 
 ipaddress
@@ -429,6 +453,13 @@ tkinter
   This avoids a loss of precision in :meth:`~tkinter.font.Font.actual`,
   :meth:`~tkinter.font.Font.measure` and :meth:`~tkinter.font.Font.metrics`.
   (Contributed by Serhiy Storchaka in :gh:`143990`.)
+
+* Values of several Tcl object types returned by :mod:`tkinter` are now
+  converted to the corresponding Python type instead of being wrapped in a
+  :class:`!_tkinter.Tcl_Obj`: ``index``, ``window``, ``nsName`` and
+  ``parsedVarName`` objects to :class:`str`, and ``pixel`` screen distances
+  with no unit suffix to :class:`int` or :class:`float`.
+  (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
 xml
 ---
