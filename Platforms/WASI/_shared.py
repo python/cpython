@@ -17,7 +17,6 @@ import tomllib
 
 
 class Context:
-
     clean = False
 
     def __init__(self):

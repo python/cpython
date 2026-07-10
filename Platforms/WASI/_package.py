@@ -12,6 +12,7 @@ import _shared
 # - gname
 # https://docs.python.org/3/library/tarfile.html#writing-examples
 
+
 def wasmtime_script(context):
     return f"""\
 #!/bin/sh
@@ -192,7 +193,9 @@ def wasmtime_config_file(context):
 def wasm_file(context):
     """Have python.wasm end up at lib/pythonXY/lib-wasm/pythonX.Yd?.wasm."""
     return (
-        lib_python(context) / "lib-wasm" / f"python{python_version(context, debug_ok=True)}.wasm",
+        lib_python(context)
+        / "lib-wasm"
+        / f"python{python_version(context, debug_ok=True)}.wasm",
         context.wasi_build_path / "python.wasm",
     )
 
@@ -200,7 +203,9 @@ def wasm_file(context):
 def python_wasmtime_script(base, context):
     """Create bin/pythonN.Md?.wasmtime."""
     script = wasmtime_script(context)
-    path = base / f"bin/python{python_version(context, debug_ok=True)}.wasmtime"
+    path = (
+        base / f"bin/python{python_version(context, debug_ok=True)}.wasmtime"
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
         f.write(script)
@@ -215,10 +220,15 @@ def python_wasmtime_symlink(path, context):
     - bin/pythonN.M.wasmtime (if debug build)
     - bin/pythonN.wasmtime (if debug build)
     """
-    symlinks = [path.parent / f"python{context.wasi_build_details["language"]["version_info"]["major"]}.wasmtime"]
+    symlinks = [
+        path.parent
+        / f"python{context.wasi_build_details['language']['version_info']['major']}.wasmtime"
+    ]
     if context.is_debug:
         # The file already has the debug name, so the missing symlink is the non-debug name.
-        symlinks.append(path.parent / f"python{python_version(context)}.wasmtime")
+        symlinks.append(
+            path.parent / f"python{python_version(context)}.wasmtime"
+        )
 
     return [(symlink, path) for symlink in symlinks]
 
@@ -226,7 +236,8 @@ def python_wasmtime_symlink(path, context):
 def config_file(context):
     """Have Misc/config.sh end up at bin/pythonN.Md?.config."""
     return (
-        pathlib.PurePath("bin") / f"python{python_version(context, debug_ok=True)}-config",
+        pathlib.PurePath("bin")
+        / f"python{python_version(context, debug_ok=True)}-config",
         context.wasi_build_path / "Misc" / "python-config.sh",
     )
 
@@ -238,10 +249,15 @@ def config_symlink(config_path, context):
     - bin/pythonNd?-config
     - bin/pythonN-config (if debug build)
     """
-    symlinks = [config_path.parent / f"python{context.wasi_build_details['language']['version_info']['major']}-config"]
+    symlinks = [
+        config_path.parent
+        / f"python{context.wasi_build_details['language']['version_info']['major']}-config"
+    ]
     if context.is_debug:
         # The file already has the debug name, so the missing symlink is the non-debug name.
-        symlinks.append(config_path.parent / f"python{python_version(context)}-config")
+        symlinks.append(
+            config_path.parent / f"python{python_version(context)}-config"
+        )
 
     return [(symlink, config_path) for symlink in symlinks]
 
