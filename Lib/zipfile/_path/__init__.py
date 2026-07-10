@@ -414,6 +414,9 @@ class Path:
         """
         Return whether this path is a symlink.
         """
+        if not self.at:
+            return False
+
         info = self.root.getinfo(self.at)
         mode = info.external_attr >> 16
         return stat.S_ISLNK(mode)
