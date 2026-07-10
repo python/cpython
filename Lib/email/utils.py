@@ -399,7 +399,7 @@ def encode_rfc2231(s, charset=None, language=None):
     return "%s'%s'%s" % (charset, language, s)
 
 
-rfc2231_continuation = re.compile(r'^(?P<name>\w+)\*((?P<num>[0-9]+)\*?)?$',
+rfc2231_continuation = re.compile(r'^(?P<name>[\w-]+)\*((?P<num>[0-9]+)\*?)?$',
     re.ASCII)
 
 def decode_params(params):
