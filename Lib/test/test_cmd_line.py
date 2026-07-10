@@ -314,7 +314,7 @@ class CmdLineTest(unittest.TestCase):
             # decodable from ASCII) and run_command() failed on
             # PyUnicode_AsUTF8String(). This is the expected behaviour on
             # Linux.
-            pattern = b"Unable to decode the command from the command line:"
+            pattern = b"python: Unable to decode the command from the command line:"
         elif p.returncode == 0:
             # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
             # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris

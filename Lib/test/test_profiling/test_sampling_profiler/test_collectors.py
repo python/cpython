@@ -711,7 +711,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
             [MockAwaitedInfo(thread_id=100, awaited_by=[parent, child])],
             timestamps_us=[1000, 2000],
         )
-        profile_data = export_gecko_profile(self, collector)
+        profile_data = collector._build_profile()
 
         self.assertEqual(len(profile_data["threads"]), 1)
         thread_data = profile_data["threads"][0]

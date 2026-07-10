@@ -148,6 +148,9 @@ extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
 
+// Raise PyType_Modified with the type lock already held.
+extern void _PyType_Modified_Unlocked(PyTypeObject *type);
+
 PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
 PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 
