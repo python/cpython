@@ -3059,6 +3059,10 @@ class ThreadedTests(unittest.TestCase):
                 'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
                 str(e.exception))
 
+    @support.skip_if_sanitizer("gh-143756: data race in "
+                               "SSLContext.load_cert_chain when called "
+                               "concurrently on the same context",
+                               thread=True)
     @unittest.skipUnless(support.Py_GIL_DISABLED, "test is only useful if the GIL is disabled")
     def test_ssl_in_multiple_threads(self):
         # See GH-124984: OpenSSL is not thread safe.
