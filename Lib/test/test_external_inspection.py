@@ -3809,6 +3809,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
     """Frame chain walks abort instead of looping/overflowing on deep chains."""
 
     CHAIN_DEPTH = 1024 + 512 + 1
+    TASK_WAITER_CHAIN_DEPTH = 512 + 1
 
     def _assert_unwinder_limit_error(self, unwind, expected_substring):
         """Call unwind() until it raises the frame chain limit error.
@@ -3883,7 +3884,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
                 task = asyncio.create_task(chain(n - 1))
                 await task
 
-            asyncio.run(chain({self.CHAIN_DEPTH}))
+            asyncio.run(chain({self.TASK_WAITER_CHAIN_DEPTH}))
             """
         with self._target_process(script_body) as (p, client_socket, _):
             _wait_for_signal(client_socket, b"ready")
