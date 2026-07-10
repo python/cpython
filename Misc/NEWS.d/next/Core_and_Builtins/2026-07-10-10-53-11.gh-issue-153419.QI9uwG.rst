@@ -1,0 +1,2 @@
+Fix several crashes relating to calling (or not calling)
+``bytearray.__init__`` in unusual ways.

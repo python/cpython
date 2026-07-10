@@ -236,6 +236,14 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
+    if (requested_size == 0) {
+        /* Resizing to zero just resets to the empty constant (#153419) */
+        Py_XSETREF(obj->ob_bytes_object,
+                   Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
+        bytearray_reinit_from_bytes(obj, 0, 0);
+        return 0;
+    }
+
     if (size + logical_offset <= alloc) {
         /* Current buffer is large enough to host the requested size,
            decide on a strategy. */
@@ -902,6 +910,19 @@ bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
     return ret;
 }
 
+static PyObject *
+bytearray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *self = PyType_GenericNew(type, args, kwds);
+    if (self == NULL) {
+        return NULL;
+    }
+    PyByteArrayObject *obj = _PyByteArray_CAST(self);
+    obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    bytearray_reinit_from_bytes(obj, 0, 0);
+    return self;
+}
+
 /*[clinic input]
 bytearray.__init__
 
@@ -920,22 +941,13 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
 
-    /* First __init__; set ob_bytes_object so ob_bytes is always non-null. */
-    if (self->ob_bytes_object == NULL) {
-        self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-        bytearray_reinit_from_bytes(self, 0, 0);
-        self->ob_exports = 0;
-    }
-
     if (Py_SIZE(self) != 0) {
-        /* Empty previous contents (yes, do this first of all!) */
+        /* Empty previous contents if possible (yes, do this first of all!). */
         if (PyByteArray_Resize((PyObject *)self, 0) < 0)
             return -1;
     }
 
-    /* Should be caused by first init or the resize to 0. */
     assert(self->ob_bytes_object == Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_BYTES));
-    assert(self->ob_exports == 0);
 
     /* Make a quick exit if no first argument */
     if (arg == NULL) {
@@ -963,8 +975,11 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         }
         assert(PyBytes_Check(encoded));
 
-        /* Most encodes return a new unique bytes, just use it as buffer. */
-        if (_PyObject_IsUniquelyReferenced(encoded)
+        /* Most encodes return a new unique bytes, just use it as buffer.
+           If there are active exports, let `iconcat` handle raising the
+           error when encoded is not empty */
+        if (self->ob_exports == 0
+            && _PyObject_IsUniquelyReferenced(encoded)
             && PyBytes_CheckExact(encoded))
         {
             Py_ssize_t size = Py_SIZE(encoded);
@@ -2937,7 +2952,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_dictoffset */
     bytearray___init__,                 /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+    bytearray_new,                      /* tp_new */
     PyObject_Free,                      /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTEARRAY,
 };

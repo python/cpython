@@ -1860,6 +1860,54 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         alloc = b.__alloc__()
         self.assertGreater(alloc, len(b))
 
+    def test_reinit_small_buffer(self):
+        # gh-153419: reinitializing a bytearray whose buffer allocation is
+        # exactly one byte used to fail a debug assertion
+        b = bytearray(1)
+        b.__init__()
+        self.assertEqual(b, bytearray())
+
+    def test_reinit_empty_buffer(self):
+        # gh-153419: Calling __init__ on a bytearray that has an active
+        # export should only be allowed if the bytearray is unchanged.
+        b = bytearray()
+        with memoryview(b):
+            self.assertRaises(BufferError, b.__init__, b"abc")
+            self.assertRaises(BufferError, b.__init__, "abc", "ascii")
+            self.assertRaises(BufferError, b.__init__, 3)
+            b.__init__()
+            b.__init__(b"")
+            b.__init__("", "ascii")
+            self.assertEqual(b, bytearray())
+
+    def test_reinit_nonempty_buffer(self):
+        # gh-153419: If a buffer is non-empty and has an active export
+        # calling __init__ on it should always fail, even if the
+        # new value ends up the same as the old one. This is purely for
+        # practical reasons rather than a design goal.
+        b = bytearray(b"abc")
+        with memoryview(b):
+            self.assertRaises(BufferError, b.__init__)
+            self.assertRaises(BufferError, b.__init__, b"xy")
+            self.assertRaises(BufferError, b.__init__, b"abc")
+
+    def test_new_without_init(self):
+        # gh-153419: a bytearray must be fully initialized by __new__
+        # alone to ensure that the underlying buffer is always valid.
+        b = bytearray.__new__(bytearray)
+        self.assertEqual(b, bytearray())
+        b.append(1)
+        self.assertEqual(b, bytearray(b"\x01"))
+
+        class B(bytearray):
+            def __init__(self, *args):
+                pass  # does not call super().__init__()
+
+        b = B(b"ignored")
+        self.assertEqual(b, bytearray())
+        b.extend(b"abc")
+        self.assertEqual(b, bytearray(b"abc"))
+
     def test_extend(self):
         orig = b'hello'
         a = bytearray(orig)
