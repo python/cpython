@@ -1311,6 +1311,10 @@ class ContextTests(unittest.TestCase):
         # Make sure the password function isn't called if it isn't needed
         ctx.load_cert_chain(CERTFILE, password=getpass_exception)
 
+    @support.skip_if_sanitizer("gh-143756: data race in "
+                               "SSLContext.load_cert_chain when called "
+                               "concurrently on the same context",
+                               thread=True)
     @threading_helper.requires_working_threading()
     def test_load_cert_chain_thread_safety(self):
         # gh-134698: _ssl detaches the thread state (and as such,
