@@ -276,6 +276,14 @@ imaplib
   :meth:`~imaplib.IMAP4.uid`.
   (Contributed by Serhiy Storchaka in :gh:`153502`.)
 
+* :meth:`~imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.sort`
+  and :meth:`~imaplib.IMAP4.thread` (and the corresponding ``uid`` commands)
+  now encode :class:`str` search criteria to the declared *charset*,
+  so international search text can be passed as an ordinary :class:`str`.
+  When *charset* is ``None`` (as it must be under ``UTF8=ACCEPT``),
+  the criteria are sent using the connection encoding instead.
+  (Contributed by Serhiy Storchaka in :gh:`153494`.)
+
 
 ipaddress
 ---------
