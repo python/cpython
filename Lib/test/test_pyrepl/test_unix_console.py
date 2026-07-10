@@ -10,6 +10,7 @@ import unittest
 from functools import partial
 from _colorize import ANSIColors
 from test.support import force_color, os_helper, force_not_colorized_test_class
+from test.support import is_android, is_apple_mobile, is_wasm32
 from test.support import threading_helper
 
 from unittest import TestCase
@@ -437,6 +438,8 @@ except ImportError:
 
 @unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
 @unittest.skipUnless(pty, "requires pty")
+@unittest.skipIf(is_android or is_apple_mobile or is_wasm32,
+                 "pty is not available on this platform")
 class TestUnixConsoleInputHook(TestCase):
     # gh-152907: pyrepl runs with OPOST disabled so it can drive the cursor
     # itself, but input-hook callbacks (GUI event loops, and any warning,
