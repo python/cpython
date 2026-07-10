@@ -590,13 +590,17 @@ class IMAP4:
         return typ, dat
 
 
-    def copy(self, message_set, new_mailbox):
+    def copy(self, message_set, new_mailbox, *, uid=False):
         """Copy 'message_set' messages onto end of 'new_mailbox'.
 
         (typ, [data]) = <instance>.copy(message_set, new_mailbox)
+
+        If 'uid' is true, 'message_set' is a set of UIDs (UID COPY).
         """
-        return self._simple_command('COPY', self._sequence_set(message_set),
-                                    self._mailbox(new_mailbox))
+        args = (self._sequence_set(message_set), self._mailbox(new_mailbox))
+        if uid:
+            return self._simple_command('UID', self._atom('COPY'), *args)
+        return self._simple_command('COPY', *args)
 
 
     def create(self, mailbox):
@@ -634,7 +638,7 @@ class IMAP4:
             self._mode_utf8()
         return typ, data
 
-    def expunge(self):
+    def expunge(self, message_set=None, *, uid=False):
         """Permanently remove deleted items from selected mailbox.
 
         Generates 'EXPUNGE' response for each deleted message.
@@ -642,13 +646,26 @@ class IMAP4:
         (typ, [data]) = <instance>.expunge()
 
         'data' is list of 'EXPUNGE'd message numbers in order received.
+
+        If 'uid' is true, only messages with a UID in 'message_set' are
+        removed (UID EXPUNGE, RFC 4315); 'message_set' is then required and
+        must be omitted otherwise.
         """
         name = 'EXPUNGE'
-        typ, dat = self._simple_command(name)
+        if uid:
+            if message_set is None:
+                raise self.error('UID EXPUNGE requires a message set')
+            typ, dat = self._simple_command('UID', self._atom(name),
+                                            self._sequence_set(message_set))
+        else:
+            if message_set is not None:
+                raise self.error('EXPUNGE takes no message set; '
+                                 'use uid=True for UID EXPUNGE')
+            typ, dat = self._simple_command(name)
         return self._untagged_response(typ, dat, name)
 
 
-    def fetch(self, message_set, message_parts):
+    def fetch(self, message_set, message_parts, *, uid=False):
         """Fetch (parts of) messages.
 
         (typ, [data, ...]) = <instance>.fetch(message_set, message_parts)
@@ -657,10 +674,17 @@ class IMAP4:
         enclosed in parentheses, eg: "(UID BODY[TEXT])".
 
         'data' are tuples of message part envelope and data.
+
+        If 'uid' is true, 'message_set' is a set of UIDs and the message
+        numbers in the response are UIDs (UID FETCH).
         """
         name = 'FETCH'
-        typ, dat = self._simple_command(name, self._sequence_set(message_set),
-                                        self._fetch_parts(message_parts))
+        args = (self._sequence_set(message_set),
+                self._fetch_parts(message_parts))
+        if uid:
+            typ, dat = self._simple_command('UID', self._atom(name), *args)
+        else:
+            typ, dat = self._simple_command(name, *args)
         return self._untagged_response(typ, dat, name)
 
 
@@ -842,13 +866,17 @@ class IMAP4:
                                         self._list_mailbox(pattern))
         return self._untagged_response(typ, dat, name)
 
-    def move(self, message_set, new_mailbox):
+    def move(self, message_set, new_mailbox, *, uid=False):
         """Move 'message_set' messages onto end of 'new_mailbox'.
 
         (typ, [data]) = <instance>.move(message_set, new_mailbox)
+
+        If 'uid' is true, 'message_set' is a set of UIDs (UID MOVE).
         """
-        return self._simple_command('MOVE', self._sequence_set(message_set),
-                                    self._mailbox(new_mailbox))
+        args = (self._sequence_set(message_set), self._mailbox(new_mailbox))
+        if uid:
+            return self._simple_command('UID', self._atom('MOVE'), *args)
+        return self._simple_command('MOVE', *args)
 
     def myrights(self, mailbox):
         """Show my ACLs for a mailbox (i.e. the rights that I have on mailbox).
@@ -913,22 +941,27 @@ class IMAP4:
                                     self._mailbox(newmailbox))
 
 
-    def search(self, charset, *criteria):
+    def search(self, charset, *criteria, uid=False):
         """Search mailbox for matching messages.
 
         (typ, [data]) = <instance>.search(charset, criterion, ...)
 
         'data' is space separated list of matching message numbers.
         If UTF8 is enabled, charset MUST be None.
+        If 'uid' is true, the message numbers in the response are UIDs
+        (UID SEARCH).
         """
         name = 'SEARCH'
         if charset is not None:
             if self.utf8_enabled:
                 raise IMAP4.error("Non-None charset not valid in UTF8 mode")
-            typ, dat = self._simple_command(name,
-                    'CHARSET', self._astring(charset), *criteria)
+            args = ('CHARSET', self._astring(charset), *criteria)
         else:
-            typ, dat = self._simple_command(name, *criteria)
+            args = criteria
+        if uid:
+            typ, dat = self._simple_command('UID', self._atom(name), *args)
+        else:
+            typ, dat = self._simple_command(name, *args)
         return self._untagged_response(typ, dat, name)
 
 
@@ -991,10 +1024,13 @@ class IMAP4:
         return self._untagged_response(typ, dat, 'QUOTA')
 
 
-    def sort(self, sort_criteria, charset, *search_criteria):
+    def sort(self, sort_criteria, charset, *search_criteria, uid=False):
         """IMAP4rev1 extension SORT command.
 
         (typ, [data]) = <instance>.sort(sort_criteria, charset, search_criteria, ...)
+
+        If 'uid' is true, the message numbers in the response are UIDs
+        (UID SORT).
         """
         name = 'SORT'
         #if not name in self.capabilities:      # Let the server decide!
@@ -1002,7 +1038,11 @@ class IMAP4:
         sort_criteria = self._set_quote(sort_criteria)
         if charset is not None:
             charset = self._astring(charset)
-        typ, dat = self._simple_command(name, sort_criteria, charset, *search_criteria)
+        args = (sort_criteria, charset, *search_criteria)
+        if uid:
+            typ, dat = self._simple_command('UID', self._atom(name), *args)
+        else:
+            typ, dat = self._simple_command(name, *args)
         return self._untagged_response(typ, dat, name)
 
 
@@ -1043,14 +1083,20 @@ class IMAP4:
         return self._untagged_response(typ, dat, name)
 
 
-    def store(self, message_set, command, flags):
+    def store(self, message_set, command, flags, *, uid=False):
         """Alters flag dispositions for messages in mailbox.
 
         (typ, [data]) = <instance>.store(message_set, command, flags)
+
+        If 'uid' is true, 'message_set' is a set of UIDs (UID STORE).
         """
-        flags = self._set_quote(flags)
-        typ, dat = self._simple_command('STORE', self._sequence_set(message_set),
-                                        command, flags)
+        name = 'STORE'
+        args = (self._sequence_set(message_set), command,
+                self._set_quote(flags))
+        if uid:
+            typ, dat = self._simple_command('UID', self._atom(name), *args)
+        else:
+            typ, dat = self._simple_command(name, *args)
         return self._untagged_response(typ, dat, 'FETCH')
 
 
@@ -1062,16 +1108,22 @@ class IMAP4:
         return self._simple_command('SUBSCRIBE', self._mailbox(mailbox))
 
 
-    def thread(self, threading_algorithm, charset, *search_criteria):
+    def thread(self, threading_algorithm, charset, *search_criteria, uid=False):
         """IMAPrev1 extension THREAD command.
 
         (type, [data]) = <instance>.thread(threading_algorithm, charset, search_criteria, ...)
+
+        If 'uid' is true, the message numbers in the response are UIDs
+        (UID THREAD).
         """
         name = 'THREAD'
         if charset is not None:
             charset = self._astring(charset)
-        typ, dat = self._simple_command(name, self._atom(threading_algorithm),
-                                        charset, *search_criteria)
+        args = (self._atom(threading_algorithm), charset, *search_criteria)
+        if uid:
+            typ, dat = self._simple_command('UID', self._atom(name), *args)
+        else:
+            typ, dat = self._simple_command(name, *args)
         return self._untagged_response(typ, dat, name)
 
 
