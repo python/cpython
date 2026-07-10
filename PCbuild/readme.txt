@@ -23,7 +23,7 @@ external dependencies. To build, simply run the "build.bat" script without
 any arguments. After this succeeds, you can open the "pcbuild.sln"
 solution in Visual Studio to continue development.
 
-To build an installer package, refer to the README in the Tools/msi folder.
+To build an installer package, refer to PC/layout.
 
 The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into the
@@ -420,8 +420,6 @@ _testclinic_limited extension, the file Modules/_testclinic_limited.c:
 * Save and exit Visual Studio.
 * Add `;_testclinic_limited` to `<TestModules Include="...">` in
   PCbuild\pcbuild.proj.
-* Update "exts" in Tools\msi\lib\lib_files.wxs file or in
-  Tools\msi\test\test_files.wxs file (for tests).
 * PC\layout\main.py needs updating if you add a test-only extension whose name
   doesn't start with "_test".
 * Add the extension to PCbuild\readme.txt (this file).
