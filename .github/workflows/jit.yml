@@ -138,10 +138,12 @@ jobs:
           - true
           - false
         include:
+          # https://apt.llvm.org/llvm.sh doesn't support LLVM 19
+          # on Ubuntu 26.04, so stick to Ubuntu 24.04 until LLVM is upgraded.
           - target: x86_64-unknown-linux-gnu/gcc
-            runner: ubuntu-26.04
+            runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
-            runner: ubuntu-26.04-arm
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -151,7 +153,8 @@ jobs:
           python-version: '3.11'
       - name: Build
         run: |
-          # On ubuntu-26.04 image, clang is clang-21 by default
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
+          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
       - name: Test
