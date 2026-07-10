@@ -19,8 +19,8 @@ The following commands inspect the process identified by ``PID``:
 
 .. code-block:: shell-session
 
-   $ python -m asyncio pstree [--retries N] PID
-   $ python -m asyncio ps [--retries N] PID
+   $ python -m asyncio pstree PID
+   $ python -m asyncio ps PID
 
 The commands read the target process state without executing any code in it.
 They are only available on supported platforms and may require permission to
