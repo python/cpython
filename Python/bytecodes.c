@@ -1134,8 +1134,8 @@ dummy_func(
         macro(STORE_SLICE) = _SPECIALIZE_STORE_SLICE + _STORE_SLICE;
 
         macro(BINARY_OP_SUBSCR_LIST_INT) =
-            _GUARD_TOS_NON_NEGATIVE_COMPACT_INT + _GUARD_NOS_LIST +
-            unused/5 + _BINARY_OP_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
+            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/5 +
+            _BINARY_OP_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
 
         op(_BINARY_OP_SUBSCR_LIST_INT, (list_st, sub_st -- res, ls, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
@@ -1145,6 +1145,9 @@ dummy_func(
             assert(PyList_CheckExact(list));
 
             Py_ssize_t index = _PyLong_CompactValue((PyLongObject *)sub);
+            if (index < 0) {
+                index += PyList_GET_SIZE(list);
+            }
 #ifdef Py_GIL_DISABLED
             PyObject *res_o = _PyList_GetItemRef((PyListObject*)list, index);
             EXIT_IF(res_o == NULL);
