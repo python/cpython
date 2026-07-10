@@ -703,6 +703,12 @@
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
 
+/* Define if you have a working iconv() function. */
+#undef HAVE_ICONV
+
+/* Define to 1 if you have the <iconv.h> header file. */
+#undef HAVE_ICONV_H
+
 /* Define to 1 if you have the 'if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
@@ -1152,6 +1158,9 @@
 
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
+
+/* Define if you have readline 6.3 */
+#undef HAVE_RL_CHANGE_ENVIRONMENT
 
 /* Define to 1 if the system has the type 'rl_compdisp_func_t'. */
 #undef HAVE_RL_COMPDISP_FUNC_T

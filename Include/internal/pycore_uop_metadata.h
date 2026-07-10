@@ -187,7 +187,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_UNPACK_SEQUENCE_LIST] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_EX] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_DELETE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_LOCALS] = HAS_ERROR_FLAG,
     [_LOAD_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -284,7 +283,6 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_EXC_INFO] = 0,
-    [_GUARD_KEYS_VERSION] = HAS_EXIT_FLAG,
     [_LOAD_ATTR_METHOD_WITH_VALUES] = HAS_ARG_FLAG,
     [_LOAD_ATTR_METHOD_NO_DICT] = HAS_ARG_FLAG,
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
@@ -1814,15 +1812,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_DELETE_ATTR] = {
-        .best = { 1, 1, 1, 1 },
-        .entries = {
-            { -1, -1, -1 },
-            { 0, 1, _DELETE_ATTR_r10 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
     [_STORE_GLOBAL] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -2685,15 +2674,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 2, 1, _PUSH_EXC_INFO_r12 },
             { 3, 2, _PUSH_EXC_INFO_r23 },
             { -1, -1, -1 },
-        },
-    },
-    [_GUARD_KEYS_VERSION] = {
-        .best = { 0, 1, 2, 3 },
-        .entries = {
-            { 1, 0, _GUARD_KEYS_VERSION_r01 },
-            { 1, 1, _GUARD_KEYS_VERSION_r11 },
-            { 2, 2, _GUARD_KEYS_VERSION_r22 },
-            { 3, 3, _GUARD_KEYS_VERSION_r33 },
         },
     },
     [_LOAD_ATTR_METHOD_WITH_VALUES] = {
@@ -4308,7 +4288,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_UNPACK_SEQUENCE_LIST_r10] = _UNPACK_SEQUENCE_LIST,
     [_UNPACK_EX_r10] = _UNPACK_EX,
     [_STORE_ATTR_r20] = _STORE_ATTR,
-    [_DELETE_ATTR_r10] = _DELETE_ATTR,
     [_STORE_GLOBAL_r10] = _STORE_GLOBAL,
     [_LOAD_LOCALS_r01] = _LOAD_LOCALS,
     [_LOAD_LOCALS_r12] = _LOAD_LOCALS,
@@ -4507,10 +4486,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_PUSH_EXC_INFO_r02] = _PUSH_EXC_INFO,
     [_PUSH_EXC_INFO_r12] = _PUSH_EXC_INFO,
     [_PUSH_EXC_INFO_r23] = _PUSH_EXC_INFO,
-    [_GUARD_KEYS_VERSION_r01] = _GUARD_KEYS_VERSION,
-    [_GUARD_KEYS_VERSION_r11] = _GUARD_KEYS_VERSION,
-    [_GUARD_KEYS_VERSION_r22] = _GUARD_KEYS_VERSION,
-    [_GUARD_KEYS_VERSION_r33] = _GUARD_KEYS_VERSION,
     [_LOAD_ATTR_METHOD_WITH_VALUES_r02] = _LOAD_ATTR_METHOD_WITH_VALUES,
     [_LOAD_ATTR_METHOD_WITH_VALUES_r12] = _LOAD_ATTR_METHOD_WITH_VALUES,
     [_LOAD_ATTR_METHOD_WITH_VALUES_r23] = _LOAD_ATTR_METHOD_WITH_VALUES,
@@ -5165,8 +5140,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_COPY_FREE_VARS_r33] = "_COPY_FREE_VARS_r33",
     [_CREATE_INIT_FRAME] = "_CREATE_INIT_FRAME",
     [_CREATE_INIT_FRAME_r01] = "_CREATE_INIT_FRAME_r01",
-    [_DELETE_ATTR] = "_DELETE_ATTR",
-    [_DELETE_ATTR_r10] = "_DELETE_ATTR_r10",
     [_DELETE_DEREF] = "_DELETE_DEREF",
     [_DELETE_DEREF_r00] = "_DELETE_DEREF_r00",
     [_DELETE_FAST] = "_DELETE_FAST",
@@ -5428,11 +5401,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_ITER_VIRTUAL_r11] = "_GUARD_ITER_VIRTUAL_r11",
     [_GUARD_ITER_VIRTUAL_r22] = "_GUARD_ITER_VIRTUAL_r22",
     [_GUARD_ITER_VIRTUAL_r33] = "_GUARD_ITER_VIRTUAL_r33",
-    [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",
-    [_GUARD_KEYS_VERSION_r01] = "_GUARD_KEYS_VERSION_r01",
-    [_GUARD_KEYS_VERSION_r11] = "_GUARD_KEYS_VERSION_r11",
-    [_GUARD_KEYS_VERSION_r22] = "_GUARD_KEYS_VERSION_r22",
-    [_GUARD_KEYS_VERSION_r33] = "_GUARD_KEYS_VERSION_r33",
     [_GUARD_LOAD_SUPER_ATTR_METHOD] = "_GUARD_LOAD_SUPER_ATTR_METHOD",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r03] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r03",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r13] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r13",
@@ -6483,8 +6451,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _STORE_ATTR:
             return 2;
-        case _DELETE_ATTR:
-            return 1;
         case _STORE_GLOBAL:
             return 1;
         case _LOAD_LOCALS:
@@ -6677,8 +6643,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _PUSH_EXC_INFO:
             return 1;
-        case _GUARD_KEYS_VERSION:
-            return 0;
         case _LOAD_ATTR_METHOD_WITH_VALUES:
             return 1;
         case _LOAD_ATTR_METHOD_NO_DICT:

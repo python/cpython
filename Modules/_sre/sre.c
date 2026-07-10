@@ -738,6 +738,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->charsize = charsize;
     state->match_all = 0;
     state->must_advance = 0;
+    state->save_marks = 0;
     state->debug = ((pattern->flags & SRE_FLAG_DEBUG) != 0);
 
     state->beginning = ptr;

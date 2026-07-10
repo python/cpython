@@ -116,9 +116,10 @@ All the :mod:`!ttk` Widgets accept the following options:
 |           | read-only, and may only be specified when the window is      |
 |           | created.                                                     |
 +-----------+--------------------------------------------------------------+
-| cursor    | Specifies the mouse cursor to be used for the widget. If set |
-|           | to the empty string (the default), the cursor is inherited   |
-|           | from the parent widget.                                      |
+| cursor    | Specifies the mouse cursor to be used for the widget.  See   |
+|           | the *cursor* option type under :ref:`Tk-option-data-types`.  |
+|           | If set to the empty string (the default), the cursor is      |
+|           | inherited from the parent widget.                            |
 +-----------+--------------------------------------------------------------+
 | takefocus | Determines whether the window accepts the focus during       |
 |           | keyboard traversal. 0, 1 or an empty string is returned.     |
@@ -1371,7 +1372,7 @@ ttk.Treeview
       Without arguments, returns a tuple of all detached items,
       but not their descendants (see :meth:`detached_all`).
       With *item*, returns whether *item* is detached; since Tk 9.1, also
-      returns true if an ancestor of *item* is detached.
+      returns ``True`` if an ancestor of *item* is detached.
 
       Requires Tk 9.0 or newer.
 
