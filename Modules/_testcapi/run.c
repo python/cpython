@@ -24,34 +24,16 @@
 #undef PyRun_InteractiveLoop
 
 
-// Some PyRun functions crash if start is invalid,
-// so validate the start argument.
-static int
-check_start(int start)
-{
-    if (start == Py_single_input || start == Py_file_input
-        || start == Py_eval_input || start == Py_func_type_input)
-    {
-        return 0;
-    }
-    PyErr_SetString(PyExc_ValueError, "invalid start argument");
-    return -1;
-}
-
-
 // Test PyRun_String()
 static PyObject*
 run_string(PyObject *mod, PyObject *args)
 {
     const char *str;
-    int start = 0;
+    int start;
     PyObject *globals = NULL;
     PyObject *locals = NULL;
 
-    if (!PyArg_ParseTuple(args, "y|iOO", &str, &start, &globals, &locals)) {
-        return NULL;
-    }
-    if (check_start(start) < 0) {
+    if (!PyArg_ParseTuple(args, "yi|OO", &str, &start, &globals, &locals)) {
         return NULL;
     }
     NULLABLE(globals);
@@ -77,9 +59,6 @@ run_stringflags(PyObject *mod, PyObject *args)
     if (!PyArg_ParseTuple(args, "z#iO|Oii",
                           &str, &size, &start, &globals, &locals,
                           &cf_flags, &cf_feature_version)) {
-        return NULL;
-    }
-    if (check_start(start) < 0) {
         return NULL;
     }
     NULLABLE(globals);
@@ -481,9 +460,6 @@ run_file(PyObject *mod, PyObject *args)
                           &globals, &locals)) {
         return NULL;
     }
-    if (check_start(start) < 0) {
-        return NULL;
-    }
     NULLABLE(globals);
     NULLABLE(locals);
 
@@ -516,9 +492,6 @@ run_fileex(PyObject *mod, PyObject *args)
     if (!PyArg_ParseTuple(args, "z#iO|Oi",
                           &filename, &filename_size, &start, &globals, &locals,
                           &closeit)) {
-        return NULL;
-    }
-    if (check_start(start) < 0) {
         return NULL;
     }
     NULLABLE(globals);
@@ -558,9 +531,6 @@ run_fileflags(PyObject *mod, PyObject *args)
     if (!PyArg_ParseTuple(args, "z#iO|Oii",
                           &filename, &filename_size, &start, &globals, &locals,
                           &cf_flags, &cf_feature_version)) {
-        return NULL;
-    }
-    if (check_start(start) < 0) {
         return NULL;
     }
     NULLABLE(globals);
@@ -604,9 +574,6 @@ run_fileexflags(PyObject *mod, PyObject *args)
     if (!PyArg_ParseTuple(args, "z#iO|Oiii",
                           &filename, &filename_size, &start, &globals, &locals,
                           &closeit, &cf_flags, &cf_feature_version)) {
-        return NULL;
-    }
-    if (check_start(start) < 0) {
         return NULL;
     }
     NULLABLE(globals);
@@ -733,6 +700,86 @@ run_interactiveloopflags(PyObject *mod, PyObject *args)
 }
 
 
+// Test Py_CompileStringFlags()
+static PyObject*
+run_compilestringflags(PyObject *mod, PyObject *args)
+{
+    const char *str;
+    const char *filename;
+    int start;
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    PyCompilerFlags *pflags = NULL;
+    int cf_flags = 0;
+    int cf_feature_version = 0;
+
+    if (!PyArg_ParseTuple(args, "yyi|ii", &str, &filename, &start,
+                          &cf_flags, &cf_feature_version)) {
+        return NULL;
+    }
+    if (cf_flags || cf_feature_version) {
+        flags.cf_flags = cf_flags;
+        flags.cf_feature_version = cf_feature_version;
+        pflags = &flags;
+    }
+
+    return Py_CompileStringFlags(str, filename, start, pflags);
+}
+
+
+// Test Py_CompileStringExFlags()
+static PyObject*
+run_compilestringexflags(PyObject *mod, PyObject *args)
+{
+    const char *str;
+    const char *filename;
+    int start;
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    PyCompilerFlags *pflags = NULL;
+    int cf_flags = 0;
+    int cf_feature_version = 0;
+    int optimize = -1;
+
+    if (!PyArg_ParseTuple(args, "yyi|iii", &str, &filename, &start,
+                          &cf_flags, &cf_feature_version, &optimize)) {
+        return NULL;
+    }
+    if (cf_flags || cf_feature_version) {
+        flags.cf_flags = cf_flags;
+        flags.cf_feature_version = cf_feature_version;
+        pflags = &flags;
+    }
+
+    return Py_CompileStringExFlags(str, filename, start, pflags, optimize);
+}
+
+
+// Test Py_CompileStringObject()
+static PyObject*
+run_compilestringobject(PyObject *mod, PyObject *args)
+{
+    const char *str;
+    PyObject *filename;
+    int start;
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    PyCompilerFlags *pflags = NULL;
+    int cf_flags = 0;
+    int cf_feature_version = 0;
+    int optimize = -1;
+
+    if (!PyArg_ParseTuple(args, "yOi|iii", &str, &filename, &start,
+                          &cf_flags, &cf_feature_version, &optimize)) {
+        return NULL;
+    }
+    if (cf_flags || cf_feature_version) {
+        flags.cf_flags = cf_flags;
+        flags.cf_feature_version = cf_feature_version;
+        pflags = &flags;
+    }
+
+    return Py_CompileStringObject(str, filename, start, pflags, optimize);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"run_string", run_string, METH_VARARGS},
     {"run_stringflags", run_stringflags, METH_VARARGS},
@@ -754,6 +801,9 @@ static PyMethodDef test_methods[] = {
     {"run_simplestringflags", run_simplestringflags, METH_VARARGS},
     {"run_interactiveloop", run_interactiveloop, METH_VARARGS},
     {"run_interactiveloopflags", run_interactiveloopflags, METH_VARARGS},
+    {"run_compilestringflags", run_compilestringflags, METH_VARARGS},
+    {"run_compilestringexflags", run_compilestringexflags, METH_VARARGS},
+    {"run_compilestringobject", run_compilestringobject, METH_VARARGS},
     {NULL},
 };
 
@@ -761,6 +811,12 @@ int
 _PyTestCapi_Init_Run(PyObject *mod)
 {
     if (PyModule_AddFunctions(mod, test_methods) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntMacro(mod, PyCF_ONLY_AST) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntMacro(mod, PyCF_IGNORE_COOKIE) < 0) {
         return -1;
     }
     return 0;
