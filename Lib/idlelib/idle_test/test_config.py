@@ -94,7 +94,7 @@ class IdleConfParserTest(unittest.TestCase):
         self.assertEqual(parser.GetOptionList('Foo Bar'), ['foo'])
 
     def test_load_invalid_file(self):
-        # gh-000000: a corrupt config file must warn and fall back to
+        # gh-153477: a corrupt config file must warn and fall back to
         # defaults, not abort IDLE startup.
         self.addCleanup(config._warned.clear)
         with tempfile.TemporaryDirectory() as tdir:
