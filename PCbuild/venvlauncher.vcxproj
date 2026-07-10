@@ -110,9 +110,6 @@
     <ClCompile Include="..\PC\venvlauncher.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\icons\launcher.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="..\PC\python_exe.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

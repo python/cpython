@@ -140,12 +140,6 @@ CPython in different ways:
 pythonw
     pythonw.exe, a variant of python.exe that doesn't open a Command
     Prompt window
-pylauncher
-    py.exe, the Python Launcher for Windows, see
-        https://docs.python.org/3/using/windows.html#launcher
-pywlauncher
-    pyw.exe, a variant of py.exe that doesn't open a Command Prompt
-    window
 _testembed
     _testembed.exe, a small program that embeds Python for testing
     purposes, used by test_capi.py
@@ -156,8 +150,6 @@ _freeze_module
     _freeze_module.exe, used to regenerate frozen modules in Python
     after changes have been made to the corresponding source files
     (e.g. Lib\importlib\_bootstrap.py).
-pyshellext
-    pyshellext.dll, the shell extension deployed with the launcher
 python3dll
     python3.dll, the PEP 384 Stable ABI dll
     (not installed on free-threaded builds)
