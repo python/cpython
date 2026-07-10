@@ -3329,6 +3329,34 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_duplicate_sign_in_complex_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 ++ 0j:
+                pass
+        """)
+
+    def test_duplicate_sign_in_complex_2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 -+ 0j:
+                pass
+        """)
+
+    def test_duplicate_sign_in_complex_3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 +- 0j:
+                pass
+        """)
+
+    def test_duplicate_sign_in_complex_4(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0 -- 0j:
+                pass
+        """)
+
 class TestTypeErrors(unittest.TestCase):
 
     def test_accepts_positional_subpatterns_0(self):
