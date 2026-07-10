@@ -3438,6 +3438,17 @@ class TestStack(unittest.TestCase):
              '    line 2\n'],
             s.format())
 
+    def test_from_list_multiline_with_columns_without_end_lineno(self):
+        # end_lineno defaults to lineno, so the frame spans a single line
+        # and the trailing physical lines are not displayed.
+        frame = traceback.FrameSummary(
+            'foo.py', 1, 'fred', line='line 1\nline 2',
+            colno=0, end_colno=6)
+        s = traceback.StackSummary.from_list([frame])
+        self.assertEqual(
+            ['  File "foo.py", line 1, in fred\n    line 1\n'],
+            s.format())
+
     def test_format_list_multiline_old_style_tuple(self):
         frames = [
             ('test.py', 10, 'func',

@@ -173,9 +173,10 @@ Module-Level Functions
    for printing.  Each string in the resulting list corresponds to the item with
    the same index in the argument list.  Each string ends in a newline and may
    contain internal newlines.  When an item's source text spans multiple
-   physical lines, only the first physical line is displayed if column position
-   information is unavailable.  Old-style tuples never have column position
-   information.
+   physical lines, every line is displayed only if the item has both column
+   position information and an end line number greater than its line number;
+   otherwise just the first physical line is displayed.  Old-style tuples never
+   have column position information.
 
 
 .. function:: format_exception_only(exc, /[, value], *, show_group=False)
@@ -484,8 +485,10 @@ the module-level functions described above.
       resulting list corresponds to a single :ref:`frame <frame-objects>` from
       the stack.
       Each string ends in a newline and may contain internal newlines.  When a
-      frame's source text spans multiple physical lines, only the first physical
-      line is displayed if column position information is unavailable.
+      frame's source text spans multiple physical lines, every line is displayed
+      only if the frame has both column position information and an end line
+      number greater than its line number; otherwise just the first physical
+      line is displayed.
 
       For long sequences of the same frame and line, the first few
       repetitions are shown, followed by a summary line stating the exact
