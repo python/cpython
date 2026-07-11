@@ -2280,8 +2280,8 @@ Base and mixin classes
       If all four arguments are given, the window manager keeps the ratio
       between ``minNumer/minDenom`` and ``maxNumer/maxDenom``; passing empty
       strings removes any existing restriction.
-      With no arguments, return a tuple of the four current values, or an empty
-      string if no aspect restriction is in effect.
+      With no arguments, return a tuple of the four current values, or ``None``
+      if no aspect restriction is in effect.
       :meth:`wm_aspect` is an alias of :meth:`!aspect`.
 
    .. method:: wm_attributes(*args, return_python_dict=False, **kwargs)
@@ -2506,8 +2506,8 @@ Base and mixin classes
       window's internally requested size, and *widthInc* and *heightInc* are
       the pixel sizes of a horizontal and vertical grid unit.
       Empty strings turn off gridded management.
-      With no arguments, return a tuple of the four current values, or an empty
-      string if the window is not gridded.
+      With no arguments, return a tuple of the four current values, or ``None``
+      if the window is not gridded.
       :meth:`wm_grid` is an alias of :meth:`!grid`.
 
       Not to be confused with the grid geometry manager :meth:`Grid.grid`.
@@ -2602,8 +2602,8 @@ Base and mixin classes
       Set or query a hint to the window manager about where the window's icon
       should be positioned.
       Empty strings cancel an existing hint.
-      With no arguments, return a tuple of the two current values, or an empty
-      string if no hint is in effect.
+      With no arguments, return a tuple of the two current values, or ``None``
+      if no hint is in effect.
       :meth:`wm_iconposition` is an alias of :meth:`!iconposition`.
 
    .. method:: wm_iconwindow(pathName=None)
@@ -2672,7 +2672,8 @@ Base and mixin classes
       When this flag is set, the window is ignored by the window manager: it is
       not reparented into a decorative frame and the user cannot manipulate it
       through the usual window manager controls.
-      With no argument, return a boolean indicating whether the flag is set.
+      With no argument, return a boolean indicating whether the flag is set,
+      or ``None`` if it has not been set.
       The flag is reliably honored only when the window is first mapped or
       remapped from the withdrawn state.
       :meth:`wm_overrideredirect` is an alias of :meth:`!overrideredirect`.

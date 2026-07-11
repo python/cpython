@@ -42,8 +42,9 @@ To override the basic Tk widgets, the import should follow the Tk import::
 
 That code causes several :mod:`!tkinter.ttk` widgets (:class:`Button`,
 :class:`Checkbutton`, :class:`Entry`, :class:`Frame`, :class:`Label`,
-:class:`LabelFrame`, :class:`Menubutton`, :class:`PanedWindow`,
-:class:`Radiobutton`, :class:`Scale` and :class:`Scrollbar`) to
+:class:`LabelFrame`, :class:`Menubutton`, :class:`OptionMenu`,
+:class:`PanedWindow`, :class:`Radiobutton`, :class:`Scale`,
+:class:`Scrollbar` and :class:`Spinbox`) to
 automatically replace the Tk widgets.
 
 This has the direct benefit of using the new widgets which gives a better look
@@ -1039,6 +1040,9 @@ ttk.Treeview
          The minimum width of the column in pixels. The treeview widget will
          not make the column any smaller than specified by this option when
          the widget is resized or the user drags a column.
+      *separator*: ``True``/``False``
+         Specifies whether a column separator should be drawn to the right of
+         the column.
       *stretch*: ``True``/``False``
          Specifies whether the column's width should be adjusted when
          the widget is resized.
@@ -1752,8 +1756,11 @@ and inherits the common methods of :class:`Widget`.
    display in the menu.
    A *command* keyword argument may be given to specify a callable that is
    invoked with the selected value whenever the selection changes; the *style*
-   keyword argument sets the style used by the underlying menubutton; and the
-   *name* keyword argument sets the Tk widget name.
+   keyword argument sets the style used by the underlying menubutton; the
+   *direction* keyword argument sets where the menu is posted relative to the
+   menubutton (one of ``'above'``, ``'below'`` (the default), ``'left'``,
+   ``'right'`` or ``'flush'``); and the *name* keyword argument sets the Tk
+   widget name.
 
    .. method:: set_menu(default=None, *values)
 
