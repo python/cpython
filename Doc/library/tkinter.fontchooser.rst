@@ -35,10 +35,8 @@ The dialog also generates two virtual events on the parent window
 
 .. note::
 
-   The *command* callback is the only reliable way to obtain the
-   selected font.
-   On some platforms the *font* option is not updated to the user's
-   choice.
+   The *command* callback is the only reliable way to obtain the selected font.
+   On some platforms the *font* option is not updated to the user's choice.
 
 .. class:: FontChooser(master=None, **options)
 
@@ -50,20 +48,18 @@ The dialog also generates two virtual events on the parent window
 
    The supported configuration options are:
 
-   * *parent* --- the window to which the dialog and its virtual events
-     are related.
+   * *parent* --- the window to which the dialog and its virtual events are related.
      It defaults to the main window;
      on macOS the dialog is shown as a sheet attached to it,
      rather than as a free-standing panel.
    * *title* --- the title of the dialog.
    * *font* --- the font that is currently selected in the dialog.
-   * *command* --- a callback that is called with a
-     :class:`~tkinter.font.Font` object wrapping the selected font when
-     the user selects a font.
+   * *command* --- a callback that is called
+     with a :class:`~tkinter.font.Font` object wrapping the selected font
+     when the user selects a font.
    * *visible* --- whether the dialog is currently displayed (read-only).
 
-   The *font* option accepts the forms supported by
-   :class:`tkinter.font.Font`.
+   The *font* option accepts the forms supported by :class:`tkinter.font.Font`.
 
    .. method:: configure(**options)
                config(**options)
