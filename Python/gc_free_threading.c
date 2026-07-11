@@ -1941,6 +1941,9 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
 
     /* The local variable cannot be rebound, check it for sanity */
     assert(PyList_CheckExact(gcstate->callbacks));
+    if (PyList_GET_SIZE(gcstate->callbacks) == 0) {
+        return;
+    }
 
     PyObject *info = Py_BuildValue("{sisnsnsnsd}",
         "generation", generation,
