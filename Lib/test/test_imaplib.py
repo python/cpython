@@ -322,7 +322,7 @@ class TestImaplib(unittest.TestCase):
         self.assertEqual(sub('FROM ?', ['me@host']), 'FROM me@host')
         self.assertEqual(sub('SUBJECT ?', ['hello world']),
                          'SUBJECT "hello world"')
-        self.assertEqual(sub('SUBJECT ?', ['a"b']), 'SUBJECT "a\\"b"')
+        self.assertEqual(sub('SUBJECT ?', ['a"b']), r'SUBJECT "a\"b"')
         # An integer becomes a number, a list a parenthesized list.
         self.assertEqual(sub('LARGER ?', [1000]), 'LARGER 1000')
         self.assertEqual(sub('HEADER.FIELDS ?', [['DATE', 'FROM']]),
