@@ -1,0 +1,9 @@
+Fix :func:`unittest.mock.create_autospec` (and ``mock.patch(...,
+autospec=True)``) computing the wrong signature for :class:`functools.partial`
+and :class:`functools.partialmethod` targets. A ``functools.partial`` mock
+previously accepted calls with any number of arguments, since its
+effective, post-partial-application signature was never consulted. A
+``functools.partialmethod`` class attribute, when autospecced as part of a
+whole class, previously had its ``self`` parameter checked against the
+partialmethod's own pre-bound argument instead of being skipped, so calls
+were validated against the wrong signature shape.
