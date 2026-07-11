@@ -581,14 +581,6 @@
             break;
         }
 
-        case _GUARD_NOS_EXACT_INT: {
-            break;
-        }
-
-        case _GUARD_TOS_EXACT_INT: {
-            break;
-        }
-
         case _GUARD_NOS_OVERFLOWED: {
             break;
         }
@@ -770,10 +762,25 @@
                 /* Start of uop copied from bytecodes for constant evaluation */
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-                assert(PyLong_CheckExact(left_o));
-                assert(PyLong_CheckExact(right_o));
+                if (!PyLong_CheckExact(left_o)) {
+                    ctx->done = true;
+                    break;
+                }
+                if (!PyLong_CheckExact(right_o)) {
+                    ctx->done = true;
+                    break;
+                }
+                bool both_compact = _PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o);
+                bool shrink_pair = false;
+                if (!both_compact) {
+                    shrink_pair = _PyLong_IsShrinkSubtractPair((PyLongObject *)left_o, (PyLongObject *)right_o);
+                }
+                if (!(both_compact || shrink_pair)) {
+                    ctx->done = true;
+                    break;
+                }
                 STAT_INC(BINARY_OP, hit);
-                if (_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o)) {
+                if (both_compact) {
                     res_stackref = _PyCompactLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
                 }
                 else {
