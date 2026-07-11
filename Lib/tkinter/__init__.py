@@ -2639,11 +2639,13 @@ class Tk(Misc, Wm):
         if os.path.isfile(class_tcl):
             self.tk.call('source', class_tcl)
         if os.path.isfile(class_py):
-            exec(open(class_py).read(), dir)
+            with open(class_py, 'rb') as f:
+                exec(f.read(), dir)
         if os.path.isfile(base_tcl):
             self.tk.call('source', base_tcl)
         if os.path.isfile(base_py):
-            exec(open(base_py).read(), dir)
+            with open(base_py, 'rb') as f:
+                exec(f.read(), dir)
 
     def report_callback_exception(self, exc, val, tb):
         """Report callback exception on sys.stderr.

@@ -1,5 +1,6 @@
 import collections.abc
 import functools
+import os
 import platform
 import sys
 import textwrap
@@ -754,6 +755,26 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
 
 class TkTest(AbstractTkTest, unittest.TestCase):
+
+    def test_readprofile(self):
+        # gh-153333: profile scripts are decoded with their own coding cookie,
+        # not the locale encoding.  Two cookies so no locale can mask the bug.
+        profiles = {
+            '.RpClass.py': ('latin-1', "self._rp_latin1 = 'caf\xe9'"),
+            '.rpbase.py': ('utf-8', "self._rp_utf8 = 'caf\xe9'"),
+        }
+        self.addCleanup(self.root.__dict__.pop, '_rp_latin1', None)
+        self.addCleanup(self.root.__dict__.pop, '_rp_utf8', None)
+        with (os_helper.temp_dir() as home,
+              os_helper.EnvironmentVarGuard() as env):
+            env['HOME'] = home
+            for filename, (encoding, body) in profiles.items():
+                script = '# -*- coding: %s -*-\n%s\n' % (encoding, body)
+                with open(os.path.join(home, filename), 'wb') as f:
+                    f.write(script.encode(encoding))
+            self.root.readprofile('rpbase', 'RpClass')
+        self.assertEqual(self.root._rp_latin1, 'caf\xe9')
+        self.assertEqual(self.root._rp_utf8, 'caf\xe9')
 
     def test_className(self):
         # The className argument sets the class of the root window.  Tk
