@@ -717,8 +717,8 @@ class OtherTest(unittest.TestCase):
         self.assertListEqual(half_view.tolist(), float_view.tolist())
 
     def test_complex_types(self):
-        float_complex_data = struct.pack('FFF', 0.0, -1.5j, 1+2j)
-        double_complex_data = struct.pack('DDD', 0.0, -1.5j, 1+2j)
+        float_complex_data = struct.pack('ZfZfZf', 0.0, -1.5j, 1+2j)
+        double_complex_data = struct.pack('ZdZdZd', 0.0, -1.5j, 1+2j)
         float_complex_view = memoryview(float_complex_data).cast('Zf')
         double_complex_view = memoryview(double_complex_data).cast('Zd')
         self.assertEqual(float_complex_view.nbytes * 2, double_complex_view.nbytes)

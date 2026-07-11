@@ -290,7 +290,7 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyMethodDef enum_methods[] = {
     {"__reduce__", enum_reduce, METH_NOARGS, reduce_doc},
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       PyDoc_STR("'enumerate' objects are generic over the type of their values")},
     {NULL,              NULL}           /* sentinel */
 };
 

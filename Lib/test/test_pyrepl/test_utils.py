@@ -125,6 +125,30 @@ class TestUtils(TestCase):
                     ("import", "keyword"),
                 ],
             ),
+            (
+                "case +1",
+                [
+                    ("case", "soft_keyword"),
+                    ("+", "op"),
+                    ("1", "number"),
+                ],
+            ),
+            (
+                "match +1",
+                [
+                    ("match", "soft_keyword"),
+                    ("+", "op"),
+                    ("1", "number"),
+                ],
+            ),
+            (
+                "match -1",
+                [
+                    ("match", "soft_keyword"),
+                    ("-", "op"),
+                    ("1", "number"),
+                ],
+            ),
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):

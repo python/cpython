@@ -312,7 +312,7 @@ int _Py_uop_analyze_and_optimize(
     _PyUOpInstruction *input, int trace_len, int curr_stackentries,
     _PyUOpInstruction *output, _PyBloomFilter *dependencies);
 
-extern PyTypeObject _PyUOpExecutor_Type;
+PyAPI_DATA(PyTypeObject) _PyUOpExecutor_Type;
 
 
 #define UOP_FORMAT_TARGET 0
