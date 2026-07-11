@@ -1,0 +1,4 @@
+Fix a possible crash in ``_tokenize.TokenizerIter`` when memory allocation
+fails while converting byte offsets to character offsets for non-ASCII source
+lines. The tokenizer now correctly propagates ``MemoryError`` instead of
+dereferencing a NULL pointer or returning a result with an exception set.

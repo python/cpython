@@ -202,21 +202,27 @@ _get_current_line(tokenizeriterobject *it, const char *line_start, Py_ssize_t si
     return line;
 }
 
-static void
+static int
 _get_col_offsets(tokenizeriterobject *it, struct token token, const char *line_start,
                  PyObject *line, int line_changed, Py_ssize_t lineno, Py_ssize_t end_lineno,
                  Py_ssize_t *col_offset, Py_ssize_t *end_col_offset)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
     Py_ssize_t byte_offset = -1;
+    Py_ssize_t byte_col_offset_diff = it->byte_col_offset_diff;
     if (token.start != NULL && token.start >= line_start) {
         byte_offset = token.start - line_start;
         if (line_changed) {
-            *col_offset = _PyPegen_byte_offset_to_character_offset_line(line, 0, byte_offset);
-            it->byte_col_offset_diff = byte_offset - *col_offset;
+            Py_ssize_t offset = _PyPegen_byte_offset_to_character_offset_line(
+                line, 0, byte_offset);
+            if (offset < 0) {
+                return -1;
+            }
+            *col_offset = offset;
+            byte_col_offset_diff = byte_offset - *col_offset;
         }
         else {
-            *col_offset = byte_offset - it->byte_col_offset_diff;
+            *col_offset = byte_offset - byte_col_offset_diff;
         }
     }
 
@@ -226,17 +232,28 @@ _get_col_offsets(tokenizeriterobject *it, struct token token, const char *line_s
             // If the whole token is at the same line, we can just use the token.start
             // buffer for figuring out the new column offset, since using line is not
             // performant for very long lines.
-            Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(line, byte_offset, end_byte_offset);
+            Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(
+                line, byte_offset, end_byte_offset);
+            if (token_col_offset < 0) {
+                return -1;
+            }
             *end_col_offset = *col_offset + token_col_offset;
-            it->byte_col_offset_diff += token.end - token.start - token_col_offset;
+            byte_col_offset_diff += token.end - token.start - token_col_offset;
         }
         else {
-            *end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(it->tok->line_start, end_byte_offset);
-            it->byte_col_offset_diff += end_byte_offset - *end_col_offset;
+            Py_ssize_t offset = _PyPegen_byte_offset_to_character_offset_raw(
+                it->tok->line_start, end_byte_offset);
+            if (offset < 0) {
+                return -1;
+            }
+            *end_col_offset = offset;
+            byte_col_offset_diff += end_byte_offset - *end_col_offset;
         }
     }
+    it->byte_col_offset_diff = byte_col_offset_diff;
     it->last_lineno = lineno;
     it->last_end_lineno = end_lineno;
+    return 0;
 }
 
 static PyObject *
@@ -301,8 +318,11 @@ tokenizeriter_next(PyObject *op)
     Py_ssize_t end_lineno = it->tok->lineno;
     Py_ssize_t col_offset = -1;
     Py_ssize_t end_col_offset = -1;
-    _get_col_offsets(it, token, line_start, line, line_changed,
-                     lineno, end_lineno, &col_offset, &end_col_offset);
+    if (_get_col_offsets(it, token, line_start, line, line_changed,
+                         lineno, end_lineno, &col_offset, &end_col_offset) < 0) {
+        Py_DECREF(str);
+        goto exit;
+    }
 
     if (it->tok->tok_extra_tokens) {
         if (is_trailing_token) {
