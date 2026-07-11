@@ -1604,19 +1604,27 @@ class ContextTests(unittest.TestCase):
         gc.collect()
         self.assertIs(wr(), None)
 
-    @unittest.skipUnless(support.Py_GIL_DISABLED,
-                         "test is only useful if the GIL is disabled")
+    @support.skip_if_sanitizer("gh-150191: OpenSSL has an internal data race "
+                               "when the SNI callback is replaced during a "
+                               "handshake", thread=True)
     @threading_helper.requires_working_threading()
     def test_sni_callback_race(self):
-        # Replacing sni_callback while handshakes are in-flight must not
+        # Replacing sni_callback while a handshake is in-flight must not
         # crash (use-after-free on the callback in free-threaded builds).
+        #
+        # Use a single handshake thread: OpenSSL has internal data races
+        # on shared SSL_CTX state when multiple handshakes run
+        # concurrently against the same context (gh-150191). Concurrency
+        # on the *setter* is what exercises the fix from gh-149816, so
+        # multiple toggler threads race against each other and against
+        # the one handshake worker.
         client_ctx, server_ctx, hostname = testing_context()
 
         server_ctx.sni_callback = lambda *a: None
-        done = threading.Event()
+        deadline = time.monotonic() + 0.1
 
         def do_handshakes():
-            while not done.is_set():
+            while time.monotonic() < deadline:
                 c_in = ssl.MemoryBIO()
                 c_out = ssl.MemoryBIO()
                 s_in = ssl.MemoryBIO()
@@ -1643,19 +1651,11 @@ class ContextTests(unittest.TestCase):
                         c_in.write(s_out.read())
 
         def toggle_callback():
-            while not done.is_set():
+            while time.monotonic() < deadline:
                 server_ctx.sni_callback = lambda *a: None
                 server_ctx.sni_callback = None
 
-        workers = max(4, (os.cpu_count() or 4) * 2)
-        threads = [threading.Thread(target=do_handshakes)
-                   for _ in range(workers)]
-        threads.append(threading.Thread(target=toggle_callback))
-
-        with threading_helper.catch_threading_exception() as cm:
-            with threading_helper.start_threads(threads):
-                done.set()
-            self.assertIsNone(cm.exc_value)
+        threading_helper.run_concurrently([do_handshakes] + 4 * [toggle_callback])
 
     def test_cert_store_stats(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -5048,6 +5048,9 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
 
+    @support.skip_if_sanitizer("gh-150191: OpenSSL races on SSL->rwstate and "
+                               "the socket BIO flags with concurrent read "
+                               "and write", thread=True)
     def test_thread_recv_while_main_thread_sends(self):
         # GH-137583: Locking was added to calls to send() and recv() on SSL
         # socket objects. This seemed fine at the surface level because those
