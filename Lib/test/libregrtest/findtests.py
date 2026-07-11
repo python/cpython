@@ -110,6 +110,10 @@ def collect_cases(tests: TestTuple, *,
                   match_tests: TestFilter | None = None,
                   test_dir: StrPath | None = None
                   ) -> tuple[dict[TestName, list[str]], list[TestName]]:
+    # Install the filter unconditionally: passing None clears any
+    # previously installed global filter, so collection is not
+    # affected by unrelated state in this process.
+    set_match_tests(match_tests)
     result: dict[TestName, list[str]] = {}
     skipped: list[TestName] = []
     for test_name in tests:
@@ -127,7 +131,7 @@ def collect_cases(tests: TestTuple, *,
 
 def _collect_cases(suite: unittest.TestSuite, out: list[str]) -> None:
     for test in suite:
-        if isinstance(test, unittest.loader._FailedTest):
+        if isinstance(test, unittest.loader._FailedTest):  # type: ignore[attr-defined]
             continue
         if isinstance(test, unittest.TestSuite):
             _collect_cases(test, out)

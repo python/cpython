@@ -100,6 +100,10 @@ class Regrtest:
         else:
             num_workers = ns.use_mp  # run in parallel
         self.num_workers: int = num_workers
+        if ns.single_process_per_case and ns.use_mp is None:
+            # Each test case runs in its own worker subprocess;
+            # default to one worker when -j was not given.
+            self.num_workers = 1
         self.worker_json: StrJSON | None = ns.worker_json
 
         # Options to run tests
@@ -531,10 +535,6 @@ class Regrtest:
             msg = ("WARNING: Running tests with --huntrleaks/-R and "
                    "less than 3 warmup repetitions can give false positives!")
             print(msg, file=sys.stdout, flush=True)
-
-        if self.want_single_process_per_case and self.num_workers == 0:
-            # Each test case must run in its own subprocess
-            self.num_workers = 1
 
         if self.num_workers < 0:
             # Use all CPUs + 2 extra worker processes for tests

@@ -498,6 +498,17 @@ def _parse_args(args, **kwargs):
     if ns.single_process:
         ns.use_mp = None
 
+    if ns.single_process_per_case:
+        if ns.rerun:
+            parser.error("--single-process-per-case and --rerun "
+                         "options don't go together")
+        if ns.pgo:
+            parser.error("--single-process-per-case and --pgo "
+                         "options don't go together")
+        if ns.single_process:
+            parser.error("--single-process-per-case and --single-process "
+                         "options don't go together")
+
     # When both --slow-ci and --fast-ci options are present,
     # --slow-ci has the priority
     if ns.slow_ci:

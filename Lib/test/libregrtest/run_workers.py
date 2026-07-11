@@ -139,7 +139,6 @@ class WorkerThread(threading.Thread):
         self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
-        self.current_module: TestName = ""
 
     def __repr__(self) -> str:
         info = [f'WorkerThread #{self.worker_id}']
@@ -287,11 +286,16 @@ class WorkerThread(threading.Thread):
                 json_file = JsonFile(json_fd, JsonFileType.UNIX_FD)
         return (json_file, json_tmpfile)
 
-    def create_worker_runtests(self, test_name: TestName, json_file: JsonFile) -> WorkerRunTests:
+    def create_worker_runtests(self, test_name: TestName,
+                               json_file: JsonFile,
+                               module_name: TestName | None = None,
+                               ) -> WorkerRunTests:
         kwargs: dict[str, Any] = {}
 
-        if self.runtests.single_process_per_case:
-            tests = (self.current_module,)
+        if module_name is not None:
+            # single_process_per_case mode: run a single test case
+            # (test_name is a case ID) inside its module.
+            tests = (module_name,)
             kwargs['match_tests'] = [(test_name, True)]
         else:
             tests = (test_name,)
@@ -377,11 +381,13 @@ class WorkerThread(threading.Thread):
 
         return (result, stdout)
 
-    def _runtest(self, test_name: TestName) -> MultiprocessResult:
+    def _runtest(self, test_name: TestName,
+                 module_name: TestName | None = None) -> MultiprocessResult:
         with contextlib.ExitStack() as stack:
             stdout_file = self.create_stdout(stack)
             json_file, json_tmpfile = self.create_json_file(stack)
-            worker_runtests = self.create_worker_runtests(test_name, json_file)
+            worker_runtests = self.create_worker_runtests(
+                test_name, json_file, module_name=module_name)
 
             retcode: str | int | None
             retcode, tmp_files = self.run_tmp_files(worker_runtests,
@@ -419,6 +425,7 @@ class WorkerThread(threading.Thread):
 
     def _run_flat(self) -> None:
         """Original behavior: one test name (module) per iteration."""
+        assert isinstance(self.pending, MultiprocessIterator)
         fail_fast = self.runtests.fail_fast
         fail_env_changed = self.runtests.fail_env_changed
         try:
@@ -450,6 +457,7 @@ class WorkerThread(threading.Thread):
 
     def _run_grouped(self) -> None:
         """Execute all tests in a group on the same thread before moving on."""
+        assert isinstance(self.pending, GroupedMultiprocessIterator)
         fail_fast = self.runtests.fail_fast
         fail_env_changed = self.runtests.fail_env_changed
         try:
@@ -463,11 +471,10 @@ class WorkerThread(threading.Thread):
                 for test_name in case_ids:
                     if self._stopped:
                         break
-                    self.current_module = module_name
                     self.start_time = time.monotonic()
                     self.test_name = test_name
                     try:
-                        mp_result = self._runtest(test_name)
+                        mp_result = self._runtest(test_name, module_name)
                     except WorkerError as exc:
                         mp_result = exc.mp_result
                     finally:
@@ -563,6 +570,7 @@ class RunWorkers:
         self.live_worker_count = 0
 
         self.output: queue.Queue[QueueContent] = queue.Queue()
+        self.pending: MultiprocessIterator | GroupedMultiprocessIterator
         if runtests.single_process_per_case:
             groups_iter = runtests.iter_case_groups()
             self.pending = GroupedMultiprocessIterator(groups_iter)
