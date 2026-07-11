@@ -188,9 +188,10 @@ enclosed with either parentheses or double quotes) each string is quoted.
 However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
-In general, pass arguments unquoted and let the module quote them as needed.
-An argument that is already enclosed in double quotes is left unchanged,
-Or you can quote the string yourself; an argument that is already enclosed in double quotes is left unchanged.  In general, however, it is better to pass the arguments unquoted and let the module quote them as needed.
+Or you can quote the string yourself;
+an argument that is already enclosed in double quotes is left unchanged.
+In general, however, it is better to pass arguments unquoted
+and let the module quote them as needed.
 
 Mailbox names are encoded as modified UTF-7 (:rfc:`3501`, section 5.1.3),
 so a mailbox name containing non-ASCII characters can be passed as an
@@ -211,30 +212,22 @@ or mandated results from the command. Each *data* is either a ``bytes``, or a
 tuple. If a tuple, then the first part is the header of the response, and the
 second part contains the data (ie: 'literal' value).
 
-The *message_set* options to commands below is a string specifying one or more
-messages to be acted upon.  It may be a simple message number (``'1'``), a range
-of message numbers (``'2:4'``), or a group of non-contiguous ranges separated by
-commas (``'1:3,6:9'``).  A range can contain an asterisk to indicate an infinite
-upper bound (``'3:*'``).
+The *message_set* options to the commands below can be a string specifying
+one or more messages to be acted upon.
+It may be a simple message number (``'1'``),
+a range of message numbers (``'2:4'``),
+or a group of non-contiguous ranges separated by commas (``'1:3,6:9'``).
+A range can contain an asterisk
+to indicate an infinite upper bound (``'3:*'``).
 
-It may also be given in a structured form:
-an integer,
-or a sequence whose items are integers,
-``(start, stop)`` range tuples (where ``None`` or ``'*'`` stands for the last
-message),
+Alternatively it can be specified using integers and :class:`range` objects.
+It may be a single message number or a sequence.
+The sequence items may be integers,
+``(start, stop)`` tuples
+(where ``None`` or ``'*'`` stands for the last message),
 or :class:`range` objects.
-For example, ``[1, (3, 5), 8]`` and ``[range(1, 6), 8]`` are both equivalent to
-The *message_set* options to the commands below can be a string specifying one or more
-messages to be acted upon.  It may be a simple message number (``'1'``), a range
-of message numbers (``'2:4'``), or a group of non-contiguous ranges separated by
-commas (``'1:3,6:9'``).  A range can contain an asterisk to indicate an infinite
-upper bound (``'3:*'``).
-
-Alternatively it can be specified using integers and :class:`range` objects.  It may be a
-single message number or a sequence.  The sequence items may be integers,
-``(start, stop)`` tuples (where ``None`` or ``'*'`` stands for the last message),
-or :class:`range` objects.  For example, ``[1, (3, 5), 8]`` and ``[range(1, 6), 8]`` are both
-equivalent to ``'1,3:5,8'``.
+For example, ``[1, (3, 5), 8]`` and ``[range(1, 6), 8]``
+are both equivalent to ``'1,3:5,8'``.
 
 .. versionchanged:: next
    Added support for the structured *message_set*.
@@ -246,15 +239,14 @@ the *names* argument of :meth:`~IMAP4.status`,
 the *sort_criteria* argument of :meth:`~IMAP4.sort`,
 or the *message_parts* argument of :meth:`~IMAP4.fetch` ---
 can be passed as a sequence of strings instead of a single preformatted string.
-For example, ``[r'\Seen', r'\Answered']`` is equivalent to ``(\Seen \Answered)``.
+For example, ``[r'\Seen', r'\Answered']``
+is equivalent to ``(\Seen \Answered)``.
 
 .. versionchanged:: next
    Added support for passing these arguments as a sequence.
 
 .. _imap4-params:
 
-The value-bearing arguments of the search and fetch commands must otherwise be
-quoted by hand.
 The value-bearing arguments of the search and fetch commands can be
 quoted by hand, but this is error prone.
 Instead, they may contain ``?`` placeholders that are substituted, and quoted
@@ -269,23 +261,24 @@ in the manner of :mod:`sqlite3` parameter substitution::
 
 The placeholders are:
 
-* ``?`` --- an astring: a string (quoted if necessary), an integer, or a
-* ``?`` --- an ``astring``: a string (which will be quoted if necessary), an integer, or a
-  list of integers and/or strings (which will be sent as a parenthesized list);
+* ``?`` --- an ``astring``:
+  a string (which will be quoted if necessary),
+  an integer,
+  or a list of integers and/or strings
+  (which will be sent as a parenthesized list);
 * ``?f`` --- a flag or a list of flags, sent verbatim without quoting;
 * ``?s`` --- a *message_set* in the structured form described above.
 
 ``??`` stands for a literal ``?``.
 
-Substitution is only performed when *params* is given,
-Substitution is only performed when *params* is given,
-if no *params* are given an argument containing a literal ``?`` is unchanged.
 The *params* keyword is accepted by :meth:`~IMAP4.search`,
 :meth:`~IMAP4.fetch`, :meth:`~IMAP4.sort`, :meth:`~IMAP4.thread` and
 :meth:`~IMAP4.uid`.
 
 .. versionadded:: next
    The *params* keyword argument.
+   Substitution is only performed when *params* is given,
+   so an existing call that contains a literal ``?`` is unaffected.
 
 An :class:`IMAP4` instance has the following methods:
 
