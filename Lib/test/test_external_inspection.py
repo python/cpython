@@ -3810,8 +3810,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
 
     # Limits plus one, to exceed them (must match MAX_FRAME_CHAIN_DEPTH /
     # MAX_TASK_WAITER_CHAIN_DEPTH from _remote_debugging.h)
-    CHAIN_DEPTH = 1024 + 512 + 1
-
+    FRAME_CHAIN_DEPTH = 1024 + 512 + 1
     TASK_WAITER_CHAIN_DEPTH = 256 + 1
 
     def _assert_unwinder_limit_error(self, unwind, expected_substring):
@@ -3848,7 +3847,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
         synchronous stack walk instead of walking it indefinitely."""
         script_body = f"""\
             import sys
-            sys.setrecursionlimit({self.CHAIN_DEPTH * 2})
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
 
             def recurse(n):
                 if n <= 0:
@@ -3857,7 +3856,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
                     return
                 recurse(n - 1)
 
-            recurse({self.CHAIN_DEPTH})
+            recurse({self.FRAME_CHAIN_DEPTH})
             """
         with self._target_process(script_body) as (p, client_socket, _):
             _wait_for_signal(client_socket, b"ready")
@@ -3907,7 +3906,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
         stack walk instead of walking it indefinitely."""
         script_body = f"""\
             import sys, asyncio
-            sys.setrecursionlimit({self.CHAIN_DEPTH * 2})
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
 
             def recurse(n):
                 if n <= 0:
@@ -3917,7 +3916,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
                 recurse(n - 1)
 
             async def deep():
-                recurse({self.CHAIN_DEPTH})
+                recurse({self.FRAME_CHAIN_DEPTH})
 
             asyncio.run(deep())
             """
@@ -3939,7 +3938,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
         the walk instead of overflowing the C stack."""
         script_body = f"""\
             import sys, asyncio
-            sys.setrecursionlimit({self.CHAIN_DEPTH * 2})
+            sys.setrecursionlimit({self.FRAME_CHAIN_DEPTH * 2})
 
             async def chain(n):
                 if n <= 0:
@@ -3948,7 +3947,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
                 await chain(n - 1)
 
             async def main():
-                task = asyncio.create_task(chain({self.CHAIN_DEPTH}))
+                task = asyncio.create_task(chain({self.FRAME_CHAIN_DEPTH}))
                 await asyncio.sleep(0)
                 sock.sendall(b"ready")
                 await task
