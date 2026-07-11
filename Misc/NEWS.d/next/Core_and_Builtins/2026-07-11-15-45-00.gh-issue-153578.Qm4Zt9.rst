@@ -1,0 +1,2 @@
+Fix a crash in :meth:`bytearray.extend` when the argument's
+:meth:`~object.__buffer__` method resizes the bytearray. Patch by tonghuaroot.
