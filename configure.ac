@@ -4544,8 +4544,8 @@ WITH_SAVE_ENV([
       #  error "Tk older than 8.5.12 not supported"
       #endif
     ], [
-      void *x1 = Tcl_Init;
-      void *x2 = Tk_Init;
+      Tcl_Init(NULL);
+      Tk_Init(NULL);
     ])
   ], [
     have_tcltk=yes
