@@ -1,0 +1,2 @@
+Optimize unicode_eq string equality comparisons for short strings by using
+inline integer casts and SSE2 vector instructions.
