@@ -265,7 +265,8 @@ char *
 _PyTokenizer_translate_newlines(const char *s, int exec_input, int preserve_crlf,
                    struct tok_state *tok) {
     int skip_next_lf = 0;
-    size_t needed_length = strlen(s) + 2, final_length;
+    size_t input_length = strlen(s);
+    size_t needed_length = input_length + 2, final_length;
     char *buf, *current;
     char c = '\0';
     buf = PyMem_Malloc(needed_length);
@@ -273,6 +274,13 @@ _PyTokenizer_translate_newlines(const char *s, int exec_input, int preserve_crlf
         tok->done = E_NOMEM;
         PyErr_NoMemory();
         return NULL;
+    }
+    if (memchr(s, '\r', input_length) == NULL) {
+        // No carriage returns: nothing to translate, copy verbatim.
+        memcpy(buf, s, input_length);
+        current = buf + input_length;
+        c = input_length ? s[input_length - 1] : '\0';
+        goto add_final_newline;
     }
     for (current = buf; *s; s++, current++) {
         c = *s;
@@ -290,6 +298,7 @@ _PyTokenizer_translate_newlines(const char *s, int exec_input, int preserve_crlf
         }
         *current = c;
     }
+add_final_newline:
     /* If this is exec input, add a newline to the end of the string if
        there isn't one already. */
     if (exec_input && c != '\n' && c != '\0') {
