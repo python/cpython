@@ -572,10 +572,40 @@ _PyPegen_name_from_token(Parser *p, Token* t)
         p->error_indicator = 1;
         return NULL;
     }
+    // Identifiers repeat constantly; a small span-keyed cache skips the
+    // UTF-8 decode + intern for repeated occurrences. Keys point into
+    // arena-owned token bytes and values are arena-owned interned strings,
+    // so borrowed references are valid for the lifetime of the parse
+    // (including the second error pass, which reuses parser and arena).
+    Py_ssize_t len = PyBytes_GET_SIZE(t->bytes);
+    uint32_t hash = 2166136261u;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        hash = (hash ^ (unsigned char)s[i]) * 16777619u;
+    }
+    struct _identifier_cache_entry *free_slot = NULL;
+    size_t idx = hash & (_PYPEGEN_IDENT_CACHE_SIZE - 1);
+    for (int probe = 0; probe < _PYPEGEN_IDENT_CACHE_MAX_PROBES; probe++) {
+        struct _identifier_cache_entry *e =
+            &p->ident_cache[(idx + probe) & (_PYPEGEN_IDENT_CACHE_SIZE - 1)];
+        if (e->key == NULL) {
+            free_slot = e;
+            break;
+        }
+        if (e->hash == hash && e->len == len && memcmp(e->key, s, len) == 0) {
+            return _PyAST_Name(e->value, Load, t->lineno, t->col_offset,
+                               t->end_lineno, t->end_col_offset, p->arena);
+        }
+    }
     PyObject *id = _PyPegen_new_identifier(p, s);
     if (id == NULL) {
         p->error_indicator = 1;
         return NULL;
+    }
+    if (free_slot != NULL) {
+        free_slot->key = s;
+        free_slot->len = len;
+        free_slot->hash = hash;
+        free_slot->value = id;
     }
     return _PyAST_Name(id, Load, t->lineno, t->col_offset, t->end_lineno,
                        t->end_col_offset, p->arena);
@@ -844,6 +874,15 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->flags = flags;
     p->feature_version = feature_version;
     p->known_err_token = NULL;
+    p->ident_cache = PyMem_Calloc(_PYPEGEN_IDENT_CACHE_SIZE,
+                                  sizeof(struct _identifier_cache_entry));
+    if (p->ident_cache == NULL) {
+        growable_comment_array_deallocate(&p->type_ignore_comments);
+        PyMem_Free(p->tokens[0]);
+        PyMem_Free(p->tokens);
+        PyMem_Free(p);
+        return (Parser *) PyErr_NoMemory();
+    }
     p->level = 0;
     p->call_invalid_rules = 0;
     p->last_stmt_location.lineno = 0;
@@ -859,6 +898,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
 void
 _PyPegen_Parser_Free(Parser *p)
 {
+    PyMem_Free(p->ident_cache);
     Py_XDECREF(p->normalize);
     for (int i = 0; i < p->size; i++) {
         PyMem_Free(p->tokens[i]);
