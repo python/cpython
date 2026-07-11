@@ -735,13 +735,9 @@ class UnixConsole(Console):
             return self.__run_input_hook
 
     def __run_input_hook(self):
-        # Input-hook callbacks (GUI toolkit event loops, and any warning,
-        # traceback or print they emit) expect normal cooked-mode output, but
-        # pyrepl runs with OPOST disabled so it can drive the cursor itself.
-        # Temporarily restore the terminal's saved output flags around the
-        # hook so that '\n' is translated to '\r\n' as it was under the
-        # readline REPL, then re-enter raw mode.  Only oflag is toggled --
-        # re-enabling ECHO/ICANON at the prompt would be wrong.  See gh-152907.
+        # gh-152907: input hooks expect cooked output, but pyrepl runs with
+        # OPOST disabled.  Restore the saved output flags around the hook
+        # (only oflag; input must stay raw at the prompt).
         cooked = self.__rawtermstate.copy()
         cooked.oflag = self.__svtermstate.oflag
         self.__input_fd_set(cooked)

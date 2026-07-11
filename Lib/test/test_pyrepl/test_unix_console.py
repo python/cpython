@@ -440,20 +440,15 @@ except ImportError:
 @unittest.skipIf(is_android or is_apple_mobile or is_wasm32,
                  "pty is not available on this platform")
 class TestUnixConsoleInputHook(TestCase):
-    # gh-152907: pyrepl runs with OPOST disabled so it can drive the cursor
-    # itself, but input-hook callbacks (GUI event loops, and any warning,
-    # traceback or print they emit) expect normal cooked-mode output.  The
-    # console must restore cooked output around the hook call so that '\n' is
-    # translated back to '\r\n', then re-enter raw mode.
+    # gh-152907: the console must restore cooked output (OPOST) around
+    # input-hook calls, then re-enter raw mode.
 
     def test_input_hook_output_is_cooked(self):
         master_fd, slave_fd = pty.openpty()
 
-        # Drain the master side continuously, like a real terminal would.
-        # This cannot be deferred until after the hook call: pyrepl switches
-        # the terminal mode with TCSADRAIN, which on some platforms (e.g.
-        # macOS) blocks until the queued output has actually been read from
-        # the master side, so an undrained pty deadlocks the mode switch.
+        # Drain the master continuously: on some platforms (e.g. macOS)
+        # tcsetattr(TCSADRAIN) blocks until the master side is read, so an
+        # undrained pty would deadlock the mode switch.
         chunks = []
         reading = True
 
@@ -479,8 +474,7 @@ class TestUnixConsoleInputHook(TestCase):
             os.close(master_fd)
         self.addCleanup(cleanup)
 
-        # Establish a normal cooked terminal as the saved state so the fix has
-        # something to restore around the hook call.
+        # Start from a cooked terminal so there are saved flags to restore.
         attr = _termios.tcgetattr(slave_fd)
         attr[1] |= _termios.OPOST | _termios.ONLCR
         _termios.tcsetattr(slave_fd, _termios.TCSANOW, attr)
@@ -513,9 +507,8 @@ class TestUnixConsoleInputHook(TestCase):
             console.restore()
             os.close(slave_fd)
 
-        # No sleep needed: the TCSADRAIN switch back to raw mode did not
-        # return until the hook's output was drained, so after joining the
-        # reader and emptying the master nothing is left in flight.
+        # The switch back to raw mode already drained the hook's output, so
+        # joining the reader is enough -- no sleep needed.
         reading = False
         reader_thread.join()
         while select.select([master_fd], [], [], 0)[0]:
