@@ -3420,6 +3420,9 @@ module_exec(PyObject *module)
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
         return 1;
     }
+    if (_PyTestInternalCapi_Init_Tokenizer(module) < 0) {
+        return 1;
+    }
     if (_PyTestInternalCapi_Init_Tuple(module) < 0) {
         return 1;
     }
