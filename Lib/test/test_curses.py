@@ -1,6 +1,7 @@
 import functools
 import inspect
 import os
+import platform
 import select
 import string
 import sys
@@ -27,6 +28,9 @@ try:
     import curses.panel
 except ImportError:
     pass
+
+# Only reachable once curses imported, so the platform has fcntl too.
+import fcntl
 
 def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
@@ -85,6 +89,18 @@ SHORT_MAX = 0x7fff
 _ncurses_version = getattr(curses, 'ncurses_version', None)
 BROKEN_NEWTERM = _ncurses_version is not None and _ncurses_version < (6, 5)
 USE_NEWTERM = hasattr(curses, 'newterm') and not BROKEN_NEWTERM
+
+# Older macOS reports a variation selector as a spacing character (wcwidth()
+# == 1) rather than a combining mark, so it cannot share a cell with its base.
+# The failure is confirmed on 14.2 and gone by 26, so skip below 26.
+def _broken_variation_selector_width():
+    if sys.platform == 'darwin':
+        mac_ver = platform.mac_ver()[0]
+        if mac_ver:
+            return tuple(map(int, mac_ver.split('.'))) < (26,)
+    return False
+
+BROKEN_VARIATION_SELECTOR_WIDTH = _broken_variation_selector_width()
 
 # newterm() is used when available (it reports errors instead of exiting), but
 # initscr() is still the fallback, and an unusable $TERM has no terminal to
@@ -151,6 +167,10 @@ class TestCurses(unittest.TestCase):
             # ScreenTests run newterm()/set_term() in the same process.
             try:
                 infd = sys.__stdin__.fileno()
+                if fcntl.fcntl(infd, fcntl.F_GETFL) & os.O_ACCMODE == os.O_WRONLY:
+                    # newterm() needs a readable input fd; a write-only stdin
+                    # (as nohup leaves for a backgrounded run) fails with EINVAL.
+                    infd = stdout_fd
             except (AttributeError, ValueError, OSError):
                 infd = stdout_fd
             self.screen = curses.newterm(term, stdout_fd, infd)
@@ -411,7 +431,8 @@ class TestCurses(unittest.TestCase):
         stdscr = self.stdscr
         if self._encodable('\U0001f600'):
             stdscr.addch(0, 0, '\U0001f600')          # single emoji
-        if self._encodable('\u263a\ufe0f'):
+        # Skip the variation selector where the platform reports it as spacing.
+        if not BROKEN_VARIATION_SELECTOR_WIDTH and self._encodable('\u263a\ufe0f'):
             stdscr.addch(1, 0, '\u263a\ufe0f')        # WHITE SMILING FACE + VS-16
         # An emoji ZWJ sequence or an emoji with a modifier is more than one
         # spacing character and cannot share a single cell.
