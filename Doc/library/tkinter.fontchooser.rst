@@ -40,7 +40,7 @@ The dialog also generates two virtual events on the parent window
    On some platforms the *font* option is not updated to the user's
    choice.
 
-.. class:: FontChooser(master=None, *, parent=None, title=None, font=None, command=None)
+.. class:: FontChooser(master=None, **options)
 
    The class implementing the font selection dialog.
 

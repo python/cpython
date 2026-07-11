@@ -36,23 +36,13 @@ class FontChooser:
     to the user's choice.
     """
 
-    def __init__(self, master=None, *, parent=None, title=None, font=None,
-                 command=None):
+    def __init__(self, master=None, **options):
         if master is None:
-            master = parent
+            master = options.get('parent')
         if master is None:
             master = tkinter._get_default_root('create a font chooser')
         self.master = master
         self._command_name = None
-        options = {}
-        if parent is not None:
-            options['parent'] = parent
-        if title is not None:
-            options['title'] = title
-        if font is not None:
-            options['font'] = font
-        if command is not None:
-            options['command'] = command
         if options:
             self.configure(options)
 
