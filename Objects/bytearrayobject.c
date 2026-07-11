@@ -1622,8 +1622,8 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     if (_PyBytes_Resize(&self->ob_bytes_object, to_take) == -1) {
-        /* _PyBytes_Resize has made ob_bytes_object NULL here
-           we need to ensure that the other byte array fields are consistent. */
+        /* _PyBytes_Resize has made ob_bytes_object NULL here. We need to
+           ensure that the other bytearray fields are consistent. */
         self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         bytearray_reinit_from_bytes(self, 0, 0);
         Py_DECREF(remaining);

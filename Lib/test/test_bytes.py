@@ -2202,9 +2202,9 @@ class ByteArrayInitialization1Test(unittest.TestCase):
     # A bytearray created with __new__ so that __init__ is never called
     # (often as a side-effect of a subclass not calling super().__init__).
     # Is left with ob_bytes_object == NULL.  It's easy for implementation
-    # code to not realise that ob_bytes_object can be NULL, so these tests
+    # code to not realize that ob_bytes_object can be NULL, so these tests
     # verify a set of code paths that have historically crashed or asserted
-    # (see gh-153419)
+    # (see gh-153419).
 
     def _check(self, stmt, expected):
         code = textwrap.dedent(f"""
@@ -2244,7 +2244,7 @@ class ByteArrayInitialization1Test(unittest.TestCase):
 
     def test_reinit_length1(self):
         # There is a shortcut taken when resizing, where alloc/2 < newsize.
-        # In this case, the existing buffer is reused, rather than reset
+        # In this case, the existing buffer is reused, rather than reset.
         # If this happens when newsize == 0 and alloc == 1, then various
         # code assumptions can be violated.  This test should catch those
         # in debug builds. (see gh-153419)
