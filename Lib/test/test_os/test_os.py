@@ -4517,7 +4517,7 @@ class OSErrorTests(unittest.TestCase):
                 try:
                     func(name, *func_args)
                 except OSError as err:
-                    if func is os.chroot and support.is_android and os.getuid() != 0:
+                    if support.is_android and os.getuid() != 0 and func is getattr(os, 'chroot', None):
                         self.assertIsNone(err.filename, str(func))
                     else:
                         self.assertIs(err.filename, name, str(func))
