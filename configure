@@ -16268,8 +16268,8 @@ int
 main (void)
 {
 
-      void *x1 = Tcl_Init;
-      void *x2 = Tk_Init;
+      Tcl_Init(NULL);
+      Tk_Init(NULL);
 
   ;
   return 0;
