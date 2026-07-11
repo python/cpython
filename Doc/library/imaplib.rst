@@ -222,8 +222,7 @@ to indicate an infinite upper bound (``'3:*'``).
 
 Alternatively it can be specified using integers and :class:`range` objects.
 It may be a single message number or a sequence.
-The sequence items may be integers,
-``(start, stop)`` tuples
+The sequence items may be integers, ``(start, stop)`` tuples
 (where ``None`` or ``'*'`` stands for the last message),
 or :class:`range` objects.
 For example, ``[1, (3, 5), 8]`` and ``[range(1, 6), 8]``
@@ -247,8 +246,8 @@ is equivalent to ``(\Seen \Answered)``.
 
 .. _imap4-params:
 
-The value-bearing arguments of the search and fetch commands can be
-quoted by hand, but this is error prone.
+The value-bearing arguments of the search and fetch commands
+can be quoted by hand, but this is error prone.
 Instead, they may contain ``?`` placeholders that are substituted, and quoted
 as required, from a *params* keyword argument,
 in the manner of :mod:`sqlite3` parameter substitution::
@@ -261,10 +260,8 @@ in the manner of :mod:`sqlite3` parameter substitution::
 
 The placeholders are:
 
-* ``?`` --- an ``astring``:
-  a string (which will be quoted if necessary),
-  an integer,
-  or a list of integers and/or strings
+* ``?`` --- an ``astring``: a string (which will be quoted if necessary),
+  an integer, or a list of integers and/or strings
   (which will be sent as a parenthesized list);
 * ``?f`` --- a flag or a list of flags, sent verbatim without quoting;
 * ``?s`` --- a *message_set* in the structured form described above.
