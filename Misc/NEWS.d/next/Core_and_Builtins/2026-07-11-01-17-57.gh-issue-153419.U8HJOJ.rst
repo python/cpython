@@ -1,0 +1,4 @@
+Fix several ``bytearray`` crashes caused by calling or not calling __init__
+at the expected times.  As a side-effect, calling __init__ on an empty
+bytearray that has an active buffer view (``memoryview`` or similar) will
+now raise a ``BufferError``
