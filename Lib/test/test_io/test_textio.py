@@ -1610,6 +1610,49 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
 
+    def test_reentrant_seek_during_tell(self):
+        # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
+        # snapshot, so tell() re-decodes and calls the decoder's getstate(); a
+        # reentrant seek() there must not free the snapshot tell() still uses.
+        # C-only: _pyio binds next_input as a strong local and cannot crash.
+        wrapper = None
+        armed = False
+
+        class ReentrantDecoder(codecs.IncrementalDecoder):
+            def decode(self, input, final=False):
+                return bytes(input).decode("latin-1")
+            def getstate(self):
+                nonlocal armed
+                if wrapper is not None and armed:
+                    armed = False
+                    wrapper.seek(0)
+                return (b"", 0)
+            def setstate(self, state):
+                pass
+
+        def search(name):
+            if name != "reentrant_tell_test":
+                return None
+            return codecs.CodecInfo(
+                name=name,
+                encode=lambda s, e='strict': (s.encode("latin-1"), len(s)),
+                decode=lambda b, e='strict': (bytes(b).decode("latin-1"), len(b)),
+                incrementaldecoder=ReentrantDecoder)
+
+        codecs.register(search)
+        self.addCleanup(codecs.unregister, search)
+        raw = self.BytesIO(b"abcdefghijklmnop" * 8)
+        wrapper = self.TextIOWrapper(self.BufferedReader(raw),
+                                     encoding="reentrant_tell_test", newline="")
+        wrapper._CHUNK_SIZE = 8
+        wrapper.read(5)
+        armed = True
+        self.assertIsInstance(wrapper.tell(), int)
+        # tell() at the snapshot boundary takes the early return that owns and
+        # must release next_input; exercise it too (leak-checked under -R).
+        wrapper.seek(0)
+        self.assertIsInstance(wrapper.tell(), int)
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
