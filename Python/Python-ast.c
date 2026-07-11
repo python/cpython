@@ -18544,7 +18544,15 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (state == NULL) {
         return NULL;
     }
+    // Freshly converted AST nodes cannot be part of a reference cycle yet,
+    // so a garbage collection while building them cannot free anything of
+    // this tree and only pays to traverse its half-built nodes. Pause the
+    // collector while the conversion runs.
+    int gc_was_enabled = PyGC_Disable();
     PyObject *result = ast2obj_mod(state, t);
+    if (gc_was_enabled) {
+        PyGC_Enable();
+    }
 
     return result;
 }
