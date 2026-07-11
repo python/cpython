@@ -12508,6 +12508,10 @@ disjunction_rule(Parser *p)
         return NULL;
     }
     expr_ty _res = NULL;
+    if (_PyPegen_atom_fast_path(p, &_res)) {
+        p->level--;
+        return _res;
+    }
     if (_PyPegen_is_memoized(p, disjunction_type, &_res)) {
         p->level--;
         return _res;
@@ -12684,6 +12688,10 @@ inversion_rule(Parser *p)
         return NULL;
     }
     expr_ty _res = NULL;
+    if (_PyPegen_atom_fast_path(p, &_res)) {
+        p->level--;
+        return _res;
+    }
     if (_PyPegen_is_memoized(p, inversion_type, &_res)) {
         p->level--;
         return _res;
