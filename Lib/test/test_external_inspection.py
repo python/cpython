@@ -3808,6 +3808,8 @@ recurse({depth})
 class TestFrameChainLimits(RemoteInspectionTestBase):
     """Frame chain walks abort instead of looping/overflowing on deep chains."""
 
+    # Limits plus one, to exceed them (must match MAX_FRAME_CHAIN_DEPTH /
+    # MAX_TASK_WAITER_CHAIN_DEPTH from _remote_debugging.h)
     CHAIN_DEPTH = 1024 + 512 + 1
 
     TASK_WAITER_CHAIN_DEPTH = 256 + 1
