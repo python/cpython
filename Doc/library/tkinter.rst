@@ -146,6 +146,9 @@ The modules that provide Tk support include:
 :mod:`tkinter.font`
    Utilities to help work with fonts.
 
+:mod:`tkinter.fontchooser`
+   Dialog to let the user choose a font.
+
 :mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
 
@@ -154,6 +157,9 @@ The modules that provide Tk support include:
 
 :mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
+
+:mod:`tkinter.systray`
+   System tray icon and desktop notifications.
 
 :mod:`tkinter.ttk`
    Themed widget set introduced in Tk 8.5, providing modern alternatives
@@ -539,11 +545,8 @@ arguments, or by calling the :meth:`~Misc.keys` method on that widget.
 The return value of these calls is a dictionary whose key is the name of the
 option as a string (for example, ``'relief'``) and whose values are 5-tuples.
 
-Some options, like ``bg`` are synonyms for common options with long names
-(``bg`` is shorthand for "background"). Passing the ``config()`` method the name
-of a shorthand option will return a 2-tuple, not 5-tuple. The 2-tuple passed
-back will contain the name of the synonym and the "real" option (such as
-``('bg', 'background')``).
+Some options, like ``bg``, are synonyms for common options with long names
+(``bg`` is shorthand for "background").
 
 +-------+---------------------------------+--------------+
 | Index | Meaning                         | Example      |
@@ -3555,6 +3558,13 @@ Widget classes
    A newly created item is placed at the top of the list; the order can be
    changed with :meth:`tag_raise` and :meth:`tag_lower`.
 
+   .. method:: tk_print()
+
+      Print the contents of the canvas using the native print dialog.
+      Requires Tk 8.7/9.0 or newer.
+
+      .. versionadded:: next
+
    .. method:: create_arc(*args, **kw)
                create_bitmap(*args, **kw)
                create_image(*args, **kw)
@@ -4925,13 +4935,13 @@ Widget classes
       containing *child*.
       *option* may be any value allowed by :meth:`paneconfigure`.
 
-   .. method:: paneconfig(tagOrId, cnf=None, **kw)
+   .. method:: paneconfig(child, cnf=None, **kw)
       :no-typesetting:
 
-   .. method:: paneconfigure(tagOrId, cnf=None, **kw)
+   .. method:: paneconfigure(child, cnf=None, **kw)
 
       Query or modify the management options of the pane containing the widget
-      *tagOrId*.
+      *child*.
       With no options, it returns a dictionary describing all of the available
       options for the pane; given a single option name as a string, it returns
       a description of that one option; otherwise it sets the given options.
@@ -4945,6 +4955,10 @@ Widget classes
       and *stretch* (how extra space is allocated to the pane: one of
       ``'always'``, ``'first'``, ``'last'``, ``'middle'`` or ``'never'``).
       :meth:`paneconfig` is an alias of :meth:`!paneconfigure`.
+
+      .. deprecated-removed:: next 3.18
+         The first parameter was renamed from *tagOrId* to *child*.
+         The old name is still accepted as a keyword argument.
 
    .. method:: identify(x, y)
 
@@ -5365,6 +5379,13 @@ Widget classes
    ``'lineend'``, ``'wordstart'`` or ``'wordend'`` adjusts the index relative
    to its base; several modifiers may be combined and are applied from left to
    right, for example ``'insert wordstart - 1 c'``.
+
+   .. method:: tk_print()
+
+      Print the contents of the text widget using the native print dialog.
+      Requires Tk 8.7/9.0 or newer.
+
+      .. versionadded:: next
 
    .. method:: insert(index, chars, *args)
 

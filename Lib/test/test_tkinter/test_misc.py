@@ -1,5 +1,6 @@
 import collections.abc
 import functools
+import os
 import gc
 import platform
 import sys
@@ -650,6 +651,15 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # Resetting the timer returns None and does not raise.
         self.assertIsNone(self.root.tk_inactive(reset=True))
 
+    def test_tk_print(self):
+        # tk print supports only canvas and text widgets, so tk_print is a
+        # method of Canvas and Text only.  Calling it opens the print
+        # dialog, so the behavior itself cannot be tested here.
+        self.assertHasAttr(tkinter.Canvas, 'tk_print')
+        self.assertHasAttr(tkinter.Text, 'tk_print')
+        self.assertNotHasAttr(tkinter.Frame, 'tk_print')
+        self.assertNotHasAttr(tkinter.Misc, 'tk_print')
+
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
         self.assertEqual(self.root.waitvar, self.root.wait_variable)
@@ -859,6 +869,26 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
 
 class TkTest(AbstractTkTest, unittest.TestCase):
+
+    def test_readprofile(self):
+        # gh-153333: profile scripts are decoded with their own coding cookie,
+        # not the locale encoding.  Two cookies so no locale can mask the bug.
+        profiles = {
+            '.RpClass.py': ('latin-1', "self._rp_latin1 = 'caf\xe9'"),
+            '.rpbase.py': ('utf-8', "self._rp_utf8 = 'caf\xe9'"),
+        }
+        self.addCleanup(self.root.__dict__.pop, '_rp_latin1', None)
+        self.addCleanup(self.root.__dict__.pop, '_rp_utf8', None)
+        with (os_helper.temp_dir() as home,
+              os_helper.EnvironmentVarGuard() as env):
+            env['HOME'] = home
+            for filename, (encoding, body) in profiles.items():
+                script = '# -*- coding: %s -*-\n%s\n' % (encoding, body)
+                with open(os.path.join(home, filename), 'wb') as f:
+                    f.write(script.encode(encoding))
+            self.root.readprofile('rpbase', 'RpClass')
+        self.assertEqual(self.root._rp_latin1, 'caf\xe9')
+        self.assertEqual(self.root._rp_utf8, 'caf\xe9')
 
     def test_className(self):
         # The className argument sets the class of the root window.  Tk

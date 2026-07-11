@@ -163,14 +163,22 @@ cancelled it is the empty value documented for that function -- an empty
 string, an empty tuple, an empty list or ``None``.
 
 .. function:: askopenfile(mode="r", **options)
-              askopenfiles(mode="r", **options)
 
-   Create an :class:`Open` dialog.
-   :func:`askopenfile` returns the opened file object, or ``None`` if the
-   dialog is cancelled.
-   :func:`askopenfiles` returns a list of the opened file objects, or an empty
-   list if cancelled.
+   Create an :class:`Open` dialog and return the opened file object,
+   or ``None`` if the dialog is cancelled.
+   The file is opened in mode *mode* (read-only ``'r'`` by default).
+
+.. function:: askopenfiles(mode="r", **options)
+
+   Create an :class:`Open` dialog and return a list of the opened file objects,
+   or an empty list if cancelled.
    The files are opened in mode *mode* (read-only ``'r'`` by default).
+
+   .. deprecated-removed:: next 3.19
+      Opening several files at once is error-prone,
+      and the returned list cannot be used in a :keyword:`with` statement.
+      Iterate over the names returned by :func:`askopenfilenames`
+      and open them one by one instead.
 
 .. function:: asksaveasfile(mode="w", **options)
 
