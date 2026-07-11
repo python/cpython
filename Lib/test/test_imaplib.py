@@ -184,8 +184,8 @@ class TestImaplib(unittest.TestCase):
         self.assertEqual(m._astring(b'INBOX'), b'INBOX')
         # Names with protocol-sensitive characters are quoted.
         self.assertEqual(m._astring('New folder'), b'"New folder"')
-        self.assertEqual(m._astring('a"b'), b'"a\\"b"')
-        self.assertEqual(m._astring('a\\b'), b'"a\\\\b"')
+        self.assertEqual(m._astring('a"b'), rb'"a\"b"')
+        self.assertEqual(m._astring(r'a\b'), rb'"a\\b"')
         self.assertEqual(m._astring(''), b'""')
         self.assertEqual(m._astring('*'), b'"*"')
         # A well-formed quoted string is passed through unchanged.
@@ -193,12 +193,12 @@ class TestImaplib(unittest.TestCase):
         self.assertEqual(m._astring('""'), b'""')
         # Including a lenient (non-RFC) backslash escape, which the server
         # may accept.
-        self.assertEqual(m._astring('"a\\b"'), b'"a\\b"')
+        self.assertEqual(m._astring(r'"a\b"'), rb'"a\b"')
         # A string that only looks quoted but is not a single token is
         # quoted as data, closing the argument injection vector.
         self.assertEqual(m._astring('"a" SELECT evil "'),
-                         b'"\\"a\\" SELECT evil \\""')
-        self.assertEqual(m._astring('"'), b'"\\""')
+                         rb'"\"a\" SELECT evil \""')
+        self.assertEqual(m._astring('"'), rb'"\""')
         # Non-ASCII names are only allowed in a quoted string or a
         # literal, never in an atom (RFC 6855).
         m._encoding = 'utf-8'
@@ -344,6 +344,11 @@ class TestImaplib(unittest.TestCase):
         self.assertRaises(ValueError, sub, '?', ['a\r\nb'])  # CR/LF not inline
         self.assertRaises(TypeError, sub, '?', [True])     # bool is not a string
         self.assertRaises(TypeError, sub, '?', [1.5])      # float is not a string
+        self.assertRaises(TypeError, sub, '?s', [['a']])   # not a message number
+        self.assertRaises(TypeError, sub, '?s', [[1.5]])   # not a message number
+        self.assertRaises(TypeError, sub, '?s', [[(1, 'a')]])  # not a message number
+        self.assertRaises(ValueError, sub, '?s', [[(1,)]])       # not a range pair
+        self.assertRaises(ValueError, sub, '?s', [[(1, 2, 3)]])  # not a range pair
 
 
 if ssl:

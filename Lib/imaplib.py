@@ -185,9 +185,7 @@ _placeholder = re.compile(r'\?[?fs]?')
 def _format_astring(value):
     if isinstance(value, (list, tuple)):
         return '(' + ' '.join(map(_format_astring, value)) + ')'
-    if isinstance(value, bool):
-        raise TypeError('a boolean is not a valid IMAP4 string')
-    if isinstance(value, int):
+    if not isinstance(value, bool) and isinstance(value, int):
         return str(value)
     if isinstance(value, (bytes, bytearray)):
         value = str(value, 'ascii')
@@ -204,6 +202,8 @@ def _format_astring(value):
 
 def _format_flags(value):
     if isinstance(value, (list, tuple)):
+        # A nested sequence is not part of the API; it produces invalid
+        # syntax that is rejected by the server.
         return '(' + ' '.join(map(_format_flags, value)) + ')'
     if isinstance(value, (bytes, bytearray)):
         value = str(value, 'ascii')

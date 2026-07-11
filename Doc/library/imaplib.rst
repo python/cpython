@@ -268,14 +268,14 @@ The placeholders are:
 
 ``??`` stands for a literal ``?``.
 
+Substitution is only performed when *params* is given;
+if no *params* are given, an argument containing a literal ``?`` is unchanged.
 The *params* keyword is accepted by :meth:`~IMAP4.search`,
 :meth:`~IMAP4.fetch`, :meth:`~IMAP4.sort`, :meth:`~IMAP4.thread` and
 :meth:`~IMAP4.uid`.
 
 .. versionadded:: next
    The *params* keyword argument.
-   Substitution is only performed when *params* is given,
-   so an existing call that contains a literal ``?`` is unaffected.
 
 An :class:`IMAP4` instance has the following methods:
 
