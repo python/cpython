@@ -1,0 +1,2 @@
+Fix the :exc:`SyntaxError` caret position for invalid numeric literals to
+point at the first invalid character instead of the last valid one.

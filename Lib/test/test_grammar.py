@@ -140,6 +140,26 @@ class TokenTests(unittest.TestCase):
         check("1e2_", "invalid decimal literal")
         check("1e+", "invalid decimal literal")
 
+    def test_end_of_numerical_literals_offset(self):
+        # gh-149277: verify the error caret points at the first invalid
+        # character, not the last valid digit.
+        cases = [
+            ("0xfg", 4),
+            ("0x9g", 4),
+            ("0b1z", 4),
+            ("0o7q", 4),
+            ("9spam", 2),
+            ("0xfspam", 4),
+            ("1.0x", 4),
+            ("1e3w", 4),
+            ("1jz", 3),
+        ]
+        for source, expected_offset in cases:
+            with self.subTest(source=source):
+                with self.assertRaises(SyntaxError) as cm:
+                    compile(source, "<test>", "eval")
+                self.assertEqual(cm.exception.offset, expected_offset)
+
     def test_end_of_numerical_literals(self):
         def check(test, error=False):
             with self.subTest(expr=test):
