@@ -148,7 +148,7 @@ typedef enum _WIN32_THREADSTATE {
 #define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
 #define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
 #define MAX_FRAME_CHAIN_DEPTH (1024 + 512)  /* Iteration bound for frame chain walks */
-#define MAX_TASK_WAITER_CHAIN_DEPTH 256
+#define MAX_TASK_WAITER_CHAIN_DEPTH 256  /* Task waiter walk recursion cap: 256 * SIZEOF_TASK_OBJ ~= 1 MiB */
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
