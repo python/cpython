@@ -541,11 +541,8 @@ arguments, or by calling the :meth:`~Misc.keys` method on that widget.
 The return value of these calls is a dictionary whose key is the name of the
 option as a string (for example, ``'relief'``) and whose values are 5-tuples.
 
-Some options, like ``bg`` are synonyms for common options with long names
-(``bg`` is shorthand for "background"). Passing the ``config()`` method the name
-of a shorthand option will return a 2-tuple, not 5-tuple. The 2-tuple passed
-back will contain the name of the synonym and the "real" option (such as
-``('bg', 'background')``).
+Some options, like ``bg``, are synonyms for common options with long names
+(``bg`` is shorthand for "background").
 
 +-------+---------------------------------+--------------+
 | Index | Meaning                         | Example      |
