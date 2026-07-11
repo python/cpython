@@ -1,1 +1,0 @@
-Document ``mode="func_type"`` in :func:`compile`.
