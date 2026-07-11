@@ -25,7 +25,7 @@ from test.support import warnings_helper
 import test.string_tests
 import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 
 if sys.flags.bytes_warning:
@@ -2196,6 +2196,85 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 return 1
 
         self.assertRaises(BufferError, ba.hex, S(b':'))
+
+
+class ByteArrayInitialization1Test(unittest.TestCase):
+    # A bytearray created with __new__ so that __init__ is never called
+    # (often as a side-effect of a subclass not calling super().__init__).
+    # Is left with ob_bytes_object == NULL.  It's easy for implementation
+    # code to not realise that ob_bytes_object can be NULL, so these tests
+    # verify a set of code paths that have historically crashed or asserted
+    # (see gh-153419)
+
+    def _check(self, stmt, expected):
+        code = textwrap.dedent(f"""
+            a = bytearray.__new__(bytearray)
+            {stmt}
+            print(list(a))
+        """)
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(out.decode().strip(), expected)
+
+    def test_append(self):
+        self._check("a.append(1)", "[1]")
+
+    def test_insert(self):
+        self._check("a.insert(0, 1)", "[1]")
+
+    def test_extend_bytes(self):
+        self._check("a.extend(b'x')", "[120]")
+
+    def test_extend_iterable(self):
+        self._check("a.extend([1, 2, 3])", "[1, 2, 3]")
+
+    def test_iadd(self):
+        self._check("a += b'x'", "[120]")
+
+    def test_slice_assign(self):
+        self._check("a[:] = b'xyz'", "[120, 121, 122]")
+
+    def test_resize(self):
+        self._check("a.resize(4)", "[0, 0, 0, 0]")
+
+    def test_init_int(self):
+        self._check("a.__init__(5)", "[0, 0, 0, 0, 0]")
+
+    def test_init_bytes(self):
+        self._check("a.__init__(b'xyz')", "[120, 121, 122]")
+
+    def test_reinit_length1(self):
+        # There is a shortcut taken when resizing, where alloc/2 < newsize.
+        # In this case, the existing buffer is reused, rather than reset
+        # If this happens when newsize == 0 and alloc == 1, then various
+        # code assumptions can be violated.  This test should catch those
+        # in debug builds. (see gh-153419)
+        code = textwrap.dedent("""
+            a = bytearray(1)
+            a.__init__()
+            print(list(a))
+        """)
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(out.decode().strip(), repr([]))
+
+    def test_take_bytes_all(self):
+        self._check("a.take_bytes()", "[]")
+
+    def test_take_bytes_zero(self):
+        self._check("a.take_bytes(0)", "[]")
+
+    def test_reinit_with_view(self):
+        code = textwrap.dedent("""
+            a = bytearray()
+            v = memoryview(a)
+            try:
+                a.__init__("x", "ascii")
+            except BufferError:
+                print("PASS")
+            else:
+                print("NO EXCEPTION")
+        """)
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(out.decode().strip(), "PASS")
 
 
 class AssortedBytesTest(unittest.TestCase):

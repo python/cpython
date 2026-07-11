@@ -213,6 +213,15 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyByteArrayObject *obj = ((PyByteArrayObject *)self);
+
+    /* If ob_bytes_object has not been initialized yet, eagerly initialize
+       it here so the following code can reason about state more easily,
+       and things like pointer comparisons are valid. */
+    if (obj->ob_bytes_object == NULL) {
+        obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+        bytearray_reinit_from_bytes(obj, 0, 0);
+    }
+
     /* All computations are done unsigned to avoid integer overflows
        (see issue #22335). */
     size_t alloc = (size_t) obj->ob_alloc;
@@ -234,6 +243,15 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
     }
     if (!_canresize(obj)) {
         return -1;
+    }
+
+    /* When resizing to 0, always reset to the empty-bytes constant to avoid
+       complexity in the realloc path below (see gh-153419). */
+    if (requested_size == 0) {
+        Py_XSETREF(obj->ob_bytes_object,
+                   Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
+        bytearray_reinit_from_bytes(obj, 0, 0);
+        return 0;
     }
 
     if (size + logical_offset <= alloc) {
@@ -920,20 +938,17 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
 
-    /* First __init__; set ob_bytes_object so ob_bytes is always non-null. */
-    if (self->ob_bytes_object == NULL) {
-        self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-        bytearray_reinit_from_bytes(self, 0, 0);
-        self->ob_exports = 0;
+    if (!_canresize(self)) {
+        return -1;
     }
 
-    if (Py_SIZE(self) != 0) {
-        /* Empty previous contents (yes, do this first of all!) */
-        if (PyByteArray_Resize((PyObject *)self, 0) < 0)
-            return -1;
+    /* Empty any previous contents (do this first of all!).
+       Also initializes ob_bytes_object if needed */
+    if (PyByteArray_Resize((PyObject *)self, 0) < 0) {
+        return -1;
     }
 
-    /* Should be caused by first init or the resize to 0. */
+    /* PyByteArray_Resize(,0) should always leave the empty bytes constant */
     assert(self->ob_bytes_object == Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_BYTES));
     assert(self->ob_exports == 0);
 
@@ -1607,6 +1622,10 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     if (_PyBytes_Resize(&self->ob_bytes_object, to_take) == -1) {
+        /* _PyBytes_Resize has made ob_bytes_object NULL here
+           we need to ensure that the other byte array fields are consistent. */
+        self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+        bytearray_reinit_from_bytes(self, 0, 0);
         Py_DECREF(remaining);
         return NULL;
     }
