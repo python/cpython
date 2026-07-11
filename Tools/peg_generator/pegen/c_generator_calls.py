@@ -409,6 +409,17 @@ class CCallLowerer:
                 i = j
             self._prefixes[rule.name] = tuple(prefixes)
 
+    def _rule_fast_path(self, rule: Rule) -> str | None:
+        for flag in rule.flags:
+            name, _, func = flag.partition("=")
+            if name == "fastpath":
+                if not func:
+                    raise ValueError(
+                        f"rule {rule.name!r}: fastpath flag needs a function"
+                    )
+                return func
+        return None
+
     def prepare_rule(
         self, rule: Rule, *, skip_actions: bool = False, shared: bool = False
     ) -> CRule:
@@ -427,6 +438,7 @@ class CCallLowerer:
             left_recursive=rule.left_recursive,
             leader=rule.leader,
             memoize="memo" in rule.flags and not rule.left_recursive,
+            fastpath=self._rule_fast_path(rule),
             disable_invalid_rules=rule.name.endswith("without_invalid"),
             prefixes=self._prefixes.get(rule.name, ()),
             source=rule.source,
