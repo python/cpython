@@ -790,6 +790,15 @@ distance
    millimetres, ``p`` for printer's points.  For example, 3.5 inches is expressed
    as ``"3.5i"``.
 
+   When a screen distance option is read back (for example with :meth:`!cget`),
+   a distance with no unit suffix is returned as an :class:`int` or a :class:`float`.
+   A distance with a unit suffix depends on the screen resolution
+   and is returned as an opaque Tcl object that can be passed back to Tk.
+
+   .. versionchanged:: next
+      Screen distances with no unit suffix are returned as an :class:`int`
+      or a :class:`float`.
+
 font
    Tk uses a font description such as ``{courier 10 bold}``; in
    :mod:`!tkinter` this is most naturally passed as a tuple of
@@ -2066,7 +2075,7 @@ Base and mixin classes
 
    .. method:: winfo_exists()
 
-      Return ``1`` if the widget exists, ``0`` otherwise.
+      Return ``True`` if the widget exists, ``False`` otherwise.
 
    .. method:: winfo_fpixels(number)
 
@@ -2115,7 +2124,7 @@ Base and mixin classes
 
    .. method:: winfo_ismapped()
 
-      Return ``1`` if the widget is currently mapped, ``0`` otherwise.
+      Return ``True`` if the widget is currently mapped, ``False`` otherwise.
 
    .. method:: winfo_manager()
 
@@ -2246,8 +2255,8 @@ Base and mixin classes
 
    .. method:: winfo_viewable()
 
-      Return ``1`` if the widget and all of its ancestors up through the
-      nearest toplevel window are mapped, ``0`` otherwise.
+      Return ``True`` if the widget and all of its ancestors up through the
+      nearest toplevel window are mapped, ``False`` otherwise.
 
    .. method:: winfo_visual()
 
@@ -5751,7 +5760,7 @@ Widget classes
    .. method:: edit_modified(arg=None)
 
       If *arg* is omitted, return the current state of the modified flag as
-      ``0`` or ``1``; the flag is set automatically whenever the text is
+      a :class:`bool`; the flag is set automatically whenever the text is
       inserted or deleted.
       Otherwise set the flag to the boolean *arg*.
 

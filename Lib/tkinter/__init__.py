@@ -1332,8 +1332,8 @@ class Misc:
         return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
 
     def winfo_exists(self):
-        """Return true if this widget exists."""
-        return self.tk.getint(
+        """Return True if this widget exists."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'exists', self._w))
 
     def winfo_fpixels(self, number):
@@ -1370,8 +1370,8 @@ class Misc:
             self.tk.call('winfo', 'isdark', self._w))
 
     def winfo_ismapped(self):
-        """Return true if this widget is mapped."""
-        return self.tk.getint(
+        """Return True if this widget is mapped."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'ismapped', self._w))
 
     def winfo_manager(self):
@@ -1498,8 +1498,8 @@ class Misc:
             'winfo', 'toplevel', self._w))
 
     def winfo_viewable(self):
-        """Return true if the widget and all its higher ancestors are mapped."""
-        return self.tk.getint(
+        """Return True if the widget and all its higher ancestors are mapped."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'viewable', self._w))
 
     def winfo_visual(self):
@@ -2976,16 +2976,20 @@ class BaseWidget(Misc):
             del cnf['name']
         if not name:
             name = self.__class__.__name__.lower()
+            # Generated names are marked with a leading "+", which a user is
+            # unlikely to use, so they do not clash with explicit names.
+            # "+" is also one of the few symbols with no special meaning in
+            # canvas and text tag expressions, so the name can be used as a tag.
             if name[-1].isdigit():
-                name += "!"  # Avoid duplication when calculating names below
+                name += "+"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
             master._last_child_ids[name] = count
             if count == 1:
-                name = '!%s' % (name,)
+                name = '+%s' % (name,)
             else:
-                name = '!%s%d' % (name, count)
+                name = '+%s%d' % (name, count)
         self._name = name
         if master._w=='.':
             self._w = '.' + name
@@ -4219,6 +4223,8 @@ class Text(Widget, XView, YView):
         modified flag. If boolean is specified, sets the
         modified flag of the widget to arg.
         """
+        if arg is None:
+            return self.tk.getboolean(self.edit("modified"))
         return self.edit("modified", arg)
 
     def edit_redo(self):
