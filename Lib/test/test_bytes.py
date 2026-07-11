@@ -25,7 +25,7 @@ from test.support import warnings_helper
 import test.string_tests
 import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import assert_python_failure
 
 
 if sys.flags.bytes_warning:
@@ -2197,50 +2197,33 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
         self.assertRaises(BufferError, ba.hex, S(b':'))
 
+    def test_uninitialized_instance(self):
+        # A bytearray created with __new__ so that __init__ is never called
+        # (often as a side-effect of a subclass not calling super().__init__)
+        # is left with ob_bytes_object == NULL.  It's easy for implementation
+        # code to not realize that ob_bytes_object can be NULL, so these
+        # checks exercise code paths that have historically crashed or
+        # asserted (see gh-153419).
+        def uninitialized():
+            return bytearray.__new__(bytearray)
 
-class ByteArrayInitialization1Test(unittest.TestCase):
-    # A bytearray created with __new__ so that __init__ is never called
-    # (often as a side-effect of a subclass not calling super().__init__).
-    # Is left with ob_bytes_object == NULL.  It's easy for implementation
-    # code to not realize that ob_bytes_object can be NULL, so these tests
-    # verify a set of code paths that have historically crashed or asserted
-    # (see gh-153419).
+        uninitialized().insert(0, 1)
+        uninitialized().extend(b"x")
+        uninitialized().extend([1, 2, 3])
+        uninitialized().resize(4)
+        uninitialized().__init__(5)
+        uninitialized().__init__(b"xyz")
+        uninitialized().take_bytes()
+        uninitialized().take_bytes(0)
 
-    def _check(self, stmt, expected):
-        code = textwrap.dedent(f"""
-            a = bytearray.__new__(bytearray)
-            {stmt}
-            print(list(a))
-        """)
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out.decode().strip(), expected)
+        a = uninitialized()
+        a.append(1)
 
-    def test_append(self):
-        self._check("a.append(1)", "[1]")
+        a = uninitialized()
+        a += b"x"
 
-    def test_insert(self):
-        self._check("a.insert(0, 1)", "[1]")
-
-    def test_extend_bytes(self):
-        self._check("a.extend(b'x')", "[120]")
-
-    def test_extend_iterable(self):
-        self._check("a.extend([1, 2, 3])", "[1, 2, 3]")
-
-    def test_iadd(self):
-        self._check("a += b'x'", "[120]")
-
-    def test_slice_assign(self):
-        self._check("a[:] = b'xyz'", "[120, 121, 122]")
-
-    def test_resize(self):
-        self._check("a.resize(4)", "[0, 0, 0, 0]")
-
-    def test_init_int(self):
-        self._check("a.__init__(5)", "[0, 0, 0, 0, 0]")
-
-    def test_init_bytes(self):
-        self._check("a.__init__(b'xyz')", "[120, 121, 122]")
+        a = uninitialized()
+        a[:] = b"xyz"
 
     def test_reinit_length1(self):
         # There is a shortcut taken when resizing, where alloc/2 < newsize.
@@ -2248,33 +2231,15 @@ class ByteArrayInitialization1Test(unittest.TestCase):
         # If this happens when newsize == 0 and alloc == 1, then various
         # code assumptions can be violated.  This test should catch those
         # in debug builds. (see gh-153419)
-        code = textwrap.dedent("""
-            a = bytearray(1)
-            a.__init__()
-            print(list(a))
-        """)
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out.decode().strip(), repr([]))
-
-    def test_take_bytes_all(self):
-        self._check("a.take_bytes()", "[]")
-
-    def test_take_bytes_zero(self):
-        self._check("a.take_bytes(0)", "[]")
+        a = bytearray(1)
+        a.__init__()
+        self.assertEqual(a, b"")
 
     def test_reinit_with_view(self):
-        code = textwrap.dedent("""
-            a = bytearray()
-            v = memoryview(a)
-            try:
-                a.__init__("x", "ascii")
-            except BufferError:
-                print("PASS")
-            else:
-                print("NO EXCEPTION")
-        """)
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out.decode().strip(), "PASS")
+        a = bytearray()
+        with memoryview(a):
+            self.assertRaises(BufferError, a.__init__, "x", "ascii")
+        self.assertEqual(a, b"")
 
 
 class AssortedBytesTest(unittest.TestCase):

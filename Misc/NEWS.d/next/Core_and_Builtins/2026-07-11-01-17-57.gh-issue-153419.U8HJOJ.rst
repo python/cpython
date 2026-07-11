@@ -1,4 +1,1 @@
-Fix several ``bytearray`` crashes caused by calling, or not calling,
-``__init__`` when expected.  As a side-effect, calling ``__init__`` on
-an empty ``bytearray`` that has an active buffer view (``memoryview`` or
-similar) now raises a ``BufferError``.
+Fix several :class:`bytearray` crashes caused by calling :meth:`~object.__init__`/:meth:`~object.__new__` in unusual ways.
