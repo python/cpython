@@ -1,0 +1,7 @@
+The :func:`~dataclasses.dataclass` decorator now skips generating
+:meth:`~object.__init__`, :meth:`~object.__repr__`, and
+:meth:`~object.__eq__` when the class already defines them in its own
+dictionary, matching the documented design tables. Previously,
+``__init__`` generation and its field-ordering validation ran
+unconditionally, which could raise :exc:`TypeError` for inherited
+fields even when the class's own ``__init__`` would have been preserved.

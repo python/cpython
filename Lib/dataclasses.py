@@ -1142,7 +1142,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     func_builder = _FuncBuilder(globals)
 
-    if init:
+    if init and '__init__' not in cls.__dict__:
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
 
@@ -1166,7 +1166,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # used in all of the following methods.
     field_list = [f for f in fields.values() if f._field_type is _FIELD]
 
-    if repr:
+    if repr and '__repr__' not in cls.__dict__:
         flds = [f for f in field_list if f.repr]
         func_builder.add_fn('__repr__',
                             ('self',),
@@ -1176,7 +1176,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             locals={'__dataclasses_recursive_repr': recursive_repr},
                             decorator="@__dataclasses_recursive_repr()")
 
-    if eq:
+    if eq and '__eq__' not in cls.__dict__:
         # Create __eq__ method.  There's no need for a __ne__ method,
         # since python will call __eq__ and negate it.
         cmp_fields = (field for field in field_list if field.compare)
