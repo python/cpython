@@ -1,0 +1,4 @@
+Broaden ``_asyncio``'s private ``_call_soon()`` fast path to cover safe
+subclasses of ``asyncio.base_events.BaseEventLoop``, improving hot task
+and future scheduling paths without changing customized ``call_soon()``
+behavior.

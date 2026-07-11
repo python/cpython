@@ -149,6 +149,7 @@ typedef struct {
     PyTypeObject *TaskType;
 
     PyObject *asyncio_mod;
+    PyObject *call_soon_private_name;
     PyObject *context_kwname;
 
     /* WeakSet containing scheduled 3rd party tasks which don't
@@ -356,30 +357,148 @@ get_event_loop(asyncio_state *state)
 
 
 static int
+is_asyncio_base_event_loop_type(PyTypeObject *loop_type)
+{
+    if (strcmp(loop_type->tp_name, "BaseEventLoop") != 0) {
+        return 0;
+    }
+
+    PyObject *module_name =
+        PyDict_GetItemWithError(loop_type->tp_dict, &_Py_ID(__module__));
+    if (module_name == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+
+    return (
+        PyUnicode_Check(module_name) &&
+        PyUnicode_CompareWithASCIIString(module_name, "asyncio.base_events") == 0
+    );
+}
+
+static int
+is_asyncio_base_event_loop_subclass(PyTypeObject *loop_type)
+{
+    // The _asyncio module is imported from asyncio.events while
+    // asyncio.base_events is still initializing, so we can't cache the
+    // BaseEventLoop type during module init without creating an import cycle.
+    for (PyTypeObject *base = loop_type; base != NULL; base = base->tp_base) {
+        int is_base_event_loop = is_asyncio_base_event_loop_type(base);
+        if (is_base_event_loop < 0) {
+            return -1;
+        }
+        if (is_base_event_loop) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int
+loop_has_instance_call_soon_shadow(PyObject *loop)
+{
+    // Respect instance-level monkeypatching such as:
+    //     loop.call_soon = custom_call_soon
+    // These must keep using the public slow path.
+    PyObject *attr = NULL;
+    PyObject *dict = PyObject_GenericGetDict(loop, NULL);
+    if (dict == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+            return 0;
+        }
+        return -1;
+    }
+
+    int rc = PyDict_GetItemRef(dict, &_Py_ID(call_soon), &attr);
+    Py_DECREF(dict);
+    if (rc < 0) {
+        return -1;
+    }
+    Py_XDECREF(attr);
+    return rc > 0;
+}
+
+static int
 call_soon(asyncio_state *state, PyObject *loop, PyObject *func, PyObject *arg,
           PyObject *ctx)
 {
-    PyObject *handle;
+    PyObject *handle = NULL;
 
-    if (ctx == NULL) {
-        PyObject *stack[] = {loop, func, arg};
-        size_t nargsf = 3 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-        handle = PyObject_VectorcallMethod(&_Py_ID(call_soon), stack, nargsf, NULL);
+    PyTypeObject *loop_type = Py_TYPE(loop);
+    int is_base_event_loop_subclass =
+        is_asyncio_base_event_loop_subclass(loop_type);
+    int is_stdlib_base_event_loop =
+        is_asyncio_base_event_loop_type(loop_type);
+    if (is_base_event_loop_subclass < 0 || is_stdlib_base_event_loop < 0) {
+        return -1;
     }
-    else {
-        /* All refs in 'stack' are borrowed. */
-        PyObject *stack[4];
-        size_t nargs = 2;
-        stack[0] = loop;
-        stack[1] = func;
-        if (arg != NULL) {
-            stack[2] = arg;
-            nargs++;
+    PyObject *call_soon_attr =
+        PyDict_GetItemWithError(loop_type->tp_dict, &_Py_ID(call_soon));
+    if (call_soon_attr == NULL && PyErr_Occurred()) {
+        return -1;
+    }
+    int has_instance_call_soon_shadow = loop_has_instance_call_soon_shadow(loop);
+    if (has_instance_call_soon_shadow < 0) {
+        return -1;
+    }
+
+    int use_fastpath = (
+        is_base_event_loop_subclass &&
+        // Only use the private fast path when the subclass keeps the public
+        // call_soon() contract unchanged at both the type and instance level.
+        !has_instance_call_soon_shadow &&
+        (is_stdlib_base_event_loop || call_soon_attr == NULL)
+    );
+
+    if (use_fastpath) {
+        PyObject *args;
+        if (arg == NULL) {
+            args = Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
         }
-        stack[nargs] = (PyObject *)ctx;
-        size_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
-        handle = PyObject_VectorcallMethod(&_Py_ID(call_soon), stack, nargsf,
-                                           state->context_kwname);
+        else {
+            args = PyTuple_Pack(1, arg);
+            if (args == NULL) {
+                return -1;
+            }
+        }
+
+        PyObject *stack[] = {loop, func, args, ctx ? ctx : Py_None};
+        size_t nargsf = 4 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+        handle = PyObject_VectorcallMethod(state->call_soon_private_name, stack,
+                                           nargsf, NULL);
+        if (arg != NULL) {
+            Py_DECREF(args);
+        }
+
+        if (handle == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
+    }
+
+    if (handle == NULL) {
+        if (ctx == NULL) {
+            PyObject *stack[] = {loop, func, arg};
+            size_t nargsf = 3 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+            handle = PyObject_VectorcallMethod(&_Py_ID(call_soon), stack, nargsf, NULL);
+        }
+        else {
+            PyObject *stack[4];
+            size_t nargs = 2;
+            stack[0] = loop;
+            stack[1] = func;
+            if (arg != NULL) {
+                stack[2] = arg;
+                nargs++;
+            }
+            stack[nargs] = (PyObject *)ctx;
+            size_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+            handle = PyObject_VectorcallMethod(&_Py_ID(call_soon), stack, nargsf,
+                                               state->context_kwname);
+        }
     }
 
     if (handle == NULL) {
@@ -4183,6 +4302,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->TaskType);
 
     Py_VISIT(state->asyncio_mod);
+    Py_VISIT(state->call_soon_private_name);
     Py_VISIT(state->traceback_extract_stack);
     Py_VISIT(state->asyncio_future_repr_func);
     Py_VISIT(state->asyncio_get_event_loop);
@@ -4213,6 +4333,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->TaskType);
 
     Py_CLEAR(state->asyncio_mod);
+    Py_CLEAR(state->call_soon_private_name);
     Py_CLEAR(state->traceback_extract_stack);
     Py_CLEAR(state->asyncio_future_repr_func);
     Py_CLEAR(state->asyncio_get_event_loop);
@@ -4261,6 +4382,11 @@ module_init(asyncio_state *state)
 
     state->context_kwname = Py_BuildValue("(s)", "context");
     if (state->context_kwname == NULL) {
+        goto fail;
+    }
+
+    state->call_soon_private_name = PyUnicode_InternFromString("_call_soon");
+    if (state->call_soon_private_name == NULL) {
         goto fail;
     }
 
