@@ -880,6 +880,12 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
         PyMem_Free(p);
         return (Parser *) PyErr_NoMemory();
     }
+    p->tstate = PyThreadState_Get();
+    // Force the stack limits to be initialized before caching them.
+    (void)_Py_ReachedRecursionLimitWithMargin(p->tstate, 1);
+    p->stack_soft_limit =
+        ((_PyThreadStateImpl *)p->tstate)->c_stack_soft_limit
+        + _PyOS_STACK_MARGIN_BYTES;
     p->level = 0;
     p->call_invalid_rules = 0;
     p->last_stmt_location.lineno = 0;
