@@ -635,7 +635,8 @@ Tkapp_New(const char *screenName, const char *className,
     TkappObject *v;
     char *argv0;
 
-    v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
+    PyTypeObject *tp = (PyTypeObject *)Tkapp_Type;
+    v = (TkappObject *)tp->tp_alloc(tp, 0);
     if (v == NULL)
         return NULL;
 
@@ -2943,7 +2944,8 @@ Tktt_New(PyObject *func)
 {
     TkttObject *v;
 
-    v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
+    PyTypeObject *tp = (PyTypeObject *)Tktt_Type;
+    v = (TkttObject *)tp->tp_alloc(tp, 0);
     if (v == NULL)
         return NULL;
 
@@ -2954,16 +2956,41 @@ Tktt_New(PyObject *func)
     return (TkttObject*)Py_NewRef(v);
 }
 
-static void
-Tktt_Dealloc(PyObject *self)
+/* Plain cast, not TkttObject_CAST: the GC can run at shutdown after
+   module_clear() has cleared the global Tktt_Type the macro checks against. */
+
+static int
+Tktt_Clear(PyObject *op)
 {
-    TkttObject *v = TkttObject_CAST(self);
-    PyObject *func = v->func;
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    TkttObject *self = (TkttObject *)op;
+    Py_CLEAR(self->func);
+    return 0;
+}
 
-    Py_XDECREF(func);
+static int
+Tktt_Traverse(PyObject *op, visitproc visit, void *arg)
+{
+    TkttObject *self = (TkttObject *)op;
+    Py_VISIT(Py_TYPE(op));
+    /* Not the extra reference of a pending timer (see Tktt_New): it is owned
+       by the Tcl event loop, so the timer is a GC root, not part of a cycle. */
+    Py_VISIT(self->func);
+    return 0;
+}
 
-    PyObject_Free(self);
+static void
+Tktt_Dealloc(PyObject *op)
+{
+    TkttObject *self = (TkttObject *)op;  /* see GC slots above */
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    /* Cancel any pending timer so its callback cannot fire on freed memory. */
+    if (self->token != NULL) {
+        Tcl_DeleteTimerHandler(self->token);
+        self->token = NULL;
+    }
+    (void)Tktt_Clear(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
@@ -3257,11 +3284,31 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self)
 
 /**** Tkapp Type Methods ****/
 
+/* Plain casts -- see the Tktt GC slots above. */
+
+static int
+Tkapp_Clear(PyObject *op)
+{
+    TkappObject *self = (TkappObject *)op;
+    Py_CLEAR(self->trace);
+    return 0;
+}
+
+static int
+Tkapp_Traverse(PyObject *op, visitproc visit, void *arg)
+{
+    TkappObject *self = (TkappObject *)op;
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(self->trace);
+    return 0;
+}
+
 static void
 Tkapp_Dealloc(PyObject *op)
 {
-    TkappObject *self = TkappObject_CAST(op);
-    PyTypeObject *tp = Py_TYPE(self);
+    TkappObject *self = (TkappObject *)op;
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         /* Deleting the interpreter from another thread aborts the process
            ("Tcl_AsyncDelete: async handler deleted by the wrong thread").
@@ -3280,8 +3327,8 @@ Tkapp_Dealloc(PyObject *op)
         Tcl_DeleteInterp(Tkapp_Interp(self));
         LEAVE_TCL
     }
-    Py_XDECREF(self->trace);
-    PyObject_Free(self);
+    (void)Tkapp_Clear(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
     DisableEventHook();
 }
@@ -3488,6 +3535,8 @@ static PyMethodDef Tktt_methods[] =
 
 static PyType_Slot Tktt_Type_slots[] = {
     {Py_tp_dealloc, Tktt_Dealloc},
+    {Py_tp_traverse, Tktt_Traverse},
+    {Py_tp_clear, Tktt_Clear},
     {Py_tp_repr, Tktt_Repr},
     {Py_tp_methods, Tktt_methods},
     {0, 0}
@@ -3500,6 +3549,7 @@ static PyType_Spec Tktt_Type_spec = {
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
         | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
     ),
     .slots = Tktt_Type_slots,
 };
@@ -3547,6 +3597,8 @@ static PyMethodDef Tkapp_methods[] =
 
 static PyType_Slot Tkapp_Type_slots[] = {
     {Py_tp_dealloc, Tkapp_Dealloc},
+    {Py_tp_traverse, Tkapp_Traverse},
+    {Py_tp_clear, Tkapp_Clear},
     {Py_tp_methods, Tkapp_methods},
     {0, 0}
 };
@@ -3559,6 +3611,7 @@ static PyType_Spec Tkapp_Type_spec = {
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
         | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
     ),
     .slots = Tkapp_Type_slots,
 };
