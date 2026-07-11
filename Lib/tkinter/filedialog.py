@@ -19,7 +19,6 @@ __all__ = ["FileDialog", "LoadFileDialog", "SaveFileDialog",
 import fnmatch
 import os
 import tkinter
-import warnings
 from tkinter import (
     ACTIVE, CENTER, EW, NORMAL, NS, NSEW, RAISED, W, YES, BOTTOM, TOP, Tk, X,
     Toplevel, END, Listbox, BOTH,
@@ -576,6 +575,7 @@ def askopenfiles(mode = "r", **options):
     returns a list of open file objects or an empty list if
     cancel selected
     """
+    import warnings
     warnings._deprecated(
         "tkinter.filedialog.askopenfiles",
         message=f"{warnings._DEPRECATED_MSG}; iterate over the names returned "
