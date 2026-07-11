@@ -99,6 +99,9 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'setresuid'),
                          'test needs posix.setresuid()')
     def test_setresuid(self):
+        if support.is_android and os.getuid() != 0:
+            self.assertRaises(PermissionError, posix.setresuid, -1, -1, -1)
+            return
         current_user_ids = posix.getresuid()
         self.assertIsNone(posix.setresuid(*current_user_ids))
         # -1 means don't change that value.
@@ -116,6 +119,9 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'setresgid'),
                          'test needs posix.setresgid()')
     def test_setresgid(self):
+        if support.is_android and os.getuid() != 0:
+            self.assertRaises(PermissionError, posix.setresgid, -1, -1, -1)
+            return
         current_group_ids = posix.getresgid()
         self.assertIsNone(posix.setresgid(*current_group_ids))
         # -1 means don't change that value.

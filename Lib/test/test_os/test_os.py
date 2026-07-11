@@ -4517,7 +4517,10 @@ class OSErrorTests(unittest.TestCase):
                 try:
                     func(name, *func_args)
                 except OSError as err:
-                    self.assertIs(err.filename, name, str(func))
+                    if func is os.chroot and support.is_android and os.getuid() != 0:
+                        self.assertIsNone(err.filename, str(func))
+                    else:
+                        self.assertIs(err.filename, name, str(func))
                 except UnicodeDecodeError:
                     pass
                 else:
