@@ -5,7 +5,6 @@ import platform
 import sys
 import textwrap
 import unittest
-import warnings
 import weakref
 import tkinter
 from tkinter import TclError
@@ -365,24 +364,6 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(self.root.getdouble('3.5'), 3.5)
         self.assertEqual(self.root.getdouble(3), 3.0)
         self.assertRaises(ValueError, self.root.getdouble, 'spam')
-
-    def test_readprofile(self):
-        # gh-153333: readprofile() reads the profile scripts with the source
-        # file's encoding (here a Latin-1 coding cookie), not the locale
-        # default encoding.
-        name = 'readprofiletest'
-        script = ("# -*- coding: latin-1 -*-\n"
-                  "self.readprofile_result = 'caf\xe9'\n")
-        self.addCleanup(self.root.__dict__.pop, 'readprofile_result', None)
-        with os_helper.temp_dir() as home:
-            with open(os.path.join(home, '.%s.py' % name), 'wb') as f:
-                f.write(script.encode('latin-1'))
-            with os_helper.EnvironmentVarGuard() as env:
-                env['HOME'] = home
-                with warnings.catch_warnings():
-                    warnings.simplefilter('error', EncodingWarning)
-                    self.root.readprofile(name, name)
-        self.assertEqual(self.root.readprofile_result, 'caf\xe9')
 
     def test_getvar(self):
         self.root.setvar('test_var', 'hello')
@@ -828,6 +809,26 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
 
 class TkTest(AbstractTkTest, unittest.TestCase):
+
+    def test_readprofile(self):
+        # gh-153333: profile scripts are decoded with their own coding cookie,
+        # not the locale encoding.  Two cookies so no locale can mask the bug.
+        profiles = {
+            '.RpClass.py': ('latin-1', "self._rp_latin1 = 'caf\xe9'"),
+            '.rpbase.py': ('utf-8', "self._rp_utf8 = 'caf\xe9'"),
+        }
+        self.addCleanup(self.root.__dict__.pop, '_rp_latin1', None)
+        self.addCleanup(self.root.__dict__.pop, '_rp_utf8', None)
+        with (os_helper.temp_dir() as home,
+              os_helper.EnvironmentVarGuard() as env):
+            env['HOME'] = home
+            for filename, (encoding, body) in profiles.items():
+                script = '# -*- coding: %s -*-\n%s\n' % (encoding, body)
+                with open(os.path.join(home, filename), 'wb') as f:
+                    f.write(script.encode(encoding))
+            self.root.readprofile('rpbase', 'RpClass')
+        self.assertEqual(self.root._rp_latin1, 'caf\xe9')
+        self.assertEqual(self.root._rp_utf8, 'caf\xe9')
 
     def test_className(self):
         # The className argument sets the class of the root window.  Tk
