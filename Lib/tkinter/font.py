@@ -1,3 +1,5 @@
+"""Utilities to help work with fonts in Tkinter."""
+
 # Tkinter font wrapper
 #
 # written by Fredrik Lundh, February 1998
