@@ -4,6 +4,9 @@
 #include <Python.h>
 #include <pycore_ast.h>
 #include <pycore_token.h>
+#include <pycore_ceval.h>     // _Py_ReachedRecursionLimitWithMargin()
+#include <pycore_pystate.h>   // _Py_get_machine_stack_pointer()
+#include <pycore_pythonrun.h> // _PyOS_STACK_MARGIN_BYTES
 
 #include "lexer/state.h"
 
@@ -91,7 +94,29 @@ typedef struct {
     int call_invalid_rules;
     int debug;
     location last_stmt_location;
+    PyThreadState *tstate;
+    // Cached copy of tstate->c_stack_soft_limit plus one margin, so the
+    // per-rule stack check is a single inline comparison.
+    uintptr_t stack_soft_limit;
 } Parser;
+
+// C-stack exhaustion check run on every rule entry. The fast path compares
+// the machine stack pointer against the soft limit cached in the Parser;
+// only when the stack is nearly exhausted is the full check called.
+static inline int
+_PyPegen_stack_exhausted(Parser *p)
+{
+#if _Py_STACK_GROWS_DOWN
+    if (_Py_get_machine_stack_pointer() > p->stack_soft_limit) {
+        return 0;
+    }
+#else
+    if (_Py_get_machine_stack_pointer() <= p->stack_soft_limit) {
+        return 0;
+    }
+#endif
+    return _Py_ReachedRecursionLimitWithMargin(p->tstate, 1);
+}
 
 typedef struct {
     cmpop_ty cmpop;
