@@ -2428,26 +2428,26 @@ class POSIXProcessTestCase(BaseTestCase):
             p.wait()
         self.assertEqual(-p.returncode, signal.SIGABRT)
 
-    def test_CalledProcessError_str_signal(self):
-        err = subprocess.CalledProcessError(-int(signal.SIGABRT), "fake cmd")
-        error_string = str(err)
-        # We're relying on the repr() of the signal.Signals intenum to provide
-        # the word signal, the signal name and the numeric value.
-        self.assertIn("signal", error_string.lower())
-        # We're not being specific about the signal name as some signals have
-        # multiple names and which name is revealed can vary.
-        self.assertIn("SIG", error_string)
-        self.assertIn(str(signal.SIGABRT), error_string)
-
-    def test_CalledProcessError_str_unknown_signal(self):
-        err = subprocess.CalledProcessError(-9876543, "fake cmd")
-        error_string = str(err)
-        self.assertIn("unknown signal 9876543.", error_string)
-
-    def test_CalledProcessError_str_non_zero(self):
+    def test_CalledProcessError_str(self):
+        # command string
         err = subprocess.CalledProcessError(2, "fake cmd")
-        error_string = str(err)
-        self.assertIn("non-zero exit status 2.", error_string)
+        self.assertEqual(str(err), "Command 'fake cmd' returned non-zero exit status 2.")
+
+        # command string with a single-quote
+        err = subprocess.CalledProcessError(2, "fake ' cmd")
+        self.assertEqual(str(err), 'Command "fake \' cmd" returned non-zero exit status 2.')
+
+        # command list
+        err = subprocess.CalledProcessError(2, ["fake", "cmd"])
+        self.assertEqual(str(err), "Command ['fake', 'cmd'] returned non-zero exit status 2.")
+
+        # signal
+        err = subprocess.CalledProcessError(-int(signal.SIGABRT), "fake cmd")
+        self.assertEqual(str(err), f"Command 'fake cmd' died with {signal.SIGABRT!r}.")
+
+        # unknown signal
+        err = subprocess.CalledProcessError(-9876543, "fake cmd")
+        self.assertEqual(str(err), "Command 'fake cmd' died with unknown signal 9876543.")
 
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
@@ -3719,8 +3719,9 @@ class Win32ProcessTestCase(BaseTestCase):
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        rc = subprocess.call(ZERO_RETURN_CMD,
+                             startupinfo=startupinfo)
+        self.assertEqual(rc, 0)
 
     def test_startupinfo_keywords(self):
         # startupinfo argument
@@ -3735,8 +3736,9 @@ class Win32ProcessTestCase(BaseTestCase):
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        rc = subprocess.call(ZERO_RETURN_CMD,
+                             startupinfo=startupinfo)
+        self.assertEqual(rc, 0)
 
     def test_startupinfo_copy(self):
         # bpo-34044: Popen must not modify input STARTUPINFO structure
@@ -3765,13 +3767,17 @@ class Win32ProcessTestCase(BaseTestCase):
             self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
             self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
 
+    # CREATE_NEW_CONSOLE creates a "popup" window.
+    @support.requires_resource('gui')
     def test_creationflags(self):
         # creationflags argument
         CREATE_NEW_CONSOLE = 16
         sys.stderr.write("    a DOS box should flash briefly ...\n")
-        subprocess.call(sys.executable +
-                        ' -c "import time; time.sleep(0.25)"',
-                        creationflags=CREATE_NEW_CONSOLE)
+        rc = subprocess.call(sys.executable +
+                             ' -c "import time; time.sleep(0.25)"',
+                             creationflags=CREATE_NEW_CONSOLE)
+        support.skip_on_low_desktop_heap_memory_subprocess(rc)
+        self.assertEqual(rc, 0)
 
     def test_invalid_args(self):
         # invalid arguments should raise ValueError
@@ -3849,14 +3855,16 @@ class Win32ProcessTestCase(BaseTestCase):
     def test_empty_attribute_list(self):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {}
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        rc = subprocess.call(ZERO_RETURN_CMD,
+                             startupinfo=startupinfo)
+        self.assertEqual(rc, 0)
 
     def test_empty_handle_list(self):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {"handle_list": []}
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        rc = subprocess.call(ZERO_RETURN_CMD,
+                             startupinfo=startupinfo)
+        self.assertEqual(rc, 0)
 
     def test_shell_sequence(self):
         # Run command through the shell (sequence)
@@ -3867,6 +3875,8 @@ class Win32ProcessTestCase(BaseTestCase):
                              env=newenv)
         with p:
             self.assertIn(b"physalis", p.stdout.read())
+            p.communicate()
+            self.assertEqual(p.returncode, 0)
 
     def test_shell_string(self):
         # Run command through the shell (string)
@@ -3877,6 +3887,8 @@ class Win32ProcessTestCase(BaseTestCase):
                              env=newenv)
         with p:
             self.assertIn(b"physalis", p.stdout.read())
+            p.communicate()
+            self.assertEqual(p.returncode, 0)
 
     def test_shell_encodings(self):
         # Run command through the shell (string)
@@ -3889,6 +3901,8 @@ class Win32ProcessTestCase(BaseTestCase):
                                  encoding=enc)
             with p:
                 self.assertIn("physalis", p.stdout.read(), enc)
+                p.communicate()
+                self.assertEqual(p.returncode, 0)
 
     def test_call_string(self):
         # call() function with string argument on Windows

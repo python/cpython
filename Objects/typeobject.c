@@ -1162,8 +1162,8 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
 #endif
 }
 
-static void
-type_modified_unlocked(PyTypeObject *type)
+void
+_PyType_Modified_Unlocked(PyTypeObject *type)
 {
     /* Invalidate any cached data for the specified type and all
        subclasses.  This function is called after the base
@@ -1203,7 +1203,7 @@ type_modified_unlocked(PyTypeObject *type)
             if (subclass == NULL) {
                 continue;
             }
-            type_modified_unlocked(subclass);
+            _PyType_Modified_Unlocked(subclass);
             Py_DECREF(subclass);
         }
     }
@@ -1248,7 +1248,7 @@ PyType_Modified(PyTypeObject *type)
     }
 
     BEGIN_TYPE_LOCK();
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
 }
 
@@ -1594,7 +1594,12 @@ type_set_qualname(PyObject *tp, PyObject *value, void *context)
     }
 
     et = (PyHeapTypeObject*)type;
-    Py_SETREF(et->ht_qualname, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_qualname = et->ht_qualname;
+    et->ht_qualname = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_DECREF(old_qualname);
     return 0;
 }
 
@@ -1736,7 +1741,7 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     }
 
     BEGIN_TYPE_LOCK();
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
     types_stop_world();
     if (abstract)
         type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
@@ -1963,7 +1968,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
             goto bail;
         }
         /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
-        type_modified_unlocked(type);
+        _PyType_Modified_Unlocked(type);
     }
     else {
         res = 0;
@@ -3679,7 +3684,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
     if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
-        type_modified_unlocked(type);
+        _PyType_Modified_Unlocked(type);
     }
     else {
         /* For static builtin types, this is only called during init
@@ -3712,9 +3717,9 @@ find_best_base(PyObject *bases)
     for (i = 0; i < n; i++) {
         PyObject *base_proto = PyTuple_GET_ITEM(bases, i);
         if (!PyType_Check(base_proto)) {
-            PyErr_SetString(
+            PyErr_Format(
                 PyExc_TypeError,
-                "bases must be types");
+                "bases must be types; got '%T'", base_proto);
             return NULL;
         }
         PyTypeObject *base_i = (PyTypeObject *)base_proto;
@@ -3788,7 +3793,7 @@ solid_base(PyTypeObject *type)
 // or when __bases__ is re-assigned.  Since the slots are read without atomic
 // operations and without locking, we can only safely update them while the
 // world is stopped.  However, with the world stopped, we are very limited on
-// which APIs can be safely used.  For example, calling _PyObject_HashFast()
+// which APIs can be safely used.  For example, calling _PyObject_HashDictKey()
 // or _PyDict_GetItemRef_KnownHash() are not safe and can potentially cause
 // deadlocks.  Hashing can be re-entrant and _PyDict_GetItemRef_KnownHash can
 // acquire a lock if the dictionary is not owned by the current thread, to
@@ -4162,8 +4167,9 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
     for (i = 0; i < nbases; i++) {
         tmp = PyTuple_GET_ITEM(bases, i);
         tmptype = Py_TYPE(tmp);
-        if (PyType_IsSubtype(winner, tmptype))
+        if (PyType_IsSubtype(winner, tmptype)) {
             continue;
+        }
         if (PyType_IsSubtype(tmptype, winner)) {
             winner = tmptype;
             continue;
@@ -5487,6 +5493,7 @@ type_from_slots_or_spec(
     Py_ssize_t name_buf_len = strlen(it.name) + 1;
     _ht_tpname = PyMem_Malloc(name_buf_len);
     if (_ht_tpname == NULL) {
+        PyErr_NoMemory();
         goto finally;
     }
     memcpy(_ht_tpname, it.name, name_buf_len);
@@ -5524,6 +5531,12 @@ type_from_slots_or_spec(
         }
     }
 
+    /* Calculate best base, and check that all bases are type objects */
+    PyTypeObject *base = find_best_base(bases);  // borrowed ref
+    if (base == NULL) {
+        goto finally;
+    }
+
     /* Calculate the metaclass */
 
     if (!metaclass) {
@@ -5546,11 +5559,6 @@ type_from_slots_or_spec(
         goto finally;
     }
 
-    /* Calculate best base, and check that all bases are type objects */
-    PyTypeObject *base = find_best_base(bases);  // borrowed ref
-    if (base == NULL) {
-        goto finally;
-    }
     // find_best_base() should check Py_TPFLAGS_BASETYPE & raise a proper
     // exception, here we just check its work
     assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
@@ -5772,7 +5780,7 @@ type_from_slots_or_spec(
     ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
 #endif
 
- finally:
+finally:
     if (PyErr_Occurred()) {
         Py_CLEAR(res);
     }
@@ -6129,7 +6137,7 @@ PyObject_GetItemData(PyObject *obj)
 static int
 find_name_in_mro(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    Py_hash_t hash = _PyObject_HashFast(name);
+    Py_hash_t hash = _PyObject_HashDictKey(name);
     if (hash == -1) {
         PyErr_Clear();
         return -1;
@@ -6492,14 +6500,14 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
 {
     BEGIN_TYPE_LOCK();
     /* Ideally, changing flags and invalidating the old version tag would
-       happen in one step. But type_modified_unlocked() is re-entrant and
+       happen in one step. But _PyType_Modified_Unlocked() is re-entrant and
        cannot run with the world stopped, so we must invalidate first.
        Immutable/static-builtin types are skipped because
        set_flags_recursive() does not modify them. */
     if (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
         (self->tp_flags & mask) != flags)
     {
-        type_modified_unlocked(self);
+        _PyType_Modified_Unlocked(self);
     }
     /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
        can reassign a version tag before the flag update. */
@@ -6680,7 +6688,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
                  PyObject *value, PyObject **old_value)
 {
     // We don't want any re-entrancy between when we update the dict
-    // and call type_modified_unlocked, including running the destructor
+    // and call _PyType_Modified_Unlocked, including running the destructor
     // of the current value as it can observe the cache in an inconsistent
     // state.  Because we have an exact unicode and our dict has exact
     // unicodes we know that this will all complete without releasing
@@ -6694,7 +6702,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         update_subclasses() recursion in update_slot(), but carefully:
         they each have their own conditions on which to stop
         recursing into subclasses. */
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
 
     if (_PyDict_SetItem_LockHeld(dict, name, value) < 0) {
         PyErr_Format(PyExc_AttributeError,
@@ -7018,7 +7026,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     if (et->ht_cached_keys) {
-        _PyDictKeys_DecRef(et->ht_cached_keys);
+        _PyDict_RemoveKeysForClass(et);
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
@@ -11327,6 +11335,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
 
     wrapper = PyObject_GC_New(PyBufferWrapper, &_PyBufferWrapper_Type);
     if (wrapper == NULL) {
+        PyBuffer_Release(buffer);
         goto fail;
     }
     wrapper->mv = ret;
@@ -12508,7 +12517,7 @@ PyType_Freeze(PyTypeObject *type)
     type_add_flags(type, Py_TPFLAGS_IMMUTABLETYPE);
     types_start_world();
     ASSERT_TYPE_LOCK_HELD();
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
 
     return 0;

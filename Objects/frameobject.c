@@ -9,6 +9,7 @@
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
 #include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
@@ -636,9 +637,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
                 goto error;
             }
 
-            int rc = PyList_Append(items, pair);
-            Py_DECREF(pair);
-            if (rc < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
                 goto error;
             }
         }
@@ -655,9 +654,7 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
                 goto error;
             }
 
-            int rc = PyList_Append(items, pair);
-            Py_DECREF(pair);
-            if (rc < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
                 goto error;
             }
         }
@@ -1117,7 +1114,7 @@ frame_back_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=3a84c22a55a63c79 input=9e528570d0e1f44a]*/
 {
     PyObject *res = (PyObject *)PyFrame_GetBack(self);
-    if (res == NULL) {
+    if (res == NULL && !PyErr_Occurred()) {
         Py_RETURN_NONE;
     }
     return res;
@@ -2405,6 +2402,9 @@ PyFrame_GetBack(PyFrameObject *frame)
         prev = _PyFrame_GetFirstComplete(prev);
         if (prev) {
             back = _PyFrame_GetFrameObject(prev);
+            if (back == NULL) {
+                return NULL;
+            }
         }
     }
     return (PyFrameObject*)Py_XNewRef(back);

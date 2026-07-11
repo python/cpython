@@ -83,15 +83,15 @@ Japanese =?iso-2022-jp?b?GyRCRnxLXDhsGyhC?= =?iso-2022-jp?b?GyRCRnxLXDhsGyhC?=
         h.append(s, Charset('big5hkscs'))
         eq(h.encode(), """\
 Chinese =?gb2312?b?1tDOxA==?= =?gbk?b?1tDOxA==?= =?gb18030?b?1tDOxA==?=
- =?hz?b?fntWUE5Efn0=?= =?big5?b?pKSk5Q==?= =?big5hkscs?b?pKSk5Q==?=""")
+ =?hz-gb-2312?b?fntWUE5Efn0=?= =?big5?b?pKSk5Q==?= =?big5-hkscs?b?pKSk5Q==?=""")
         eq(decode_header(h.encode()),
            [(b'Chinese ', None),
             (b'\xd6\xd0\xce\xc4', 'gb2312'),
             (b'\xd6\xd0\xce\xc4', 'gbk'),
             (b'\xd6\xd0\xce\xc4', 'gb18030'),
-            (b'~{VPND~}', 'hz'),
+            (b'~{VPND~}', 'hz-gb-2312'),
             (b'\xa4\xa4\xa4\xe5', 'big5'),
-            (b'\xa4\xa4\xa4\xe5', 'big5hkscs'),
+            (b'\xa4\xa4\xa4\xe5', 'big5-hkscs'),
            ])
 
     def test_korean_codecs(self):
