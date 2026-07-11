@@ -19,10 +19,10 @@ typedef struct {
     PyObject *lz_builtins;
     PyObject *lz_from;
     PyObject *lz_attr;
+    // Protected by the lazy object lock.
     PyObject *lz_globals;
     PyObject *lz_key;
-    PyObject *lz_resolved;       // Protected by the lazy object lock.
-    Py_hash_t lz_key_hash;
+    PyObject *lz_resolved;
     // Frame information for the original import location.
     PyCodeObject *lz_code;     // Code object where the lazy import was created.
     int lz_instr_offset;       // Instruction offset where the lazy import was created.
@@ -30,8 +30,8 @@ typedef struct {
 
 
 PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
-PyAPI_FUNC(PyObject *) _PyLazyImport_GetResolved(PyObject *lazy_import);
-PyAPI_FUNC(int) _PyLazyImport_FinishResolve(
+extern PyObject * _PyLazyImport_GetResolved(PyObject *lazy_import);
+extern int _PyLazyImport_FinishResolve(
     PyObject *lazy_import, PyObject *resolved);
 PyAPI_FUNC(int) _PyLazyImport_ReplaceDictItemIfCurrent(
     PyObject *lazy_import, PyObject *dict, PyObject *name,

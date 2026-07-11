@@ -1,5 +1,3 @@
 Fix :meth:`!types.LazyImportType.resolve` so resolving a module-level lazy
-import replaces the original lazy proxy in the module globals.
-Lazy submodule attribute access now also preserves importlib's
-``sys.modules[name] is None`` sentinel behavior while treating absent requested
-lazy submodules as normal attribute misses.
+import replaces the original lazy proxy in the module globals. Lazy import
+creation now requires an exact dictionary for the globals namespace.

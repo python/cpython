@@ -4452,135 +4452,52 @@ register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
     return res;
 }
 
-static int
-is_module_not_found_for_name(PyThreadState *tstate, PyObject *name)
+PyObject *
+_PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name)
 {
-    // Return true only for the importlib._handle_fromlist() compatibility
-    // case where "name itself was not found" and sys.modules[name] is not the
-    // None sentinel. Consume the current exception so callers can continue
-    // normal attribute fallback.
-    if (!_PyErr_ExceptionMatches(tstate, PyExc_ModuleNotFoundError)) {
-        return 0;
-    }
-
-    PyObject *exc = _PyErr_GetRaisedException(tstate);
-    PyObject *missing_name = PyObject_GetAttr(exc, &_Py_ID(name));
-    if (missing_name == NULL) {
-        PyErr_Clear();
-        _PyErr_SetRaisedException(tstate, exc);
-        return 0;
-    }
-
-    int is_same = PyObject_RichCompareBool(missing_name, name, Py_EQ);
-    Py_DECREF(missing_name);
-    if (is_same <= 0) {
-        if (is_same < 0) {
-            PyErr_Clear();
-        }
-        _PyErr_SetRaisedException(tstate, exc);
-        return 0;
-    }
-
-    PyObject *mod = import_get_module(tstate, name);
-    if (mod == Py_None) {
-        Py_DECREF(mod);
-        _PyErr_SetRaisedException(tstate, exc);
-        return 0;
-    }
-    if (mod == NULL && _PyErr_Occurred(tstate)) {
-        PyErr_Clear();
-        _PyErr_SetRaisedException(tstate, exc);
-        return 0;
-    }
-    Py_XDECREF(mod);
-    Py_DECREF(exc);
-    return 1;
-}
-
-int
-_PyImport_TryLoadLazySubmodule(PyObject *mod_name, PyObject *attr_name,
-                               PyObject *mod_dict, PyObject **result)
-{
-    *result = NULL;
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyInterpreterState *interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *lazy_pending = LAZY_PENDING_SUBMODULES(interp);
     if (lazy_pending == NULL) {
-        return 0;
+        return NULL;
     }
 
     PyObject *pending_set;
     int rc = PyDict_GetItemRef(lazy_pending, mod_name, &pending_set);
-    if (rc < 0) {
-        return -1;
-    }
-    if (rc == 0) {
-        return 0;
+    if (rc <= 0) {
+        return NULL;
     }
 
     int contains = PySet_Contains(pending_set, attr_name);
-    if (contains < 0) {
+    if (contains <= 0) {
         Py_DECREF(pending_set);
-        return -1;
-    }
-    if (contains == 0) {
-        Py_DECREF(pending_set);
-        return 0;
+        return NULL;
     }
 
     PyObject *full_name = PyUnicode_FromFormat("%U.%U", mod_name, attr_name);
     if (full_name == NULL) {
         Py_DECREF(pending_set);
-        return -1;
+        return NULL;
     }
 
     PyObject *mod = PyImport_ImportModuleLevelObject(
         full_name, NULL, NULL, NULL, 0);
     if (mod == NULL) {
-        if (is_module_not_found_for_name(tstate, full_name)) {
-            Py_DECREF(pending_set);
-            Py_DECREF(full_name);
-            return 0;
-        }
         Py_DECREF(pending_set);
         Py_DECREF(full_name);
-        return -1;
+        return NULL;
     }
     Py_DECREF(mod);
 
-    PyObject *submod = PyImport_GetModule(full_name);
-    if (submod == NULL) {
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_Format(tstate, PyExc_KeyError,
-                          "%R not in sys.modules as expected",
-                          full_name);
-        }
+    if (PySet_Discard(pending_set, attr_name) < 0) {
+        Py_DECREF(pending_set);
         Py_DECREF(full_name);
-        Py_DECREF(pending_set);
-        return -1;
-    }
-    Py_DECREF(full_name);
-
-    if (PyDict_SetItem(mod_dict, attr_name, submod) < 0) {
-        Py_DECREF(pending_set);
-        Py_DECREF(submod);
-        return -1;
-    }
-
-    // This completes the successful lazy-submodule publish. pending_set is an
-    // internal set and attr_name is a Unicode attribute name, so discard is not
-    // expected to fail after the parent dict has been updated.
-    int discard_rc = PySet_Discard(pending_set, attr_name);
-    assert(discard_rc >= 0);
-    if (discard_rc < 0) {
-        Py_DECREF(pending_set);
-        Py_DECREF(submod);
-        return -1;
+        return NULL;
     }
     Py_DECREF(pending_set);
-    *result = submod;
-    return 1;
+
+    PyObject *submod = PyImport_GetModule(full_name);
+    Py_DECREF(full_name);
+    return submod;
 }
 
 PyObject *
@@ -4661,6 +4578,13 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
                 name, globals, locals, fromlist, level
             );
         }
+    }
+
+    if (!PyDict_CheckExact(globals)) {
+        Py_DECREF(abs_name);
+        PyErr_SetString(PyExc_TypeError,
+                       "'lazy import' requires exact dict globals");
+        return NULL;
     }
 
     // here, 'filter' is either NULL or is equivalent to a borrowed reference

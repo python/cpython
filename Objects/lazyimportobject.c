@@ -38,7 +38,6 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins, PyObject *name
     m->lz_globals = NULL;
     m->lz_key = NULL;
     m->lz_resolved = NULL;
-    m->lz_key_hash = -1;
 
     // Capture frame information for the original import location.
     m->lz_code = NULL;
@@ -165,7 +164,6 @@ _PyLazyImport_SetGlobalBindingAndDictItem(PyObject *op, PyObject *globals,
         // may update only this key; aliases must not retarget it.
         m->lz_globals = Py_NewRef(globals);
         m->lz_key = Py_NewRef(name);
-        m->lz_key_hash = hash;
         recorded = 1;
     }
     err = _PyDict_SetItem_KnownHash_LockHeld(
@@ -175,7 +173,6 @@ _PyLazyImport_SetGlobalBindingAndDictItem(PyObject *op, PyObject *globals,
         discard_key = m->lz_key;
         m->lz_globals = NULL;
         m->lz_key = NULL;
-        m->lz_key_hash = -1;
     }
     Py_END_CRITICAL_SECTION2();
 
@@ -233,8 +230,6 @@ _PyLazyImport_FinishResolve(PyObject *op, PyObject *resolved)
     PyLazyImportObject *m = PyLazyImportObject_CAST(op);
     PyObject *globals = NULL;
     PyObject *key = NULL;
-    Py_hash_t key_hash = -1;
-    int err = 0;
     int already_resolved = 0;
 
     assert(PyLazyImport_CheckExact(op));
@@ -247,7 +242,6 @@ _PyLazyImport_FinishResolve(PyObject *op, PyObject *resolved)
     else if (m->lz_globals != NULL && m->lz_key != NULL) {
         globals = Py_NewRef(m->lz_globals);
         key = Py_NewRef(m->lz_key);
-        key_hash = m->lz_key_hash;
     }
     Py_END_CRITICAL_SECTION();
 
@@ -259,8 +253,8 @@ _PyLazyImport_FinishResolve(PyObject *op, PyObject *resolved)
         assert(key != NULL);
         assert(PyDict_CheckExact(globals));
 
-        err = lazy_import_replace_dict_item_if_current(
-            op, globals, key, key_hash, resolved);
+        int err = _PyLazyImport_ReplaceDictItemIfCurrent(
+            op, globals, key, resolved);
         if (err < 0) {
             Py_DECREF(globals);
             Py_DECREF(key);
@@ -276,14 +270,12 @@ _PyLazyImport_FinishResolve(PyObject *op, PyObject *resolved)
     }
     if (globals != NULL &&
         m->lz_globals == globals &&
-        m->lz_key == key &&
-        m->lz_key_hash == key_hash)
+        m->lz_key == key)
     {
         discard_globals = m->lz_globals;
         discard_key = m->lz_key;
         m->lz_globals = NULL;
         m->lz_key = NULL;
-        m->lz_key_hash = -1;
     }
     Py_END_CRITICAL_SECTION();
 

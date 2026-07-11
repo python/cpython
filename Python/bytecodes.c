@@ -19,7 +19,7 @@
 #include "pycore_instruments.h"
 #include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
-#include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact(), _PyLazyImport_SetGlobalBindingAndDictItem()
+#include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact()
 #include "pycore_long.h"          // _PyLong_ExactDealloc(), _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -2175,7 +2175,9 @@ dummy_func(
             }
             else {
                 PyObject *value = PyStackRef_AsPyObjectBorrow(v);
-                if (PyLazyImport_CheckExact(value)) {
+                if (PyLazyImport_CheckExact(value) &&
+                    PyDict_CheckExact(GLOBALS()))
+                {
                     err = _PyLazyImport_SetGlobalBindingAndDictItem(
                         value, GLOBALS(), name);
                 }
@@ -2264,13 +2266,10 @@ dummy_func(
                     Py_DECREF(v_o);
                     ERROR_IF(true);
                 }
-                int err;
+                int err = 0;
                 if (PyDict_CheckExact(GLOBALS())) {
                     err = _PyLazyImport_ReplaceDictItemIfCurrent(
                         v_o, GLOBALS(), name, l_v);
-                }
-                else {
-                    err = PyDict_SetItem(GLOBALS(), name, l_v);
                 }
                 if (err < 0) {
                     Py_DECREF(v_o);

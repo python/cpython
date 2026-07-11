@@ -10034,7 +10034,9 @@
             }
             else {
                 PyObject *value = PyStackRef_AsPyObjectBorrow(v);
-                if (PyLazyImport_CheckExact(value)) {
+                if (PyLazyImport_CheckExact(value) &&
+                    PyDict_CheckExact(GLOBALS()))
+                {
                     stack_pointer[0] = v;
                     stack_pointer += 1;
                     ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -10177,18 +10179,12 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                int err;
+                int err = 0;
                 if (PyDict_CheckExact(GLOBALS())) {
                     assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                     _PyFrame_StackPointerValidate(frame);
                     err = _PyLazyImport_ReplaceDictItemIfCurrent(
                         v_o, GLOBALS(), name, l_v);
-                    _PyFrame_StackPointerInvalidate(frame);
-                }
-                else {
-                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                    _PyFrame_StackPointerValidate(frame);
-                    err = PyDict_SetItem(GLOBALS(), name, l_v);
                     _PyFrame_StackPointerInvalidate(frame);
                 }
                 if (err < 0) {

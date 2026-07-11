@@ -3694,13 +3694,10 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
             *writeto = PyStackRef_NULL;
             return;
         }
-        int err;
+        int err = 0;
         if (PyDict_CheckExact(globals)) {
             err = _PyLazyImport_ReplaceDictItemIfCurrent(
                 res_o, globals, name, l_v);
-        }
-        else {
-            err = PyDict_SetItem(globals, name, l_v);
         }
         PyStackRef_CLOSE(writeto[0]);
         if (err < 0) {
