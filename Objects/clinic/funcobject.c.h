@@ -9,6 +9,56 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+#if !defined(function___code___DOCSTR)
+#  define function___code___DOCSTR NULL
+#endif
+#if defined(FUNCTION___CODE___GETSETDEF)
+#  undef FUNCTION___CODE___GETSETDEF
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, (setter)function___code___set, function___code___DOCSTR},
+#else
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, NULL, function___code___DOCSTR},
+#endif
+
+static PyObject *
+function___code___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___code___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___code___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___code___DOCSTR)
+#  define function___code___DOCSTR NULL
+#endif
+#if defined(FUNCTION___CODE___GETSETDEF)
+#  undef FUNCTION___CODE___GETSETDEF
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, (setter)function___code___set, function___code___DOCSTR},
+#else
+#  define FUNCTION___CODE___GETSETDEF {"__code__", NULL, (setter)function___code___set, NULL},
+#endif
+
+static int
+function___code___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___code___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___code___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 #if !defined(function___name___DOCSTR)
 #  define function___name___DOCSTR NULL
 #endif
@@ -390,4 +440,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9d22c2b0ddf343b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a13df804c994bf0b input=a9049054013a1b77]*/

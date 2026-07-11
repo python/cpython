@@ -1106,10 +1106,12 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
     gen->gi_iframe.f_executable = PyStackRef_None;
+    Py_BEGIN_CRITICAL_SECTION((PyObject *)func);
     assert(func->func_name != NULL);
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);
     gen->gi_qualname = Py_NewRef(func->func_qualname);
+    Py_END_CRITICAL_SECTION();
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }
