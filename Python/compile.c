@@ -174,6 +174,7 @@ new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
 {
     compiler *c = PyMem_Calloc(1, sizeof(compiler));
     if (c == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     if (compiler_setup(c, mod, filename, pflags, optimize, arena, module) < 0) {
@@ -1688,7 +1689,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
     metadata = PyDict_New();
     if (metadata == NULL) {
-        return NULL;
+        goto finally;
     }
 
     if (compiler_codegen(c, mod) < 0) {
