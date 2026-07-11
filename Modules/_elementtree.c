@@ -449,6 +449,9 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     self_elem = (ElementObject *)self;
 
+    /* On re-init, drop any children and attrib from a previous init. */
+    clear_extra(self_elem);
+
     if (attrib != NULL && !is_empty_dict(attrib)) {
         if (create_extra(self_elem, attrib) < 0) {
             Py_DECREF(attrib);
