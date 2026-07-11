@@ -5,7 +5,6 @@ import select
 import signal
 import sys
 import threading
-import time
 import unittest
 from functools import partial
 from _colorize import ANSIColors
@@ -450,9 +449,11 @@ class TestUnixConsoleInputHook(TestCase):
     def test_input_hook_output_is_cooked(self):
         master_fd, slave_fd = pty.openpty()
 
-        # Continuously drain the master side, like a real terminal.  This is
-        # required because pyrepl switches the terminal mode with TCSADRAIN,
-        # which blocks until queued output has been consumed.
+        # Drain the master side continuously, like a real terminal would.
+        # This cannot be deferred until after the hook call: pyrepl switches
+        # the terminal mode with TCSADRAIN, which on some platforms (e.g.
+        # macOS) blocks until the queued output has actually been read from
+        # the master side, so an undrained pty deadlocks the mode switch.
         chunks = []
         reading = True
 
@@ -502,7 +503,7 @@ class TestUnixConsoleInputHook(TestCase):
                 mock_posix._inputhook.side_effect = fake_hook
                 hook = console.input_hook
                 self.assertIsNotNone(hook)
-                hook()
+                self.assertEqual(hook(), 0)
 
             # The hook ran with cooked output (OPOST on)...
             self.assertTrue(observed["oflag"] & _termios.OPOST)
@@ -512,8 +513,20 @@ class TestUnixConsoleInputHook(TestCase):
             console.restore()
             os.close(slave_fd)
 
-        # Give the reader a moment to drain the hook's output.
-        time.sleep(0.2)
+        # No sleep needed: the TCSADRAIN switch back to raw mode did not
+        # return until the hook's output was drained, so after joining the
+        # reader and emptying the master nothing is left in flight.
+        reading = False
+        reader_thread.join()
+        while select.select([master_fd], [], [], 0)[0]:
+            try:
+                extra = os.read(master_fd, 4096)
+            except OSError:
+                break
+            if not extra:
+                break
+            chunks.append(extra)
+
         data = b"".join(chunks)
         # The tty translated the hook's bare '\n' into '\r\n'.
         self.assertIn(b"line1\r\nline2\r\n", data)

@@ -746,7 +746,7 @@ class UnixConsole(Console):
         cooked.oflag = self.__svtermstate.oflag
         self.__input_fd_set(cooked)
         try:
-            posix._inputhook()
+            return posix._inputhook()
         finally:
             self.__input_fd_set(self.__rawtermstate)
 
