@@ -220,7 +220,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     assert(parser_token != NULL);
 
     parser_token->type = (token_type == NAME) ? _get_keyword_or_name_type(p, new_token) : token_type;
-    if (token_type == NAME || token_needs_text(parser_token->type)) {
+    if (token_needs_text(parser_token->type)) {
         parser_token->bytes = PyBytes_FromStringAndSize(
             new_token->start, new_token->end - new_token->start);
         if (parser_token->bytes == NULL) {
