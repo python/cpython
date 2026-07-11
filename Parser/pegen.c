@@ -220,7 +220,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     const char *text = _PyToken_TextView(p->tok, new_token, &length);
     parser_token->type = token_type == NAME
         ? _get_keyword_or_name_type(p, text, length) : token_type;
-    if (token_type == NAME || token_needs_text(parser_token->type)) {
+    if (token_needs_text(parser_token->type)) {
         parser_token->bytes = PyBytes_FromStringAndSize(text, length);
         if (parser_token->bytes == NULL) {
             return -1;
