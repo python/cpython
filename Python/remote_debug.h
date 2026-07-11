@@ -781,6 +781,106 @@ exit:
     return result;
 }
 
+static const char *
+find_debug_cookie(const char *buffer, size_t len)
+{
+    const char *cookie = _Py_Debug_Cookie;
+    const size_t cookie_len = sizeof(_Py_Debug_Cookie) - 1;
+    if (len < cookie_len) {
+        return NULL;
+    }
+
+    size_t pos = 0;
+    size_t last = len - cookie_len;
+    while (pos <= last) {
+        const char *candidate = memchr(
+            buffer + pos, cookie[0], last - pos + 1);
+        if (candidate == NULL) {
+            return NULL;
+        }
+        pos = (size_t)(candidate - buffer);
+        if (memcmp(candidate, cookie, cookie_len) == 0) {
+            return candidate;
+        }
+        pos++;
+    }
+    return NULL;
+}
+
+static int
+linux_map_path_is_deleted(const char *path)
+{
+    static const char deleted_suffix[] = " (deleted)";
+    size_t path_len = strlen(path);
+    size_t suffix_len = sizeof(deleted_suffix) - 1;
+    return path_len >= suffix_len
+        && strcmp(path + path_len - suffix_len, deleted_suffix) == 0;
+}
+
+static int
+linux_map_perms_are_readwrite(const char *perms)
+{
+    return perms[0] == 'r' && perms[1] == 'w';
+}
+
+static uintptr_t
+scan_linux_mapping_for_pyruntime_cookie(
+        proc_handle_t *handle,
+        uintptr_t start,
+        uintptr_t end)
+{
+    if (end <= start) {
+        return 0;
+    }
+
+    const size_t cookie_len = sizeof(_Py_Debug_Cookie) - 1;
+    const size_t overlap = cookie_len - 1;
+    const size_t chunk_size = 1024 * 1024;
+    char *buffer = PyMem_Malloc(chunk_size);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        _set_debug_exception_cause(PyExc_MemoryError,
+            "Cannot allocate memory while scanning PID %d for PyRuntime cookie",
+            handle->pid);
+        return 0;
+    }
+
+    uintptr_t retval = 0;
+    uintptr_t mapping_size = end - start;
+    uintptr_t offset = 0;
+    while (offset < mapping_size) {
+        uintptr_t remaining = mapping_size - offset;
+        size_t wanted = remaining > chunk_size
+            ? chunk_size : (size_t)remaining;
+        if (_Py_RemoteDebug_ReadRemoteMemory(
+                handle, start + offset, wanted, buffer) < 0) {
+            if (_Py_RemoteDebug_HasPermissionError()) {
+                goto exit;
+            }
+            // A candidate mapping can disappear or contain unreadable holes while
+            // the target process keeps running. Treat those as non-matches and
+            // keep scanning other candidate mappings.
+            PyErr_Clear();
+        }
+        else {
+            const char *hit = find_debug_cookie(buffer, wanted);
+            if (hit != NULL) {
+                retval = start + offset + (uintptr_t)(hit - buffer);
+                goto exit;
+            }
+        }
+
+        if (wanted <= overlap) {
+            break;
+        }
+        offset += wanted - overlap;
+    }
+
+exit:
+    PyMem_Free(buffer);
+    return retval;
+}
+
 static uintptr_t
 search_linux_map_for_section(proc_handle_t *handle, const char* secname, const char* substr,
                              section_validator_t validator)
@@ -835,16 +935,22 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         linelen = 0;
 
         unsigned long start = 0;
-        unsigned long path_pos = 0;
-        sscanf(line, "%lx-%*x %*s %*s %*s %*s %ln", &start, &path_pos);
+        unsigned long end = 0;
+        int path_pos = 0;
+        char perms[5] = "";
+        int fields = sscanf(line, "%lx-%lx %4s %*s %*s %*s %n",
+                            &start, &end, perms, &path_pos);
 
-        if (!path_pos) {
+        if (fields < 3 || !path_pos) {
             // Line didn't match our format string.  This shouldn't be
             // possible, but let's be defensive and skip the line.
             continue;
         }
 
         const char *path = line + path_pos;
+        if (path[0] == '\0') {
+            continue;
+        }
         if (path[0] == '[' && path[strlen(path)-1] == ']') {
             // Skip [heap], [stack], [anon:cpython:pymalloc], etc.
             continue;
@@ -858,8 +964,21 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         if (strstr(filename, substr)) {
-            PyErr_Clear();
-            retval = search_elf_file_for_section(handle, secname, start, path);
+            int deleted_pyruntime_mapping =
+                strcmp(secname, "PyRuntime") == 0
+                && linux_map_path_is_deleted(path);
+            if (deleted_pyruntime_mapping
+                && linux_map_perms_are_readwrite(perms)) {
+                PyErr_Clear();
+                retval = scan_linux_mapping_for_pyruntime_cookie(
+                    handle, (uintptr_t)start, (uintptr_t)end);
+            }
+            if (!deleted_pyruntime_mapping
+                && retval == 0 && !PyErr_Occurred()) {
+                PyErr_Clear();
+                retval = search_elf_file_for_section(
+                    handle, secname, start, path);
+            }
             if (retval) {
                 if (validator == NULL || validator(handle, retval)) {
                     break;

@@ -374,9 +374,15 @@ gc_get_stats_impl(PyObject *module)
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&gcstate->stats_mutex);
+#endif
     stats[0] = gcstate->generation_stats->young.items[gcstate->generation_stats->young.index];
     stats[1] = gcstate->generation_stats->old[0].items[gcstate->generation_stats->old[0].index];
     stats[2] = gcstate->generation_stats->old[1].items[gcstate->generation_stats->old[1].index];
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&gcstate->stats_mutex);
+#endif
 
     PyObject *result = PyList_New(0);
     if (result == NULL)

@@ -25,16 +25,23 @@ from idlelib import debugobj_r  # remote_object_tree_item
 from idlelib import iomenu  # encoding
 from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
+from idlelib import util  # fix_scaling
 import __main__
 
 import tkinter  # Use tcl and, if startup fails, messagebox.
 if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
     # Undo modifications of tkinter by idlelib imports; see bpo-25507.
+    # Which of these submodules got imported (and thus added as a tkinter
+    # attribute) depends on what idlelib pulled in, so tolerate missing
+    # ones rather than assuming a fixed set; see gh-59396.
     for mod in ('simpledialog', 'messagebox', 'font',
                 'dialog', 'filedialog', 'commondialog',
                 'ttk'):
-        delattr(tkinter, mod)
-        del sys.modules['tkinter.' + mod]
+        try:
+            delattr(tkinter, mod)
+            del sys.modules['tkinter.' + mod]
+        except (AttributeError, KeyError):
+            pass
     # Avoid AttributeError if run again; see bpo-37038.
     sys.modules['idlelib.run'].firstrun = False
 
@@ -216,7 +223,7 @@ def show_socket_error(err, address):
     import tkinter
     from tkinter.messagebox import showerror
     root = tkinter.Tk()
-    fix_scaling(root)
+    util.fix_scaling(root)
     root.withdraw()
     showerror(
             "Subprocess Connection Error",
@@ -389,16 +396,6 @@ def exit():
     sys.exit(0)
 
 
-def fix_scaling(root):
-    """Scale fonts on HiDPI displays."""
-    import tkinter.font
-    scaling = float(root.tk.call('tk', 'scaling'))
-    if scaling > 1.4:
-        for name in tkinter.font.names(root):
-            font = tkinter.font.Font(root=root, name=name, exists=True)
-            size = int(font['size'])
-            if size < 0:
-                font['size'] = round(-0.75*size)
 
 
 def fixdoc(fun, text):

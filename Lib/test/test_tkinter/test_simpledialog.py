@@ -32,7 +32,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         d = self.create(buttons=['OK'], bitmap='warning')
         self.assertEqual(d._buttons[0].winfo_class(), 'TButton')
         self.assertEqual(d.message.winfo_class(), 'TLabel')
-        self.assertEqual(str(d.message.cget('anchor')), 'nw')  # cf. MessageBox
+        self.assertEqual(d.message.cget('anchor'), 'nw')  # cf. MessageBox
         # The standard icons are drawn with themed images (cf. MessageBox).
         self.assertEqual(d.bitmap.winfo_class(), 'TLabel')
         self.assertIn('::tk::icons::warning', str(d.bitmap.cget('image')))
@@ -44,6 +44,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(str(d.root.cget('background')),
                          ttk.Style(d.root).lookup('.', 'background'))
         # The bindings work with the themed buttons too.
+        self.require_mapped(d.root)
         d._buttons[0].focus_force()
         d.root.update()
         d.root.event_generate('<Return>')
@@ -56,7 +57,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(d._buttons[0].winfo_class(), 'Button')
         self.assertEqual(d.message.winfo_class(), 'Label')
         if d.root._windowingsystem == 'x11':
-            self.assertEqual(str(d.frame.cget('relief')), 'raised')
+            self.assertEqual(d.frame.cget('relief'), 'raised')
         # tk_dialog does not make the buttons equal width.
         self.assertIsNone(d.root.children['bot'].grid_columnconfigure(0)['uniform'])
         # The bitmap is a classic monochrome label.
@@ -74,17 +75,20 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # Without a detail message the message label expands.
         d = self.create()
         self.assertIsNone(d.detail)
-        self.assertEqual(int(d.message.pack_info()['expand']), 1)
+        self.assertEqual(d.message.pack_info()['expand'],
+                         1 if self.wantobjects else '1')
 
     def test_detail(self):
         # The detail message is shown below the main message.
         d = self.create(detail='More information.')
         self.assertEqual(d.detail.winfo_class(), 'TLabel')
         self.assertEqual(str(d.detail.cget('text')), 'More information.')
-        self.assertEqual(str(d.detail.cget('anchor')), 'nw')  # cf. MessageBox
+        self.assertEqual(d.detail.cget('anchor'), 'nw')  # cf. MessageBox
         # With a detail message it expands and the main message does not.
-        self.assertEqual(int(d.message.pack_info()['expand']), 0)
-        self.assertEqual(int(d.detail.pack_info()['expand']), 1)
+        self.assertEqual(d.message.pack_info()['expand'],
+                         0 if self.wantobjects else '0')
+        self.assertEqual(d.detail.pack_info()['expand'],
+                         1 if self.wantobjects else '1')
 
     def test_bitmap_fallback(self):
         # A non-standard bitmap has no themed image, so even the ttk version
@@ -113,11 +117,11 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         yes, no = d._buttons
         self.assertEqual(str(yes.cget('text')), 'Yes')
         self.assertEqual(str(no.cget('text')), 'No')
-        self.assertEqual(int(no.cget('underline')), 0)
+        self.assertEqual(no.cget('underline'), 0 if self.wantobjects else '0')
         self.assertEqual(str(no.cget('width')), '12')
         # The dialog still controls the default ring (default=0) ...
-        self.assertEqual(str(yes.cget('default')), 'active')
-        self.assertEqual(str(no.cget('default')), 'normal')
+        self.assertEqual(yes.cget('default'), 'active')
+        self.assertEqual(no.cget('default'), 'normal')
         # ... and the command, which records the button index.
         no.invoke()
         self.assertEqual(d.num, 1)
@@ -127,18 +131,19 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # (cf. tk::MessageBox).
         d = self.create()  # buttons ['Yes', 'No'], default 0
         b0, b1 = d._buttons
-        self.assertEqual(str(b1.cget('default')), 'normal')
+        self.assertEqual(b1.cget('default'), 'normal')
         b1.focus_force()
         d.root.update()
-        self.assertEqual(str(b1.cget('default')), 'active')   # focused -> ring
+        self.assertEqual(b1.cget('default'), 'active')   # focused -> ring
         b0.focus_force()
         d.root.update()
-        self.assertEqual(str(b1.cget('default')), 'normal')   # unfocused -> none
+        self.assertEqual(b1.cget('default'), 'normal')   # unfocused -> none
 
     def test_alt_key(self):
         # Alt + an underlined character (the "underline" button option) invokes
         # the matching button (cf. tk::AmpWidget in tk::MessageBox).
         d = self.create(buttons=['Yes', {'text': 'No', 'underline': 0}])
+        self.require_mapped(d.root)
         d._buttons[0].focus_force()
         d.root.update()
         d.root.event_generate('<Alt-n>')  # "No" -> underline 0 -> "N"
@@ -149,6 +154,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # <Return> invokes the button with the focus, even if it is not the
         # default and the focus was not moved by keyboard traversal.
         d = self.create(buttons=['Yes', 'No'])  # default 0
+        self.require_mapped(d.root)
         d._buttons[1].focus_force()
         d.root.update()
         d.root.event_generate('<Return>')
@@ -158,6 +164,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
     def test_focus_next_then_return(self):
         # <Tab> moves the focus to the next button; <Return> invokes it.
         d = self.create(buttons=['Yes', 'No'])
+        self.require_mapped(d.root)
         d._buttons[0].focus_force()
         d.root.update()
         d._buttons[0].event_generate('<Tab>')
@@ -169,6 +176,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
     def test_focus_prev_then_return(self):
         # <Shift-Tab> moves the focus to the previous button.
         d = self.create(buttons=['Yes', 'No'])
+        self.require_mapped(d.root)
         d._buttons[1].focus_force()
         d.root.update()
         d._buttons[1].event_generate('<Shift-Tab>')
@@ -180,6 +188,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
     def test_return_activates_default(self):
         # <Return> with the focus off the buttons invokes the default button.
         d = self.create()  # default 0
+        self.require_mapped(d.root)
         d.root.focus_force()  # the dialog, not a button, has the focus
         d.root.update()
         d.root.event_generate('<Return>')
@@ -190,6 +199,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # With no default button, <Return> off the buttons rings the bell and
         # leaves the dialog open instead of activating a button.
         d = self.create(default=None)
+        self.require_mapped(d.root)
         d.root.focus_force()  # the dialog, not a button, has the focus
         d.root.update()
         bells = []
@@ -262,7 +272,7 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(d.children['ok'].winfo_class(), 'Button')
         self.assertEqual(d.entry.winfo_class(), 'Entry')
         if d._windowingsystem == 'x11':
-            self.assertEqual(str(d.children['bot'].cget('relief')), 'raised')
+            self.assertEqual(d.children['bot'].cget('relief'), 'raised')
         # tk_dialog does not make the buttons equal width.
         self.assertIsNone(d.children['bot'].grid_columnconfigure(0)['uniform'])
         # The bindings work with the classic buttons too.
@@ -304,8 +314,8 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
 
     def test_button_default(self):
         d = self.open()
-        self.assertEqual(str(d.children['ok'].cget('default')), 'active')
-        self.assertEqual(str(d.children['cancel'].cget('default')), 'normal')
+        self.assertEqual(d.children['ok'].cget('default'), 'active')
+        self.assertEqual(d.children['cancel'].cget('default'), 'normal')
 
     def test_underline_ampersand(self):
         self.assertEqual(_underline_ampersand('Yes'), ('Yes', -1))
@@ -319,19 +329,19 @@ class DialogTest(AbstractTkTest, unittest.TestCase):
         d = self.open()
         ok = d.children['ok']  # "&OK" -> underline 0 -> "O"
         self.assertEqual(str(ok.cget('text')), 'OK')
-        self.assertEqual(int(ok.cget('underline')), 0)
+        self.assertEqual(ok.cget('underline'), 0 if self.wantobjects else '0')
 
     def test_default_ring(self):
         # The default ring follows the keyboard focus among the buttons.
         d = self.open()
         cancel = d.children['cancel']
-        self.assertEqual(str(cancel.cget('default')), 'normal')
+        self.assertEqual(cancel.cget('default'), 'normal')
         cancel.focus_force()
         d.update()
-        self.assertEqual(str(cancel.cget('default')), 'active')
+        self.assertEqual(cancel.cget('default'), 'active')
         d.children['ok'].focus_force()
         d.update()
-        self.assertEqual(str(cancel.cget('default')), 'normal')
+        self.assertEqual(cancel.cget('default'), 'normal')
 
     def test_find_alt_key_target(self):
         d = self.open()
