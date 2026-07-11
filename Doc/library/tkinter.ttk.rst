@@ -885,8 +885,8 @@ This widget accepts the following specific options:
    The *selectmode* option gained the values ``"single"`` and ``"multiple"``;
    the new widget options *selecttype* (``"item"`` or ``"cell"`` selection),
    *striped* (zebra-striped rows), and *titlecolumns* / *titleitems* (columns
-   or rows frozen against scrolling) were introduced; and items gained a
-   *hidden* option.
+   or rows frozen against scrolling) were introduced; the column *separator*
+   option was added; and items gained a *hidden* option.
    Tk 9.1 added the *rowheight* and *headingheight* options.
 
 
