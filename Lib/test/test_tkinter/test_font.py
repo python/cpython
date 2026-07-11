@@ -20,6 +20,10 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         except tkinter.TclError:
             cls.font = font.Font(root=cls.root, name=fontname, exists=False)
 
+    def actual_size(self, desc):
+        # The requested size is not always available (e.g. bitmap fonts).
+        return self.root.tk.call('font', 'actual', desc, '-size')
+
     def test_configure(self):
         self.assertEqual(self.font.config, self.font.configure)
         options = self.font.configure()
@@ -51,7 +55,7 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         f = font.Font(root=self.root, font=('Times', 20, 'bold'))
         self.assertIn(f.name, font.names(self.root))
         self.assertEqual(f.actual('weight'), 'bold')
-        self.assertEqual(f.cget('size'), sizetype(20))
+        self.assertEqual(f.cget('size'), self.actual_size(('Times', 20, 'bold')))
 
         # ... or from the keyword options.
         f = font.Font(root=self.root, family='Times', size=20, weight='bold')
@@ -62,13 +66,13 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         # Explicit options override the corresponding settings of *font*.
         f = font.Font(root=self.root, font=('Times', 20, 'bold'), weight='normal')
         self.assertEqual(f.actual('weight'), 'normal')
-        self.assertEqual(f.cget('size'), sizetype(20))
+        self.assertEqual(f.cget('size'), self.actual_size(('Times', 20, 'bold')))
 
         # The new font can be given an explicit name.
         f = font.Font(root=self.root, name='testfont', font=('Times', 20))
         self.assertEqual(f.name, 'testfont')
         self.assertIn('testfont', font.names(self.root))
-        self.assertEqual(f.cget('size'), sizetype(20))
+        self.assertEqual(f.cget('size'), self.actual_size(('Times', 20)))
         # Reusing the name of an existing font fails.
         self.assertRaises(tkinter.TclError, font.Font, root=self.root,
                           name='testfont', font=('Times', 10))
@@ -134,7 +138,7 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(str(f), 'Times 20 bold')
         self.assertNotIn(f.name, font.names(self.root))
         self.assertEqual(f.actual('weight'), 'bold')
-        self.assertEqual(f.actual('size'), sizetype(20))
+        self.assertEqual(f.actual('size'), self.actual_size(('Times', 20, 'bold')))
         # It can be used as a widget option, with the same effect as the
         # description itself (gh-143990).
         self.assertEqual(tkinter.Label(self.root, font=f).cget('font'),

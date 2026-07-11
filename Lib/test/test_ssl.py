@@ -1604,6 +1604,9 @@ class ContextTests(unittest.TestCase):
         gc.collect()
         self.assertIs(wr(), None)
 
+    @support.skip_if_sanitizer("gh-150191: OpenSSL has an internal data race "
+                               "when the SNI callback is replaced during a "
+                               "handshake", thread=True)
     @threading_helper.requires_working_threading()
     def test_sni_callback_race(self):
         # Replacing sni_callback while a handshake is in-flight must not
@@ -5045,6 +5048,9 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
 
+    @support.skip_if_sanitizer("gh-150191: OpenSSL races on SSL->rwstate and "
+                               "the socket BIO flags with concurrent read "
+                               "and write", thread=True)
     def test_thread_recv_while_main_thread_sends(self):
         # GH-137583: Locking was added to calls to send() and recv() on SSL
         # socket objects. This seemed fine at the surface level because those
