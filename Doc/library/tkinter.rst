@@ -4916,10 +4916,9 @@ Widget classes
       ``'always'``, ``'first'``, ``'last'``, ``'middle'`` or ``'never'``).
       :meth:`paneconfig` is an alias of :meth:`!paneconfigure`.
 
-      .. versionchanged:: next
+      .. deprecated-removed:: next 3.18
          The first parameter was renamed from *tagOrId* to *child*.
-         The old name is still accepted as a keyword argument,
-         but it is deprecated and will be removed in Python 3.18.
+         The old name is still accepted as a keyword argument.
 
    .. method:: identify(x, y)
 
