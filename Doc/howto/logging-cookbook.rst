@@ -4,8 +4,6 @@
 Logging Cookbook
 ================
 
-:Author: Vinay Sajip <vinay_sajip at red-dove dot com>
-
 This page contains a number of recipes related to logging, which have been found
 useful in the past. For links to tutorial and reference information, please see
 :ref:`cookbook-ref-links`.
@@ -3877,7 +3875,7 @@ subclassed handler which looks something like this::
         def format(self, record):
             version = 1
             asctime = dt.datetime.fromtimestamp(record.created).isoformat()
-            m = self.tz_offset.match(time.strftime('%z'))
+            m = self.tz_offset.prefixmatch(time.strftime('%z'))
             has_offset = False
             if m and time.timezone:
                 hrs, mins = m.groups()

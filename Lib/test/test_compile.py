@@ -2369,7 +2369,10 @@ class TestSourcePositions(unittest.TestCase):
         source = "del (\n lhs  \n   .    \n     rhs      \n       )"
         code = compile(source, "<test>", "exec")
         self.assertOpcodeSourcePositionIs(
-            code, "DELETE_ATTR", line=4, end_line=4, column=5, end_column=8
+            code, "PUSH_NULL", line=4, end_line=4, column=5, end_column=8
+        )
+        self.assertOpcodeSourcePositionIs(
+            code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
         )
 
     def test_attribute_load(self):
@@ -2485,12 +2488,13 @@ class TestSourcePositions(unittest.TestCase):
             start_line, end_line, _, _ = instr.positions
             self.assertEqual(start_line, end_line)
 
-        # Expect four `LOAD_CONST None` instructions:
+        # Expect four `None`-loading instructions:
         # three for the no-exception __exit__ call, and one for the return.
         # They should all have the locations of the context manager ('xyz').
 
         load_none = [instr for instr in dis.get_instructions(f) if
-                     instr.opname == 'LOAD_CONST' and instr.argval is None]
+                     instr.opname in ('LOAD_CONST', 'LOAD_COMMON_CONSTANT')
+                     and instr.argval is None]
         return_value = [instr for instr in dis.get_instructions(f) if
                         instr.opname == 'RETURN_VALUE']
 

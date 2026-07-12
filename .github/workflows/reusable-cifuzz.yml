@@ -13,6 +13,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   cifuzz:
     name: ${{ inputs.oss-fuzz-project-name }} (${{ inputs.sanitizer }})

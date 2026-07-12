@@ -1,7 +1,7 @@
-// Need limited C API version 3.12 for PyType_FromMetaclass()
+// Need limited C API version 3.15 for _DuringGC functions
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-#  define Py_LIMITED_API 0x030c0000
+#  define Py_LIMITED_API 0x030f0000
 #endif
 
 #include "parts.h"
@@ -55,6 +55,8 @@ make_sized_heaptypes(PyObject *module, PyObject *args)
         goto finally;
     }
     char *data_ptr = PyObject_GetTypeData(instance, (PyTypeObject *)sub);
+    assert(data_ptr == PyObject_GetTypeData_DuringGC(instance,
+                                                     (PyTypeObject *)sub));
     if (!data_ptr) {
         goto finally;
     }
@@ -80,6 +82,7 @@ var_heaptype_set_data_to_3s(
     PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     void *data_ptr = PyObject_GetTypeData(self, defining_class);
+    assert(data_ptr == PyObject_GetTypeData_DuringGC(self, defining_class));
     if (!data_ptr) {
         return NULL;
     }
@@ -96,6 +99,7 @@ var_heaptype_get_data(PyObject *self, PyTypeObject *defining_class,
                       PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     void *data_ptr = PyObject_GetTypeData(self, defining_class);
+    assert(data_ptr == PyObject_GetTypeData_DuringGC(self, defining_class));
     if (!data_ptr) {
         return NULL;
     }
@@ -259,6 +263,7 @@ heapctypewithrelativedict_dealloc(PyObject* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     HeapCTypeWithDictStruct *data = PyObject_GetTypeData(self, tp);
+    assert(data == PyObject_GetTypeData_DuringGC(self, tp));
     Py_XDECREF(data->dict);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -297,6 +302,7 @@ heapctypewithrelativeweakref_dealloc(PyObject* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     HeapCTypeWithWeakrefStruct *data = PyObject_GetTypeData(self, tp);
+    assert(data == PyObject_GetTypeData_DuringGC(self, tp));
     if (data->weakreflist != NULL) {
         PyObject_ClearWeakRefs(self);
     }

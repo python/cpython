@@ -6,9 +6,6 @@
 Instrumenting CPython with DTrace and SystemTap
 ===============================================
 
-:author: David Malcolm
-:author: Łukasz Langa
-
 DTrace and SystemTap are monitoring tools, each providing a way to inspect
 what the processes on a computer system are doing.  They both use
 domain-specific languages allowing a user to write scripts which:

@@ -1,4 +1,5 @@
 import os
+import shlex
 import signal
 import sys
 import textwrap
@@ -37,7 +38,7 @@ PROGRAM_CAT = [
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
@@ -770,9 +771,7 @@ class SubprocessMixin:
 
     def test_create_subprocess_env_shell(self) -> None:
         async def main() -> None:
-            executable = sys.executable
-            if sys.platform == "win32":
-                executable = f'"{executable}"'
+            executable = f'"{sys.executable}"' if sys.platform == "win32" else shlex.quote(sys.executable)
             cmd = f'''{executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
             env = os.environ.copy()
             env["FOO"] = "bar"

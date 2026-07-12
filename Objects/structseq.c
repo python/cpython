@@ -28,7 +28,11 @@ static Py_ssize_t
 get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
 {
     PyObject *v = PyDict_GetItemWithError(_PyType_GetDict(tp), name);
-    if (v == NULL && !PyErr_Occurred()) {
+
+    if (v == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         PyErr_Format(PyExc_TypeError,
                      "Missed attribute '%U' of type %s",
                      name, tp->tp_name);
