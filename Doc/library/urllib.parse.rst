@@ -225,7 +225,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: 3.16
       Values for ``url`` and ``scheme`` other than strings, bytes, or ``None``
       raise :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to
       be changed to :exc:`TypeError` in future versions of Python).
@@ -325,7 +325,7 @@ or on combining URL components into a URL string.
       query parameter separator. This has been changed to allow only a single
       separator key, with ``&`` as the default separator.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: 3.16
       Values for ``qs`` and ``separator`` other than strings, bytes, or
       ``None`` raise :exc:`TypeError` if true or :exc:`DeprecationWarning` if
       false (to be changed to :exc:`TypeError` in future versions of Python).
@@ -389,7 +389,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: 3.16
       Items in ``parts`` other than strings, bytes, or ``None`` raise
       :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
       changed to :exc:`TypeError` in future versions of Python).
@@ -437,7 +437,7 @@ or on combining URL components into a URL string.
 
       Behavior updated to match the semantics defined in :rfc:`3986`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: 3.16
       Values for ``base`` and ``url`` other than strings, bytes, or ``None``
       raise :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to
       be changed to :exc:`TypeError` in future versions of Python).
@@ -472,7 +472,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: 3.16
       Values other than other than strings, bytes, or ``None`` raise
       :exc:`TypeError` if true or :exc:`DeprecationWarning` if false (to be
       changed to :exc:`TypeError` in future versions of Python).
