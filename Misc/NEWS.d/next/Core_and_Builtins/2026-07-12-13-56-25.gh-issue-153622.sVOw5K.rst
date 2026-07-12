@@ -1,1 +1,0 @@
-Fix unchecked :c:func:`PyLong_AsInt` errors in the legacy tracing implementation.
