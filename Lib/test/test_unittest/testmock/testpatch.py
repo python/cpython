@@ -1089,13 +1089,20 @@ class PatchTest(unittest.TestCase):
                 return a, b, c
             partial_method = functools.partialmethod(method, 1)
 
-        Foo().partial_method(2)
+        results = Foo().partial_method(2)
+        self.assertEqual(results, (1, 2, 3))
 
         with patch.object(Foo, 'partial_method', autospec=True) as method:
             self.assertNotIsInstance(method, NonCallableMagicMock)
             foo = Foo()
-            foo.partial_method(2)
+
+            result = foo.partial_method(2)
+            self.assertEqual(result, method.return_value)
+            method.assert_called_once_with(2)
+
             foo.partial_method(2, c=4)
+            method.assert_called_with(2, c=4)
+
             self.assertRaises(TypeError, foo.partial_method)
             self.assertRaises(TypeError, foo.partial_method, 2, 3, 4)
             self.assertRaises(TypeError, foo.partial_method, 2, foo="lish")
