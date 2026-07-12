@@ -1,5 +1,7 @@
 #include "Python.h"
 
+struct _PyExecutorObject;
+
 #ifdef _Py_TIER2
 
 #include "opcode.h"
