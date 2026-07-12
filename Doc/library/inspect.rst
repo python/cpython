@@ -738,11 +738,10 @@ Retrieving source code
 
 .. function:: getabsfile(object)
 
-   Return an absolute path to the (text or binary) file in which an object
-   was defined, normalized for the current platform using
-   :func:`os.path.normcase`.  This uses :func:`getsourcefile` and falls back
-   to :func:`getfile` if no source file can be found.  The idea is for each
-   object to have a unique origin.
+   Return an absolute, normalized path to the (text or binary) file in
+   which an object was defined.  This uses :func:`getsourcefile` and falls
+   back to :func:`getfile` if no source file can be found.  The idea is for
+   each object to have a unique origin.
 
 
 .. function:: getmodule(object)
@@ -1237,8 +1236,9 @@ Classes and functions
 
 .. function:: classify_class_attrs(cls)
 
-   Return a list of ``Attribute(name, kind, defining_class, object)`` named
-   tuples for each attribute reported by ``dir(cls)``.  *kind* is one of
+   Return a list of :term:`named tuples <named tuple>`
+   ``Attribute(name, kind, defining_class, object)`` for each attribute
+   reported by ``dir(cls)``.  *kind* is one of
    ``'class method'``, ``'static method'``, ``'property'``, ``'method'`` or
    ``'data'``, and *defining_class* is the class in *cls*'s :term:`MRO` (or
    its metaclass's MRO) that defines the attribute.  *object* is the
