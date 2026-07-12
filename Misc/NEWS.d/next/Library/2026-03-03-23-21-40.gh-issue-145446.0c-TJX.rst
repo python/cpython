@@ -1,1 +1,0 @@
-Now :mod:`functools` is safer in free-threaded build when using keywords in :func:`functools.partial`

@@ -1,0 +1,5 @@
+Fix hang in
+``test.test_profiling.test_sampling_profiler.test_live_collector_ui.TestLiveModeErrors.test_run_failed_script_live``
+on slow buildbots. The test now always queues a final ``q`` keystroke so the
+live TUI loop exits even when the profiler collects enough samples to enter
+the post-finished input loop.

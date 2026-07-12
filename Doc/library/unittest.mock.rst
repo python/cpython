@@ -345,7 +345,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_any_call(*args, **kwargs)
 
-        assert the mock has been called with the specified arguments.
+        Assert the mock has been called with the specified arguments.
 
         The assert passes if the mock has *ever* been called, unlike
         :meth:`assert_called_with` and :meth:`assert_called_once_with` that
@@ -360,7 +360,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_has_calls(calls, any_order=False)
 
-        assert the mock has been called with the specified calls.
+        Assert the mock has been called with the specified calls.
         The :attr:`mock_calls` list is checked for the calls.
 
         If *any_order* is false then the calls must be
@@ -2223,7 +2223,7 @@ return something else::
    >>> mock == 3
    True
 
-The return value of :meth:`MagicMock.__iter__` can be any iterable object and isn't
+The return value of :meth:`!__iter__` can be any iterable object and isn't
 required to be an iterator:
 
    >>> mock = MagicMock()
@@ -2539,7 +2539,7 @@ Alternatively you can just use ``vars(my_mock)`` (instance members) and
 mock_open
 ~~~~~~~~~
 
-.. function:: mock_open(mock=None, read_data=None)
+.. function:: mock_open(mock=None, read_data='')
 
    A helper function to create a mock to replace the use of :func:`open`. It works
    for :func:`open` called directly or used as a context manager.

@@ -158,10 +158,18 @@ struct pyruntimestate {
     /* Is Python preinitialized? Set to 1 by Py_PreInitialize() */
     int preinitialized;
 
-    /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
+    /* Is Python core initialized? Set to 1 by _Py_InitializeCore().
+
+       Use _PyRuntimeState_GetCoreInitialized() and
+       _PyRuntimeState_SetCoreInitialized() to access it,
+       don't access it directly. */
     int core_initialized;
 
-    /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+    /* Is Python fully initialized? Set to 1 by Py_Initialize().
+
+       Use _PyRuntimeState_GetInitialized() and
+       _PyRuntimeState_SetInitialized() to access it,
+       don't access it directly. */
     int initialized;
 
     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()

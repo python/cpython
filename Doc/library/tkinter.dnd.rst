@@ -48,7 +48,8 @@ Selection of a target object occurs as follows:
 
    .. method:: on_motion(event)
 
-      Inspect area below mouse for target objects while drag is performed.
+      Inspect area below mouse for target objects while a drag
+      is performed.
 
    .. method:: on_release(event)
 
@@ -56,7 +57,9 @@ Selection of a target object occurs as follows:
 
 .. function:: dnd_start(source, event)
 
-   Factory function for drag-and-drop process.
+   Factory function for the drag-and-drop process.
+   Return the :class:`DndHandler` instance managing the drag, or ``None`` if a
+   drag could not be started.
 
 .. seealso::
 

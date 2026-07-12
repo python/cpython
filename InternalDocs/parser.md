@@ -819,6 +819,13 @@ directory on the CPython repository and manually call the parser generator by ex
 $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
 ```
 
+> [!CAUTION]
+> Python's grammar (the `Grammar/python.gram` file) is written for the
+> C backend. To experiment, you will need to write a grammar
+> without C-specific parts like actions and the trailer.
+> See [#133560](https://github.com/python/cpython/issues/133560) 
+> and [#96424](https://github.com/python/cpython/issues/96424) for more information.
+
 This will generate a file called `parse.py` in the same directory that you
 can use to parse some input:
 

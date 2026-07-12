@@ -223,8 +223,19 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
     }
 
     /* Single pass: collect PIDs and their PPIDs together */
-    struct dirent *entry;
-    while ((entry = readdir(proc_dir)) != NULL) {
+    for (;;) {
+        errno = 0;
+        struct dirent *entry = readdir(proc_dir);
+        if (entry == NULL) {
+            if (errno != 0) {
+                int err = errno;
+                _set_debug_oserror_from_errno_with_filename(err, "/proc",
+                    "Failed to read process directory '/proc': %s",
+                    strerror(err));
+                goto done;
+            }
+            break;
+        }
         /* Skip non-numeric entries (also skips . and ..) */
         if (entry->d_name[0] < '1' || entry->d_name[0] > '9') {
             continue;
@@ -245,7 +256,14 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         }
     }
 
-    closedir(proc_dir);
+    if (closedir(proc_dir) != 0) {
+        int err = errno;
+        proc_dir = NULL;
+        _set_debug_oserror_from_errno_with_filename(err, "/proc",
+            "Failed to close process directory '/proc': %s",
+            strerror(err));
+        goto done;
+    }
     proc_dir = NULL;
 
     if (find_children_bfs(target_pid, recursive,
@@ -358,7 +376,8 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
 
     snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) {
-        PyErr_SetFromWindowsErr(0);
+        DWORD error = GetLastError();
+        PyErr_SetFromWindowsErr(error);
         goto done;
     }
 
@@ -373,13 +392,23 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
     /* Single pass: collect PIDs and PPIDs together */
     PROCESSENTRY32 pe;
     pe.dwSize = sizeof(PROCESSENTRY32);
-    if (Process32First(snapshot, &pe)) {
-        do {
-            if (pid_array_append(&all_pids, (pid_t)pe.th32ProcessID) < 0 ||
-                pid_array_append(&ppids, (pid_t)pe.th32ParentProcessID) < 0) {
-                goto done;
-            }
-        } while (Process32Next(snapshot, &pe));
+    if (!Process32First(snapshot, &pe)) {
+        DWORD error = GetLastError();
+        PyErr_SetFromWindowsErr(error);
+        goto done;
+    }
+
+    do {
+        if (pid_array_append(&all_pids, (pid_t)pe.th32ProcessID) < 0 ||
+            pid_array_append(&ppids, (pid_t)pe.th32ParentProcessID) < 0) {
+            goto done;
+        }
+    } while (Process32Next(snapshot, &pe));
+
+    DWORD error = GetLastError();
+    if (error != ERROR_NO_MORE_FILES) {
+        PyErr_SetFromWindowsErr(error);
+        goto done;
     }
 
     CloseHandle(snapshot);

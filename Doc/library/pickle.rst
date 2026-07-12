@@ -56,7 +56,7 @@ The :mod:`!pickle` module differs from :mod:`marshal` in several significant way
 * :mod:`marshal` cannot be used to serialize user-defined classes and their
   instances.  :mod:`!pickle` can save and restore class instances transparently,
   however the class definition must be importable and live in the same module as
-  when the object was stored.
+  when the object was pickled.
 
 * The :mod:`marshal` serialization format is not guaranteed to be portable
   across Python versions.  Because its primary job in life is to support
@@ -693,7 +693,10 @@ or both.
    If a string is returned, the string should be interpreted as the name of a
    global variable.  It should be the object's local name relative to its
    module; the pickle module searches the module namespace to determine the
-   object's module.  This behaviour is typically useful for singletons.
+   object's module: for a given ``obj`` to be pickled, the ``__module__``
+   attribute is looked up on ``obj`` directly, which falls back to a lookup
+   on the type of ``obj`` if no ``__module__`` instance attribute is set.
+   This behaviour is typically useful for singletons.
 
    When a tuple is returned, it must be between two and six items long.
    Optional items can either be omitted, or ``None`` can be provided as their
