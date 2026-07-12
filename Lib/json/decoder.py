@@ -218,7 +218,7 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
         pairs = object_hook(pairs)
     return pairs, end
 
-def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
+def JSONArray(s_and_end, scan_once, array_hook, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
     s, end = s_and_end
     values = []
     nextchar = s[end:end + 1]
@@ -227,6 +227,8 @@ def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
         nextchar = s[end:end + 1]
     # Look-ahead for trivial empty array
     if nextchar == ']':
+        if array_hook is not None:
+            values = array_hook(values)
         return values, end + 1
     _append = values.append
     while True:
@@ -256,6 +258,8 @@ def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
         if nextchar == ']':
             raise JSONDecodeError("Illegal trailing comma before end of array", s, comma_idx)
 
+    if array_hook is not None:
+        values = array_hook(values)
     return values, end
 
 
@@ -291,7 +295,7 @@ class JSONDecoder(object):
 
     def __init__(self, *, object_hook=None, parse_float=None,
             parse_int=None, parse_constant=None, strict=True,
-            object_pairs_hook=None):
+            object_pairs_hook=None, array_hook=None):
         """``object_hook``, if specified, will be called with the result
         of every JSON object decoded and its return value will be used in
         place of the given ``dict``.  This can be used to provide custom
@@ -303,6 +307,14 @@ class JSONDecoder(object):
         ``dict``.  This feature can be used to implement custom decoders.
         If ``object_hook`` is also defined, the ``object_pairs_hook`` takes
         priority.
+
+        ``array_hook`` is an optional function that will be called with the
+        result of any literal array decode (a ``list``). The return value of
+        this function will be used instead of the ``list``. This feature can
+        be used along ``object_pairs_hook`` to customize the resulting data
+        structure - for example, by setting that to ``frozendict`` and
+        ``array_hook`` to ``tuple``, one can get a deep immutable data
+        structute from any JSON data.
 
         ``parse_float``, if specified, will be called with the string
         of every JSON float to be decoded. By default this is equivalent to
@@ -330,6 +342,7 @@ class JSONDecoder(object):
         self.parse_constant = parse_constant or _CONSTANTS.__getitem__
         self.strict = strict
         self.object_pairs_hook = object_pairs_hook
+        self.array_hook = array_hook
         self.parse_object = JSONObject
         self.parse_array = JSONArray
         self.parse_string = scanstring

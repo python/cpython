@@ -1,0 +1,4 @@
+:mod:`imaplib` now encodes non-ASCII mailbox names as modified UTF-7
+(:rfc:`3501`, section 5.1.3), so international mailbox names can be passed as
+ordinary :class:`str`.  A ``str`` that is already valid modified UTF-7, or a
+:class:`bytes` object, is sent unchanged.

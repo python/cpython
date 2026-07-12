@@ -383,6 +383,12 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
                          decompress(bytes()), b'')
 
+    def test_riscv_filter_constant_exists(self):
+        self.assertTrue(lzma.FILTER_RISCV)
+
+    def test_arm64_filter_constant_exists(self):
+        self.assertTrue(lzma.FILTER_ARM64)
+
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):
 

@@ -555,6 +555,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: const char* PyTypeObject.tp_name
 
+   See :c:macro:`Py_tp_name` for the corresponding
+   :c:member:`Slot ID <PySlot.sl_id>`.
+
    Pointer to a NUL-terminated string containing the name of the type. For types
    that are accessible as module globals, the string should be the full module
    name, followed by a dot, followed by the type name; for built-in types, it
@@ -593,6 +596,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
               Py_ssize_t PyTypeObject.tp_itemsize
 
    These fields allow calculating the size in bytes of instances of the type.
+
+   See :c:macro:`Py_tp_basicsize`, :c:macro:`Py_tp_extra_basicsize` and
+   :c:macro:`Py_tp_itemsize` for the corresponding
+   :c:member:`Slot IDs <PySlot.sl_id>`.
 
    There are two kinds of types: types with fixed-length instances have a zero
    :c:member:`!tp_itemsize` field, types with variable-length instances have a non-zero
@@ -1133,6 +1140,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: unsigned long PyTypeObject.tp_flags
 
+   See :c:macro:`Py_tp_flags` for the corresponding
+   :c:member:`Slot ID <PySlot.sl_id>`.
+
    This field is a bit mask of various flags.  Some flags indicate variant
    semantics for certain situations; others are used to indicate that certain
    fields in the type object (or in the extension structures referenced via
@@ -1391,8 +1401,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       .. versionchanged:: 3.9
 
-      Renamed to the current name, without the leading underscore.
-      The old provisional name is :term:`soft deprecated`.
+         Renamed to the current name, without the leading underscore.
+         The old provisional name is :term:`soft deprecated`.
 
       .. versionchanged:: 3.12
 
@@ -1501,10 +1511,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_HAVE_VERSION_TAG
 
-      This is a :term:`soft deprecated` macro that does nothing.
+      This macro does nothing.
       Historically, this would indicate that the
       :c:member:`~PyTypeObject.tp_version_tag` field was available and
       initialized.
+
+      .. soft-deprecated:: 3.13
 
 
    .. c:macro:: Py_TPFLAGS_INLINE_VALUES
@@ -1563,93 +1575,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. corresponding-type-slot:: Py_tp_traverse
 
    An optional pointer to a traversal function for the garbage collector.  This is
-   only used if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is set.  The signature is::
+   only used if the :c:macro:`Py_TPFLAGS_HAVE_GC` flag bit is set.
 
-      int tp_traverse(PyObject *self, visitproc visit, void *arg);
-
-   More information about Python's garbage collection scheme can be found
-   in section :ref:`supporting-cycle-detection`.
-
-   The :c:member:`~PyTypeObject.tp_traverse` pointer is used by the garbage collector to detect
-   reference cycles. A typical implementation of a :c:member:`~PyTypeObject.tp_traverse` function
-   simply calls :c:func:`Py_VISIT` on each of the instance's members that are Python
-   objects that the instance owns. For example, this is function :c:func:`!local_traverse` from the
-   :mod:`!_thread` extension module::
-
-      static int
-      local_traverse(PyObject *op, visitproc visit, void *arg)
-      {
-          localobject *self = (localobject *) op;
-          Py_VISIT(self->args);
-          Py_VISIT(self->kw);
-          Py_VISIT(self->dict);
-          return 0;
-      }
-
-   Note that :c:func:`Py_VISIT` is called only on those members that can participate
-   in reference cycles.  Although there is also a ``self->key`` member, it can only
-   be ``NULL`` or a Python string and therefore cannot be part of a reference cycle.
-
-   On the other hand, even if you know a member can never be part of a cycle, as a
-   debugging aid you may want to visit it anyway just so the :mod:`gc` module's
-   :func:`~gc.get_referents` function will include it.
-
-   Heap types (:c:macro:`Py_TPFLAGS_HEAPTYPE`) must visit their type with::
-
-       Py_VISIT(Py_TYPE(self));
-
-   It is only needed since Python 3.9. To support Python 3.8 and older, this
-   line must be conditional::
-
-       #if PY_VERSION_HEX >= 0x03090000
-           Py_VISIT(Py_TYPE(self));
-       #endif
-
-   If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
-   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
-   :c:func:`PyObject_VisitManagedDict` like this::
-
-       PyObject_VisitManagedDict((PyObject*)self, visit, arg);
-
-   .. warning::
-       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the
-       members that the instance *owns* (by having :term:`strong references
-       <strong reference>` to them) must be
-       visited. For instance, if an object supports weak references via the
-       :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
-       the linked list (what *tp_weaklist* points to) must **not** be
-       visited as the instance does not directly own the weak references to itself
-       (the weakreference list is there to support the weak reference machinery,
-       but the instance has no strong reference to the elements inside it, as they
-       are allowed to be removed even if the instance is still alive).
-
-   .. warning::
-      The traversal function must not have any side effects.  It must not
-      modify the reference counts of any Python objects nor create or destroy
-      any Python objects.
-
-   Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
-   :c:func:`!local_traverse` to have these specific names; don't name them just
-   anything.
-
-   Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
-   their type. Their traversal function must therefore either visit
-   :c:func:`Py_TYPE(self) <Py_TYPE>`, or delegate this responsibility by
-   calling ``tp_traverse`` of another heap-allocated type (such as a
-   heap-allocated superclass).
-   If they do not, the type object may not be garbage-collected.
-
-   .. note::
-
-      The :c:member:`~PyTypeObject.tp_traverse` function can be called from any
-      thread.
-
-   .. versionchanged:: 3.9
-
-      Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
-      ``tp_traverse``.  In earlier versions of Python, due to
-      `bug 40217 <https://bugs.python.org/issue40217>`_, doing this
-      may lead to crashes in subclasses.
+   See :ref:`gc-traversal` for documentation.
 
    **Inheritance:**
 
@@ -2008,11 +1936,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyTypeObject* PyTypeObject.tp_base
 
-   .. corresponding-type-slot:: Py_tp_base
-
    An optional pointer to a base type from which type properties are inherited.  At
    this level, only single inheritance is supported; multiple inheritance require
    dynamically creating a type object by calling the metatype.
+
+   For the corresponding slot ID, see :c:macro:`Py_tp_base`.
 
    .. note::
 
@@ -2325,17 +2253,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: PyObject* PyTypeObject.tp_bases
 
-   .. corresponding-type-slot:: Py_tp_bases
-
    Tuple of base types.
 
    This field should be set to ``NULL`` and treated as read-only.
    Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
 
-   For dynamically created classes, the :c:data:`Py_tp_bases`
-   :c:type:`slot <PyType_Slot>` can be used instead of the *bases* argument
-   of :c:func:`PyType_FromSpecWithBases`.
-   The argument form is preferred.
+   For the corresponding slot ID, see :c:macro:`Py_tp_bases`.
 
    .. warning::
 
@@ -3047,24 +2970,42 @@ Buffer Object Structures
    steps:
 
    (1) Check if the request can be met. If not, raise :exc:`BufferError`,
-       set :c:expr:`view->obj` to ``NULL`` and return ``-1``.
+       set ``view->obj`` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.
 
    (3) Increment an internal counter for the number of exports.
 
-   (4) Set :c:expr:`view->obj` to *exporter* and increment :c:expr:`view->obj`.
+   (4) Set ``view->obj`` to *exporter* and increment ``view->obj``.
 
    (5) Return ``0``.
+
+   **Thread safety:**
+
+   In the :term:`free-threaded build`, implementations must ensure:
+
+   * The export counter increment in step (3) is atomic.
+
+   * The underlying buffer data remains valid and at a stable memory
+     location for the lifetime of all exports.
+
+   * For objects that support resizing or reallocation (such as
+     :class:`bytearray`), the export counter is checked atomically before
+     such operations, and :exc:`BufferError` is raised if exports exist.
+
+   * The function is safe to call concurrently from multiple threads.
+
+   See also :ref:`thread-safety-memoryview` for the Python-level
+   thread safety guarantees of :class:`memoryview` objects.
 
    If *exporter* is part of a chain or tree of buffer providers, two main
    schemes can be used:
 
    * Re-export: Each member of the tree acts as the exporting object and
-     sets :c:expr:`view->obj` to a new reference to itself.
+     sets ``view->obj`` to a new reference to itself.
 
    * Redirect: The buffer request is redirected to the root object of the
-     tree. Here, :c:expr:`view->obj` will be a new reference to the root
+     tree. Here, ``view->obj`` will be a new reference to the root
      object.
 
    The individual fields of *view* are described in section
@@ -3102,13 +3043,23 @@ Buffer Object Structures
 
    (2) If the counter is ``0``, free all memory associated with *view*.
 
+   **Thread safety:**
+
+   In the :term:`free-threaded build`:
+
+   * The export counter decrement in step (1) must be atomic.
+
+   * Resource cleanup when the counter reaches zero must be done atomically,
+     as the final release may race with concurrent releases from other
+     threads and dellocation must only happen once.
+
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
    track of buffer-specific resources. This field is guaranteed to remain
    constant, while a consumer MAY pass a copy of the original buffer as the
    *view* argument.
 
 
-   This function MUST NOT decrement :c:expr:`view->obj`, since that is
+   This function MUST NOT decrement ``view->obj``, since that is
    done automatically in :c:func:`PyBuffer_Release` (this scheme is
    useful for breaking reference cycles).
 

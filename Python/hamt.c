@@ -4,6 +4,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_Format()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <stddef.h>               // offsetof()
 
@@ -701,6 +702,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             PyHamtNode_Bitmap *ret = hamt_node_bitmap_clone(self);
             if (ret == NULL) {
+                Py_DECREF(sub_node);
                 return NULL;
             }
             Py_SETREF(ret->b_array[val_idx], (PyObject*)sub_node);
@@ -993,6 +995,7 @@ hamt_node_bitmap_without(PyHamtNode_Bitmap *self,
 
                 PyHamtNode_Bitmap *clone = hamt_node_bitmap_clone(self);
                 if (clone == NULL) {
+                    Py_DECREF(sub_node);
                     return W_ERROR;
                 }
 
@@ -2542,7 +2545,7 @@ PyTypeObject _PyHamtItems_Type = {
 static PyObject *
 hamt_iter_yield_items(PyObject *key, PyObject *val)
 {
-    return PyTuple_Pack(2, key, val);
+    return _PyTuple_FromPair(key, val);
 }
 
 PyObject *

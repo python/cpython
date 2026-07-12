@@ -469,7 +469,7 @@ identifier names.
 .. versionchanged:: 3.12
    ``type`` is now a soft keyword.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    ``lazy`` is now a soft keyword.
 
 .. index::
@@ -560,7 +560,7 @@ start with a character in the "letter-like" set ``xid_start``,
 and the remaining characters must be in the "letter- and digit-like" set
 ``xid_continue``.
 
-These sets based on the *XID_Start* and *XID_Continue* sets as defined by the
+These sets are based on the *XID_Start* and *XID_Continue* sets as defined by the
 Unicode standard annex `UAX-31`_.
 Python's ``xid_start`` additionally includes the underscore (``_``).
 Note that Python does not necessarily conform to `UAX-31`_.

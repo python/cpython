@@ -112,7 +112,6 @@ Dependencies to build optional modules are:
 
 .. [1] If *libmpdec* is not available, the :mod:`decimal` module will use
    a pure-Python implementation.
-   See :option:`--with-system-libmpdec` for details.
 .. [2] See :option:`--with-readline` for choosing the backend for the
    :mod:`readline` module.
 .. [3] The :mod:`uuid` module uses ``_uuid`` to generate "safe" UUIDs.
@@ -463,6 +462,26 @@ General Options
 
    ``pkg-config`` options.
 
+.. option:: --disable-epoll
+
+   Build without ``epoll``, meaning that :py:func:`select.epoll` will not be
+   present even if the system provides an
+   :manpage:`epoll_create <epoll_create(2)>` function.
+   This may be used on systems where :manpage:`!epoll_create` or
+   :manpage:`epoll_create1 <epoll_create1(2)>` is available
+   but incompatible with Linux semantics.
+
+   .. versionadded:: 3.15
+
+.. option:: --with-build-details-suffix=[yes|SUFFIX]
+
+   Rename ``build-details.json`` to permit multiple co-located Python
+   installs. If a custom ``SUFFIX`` is supplied it is used verbatim,
+   otherwise one will be generated from the ``MULTIARCH`` tag with
+   ``-free-threading`` and ``-debug``, as appropriate.
+
+   .. versionadded:: 3.16
+
 
 C compiler options
 ------------------
@@ -541,11 +560,6 @@ Options for third-party dependencies
 
    C compiler and linker flags for ``libmpdec``, used by :mod:`decimal` module,
    overriding ``pkg-config``.
-
-   .. note::
-
-      These environment variables have no effect unless
-      :option:`--with-system-libmpdec` is specified.
 
 .. option:: LIBLZMA_CFLAGS
 .. option:: LIBLZMA_LIBS
@@ -769,10 +783,40 @@ also be used to improve performance.
 
    .. versionadded:: 3.14
 
+.. option:: --without-frame-pointers
+
+   Disable frame pointers, which are enabled by default (see :pep:`831`).
+
+   By default, the build appends flags to generate frame or backchain
+   pointers to ``BASECFLAGS``:
+
+   - ``-fno-omit-frame-pointer`` and/or ``-mno-omit-leaf-frame-pointer``
+     are added when the compiler supports them.
+   - ``-marm`` and/or ``-mno-thumb`` is added on 32-bit ARM when supported,
+   - on s390x platforms, when supported, ``-mbackchain`` is added *instead*.
+     of the above frame pointer flags.
+   - on ppc64le platforms, no compiler flags is needed since the power ABI
+     requires that compilers maintain a back chain by default.
+
+   Frame pointers enable profilers, debuggers, and system tracing tools
+   (``perf``, ``eBPF``, ``dtrace``, ``gdb``) to walk the C call stack
+   without DWARF metadata. The flags propagate to third-party C
+   extensions through :mod:`sysconfig`. On compilers that do not
+   understand them, the build silently skips them.
+
+   Downstream packagers and authors of native libraries built with
+   custom build systems should set the same flags so the unwind chain
+   stays unbroken across all native frames.
+
+   .. versionadded:: 3.15
+
 .. option:: --without-mimalloc
 
    Disable the fast :ref:`mimalloc <mimalloc>` allocator
    (enabled by default).
+
+   This option cannot be used together with :option:`--disable-gil`
+   because the :term:`free-threaded <free threading>` build requires mimalloc.
 
    See also :envvar:`PYTHONMALLOC` environment variable.
 
@@ -792,9 +836,18 @@ also be used to improve performance.
 
    Even when compiled with this option, huge pages are **not** used at runtime
    unless the :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable is set
-   to ``1``. This opt-in is required because huge pages carry risks on Linux:
-   if the huge-page pool is exhausted, page faults (including copy-on-write
-   faults after :func:`os.fork`) deliver ``SIGBUS`` and kill the process.
+   to ``1``. This opt-in is required because huge pages
+
+   * carry risks on Linux: if the huge-page pool is exhausted, page faults
+     (including copy-on-write faults after :func:`os.fork`) deliver ``SIGBUS``
+     and kill the process.
+
+   * need a special privilege on Windows. See the `Windows documentation for large pages
+     <https://learn.microsoft.com/windows/win32/memory/large-page-support>`_
+     for details. Python will fail on startup if the required privilege
+     `SeLockMemoryPrivilege
+     <https://learn.microsoft.com/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/lock-pages-in-memory>`_
+     is not held by the user.
 
    The configure script checks that the platform supports ``MAP_HUGETLB``
    and emits a warning if it is not available.
@@ -883,9 +936,11 @@ See also the :ref:`Python Development Mode <devmode>` and the
 :option:`--with-trace-refs` configure option.
 
 .. versionchanged:: 3.8
-   Release builds and debug builds are now ABI compatible: defining the
+   Release builds are now ABI compatible with debug builds: defining the
    ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
-   :option:`--with-trace-refs` option).
+   :option:`--with-trace-refs` option). However, debug builds still expose
+   more symbols than release builds and code built against a debug build is not
+   necessarily compatible with a release build.
 
 
 Debug options
@@ -987,6 +1042,21 @@ Linker options
 
    .. versionadded:: 3.10
 
+.. option:: --enable-static-libpython-for-interpreter
+
+   Do not link the Python interpreter binary (``python3``) against the
+   shared Python library; instead, statically link the interpreter
+   against ``libpython`` as if ``--enable-shared`` had not been used,
+   but continue to build the shared ``libpython`` (for use by other
+   programs).
+
+   This option does nothing if ``--enable-shared`` is not used.
+
+   The default (when ``-enable-shared`` is used) is to link the Python
+   interpreter against the built shared library.
+
+   .. versionadded:: 3.15
+
 
 Libraries options
 -----------------
@@ -999,29 +1069,6 @@ Libraries options
 
    Build the :mod:`!pyexpat` module using an installed ``expat`` library
    (default is no).
-
-.. option:: --with-system-libmpdec
-
-   Build the ``_decimal`` extension module using an installed ``mpdecimal``
-   library, see the :mod:`decimal` module (default is yes).
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.13
-      Default to using the installed ``mpdecimal`` library.
-
-   .. versionchanged:: 3.15
-
-      A bundled copy of the library will no longer be selected
-      implicitly if an installed ``mpdecimal`` library is not found.
-      In Python 3.15 only, it can still be selected explicitly using
-      ``--with-system-libmpdec=no`` or ``--without-system-libmpdec``.
-
-   .. deprecated-removed:: 3.13 3.16
-      A copy of the ``mpdecimal`` library sources will no longer be distributed
-      with Python 3.16.
-
-   .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
 
@@ -1548,6 +1595,12 @@ Compiler flags
    Strict or non-strict aliasing flags used to compile ``Python/dtoa.c``.
 
    .. versionadded:: 3.7
+
+.. envvar:: CFLAGS_CEVAL
+
+   Flags used to compile ``Python/ceval.c``.
+
+   .. versionadded:: 3.14.5
 
 .. envvar:: CCSHARED
 

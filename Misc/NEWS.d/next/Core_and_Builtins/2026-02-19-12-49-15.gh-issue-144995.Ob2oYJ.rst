@@ -1,2 +1,0 @@
-Optimize :class:`memoryview` comparison: a :class:`memoryview` is equal to
-itself, there is no need to compare values. Patch by Victor Stinner.

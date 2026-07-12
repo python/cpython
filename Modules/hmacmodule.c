@@ -942,20 +942,19 @@ _hmac_HMAC_digest_impl(HMACObject *self)
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 _hmac.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
 
-This may be used to exchange the value safely in email or other non-binary
-environments.
+This may be used to exchange the value safely in email or other
+non-binary environments.
 
 This method may raise a MemoryError.
 [clinic start generated code]*/
 
 static PyObject *
 _hmac_HMAC_hexdigest_impl(HMACObject *self)
-/*[clinic end generated code: output=6659807a09ae14ec input=6e0e796e38d82fc8]*/
+/*[clinic end generated code: output=6659807a09ae14ec input=9097dce732ed808f]*/
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
@@ -1690,6 +1689,7 @@ hmacmodule_free(void *mod)
 }
 
 static struct PyModuleDef_Slot hmacmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, hmacmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
