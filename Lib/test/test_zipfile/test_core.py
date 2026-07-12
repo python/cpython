@@ -4827,17 +4827,16 @@ class OtherTests(unittest.TestCase):
             with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
                 zipf.read('a')
 
-    @mock.patch('os.sep', '\\')
-    @mock.patch('os.altsep', '/')
     def test_append_keep_filename(self):
         """Files loaded from an archive should keep original filename when
         rewritten to central directory in append mode."""
-        with zipfile.ZipFile(TESTFN, mode="w") as zipfp:
+        with mock.patch('os.sep', '/'), mock.patch('os.altsep', None), \
+             zipfile.ZipFile(TESTFN, mode="w") as zipfp:
             zinfo = zipfile.ZipInfo('MyFolder/My\\File.txt')
-            zinfo._orig_filename = 'MyFolder/My\\File.txt'
             zipfp.writestr(zinfo, 'foo')
 
-        with zipfile.ZipFile(TESTFN, "a") as zipfp:
+        with mock.patch('os.sep', '\\'), mock.patch('os.altsep', '/'), \
+             zipfile.ZipFile(TESTFN, "a") as zipfp:
             self.assertIsNone(zipfp.testzip())
             zi = zipfp.infolist()[0]
             self.assertEqual(zi.orig_filename, 'MyFolder/My\\File.txt')
