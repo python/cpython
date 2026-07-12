@@ -115,4 +115,12 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="CopyFreethreadedBinary" AfterTargets="AfterBuild"
+          Condition="$(DisableGil) == 'true' and $(Configuration) != 'PGInstrument'">
+    <Message Text="Duplicating $(TargetPath) to $(PyWExeName)$(MajorVersionNumber).$(MinorVersionNumber)t$(PyDebugExt).exe for free-threaded compatibility" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFiles="$(OutDir)\$(PyWExeName)$(MajorVersionNumber).$(MinorVersionNumber)t$(PyDebugExt).exe"
+          SkipUnchangedFiles="true"
+          UseHardLinksIfPossible="true" />
+  </Target>
 </Project>

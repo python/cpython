@@ -1,0 +1,3 @@
+Fix a crash when sharing :class:`memoryview` objects between interpreters
+fails due to running out of memory. It now raises a proper
+:exc:`MemoryError`.

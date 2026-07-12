@@ -19,6 +19,7 @@
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateAll
+#include "pycore_parking_lot.h"   // _PyParkingLot
 #include "pycore_pathconfig.h"    // _PyPathConfig_UpdateGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
@@ -27,9 +28,10 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stackref.h"      // PyStackRef_FromPyObjectBorrow()
 #include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
-#include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_traceback.h"     // PyUnstable_TracebackThreads()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
@@ -37,9 +39,6 @@
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_warnings.h"      // _PyWarnings_InitState()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
-#ifdef _Py_JIT
-#include "pycore_jit.h"           // _PyJIT_Fini()
-#endif
 
 #if defined(PYMALLOC_USE_HUGEPAGES) && defined(MS_WINDOWS)
 #include <Windows.h>
@@ -430,7 +429,8 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
         }
     }
 
-    tstate->interp->long_state.max_str_digits = config->int_max_str_digits;
+    _Py_atomic_store_int(&tstate->interp->long_state.max_str_digits,
+                         config->int_max_str_digits);
 
     // Update the sys module for the new configuration
     if (_PySys_UpdateConfig(tstate) < 0) {
@@ -880,16 +880,28 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
 
-    interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
-    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
-    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
-    interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
-    interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
-    interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject*)&PyList_Type;
-    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject*)&PySet_Type;
-
-    for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
-        assert(interp->common_consts[i] != NULL);
+    PyObject *common_objs[NUM_COMMON_CONSTANTS] = {NULL};
+    common_objs[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
+    common_objs[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
+    common_objs[CONSTANT_BUILTIN_TUPLE] = (PyObject *)&PyTuple_Type;
+    common_objs[CONSTANT_BUILTIN_ALL] = all;
+    common_objs[CONSTANT_BUILTIN_ANY] = any;
+    common_objs[CONSTANT_BUILTIN_LIST] = (PyObject *)&PyList_Type;
+    common_objs[CONSTANT_BUILTIN_SET] = (PyObject *)&PySet_Type;
+    common_objs[CONSTANT_NONE] = Py_None;
+    common_objs[CONSTANT_EMPTY_STR] =
+        Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
+    common_objs[CONSTANT_TRUE] = Py_True;
+    common_objs[CONSTANT_FALSE] = Py_False;
+    common_objs[CONSTANT_MINUS_ONE] =
+        (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS - 1];
+    common_objs[CONSTANT_BUILTIN_FROZENSET] = (PyObject *)&PyFrozenSet_Type;
+    common_objs[CONSTANT_EMPTY_TUPLE] =
+        Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
+    for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
+        assert(common_objs[i] != NULL);
+        _Py_SetImmortal(common_objs[i]);
+        interp->common_consts[i] = PyStackRef_FromPyObjectBorrow(common_objs[i]);
     }
 
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
@@ -1482,15 +1494,11 @@ init_interp_main(PyThreadState *tstate)
 
     // Initialize lazy imports based on configuration. Do this after site
     // module is imported to avoid circular imports during startup.
-    if (config->lazy_imports != -1) {
-        PyImport_LazyImportsMode lazy_mode;
-        if (config->lazy_imports == 1) {
-            lazy_mode = PyImport_LAZY_ALL;
-        }
-        else {
-            lazy_mode = PyImport_LAZY_NONE;
-        }
-        if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
+    if (config->lazy_imports == 0) {
+        return _PyStatus_ERR("PyConfig.lazy_imports=0 is not supported");
+    }
+    if (config->lazy_imports == 1) {
+        if (PyImport_SetLazyImportsMode(PyImport_LAZY_ALL) < 0) {
             return _PyStatus_ERR("failed to set lazy imports mode");
         }
     }
@@ -2226,15 +2234,13 @@ interp_has_threads(PyInterpreterState *interp)
     /* This needs to check for non-daemon threads only, otherwise we get stuck
      * in an infinite loop. */
     assert(interp != NULL);
-    ASSERT_WORLD_STOPPED(interp);
+    ASSERT_HEAD_IS_LOCKED(interp->runtime);
     assert(interp->threads.head != NULL);
     if (interp->threads.head->next == NULL) {
         // No other threads active, easy way out.
         return 0;
     }
 
-    // We don't have to worry about locking this because the
-    // world is stopped.
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
         if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
             return 1;
@@ -2266,9 +2272,7 @@ static int
 runtime_has_subinterpreters(_PyRuntimeState *runtime)
 {
     assert(runtime != NULL);
-    HEAD_LOCK(runtime);
     PyInterpreterState *interp = runtime->interpreters.head;
-    HEAD_UNLOCK(runtime);
     return interp->next != NULL;
 }
 
@@ -2277,6 +2281,7 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
+    assert(_Py_atomic_load_uintptr(&interp->finalization_guards) != _PyInterpreterGuard_GUARDS_NOT_ALLOWED);
     /* Each of these functions can start one another, e.g. a pending call
      * could start a thread or vice versa. To ensure that we properly clean
      * call everything, we run these in a loop until none of them run anything. */
@@ -2303,41 +2308,78 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
 
         if (subinterpreters) {
             /* Clean up any lingering subinterpreters.
-
-            Two preconditions need to be met here:
-
-                - This has to happen before _PyRuntimeState_SetFinalizing is
-                called, or else threads might get prematurely blocked.
-                - The world must not be stopped, as finalizers can run.
-            */
+             * Two preconditions need to be met here:
+             * 1. This has to happen before _PyRuntimeState_SetFinalizing is
+             *    called, or else threads might get prematurely blocked.
+             * 2. The world must not be stopped, as finalizers can run.
+             */
             finalize_subinterpreters();
         }
 
+        // This is used as a throttle to prevent constant spinning while
+        // on finalization guards.
+        for (;;) {
+            uintptr_t num_guards = _Py_atomic_load_uintptr(&interp->finalization_guards);
+            if (num_guards == 0) {
+                break;
+            }
+
+            int ret = _PyParkingLot_Park(&interp->finalization_guards,
+                                         &num_guards, sizeof(num_guards), -1,
+                                         NULL, /*detach=*/1);
+            if (ret == Py_PARK_OK) {
+                break;
+            }
+            else if (ret == Py_PARK_INTR) {
+                if (PyErr_CheckSignals() < 0) {
+                    int fatal = PyErr_ExceptionMatches(PyExc_KeyboardInterrupt);
+                    PyErr_FormatUnraisable("Exception ignored while waiting on finalization guards");
+                    if (fatal) {
+                        fputs("Interrupted while waiting on finalization guards\n", stderr);
+                        exit(1);
+                    }
+                }
+                assert(!PyErr_Occurred());
+            }
+            else {
+                assert(ret == Py_PARK_AGAIN);
+            }
+        }
 
         /* Stop the world to prevent other threads from creating threads or
          * atexit callbacks. On the default build, this is simply locked by
          * the GIL. For pending calls, we acquire the dedicated mutex, because
          * Py_AddPendingCall() can be called without an attached thread state.
          */
-
         PyMutex_Lock(&interp->ceval.pending.mutex);
-        // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
-        // being stopped?
         _PyEval_StopTheWorldAll(interp->runtime);
+
+        HEAD_LOCK(interp->runtime);
         int has_subinterpreters = subinterpreters
                                     ? runtime_has_subinterpreters(interp->runtime)
                                     : 0;
+        uintptr_t guards_expected = 0;
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
                               || has_subinterpreters);
+
         if (!should_continue) {
-            break;
+            // We only want to prevent new guards once we're sure that we
+            // won't be running another pre-finalization cycle.
+            if (_Py_atomic_compare_exchange_uintptr(&interp->finalization_guards,
+                                                    &guards_expected,
+                                                    _PyInterpreterGuard_GUARDS_NOT_ALLOWED) == 1) {
+                HEAD_UNLOCK(interp->runtime);
+                break;
+            }
         }
+        HEAD_UNLOCK(interp->runtime);
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
     }
     assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
+    assert(_Py_atomic_load_uintptr(&interp->finalization_guards) == _PyInterpreterGuard_GUARDS_NOT_ALLOWED);
     ASSERT_WORLD_STOPPED(interp);
 }
 
@@ -2530,11 +2572,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
-
-#ifdef _Py_JIT
-    /* Free JIT shim memory */
-    _PyJIT_Fini();
-#endif
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -3291,7 +3328,9 @@ apple_log_write_impl(PyObject *self, PyObject *args)
 
     // Pass the user-provided text through explicit %s formatting
     // to avoid % literals being interpreted as a formatting directive.
-    os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
+    // Using {public} ensures "dynamic" string messages are visible
+    // in the log without special configuration.
+    os_log_with_type(OS_LOG_DEFAULT, logtype, "%{public}s", text);
     Py_RETURN_NONE;
 }
 
@@ -3350,9 +3389,9 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 
     /* display the current Python stack */
 #ifndef Py_GIL_DISABLED
-    _Py_DumpTracebackThreads(fd, interp, tstate);
+    PyUnstable_DumpTracebackThreads(fd, interp, tstate, 0);
 #else
-    _Py_DumpTraceback(fd, tstate);
+    PyUnstable_DumpTraceback(fd, tstate);
 #endif
 }
 
@@ -3693,7 +3732,9 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
        This function already did its best to display a traceback.
        Disable faulthandler to prevent writing a second traceback
        on abort(). */
-    _PyFaulthandler_Fini();
+    if (has_tstate_and_gil) {
+        _PyFaulthandler_Fini();
+    }
 
     /* Check if the current Python thread hold the GIL */
     if (has_tstate_and_gil) {
