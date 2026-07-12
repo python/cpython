@@ -610,6 +610,13 @@ An :class:`IMAP4` instance has the following methods:
    If *uid* is true, the message numbers in the response are UIDs
    (``UID SEARCH``).
 
+   A criterion passed as :class:`str` is encoded to *charset*
+   (which must name a codec known to Python);
+   pass :class:`bytes` to send a criterion that is already encoded,
+   for example when *charset* is one that Python does not support.
+   When *charset* is ``None`` (as it must be under ``UTF8=ACCEPT``),
+   the criterion is sent using the connection's encoding instead.
+
    Example::
 
       # M is a connected IMAP4 instance...
@@ -620,6 +627,9 @@ An :class:`IMAP4` instance has the following methods:
 
    .. versionchanged:: next
       Added the *uid* parameter.
+
+   .. versionchanged:: next
+      ``str`` search criteria are encoded to *charset*.
 
 
 .. method:: IMAP4.select(mailbox='INBOX', readonly=False)
@@ -682,10 +692,17 @@ An :class:`IMAP4` instance has the following methods:
 
    If *uid* is true, the message numbers in the response are UIDs (``UID SORT``).
 
+   As with :meth:`search`,
+   a *search_criterion* passed as :class:`str` is encoded to *charset*;
+   pass :class:`bytes` to send one already encoded.
+
    This is an ``IMAP4rev1`` extension command.
 
    .. versionchanged:: next
       Added the *uid* parameter.
+
+   .. versionchanged:: next
+      ``str`` search criteria are encoded to *charset*.
 
 
 .. method:: IMAP4.starttls(ssl_context=None)
@@ -772,10 +789,17 @@ An :class:`IMAP4` instance has the following methods:
    If *uid* is true, the message numbers in the response are UIDs
    (``UID THREAD``).
 
+   As with :meth:`search`,
+   a *search_criterion* passed as :class:`str` is encoded to *charset*;
+   pass :class:`bytes` to send one already encoded.
+
    This is an ``IMAP4rev1`` extension command.
 
    .. versionchanged:: next
       Added the *uid* parameter.
+
+   .. versionchanged:: next
+      ``str`` search criteria are encoded to *charset*.
 
 
 .. method:: IMAP4.uid(command, arg[, ...])

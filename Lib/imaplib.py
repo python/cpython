@@ -950,11 +950,15 @@ class IMAP4:
         If UTF8 is enabled, charset MUST be None.
         If 'uid' is true, the message numbers in the response are UIDs
         (UID SEARCH).
+
+        A 'criteria' passed as str is encoded to 'charset'; pass bytes to
+        send criteria that are already encoded.
         """
         name = 'SEARCH'
         if charset is not None:
             if self.utf8_enabled:
                 raise IMAP4.error("Non-None charset not valid in UTF8 mode")
+            criteria = self._encode_criteria(charset, criteria)
             args = ('CHARSET', self._astring(charset), *criteria)
         else:
             args = criteria
@@ -1036,6 +1040,7 @@ class IMAP4:
         #if not name in self.capabilities:      # Let the server decide!
         #       raise self.error('unimplemented extension command: %s' % name)
         sort_criteria = self._set_quote(sort_criteria)
+        search_criteria = self._encode_criteria(charset, search_criteria)
         if charset is not None:
             charset = self._astring(charset)
         args = (sort_criteria, charset, *search_criteria)
@@ -1117,6 +1122,7 @@ class IMAP4:
         (UID THREAD).
         """
         name = 'THREAD'
+        search_criteria = self._encode_criteria(charset, search_criteria)
         if charset is not None:
             charset = self._astring(charset)
         args = (self._atom(threading_algorithm), charset, *search_criteria)
@@ -1158,12 +1164,14 @@ class IMAP4:
                     self._set_quote(flags))
         elif command == 'SORT':
             sort_criteria, charset, *search_criteria = args
+            search_criteria = self._encode_criteria(charset, search_criteria)
             if charset is not None:
                 charset = self._astring(charset)
             args = (self._set_quote(sort_criteria), charset,
                     *search_criteria)
         elif command == 'THREAD':
             threading_algorithm, charset, *search_criteria = args
+            search_criteria = self._encode_criteria(charset, search_criteria)
             if charset is not None:
                 charset = self._astring(charset)
             args = (self._atom(threading_algorithm), charset,
@@ -1575,6 +1583,17 @@ class IMAP4:
         if arg.upper() in ('ALL', 'FULL', 'FAST'):
             return arg
         return self._set_quote(arg)
+
+    def _encode_criteria(self, charset, criteria):
+        # Encode str search criteria to the declared CHARSET so the bytes on
+        # the wire match it.  bytes criteria are already encoded and pass
+        # through unchanged.  charset is None when no CHARSET is sent.
+        if charset is None:
+            return criteria
+        if isinstance(charset, (bytes, bytearray)):
+            charset = str(charset, 'ascii')
+        return tuple(c.encode(charset) if isinstance(c, str) else c
+                     for c in criteria)
 
     def _quote(self, arg):
         if isinstance(arg, str):
