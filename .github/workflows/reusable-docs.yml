@@ -3,6 +3,17 @@ name: Reusable Docs
 on:
   workflow_call:
   workflow_dispatch:
+  # Pushes to CPython branches seed the pip caches under the exact keys every
+  # docs PR restores from. Without a branch-scoped copy, each PR saves a
+  # duplicate into its own refs/pull/N/merge scope that nothing else can read.
+  push:
+    branches:
+      - main
+      - '3.*'
+    paths:
+      - 'Doc/pylock.toml'
+      - 'Doc/requirements.txt'
+      - '.github/workflows/reusable-docs.yml'
 
 permissions:
   contents: read
@@ -95,7 +106,7 @@ jobs:
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

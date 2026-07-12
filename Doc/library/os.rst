@@ -2180,6 +2180,11 @@ features:
 
    .. audit-event:: os.chdir path os.chdir
 
+   .. seealso::
+
+      The :func:`contextlib.chdir` context manager, which changes the current
+      working directory on entering and restores the previous one on exit.
+
    .. versionchanged:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
@@ -3032,10 +3037,16 @@ features:
 
    .. attribute:: path
 
-      The entry's full path name: equivalent to ``os.path.join(scandir_path,
-      entry.name)`` where *scandir_path* is the :func:`scandir` *path*
-      argument.  The path is only absolute if the :func:`scandir` *path*
-      argument was absolute.  If the :func:`scandir` *path*
+      The entry's path name: equivalent to ``os.path.join(scandir_path,
+      entry.name)`` where *scandir_path* is the original :func:`scandir`
+      *path* argument.  Apart from the filename, the path preserves the
+      original :func:`scandir` argument.  If the :func:`scandir` *path*
+      argument was relative, the :attr:`path` attribute is also relative.
+      Changing the current working directory after creating the
+      :func:`scandir` iterator may cause later uses of :attr:`path` to resolve
+      differently.  On some platforms, the constructed path may not be valid
+      if the original :func:`scandir` argument was usable for enumeration but
+      not for joining with the entry name.  If the :func:`scandir` *path*
       argument was a :ref:`file descriptor <path_fd>`, the :attr:`path`
       attribute is the same as the :attr:`name` attribute.
 
