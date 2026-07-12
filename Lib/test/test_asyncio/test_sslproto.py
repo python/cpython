@@ -843,8 +843,10 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         sslctx = test_utils.simple_server_sslcontext()
         client_sslctx = test_utils.simple_client_sslcontext()
+        server_err = None
 
         def server(sock):
+            nonlocal server_err
             orig_sock = sock.dup()
             try:
                 sock.start_tls(
@@ -853,8 +855,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.sendall(b'A\n')
                 sock.recv_all(1)
                 orig_sock.send(b'please corrupt the SSL connection')
-            except ssl.SSLError:
-                pass
+                # gh-98078: receive the fatal TLS alert sent by the
+                # client before it closed the connection
+                sock.recv(16)
+            except ssl.SSLError as exc:
+                server_err = exc
             finally:
                 orig_sock.close()
                 sock.close()
@@ -880,6 +885,71 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             res = self.loop.run_until_complete(client(srv.addr))
 
         self.assertEqual(res, 'OK')
+        # gh-98078: the client must send a fatal TLS alert to the
+        # server instead of just closing the connection, so that the
+        # server knows why the connection was dropped.
+        self.assertIsInstance(server_err, ssl.SSLError)
+        self.assertIn('ALERT_UNEXPECTED_MESSAGE', server_err.reason or '')
+
+    def test_shutdown_corrupted_ssl_sends_close_notify(self):
+        # gh-98078: when the TLS shutdown fails (here: on a corrupted
+        # record that was buffered while the application had reading
+        # paused), the close_notify alert that OpenSSL already
+        # generated must be sent to the peer before the transport is
+        # closed, so that the peer sees a clean TLS EOF instead of a
+        # connection reset.
+        self.loop.set_exception_handler(lambda loop, ctx: None)
+
+        sslctx = test_utils.simple_server_sslcontext()
+        client_sslctx = test_utils.simple_client_sslcontext()
+        server_err = None
+
+        def server(sock):
+            nonlocal server_err
+            orig_sock = sock.dup()
+            try:
+                sock.start_tls(
+                    sslctx,
+                    server_side=True)
+                sock.sendall(b'A\n')
+                sock.recv_all(1)
+                orig_sock.send(b'please corrupt the SSL connection')
+                # the client now closes the connection; although its
+                # TLS shutdown fails on the corrupted record, it must
+                # still send close_notify, completing our unwrap()
+                sock.unwrap()
+            except ssl.SSLError as exc:
+                server_err = exc
+            finally:
+                orig_sock.close()
+                sock.close()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='')
+            # drain the post-handshake data (e.g. TLS session tickets)
+            # so that only the corrupted record can be buffered next
+            self.assertEqual(await reader.readline(), b'A\n')
+            # keep the corrupted record buffered in the incoming BIO
+            writer.transport.pause_reading()
+            writer.write(b'B')
+            await writer.drain()
+            # wait for the corrupted record to arrive in the read buffer
+            async with asyncio.timeout(support.SHORT_TIMEOUT):
+                while not writer.transport.get_read_buffer_size():
+                    await asyncio.sleep(0)
+            writer.close()
+            with self.assertRaises(ssl.SSLError):
+                await writer.wait_closed()
+
+        with self.tcp_server(server,
+                             max_clients=1,
+                             backlog=1) as srv:
+            self.loop.run_until_complete(client(srv.addr))
+
+        self.assertIsNone(server_err)
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')

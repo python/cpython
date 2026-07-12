@@ -658,6 +658,10 @@ class SSLProtocol(protocols.BufferedProtocol):
         except SSLAgainErrors:
             self._process_outgoing()
         except ssl.SSLError as exc:
+            # gh-98078: send what OpenSSL left in the outgoing BIO, e.g.
+            # the close_notify alert, to the peer before closing (see
+            # _on_handshake_complete()).
+            self._process_outgoing()
             self._on_shutdown_complete(exc)
         else:
             self._process_outgoing()
@@ -749,6 +753,11 @@ class SSLProtocol(protocols.BufferedProtocol):
                 else:
                     self._process_outgoing()
             self._control_ssl_reading()
+        except ssl.SSLError as ex:
+            # gh-98078: send the fatal TLS alert left in the outgoing
+            # BIO to the peer (see _on_handshake_complete()).
+            self._process_outgoing()
+            self._fatal_error(ex, 'Fatal error on SSL protocol')
         except Exception as ex:
             self._fatal_error(ex, 'Fatal error on SSL protocol')
 
