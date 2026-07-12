@@ -4924,16 +4924,16 @@ static PyObject *
 _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
 /*[clinic end generated code: output=dd74b3c524dd2723 input=832769a0734b8c4d]*/
 {
-    FILE *f;
-    DH *dh;
-
-#if defined(MS_WINDOWS) && defined(Py_DEBUG)
+#if defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_DESKTOP)
+    PyErr_SetString(PyExc_NotImplementedError, "load_dh_params: unavailable on UWP build");
+    return NULL;
+#elif defined(MS_WINDOWS) && defined(Py_DEBUG)
     PyErr_SetString(PyExc_NotImplementedError,
                     "load_dh_params: unavailable on Windows debug build");
     return NULL;
-#endif
-
-    f = Py_fopen(filepath, "rb");
+#else
+    FILE* f = Py_fopen(filepath, "rb");
+    DH* dh;
     if (f == NULL)
         return NULL;
 
@@ -4959,6 +4959,7 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
     }
     DH_free(dh);
     Py_RETURN_NONE;
+#endif
 }
 
 /*[clinic input]
