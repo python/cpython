@@ -1074,7 +1074,7 @@ Performance
 My program is too slow. How do I speed it up?
 ---------------------------------------------
 
-That's a tough one, in general.  First, here is list of things to
+That's a tough one, in general.  First, here is a list of things to
 remember before diving further:
 
 * Performance characteristics vary across Python implementations.  This FAQ
@@ -1924,7 +1924,7 @@ correctly using identity tests:
 
    .. code-block:: python
 
-      _sentinel = object()
+      _sentinel = sentinel('_sentinel')
 
       def pop(self, key, default=_sentinel):
           if key in self:
@@ -2003,7 +2003,7 @@ How do I cache method calls?
 ----------------------------
 
 The two principal tools for caching methods are
-:func:`functools.cached_property` and :func:`functools.lru_cache`.  The
+:deco:`functools.cached_property` and :deco:`functools.lru_cache`.  The
 former stores results at the instance level and the latter at the class
 level.
 

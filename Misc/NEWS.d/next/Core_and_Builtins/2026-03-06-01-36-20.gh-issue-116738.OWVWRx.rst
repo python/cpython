@@ -1,2 +1,0 @@
-Make :meth:`!mmap.mmap.set_name` thread-safe on the :term:`free threaded <free
-threading>` build.

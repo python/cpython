@@ -1,3 +1,0 @@
-Add :c:func:`PyArg_ParseArray` and :c:func:`PyArg_ParseArrayAndKeywords`
-functions to parse arguments of functions using the :c:macro:`METH_FASTCALL`
-calling convention. Patch by Victor Stinner.

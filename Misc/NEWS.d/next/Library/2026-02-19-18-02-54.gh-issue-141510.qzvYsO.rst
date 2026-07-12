@@ -1,3 +1,0 @@
-:func:`dataclasses.field`: if *metadata* is ``None``, use an empty
-:class:`frozendict`, instead of a :func:`~types.MappingProxyType` of an
-empty :class:`dict`. Patch by Victor Stinner.

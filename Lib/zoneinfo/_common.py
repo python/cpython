@@ -26,7 +26,7 @@ def load_tzdata(key):
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
         # IsADirectoryError: If package_name without a resource_name specified.
-        raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
+        raise ZoneInfoNotFoundError(f"No time zone found with key {key!r}")
 
 
 def load_data(fobj):
@@ -67,6 +67,10 @@ def load_data(fobj):
             f">{timecnt}{time_type}", fobj.read(timecnt * time_size)
         )
         trans_idx = struct.unpack(f">{timecnt}B", fobj.read(timecnt))
+
+        if max(trans_idx) >= typecnt:
+            raise ValueError("Invalid transition index found while reading TZif: "
+                            f"{max(trans_idx)}")
     else:
         trans_list_utc = ()
         trans_idx = ()

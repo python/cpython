@@ -143,6 +143,12 @@ typedef struct {
 
 typedef struct {
     _Py_BackoffCounter counter;
+} _PyGetIterCache;
+
+#define INLINE_CACHE_ENTRIES_GET_ITER CACHE_ENTRIES(_PyGetIterCache)
+
+typedef struct {
+    _Py_BackoffCounter counter;
 } _PySendCache;
 
 #define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
@@ -323,6 +329,8 @@ PyAPI_FUNC(void) _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_GatherStats_GetIter(_PyStackRef iterable);
 PyAPI_FUNC(void) _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(void) _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr);
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
@@ -495,6 +503,18 @@ typedef struct {
     int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
+    /* Static type of the result, or NULL if unknown. Used by the tier 2
+       optimizer to propagate type information through _BINARY_OP_EXTEND. */
+    PyTypeObject *result_type;
+    /* Nonzero iff `action` always returns a freshly allocated object (not
+       aliased to either operand). Used by the tier 2 optimizer to enable
+       inplace follow-up ops. */
+    int result_unique;
+    /* Expected types of the left and right operands. Used by the tier 2
+       optimizer to eliminate _GUARD_BINARY_OP_EXTEND when the operand
+       types are already known. NULL means unknown/don't eliminate. */
+    PyTypeObject *lhs_type;
+    PyTypeObject *rhs_type;
 } _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
@@ -519,7 +539,8 @@ typedef struct {
 
 PyAPI_FUNC(int) _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
-extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(_Py_CODEUNIT) _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 

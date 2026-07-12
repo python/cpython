@@ -6,5 +6,5 @@ set -o errexit
 cd "$(dirname "$0")"
 
 for variant in asan freethreading tsan-freethreading; do
-    cp -av default/recipe.yaml default/pixi.toml ${variant}/
+    cp -av default/pixi.toml ${variant}/
 done

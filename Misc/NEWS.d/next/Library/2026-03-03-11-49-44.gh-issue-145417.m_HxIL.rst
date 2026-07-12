@@ -1,4 +1,0 @@
-:mod:`venv`: Prevent incorrect preservation of SELinux context
-when copying the ``Activate.ps1`` script. The script inherited
-the SELinux security context of the system template directory,
-rather than the destination project directory.

@@ -331,10 +331,14 @@ Compressing and decompressing data in memory
 
       If *max_length* is non-negative, the method returns at most *max_length*
       bytes of decompressed data. If this limit is reached and further
-      output can be produced, the :attr:`~.needs_input` attribute will
-      be set to ``False``. In this case, the next call to
+      output can be produced (or EOF is reached), the :attr:`~.needs_input`
+      attribute will be set to ``False``. In this case, the next call to
       :meth:`~.decompress` may provide *data* as ``b''`` to obtain
-      more of the output.
+      more of the output. The full content can thus be read like::
+
+        process_output(d.decompress(data, max_length))
+        while not d.eof and not d.needs_input:
+            process_output(d.decompress(b"", max_length))
 
       If all of the input data was decompressed and returned (either
       because this was less than *max_length* bytes, or because
