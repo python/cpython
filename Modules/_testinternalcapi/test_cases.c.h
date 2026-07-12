@@ -6154,7 +6154,7 @@
             opcode = ENTER_EXECUTOR;
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+            _PyExecutorObject *executor = ((_PyExecutorArrayInternal *)code->co_executors)->executors[oparg & 255];
             if (IS_JIT_TRACING()) {
                 int og_opcode = executor->vm_data.opcode;
                 int og_oparg = (oparg & ~255) | executor->vm_data.oparg;

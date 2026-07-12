@@ -1788,7 +1788,7 @@ add_executor_dependency(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OO", &exec, &obj)) {
         return NULL;
     }
-    _Py_Executor_DependsOn((_PyExecutorObject *)exec, obj);
+    _Py_Executor_DependsOn(_PyExecutor_AsHandle((_PyExecutorObject *)exec), obj);
     Py_RETURN_NONE;
 }
 
@@ -1821,7 +1821,7 @@ get_exit_executor(PyObject *self, PyObject *arg)
         return NULL;
     }
     _PyExitData *exit = (_PyExitData *)ptr;
-    return Py_NewRef(exit->executor);
+    return Py_NewRef(_PyExecutor_FromHandle(exit->executor));
 }
 
 #endif

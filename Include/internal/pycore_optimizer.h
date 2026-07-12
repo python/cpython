@@ -180,6 +180,8 @@ typedef struct {
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
+typedef struct _PyExecutorHandle _PyExecutorHandle;
+
 typedef struct _PyExitData {
     uint32_t target;
     uint16_t index:12;
@@ -187,7 +189,7 @@ typedef struct _PyExitData {
     uint16_t is_dynamic:1;
     uint16_t is_control_flow:1;
     _Py_BackoffCounter temperature;
-    struct _PyExecutorObject *executor;
+    _PyExecutorHandle *executor;
 } _PyExitData;
 
 typedef struct _PyExecutorObject {
@@ -202,12 +204,48 @@ typedef struct _PyExecutorObject {
     _PyExitData exits[1];
 } _PyExecutorObject;
 
+static inline _PyExecutorObject *
+_PyExecutor_FromHandle(_PyExecutorHandle *executor)
+{
+    return (_PyExecutorObject *)executor;
+}
+
+static inline _PyExecutorHandle *
+_PyExecutor_AsHandle(_PyExecutorObject *executor)
+{
+    return (_PyExecutorHandle *)executor;
+}
+
+typedef struct _PyExecutorArrayInternal {
+    int size;
+    int capacity;
+    _PyExecutorObject *executors[1];
+} _PyExecutorArrayInternal;
+
+static inline _PyExecutorArrayInternal *
+_PyExecutorArray_CAST(_PyExecutorArray *executors)
+{
+    return (_PyExecutorArrayInternal *)executors;
+}
+
+static inline int
+_PyExecutorArray_SIZE(_PyExecutorArray *executors)
+{
+    return _PyExecutorArray_CAST(executors)->size;
+}
+
+static inline _PyExecutorObject **
+_PyExecutorArray_EXECUTORS(_PyExecutorArray *executors)
+{
+    return _PyExecutorArray_CAST(executors)->executors;
+}
+
 // Export for '_opcode' shared extension (JIT compiler).
-PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
+PyAPI_FUNC(_PyExecutorHandle*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
 int _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorDetach(_PyExecutorObject *);
-PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
+PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorHandle *executor, void *obj);
 
 /* We use a bloomfilter with k = 6, m = 256
  * The choice of k and the following constants
@@ -519,7 +557,7 @@ PyAPI_FUNC(int)
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
     _Py_CODEUNIT *close_loop_instr, _PyStackRef *stack_pointer, int chain_depth, _PyExitData *exit,
-    int oparg, _PyExecutorObject *current_executor);
+    int oparg, _PyExecutorHandle *current_executor);
 
 PyAPI_FUNC(void) _PyJit_FinalizeTracing(PyThreadState *tstate, int err);
 PyAPI_FUNC(bool) _PyJit_EnterExecutorShouldStopTracing(int og_opcode);
