@@ -1,1 +1,0 @@
-Corrected and clarified the documentation comments for several PyBuffer_* C API functions in Include/pybuffer.h, including the description of PyBuffer_IsContiguous().
