@@ -1262,7 +1262,6 @@ class UrlParseTestCase(unittest.TestCase):
             urllib.parse.urlsplit(1, b'http')
 
     def _check_result_type(self, str_type, str_args):
-        num_args = len(str_type._fields)
         bytes_type = str_type._encoded_counterpart
         self.assertIs(bytes_type._decoded_counterpart, str_type)
         bytes_args = tuple_encode(str_args)
@@ -2011,10 +2010,10 @@ class DeprecationTest(unittest.TestCase):
             (urllib.parse.urlunparse, [[None, b'www.python.org', (), (), (), ()]]),
             (urllib.parse.urlunsplit, [['http', 0, '', '', '']]),
         ]
-        for callable, args in cases:
-            with self.subTest(callable=callable.__name__, args=args):
+        for func, args in cases:
+            with self.subTest(callable=func.__name__, args=args):
                 with self.assertWarnsRegex(DeprecationWarning, "false values"):
-                    callable(*args)
+                    func(*args)
 
 
 def str_encode(s):

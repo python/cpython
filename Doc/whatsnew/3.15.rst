@@ -2309,6 +2309,7 @@ New deprecations
     :func:`issubclass`, but warnings were not previously emitted if it was
     merely imported or accessed from the :mod:`!typing` module.
 
+
 * :mod:`webbrowser`:
 
   * :class:`!webbrowser.MacOSXOSAScript` is deprecated in favour of
