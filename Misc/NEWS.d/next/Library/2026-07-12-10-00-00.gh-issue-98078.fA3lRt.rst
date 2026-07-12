@@ -1,0 +1,4 @@
+Fix :mod:`asyncio` SSL transports not sending the fatal TLS alert to the
+peer when the TLS handshake fails. The peer can now tell why the handshake
+failed (for example, certificate verification failure or no TLS version in
+common) instead of seeing the connection abruptly closed.
