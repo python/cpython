@@ -1231,6 +1231,29 @@ Classes and functions
    times.
 
 
+.. function:: walktree(classes, children, parent)
+
+   Recursive helper function used by :func:`getclasstree` to build its
+   nested list structure.  *children* maps each class to a list of its
+   direct subclasses, as accumulated by :func:`getclasstree`, and *parent*
+   is the common parent of *classes* at the current level of recursion (or
+   ``None`` at the top level).
+
+
+.. function:: getargs(co)
+
+   Get information about the arguments accepted by a code object *co*.
+   Return an ``Arguments(args, varargs, varkw)`` :term:`named tuple`, where
+   *args* is a list of argument names (with any keyword-only arguments
+   appended at the end), and *varargs* and *varkw* are the names of the
+   ``*`` and ``**`` arguments, or ``None`` if they are not accepted.
+
+   Note that :func:`getfullargspec` provides additional information (such
+   as default values and annotations) and is the recommended way to inspect
+   a callable's parameters.  This function is retained primarily for use in
+   code that already works directly with code objects.
+
+
 .. function:: getfullargspec(func, *, annotation_format=Format.VALUE)
 
    Get the names and default values of a Python function's parameters.  A
