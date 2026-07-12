@@ -116,13 +116,11 @@ ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
  * SET ITERATION FUNCTIONS
  * ============================================================================ */
 
-int
+static int
 iterate_set_entries(
     RemoteUnwinderObject *unwinder,
     uintptr_t set_addr,
-    set_entry_processor_func processor,
-    void *context,
-    size_t depth
+    PyObject *awaited_by
 ) {
     char set_object[SIZEOF_SET_OBJ];
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, set_addr,
@@ -154,19 +152,10 @@ iterate_set_entries(
         }
 
         if ((void*)key_addr != NULL) {
-            Py_ssize_t ref_cnt;
-            if (read_Py_ssize_t(unwinder, table_ptr, &ref_cnt) < 0) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read set entry ref count");
+            if (parse_task(unwinder, key_addr, awaited_by) < 0) {
                 return -1;
             }
-
-            if (ref_cnt) {
-                // Process this valid set entry
-                if (processor(unwinder, key_addr, context, depth) < 0) {
-                    return -1;
-                }
-                els++;
-            }
+            els++;
         }
         table_ptr += sizeof(void*) * 2;
         i++;
@@ -526,44 +515,11 @@ error:
  * TASK AWAITED_BY PROCESSING
  * ============================================================================ */
 
-// Forward declaration for mutual recursion
-static int process_waiter_task(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
-    void *context,
-    size_t depth
-);
-
-// Processor function for parsing tasks in sets
-static int
-process_task_parser(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
-    void *context,
-    size_t depth
-) {
-    (void)depth;
-    PyObject *awaited_by = (PyObject *)context;
-    return parse_task(unwinder, key_addr, awaited_by);
-}
-
 static int
 parse_task_awaited_by(
     RemoteUnwinderObject *unwinder,
     uintptr_t task_address,
     PyObject *awaited_by
-) {
-    return process_task_awaited_by(
-        unwinder, task_address, process_task_parser, awaited_by, 0);
-}
-
-int
-process_task_awaited_by(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t task_address,
-    set_entry_processor_func processor,
-    void *context,
-    size_t depth
 ) {
     // Read the entire TaskObj at once
     char task_obj[SIZEOF_TASK_OBJ];
@@ -582,11 +538,10 @@ process_task_awaited_by(
     char awaited_by_is_a_set = GET_MEMBER(char, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by_is_set);
 
     if (awaited_by_is_a_set) {
-        return iterate_set_entries(
-            unwinder, task_ab_addr, processor, context, depth);
+        return iterate_set_entries(unwinder, task_ab_addr, awaited_by);
     } else {
         // Single task waiting
-        return processor(unwinder, task_ab_addr, context, depth);
+        return parse_task(unwinder, task_ab_addr, awaited_by);
     }
 }
 
@@ -681,40 +636,39 @@ error:
     return -1;
 }
 
-int
-process_task_and_waiters(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t task_addr,
-    PyObject *result,
-    size_t depth
-) {
-    if (depth >= MAX_TASK_WAITER_CHAIN_DEPTH) {
-        PyErr_SetString(PyExc_RuntimeError,
-            "Too many task waiters (possible infinite loop)");
-        set_exception_cause(unwinder, PyExc_RuntimeError,
-            "Task waiter chain depth limit exceeded");
-        return -1;
-    }
-
-    // First, add this task to the result
-    if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
-        return -1;
-    }
-
-    // Now find all tasks that are waiting for this task and process them
-    return process_task_awaited_by(
-        unwinder, task_addr, process_waiter_task, result, depth + 1);
-}
-
-// Processor function for task waiters
 static int
-process_waiter_task(
+process_task_waiters(
     RemoteUnwinderObject *unwinder,
-    uintptr_t key_addr,
-    void *context,
-    size_t depth
+    PyObject *result
 ) {
-    return process_task_and_waiters(unwinder, key_addr, (PyObject *)context, depth);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
+        PyObject *task_info = PyList_GET_ITEM(result, i);
+        PyObject *waiters = PyStructSequence_GET_ITEM(task_info, 3);
+        for (Py_ssize_t j = 0; j < PyList_GET_SIZE(waiters); j++) {
+            if (PyList_GET_SIZE(result) >= MAX_TASK_WAITER_WALK_TASKS) {
+                PyErr_SetString(PyExc_RuntimeError,
+                    "Too many task waiters (possible infinite loop)");
+                set_exception_cause(unwinder, PyExc_RuntimeError,
+                    "Task waiter walk size limit exceeded");
+                return -1;
+            }
+            PyObject *waiter = PyList_GET_ITEM(waiters, j);
+            PyObject *task_id = PyStructSequence_GET_ITEM(waiter, 1);
+            void *task_ptr = PyLong_AsVoidPtr(task_id);
+            if (task_ptr == NULL && PyErr_Occurred()) {
+                set_exception_cause(unwinder, PyExc_RuntimeError,
+                                    "Failed to parse waiter task ID");
+                return -1;
+            }
+            if (process_single_task_node(
+                    unwinder, (uintptr_t)task_ptr, NULL, result) < 0)
+            {
+                return -1;
+            }
+        }
+    }
+
+    return 0;
 }
 
 /* ============================================================================
@@ -1017,9 +971,7 @@ process_running_task_chain(
     }
 
     // Now find all tasks that are waiting for this task and process them
-    if (process_task_awaited_by(
-            unwinder, running_task_addr, process_waiter_task, result, 1) < 0)
-    {
+    if (process_task_waiters(unwinder, result) < 0) {
         return -1;
     }
 
