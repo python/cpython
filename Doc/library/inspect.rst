@@ -750,6 +750,27 @@ Retrieving source code
    function.
 
 
+.. function:: findsource(object)
+
+   Return the list of source lines for the entire file containing the given
+   object, together with the line number in that list where the object's
+   own source starts.  The argument may be a module, class, method,
+   function, traceback, frame, or code object.  An :exc:`OSError` is raised
+   if the source code cannot be retrieved.
+
+   Unlike :func:`getsourcelines`, this does not call :func:`unwrap` on the
+   object first, so it will report the location of a decorator-wrapped
+   callable's wrapper rather than the wrapped function.
+
+
+.. function:: getblock(lines)
+
+   Extract and return the block of code at the top of the given list of
+   source *lines*, using the :mod:`tokenize` module to detect where the
+   block ends.  This is used together with :func:`findsource` to implement
+   :func:`getsourcelines`.
+
+
 .. function:: getsourcelines(object)
 
    Return a list of source lines and starting line number for an object. The
