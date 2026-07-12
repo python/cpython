@@ -124,7 +124,6 @@ def _coerce_args(*args):
     #   - noop for str inputs
     #   - encoding function otherwise
     str_input = None
-    empty_values = {"", b"", None}
     for arg in args:
         if arg:
             if str_input is None:
@@ -132,7 +131,7 @@ def _coerce_args(*args):
             else:
                 if isinstance(arg, str) != str_input:
                     raise TypeError("Cannot mix str and non-str arguments")
-            if arg is not None and str_input is False and not hasattr(arg, "decode"):
+            if not hasattr(arg, "decode") and str_input is False:
                 raise TypeError(f"Expected a string, bytes, or None: got {type(arg)}")
         elif arg is not None and not isinstance(arg, str) and not hasattr(arg, "decode"):
             warnings.warn(
