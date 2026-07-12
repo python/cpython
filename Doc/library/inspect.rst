@@ -736,6 +736,15 @@ Retrieving source code
    class, or function.
 
 
+.. function:: getabsfile(object)
+
+   Return an absolute path to the (text or binary) file in which an object
+   was defined, normalized for the current platform using
+   :func:`os.path.normcase`.  This uses :func:`getsourcefile` and falls back
+   to :func:`getfile` if no source file can be found.  The idea is for each
+   object to have a unique origin.
+
+
 .. function:: getmodule(object)
 
    Try to guess which module an object was defined in. Return ``None``
@@ -789,6 +798,12 @@ Retrieving source code
    that can be uniformly removed from the second line onwards is removed.  Empty
    lines at the beginning and end are subsequently removed.  Also, all tabs are
    expanded to spaces.
+
+
+.. function:: indentsize(line)
+
+   Return the indentation size, in number of spaces, at the start of a line
+   of text, expanding tabs using :meth:`str.expandtabs`.
 
 
 .. _inspect-signature-object:
@@ -1219,6 +1234,20 @@ function.
 
 Classes and functions
 ---------------------
+
+.. function:: classify_class_attrs(cls)
+
+   Return a list of ``Attribute(name, kind, defining_class, object)`` named
+   tuples for each attribute reported by ``dir(cls)``.  *kind* is one of
+   ``'class method'``, ``'static method'``, ``'property'``, ``'method'`` or
+   ``'data'``, and *defining_class* is the class in *cls*'s :term:`MRO` (or
+   its metaclass's MRO) that defines the attribute.  *object* is the
+   attribute value, retrieved with :func:`getattr` where possible, falling
+   back to a lookup in the defining class's ``__dict__``.
+
+   This is used internally by :mod:`pydoc` to build the class documentation
+   shown by :func:`help`.
+
 
 .. function:: getclasstree(classes, unique=False)
 
