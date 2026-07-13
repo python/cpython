@@ -1,0 +1,2 @@
+Fix potential reference leaks in cross-interpreter ``NotShareableError``
+error handling.

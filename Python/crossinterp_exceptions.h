@@ -83,6 +83,7 @@ _ensure_notshareableerror(PyThreadState *tstate,
             // A NotShareableError instance is already set.
             assert(cause == NULL);
             _PyErr_SetRaisedException(tstate, ctx);
+            return;
         }
     }
     else {
