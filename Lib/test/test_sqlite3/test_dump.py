@@ -228,6 +228,28 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         actual = list(self.cx.iterdump())
         self.assertEqual(expected, actual)
 
+    def test_dump_table_with_single_quote_in_name(self):
+        # Table names containing single quotes must be round-trippable.
+        self.cu.execute("CREATE TABLE \"a'b\" (x);")
+        self.cu.execute("INSERT INTO \"a'b\" VALUES (1);")
+        dump_sqls = list(self.cx.iterdump())
+        with memory_database() as cx2:
+            cx2.executescript("".join(dump_sqls))
+            cu2 = cx2.cursor()
+            res = cu2.execute("SELECT * FROM \"a'b\";").fetchall()
+            self.assertEqual(res, [(1,)])
+
+    def test_dump_table_with_double_quotes_in_name(self):
+        # Regression test: names with double quotes already handled.
+        self.cu.execute('CREATE TABLE "a""b" (x)')
+        self.cu.execute('INSERT INTO "a""b" VALUES (2)')
+        dump_sqls = list(self.cx.iterdump())
+        with memory_database() as cx2:
+            cx2.executescript("".join(dump_sqls))
+            cu2 = cx2.cursor()
+            res = cu2.execute('SELECT * FROM "a""b";').fetchall()
+            self.assertEqual(res, [(2,)])
+
 
 if __name__ == "__main__":
     unittest.main()

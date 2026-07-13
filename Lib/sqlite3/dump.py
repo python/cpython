@@ -78,13 +78,21 @@ def _iterdump(connection, *, filter=None):
 
         # Build the insert statement for each row of the current table
         table_name_ident = _quote_name(table_name)
+        # When the identifier (which may contain single quotes) is embedded
+        # inside a single-quoted SQL string literal below, any single quotes
+        # must be doubled so the string literal remains valid. Use
+        # table_name_ident for identifier contexts (PRAGMA, FROM), and
+        # table_name_literal for the string-literal context.
+        table_name_literal = table_name_ident.replace("'", "''")
         res = cu.execute(f'PRAGMA table_info({table_name_ident})')
         column_names = [str(table_info[1]) for table_info in res.fetchall()]
-        q = "SELECT 'INSERT INTO {0} VALUES('{1}')' FROM {0};".format(
+        cols = "','".join(
+            "||quote({0})||".format(_quote_name(col)) for col in column_names
+        )
+        q = "SELECT 'INSERT INTO {1} VALUES('{2}')' FROM {0};".format(
             table_name_ident,
-            "','".join(
-                "||quote({0})||".format(_quote_name(col)) for col in column_names
-            )
+            table_name_literal,
+            cols,
         )
         query_res = cu.execute(q)
         for row in query_res:
