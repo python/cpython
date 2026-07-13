@@ -1,3 +1,2 @@
-Add limits to frame, coroutine and task-waiter walks in the Tachyon sampling
-profiler. This avoids potential hangs and stack overflows.  Patch by Maurycy
-Pawłowski-Wieroński.
+Make frame, coroutine and task-waiter walks iterative and bounded, avoiding
+potential hangs and stack overflows. Patch by Maurycy Pawłowski-Wieroński.
