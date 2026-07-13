@@ -1,0 +1,3 @@
+bpo-153658: sqlite3.Connection.iterdump() now correctly handles table and column names that contain single quotes (apostrophes). Identifiers with apostrophes are properly escaped when embedded in single-quoted SQL string literals, so dumps produced by iterdump() can be replayed with executescript().
+
+Contributed by @joshiaradhya.
