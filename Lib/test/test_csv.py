@@ -1464,9 +1464,7 @@ ghi\0jkl
         self.assertIs(dialect.skipinitialspace, False)
 
     def test_sniff_delimiter_equals_quotechar(self):
-        # A sample that makes sniff() guess a dialect whose delimiter equals
-        # its quotechar is invalid; that must surface as csv.Error, not as a
-        # raw ValueError leaking from the _csv extension.
+        # An inconsistent guessed dialect must surface as csv.Error.
         sniffer = csv.Sniffer()
         for sample in ('"', '""', "''"):
             with self.subTest(sample=sample):
