@@ -13,3 +13,7 @@ being deprecated in Python 3.11.  The removal was decided in :pep:`594`.
 
 The last version of Python that provided the :mod:`!uu` module was
 `Python 3.12 <https://docs.python.org/3.12/library/uu.html>`_.
+
+Encoding and decoding in the uu format can instead be achieved using
+:func:`codecs.encode` and :func:`codecs.decode`, specifying :code:`"uu"`
+as the codec.
