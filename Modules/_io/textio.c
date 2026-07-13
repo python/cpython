@@ -2781,7 +2781,8 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         textiowrapper_set_decoded_chars(self, decoded);
 
         /* Skip chars_to_skip of the decoded characters. */
-        if (PyUnicode_GetLength(self->decoded_chars) < cookie.chars_to_skip) {
+        /* gh-153662: Reject negative chars_to_skip*/
+        if (cookie.chars_to_skip < 0 || PyUnicode_GetLength(self->decoded_chars) < cookie.chars_to_skip) {
             PyErr_SetString(PyExc_OSError, "can't restore logical file position");
             goto fail;
         }

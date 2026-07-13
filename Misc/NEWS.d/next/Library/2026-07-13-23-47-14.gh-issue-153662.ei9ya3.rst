@@ -1,0 +1,1 @@
+:class:`io.TextIOWrapper`: Fix a rare crash when calling ``seek()`` with a malformed cookie.
