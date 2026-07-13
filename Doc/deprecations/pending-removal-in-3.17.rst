@@ -1,6 +1,14 @@
 Pending removal in Python 3.17
 ------------------------------
 
+* :mod:`datetime`:
+
+  * :meth:`~datetime.datetime.strptime` calls using a format string containing
+    ``%e`` (day of month) without a year.
+    This has been deprecated since Python 3.15.
+    (Contributed by Stan Ulbrych in :gh:`70647`.)
+
+
 * :mod:`collections.abc`:
 
   - :class:`collections.abc.ByteString` is scheduled for removal in Python 3.17.
@@ -27,7 +35,12 @@ Pending removal in Python 3.17
 
   - Passing non-ascii *encoding* names to :func:`encodings.normalize_encoding`
     is deprecated and scheduled for removal in Python 3.17.
-    (Contributed by Stan Ulbrych in :gh:`136702`)
+    (Contributed by Stan Ulbrych in :gh:`136702`.)
+
+* :mod:`webbrowser`:
+
+  - :class:`!webbrowser.MacOSXOSAScript` is deprecated in favour of
+    :class:`!webbrowser.MacOS`. (:gh:`137586`)
 
 * :mod:`typing`:
 
@@ -55,3 +68,13 @@ Pending removal in Python 3.17
 
     See :pep:`PEP 688 <688#current-options>` for more details.
     (Contributed by Shantanu Jain in :gh:`91896`.)
+
+* :mod:`tkinter`:
+
+  - The :class:`!tkinter.Variable` methods :meth:`!trace_variable`,
+    :meth:`!trace` (an alias of :meth:`!trace_variable`),
+    :meth:`!trace_vdelete` and :meth:`!trace_vinfo`, deprecated since
+    Python 3.14, are scheduled for removal in Python 3.17.
+    Use :meth:`!trace_add`, :meth:`!trace_remove` and :meth:`!trace_info`
+    instead.
+    (Contributed by Serhiy Storchaka in :gh:`120220`.)

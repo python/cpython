@@ -12,7 +12,7 @@ and :source:`Lib/concurrent/futures/interpreter.py`
 
 --------------
 
-The :mod:`concurrent.futures` module provides a high-level interface for
+The :mod:`!concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.
 
 The asynchronous execution can be performed with threads, using
@@ -20,6 +20,11 @@ The asynchronous execution can be performed with threads, using
 or separate processes, using :class:`ProcessPoolExecutor`.
 Each implements the same interface, which is defined
 by the abstract :class:`Executor` class.
+
+:class:`concurrent.futures.Future` must not be confused with
+:class:`asyncio.Future`, which is designed for use with :mod:`asyncio`
+tasks and coroutines. See the :doc:`asyncio's Future <asyncio-future>`
+documentation for a detailed comparison of the two.
 
 .. include:: ../includes/wasm-notavail.rst
 
@@ -151,7 +156,9 @@ And::
        print(f.result())
 
    executor = ThreadPoolExecutor(max_workers=1)
-   executor.submit(wait_on_future)
+   future = executor.submit(wait_on_future)
+   # Note: calling future.result() would also cause a deadlock because
+   # the single worker thread is already waiting for wait_on_future().
 
 
 .. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
@@ -379,11 +386,6 @@ in a REPL or a lambda should not be expected to work.
    default in absence of a *mp_context* parameter. This feature is incompatible
    with the "fork" start method.
 
-   .. note::
-      Bugs have been reported when using the *max_tasks_per_child* feature that
-      can result in the :class:`ProcessPoolExecutor` hanging in some
-      circumstances. Follow its eventual resolution in :gh:`115634`.
-
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
       :exc:`~concurrent.futures.process.BrokenProcessPool` error is now raised.
@@ -418,6 +420,11 @@ in a REPL or a lambda should not be expected to work.
       :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
+
+   .. versionchanged:: next
+      Fixed a deadlock (:gh:`115634`) where the executor could hang after
+      a worker process exited upon reaching its *max_tasks_per_child*
+      limit while tasks remained queued.
 
    .. method:: terminate_workers()
 

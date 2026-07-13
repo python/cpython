@@ -1,2 +1,0 @@
-Some keystrokes can be swallowed in the new ``PyREPL`` on Windows,
-especially when used together with the ALT key. Fix by Chris Eibl.

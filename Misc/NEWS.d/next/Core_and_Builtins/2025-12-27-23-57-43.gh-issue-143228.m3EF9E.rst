@@ -1,4 +1,0 @@
-Fix use-after-free in perf trampoline when toggling profiling while
-threads are running or during interpreter finalization with daemon threads
-active. The fix uses reference counting to ensure trampolines are not freed
-while any code object could still reference them. Pach by Pablo Galindo

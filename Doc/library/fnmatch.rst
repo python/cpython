@@ -51,7 +51,7 @@ Unless stated otherwise, "filename string" and "pattern string" either refer to
 functions documented below do not allow to mix a :class:`!bytes` pattern with
 a :class:`!str` filename, and vice-versa.
 
-Finally, note that :func:`functools.lru_cache` with a *maxsize* of 32768
+Finally, note that :deco:`functools.lru_cache` with a *maxsize* of 32768
 is used to cache the (typed) compiled regex patterns in the following
 functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filterfalse`.
 
@@ -103,7 +103,8 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filter
 .. function:: translate(pat)
 
    Return the shell-style pattern *pat* converted to a regular expression for
-   using with :func:`re.match`. The pattern is expected to be a :class:`str`.
+   using with :func:`re.prefixmatch`. The pattern is expected to be a
+   :class:`str`.
 
    Example:
 
@@ -113,7 +114,7 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filter
       >>> regex
       '(?s:.*\\.txt)\\z'
       >>> reobj = re.compile(regex)
-      >>> reobj.match('foobar.txt')
+      >>> reobj.prefixmatch('foobar.txt')
       <re.Match object; span=(0, 10), match='foobar.txt'>
 
 

@@ -1,4 +1,0 @@
-Add :func:`!_winapi.RegisterEventSource`,
-:func:`!_winapi.DeregisterEventSource` and :func:`!_winapi.ReportEvent`.
-Using these functions in :class:`~logging.handlers.NTEventLogHandler`
-to replace :mod:`!pywin32`.

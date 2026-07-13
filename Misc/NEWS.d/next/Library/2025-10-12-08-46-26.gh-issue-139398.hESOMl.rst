@@ -1,0 +1,2 @@
+Add supported ``_sunder_`` names to the :func:`dir` method of the :mod:`enum` module
+to support them in :term:`REPL` autocompletion.

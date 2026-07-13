@@ -45,6 +45,16 @@ class MetaPathFinder(metaclass=abc.ABCMeta):
         This method is used by importlib.invalidate_caches().
         """
 
+    def discover(self, parent=None):
+        """An optional method which searches for possible specs with given *parent*
+        module spec. If *parent* is *None*, MetaPathFinder.discover will search
+        for top-level modules.
+
+        Returns an iterable of possible specs.
+        """
+        return ()
+
+
 _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
           machinery.PathFinder, machinery.WindowsRegistryFinder)
 
@@ -57,6 +67,15 @@ class PathEntryFinder(metaclass=abc.ABCMeta):
         """An optional method for clearing the finder's cache, if any.
         This method is used by PathFinder.invalidate_caches().
         """
+
+    def discover(self, parent=None):
+        """An optional method which searches for possible specs with given
+        *parent* module spec. If *parent* is *None*, PathEntryFinder.discover
+        will search for top-level modules.
+
+        Returns an iterable of possible specs.
+        """
+        return ()
 
 _register(PathEntryFinder, machinery.FileFinder)
 
