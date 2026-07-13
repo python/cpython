@@ -3,7 +3,7 @@
 Tkinter provides classes which allow the display, positioning and
 control of widgets. Toplevel widgets are Tk and Toplevel. Other
 widgets are Frame, Label, Entry, Text, Canvas, Button, Radiobutton,
-Checkbutton, Scale, Listbox, Scrollbar, OptionMenu, Spinbox
+Checkbutton, Scale, Listbox, Scrollbar, OptionMenu, Spinbox,
 LabelFrame and PanedWindow.
 
 Properties of the widgets are specified with keyword arguments.
@@ -1332,8 +1332,8 @@ class Misc:
         return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
 
     def winfo_exists(self):
-        """Return true if this widget exists."""
-        return self.tk.getint(
+        """Return True if this widget exists."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'exists', self._w))
 
     def winfo_fpixels(self, number):
@@ -1370,8 +1370,8 @@ class Misc:
             self.tk.call('winfo', 'isdark', self._w))
 
     def winfo_ismapped(self):
-        """Return true if this widget is mapped."""
-        return self.tk.getint(
+        """Return True if this widget is mapped."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'ismapped', self._w))
 
     def winfo_manager(self):
@@ -1498,8 +1498,8 @@ class Misc:
             'winfo', 'toplevel', self._w))
 
     def winfo_viewable(self):
-        """Return true if the widget and all its higher ancestors are mapped."""
-        return self.tk.getint(
+        """Return True if the widget and all its higher ancestors are mapped."""
+        return self.tk.getboolean(
             self.tk.call('winfo', 'viewable', self._w))
 
     def winfo_visual(self):
@@ -2528,7 +2528,7 @@ class Wm:
 
     def wm_iconposition(self, x=None, y=None):
         """Set the position of the icon of this widget to X and Y. Return
-        a tuple of the current values of X and X if None is given."""
+        a tuple of the current values of X and Y if None is given."""
         return self._getints(self.tk.call(
             'wm', 'iconposition', self._w, x, y))
 
@@ -2750,11 +2750,13 @@ class Tk(Misc, Wm):
         if os.path.isfile(class_tcl):
             self.tk.call('source', class_tcl)
         if os.path.isfile(class_py):
-            exec(open(class_py).read(), dir)
+            with open(class_py, 'rb') as f:
+                exec(f.read(), dir)
         if os.path.isfile(base_tcl):
             self.tk.call('source', base_tcl)
         if os.path.isfile(base_py):
-            exec(open(base_py).read(), dir)
+            with open(base_py, 'rb') as f:
+                exec(f.read(), dir)
 
     def report_callback_exception(self, exc, val, tb):
         """Report callback exception on sys.stderr.
@@ -2976,16 +2978,20 @@ class BaseWidget(Misc):
             del cnf['name']
         if not name:
             name = self.__class__.__name__.lower()
+            # Generated names are marked with a leading "+", which a user is
+            # unlikely to use, so they do not clash with explicit names.
+            # "+" is also one of the few symbols with no special meaning in
+            # canvas and text tag expressions, so the name can be used as a tag.
             if name[-1].isdigit():
-                name += "!"  # Avoid duplication when calculating names below
+                name += "+"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
             master._last_child_ids[name] = count
             if count == 1:
-                name = '!%s' % (name,)
+                name = '+%s' % (name,)
             else:
-                name = '!%s%d' % (name, count)
+                name = '+%s%d' % (name, count)
         self._name = name
         if master._w=='.':
             self._w = '.' + name
@@ -3126,6 +3132,12 @@ class Canvas(Widget, XView, YView):
         state, takefocus, width, xscrollcommand, xscrollincrement,
         yscrollcommand, yscrollincrement."""
         Widget.__init__(self, master, 'canvas', cnf, kw)
+
+    def tk_print(self):
+        """Print the contents of the canvas using the native print dialog.
+
+        Requires Tk 8.7/9.0 or newer."""
+        self.tk.call('tk', 'print', self._w)
 
     def addtag(self, *args):
         """Internal function."""
@@ -4068,6 +4080,12 @@ class Text(Widget, XView, YView):
         """
         Widget.__init__(self, master, 'text', cnf, kw)
 
+    def tk_print(self):
+        """Print the contents of the text widget using the native print dialog.
+
+        Requires Tk 8.7/9.0 or newer."""
+        self.tk.call('tk', 'print', self._w)
+
     def bbox(self, index):  # overrides Misc.bbox
         """Return a tuple of (x,y,width,height) which gives the bounding
         box of the visible part of the character at the given index."""
@@ -4207,6 +4225,8 @@ class Text(Widget, XView, YView):
         modified flag. If boolean is specified, sets the
         modified flag of the widget to arg.
         """
+        if arg is None:
+            return self.tk.getboolean(self.edit("modified"))
         return self.edit("modified", arg)
 
     def edit_redo(self):
@@ -5325,7 +5345,7 @@ class PanedWindow(Widget):
         return self.tk.call(
             (self._w, 'panecget') + (child, '-'+option))
 
-    def paneconfigure(self, tagOrId, cnf=None, **kw):
+    def paneconfigure(self, child=None, cnf=None, **kw):
         """Query or modify the configuration options for a child window.
 
         Similar to configure() except that it applies to the specified
@@ -5387,12 +5407,26 @@ class PanedWindow(Widget):
             Tk_GetPixels.
 
         """
+        if 'tagOrId' in kw:
+            if child is not None:
+                raise TypeError("paneconfigure() got values for both 'child' "
+                                "and its deprecated alias 'tagOrId'")
+            import warnings
+            warnings.warn(
+                    "The 'tagOrId' parameter of PanedWindow.paneconfigure() "
+                    "is deprecated and will be removed in Python 3.18; "
+                    "use 'child' instead.",
+                    DeprecationWarning, stacklevel=2)
+            child = kw.pop('tagOrId')
+        if child is None:
+            raise TypeError("paneconfigure() missing 1 required positional "
+                            "argument: 'child'")
         if cnf is None and not kw:
-            return self._getconfigure(self._w, 'paneconfigure', tagOrId)
+            return self._getconfigure(self._w, 'paneconfigure', child)
         if isinstance(cnf, str) and not kw:
             return self._getconfigure1(
-                self._w, 'paneconfigure', tagOrId, '-'+cnf)
-        self.tk.call((self._w, 'paneconfigure', tagOrId) +
+                self._w, 'paneconfigure', child, '-'+cnf)
+        self.tk.call((self._w, 'paneconfigure', child) +
                  self._options(cnf, kw))
 
     paneconfig = paneconfigure

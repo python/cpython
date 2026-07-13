@@ -841,7 +841,7 @@ static PyMemberDef ga_members[] = {
 };
 
 static PyObject *
-ga_parameters(PyObject *self, void *unused)
+ga_parameters_lock_held(PyObject *self)
 {
     gaobject *alias = (gaobject *)self;
     if (alias->parameters == NULL) {
@@ -851,6 +851,16 @@ ga_parameters(PyObject *self, void *unused)
         }
     }
     return Py_NewRef(alias->parameters);
+}
+
+static PyObject *
+ga_parameters(PyObject *self, void *unused)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = ga_parameters_lock_held(self);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *

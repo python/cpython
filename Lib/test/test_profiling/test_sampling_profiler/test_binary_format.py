@@ -999,9 +999,9 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
     """Tests for malformed binary files."""
 
     HDR_OFF_SAMPLES = 28
-    HDR_OFF_THREADS = 32
-    HDR_OFF_STR_TABLE = 36
-    HDR_OFF_FRAME_TABLE = 44
+    HDR_OFF_THREADS = 36
+    HDR_OFF_STR_TABLE = 40
+    HDR_OFF_FRAME_TABLE = 48
     FILE_HEADER_PLACEHOLDER_SIZE = 64
     FILE_FOOTER_SIZE = 32
     FTR_OFF_STRINGS = 0
@@ -1039,7 +1039,7 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
 
         with open(filename, "r+b") as raw:
             raw.seek(self.HDR_OFF_SAMPLES)
-            raw.write(struct.pack("=I", 2))
+            raw.write(struct.pack("=Q", 2))
 
         with BinaryReader(filename) as reader:
             self.assertEqual(reader.get_info()["sample_count"], 2)
@@ -1148,6 +1148,31 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             f"Invalid frame count {max_frames + 1} exceeds maximum "
             f"possible {max_frames}",
         )
+
+    def test_sample_count_reads_full_64_bits(self):
+        """sample_count values requiring the upper 32 bits decode correctly."""
+        filename = self.create_binary_file([], compression="none")
+        big_count = 0x1_0002_0003
+
+        with open(filename, "r+b") as raw:
+            raw.seek(self.HDR_OFF_SAMPLES)
+            raw.write(struct.pack("=Q", big_count))
+
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["sample_count"], big_count)
+
+    def test_sample_count_boundary_values(self):
+        """Values above the old u32 ceiling decode fine."""
+        filename = self.create_binary_file([], compression="none")
+
+        for value in (0xFFFFFFFF - 1, 0xFFFFFFFF, 0xFFFFFFFF + 1):
+            with self.subTest(value=value):
+                with open(filename, "r+b") as raw:
+                    raw.seek(self.HDR_OFF_SAMPLES)
+                    raw.write(struct.pack("=Q", value))
+
+                with BinaryReader(filename) as reader:
+                    self.assertEqual(reader.get_info()["sample_count"], value)
 
 
 class TestBinaryEncodings(BinaryFormatTestBase):
