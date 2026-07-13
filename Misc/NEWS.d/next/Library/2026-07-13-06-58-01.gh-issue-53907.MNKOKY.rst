@@ -1,0 +1,4 @@
+Fix :class:`urllib.request.HTTPDigestAuthHandler` and
+:class:`~urllib.request.ProxyDigestAuthHandler` not resetting their retry count
+when authentication fails.  The stale count made the handler reject valid
+credentials on all subsequent requests.
