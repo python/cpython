@@ -613,7 +613,7 @@ Packer options
 ^^^^^^^^^^^^^^
 
 For more extensive information on the packer and the options that it can take,
-see the man pages and page 183 of John Ousterhout's book.
+see the relevant man pages for details.
 
 anchor
    Anchor type.  Denotes where the packer is to place each content in its parcel.
@@ -772,7 +772,7 @@ color
    Colors can be given as the names of X colors in the rgb.txt file, or as strings
    representing RGB values in 4 bit: ``"#RGB"``, 8 bit: ``"#RRGGBB"``, 12 bit:
    ``"#RRRGGGBBB"``, or 16 bit: ``"#RRRRGGGGBBBB"`` ranges, where R,G,B here
-   represent any legal hex digit.  See page 160 of Ousterhout's book for details.
+   represent any legal hex digit.  See the Tk documentation for details.
 
 cursor
    The name of the mouse cursor to display while the pointer is over the widget.
@@ -856,8 +856,7 @@ sequence
    ``<modifier-modifier-type-detail>`` form (for example ``"<Enter>"`` or
    ``"<Control-Button-1>"``); application-defined virtual events use double angle
    brackets, as in ``"<<Paste>>"``.  (See the
-   :manpage:`bind(3tk)` man page, and page 201 of John Ousterhout's book,
-   :title-reference:`Tcl and the Tk Toolkit (2nd edition)`, for details).
+   :manpage:`bind(3tk)` man page for details).
 
 func
    is a Python function, taking one argument, to be invoked when the event occurs.
