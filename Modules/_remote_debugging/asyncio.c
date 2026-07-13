@@ -238,13 +238,14 @@ parse_task_name(
  * ============================================================================ */
 
 static int
-handle_yield_from_frame(
+get_awaited_coro_address(
     RemoteUnwinderObject *unwinder,
     uintptr_t gi_iframe_addr,
     uintptr_t gen_type_addr,
-    PyObject *render_to,
-    size_t depth
+    uintptr_t *next_coro
 ) {
+    *next_coro = 0;
+
     // Read the entire interpreter frame at once
     char iframe[SIZEOF_INTERP_FRAME];
     int err = _Py_RemoteDebug_PagedReadRemoteMemory(
@@ -300,12 +301,7 @@ handle_yield_from_frame(
                    doesn't match the type of whatever it points to
                    in its cr_await.
                 */
-                err = parse_coro_chain(unwinder, gi_await_addr, render_to,
-                                       depth + 1);
-                if (err) {
-                    set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain in yield_from");
-                    return -1;
-                }
+                *next_coro = gi_await_addr;
             }
         }
     }
@@ -313,67 +309,72 @@ handle_yield_from_frame(
     return 0;
 }
 
-int
+static int
 parse_coro_chain(
     RemoteUnwinderObject *unwinder,
     uintptr_t coro_address,
-    PyObject *render_to,
-    size_t depth
+    PyObject *render_to
 ) {
     assert((void*)coro_address != NULL);
 
-    if (depth >= MAX_FRAME_CHAIN_DEPTH) {
-        PyErr_SetString(PyExc_RuntimeError,
-            "Too many coroutine frames (possible infinite loop)");
-        set_exception_cause(unwinder, PyExc_RuntimeError,
-            "Coroutine chain depth limit exceeded");
-        return -1;
-    }
+    for (size_t depth = 0; (void*)coro_address != NULL; depth++) {
+        if (depth >= MAX_FRAME_CHAIN_DEPTH) {
+            PyErr_SetString(PyExc_RuntimeError,
+                "Too many coroutine frames (possible infinite loop)");
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Coroutine chain depth limit exceeded");
+            return -1;
+        }
 
-    // Read the entire generator object at once
-    char gen_object[SIZEOF_GEN_OBJ];
-    int err = _Py_RemoteDebug_PagedReadRemoteMemory(
-        &unwinder->handle,
-        coro_address,
-        SIZEOF_GEN_OBJ,
-        gen_object);
-    if (err < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read generator object in coro chain");
-        return -1;
-    }
+        // Read the entire generator object at once
+        char gen_object[SIZEOF_GEN_OBJ];
+        int err = _Py_RemoteDebug_PagedReadRemoteMemory(
+            &unwinder->handle,
+            coro_address,
+            SIZEOF_GEN_OBJ,
+            gen_object);
+        if (err < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read generator object in coro chain");
+            return -1;
+        }
 
-    int8_t frame_state = GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state);
-    if (frame_state == FRAME_CLEARED) {
-        return 0;
-    }
+        int8_t frame_state = GET_MEMBER(int8_t, gen_object, unwinder->debug_offsets.gen_object.gi_frame_state);
+        if (frame_state == FRAME_CLEARED) {
+            return 0;
+        }
 
-    uintptr_t gen_type_addr = GET_MEMBER(uintptr_t, gen_object, unwinder->debug_offsets.pyobject.ob_type);
+        uintptr_t gen_type_addr = GET_MEMBER(uintptr_t, gen_object, unwinder->debug_offsets.pyobject.ob_type);
 
-    PyObject* name = NULL;
+        PyObject* name = NULL;
 
-    // Parse the previous frame using the gi_iframe from local copy
-    uintptr_t prev_frame;
-    uintptr_t gi_iframe_addr = coro_address + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
-    uintptr_t address_of_code_object = 0;
-    if (parse_frame_object(unwinder, &name, gi_iframe_addr, &address_of_code_object, &prev_frame) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in coro chain");
-        return -1;
-    }
+        // Parse the previous frame using the gi_iframe from local copy
+        uintptr_t prev_frame;
+        uintptr_t gi_iframe_addr = coro_address + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
+        uintptr_t address_of_code_object = 0;
+        if (parse_frame_object(unwinder, &name, gi_iframe_addr, &address_of_code_object, &prev_frame) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in coro chain");
+            return -1;
+        }
 
-    if (!name) {
-        return 0;
-    }
+        if (!name) {
+            return 0;
+        }
 
-    if (PyList_Append(render_to, name)) {
+        if (PyList_Append(render_to, name)) {
+            Py_DECREF(name);
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame to coro chain");
+            return -1;
+        }
         Py_DECREF(name);
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame to coro chain");
-        return -1;
-    }
-    Py_DECREF(name);
 
-    if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
-        return handle_yield_from_frame(unwinder, gi_iframe_addr, gen_type_addr,
-                                       render_to, depth);
+        if (frame_state != FRAME_SUSPENDED_YIELD_FROM) {
+            return 0;
+        }
+
+        if (get_awaited_coro_address(unwinder, gi_iframe_addr, gen_type_addr,
+                                     &coro_address) < 0) {
+            return -1;
+        }
     }
 
     return 0;
@@ -419,7 +420,7 @@ create_task_result(
     coro_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
 
     if ((void*)coro_addr != NULL) {
-        if (parse_coro_chain(unwinder, coro_addr, call_stack, 0) < 0) {
+        if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain");
             goto error;
         }
