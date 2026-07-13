@@ -1074,6 +1074,24 @@ class BadFileZipImportTestCase(unittest.TestCase):
         fp.close()
         self.assertZipFailure(TESTMOD)
 
+    def testInvalidUTF8FileName(self):
+        # A central directory entry that sets the UTF-8 file name flag (0x800)
+        # but stores bytes that are not valid UTF-8 must raise ZipImportError
+        # rather than leaking a UnicodeDecodeError.
+        UTF8_FLAG = 0x800
+        name = b'\xff\xfe\xff'
+        cdh = b'PK\x01\x02' + struct.pack(
+            '<HHHHHHIIIHHHHHII',
+            20, 20, UTF8_FLAG, 0, 0, 0, 0, 50, 100,
+            len(name), 0, 0, 0, 0, 0, 0)
+        cdh += name
+        eocd = b'PK\x05\x06' + struct.pack(
+            '<HHHHIIH', 0, 0, 1, 1, len(cdh), 0, 0)
+        os_helper.unlink(TESTMOD)
+        with open(TESTMOD, 'wb') as fp:
+            fp.write(cdh + eocd)
+        self.assertZipFailure(TESTMOD)
+
     # XXX: disabled until this works on Big-endian machines
     def _testBogusZipFile(self):
         os_helper.unlink(TESTMOD)
