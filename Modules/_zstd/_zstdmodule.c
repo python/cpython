@@ -67,45 +67,52 @@ set_zstd_error(const _zstd_state *state, error_type type, size_t zstd_ret)
     }
     switch (type) {
         case ERR_DECOMPRESS:
-            msg = "Unable to decompress Zstandard data: %s";
+            msg = "Unable to decompress Zstandard data: %s (error code %llu)";
             break;
         case ERR_COMPRESS:
-            msg = "Unable to compress Zstandard data: %s";
+            msg = "Unable to compress Zstandard data: %s (error code %llu)";
             break;
         case ERR_SET_PLEDGED_INPUT_SIZE:
-            msg = "Unable to set pledged uncompressed content size: %s";
+            msg = "Unable to set pledged uncompressed content size: %s "
+                  "(error code %llu)";
             break;
 
         case ERR_LOAD_D_DICT:
             msg = "Unable to load Zstandard dictionary or prefix for "
-                  "decompression: %s";
+                  "decompression: %s (error code %llu)";
             break;
         case ERR_LOAD_C_DICT:
             msg = "Unable to load Zstandard dictionary or prefix for "
-                  "compression: %s";
+                  "compression: %s (error code %llu)";
             break;
 
         case ERR_GET_C_BOUNDS:
-            msg = "Unable to get zstd compression parameter bounds: %s";
+            msg = "Unable to get zstd compression parameter bounds: %s "
+                  "(error code %llu)";
             break;
         case ERR_GET_D_BOUNDS:
-            msg = "Unable to get zstd decompression parameter bounds: %s";
+            msg = "Unable to get zstd decompression parameter bounds: %s "
+                  "(error code %llu)";
             break;
         case ERR_SET_C_LEVEL:
-            msg = "Unable to set zstd compression level: %s";
+            msg = "Unable to set zstd compression level: %s "
+                  "(error code %llu)";
             break;
 
         case ERR_TRAIN_DICT:
-            msg = "Unable to train the Zstandard dictionary: %s";
+            msg = "Unable to train the Zstandard dictionary: %s "
+                  "(error code %llu)";
             break;
         case ERR_FINALIZE_DICT:
-            msg = "Unable to finalize the Zstandard dictionary: %s";
+            msg = "Unable to finalize the Zstandard dictionary: %s "
+                  "(error code %llu)";
             break;
 
         default:
             Py_UNREACHABLE();
     }
-    PyErr_Format(state->ZstdError, msg, ZSTD_getErrorName(zstd_ret));
+    PyErr_Format(state->ZstdError, msg, ZSTD_getErrorName(zstd_ret),
+                 (unsigned long long)zstd_ret);
 }
 
 typedef struct {
