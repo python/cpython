@@ -146,6 +146,9 @@ The modules that provide Tk support include:
 :mod:`tkinter.font`
    Utilities to help work with fonts.
 
+:mod:`tkinter.fontchooser`
+   Dialog to let the user choose a font.
+
 :mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
 
@@ -154,6 +157,9 @@ The modules that provide Tk support include:
 
 :mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
+
+:mod:`tkinter.systray`
+   System tray icon and desktop notifications.
 
 :mod:`tkinter.ttk`
    Themed widget set introduced in Tk 8.5, providing modern alternatives
@@ -539,11 +545,8 @@ arguments, or by calling the :meth:`~Misc.keys` method on that widget.
 The return value of these calls is a dictionary whose key is the name of the
 option as a string (for example, ``'relief'``) and whose values are 5-tuples.
 
-Some options, like ``bg`` are synonyms for common options with long names
-(``bg`` is shorthand for "background"). Passing the ``config()`` method the name
-of a shorthand option will return a 2-tuple, not 5-tuple. The 2-tuple passed
-back will contain the name of the synonym and the "real" option (such as
-``('bg', 'background')``).
+Some options, like ``bg``, are synonyms for common options with long names
+(``bg`` is shorthand for "background").
 
 +-------+---------------------------------+--------------+
 | Index | Meaning                         | Example      |
@@ -656,6 +659,9 @@ method on it, and to change its value you call the :meth:`!set` method.
 If you follow this protocol, the widget will always track the value of the
 variable, with no further intervention on your part.
 
+Keep a reference to the variable for as long as a widget uses it, for example
+by storing it as an attribute (see :class:`Variable`).
+
 For example::
 
    import tkinter as tk
@@ -734,6 +740,8 @@ Here are some examples of typical usage::
    myapp.mainloop()
 
 
+.. _Tk-option-data-types:
+
 Tk option data types
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -767,12 +775,16 @@ color
    represent any legal hex digit.  See page 160 of Ousterhout's book for details.
 
 cursor
-   The standard X cursor names from :file:`cursorfont.h` can be used, without the
-   ``XC_`` prefix.  For example to get a hand cursor (``XC_hand2``), use the
-   string ``"hand2"``.  You can also specify a bitmap and mask file of your own.
+   The name of the mouse cursor to display while the pointer is over the widget.
+   Tk provides a portable set of cursor names available on all platforms
+   (for example ``"arrow"``, ``"watch"``, ``"cross"``, or ``"hand2"``);
+   the standard X cursor names from :file:`cursorfont.h` may also be used,
+   without the ``XC_`` prefix (so ``XC_hand2`` becomes ``"hand2"``).
+   The full list of names, including the platform-specific ones,
+   is given in the :manpage:`cursors(3tk)` manual page.
+   You can also specify a bitmap and mask file of your own.
    On Windows a cursor file (:file:`.cur` or :file:`.ani`) may be used directly,
    giving its path preceded with an ``@``, as in ``"@C:/cursors/bart.ani"``.
-   See page 179 of Ousterhout's book.
 
 distance
    Screen distances can be specified in either pixels or absolute distances.
@@ -780,6 +792,15 @@ distance
    character denoting units: ``c`` for centimetres, ``i`` for inches, ``m`` for
    millimetres, ``p`` for printer's points.  For example, 3.5 inches is expressed
    as ``"3.5i"``.
+
+   When a screen distance option is read back (for example with :meth:`!cget`),
+   a distance with no unit suffix is returned as an :class:`int` or a :class:`float`.
+   A distance with a unit suffix depends on the screen resolution
+   and is returned as an opaque Tcl object that can be passed back to Tk.
+
+   .. versionchanged:: next
+      Screen distances with no unit suffix are returned as an :class:`int`
+      or a :class:`float`.
 
 font
    Tk uses a font description such as ``{courier 10 bold}``; in
@@ -1056,11 +1077,11 @@ Base and mixin classes
       :class:`int`.
       Raise :exc:`ValueError` if *s* is not a valid integer.
 
-   .. method:: getvar(name='PY_VAR')
+   .. method:: getvar(name)
 
       Return the value of the Tcl global variable named *name*.
 
-   .. method:: setvar(name='PY_VAR', value='1')
+   .. method:: setvar(name, value)
 
       Set the Tcl global variable named *name* to *value*.
 
@@ -1524,10 +1545,10 @@ Base and mixin classes
       This updates the display of windows, for example after geometry changes,
       but does not process events caused by the user.
 
-   .. method:: waitvar(name='PY_VAR')
+   .. method:: waitvar(name)
       :no-typesetting:
 
-   .. method:: wait_variable(name='PY_VAR')
+   .. method:: wait_variable(name)
 
       Wait until the Tcl variable *name* is modified, continuing to process
       events in the meantime so that the application stays responsive.
@@ -2057,7 +2078,7 @@ Base and mixin classes
 
    .. method:: winfo_exists()
 
-      Return ``1`` if the widget exists, ``0`` otherwise.
+      Return ``True`` if the widget exists, ``False`` otherwise.
 
    .. method:: winfo_fpixels(number)
 
@@ -2071,6 +2092,7 @@ Base and mixin classes
 
       Return the geometry of the widget, in the form ``widthxheight+x+y``.
       All dimensions are in pixels.
+      An offset can be negative; see :meth:`~Wm.geometry`.
 
    .. method:: winfo_height()
 
@@ -2105,7 +2127,7 @@ Base and mixin classes
 
    .. method:: winfo_ismapped()
 
-      Return ``1`` if the widget is currently mapped, ``0`` otherwise.
+      Return ``True`` if the widget is currently mapped, ``False`` otherwise.
 
    .. method:: winfo_manager()
 
@@ -2236,8 +2258,8 @@ Base and mixin classes
 
    .. method:: winfo_viewable()
 
-      Return ``1`` if the widget and all of its ancestors up through the
-      nearest toplevel window are mapped, ``0`` otherwise.
+      Return ``True`` if the widget and all of its ancestors up through the
+      nearest toplevel window are mapped, ``False`` otherwise.
 
    .. method:: winfo_visual()
 
@@ -2334,8 +2356,8 @@ Base and mixin classes
       If all four arguments are given, the window manager keeps the ratio
       between ``minNumer/minDenom`` and ``maxNumer/maxDenom``; passing empty
       strings removes any existing restriction.
-      With no arguments, return a tuple of the four current values, or an empty
-      string if no aspect restriction is in effect.
+      With no arguments, return a tuple of the four current values, or ``None``
+      if no aspect restriction is in effect.
       :meth:`wm_aspect` is an alias of :meth:`!aspect`.
 
    .. method:: wm_attributes(*args, return_python_dict=False, **kwargs)
@@ -2541,6 +2563,8 @@ Base and mixin classes
       *width* and *height* are in pixels (or grid units for a gridded window);
       a position preceded by ``+`` is measured from the left or top edge of the
       screen and one preceded by ``-`` from the right or bottom edge.
+      An offset can be negative, as in ``'200x100+-9+-8'``, when the window
+      edge is positioned beyond the corresponding screen edge.
       An empty string cancels any user-specified geometry, letting the window
       revert to its natural size.
       With no argument, return the current geometry as a string of the form
@@ -2558,8 +2582,8 @@ Base and mixin classes
       window's internally requested size, and *widthInc* and *heightInc* are
       the pixel sizes of a horizontal and vertical grid unit.
       Empty strings turn off gridded management.
-      With no arguments, return a tuple of the four current values, or an empty
-      string if the window is not gridded.
+      With no arguments, return a tuple of the four current values, or ``None``
+      if the window is not gridded.
       :meth:`wm_grid` is an alias of :meth:`!grid`.
 
       Not to be confused with the grid geometry manager :meth:`Grid.grid`.
@@ -2672,8 +2696,8 @@ Base and mixin classes
       Set or query a hint to the window manager about where the window's icon
       should be positioned.
       Empty strings cancel an existing hint.
-      With no arguments, return a tuple of the two current values, or an empty
-      string if no hint is in effect.
+      With no arguments, return a tuple of the two current values, or ``None``
+      if no hint is in effect.
       :meth:`wm_iconposition` is an alias of :meth:`!iconposition`.
 
    .. method:: wm_iconwindow(pathName=None)
@@ -2699,7 +2723,8 @@ Base and mixin classes
       Make *widget* a stand-alone top-level window, decorated by the window
       manager with a title bar and so on.
       Only :class:`Frame`, :class:`LabelFrame` and :class:`Toplevel` widgets
-      may be used; passing any other widget type raises an error.
+      may be used (the :mod:`tkinter.ttk` versions are **not** accepted);
+      passing any other widget type raises an error.
       :meth:`wm_manage` is an alias of :meth:`!manage`.
 
       .. versionadded:: 3.3
@@ -2741,7 +2766,8 @@ Base and mixin classes
       When this flag is set, the window is ignored by the window manager: it is
       not reparented into a decorative frame and the user cannot manipulate it
       through the usual window manager controls.
-      With no argument, return a boolean indicating whether the flag is set.
+      With no argument, return a boolean indicating whether the flag is set,
+      or ``None`` if it has not been set.
       The flag is reliably honored only when the window is first mapped or
       remapped from the withdrawn state.
       :meth:`wm_overrideredirect` is an alias of :meth:`!overrideredirect`.
@@ -3393,6 +3419,14 @@ Toplevel widgets
    profile files is the :envvar:`HOME` environment variable or, if that
    isn't defined, then :data:`os.curdir`.
 
+   .. note::
+
+      On Windows, creating a Tcl interpreter (by instantiating :class:`Tk` or
+      calling :func:`Tcl`) sets the :envvar:`HOME` environment variable for
+      the process, if it is not already set, to ``%HOMEDRIVE%%HOMEPATH%`` (or
+      :envvar:`USERPROFILE`, or ``c:\``).  This is done by Tcl and can affect
+      other code that reads :envvar:`HOME`.
+
    .. attribute:: tk
 
       The Tk application object created by instantiating :class:`Tk`.  This
@@ -3524,6 +3558,13 @@ Widget classes
    later in the list are drawn on top of earlier ones.
    A newly created item is placed at the top of the list; the order can be
    changed with :meth:`tag_raise` and :meth:`tag_lower`.
+
+   .. method:: tk_print()
+
+      Print the contents of the canvas using the native print dialog.
+      Requires Tk 8.7/9.0 or newer.
+
+      .. versionadded:: next
 
    .. method:: create_arc(*args, **kw)
                create_bitmap(*args, **kw)
@@ -4895,13 +4936,13 @@ Widget classes
       containing *child*.
       *option* may be any value allowed by :meth:`paneconfigure`.
 
-   .. method:: paneconfig(tagOrId, cnf=None, **kw)
+   .. method:: paneconfig(child, cnf=None, **kw)
       :no-typesetting:
 
-   .. method:: paneconfigure(tagOrId, cnf=None, **kw)
+   .. method:: paneconfigure(child, cnf=None, **kw)
 
       Query or modify the management options of the pane containing the widget
-      *tagOrId*.
+      *child*.
       With no options, it returns a dictionary describing all of the available
       options for the pane; given a single option name as a string, it returns
       a description of that one option; otherwise it sets the given options.
@@ -4915,6 +4956,10 @@ Widget classes
       and *stretch* (how extra space is allocated to the pane: one of
       ``'always'``, ``'first'``, ``'last'``, ``'middle'`` or ``'never'``).
       :meth:`paneconfig` is an alias of :meth:`!paneconfigure`.
+
+      .. deprecated-removed:: next 3.18
+         The first parameter was renamed from *tagOrId* to *child*.
+         The old name is still accepted as a keyword argument.
 
    .. method:: identify(x, y)
 
@@ -5336,6 +5381,13 @@ Widget classes
    to its base; several modifiers may be combined and are applied from left to
    right, for example ``'insert wordstart - 1 c'``.
 
+   .. method:: tk_print()
+
+      Print the contents of the text widget using the native print dialog.
+      Requires Tk 8.7/9.0 or newer.
+
+      .. versionadded:: next
+
    .. method:: insert(index, chars, *args)
 
       Insert the string *chars* just before the character at *index* (if
@@ -5716,7 +5768,7 @@ Widget classes
    .. method:: edit_modified(arg=None)
 
       If *arg* is omitted, return the current state of the modified flag as
-      ``0`` or ``1``; the flag is set automatically whenever the text is
+      a :class:`bool`; the flag is set automatically whenever the text is
       inserted or deleted.
       Otherwise set the flag to the boolean *arg*.
 
@@ -5906,6 +5958,14 @@ Variable classes
    In most cases you should use one of the typed subclasses below --
    :class:`StringVar`, :class:`IntVar`, :class:`DoubleVar` or
    :class:`BooleanVar` -- rather than :class:`!Variable` directly.
+
+   .. note::
+
+      When a :class:`!Variable` is garbage collected, its Tcl variable is unset.
+      Keep a reference to it for as long as a widget is linked to it, for example
+      by storing it as an attribute rather than in a local variable.
+      Otherwise Tk recreates the Tcl variable to keep the widget working, but it
+      is never unset again, leaking one Tcl variable per dropped wrapper.
 
    .. versionchanged:: 3.10
       Two variables now compare equal (``==``) only when they have the same

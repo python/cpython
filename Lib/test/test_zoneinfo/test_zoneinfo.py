@@ -1009,14 +1009,14 @@ class TZStrTest(ZoneInfoTestBase):
 
         cls._tzif_header = bytes(out)
 
-    def zone_from_tzstr(self, tzstr):
+    def zone_from_tzstr(self, tzstr, encoding="ascii"):
         """Creates a zoneinfo file following a POSIX rule."""
         zonefile = io.BytesIO(self._tzif_header)
         zonefile.seek(0, 2)
 
         # Write the footer
         zonefile.write(b"\x0A")
-        zonefile.write(tzstr.encode("ascii"))
+        zonefile.write(tzstr.encode(encoding))
         zonefile.write(b"\x0A")
 
         zonefile.seek(0)
@@ -1111,6 +1111,9 @@ class TZStrTest(ZoneInfoTestBase):
             "AAA4BBB,J1/2,J1/14",
             "AAA4BBB,J20/2,J365/2",
             "AAA4BBB,J365/2,J365/14",
+            # Leading-zero day-of-year
+            "AAA4BBB,J001/2,J065/2",
+            "AAA4BBB,001/2,065/2",
             # Extreme transition hour
             "AAA4BBB,J60/167,J300/2",
             "AAA4BBB,J60/+167,J300/2",
@@ -1150,6 +1153,13 @@ class TZStrTest(ZoneInfoTestBase):
             "+11",  # Unquoted alphanumeric
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
+            # Unquoted abbreviation with embedded or leading whitespace
+            "AB C3",
+            " A B 3",
+            "AAA4BB B,J60/2,J300/2",  # Embedded whitespace in DST
+            # Empty quoted abbreviation
+            "<>5",
+            "AAA4<>,M3.2.0/2,M11.1.0/3",
             "PST8PDT,M3.2.0/2",  # Only one transition rule
             # Invalid offset hours
             "AAA168",
@@ -1202,6 +1212,15 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid julian offset
             "AAA4BBB,J0/2,J20/2",
             "AAA4BBB,J20/2,J366/2",
+            # gh-152847: non-digit day-of-year
+            "AAA4BBB,J1_0,J300/2",
+            "AAA4BBB,J60/2,J30_0/2",
+            "AAA4BBB,1_0,J300/2",
+            "AAA4BBB,J+1,J300/2",
+            "AAA4BBB,J 1,J300/2",
+            "AAA4BBB, 1,J300/2",
+            "AAA4BBB,J0001,J300/2",
+            "AAA4BBB,0001,J300/2",
             # Invalid transition time
             "AAA4BBB,J60/2/3,J300/2",
             "AAA4BBB,J60/2,J300/2/3",
@@ -1231,6 +1250,24 @@ class TZStrTest(ZoneInfoTestBase):
                 tzstr_regex = re.escape(invalid_tzstr)
                 with self.assertRaisesRegex(ValueError, tzstr_regex):
                     self.zone_from_tzstr(invalid_tzstr)
+
+    def test_invalid_tzstr_non_ascii_abbr(self):
+        tzstr = "ABÀC3"
+        if self.module is py_zoneinfo:
+            expected = re.escape(tzstr)
+        else:
+            expected = re.escape(repr(tzstr.encode("utf-8")))
+        with self.assertRaisesRegex(ValueError, expected):
+            self.zone_from_tzstr(tzstr, encoding="utf-8")
+
+    def test_invalid_tzstr_non_ascii_dst_date(self):
+        tzstr = "AAA4BBB,J١,J300/2"
+        if self.module is py_zoneinfo:
+            expected = re.escape(tzstr)
+        else:
+            expected = re.escape(repr(tzstr.encode("utf-8")))
+        with self.assertRaisesRegex(ValueError, expected):
+            self.zone_from_tzstr(tzstr, encoding="utf-8")
 
     @classmethod
     def _populate_test_cases(cls):

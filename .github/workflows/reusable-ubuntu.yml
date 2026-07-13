@@ -39,7 +39,7 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         persist-credentials: false
     - name: Register gcc problem matcher
@@ -49,9 +49,9 @@ jobs:
     - name: Install Clang and BOLT
       if: ${{ fromJSON(inputs.bolt-optimizations) }}
       run: |
-        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
-        sudo apt-get install --no-install-recommends bolt-19
-        echo PATH="$(llvm-config-19 --bindir):$PATH" >> $GITHUB_ENV
+        # On ubuntu-26.04 image, LLVM is LLVM-21 by default
+        sudo apt-get install --no-install-recommends bolt-21
+        echo PATH="$(llvm-config-21 --bindir):$PATH" >> $GITHUB_ENV
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"

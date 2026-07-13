@@ -2255,7 +2255,7 @@ class TarFile(object):
             type = FIFOTYPE
         elif stat.S_ISLNK(stmd):
             type = SYMTYPE
-            linkname = os.readlink(name)
+            linkname = os.readlink(name).replace(os.sep, "/")
         elif stat.S_ISCHR(stmd):
             type = CHRTYPE
         elif stat.S_ISBLK(stmd):
@@ -2534,7 +2534,8 @@ class TarFile(object):
         tarinfo, unfiltered = self._get_extract_tarinfo(
             member, filter_function, path)
         if tarinfo is not None:
-            self._extract_one(tarinfo, path, set_attrs, numeric_owner)
+            self._extract_one(tarinfo, path, set_attrs, numeric_owner,
+                              filter_function=filter_function)
 
     def _get_extract_tarinfo(self, member, filter_function, path):
         """Get (filtered, unfiltered) TarInfos from *member*

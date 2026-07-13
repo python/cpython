@@ -908,13 +908,13 @@ _PyImport_SwapPackageContext(const char *newcontext)
 int
 _PyImport_GetDLOpenFlags(PyInterpreterState *interp)
 {
-    return DLOPENFLAGS(interp);
+    return FT_ATOMIC_LOAD_INT_RELAXED(DLOPENFLAGS(interp));
 }
 
 void
 _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val)
 {
-    DLOPENFLAGS(interp) = new_val;
+    FT_ATOMIC_STORE_INT_RELAXED(DLOPENFLAGS(interp), new_val);
 }
 #endif  // HAVE_DLOPEN
 
@@ -4539,7 +4539,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         }
         if (fromlist == NULL) {
             assert(!PyErr_Occurred());
-            fromlist = Py_NewRef(Py_None);
+            fromlist = Py_None;
         }
         PyObject *args[] = {modname, abs_name, fromlist};
         PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
@@ -4568,8 +4568,19 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     // here, 'filter' is either NULL or is equivalent to a borrowed reference
+    if (fromlist && PyUnicode_Check(fromlist)) {
+        fromlist = PyTuple_Pack(1, fromlist);
+        if (fromlist == NULL) {
+            Py_DECREF(abs_name);
+            return NULL;
+        }
+    }
+    else {
+        Py_XINCREF(fromlist);
+    }
     PyObject *res = _PyLazyImport_New(frame, builtins, abs_name, fromlist);
     if (res == NULL) {
+        Py_XDECREF(fromlist);
         Py_DECREF(abs_name);
         return NULL;
     }
@@ -4580,13 +4591,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         goto error;
     }
 
-    if (fromlist && PyUnicode_Check(fromlist)) {
-        if (register_from_lazy_on_parent(tstate, abs_name, fromlist) < 0) {
-            goto error;
-        }
-    }
-    else if (fromlist && PyTuple_Check(fromlist) &&
-             PyTuple_GET_SIZE(fromlist)) {
+    if (fromlist && PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist)) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(fromlist); i++) {
             if (register_from_lazy_on_parent(tstate, abs_name,
                                              PyTuple_GET_ITEM(fromlist, i)) < 0)
@@ -4599,9 +4604,11 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         goto error;
     }
 
+    Py_XDECREF(fromlist);
     Py_DECREF(abs_name);
     return res;
 error:
+    Py_XDECREF(fromlist);
     Py_DECREF(abs_name);
     Py_DECREF(res);
     return NULL;
