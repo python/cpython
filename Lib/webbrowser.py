@@ -73,7 +73,7 @@ def get(using=None):
 # It is recommended one does "import webbrowser" and uses webbrowser.open(url)
 # instead of "from webbrowser import *".
 
-def open(url, new=0, autoraise=True):
+def open(url, new=0, autoraise=True, kiosk=False):
     """Display url using the default browser.
 
     If possible, open url in a location determined by new.
@@ -81,6 +81,9 @@ def open(url, new=0, autoraise=True):
     - 1: a new browser window.
     - 2: a new browser page ("tab").
     If possible, autoraise raises the window (the default) or not.
+
+    If kiosk is true, open the url in kiosk/full-screen mode
+    (supported by Chrome, Firefox, and Edge).
 
     If opening the browser succeeds, return True.
     If there is a problem, return False.
@@ -91,7 +94,7 @@ def open(url, new=0, autoraise=True):
                 register_standard_browsers()
     for name in _tryorder:
         browser = get(name)
-        if browser.open(url, new, autoraise):
+        if browser.open(url, new, autoraise, kiosk=kiosk):
             return True
     return False
 
@@ -155,7 +158,7 @@ class BaseBrowser:
         self.name = name
         self.basename = name
 
-    def open(self, url, new=0, autoraise=True):
+    def open(self, url, new=0, autoraise=True, kiosk=False):
         raise NotImplementedError
 
     def open_new(self, url):
@@ -185,11 +188,13 @@ class GenericBrowser(BaseBrowser):
             self.args = name[1:]
         self.basename = os.path.basename(self.name)
 
-    def open(self, url, new=0, autoraise=True):
+    def open(self, url, new=0, autoraise=True, kiosk=False):
         sys.audit("webbrowser.open", url)
         self._check_url(url)
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
+        if kiosk:
+            cmdline.append("--kiosk")
         try:
             if sys.platform[:3] == 'win':
                 p = subprocess.Popen(cmdline)
@@ -204,11 +209,13 @@ class BackgroundBrowser(GenericBrowser):
     """Class for all browsers which are to be started in the
        background."""
 
-    def open(self, url, new=0, autoraise=True):
+    def open(self, url, new=0, autoraise=True, kiosk=False):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         sys.audit("webbrowser.open", url)
         self._check_url(url)
+        if kiosk:
+            cmdline.append("--kiosk")
         try:
             if sys.platform[:3] == 'win':
                 p = subprocess.Popen(cmdline)
@@ -273,7 +280,7 @@ class UnixBrowser(BaseBrowser):
         else:
             return not p.wait()
 
-    def open(self, url, new=0, autoraise=True):
+    def open(self, url, new=0, autoraise=True, kiosk=False):
         sys.audit("webbrowser.open", url)
         if new == 0:
             action = self.remote_action
@@ -293,6 +300,8 @@ class UnixBrowser(BaseBrowser):
         args = [arg.replace("%action", action).replace("%s", url)
                 for arg in self.remote_args]
         args = [arg for arg in args if arg]
+        if kiosk:
+            args.append("--kiosk")
         success = self._invoke(args, True, autoraise, url)
         if not success:
             # remote invocation failed, try straight way
@@ -366,7 +375,7 @@ class Konqueror(BaseBrowser):
     for more information on the Konqueror remote-control interface.
     """
 
-    def open(self, url, new=0, autoraise=True):
+    def open(self, url, new=0, autoraise=True, kiosk=False):
         sys.audit("webbrowser.open", url)
         self._check_url(url)
         # XXX Currently I know no way to prevent KFM from opening a new win.
@@ -603,7 +612,7 @@ def register_standard_browsers():
 
 if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
-        def open(self, url, new=0, autoraise=True):
+        def open(self, url, new=0, autoraise=True, kiosk=False):
             sys.audit("webbrowser.open", url)
             self._check_url(url)
             try:
@@ -671,7 +680,7 @@ if sys.platform == 'darwin':
             'brave browser':  'com.brave.Browser',
         }
 
-        def open(self, url, new=0, autoraise=True):
+        def open(self, url, new=0, autoraise=True, kiosk=False):
             sys.audit("webbrowser.open", url)
             self._check_url(url)
             if self.name == 'default':
@@ -696,7 +705,7 @@ if sys.platform == 'darwin':
             warnings._deprecated("webbrowser.MacOSXOSAScript", remove=(3, 17))
             super().__init__(name)
 
-        def open(self, url, new=0, autoraise=True):
+        def open(self, url, new=0, autoraise=True, kiosk=False):
             sys.audit("webbrowser.open", url)
             self._check_url(url)
             url = url.replace('"', '%22')
@@ -753,7 +762,7 @@ if sys.platform == "ios":
         from ctypes import c_void_p, c_char_p, c_ulong
 
     class IOSBrowser(BaseBrowser):
-        def open(self, url, new=0, autoraise=True):
+        def open(self, url, new=0, autoraise=True, kiosk=False):
             sys.audit("webbrowser.open", url)
             self._check_url(url)
             # If ctypes isn't available, we can't open a browser
