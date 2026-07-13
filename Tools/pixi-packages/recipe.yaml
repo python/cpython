@@ -1,6 +1,7 @@
 context:
-  # Keep up to date
   freethreading_tag: ${{ "t" if "freethreading" in variant else "" }}
+  abi_prefix: ${{ (variant | split("_"))[0] + "_" if "san" in variant else "" }}
+  abi_tag: ${{ abi_prefix }}cp${{ (version | split('.'))[:2] | join('') }}
 
 recipe:
   name: python
