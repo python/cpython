@@ -2436,9 +2436,8 @@ class PaxWriteTest(GNUWriteTest):
             tar.close()
 
     def _make_malformed_gnusparse_tar(self, pax_entries, following=b""):
-        # Build an in-memory tar whose pax extended ('x') header carries the
-        # given GNU.sparse.* records, followed by a regular file member (and
-        # optionally a leading data block for the sparse-1.0 map).
+        # Build an in-memory tar: a pax ('x') header with the given
+        # GNU.sparse.* records, then a file member (and any `following` data).
         def pax_record(key, value):
             kv = key.encode() + b"=" + value.encode() + b"\n"
             n = len(kv)
@@ -2472,9 +2471,8 @@ class PaxWriteTest(GNUWriteTest):
         return io.BytesIO(blocks)
 
     def test_pax_gnusparse_bad_number(self):
-        # A malformed GNU sparse number in a pax extended header is reported
-        # through InvalidHeaderError instead of a bare ValueError, so the
-        # reader stops cleanly like it does for the GNU sparse 0.0 format.
+        # A malformed GNU sparse number surfaces as InvalidHeaderError, not a
+        # bare ValueError, so the reader stops (getmembers() truncates).
         cases = [
             [("GNU.sparse.map", "1,notanumber")],       # sparse 0.1
             [("GNU.sparse.size", "notanumber")],
