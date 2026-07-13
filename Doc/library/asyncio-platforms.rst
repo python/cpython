@@ -68,12 +68,8 @@ All event loops on Windows do not support the following methods:
   methods are not supported.
 
 * :meth:`loop.connect_read_pipe` and :meth:`loop.connect_write_pipe` only
-  accept a handle opened for overlapped I/O, which in practice means a named
-  pipe such as those created by :func:`!asyncio.windows_utils.pipe`.  A
-  console handle cannot be associated with an I/O completion port, so
-  :data:`sys.stdin`, :data:`sys.stdout` and :data:`sys.stderr` are not
-  supported.  See :ref:`Supported pipe objects <asyncio-pipe-objects>` for
-  how such a handle is rejected, which differs between the two methods.
+  accept a handle opened for overlapped I/O.
+  See :ref:`Supported pipe objects <asyncio-pipe-objects>` for which objects are supported.
 
 The resolution of the monotonic clock on Windows is usually around 15.6
 milliseconds.  The best resolution is 0.5 milliseconds. The resolution depends on the

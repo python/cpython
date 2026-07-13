@@ -347,12 +347,12 @@ class ProactorPipeObjectSupportTests(unittest.TestCase):
 
         async def run():
             transport, _ = await self.loop.connect_read_pipe(Proto, pipe)
-            await lost
+            exc = await lost
             transport.close()
+            return exc
 
-        self.loop.run_until_complete(run())
-        self.assertTrue(self.errors, 'no error reached the exception handler')
-        self.assertIsInstance(self.errors[0]['exception'], OSError)
+        exc = self.loop.run_until_complete(run())
+        self.assertIsInstance(exc, OSError)
 
     def check_write_rejected(self, pipe):
         self.addCleanup(pipe.close)
@@ -360,10 +360,9 @@ class ProactorPipeObjectSupportTests(unittest.TestCase):
             self.loop.run_until_complete(
                 self.loop.connect_write_pipe(asyncio.BaseProtocol, pipe))
 
-    def test_overlapped_pipe(self):
-        rhandle, whandle = windows_utils.pipe(overlapped=(True, True))
-        rpipe = windows_utils.PipeHandle(rhandle)
-        wpipe = windows_utils.PipeHandle(whandle)
+    def check_accepted(self, rpipe, wpipe):
+        self.addCleanup(rpipe.close)
+        self.addCleanup(wpipe.close)
 
         chunks = []
         lost = self.loop.create_future()
@@ -389,6 +388,15 @@ class ProactorPipeObjectSupportTests(unittest.TestCase):
         self.assertEqual(b''.join(chunks), b'spam')
         self.assertFalse(self.errors)
 
+    def test_overlapped_pipe(self):
+        rhandle, whandle = windows_utils.pipe(duplex=True, overlapped=(True, True))
+        self.check_accepted(windows_utils.PipeHandle(rhandle),
+                            windows_utils.PipeHandle(whandle))
+
+    def test_socketpair(self):
+        rsock, wsock = socket.socketpair()
+        self.check_accepted(rsock, wsock)
+
     def test_read_non_overlapped_pipe(self):
         rhandle, whandle = windows_utils.pipe(overlapped=(False, False))
         self.addCleanup(windows_utils.PipeHandle(whandle).close)
@@ -408,6 +416,16 @@ class ProactorPipeObjectSupportTests(unittest.TestCase):
     def test_write_regular_file(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         self.check_write_rejected(open(os_helper.TESTFN, 'wb', 0))
+
+    def test_read_os_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, wfd)
+        self.check_read_rejected(open(rfd, 'rb', 0))
+
+    def test_write_os_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.check_write_rejected(open(wfd, 'wb', 0))
 
 
 if __name__ == '__main__':

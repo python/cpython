@@ -1312,8 +1312,13 @@ following:
 * a character device, such as a terminal.
 
 On Windows, where only :class:`ProactorEventLoop` implements these methods,
-*pipe* must wrap a handle opened for overlapped I/O, since the handle has to
-be associated with an I/O completion port.
+*pipe* must wrap a handle opened for overlapped I/O (that is, created with the
+``FILE_FLAG_OVERLAPPED`` flag), since the handle has to be associated with an
+I/O completion port.  Handles that were not opened for overlapped I/O are
+rejected.  In particular, the standard streams (:data:`sys.stdin`,
+:data:`sys.stdout` and :data:`sys.stderr`), console handles, and the pipes
+created by :func:`os.pipe` are **not** opened for overlapped I/O and therefore
+cannot be used with these methods.
 
 .. note::
 
