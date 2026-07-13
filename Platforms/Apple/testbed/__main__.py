@@ -74,12 +74,6 @@ def xcode_test(location: Path, platform: str, simulator: str, verbose: bool):
     ]
     verbosity_args = [] if verbose else ["-quiet"]
 
-    print("Diagnostic - show xcodebuild destinations...")
-    subprocess.run(
-        ["xcodebuild", "-scheme", f"{platform}Testbed", "-showdestinations"],
-        check=True,
-    )
-
     print("Building test project...")
     subprocess.run(
         ["xcodebuild", "build-for-testing"] + args + verbosity_args,

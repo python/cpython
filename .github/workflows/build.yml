@@ -367,11 +367,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: List simulators
-        run: xcrun simctl list
-
       - name: Build and test
-        run: python3 Platforms/Apple ci iOS --fast-ci --simulator 'iPhone 17e,OS=26.5'
+        run: python3 Platforms/Apple ci iOS --fast-ci
 
   build-emscripten:
     name: 'Emscripten'
