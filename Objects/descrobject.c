@@ -1232,8 +1232,29 @@ mappingproxy_traverse(PyObject *self, visitproc visit, void *arg)
 static PyObject *
 mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
-    mappingproxyobject *v = (mappingproxyobject *)self;
     if (op == Py_EQ || op == Py_NE) {
+        mappingproxyobject *v = (mappingproxyobject *)self;
+        // We have to guard the mutable `dict` instances, because it can
+        // otherwise mutate the type's `__dict__` entries and cause crashes.
+        // But, do not create copies on known types like `OrderedDict`
+        // or immutable types like `frozendict`
+        // for memory optimization. See gh-152405 for the details.
+        if (
+            PyDict_CheckExact(v->mapping) &&
+            !(PyAnyDict_CheckExact(w) ||
+                Py_TYPE(w) == &PyDictProxy_Type ||
+                PyODict_CheckExact(w))
+        ) {
+            // So, instead we send a copy:
+            PyObject *copy = PyDict_Copy(v->mapping);
+            if (copy == NULL) {
+                return NULL;
+            }
+            PyObject *res = PyObject_RichCompare(copy, w, op);
+            Py_DECREF(copy);
+            return res;
+        }
+        // Otherwise we are free to share the mapping directly:
         return PyObject_RichCompare(v->mapping, w, op);
     }
     Py_RETURN_NOTIMPLEMENTED;
