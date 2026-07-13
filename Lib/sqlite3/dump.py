@@ -80,11 +80,15 @@ def _iterdump(connection, *, filter=None):
         table_name_ident = _quote_name(table_name)
         res = cu.execute(f'PRAGMA table_info({table_name_ident})')
         column_names = [str(table_info[1]) for table_info in res.fetchall()]
-        q = "SELECT 'INSERT INTO {0} VALUES('{1}')' FROM {0};".format(
-            table_name_ident,
+        # In the string-literal copy any single quote must be doubled;
+        # the FROM clause below uses the identifier form as-is.
+        table_name_literal = table_name_ident.replace("'", "''")
+        q = "SELECT 'INSERT INTO {0} VALUES('{1}')' FROM {2};".format(
+            table_name_literal,
             "','".join(
                 "||quote({0})||".format(_quote_name(col)) for col in column_names
-            )
+            ),
+            table_name_ident,
         )
         query_res = cu.execute(q)
         for row in query_res:
