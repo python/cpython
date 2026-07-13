@@ -586,6 +586,8 @@ their values.  This is meant only as an example.
 
 .. _pack-the-packer:
 .. _tkinter-geometry-management:
+.. _the-packer:
+.. _packer-options:
 
 Geometry management
 ^^^^^^^^^^^^^^^^^^^
