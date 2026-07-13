@@ -211,6 +211,10 @@ class HTTPMessage(email.message.Message):
         import warnings
         warnings._deprecated(
             "http.client.HTTPMessage.getallmatchingheaders",
+            message=(
+                "{name!r} is deprecated and slated for removal in Python "
+                "{remove}. Use email.message.Message.get_all() instead."
+            ),
             remove=(3, 18),
         )
         name = name.lower() + ':'
