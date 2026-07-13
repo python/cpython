@@ -1174,9 +1174,9 @@ on using nuget. What follows is a summary that is sufficient for Python
 developers.
 
 The ``nuget.exe`` command line tool may be downloaded directly from
-``https://aka.ms/nugetclidl``, for example, using curl or PowerShell. With the
-tool, the latest version of Python for 64-bit or 32-bit machines is installed
-using::
+``https://dist.nuget.org/win-x86-commandline/latest/nuget.exe``, for example,
+using curl or PowerShell. With the tool, the latest version of Python for
+64-bit or 32-bit machines is installed using::
 
    nuget.exe install python -ExcludeVersion -OutputDirectory .
    nuget.exe install pythonx86 -ExcludeVersion -OutputDirectory .

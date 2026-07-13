@@ -1398,6 +1398,14 @@ shelve
   (Contributed by Furkan Onder in :gh:`99631`.)
 
 
+shutil
+------
+
+* :func:`shutil.copyfile` now also raises :exc:`~shutil.SpecialFileError` for
+  sockets and device files.
+  (Contributed by Savannah Ostrowski in :gh:`142693`.)
+
+
 socket
 ------
 
@@ -1541,6 +1549,9 @@ tarfile
   now replace slashes with backslashes in symlink targets on Windows to prevent
   creation of corrupted links.
   (Contributed by Christoph Walcher in :gh:`57911`.)
+* :func:`~tarfile.TarFile.gettarinfo` now replaces backslashes with slashes in
+  symlink targets on Windows to conform to the tar format standard. (Contributed
+  by Daniele Nicolodi in :gh:`151669`.)
 
 
 threading
@@ -2279,6 +2290,11 @@ New deprecations
     object is deprecated and will be removed in Python 3.20.
 
     (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
+
+  * Using ``'F'`` and ``'D'`` type codes now are :term:`soft deprecated`
+    in favor of two-letter forms ``'Zf'`` and ``'Zd'``.
+    (Contributed by Sergey B Kirpichev in :gh:`121249`.)
+
 
 * :mod:`typing`:
 

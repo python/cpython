@@ -1,15 +1,18 @@
 import functools
 import inspect
 import os
+import platform
+import select
 import string
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation, MISSING_C_DOCSTRINGS,
-                          gc_collect)
+                          gc_collect, SHORT_TIMEOUT)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -26,6 +29,9 @@ try:
 except ImportError:
     pass
 
+# Only reachable once curses imported, so the platform has fcntl too.
+import fcntl
+
 def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
                                'requires curses.%s' % name)
@@ -40,6 +46,31 @@ def requires_curses_window_meth(name):
         return wrapped
     return deco
 
+def _wide_build():
+    # True on a build that stores wide-character cells (built against ncursesw).
+    # A wide build accepts a spacing character plus a combining mark in a single
+    # cell; a narrow build accepts only one character per cell.  This stays a
+    # reliable wide/narrow signal even as the wide-character functions (get_wch()
+    # and friends) become available on narrow builds too, because the
+    # multi-codepoint cell capacity itself is build-specific.
+    if not hasattr(curses, 'complexchar'):
+        return hasattr(curses.window, 'get_wch')
+    try:
+        curses.complexchar('e\u0301')  # 'e' + combining acute: two code points
+    except ValueError:
+        return False
+    return True
+
+WIDE_BUILD = _wide_build()
+
+def requires_wide_build(test):
+    @functools.wraps(test)
+    def wrapped(self, *args, **kwargs):
+        if not WIDE_BUILD:
+            raise unittest.SkipTest('requires a wide-character curses build')
+        test(self, *args, **kwargs)
+    return wrapped
+
 
 def requires_colors(test):
     @functools.wraps(test)
@@ -53,9 +84,29 @@ def requires_colors(test):
 term = os.environ.get('TERM')
 SHORT_MAX = 0x7fff
 
-# If newterm was supported we could use it instead of initscr and not exit
+# ncurses before 6.5 can crash on repeated newterm().  Fall back to initscr()
+# and skip the tests that need several screens.
+_ncurses_version = getattr(curses, 'ncurses_version', None)
+BROKEN_NEWTERM = _ncurses_version is not None and _ncurses_version < (6, 5)
+USE_NEWTERM = hasattr(curses, 'newterm') and not BROKEN_NEWTERM
+
+# Older macOS reports a variation selector as a spacing character (wcwidth()
+# == 1) rather than a combining mark, so it cannot share a cell with its base.
+# The failure is confirmed on 14.2 and gone by 26, so skip below 26.
+def _broken_variation_selector_width():
+    if sys.platform == 'darwin':
+        mac_ver = platform.mac_ver()[0]
+        if mac_ver:
+            return tuple(map(int, mac_ver.split('.'))) < (26,)
+    return False
+
+BROKEN_VARIATION_SELECTOR_WIDTH = _broken_variation_selector_width()
+
+# newterm() is used when available (it reports errors instead of exiting), but
+# initscr() is still the fallback, and an unusable $TERM has no terminal to
+# drive either way.
 @unittest.skipIf(not term or term == 'unknown',
-                 "$TERM=%r, calling initscr() may cause exit" % term)
+                 "$TERM=%r, no usable terminal" % term)
 @unittest.skipIf(sys.platform == "cygwin",
                  "cygwin's curses mostly just hangs")
 class TestCurses(unittest.TestCase):
@@ -110,7 +161,33 @@ class TestCurses(unittest.TestCase):
             sys.stderr.flush()
             sys.stdout.flush()
             print(file=self.output, flush=True)
-        self.stdscr = curses.initscr()
+        if USE_NEWTERM:
+            # Use newterm() rather than initscr(): it reports errors instead of
+            # exiting, and gives each test a fresh screen, which also lets
+            # ScreenTests run newterm()/set_term() in the same process.
+            try:
+                infd = sys.__stdin__.fileno()
+                if fcntl.fcntl(infd, fcntl.F_GETFL) & os.O_ACCMODE == os.O_WRONLY:
+                    # newterm() needs a readable input fd; a write-only stdin
+                    # (as nohup leaves for a backgrounded run) fails with EINVAL.
+                    infd = stdout_fd
+            except (AttributeError, ValueError, OSError):
+                infd = stdout_fd
+            self.screen = curses.newterm(term, stdout_fd, infd)
+            self.stdscr = self.screen.stdscr
+            # Close the screen after the test to break its window<->screen
+            # reference cycle deterministically, rather than leaving it for the
+            # cyclic GC to collect during a much later test (where a window's
+            # delwin() can fail -- an unraisable error on macOS).
+            self.addCleanup(self.screen.close)
+            self.addCleanup(setattr, self, 'screen', None)
+            self.addCleanup(setattr, self, 'stdscr', None)
+        else:
+            # Tests share one initscr() screen; clear the rendition and
+            # background so a previous test's does not bleed in.
+            self.stdscr = curses.initscr()
+            self.stdscr.attrset(curses.A_NORMAL)
+            self.stdscr.bkgdset(' ')
         if self.isatty:
             curses.savetty()
             self.addCleanup(curses.endwin)
@@ -119,10 +196,12 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('filter')
     def test_filter(self):
-        # TODO: Should be called before initscr() or newterm() are called.
+        # filter() must be called before initscr()/newterm(); it confines
+        # curses to a single line.  Undo it with nofilter() afterwards so that
+        # it does not shrink the screens created by later tests.
         curses.filter()
         if hasattr(curses, 'nofilter'):
-            curses.nofilter()
+            self.addCleanup(curses.nofilter)
 
     @requires_curses_func('use_env')
     def test_use_env(self):
@@ -194,6 +273,35 @@ class TestCurses(unittest.TestCase):
         del win2
         gc_collect()
 
+    def test_dupwin(self):
+        win = curses.newwin(5, 10, 2, 3)
+        win.addstr(0, 0, 'ABCDE')
+        win.addstr(1, 0, 'fghij')
+        dup = win.dupwin()
+        # Same geometry and contents as the original.
+        self.assertEqual(dup.getbegyx(), win.getbegyx())
+        self.assertEqual(dup.getmaxyx(), win.getmaxyx())
+        self.assertEqual(dup.instr(0, 0, 5), b'ABCDE')
+        self.assertEqual(dup.instr(1, 0, 5), b'fghij')
+        # The duplicate is independent, not a subwindow.
+        if hasattr(dup, 'is_subwin'):
+            self.assertIs(dup.is_subwin(), False)
+            self.assertIsNone(dup.getparent())
+        # Changes to one do not affect the other.
+        dup.addstr(0, 0, 'xxxxx')
+        win.addstr(1, 0, 'YYYYY')
+        self.assertEqual(win.instr(0, 0, 5), b'ABCDE')
+        self.assertEqual(dup.instr(0, 0, 5), b'xxxxx')
+        self.assertEqual(dup.instr(1, 0, 5), b'fghij')
+        self.assertEqual(win.instr(1, 0, 5), b'YYYYY')
+        # A subwindow can also be duplicated; the duplicate is independent.
+        sub = win.subwin(3, 5, 2, 3)
+        subdup = sub.dupwin()
+        self.assertEqual(subdup.getmaxyx(), sub.getmaxyx())
+        if hasattr(subdup, 'is_subwin'):
+            self.assertIs(subdup.is_subwin(), False)
+            self.assertIsNone(subdup.getparent())
+
     def test_move_cursor(self):
         stdscr = self.stdscr
         win = stdscr.subwin(10, 15, 2, 5)
@@ -253,6 +361,384 @@ class TestCurses(unittest.TestCase):
                 self.assertIs(win.is_wintouched(), syncok)
                 self.assertIs(stdscr.is_wintouched(), syncok)
 
+    # Many tests below use a common set of non-ASCII cases, each applied only
+    # when the window encoding can represent it -- so the whole suite is meant to
+    # be run under several locales (e.g. ISO-8859-1, ISO-8859-15, KOI8-U):
+    #   'A'/'a'      ASCII
+    #   'é'          common to the Latin encodings
+    #   '¤'/'€'/'є'  byte 0xA4 in ISO-8859-1 / ISO-8859-15 / KOI8-U
+    # Precomposed characters are used so a round-trip does not depend on the form.
+    # On a narrow (non-wide) build a cell holds one byte, so cases that need a
+    # combining sequence or a multibyte character are guarded with _storable().
+
+    def _encodable(self, s):
+        # Wide characters are only supported in a locale that can encode them.
+        try:
+            s.encode(self.stdscr.encoding)
+        except UnicodeEncodeError:
+            return False
+        return True
+
+    def _storable(self, s):
+        # Text the current build can place in character cells.  A wide build
+        # stores any locale-encodable text (combining sequences and multibyte
+        # characters included).  A narrow build has no wide-character cells, so
+        # each character must occupy a single cell -- that is, encode to exactly
+        # one byte.
+        if not self._encodable(s):
+            return False
+        if WIDE_BUILD:
+            return True
+        return len(s.encode(self.stdscr.encoding)) == len(s)
+
+    def _read_char(self, y, x):
+        # The character written to a cell, read back for output checks.  inch()
+        # is unusable here: on a wide build it returns the low 8 bits of the
+        # character's code point rather than its locale-encoded byte, mangling
+        # anything outside Latin-1.  in_wch() reads the wide cell directly;
+        # without it, instr() re-encodes the cell to the window encoding.
+        stdscr = self.stdscr
+        if hasattr(stdscr, 'in_wch'):
+            return str(stdscr.in_wch(y, x))
+        return stdscr.instr(y, x, 1).decode(stdscr.encoding)
+
+    @requires_wide_build
+    def test_addch_combining(self):
+        stdscr = self.stdscr
+        stdscr.move(0, 0)
+        # A character cell may hold a spacing char plus combining marks.
+        if self._encodable('e\u0301'):
+            stdscr.addch('e\u0301')              # 'e' + COMBINING ACUTE ACCENT
+        if self._encodable('a\u0323\u0300'):
+            stdscr.addch(1, 0, 'a\u0323\u0300')  # base plus two combining marks
+        # Too many code points to fit in a single character cell.
+        self.assertRaises(TypeError, stdscr.addch, 'e' + '\u0301' * 10)
+        # Only the first code point may be a spacing character.
+        self.assertRaises(ValueError, stdscr.addch, 'ab')
+        self.assertRaises(ValueError, stdscr.addch, 'a\u0301b')
+        # A lone control character is allowed (like addch(ord('\n'))), but it
+        # cannot be combined with other characters, as base or otherwise.
+        stdscr.addch('\n')
+        self.assertRaises(ValueError, stdscr.addch, 'a\n')
+        self.assertRaises(ValueError, stdscr.addch, '\n\u0301')
+        self.assertRaises(ValueError, stdscr.addch, '\ne\u0301')
+
+    @requires_wide_build
+    def test_addch_emoji(self):
+        # curses has no grapheme-cluster support: a cell holds one spacing
+        # character plus zero-width combining characters.  A lone emoji fits,
+        # as does an emoji with a zero-width variation selector.
+        stdscr = self.stdscr
+        if self._encodable('\U0001f600'):
+            stdscr.addch(0, 0, '\U0001f600')          # single emoji
+        # Skip the variation selector where the platform reports it as spacing.
+        if not BROKEN_VARIATION_SELECTOR_WIDTH and self._encodable('\u263a\ufe0f'):
+            stdscr.addch(1, 0, '\u263a\ufe0f')        # WHITE SMILING FACE + VS-16
+        # An emoji ZWJ sequence or an emoji with a modifier is more than one
+        # spacing character and cannot share a single cell.
+        self.assertRaises(ValueError, stdscr.addch,
+                          '\U0001f44d\U0001f3fd')          # thumbs up + skin tone
+        self.assertRaises(ValueError, stdscr.addch,
+                          '\U0001f468\u200d\U0001f469')    # man ZWJ woman
+
+    @requires_wide_build
+    def test_wide_characters(self):
+        # Wide and combining characters in the character-cell methods.
+        stdscr = self.stdscr
+        combining = 'e\u0301'              # 'e' + COMBINING ACUTE ACCENT
+        vline, hline = '\u2502', '\u2500'  # box-drawing vertical/horizontal
+        stdscr.move(0, 0)
+        if self._encodable(combining):
+            stdscr.echochar(combining)
+            stdscr.insch(1, 0, combining)
+            stdscr.bkgdset(combining)
+            stdscr.bkgd(combining)
+        if self._encodable(hline):
+            stdscr.hline(2, 0, hline, 5)
+        if self._encodable(vline):
+            stdscr.vline(3, 0, vline, 3)
+        if self._encodable(vline + hline):
+            stdscr.border(vline, vline, hline, hline)
+            stdscr.box(vline, hline)
+        # border() and box() cannot mix integer and wide-string characters.
+        self.assertRaises(TypeError, stdscr.box, vline, ord('-'))
+
+    def test_complexchar_in_cell_methods(self):
+        # Every single-character-cell method also accepts a complexchar, whose
+        # attributes and color pair come from the cell itself.
+        stdscr = self.stdscr
+        cc = curses.complexchar('A', curses.A_BOLD)
+        v = curses.complexchar('|')
+        h = curses.complexchar('-')
+        stdscr.move(0, 0)
+        stdscr.addch(0, 0, cc)
+        self.assertEqual(str(stdscr.in_wch(0, 0)), 'A')
+        self.assertTrue(stdscr.in_wch(0, 0).attr & curses.A_BOLD)
+        stdscr.insch(1, 0, cc)
+        stdscr.echochar(cc)
+        stdscr.bkgdset(cc)
+        stdscr.bkgd(cc)
+        stdscr.hline(2, 0, h, 3)
+        stdscr.vline(3, 0, v, 3)
+        stdscr.border(v, v, h, h)
+        stdscr.box(v, h)
+        # A complexchar already carries its rendition, so combining it with an
+        # explicit attr argument is rejected.
+        self.assertRaises(TypeError, stdscr.addch, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.addch, 0, 0, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.insch, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.echochar, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.bkgd, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.bkgdset, cc, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.hline, h, 3, curses.A_BOLD)
+        self.assertRaises(TypeError, stdscr.vline, v, 3, curses.A_BOLD)
+
+    def test_in_wstr(self):
+        # The wide-character window read returns a str (instr returns bytes).
+        # See _encodable for the character set.
+        stdscr = self.stdscr
+        for s in ['abz',                    # ASCII
+                  'a\u00e9\u2502z',         # acute e (precomposed), box vline
+                  'na\u00efve',             # common to the Latin encodings
+                  'na\u00efve \u00a4',      # ISO-8859-1
+                  'soup\u00e7on \u20ac',    # ISO-8859-15
+                  '\u0434\u044f\u043a']:    # KOI8-U
+            if self._storable(s):
+                with self.subTest(s=s):
+                    stdscr.addstr(0, 0, s)
+                    self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
+                    self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
+
+    def test_complexchar(self):
+        # A complexchar is a styled wide-character cell: str() is its text,
+        # and the attr and pair attributes are its rendition.
+        cc = curses.complexchar('A', curses.A_BOLD)
+        self.assertEqual(str(cc), 'A')
+        self.assertTrue(cc.attr & curses.A_BOLD)
+        self.assertEqual(cc.pair, 0)
+        # A spacing character optionally followed by combining characters.
+        if self._storable('e\u0301'):
+            self.assertEqual(str(curses.complexchar('e\u0301')), 'e\u0301')
+        # Defaults: no attributes, color pair 0.
+        cc = curses.complexchar('z')
+        self.assertEqual(str(cc), 'z')
+        self.assertEqual(cc.attr, 0)
+        self.assertEqual(cc.pair, 0)
+        # Immutable rendition.
+        self.assertRaises(AttributeError, setattr, cc, 'attr', 1)
+        self.assertRaises(AttributeError, setattr, cc, 'pair', 1)
+        # Equality and hashing compare text, attributes and color pair.
+        self.assertEqual(curses.complexchar('A', curses.A_BOLD),
+                         curses.complexchar('A', curses.A_BOLD))
+        self.assertEqual(hash(curses.complexchar('A', curses.A_BOLD)),
+                         hash(curses.complexchar('A', curses.A_BOLD)))
+        self.assertNotEqual(curses.complexchar('A'),
+                            curses.complexchar('A', curses.A_BOLD))
+        self.assertNotEqual(curses.complexchar('A'), curses.complexchar('B'))
+        # repr() shows only a non-default attr/pair, and is a constructor call.
+        modname = type(cc).__module__
+        ns = {modname: sys.modules[modname]}
+        self.assertNotIn('attr=', repr(curses.complexchar('z')))
+        self.assertNotIn('pair=', repr(curses.complexchar('z')))
+        r = repr(curses.complexchar('A', curses.A_BOLD))
+        self.assertIn('attr=', r)
+        self.assertNotIn('pair=', r)
+        self.assertEqual(eval(r, ns), curses.complexchar('A', curses.A_BOLD))
+        # Invalid arguments.
+        self.assertRaises(TypeError, curses.complexchar, 65)
+        self.assertRaises(TypeError, curses.complexchar, 'A', 'bold')
+        self.assertRaises(OverflowError, curses.complexchar, 'A', -1)
+        self.assertRaises(OverflowError, curses.complexchar, 'A', 1 << 64)
+        self.assertRaises(ValueError, curses.complexchar, 'A', 0, -1)
+        self.assertRaises(ValueError, curses.complexchar, 'ab')
+
+    def test_in_wch(self):
+        # in_wch() returns the styled wide cell as a complexchar -- something
+        # inch() (a packed chtype) cannot represent.
+        stdscr = self.stdscr
+        stdscr.addch(0, 0, curses.complexchar('A', curses.A_UNDERLINE))
+        cc = stdscr.in_wch(0, 0)
+        self.assertEqual(str(cc), 'A')
+        self.assertTrue(cc.attr & curses.A_UNDERLINE)
+        # A character round-trips through the cell.  See _encodable for the set.
+        for ch in ('A', '\u00e9', '\u00a4', '\u20ac', '\u0454'):
+            if self._storable(ch):
+                with self.subTest(ch=ch):
+                    stdscr.addch(3, 0, curses.complexchar(ch))
+                    self.assertEqual(str(stdscr.in_wch(3, 0)), ch)
+        # in_wch() without coordinates reads at the cursor position.
+        stdscr.move(0, 0)
+        self.assertEqual(str(stdscr.in_wch()), 'A')
+
+    @requires_colors
+    def test_in_wch_color(self):
+        # Unlike the chtype methods (which pack the pair into the value via
+        # COLOR_PAIR), a complex character carries its color pair separately.
+        stdscr = self.stdscr
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        stdscr.addch(0, 0, curses.complexchar('A', curses.A_BOLD, 1))
+        cc = stdscr.in_wch(0, 0)
+        self.assertEqual(str(cc), 'A')
+        self.assertTrue(cc.attr & curses.A_BOLD)
+        self.assertEqual(cc.pair, 1)
+        self.assertEqual(curses.complexchar('A', 0, 1).pair, 1)
+
+    def test_getbkgrnd(self):
+        # getbkgrnd() returns the background as a complexchar (getbkgd() can
+        # only return a packed chtype).
+        stdscr = self.stdscr
+        stdscr.bkgdset(curses.complexchar(' ', curses.A_DIM))
+        stdscr.bkgd(curses.complexchar(' ', curses.A_BOLD))
+        cc = stdscr.getbkgrnd()
+        self.assertEqual(str(cc), ' ')
+        self.assertTrue(cc.attr & curses.A_BOLD)
+        # A non-ASCII background round-trips as a complexchar.  See _encodable.
+        for ch in ('é', '¤', '€', 'є'):
+            if self._storable(ch):
+                with self.subTest(ch=ch):
+                    stdscr.bkgd(curses.complexchar(ch))
+                    self.assertEqual(str(stdscr.getbkgrnd()), ch)
+        stdscr.bkgd(' ')
+
+    def test_complexstr(self):
+        # A complexstr is an immutable run of styled wide-character cells: the
+        # string counterpart of complexchar (as str is to a single character).
+        cc = curses.complexchar
+        B = curses.A_BOLD
+        # Built from an iterable whose items are complexchar or str cells.
+        s = curses.complexstr([cc('A', B), 'b', cc('c')])
+        self.assertEqual(len(s), 3)
+        self.assertEqual(str(s), 'Abc')
+        # Indexing yields a complexchar carrying the cell's rendition.
+        self.assertIsInstance(s[0], curses.complexchar)
+        self.assertEqual(str(s[0]), 'A')
+        self.assertTrue(s[0].attr & B)
+        self.assertEqual(s[-1], cc('c'))
+        self.assertRaises(IndexError, lambda: s[3])
+        # Iteration walks the cells.
+        self.assertEqual([str(c) for c in s], ['A', 'b', 'c'])
+        # Slicing and concatenation produce new complexstr instances.
+        self.assertIsInstance(s[1:], curses.complexstr)
+        self.assertEqual(str(s[1:]), 'bc')
+        self.assertEqual(str(s[::-1]), 'cbA')
+        self.assertEqual(str(s + curses.complexstr(['Z'])), 'AbcZ')
+        # The empty complexstr.
+        self.assertEqual(len(curses.complexstr([])), 0)
+        self.assertEqual(str(curses.complexstr('')), '')
+        # Equality and hashing compare the cells (text, attributes, pair).
+        self.assertEqual(s, curses.complexstr([cc('A', B), 'b', cc('c')]))
+        self.assertEqual(hash(s),
+                         hash(curses.complexstr([cc('A', B), 'b', cc('c')])))
+        self.assertNotEqual(s, curses.complexstr([cc('A'), 'b', cc('c')]))
+        self.assertNotEqual(s, curses.complexstr([cc('A', B), 'b']))
+        # A spacing character optionally followed by combining characters.
+        if self._storable('é'):
+            self.assertEqual(str(curses.complexstr(['é', 'x'])),
+                             'éx')
+        # cells is positional-only.
+        self.assertRaises(TypeError, lambda: curses.complexstr(cells=['x']))
+        # Invalid arguments.
+        self.assertRaises(TypeError, curses.complexstr, 5)
+        self.assertRaises(TypeError, curses.complexstr, [65])
+        self.assertRaises(ValueError, curses.complexstr, ['ab'])
+
+        # A string is split into character cells, grouping each base character
+        # with the combining characters that follow it (not one cell per code
+        # point), unlike a generic sequence whose items are each one cell.
+        self.assertEqual(len(curses.complexstr('abc')), 3)
+        self.assertEqual(str(curses.complexstr('abc')), 'abc')
+        self.assertEqual(len(curses.complexstr('')), 0)
+        base = 'é'  # 'e' + combining acute: two code points, one cell
+        # Combining sequences need wide-character cells (a narrow build stores
+        # one byte per cell).
+        if WIDE_BUILD and self._encodable(base):
+            self.assertEqual(len(curses.complexstr(base)), 1)
+            self.assertEqual(curses.complexstr(base)[0], cc(base))
+            self.assertEqual(len(curses.complexstr('a' + base + 'b')), 3)
+            # A combining character cannot begin a cell: one that leads the
+            # string, or overflows a base's combining slots, has no base.
+            self.assertRaises(ValueError, curses.complexstr, '\u0301')
+            self.assertRaises(ValueError, curses.complexstr, 'e' + '\u0301' * 10)
+            # A control character may stand alone but not carry combining marks.
+            self.assertRaises(ValueError, curses.complexstr, '\n\u0301')
+        # attr and pair apply to every cell of a string; pair is optional.
+        styled = curses.complexstr('hi', B, 0)
+        self.assertTrue(all(styled[i].attr & B for i in range(len(styled))))
+        self.assertEqual(curses.complexstr('x', B)[0], cc('x', B))
+        self.assertEqual(curses.complexstr('x', B, 0)[0], cc('x', B, 0))
+        # attr and pair may also be passed by keyword.
+        self.assertEqual(curses.complexstr('x', attr=B)[0], cc('x', B))
+        self.assertEqual(curses.complexstr('x', attr=B, pair=0)[0], cc('x', B, 0))
+        self.assertEqual(curses.complexstr('x', pair=0)[0], cc('x', 0, 0))
+        # cells is positional-only.
+        self.assertRaises(TypeError, lambda: curses.complexstr(cells='x'))
+        self.assertRaises(ValueError, curses.complexstr, 'a', 0, -1)
+        self.assertRaises(ValueError, lambda: curses.complexstr('a', pair=-1))
+        # For a non-string, giving attr/pair at all is an error (the cells
+        # carry their own rendition) -- even attr=0.
+        self.assertRaises(TypeError, curses.complexstr, [cc('A')], B)
+        self.assertRaises(TypeError, curses.complexstr, [cc('A')], 0)
+        self.assertRaises(TypeError, curses.complexstr, ['A'], 0, 0)
+        self.assertRaises(TypeError,
+                          lambda: curses.complexstr([cc('A')], attr=B))
+        self.assertRaises(TypeError,
+                          lambda: curses.complexstr(['A'], pair=0))
+
+    def test_in_wchstr(self):
+        # in_wchstr() returns a complexstr -- the styled-cell counterpart of
+        # instr() (bytes) and in_wstr() (str), which both strip the rendition.
+        stdscr = self.stdscr
+        cc = curses.complexchar
+        B = curses.A_BOLD
+        s = curses.complexstr([cc('A', B), cc('b'), cc('C', B)])
+        stdscr.addstr(0, 0, s)
+        r = stdscr.in_wchstr(0, 0, 3)
+        self.assertIsInstance(r, curses.complexstr)
+        # A read followed by a re-write is an exact round-trip.
+        self.assertEqual(r, s)
+        self.assertEqual(str(r), 'AbC')
+        self.assertTrue(r[0].attr & B)
+        self.assertFalse(r[1].attr & B)
+        # The count is optional and reads to the end of the line by default.
+        stdscr.move(0, 0)
+        self.assertEqual(str(stdscr.in_wchstr())[:3], 'AbC')
+
+    def test_complexstr_in_write_methods(self):
+        # addstr/addnstr/insstr/insnstr also accept a complexstr, written via
+        # the wide-character functions; a plain str keeps its current meaning.
+        stdscr = self.stdscr
+        cc = curses.complexchar
+        B = curses.A_BOLD
+        s = curses.complexstr([cc('A', B), cc('b'), cc('C', B)])
+        # addstr with a complexstr round-trips.
+        stdscr.addstr(0, 0, s)
+        self.assertEqual(stdscr.in_wchstr(0, 0, 3), s)
+        # addnstr writes at most n cells.
+        stdscr.addstr(2, 0, '....')
+        stdscr.addnstr(2, 0, s, 2)
+        self.assertEqual(str(stdscr.in_wchstr(2, 0, 4)), 'Ab..')
+        # insstr inserts the cells in order.
+        stdscr.move(3, 0)
+        stdscr.addstr('END')
+        stdscr.insstr(3, 0, curses.complexstr([cc('P'), cc('Q')]))
+        self.assertEqual(str(stdscr.in_wchstr(3, 0, 5)), 'PQEND')
+        # insnstr inserts at most n cells.
+        stdscr.move(4, 0)
+        stdscr.addstr('END')
+        stdscr.insnstr(4, 0, curses.complexstr(['1', '2', '3']), 2)
+        self.assertEqual(str(stdscr.in_wchstr(4, 0, 5)), '12END')
+        # An empty run is accepted (and still honours the move).
+        stdscr.addstr(5, 0, curses.complexstr([]))
+        stdscr.insstr(5, 0, curses.complexstr([]))
+        # Cells carry their own rendition, so an explicit attr is rejected.
+        self.assertRaises(TypeError, stdscr.addstr, s, B)
+        self.assertRaises(TypeError, stdscr.addnstr, s, 2, B)
+        self.assertRaises(TypeError, stdscr.insstr, s, B)
+        self.assertRaises(TypeError, stdscr.insnstr, s, 2, B)
+        # A bare sequence of cells is not accepted; build a complexstr first.
+        self.assertRaises(TypeError, stdscr.addstr, [cc('A'), 'b'])
+        self.assertRaises(TypeError, stdscr.insstr, [cc('A'), 'b'])
+
     def test_output_character(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
@@ -262,18 +748,69 @@ class TestCurses(unittest.TestCase):
         stdscr.addch('A')
         stdscr.addch(b'A')
         stdscr.addch(65)
-        c = '\u20ac'
-        try:
-            stdscr.addch(c)
-        except UnicodeEncodeError:
-            self.assertRaises(UnicodeEncodeError, c.encode, encoding)
-        except OverflowError:
-            encoded = c.encode(encoding)
-            self.assertNotEqual(len(encoded), 1, repr(encoded))
+        # See _encodable for the character set.  Each is either written (mapped
+        # to a single byte), or raises UnicodeEncodeError (not in the encoding)
+        # or OverflowError (a multibyte sequence, e.g. in UTF-8).
+        for c in ('A', '\u00e9', '\u00a4', '\u20ac', '\u0454'):
+            try:
+                stdscr.addch(c)
+            except UnicodeEncodeError:
+                self.assertRaises(UnicodeEncodeError, c.encode, encoding)
+            except OverflowError:
+                encoded = c.encode(encoding)
+                self.assertNotEqual(len(encoded), 1, repr(encoded))
         stdscr.addch('A', curses.A_BOLD)
         stdscr.addch(1, 2, 'A')
         stdscr.addch(2, 3, 'A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), True)
+
+        # The same characters supplied as an int chtype (a byte > 127).  The
+        # cell is read back with _read_char(), not inch(): on a wide build the
+        # int is stored through the locale as a wide character that inch()
+        # cannot represent for a character outside Latin-1.
+        for c in ('é', '¤', '€', 'є'):
+            try:
+                b = c.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            v = b[0]
+            with self.subTest(c=c):
+                stdscr.addch(0, 0, v)
+                self.assertEqual(self._read_char(0, 0), c)
+                stdscr.addch(0, 1, v, curses.A_BOLD)
+                self.assertEqual(self._read_char(0, 1), c)
+                self.assertTrue(stdscr.inch(0, 1) & curses.A_BOLD)
+                stdscr.move(2, 0)
+                stdscr.echochar(v)
+                self.assertEqual(self._read_char(2, 0), c)
+                # insch() round-trips a byte only where its code point equals
+                # the byte value (Latin-1): on a wide build ncurses winsch
+                # stores a printable byte directly as a code point instead of
+                # decoding it through the locale.
+                if ord(c) < 0x100:
+                    stdscr.insch(1, 0, v)
+                    self.assertEqual(self._read_char(1, 0), c)
+
+        # The same characters supplied as a str.  Unlike the int path above, a
+        # str is stored as a wide-character cell on a wide build, so every
+        # encodable character round-trips, insch() included.  A multibyte
+        # character does not fit a cell on a narrow build and is skipped.
+        for c in ('é', '¤', '€', 'є'):
+            if not self._storable(c):
+                continue
+            with self.subTest(c=c):
+                stdscr.addch(0, 0, c)
+                self.assertEqual(self._read_char(0, 0), c)
+                stdscr.addch(0, 1, c, curses.A_BOLD)
+                self.assertEqual(self._read_char(0, 1), c)
+                self.assertTrue(stdscr.inch(0, 1) & curses.A_BOLD)
+                stdscr.insch(1, 0, c)
+                self.assertEqual(self._read_char(1, 0), c)
+                stdscr.move(2, 0)
+                stdscr.echochar(c)
+                self.assertEqual(self._read_char(2, 0), c)
 
         # echochar()
         stdscr.refresh()
@@ -281,13 +818,17 @@ class TestCurses(unittest.TestCase):
         stdscr.echochar('A')
         stdscr.echochar(b'A')
         stdscr.echochar(65)
-        with self.assertRaises((UnicodeEncodeError, OverflowError)):
-            # Unicode is not fully supported yet, but at least it does
-            # not crash.
-            # It is supposed to fail because either the character is
-            # not encodable with the current encoding, or it is encoded to
-            # a multibyte sequence.
-            stdscr.echochar('\u0114')
+        # See _encodable for the character set; as in the addch() loop above.
+        for c in ('A', '\u00e9', '\u00a4', '\u20ac', '\u0454'):
+            try:
+                stdscr.echochar(c)
+            except UnicodeEncodeError:
+                # The character is not encodable with the current encoding.
+                self.assertRaises(UnicodeEncodeError, c.encode, encoding)
+            except OverflowError:
+                # The character is encoded to a multibyte sequence.
+                encoded = c.encode(encoding)
+                self.assertNotEqual(len(encoded), 1, repr(encoded))
         stdscr.echochar('A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), False)
 
@@ -297,14 +838,18 @@ class TestCurses(unittest.TestCase):
         # addstr()/insstr()
         for func in [stdscr.addstr, stdscr.insstr]:
             with self.subTest(func.__qualname__):
-                stdscr.move(0, 0)
                 func('abcd')
                 func(b'abcd')
-                s = 'àßçđ'
-                try:
-                    func(s)
-                except UnicodeEncodeError:
-                    self.assertRaises(UnicodeEncodeError, s.encode, encoding)
+                # Common and encoding-distinctive strings (see _encodable for the
+                # 0xA4 set); 'àßçđ' is UTF-8-only.  Each is written if the
+                # encoding allows, else raises UnicodeEncodeError.
+                for s in ('soupçon', 'àßçđ', 'soupçon ¤', 'soupçon €', 'дякую'):
+                    stdscr.move(0, 0)
+                    try:
+                        func(s)
+                    except UnicodeEncodeError:
+                        self.assertRaises(UnicodeEncodeError, s.encode, encoding)
+                stdscr.move(0, 0)
                 func('abcd', curses.A_BOLD)
                 func(1, 2, 'abcd')
                 func(2, 3, 'abcd', curses.A_BOLD)
@@ -315,11 +860,14 @@ class TestCurses(unittest.TestCase):
                 stdscr.move(0, 0)
                 func('1234', 3)
                 func(b'1234', 3)
-                s = '\u0661\u0662\u0663\u0664'
-                try:
-                    func(s, 3)
-                except UnicodeEncodeError:
-                    self.assertRaises(UnicodeEncodeError, s.encode, encoding)
+                # As above (see _encodable); Arabic-Indic digits are UTF-8-only.
+                for s in ('caf\u00e9', '\u0661\u0662\u0663\u0664', 'caf\u00e9 \u00a4', 'caf\u00e9 \u20ac', '\u0434\u044f\u043a\u0443\u044e'):
+                    stdscr.move(0, 0)
+                    try:
+                        func(s, 3)
+                    except UnicodeEncodeError:
+                        self.assertRaises(UnicodeEncodeError, s.encode, encoding)
+                stdscr.move(0, 0)
                 func('1234', 5)
                 func('1234', 3, curses.A_BOLD)
                 func(1, 2, '1234', 3)
@@ -409,6 +957,24 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(stdscr.instr(0, 2, 4), b'BCD ')
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 0, 2, -2)
+        # A non-ASCII character of an 8-bit locale reads back as its encoded
+        # byte (see _encodable for the set).  instr() returns the locale bytes
+        # for any single-byte character; inch() packs the text into a chtype, so
+        # on a wide build it only round-trips a Latin-1 codepoint (byte ==
+        # codepoint).
+        encoding = stdscr.encoding
+        for ch in ('A', 'é', '¤', '€', 'є'):
+            try:
+                b = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            with self.subTest(ch=ch):
+                stdscr.addstr(2, 0, ch)
+                self.assertEqual(stdscr.instr(2, 0, 1), b)
+                if ord(ch) < 0x100:
+                    self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
@@ -425,6 +991,10 @@ class TestCurses(unittest.TestCase):
         # A character argument must be an int, a byte or a one-element string.
         self.assertRaises(TypeError, win.addch, [])
         self.assertRaises(OverflowError, win.addch, 2**64)
+        # The attribute argument is rejected, not truncated, when out of range.
+        self.assertRaises(OverflowError, win.addch, 'a', 2**64)
+        self.assertRaises(OverflowError, win.addstr, 'a', 2**64)
+        self.assertRaises(TypeError, win.addch, 'a', 'bold')
         # A string method rejects a non-string, non-bytes argument.
         self.assertRaises(TypeError, win.addstr, 5)
         self.assertRaises(TypeError, win.addstr)
@@ -445,6 +1015,10 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.getyx(), (3, 4))
         self.assertEqual(win.getch(), b'm'[0])
         self.assertEqual(win.getch(), b'\n'[0])
+
+        # A key value > 127 is delivered unchanged (it is not locale text).
+        curses.ungetch(0xE9)
+        self.assertEqual(win.getch(), 0xE9)
 
     def test_getstr(self):
         win = curses.newwin(5, 12, 5, 2)
@@ -467,6 +1041,24 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.instr(1, 0), b'si   dolor  ')
         self.assertEqual(win.getstr(), b'amet')
         self.assertEqual(win.instr(1, 0), b'amet dolor  ')
+
+    def test_get_wstr(self):
+        # get_wstr() reads input as a str (getstr() returns bytes); feed it with
+        # unget_wch().  See _encodable for the character set.
+        win = curses.newwin(5, 12, 5, 2)
+        curses.echo()
+        self.addCleanup(curses.noecho)
+        for s in ['Lorem',                 # ASCII
+                  'naïve',            # common to the Latin encodings
+                  'naïve ¤',     # ISO-8859-1
+                  'soupçon €',   # ISO-8859-15
+                  'дяк']:   # KOI8-U
+            if self._storable(s):
+                with self.subTest(s=s):
+                    win.erase()
+                    for ch in reversed(s + '\n'):
+                        curses.unget_wch(ch)
+                    self.assertEqual(win.get_wstr(0, 0), s)
 
     def test_clear(self):
         win = curses.newwin(5, 15, 5, 2)
@@ -545,7 +1137,6 @@ class TestCurses(unittest.TestCase):
         win.scrollok(False)
 
     def test_attributes(self):
-        # TODO: attr_get(), attr_set(), ...
         win = curses.newwin(5, 15, 5, 2)
         win.attron(curses.A_BOLD)
         win.attroff(curses.A_BOLD)
@@ -553,6 +1144,50 @@ class TestCurses(unittest.TestCase):
 
         win.standout()
         win.standend()
+
+        # The attr_*() family works on attr_t attributes paired with a color
+        # pair, unlike the chtype-based attron()/attroff()/attrset().
+        win.attr_set(curses.A_BOLD | curses.A_UNDERLINE)
+        attrs, pair = win.attr_get()
+        self.assertTrue(attrs & curses.A_BOLD)
+        self.assertTrue(attrs & curses.A_UNDERLINE)
+        self.assertEqual(pair, 0)
+        self.assertEqual(win.getattrs(), attrs)
+
+        win.attr_on(curses.A_REVERSE)
+        self.assertTrue(win.attr_get()[0] & curses.A_REVERSE)
+        win.attr_off(curses.A_REVERSE)
+        self.assertFalse(win.attr_get()[0] & curses.A_REVERSE)
+
+        # color_set() with a real pair needs start_color(); see
+        # test_attr_color_pair.  Here only the argument validation is checked,
+        # which fails before wcolor_set() is reached.
+        self.assertRaises(TypeError, win.attr_set, 'x')
+        self.assertRaises(TypeError, win.attr_set, curses.A_BOLD, 'x')
+        self.assertRaises(TypeError, win.attr_on, 'x')
+        self.assertRaises(TypeError, win.color_set, 'x')
+        self.assertRaises(ValueError, win.color_set, -1)
+        self.assertRaises(ValueError, win.attr_set, curses.A_BOLD, -1)
+        # attr_t is unsigned: a negative or too-large attribute overflows.
+        self.assertRaises(OverflowError, win.attr_set, -1)
+        self.assertRaises(OverflowError, win.attr_on, -1)
+        self.assertRaises(OverflowError, win.attr_set, 1 << 64)
+        # attron()/attroff()/attrset() reject a bad attribute too.
+        self.assertRaises(OverflowError, win.attron, 1 << 64)
+        self.assertRaises(OverflowError, win.attroff, -1)
+        self.assertRaises(OverflowError, win.attrset, 1 << 64)
+        self.assertRaises(TypeError, win.attron, 'x')
+
+    @requires_colors
+    def test_attr_color_pair(self):
+        win = curses.newwin(5, 15, 5, 2)
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        win.attr_set(curses.A_BOLD, 1)
+        attrs, pair = win.attr_get()
+        self.assertTrue(attrs & curses.A_BOLD)
+        self.assertEqual(pair, 1)
+        win.color_set(0)
+        self.assertEqual(win.attr_get()[1], 0)
 
     @requires_curses_window_meth('chgat')
     def test_chgat(self):
@@ -584,6 +1219,11 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.inch(3, 10), b'a'[0] | curses.A_BLINK)
         self.assertEqual(win.inch(3, 11), b'm'[0] | curses.A_UNDERLINE)
         self.assertEqual(win.inch(3, 14), b' '[0] | curses.A_UNDERLINE)
+
+        # attr_t is unsigned: a negative or too-large attribute overflows.
+        self.assertRaises(TypeError, win.chgat, 'x')
+        self.assertRaises(OverflowError, win.chgat, -1)
+        self.assertRaises(OverflowError, win.chgat, 1 << 64)
 
     def test_background(self):
         win = curses.newwin(5, 15, 5, 2)
@@ -617,6 +1257,29 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.getbkgd(), b'#'[0] | curses.A_REVERSE)
         self.assertEqual(win.inch(0, 0), b'L'[0] | curses.A_REVERSE)
         self.assertEqual(win.inch(0, 5), b'#'[0] | curses.A_REVERSE)
+
+        # A non-ASCII background character of an 8-bit locale reads back as its
+        # encoded byte.  See _encodable for the character set.
+        win.bkgd(' ')
+        encoding = win.encoding
+        for ch in ('é', '¤', '€', 'є'):
+            try:
+                b = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            with self.subTest(ch=ch):
+                win.bkgd(ch)
+                self.assertEqual(win.getbkgd(), b[0])
+                if ord(ch) < 0x100:
+                    # The same byte given as an int.  A wide build stores it
+                    # through the locale, so only a Latin-1 byte round-trips.
+                    win.bkgd(' ')
+                    win.bkgdset(b[0])
+                    self.assertEqual(win.getbkgd(), b[0])
+                    win.bkgd(b[0])
+                    self.assertEqual(win.getbkgd(), b[0])
 
     def test_overlay(self):
         srcwin = curses.newwin(5, 18, 3, 4)
@@ -673,6 +1336,22 @@ class TestCurses(unittest.TestCase):
         self.assertIs(win.enclose(7, 19), False)
         self.assertIs(win.enclose(6, 20), False)
 
+    @requires_curses_window_meth('mouse_trafo')
+    def test_mouse_trafo(self):
+        win = curses.newwin(5, 15, 2, 5)
+        # to_screen=True: window-relative -> stdscr-relative.
+        self.assertEqual(win.mouse_trafo(0, 0, True), (2, 5))
+        self.assertEqual(win.mouse_trafo(3, 10, True), (5, 15))
+        self.assertEqual(win.mouse_trafo(4, 14, True), (6, 19))
+        # A coordinate outside the window has no counterpart.
+        self.assertIsNone(win.mouse_trafo(5, 0, True))
+        self.assertIsNone(win.mouse_trafo(0, 15, True))
+        # to_screen=False is the inverse: stdscr-relative -> window-relative.
+        self.assertEqual(win.mouse_trafo(2, 5, False), (0, 0))
+        self.assertEqual(win.mouse_trafo(6, 19, False), (4, 14))
+        self.assertIsNone(win.mouse_trafo(1, 5, False))
+        self.assertIsNone(win.mouse_trafo(7, 19, False))
+
     def test_putwin(self):
         win = curses.newwin(5, 12, 1, 2)
         win.addstr(2, 1, 'Lorem ipsum')
@@ -684,6 +1363,37 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(win.getbegyx(), (1, 2))
             self.assertEqual(win.getmaxyx(), (5, 12))
             self.assertEqual(win.instr(2, 0), b' Lorem ipsum')
+
+    def test_scr_dump(self):
+        # Test scr_dump(), scr_restore(), scr_init() and scr_set().
+        # scr_dump() writes the virtual screen to a named file; the other three
+        # load it back.  The dump is opaque internal curses state -- on some
+        # platforms (such as macOS) it embeds raw pointers that change whenever
+        # the screen is reallocated -- so the round-trip is exercised
+        # functionally rather than by comparing dump bytes.
+        stdscr = self.stdscr
+        stdscr.erase()
+        stdscr.addstr(0, 0, 'screen dump test')
+        stdscr.refresh()
+        with tempfile.TemporaryDirectory() as d:
+            dump = os.path.join(d, 'dump')
+            self.assertIsNone(curses.scr_dump(dump))
+            with open(dump, 'rb') as f:
+                self.assertTrue(f.read())
+            # scr_restore() reloads the saved virtual screen, even after the
+            # screen has changed.
+            stdscr.erase()
+            stdscr.addstr(0, 0, 'something else')
+            stdscr.refresh()
+            self.assertIsNone(curses.scr_restore(dump))
+            # scr_init() and scr_set() also accept a dump file and return None.
+            self.assertIsNone(curses.scr_init(dump))
+            self.assertIsNone(curses.scr_set(dump))
+            # A bytes (path-like) filename is accepted too.
+            curses.scr_dump(os.fsencode(dump))
+            # Restoring from a missing file is an error.
+            self.assertRaises(curses.error,
+                              curses.scr_restore, os.path.join(d, 'nope'))
 
     def test_borders_and_lines(self):
         win = curses.newwin(5, 10, 5, 2)
@@ -710,6 +1420,16 @@ class TestCurses(unittest.TestCase):
         win.border(65, 66)
         win.border(65)
         win.border()
+        # With no arguments, border() fills the edges with ACS line and corner
+        # characters.
+        chartext = curses.A_CHARTEXT
+        maxy, maxx = win.getmaxyx()
+        self.assertEqual(win.inch(0, 0) & chartext, curses.ACS_ULCORNER & chartext)
+        self.assertEqual(win.inch(0, maxx-1) & chartext, curses.ACS_URCORNER & chartext)
+        self.assertEqual(win.inch(maxy-1, 0) & chartext, curses.ACS_LLCORNER & chartext)
+        self.assertEqual(win.inch(maxy-1, maxx-1) & chartext, curses.ACS_LRCORNER & chartext)
+        self.assertEqual(win.inch(0, 1) & chartext, curses.ACS_HLINE & chartext)
+        self.assertEqual(win.inch(1, 0) & chartext, curses.ACS_VLINE & chartext)
 
         win.box(':', '~')
         self.assertEqual(win.instr(0, 1, 8), b'~~~~~~~~')
@@ -720,6 +1440,11 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(TypeError, win.box, 65, 66, 67)
         self.assertRaises(TypeError, win.box, 65)
         win.box()
+        # With no arguments, box() likewise draws ACS corners and lines.
+        self.assertEqual(win.inch(0, 0) & chartext, curses.ACS_ULCORNER & chartext)
+        self.assertEqual(win.inch(0, maxx-1) & chartext, curses.ACS_URCORNER & chartext)
+        self.assertEqual(win.inch(0, 1) & chartext, curses.ACS_HLINE & chartext)
+        self.assertEqual(win.inch(1, 0) & chartext, curses.ACS_VLINE & chartext)
 
         win.move(1, 2)
         win.hline('-', 5)
@@ -741,18 +1466,81 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win.inch(2, 1), b';'[0] | curses.A_STANDOUT)
         self.assertEqual(win.inch(3, 1), b'a'[0])
 
+        # A border or line character of an 8-bit locale round-trips as its
+        # encoded byte.  See _encodable for the character set.
+        encoding = win.encoding
+        for ch in ('é', '¤', '€', 'є'):
+            try:
+                b = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            with self.subTest(ch=ch):
+                win.erase()
+                win.hline(2, 0, ch, 5)
+                self.assertEqual(win.instr(2, 0, 5), b * 5)
+                win.vline(0, 0, ch, 3)
+                self.assertEqual(win.instr(0, 0, 1), b)
+                self.assertEqual(win.instr(1, 0, 1), b)
+                win.border(ch, ch, ch, ch, ch, ch, ch, ch)
+                self.assertEqual(win.instr(0, 0), b * maxx)
+                if ord(ch) < 0x100:
+                    # The same byte given as an int.  A wide build stores it
+                    # through the locale, so only a Latin-1 byte round-trips.
+                    v = b[0]
+                    win.erase()
+                    win.hline(2, 0, v, 5)
+                    self.assertEqual(win.instr(2, 0, 5), b * 5)
+                    win.vline(0, 0, v, 3)
+                    self.assertEqual(win.instr(1, 0, 1), b)
+                    win.border(v, v, v, v, v, v, v, v)
+                    self.assertEqual(win.instr(0, 0), b * maxx)
+                    win.box(v, v)
+                    self.assertEqual(win.instr(0, 1, 1), b)
+
     def test_unctrl(self):
-        # TODO: wunctrl()
         self.assertEqual(curses.unctrl(b'A'), b'A')
         self.assertEqual(curses.unctrl('A'), b'A')
         self.assertEqual(curses.unctrl(65), b'A')
         self.assertEqual(curses.unctrl(b'\n'), b'^J')
         self.assertEqual(curses.unctrl('\n'), b'^J')
         self.assertEqual(curses.unctrl(10), b'^J')
+        # A printable non-ASCII byte of an 8-bit locale is returned unchanged.
+        # See _encodable for the character set.
+        encoding = self.stdscr.encoding
+        for ch in ('é', '¤', '€', 'є'):
+            try:
+                b = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(b) != 1:
+                continue
+            with self.subTest(ch=ch):
+                self.assertEqual(curses.unctrl(ch), b)
+                self.assertEqual(curses.unctrl(b[0]), b)   # the byte as an int
         self.assertRaises(TypeError, curses.unctrl, b'')
         self.assertRaises(TypeError, curses.unctrl, b'AB')
         self.assertRaises(TypeError, curses.unctrl, '')
         self.assertRaises(TypeError, curses.unctrl, 'AB')
+
+    def test_wunctrl(self):
+        # The wide-character variant of unctrl() returns a str.
+        self.assertEqual(curses.wunctrl(b'A'), 'A')
+        self.assertEqual(curses.wunctrl('A'), 'A')
+        self.assertEqual(curses.wunctrl(65), 'A')
+        self.assertEqual(curses.wunctrl('\n'), '^J')
+        self.assertEqual(curses.wunctrl(10), '^J')
+        # See _encodable for the character set (all printable here).
+        for c in ('A', 'é', '¤', '€', 'є'):
+            if self._storable(c):
+                self.assertEqual(curses.wunctrl(c), c)
+        self.assertRaises(TypeError, curses.wunctrl, b'')
+        self.assertRaises(TypeError, curses.wunctrl, b'AB')
+        self.assertRaises(TypeError, curses.wunctrl, '')
+        if WIDE_BUILD:
+            # More than one spacing character is not a single cell.
+            self.assertRaises(ValueError, curses.wunctrl, 'AB')
         self.assertRaises(OverflowError, curses.unctrl, 2**64)
 
     def test_endwin(self):
@@ -800,13 +1588,14 @@ class TestCurses(unittest.TestCase):
         curses.newpad(50, 50)
 
     def test_env_queries(self):
-        # TODO: term_attrs(), erasewchar(), killwchar()
         self.assertIsInstance(curses.termname(), bytes)
         self.assertIsInstance(curses.longname(), bytes)
         self.assertIsInstance(curses.baudrate(), int)
         self.assertIsInstance(curses.has_ic(), bool)
         self.assertIsInstance(curses.has_il(), bool)
         self.assertIsInstance(curses.termattrs(), int)
+        if hasattr(curses, 'term_attrs'):
+            self.assertIsInstance(curses.term_attrs(), int)
 
         c = curses.killchar()
         self.assertIsInstance(c, bytes)
@@ -814,6 +1603,37 @@ class TestCurses(unittest.TestCase):
         c = curses.erasechar()
         self.assertIsInstance(c, bytes)
         self.assertEqual(len(c), 1)
+
+        # The erase and kill characters are a property of the controlling
+        # terminal: the wide variants report ERR (raising curses.error) without
+        # one, while the narrow variants above return an unspecified byte.
+        try:
+            tty_fd = os.open(os.ctermid(), os.O_RDONLY)
+        except OSError:
+            tty_fd = None
+        if tty_fd is not None:
+            os.close(tty_fd)
+            c = curses.erasewchar()
+            self.assertIsInstance(c, str)
+            self.assertEqual(len(c), 1)
+            c = curses.killwchar()
+            self.assertIsInstance(c, str)
+            self.assertEqual(len(c), 1)
+
+    @requires_curses_func('define_key')
+    def test_key_management(self):
+        # Bind a custom escape sequence to a free key code and read it back.
+        seq = '\x1bspam'
+        keycode = 0o600
+        curses.define_key(seq, keycode)
+        self.assertEqual(curses.key_defined(seq), keycode)
+        # keyok enables or disables interpretation of a single key code.
+        # Use the key code just defined, which is guaranteed to be known.
+        self.assertIsNone(curses.keyok(keycode, False))
+        self.assertIsNone(curses.keyok(keycode, True))
+        # Passing None removes the binding for the key code.
+        curses.define_key(None, keycode)
+        self.assertEqual(curses.key_defined(seq), 0)
 
     def test_output_options(self):
         stdscr = self.stdscr
@@ -889,6 +1709,86 @@ class TestCurses(unittest.TestCase):
         stdscr.timeout(-1)
         stdscr.timeout(0)
         stdscr.timeout(5)
+
+    @requires_curses_window_meth('is_scrollok')
+    def test_state_getters(self):
+        stdscr = self.stdscr
+        # Each is_*() getter returns the value set by the matching setter.
+        for setter, getter in [
+            ('clearok', 'is_cleared'),
+            ('keypad', 'is_keypad'),
+            ('leaveok', 'is_leaveok'),
+            ('nodelay', 'is_nodelay'),
+            ('notimeout', 'is_notimeout'),
+            ('scrollok', 'is_scrollok'),
+        ]:
+            getattr(stdscr, setter)(True)
+            self.assertIs(getattr(stdscr, getter)(), True)
+            getattr(stdscr, setter)(False)
+            self.assertIs(getattr(stdscr, getter)(), False)
+
+        # idcok()/idlok() only take effect if the terminal can insert/delete
+        # characters/lines, so the getter reflects that capability.
+        stdscr.idcok(True)
+        self.assertIs(stdscr.is_idcok(), curses.has_ic())
+        stdscr.idcok(False)
+        self.assertIs(stdscr.is_idcok(), False)
+
+        stdscr.idlok(True)
+        self.assertIs(stdscr.is_idlok(),
+                      curses.has_il() or curses.tigetstr('csr') is not None)
+        stdscr.idlok(False)
+        self.assertIs(stdscr.is_idlok(), False)
+        if hasattr(stdscr, 'immedok'):
+            stdscr.immedok(True)
+            self.assertIs(stdscr.is_immedok(), True)
+            stdscr.immedok(False)
+        if hasattr(stdscr, 'syncok'):
+            stdscr.syncok(True)
+            self.assertIs(stdscr.is_syncok(), True)
+            stdscr.syncok(False)
+
+        # getdelay() reflects timeout()/nodelay().
+        stdscr.timeout(100)
+        self.assertEqual(stdscr.getdelay(), 100)
+        stdscr.nodelay(True)
+        self.assertEqual(stdscr.getdelay(), 0)
+        stdscr.timeout(-1)
+        self.assertEqual(stdscr.getdelay(), -1)
+
+        # getscrreg() reflects setscrreg().
+        stdscr.setscrreg(5, 10)
+        self.assertEqual(stdscr.getscrreg(), (5, 10))
+
+        # is_pad()/is_subwin()/getparent().
+        self.assertIs(stdscr.is_pad(), False)
+        self.assertIs(stdscr.is_subwin(), False)
+        self.assertIsNone(stdscr.getparent())
+        sub = stdscr.subwin(3, 3, 0, 0)
+        self.assertIs(sub.is_subwin(), True)
+        self.assertIs(sub.getparent(), stdscr)
+        pad = curses.newpad(5, 5)
+        self.assertIs(pad.is_pad(), True)
+
+    @requires_curses_func('is_cbreak')
+    def test_global_state_getters(self):
+        if self.isatty:
+            curses.cbreak()
+            self.assertIs(curses.is_cbreak(), True)
+            curses.nocbreak()
+            self.assertIs(curses.is_cbreak(), False)
+            curses.raw()
+            self.assertIs(curses.is_raw(), True)
+            curses.noraw()
+            self.assertIs(curses.is_raw(), False)
+        curses.echo()
+        self.assertIs(curses.is_echo(), True)
+        curses.noecho()
+        self.assertIs(curses.is_echo(), False)
+        curses.nl()
+        self.assertIs(curses.is_nl(), True)
+        curses.nonl()
+        self.assertIs(curses.is_nl(), False)
 
     @requires_curses_func('typeahead')
     def test_typeahead(self):
@@ -971,6 +1871,11 @@ class TestCurses(unittest.TestCase):
     def test_has_colors(self):
         self.assertIsInstance(curses.has_colors(), bool)
         self.assertIsInstance(curses.can_change_color(), bool)
+
+    @requires_curses_func('has_mouse')
+    def test_has_mouse(self):
+        # Whether a mouse is available depends on the terminal.
+        self.assertIsInstance(curses.has_mouse(), bool)
 
     def test_start_color(self):
         if not curses.has_colors():
@@ -1071,6 +1976,54 @@ class TestCurses(unittest.TestCase):
             self.assertRaises(ValueError, curses.init_pair, 1, color, 0)
             self.assertRaises(ValueError, curses.init_pair, 1, 0, color)
 
+    @requires_curses_func('alloc_pair')
+    @requires_colors
+    def test_dynamic_color_pairs(self):
+        # alloc_pair()/find_pair()/free_pair() (extended-color extension).
+        fg = bg = curses.COLORS - 1
+        pair = curses.alloc_pair(fg, bg)
+        self.assertGreater(pair, 0)
+        self.assertEqual(curses.pair_content(pair), (fg, bg))
+        # The same combination of colors reuses the same pair.
+        self.assertEqual(curses.alloc_pair(fg, bg), pair)
+        self.assertEqual(curses.find_pair(fg, bg), pair)
+        # Once freed, the pair is no longer found.
+        self.assertIsNone(curses.free_pair(pair))
+        self.assertEqual(curses.find_pair(fg, bg), -1)
+
+        # Error paths.
+        for color in self.bad_colors2():
+            self.assertRaises(ValueError, curses.alloc_pair, color, 0)
+            self.assertRaises(ValueError, curses.alloc_pair, 0, color)
+            self.assertRaises(ValueError, curses.find_pair, color, 0)
+            self.assertRaises(ValueError, curses.find_pair, 0, color)
+        for pair in self.bad_pairs():
+            self.assertRaises(ValueError, curses.free_pair, pair)
+        # Color pair 0 is reserved and cannot be freed.
+        self.assertRaises(curses.error, curses.free_pair, 0)
+
+        # Invalid number or type of arguments.
+        self.assertRaises(TypeError, curses.alloc_pair)
+        self.assertRaises(TypeError, curses.alloc_pair, 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 0, 0, 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 'red', 0)
+        self.assertRaises(TypeError, curses.alloc_pair, 0, 'red')
+        self.assertRaises(TypeError, curses.alloc_pair, fg=0, bg=0)
+        self.assertRaises(TypeError, curses.find_pair)
+        self.assertRaises(TypeError, curses.find_pair, 0)
+        self.assertRaises(TypeError, curses.find_pair, 0, 0, 0)
+        self.assertRaises(TypeError, curses.find_pair, 'red', 0)
+        self.assertRaises(TypeError, curses.find_pair, 0, 'red')
+        self.assertRaises(TypeError, curses.free_pair)
+        self.assertRaises(TypeError, curses.free_pair, 1, 2)
+        self.assertRaises(TypeError, curses.free_pair, 'red')
+
+    @requires_curses_func('reset_color_pairs')
+    @requires_colors
+    def test_reset_color_pairs(self):
+        self.assertIsNone(curses.reset_color_pairs())
+        self.assertRaises(TypeError, curses.reset_color_pairs, 0)
+
     @requires_colors
     def test_color_attrs(self):
         for pair in 0, 1, 255:
@@ -1079,6 +2032,11 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(curses.pair_number(attr | curses.A_BOLD), pair)
         self.assertEqual(curses.color_pair(0), 0)
         self.assertEqual(curses.pair_number(0), 0)
+        # A pair too large to fit is rejected, not silently masked (gh-119138).
+        max_pair = curses.pair_number(curses.A_COLOR)
+        self.assertEqual(curses.pair_number(curses.color_pair(max_pair)), max_pair)
+        self.assertRaises(OverflowError, curses.color_pair, max_pair + 1)
+        self.assertRaises(OverflowError, curses.color_pair, -1)
 
     @requires_curses_func('use_default_colors')
     @requires_colors
@@ -1088,6 +2046,23 @@ class TestCurses(unittest.TestCase):
         except curses.error:
             self.skipTest('cannot change color (use_default_colors() failed)')
         self.assertEqual(curses.pair_content(0), (-1, -1))
+
+    @requires_curses_window_meth('use')
+    def test_use_window(self):
+        win = self.stdscr
+        self.assertEqual(win.use(lambda w, a, b: (w is win, a, b), 5, b=6),
+                         (True, 5, 6))
+        with self.assertRaises(ZeroDivisionError):
+            win.use(lambda w: 1 / 0)
+
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires screen.use()')
+    @unittest.skipUnless(USE_NEWTERM, 'no screen object without newterm()')
+    def test_use_screen(self):
+        screen = self.screen
+        self.assertEqual(
+            screen.use(lambda sc, flag: (sc is screen, flag), flag=True),
+            (True, True))
 
     @requires_curses_func('assume_default_colors')
     @requires_colors
@@ -1155,6 +2130,10 @@ class TestCurses(unittest.TestCase):
     def test_userptr_segfault(self):
         w = curses.newwin(10, 10)
         panel = curses.panel.new_panel(w)
+        # set_userptr(A()) makes a panel<->userptr reference cycle (A.__del__
+        # closes over panel); clean it up so the panel and its window do not
+        # linger until a later test collects them.
+        self.addCleanup(self._delete_panels, panel)
         class A:
             def __del__(self):
                 panel.set_userptr(None)
@@ -1292,6 +2271,156 @@ class TestCurses(unittest.TestCase):
         self._type(box, 'b')
         self.assertEqual(box.gather(), 'abXc ')
 
+    def test_textbox_fill_last_cell(self):
+        # The lower-right cell can be written, even though addch() there
+        # cannot advance the cursor past the end of the window.
+        box, win = self._make_textbox(1, 4, stripspaces=0)
+        self._type(box, 'abcd')
+        self.assertEqual(box.gather(), 'abcd')
+
+    def test_textbox_fill_last_cell_multiline(self):
+        box, win = self._make_textbox(2, 3, stripspaces=0)
+        self._type(box, 'abc')
+        box.do_command(curses.ascii.NL)    # ^j -> start of next line
+        self._type(box, 'def')             # 'f' lands in the lower-right cell
+        self.assertEqual(box.gather(), 'abc\ndef\n')
+
+    def test_textbox_fill_last_cell_insert_mode(self):
+        box, win = self._make_textbox(1, 4, insert_mode=True, stripspaces=0)
+        self._type(box, 'abcd')
+        self.assertEqual(box.gather(), 'abcd')
+
+    def test_textbox_fill_last_cell_scrollok(self):
+        # Writing the lower-right cell must not scroll the window even if it
+        # has scrolling enabled.
+        box, win = self._make_textbox(2, 3, stripspaces=0)
+        win.scrollok(True)
+        self._type(box, 'abc')
+        box.do_command(curses.ascii.NL)
+        self._type(box, 'def')
+        self.assertEqual(box.gather(), 'abc\ndef\n')
+
+    def test_textbox_8bit(self):
+        # An 8-bit-locale character is entered as integer bytes -- the way
+        # do_command() receives getch() input -- and read back; runs on both
+        # builds.  Run the suite under an 8-bit locale
+        # (ISO-8859-1, ISO-8859-15 or KOI8-U) to reach the non-ASCII cases; each
+        # string is used only if the encoding maps it to single bytes.  'abc' is
+        # ASCII, 'café' is common to the Latin encodings, and the rest are
+        # distinctive (byte 0xA4 is '¤'/'€'/'є' in ISO-8859-1/-15/KOI8-U).
+        encoding = self.stdscr.encoding
+        for text in ['abc', 'café', 'naïve ¤¦', 'café €Šž', 'дякую єі']:
+            try:
+                data = text.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != len(text):
+                continue       # a multibyte encoding is not the 8-bit byte path
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 16)
+                for byte in data:
+                    box.do_command(byte)
+                self.assertEqual(box.gather(), text + ' ')
+
+    def test_textbox_8bit_insert(self):
+        # Insert mode shifts the rest of the line right by reading each cell back
+        # and rewriting it; an 8-bit-locale character entered as bytes must
+        # survive the shift.  See test_textbox_8bit for the character choices.
+        encoding = self.stdscr.encoding
+        for ch in ['é', '¤', '€', 'є']:
+            try:
+                data = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != 1:
+                continue
+            with self.subTest(ch=ch):
+                box, win = self._make_textbox(1, 10, insert_mode=True)
+                for byte in ('a' + ch + 'c').encode(encoding):
+                    box.do_command(byte)
+                win.move(0, 1)
+                box.do_command(ord('b'))   # insert 'b', shifting ch and 'c' right
+                self.assertEqual(box.gather(), 'ab' + ch + 'c ')
+
+    def test_textbox_8bit_fill_last_cell(self):
+        # An 8-bit-locale character entered as bytes must survive being written
+        # to the lower-right cell, which uses insch() rather than addch().  See
+        # test_textbox_8bit for the character choices.
+        encoding = self.stdscr.encoding
+        for ch in ['é', '¤', '€', 'є']:
+            try:
+                data = ch.encode(encoding)
+            except UnicodeEncodeError:
+                continue
+            if len(data) != 1:
+                continue
+            with self.subTest(ch=ch):
+                text = 'ab' + ch         # the last character fills the corner
+                box, win = self._make_textbox(1, len(text), stripspaces=0)
+                for byte in text.encode(encoding):
+                    box.do_command(byte)
+                self.assertEqual(box.gather(), text)
+
+    def test_textbox_unicode(self):
+        # Like test_textbox_8bit, but characters are entered as strings -- the
+        # way do_command() receives get_wch() input -- rather than integer
+        # bytes.  Each string is used only if encodable in the current locale;
+        # a narrow build stores one byte per cell, so multi-byte characters
+        # additionally need a wide build.
+        for text in ['abc', 'héšλ', 'café', 'naïve ¤', 'soupçon €Š', 'дякую єі']:
+            if not self._encodable(text):
+                continue
+            if not WIDE_BUILD and len(text.encode(self.stdscr.encoding)) != len(text):
+                continue
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 12)
+                for ch in text:
+                    box.do_command(ch)
+                self.assertEqual(box.gather(), text + ' ')
+
+    def test_textbox_unicode_insert_mode(self):
+        # Like test_textbox_8bit_insert, but the character is entered as a string
+        # (get_wch() input).  Each string is used only if encodable; multi-byte
+        # characters additionally need a wide build (one byte per cell otherwise).
+        for text in ['abcd', 'aβλc', 'aéàc', 'a¤½c', 'a€Šc', 'aдві']:
+            if not self._encodable(text):
+                continue
+            if not WIDE_BUILD and len(text.encode(self.stdscr.encoding)) != len(text):
+                continue
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 10, insert_mode=True)
+                for ch in text[0] + text[2:]:    # all but the 2nd character
+                    box.do_command(ch)
+                win.move(0, 1)
+                box.do_command(text[1])          # insert it at position 1
+                self.assertEqual(box.gather(), text + ' ')
+
+    @requires_wide_build
+    def test_textbox_combining(self):
+        # A spacing character plus a combining mark is a single cell, which
+        # needs the wide build (a narrow build stores one byte per cell).
+        text = 'e\u0301'            # 'e' + COMBINING ACUTE ACCENT
+        if self._encodable(text):
+            box, win = self._make_textbox(1, 10)
+            for ch in text:
+                box.do_command(ch)
+            self.assertEqual(box.gather(), text + ' ')
+
+    def test_textbox_edit_wide(self):
+        # edit() reads characters through get_wch().  Each character is pushed
+        # with unget_wch(), which on a narrow build requires it to encode to a
+        # single byte, so a non-ASCII case needs a wide build or an 8-bit locale.
+        for ch in ['A', 'é', '¤', '€', 'д']:
+            if not self._encodable(ch):
+                continue
+            if not WIDE_BUILD and len(ch.encode(self.stdscr.encoding)) != 1:
+                continue
+            with self.subTest(ch=ch):
+                box, win = self._make_textbox(1, 10)
+                for c in reversed(['a', ch, chr(curses.ascii.BEL)]):
+                    curses.unget_wch(c)
+                self.assertEqual(box.edit(), 'a' + ch + ' ')
+
     def test_textbox_movement(self):
         box, win = self._make_textbox(3, 10)
         self._type(box, 'abc')
@@ -1387,9 +2516,11 @@ class TestCurses(unittest.TestCase):
             curses.resize_term(35000, 1)
         with self.assertRaises(OverflowError):
             curses.resize_term(1, 35000)
-        # GH-120378: Overflow failure in resize_term() causes refresh to fail
-        tmp = curses.initscr()
-        tmp.erase()
+        # GH-120378: a failed resize can leave refresh broken; restore the
+        # original size to recover.  Avoid initscr(), which would switch away
+        # from the shared newterm() screen and corrupt later tests.
+        curses.resize_term(lines, cols)
+        self.stdscr.erase()
 
     @requires_curses_func('resizeterm')
     def test_resizeterm(self):
@@ -1409,9 +2540,11 @@ class TestCurses(unittest.TestCase):
             curses.resizeterm(35000, 1)
         with self.assertRaises(OverflowError):
             curses.resizeterm(1, 35000)
-        # GH-120378: Overflow failure in resizeterm() causes refresh to fail
-        tmp = curses.initscr()
-        tmp.erase()
+        # GH-120378: a failed resize can leave refresh broken; restore the
+        # original size to recover.  Avoid initscr(), which would switch away
+        # from the shared newterm() screen and corrupt later tests.
+        curses.resizeterm(lines, cols)
+        self.stdscr.erase()
 
     def test_ungetch(self):
         curses.ungetch(b'A')
@@ -1425,29 +2558,40 @@ class TestCurses(unittest.TestCase):
         curses.ungetch(1025)
         self.stdscr.getkey()
 
-    @requires_curses_func('unget_wch')
+    @unittest.skipIf(getattr(curses, 'ncurses_version', (99,)) < (5, 8),
+                     "unget_wch is broken in ncurses 5.7 and earlier")
+    def test_ungetch_wch(self):
+        # ungetch() also accepts a character, like unget_wch(), and it
+        # round-trips through get_wch() -- including a character that does not
+        # fit in a single byte.
+        stdscr = self.stdscr
+        for ch in ('a', '\xe9', '\xa4', '€', 'є', '\U0010FFFF'):
+            if not self._storable(ch):
+                continue
+            curses.ungetch(ch)
+            self.assertEqual(stdscr.get_wch(), ch)
+        # An int is a raw keycode, not a character codepoint.
+        curses.ungetch(curses.KEY_LEFT)
+        self.assertEqual(stdscr.getch(), curses.KEY_LEFT)
+
     @unittest.skipIf(getattr(curses, 'ncurses_version', (99,)) < (5, 8),
                      "unget_wch is broken in ncurses 5.7 and earlier")
     def test_unget_wch(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
-        for ch in ('a', '\xe9', '\u20ac', '\U0010FFFF'):
-            try:
-                ch.encode(encoding)
-            except UnicodeEncodeError:
+        # See _storable for the character set, plus a non-BMP character.
+        for ch in ('a', '\xe9', '\xa4', '\u20ac', '\u0454', '\U0010FFFF'):
+            if not self._storable(ch):
                 continue
             try:
                 curses.unget_wch(ch)
             except Exception as err:
                 self.fail("unget_wch(%a) failed with encoding %s: %s"
-                          % (ch, stdscr.encoding, err))
-            read = stdscr.get_wch()
-            self.assertEqual(read, ch)
+                          % (ch, encoding, err))
+            self.assertEqual(stdscr.get_wch(), ch)
 
-            code = ord(ch)
-            curses.unget_wch(code)
-            read = stdscr.get_wch()
-            self.assertEqual(read, ch)
+            curses.unget_wch(ord(ch))
+            self.assertEqual(stdscr.get_wch(), ch)
 
     def test_encoding(self):
         stdscr = self.stdscr
@@ -1534,6 +2678,24 @@ class MiscTests(unittest.TestCase):
     def test_has_extended_color_support(self):
         r = curses.has_extended_color_support()
         self.assertIsInstance(r, bool)
+
+    def test_type_names(self):
+        # The curses types report their public module rather than the
+        # underscore extension that implements them.
+        for name in 'window', 'complexchar', 'complexstr', 'screen', 'error':
+            tp = getattr(curses, name)
+            self.assertEqual(tp.__module__, 'curses')
+            self.assertEqual(tp.__qualname__, name)
+            self.assertEqual(tp.__name__, name)
+
+    @requires_curses_func('panel')
+    def test_panel_type_names(self):
+        import curses.panel
+        for name in 'panel', 'error':
+            tp = getattr(curses.panel, name)
+            self.assertEqual(tp.__module__, 'curses.panel')
+            self.assertEqual(tp.__qualname__, name)
+            self.assertEqual(tp.__name__, name)
 
 
 class TestAscii(unittest.TestCase):
@@ -1646,6 +2808,11 @@ class TextboxTest(unittest.TestCase):
         self.mock_win = MagicMock(spec=curses.window)
         self.mock_win.getyx.return_value = (1, 1)
         self.mock_win.getmaxyx.return_value = (10, 20)
+        self.mock_win.encoding = 'utf-8'
+        # A non-blank cell so that _end_of_line() reports a full line: instr()
+        # backs the text reads, inch() the insert-mode shift.
+        self.mock_win.instr.return_value = b'x'
+        self.mock_win.inch.return_value = ord('x')
         self.textbox = curses.textpad.Textbox(self.mock_win)
 
     def test_init(self):
@@ -1715,6 +2882,243 @@ class TextboxTest(unittest.TestCase):
         self.textbox.do_command(curses.KEY_DOWN)
         self.mock_win.move.assert_called_with(2, 1)
         self.mock_win.reset_mock()
+
+
+class NewtermTestBase(unittest.TestCase):
+    # Shared plumbing for tests that drive newterm() over their own
+    # pseudo-terminal(s).  newterm()/set_term() mutate global curses state, but
+    # each test never touches the screen shared by TestCurses, whose setUp()
+    # makes that screen current again.  So these can run in this process,
+    # without a real terminal and without a subprocess.
+
+    def setUp(self):
+        # newterm() may install signal handlers; restore them afterwards.
+        self.save_signals = SaveSignals()
+        self.save_signals.save()
+        self.addCleanup(self.save_signals.restore)
+
+    def tearDown(self):
+        # Leave visual mode and reclaim the test's screens while their
+        # pseudo-terminals are still open (make_pty() closes them later).
+        try:
+            curses.endwin()
+        except curses.error:
+            pass
+        gc_collect()
+
+    @staticmethod
+    def _drain_pty(master, stop):
+        # Read and discard whatever curses writes to the screen, until asked to
+        # stop and nothing more is pending.  poll() rather than a blocking
+        # read() so we can stop without closing the fd (closing it while this
+        # thread is blocked in read() hangs on macOS).
+        poller = select.poll()
+        poller.register(master, select.POLLIN)
+        while True:
+            if poller.poll(100):
+                try:
+                    if not os.read(master, 1024):
+                        break  # EOF
+                except OSError:
+                    break
+            elif stop.is_set():
+                break
+
+    def make_pty(self):
+        master, slave = os.openpty()
+        # Nothing reads the master end, so writing to the slave and the
+        # tcdrain() in endwin() can block on macOS once the pty buffer fills;
+        # drain it from a background thread (endwin() releases the GIL).
+        stop = threading.Event()
+        reader = threading.Thread(target=self._drain_pty, args=(master, stop),
+                                  daemon=True)
+        reader.start()
+        # Stop and join the reader before closing the fds: on macOS, closing
+        # either end while the reader is blocked in read() hangs.
+        def stop_reader():
+            stop.set()
+            reader.join(SHORT_TIMEOUT)
+        self.addCleanup(os.close, master)
+        self.addCleanup(os.close, slave)
+        self.addCleanup(stop_reader)
+        return slave
+
+
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(BROKEN_NEWTERM, 'ncurses < 6.5 mishandles repeated newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 f"$TERM={term!r}, newterm() may not work")
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class ScreenTests(NewtermTestBase):
+
+    def test_newterm(self):
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        self.assertIsInstance(screen, curses.screen)
+        win = screen.stdscr
+        self.assertIsInstance(win, curses.window)
+        self.assertEqual(win.getmaxyx(), (24, 80))
+        win.addstr(0, 0, 'hello')
+        win.refresh()
+
+    def test_newterm_file_object(self):
+        # type=None uses $TERM; the file arguments accept file objects too.
+        s = self.make_pty()
+        out = os.fdopen(os.dup(s), 'wb', buffering=0)
+        self.addCleanup(out.close)
+        screen = curses.newterm(None, out, s)
+        self.assertIsInstance(screen, curses.screen)
+
+    def test_set_term(self):
+        s = self.make_pty()
+        s2 = self.make_pty()
+        a = curses.newterm('xterm', s, s)     # current screen is a
+        b = curses.newterm('xterm', s2, s2)   # current screen is b
+        self.assertIs(curses.set_term(a), b)  # returns the previous one
+        self.assertIs(curses.set_term(b), a)
+
+    def test_window_keeps_screen_alive(self):
+        # The standard window keeps its screen alive; dropping every other
+        # reference and collecting must not invalidate the window.
+        s = self.make_pty()
+        win = curses.newterm('xterm', s, s).stdscr
+        gc_collect()
+        win.addstr(0, 0, 'still alive')
+        win.refresh()
+
+    def test_screen_freed(self):
+        # Dropping all references to a (non-current) screen and its windows
+        # frees it without error.
+        s = self.make_pty()
+        s2 = self.make_pty()
+        a = curses.newterm('xterm', s, s)
+        b = curses.newterm('xterm', s2, s2)   # a is no longer current
+        del a
+        gc_collect()
+
+    def test_close(self):
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        win = screen.stdscr
+        self.assertIsInstance(win, curses.window)
+        screen.close()
+        # After close() the standard window is detached and unusable, and
+        # stdscr is None.  No reference cycle remains.
+        self.assertIsNone(screen.stdscr)
+        self.assertRaises(curses.error, win.addstr, 0, 0, 'x')
+        # close() is idempotent.
+        screen.close()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_new_prescr(self):
+        screen = curses.new_prescr()
+        self.assertIsInstance(screen, curses.screen)
+        self.assertIsNone(screen.stdscr)
+        del screen
+        gc_collect()
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # The screen type cannot be instantiated directly (bpo-43916).
+        check_disallow_instantiation(self, curses.screen)
+
+
+@unittest.skipUnless(hasattr(curses, 'slk_init'), 'requires curses.slk_init()')
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(BROKEN_NEWTERM, 'ncurses < 6.5 mishandles repeated newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 f"$TERM={term!r}, newterm() may not work")
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class SLKTests(NewtermTestBase):
+    # Soft-label keys reserve the bottom screen line for a row of labels.
+    # slk_init() must run before newterm()/initscr(), so each test sets up its
+    # own screen rather than reusing the one TestCurses builds in setUp().
+
+    def make_slk_screen(self, fmt=0):
+        s = self.make_pty()
+        curses.slk_init(fmt)
+        return curses.newterm('xterm', s, s)
+
+    def test_init_reserves_a_line(self):
+        # Every layout takes the bottom line for the labels; the index-line
+        # layout (3) takes a second line for the index.  Layouts 0 and 1 are
+        # standard; 2 and 3 are ncurses extensions that other curses
+        # implementations reject (slk_init() then returns an error).
+        ncurses = hasattr(curses, 'ncurses_version')
+        for fmt, lines in [(0, 23), (1, 23), (2, 23), (3, 22)]:
+            with self.subTest(fmt=fmt):
+                try:
+                    screen = self.make_slk_screen(fmt)
+                except curses.error:
+                    if ncurses or fmt < 2:
+                        raise
+                    continue
+                self.assertEqual(screen.stdscr.getmaxyx()[0], lines)
+                curses.endwin()
+
+    def test_init_bad_format(self):
+        for fmt in (-1, 4):
+            self.assertRaises(ValueError, curses.slk_init, fmt)
+
+    def test_set_and_label(self):
+        self.make_slk_screen()
+        curses.slk_set(1, 'Help', 0)
+        curses.slk_set(2, 'Save', 1)
+        curses.slk_set(3, 'Quit', 2)
+        self.assertEqual(curses.slk_label(1), 'Help')
+        self.assertEqual(curses.slk_label(2), 'Save')
+        self.assertEqual(curses.slk_label(3), 'Quit')
+
+    def test_set_wide(self):
+        screen = self.make_slk_screen()
+        label = 'Ångström'
+        try:
+            label.encode(screen.stdscr.encoding)
+        except UnicodeEncodeError:
+            self.skipTest('the locale cannot encode %r' % label)
+        curses.slk_set(1, label, 0)
+        self.assertEqual(curses.slk_label(1), label)
+
+    def test_set_bad_justify(self):
+        self.make_slk_screen()
+        for justify in (-1, 3):
+            self.assertRaises(ValueError, curses.slk_set, 1, 'x', justify)
+
+    def test_refresh(self):
+        self.make_slk_screen()
+        curses.slk_set(1, 'Help', 0)
+        curses.slk_noutrefresh()
+        curses.slk_refresh()
+        curses.slk_clear()
+        curses.slk_restore()
+        curses.slk_touch()
+
+    def test_attributes(self):
+        self.make_slk_screen()
+        curses.slk_attron(curses.A_BOLD)
+        curses.slk_attrset(curses.A_UNDERLINE)
+        curses.slk_attroff(curses.A_BOLD)
+        if hasattr(curses, 'slk_attr'):
+            self.assertIsInstance(curses.slk_attr(), int)
+
+    def test_attr_on_off(self):
+        self.make_slk_screen()
+        curses.slk_attr_on(curses.A_BOLD)
+        curses.slk_attr_off(curses.A_BOLD)
+
+    def test_color(self):
+        # slk_attr_set() and slk_color() act on a color pair, so the color
+        # subsystem must be started first.
+        self.make_slk_screen()
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        curses.slk_attr_set(curses.A_BOLD)
+        curses.slk_attr_set(curses.A_BOLD, 0)
+        curses.slk_color(0)
 
 
 if __name__ == '__main__':
