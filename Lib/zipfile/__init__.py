@@ -599,33 +599,32 @@ class ZipInfo:
 
     def _decodeExtra(self, filename_crc):
         # Try to decode the extra field.
-        unpack = struct.unpack
+        unpack_from = struct.unpack_from
         for extra, tp in _Extra.iter(self.extra, True):
+            pos = 4
             if tp == 0x0001:
-                data = extra[4:]
                 # ZIP64 extension (large files and/or large archives)
                 try:
                     if self.file_size in (0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF):
                         field = "File size"
-                        self.file_size, = unpack('<Q', data[:8])
-                        data = data[8:]
+                        self.file_size, = unpack_from('<Q', extra, pos)
+                        pos += 8
                     if self.compress_size == 0xFFFF_FFFF:
                         field = "Compress size"
-                        self.compress_size, = unpack('<Q', data[:8])
-                        data = data[8:]
+                        self.compress_size, = unpack_from('<Q', extra, pos)
+                        pos += 8
                     if self.header_offset == 0xFFFF_FFFF:
                         field = "Header offset"
-                        self.header_offset, = unpack('<Q', data[:8])
+                        self.header_offset, = unpack_from('<Q', extra, pos)
                 except struct.error:
                     raise BadZipFile(f"Corrupt zip64 extra field. "
                                      f"{field} not found.") from None
             elif tp == 0x7075:
-                data = extra[4:]
                 # Unicode Path Extra Field
                 try:
-                    up_version, up_name_crc = unpack('<BL', data[:5])
+                    up_version, up_name_crc = unpack_from('<BL', extra, pos)
                     if up_version == 1 and up_name_crc == filename_crc:
-                        up_unicode_name = data[5:].decode('utf-8')
+                        up_unicode_name = extra[pos+5:].decode('utf-8')
                         if up_unicode_name:
                             self.filename = _sanitize_filename(up_unicode_name)
                         else:
