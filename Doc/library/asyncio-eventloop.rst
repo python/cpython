@@ -1140,12 +1140,21 @@ convenient.
 
    *sock* must be a non-blocking socket.
 
+   With :class:`SelectorEventLoop`, *address* does not need to be resolved:
+   for :const:`~socket.AF_INET` and :const:`~socket.AF_INET6` sockets,
+   ``sock_connect`` first checks whether *address* is already resolved by
+   calling :func:`socket.inet_pton`, and uses :meth:`loop.getaddrinfo` to
+   resolve it if it is not.
+
+   :class:`ProactorEventLoop`, the default event loop on Windows, does not
+   resolve *address*.  The host must already be a numeric IP address; passing
+   a host name raises :exc:`OSError`.  Resolve the address with
+   :meth:`loop.getaddrinfo` first, or use :meth:`loop.create_connection`,
+   which resolves the address on every platform.
+
    .. versionchanged:: 3.5.2
-      ``address`` no longer needs to be resolved.  ``sock_connect``
-      will try to check if the *address* is already resolved by calling
-      :func:`socket.inet_pton`.  If not,
-      :meth:`loop.getaddrinfo` will be used to resolve the
-      *address*.
+      With :class:`SelectorEventLoop`, ``address`` no longer needs to be
+      resolved.
 
    .. seealso::
 
