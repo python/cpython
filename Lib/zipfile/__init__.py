@@ -488,8 +488,11 @@ class ZipInfo:
         self.external_attr = 0          # External file attributes
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
-        self._end_offset = None         # Start of the next local header or central directory
+
+        # Special internal attributes set by class ZipFile when read from an archive:
         self._metadata_encoding = None  # Encoding used when read from the archive
+        self._end_offset = None         # Start of the next local header or central directory
+
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
@@ -2059,6 +2062,7 @@ class ZipFile:
                 filename = filename.decode(self.metadata_encoding or 'cp437')
             # Create ZipInfo instance to store file information
             x = ZipInfo(filename)
+            x._metadata_encoding = self.metadata_encoding or 'cp437'
             x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
             x.comment = fp.read(centdir[_CD_COMMENT_LENGTH])
             x.header_offset = centdir[_CD_LOCAL_HEADER_OFFSET]
@@ -2075,7 +2079,6 @@ class ZipFile:
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
             x._decodeExtra(orig_filename_crc)
             x.header_offset = x.header_offset + concat
-            x._metadata_encoding = self.metadata_encoding or 'cp437'
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
 
