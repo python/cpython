@@ -541,7 +541,14 @@ class ZipInfo:
             compress_size = self.compress_size
             file_size = self.file_size
 
-        extra = self.extra
+        # Strip extra fields that should not exist in the local entry or should
+        # be determined later. (self.extra can be read from central directory
+        # when read in append mode)
+        extra = _Extra.strip(self.extra, (
+            0x0001,  # Zip64
+            0x0017,  # Strong Encryption Header
+            0x6375,  # Unicode Comment
+        ))
 
         min_version = 0
         if zip64 is None:
@@ -555,7 +562,7 @@ class ZipInfo:
             extra = struct.pack(
                 fmt, 1, struct.calcsize(fmt)-4,
                 file_size, compress_size
-            ) + _Extra.strip(extra, (1,))
+            ) + extra
 
             file_size = 0xffffffff
             compress_size = 0xffffffff

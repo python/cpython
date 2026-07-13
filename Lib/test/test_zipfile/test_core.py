@@ -1217,6 +1217,28 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             b'zzz'
         ))
 
+        # should strip zip64 field if zip64 not used
+        fh = io.BytesIO()
+        with zipfile.ZipFile(fh, 'w') as zh:
+            zinfo = zipfile.ZipInfo('strfile')
+            zinfo.extra = (
+                # zip64 (should be stripped)
+                b'\x01\x00\x10\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+
+                # invalid tail
+                b'zzz'
+            )
+            zh.writestr(zinfo, 'foo')
+
+        fh.seek(0)
+        fh.seek(zinfo.header_offset)
+        entry = fh.read(zh.start_dir - zinfo.header_offset - zinfo.compress_size)
+        header = struct.unpack_from(zipfile.structFileHeader, entry)
+        extra_bytes = entry[-header[zipfile._FH_EXTRA_FIELD_LENGTH]:]
+        self.assertEqual(extra_bytes, b'zzz')
+
     def test_force_zip64(self):
         """Test that forcing zip64 extensions correctly notes this in the zip file"""
 
