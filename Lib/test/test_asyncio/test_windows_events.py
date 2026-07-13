@@ -5,6 +5,7 @@ import sys
 import time
 import threading
 import unittest
+import warnings
 from unittest import mock
 
 if sys.platform != 'win32':
@@ -16,6 +17,7 @@ import _winapi
 import asyncio
 from asyncio import windows_events
 from asyncio import windows_utils
+from test import support
 from test.support import os_helper
 from test.test_asyncio import utils as test_utils
 
@@ -356,9 +358,12 @@ class ProactorPipeObjectSupportTests(unittest.TestCase):
 
     def check_write_rejected(self, pipe):
         self.addCleanup(pipe.close)
-        with self.assertRaises(OSError):
-            self.loop.run_until_complete(
-                self.loop.connect_write_pipe(asyncio.BaseProtocol, pipe))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', ResourceWarning)
+            with self.assertRaises(OSError):
+                self.loop.run_until_complete(
+                    self.loop.connect_write_pipe(asyncio.BaseProtocol, pipe))
+            support.gc_collect()
 
     def check_accepted(self, rpipe, wpipe):
         self.addCleanup(rpipe.close)
