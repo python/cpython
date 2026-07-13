@@ -1783,8 +1783,9 @@ class HandlerTests(unittest.TestCase):
         opener = OpenerDirector()
         opener.add_handler(auth_handler)
         opener.add_handler(MockDigestHTTPHandler())
-        with self.assertRaises(urllib.error.HTTPError):
+        with self.assertRaises(urllib.error.HTTPError) as cm:
             opener.open("http://acme.example.com/protected")
+        cm.exception.close()
 
         # The same handler must still authenticate a later request.
         opener = OpenerDirector()
