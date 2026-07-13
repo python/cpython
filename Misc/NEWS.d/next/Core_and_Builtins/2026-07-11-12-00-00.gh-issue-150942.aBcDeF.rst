@@ -1,0 +1,2 @@
+Speed up :meth:`asyncio.Future.remove_done_callback` by using
+``_PyList_AppendTakeRef`` to avoid unnecessary reference count operations.

@@ -1202,9 +1202,11 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
                 j++;
                 continue;
             }
-            ret = PyList_Append(newlist, item);
+            ret = _PyList_AppendTakeRef((PyListObject *)newlist, item);
         }
-        Py_DECREF(item);
+        else {
+            Py_DECREF(item);
+        }
         if (ret < 0) {
             goto fail;
         }
