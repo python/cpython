@@ -542,8 +542,7 @@ class ZipInfo:
             file_size = self.file_size
 
         # Strip extra fields that should not exist in the local entry or should
-        # be determined later. (self.extra can be read from central directory
-        # when read in append mode)
+        # be determined later.
         extra = _Extra.strip(self.extra, (
             0x0001,  # Zip64
             0x0017,  # Strong Encryption Header

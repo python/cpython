@@ -1,4 +1,4 @@
-Fix an issue where duplicated Zip64 extra fields or other invalid
-fields were written if :attr:`ZipInfo.extra <zipfile.ZipInfo.extra>`
-already contained them (which could be read from central directory in
-append mode).
+Fix an issue where duplicated Zip64 extra fields or other improper
+fields were written to the local file entry if
+:attr:`ZipInfo.extra <zipfile.ZipInfo.extra>` contained them.
+
