@@ -4837,18 +4837,18 @@ class OtherTests(unittest.TestCase):
 
         with mock.patch('os.sep', '\\'), mock.patch('os.altsep', '/'), \
              zipfile.ZipFile(TESTFN, "a") as zipfp:
-            self.assertIsNone(zipfp.testzip())
             zi = zipfp.infolist()[0]
             self.assertEqual(zi.orig_filename, 'MyFolder/My\\File.txt')
             self.assertEqual(zi.filename, 'MyFolder/My/File.txt')
+            self.assertIsNone(zipfp.testzip())
             # trigger archive rewriting
             zipfp.comment = b''
 
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
-            self.assertIsNone(zipfp.testzip())
             zi = zipfp.infolist()[0]
             self.assertEqual(zi.orig_filename, 'MyFolder/My\\File.txt')
             self.assertEqual(zi.filename, 'MyFolder/My/File.txt')
+            self.assertIsNone(zipfp.testzip())
 
     def tearDown(self):
         unlink(TESTFN)
