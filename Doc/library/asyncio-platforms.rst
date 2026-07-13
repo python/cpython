@@ -20,9 +20,7 @@ All Platforms
   cannot be used to monitor file I/O.
 
 * :meth:`loop.connect_read_pipe` and :meth:`loop.connect_write_pipe`
-  cannot be used with regular files, nor with :data:`sys.stdin`,
-  :data:`sys.stdout` or :data:`sys.stderr` when these are redirected to or
-  from a regular file.  See :ref:`Supported pipe objects
+  cannot be used with regular files.  See :ref:`Supported pipe objects
   <asyncio-pipe-objects>` for the objects that are accepted on each
   platform.
 
@@ -71,14 +69,11 @@ All event loops on Windows do not support the following methods:
 
 * :meth:`loop.connect_read_pipe` and :meth:`loop.connect_write_pipe` only
   accept a handle opened for overlapped I/O, which in practice means a named
-  pipe such as those created by :func:`!asyncio.windows_utils.pipe`.
-  Console handles and regular file handles cannot be associated with an I/O
-  completion port, so :data:`sys.stdin`, :data:`sys.stdout`,
-  :data:`sys.stderr` and files opened with :func:`open` are not supported.
-  These methods do not fail immediately in that case: the resulting
-  :exc:`OSError` is passed to the
-  :meth:`event loop exception handler <loop.call_exception_handler>` when the
-  transport first reads or writes.
+  pipe such as those created by :func:`!asyncio.windows_utils.pipe`.  A
+  console handle cannot be associated with an I/O completion port, so
+  :data:`sys.stdin`, :data:`sys.stdout` and :data:`sys.stderr` are not
+  supported.  See :ref:`Supported pipe objects <asyncio-pipe-objects>` for
+  how such a handle is rejected, which differs between the two methods.
 
 The resolution of the monotonic clock on Windows is usually around 15.6
 milliseconds.  The best resolution is 0.5 milliseconds. The resolution depends on the
