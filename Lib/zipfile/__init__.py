@@ -456,8 +456,6 @@ class ZipInfo:
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
-        self.orig_filename = None       # Original file name in archive
-
         # Terminate the file name at the first null byte and
         # ensure paths always use forward slashes as the directory separator.
         filename = _sanitize_filename(filename)
@@ -487,7 +485,11 @@ class ZipInfo:
         self.external_attr = 0          # External file attributes
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
+
+        # Special internal attributes set by class ZipFile when read from an archive:
+        self._orig_filename = None      # Original file name in archive
         self._end_offset = None         # Start of the next local header or central directory
+
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
