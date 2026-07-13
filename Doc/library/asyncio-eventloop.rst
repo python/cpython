@@ -1263,7 +1263,9 @@ Working with pipes
    *protocol_factory* must be a callable returning an
    :ref:`asyncio protocol <asyncio-protocol>` implementation.
 
-   *pipe* is a :term:`file-like object <file object>`.
+   *pipe* is a :term:`file-like object <file object>`.  Not every file-like
+   object is accepted; see :ref:`Supported pipe objects
+   <asyncio-pipe-objects>` below.
 
    Return pair ``(transport, protocol)``, where *transport* supports
    the :class:`ReadTransport` interface and *protocol* is an object
@@ -1280,7 +1282,9 @@ Working with pipes
    *protocol_factory* must be a callable returning an
    :ref:`asyncio protocol <asyncio-protocol>` implementation.
 
-   *pipe* is :term:`file-like object <file object>`.
+   *pipe* is a :term:`file-like object <file object>`.  Not every file-like
+   object is accepted; see :ref:`Supported pipe objects
+   <asyncio-pipe-objects>` below.
 
    Return pair ``(transport, protocol)``, where *transport* supports
    :class:`WriteTransport` interface and *protocol* is an object
@@ -1288,6 +1292,44 @@ Working with pipes
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
+
+.. _asyncio-pipe-objects:
+
+.. rubric:: Supported pipe objects
+
+Even though the *pipe* argument is a :term:`file-like object <file object>`,
+these methods only work with objects the operating system can poll for
+readiness or perform overlapped I/O on.  Regular files on disk are **not**
+supported on any platform, and neither are :data:`sys.stdin`,
+:data:`sys.stdout` and :data:`sys.stderr` when they have been redirected to
+or from a regular file.  There is no asynchronous file I/O in asyncio; use
+:meth:`loop.run_in_executor` to read and write regular files without
+blocking the event loop.
+
+On Unix, with :class:`SelectorEventLoop`, *pipe* must wrap one of the
+following:
+
+* a pipe, such as an end of an :func:`os.pipe` pair or a FIFO created with
+  :func:`os.mkfifo`;
+* a socket;
+* a character device, such as a terminal.  This is why :data:`sys.stdin`
+  works when the program is run interactively but fails when its input is
+  redirected from a file.
+
+Anything else, a regular file in particular, raises :exc:`ValueError`.
+
+On Windows, where only :class:`ProactorEventLoop` implements these methods,
+*pipe* must wrap a handle opened for overlapped I/O, since the handle has to
+be associated with an I/O completion port.  In practice this means a named
+pipe, such as the ones created by :func:`!asyncio.windows_utils.pipe` and
+used for the standard streams of a subprocess started by
+:meth:`loop.subprocess_exec`.  Console handles and regular file handles
+cannot be associated with a completion port, so :data:`sys.stdin` and files
+opened with :func:`open` do not work.  Unlike on Unix, this is not reported
+by the method itself: it returns successfully and the resulting
+:exc:`OSError` is later passed to the
+:meth:`event loop exception handler <loop.call_exception_handler>` when the
+transport first reads or writes.
 
 .. note::
 
