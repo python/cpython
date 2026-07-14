@@ -1,0 +1,1 @@
+Fix potential integer overflows in PyObject_CopyData when processing multi-dimensional buffers with exceptionally large dimensions or shapes.

@@ -718,7 +718,12 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 
     /* Otherwise a more elaborate copy scheme is needed */
 
-    /* XXX(nnorwitz): need to check for overflow! */
+    if ((size_t)view_src.ndim > (size_t)PyBUF_MAX_NDIM) {
+        PyErr_SetString(PyExc_BufferError, "invalid ndim");
+        PyBuffer_Release(&view_dest);
+        PyBuffer_Release(&view_src);
+        return -1;
+    }
     indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view_src.ndim);
     if (indices == NULL) {
         PyErr_NoMemory();
@@ -731,7 +736,13 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
     }
     elements = 1;
     for (k=0; k<view_src.ndim; k++) {
-        /* XXX(nnorwitz): can this overflow? */
+        if (view_src.shape[k] != 0 && elements > PY_SSIZE_T_MAX / view_src.shape[k]) {
+            PyMem_Free(indices);
+            PyBuffer_Release(&view_dest);
+            PyBuffer_Release(&view_src);
+            PyErr_SetString(PyExc_BufferError, "buffer is too large");
+            return -1;
+        }
         elements *= view_src.shape[k];
     }
     while (elements--) {
