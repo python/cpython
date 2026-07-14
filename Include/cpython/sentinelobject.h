@@ -16,7 +16,8 @@ PyAPI_DATA(PyTypeObject) PySentinel_Type;
 
 PyAPI_FUNC(PyObject *) PySentinel_New(
     const char *name,
-    const char *module_name);
+    const char *module_name,
+    const char *repr);
 
 #ifdef __cplusplus
 }

@@ -1614,10 +1614,11 @@ properties, will be invoked and :meth:`~object.__getattr__` and
 may be called.
 
 For cases where you want passive introspection, like documentation tools, this
-can be inconvenient. :func:`getattr_static` has the same signature as :func:`getattr`
+can be inconvenient. :func:`getattr_static` has a similar signature as :func:`getattr`
 but avoids executing code when it fetches attributes.
 
-.. function:: getattr_static(obj, attr, default=None)
+.. function:: getattr_static(obj, attr)
+              getattr_static(obj, attr, default)
 
    Retrieve attributes without triggering dynamic lookup via the
    descriptor protocol, :meth:`~object.__getattr__`

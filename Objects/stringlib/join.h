@@ -68,13 +68,18 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
             buffers[i].len = PyBytes_GET_SIZE(item);
         }
         else {
+            /* item is only borrowed; its __buffer__() may run Python that
+               drops the sequence's last reference to it. */
+            Py_INCREF(item);
             if (PyObject_GetBuffer(item, &buffers[i], PyBUF_SIMPLE) != 0) {
                 PyErr_Format(PyExc_TypeError,
                              "sequence item %zd: expected a bytes-like object, "
                              "%.80s found",
                              i, Py_TYPE(item)->tp_name);
+                Py_DECREF(item);
                 goto error;
             }
+            Py_DECREF(item);
             /* If the backing objects are mutable, then dropping the GIL
              * opens up race conditions where another thread tries to modify
              * the object which we hold a buffer on it. Such code has data

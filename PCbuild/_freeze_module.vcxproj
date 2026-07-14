@@ -184,6 +184,8 @@
     <ClCompile Include="..\Parser\lexer\buffer.c" />
     <ClCompile Include="..\Parser\lexer\state.c" />
     <ClCompile Include="..\Parser\lexer\lexer.c" />
+    <ClCompile Include="..\Parser\lexer\number.c" />
+    <ClCompile Include="..\Parser\lexer\string.c" />
     <ClCompile Include="..\Parser\tokenizer\string_tokenizer.c" />
     <ClCompile Include="..\Parser\tokenizer\file_tokenizer.c" />
     <ClCompile Include="..\Parser\tokenizer\utf8_tokenizer.c" />
@@ -333,6 +335,11 @@
       <ModName>encodings._win_cp_codecs</ModName>
       <IntFile>$(IntDir)encodings._win_cp_codecs.g.h</IntFile>
       <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings._win_cp_codecs.h</OutFile>
+    </None>
+    <None Include="..\Lib\encodings\_iconv_codecs.py">
+      <ModName>encodings._iconv_codecs</ModName>
+      <IntFile>$(IntDir)encodings._iconv_codecs.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\encodings._iconv_codecs.h</OutFile>
     </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>

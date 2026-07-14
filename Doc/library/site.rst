@@ -356,7 +356,79 @@ Module contents
       This function used to be called unconditionally.
 
 
-.. function:: addsitedir(sitedir, known_paths=None, *, defer_processing_start_files=False)
+.. function:: makepath(*paths)
+
+   Join *paths* with :func:`os.path.join`, attempt to make the result
+   absolute with :func:`os.path.abspath`, and return a 2-tuple containing
+   the absolute path and its case-normalized form as produced by
+   :func:`os.path.normcase`.  If :func:`os.path.abspath` raises
+   :exc:`OSError`, the joined path is used unchanged for the
+   case-normalization step.
+
+   The second element of the returned tuple is the form used throughout the
+   :mod:`!site` module to compare paths on case-insensitive file systems, and
+   is what populates the ``known_paths`` sets that prevent duplicate
+   :data:`sys.path` entries in various APIs within this module.
+
+
+.. class:: StartupState(known_paths=None)
+
+   Instances of this class accumulate interpreter startup configuration data
+   from one or more site directories.  They are the preferred interface for
+   batching the processing of :file:`.pth` and :file:`.start` files across
+   multiple site directories, so that every :data:`sys.path` extension is
+   visible before any startup code runs.
+
+   The optional *known_paths* argument is a set of case-normalized paths
+   (which can be produced by :func:`makepath`) used to prevent duplicate
+   :data:`sys.path` entries.  When ``None`` (the default), the set is built
+   from the current :data:`sys.path`.  :func:`main` implicitly uses an
+   instance of this class.
+
+   Typical use:
+
+   .. code-block:: python
+
+      state = site.StartupState()
+      for sitedir in site_dirs:
+          state.addsitedir(sitedir)
+      state.process()
+
+   .. versionadded:: 3.15
+
+   .. method:: addsitedir(sitedir)
+
+      Read the :file:`.pth` and :file:`.start` files in *sitedir* and
+      record their :data:`sys.path` extensions, deprecated :file:`.pth`
+      ``import`` lines, and :file:`.start` entry points on this state.
+      The recorded data is not applied until :meth:`process` is called.
+
+   .. method:: addusersitepackages()
+
+      Add the per-user site-packages directory, if enabled and if it exists.
+      The directory's startup data is accumulated for later processing by
+      :meth:`process`.
+
+   .. method:: addsitepackages(prefixes=None)
+
+      Add global site-packages directories, computed from *prefixes* or from
+      the global :data:`PREFIXES` when *prefixes* is ``None``.  Each
+      directory's startup data is accumulated for later processing by
+      :meth:`process`.
+
+   .. method:: process()
+
+      Apply the accumulated state by first adding the path extensions to
+      :data:`sys.path`, then executing the :file:`.start` file entry points
+      and :file:`.pth` file ``import`` lines (:ref:`deprecated
+      <site-pth-files>`).
+
+      This method is not idempotent and must not be called more than once
+      on the same instance.  Doing so will apply the accumulated state
+      more than once, re-running entry points and ``import`` lines.
+
+
+.. function:: addsitedir(sitedir, known_paths=None)
 
    Add a directory to sys.path and parse the :file:`.pth` and :file:`.start`
    files found in that directory.  Typically used in :mod:`sitecustomize` or
@@ -366,17 +438,15 @@ Module contents
    used to prevent duplicate :data:`sys.path` entries.  When ``None`` (the
    default), the set is built from the current :data:`sys.path`.
 
-   While :file:`.pth` and :file:`.start` files are always parsed, set
-   *defer_processing_start_files* to ``True`` to prevent processing the
-   startup data found in those files, so that you can process them explicitly
-   (this is typically used by the :func:`main` function).
+   For batched processing across multiple site directories, build a
+   :class:`StartupState` explicitly and call :meth:`StartupState.addsitedir`
+   on it; that defers :file:`.pth` and :file:`.start` processing until a
+   single :meth:`StartupState.process` call, ensuring every :data:`sys.path`
+   extension is visible before any startup code runs.
 
    .. versionchanged:: 3.15
 
       Also processes :file:`.start` files.  See :ref:`site-start-files`.
-      All :file:`.pth` and :file:`.start` files are now read and
-      accumulated before any path extensions, ``import`` line execution,
-      or entry point invocations take place.
 
 
 .. function:: getsitepackages()
@@ -447,4 +517,3 @@ value greater than 2 if there is an error.
    * :pep:`370` -- Per user site-packages directory
    * :pep:`829` -- Startup entry points and the deprecation of import lines in ``.pth`` files
    * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
-
