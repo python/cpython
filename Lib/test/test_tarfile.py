@@ -1668,6 +1668,22 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         finally:
             os_helper.unlink(path)
 
+    @os_helper.skip_unless_symlink
+    def test_symlink_target_normalization(self):
+        # Test for gh-151669.
+        path = os.path.join(TEMPDIR, "symlink")
+        target = "subdir/link/target"
+        os.symlink(target.replace("/", os.sep), path)
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            try:
+                tarinfo = tar.gettarinfo(path)
+                self.assertEqual(tarinfo.linkname, target)
+            finally:
+                tar.close()
+        finally:
+            os_helper.unlink(path)
+
     def test_add_self(self):
         # Test for #1257255.
         dstname = os.path.abspath(tmpname)

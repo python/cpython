@@ -1,6 +1,7 @@
 import functools
 import inspect
 import os
+import platform
 import select
 import string
 import sys
@@ -27,6 +28,9 @@ try:
     import curses.panel
 except ImportError:
     pass
+
+# Only reachable once curses imported, so the platform has fcntl too.
+import fcntl
 
 def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
@@ -79,6 +83,24 @@ def requires_colors(test):
 
 term = os.environ.get('TERM')
 SHORT_MAX = 0x7fff
+
+# ncurses before 6.5 can crash on repeated newterm().  Fall back to initscr()
+# and skip the tests that need several screens.
+_ncurses_version = getattr(curses, 'ncurses_version', None)
+BROKEN_NEWTERM = _ncurses_version is not None and _ncurses_version < (6, 5)
+USE_NEWTERM = hasattr(curses, 'newterm') and not BROKEN_NEWTERM
+
+# Older macOS reports a variation selector as a spacing character (wcwidth()
+# == 1) rather than a combining mark, so it cannot share a cell with its base.
+# The failure is confirmed on 14.2 and gone by 26, so skip below 26.
+def _broken_variation_selector_width():
+    if sys.platform == 'darwin':
+        mac_ver = platform.mac_ver()[0]
+        if mac_ver:
+            return tuple(map(int, mac_ver.split('.'))) < (26,)
+    return False
+
+BROKEN_VARIATION_SELECTOR_WIDTH = _broken_variation_selector_width()
 
 # newterm() is used when available (it reports errors instead of exiting), but
 # initscr() is still the fallback, and an unusable $TERM has no terminal to
@@ -139,12 +161,16 @@ class TestCurses(unittest.TestCase):
             sys.stderr.flush()
             sys.stdout.flush()
             print(file=self.output, flush=True)
-        if hasattr(curses, 'newterm'):
+        if USE_NEWTERM:
             # Use newterm() rather than initscr(): it reports errors instead of
             # exiting, and gives each test a fresh screen, which also lets
             # ScreenTests run newterm()/set_term() in the same process.
             try:
                 infd = sys.__stdin__.fileno()
+                if fcntl.fcntl(infd, fcntl.F_GETFL) & os.O_ACCMODE == os.O_WRONLY:
+                    # newterm() needs a readable input fd; a write-only stdin
+                    # (as nohup leaves for a backgrounded run) fails with EINVAL.
+                    infd = stdout_fd
             except (AttributeError, ValueError, OSError):
                 infd = stdout_fd
             self.screen = curses.newterm(term, stdout_fd, infd)
@@ -157,7 +183,11 @@ class TestCurses(unittest.TestCase):
             self.addCleanup(setattr, self, 'screen', None)
             self.addCleanup(setattr, self, 'stdscr', None)
         else:
+            # Tests share one initscr() screen; clear the rendition and
+            # background so a previous test's does not bleed in.
             self.stdscr = curses.initscr()
+            self.stdscr.attrset(curses.A_NORMAL)
+            self.stdscr.bkgdset(' ')
         if self.isatty:
             curses.savetty()
             self.addCleanup(curses.endwin)
@@ -401,7 +431,8 @@ class TestCurses(unittest.TestCase):
         stdscr = self.stdscr
         if self._encodable('\U0001f600'):
             stdscr.addch(0, 0, '\U0001f600')          # single emoji
-        if self._encodable('\u263a\ufe0f'):
+        # Skip the variation selector where the platform reports it as spacing.
+        if not BROKEN_VARIATION_SELECTOR_WIDTH and self._encodable('\u263a\ufe0f'):
             stdscr.addch(1, 0, '\u263a\ufe0f')        # WHITE SMILING FACE + VS-16
         # An emoji ZWJ sequence or an emoji with a modifier is more than one
         # spacing character and cannot share a single cell.
@@ -2026,6 +2057,7 @@ class TestCurses(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(curses.screen, 'use'),
                          'requires screen.use()')
+    @unittest.skipUnless(USE_NEWTERM, 'no screen object without newterm()')
     def test_use_screen(self):
         screen = self.screen
         self.assertEqual(
@@ -2332,27 +2364,36 @@ class TestCurses(unittest.TestCase):
     def test_textbox_unicode(self):
         # Like test_textbox_8bit, but characters are entered as strings -- the
         # way do_command() receives get_wch() input -- rather than integer
-        # bytes.  Each string is used only if encodable in the current locale.
+        # bytes.  Each string is used only if encodable in the current locale;
+        # a narrow build stores one byte per cell, so multi-byte characters
+        # additionally need a wide build.
         for text in ['abc', 'héšλ', 'café', 'naïve ¤', 'soupçon €Š', 'дякую єі']:
-            if self._encodable(text):
-                with self.subTest(text=text):
-                    box, win = self._make_textbox(1, 12)
-                    for ch in text:
-                        box.do_command(ch)
-                    self.assertEqual(box.gather(), text + ' ')
+            if not self._encodable(text):
+                continue
+            if not WIDE_BUILD and len(text.encode(self.stdscr.encoding)) != len(text):
+                continue
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 12)
+                for ch in text:
+                    box.do_command(ch)
+                self.assertEqual(box.gather(), text + ' ')
 
     def test_textbox_unicode_insert_mode(self):
         # Like test_textbox_8bit_insert, but the character is entered as a string
-        # (get_wch() input).  Each string is used only if encodable.
+        # (get_wch() input).  Each string is used only if encodable; multi-byte
+        # characters additionally need a wide build (one byte per cell otherwise).
         for text in ['abcd', 'aβλc', 'aéàc', 'a¤½c', 'a€Šc', 'aдві']:
-            if self._encodable(text):
-                with self.subTest(text=text):
-                    box, win = self._make_textbox(1, 10, insert_mode=True)
-                    for ch in text[0] + text[2:]:    # all but the 2nd character
-                        box.do_command(ch)
-                    win.move(0, 1)
-                    box.do_command(text[1])          # insert it at position 1
-                    self.assertEqual(box.gather(), text + ' ')
+            if not self._encodable(text):
+                continue
+            if not WIDE_BUILD and len(text.encode(self.stdscr.encoding)) != len(text):
+                continue
+            with self.subTest(text=text):
+                box, win = self._make_textbox(1, 10, insert_mode=True)
+                for ch in text[0] + text[2:]:    # all but the 2nd character
+                    box.do_command(ch)
+                win.move(0, 1)
+                box.do_command(text[1])          # insert it at position 1
+                self.assertEqual(box.gather(), text + ' ')
 
     @requires_wide_build
     def test_textbox_combining(self):
@@ -2904,6 +2945,7 @@ class NewtermTestBase(unittest.TestCase):
 
 
 @unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(BROKEN_NEWTERM, 'ncurses < 6.5 mishandles repeated newterm()')
 @unittest.skipIf(not term or term == 'unknown',
                  f"$TERM={term!r}, newterm() may not work")
 @unittest.skipIf(sys.platform == "cygwin",
@@ -2985,6 +3027,7 @@ class ScreenTests(NewtermTestBase):
 
 @unittest.skipUnless(hasattr(curses, 'slk_init'), 'requires curses.slk_init()')
 @unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(BROKEN_NEWTERM, 'ncurses < 6.5 mishandles repeated newterm()')
 @unittest.skipIf(not term or term == 'unknown',
                  f"$TERM={term!r}, newterm() may not work")
 @unittest.skipIf(sys.platform == "cygwin",

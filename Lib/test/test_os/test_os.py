@@ -5058,6 +5058,30 @@ class TestScandir(unittest.TestCase):
         finally:
             os.chdir(old_dir)
 
+    @unittest.skipIf(sys.platform != 'win32', "Win32 specific test")
+    def test_windows_trailing_space_path(self):
+        import pathlib
+
+        filename = self.create_file("file.txt")
+        path = self.path + " "
+
+        self.assertTrue(os.path.exists(path))
+        os.stat(path)
+        with open(filename + " ", "rb") as file:
+            self.assertEqual(file.read(), b"python")
+
+        self.assertEqual(os.listdir(path), ["file.txt"])
+        with os.scandir(path) as entries:
+            self.assertEqual([entry.name for entry in entries], ["file.txt"])
+        pathlib_entries = list(pathlib.Path(path).iterdir())
+        self.assertEqual([entry.name for entry in pathlib_entries], ["file.txt"])
+        del pathlib_entries
+
+        extended_path = "\\\\?\\" + path
+        self.assertFalse(os.path.exists(extended_path))
+        self.assertRaises(FileNotFoundError, os.listdir, extended_path)
+        self.assertRaises(FileNotFoundError, os.scandir, extended_path)
+
     def test_repr(self):
         entry = self.create_file_entry()
         self.assertEqual(repr(entry), "<DirEntry 'file.txt'>")
