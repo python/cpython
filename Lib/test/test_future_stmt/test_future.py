@@ -3,7 +3,7 @@
 import __future__
 import ast
 import unittest
-from test.support import import_helper
+from test.support import force_not_colorized, import_helper
 from test.support.script_helper import spawn_python, kill_python
 from textwrap import dedent
 import os
@@ -176,6 +176,7 @@ class FutureTest(unittest.TestCase):
         exec("from __future__ import unicode_literals; x = ''", {}, scope)
         self.assertIsInstance(scope["x"], str)
 
+    @force_not_colorized
     def test_syntactical_future_repl(self):
         p = spawn_python('-i')
         p.stdin.write(b"from __future__ import barry_as_FLUFL\n")
