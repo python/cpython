@@ -265,8 +265,7 @@ def http2time(text):
         try:
             mon = MONTHS_LOWER.index(g[1].lower()) + 1
         except ValueError:
-            # The month field matched the pattern but is not a real month
-            # name, so fall through to the slower parser.
+            # Not a real month name; fall through to the slower parser.
             pass
         else:
             tt = (int(g[2]), mon, int(g[0]),
