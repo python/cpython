@@ -15230,7 +15230,6 @@ os_abort_impl(PyObject *module)
 }
 
 #ifdef MS_WINDOWS
-#ifdef MS_WINDOWS_DESKTOP
 /* Grab ShellExecute dynamically from shell32 */
 static int has_ShellExecute = -1;
 static HINSTANCE (CALLBACK *Py_ShellExecuteW)(HWND, LPCWSTR, LPCWSTR, LPCWSTR,
@@ -15259,7 +15258,6 @@ check_ShellExecute(void)
     }
     return has_ShellExecute;
 }
-#endif // MS_WINDOWS_DESKTOP
 
 
 /*[clinic input]
@@ -15304,9 +15302,6 @@ os_startfile_impl(PyObject *module, path_t *filepath,
                   path_t *cwd, int show_cmd)
 /*[clinic end generated code: output=1c6f2f3340e31ffa input=8248997b80669622]*/
 {
-#if defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_DESKTOP)
-    return PyErr_Format(PyExc_NotImplementedError, "startfile not available on UWP");
-#else
     HINSTANCE rc;
 
     if(!check_ShellExecute()) {
@@ -15335,7 +15330,6 @@ os_startfile_impl(PyObject *module, path_t *filepath,
         return NULL;
     }
     Py_RETURN_NONE;
-#endif
 }
 #endif /* MS_WINDOWS */
 
