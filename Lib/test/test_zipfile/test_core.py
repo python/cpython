@@ -1191,6 +1191,8 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
 
     def test_generated_extra_in_local_entry(self):
         """Should not write duplicated or improper fields to local file entry."""
+        comment = '\u4e00'.encode('utf-8')
+
         # zip64
         fh = io.BytesIO()
         with zipfile.ZipFile(fh, 'w') as zh:
@@ -1200,7 +1202,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                 struct.pack('<HHQQ', 0x0001, 16, 0, 0) +
                 # unicode comment
                 struct.pack('<HHBL5s', 0x6375, 10, 1,
-                            zipfile.crc32(b'\u4e00'), b'\u4e00') +
+                            zipfile.crc32(comment), comment) +
                 # invalid tail
                 b'zzz'
             )
@@ -1224,7 +1226,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                 struct.pack('<HHQQ', 0x0001, 16, 0, 0) +
                 # unicode comment
                 struct.pack('<HHBL5s', 0x6375, 10, 1,
-                            zipfile.crc32(b'\u4e00'), b'\u4e00') +
+                            zipfile.crc32(comment), comment) +
                 # invalid tail
                 b'zzz'
             )
