@@ -8967,7 +8967,7 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _CHECK_MANAGED_OBJECT_HAS_VALUES_OFFSET
+            // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
                 uint16_t validity_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
@@ -9160,16 +9160,19 @@
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
+                uint16_t validity_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                assert((char *)&_PyObject_InlineValues(owner_o)->valid ==
+                   (char *)owner_o + validity_offset);
+                if (!FT_ATOMIC_LOAD_UINT8(*((uint8_t *)owner_o + validity_offset))) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_METHOD_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -9345,16 +9348,19 @@
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
+                uint16_t validity_offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
+                assert((char *)&_PyObject_InlineValues(owner_o)->valid ==
+                   (char *)owner_o + validity_offset);
+                if (!FT_ATOMIC_LOAD_UINT8(*((uint8_t *)owner_o + validity_offset))) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            /* Skip 2 cache entries */
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);

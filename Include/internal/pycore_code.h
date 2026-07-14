@@ -111,6 +111,7 @@ typedef struct {
     union {
         uint16_t keys_version[2];
         uint16_t dict_offset;
+        uint16_t validity_offset;
     };
     uint16_t descr[4];
 } _PyLoadMethodCache;

@@ -1304,7 +1304,13 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
         }
-        write_u32(cache->keys_version, shared_keys_version);
+        PyDictValues *values = _PyObject_InlineValues(owner);
+        Py_ssize_t validity_offset = (char *)&values->valid - (char *)owner;
+        if (validity_offset != (uint16_t)validity_offset) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+            return 0;
+        }
+        cache->validity_offset = (uint16_t)validity_offset;
         specialize(instr, is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
     }
     else {
