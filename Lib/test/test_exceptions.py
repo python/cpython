@@ -1583,11 +1583,7 @@ class ExceptionTests(unittest.TestCase):
             sys.setrecursionlimit(recursionlimit)
 
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.nomemtest
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1774,11 +1770,7 @@ class ExceptionTests(unittest.TestCase):
                     self.assertIn("test message", report)
                 self.assertEndsWith(report, "\n")
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.nomemtest
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1936,12 +1928,8 @@ class ExceptionTests(unittest.TestCase):
             exc2 = None
 
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.nomemtest
     def test_exec_set_nomemory_hang(self):
-        import_module("_testcapi")
         # gh-134163: A MemoryError inside code that was wrapped by a try/except
         # block would lead to an infinite loop.
 

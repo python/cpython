@@ -206,6 +206,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                     protocol_factory, sock, sslcontext, server,
                                     backlog, ssl_handshake_timeout,
                                     ssl_shutdown_timeout, context)
+                    return
                 else:
                     raise  # The event loop will catch, log and ignore it.
             else:

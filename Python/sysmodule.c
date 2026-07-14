@@ -4641,8 +4641,8 @@ PySys_WriteStderr(const char *format, ...)
     va_end(va);
 }
 
-static void
-sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
+void
+_PySys_FormatV(PyObject *key, FILE *fp, const char *format, va_list va)
 {
     PyObject *file, *message;
     const char *utf8;
@@ -4664,13 +4664,14 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
     _PyErr_SetRaisedException(tstate, exc);
 }
 
+
 void
 PySys_FormatStdout(const char *format, ...)
 {
     va_list va;
 
     va_start(va, format);
-    sys_format(&_Py_ID(stdout), stdout, format, va);
+    _PySys_FormatV(&_Py_ID(stdout), stdout, format, va);
     va_end(va);
 }
 
@@ -4680,7 +4681,7 @@ PySys_FormatStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_format(&_Py_ID(stderr), stderr, format, va);
+    _PySys_FormatV(&_Py_ID(stderr), stderr, format, va);
     va_end(va);
 }
 

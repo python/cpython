@@ -154,6 +154,18 @@ class IsolatedCodeGenTests(CodegenTestCase):
         ]
         self.codegen_test(snippet, expected)
 
+    def test_del_for_store_global(self):
+        snippet = "global x\ndel x"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('PUSH_NULL', None),
+            ('STORE_GLOBAL', 0),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
+        ]
+        self.codegen_test(snippet, expected)
+
     def test_syntax_error__return_not_in_function(self):
         snippet = "return 42"
         with self.assertRaisesRegex(SyntaxError, "'return' outside function") as cm:
@@ -161,6 +173,18 @@ class IsolatedCodeGenTests(CodegenTestCase):
         self.assertIsNone(cm.exception.text)
         self.assertEqual(cm.exception.offset, 1)
         self.assertEqual(cm.exception.end_offset, 10)
+
+    def test_del_for_store_name(self):
+        snippet = "del x"
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('PUSH_NULL', None),
+            ('STORE_NAME', 0),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
+        ]
+        self.codegen_test(snippet, expected)
 
     def test_frozenset_optimization(self):
         l1 = self.Label()
