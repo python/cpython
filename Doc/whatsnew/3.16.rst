@@ -75,6 +75,12 @@ New features
 Other language changes
 ======================
 
+* Slicing a multi-dimensional :class:`memoryview`, or indexing it with a
+  combination of integers, slices and an ellipsis, now returns a sub-view,
+  and such sub-views support slice assignment.
+  Previously these operations raised :exc:`NotImplementedError`.
+  (Contributed by Serhiy Storchaka in :gh:`58338`.)
+
 
 
 New modules

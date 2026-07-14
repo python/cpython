@@ -2527,6 +2527,36 @@ ptr_from_tuple(const Py_buffer *view, PyObject *tup)
     return ptr;
 }
 
+/* Delete dimension 'dim' from a view, shifting the higher dimensions down.
+   The caller must have already advanced view->buf past that dimension. */
+static void
+drop_dimension(Py_buffer *view, int dim)
+{
+    for (int n = dim; n < view->ndim - 1; n++) {
+        view->shape[n] = view->shape[n+1];
+        view->strides[n] = view->strides[n+1];
+    }
+    view->ndim--;
+}
+
+/* Select integer 'index' along dimension 'dim', advancing buf and dropping
+   the dimension.  Returns -1 with IndexError set if 'index' is out of range. */
+static int
+index_dimension(Py_buffer *view, int dim, Py_ssize_t index)
+{
+    Py_ssize_t nitems = view->shape[dim];
+    if (index < 0)
+        index += nitems;
+    if (index < 0 || index >= nitems) {
+        PyErr_Format(PyExc_IndexError,
+            "index out of bounds on dimension %d", dim + 1);
+        return -1;
+    }
+    view->buf = (char *)view->buf + view->strides[dim] * index;
+    drop_dimension(view, dim);
+    return 0;
+}
+
 /* Return the item at index. In a one-dimensional view, this is an object
    with the type specified by view->format. Otherwise, the item is a sub-view.
    The function is used in memory_subscript() and memory_as_sequence. */
@@ -2554,9 +2584,30 @@ memory_item(PyObject *_self, Py_ssize_t index)
         return unpack_single(self, ptr, fmt);
     }
 
-    PyErr_SetString(PyExc_NotImplementedError,
-        "multi-dimensional sub-views are not implemented");
-    return NULL;
+    /* ndim > 1: indexing drops the leading dimension and returns a sub-view.
+       Buffers exposing suboffsets (PIL-style indirect buffers) are not
+       handled here yet. */
+    if (view->suboffsets != NULL) {
+        PyErr_SetString(PyExc_NotImplementedError,
+            "memoryview: sub-views of a buffer with suboffsets are "
+            "not implemented");
+        return NULL;
+    }
+
+    CHECK_RESTRICTED(self);
+
+    PyMemoryViewObject *sub =
+        (PyMemoryViewObject *)mbuf_add_view(self->mbuf, view);
+    if (sub == NULL)
+        return NULL;
+    if (index_dimension(&sub->view, 0, index) < 0) {
+        Py_DECREF(sub);
+        return NULL;
+    }
+    init_len(&sub->view);
+    init_flags(sub);
+
+    return (PyObject *)sub;
 }
 
 /* Return the item at position *key* (a tuple of indices). */
@@ -2565,7 +2616,6 @@ memory_item_multi(PyMemoryViewObject *self, PyObject *tup)
 {
     Py_buffer *view = &(self->view);
     const char *fmt;
-    Py_ssize_t nindices = PyTuple_GET_SIZE(tup);
     char *ptr;
 
     CHECK_RELEASED(self);
@@ -2574,11 +2624,9 @@ memory_item_multi(PyMemoryViewObject *self, PyObject *tup)
     if (fmt == NULL)
         return NULL;
 
-    if (nindices < view->ndim) {
-        PyErr_SetString(PyExc_NotImplementedError,
-                        "sub-views are not implemented");
-        return NULL;
-    }
+    /* Callers route every key other than a full index to memory_multislice();
+       this path only handles a tuple of exactly ndim integer indices. */
+    assert(PyTuple_GET_SIZE(tup) == view->ndim);
     ptr = ptr_from_tuple(view, tup);
     if (ptr == NULL)
         return NULL;
@@ -2614,40 +2662,109 @@ init_slice(Py_buffer *base, PyObject *key, int dim)
     return 0;
 }
 
+/* True if 'key' fully indexes an ndim-dimensional view: a tuple of exactly
+   ndim integer indices.  Such a key selects a single element; every other
+   tuple, a bare ellipsis, or a shorter/mixed key selects a sub-view. */
 static int
-is_multislice(PyObject *key)
+is_full_index(PyObject *key, int ndim)
 {
-    Py_ssize_t size, i;
-
-    if (!PyTuple_Check(key))
+    if (!PyTuple_Check(key) || PyTuple_GET_SIZE(key) != ndim)
         return 0;
-    size = PyTuple_GET_SIZE(key);
-    if (size == 0)
-        return 0;
-
-    for (i = 0; i < size; i++) {
-        PyObject *x = PyTuple_GET_ITEM(key, i);
-        if (!PySlice_Check(x))
+    for (Py_ssize_t i = 0; i < ndim; i++) {
+        if (!_PyIndex_Check(PyTuple_GET_ITEM(key, i)))
             return 0;
     }
     return 1;
 }
 
-static Py_ssize_t
-is_multiindex(PyObject *key)
-{
-    Py_ssize_t size, i;
+/* mv[key] for a 'key' that mixes slices, integer indices and at most one
+   ellipsis (NumPy-style basic indexing).  A slice keeps its dimension, an
+   integer index drops it, and the ellipsis expands to full slices over the
+   remaining dimensions.  'key' is a tuple, or a bare ellipsis standing for the
+   whole view.  Returns a new (sub-)view.
 
-    if (!PyTuple_Check(key))
-        return 0;
-    size = PyTuple_GET_SIZE(key);
-    for (i = 0; i < size; i++) {
-        PyObject *x = PyTuple_GET_ITEM(key, i);
-        if (!_PyIndex_Check(x)) {
-            return 0;
+   Read path only for now: buffers exposing suboffsets (PIL-style indirect
+   buffers) are not handled here and raise NotImplementedError. */
+static PyObject *
+memory_multislice(PyMemoryViewObject *self, PyObject *key)
+{
+    Py_buffer *view = &self->view;
+    int is_tuple = PyTuple_Check(key);
+    Py_ssize_t nkey = is_tuple ? PyTuple_GET_SIZE(key) : 1;
+    Py_ssize_t nindexer = 0;      /* number of slice/index items (not ellipsis) */
+    int have_ellipsis = 0;
+
+    for (Py_ssize_t i = 0; i < nkey; i++) {
+        PyObject *k = is_tuple ? PyTuple_GET_ITEM(key, i) : key;
+        if (k == Py_Ellipsis) {
+            if (have_ellipsis) {
+                PyErr_SetString(PyExc_TypeError,
+                    "memoryview: more than one ellipsis in slice key");
+                return NULL;
+            }
+            have_ellipsis = 1;
+        }
+        else if (PySlice_Check(k) || _PyIndex_Check(k)) {
+            nindexer++;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "memoryview: invalid slice key");
+            return NULL;
         }
     }
-    return 1;
+    if (nindexer > view->ndim) {
+        PyErr_SetString(PyExc_TypeError,
+            "memoryview: too many indices for memory");
+        return NULL;
+    }
+    if (view->suboffsets != NULL) {
+        PyErr_SetString(PyExc_NotImplementedError,
+            "memoryview: multi-dimensional slicing of a buffer with "
+            "suboffsets is not supported");
+        return NULL;
+    }
+
+    CHECK_RESTRICTED(self);
+
+    PyMemoryViewObject *sliced =
+        (PyMemoryViewObject *)mbuf_add_view(self->mbuf, view);
+    if (sliced == NULL)
+        return NULL;
+    Py_buffer *dest = &sliced->view;
+
+    int dim = 0;
+    Py_ssize_t n_ellipsis_dims = view->ndim - nindexer;
+    for (Py_ssize_t i = 0; i < nkey; i++) {
+        PyObject *k = is_tuple ? PyTuple_GET_ITEM(key, i) : key;
+        if (k == Py_Ellipsis) {
+            dim += (int)n_ellipsis_dims;    /* leave these dimensions as-is */
+        }
+        else if (PySlice_Check(k)) {
+            if (init_slice(dest, k, dim) < 0) {
+                Py_DECREF(sliced);
+                return NULL;
+            }
+            dim++;
+        }
+        else {
+            /* integer index: drop dimension 'dim'.  The higher dimensions
+               shift down into its place, so 'dim' is not incremented. */
+            Py_ssize_t index = PyNumber_AsSsize_t(k, PyExc_IndexError);
+            if (index == -1 && PyErr_Occurred()) {
+                Py_DECREF(sliced);
+                return NULL;
+            }
+            if (index_dimension(dest, dim, index) < 0) {
+                Py_DECREF(sliced);
+                return NULL;
+            }
+        }
+    }
+
+    init_len(dest);
+    init_flags(sliced);
+
+    return (PyObject *)sliced;
 }
 
 /* mv[obj] returns an object holding the data for one element if obj
@@ -2706,17 +2823,50 @@ memory_subscript(PyObject *_self, PyObject *key)
 
         return (PyObject *)sliced;
     }
-    else if (is_multiindex(key)) {
-        return memory_item_multi(self, key);
-    }
-    else if (is_multislice(key)) {
-        PyErr_SetString(PyExc_NotImplementedError,
-            "multi-dimensional slicing is not implemented");
-        return NULL;
+    else if (key == Py_Ellipsis || PyTuple_Check(key)) {
+        /* A full index (a tuple of exactly ndim integers) returns the single
+           element: memory_item_multi() unpacks it in place without allocating
+           a sub-view, and follows suboffsets.  Every other tuple, or a bare
+           ellipsis, produces a sub-view.  The 0-dimensional m[()] case is
+           handled above. */
+        if (is_full_index(key, view->ndim)) {
+            return memory_item_multi(self, key);
+        }
+        CHECK_RESTRICTED(self);
+        return memory_multislice(self, key);
     }
 
     PyErr_SetString(PyExc_TypeError, "memoryview: invalid slice key");
     return NULL;
+}
+
+/* Assign 'value' to the sub-view selected by 'key' (a slice, ellipsis, or a
+   tuple mixing slices and integer indices).  The lvalue sub-view is produced
+   by memory_subscript(); 'value' must be an exporter with a matching shape
+   and format, and is copied in via copy_buffer(). */
+static int
+memory_ass_view(PyMemoryViewObject *self, PyObject *key, PyObject *value)
+{
+    PyObject *lvalue = memory_subscript((PyObject *)self, key);
+    if (lvalue == NULL)
+        return -1;
+    if (!PyMemoryView_Check(lvalue)) {
+        /* A fully-indexed key yields a scalar, not a sub-view; such keys are
+           handled by the caller and must not reach here. */
+        Py_DECREF(lvalue);
+        PyErr_SetString(PyExc_TypeError, "memoryview: invalid slice key");
+        return -1;
+    }
+
+    Py_buffer src;
+    if (PyObject_GetBuffer(value, &src, PyBUF_FULL_RO) < 0) {
+        Py_DECREF(lvalue);
+        return -1;
+    }
+    int ret = copy_buffer(&((PyMemoryViewObject *)lvalue)->view, &src);
+    PyBuffer_Release(&src);
+    Py_DECREF(lvalue);
+    return ret;
 }
 
 static int
@@ -2758,9 +2908,7 @@ memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
     if (_PyIndex_Check(key)) {
         Py_ssize_t index;
         if (1 < view->ndim) {
-            PyErr_SetString(PyExc_NotImplementedError,
-                            "sub-views are not implemented");
-            return -1;
+            return memory_ass_view(self, key, value);
         }
         index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
@@ -2797,25 +2945,14 @@ memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
         PyBuffer_Release(&src);
         return ret;
     }
-    if (is_multiindex(key)) {
-        char *ptr;
-        if (PyTuple_GET_SIZE(key) < view->ndim) {
-            PyErr_SetString(PyExc_NotImplementedError,
-                            "sub-views are not implemented");
-            return -1;
-        }
+    if (is_full_index(key, view->ndim)) {
         ptr = ptr_from_tuple(view, key);
         if (ptr == NULL)
             return -1;
         return pack_single(self, ptr, value, fmt);
     }
-    if (PySlice_Check(key) || is_multislice(key)) {
-        /* Call memory_subscript() to produce a sliced lvalue, then copy
-           rvalue into lvalue. This is already implemented in _testbuffer.c. */
-        PyErr_SetString(PyExc_NotImplementedError,
-            "memoryview slice assignments are currently restricted "
-            "to ndim = 1");
-        return -1;
+    if (PySlice_Check(key) || PyTuple_Check(key) || key == Py_Ellipsis) {
+        return memory_ass_view(self, key, value);
     }
 
     PyErr_SetString(PyExc_TypeError, "memoryview: invalid slice key");
@@ -3628,6 +3765,11 @@ memoryiter_next(PyObject *self)
     if (it->it_index < it->it_length) {
         CHECK_RELEASED(seq);
         Py_buffer *view = &(seq->view);
+        if (view->ndim != 1) {
+            /* Iterating an N-D view yields sub-views over the trailing
+               dimensions. */
+            return memory_item((PyObject *)seq, it->it_index++);
+        }
         char *ptr = (char *)seq->view.buf;
 
         ptr += view->strides[0] * it->it_index++;
@@ -3655,11 +3797,6 @@ memory_iter(PyObject *seq)
     int ndims = obj->view.ndim;
     if (ndims == 0) {
         PyErr_SetString(PyExc_TypeError, "invalid indexing of 0-dim memory");
-        return NULL;
-    }
-    if (ndims != 1) {
-        PyErr_SetString(PyExc_NotImplementedError,
-            "multi-dimensional sub-views are not implemented");
         return NULL;
     }
 

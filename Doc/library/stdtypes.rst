@@ -4660,6 +4660,27 @@ copying.
       >>> m[::2].tolist()
       [-11111111, -33333333]
 
+   Slicing a multi-dimensional memoryview,
+   or indexing it with fewer integers than it has dimensions, also results in a sub-view.
+   A key may mix slices, integers and up to one ellipsis;
+   each integer drops the corresponding dimension,
+   and the ellipsis expands to full slices over the remaining dimensions.
+   An empty tuple or a bare ellipsis therefore selects the whole view::
+
+      >>> m = memoryview(bytearray(range(12))).cast('B', shape=[3, 4])
+      >>> m.tolist()
+      [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
+      >>> m[1].tolist()          # partial index: a row sub-view
+      [4, 5, 6, 7]
+      >>> m[1:3, 1:3].tolist()   # rectangular sub-view
+      [[5, 6], [9, 10]]
+      >>> m[1, 1:3].tolist()     # mix an index and a slice
+      [5, 6]
+      >>> m[..., 1].tolist()     # ellipsis fills the leading dimensions
+      [1, 5, 9]
+      >>> m[...].tolist()        # the whole view
+      [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]
+
    If the underlying object is writable, the memoryview supports
    one-dimensional slice assignment. Resizing is not allowed::
 
@@ -4680,6 +4701,20 @@ copying.
       >>> v[2:6] = b'spam'
       >>> data
       bytearray(b'z1spam')
+
+   Multi-dimensional views and sub-views support slice assignment as well,
+   provided the right-hand side is a :term:`bytes-like object`
+   whose shape and format match the selected sub-view.
+   A one-dimensional sub-view accepts any matching bytes-like object,
+   while a multi-dimensional one needs an object of the same shape::
+
+      >>> m = memoryview(bytearray(range(12))).cast('B', shape=[3, 4])
+      >>> m[0] = b'ABCD'              # a one-dimensional row sub-view
+      >>> m.tolist()
+      [[65, 66, 67, 68], [4, 5, 6, 7], [8, 9, 10, 11]]
+      >>> m[1:3, 1:3] = memoryview(bytes([10, 11, 12, 13])).cast('B', shape=[2, 2])
+      >>> m.tolist()
+      [[65, 66, 67, 68], [4, 10, 11, 7], [8, 12, 13, 11]]
 
    One-dimensional memoryviews of :term:`hashable` (read-only) types with formats
    'B', 'b' or 'c' are also hashable. The hash is defined as
@@ -4706,6 +4741,12 @@ copying.
 
    .. versionchanged:: 3.14
       memoryview is now a :term:`generic type`.
+
+   .. versionchanged:: next
+      Slicing a multi-dimensional memoryview,
+      or indexing it with a combination of integers, slices and an ellipsis,
+      now returns a sub-view, and such sub-views support slice assignment.
+      Previously these operations raised :exc:`NotImplementedError`.
 
    :class:`memoryview` has several methods:
 

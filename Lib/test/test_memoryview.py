@@ -160,9 +160,9 @@ class AbstractMemoryTests:
         self.assertRaises(TypeError, setitem, (0, slice(0,1,1)), b"a")
         self.assertRaises(TypeError, setitem, (0,), b"a")
         self.assertRaises(TypeError, setitem, "a", b"a")
-        # Not implemented: multidimensional slices
+        # Too many indices for a 1-D view.
         slices = (slice(0,1,1), slice(0,1,2))
-        self.assertRaises(NotImplementedError, setitem, slices, b"a")
+        self.assertRaises(TypeError, setitem, slices, b"a")
         # Trying to resize the memory object
         exc = ValueError if m.format == 'c' else TypeError
         self.assertRaises(exc, setitem, 0, b"")
@@ -473,7 +473,8 @@ class AbstractMemoryTests:
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
 # with itemsize > 1.
-# NOTE: support for multi-dimensional objects is unimplemented.
+# These sources are all one-dimensional; multi-dimensional views are
+# exercised in MultidimTest.
 
 class BaseBytesMemoryTests(AbstractMemoryTests):
     ro_type = bytes
@@ -686,6 +687,186 @@ class BytesMemorySliceSliceTest(unittest.TestCase,
 class ArrayMemorySliceSliceTest(unittest.TestCase,
     BaseMemorySliceSliceTests, BaseArrayMemoryTests):
     pass
+
+
+class MultidimTest(unittest.TestCase):
+    # Multi-dimensional slicing and partial indexing return sub-views, and
+    # such sub-views support assignment (gh-58338).
+
+    def grid(self, shape=(3, 4)):
+        n = 1
+        for d in shape:
+            n *= d
+        return memoryview(bytearray(range(n))).cast('B', shape=list(shape))
+
+    def test_partial_index_subview(self):
+        m = self.grid()
+        row = m[1]
+        self.assertIsInstance(row, memoryview)
+        self.assertEqual(row.shape, (4,))
+        self.assertEqual(row.tolist(), [4, 5, 6, 7])
+        self.assertEqual(m[-1].tolist(), [8, 9, 10, 11])
+
+    def test_multidim_slice_subview(self):
+        m = self.grid()
+        sub = m[1:3, 1:3]
+        self.assertIsInstance(sub, memoryview)
+        self.assertEqual(sub.shape, (2, 2))
+        self.assertEqual(sub.tolist(), [[5, 6], [9, 10]])
+
+    def test_mixed_index_and_slice(self):
+        m = self.grid()
+        self.assertEqual(m[1, 1:3].tolist(), [5, 6])
+        self.assertEqual(m[0:2, 2].tolist(), [2, 6])
+
+    def test_ellipsis(self):
+        # Ellipsis combined with an integer index (drops a dimension) or a
+        # slice (keeps it).
+        m = self.grid()
+        self.assertEqual(m[..., 1].tolist(), [1, 5, 9])       # column
+        self.assertEqual(m[1, ...].tolist(), [4, 5, 6, 7])    # row
+        self.assertEqual(m[..., 1:3].tolist(), [[1, 2], [5, 6], [9, 10]])
+        self.assertEqual(m[0:2, ...].tolist(), [[0, 1, 2, 3], [4, 5, 6, 7]])
+
+        m = self.grid((2, 3, 4))
+        self.assertEqual(m[0, ..., 1].tolist(), [1, 5, 9])
+        self.assertEqual(m[..., 1].shape, (2, 3))
+
+    def test_full_index_returns_element(self):
+        m = self.grid()
+        self.assertEqual(m[1, 2], 6)
+
+    def test_whole_view(self):
+        # The empty tuple and a bare ellipsis both select the whole view.
+        m = self.grid()
+        for key in ((), ...):
+            with self.subTest(key=key):
+                sub = m[key]
+                self.assertIsInstance(sub, memoryview)
+                self.assertIsNot(sub, m)
+                self.assertEqual(sub.shape, (3, 4))
+                self.assertEqual(sub.tolist(), m.tolist())
+
+    def test_whole_view_assign(self):
+        m = self.grid()
+        m[...] = memoryview(bytes(range(100, 112))).cast('B', shape=[3, 4])
+        self.assertEqual(m[0].tolist(), [100, 101, 102, 103])
+        m[()] = memoryview(bytes(range(12))).cast('B', shape=[3, 4])
+        self.assertEqual(m[0].tolist(), [0, 1, 2, 3])
+
+    def test_ellipsis_assign(self):
+        # Ellipsis combined with an integer index (drops a dimension) or a
+        # slice (keeps it) on the write path.
+        m = self.grid()
+        m[..., 1] = memoryview(bytes([90, 91, 92]))       # column, strided
+        self.assertEqual([m[i, 1] for i in range(3)], [90, 91, 92])
+
+        m = self.grid()
+        m[1, ...] = memoryview(bytes([90, 91, 92, 93]))   # row
+        self.assertEqual(m[1].tolist(), [90, 91, 92, 93])
+
+        m = self.grid()
+        m[..., 1:3] = memoryview(bytes(range(90, 96))).cast('B', shape=[3, 2])
+        self.assertEqual(m.tolist(),
+                         [[0, 90, 91, 3], [4, 92, 93, 7], [8, 94, 95, 11]])
+
+        m = self.grid((2, 3, 4))
+        m[0, ..., 1] = memoryview(bytes([90, 91, 92]))
+        self.assertEqual([m[0, j, 1] for j in range(3)], [90, 91, 92])
+
+    def test_step_slice(self):
+        m = self.grid((4, 4))
+        self.assertEqual(m[::2, ::2].tolist(), [[0, 2], [8, 10]])
+        self.assertEqual(m[::-1].tolist(),
+                         [[12, 13, 14, 15], [8, 9, 10, 11],
+                          [4, 5, 6, 7], [0, 1, 2, 3]])
+
+    def test_step_slice_assign(self):
+        m = self.grid()
+        m[::2, ::2] = memoryview(bytes([90, 91, 92, 93])).cast('B', shape=[2, 2])
+        self.assertEqual(m.tolist(),
+                         [[90, 1, 91, 3], [4, 5, 6, 7], [92, 9, 93, 11]])
+
+    def test_empty_slice(self):
+        m = self.grid()
+        self.assertEqual(m[1:1].shape, (0, 4))
+        self.assertEqual(m[1:1].tolist(), [])
+        self.assertEqual(m[0:0, :].shape, (0, 4))
+
+    def test_index_out_of_bounds(self):
+        m = self.grid()
+        for key in (3, -4, (0, 4), (0, -5), (3, 0)):
+            with self.subTest(key=key):
+                self.assertRaises(IndexError, m.__getitem__, key)
+
+    def test_too_many_indices(self):
+        m = self.grid()
+        self.assertRaises(TypeError, m.__getitem__, (0, 0, 0))
+
+    def test_nonbyte_format(self):
+        # itemsize > 1: strides and offsets are in bytes, so sub-views must
+        # scale correctly by the element size.
+        buf = bytearray(struct.pack('12i', *range(12)))
+        m = memoryview(buf).cast('i', shape=[3, 4])
+        self.assertEqual(m.itemsize, struct.calcsize('i'))
+        self.assertEqual(m[1].tolist(), [4, 5, 6, 7])
+        self.assertEqual(m[1, 2], 6)
+        self.assertEqual(m[::2, ::2].tolist(), [[0, 2], [8, 10]])
+        # the rvalue must share the 'i' format, not just the bytes
+        m[1] = memoryview(struct.pack('4i', 40, 41, 42, 43)).cast('i')
+        self.assertEqual(m[1].tolist(), [40, 41, 42, 43])
+        self.assertRaises(ValueError, m.__setitem__, 1,
+                          struct.pack('4i', 0, 0, 0, 0))
+
+    def test_assign_block_shape_mismatch(self):
+        m = self.grid()
+        self.assertRaises(ValueError, m.__setitem__, (slice(1, 3), slice(1, 3)),
+                          memoryview(bytes([1, 2, 3, 4])))
+
+    def test_iter_yields_subviews(self):
+        m = self.grid()
+        self.assertEqual([row.tolist() for row in m],
+                         [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]])
+
+    def test_three_dimensions(self):
+        m = self.grid((2, 3, 4))
+        self.assertEqual(m[1].shape, (3, 4))
+        self.assertEqual(m[1, 2].tolist(), [20, 21, 22, 23])
+        self.assertEqual(m[1, 2, 3], 23)          # full index: a single element
+        self.assertEqual(m[0, 1:3, 1:3].tolist(), [[5, 6], [9, 10]])
+
+    def test_assign_row(self):
+        m = self.grid()
+        m[0] = bytes([100, 101, 102, 103])
+        self.assertEqual(m[0].tolist(), [100, 101, 102, 103])
+
+    def test_assign_block(self):
+        m = self.grid()
+        m[1:3, 1:3] = memoryview(bytes([10, 11, 12, 13])).cast('B', shape=[2, 2])
+        self.assertEqual(m.tolist(),
+                         [[0, 1, 2, 3], [4, 10, 11, 7], [8, 12, 13, 11]])
+
+    def test_assign_element(self):
+        m = self.grid()
+        m[1, 2] = 99
+        self.assertEqual(m[1, 2], 99)
+
+    def test_assign_from_subview(self):
+        m = self.grid()
+        m[0] = m[2]
+        self.assertEqual(m[0].tolist(), m[2].tolist())
+
+    def test_assign_shape_mismatch(self):
+        m = self.grid()
+        self.assertRaises(ValueError, m.__setitem__, 0, bytes([1, 2]))
+
+    def test_assign_non_buffer(self):
+        m = self.grid()
+        self.assertRaises(TypeError, m.__setitem__, 0, [1, 2, 3, 4])
+
+    def test_assign_readonly(self):
+        m = memoryview(bytes(range(12))).cast('B', shape=[3, 4])
+        self.assertRaises(TypeError, m.__setitem__, 0, bytes([9, 9, 9, 9]))
 
 
 class OtherTest(unittest.TestCase):

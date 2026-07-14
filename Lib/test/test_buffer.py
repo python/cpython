@@ -1680,8 +1680,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(TypeError, nd.__getitem__, ("@%$", slice(0,1,1)))
         self.assertRaises(TypeError, nd.__getitem__, (slice(0,1,1), {}))
 
-        # memoryview: not implemented
-        self.assertRaises(NotImplementedError, mv.__getitem__,
+        # memoryview: multi-dimensional slicing validates each slice
+        self.assertRaises(ValueError, mv.__getitem__,
                           (slice(0,1,1), slice(0,1,0)))
         self.assertRaises(TypeError, mv.__getitem__, "@%$")
 
@@ -1712,7 +1712,7 @@ class TestBufferProtocol(unittest.TestCase):
         mr = memoryview(xr)
         self.assertRaises(ValueError, xl.__setitem__, slice(0,1,1), xr[7:8])
         self.assertEqual(xl.tolist(), [[1,2,3,4], [5,6,7,8]])
-        self.assertRaises(NotImplementedError, ml.__setitem__, slice(0,1,1),
+        self.assertRaises(ValueError, ml.__setitem__, slice(0,1,1),
                           mr[7:8])
 
         # differing shape
@@ -1788,6 +1788,22 @@ class TestBufferProtocol(unittest.TestCase):
                         self.assertIs(nderr, listerr)
                     else:
                         self.assertEqual(ndsliced.tolist(), sliced)
+
+    def test_memoryview_suboffsets_subview(self):
+        # Sub-views of a buffer with suboffsets (PIL-style indirect buffer)
+        # are not implemented (gh-58338).  A full index and a leading-dimension
+        # slice follow the suboffsets and still work.
+        nd = ndarray(list(range(12)), shape=[3, 4], flags=ND_PIL|ND_WRITABLE)
+        m = memoryview(nd)
+        self.assertIsNotNone(m.suboffsets)
+        self.assertEqual(m[1, 2], 6)
+        self.assertEqual(m[1:3].tolist(), [[4, 5, 6, 7], [8, 9, 10, 11]])
+        self.assertRaises(NotImplementedError, m.__getitem__, 1)
+        self.assertRaises(NotImplementedError, m.__getitem__,
+                          (slice(1, 3), slice(1, 3)))
+        self.assertRaises(NotImplementedError, m.__getitem__, (Ellipsis, 1))
+        self.assertRaises(NotImplementedError, m.__setitem__, 1,
+                          b'\x00\x00\x00\x00')
 
     def test_ndarray_slice_redundant_suboffsets(self):
         shape_t = (2, 3, 5, 2)
@@ -2982,9 +2998,15 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(TypeError, m.__getitem__, (0, 0, 0))
         self.assertRaises(TypeError, m.__getitem__, (0.0, 0.0))
 
-        # Not implemented: multidimensional sub-views
-        self.assertRaises(NotImplementedError, m.__getitem__, ())
-        self.assertRaises(NotImplementedError, m.__getitem__, 0)
+        # Empty-tuple or bare-ellipsis indexing of an N-D view returns the
+        # whole view as a sub-view.
+        self.assertEqual(m[()].tolist(), ex.tolist())
+        self.assertEqual(m[...].tolist(), ex.tolist())
+
+        # Integer indexing of an N-D view returns a sub-view.
+        self.assertEqual(m[0].tolist(), [0, 1, 2, 3])
+        self.assertEqual(m[-1].tolist(), [8, 9, 10, 11])
+        self.assertEqual([row.tolist() for row in m], ex.tolist())
 
     def test_memoryview_assign(self):
 
@@ -3092,8 +3114,11 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(TypeError, m.__setitem__, (0, 0, 0), 0)
         self.assertRaises(TypeError, m.__setitem__, (0.0, 0.0), 0)
 
-        # Not implemented: multidimensional sub-views
-        self.assertRaises(NotImplementedError, m.__setitem__, 0, [2, 3])
+        # Sub-view assignment needs a bytes-like rvalue with a matching
+        # shape; a list is not a buffer.
+        self.assertRaises(TypeError, m.__setitem__, 0, [2, 3])
+        m[0] = m[1]
+        self.assertEqual(m[0].tolist(), m[1].tolist())
 
     def test_memoryview_slice(self):
 
@@ -3105,16 +3130,19 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, m.__setitem__, slice(0,2,0),
                           bytearray([1,2]))
 
-        # 0-dim slicing (identity function)
-        self.assertRaises(NotImplementedError, m.__getitem__, ())
+        # empty tuple / bare ellipsis select the whole view
+        self.assertEqual(m[()].tolist(), list(range(12)))
+        self.assertEqual(m[...].tolist(), list(range(12)))
 
         # multidimensional slices
         ex = ndarray(list(range(12)), shape=[12], flags=ND_WRITABLE)
         m = memoryview(ex)
 
-        self.assertRaises(NotImplementedError, m.__getitem__,
+        # too many indices for a 1-D view
+        self.assertRaises(TypeError, m.__getitem__,
                           (slice(0,2,1), slice(0,2,1)))
-        self.assertRaises(NotImplementedError, m.__setitem__,
+        # too many indices for a 1-D view (assignment)
+        self.assertRaises(TypeError, m.__setitem__,
                           (slice(0,2,1), slice(0,2,1)), bytearray([1,2]))
 
         # invalid slice tuple
