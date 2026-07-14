@@ -36,6 +36,13 @@
 #define NCURSES_OPAQUE 0
 #endif
 
+/* PDCurses exposes its ncurses-compatible mouse API, the one this module uses,
+   only when this is defined before the curses header is included below.
+   Ignored by other curses implementations. */
+#ifndef PDC_NCMOUSE
+#  define PDC_NCMOUSE
+#endif
+
 #if defined(HAVE_NCURSESW_NCURSES_H)
 #  include <ncursesw/ncurses.h>
 #elif defined(HAVE_NCURSESW_CURSES_H)

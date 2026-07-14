@@ -1215,7 +1215,7 @@ static PyObject *
 rlock_repr(PyObject *op)
 {
     rlockobject *self = rlockobject_CAST(op);
-    PyThread_ident_t owner = self->lock.thread;
+    PyThread_ident_t owner = FT_ATOMIC_LOAD_ULLONG_RELAXED(self->lock.thread);
     int locked = rlock_locked_impl(self);
     size_t count;
     if (locked) {

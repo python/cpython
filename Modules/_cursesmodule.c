@@ -1502,7 +1502,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
                                        "echochar");
 }
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
 /*[clinic input]
 _curses.window.enclose
 
@@ -3244,7 +3244,7 @@ _curses_getsyx_impl(PyObject *module)
 }
 #endif
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
 /*[clinic input]
 _curses.getmouse
 
@@ -3736,9 +3736,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     Py_RETURN_NONE;
 }
 
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
-// https://invisible-island.net/ncurses/NEWS.html#index-t20080119
-
+#ifdef HAVE_CURSES_ESCDELAY
 /*[clinic input]
 _curses.get_escdelay
 
@@ -3755,6 +3753,9 @@ _curses_get_escdelay_impl(PyObject *module)
 {
     return PyLong_FromLong(ESCDELAY);
 }
+#endif /* HAVE_CURSES_ESCDELAY */
+
+#ifdef HAVE_CURSES_SET_ESCDELAY
 /*[clinic input]
 _curses.set_escdelay
     ms: int
@@ -3779,7 +3780,9 @@ _curses_set_escdelay_impl(PyObject *module, int ms)
 
     return PyCursesCheckERR(module, set_escdelay(ms), "set_escdelay");
 }
+#endif /* HAVE_CURSES_SET_ESCDELAY */
 
+#ifdef HAVE_CURSES_TABSIZE
 /*[clinic input]
 _curses.get_tabsize
 
@@ -3795,6 +3798,9 @@ _curses_get_tabsize_impl(PyObject *module)
 {
     return PyLong_FromLong(TABSIZE);
 }
+#endif /* HAVE_CURSES_TABSIZE */
+
+#ifdef HAVE_CURSES_SET_TABSIZE
 /*[clinic input]
 _curses.set_tabsize
     size: int
@@ -3818,7 +3824,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 
     return PyCursesCheckERR(module, set_tabsize(size), "set_tabsize");
 }
-#endif
+#endif /* HAVE_CURSES_SET_TABSIZE */
 
 /*[clinic input]
 _curses.intrflush
@@ -3955,7 +3961,7 @@ _curses_meta_impl(PyObject *module, int yes)
     return PyCursesCheckERR(module, meta(stdscr, yes), "meta");
 }
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
 /*[clinic input]
 _curses.mouseinterval
 
@@ -5075,10 +5081,8 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
     _CURSES_SAVETTY_METHODDEF
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
     _CURSES_GET_ESCDELAY_METHODDEF
     _CURSES_SET_ESCDELAY_METHODDEF
-#endif
     _CURSES_GET_TABSIZE_METHODDEF
     _CURSES_SET_TABSIZE_METHODDEF
     _CURSES_SETSYX_METHODDEF
@@ -5381,7 +5385,7 @@ cursesmodule_exec(PyObject *module)
     SetDictInt("COLOR_CYAN",        COLOR_CYAN);
     SetDictInt("COLOR_WHITE",       COLOR_WHITE);
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
     /* Mouse-related constants */
     SetDictInt("BUTTON1_PRESSED",          BUTTON1_PRESSED);
     SetDictInt("BUTTON1_RELEASED",         BUTTON1_RELEASED);
@@ -5407,7 +5411,7 @@ cursesmodule_exec(PyObject *module)
     SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
     SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
 
-#if NCURSES_MOUSE_VERSION > 1
+#ifdef BUTTON5_PRESSED
     SetDictInt("BUTTON5_PRESSED",          BUTTON5_PRESSED);
     SetDictInt("BUTTON5_RELEASED",         BUTTON5_RELEASED);
     SetDictInt("BUTTON5_CLICKED",          BUTTON5_CLICKED);

@@ -49,6 +49,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
     def test_return_activates_default(self):
         # <Return> invokes the default button.
         d = self.create()  # default 0
+        self.require_mapped(d.root)
         d.root.focus_force()
         d.root.update()
         d.root.event_generate('<Return>')
@@ -59,6 +60,7 @@ class SimpleDialogTest(AbstractTkTest, unittest.TestCase):
         # With no default button, <Return> rings the bell and leaves the dialog
         # open instead of activating a button.
         d = self.create(default=None)
+        self.require_mapped(d.root)
         d.root.focus_force()
         d.root.update()
         bells = []

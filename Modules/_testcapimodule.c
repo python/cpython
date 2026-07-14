@@ -22,6 +22,9 @@
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE
 #endif
+#ifdef HAVE_SYS_SYSCTL_H
+#  include <sys/sysctl.h>         // sysctlbyname()
+#endif
 
 #ifdef bool
 #  error "The public headers should not include <stdbool.h>, see gh-48924"
@@ -2568,6 +2571,31 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+
+#ifdef HAVE_SYSCTLBYNAME
+static PyObject*
+uptime_bsd(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    struct timeval tv;
+    size_t size = sizeof(tv);
+    int res = sysctlbyname("kern.boottime", &tv, &size, NULL, 0);
+    if (res != 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    double boottime = (double)tv.tv_sec + tv.tv_usec * 1e-6;
+
+    PyTime_t now_t;
+    if (PyTime_Time(&now_t) < 0) {
+        return NULL;
+    }
+    double now = PyTime_AsSecondsDouble(now_t);
+
+    double uptime = now - boottime;
+    return PyFloat_FromDouble(uptime);
+}
+#endif
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2663,6 +2691,9 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+#ifdef HAVE_SYSCTLBYNAME
+    {"uptime_bsd", uptime_bsd, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 

@@ -204,6 +204,11 @@ def make_build_python(context):
     run(["make", "-j", str(os.cpu_count())])
 
 
+def pythoninfo_build_python(context):
+    os.chdir(subdir("build"))
+    run(["make", "pythoninfo"])
+
+
 # To create new builds of these dependencies, usually all that's necessary is to
 # push a tag to the cpython-android-source-deps repository, and GitHub Actions
 # will do the rest.
@@ -305,6 +310,7 @@ def build_targets(context):
     if context.target in {"all", "build"}:
         configure_build_python(context)
         make_build_python(context)
+        pythoninfo_build_python(context)
 
     for host in HOSTS:
         if context.target in {"all", "hosts", host}:
@@ -812,6 +818,7 @@ def ci(context):
     for step in [
         configure_build_python,
         make_build_python,
+        pythoninfo_build_python,
         configure_host_python,
         make_host_python,
         package,
@@ -896,6 +903,8 @@ def parse_args():
         "configure-build", help="Run `configure` for the build Python")
     add_parser(
         "make-build", help="Run `make` for the build Python")
+    add_parser(
+        "pythoninfo-build", help="Display build info of the build Python")
     configure_host = add_parser(
         "configure-host", help="Run `configure` for Android")
     make_host = add_parser(
@@ -1012,6 +1021,7 @@ def main():
     dispatch = {
         "configure-build": configure_build_python,
         "make-build": make_build_python,
+        "pythoninfo-build": pythoninfo_build_python,
         "configure-host": configure_host_python,
         "make-host": make_host_python,
         "build": build_targets,

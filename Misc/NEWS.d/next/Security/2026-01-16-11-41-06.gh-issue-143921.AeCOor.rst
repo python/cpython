@@ -1,0 +1,2 @@
+Reject NUL, CR and LF characters in IMAP commands. Other control
+characters are allowed and sent quoted.

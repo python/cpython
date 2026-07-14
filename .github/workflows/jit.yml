@@ -26,7 +26,7 @@ env:
 jobs:
   interpreter:
     name: Interpreter (Debug)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -96,9 +96,9 @@ jobs:
           - false
         include:
           - target: x86_64-apple-darwin/clang
-            runner: macos-15-intel
+            runner: macos-26-intel
           - target: aarch64-apple-darwin/clang
-            runner: macos-15
+            runner: macos-26
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -138,6 +138,8 @@ jobs:
           - true
           - false
         include:
+          # https://apt.llvm.org/llvm.sh doesn't support LLVM 19
+          # on Ubuntu 26.04, so stick to Ubuntu 24.04 until LLVM is upgraded.
           - target: x86_64-unknown-linux-gnu/gcc
             runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
@@ -162,6 +164,8 @@ jobs:
   linux-extras:
     name: ${{ matrix.name }}
 
+    # https://apt.llvm.org/llvm.sh doesn't support LLVM 19 on Ubuntu 26.04,
+    # so stick to Ubuntu 24.04 until LLVM is upgraded.
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
