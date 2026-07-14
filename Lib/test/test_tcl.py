@@ -650,6 +650,22 @@ class TclTest(unittest.TestCase):
         else:
             self.assertEqual(a, expected)
 
+    def test_return_dict_object(self):
+        # A dict is returned as a Tcl_Obj to preserve its structure.
+        tcl = self.interp.tk
+        a = tcl.call('dict', 'create', 'a', 1, 'b', 2)
+        if self.wantobjects:
+            self.assertIsInstance(a, _tkinter.Tcl_Obj)
+            self.assertEqual(a.typename, 'dict')
+        self.assertEqual(str(a), 'a 1 b 2')
+
+    def test_return_nsname_object(self):
+        # An "nsName" object is returned as a str, not wrapped in a Tcl_Obj.
+        tcl = self.interp.tk
+        a = tcl.call('namespace', 'current')
+        self.assertIsInstance(a, str)
+        self.assertEqual(a, '::')
+
     def test_splitlist(self):
         splitlist = self.interp.tk.splitlist
         call = self.interp.tk.call

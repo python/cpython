@@ -222,10 +222,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(decodeescape(br'x\xa\xy', 'replace'), b'x??y')
         self.assertEqual(decodeescape(br'x\xa\xy', 'ignore'), b'xy')
         self.assertRaises(ValueError, decodeescape, b'\\', 'spam')
-        self.assertEqual(decodeescape(NULL), b'')
         self.assertRaises(OverflowError, decodeescape, b'abc', NULL, PY_SSIZE_T_MAX)
         self.assertRaises(OverflowError, decodeescape, NULL, NULL, PY_SSIZE_T_MAX)
 
+        # INVALID decodeescape(NULL)
         # CRASHES decodeescape(b'abc', NULL, -1)
         # CRASHES decodeescape(NULL, NULL, 1)
 
