@@ -1419,6 +1419,30 @@ class TestSpecializer(TestBase):
                 self.assertEqual(c, 2.0)
                 c = b / a
                 self.assertEqual(c, 0.5)
+                c = a
+                c += b
+                self.assertEqual(c, 9.0)
+                c = b
+                c += a
+                self.assertEqual(c, 9.0)
+                c = a
+                c -= b
+                self.assertEqual(c, 3.0)
+                c = b
+                c -= a
+                self.assertEqual(c, -3.0)
+                c = a
+                c *= b
+                self.assertEqual(c, 18.0)
+                c = b
+                c *= a
+                self.assertEqual(c, 18.0)
+                c = a
+                c /= b
+                self.assertEqual(c, 2.0)
+                c = b
+                c /= a
+                self.assertEqual(c, 0.5)
 
         binary_op_add_extend()
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
@@ -1636,6 +1660,37 @@ class TestSpecializer(TestBase):
 
         self.assert_specialized(send_yield_from, "SEND_GEN")
         self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization
+    def test_send_yield_from_iter(self):
+        L = list(range(100))
+        def send_yield_from():
+            yield from L
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            list(send_yield_from())
+
+        self.assert_specialized(send_yield_from, "SEND_VIRTUAL")
+        self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization
+    def test_send_async_for(self):
+        async def g():
+            yield None
+
+        async def send_for():
+            async for _ in g():
+                break
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            try:
+                send_for().send(None)
+            except StopIteration:
+                pass
+        self.assert_specialized(send_for, "SEND_ASYNC_GEN")
+        self.assert_no_opcode(send_for, "SEND")
 
     @cpython_only
     @requires_specialization
@@ -2153,6 +2208,17 @@ class TestSpecializer(TestBase):
             self.assert_no_opcode(load_module_attr_missing, "LOAD_ATTR_MODULE")
         finally:
             sys.modules.pop("test_module_with_getattr", None)
+
+    @cpython_only
+    @requires_specialization
+    def test_specialized_iter_doesnt_skip_send_check(self):
+        def gen_func(seq):
+            yield from seq
+        gen = gen_func(list(range(10)))
+        for _ in range(3):
+            gen.send(None)
+        with self.assertRaises(AttributeError):
+            gen.send(1)
 
 
     @cpython_only

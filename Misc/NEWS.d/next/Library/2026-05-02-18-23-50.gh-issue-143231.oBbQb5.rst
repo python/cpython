@@ -1,1 +1,0 @@
-A *module* attribute has been added to :class:`!warnings.WarningMessage`.

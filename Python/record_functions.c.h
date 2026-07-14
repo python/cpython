@@ -137,6 +137,9 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [STORE_SUBSCR_DICT] = {1, {_RECORD_NOS_TYPE_INDEX}},
         [SEND] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
         [SEND_GEN] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
+        [FOR_ITER] = {1, {_RECORD_NOS_INDEX}},
+        [SEND_VIRTUAL] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
+        [SEND_ASYNC_GEN] = {1, {_RECORD_3OS_GEN_FUNC_INDEX}},
         [STORE_ATTR] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [LOAD_SUPER_ATTR] = {1, {_RECORD_NOS_INDEX}},
         [LOAD_SUPER_ATTR_METHOD] = {1, {_RECORD_NOS_INDEX}},
@@ -155,7 +158,6 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [GET_ITER] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER_SELF] = {1, {_RECORD_TOS_TYPE_INDEX}},
         [GET_ITER_VIRTUAL] = {1, {_RECORD_TOS_TYPE_INDEX}},
-        [FOR_ITER] = {1, {_RECORD_NOS_INDEX}},
         [FOR_ITER_VIRTUAL] = {1, {_RECORD_NOS_INDEX}},
         [FOR_ITER_LIST] = {1, {_RECORD_NOS_INDEX}},
         [FOR_ITER_TUPLE] = {1, {_RECORD_NOS_INDEX}},
@@ -204,6 +206,7 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [BINARY_OP_SUBSCR_GETITEM] = {1, 0, {0}},
         [STORE_SUBSCR_DICT] = {1, 0, {0}},
         [SEND_GEN] = {1, 0, {0}},
+        [FOR_ITER] = {1, 1, {0}},
         [LOAD_SUPER_ATTR_METHOD] = {1, 0, {0}},
         [LOAD_ATTR_INSTANCE_VALUE] = {1, 1, {0}},
         [LOAD_ATTR_WITH_HINT] = {1, 1, {0}},
@@ -218,7 +221,6 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [GET_ITER] = {1, 0, {0}},
         [GET_ITER_SELF] = {1, 0, {0}},
         [GET_ITER_VIRTUAL] = {1, 0, {0}},
-        [FOR_ITER] = {1, 1, {0}},
         [FOR_ITER_GEN] = {1, 1, {0}},
         [LOAD_SPECIAL] = {1, 0, {0}},
         [LOAD_ATTR_METHOD_WITH_VALUES] = {1, 1, {0}},
@@ -257,19 +259,77 @@ const _Py_RecordFuncPtr _PyOpcode_RecordFunctions[9] = {
         [_RECORD_4OS_INDEX] = _PyOpcode_RecordFunction_4OS,
 };
 
+static PyObject *
+_PyOpcode_RecordTransform_NOS_TYPE(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef nos;
+    nos = PyStackRef_FromPyObjectBorrow(recorded_value);
+    transformed_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(nos));
+    Py_XINCREF(transformed_value);
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
+static PyObject *
+_PyOpcode_RecordTransform_TOS_TYPE(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef tos;
+    tos = PyStackRef_FromPyObjectBorrow(recorded_value);
+    transformed_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(tos));
+    Py_XINCREF(transformed_value);
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
+static PyObject *
+_PyOpcode_RecordTransform_NOS_GEN_FUNC(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef nos;
+    nos = PyStackRef_FromPyObjectBorrow(recorded_value);
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(nos);
+    if (PyGen_Check(obj)) {
+        PyGenObject *gen = (PyGenObject *)obj;
+        _PyStackRef func = gen->gi_iframe.f_funcobj;
+        if (!PyStackRef_IsNull(func)) {
+            transformed_value = (PyObject *)PyStackRef_AsPyObjectBorrow(func);
+            Py_XINCREF(transformed_value);
+        }
+    }
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
+static PyObject *
+_PyOpcode_RecordTransform_BOUND_METHOD(PyObject *recorded_value)
+{
+    PyObject *transformed_value = NULL;
+    _PyStackRef callable;
+    callable = PyStackRef_FromPyObjectBorrow(recorded_value);
+    PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+    if (Py_TYPE(callable_o) == &PyMethod_Type) {
+        transformed_value = (PyObject *)callable_o;
+        Py_XINCREF(transformed_value);
+    }
+    Py_DECREF(recorded_value);
+    return transformed_value;
+}
+
 PyObject *
 _PyOpcode_RecordTransformValue(int uop, PyObject *value)
 {
-        switch (uop) {
-                case _RECORD_TOS_TYPE:
-                case _RECORD_NOS_TYPE:
-                    return record_trace_transform_to_type(value);
-                case _RECORD_NOS_GEN_FUNC:
-                case _RECORD_3OS_GEN_FUNC:
-                    return record_trace_transform_gen_func(value);
-                case _RECORD_BOUND_METHOD:
-                    return record_trace_transform_bound_method(value);
-                default:
-                    return value;
-        }
+    switch (uop) {
+        case _RECORD_NOS_TYPE:
+            return _PyOpcode_RecordTransform_NOS_TYPE(value);
+        case _RECORD_TOS_TYPE:
+            return _PyOpcode_RecordTransform_TOS_TYPE(value);
+        case _RECORD_NOS_GEN_FUNC:
+            return _PyOpcode_RecordTransform_NOS_GEN_FUNC(value);
+        case _RECORD_BOUND_METHOD:
+            return _PyOpcode_RecordTransform_BOUND_METHOD(value);
+        default:
+            return value;
+    }
 }

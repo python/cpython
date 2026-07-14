@@ -106,8 +106,8 @@ import types
 import unittest
 from io import StringIO, TextIOWrapper, BytesIO
 from collections import namedtuple
-import _colorize  # Used in doctests
-from _colorize import ANSIColors, can_colorize
+lazy import _colorize  # Used in doctests
+lazy from _colorize import ANSIColors, can_colorize
 
 
 class TestResults(namedtuple('TestResults', 'failed attempted')):
@@ -1768,7 +1768,7 @@ class OutputChecker:
                           '', want)
             # If a line in got contains only spaces, then remove the
             # spaces.
-            got = re.sub(r'(?m)^[^\S\n]+$', '', got)
+            got = re.sub(r'(?m)^[\s--\n]+$', '', got)
             if got == want:
                 return True
 

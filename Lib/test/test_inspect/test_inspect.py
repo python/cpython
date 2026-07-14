@@ -7,6 +7,7 @@ import datetime
 import functools
 import gc
 import importlib
+import importlib.util
 import inspect
 import io
 import linecache
@@ -1355,9 +1356,10 @@ class TestClassesAndFunctions(unittest.TestCase):
                                     varkw_e=None, defaults_e=None,
                                     posonlyargs_e=[], kwonlyargs_e=[],
                                     kwonlydefaults_e=None,
-                                    ann_e={}):
+                                    ann_e={},
+                                    annotation_format=Format.VALUE):
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-            inspect.getfullargspec(routine)
+            inspect.getfullargspec(routine, annotation_format=annotation_format)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
@@ -1389,6 +1391,19 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      defaults_e=(1,2,3),
                                      kwonlyargs_e=['e', 'f'],
                                      kwonlydefaults_e={'e': 4, 'f': 5})
+
+    def get_getfullargspec_with_undefined_names_in_annotations(self):
+        def my_func(a: undefined_name):
+            pass
+
+        with self.assertRaises(NameError):
+            inspect.getfullargspec(my_func)
+
+        self.assertFullArgSpecEquals(my_func, ['a'], ann_e={'a': 'undefined_name'},
+                                     annotation_format=Format.STRING)
+
+        arg_spec = inspect.getfullargspec(my_func, annotation_format=Format.FORWARDREF)
+        self.assertIsInstance(arg_spec.annotations['a'], ForwardRef)
 
     def test_argspec_api_ignores_wrapped(self):
         # Issue 20684: low level introspection API must ignore __wrapped__
@@ -2974,7 +2989,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        asyncio.events._set_event_loop_policy(None)
+        asyncio.set_event_loop(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -6241,8 +6256,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
-        unsupported_signature = {"reduce"}
-        self._test_module_has_signatures(functools, unsupported_signature=unsupported_signature)
+        self._test_module_has_signatures(functools)
 
     def test_gc_module_has_signatures(self):
         import gc
@@ -6506,6 +6520,19 @@ class TestModuleCLI(unittest.TestCase):
     NO_SOURCE_ERROR = "No source code available for defining module"
     NO_SOURCE_TARGET_ERROR = "Failed to retrieve source code for given target"
 
+    @staticmethod
+    def _expected_cached(module):
+        # assert_python_ok() runs the subprocess in isolated mode (-I), which
+        # ignores PYTHONPYCACHEPREFIX, so compute the expected cached path the
+        # same way (i.e. without any pycache prefix) to stay independent of the
+        # environment the test suite is run in.  Modules without a cached path
+        # (e.g. frozen modules such as ntpath/importlib.machinery on Windows)
+        # report None, so preserve that.
+        if module.__spec__.cached is None:
+            return None
+        with support.swap_attr(sys, 'pycache_prefix', None):
+            return importlib.util.cache_from_source(module.__spec__.origin)
+
     def test_only_source(self):
         module = importlib.import_module('unittest')
         rc, out, err = assert_python_ok('-m', 'inspect',
@@ -6563,12 +6590,13 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         module_name, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         expected_lines = [
             f"Target: {module.__name__}",  # No aliasing
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             f"Loader: {_clean_object_ids(repr(module.__spec__.loader))}",
             f"Submodule search paths: {module.__path__}",
             "",
@@ -6606,13 +6634,14 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         cli_target, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         # The error is only informational when reading source details
         expected_lines = [
             f"Target: {cli_target}",  # No aliasing
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             self.NO_SOURCE_TARGET_ERROR,
             "",
         ]
@@ -6631,12 +6660,13 @@ class TestModuleCLI(unittest.TestCase):
         args = support.optim_args_from_interpreter_flags()
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         cli_target, '--details')
+        cached = self._expected_cached(module)
         # Full rendering check on the expected output
         expected_lines = [
             f'Target: {defining_target} (looked up as "{cli_target}")',
             f"Origin: {module.__spec__.origin}",
             f"Source: {module.__file__}",
-            f"Cached: {module.__spec__.cached}",  # None is still displayed
+            f"Cached: {cached}",  # None is still displayed
             f"Line: {inspect.findsource(target)[1]}",
             "",
         ]

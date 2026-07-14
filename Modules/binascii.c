@@ -1057,7 +1057,8 @@ binascii.a2b_ascii85
     foldspaces: bool = False
         Allow 'y' as a short form encoding four spaces.
     adobe: bool = False
-        Expect data to be wrapped in '<~' and '~>' as in Adobe Ascii85.
+        Expect data to be terminated with '~>' as in Adobe Ascii85, and
+        optionally accept leading '<~'.
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
     canonical: bool = False
@@ -1069,7 +1070,7 @@ Decode Ascii85 data.
 static PyObject *
 binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
                           int adobe, Py_buffer *ignorechars, int canonical)
-/*[clinic end generated code: output=09b35f1eac531357 input=dd050604ed30199e]*/
+/*[clinic end generated code: output=09b35f1eac531357 input=08eab2e53c62f1a8]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1264,7 +1265,7 @@ binascii.b2a_ascii85
     wrapcol: size_t = 0
         Split result into lines of provided width.
     pad: bool = False
-        Pad input to a multiple of 4 before encoding.
+        Retain zero-padding bytes at end of output.
     adobe: bool = False
         Wrap result in '<~' and '~>' as in Adobe Ascii85.
 
@@ -1274,7 +1275,7 @@ Ascii85-encode data.
 static PyObject *
 binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int foldspaces,
                           size_t wrapcol, int pad, int adobe)
-/*[clinic end generated code: output=5ce8fdee843073f4 input=791da754508c7d17]*/
+/*[clinic end generated code: output=5ce8fdee843073f4 input=a77e31d63517bf19]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
@@ -1539,7 +1540,7 @@ binascii.b2a_base85
     /
     *
     pad: bool = False
-        Pad input to a multiple of 4 before encoding.
+        Retain zero-padding bytes at end of output.
     wrapcol: size_t = 0
     alphabet: Py_buffer(c_default="{NULL, NULL}") = BASE85_ALPHABET
 
@@ -1549,7 +1550,7 @@ Base85-code line of data.
 static PyObject *
 binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
                          size_t wrapcol, Py_buffer *alphabet)
-/*[clinic end generated code: output=98b962ed52c776a4 input=1b20b0bd6572691b]*/
+/*[clinic end generated code: output=98b962ed52c776a4 input=54886d05128d41a8]*/
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;

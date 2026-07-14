@@ -9,6 +9,7 @@
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_interp_structs.h" // CODE_MAX_WATCHERS
 #include "pycore_context.h"       // CONTEXT_MAX_WATCHERS
+#include "pycore_lock.h"          // _PyOnceFlag
 
 /*[clinic input]
 module _testcapi
@@ -18,6 +19,14 @@ module _testcapi
 // Test dict watching
 static PyObject *g_dict_watch_events = NULL;
 static int g_dict_watchers_installed = 0;
+static _PyOnceFlag g_dict_watch_once = {0};
+
+static int
+_init_dict_watch_events(void *arg)
+{
+    g_dict_watch_events = PyList_New(0);
+    return g_dict_watch_events ? 0 : -1;
+}
 
 static int
 dict_watch_callback(PyDict_WatchEvent event,
@@ -106,13 +115,10 @@ add_dict_watcher(PyObject *self, PyObject *kind)
     if (watcher_id < 0) {
         return NULL;
     }
-    if (!g_dict_watchers_installed) {
-        assert(!g_dict_watch_events);
-        if (!(g_dict_watch_events = PyList_New(0))) {
-            return NULL;
-        }
+    if (_PyOnceFlag_CallOnce(&g_dict_watch_once, _init_dict_watch_events, NULL) < 0) {
+        return NULL;
     }
-    g_dict_watchers_installed++;
+    _Py_atomic_add_int(&g_dict_watchers_installed, 1);
     return PyLong_FromLong(watcher_id);
 }
 
@@ -122,10 +128,8 @@ clear_dict_watcher(PyObject *self, PyObject *watcher_id)
     if (PyDict_ClearWatcher(PyLong_AsLong(watcher_id))) {
         return NULL;
     }
-    g_dict_watchers_installed--;
-    if (!g_dict_watchers_installed) {
-        assert(g_dict_watch_events);
-        Py_CLEAR(g_dict_watch_events);
+    if (_Py_atomic_add_int(&g_dict_watchers_installed, -1) == 1) {
+        PyList_Clear(g_dict_watch_events);
     }
     Py_RETURN_NONE;
 }
@@ -164,7 +168,7 @@ _testcapi_unwatch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
 static PyObject *
 get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    if (!g_dict_watch_events) {
+    if (_Py_atomic_load_int(&g_dict_watchers_installed) <= 0) {
         PyErr_SetString(PyExc_RuntimeError, "no watchers active");
         return NULL;
     }

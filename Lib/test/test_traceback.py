@@ -23,7 +23,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_subprocess, os_helper)
 from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
-from test.support.import_helper import forget
+from test.support.import_helper import ensure_lazy_imports, forget
 from test.support import force_not_colorized, force_not_colorized_test_class
 
 import json
@@ -206,7 +206,7 @@ class TracebackCases(unittest.TestCase):
                 sys.setrecursionlimit(15)
 
                 def f():
-                    ref(lambda: 0, [])
+                    ref(lambda: 0, ord)
                     f()
 
                 try:
@@ -1815,6 +1815,18 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
         ("[x for x\nin range(3)\nof x]", "if"),
         ("[123 fur x\nin range(3)\nif x]", "for"),
         ("for x im n:\n  pass", "in"),
+        ("mach x:", "match"),
+        ("math x:", "match"),
+        ("match 1:\n  cse 1:", "case"),
+        ("typ x = int", "type"),
+        ("typed x = int", "type"),
+        ("lazi import x", "lazy"),
+        ("lezi import x", "lazy"),
+        ("switch x:\n case:", "match"),
+        ("delete x", "del"),
+        ("function f():", "def"),
+        ("func f():", "def"),
+        ("void f():", "def"),
     ]
 
     def test_keyword_suggestions_from_file(self):
@@ -4637,6 +4649,9 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
             (frozenset, 'remove', "Did you mean to use a 'set' object?"),
             (frozenset, 'update', "Did you mean to use a 'set' object?"),
             (frozendict, 'update', "Did you mean to use a 'dict' object?"),
+            (tuple, 'clear', "Did you mean to use a 'list' object?"),
+            (frozenset, 'clear', "Did you mean to use a 'set' object?"),
+            (frozendict, 'clear', "Did you mean to use a 'dict' object?"),
         ]
         for test_type, attr, expected in cases:
             with self.subTest(type=test_type.__name__, attr=attr):
@@ -5630,6 +5645,12 @@ class TestLazyImportSuggestions(unittest.TestCase):
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertIn(b"__name__", stderr)
         self.assertNotIn(b"BAR_MODULE_LOADED", stdout)
+
+
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("traceback", {"_colorize"})
 
 
 if __name__ == "__main__":

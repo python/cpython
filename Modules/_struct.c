@@ -1697,6 +1697,21 @@ prepare_s(PyStructObject *self, PyObject *format)
         if (e == NULL)
             return -1;
 
+        if (strcmp(e->format, "F") == 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "The 'F' type code is deprecated, use 'Zf'", 1))
+            {
+                return -1;
+            }
+        }
+        if (strcmp(e->format, "D") == 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "The 'D' type code is deprecated, use 'Zd'", 1))
+            {
+                return -1;
+            }
+        }
+
         switch (c) {
             case 's': _Py_FALLTHROUGH;
             case 'p':
@@ -2065,6 +2080,20 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
                 }
                 v = PyBytes_FromStringAndSize(res + 1, n);
             } else {
+                if (strcmp(e->format, "F") == 0) {
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "The 'F' type code is deprecated, use 'Zf'", 1))
+                    {
+                        goto fail;
+                    }
+                }
+                if (strcmp(e->format, "D") == 0) {
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "The 'D' type code is deprecated, use 'Zd'", 1))
+                    {
+                        goto fail;
+                    }
+                }
                 v = e->unpack(state, res, e);
             }
             if (v == NULL)
@@ -2721,6 +2750,7 @@ pack_into_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer,
 }
 
 /*[clinic input]
+@permit_long_summary
 unpack
 
     format as s_object: cache_struct
@@ -2735,12 +2765,13 @@ for more on format strings.
 
 static PyObject *
 unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer)
-/*[clinic end generated code: output=48ddd4d88eca8551 input=7df28c5d0b5b6f4e]*/
+/*[clinic end generated code: output=48ddd4d88eca8551 input=53a60a65830bd1e1]*/
 {
     return Struct_unpack_impl(s_object, buffer);
 }
 
 /*[clinic input]
+@permit_long_summary
 unpack_from
 
     format as s_object: cache_struct
@@ -2757,7 +2788,7 @@ help(struct) for more on format strings.
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
                  Py_buffer *buffer, Py_ssize_t offset)
-/*[clinic end generated code: output=1042631674c6e0d3 input=599262b23559f6c5]*/
+/*[clinic end generated code: output=1042631674c6e0d3 input=3e46619756fb0293]*/
 {
     return Struct_unpack_from_impl(s_object, buffer, offset);
 }

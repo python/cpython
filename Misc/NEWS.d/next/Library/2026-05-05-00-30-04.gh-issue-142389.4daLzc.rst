@@ -1,2 +1,0 @@
-Add backticks to stdlib argparse help to display in colour. Patch by Hugo
-van Kemenade.

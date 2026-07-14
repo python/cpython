@@ -55,8 +55,13 @@ class RobotFileParser:
         self.last_checked = time.time()
 
     def set_url(self, url):
-        """Sets the URL referring to a robots.txt file."""
+        """Sets the URL referring to a robots.txt file.
+        can be a string or a Request object.
+        """
         self.url = url
+
+        if isinstance(url, urllib.request.Request):
+            url = url.full_url
         self.host, self.path = urllib.parse.urlsplit(url)[1:3]
 
     def read(self):
@@ -65,9 +70,17 @@ class RobotFileParser:
             f = urllib.request.urlopen(self.url)
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
+                # If access to robot.txt has the status Unauthorized/Forbidden,
+                # then most likely this applies to the entire site.
                 self.disallow_all = True
-            elif err.code >= 400 and err.code < 500:
+            elif 400 <= err.code < 500:
+                # RFC 9309, Section 2.3.1.3: the crawler MAY access any
+                # resources on the server.
                 self.allow_all = True
+            elif 500 <= err.code < 600:
+                # RFC 9309, Section 2.3.1.4: the crawler MUST assume
+                # complete disallow.
+                self.disallow_all = True
             err.close()
         else:
             raw = f.read()

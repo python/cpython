@@ -24,7 +24,6 @@ import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
-from test.support import warnings_helper
 
 try:
     from _testbuffer import *
@@ -143,7 +142,7 @@ MEMORYVIEW = NATIVE.copy()
 # Format codes supported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
-    if not k in "bBhHiIlLfd":
+    if k not in list("bBhHiIlLefd") + ['Zf', 'Zd']:
         del ARRAY[k]
 
 BYTEFMT = NATIVE.copy()
@@ -3261,15 +3260,6 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertNotEqual(point, a)
             self.assertRaises(NotImplementedError, a.tolist)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
-    def test_memoryview_compare_special_cases_deprecated_u_type_code(self):
-
-        # Depends on issue #15625: the struct module does not understand 'u'.
-        a = array.array('u', 'xyz')
-        v = memoryview(a)
-        self.assertNotEqual(a, v)
-        self.assertNotEqual(v, a)
-
     def test_memoryview_compare_ndim_zero(self):
 
         nd1 = ndarray(1729, shape=[], format='@L')
@@ -4495,8 +4485,10 @@ class TestBufferProtocol(unittest.TestCase):
     def test_array_alignment(self):
         # gh-140557: pointer alignment of buffers including empty allocation
         # should match the maximum array alignment.
-        align = max(struct.calcsize(fmt) for fmt in ARRAY)
-        cases = [array.array(fmt) for fmt in ARRAY]
+        formats = [fmt for fmt in ARRAY
+                   if struct.calcsize(fmt) <= struct.calcsize('P')]
+        align = max(struct.calcsize(fmt) for fmt in formats)
+        cases = [array.array(fmt) for fmt in formats]
         # Empty arrays
         self.assertEqual(
             [_testcapi.buffer_pointer_as_int(case) % align for case in cases],

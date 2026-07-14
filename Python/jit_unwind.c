@@ -60,6 +60,9 @@ enum {
     DWRF_CFA_offset_extended_sf = 0x11,   // Extended signed offset
     DWRF_CFA_advance_loc = 0x40,          // Advance location counter
     DWRF_CFA_offset = 0x80,               // Simple offset instruction
+#if defined(__aarch64__)
+    DWRF_CFA_AARCH64_negate_ra_state = 0x2d, // Toggle return address signing state
+#endif
     DWRF_CFA_restore = 0xc0               // Restore register
 };
 
@@ -562,6 +565,13 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
         DWRF_UV(8);                           // New offset: SP + 8
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
         /* AArch64 calling convention unwinding rules */
+#if defined(__ARM_FEATURE_PAC_DEFAULT) || \
+    (defined(__ARM_FEATURE_BTI_DEFAULT) && __ARM_FEATURE_BTI_DEFAULT == 1)
+        DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance past SIGN_LR (4 bytes)
+#endif
+#if defined(__ARM_FEATURE_PAC_DEFAULT)
+        DWRF_U8(DWRF_CFA_AARCH64_negate_ra_state); // Saved LR is PAC-signed from here
+#endif
         DWRF_U8(DWRF_CFA_advance_loc | 1);        // Advance by 1 instruction (4 bytes)
         DWRF_U8(DWRF_CFA_def_cfa_offset);         // CFA = SP + 16
         DWRF_UV(16);                              // Stack pointer moved by 16 bytes
@@ -570,6 +580,9 @@ static void elf_init_ehframe_perf(ELFObjectContext* ctx) {
         DWRF_U8(DWRF_CFA_offset | DWRF_REG_RA);   // x30 (link register) saved
         DWRF_UV(1);                               // At CFA-8 (1 * 8 = 8 bytes from CFA)
         DWRF_U8(DWRF_CFA_advance_loc | 3);        // Advance by 3 instructions (12 bytes)
+#if defined(__ARM_FEATURE_PAC_DEFAULT)
+        DWRF_U8(DWRF_CFA_AARCH64_negate_ra_state); // LR is authenticated, no longer PAC-signed
+#endif
         DWRF_U8(DWRF_CFA_def_cfa_register);       // CFA = FP (x29) + 16
         DWRF_UV(DWRF_REG_FP);
         DWRF_U8(DWRF_CFA_restore | DWRF_REG_RA);  // Restore x30 - NO DWRF_UV() after this!

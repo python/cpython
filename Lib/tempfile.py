@@ -31,6 +31,7 @@ __all__ = [
     "TMP_MAX", "gettempprefix",            # constants
     "tempdir", "gettempdir",
     "gettempprefixb", "gettempdirb",
+    "TemporaryFileWrapper",
    ]
 
 
@@ -484,7 +485,7 @@ class _TemporaryFileCloser:
             _warnings.warn(self.warn_message, ResourceWarning)
 
 
-class _TemporaryFileWrapper:
+class TemporaryFileWrapper:
     """Temporary file wrapper
 
     This class provides a wrapper around files opened for
@@ -555,6 +556,19 @@ class _TemporaryFileWrapper:
         for line in self.file:
             yield line
 
+def __getattr__(name):
+    if name == "_TemporaryFileWrapper":
+        _warnings._deprecated(
+            "tempfile._TemporaryFileWrapper",
+            message=(
+                "{name!r} is deprecated and slated for removal in Python {remove}. "
+                "Use tempfile.TemporaryFileWrapper instead."
+            ),
+            remove=(3, 21),
+        )
+        return TemporaryFileWrapper
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
                        dir=None, delete=True, *, errors=None,
@@ -607,7 +621,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
             raw = getattr(file, 'buffer', file)
             raw = getattr(raw, 'raw', raw)
             raw.name = name
-            return _TemporaryFileWrapper(file, name, delete, delete_on_close)
+            return TemporaryFileWrapper(file, name, delete, delete_on_close)
         except:
             file.close()
             raise

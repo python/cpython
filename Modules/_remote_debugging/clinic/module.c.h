@@ -21,33 +21,37 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 "\n"
 "Args:\n"
 "    pid: Process ID of the target Python process to debug\n"
-"    all_threads: If True, initialize state for all threads in the process.\n"
-"                If False, only initialize for the main thread.\n"
+"    all_threads: If True, initialize state for all threads in the\n"
+"        process.  If False, only initialize for the main thread.\n"
 "    only_active_thread: If True, only sample the thread holding the GIL.\n"
-"    mode: Profiling mode: 0=WALL (wall-time), 1=CPU (cpu-time), 2=GIL (gil-time).\n"
-"                       Cannot be used together with all_threads=True.\n"
-"    debug: If True, chain exceptions to explain the sequence of events that\n"
-"           lead to the exception.\n"
-"    skip_non_matching_threads: If True, skip threads that don\'t match the selected mode.\n"
-"                              If False, include all threads regardless of mode.\n"
-"    native: If True, include artificial \"<native>\" frames to denote calls to\n"
-"            non-Python code.\n"
-"    gc: If True, include artificial \"<GC>\" frames to denote active garbage\n"
-"        collection.\n"
-"    opcodes: If True, gather bytecode opcode information for instruction-level\n"
-"             profiling.\n"
-"    cache_frames: If True, enable frame caching optimization to avoid re-reading\n"
-"                 unchanged parent frames between samples.\n"
-"    stats: If True, collect statistics about cache hits, memory reads, etc.\n"
-"           Use get_stats() to retrieve the collected statistics.\n"
+"    mode: Profiling mode: 0=WALL (wall-time), 1=CPU (cpu-time), 2=GIL\n"
+"        (gil-time).  Cannot be used together with all_threads=True.\n"
+"    debug: If True, chain exceptions to explain the sequence of events\n"
+"        that lead to the exception.\n"
+"    skip_non_matching_threads: If True, skip threads that don\'t match\n"
+"        the selected mode.  If False, include all threads regardless of\n"
+"        mode.\n"
+"    native: If True, include artificial \"<native>\" frames to denote\n"
+"        calls to non-Python code.\n"
+"    gc: If True, include artificial \"<GC>\" frames to denote active\n"
+"        garbage collection.\n"
+"    opcodes: If True, gather bytecode opcode information for\n"
+"        instruction-level profiling.\n"
+"    cache_frames: If True, enable frame caching optimization to avoid\n"
+"        re-reading unchanged parent frames between samples.\n"
+"    stats: If True, collect statistics about cache hits, memory reads,\n"
+"        etc.  Use get_stats() to retrieve the collected statistics.\n"
 "\n"
-"The RemoteUnwinder provides functionality to inspect and debug a running Python\n"
-"process, including examining thread states, stack frames and other runtime data.\n"
+"The RemoteUnwinder provides functionality to inspect and debug a running\n"
+"Python process, including examining thread states, stack frames and\n"
+"other runtime data.\n"
 "\n"
 "Raises:\n"
 "    PermissionError: If access to the target process is denied\n"
-"    OSError: If unable to attach to the target process or access its memory\n"
-"    RuntimeError: If unable to read debug information from the target process\n"
+"    OSError: If unable to attach to the target process or access its\n"
+"        memory\n"
+"    RuntimeError: If unable to read debug information from the target\n"
+"        process\n"
 "    ValueError: If both all_threads and only_active_thread are True");
 
 static int
@@ -217,16 +221,21 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stack_trace__doc__,
 "\n"
 "Returns stack traces for all interpreters and threads in process.\n"
 "\n"
-"Each element in the returned list is a tuple of (interpreter_id, thread_list), where:\n"
+"Each element in the returned list is a tuple of (interpreter_id,\n"
+"thread_list), where:\n"
 "- interpreter_id is the interpreter identifier\n"
-"- thread_list is a list of tuples (thread_id, frame_list) for threads in that interpreter\n"
+"- thread_list is a list of tuples (thread_id, frame_list) for\n"
+"  threads in that interpreter\n"
 "  - thread_id is the OS thread identifier\n"
-"  - frame_list is a list of tuples (function_name, filename, line_number) representing\n"
-"    the Python stack frames for that thread, ordered from most recent to oldest\n"
+"  - frame_list is a list of tuples (function_name, filename,\n"
+"    line_number) representing the Python stack frames for that\n"
+"    thread, ordered from most recent to oldest\n"
 "\n"
 "The threads returned depend on the initialization parameters:\n"
-"- If only_active_thread was True: returns only the thread holding the GIL across all interpreters\n"
-"- If all_threads was True: returns all threads across all interpreters\n"
+"- If only_active_thread was True: returns only the thread holding\n"
+"  the GIL across all interpreters\n"
+"- If all_threads was True: returns all threads across all\n"
+"  interpreters\n"
 "- Otherwise: returns only the main thread of each interpreter\n"
 "\n"
 "Example:\n"
@@ -250,10 +259,12 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stack_trace__doc__,
 "    ]\n"
 "\n"
 "Raises:\n"
-"    RuntimeError: If there is an error copying memory from the target process\n"
+"    RuntimeError: If there is an error copying memory from the\n"
+"        target process\n"
 "    OSError: If there is an error accessing the target process\n"
 "    PermissionError: If access to the target process is denied\n"
-"    UnicodeDecodeError: If there is an error decoding strings from the target process");
+"    UnicodeDecodeError: If there is an error decoding strings from\n"
+"        the target process");
 
 #define _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STACK_TRACE_METHODDEF    \
     {"get_stack_trace", (PyCFunction)_remote_debugging_RemoteUnwinder_get_stack_trace, METH_NOARGS, _remote_debugging_RemoteUnwinder_get_stack_trace__doc__},
@@ -279,20 +290,25 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_all_awaited_by__doc__,
 "\n"
 "Get all tasks and their awaited_by relationships from the remote process.\n"
 "\n"
-"This provides a tree structure showing which tasks are waiting for other tasks.\n"
+"This provides a tree structure showing which tasks are waiting for\n"
+"other tasks.\n"
 "\n"
 "For each task, returns:\n"
-"1. The call stack frames leading to where the task is currently executing\n"
+"1. The call stack frames leading to where the task is currently\n"
+"   executing\n"
 "2. The name of the task\n"
-"3. A list of tasks that this task is waiting for, with their own frames/names/etc\n"
+"3. A list of tasks that this task is waiting for, with their own\n"
+"   frames/names/etc\n"
 "\n"
 "Returns a list of [frames, task_name, subtasks] where:\n"
-"- frames: List of (func_name, filename, lineno) showing the call stack\n"
+"- frames: List of (func_name, filename, lineno) showing the call\n"
+"  stack\n"
 "- task_name: String identifier for the task\n"
 "- subtasks: List of tasks being awaited by this task, in same format\n"
 "\n"
 "Raises:\n"
-"    RuntimeError: If AsyncioDebug section is not available in the remote process\n"
+"    RuntimeError: If AsyncioDebug section is not available in the\n"
+"        remote process\n"
 "    MemoryError: If memory allocation fails\n"
 "    OSError: If reading from the remote process fails\n"
 "\n"
@@ -336,14 +352,16 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "\n"
 "Get the currently running async tasks and their dependency graphs from the remote process.\n"
 "\n"
-"This returns information about running tasks and all tasks that are waiting for them,\n"
-"forming a complete dependency graph for each thread\'s active task.\n"
+"This returns information about running tasks and all tasks that are\n"
+"waiting for them, forming a complete dependency graph for each\n"
+"thread\'s active task.\n"
 "\n"
-"For each thread with a running task, returns the running task plus all tasks that\n"
-"transitively depend on it (tasks waiting for the running task, tasks waiting for\n"
-"those tasks, etc.).\n"
+"For each thread with a running task, returns the running task plus\n"
+"all tasks that transitively depend on it (tasks waiting for the\n"
+"running task, tasks waiting for those tasks, etc.).\n"
 "\n"
-"Returns a list of per-thread results, where each thread result contains:\n"
+"Returns a list of per-thread results, where each thread result\n"
+"contains:\n"
 "- Thread ID\n"
 "- List of task information for the running task and all its waiters\n"
 "\n"
@@ -354,11 +372,13 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "- List of tasks waiting for this task (recursive structure)\n"
 "\n"
 "Raises:\n"
-"    RuntimeError: If AsyncioDebug section is not available in the target process\n"
+"    RuntimeError: If AsyncioDebug section is not available in the\n"
+"        target process\n"
 "    MemoryError: If memory allocation fails\n"
 "    OSError: If reading from the remote process fails\n"
 "\n"
-"Example output (similar structure to get_all_awaited_by but only for running tasks):\n"
+"Example output (similar structure to get_all_awaited_by but only for\n"
+"running tasks):\n"
 "[\n"
 "    (140234, [\n"
 "        (4345585712, \'main_task\',\n"
@@ -403,16 +423,34 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stats__doc__,
 "        - total_samples: Total number of get_stack_trace calls\n"
 "        - frame_cache_hits: Full cache hits (entire stack unchanged)\n"
 "        - frame_cache_misses: Cache misses requiring full walk\n"
-"        - frame_cache_partial_hits: Partial hits (stopped at cached frame)\n"
+"        - frame_cache_partial_hits: Partial hits (stopped at cached\n"
+"          frame)\n"
 "        - frames_read_from_cache: Total frames retrieved from cache\n"
-"        - frames_read_from_memory: Total frames read from remote memory\n"
+"        - frames_read_from_memory: Total frames read from remote\n"
+"          memory\n"
 "        - memory_reads: Total remote memory read operations\n"
 "        - memory_bytes_read: Total bytes read from remote memory\n"
 "        - code_object_cache_hits: Code object cache hits\n"
 "        - code_object_cache_misses: Code object cache misses\n"
-"        - stale_cache_invalidations: Times stale cache entries were cleared\n"
-"        - frame_cache_hit_rate: Percentage of samples that hit the cache\n"
-"        - code_object_cache_hit_rate: Percentage of code object lookups that hit cache\n"
+"        - stale_cache_invalidations: Times stale cache entries were\n"
+"          cleared\n"
+"        - batched_read_attempts: Batched remote-read attempts\n"
+"        - batched_read_successes: Attempts that read all requested\n"
+"          segments\n"
+"        - batched_read_misses: Attempts that fell back or partially\n"
+"          read\n"
+"        - batched_read_segments_requested: Segments requested by\n"
+"          batched reads\n"
+"        - batched_read_segments_completed: Segments completed by\n"
+"          batched reads\n"
+"        - frame_cache_hit_rate: Percentage of samples that hit the\n"
+"          cache\n"
+"        - code_object_cache_hit_rate: Percentage of code object\n"
+"          lookups that hit cache\n"
+"        - batched_read_success_rate: Percentage of batched reads\n"
+"          that completed all segments\n"
+"        - batched_read_segment_completion_rate: Percentage of\n"
+"          requested segments read by batched reads\n"
 "\n"
 "Raises:\n"
 "    RuntimeError: If stats collection was not enabled (stats=False)");
@@ -442,9 +480,11 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_pause_threads__doc__,
 "Pause all threads in the target process.\n"
 "\n"
 "This stops all threads in the target process to allow for consistent\n"
-"memory reads during sampling. Must be paired with a call to resume_threads().\n"
+"memory reads during sampling. Must be paired with a call to\n"
+"resume_threads().\n"
 "\n"
-"Returns True if threads were successfully paused, False if they were already paused.\n"
+"Returns True if threads were successfully paused, False if they were\n"
+"already paused.\n"
 "\n"
 "Raises:\n"
 "    RuntimeError: If there is an error stopping the threads");
@@ -473,9 +513,11 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_resume_threads__doc__,
 "\n"
 "Resume all threads in the target process.\n"
 "\n"
-"This resumes threads that were previously paused with pause_threads().\n"
+"This resumes threads that were previously paused with\n"
+"pause_threads().\n"
 "\n"
-"Returns True if threads were successfully resumed, False if they were not paused.");
+"Returns True if threads were successfully resumed, False if they\n"
+"were not paused.");
 
 #define _REMOTE_DEBUGGING_REMOTEUNWINDER_RESUME_THREADS_METHODDEF    \
     {"resume_threads", (PyCFunction)_remote_debugging_RemoteUnwinder_resume_threads, METH_NOARGS, _remote_debugging_RemoteUnwinder_resume_threads__doc__},
@@ -503,16 +545,18 @@ PyDoc_STRVAR(_remote_debugging_GCMonitor___init____doc__,
 "\n"
 "Args:\n"
 "    pid: Process ID of the target Python process to monitor\n"
-"    debug: If True, chain exceptions to explain the sequence of events that\n"
-"           lead to the exception.\n"
+"    debug: If True, chain exceptions to explain the sequence of\n"
+"           events that lead to the exception.\n"
 "\n"
-"The GCMonitor provides functionality to read GC statistics from a running\n"
-"Python process.\n"
+"The GCMonitor provides functionality to read GC statistics from\n"
+"a running Python process.\n"
 "\n"
 "Raises:\n"
 "    PermissionError: If access to the target process is denied\n"
-"    OSError: If unable to attach to the target process or access its memory\n"
-"    RuntimeError: If unable to read debug information from the target process");
+"    OSError: If unable to attach to the target process or access\n"
+"        its memory\n"
+"    RuntimeError: If unable to read debug information from the\n"
+"        target process");
 
 static int
 _remote_debugging_GCMonitor___init___impl(GCMonitorObject *self, int pid,
@@ -605,8 +649,8 @@ PyDoc_STRVAR(_remote_debugging_GCMonitor_get_gc_stats__doc__,
 "        - duration: Total collection time, in seconds.\n"
 "\n"
 "Raises:\n"
-"    RuntimeError: If the target process cannot be inspected or if its\n"
-"        debug offsets or GC stats layout are incompatible.");
+"    RuntimeError: If the target process cannot be inspected or if\n"
+"        its debug offsets or GC stats layout are incompatible.");
 
 #define _REMOTE_DEBUGGING_GCMONITOR_GET_GC_STATS_METHODDEF    \
     {"get_gc_stats", _PyCFunction_CAST(_remote_debugging_GCMonitor_get_gc_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_GCMonitor_get_gc_stats__doc__},
@@ -681,14 +725,15 @@ PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
 "Arguments:\n"
 "    filename: Path to output file\n"
 "    sample_interval_us: Sampling interval in microseconds\n"
-"    start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)\n"
+"    start_time_us: Start timestamp in microseconds (from\n"
+"        time.monotonic() * 1e6)\n"
 "    compression: 0=none, 1=zstd (default: 0)\n"
 "\n"
 "Use as a context manager or call finalize() when done.");
 
 static int
 _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
-                                             const char *filename,
+                                             PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
                                              int compression);
@@ -728,7 +773,7 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 3;
-    const char *filename;
+    PyObject *filename;
     unsigned long long sample_interval_us;
     unsigned long long start_time_us;
     int compression = 0;
@@ -738,19 +783,7 @@ _remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject
     if (!fastargs) {
         goto exit;
     }
-    if (!PyUnicode_Check(fastargs[0])) {
-        _PyArg_BadArgument("BinaryWriter", "argument 'filename'", "str", fastargs[0]);
-        goto exit;
-    }
-    Py_ssize_t filename_length;
-    filename = PyUnicode_AsUTF8AndSize(fastargs[0], &filename_length);
-    if (filename == NULL) {
-        goto exit;
-    }
-    if (strlen(filename) != (size_t)filename_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    filename = fastargs[0];
     if (!_PyLong_UnsignedLongLong_Converter(fastargs[1], &sample_interval_us)) {
         goto exit;
     }
@@ -779,7 +812,8 @@ PyDoc_STRVAR(_remote_debugging_BinaryWriter_write_sample__doc__,
 "\n"
 "Arguments:\n"
 "    stack_frames: List of InterpreterInfo objects\n"
-"    timestamp_us: Current timestamp in microseconds (from time.monotonic() * 1e6)");
+"    timestamp_us: Current timestamp in microseconds (from\n"
+"        time.monotonic() * 1e6)");
 
 #define _REMOTE_DEBUGGING_BINARYWRITER_WRITE_SAMPLE_METHODDEF    \
     {"write_sample", _PyCFunction_CAST(_remote_debugging_BinaryWriter_write_sample), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_BinaryWriter_write_sample__doc__},
@@ -981,8 +1015,9 @@ PyDoc_STRVAR(_remote_debugging_BinaryWriter_get_stats__doc__,
 "\n"
 "Get encoding statistics for the writer.\n"
 "\n"
-"Returns a dict with encoding statistics including repeat/full/suffix/pop-push\n"
-"record counts, frames written/saved, and compression ratio.");
+"Returns a dict with encoding statistics including\n"
+"repeat/full/suffix/pop-push record counts, frames written/saved, and\n"
+"compression ratio.");
 
 #define _REMOTE_DEBUGGING_BINARYWRITER_GET_STATS_METHODDEF    \
     {"get_stats", (PyCFunction)_remote_debugging_BinaryWriter_get_stats, METH_NOARGS, _remote_debugging_BinaryWriter_get_stats__doc__},
@@ -1009,7 +1044,7 @@ PyDoc_STRVAR(_remote_debugging_BinaryReader___init____doc__,
 
 static int
 _remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
-                                             const char *filename);
+                                             PyObject *filename);
 
 static int
 _remote_debugging_BinaryReader___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1045,26 +1080,14 @@ _remote_debugging_BinaryReader___init__(PyObject *self, PyObject *args, PyObject
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    const char *filename;
+    PyObject *filename;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
-    if (!PyUnicode_Check(fastargs[0])) {
-        _PyArg_BadArgument("BinaryReader", "argument 'filename'", "str", fastargs[0]);
-        goto exit;
-    }
-    Py_ssize_t filename_length;
-    filename = PyUnicode_AsUTF8AndSize(fastargs[0], &filename_length);
-    if (filename == NULL) {
-        goto exit;
-    }
-    if (strlen(filename) != (size_t)filename_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
+    filename = fastargs[0];
     return_value = _remote_debugging_BinaryReader___init___impl((BinaryReaderObject *)self, filename);
 
 exit:
@@ -1172,8 +1195,8 @@ PyDoc_STRVAR(_remote_debugging_BinaryReader_get_stats__doc__,
 "\n"
 "Get reconstruction statistics from replay.\n"
 "\n"
-"Returns a dict with statistics about record types decoded and samples\n"
-"reconstructed during replay.");
+"Returns a dict with statistics about record types decoded and\n"
+"samples reconstructed during replay.");
 
 #define _REMOTE_DEBUGGING_BINARYREADER_GET_STATS_METHODDEF    \
     {"get_stats", (PyCFunction)_remote_debugging_BinaryReader_get_stats, METH_NOARGS, _remote_debugging_BinaryReader_get_stats__doc__},
@@ -1336,11 +1359,12 @@ PyDoc_STRVAR(_remote_debugging_get_child_pids__doc__,
 "    If True, return all descendants (children, grandchildren, etc.).\n"
 "    If False, return only direct children.\n"
 "\n"
-"Returns a list of child process IDs. Returns an empty list if no children\n"
-"are found.\n"
+"Returns a list of child process IDs.  Returns an empty list if no\n"
+"children are found.\n"
 "\n"
-"This function provides a snapshot of child processes at a moment in time.\n"
-"Child processes may exit or new ones may be created after the list is returned.\n"
+"This function provides a snapshot of child processes at a moment in\n"
+"time.  Child processes may exit or new ones may be created after the\n"
+"list is returned.\n"
 "\n"
 "Raises:\n"
 "    OSError: If unable to enumerate processes\n"
@@ -1564,4 +1588,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=36674f4cb8a653f3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3df14a6ab7f2998 input=a9049054013a1b77]*/

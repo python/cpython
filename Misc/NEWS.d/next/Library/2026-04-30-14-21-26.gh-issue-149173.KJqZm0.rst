@@ -1,2 +1,0 @@
-Fix inverted :envvar:`PYTHON_BASIC_REPL` environment check in
-``pdb._pyrepl_available``.

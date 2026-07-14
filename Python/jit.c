@@ -11,6 +11,7 @@
 #include "pycore_floatobject.h"
 #include "pycore_frame.h"
 #include "pycore_function.h"
+#include "pycore_genobject.h"
 #include "pycore_import.h"
 #include "pycore_interpframe.h"
 #include "pycore_interpolation.h"
@@ -32,7 +33,7 @@
 
 #include "pycore_jit.h"
 
-// Memory management stuff: ////////////////////////////////////////////////////
+// Memory management stuff: ///////////////////////////////////////////////////
 
 #ifndef MS_WINDOWS
     #include <sys/mman.h>
@@ -740,6 +741,16 @@ _PyJIT_Free(_PyExecutorObject *executor)
                                    "freeing JIT memory");
         }
     }
+}
+
+// Avoid excessive bloat due to asserts in stencils
+int
+_Py_jit_assertion_failure(int line)
+{
+    printf("Assertion failure at line %d of executor_cases.c.h", line);
+    fflush(stdout);
+    abort();
+    return 0;
 }
 
 #endif  // _Py_JIT
