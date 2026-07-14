@@ -490,6 +490,39 @@ dictkeys_incref(PyDictKeysObject *dk)
     INCREF_KEYS(dk);
 }
 
+/* Clear key/value pointers in a keys table without changing refcounts.
+ *
+ * Under free-threading, old keys tables may outlive the logical free via
+ * QSBR so that concurrent lock-free readers can still touch the memory.
+ * Those readers must not observe live object pointers in a table whose
+ * contents have already been transferred or released: a later update of
+ * the dict can free those objects while a reader still holds the stale
+ * table.  Nulling the slots forces try-incref paths to fail cleanly.
+ *
+ * Callers that still own the references (e.g. dictkeys_decref) must
+ * snapshot them before calling this helper; callers that transferred
+ * ownership (e.g. dictresize) must not decref them afterwards.
+ */
+static void
+dictkeys_clear_entries(PyDictKeysObject *keys)
+{
+    Py_ssize_t i, n = keys->dk_nentries;
+    if (DK_IS_UNICODE(keys)) {
+        PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
+        for (i = 0; i < n; i++) {
+            FT_ATOMIC_STORE_PTR_RELEASE(entries[i].me_key, NULL);
+            FT_ATOMIC_STORE_PTR_RELEASE(entries[i].me_value, NULL);
+        }
+    }
+    else {
+        PyDictKeyEntry *entries = DK_ENTRIES(keys);
+        for (i = 0; i < n; i++) {
+            FT_ATOMIC_STORE_PTR_RELEASE(entries[i].me_key, NULL);
+            FT_ATOMIC_STORE_PTR_RELEASE(entries[i].me_value, NULL);
+        }
+    }
+}
+
 static inline void
 dictkeys_decref(PyDictKeysObject *dk, bool use_qsbr)
 {
@@ -506,16 +539,27 @@ dictkeys_decref(PyDictKeysObject *dk, bool use_qsbr)
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dk);
             Py_ssize_t i, n;
             for (i = 0, n = dk->dk_nentries; i < n; i++) {
-                Py_XDECREF(entries[i].me_key);
-                Py_XDECREF(entries[i].me_value);
+                /* Snapshot then null *before* decref so a concurrent
+                 * lock-free reader of a QSBR-retained table cannot follow
+                 * a pointer to an object we are about to free. */
+                PyObject *key = entries[i].me_key;
+                PyObject *value = entries[i].me_value;
+                FT_ATOMIC_STORE_PTR_RELEASE(entries[i].me_key, NULL);
+                FT_ATOMIC_STORE_PTR_RELEASE(entries[i].me_value, NULL);
+                Py_XDECREF(key);
+                Py_XDECREF(value);
             }
         }
         else {
             PyDictKeyEntry *entries = DK_ENTRIES(dk);
             Py_ssize_t i, n;
             for (i = 0, n = dk->dk_nentries; i < n; i++) {
-                Py_XDECREF(entries[i].me_key);
-                Py_XDECREF(entries[i].me_value);
+                PyObject *key = entries[i].me_key;
+                PyObject *value = entries[i].me_value;
+                FT_ATOMIC_STORE_PTR_RELEASE(entries[i].me_key, NULL);
+                FT_ATOMIC_STORE_PTR_RELEASE(entries[i].me_value, NULL);
+                Py_XDECREF(key);
+                Py_XDECREF(value);
             }
         }
         free_keys_object(dk, use_qsbr);
@@ -886,6 +930,11 @@ free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
     }
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
+        /* Ownership of any remaining entry references has already been
+         * transferred or released by the caller.  Poison the slots so
+         * concurrent readers of this QSBR-retained table cannot revive
+         * a transferred/freed object via a stale me_key/me_value. */
+        dictkeys_clear_entries(keys);
         _PyMem_FreeDelayed(ptr, size);
         return;
     }
@@ -931,6 +980,13 @@ free_values(PyDictValues *values, bool use_qsbr)
     assert(values->embedded == 0);
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
+        /* Same rationale as free_keys_object: the values array may outlive
+         * the logical free via QSBR.  Callers have either transferred
+         * ownership of the stored objects or already decref'd them; clear
+         * the slots so concurrent lock-free readers fail try-incref. */
+        for (uint8_t i = 0; i < values->capacity; i++) {
+            FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
+        }
         _PyMem_FreeDelayed(values, values_size_from_count(values->capacity));
         return;
     }
@@ -1490,29 +1546,31 @@ compare_unicode_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
     assert(startkey == NULL || PyUnicode_CheckExact(ep->me_key));
     assert(!PyUnicode_CheckExact(key));
 
-    if (startkey != NULL) {
-        if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
-            return DKIX_KEY_CHANGED;
-        }
+    if (startkey == NULL) {
+        /* See compare_unicode_unicode_threadsafe. */
+        return DKIX_KEY_CHANGED;
+    }
+    if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
+        return DKIX_KEY_CHANGED;
+    }
 
-        if (unicode_get_hash(startkey) == hash) {
-            int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-            Py_DECREF(startkey);
-            if (cmp < 0) {
-                return DKIX_ERROR;
-            }
-            if (dk == _Py_atomic_load_ptr_relaxed(&mp->ma_keys) &&
-                startkey == _Py_atomic_load_ptr_relaxed(&ep->me_key)) {
-                return cmp;
-            }
-            else {
-                /* The dict was mutated, restart */
-                return DKIX_KEY_CHANGED;
-            }
+    if (unicode_get_hash(startkey) == hash) {
+        int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+        Py_DECREF(startkey);
+        if (cmp < 0) {
+            return DKIX_ERROR;
+        }
+        if (dk == _Py_atomic_load_ptr_relaxed(&mp->ma_keys) &&
+            startkey == _Py_atomic_load_ptr_relaxed(&ep->me_key)) {
+            return cmp;
         }
         else {
-            Py_DECREF(startkey);
+            /* The dict was mutated, restart */
+            return DKIX_KEY_CHANGED;
         }
+    }
+    else {
+        Py_DECREF(startkey);
     }
     return 0;
 }
@@ -1534,22 +1592,27 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
         assert(PyUnicode_CheckExact(startkey));
         return 1;
     }
-    if (startkey != NULL) {
-        if (_Py_IsImmortal(startkey)) {
-            assert(PyUnicode_CheckExact(startkey));
-            return unicode_get_hash(startkey) == hash && unicode_eq(startkey, key);
+    if (startkey == NULL) {
+        /* Active indices never point at a NULL me_key under the normal
+         * delete protocol (index is set to DKIX_DUMMY first).  A NULL
+         * key with ix >= 0 means a concurrent resize/clear has poisoned
+         * this QSBR-retained table; force a locked retry. */
+        return DKIX_KEY_CHANGED;
+    }
+    if (_Py_IsImmortal(startkey)) {
+        assert(PyUnicode_CheckExact(startkey));
+        return unicode_get_hash(startkey) == hash && unicode_eq(startkey, key);
+    }
+    else {
+        if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
+            return DKIX_KEY_CHANGED;
         }
-        else {
-            if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
-                return DKIX_KEY_CHANGED;
-            }
-            assert(PyUnicode_CheckExact(startkey));
-            if (unicode_get_hash(startkey) == hash && unicode_eq(startkey, key)) {
-                Py_DECREF(startkey);
-                return 1;
-            }
+        assert(PyUnicode_CheckExact(startkey));
+        if (unicode_get_hash(startkey) == hash && unicode_eq(startkey, key)) {
             Py_DECREF(startkey);
+            return 1;
         }
+        Py_DECREF(startkey);
     }
     return 0;
 }
@@ -1569,9 +1632,14 @@ compare_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
     if (startkey == key) {
         return 1;
     }
+    if (startkey == NULL) {
+        /* See compare_unicode_unicode_threadsafe: NULL me_key under an
+         * active index means the keys table is being reclaimed. */
+        return DKIX_KEY_CHANGED;
+    }
     Py_ssize_t ep_hash = _Py_atomic_load_ssize_relaxed(&ep->me_hash);
     if (ep_hash == hash) {
-        if (startkey == NULL || !_Py_TryIncrefCompare(&ep->me_key, startkey)) {
+        if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
             return DKIX_KEY_CHANGED;
         }
         int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -1696,7 +1764,8 @@ read_failed:
 }
 
 static Py_ssize_t
-lookup_threadsafe_unicode(PyDictKeysObject *dk, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
+lookup_threadsafe_unicode(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key,
+                          Py_hash_t hash, _PyStackRef *value_addr)
 {
     assert(dk->dk_kind == DICT_KEYS_UNICODE);
     assert(PyUnicode_CheckExact(key));
@@ -1714,10 +1783,23 @@ lookup_threadsafe_unicode(PyDictKeysObject *dk, PyObject *key, Py_hash_t hash, _
             return DKIX_EMPTY;
         }
         if (_PyObject_HasDeferredRefcount(value)) {
+            /* Deferred-refcount objects skip the CAS on *addr_of_value,
+             * so re-validate that we still see the same keys table and
+             * the same slot value before handing out a borrowed tagged
+             * ref.  Otherwise a concurrent resize can free the value
+             * while we return a stale pointer. */
+            if (dk != _Py_atomic_load_ptr(&mp->ma_keys) ||
+                    value != _Py_atomic_load_ptr(addr_of_value)) {
+                return DKIX_KEY_CHANGED;
+            }
             *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_REFCNT };
             return ix;
         }
         if (_Py_TryIncrefCompare(addr_of_value, value)) {
+            if (dk != _Py_atomic_load_ptr(&mp->ma_keys)) {
+                Py_DECREF(value);
+                return DKIX_KEY_CHANGED;
+            }
             *value_addr = PyStackRef_FromPyObjectSteal(value);
             return ix;
         }
@@ -1734,7 +1816,7 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
 
     PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
-        Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, value_addr);
+        Py_ssize_t ix = lookup_threadsafe_unicode(mp, dk, key, hash, value_addr);
         if (ix != DKIX_KEY_CHANGED) {
             return ix;
         }
@@ -1796,7 +1878,7 @@ _PyDict_GetMethodStackRef(PyDictObject *mp, PyObject *key, _PyStackRef *method)
         PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
         if (dk->dk_kind == DICT_KEYS_UNICODE) {
             _PyStackRef ref;
-            Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, &ref);
+            Py_ssize_t ix = lookup_threadsafe_unicode(mp, dk, key, hash, &ref);
             if (ix >= 0) {
                 assert(!PyStackRef_IsNull(ref));
                 PyStackRef_XSETREF(*method, ref);

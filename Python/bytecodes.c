@@ -2980,13 +2980,31 @@ dummy_func(
             if (attr_o == NULL) {
                 EXIT_IF(true);
             }
-            STAT_INC(LOAD_ATTR, hit);
 #ifdef Py_GIL_DISABLED
-            int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
+            /* A concurrent resize publishes a new keys table and may
+             * free or overwrite values while we hold a stale table
+             * pointer (QSBR-retained).  Reject the hit unless ma_keys
+             * still matches and the slot still holds attr_o before we
+             * try to take a reference.  A second check after the
+             * try-incref closes the remaining window, including for
+             * deferred-refcount objects whose try-incref path does not
+             * re-validate the slot itself. */
+            EXIT_IF(dk != FT_ATOMIC_LOAD_PTR(dict->ma_keys));
+            EXIT_IF(FT_ATOMIC_LOAD_PTR(ep->me_value) != attr_o);
+            _PyStackRef tmp_attr;
+            int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &tmp_attr);
             if (!increfed) {
                 EXIT_IF(true);
             }
+            if (dk != FT_ATOMIC_LOAD_PTR(dict->ma_keys) ||
+                    FT_ATOMIC_LOAD_PTR(ep->me_value) != attr_o) {
+                PyStackRef_CLOSE(tmp_attr);
+                EXIT_IF(true);
+            }
+            STAT_INC(LOAD_ATTR, hit);
+            attr = tmp_attr;
 #else
+            STAT_INC(LOAD_ATTR, hit);
             attr = PyStackRef_FromPyObjectNew(attr_o);
 #endif
             o = owner;

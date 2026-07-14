@@ -12352,9 +12352,22 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
-            STAT_INC(LOAD_ATTR, hit);
             #ifdef Py_GIL_DISABLED
-            int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
+
+            if (dk != FT_ATOMIC_LOAD_PTR(dict->ma_keys)) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = owner;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (FT_ATOMIC_LOAD_PTR(ep->me_value) != attr_o) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = owner;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _PyStackRef tmp_attr;
+            int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &tmp_attr);
             if (!increfed) {
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
@@ -12363,7 +12376,28 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
+            if (dk != FT_ATOMIC_LOAD_PTR(dict->ma_keys) ||
+                FT_ATOMIC_LOAD_PTR(ep->me_value) != attr_o) {
+                stack_pointer[0] = owner;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_CLOSE(tmp_attr);
+                _PyFrame_StackPointerInvalidate(frame);
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    _tos_cache0 = owner;
+                    SET_CURRENT_CACHED_VALUES(1);
+                    stack_pointer += -1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            STAT_INC(LOAD_ATTR, hit);
+            attr = tmp_attr;
             #else
+            STAT_INC(LOAD_ATTR, hit);
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             o = owner;

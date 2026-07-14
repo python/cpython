@@ -1,0 +1,5 @@
+Fix a use-after-free in the free-threaded build when a dictionary is resized
+concurrently with lock-free lookups (including the specialized
+``LOAD_ATTR_WITH_HINT`` path).  Old keys and values tables are now cleared
+before QSBR-delayed reclamation, and lock-free lookup treats a poisoned
+entry as a signal to retry under the dict lock.

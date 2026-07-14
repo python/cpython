@@ -163,6 +163,122 @@ class TestDict(TestCase):
         for t in worker_threads:
             t.join()
 
+    def test_racing_load_attr_with_hint_and_resize(self):
+        """Concurrent LOAD_ATTR_WITH_HINT vs dict resize must not UAF.
+
+        The specialized hint path snapshots ma_keys and reads me_value from
+        that table.  A concurrent resize can publish a new keys table and
+        free/overwrite the old value while a reader still holds the stale
+        table (QSBR-retained).  Stress the interleaving hard.
+
+        The attribute ``x`` is only ever assigned (never deleted).  Readers
+        must therefore always observe a ``str`` value without crashing.
+        """
+        class C:
+            pass
+
+        obj = C()
+        # Force a materialized combined dict with enough entries that the
+        # attribute is specialized to LOAD_ATTR_WITH_HINT and subsequent
+        # inserts trigger resizes.
+        for i in range(32):
+            setattr(obj, f"_pad{i}", i)
+        obj.x = "initial"
+
+        # Warm up specialization on the reader side.
+        for _ in range(200):
+            _ = obj.x
+
+        stop = False
+        errors = []
+
+        def reader():
+            try:
+                while not stop:
+                    val = obj.x
+                    # Value must always be a str from the writer or the
+                    # initial assignment; never a dangling/reused object.
+                    if not isinstance(val, str):
+                        errors.append(f"unexpected type: {type(val)!r}")
+                        return
+            except Exception as e:
+                errors.append(repr(e))
+
+        def writer():
+            n = 0
+            try:
+                while not stop:
+                    # Update x (may free previous value while readers hold
+                    # a stale keys table pointing at it).
+                    obj.x = f"v{n}"
+                    n += 1
+                    # Churn *other* keys to force repeated resizes.  Only
+                    # one writer runs so setattr/delattr of _tmp* cannot
+                    # race with itself.
+                    if n % 3 == 0:
+                        for i in range(16):
+                            setattr(obj, f"_tmp{i}", n)
+                        for i in range(16):
+                            delattr(obj, f"_tmp{i}")
+            except Exception as e:
+                errors.append(repr(e))
+
+        readers = [Thread(target=reader) for _ in range(4)]
+        # Single writer: keeps ``x`` continuously defined and avoids
+        # racing delattr on the padding keys.
+        writers = [Thread(target=writer)]
+        for t in readers + writers:
+            t.start()
+        time.sleep(0.5)
+        stop = True
+        for t in readers + writers:
+            t.join(timeout=5)
+            self.assertFalse(t.is_alive())
+        self.assertEqual(errors, [])
+        self.assertIsInstance(obj.x, str)
+
+    def test_racing_dict_resize_and_lookup(self):
+        """Lock-free lookups racing with repeated resizes must not crash."""
+        d = {f"k{i}": i for i in range(8)}
+        d["x"] = 0
+        stop = False
+        errors = []
+
+        def reader():
+            try:
+                while not stop:
+                    for i in range(8):
+                        _ = d.get(f"k{i}")
+                    _ = d.get("x")
+                    # Direct subscript of a key that is never deleted.
+                    _ = d["x"]
+            except Exception as e:
+                errors.append(repr(e))
+
+        def resizer():
+            n = 0
+            try:
+                while not stop:
+                    d["x"] = n
+                    for i in range(64):
+                        d[f"tmp{i}"] = n
+                    for i in range(64):
+                        d.pop(f"tmp{i}", None)
+                    n += 1
+            except Exception as e:
+                errors.append(repr(e))
+
+        threads = [Thread(target=reader) for _ in range(4)]
+        threads += [Thread(target=resizer)]
+        for t in threads:
+            t.start()
+        time.sleep(0.5)
+        stop = True
+        for t in threads:
+            t.join(timeout=5)
+            self.assertFalse(t.is_alive())
+        self.assertEqual(errors, [])
+
 
     def test_racing_set_object_dict(self):
         """Races assigning to __dict__ should be thread safe"""
