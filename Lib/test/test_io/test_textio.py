@@ -1426,6 +1426,7 @@ class TextIOWrapperTest:
             os.close(w)
 
     def test_seek_reject_negative_chars_to_skip(self):
+        # See https://github.com/python/cpython/issues/153662
         data = b"1"
         raw = io.BytesIO(data)
         buf = io.BufferedReader(raw)
@@ -1433,8 +1434,10 @@ class TextIOWrapperTest:
         # Set 'cookie.chars_to_skip' to INT_MIN
         COOKIE_VALUE = (100 << (12 * 8)) | (0x80 << (19 * 8))
         tio.read()
-        with self.assertRaises(OSError):
+        with self.assertRaises(OSError) as err:
             tio.seek(COOKIE_VALUE)
+        self.assertEqual(str(err.exception), "can't restore logical file position")
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews
