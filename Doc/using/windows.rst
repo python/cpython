@@ -59,6 +59,8 @@ packages.
 .. _setting-envvars:
 .. _windows-path-mod:
 .. _launcher:
+.. _getting-started:
+.. _installation-steps:
 
 Python install manager
 ======================
@@ -313,6 +315,8 @@ for new users, but should not generally be relied on rather than using the
 
 
 .. _pymanager-offline:
+.. _install-layout-option:
+.. _installing-without-downloading:
 
 Offline installs
 ----------------
@@ -376,6 +380,10 @@ again. To completely clean up all Python runtimes, run with ``--purge`` before
 uninstalling the Python install manager.
 
 .. _pymanager-config:
+.. _customization:
+.. _customizing-default-python-versions:
+.. _customization-via-ini-files:
+.. _launcher-ini:
 
 Configuration
 -------------
@@ -516,6 +524,7 @@ Dotted names should be nested inside JSON objects, for example, ``list.format``
 would be specified as ``{"list": {"format": "table"}}``.
 
 .. _pymanager-shebang:
+.. _arguments-in-shebang-lines:
 
 Shebang lines
 -------------
