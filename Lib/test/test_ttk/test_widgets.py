@@ -351,6 +351,19 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Entry(self.root, **kwargs)
 
+    def _arrow_x(self, widget, y, arrow):
+        # Return an x coordinate on the up/down *arrow* element in row y,
+        # found by scanning inward from the right edge of the widget.  A
+        # fixed inset such as width - 5 lands in the arrow element's
+        # right-hand border, which scales with the display scaling, so at a
+        # high DPI identify() there returns 'field' instead of the arrow.
+        self.assertTrue(wait_until_mapped(widget, full_size=True))
+        width = widget.winfo_width()
+        for x in range(width - 1, width // 2, -1):
+            if widget.identify(x, y).endswith(arrow):
+                return x
+        self.fail(f'no {arrow} found in row {y}')
+
     def test_configure_invalidcommand(self):
         widget = self.create()
         self.checkCommandParam(widget, 'invalidcommand')
@@ -491,10 +504,11 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.checkParams(widget, 'height', 100, 101.2, 102.6, -100, 0, '1i')
 
     def _show_drop_down_listbox(self):
-        width = self.combo.winfo_width()
-        x, y = width - 5, 5
+        y = 5
         if sys.platform != 'darwin':  # there's no down arrow on macOS
-            self.assertRegex(self.combo.identify(x, y), r'.*downarrow\z')
+            x = self._arrow_x(self.combo, y, 'downarrow')
+        else:
+            x = self.combo.winfo_width() - 5
         self.combo.event_generate('<Button-1>', x=x, y=y)
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
 
@@ -1300,22 +1314,16 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
     def _click_increment_arrow(self):
         self.require_mapped(self.spin)
-        width = self.spin.winfo_width()
-        height = self.spin.winfo_height()
-        x = width - 5
-        y = height//2 - 5
-        self.assertRegex(self.spin.identify(x, y), r'.*uparrow\z')
+        y = self.spin.winfo_height()//2 - 5
+        x = self._arrow_x(self.spin, y, 'uparrow')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
 
     def _click_decrement_arrow(self):
         self.require_mapped(self.spin)
-        width = self.spin.winfo_width()
-        height = self.spin.winfo_height()
-        x = width - 5
-        y = height//2 + 4
-        self.assertRegex(self.spin.identify(x, y), r'.*downarrow\z')
+        y = self.spin.winfo_height()//2 + 4
+        x = self._arrow_x(self.spin, y, 'downarrow')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
