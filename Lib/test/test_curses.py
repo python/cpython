@@ -29,6 +29,9 @@ try:
 except ImportError:
     pass
 
+# Only reachable once curses imported, so the platform has fcntl too.
+import fcntl
+
 def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
                                'requires curses.%s' % name)
@@ -164,6 +167,10 @@ class TestCurses(unittest.TestCase):
             # ScreenTests run newterm()/set_term() in the same process.
             try:
                 infd = sys.__stdin__.fileno()
+                if fcntl.fcntl(infd, fcntl.F_GETFL) & os.O_ACCMODE == os.O_WRONLY:
+                    # newterm() needs a readable input fd; a write-only stdin
+                    # (as nohup leaves for a backgrounded run) fails with EINVAL.
+                    infd = stdout_fd
             except (AttributeError, ValueError, OSError):
                 infd = stdout_fd
             self.screen = curses.newterm(term, stdout_fd, infd)

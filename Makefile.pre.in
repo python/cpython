@@ -395,7 +395,9 @@ PEGEN_OBJS=		\
 TOKENIZER_OBJS=		\
 		Parser/lexer/buffer.o \
 		Parser/lexer/lexer.o \
+		Parser/lexer/number.o \
 		Parser/lexer/state.o \
+		Parser/lexer/string.o \
 		Parser/tokenizer/file_tokenizer.o \
 		Parser/tokenizer/readline_tokenizer.o \
 		Parser/tokenizer/string_tokenizer.o \
@@ -410,6 +412,7 @@ PEGEN_HEADERS= \
 TOKENIZER_HEADERS= \
 		Parser/lexer/buffer.h \
 		Parser/lexer/lexer.h \
+		Parser/lexer/lexer_internal.h \
 		Parser/lexer/state.h \
 		Parser/tokenizer/tokenizer.h \
 		Parser/tokenizer/helpers.h
@@ -621,13 +624,16 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/expat.h \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \
+		Modules/expat/fallthrough.h \
 		Modules/expat/iasciitab.h \
 		Modules/expat/internal.h \
 		Modules/expat/latin1tab.h \
+		Modules/expat/memory_sanitizer.h \
 		Modules/expat/nametab.h \
 		Modules/expat/pyexpatns.h \
 		Modules/expat/siphash.h \
 		Modules/expat/utf8tab.h \
+		Modules/expat/xcsinc.c \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h \
@@ -1656,6 +1662,7 @@ FROZEN_FILES_IN = \
 		Lib/encodings/aliases.py \
 		Lib/encodings/utf_8.py \
 		Lib/encodings/_win_cp_codecs.py \
+		Lib/encodings/_iconv_codecs.py \
 		Lib/io.py \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
@@ -1686,6 +1693,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/encodings.aliases.h \
 		Python/frozen_modules/encodings.utf_8.h \
 		Python/frozen_modules/encodings._win_cp_codecs.h \
+		Python/frozen_modules/encodings._iconv_codecs.h \
 		Python/frozen_modules/io.h \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
@@ -1746,6 +1754,9 @@ Python/frozen_modules/encodings.utf_8.h: Lib/encodings/utf_8.py $(FREEZE_MODULE_
 
 Python/frozen_modules/encodings._win_cp_codecs.h: Lib/encodings/_win_cp_codecs.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) encodings._win_cp_codecs $(srcdir)/Lib/encodings/_win_cp_codecs.py Python/frozen_modules/encodings._win_cp_codecs.h
+
+Python/frozen_modules/encodings._iconv_codecs.h: Lib/encodings/_iconv_codecs.py $(FREEZE_MODULE_DEPS)
+	$(FREEZE_MODULE) encodings._iconv_codecs $(srcdir)/Lib/encodings/_iconv_codecs.py Python/frozen_modules/encodings._iconv_codecs.h
 
 Python/frozen_modules/io.h: Lib/io.py $(FREEZE_MODULE_DEPS)
 	$(FREEZE_MODULE) io $(srcdir)/Lib/io.py Python/frozen_modules/io.h

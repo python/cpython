@@ -29,20 +29,14 @@ class StandardTtkOptionsTests(StandardOptionsTests):
 
     def test_configure_padding(self):
         widget = self.create()
-        if get_tk_patchlevel(self.root) < (8, 6, 14):
-            def padding_conv(value):
-                self.assertIsInstance(value, tuple)
-                return tuple(map(str, value))
-        else:
-            padding_conv = None
-        self.checkParam(widget, 'padding', 0, expected=(0,), conv=padding_conv)
-        self.checkParam(widget, 'padding', 5, expected=(5,), conv=padding_conv)
+        self.checkParam(widget, 'padding', 0, expected=(0,))
+        self.checkParam(widget, 'padding', 5, expected=(5,))
         self.checkParam(widget, 'padding', (5, 6),
-                        expected=(5, 6), conv=padding_conv)
+                        expected=(5, 6))
         self.checkParam(widget, 'padding', (5, 6, 7),
-                        expected=(5, 6, 7), conv=padding_conv)
+                        expected=(5, 6, 7))
         self.checkParam(widget, 'padding', (5, 6, 7, 8),
-                        expected=(5, 6, 7, 8), conv=padding_conv)
+                        expected=(5, 6, 7, 8))
         self.checkParam(widget, 'padding', ('5p', '6p', '7p', '8p'))
         self.checkParam(widget, 'padding', (), expected='')
 
@@ -310,7 +304,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
                 b = ttk.Checkbutton(f, text=j)
                 b.pack()
                 buttons.append(b)
-        variables = [str(b['variable']) for b in buttons]
+        variables = [b['variable'] for b in buttons]
         self.assertEqual(len(set(variables)), 4, variables)
 
     def test_unique_variables2(self):
@@ -331,7 +325,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
             buttons.append(b)
         names = [str(b) for b in buttons]
         self.assertEqual(len(set(names)), len(buttons), names)
-        variables = [str(b['variable']) for b in buttons]
+        variables = [b['variable'] for b in buttons]
         self.assertEqual(len(set(variables)), len(buttons), variables)
 
 
@@ -618,14 +612,14 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_orient(self):
         widget = self.create()
-        self.assertEqual(str(widget['orient']), 'vertical')
+        self.assertEqual(widget['orient'], 'vertical')
         errmsg='attempt to change read-only option'
         if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'orient', 'horizontal',
                 errmsg=errmsg)
         widget2 = self.create(orient='horizontal')
-        self.assertEqual(str(widget2['orient']), 'horizontal')
+        self.assertEqual(widget2['orient'], 'horizontal')
 
     def test_add(self):
         # attempt to add a child that is not a direct child of the paned window
@@ -790,7 +784,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
         self.assertEqual(myvar.get(),
             conv(cbtn.tk.globalgetvar(cbtn['variable'])))
 
-        self.assertEqual(str(cbtn['variable']), str(cbtn2['variable']))
+        self.assertEqual(cbtn['variable'], cbtn2['variable'])
 
 
 @add_configure_tests(StandardTtkOptionsTests)
@@ -985,13 +979,13 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_step(self):
         widget = self.create(maximum=100, mode='determinate')
-        self.assertEqual(float(widget['value']), 0.0)
+        self.assertEqual(widget['value'], self._str(0.0))
         widget.step()  # The default increment is 1.0.
-        self.assertEqual(float(widget['value']), 1.0)
+        self.assertEqual(widget['value'], self._str(1.0))
         widget.step(5)
-        self.assertEqual(float(widget['value']), 6.0)
+        self.assertEqual(widget['value'], self._str(6.0))
         widget.step(-2)
-        self.assertEqual(float(widget['value']), 4.0)
+        self.assertEqual(widget['value'], self._str(4.0))
 
     def test_start_stop(self):
         widget = self.create(maximum=100, mode='determinate')
@@ -1000,9 +994,9 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
         widget.update()
         widget.stop()   # Cancel it.
         # After stopping, the value no longer changes.
-        value = float(widget['value'])
+        value = widget['value']
         widget.update()
-        self.assertEqual(float(widget['value']), value)
+        self.assertEqual(widget['value'], value)
 
 
 @unittest.skipIf(sys.platform == 'darwin',
@@ -1685,9 +1679,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.get_children(item_id), ())
 
     def test_exists(self):
-        self.assertEqual(self.tv.exists('something'), False)
-        self.assertEqual(self.tv.exists(''), True)
-        self.assertEqual(self.tv.exists({}), False)
+        self.assertIs(self.tv.exists('something'), False)
+        self.assertIs(self.tv.exists(''), True)
+        self.assertIs(self.tv.exists({}), False)
 
         # the following will make a tk.call equivalent to
         # tk.call(treeview, "exists") which should result in an error
