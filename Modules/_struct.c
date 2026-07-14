@@ -1960,7 +1960,8 @@ Return a tuple containing unpacked values.
 Values are unpacked according to the format string Struct.format.
 
 The buffer's size in bytes, starting at position offset, must be
-at least Struct.size.
+at least Struct.size.  A negative offset counts from the end of the
+buffer.
 
 See help(struct) for more on format strings.
 [clinic start generated code]*/
@@ -1968,7 +1969,7 @@ See help(struct) for more on format strings.
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
-/*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
+/*[clinic end generated code: output=57fac875e0977316 input=3451f778ed8a5345]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     ENSURE_STRUCT_IS_READY(self);
@@ -2296,8 +2297,9 @@ PyDoc_STRVAR(s_pack_into__doc__,
 \n\
 Pack the values v1, v2, ... according to the format string S.format\n\
 and write the packed bytes into the writable buffer buf starting at\n\
-offset.  Note that the offset is a required argument.  See\n\
-help(struct) for more on format strings.");
+offset.  Note that the offset is a required argument.  A negative\n\
+offset counts from the end of the buffer.  See help(struct) for more\n\
+on format strings.");
 
 static PyObject *
 s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
@@ -2593,8 +2595,8 @@ PyDoc_STRVAR(pack_into_doc,
 \n\
 Pack the values v1, v2, ... according to the format string and write\n\
 the packed bytes into the writable buffer buf starting at offset.  Note\n\
-that the offset is a required argument.  See help(struct) for more\n\
-on format strings.");
+that the offset is a required argument.  A negative offset counts from\n\
+the end of the buffer.  See help(struct) for more on format strings.");
 
 static PyObject *
 pack_into(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -2648,6 +2650,7 @@ unpack_from
 Return a tuple containing values unpacked according to the format string.
 
 The buffer's size, minus offset, must be at least calcsize(format).
+A negative offset counts from the end of the buffer.
 
 See help(struct) for more on format strings.
 [clinic start generated code]*/
@@ -2655,7 +2658,7 @@ See help(struct) for more on format strings.
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
                  Py_buffer *buffer, Py_ssize_t offset)
-/*[clinic end generated code: output=1042631674c6e0d3 input=6e80a5398e985025]*/
+/*[clinic end generated code: output=1042631674c6e0d3 input=e383ecb97728be2b]*/
 {
     return Struct_unpack_from_impl(s_object, buffer, offset);
 }
