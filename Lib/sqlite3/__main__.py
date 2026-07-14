@@ -80,7 +80,16 @@ class SqliteInteractiveConsole(InteractiveConsole):
                     self.write(f'{t.type}Error{t.reset}: {t.message}unknown '
                                f'command: "{unknown}"{t.reset}\n')
         else:
-            if not sqlite3.complete_statement(source):
+            try:
+                complete = sqlite3.complete_statement(source)
+            # NUL -> ValueError, lone surrogate -> UnicodeEncodeError; keep
+            # narrow so real bugs still surface.
+            except (ValueError, UnicodeEncodeError) as e:
+                t = theme.traceback
+                self.write(f"{t.type}{type(e).__name__}{t.reset}: "
+                           f"{t.message}{e}{t.reset}\n")
+                return False
+            if not complete:
                 return True
             execute(self._cur, source, theme=theme)
         return False
