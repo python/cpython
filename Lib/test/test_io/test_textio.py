@@ -1425,28 +1425,21 @@ class TextIOWrapperTest:
                 os.close(r)
             os.close(w)
 
-    def test_seek_reject_negative_chars_to_skip(self):
+    @support.subTests('cookie_value', [
+        # Set 'cookie.chars_to_skip' to INT_MIN
+        (100 << (12 * 8)) | (0x80 << (19 * 8)),
+        # Set 'cookie.chars_to_skip' to INT_MAX
+        (100 << (12 * 8)) | (0x7FFFFFFF << (16 * 8))
+    ])
+    def test_seek_reject_invalid_chars_to_skip(self, cookie_value):
         # See https://github.com/python/cpython/issues/153662
         data = b"1"
         raw = io.BytesIO(data)
         buf = io.BufferedReader(raw)
         tio = io.TextIOWrapper(buf, encoding='utf-8')
-        # Set 'cookie.chars_to_skip' to INT_MIN
-        COOKIE_VALUE = (100 << (12 * 8)) | (0x80 << (19 * 8))
         tio.read()
         with self.assertRaisesRegex(OSError, "can't restore logical file position"):
-            tio.seek(COOKIE_VALUE)
-
-    def test_seek_reject_int_max_chars_to_skip(self):
-        data = b"1"
-        raw = io.BytesIO(data)
-        buf = io.BufferedReader(raw)
-        tio = io.TextIOWrapper(buf, encoding='utf-8')
-        # Set 'cookie.chars_to_skip' to INT_MAX
-        COOKIE_VALUE = (100 << (12 * 8)) | (0x7FFFFFFF << (16 * 8))
-        tio.read()
-        with self.assertRaisesRegex(OSError, "can't restore logical file position"):
-            tio.seek(COOKIE_VALUE)
+            tio.seek(cookie_value)
 
 
 class MemviewBytesIO(io.BytesIO):
