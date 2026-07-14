@@ -1,1 +1,0 @@
-tarfiles; Fixed use before assignment of self.exception for gzip decompression

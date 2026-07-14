@@ -4,11 +4,6 @@
  * This only tests basic functionality, not any synchronizing ordering.
  */
 
-/* Always enable assertions */
-#undef NDEBUG
-
-#include "Python.h"
-#include "cpython/pyatomic.h"
 #include "parts.h"
 
 // We define atomic bitwise operations on these types
@@ -130,6 +125,7 @@ test_atomic_fences(PyObject *self, PyObject *obj) {
     // Just make sure that the fences compile. We are not
     // testing any synchronizing ordering.
     _Py_atomic_fence_seq_cst();
+    _Py_atomic_fence_acquire();
     _Py_atomic_fence_release();
     Py_RETURN_NONE;
 }
@@ -142,6 +138,21 @@ test_atomic_release_acquire(PyObject *self, PyObject *obj) {
     _Py_atomic_store_ptr_release(&x, y);
     assert(x == y);
     assert(_Py_atomic_load_ptr_acquire(&x) == y);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_atomic_load_store_int_release_acquire(PyObject *self, PyObject *obj) { \
+    int x = 0;
+    int y = 1;
+    int z = 2;
+    assert(_Py_atomic_load_int_acquire(&x) == 0);
+    _Py_atomic_store_int_release(&x, y);
+    assert(x == y);
+    assert(_Py_atomic_load_int_acquire(&x) == y);
+    _Py_atomic_store_int_release(&x, z);
+    assert(x == z);
+    assert(_Py_atomic_load_int_acquire(&x) == z);
     Py_RETURN_NONE;
 }
 
@@ -167,6 +178,7 @@ static PyMethodDef test_methods[] = {
     FOR_BITWISE_TYPES(BIND_TEST_AND_OR)
     {"test_atomic_fences", test_atomic_fences, METH_NOARGS},
     {"test_atomic_release_acquire", test_atomic_release_acquire, METH_NOARGS},
+    {"test_atomic_load_store_int_release_acquire", test_atomic_load_store_int_release_acquire, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

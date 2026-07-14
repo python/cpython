@@ -5,8 +5,11 @@ import errno
 import os
 import select
 import socket
+from test import support
 import time
 import unittest
+
+from test.support import warnings_helper
 
 if not hasattr(select, "kqueue"):
     raise unittest.SkipTest("test works only on BSD")
@@ -251,10 +254,37 @@ class TestKQueue(unittest.TestCase):
         # operations must fail with ValueError("I/O operation on closed ...")
         self.assertRaises(ValueError, kqueue.control, None, 4)
 
+    def test_close_error(self):
+        # gh-146205: close() should raise OSError if underlying fd is invalid
+        kqueue = select.kqueue()
+        fd = kqueue.fileno()
+        os.close(fd)
+        with self.assertRaises(OSError) as cm:
+            kqueue.close()
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
     def test_fd_non_inheritable(self):
         kqueue = select.kqueue()
         self.addCleanup(kqueue.close)
         self.assertEqual(os.get_inheritable(kqueue.fileno()), False)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.requires_fork()
+    def test_fork(self):
+        # gh-110395: kqueue objects must be closed after fork
+        kqueue = select.kqueue()
+        if (pid := os.fork()) == 0:
+            try:
+                self.assertTrue(kqueue.closed)
+                with self.assertRaisesRegex(ValueError, "closed kqueue"):
+                    kqueue.fileno()
+            except:
+                os._exit(1)
+            finally:
+                os._exit(0)
+        else:
+            support.wait_process(pid, exitcode=0)
+            self.assertFalse(kqueue.closed)  # child done, we're still open.
 
 
 if __name__ == "__main__":

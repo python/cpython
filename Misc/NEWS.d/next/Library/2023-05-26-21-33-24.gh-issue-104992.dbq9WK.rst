@@ -1,2 +1,0 @@
-Remove the untested and undocumented :meth:`!unittest.TestProgram.usageExit`
-method, deprecated in Python 3.11. Patch by Hugo van Kemenade.

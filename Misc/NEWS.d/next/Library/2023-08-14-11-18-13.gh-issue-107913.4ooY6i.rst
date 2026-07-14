@@ -1,3 +1,0 @@
-Fix possible losses of ``errno`` and ``winerror`` values in :exc:`OSError`
-exceptions if they were cleared or modified by the cleanup code before
-creating the exception object.

@@ -1,2 +1,0 @@
-Specialize :opcode:`LOAD_ATTR` for non-descriptors on the class. Adds
-:opcode:`LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES` and :opcode:`LOAD_ATTR_NONDESCRIPTOR_NO_DICT`.

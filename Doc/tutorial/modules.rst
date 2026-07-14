@@ -27,14 +27,16 @@ called :file:`fibo.py` in the current directory with the following contents::
 
    # Fibonacci numbers module
 
-   def fib(n):    # write Fibonacci series up to n
+   def fib(n):
+       """Write Fibonacci series up to n."""
        a, b = 0, 1
        while a < n:
            print(a, end=' ')
            a, b = b, a+b
        print()
 
-   def fib2(n):   # return Fibonacci series up to n
+   def fib2(n):
+       """Return Fibonacci series up to n."""
        result = []
        a, b = 0, 1
        while a < n:
@@ -437,7 +439,8 @@ When importing the package, Python searches through the directories on
 ``sys.path`` looking for the package subdirectory.
 
 The :file:`__init__.py` files are required to make Python treat directories
-containing the file as packages.  This prevents directories with a common name,
+containing the file as packages (unless using a :term:`namespace package`, a
+relatively advanced feature). This prevents directories with a common name,
 such as ``string``, from unintentionally hiding valid modules that occur later
 on the module search path. In the simplest case, :file:`__init__.py` can just be
 an empty file, but it can also execute initialization code for the package or
@@ -576,16 +579,17 @@ module for example, you might use::
    from .. import formats
    from ..filters import equalizer
 
-Note that relative imports are based on the name of the current module.  Since
-the name of the main module is always ``"__main__"``, modules intended for use
+Note that relative imports are based on the name of the current module's package.
+Since the main module does not have a package, modules intended for use
 as the main module of a Python application must always use absolute imports.
 
 
 Packages in Multiple Directories
 --------------------------------
 
-Packages support one more special attribute, :attr:`__path__`.  This is
-initialized to be a list containing the name of the directory holding the
+Packages support one more special attribute, :attr:`~module.__path__`.  This is
+initialized to be a :term:`sequence` of strings containing the name of the
+directory holding the
 package's :file:`__init__.py` before the code in that file is executed.  This
 variable can be modified; doing so affects future searches for modules and
 subpackages contained in the package.

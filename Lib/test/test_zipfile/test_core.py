@@ -1,31 +1,36 @@
+import _pyio
 import array
 import contextlib
 import importlib.util
 import io
 import itertools
 import os
-import pathlib
 import posixpath
+import stat
 import struct
 import subprocess
 import sys
 import time
 import unittest
 import unittest.mock as mock
+import warnings
 import zipfile
 
 
 from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
-from test.support import script_helper
+from test import archiver_tests
+from test.support import script_helper, os_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
-    captured_stdout, captured_stderr, requires_subprocess
+    requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
+    cpython_only
 )
 from test.support.os_helper import (
-    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count
+    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
 )
+from test.support.import_helper import ensure_lazy_imports
 
 
 TESTFN2 = TESTFN + "2"
@@ -46,6 +51,13 @@ def get_files(test):
     with io.BytesIO() as f:
         yield f
         test.assertFalse(f.closed)
+
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("zipfile", {"typing"})
+
 
 class AbstractTestsWithSourceFile:
     @classmethod
@@ -159,7 +171,7 @@ class AbstractTestsWithSourceFile:
             self.zip_open_test(f, self.compression)
 
     def test_open_with_pathlike(self):
-        path = pathlib.Path(TESTFN2)
+        path = FakePath(TESTFN2)
         self.zip_open_test(path, self.compression)
         with zipfile.ZipFile(path, "r", self.compression) as zipfp:
             self.assertIsInstance(zipfp.filename, str)
@@ -301,26 +313,26 @@ class AbstractTestsWithSourceFile:
                 self.assertEqual(openobj.read(1), b'2')
 
     def test_writestr_compression(self):
-        zipfp = zipfile.ZipFile(TESTFN2, "w")
-        zipfp.writestr("b.txt", "hello world", compress_type=self.compression)
-        info = zipfp.getinfo('b.txt')
-        self.assertEqual(info.compress_type, self.compression)
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            zipfp.writestr("b.txt", "hello world", compress_type=self.compression)
+            info = zipfp.getinfo('b.txt')
+            self.assertEqual(info.compress_type, self.compression)
 
     def test_writestr_compresslevel(self):
-        zipfp = zipfile.ZipFile(TESTFN2, "w", compresslevel=1)
-        zipfp.writestr("a.txt", "hello world", compress_type=self.compression)
-        zipfp.writestr("b.txt", "hello world", compress_type=self.compression,
-                       compresslevel=2)
+        with zipfile.ZipFile(TESTFN2, "w", compresslevel=1) as zipfp:
+            zipfp.writestr("a.txt", "hello world", compress_type=self.compression)
+            zipfp.writestr("b.txt", "hello world", compress_type=self.compression,
+                           compresslevel=2)
 
-        # Compression level follows the constructor.
-        a_info = zipfp.getinfo('a.txt')
-        self.assertEqual(a_info.compress_type, self.compression)
-        self.assertEqual(a_info._compresslevel, 1)
+            # Compression level follows the constructor.
+            a_info = zipfp.getinfo('a.txt')
+            self.assertEqual(a_info.compress_type, self.compression)
+            self.assertEqual(a_info.compress_level, 1)
 
-        # Compression level is overridden.
-        b_info = zipfp.getinfo('b.txt')
-        self.assertEqual(b_info.compress_type, self.compression)
-        self.assertEqual(b_info._compresslevel, 2)
+            # Compression level is overridden.
+            b_info = zipfp.getinfo('b.txt')
+            self.assertEqual(b_info.compress_type, self.compression)
+            self.assertEqual(b_info._compresslevel, 2)
 
     def test_read_return_size(self):
         # Issue #9837: ZipExtFile.read() shouldn't return more bytes
@@ -389,7 +401,6 @@ class AbstractTestsWithSourceFile:
                 with zipfp.open(fname) as zipopen:
                     r = repr(zipopen)
                     self.assertIn('name=%r' % fname, r)
-                    self.assertIn("mode='r'", r)
                     if self.compression != zipfile.ZIP_STORED:
                         self.assertIn('compress_type=', r)
                 self.assertIn('[closed]', repr(zipopen))
@@ -408,7 +419,7 @@ class AbstractTestsWithSourceFile:
             one_info = zipfp.getinfo('compress_1')
             nine_info = zipfp.getinfo('compress_9')
             self.assertEqual(one_info._compresslevel, 1)
-            self.assertEqual(nine_info._compresslevel, 9)
+            self.assertEqual(nine_info.compress_level, 9)
 
     def test_writing_errors(self):
         class BrokenFile(io.BytesIO):
@@ -446,6 +457,27 @@ class AbstractTestsWithSourceFile:
             self.assertEqual(zipfp.read('file1'), b'data1')
             self.assertEqual(zipfp.read('file2'), b'data2')
 
+    def test_zipextfile_attrs(self):
+        fname = "somefile.txt"
+        with zipfile.ZipFile(TESTFN2, mode="w") as zipfp:
+            zipfp.writestr(fname, "bogus")
+
+        with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
+            with zipfp.open(fname) as fid:
+                self.assertEqual(fid.name, fname)
+                self.assertRaises(io.UnsupportedOperation, fid.fileno)
+                self.assertEqual(fid.mode, 'rb')
+                self.assertIs(fid.readable(), True)
+                self.assertIs(fid.writable(), False)
+                self.assertIs(fid.seekable(), True)
+                self.assertIs(fid.closed, False)
+            self.assertIs(fid.closed, True)
+            self.assertEqual(fid.name, fname)
+            self.assertEqual(fid.mode, 'rb')
+            self.assertRaises(io.UnsupportedOperation, fid.fileno)
+            self.assertRaises(ValueError, fid.readable)
+            self.assertIs(fid.writable(), False)
+            self.assertRaises(ValueError, fid.seekable)
 
     def tearDown(self):
         unlink(TESTFN)
@@ -577,17 +609,16 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
 
     def test_io_on_closed_zipextfile(self):
         fname = "somefile.txt"
-        with zipfile.ZipFile(TESTFN2, mode="w") as zipfp:
+        with zipfile.ZipFile(TESTFN2, mode="w", compression=self.compression) as zipfp:
             zipfp.writestr(fname, "bogus")
 
         with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
             with zipfp.open(fname) as fid:
                 fid.close()
+                self.assertIs(fid.closed, True)
                 self.assertRaises(ValueError, fid.read)
                 self.assertRaises(ValueError, fid.seek, 0)
                 self.assertRaises(ValueError, fid.tell)
-                self.assertRaises(ValueError, fid.readable)
-                self.assertRaises(ValueError, fid.seekable)
 
     def test_write_to_readonly(self):
         """Check that trying to call write() on a readonly ZipFile object
@@ -672,6 +703,10 @@ class LzmaTestsWithSourceFile(AbstractTestsWithSourceFile,
                               unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
+@requires_zstd()
+class ZstdTestsWithSourceFile(AbstractTestsWithSourceFile,
+                              unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 class AbstractTestZip64InSmallFiles:
     # These tests test the ZIP64 functionality without using large files,
@@ -864,6 +899,8 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         self, file_size_64_set=False, file_size_extra=False,
         compress_size_64_set=False, compress_size_extra=False,
         header_offset_64_set=False, header_offset_extra=False,
+        extensible_data=b'',
+        end_of_central_dir_size=None, offset_to_end_of_central_dir=None,
     ):
         """Generate bytes sequence for a zip with (incomplete) zip64 data.
 
@@ -917,6 +954,12 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
 
         central_dir_size = struct.pack('<Q', 58 + 8 * len(central_zip64_fields))
         offset_to_central_dir = struct.pack('<Q', 50 + 8 * len(local_zip64_fields))
+        if end_of_central_dir_size is None:
+            end_of_central_dir_size = 44 + len(extensible_data)
+        if offset_to_end_of_central_dir is None:
+            offset_to_end_of_central_dir = (108
+                                            + 8 * len(local_zip64_fields)
+                                            + 8 * len(central_zip64_fields))
 
         local_extra_length = struct.pack("<H", 4 + 8 * len(local_zip64_fields))
         central_extra_length = struct.pack("<H", 4 + 8 * len(central_zip64_fields))
@@ -945,14 +988,17 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             + filename
             + central_extra
             # Zip64 end of central directory
-            + b"PK\x06\x06,\x00\x00\x00\x00\x00\x00\x00-\x00-"
-            + b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00"
+            + b"PK\x06\x06"
+            + struct.pack('<Q', end_of_central_dir_size)
+            + b"-\x00-\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00"
             + b"\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00"
             + central_dir_size
             + offset_to_central_dir
+            + extensible_data
             # Zip64 end of central directory locator
-            + b"PK\x06\x07\x00\x00\x00\x00l\x00\x00\x00\x00\x00\x00\x00\x01"
-            + b"\x00\x00\x00"
+            + b"PK\x06\x07\x00\x00\x00\x00"
+            + struct.pack('<Q', offset_to_end_of_central_dir)
+            + b"\x01\x00\x00\x00"
             # end of central directory
             + b"PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00:\x00\x00\x002\x00"
             + b"\x00\x00\x00\x00"
@@ -983,6 +1029,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         with self.assertRaises(zipfile.BadZipFile) as e:
             zipfile.ZipFile(io.BytesIO(missing_file_size_extra))
         self.assertIn('file size', str(e.exception).lower())
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(missing_file_size_extra)))
 
         # zip64 file size present, zip64 compress size present, one field in
         # extra, expecting two, equals missing compress size.
@@ -994,6 +1041,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         with self.assertRaises(zipfile.BadZipFile) as e:
             zipfile.ZipFile(io.BytesIO(missing_compress_size_extra))
         self.assertIn('compress size', str(e.exception).lower())
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(missing_compress_size_extra)))
 
         # zip64 compress size present, no fields in extra, expecting one,
         # equals missing compress size.
@@ -1003,6 +1051,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         with self.assertRaises(zipfile.BadZipFile) as e:
             zipfile.ZipFile(io.BytesIO(missing_compress_size_extra))
         self.assertIn('compress size', str(e.exception).lower())
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(missing_compress_size_extra)))
 
         # zip64 file size present, zip64 compress size present, zip64 header
         # offset present, two fields in extra, expecting three, equals missing
@@ -1017,6 +1066,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         with self.assertRaises(zipfile.BadZipFile) as e:
             zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
         self.assertIn('header offset', str(e.exception).lower())
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(missing_header_offset_extra)))
 
         # zip64 compress size present, zip64 header offset present, one field
         # in extra, expecting two, equals missing header offset
@@ -1029,6 +1079,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         with self.assertRaises(zipfile.BadZipFile) as e:
             zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
         self.assertIn('header offset', str(e.exception).lower())
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(missing_header_offset_extra)))
 
         # zip64 file size present, zip64 header offset present, one field in
         # extra, expecting two, equals missing header offset
@@ -1041,6 +1092,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         with self.assertRaises(zipfile.BadZipFile) as e:
             zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
         self.assertIn('header offset', str(e.exception).lower())
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(missing_header_offset_extra)))
 
         # zip64 header offset present, no fields in extra, expecting one,
         # equals missing header offset
@@ -1052,6 +1104,63 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         with self.assertRaises(zipfile.BadZipFile) as e:
             zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
         self.assertIn('header offset', str(e.exception).lower())
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(missing_header_offset_extra)))
+
+    def test_bad_zip64_end_of_central_dir(self):
+        zipdata = self.make_zip64_file(end_of_central_dir_size=0)
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'Corrupt.*record'):
+            zipfile.ZipFile(io.BytesIO(zipdata))
+        self.assertFalse(zipfile.is_zipfile(io.BytesIO(zipdata)))
+
+        zipdata = self.make_zip64_file(end_of_central_dir_size=100)
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'Corrupt.*record'):
+            zipfile.ZipFile(io.BytesIO(zipdata))
+        self.assertFalse(zipfile.is_zipfile(io.BytesIO(zipdata)))
+
+        zipdata = self.make_zip64_file(offset_to_end_of_central_dir=0)
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'Corrupt.*record'):
+            zipfile.ZipFile(io.BytesIO(zipdata))
+        self.assertFalse(zipfile.is_zipfile(io.BytesIO(zipdata)))
+
+        zipdata = self.make_zip64_file(offset_to_end_of_central_dir=1000)
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'Corrupt.*locator'):
+            zipfile.ZipFile(io.BytesIO(zipdata))
+        self.assertFalse(zipfile.is_zipfile(io.BytesIO(zipdata)))
+
+    def test_zip64_end_of_central_dir_record_not_found(self):
+        zipdata = self.make_zip64_file()
+        zipdata = zipdata.replace(b"PK\x06\x06", b'\x00'*4)
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'record not found'):
+            zipfile.ZipFile(io.BytesIO(zipdata))
+        self.assertFalse(zipfile.is_zipfile(io.BytesIO(zipdata)))
+
+        zipdata = self.make_zip64_file(
+            extensible_data=b'\xca\xfe\x04\x00\x00\x00data')
+        zipdata = zipdata.replace(b"PK\x06\x06", b'\x00'*4)
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'record not found'):
+            zipfile.ZipFile(io.BytesIO(zipdata))
+        self.assertFalse(zipfile.is_zipfile(io.BytesIO(zipdata)))
+
+    def test_zip64_extensible_data(self):
+        # These values are what is set in the make_zip64_file method.
+        expected_file_size = 8
+        expected_compress_size = 8
+        expected_header_offset = 0
+        expected_content = b"test1234"
+
+        zipdata = self.make_zip64_file(
+            extensible_data=b'\xca\xfe\x04\x00\x00\x00data')
+        with zipfile.ZipFile(io.BytesIO(zipdata)) as zf:
+            zinfo = zf.infolist()[0]
+            self.assertEqual(zinfo.file_size, expected_file_size)
+            self.assertEqual(zinfo.compress_size, expected_compress_size)
+            self.assertEqual(zinfo.header_offset, expected_header_offset)
+            self.assertEqual(zf.read(zinfo), expected_content)
+        self.assertTrue(zipfile.is_zipfile(io.BytesIO(zipdata)))
+
+        with self.assertRaisesRegex(zipfile.BadZipFile, 'record not found'):
+            zipfile.ZipFile(io.BytesIO(b'prepended' + zipdata))
+        self.assertFalse(zipfile.is_zipfile(io.BytesIO(b'prepended' + zipdata)))
 
     def test_generated_valid_zip64_extra(self):
         # These values are what is set in the make_zip64_file method.
@@ -1097,7 +1206,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # Because this is hard to verify by parsing the data as a zip, the raw
         # bytes are checked to ensure that they line up with the zip spec.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-        # The relevent sections for this test are:
+        # The relevant sections for this test are:
         #  - 4.3.7 for local file header
         #  - 4.5.3 for zip64 extra field
 
@@ -1168,7 +1277,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         # in as a zip, this test looks at the raw bytes created to ensure that
         # the correct data has been generated.
         # The spec for this can be found at: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-        # The relevent sections for this test are:
+        # The relevant sections for this test are:
         #  - 4.3.7 for local file header
         #  - 4.3.9 for the data descriptor
         #  - 4.5.3 for zip64 extra field
@@ -1249,6 +1358,10 @@ class LzmaTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                                 unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
+@requires_zstd()
+class ZstdTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
+                                unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 class AbstractWriterTests:
 
@@ -1284,6 +1397,25 @@ class AbstractWriterTests:
                 self.assertEqual(data.write(q), LENGTH)
             self.assertEqual(zip.getinfo('data').file_size, LENGTH)
 
+    def test_zipwritefile_attrs(self):
+        fname = "somefile.txt"
+        with zipfile.ZipFile(TESTFN2, mode="w", compression=self.compression) as zipfp:
+            with zipfp.open(fname, 'w') as fid:
+                self.assertEqual(fid.name, fname)
+                self.assertRaises(io.UnsupportedOperation, fid.fileno)
+                self.assertEqual(fid.mode, 'wb')
+                self.assertIs(fid.readable(), False)
+                self.assertIs(fid.writable(), True)
+                self.assertIs(fid.seekable(), False)
+                self.assertIs(fid.closed, False)
+            self.assertIs(fid.closed, True)
+            self.assertEqual(fid.name, fname)
+            self.assertEqual(fid.mode, 'wb')
+            self.assertRaises(io.UnsupportedOperation, fid.fileno)
+            self.assertIs(fid.readable(), False)
+            self.assertIs(fid.writable(), True)
+            self.assertIs(fid.seekable(), False)
+
 class StoredWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_STORED
 
@@ -1298,6 +1430,2128 @@ class Bzip2WriterTests(AbstractWriterTests, unittest.TestCase):
 @requires_lzma()
 class LzmaWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_LZMA
+
+@requires_zstd()
+class ZstdWriterTests(AbstractWriterTests, unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
+
+
+_ZINFO_PUBLIC_KEYS = [k for k in zipfile.ZipInfo.__slots__ if not k.startswith('_')]
+
+def comparable_zinfo(zinfo):
+    """Return a dict of public ZipInfo attributes for assertEqual comparison."""
+    attrs = {k: getattr(zinfo, k) for k in _ZINFO_PUBLIC_KEYS}
+
+    # Since patch gh-84353, the _MASK_UTF_FILENAME (0x800) bit may be
+    # changed when writing to the end record depending on whether filename
+    # can be encoded with ascii or cp437. Skip checking this bit by
+    # pretending it's always set.
+    attrs['flag_bits'] |= 0x800
+
+    return attrs
+
+_struct_pack = struct.pack
+
+def struct_pack_no_dd_sig(fmt, *values):
+    """A mock side_effect for native `struct.pack` to not generate a
+    signature for data descriptors."""
+    # suppress BytesWarning etc.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        if values[0] == zipfile._DD_SIGNATURE:
+            return _struct_pack(fmt[:1] + fmt[2:], *values[1:])
+    return _struct_pack(fmt, *values)
+
+class RepackHelperMixin:
+    """Common helpers for remove and repack."""
+    maxDiff = 8192
+
+    @classmethod
+    def _prepare_test_files(cls):
+        return [
+            ('file0.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
+            ('file1.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
+            ('file2.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
+        ]
+
+    @classmethod
+    def _prepare_zip_from_test_files(cls, zfname, test_files, force_zip64=False):
+        with zipfile.ZipFile(zfname, 'w', cls.compression) as zh:
+            for file, data in test_files:
+                with zh.open(file, 'w', force_zip64=force_zip64) as fh:
+                    fh.write(data)
+            return list(zh.infolist())
+
+class AbstractRemoveTests(RepackHelperMixin):
+    @classmethod
+    def setUpClass(cls):
+        cls.test_files = cls._prepare_test_files()
+
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def test_remove_by_name(self):
+        for i in range(0, 3):
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zh.remove(self.test_files[i][0])
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for j, zi in enumerate(zinfos) if j != i],
+                    )
+
+                    # check NameToInfo cache
+                    with self.assertRaises(KeyError):
+                        zh.getinfo(self.test_files[i][0])
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_remove_by_zinfo(self):
+        for i in range(0, 3):
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zh.remove(zh.infolist()[i])
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for j, zi in enumerate(zinfos) if j != i],
+                    )
+
+                    # check NameToInfo cache
+                    with self.assertRaises(KeyError):
+                        zh.getinfo(self.test_files[i][0])
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_remove_by_name_nonexist(self):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            with self.assertRaises(KeyError):
+                zh.remove('nonexist.txt')
+
+    def test_remove_by_zinfo_nonexist(self):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            with self.assertRaises(KeyError):
+                zh.remove(zipfile.ZipInfo('nonexist.txt'))
+
+    def test_remove_by_name_duplicated(self):
+        test_files = [
+            ('file.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
+            ('file.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
+            ('file1.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
+        ]
+
+        # suppress duplicated name warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove('file.txt')
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [comparable_zinfo(zi) for zi in [zinfos[0], zinfos[2]]],
+            )
+
+            # check NameToInfo cache
+            self.assertEqual(
+                comparable_zinfo(zh.getinfo('file.txt')),
+                comparable_zinfo(zinfos[0]),
+            )
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+        # suppress duplicated name warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove('file.txt')
+            zh.remove('file.txt')
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [comparable_zinfo(zi) for zi in [zinfos[2]]],
+            )
+
+            # check NameToInfo cache
+            with self.assertRaises(KeyError):
+                zh.getinfo('file.txt')
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+    def test_remove_by_zinfo_duplicated(self):
+        test_files = [
+            ('file.txt', b'Lorem ipsum dolor sit amet, consectetur adipiscing elit'),
+            ('file.txt', b'Duis aute irure dolor in reprehenderit in voluptate velit esse'),
+            ('file1.txt', b'Sed ut perspiciatis unde omnis iste natus error sit voluptatem'),
+        ]
+
+        # suppress duplicated name warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove(zh.infolist()[0])
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [comparable_zinfo(zi) for zi in [zinfos[1], zinfos[2]]],
+            )
+
+            # check NameToInfo cache
+            self.assertEqual(
+                comparable_zinfo(zh.getinfo('file.txt')),
+                comparable_zinfo(zinfos[1]),
+            )
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+        # suppress duplicated name warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove(zh.infolist()[1])
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [comparable_zinfo(zi) for zi in [zinfos[0], zinfos[2]]],
+            )
+
+            # check NameToInfo cache
+            self.assertEqual(
+                comparable_zinfo(zh.getinfo('file.txt')),
+                comparable_zinfo(zinfos[0]),
+            )
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+        # suppress duplicated name warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            infolist = zh.infolist().copy()
+            zh.remove(infolist[0])
+            zh.remove(infolist[1])
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [comparable_zinfo(zi) for zi in [zinfos[2]]],
+            )
+
+            # check NameToInfo cache
+            with self.assertRaises(KeyError):
+                zh.getinfo('file.txt')
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+    def test_remove_zip64(self):
+        for i in range(0, 3):
+            with self.subTest(i=i, filename=self.test_files[i][0]):
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files, force_zip64=True)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zh.remove(zh.infolist()[i])
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for j, zi in enumerate(zinfos) if j != i],
+                    )
+
+                    # check NameToInfo cache
+                    with self.assertRaises(KeyError):
+                        zh.getinfo(self.test_files[i][0])
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_remove_closed(self):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            zh.close()
+            with self.assertRaises(ValueError):
+                zh.remove(self.test_files[0][0])
+
+    def test_remove_writing(self):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            with zh.open('newfile.txt', 'w'):
+                with self.assertRaises(ValueError):
+                    zh.remove(self.test_files[0][0])
+
+    def test_remove_mode_r(self):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'r') as zh:
+            with self.assertRaises(ValueError):
+                zh.remove(self.test_files[0][0])
+
+    def test_remove_mode_w(self):
+        with zipfile.ZipFile(TESTFN, 'w') as zh:
+            for file, data in self.test_files:
+                zh.writestr(file, data)
+            zinfos = list(zh.infolist())
+
+            zh.remove(self.test_files[0][0])
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [comparable_zinfo(zi) for zi in [zinfos[1], zinfos[2]]],
+            )
+
+            # check NameToInfo cache
+            with self.assertRaises(KeyError):
+                zh.getinfo(self.test_files[0][0])
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+    def test_remove_mode_x(self):
+        with zipfile.ZipFile(TESTFN, 'x') as zh:
+            for file, data in self.test_files:
+                zh.writestr(file, data)
+            zinfos = list(zh.infolist())
+
+            zh.remove(self.test_files[0][0])
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [comparable_zinfo(zi) for zi in [zinfos[1], zinfos[2]]],
+            )
+
+            # check NameToInfo cache
+            with self.assertRaises(KeyError):
+                zh.getinfo(self.test_files[0][0])
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+class StoredRemoveTests(AbstractRemoveTests, unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+@requires_zlib()
+class DeflateRemoveTests(AbstractRemoveTests, unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+@requires_bz2()
+class Bzip2RemoveTests(AbstractRemoveTests, unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+@requires_lzma()
+class LzmaRemoveTests(AbstractRemoveTests, unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+@requires_zstd()
+class ZstdRemoveTests(AbstractRemoveTests, unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
+
+class AbstractRepackTests(RepackHelperMixin):
+    @classmethod
+    def setUpClass(cls):
+        cls.test_files = cls._prepare_test_files()
+
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def test_repack_basic(self):
+        """Should remove local file entries for deleted files."""
+        ln = len(self.test_files)
+        iii = (ii for n in range(1, ln + 1) for ii in itertools.combinations(range(ln), n))
+        for ii in iii:
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_repack_propagation(self):
+        """Should call internal API with adequate parameters."""
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            with mock.patch.object(zipfile._ZipRepacker, 'repack') as m_rp, \
+                 mock.patch.object(zipfile, '_ZipRepacker', wraps=zipfile._ZipRepacker) as m_zr:
+                zh.repack()
+        m_zr.assert_called_once_with(strict_descriptor=True,
+                                     chunk_size=zipfile._REPACK_CHUNK_SIZE)
+        m_rp.assert_called_once_with(zh, None)
+
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zi = zh.remove(zh.infolist()[0])
+            with mock.patch.object(zipfile._ZipRepacker, 'repack') as m_rp, \
+                 mock.patch.object(zipfile, '_ZipRepacker', wraps=zipfile._ZipRepacker) as m_zr:
+                zh.repack([zi], strict_descriptor=False, chunk_size=1024)
+        m_zr.assert_called_once_with(strict_descriptor=False, chunk_size=1024)
+        m_rp.assert_called_once_with(zh, [zi])
+
+    def test_repack_bytes_before_first_file(self):
+        """Should preserve random bytes before the first recorded local file entry."""
+        for ii in ([], [0], [0, 1], [0, 1, 2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    expected_zinfos = self._prepare_zip_from_test_files(fh, test_files)
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    self._prepare_zip_from_test_files(fh, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_repack_magic_before_first_file(self):
+        """Should preserve random signature bytes not forming a valid file entry
+        before the first recorded local file entry."""
+        for ii in ([], [0], [0, 1], [0, 1, 2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'PK\003\004 ')
+                    expected_zinfos = self._prepare_zip_from_test_files(fh, test_files)
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'PK\003\004 ')
+                    self._prepare_zip_from_test_files(fh, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_repack_file_entry_before_first_file(self):
+        """Should preserve seemingly valid file entries not forming consecutive
+        valid file entries until the first recorded local file entry.
+
+        This may happen when a self-extractor contains an uncompressed ZIP
+        library. (simulated by writing a ZIP file in this test)
+        """
+        for ii in ([], [0], [0, 1], [0, 1, 2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w') as zh:
+                        zh.writestr('file.txt', b'dummy')
+                        zh.writestr('file2.txt', b'dummy')
+                        zh.writestr('file3.txt', b'dummy')
+                    fh.write(b' ')
+                    expected_zinfos = self._prepare_zip_from_test_files(fh, test_files)
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w') as zh:
+                        zh.writestr('file.txt', b'dummy')
+                        zh.writestr('file2.txt', b'dummy')
+                        zh.writestr('file3.txt', b'dummy')
+                    fh.write(b' ')
+                    self._prepare_zip_from_test_files(fh, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
+    def test_repack_bytes_before_removed_files(self):
+        """Should preserve if there are bytes before stale local file entries."""
+        for ii in ([1], [1, 2], [2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for i, (file, data) in enumerate(self.test_files):
+                            if i == ii[0]:
+                                fh.write(b' dummy bytes ')
+                                zh.start_dir = fh.tell()
+                            zh.writestr(file, data)
+                        for i in ii:
+                            zh.remove(self.test_files[i][0])
+                        expected_zinfos = list(zh.infolist())
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for i, (file, data) in enumerate(self.test_files):
+                            if i == ii[0]:
+                                fh.write(b' dummy bytes ')
+                                zh.start_dir = fh.tell()
+                            zh.writestr(file, data)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
+    def test_repack_bytes_after_removed_files(self):
+        """Should keep extra bytes if there are bytes after stale local file entries."""
+        for ii in ([1], [1, 2], [2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for i, (file, data) in enumerate(self.test_files):
+                            if i not in ii:
+                                zh.writestr(file, data)
+                            if i == ii[-1]:
+                                fh.write(b' dummy bytes ')
+                                zh.start_dir = fh.tell()
+                        expected_zinfos = list(zh.infolist())
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for i, (file, data) in enumerate(self.test_files):
+                            zh.writestr(file, data)
+                            if i == ii[-1]:
+                                fh.write(b' dummy bytes ')
+                                zh.start_dir = fh.tell()
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
+    def test_repack_bytes_between_removed_files(self):
+        """Should strip only local file entries before random bytes."""
+        # calculate the expected results
+        with open(TESTFN, 'wb') as fh:
+            with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                zh.writestr(*self.test_files[0])
+                fh.write(b' dummy bytes ')
+                zh.start_dir = fh.tell()
+                zh.writestr(*self.test_files[2])
+                zh.remove(self.test_files[2][0])
+                expected_zinfos = list(zh.infolist())
+        expected_size = os.path.getsize(TESTFN)
+
+        # do the removal and check the result
+        with open(TESTFN, 'wb') as fh:
+            with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                zh.writestr(*self.test_files[0])
+                zh.writestr(*self.test_files[1])
+                fh.write(b' dummy bytes ')
+                zh.start_dir = fh.tell()
+                zh.writestr(*self.test_files[2])
+        with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+            zh.remove(self.test_files[1][0])
+            zh.remove(self.test_files[2][0])
+            zh.repack()
+
+            # check infolist
+            self.assertEqual(
+                [comparable_zinfo(zi) for zi in zh.infolist()],
+                [comparable_zinfo(zi) for zi in expected_zinfos],
+            )
+
+        # check file size
+        self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+        # make sure the zip file is still valid
+        with zipfile.ZipFile(TESTFN) as zh:
+            self.assertIsNone(zh.testzip())
+
+    def test_repack_prepended_bytes(self):
+        for ii in ([], [0], [0, 1], [1], [2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                fz = io.BytesIO()
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                self._prepare_zip_from_test_files(fz, test_files)
+                fz.seek(0)
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
+                with zipfile.ZipFile(TESTFN) as zh:
+                    expected_zinfos = list(zh.infolist())
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                fz = io.BytesIO()
+                self._prepare_zip_from_test_files(fz, self.test_files)
+                fz.seek(0)
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for i in ii:
+                        zh.remove(self.test_files[i][0])
+                    zh.repack()
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_repack_overlapping_blocks(self):
+        for ii in ([0], [1], [2]):
+            with self.subTest(remove=ii):
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    zh._didModify = True
+                    for i in ii:
+                        zi = zh.infolist()[i]
+                        zi.compress_size += 1
+                        zi.file_size += 1
+
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                        zh.repack()
+
+    def test_repack_scan_unsigned_data_descriptor(self):
+        """By default (strict_descriptor=True) the scan does not reclaim an
+        unreferenced entry written with an unsigned data descriptor, but keeps
+        the archive valid; strict_descriptor=False reclaims it."""
+        removed_name, removed_data = self.test_files[1]
+        remaining = [n for n, _ in self.test_files if n != removed_name]
+
+        # Build an archive whose entries use *unsigned* data descriptors by
+        # writing to an unseekable stream with the descriptor signature stripped.
+        buf = io.BytesIO()
+        with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig):
+            with zipfile.ZipFile(Unseekable(buf), 'w', self.compression) as zh:
+                for file, data in self.test_files:
+                    with zh.open(file, 'w') as fh:
+                        fh.write(data)
+        archive = buf.getvalue()
+
+        # sanity: the removed entry really uses a data descriptor (flag bit 3);
+        # it is unsigned by construction above
+        with zipfile.ZipFile(io.BytesIO(archive)) as zh:
+            self.assertTrue(zh.getinfo(removed_name).flag_bits & 0x08)
+
+        # default repack(): strict_descriptor=True does not locate the unsigned
+        # data descriptor, so the local data is preserved (not reclaimed).
+        fz = io.BytesIO(archive)
+        with zipfile.ZipFile(fz, 'a', self.compression) as zh:
+            zh.remove(removed_name)
+            zh.repack()
+        default_size = len(fz.getvalue())
+        with zipfile.ZipFile(fz) as zh:
+            self.assertEqual(zh.namelist(), remaining)
+            self.assertIsNone(zh.testzip())
+
+        # strict_descriptor=False: the unsigned data descriptor is detected, so
+        # the local data is reclaimed and the archive shrinks.
+        fz = io.BytesIO(archive)
+        with zipfile.ZipFile(fz, 'a', self.compression) as zh:
+            zh.remove(removed_name)
+            zh.repack(strict_descriptor=False)
+        strict_false_size = len(fz.getvalue())
+        with zipfile.ZipFile(fz) as zh:
+            self.assertEqual(zh.namelist(), remaining)
+            self.assertIsNone(zh.testzip())
+
+        self.assertLess(strict_false_size, default_size)
+
+    def test_repack_removed_basic(self):
+        """Should remove local file entries for provided deleted files."""
+        ln = len(self.test_files)
+        iii = (ii for n in range(1, ln + 1) for ii in itertools.combinations(range(ln), n))
+        for ii in iii:
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                expected_zinfos = self._prepare_zip_from_test_files(TESTFN, test_files)
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
+                    zh.repack(zinfos)
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_repack_removed_partial(self):
+        """Should remove local file entries only for provided deleted files."""
+        ln = len(self.test_files)
+        iii = (ii for n in range(1, ln + 1) for ii in itertools.combinations(range(ln), n))
+        for ii in iii:
+            with self.subTest(removed=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                self._prepare_zip_from_test_files(TESTFN, test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    for zi in zh.infolist().copy():
+                        zh.remove(zi)
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                zinfos = self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i, _ in enumerate(self.test_files)]
+                    zh.repack([zinfos[i] for i in ii])
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    @mock.patch.object(time, 'time', new=lambda: 315590400)  # fix time for ZipFile.writestr()
+    def test_repack_removed_bytes_between_files(self):
+        """Should not remove bytes between local file entries."""
+        for ii in ([0], [1], [2]):
+            with self.subTest(removed=ii):
+                # calculate the expected results
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for j, (file, data) in enumerate(self.test_files):
+                            if j not in ii:
+                                zh.writestr(file, data)
+                            fh.write(b' dummy bytes ')
+                            zh.start_dir = fh.tell()
+                        expected_zinfos = list(zh.infolist())
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                with open(TESTFN, 'wb') as fh:
+                    with zipfile.ZipFile(fh, 'w', self.compression) as zh:
+                        for file, data in self.test_files:
+                            zh.writestr(file, data)
+                            fh.write(b' dummy bytes ')
+                            zh.start_dir = fh.tell()
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
+                    zh.repack(zinfos)
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    def test_repack_removed_bad_header_offset(self):
+        """Should raise when provided ZipInfo objects has differing header offset."""
+        for ii in ([0], [1], [2]):
+            with self.subTest(removed=ii):
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
+                    for zi in zinfos:
+                        zi.header_offset += 1
+                    with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number for file header'):
+                        zh.repack(zinfos)
+
+    def test_repack_removed_bad_header_offset2(self):
+        """Should raise when provided ZipInfo objects has differing header offset."""
+        for ii in ([1], [2]):
+            with self.subTest(removed=ii):
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
+                    for zi in zinfos:
+                        zi.header_offset -= 1
+                    with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                        zh.repack(zinfos)
+
+    def test_repack_removed_bad_non_removed(self):
+        """Should raise when provided ZipInfo objects are not removed."""
+        for ii in ([0], [1], [2]):
+            with self.subTest(removed=ii):
+                self._prepare_zip_from_test_files(TESTFN, self.test_files)
+                with zipfile.ZipFile(TESTFN, 'a') as zh:
+                    zinfos = [zh.getinfo(self.test_files[i][0]) for i in ii]
+                    with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                        zh.repack(zinfos)
+
+    def test_repack_removed_prepended_bytes(self):
+        for ii in ([], [0], [0, 1], [1], [2]):
+            with self.subTest(remove=ii):
+                # calculate the expected results
+                test_files = [data for j, data in enumerate(self.test_files) if j not in ii]
+                fz = io.BytesIO()
+                self._prepare_zip_from_test_files(fz, test_files)
+                fz.seek(0)
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
+                with zipfile.ZipFile(TESTFN) as zh:
+                    expected_zinfos = list(zh.infolist())
+                expected_size = os.path.getsize(TESTFN)
+
+                # do the removal and check the result
+                fz = io.BytesIO()
+                self._prepare_zip_from_test_files(fz, self.test_files)
+                fz.seek(0)
+                with open(TESTFN, 'wb') as fh:
+                    fh.write(b'dummy ')
+                    fh.write(fz.read())
+                with zipfile.ZipFile(TESTFN, 'a', self.compression) as zh:
+                    zinfos = [zh.remove(self.test_files[i][0]) for i in ii]
+                    zh.repack(zinfos)
+
+                    # check infolist
+                    self.assertEqual(
+                        [comparable_zinfo(zi) for zi in zh.infolist()],
+                        [comparable_zinfo(zi) for zi in expected_zinfos],
+                    )
+
+                # check file size
+                self.assertEqual(os.path.getsize(TESTFN), expected_size)
+
+                # make sure the zip file is still valid
+                with zipfile.ZipFile(TESTFN) as zh:
+                    self.assertIsNone(zh.testzip())
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_closed(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            zh.close()
+            with self.assertRaises(ValueError):
+                zh.repack()
+        m_repack.assert_not_called()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_writing(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'a') as zh:
+            with zh.open('newfile.txt', 'w'):
+                with self.assertRaises(ValueError):
+                    zh.repack()
+        m_repack.assert_not_called()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_mode_r(self, m_repack):
+        self._prepare_zip_from_test_files(TESTFN, self.test_files)
+        with zipfile.ZipFile(TESTFN, 'r') as zh:
+            with self.assertRaises(ValueError):
+                zh.repack()
+        m_repack.assert_not_called()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_mode_w(self, m_repack):
+        with zipfile.ZipFile(TESTFN, 'w') as zh:
+            with self.assertRaises(ValueError):
+                zh.repack()
+        m_repack.assert_not_called()
+
+    @mock.patch.object(zipfile, '_ZipRepacker')
+    def test_repack_mode_x(self, m_repack):
+        with zipfile.ZipFile(TESTFN, 'x') as zh:
+            with self.assertRaises(ValueError):
+                zh.repack()
+        m_repack.assert_not_called()
+
+class StoredRepackTests(AbstractRepackTests, unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+@requires_zlib()
+class DeflateRepackTests(AbstractRepackTests, unittest.TestCase):
+    compression = zipfile.ZIP_DEFLATED
+
+@requires_bz2()
+class Bzip2RepackTests(AbstractRepackTests, unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+@requires_lzma()
+class LzmaRepackTests(AbstractRepackTests, unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+@requires_zstd()
+class ZstdRepackTests(AbstractRepackTests, unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
+
+class OtherRepackTests(unittest.TestCase):
+    def test_full_overlap_different_names(self):
+        # see `test_full_overlap_different_names` in built-in test.test_zipfile
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00b\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK'
+            b'\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bPK\x05'
+            b'\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00/\x00\x00'
+            b'\x00\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (not found)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00b\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00b'
+            b'PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00/\x00'
+            b'\x00\x00\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+    def test_quoted_overlap(self):
+        # see `test_quoted_overlap` in built-in test.test_zipfile
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05Y\xfc'
+            b'8\x044\x00\x00\x00(\x04\x00\x00\x01\x00\x00\x00a\x00'
+            b'\x1f\x00\xe0\xffPK\x03\x04\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00b\xed\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\'
+            b'd\x0b`PK\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0'
+            b'lH\x05Y\xfc8\x044\x00\x00\x00(\x04\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00aPK\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00\x00\x00'
+            b'bPK\x05\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00'
+            b'\x00S\x00\x00\x00\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (no valid entry)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05Y\xfc'
+            b'8\x044\x00\x00\x00(\x04\x00\x00\x01\x00\x00\x00a\x00'
+            b'\x1f\x00\xe0\xffPK\x03\x04\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00b\xed\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\'
+            b'd\x0b`PK\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00\x00\x00'
+            b'bPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00'
+            b'\x00S\x00\x00\x00\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+    def test_partial_overlap_at_dd(self):
+        # file 'a' has an unsigned data descriptor (whose information isn't
+        # consistent with in central directory) that starts at the starting
+        # position of file 'b'
+        data = (
+            b'PK\x03\x04\x14\x00\x08\x00\x00\x00\x00\x00!\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00acontent'
+            b'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00!\x00\xa90\xc5\xfe'
+            b'\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00bcontent'
+            b'PK\x01\x02\x14\x00\x14\x00\x08\x00\x00\x00\x00\x00!\x00'
+            b'\xa90\xc5\xfe\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00\x00a'
+            b'PK\x01\x02\x14\x00\x14\x00\x00\x00\x00\x00\x00\x00!\x00'
+            b'\xa90\xc5\xfe\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01&\x00\x00\x00b'
+            b'PK\x05\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00L\x00'
+            b'\x00\x00\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 7)
+            self.assertEqual(zi.file_size, 7)
+            self.assertEqual(zi.flag_bits, 8)
+            zi = zh.getinfo('b')
+            self.assertEqual(zi.header_offset, 38)
+            self.assertEqual(zi.compress_size, 7)
+            self.assertEqual(zi.file_size, 7)
+            self.assertEqual(zi.flag_bits, 0)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (no valid entry)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x03\x04\x14\x00\x08\x00\x00\x00\x00\x00!\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00acontent'
+            b'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00!\x00\xa90\xc5\xfe'
+            b'\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00bcontent'
+            b'PK\x01\x02\x14\x00\x14\x00\x00\x00\x00\x00\x00\x00!\x00'
+            b'\xa90\xc5\xfe\x07\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01&\x00\x00\x00b'
+            b'PK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00L\x00'
+            b'\x00\x00\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+    def test_overlap_with_central_dir(self):
+        # see `test_overlap_with_central_dir` in built-in test.test_zipfile
+        data = (
+            b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
+            b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\xb4\x81\x00\x00\x00\x00aP'
+            b'K\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number for file header'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number for file header'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (not found)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+    def test_overlap_with_archive_comment(self):
+        # see `test_overlap_with_archive_comment` in built-in test.test_zipfile
+        data = (
+            b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
+            b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\xb4\x81E\x00\x00\x00aP'
+            b'K\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x00'
+            b'\x00\x00\x00*\x00'
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00G_|Z\xe2\x1e'
+            b'8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00aK'
+            b'L\x1c\x05\xa3`\x14\x8cx\x00\x00'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack()
+
+        with zipfile.ZipFile(io.BytesIO(data), 'a') as zh:
+            zi = zh.remove('a')
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zh.repack([zi])
+
+        # local entry of 'a' should not be stripped (not found)
+        fz = io.BytesIO(data)
+        with zipfile.ZipFile(fz, 'a') as zh:
+            zh.remove('a')
+            zh.repack()
+
+        expected = (
+            b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00*\x00'
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00G_|Z\xe2\x1e'
+            b'8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00aK'
+            b'L\x1c\x05\xa3`\x14\x8cx\x00\x00'
+        )
+        fz.seek(0)
+        self.assertEqual(fz.read(), expected)
+
+class ZipRepackerTests(unittest.TestCase):
+    def _generate_local_file_entry(self, arcname, raw_bytes,
+                                   compression=zipfile.ZIP_STORED,
+                                   force_zip64=False, dd=False, dd_sig=True):
+        fz = io.BytesIO()
+        f = Unseekable(fz) if dd else fz
+        cm = (mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig)
+              if dd and not dd_sig else contextlib.nullcontext())
+        with zipfile.ZipFile(f, 'w', compression=compression) as zh:
+            with cm, zh.open(arcname, 'w', force_zip64=force_zip64) as fh:
+                fh.write(raw_bytes)
+            if dd:
+                zi = zh.infolist()[0]
+                self.assertTrue(zi.flag_bits & zipfile._MASK_USE_DATA_DESCRIPTOR,
+                                f'data descriptor flag not set: {zi.filename}')
+            fz.seek(0)
+            return fz.read()
+
+    def test_validate_local_file_entry_stored(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_STORED)
+
+    @requires_zlib()
+    def test_validate_local_file_entry_zlib(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_DEFLATED)
+
+    @requires_bz2()
+    def test_validate_local_file_entry_bz2(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_BZIP2)
+
+    @requires_lzma()
+    def test_validate_local_file_entry_lzma(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_LZMA)
+
+    @requires_zstd()
+    def test_validate_local_file_entry_zstd(self):
+        self._test_validate_local_file_entry(method=zipfile.ZIP_ZSTANDARD)
+
+    def _test_validate_local_file_entry(self, method):
+        # strict_descriptor=False to exercise unsigned data descriptor scanning
+        # (the default is strict_descriptor=True, tested separately below)
+        repacker = zipfile._ZipRepacker(strict_descriptor=False)
+
+        # basic
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # offset
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_) + 1)
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        bytes_ = b'pre' + bytes_ + b'post'
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 3, len(bytes_) - 4)
+        self.assertEqual(result, len(bytes_) - 7)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 3, len(bytes_))
+        self.assertEqual(result, len(bytes_) - 7)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # return None if no match at given offset
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 2, len(bytes_) - 4)
+        self.assertEqual(result, None)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 4, len(bytes_) - 4)
+        self.assertEqual(result, None)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # return None if truncated local file header
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method)
+        bytes_ = bytes_[:zipfile.sizeFileHeader - 1]
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, None)
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # data descriptor
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, dd=True)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # data descriptor (unsigned)
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, dd=True, dd_sig=False)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_called_once_with(fz, 38, len(bytes_), False, method)
+        if repacker._scan_data_descriptor_no_sig_by_decompression(fz, 38, len(bytes_), False, method):
+            m_sddns.assert_not_called()
+        else:
+            m_sddns.assert_called_once_with(fz, 38, len(bytes_), False)
+
+        # return None for data descriptor (unsigned) if `strict_descriptor=True`
+        repacker = zipfile._ZipRepacker(strict_descriptor=True)
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, dd=True, dd_sig=False)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, None)
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+    def test_validate_local_file_entry_zip64_stored(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_STORED)
+
+    @requires_zlib()
+    def test_validate_local_file_entry_zip64_zlib(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_DEFLATED)
+
+    @requires_bz2()
+    def test_validate_local_file_entry_zip64_bz2(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_BZIP2)
+
+    @requires_lzma()
+    def test_validate_local_file_entry_zip64_lzma(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_LZMA)
+
+    @requires_zstd()
+    def test_validate_local_file_entry_zip64_zstd(self):
+        self._test_validate_local_file_entry_zip64(method=zipfile.ZIP_ZSTANDARD)
+
+    def _test_validate_local_file_entry_zip64(self, method):
+        # strict_descriptor=False to exercise unsigned data descriptor scanning
+        # (the default is strict_descriptor=True, tested separately below)
+        repacker = zipfile._ZipRepacker(strict_descriptor=False)
+
+        # zip64
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, force_zip64=True)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_not_called()
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # data descriptor + zip64
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, force_zip64=True, dd=True)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 58, len(bytes_), True)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+        # data descriptor (unsigned) + zip64
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, force_zip64=True, dd=True, dd_sig=False)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 58, len(bytes_), True)
+        m_sddnsbd.assert_called_once_with(fz, 58, len(bytes_), True, method)
+        if repacker._scan_data_descriptor_no_sig_by_decompression(fz, 58, len(bytes_), True, method):
+            m_sddns.assert_not_called()
+        else:
+            m_sddns.assert_called_once_with(fz, 58, len(bytes_), True)
+
+        # return None for data descriptor (unsigned) if `strict_descriptor=True`
+        repacker = zipfile._ZipRepacker(strict_descriptor=True)
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', compression=method, force_zip64=True, dd=True, dd_sig=False)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, None)
+        m_sdd.assert_called_once_with(fz, 58, len(bytes_), True)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+    def test_validate_local_file_entry_overshoot(self):
+        """A header whose compress_size points past end_offset is rejected."""
+        repacker = zipfile._ZipRepacker()
+
+        bytes_ = self._generate_local_file_entry('file.txt', b'dummy')
+        fz = io.BytesIO(bytes_)
+        # exact fit at end_offset is accepted
+        self.assertEqual(
+            repacker._validate_local_file_entry(fz, 0, len(bytes_)),
+            len(bytes_),
+        )
+        # one byte short: entry would extend past end_offset
+        self.assertIsNone(
+            repacker._validate_local_file_entry(fz, 0, len(bytes_) - 1),
+        )
+
+        # zip64 extra supplying the oversized compress_size
+        bytes_ = self._generate_local_file_entry(
+            'file.txt', b'dummy', force_zip64=True)
+        fz = io.BytesIO(bytes_)
+        self.assertEqual(
+            repacker._validate_local_file_entry(fz, 0, len(bytes_)),
+            len(bytes_),
+        )
+        self.assertIsNone(
+            repacker._validate_local_file_entry(fz, 0, len(bytes_) - 1),
+        )
+
+    def test_validate_local_file_entry_encrypted(self):
+        # strict_descriptor=False to exercise unsigned data descriptor scanning
+        # of an encrypted entry (the default strict_descriptor=True is tested below)
+        repacker = zipfile._ZipRepacker(strict_descriptor=False)
+
+        bytes_ = (
+            b'PK\x03\x04'
+            b'\x14\x00'
+            b'\x09\x00'
+            b'\x08\x00'
+            b'\xAB\x28'
+            b'\xD2\x5A'
+            b'\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00'
+            b'\x08\x00'
+            b'\x00\x00'
+            b'file.txt'
+            b'\x97\xF1\x83\x34\x9D\xC4\x8C\xD3\xED\x79\x8C\xA2\xBB\x49\xFF\x1B\x89'
+            b'\x3F\xF2\xF4\x4F'
+            b'\x11\x00\x00\x00'
+            b'\x05\x00\x00\x00'
+        )
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, len(bytes_))
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_called_once_with(fz, 38, len(bytes_), False)
+
+        # return None for the unsigned data descriptor if `strict_descriptor=True`
+        repacker = zipfile._ZipRepacker(strict_descriptor=True)
+        fz = io.BytesIO(bytes_)
+        with mock.patch.object(repacker, '_scan_data_descriptor',
+                               wraps=repacker._scan_data_descriptor) as m_sdd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig_by_decompression',
+                               wraps=repacker._scan_data_descriptor_no_sig_by_decompression) as m_sddnsbd, \
+             mock.patch.object(repacker, '_scan_data_descriptor_no_sig',
+                               wraps=repacker._scan_data_descriptor_no_sig) as m_sddns:
+            result = repacker._validate_local_file_entry(fz, 0, len(bytes_))
+        self.assertEqual(result, None)
+        m_sdd.assert_called_once_with(fz, 38, len(bytes_), False)
+        m_sddnsbd.assert_not_called()
+        m_sddns.assert_not_called()
+
+    def test_iter_scan_signature(self):
+        bytes_ = b'sig__sig__sig__sig'
+        ln = len(bytes_)
+        fp = io.BytesIO(bytes_)
+        repacker = zipfile._ZipRepacker()
+
+        # basic
+        self.assertEqual(
+            list(repacker._iter_scan_signature(fp, b'sig', 0, ln)),
+            [0, 5, 10, 15],
+        )
+
+        # start_offset
+        self.assertEqual(
+            list(repacker._iter_scan_signature(fp, b'sig', 1, ln)),
+            [5, 10, 15],
+        )
+        self.assertEqual(
+            list(repacker._iter_scan_signature(fp, b'sig', 6, ln)),
+            [10, 15],
+        )
+        self.assertEqual(
+            list(repacker._iter_scan_signature(fp, b'sig', 16, ln)),
+            [],
+        )
+
+        # end_offset
+        self.assertEqual(
+            list(repacker._iter_scan_signature(fp, b'sig', 0, ln - 1)),
+            [0, 5, 10],
+        )
+        self.assertEqual(
+            list(repacker._iter_scan_signature(fp, b'sig', 0, ln - 6)),
+            [0, 5],
+        )
+
+        # chunk_size
+        self.assertEqual(
+            list(repacker._iter_scan_signature(fp, b'sig', 0, ln, 3)),
+            [0, 5, 10, 15],
+        )
+        self.assertEqual(
+            list(repacker._iter_scan_signature(fp, b'sig', 0, ln, 1)),
+            [0, 5, 10, 15],
+        )
+
+    def test_scan_data_descriptor(self):
+        repacker = zipfile._ZipRepacker()
+
+        sig = zipfile._DD_SIGNATURE
+        raw_bytes = comp_bytes = b'dummy'
+        raw_len = comp_len = len(raw_bytes)
+        raw_crc = zipfile.crc32(raw_bytes)
+
+        # basic
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            (raw_crc, comp_len, raw_len, 16),
+        )
+
+        # return None if no signature
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        # return None if compressed size not match
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len + 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len - 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = b'1' + comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = comp_bytes[1:] + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        # zip64
+        bytes_ = comp_bytes + struct.pack('<2L2Q', sig, raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), True),
+            (raw_crc, comp_len, raw_len, 24),
+        )
+
+        # offset
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 1, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = b'123' + comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 3, len(bytes_), False),
+            (raw_crc, comp_len, raw_len, 16),
+        )
+
+        # end_offset
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_) - 1, False),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<4L', sig, raw_crc, comp_len, raw_len) + b'123'
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_) - 3, False),
+            (raw_crc, comp_len, raw_len, 16),
+        )
+        self.assertEqual(
+            repacker._scan_data_descriptor(io.BytesIO(bytes_), 0, len(bytes_), False),
+            (raw_crc, comp_len, raw_len, 16),
+        )
+
+    def test_scan_data_descriptor_no_sig(self):
+        repacker = zipfile._ZipRepacker()
+
+        raw_bytes = comp_bytes = b'dummy'
+        raw_len = comp_len = len(raw_bytes)
+        raw_crc = zipfile.crc32(raw_bytes)
+
+        # basic
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+
+        # return None if compressed size not match
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len + 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len - 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = b'1' + comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = comp_bytes[1:] + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            None,
+        )
+
+        # zip64
+        bytes_ = comp_bytes + struct.pack('<L2Q', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), True),
+            (raw_crc, comp_len, raw_len, 20),
+        )
+
+        # offset
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 1, len(bytes_), False),
+            None,
+        )
+
+        bytes_ = b'123' + comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 3, len(bytes_), False),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+
+        # end_offset
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_) - 1, False),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len) + b'123'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_) - 3, False),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+
+        # chunk_size
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False, 12),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig(io.BytesIO(bytes_), 0, len(bytes_), False, 1),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+
+    def test_scan_data_descriptor_no_sig_by_decompression_stored(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression_invalid(zipfile.ZIP_STORED)
+
+    @requires_zlib()
+    def test_scan_data_descriptor_no_sig_by_decompression_zlib(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression(zipfile.ZIP_DEFLATED)
+
+    @requires_bz2()
+    def test_scan_data_descriptor_no_sig_by_decompression_bz2(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression(zipfile.ZIP_BZIP2)
+
+    @requires_lzma()
+    def test_scan_data_descriptor_no_sig_by_decompression_lzma(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression(zipfile.ZIP_LZMA)
+
+    @requires_zstd()
+    def test_scan_data_descriptor_no_sig_by_decompression_zstd(self):
+        self._test_scan_data_descriptor_no_sig_by_decompression(zipfile.ZIP_ZSTANDARD)
+
+    def test_scan_data_descriptor_no_sig_by_decompression_unknown(self):
+        method = 1024  # simulate an unknown method
+        self._test_scan_data_descriptor_no_sig_by_decompression_invalid(method)
+
+    def _test_scan_data_descriptor_no_sig_by_decompression(self, method):
+        repacker = zipfile._ZipRepacker()
+
+        raw_bytes = b'dummy'
+        raw_len = len(raw_bytes)
+        raw_crc = zipfile.crc32(raw_bytes)
+
+        compressor = zipfile._get_compressor(method)
+        comp_bytes = compressor.compress(raw_bytes)
+        comp_bytes += compressor.flush()
+        comp_len = len(comp_bytes)
+
+        # basic
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+
+        # return None if data length < DD signature
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, 11, False, method),
+            None,
+        )
+
+        # return None if compressed size not match
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len + 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len - 1, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            None,
+        )
+
+        # zip64
+        bytes_ = comp_bytes + struct.pack('<L2Q', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), True, method),
+            (raw_crc, comp_len, raw_len, 20),
+        )
+
+        # offset
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 1, len(bytes_), False, method),
+            None,
+        )
+
+        bytes_ = b'123' + comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 3, len(bytes_), False, method),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+
+        # end_offset
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len)
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_) - 1, False, method),
+            None,
+        )
+
+        bytes_ = comp_bytes + struct.pack('<3L', raw_crc, comp_len, raw_len) + b'123'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_) - 3, False, method),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            (raw_crc, comp_len, raw_len, 12),
+        )
+
+    def _test_scan_data_descriptor_no_sig_by_decompression_invalid(self, method):
+        repacker = zipfile._ZipRepacker()
+
+        bytes_ = b'dummy'
+        self.assertEqual(
+            repacker._scan_data_descriptor_no_sig_by_decompression(
+                io.BytesIO(bytes_), 0, len(bytes_), False, method),
+            False,
+        )
+
+    @requires_zlib()
+    def test_trace_compressed_block_end_zlib(self):
+        import zlib
+        self._test_trace_compressed_block_end(zipfile.ZIP_DEFLATED, zlib.error)
+
+    @requires_bz2()
+    def test_trace_compressed_block_end_bz2(self):
+        self._test_trace_compressed_block_end(zipfile.ZIP_BZIP2, OSError)
+
+    @requires_lzma()
+    def test_trace_compressed_block_end_lzma(self):
+        self._test_trace_compressed_block_end(zipfile.ZIP_LZMA, EOFError)
+
+    @requires_zstd()
+    def test_trace_compressed_block_end_zstd(self):
+        import compression.zstd
+        self._test_trace_compressed_block_end(zipfile.ZIP_ZSTANDARD, compression.zstd.ZstdError)
+
+    def _test_trace_compressed_block_end(self, method, exc_cls):
+        repacker = zipfile._ZipRepacker()
+
+        compressor = zipfile._get_compressor(method)
+
+        comp_bytes = compressor.compress(b'dummy')
+        comp_bytes += compressor.flush()
+        comp_len = len(comp_bytes)
+
+        # basic
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor),
+            comp_len,
+        )
+
+        # offset
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        with self.assertRaises(exc_cls):
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 1, len(bytes_), decompressor)
+
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = b'123' + comp_bytes
+        with self.assertRaises(exc_cls):
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor)
+
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = b'123' + comp_bytes
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 3, len(bytes_), decompressor),
+            comp_len + 3,
+        )
+
+        # end_offset
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        with self.assertRaises(EOFError):
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_) - 1, decompressor)
+
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes + b'123'
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_) - 3, decompressor),
+            comp_len,
+        )
+
+        # chunk_size
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor, 16),
+            comp_len,
+        )
+
+        decompressor = zipfile._get_decompressor(method)
+        bytes_ = comp_bytes
+        self.assertEqual(
+            repacker._trace_compressed_block_end(io.BytesIO(bytes_), 0, len(bytes_), decompressor, 1),
+            comp_len,
+        )
+
+    def test_calc_local_file_entry_size(self):
+        repacker = zipfile._ZipRepacker()
+
+        # basic
+        fz = io.BytesIO()
+        with zipfile.ZipFile(fz, 'w') as zh:
+            with zh.open('file.txt', 'w') as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            43,
+        )
+
+        # data descriptor
+        fz = io.BytesIO()
+        with zipfile.ZipFile(Unseekable(fz), 'w') as zh:
+            with zh.open('file.txt', 'w') as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            59,
+        )
+
+        # data descriptor (unsigned)
+        fz = io.BytesIO()
+        with zipfile.ZipFile(Unseekable(fz), 'w') as zh:
+            with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig), \
+                 zh.open('file.txt', 'w') as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            55,
+        )
+
+    def test_calc_local_file_entry_size_zip64(self):
+        repacker = zipfile._ZipRepacker()
+
+        # zip64
+        fz = io.BytesIO()
+        with zipfile.ZipFile(fz, 'w') as zh:
+            with zh.open('file.txt', 'w', force_zip64=True) as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            63,
+        )
+
+        # data descriptor + zip64
+        fz = io.BytesIO()
+        with zipfile.ZipFile(Unseekable(fz), 'w') as zh:
+            with zh.open('file.txt', 'w', force_zip64=True) as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            87,
+        )
+
+        # data descriptor (unsigned) + zip64
+        fz = io.BytesIO()
+        with zipfile.ZipFile(Unseekable(fz), 'w') as zh:
+            with mock.patch.object(struct, 'pack', side_effect=struct_pack_no_dd_sig), \
+                 zh.open('file.txt', 'w', force_zip64=True) as fh:
+                fh.write(b'dummy')
+            zi = zh.infolist()[-1]
+
+        self.assertEqual(
+            repacker._calc_local_file_entry_size(fz, zi),
+            83,
+        )
+
+    def test_copy_bytes(self):
+        repacker = zipfile._ZipRepacker()
+
+        fp = io.BytesIO(b'abc123')
+        repacker._copy_bytes(fp, 0, 3, 3)
+        self.assertEqual(fp.getvalue(), b'abcabc')
+
+        fp = io.BytesIO(b'abc123')
+        repacker._copy_bytes(fp, 3, 0, 3)
+        self.assertEqual(fp.getvalue(), b'123123')
+
+        fp = io.BytesIO(b'abc123')
+        repacker._copy_bytes(fp, 0, 4, 3)
+        self.assertEqual(fp.getvalue(), b'abc1abc')
+
+        fp = io.BytesIO(b'abc123')
+        repacker._copy_bytes(fp, 0, 10, 3)
+        self.assertEqual(fp.getvalue(), b'abc123\x00\x00\x00\x00abc')
+
+        fp = io.BytesIO(b'abc123')
+        repacker._copy_bytes(fp, 0, 3, 2)
+        self.assertEqual(fp.getvalue(), b'abcab3')
+
+        # check chunk_size
+        repacker = zipfile._ZipRepacker(chunk_size=6)
+        fp = io.BytesIO(b'abcdef123456')
+        with mock.patch.object(fp, 'read', wraps=fp.read) as m_read:
+            repacker._copy_bytes(fp, 0, 12, 6)
+        self.assertEqual(fp.getvalue(), b'abcdef123456abcdef')
+        m_read.assert_called_once_with(6)
+
+        repacker = zipfile._ZipRepacker(chunk_size=3)
+        fp = io.BytesIO(b'abcdef123456')
+        with mock.patch.object(fp, 'read', wraps=fp.read) as m_read:
+            repacker._copy_bytes(fp, 0, 12, 6)
+        self.assertEqual(fp.getvalue(), b'abcdef123456abcdef')
+        self.assertEqual(m_read.mock_calls, [mock.call(3), mock.call(3)])
+
+        repacker = zipfile._ZipRepacker(chunk_size=1)
+        fp = io.BytesIO(b'abcdef123456')
+        with mock.patch.object(fp, 'read', wraps=fp.read) as m_read:
+            repacker._copy_bytes(fp, 0, 12, 6)
+        self.assertEqual(fp.getvalue(), b'abcdef123456abcdef')
+        self.assertEqual(m_read.mock_calls, [
+            mock.call(1), mock.call(1), mock.call(1), mock.call(1), mock.call(1), mock.call(1)])
+
+    def test_copy_bytes_short_read(self):
+        """Raise rather than loop forever if EOF is hit before size bytes."""
+        repacker = zipfile._ZipRepacker()
+        fp = io.BytesIO(b'abc123')
+        with self.assertRaises(zipfile.BadZipFile):
+            repacker._copy_bytes(fp, 0, 0, 100)
 
 
 class PyZipFileTests(unittest.TestCase):
@@ -1486,7 +3740,7 @@ class PyZipFileTests(unittest.TestCase):
                 fp.write("print(42)\n")
 
             with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
-                zipfp.writepy(pathlib.Path(TESTFN2) / "mod1.py")
+                zipfp.writepy(FakePath(os.path.join(TESTFN2, "mod1.py")))
                 names = zipfp.namelist()
                 self.assertCompiledIn('mod1.py', names)
         finally:
@@ -1544,7 +3798,7 @@ class ExtractTests(unittest.TestCase):
 
     def test_extract_with_target_pathlike(self):
         with temp_dir() as extdir:
-            self._test_extract_with_target(pathlib.Path(extdir))
+            self._test_extract_with_target(FakePath(extdir))
 
     def test_extract_all(self):
         with temp_cwd():
@@ -1579,7 +3833,7 @@ class ExtractTests(unittest.TestCase):
 
     def test_extract_all_with_target_pathlike(self):
         with temp_dir() as extdir:
-            self._test_extract_all_with_target(pathlib.Path(extdir))
+            self._test_extract_all_with_target(FakePath(extdir))
 
     def check_file(self, filename, content):
         self.assertTrue(os.path.isfile(filename))
@@ -1687,6 +3941,33 @@ class ExtractTests(unittest.TestCase):
             unlink(TESTFN2)
 
 
+class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
+    testdir = TESTFN
+
+    @classmethod
+    def setUpClass(cls):
+        p = cls.ar_with_file = TESTFN + '-with-file.zip'
+        cls.addClassCleanup(unlink, p)
+        with zipfile.ZipFile(p, 'w') as zipfp:
+            zipfp.writestr('test', b'newcontent')
+
+        p = cls.ar_with_dir = TESTFN + '-with-dir.zip'
+        cls.addClassCleanup(unlink, p)
+        with zipfile.ZipFile(p, 'w') as zipfp:
+            zipfp.mkdir('test')
+
+        p = cls.ar_with_implicit_dir = TESTFN + '-with-implicit-dir.zip'
+        cls.addClassCleanup(unlink, p)
+        with zipfile.ZipFile(p, 'w') as zipfp:
+            zipfp.writestr('test/file', b'newcontent')
+
+    def open(self, path):
+        return zipfile.ZipFile(path, 'r')
+
+    def extractall(self, ar):
+        ar.extractall(self.testdir)
+
+
 class OtherTests(unittest.TestCase):
     def test_open_via_zip_info(self):
         # Create the ZIP archive
@@ -1714,6 +3995,36 @@ class OtherTests(unittest.TestCase):
                 zinfo = zipfile.ZipInfo(data)
                 zinfo.flag_bits |= zipfile._MASK_USE_DATA_DESCRIPTOR  # Include an extended local header.
                 orig_zip.writestr(zinfo, data)
+
+    def test_write_with_source_date_epoch(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            # Set the SOURCE_DATE_EPOCH environment variable to a specific timestamp
+            env['SOURCE_DATE_EPOCH'] = "1735715999"
+
+            with zipfile.ZipFile(TESTFN, "w") as zf:
+                zf.writestr("test_source_date_epoch.txt", "Testing SOURCE_DATE_EPOCH")
+
+            with zipfile.ZipFile(TESTFN, "r") as zf:
+                zip_info = zf.getinfo("test_source_date_epoch.txt")
+                expected_utc = (2025, 1, 1, 7, 19, 58)
+                self.assertEqual(zip_info.date_time, expected_utc)
+
+    def test_write_without_source_date_epoch(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            del env['SOURCE_DATE_EPOCH']
+
+            with zipfile.ZipFile(TESTFN, "w") as zf:
+                zf.writestr("test_no_source_date_epoch.txt", "Testing without SOURCE_DATE_EPOCH")
+
+            with zipfile.ZipFile(TESTFN, "r") as zf:
+                zip_info = zf.getinfo("test_no_source_date_epoch.txt")
+                self.assertTimestampAlmostEqual(time.localtime(), zip_info.date_time, tolerance=2)
+
+    def assertTimestampAlmostEqual(self, time1, time2, tolerance):
+        import datetime
+        dt1 = datetime.datetime(*time1[:6])
+        dt2 = datetime.datetime(*time2[:6])
+        self.assertLessEqual((dt1 - dt2).total_seconds(), tolerance)
 
     def test_close(self):
         """Check that the zipfile is closed after the 'with' block."""
@@ -1754,7 +4065,7 @@ class OtherTests(unittest.TestCase):
     @requires_zlib()
     def test_read_unicode_filenames(self):
         # bug #10801
-        fname = findfile('zip_cp437_header.zip')
+        fname = findfile('zip_cp437_header.zip', subdir='archivetestdata')
         with zipfile.ZipFile(fname) as zipfp:
             for name in zipfp.namelist():
                 zipfp.open(name).close()
@@ -1769,23 +4080,18 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
 
-    @requires_zlib()
-    def test_read_zipfile_containing_unicode_path_extra_field(self):
+    def create_zipfile_with_extra_data(self, filename, extra_data_name):
         with zipfile.ZipFile(TESTFN, mode='w') as zf:
-            # create a file with a non-ASCII name
-            filename = '이름.txt'
-            filename_encoded = filename.encode('utf-8')
-
+            filename_encoded = filename.encode("utf-8")
             # create a ZipInfo object with Unicode path extra field
             zip_info = zipfile.ZipInfo(filename)
 
             tag_for_unicode_path = b'\x75\x70'
             version_of_unicode_path = b'\x01'
 
-            import zlib
-            filename_crc = struct.pack('<L', zlib.crc32(filename_encoded))
+            filename_crc = struct.pack('<L', zipfile.crc32(filename_encoded))
 
-            extra_data = version_of_unicode_path + filename_crc + filename_encoded
+            extra_data = version_of_unicode_path + filename_crc + extra_data_name
             tsize = len(extra_data).to_bytes(2, 'little')
 
             zip_info.extra = tag_for_unicode_path + tsize + extra_data
@@ -1793,8 +4099,20 @@ class OtherTests(unittest.TestCase):
             # add the file to the ZIP archive
             zf.writestr(zip_info, b'Hello World!')
 
+    def test_read_zipfile_containing_unicode_path_extra_field(self):
+        self.create_zipfile_with_extra_data("이름.txt", "이름.txt".encode("utf-8"))
         with zipfile.ZipFile(TESTFN, "r") as zf:
             self.assertEqual(zf.filelist[0].filename, "이름.txt")
+
+    def test_read_zipfile_warning(self):
+        self.create_zipfile_with_extra_data("이름.txt", b"")
+        with self.assertWarns(UserWarning):
+            zipfile.ZipFile(TESTFN, "r").close()
+
+    def test_read_zipfile_error(self):
+        self.create_zipfile_with_extra_data("이름.txt", b"\xff")
+        with self.assertRaises(zipfile.BadZipfile):
+            zipfile.ZipFile(TESTFN, "r").close()
 
     def test_read_after_write_unicode_filenames(self):
         with zipfile.ZipFile(TESTFN2, 'w') as zipfp:
@@ -1854,7 +4172,7 @@ class OtherTests(unittest.TestCase):
             fp.write("this is not a legal zip file\n")
         self.assertFalse(zipfile.is_zipfile(TESTFN))
         # - passing a path-like object
-        self.assertFalse(zipfile.is_zipfile(pathlib.Path(TESTFN)))
+        self.assertFalse(zipfile.is_zipfile(FakePath(TESTFN)))
         # - passing a file object
         with open(TESTFN, "rb") as fp:
             self.assertFalse(zipfile.is_zipfile(fp))
@@ -1863,6 +4181,25 @@ class OtherTests(unittest.TestCase):
         fp.write(b"this is not a legal zip file\n")
         self.assertFalse(zipfile.is_zipfile(fp))
         fp.seek(0, 0)
+        self.assertFalse(zipfile.is_zipfile(fp))
+        # - passing non-zipfile with ZIP header elements
+        # data created using pyPNG like so:
+        #  d = [(ord('P'), ord('K'), 5, 6), (ord('P'), ord('K'), 6, 6)]
+        #  w = png.Writer(1,2,alpha=True,compression=0)
+        #  f = open('onepix.png', 'wb')
+        #  w.write(f, d)
+        #  w.close()
+        data = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00"
+                b"\x00\x02\x08\x06\x00\x00\x00\x99\x81\xb6'\x00\x00\x00\x15I"
+                b"DATx\x01\x01\n\x00\xf5\xff\x00PK\x05\x06\x00PK\x06\x06\x07"
+                b"\xac\x01N\xc6|a\r\x00\x00\x00\x00IEND\xaeB`\x82")
+        # - passing a filename
+        with open(TESTFN, "wb") as fp:
+            fp.write(data)
+        self.assertFalse(zipfile.is_zipfile(TESTFN))
+        # - passing a file-like object
+        fp = io.BytesIO()
+        fp.write(data)
         self.assertFalse(zipfile.is_zipfile(fp))
 
     def test_damaged_zipfile(self):
@@ -1893,10 +4230,16 @@ class OtherTests(unittest.TestCase):
             zip_contents = fp.read()
         # - passing a file-like object
         fp = io.BytesIO()
-        fp.write(zip_contents)
+        end = fp.write(zip_contents)
+        self.assertEqual(fp.tell(), end)
+        mid = end // 2
+        fp.seek(mid, 0)
         self.assertTrue(zipfile.is_zipfile(fp))
-        fp.seek(0, 0)
+        # check that the position is left unchanged after the call
+        # see: https://github.com/python/cpython/issues/122356
+        self.assertEqual(fp.tell(), mid)
         self.assertTrue(zipfile.is_zipfile(fp))
+        self.assertEqual(fp.tell(), mid)
 
     def test_non_existent_file_raises_OSError(self):
         # make sure we don't raise an AttributeError when a partially-constructed
@@ -2104,6 +4447,7 @@ class OtherTests(unittest.TestCase):
             zipf = zipfile.ZipFile(TESTFN, mode="r")
         except zipfile.BadZipFile:
             self.fail("Unable to create empty ZIP file in 'w' mode")
+        zipf.close()
 
         zipf = zipfile.ZipFile(TESTFN, mode="a")
         zipf.close()
@@ -2111,6 +4455,7 @@ class OtherTests(unittest.TestCase):
             zipf = zipfile.ZipFile(TESTFN, mode="r")
         except:
             self.fail("Unable to create empty ZIP file in 'a' mode")
+        zipf.close()
 
     def test_open_empty_file(self):
         # Issue 1710703: Check that opening a file with less than 22 bytes
@@ -2128,6 +4473,34 @@ class OtherTests(unittest.TestCase):
         """Before bpo-26185, repr() on empty ZipInfo object was failing."""
         zi = zipfile.ZipInfo(filename="empty")
         self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_size=0>")
+
+    def test_for_archive(self):
+        base_filename = TESTFN2.rstrip('/')
+
+        with zipfile.ZipFile(TESTFN, mode="w", compresslevel=1,
+                             compression=zipfile.ZIP_STORED) as zf:
+            # no trailing forward slash
+            zi = zipfile.ZipInfo(base_filename)._for_archive(zf)
+            self.assertEqual(zi.compress_level, 1)
+            self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
+            # ?rw- --- ---
+            filemode = stat.S_IRUSR | stat.S_IWUSR
+            # filemode is stored as the highest 16 bits of external_attr
+            self.assertEqual(zi.external_attr >> 16, filemode)
+            self.assertEqual(zi.external_attr & 0xFF, 0)  # no MS-DOS flag
+
+        with zipfile.ZipFile(TESTFN, mode="w", compresslevel=1,
+                             compression=zipfile.ZIP_STORED) as zf:
+            # with a trailing slash
+            zi = zipfile.ZipInfo(f'{base_filename}/')._for_archive(zf)
+            self.assertEqual(zi.compress_level, 1)
+            self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
+            # d rwx rwx r-x
+            filemode = stat.S_IFDIR
+            filemode |= stat.S_IRWXU | stat.S_IRWXG
+            filemode |= stat.S_IROTH | stat.S_IXOTH
+            self.assertEqual(zi.external_attr >> 16, filemode)
+            self.assertEqual(zi.external_attr & 0xFF, 0x10)  # MS-DOS flag
 
     def test_create_empty_zipinfo_default_attributes(self):
         """Ensure all required attributes are set."""
@@ -2235,6 +4608,34 @@ class OtherTests(unittest.TestCase):
                 fp.seek(0, os.SEEK_SET)
                 self.assertEqual(fp.tell(), 0)
 
+    def test_read_after_seek(self):
+        # Issue 102956: Make sure seek(x, os.SEEK_CUR) doesn't break read()
+        txt = b"Charge men!"
+        bloc = txt.find(b"men")
+        with zipfile.ZipFile(TESTFN, "w") as zipf:
+            zipf.writestr("foo.txt", txt)
+        with zipfile.ZipFile(TESTFN, mode="r") as zipf:
+            with zipf.open("foo.txt", "r") as fp:
+                fp.seek(bloc, os.SEEK_CUR)
+                self.assertEqual(fp.read(-1), b'men!')
+        with zipfile.ZipFile(TESTFN, mode="r") as zipf:
+            with zipf.open("foo.txt", "r") as fp:
+                fp.read(6)
+                fp.seek(1, os.SEEK_CUR)
+                self.assertEqual(fp.read(-1), b'men!')
+
+    def test_uncompressed_interleaved_seek_read(self):
+        # gh-127847: Make sure the position in the archive is correct
+        # in the special case of seeking in a ZIP_STORED entry.
+        with zipfile.ZipFile(TESTFN, "w") as zipf:
+            zipf.writestr("a.txt", "123")
+            zipf.writestr("b.txt", "456")
+        with zipfile.ZipFile(TESTFN, "r") as zipf:
+            with zipf.open("a.txt", "r") as a, zipf.open("b.txt", "r") as b:
+                self.assertEqual(a.read(1), b"1")
+                self.assertEqual(b.seek(1), 1)
+                self.assertEqual(b.read(1), b"5")
+
     @requires_bz2()
     def test_decompress_without_3rd_party_library(self):
         data = b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -2244,6 +4645,187 @@ class OtherTests(unittest.TestCase):
         with mock.patch('zipfile.bz2', None):
             with zipfile.ZipFile(zip_file) as zf:
                 self.assertRaises(RuntimeError, zf.extract, 'a.txt')
+
+    @requires_zlib()
+    def test_full_overlap_different_names(self):
+        # The ZIP file contains two central directory entries with
+        # different names which refer to the same local header.
+        # The name of the local header matches the name of the first
+        # central directory entry.
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00b\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK'
+            b'\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bPK\x05'
+            b'\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00/\x00\x00'
+            b'\x00\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a', 'b'])
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            zi = zipf.getinfo('b')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            self.assertEqual(len(zipf.read('b')), 1033)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'File name.*differ'):
+                zipf.read('a')
+
+    @requires_zlib()
+    def test_full_overlap_different_names2(self):
+        # The ZIP file contains two central directory entries with
+        # different names which refer to the same local header.
+        # The name of the local header matches the name of the second
+        # central directory entry.
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00a\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK'
+            b'\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bPK\x05'
+            b'\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00/\x00\x00'
+            b'\x00\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a', 'b'])
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            zi = zipf.getinfo('b')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'File name.*differ'):
+                zipf.read('b')
+            with self.assertWarnsRegex(UserWarning, 'Overlapped entries') as cm:
+                self.assertEqual(len(zipf.read('a')), 1033)
+            self.assertEqual(cm.filename, __file__)
+
+    @requires_zlib()
+    def test_full_overlap_same_name(self):
+        # The ZIP file contains two central directory entries with
+        # the same name which refer to the same local header.
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00a\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK'
+            b'\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK\x05'
+            b'\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00/\x00\x00'
+            b'\x00\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a', 'a'])
+            self.assertEqual(len(zipf.infolist()), 2)
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            self.assertEqual(len(zipf.read('a')), 1033)
+            self.assertEqual(len(zipf.read(zi)), 1033)
+            self.assertEqual(len(zipf.read(zipf.infolist()[1])), 1033)
+            with self.assertWarnsRegex(UserWarning, 'Overlapped entries') as cm:
+                self.assertEqual(len(zipf.read(zipf.infolist()[0])), 1033)
+            self.assertEqual(cm.filename, __file__)
+            with self.assertWarnsRegex(UserWarning, 'Overlapped entries') as cm:
+                zipf.open(zipf.infolist()[0]).close()
+            self.assertEqual(cm.filename, __file__)
+
+    @requires_zlib()
+    def test_quoted_overlap(self):
+        # The ZIP file contains two files. The second local header
+        # is contained in the range of the first file.
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05Y\xfc'
+            b'8\x044\x00\x00\x00(\x04\x00\x00\x01\x00\x00\x00a\x00'
+            b'\x1f\x00\xe0\xffPK\x03\x04\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00b\xed\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\'
+            b'd\x0b`PK\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0'
+            b'lH\x05Y\xfc8\x044\x00\x00\x00(\x04\x00\x00\x01'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00aPK\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0l'
+            b'H\x05\xe2\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00\x00\x00'
+            b'bPK\x05\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00'
+            b'\x00S\x00\x00\x00\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a', 'b'])
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 52)
+            self.assertEqual(zi.file_size, 1064)
+            zi = zipf.getinfo('b')
+            self.assertEqual(zi.header_offset, 36)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zipf.read('a')
+            self.assertEqual(len(zipf.read('b')), 1033)
+
+    @requires_zlib()
+    def test_overlap_with_central_dir(self):
+        # The local header offset is equal to the central directory offset.
+        data = (
+            b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
+            b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\xb4\x81\x00\x00\x00\x00aP'
+            b'K\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a'])
+            self.assertEqual(len(zipf.infolist()), 1)
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 11)
+            self.assertEqual(zi.file_size, 1033)
+            # Found central directory signature PK\x01\x02 instead of
+            # local header signature PK\x03\x04.
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number'):
+                zipf.read('a')
+
+    @requires_zlib()
+    def test_overlap_with_archive_comment(self):
+        # The local header is written after the central directory,
+        # in the archive comment.
+        data = (
+            b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
+            b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\xb4\x81E\x00\x00\x00aP'
+            b'K\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x00'
+            b'\x00\x00\x00*\x00'
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00G_|Z\xe2\x1e'
+            b'8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00aK'
+            b'L\x1c\x05\xa3`\x14\x8cx\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a'])
+            self.assertEqual(len(zipf.infolist()), 1)
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 69)
+            self.assertEqual(zi.compress_size, 11)
+            self.assertEqual(zi.file_size, 1033)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zipf.read('a')
 
     def tearDown(self):
         unlink(TESTFN)
@@ -2336,6 +4918,17 @@ class LzmaBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
         b'ePK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00'
         b'\x00>\x00\x00\x00\x00\x00')
 
+@requires_zstd()
+class ZstdBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
+    zip_with_bad_crc = (
+        b'PK\x03\x04?\x00\x00\x00]\x00\x00\x00!\x00V\xb1\x17J\x14\x00'
+        b'\x00\x00\x0b\x00\x00\x00\x05\x00\x00\x00afile(\xb5/\xfd\x00'
+        b'XY\x00\x00Hello WorldPK\x01\x02?\x03?\x00\x00\x00]\x00\x00\x00'
+        b'!\x00V\xb0\x17J\x14\x00\x00\x00\x0b\x00\x00\x00\x05\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00\x00afilePK'
+        b'\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00\x007\x00\x00\x00'
+        b'\x00\x00')
 
 class DecryptionTests(unittest.TestCase):
     """Check that ZIP decryption works. Since the library does not
@@ -2563,6 +5156,10 @@ class LzmaTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
                                      unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
+@requires_zstd()
+class ZstdTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
+                                     unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 # Provide the tell() method but not seek()
 class Tellable:
@@ -2777,7 +5374,7 @@ class TestWithDirectory(unittest.TestCase):
         os.mkdir(TESTFN2)
 
     def test_extract_dir(self):
-        with zipfile.ZipFile(findfile("zipdir.zip")) as zipf:
+        with zipfile.ZipFile(findfile("zipdir.zip", subdir="archivetestdata")) as zipf:
             zipf.extractall(TESTFN2)
         self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a")))
         self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a", "b")))
@@ -2788,6 +5385,22 @@ class TestWithDirectory(unittest.TestCase):
         os.mkdir(os.path.join(TESTFN2, "a"))
         self.test_extract_dir()
 
+    def test_extract_dir_backslash(self):
+        zfname = findfile("zipdir_backslash.zip", subdir="archivetestdata")
+        with zipfile.ZipFile(zfname) as zipf:
+            zipf.extractall(TESTFN2)
+        if os.name == 'nt':
+            self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a")))
+            self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a", "b")))
+            self.assertTrue(os.path.isfile(os.path.join(TESTFN2, "a", "b", "c")))
+            self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "d")))
+            self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "d", "e")))
+        else:
+            self.assertTrue(os.path.isfile(os.path.join(TESTFN2, "a\\b\\c")))
+            self.assertTrue(os.path.isfile(os.path.join(TESTFN2, "d\\e\\")))
+            self.assertFalse(os.path.exists(os.path.join(TESTFN2, "a")))
+            self.assertFalse(os.path.exists(os.path.join(TESTFN2, "d")))
+
     def test_write_dir(self):
         dirpath = os.path.join(TESTFN2, "x")
         os.mkdir(dirpath)
@@ -2795,7 +5408,7 @@ class TestWithDirectory(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, "w") as zipf:
             zipf.write(dirpath)
             zinfo = zipf.filelist[0]
-            self.assertTrue(zinfo.filename.endswith("/x/"))
+            self.assertEndsWith(zinfo.filename, "/x/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zipf.write(dirpath, "y")
             zinfo = zipf.filelist[1]
@@ -2803,7 +5416,7 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             zinfo = zipf.filelist[0]
-            self.assertTrue(zinfo.filename.endswith("/x/"))
+            self.assertEndsWith(zinfo.filename, "/x/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zinfo = zipf.filelist[1]
             self.assertTrue(zinfo.filename, "y/")
@@ -2823,7 +5436,7 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(zinfo.external_attr, (0o40775 << 16) | 0x10)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             zinfo = zipf.filelist[0]
-            self.assertTrue(zinfo.filename.endswith("x/"))
+            self.assertEndsWith(zinfo.filename, "x/")
             self.assertEqual(zinfo.external_attr, (0o40775 << 16) | 0x10)
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
@@ -2872,7 +5485,7 @@ class TestWithDirectory(unittest.TestCase):
 
             directory = os.path.join(TESTFN2, "directory2")
             os.mkdir(directory)
-            mode = os.stat(directory).st_mode
+            mode = os.stat(directory).st_mode & 0xFFFF
             zf.write(directory, arcname="directory2/")
             zinfo = zf.filelist[1]
             self.assertEqual(zinfo.filename, "directory2/")
@@ -2883,6 +5496,17 @@ class TestWithDirectory(unittest.TestCase):
             zf.extractall(target)
 
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2"})
+
+    def test_root_folder_in_zipfile(self):
+        """
+        gh-112795: Some tools or self constructed codes will add '/' folder to
+        the zip file, this is a strange behavior, but we should support it.
+        """
+        in_memory_file = io.BytesIO()
+        zf = zipfile.ZipFile(in_memory_file, "w")
+        zf.mkdir('/')
+        zf.writestr('./a.txt', 'aaa')
+        zf.extractall(TESTFN2)
 
     def tearDown(self):
         rmtree(TESTFN2)
@@ -2898,7 +5522,7 @@ class ZipInfoTests(unittest.TestCase):
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
     def test_from_file_pathlike(self):
-        zi = zipfile.ZipInfo.from_file(pathlib.Path(__file__))
+        zi = zipfile.ZipInfo.from_file(FakePath(__file__))
         self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
@@ -2924,6 +5548,17 @@ class ZipInfoTests(unittest.TestCase):
         self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
         self.assertEqual(zi.file_size, 0)
 
+    def test_compresslevel_property(self):
+        zinfo = zipfile.ZipInfo("xxx")
+        self.assertFalse(zinfo._compresslevel)
+        self.assertFalse(zinfo.compress_level)
+        zinfo._compresslevel = 99  # test the legacy @property.setter
+        self.assertEqual(zinfo.compress_level, 99)
+        self.assertEqual(zinfo._compresslevel, 99)
+        zinfo.compress_level = 8
+        self.assertEqual(zinfo.compress_level, 8)
+        self.assertEqual(zinfo._compresslevel, 8)
+
 
 class CommandLineTest(unittest.TestCase):
 
@@ -2946,7 +5581,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertNotEqual(err.strip(), b'')
 
     def test_test_command(self):
-        zip_name = findfile('zipdir.zip')
+        zip_name = findfile('zipdir.zip', subdir='archivetestdata')
         for opt in '-t', '--test':
             out = self.zipfilecmd(opt, zip_name)
             self.assertEqual(out.rstrip(), b'Done testing')
@@ -2955,7 +5590,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(out, b'')
 
     def test_list_command(self):
-        zip_name = findfile('zipdir.zip')
+        zip_name = findfile('zipdir.zip', subdir='archivetestdata')
         t = io.StringIO()
         with zipfile.ZipFile(zip_name, 'r') as tf:
             tf.printdir(t)
@@ -2988,7 +5623,7 @@ class CommandLineTest(unittest.TestCase):
                 unlink(TESTFN2)
 
     def test_extract_command(self):
-        zip_name = findfile('zipdir.zip')
+        zip_name = findfile('zipdir.zip', subdir='archivetestdata')
         for opt in '-e', '--extract':
             with temp_dir() as extdir:
                 out = self.zipfilecmd(opt, zip_name, extdir)
@@ -3009,8 +5644,8 @@ class TestExecutablePrependedZip(unittest.TestCase):
     """Test our ability to open zip files with an executable prepended."""
 
     def setUp(self):
-        self.exe_zip = findfile('exe_with_zip', subdir='ziptestdata')
-        self.exe_zip64 = findfile('exe_with_z64', subdir='ziptestdata')
+        self.exe_zip = findfile('exe_with_zip', subdir='archivetestdata')
+        self.exe_zip64 = findfile('exe_with_z64', subdir='archivetestdata')
 
     def _test_zip_works(self, name):
         # bpo28494 sanity check: ensure is_zipfile works on these.
@@ -3121,29 +5756,23 @@ class EncodedMetadataTests(unittest.TestCase):
 
     def test_read_after_append(self):
         newname = '\u56db'  # Han 'four'
-        expected_names = [name.encode('shift_jis').decode('cp437')
-                          for name in self.file_names[:2]] + self.file_names[2:]
-        expected_names.append(newname)
-        expected_content = (*self.file_content, b"newcontent")
+        newname2 = 'fünf'  # representable in cp437, but still stored as UTF-8
+        expected_names = [*self.file_names, newname, newname2]
+        mojibake_expected_names = [name.encode('shift_jis').decode('cp437')
+                                   if i < 2 else name
+                                   for i, name in enumerate(expected_names)]
+        expected_content = (*self.file_content, b"newcontent", b"newcontent2")
 
         with zipfile.ZipFile(TESTFN, "a") as zipfp:
             zipfp.writestr(newname, "newcontent")
-            self.assertEqual(sorted(zipfp.namelist()), sorted(expected_names))
+            zipfp.writestr(newname2, "newcontent2")
+            self.assertEqual(sorted(zipfp.namelist()), sorted(mojibake_expected_names))
 
         with zipfile.ZipFile(TESTFN, "r") as zipfp:
-            self._test_read(zipfp, expected_names, expected_content)
+            self._test_read(zipfp, mojibake_expected_names, expected_content)
 
         with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
-            self.assertEqual(sorted(zipfp.namelist()), sorted(expected_names))
-            for i, (name, content) in enumerate(zip(expected_names, expected_content)):
-                info = zipfp.getinfo(name)
-                self.assertEqual(info.filename, name)
-                self.assertEqual(info.file_size, len(content))
-                if i < 2:
-                    with self.assertRaises(zipfile.BadZipFile):
-                        zipfp.read(name)
-                else:
-                    self.assertEqual(zipfp.read(name), content)
+            self._test_read(zipfp, expected_names, expected_content)
 
     def test_write_with_metadata_encoding(self):
         ZF = zipfile.ZipFile
@@ -3151,6 +5780,20 @@ class EncodedMetadataTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,
                                         "^metadata_encoding is only"):
                 ZF("nonesuch.zip", mode, metadata_encoding="shift_jis")
+
+    def test_add_comment(self):
+        with zipfile.ZipFile(TESTFN, "r") as zipfp:
+            mojibake_expected_names = zipfp.namelist()
+
+        with zipfile.ZipFile(TESTFN, "a") as zipfp:
+            zipfp.comment = b'comment'
+            self.assertEqual(zipfp.namelist(), mojibake_expected_names)
+
+        with zipfile.ZipFile(TESTFN, "r") as zipfp:
+            self._test_read(zipfp, mojibake_expected_names, self.file_content)
+
+        with zipfile.ZipFile(TESTFN, "r", metadata_encoding='shift_jis') as zipfp:
+            self._test_read(zipfp, self.file_names, self.file_content)
 
     def test_cli_with_metadata_encoding(self):
         errmsg = "Non-conforming encodings not supported with -c."
@@ -3182,7 +5825,7 @@ class EncodedMetadataTests(unittest.TestCase):
             except OSError:
                 pass
             except UnicodeEncodeError:
-                self.skipTest(f'cannot encode file name {fn!r}')
+                self.skipTest(f'cannot encode file name {fn!a}')
 
         zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
@@ -3203,14 +5846,14 @@ class StripExtraTests(unittest.TestCase):
         b = s.pack(2, 0)
         c = s.pack(3, 0)
 
-        self.assertEqual(b'', zipfile._strip_extra(a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b, zipfile._strip_extra(b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b'', zipfile._Extra.strip(a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._Extra.strip(b, (self.ZIP64_EXTRA,)))
         self.assertEqual(
-            b+b"z", zipfile._strip_extra(b+b"z", (self.ZIP64_EXTRA,)))
+            b+b"z", zipfile._Extra.strip(b+b"z", (self.ZIP64_EXTRA,)))
 
-        self.assertEqual(b+c, zipfile._strip_extra(a+b+c, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b+c, zipfile._strip_extra(b+a+c, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b+c, zipfile._strip_extra(b+c+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._Extra.strip(a+b+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._Extra.strip(b+a+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._Extra.strip(b+c+a, (self.ZIP64_EXTRA,)))
 
     def test_with_data(self):
         s = struct.Struct("<HH")
@@ -3218,38 +5861,120 @@ class StripExtraTests(unittest.TestCase):
         b = s.pack(2, 2) + b"bb"
         c = s.pack(3, 3) + b"ccc"
 
-        self.assertEqual(b"", zipfile._strip_extra(a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b, zipfile._strip_extra(b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", zipfile._Extra.strip(a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._Extra.strip(b, (self.ZIP64_EXTRA,)))
         self.assertEqual(
-            b+b"z", zipfile._strip_extra(b+b"z", (self.ZIP64_EXTRA,)))
+            b+b"z", zipfile._Extra.strip(b+b"z", (self.ZIP64_EXTRA,)))
 
-        self.assertEqual(b+c, zipfile._strip_extra(a+b+c, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b+c, zipfile._strip_extra(b+a+c, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b+c, zipfile._strip_extra(b+c+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._Extra.strip(a+b+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._Extra.strip(b+a+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._Extra.strip(b+c+a, (self.ZIP64_EXTRA,)))
 
     def test_multiples(self):
         s = struct.Struct("<HH")
         a = s.pack(self.ZIP64_EXTRA, 1) + b"a"
         b = s.pack(2, 2) + b"bb"
 
-        self.assertEqual(b"", zipfile._strip_extra(a+a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b"", zipfile._strip_extra(a+a+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", zipfile._Extra.strip(a+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", zipfile._Extra.strip(a+a+a, (self.ZIP64_EXTRA,)))
         self.assertEqual(
-            b"z", zipfile._strip_extra(a+a+b"z", (self.ZIP64_EXTRA,)))
+            b"z", zipfile._Extra.strip(a+a+b"z", (self.ZIP64_EXTRA,)))
         self.assertEqual(
-            b+b"z", zipfile._strip_extra(a+a+b+b"z", (self.ZIP64_EXTRA,)))
+            b+b"z", zipfile._Extra.strip(a+a+b+b"z", (self.ZIP64_EXTRA,)))
 
-        self.assertEqual(b, zipfile._strip_extra(a+a+b, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b, zipfile._strip_extra(a+b+a, (self.ZIP64_EXTRA,)))
-        self.assertEqual(b, zipfile._strip_extra(b+a+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._Extra.strip(a+a+b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._Extra.strip(a+b+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._Extra.strip(b+a+a, (self.ZIP64_EXTRA,)))
 
     def test_too_short(self):
-        self.assertEqual(b"", zipfile._strip_extra(b"", (self.ZIP64_EXTRA,)))
-        self.assertEqual(b"z", zipfile._strip_extra(b"z", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", zipfile._Extra.strip(b"", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"z", zipfile._Extra.strip(b"z", (self.ZIP64_EXTRA,)))
         self.assertEqual(
-            b"zz", zipfile._strip_extra(b"zz", (self.ZIP64_EXTRA,)))
+            b"zz", zipfile._Extra.strip(b"zz", (self.ZIP64_EXTRA,)))
         self.assertEqual(
-            b"zzz", zipfile._strip_extra(b"zzz", (self.ZIP64_EXTRA,)))
+            b"zzz", zipfile._Extra.strip(b"zzz", (self.ZIP64_EXTRA,)))
+
+
+class StatIO(_pyio.BytesIO):
+    """Buffer which remembers the number of bytes that were read."""
+
+    def __init__(self):
+        super().__init__()
+        self.bytes_read = 0
+
+    def read(self, size=-1):
+        bs = super().read(size)
+        self.bytes_read += len(bs)
+        return bs
+
+
+class StoredZipExtFileRandomReadTest(unittest.TestCase):
+    """Tests whether an uncompressed, unencrypted zip entry can be randomly
+    seek and read without reading redundant bytes."""
+    def test_stored_seek_and_read(self):
+
+        sio = StatIO()
+        # 20000 bytes
+        txt = b'0123456789' * 2000
+
+        # The seek length must be greater than ZipExtFile.MIN_READ_SIZE
+        # as `ZipExtFile._read2()` reads in blocks of this size and we
+        # need to seek out of the buffered data
+        read_buffer_size = zipfile.ZipExtFile.MIN_READ_SIZE
+        self.assertGreaterEqual(10002, read_buffer_size)  # for forward seek test
+        self.assertGreaterEqual(5003, read_buffer_size)  # for backward seek test
+        # The read length must be less than MIN_READ_SIZE, since we assume that
+        # only 1 block is read in the test.
+        read_length = 100
+        self.assertGreaterEqual(read_buffer_size, read_length)  # for read() calls
+
+        with zipfile.ZipFile(sio, "w", compression=zipfile.ZIP_STORED) as zipf:
+            zipf.writestr("foo.txt", txt)
+
+        # check random seek and read on a file
+        with zipfile.ZipFile(sio, "r") as zipf:
+            with zipf.open("foo.txt", "r") as fp:
+                # Test this optimized read hasn't rewound and read from the
+                # start of the file (as in the case of the unoptimized path)
+
+                # forward seek
+                old_count = sio.bytes_read
+                forward_seek_len = 10002
+                current_pos = 0
+                fp.seek(forward_seek_len, os.SEEK_CUR)
+                current_pos += forward_seek_len
+                self.assertEqual(fp.tell(), current_pos)
+                self.assertEqual(fp._left, fp._compress_left)
+                arr = fp.read(read_length)
+                current_pos += read_length
+                self.assertEqual(fp.tell(), current_pos)
+                self.assertEqual(arr, txt[current_pos - read_length:current_pos])
+                self.assertEqual(fp._left, fp._compress_left)
+                read_count = sio.bytes_read - old_count
+                self.assertLessEqual(read_count, read_buffer_size)
+
+                # backward seek
+                old_count = sio.bytes_read
+                backward_seek_len = 5003
+                fp.seek(-backward_seek_len, os.SEEK_CUR)
+                current_pos -= backward_seek_len
+                self.assertEqual(fp.tell(), current_pos)
+                self.assertEqual(fp._left, fp._compress_left)
+                arr = fp.read(read_length)
+                current_pos += read_length
+                self.assertEqual(fp.tell(), current_pos)
+                self.assertEqual(arr, txt[current_pos - read_length:current_pos])
+                self.assertEqual(fp._left, fp._compress_left)
+                read_count = sio.bytes_read - old_count
+                self.assertLessEqual(read_count, read_buffer_size)
+
+                # eof flags test
+                fp.seek(0, os.SEEK_END)
+                fp.seek(12345, os.SEEK_SET)
+                current_pos = 12345
+                arr = fp.read(read_length)
+                current_pos += read_length
+                self.assertEqual(arr, txt[current_pos - read_length:current_pos])
 
 
 if __name__ == "__main__":

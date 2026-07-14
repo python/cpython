@@ -1,2 +1,0 @@
-Remove the ``typing.io`` and ``typing.re`` namespaces, deprecated since Python
-3.8. All items are still available from the main :mod:`typing` module.

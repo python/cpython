@@ -1,0 +1,3 @@
+Add the :meth:`ttk.Style.theme_styles <tkinter.ttk.Style.theme_styles>`
+method, wrapping the Tk ``ttk::style theme styles`` subcommand, which
+returns the list of styles defined in a theme.

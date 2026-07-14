@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(signal_default_int_handler__doc__,
 "default_int_handler($module, signalnum, frame, /)\n"
 "--\n"
@@ -132,11 +138,12 @@ PyDoc_STRVAR(signal_signal__doc__,
 "Set the action for the given signal.\n"
 "\n"
 "The action can be SIG_DFL, SIG_IGN, or a callable Python object.\n"
-"The previous action is returned.  See getsignal() for possible return values.\n"
+"The previous action is returned.  See getsignal() for possible return\n"
+"values.\n"
 "\n"
 "*** IMPORTANT NOTICE ***\n"
-"A signal handler function is called with two arguments:\n"
-"the first is the signal number, the second is the interrupted stack frame.");
+"A signal handler function is called with two arguments: the first is\n"
+"the signal number, the second is the interrupted stack frame.");
 
 #define SIGNAL_SIGNAL_METHODDEF    \
     {"signal", _PyCFunction_CAST(signal_signal), METH_FASTCALL, signal_signal__doc__},
@@ -274,6 +281,80 @@ exit:
 
 #endif /* defined(HAVE_SIGINTERRUPT) */
 
+PyDoc_STRVAR(signal_set_wakeup_fd__doc__,
+"set_wakeup_fd($module, fd, /, *, warn_on_full_buffer=True)\n"
+"--\n"
+"\n"
+"Sets the fd to be written to (with the signal number) when a signal comes in.\n"
+"\n"
+"A library can use this to wakeup select or poll.\n"
+"The previous fd or -1 is returned.\n"
+"\n"
+"The fd must be non-blocking.");
+
+#define SIGNAL_SET_WAKEUP_FD_METHODDEF    \
+    {"set_wakeup_fd", _PyCFunction_CAST(signal_set_wakeup_fd), METH_FASTCALL|METH_KEYWORDS, signal_set_wakeup_fd__doc__},
+
+static PyObject *
+signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
+                          int warn_on_full_buffer);
+
+static PyObject *
+signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(warn_on_full_buffer), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "warn_on_full_buffer", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_wakeup_fd",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *fdobj;
+    int warn_on_full_buffer = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    fdobj = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    warn_on_full_buffer = PyObject_IsTrue(args[1]);
+    if (warn_on_full_buffer < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = signal_set_wakeup_fd_impl(module, fdobj, warn_on_full_buffer);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_SETITIMER)
 
 PyDoc_STRVAR(signal_setitimer__doc__,
@@ -282,8 +363,8 @@ PyDoc_STRVAR(signal_setitimer__doc__,
 "\n"
 "Sets given itimer (one of ITIMER_REAL, ITIMER_VIRTUAL or ITIMER_PROF).\n"
 "\n"
-"The timer will fire after value seconds and after that every interval seconds.\n"
-"The itimer can be cleared by setting seconds to zero.\n"
+"The timer will fire after value seconds and after that every interval\n"
+"seconds.  The itimer can be cleared by setting seconds to zero.\n"
 "\n"
 "Returns old values as a tuple: (delay, interval).");
 
@@ -428,8 +509,8 @@ PyDoc_STRVAR(signal_sigwait__doc__,
 "Wait for a signal.\n"
 "\n"
 "Suspend execution of the calling thread until the delivery of one of the\n"
-"signals specified in the signal set sigset.  The function accepts the signal\n"
-"and returns the signal number.");
+"signals specified in the signal set sigset.  The function accepts the\n"
+"signal and returns the signal number.");
 
 #define SIGNAL_SIGWAIT_METHODDEF    \
     {"sigwait", (PyCFunction)signal_sigwait, METH_O, signal_sigwait__doc__},
@@ -520,7 +601,7 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
 "\n"
 "Like sigwaitinfo(), but with a timeout.\n"
 "\n"
-"The timeout is specified in seconds, with floating point numbers allowed.");
+"The timeout is specified in seconds, rounded up to nanoseconds.");
 
 #define SIGNAL_SIGTIMEDWAIT_METHODDEF    \
     {"sigtimedwait", _PyCFunction_CAST(signal_sigtimedwait), METH_FASTCALL, signal_sigtimedwait__doc__},
@@ -576,11 +657,26 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("pthread_kill", nargs, 2, 2)) {
         goto exit;
     }
-    if (!PyLong_Check(args[0])) {
+    if (!PyIndex_Check(args[0])) {
         _PyArg_BadArgument("pthread_kill", "argument 1", "int", args[0]);
         goto exit;
     }
-    thread_id = PyLong_AsUnsignedLongMask(args[0]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[0], &thread_id, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
     signalnum = PyLong_AsInt(args[1]);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
@@ -593,7 +689,7 @@ exit:
 
 #endif /* defined(HAVE_PTHREAD_KILL) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_send_signal))
+#if (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 
 PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
 "pidfd_send_signal($module, pidfd, signalnum, siginfo=None, flags=0, /)\n"
@@ -646,7 +742,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal)) */
+#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
 
 #ifndef SIGNAL_ALARM_METHODDEF
     #define SIGNAL_ALARM_METHODDEF
@@ -699,4 +795,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=ef4c2ad1a2443063 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0731d6f05c42c09a input=a9049054013a1b77]*/

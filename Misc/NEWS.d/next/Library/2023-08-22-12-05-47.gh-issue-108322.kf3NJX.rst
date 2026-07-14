@@ -1,2 +1,0 @@
-Speed-up NormalDist.samples() by using the inverse CDF method instead of
-calling random.gauss().

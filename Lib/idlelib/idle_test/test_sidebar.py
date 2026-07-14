@@ -11,11 +11,10 @@ import tkinter as tk
 from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
-from idlelib.editor import fixwordbreaks
 from idlelib.percolator import Percolator
 import idlelib.pyshell
-from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
-from idlelib.run import fix_scaling
+from idlelib.pyshell import PyShell, PyShellFileList
+from idlelib.util import fix_scaling, fix_word_breaks, fix_x11_paste
 import idlelib.sidebar
 from idlelib.sidebar import get_end_linenumber, get_lineno
 
@@ -403,7 +402,7 @@ class ShellSidebarTest(unittest.TestCase):
         root.withdraw()
 
         fix_scaling(root)
-        fixwordbreaks(root)
+        fix_word_breaks(root)
         fix_x11_paste(root)
 
         cls.flist = flist = PyShellFileList(root)
@@ -690,16 +689,22 @@ class ShellSidebarTest(unittest.TestCase):
         last_lineno = get_end_linenumber(text)
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
-        # Scroll up using the <MouseWheel> event.
-        # The meaning of delta is platform-dependent.
-        delta = -1 if sys.platform == 'darwin' else 120
-        sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
-        yield
-        if sys.platform != 'darwin':  # .update_idletasks() does not work.
-            self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+        # Delta for <MouseWheel>, whose meaning is platform-dependent.
+        delta = 1 if sidebar.canvas._windowingsystem == 'aqua' else 120
 
-        # Scroll back down using the <Button-5> event.
-        sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
+        # Scroll up.
+        if sidebar.canvas._windowingsystem == 'x11':
+            sidebar.canvas.event_generate('<Button-4>', x=0, y=0)
+        else:
+            sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
+        yield
+        self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+
+        # Scroll back down.
+        if sidebar.canvas._windowingsystem == 'x11':
+            sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
+        else:
+            sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=-delta)
         yield
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
@@ -719,7 +724,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         text.tag_add('sel', f'{first_line}.0', 'end-1c')
         selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('if True:\n'))
+        self.assertStartsWith(selected_text, 'if True:\n')
         self.assertIn('\n1\n', selected_text)
 
         text.event_generate('<<copy>>')
@@ -743,7 +748,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         text.tag_add('sel', f'{first_line}.3', 'end-1c')
         selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('True:\n'))
+        self.assertStartsWith(selected_text, 'True:\n')
 
         selected_lines_text = text.get('sel.first linestart', 'sel.last')
         selected_lines = selected_lines_text.split('\n')

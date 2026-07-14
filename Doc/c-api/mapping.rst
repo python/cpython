@@ -76,6 +76,24 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    rather than a :c:expr:`PyObject*`.
 
 
+.. c:function:: int PyMapping_HasKeyWithError(PyObject *o, PyObject *key)
+
+   Return ``1`` if the mapping object has the key *key* and ``0`` otherwise.
+   This is equivalent to the Python expression ``key in o``.
+   On failure, return ``-1``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyMapping_HasKeyStringWithError(PyObject *o, const char *key)
+
+   This is the same as :c:func:`PyMapping_HasKeyWithError`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyMapping_HasKey(PyObject *o, PyObject *key)
 
    Return ``1`` if the mapping object has the key *key* and ``0`` otherwise.
@@ -84,10 +102,10 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
    .. note::
 
-      Exceptions which occur when this calls :meth:`~object.__getitem__`
+      Exceptions which occur when this calls the :meth:`~object.__getitem__`
       method are silently ignored.
-      For proper error handling, use :c:func:`PyMapping_GetOptionalItem` or
-      :c:func:`PyObject_GetItem()` instead.
+      For proper error handling, use :c:func:`PyMapping_HasKeyWithError`,
+      :c:func:`PyMapping_GetOptionalItem` or :c:func:`PyObject_GetItem()` instead.
 
 
 .. c:function:: int PyMapping_HasKeyString(PyObject *o, const char *key)
@@ -98,10 +116,11 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
    .. note::
 
-      Exceptions that occur when this calls :meth:`~object.__getitem__`
+      Exceptions that occur when this calls the :meth:`~object.__getitem__`
       method or while creating the temporary :class:`str`
       object are silently ignored.
-      For proper error handling, use :c:func:`PyMapping_GetOptionalItemString` or
+      For proper error handling, use :c:func:`PyMapping_HasKeyStringWithError`,
+      :c:func:`PyMapping_GetOptionalItemString` or
       :c:func:`PyMapping_GetItemString` instead.
 
 

@@ -1,2 +1,0 @@
-The Argument Clinic command-line tool now prints to stderr instead of stdout
-on failure.

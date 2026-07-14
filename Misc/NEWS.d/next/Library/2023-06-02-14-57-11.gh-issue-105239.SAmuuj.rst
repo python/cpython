@@ -1,2 +1,0 @@
-Fix longstanding bug where ``issubclass(object, typing.Protocol)`` would
-evaluate to ``True`` in some edge cases. Patch by Alex Waygood.

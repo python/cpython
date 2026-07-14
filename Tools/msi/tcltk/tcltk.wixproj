@@ -28,7 +28,7 @@
             <Group>tcltk_lib</Group>
         </InstallFiles>
 
-        <InstallFiles Include="$(PySourcePath)Lib\tkinter\**\*;$(PySourcePath)Lib\idlelib\**\*;$(PySourcePath)Lib\turtledemo\**\*"
+        <InstallFiles Include="$(PySourcePath)Lib\tkinter\**\*;$(PySourcePath)Lib\idlelib\**\*;$(PySourcePath)Lib\turtledemo\**\*;$(PySourcePath)Lib\turtle.py"
                       Exclude="$(PySourcePath)Lib\**\*.pyc;$(PySourcePath)Lib\**\*.pyo">
             <SourceBase>$(PySourcePath)</SourceBase>
             <Source>!(bindpath.src)</Source>

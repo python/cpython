@@ -10,6 +10,11 @@
 
 #include "Python.h"
 
+int _PyTestInternalCapi_Init_Lock(PyObject *module);
 int _PyTestInternalCapi_Init_PyTime(PyObject *module);
+int _PyTestInternalCapi_Init_Set(PyObject *module);
+int _PyTestInternalCapi_Init_Complex(PyObject *module);
+int _PyTestInternalCapi_Init_CriticalSection(PyObject *module);
+int _PyTestInternalCapi_Init_Tuple(PyObject *module);
 
 #endif // Py_TESTINTERNALCAPI_PARTS_H

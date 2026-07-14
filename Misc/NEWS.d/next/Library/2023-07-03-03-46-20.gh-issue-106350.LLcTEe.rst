@@ -1,2 +1,0 @@
-Detect possible memory allocation failure in the libtommath function :c:func:`mp_init`
-used by the ``_tkinter`` module.

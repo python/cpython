@@ -1,3 +1,0 @@
-Add :c:func:`PyImport_AddModuleRef`: similar to :c:func:`PyImport_AddModule`,
-but return a :term:`strong reference` instead of a :term:`borrowed reference`.
-Patch by Victor Stinner.

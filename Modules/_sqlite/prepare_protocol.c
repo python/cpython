@@ -21,24 +21,23 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "prepare_protocol.h"
 
-static int
-pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol *self, PyObject *args,
-                               PyObject *kwargs)
-{
-    return 0;
-}
+#include "pycore_object.h"        // _PyObject_VisitType()
+
 
 static int
-pysqlite_prepare_protocol_traverse(PyObject *self, visitproc visit, void *arg)
+pysqlite_prepare_protocol_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol *self)
+pysqlite_prepare_protocol_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -51,7 +50,7 @@ PyDoc_STRVAR(doc, "PEP 246 style object adaption protocol type.");
 static PyType_Slot type_slots[] = {
     {Py_tp_dealloc, pysqlite_prepare_protocol_dealloc},
     {Py_tp_init, pysqlite_prepare_protocol_init},
-    {Py_tp_traverse, pysqlite_prepare_protocol_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_doc, (void *)doc},
     {0, NULL},
 };

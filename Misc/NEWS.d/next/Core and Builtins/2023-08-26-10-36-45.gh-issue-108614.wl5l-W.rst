@@ -1,2 +1,0 @@
-Add RESUME_CHECK instruction, to avoid having to handle instrumentation,
-signals, and contexts switches in the tier 2 execution engine.

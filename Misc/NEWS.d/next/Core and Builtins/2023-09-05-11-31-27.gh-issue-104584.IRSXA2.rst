@@ -1,2 +1,0 @@
-Fix a crash when running with :envvar:`PYTHONUOPS` or :option:`-X uops <-X>`
-enabled and an error occurs during optimization.

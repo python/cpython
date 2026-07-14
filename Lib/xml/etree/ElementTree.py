@@ -8,8 +8,8 @@
     2. Element represents a single node in this tree.
 
  Interactions with the whole document (reading and writing to/from files) are
- usually done on the ElementTree level.  Interactions with a single XML element
- and its sub-elements are done on the Element level.
+ usually done on the ElementTree level.  Interactions with a single XML
+ element and its sub-elements are done on the Element level.
 
  Element is a flexible container object designed to store hierarchical data
  structures in memory. It can be described as a cross between a list and a
@@ -83,14 +83,11 @@ __all__ = [
     "SubElement",
     "tostring", "tostringlist",
     "TreeBuilder",
-    "VERSION",
     "XML", "XMLID",
     "XMLParser", "XMLPullParser",
     "register_namespace",
     "canonicalize", "C14NWriterTarget",
     ]
-
-VERSION = "1.3.0"
 
 import sys
 import re
@@ -99,6 +96,7 @@ import io
 import collections
 import collections.abc
 import contextlib
+import weakref
 
 from . import ElementPath
 
@@ -166,9 +164,9 @@ class Element:
 
     """
 
-    def __init__(self, tag, attrib={}, **extra):
-        if not isinstance(attrib, dict):
-            raise TypeError("attrib must be dict, not %s" % (
+    def __init__(self, tag, /, attrib={}, **extra):
+        if not isinstance(attrib, (dict, frozendict)):
+            raise TypeError("attrib must be dict or frozendict, not %s" % (
                 attrib.__class__.__name__,))
         self.tag = tag
         self.attrib = {**attrib, **extra}
@@ -200,7 +198,7 @@ class Element:
 
     def __bool__(self):
         warnings.warn(
-            "Testing an element's truth value will raise an exception in "
+            "Testing an element's truth value will always return True in "
             "future versions.  "
             "Use specific 'len(elem)' or 'elem is not None' test instead.",
             DeprecationWarning, stacklevel=2
@@ -265,14 +263,22 @@ class Element:
         ValueError is raised if a matching element could not be found.
 
         """
-        # assert iselement(element)
-        self._children.remove(subelement)
+        try:
+            self._children.remove(subelement)
+        except ValueError:
+            # to align the error type with the C implementation
+            if isinstance(subelement, type) or not iselement(subelement):
+                raise TypeError('expected an Element, not %s' %
+                                type(subelement).__name__) from None
+            # to align the error message with the C implementation
+            raise ValueError(f"{subelement!r} not in {self!r}") from None
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
 
         *path* is a string having either an element tag or an XPath,
-        *namespaces* is an optional mapping from namespace prefix to full name.
+        *namespaces* is an optional mapping from namespace prefix to full
+        name.
 
         Return the first matching element, or None if no element was found.
 
@@ -284,7 +290,8 @@ class Element:
 
         *path* is a string having either an element tag or an XPath,
         *default* is the value to return if the element was not found,
-        *namespaces* is an optional mapping from namespace prefix to full name.
+        *namespaces* is an optional mapping from namespace prefix to full
+        name.
 
         Return text content of first matching element, or default value if
         none was found.  Note that if an element is found having no text
@@ -297,7 +304,8 @@ class Element:
         """Find all matching subelements by tag name or path.
 
         *path* is a string having either an element tag or an XPath,
-        *namespaces* is an optional mapping from namespace prefix to full name.
+        *namespaces* is an optional mapping from namespace prefix to full
+        name.
 
         Returns list containing all matching elements in document order.
 
@@ -308,7 +316,8 @@ class Element:
         """Find all matching subelements by tag name or path.
 
         *path* is a string having either an element tag or an XPath,
-        *namespaces* is an optional mapping from namespace prefix to full name.
+        *namespaces* is an optional mapping from namespace prefix to full
+        name.
 
         Return an iterable yielding all matching elements in document order.
 
@@ -411,7 +420,7 @@ class Element:
                 yield t
 
 
-def SubElement(parent, tag, attrib={}, **extra):
+def SubElement(parent, tag, /, attrib={}, **extra):
     """Subelement factory which creates an element instance, and appends it
     to an existing parent.
 
@@ -522,7 +531,9 @@ class ElementTree:
 
     """
     def __init__(self, element=None, file=None):
-        # assert element is None or iselement(element)
+        if element is not None and not iselement(element):
+            raise TypeError('expected an Element, not %s' %
+                            type(element).__name__)
         self._root = element # first node
         if file:
             self.parse(file)
@@ -538,14 +549,16 @@ class ElementTree:
         with the given element.  Use with care!
 
         """
-        # assert iselement(element)
+        if not iselement(element):
+            raise TypeError('expected an Element, not %s'
+                            % type(element).__name__)
         self._root = element
 
     def parse(self, source, parser=None):
         """Load external XML document into element tree.
 
-        *source* is a file name or file object, *parser* is an optional parser
-        instance that defaults to XMLParser.
+        *source* is a file name or file object, *parser* is an optional
+        parser instance that defaults to XMLParser.
 
         ParseError is raised if the parser fails to parse the document.
 
@@ -578,7 +591,8 @@ class ElementTree:
     def iter(self, tag=None):
         """Create and return tree iterator for the root element.
 
-        The iterator loops over all elements in this tree, in document order.
+        The iterator loops over all elements in this tree, in document
+        order.
 
         *tag* is a string with the tag name to iterate over
         (default is to return all elements).
@@ -593,7 +607,8 @@ class ElementTree:
         Same as getroot().find(path), which is Element.find()
 
         *path* is a string having either an element tag or an XPath,
-        *namespaces* is an optional mapping from namespace prefix to full name.
+        *namespaces* is an optional mapping from namespace prefix to full
+        name.
 
         Return the first matching element, or None if no element was found.
 
@@ -615,7 +630,8 @@ class ElementTree:
         Same as getroot().findtext(path),  which is Element.findtext()
 
         *path* is a string having either an element tag or an XPath,
-        *namespaces* is an optional mapping from namespace prefix to full name.
+        *namespaces* is an optional mapping from namespace prefix to full
+        name.
 
         Return the first matching element, or None if no element was found.
 
@@ -637,7 +653,8 @@ class ElementTree:
         Same as getroot().findall(path), which is Element.findall().
 
         *path* is a string having either an element tag or an XPath,
-        *namespaces* is an optional mapping from namespace prefix to full name.
+        *namespaces* is an optional mapping from namespace prefix to full
+        name.
 
         Return list containing all matching elements in document order.
 
@@ -684,26 +701,30 @@ class ElementTree:
         """Write element tree to a file as XML.
 
         Arguments:
-          *file_or_filename* -- file name or a file object opened for writing
+          *file_or_filename* -- file name or a file object opened for
+                                writing
 
           *encoding* -- the output encoding (default: US-ASCII)
 
-          *xml_declaration* -- bool indicating if an XML declaration should be
-                               added to the output. If None, an XML declaration
-                               is added if encoding IS NOT either of:
-                               US-ASCII, UTF-8, or Unicode
+          *xml_declaration* -- bool indicating if an XML declaration should
+                               be added to the output. If None, an XML
+                               declaration is added if encoding IS NOT
+                               either of: US-ASCII, UTF-8, or Unicode
 
-          *default_namespace* -- sets the default XML namespace (for "xmlns")
+          *default_namespace* -- sets the default XML namespace (for
+                                 "xmlns")
 
           *method* -- either "xml" (default), "html, "text", or "c14n"
 
           *short_empty_elements* -- controls the formatting of elements
-                                    that contain no content. If True (default)
-                                    they are emitted as a single self-closed
-                                    tag, otherwise they are emitted as a pair
-                                    of start/end tags
+                                    that contain no content.  If True
+                                    (default) they are emitted as a single
+                                    self-closed tag, otherwise they are
+                                    emitted as a pair of start/end tags
 
         """
+        if self._root is None:
+            raise TypeError('ElementTree not initialized')
         if not method:
             method = "xml"
         elif method not in _serialize:
@@ -896,17 +917,20 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if elem.tail:
         write(_escape_cdata(elem.tail))
 
+_CDATA_CONTENT_ELEMENTS = {"script", "style", "xmp", "iframe", "noembed",
+                           "noframes", "plaintext"}
+
 HTML_EMPTY = {"area", "base", "basefont", "br", "col", "embed", "frame", "hr",
               "img", "input", "isindex", "link", "meta", "param", "source",
-              "track", "wbr"}
+              "track", "wbr", "plaintext"}
 
 def _serialize_html(write, elem, qnames, namespaces, **kwargs):
     tag = elem.tag
     text = elem.text
     if tag is Comment:
-        write("<!--%s-->" % _escape_cdata(text))
+        write("<!--%s-->" % text)
     elif tag is ProcessingInstruction:
-        write("<?%s?>" % _escape_cdata(text))
+        write("<?%s?>" % text)
     else:
         tag = qnames[tag]
         if tag is None:
@@ -930,16 +954,19 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                 for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
-                    if isinstance(v, QName):
-                        v = qnames[v.text]
+                    k = qnames[k]
+                    if v is None:
+                        write(" %s" % k)  # empty attr
                     else:
-                        v = _escape_attrib_html(v)
-                    # FIXME: handle boolean attributes
-                    write(" %s=\"%s\"" % (qnames[k], v))
+                        if isinstance(v, QName):
+                            v = qnames[v.text]
+                        else:
+                            v = _escape_attrib_html(v)
+                        write(" %s=\"%s\"" % (k, v))
             write(">")
             ltag = tag.lower()
             if text:
-                if ltag == "script" or ltag == "style":
+                if ltag in _CDATA_CONTENT_ELEMENTS:
                     write(text)
                 else:
                     write(_escape_cdata(text))
@@ -1072,9 +1099,9 @@ def tostring(element, encoding=None, method=None, *,
     is returned. Otherwise a bytestring is returned.
 
     *element* is an Element instance, *encoding* is an optional output
-    encoding defaulting to US-ASCII, *method* is an optional output which can
-    be one of "xml" (default), "html", "text" or "c14n", *default_namespace*
-    sets the default XML namespace (for "xmlns").
+    encoding defaulting to US-ASCII, *method* is an optional output which
+    can be one of "xml" (default), "html", "text" or "c14n",
+    *default_namespace* sets the default XML namespace (for "xmlns").
 
     Returns an (optionally) encoded string containing the XML data.
 
@@ -1214,7 +1241,8 @@ def iterparse(source, events=None, parser=None):
     "end" events are reported.
 
     *source* is a filename or file object containing XML data, *events* is
-    a list of events to report back, *parser* is an optional parser instance.
+    a list of events to report back, *parser* is an optional parser
+    instance.
 
     Returns an iterator providing (event, elem) pairs.
 
@@ -1223,13 +1251,14 @@ def iterparse(source, events=None, parser=None):
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
 
-    def iterator(source):
+    if not hasattr(source, "read"):
+        source = open(source, "rb")
+        close_source = True
+    else:
         close_source = False
+
+    def iterator(source):
         try:
-            if not hasattr(source, "read"):
-                source = open(source, "rb")
-                close_source = True
-            yield None
             while True:
                 yield from pullparser.read_events()
                 # load event buffer
@@ -1239,18 +1268,34 @@ def iterparse(source, events=None, parser=None):
                 pullparser.feed(data)
             root = pullparser._close_and_return_root()
             yield from pullparser.read_events()
-            it.root = root
+            it = wr()
+            if it is not None:
+                it.root = root
         finally:
             if close_source:
                 source.close()
 
+    gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator(source).__next__
+        __next__ = gen.__next__
+
+        def close(self):
+            nonlocal close_source
+            if close_source:
+                source.close()
+                close_source = False
+            gen.close()
+
+        def __del__(self, _warn=warnings.warn):
+            if close_source:
+                try:
+                    _warn(f"unclosed iterparse iterator {source.name!r}", ResourceWarning, stacklevel=2)
+                finally:
+                    source.close()
+
     it = IterParseIterator()
     it.root = None
-    del iterator, IterParseIterator
-
-    next(it)
+    wr = weakref.ref(it)
     return it
 
 
@@ -1305,6 +1350,11 @@ class XMLPullParser:
                 raise event
             else:
                 yield event
+
+    def flush(self):
+        if self._parser is None:
+            raise ValueError("flush() called after end of stream")
+        self._parser.flush()
 
 
 def XML(text, parser=None):
@@ -1712,6 +1762,15 @@ class XMLParser:
             del self.parser, self._parser
             del self.target, self._target
 
+    def flush(self):
+        was_enabled = self.parser.GetReparseDeferralEnabled()
+        try:
+            self.parser.SetReparseDeferralEnabled(False)
+            self.parser.Parse(b"", False)
+        except self._error as v:
+            self._raiseerror(v)
+        finally:
+            self.parser.SetReparseDeferralEnabled(was_enabled)
 
 # --------------------------------------------------------------------
 # C14N 2.0
@@ -1719,10 +1778,11 @@ class XMLParser:
 def canonicalize(xml_data=None, *, out=None, from_file=None, **options):
     """Convert XML to its C14N 2.0 serialised form.
 
-    If *out* is provided, it must be a file or file-like object that receives
-    the serialised canonical XML output (text, not bytes) through its ``.write()``
-    method.  To write to a file, open it in text mode with encoding "utf-8".
-    If *out* is not provided, this function returns the output as text string.
+    If *out* is provided, it must be a file or file-like object that
+    receives the serialised canonical XML output (text, not bytes) through
+    its ``.write()`` method.  To write to a file, open it in text mode with
+    encoding "utf-8".  If *out* is not provided, this function returns the
+    output as text string.
 
     Either *xml_data* (an XML string) or *from_file* (a file path or
     file-like object) must be provided as input.
@@ -1756,19 +1816,22 @@ class C14NWriterTarget:
     Serialises parse events to XML C14N 2.0.
 
     The *write* function is used for writing out the resulting data stream
-    as text (not bytes).  To write to a file, open it in text mode with encoding
-    "utf-8" and pass its ``.write`` method.
+    as text (not bytes).  To write to a file, open it in text mode with
+    encoding "utf-8" and pass its ``.write`` method.
 
     Configuration options:
 
     - *with_comments*: set to true to include comments
-    - *strip_text*: set to true to strip whitespace before and after text content
-    - *rewrite_prefixes*: set to true to replace namespace prefixes by "n{number}"
+    - *strip_text*: set to true to strip whitespace before and after text
+                    content
+    - *rewrite_prefixes*: set to true to replace namespace prefixes by
+                          "n{number}"
     - *qname_aware_tags*: a set of qname aware tag names in which prefixes
                           should be replaced in text content
-    - *qname_aware_attrs*: a set of qname aware attribute names in which prefixes
-                           should be replaced in text content
-    - *exclude_attrs*: a set of attribute names that should not be serialised
+    - *qname_aware_attrs*: a set of qname aware attribute names in which
+                           prefixes should be replaced in text content
+    - *exclude_attrs*: a set of attribute names that should not be
+                       serialised
     - *exclude_tags*: a set of tag names that should not be serialised
     """
     def __init__(self, write, *,
@@ -2062,3 +2125,14 @@ except ImportError:
     pass
 else:
     _set_factories(Comment, ProcessingInstruction)
+
+
+# --------------------------------------------------------------------
+
+def __getattr__(name):
+    if name == "VERSION":
+        from warnings import _deprecated
+
+        _deprecated("VERSION", remove=(3, 20))
+        return "1.3.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
