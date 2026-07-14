@@ -24,6 +24,7 @@ _PyLexer_set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
            size tracking to underflow.  Treat as a tokenizer error rather
            than passing a negative length (cast to huge size_t) to malloc or
            PyUnicode_DecodeUTF8. */
+        tok->done = E_TOKEN;
         return -1;
     }
 
