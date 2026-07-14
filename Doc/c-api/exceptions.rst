@@ -502,9 +502,9 @@ Querying the error indicator
    clearing the existing exception if one is set.  If *exc* is ``NULL``,
    just clear the existing exception.
 
-   .. note::
+   *exc* must be a valid exception or ``NULL``.
 
-      This call ":term:`steals <steal>`" a reference to *exc*.
+   This call ":term:`steals <steal>`" a reference to *exc*.
 
    .. versionadded:: 3.12
 
