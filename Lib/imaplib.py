@@ -1623,7 +1623,7 @@ class IMAP4:
         # UTF-7 token -- one that needs no quoting, or an explicitly quoted
         # string -- is passed through unchanged, so that a name obtained as raw
         # bytes from LIST (and decoded as ASCII) round-trips without being
-        # encoded again.  Pass bytes to bypass encoding entirely.
+        # encoded again.  self._encoding is only ever 'ascii' or 'utf-8'.
         if self._encoding != 'ascii':
             return bytes(arg, self._encoding)
         try:
@@ -1639,11 +1639,15 @@ class IMAP4:
         return arg.encode('utf-7-imap')
 
     def _mailbox(self, arg):
+        # A str name is encoded for the wire; pass bytes to send the name
+        # verbatim, bypassing encoding entirely.
         if isinstance(arg, str):
             arg = self._encode_mailbox(arg, _non_astring_char)
         return self._astring(arg)
 
     def _list_mailbox(self, arg):
+        # As _mailbox(), but for a LIST/LSUB pattern; pass bytes to bypass
+        # encoding.
         if isinstance(arg, str):
             arg = self._encode_mailbox(arg, _non_list_char)
         if _quoted.fullmatch(arg):
