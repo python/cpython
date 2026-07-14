@@ -553,9 +553,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    Raise a :exc:`SystemExit` exception, signaling an intention to exit the interpreter.
 
-   The optional argument *arg* can be an integer giving the exit status
-   (defaulting to zero), or another type of object.  If it is an integer, zero
-   is considered "successful termination" and any nonzero value is considered
+   The optional argument *arg* can be an integer or boolean giving the exit status
+   (defaulting to zero), or another type of object.  If it is an integer or boolean, zero/``False``
+   is considered "successful termination" and any nonzero value/``True`` is considered
    "abnormal termination" by shells and the like.  Most systems require it to be
    in the range 0--127, and produce undefined results otherwise.  Some systems
    have a convention for assigning specific meanings to specific exit codes, but
