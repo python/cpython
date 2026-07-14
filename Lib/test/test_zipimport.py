@@ -1075,9 +1075,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
         self.assertZipFailure(TESTMOD)
 
     def testInvalidUTF8FileName(self):
-        # A central directory entry that sets the UTF-8 file name flag (0x800)
-        # but stores bytes that are not valid UTF-8 must raise ZipImportError
-        # rather than leaking a UnicodeDecodeError.
+        # A UTF-8-flagged file name that is not valid UTF-8 raises ZipImportError.
         UTF8_FLAG = 0x800
         name = b'\xff\xfe\xff'
         cdh = b'PK\x01\x02' + struct.pack(
