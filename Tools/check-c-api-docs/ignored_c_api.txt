@@ -51,8 +51,6 @@ PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
 PyUnstable_EXECUTABLE_KIND_SKIP
 # cpython/pylifecycle.h
 Py_FrozenMain
-# pythonrun.h
-PyErr_Display
 # cpython/objimpl.h
 PyObject_GET_WEAKREFS_LISTPTR
 # cpython/pythonrun.h
