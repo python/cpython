@@ -1,0 +1,2 @@
+Made :func:`socket.getservbyname`, :func:`socket.getservbyport` and
+:func:`socket.getprotobyname` thread-safe.

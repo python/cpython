@@ -7530,6 +7530,62 @@ class FreeThreadingTests(unittest.TestCase):
         with threading_helper.start_threads([t1, t2]):
             pass
 
+    def test_getservby_getprotobyname_race(self):
+        # gh-74667: these used to share a static buffer with no lock, so
+        # concurrent calls clobbered each other's result.
+        try:
+            http_port = socket.getservbyname('http', 'tcp')
+            https_port = socket.getservbyname('https', 'tcp')
+            http_name = socket.getservbyport(http_port, 'tcp')
+            https_name = socket.getservbyport(https_port, 'tcp')
+            tcp = socket.getprotobyname('tcp')
+            udp = socket.getprotobyname('udp')
+        except OSError:
+            self.skipTest('required services/protocols are not available')
+
+        loops = 10000
+        errors = []
+
+        def check_servbyname(name, proto, expected):
+            for _ in range(loops):
+                got = socket.getservbyname(name, proto)
+                if got != expected:
+                    errors.append(f'getservbyname({name!r}, {proto!r}): '
+                                  f'{got!r} != {expected!r}')
+                    return
+
+        def check_servbyport(port, proto, expected):
+            for _ in range(loops):
+                got = socket.getservbyport(port, proto)
+                if got != expected:
+                    errors.append(f'getservbyport({port!r}, {proto!r}): '
+                                  f'{got!r} != {expected!r}')
+                    return
+
+        def check_protobyname(name, expected):
+            for _ in range(loops):
+                got = socket.getprotobyname(name)
+                if got != expected:
+                    errors.append(f'getprotobyname({name!r}): '
+                                  f'{got!r} != {expected!r}')
+                    return
+
+        threads = [
+            threading.Thread(target=check_servbyname,
+                             args=('http', 'tcp', http_port)),
+            threading.Thread(target=check_servbyname,
+                             args=('https', 'tcp', https_port)),
+            threading.Thread(target=check_servbyport,
+                             args=(http_port, 'tcp', http_name)),
+            threading.Thread(target=check_servbyport,
+                             args=(https_port, 'tcp', https_name)),
+            threading.Thread(target=check_protobyname, args=('tcp', tcp)),
+            threading.Thread(target=check_protobyname, args=('udp', udp)),
+        ]
+        with threading_helper.start_threads(threads):
+            pass
+        self.assertEqual(errors, [])
+
 
 class ReentrantMutationTests(unittest.TestCase):
     """Regression tests for re-entrant mutation in sendmsg/recvmsg_into.
