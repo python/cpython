@@ -280,6 +280,12 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_expr(exp->v.IfExp.body, Load) &&
             validate_expr(exp->v.IfExp.orelse, Load);
         break;
+    case Perchance_kind:
+        ret = validate_expr(exp->v.Perchance.value, Load) &&
+            validate_expr(exp->v.Perchance.fallback, Load) &&
+            (!exp->v.Perchance.guard ||
+             validate_expr(exp->v.Perchance.guard, Load));
+        break;
     case Dict_kind:
         if (asdl_seq_LEN(exp->v.Dict.keys) != asdl_seq_LEN(exp->v.Dict.values)) {
             PyErr_SetString(PyExc_ValueError,

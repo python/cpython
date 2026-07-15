@@ -540,6 +540,11 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
         CALL(astfold_expr, expr_ty, node_->v.IfExp.body);
         CALL(astfold_expr, expr_ty, node_->v.IfExp.orelse);
         break;
+    case Perchance_kind:
+        CALL(astfold_expr, expr_ty, node_->v.Perchance.value);
+        CALL(astfold_expr, expr_ty, node_->v.Perchance.fallback);
+        CALL_OPT(astfold_expr, expr_ty, node_->v.Perchance.guard);
+        break;
     case Dict_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Dict.keys);
         CALL_SEQ(astfold_expr, expr, node_->v.Dict.values);

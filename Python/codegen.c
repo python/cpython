@@ -2070,6 +2070,84 @@ codegen_ifexp(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
+/*
+   Code generated for "V perchance F from G" (an expression form of
+   try/except; "from G" is optional and defaults to Exception):
+
+   Value stack          Label     Instruction              Argument
+   []                             SETUP_FINALLY            HANDLER
+   []                             <code for V>
+   [res]                          POP_BLOCK
+   [res]                          JUMP                     END
+   [exc]                HANDLER:  SETUP_CLEANUP            CLEANUP
+   [prev, exc]                    PUSH_EXC_INFO
+   [prev, exc, G]                 <code for G, or LOAD_COMMON_CONSTANT Exception>
+   [prev, exc, match?]            CHECK_EXC_MATCH
+   [prev, exc]                    POP_JUMP_IF_FALSE        NOMATCH
+   [prev]                         POP_TOP
+   [prev, res]                    <code for F>
+   [prev, res]                    POP_BLOCK
+   [res, prev]                    SWAP                     2
+   [res]                          POP_EXCEPT
+   [res]                          JUMP                     END
+   [prev, exc]          NOMATCH:  RERAISE                  0
+   [prev, exc]          CLEANUP:  POP_EXCEPT_AND_RERAISE
+   [res]                END:      <next instruction>
+*/
+static int
+codegen_perchance(compiler *c, expr_ty e)
+{
+    assert(e->kind == Perchance_kind);
+    location loc = LOC(e);
+
+    NEW_JUMP_TARGET_LABEL(c, body);
+    NEW_JUMP_TARGET_LABEL(c, handler);
+    NEW_JUMP_TARGET_LABEL(c, no_match);
+    NEW_JUMP_TARGET_LABEL(c, cleanup);
+    NEW_JUMP_TARGET_LABEL(c, end);
+
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, handler);
+
+    USE_LABEL(c, body);
+    RETURN_IF_ERROR(
+        _PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_TRY_EXCEPT, body, NO_LABEL, NULL));
+    VISIT(c, expr, e->v.Perchance.value);
+    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_TRY_EXCEPT, body);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
+
+    USE_LABEL(c, handler);
+    ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, cleanup);
+    ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
+    RETURN_IF_ERROR(
+        _PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_EXCEPTION_HANDLER,
+                              NO_LABEL, NO_LABEL, NULL));
+    if (e->v.Perchance.guard) {
+        VISIT(c, expr, e->v.Perchance.guard);
+    }
+    else {
+        ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_EXCEPTION);
+    }
+    ADDOP(c, loc, CHECK_EXC_MATCH);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, no_match);
+    ADDOP(c, loc, POP_TOP);
+    VISIT(c, expr, e->v.Perchance.fallback);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, NO_LOCATION, SWAP, 2);
+    ADDOP(c, NO_LOCATION, POP_EXCEPT);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, end);
+
+    USE_LABEL(c, no_match);
+    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_EXCEPTION_HANDLER, NO_LABEL);
+    ADDOP_I(c, NO_LOCATION, RERAISE, 0);
+
+    USE_LABEL(c, cleanup);
+    POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);
+
+    USE_LABEL(c, end);
+    return SUCCESS;
+}
+
 static int
 codegen_lambda(compiler *c, expr_ty e)
 {
@@ -5502,6 +5580,8 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
         return codegen_lambda(c, e);
     case IfExp_kind:
         return codegen_ifexp(c, e);
+    case Perchance_kind:
+        return codegen_perchance(c, e);
     case Dict_kind:
         return codegen_dict(c, e);
     case Set_kind:

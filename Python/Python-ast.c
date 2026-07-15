@@ -140,6 +140,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->Or_type);
     Py_CLEAR(state->ParamSpec_type);
     Py_CLEAR(state->Pass_type);
+    Py_CLEAR(state->Perchance_type);
     Py_CLEAR(state->Pow_singleton);
     Py_CLEAR(state->Pow_type);
     Py_CLEAR(state->RShift_singleton);
@@ -214,6 +215,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->excepthandler_type);
     Py_CLEAR(state->expr_context_type);
     Py_CLEAR(state->expr_type);
+    Py_CLEAR(state->fallback);
     Py_CLEAR(state->finalbody);
     Py_CLEAR(state->format_spec);
     Py_CLEAR(state->func);
@@ -320,6 +322,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->end_col_offset = PyUnicode_InternFromString("end_col_offset")) == NULL) return -1;
     if ((state->end_lineno = PyUnicode_InternFromString("end_lineno")) == NULL) return -1;
     if ((state->exc = PyUnicode_InternFromString("exc")) == NULL) return -1;
+    if ((state->fallback = PyUnicode_InternFromString("fallback")) == NULL) return -1;
     if ((state->finalbody = PyUnicode_InternFromString("finalbody")) == NULL) return -1;
     if ((state->format_spec = PyUnicode_InternFromString("format_spec")) == NULL) return -1;
     if ((state->func = PyUnicode_InternFromString("func")) == NULL) return -1;
@@ -579,6 +582,11 @@ static const char * const IfExp_fields[]={
     "test",
     "body",
     "orelse",
+};
+static const char * const Perchance_fields[]={
+    "value",
+    "fallback",
+    "guard",
 };
 static const char * const Dict_fields[]={
     "keys",
@@ -2729,6 +2737,57 @@ add_ast_annotations(struct ast_state *state)
         return 0;
     }
     Py_DECREF(IfExp_annotations);
+    PyObject *Perchance_annotations = PyDict_New();
+    if (!Perchance_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Perchance_annotations, "value", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Perchance_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        Py_INCREF(type);
+        cond = PyDict_SetItemString(Perchance_annotations, "fallback", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Perchance_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(Perchance_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(Perchance_annotations, "guard", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(Perchance_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->Perchance_type, "_field_types",
+                                  Perchance_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Perchance_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->Perchance_type, "__annotations__",
+                                  Perchance_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(Perchance_annotations);
+        return 0;
+    }
+    Py_DECREF(Perchance_annotations);
     PyObject *Dict_annotations = PyDict_New();
     if (!Dict_annotations) return 0;
     {
@@ -6348,6 +6407,7 @@ init_types(void *arg)
         "     | UnaryOp(unaryop op, expr operand)\n"
         "     | Lambda(arguments args, expr body)\n"
         "     | IfExp(expr test, expr body, expr orelse)\n"
+        "     | Perchance(expr value, expr fallback, expr? guard)\n"
         "     | Dict(expr?* keys, expr* values)\n"
         "     | Set(expr* elts)\n"
         "     | ListComp(expr elt, comprehension* generators)\n"
@@ -6404,6 +6464,12 @@ init_types(void *arg)
                                   IfExp_fields, 3,
         "IfExp(expr test, expr body, expr orelse)");
     if (!state->IfExp_type) return -1;
+    state->Perchance_type = make_type(state, "Perchance", state->expr_type,
+                                      Perchance_fields, 3,
+        "Perchance(expr value, expr fallback, expr? guard)");
+    if (!state->Perchance_type) return -1;
+    if (PyObject_SetAttr(state->Perchance_type, state->guard, Py_None) == -1)
+        return -1;
     state->Dict_type = make_type(state, "Dict", state->expr_type, Dict_fields,
                                  2,
         "Dict(expr?* keys, expr* values)");
@@ -7892,6 +7958,36 @@ _PyAST_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
     p->v.IfExp.test = test;
     p->v.IfExp.body = body;
     p->v.IfExp.orelse = orelse;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
+_PyAST_Perchance(expr_ty value, expr_ty fallback, expr_ty guard, int lineno,
+                 int col_offset, int end_lineno, int end_col_offset, PyArena
+                 *arena)
+{
+    expr_ty p;
+    if (!value) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'value' is required for Perchance");
+        return NULL;
+    }
+    if (!fallback) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'fallback' is required for Perchance");
+        return NULL;
+    }
+    p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = Perchance_kind;
+    p->v.Perchance.value = value;
+    p->v.Perchance.fallback = fallback;
+    p->v.Perchance.guard = guard;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -9666,6 +9762,26 @@ ast2obj_expr(struct ast_state *state, void* _o)
         value = ast2obj_expr(state, o->v.IfExp.orelse);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->orelse, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case Perchance_kind:
+        tp = (PyTypeObject *)state->Perchance_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(state, o->v.Perchance.value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(state, o->v.Perchance.fallback);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->fallback, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(state, o->v.Perchance.guard);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->guard, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -14279,6 +14395,72 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, const char*
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = state->Perchance_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (isinstance) {
+        expr_ty value;
+        expr_ty fallback;
+        expr_ty guard;
+
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Perchance");
+            return -1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'Perchance' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &value, "value", arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->fallback, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"fallback\" missing from Perchance");
+            return -1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'Perchance' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &fallback, "fallback", arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->guard, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            guard = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'Perchance' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &guard, "guard", arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_Perchance(value, fallback, guard, lineno, col_offset,
+                                end_lineno, end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     tp = state->Dict_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -18246,6 +18428,9 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObjectRef(m, "IfExp", state->IfExp_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "Perchance", state->Perchance_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "Dict", state->Dict_type) < 0) {

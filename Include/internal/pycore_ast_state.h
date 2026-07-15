@@ -123,6 +123,7 @@ struct ast_state {
     PyObject *Or_type;
     PyObject *ParamSpec_type;
     PyObject *Pass_type;
+    PyObject *Perchance_type;
     PyObject *Pow_singleton;
     PyObject *Pow_type;
     PyObject *RShift_singleton;
@@ -197,6 +198,7 @@ struct ast_state {
     PyObject *excepthandler_type;
     PyObject *expr_context_type;
     PyObject *expr_type;
+    PyObject *fallback;
     PyObject *finalbody;
     PyObject *format_spec;
     PyObject *func;

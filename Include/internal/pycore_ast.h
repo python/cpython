@@ -359,14 +359,14 @@ struct _stmt {
 };
 
 enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
-                  Lambda_kind=5, IfExp_kind=6, Dict_kind=7, Set_kind=8,
-                  ListComp_kind=9, SetComp_kind=10, DictComp_kind=11,
-                  GeneratorExp_kind=12, Await_kind=13, Yield_kind=14,
-                  YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
-                  FormattedValue_kind=18, Interpolation_kind=19,
-                  JoinedStr_kind=20, TemplateStr_kind=21, Constant_kind=22,
-                  Attribute_kind=23, Subscript_kind=24, Starred_kind=25,
-                  Name_kind=26, List_kind=27, Tuple_kind=28, Slice_kind=29};
+                  Lambda_kind=5, IfExp_kind=6, Perchance_kind=7, Dict_kind=8,
+                  Set_kind=9, ListComp_kind=10, SetComp_kind=11,
+                  DictComp_kind=12, GeneratorExp_kind=13, Await_kind=14,
+                  Yield_kind=15, YieldFrom_kind=16, Compare_kind=17,
+                  Call_kind=18, FormattedValue_kind=19, Interpolation_kind=20,
+                  JoinedStr_kind=21, TemplateStr_kind=22, Constant_kind=23,
+                  Attribute_kind=24, Subscript_kind=25, Starred_kind=26,
+                  Name_kind=27, List_kind=28, Tuple_kind=29, Slice_kind=30};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -401,6 +401,12 @@ struct _expr {
             expr_ty body;
             expr_ty orelse;
         } IfExp;
+
+        struct {
+            expr_ty value;
+            expr_ty fallback;
+            expr_ty guard;
+        } Perchance;
 
         struct {
             asdl_expr_seq *keys;
@@ -803,6 +809,9 @@ expr_ty _PyAST_Lambda(arguments_ty args, expr_ty body, int lineno, int
 expr_ty _PyAST_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno,
                      int col_offset, int end_lineno, int end_col_offset,
                      PyArena *arena);
+expr_ty _PyAST_Perchance(expr_ty value, expr_ty fallback, expr_ty guard, int
+                         lineno, int col_offset, int end_lineno, int
+                         end_col_offset, PyArena *arena);
 expr_ty _PyAST_Dict(asdl_expr_seq * keys, asdl_expr_seq * values, int lineno,
                     int col_offset, int end_lineno, int end_col_offset, PyArena
                     *arena);

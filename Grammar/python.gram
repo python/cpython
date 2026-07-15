@@ -143,6 +143,7 @@ compound_stmt[stmt_ty]:
     | &'try' try_stmt
     | &'while' while_stmt
     | match_stmt
+    | perchance_stmt
 
 # SIMPLE STATEMENTS
 # =================
@@ -481,6 +482,21 @@ finally_block[asdl_stmt_seq*]:
     | invalid_finally_stmt
     | 'finally' &&':' a=block { a }
 
+# Perchance statement
+# -------------------
+# "perchance E1, E2: block" is sugar for "try: block / except (E1, E2): pass"
+# and is desugared to a Try node right here in the parser.
+
+perchance_stmt[stmt_ty]:
+    | "perchance" e=expressions ':' b=block {
+        CHECK_VERSION(stmt_ty, 16, "Perchance statements are",
+            _PyAST_Try(b,
+                CHECK(asdl_excepthandler_seq*, _PyPegen_singleton_seq(p,
+                    CHECK(excepthandler_ty, _PyAST_ExceptHandler(e, NULL,
+                        CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p,
+                            CHECK(stmt_ty, _PyAST_Pass(EXTRA)))), EXTRA)))),
+                NULL, NULL, EXTRA)) }
+
 # Match statement
 # ---------------
 
@@ -719,11 +735,17 @@ expression[expr_ty] (memo):
     | invalid_expression
     | invalid_legacy_expression
     | if_expression
+    | perchance_expression
     | disjunction
     | lambdef
 
 if_expression[expr_ty]:
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+
+perchance_expression[expr_ty] (memo):
+    | a=perchance_expression "perchance" f=disjunction g=['from' e=disjunction { e }] {
+        CHECK_VERSION(expr_ty, 16, "Perchance expressions are", _PyAST_Perchance(a, f, g, EXTRA)) }
+    | disjunction
 
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _PyAST_YieldFrom(a, EXTRA) }

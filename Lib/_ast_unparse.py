@@ -772,6 +772,17 @@ class Unparser(NodeVisitor):
             self.set_precedence(_Precedence.TEST, node.orelse)
             self.traverse(node.orelse)
 
+    def visit_Perchance(self, node):
+        with self.require_parens(_Precedence.TEST, node):
+            self.set_precedence(_Precedence.TEST.next(), node.value, node.fallback)
+            self.traverse(node.value)
+            self.write(" perchance ")
+            self.traverse(node.fallback)
+            if node.guard:
+                self.set_precedence(_Precedence.TEST.next(), node.guard)
+                self.write(" from ")
+                self.traverse(node.guard)
+
     def visit_Set(self, node):
         if node.elts:
             with self.delimit("{", "}"):

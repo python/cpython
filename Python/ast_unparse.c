@@ -324,6 +324,21 @@ append_ast_ifexp(PyUnicodeWriter *writer, expr_ty e, int level)
 }
 
 static int
+append_ast_perchance(PyUnicodeWriter *writer, expr_ty e, int level)
+{
+    APPEND_STR_IF(level > PR_TEST, "(");
+    APPEND_EXPR(e->v.Perchance.value, PR_TEST + 1);
+    APPEND_STR(" perchance ");
+    APPEND_EXPR(e->v.Perchance.fallback, PR_TEST + 1);
+    if (e->v.Perchance.guard) {
+        APPEND_STR(" from ");
+        APPEND_EXPR(e->v.Perchance.guard, PR_TEST + 1);
+    }
+    APPEND_STR_IF(level > PR_TEST, ")");
+    return 0;
+}
+
+static int
 append_ast_dict(PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, value_count;
@@ -950,6 +965,8 @@ append_ast_expr(PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_lambda(writer, e, level);
     case IfExp_kind:
         return append_ast_ifexp(writer, e, level);
+    case Perchance_kind:
+        return append_ast_perchance(writer, e, level);
     case Dict_kind:
         return append_ast_dict(writer, e);
     case Set_kind:
