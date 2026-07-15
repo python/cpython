@@ -3218,7 +3218,7 @@ fields, or any other data types containing pointer type fields.
    :class:`typing.Annotated` wrapping a ctypes type.
 
    *anonymous* specifies whether the field will be present in the
-   :attr:`~Structure._anonymous_` attribute of the generated class.
+   :attr:`~ctypes.Structure._anonymous_` attribute of the generated class.
 
    If *bit_width* is non-``None``, the annotated field will be *bit_width*
    number of bits in the generated structure. This is equivalent to passing
