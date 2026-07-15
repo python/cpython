@@ -1069,6 +1069,9 @@ struct _is {
     // guards can no longer be created.
     uintptr_t finalization_guards;
 
+    PyMutex xidata_list_mutex;
+    struct _xidata *xidata_list_head;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
     // _initial_thread should be the last field of PyInterpreterState.

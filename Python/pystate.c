@@ -8,6 +8,7 @@
 #include "pycore_ceval.h"         // _PyEval_AcquireLock()
 #include "pycore_codecs.h"        // _PyCodec_Fini()
 #include "pycore_critical_section.h" // _PyCriticalSection_Resume()
+#include "pycore_crossinterp.h"   // _PyXIData_CleanupRegistry()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -598,6 +599,8 @@ init_interpreter(PyInterpreterState *interp,
     interp->executor_ptrs = NULL;
     interp->executor_count = 0;
     interp->executor_capacity = 0;
+    interp->xidata_list_mutex = (PyMutex){0};
+    interp->xidata_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
 
@@ -1065,6 +1068,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     _PyObject_FiniState(interp);
 
     PyConfig_Clear(&interp->config);
+
+    _PyXIData_CleanupRegistry(interp);
 
     free_interpreter(interp);
 }

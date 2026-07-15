@@ -15,6 +15,59 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_typeobject.h"    // _PyStaticType_InitBuiltin()
+static void
+_PyXIData_Link(PyInterpreterState *interp, _PyXIData_t *xidata)
+{
+    PyMutex_Lock(&interp->xidata_list_mutex);
+    xidata->xid_next = interp->xidata_list_head;
+    xidata->xid_prev = NULL;
+    if (interp->xidata_list_head != NULL) {
+        interp->xidata_list_head->xid_prev = xidata;
+    }
+    interp->xidata_list_head = xidata;
+    PyMutex_Unlock(&interp->xidata_list_mutex);
+}
+
+static void
+_PyXIData_Unlink(PyInterpreterState *interp, _PyXIData_t *xidata)
+{
+    PyMutex_Lock(&interp->xidata_list_mutex);
+    if (xidata->xid_next != NULL) {
+        xidata->xid_next->xid_prev = xidata->xid_prev;
+    }
+    if (xidata->xid_prev != NULL) {
+        xidata->xid_prev->xid_next = xidata->xid_next;
+    }
+    else if (interp->xidata_list_head == xidata) {
+        interp->xidata_list_head = xidata->xid_next;
+    }
+    xidata->xid_next = NULL;
+    xidata->xid_prev = NULL;
+    PyMutex_Unlock(&interp->xidata_list_mutex);
+}
+
+void
+_PyXIData_CleanupRegistry(PyInterpreterState *interp)
+{
+    PyMutex_Lock(&interp->xidata_list_mutex);
+    _PyXIData_t *head = interp->xidata_list_head;
+    interp->xidata_list_head = NULL;
+    PyMutex_Unlock(&interp->xidata_list_mutex);
+
+    _PyXIData_t *curr = head;
+    while (curr != NULL) {
+        _PyXIData_t *next = curr->xid_next;
+        int expected = _PyXIData_STATUS_ACTIVE;
+        if (_Py_atomic_compare_exchange_int(&curr->status, &expected, _PyXIData_STATUS_CLAIMED_BY_SENDER_TEARDOWN)) {
+            if (curr->free != NULL) {
+                curr->free(curr->data);
+            }
+            curr->data = NULL;
+            Py_CLEAR(curr->obj);
+        }
+        curr = next;
+    }
+}
 
 
 static Py_ssize_t
@@ -373,6 +426,13 @@ _PyXIData_Init(_PyXIData_t *xidata,
         ? PyInterpreterState_GetID(interp)
         : -1;
     xidata->new_object = new_object;
+
+    _Py_atomic_store_int(&xidata->status, _PyXIData_STATUS_ACTIVE);
+    xidata->xid_next = NULL;
+    xidata->xid_prev = NULL;
+    if (interp != NULL) {
+        _PyXIData_Link(interp, xidata);
+    }
 }
 
 int
@@ -1016,6 +1076,10 @@ _PyCode_GetPureScriptXIData(PyThreadState *tstate,
 PyObject *
 _PyXIData_NewObject(_PyXIData_t *xidata)
 {
+    if (_Py_atomic_load_int(&xidata->status) != _PyXIData_STATUS_ACTIVE) {
+        PyErr_SetString(PyExc_RuntimeError, "the originating interpreter has been destroyed");
+        return NULL;
+    }
     return xidata->new_object(xidata);
 }
 
@@ -1040,26 +1104,31 @@ _xidata_release(_PyXIData_t *xidata, int rawfree)
         return 0;
     }
 
-    // Switch to the original interpreter.
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(
-                                        _PyXIData_INTERPID(xidata));
-    if (interp == NULL) {
-        // The interpreter was already destroyed.
-        // This function shouldn't have been called.
-        // XXX Someone leaked some memory...
-        assert(PyErr_Occurred());
+    int expected = _PyXIData_STATUS_ACTIVE;
+    if (_Py_atomic_compare_exchange_int(&xidata->status, &expected, _PyXIData_STATUS_RELEASED)) {
+        PyInterpreterState *interp = _PyInterpreterState_LookUpID(_PyXIData_INTERPID(xidata));
+        if (interp != NULL) {
+            _PyXIData_Unlink(interp, xidata);
+            if (rawfree) {
+                return _Py_CallInInterpreterAndRawFree(interp, _call_clear_xidata, xidata);
+            }
+            else {
+                return _Py_CallInInterpreter(interp, _call_clear_xidata, xidata);
+            }
+        }
+        else {
+            if (rawfree) {
+                PyMem_RawFree(xidata);
+            }
+            return -1;
+        }
+    }
+    else {
+        // Already claimed by sender teardown.
         if (rawfree) {
             PyMem_RawFree(xidata);
         }
-        return -1;
-    }
-
-    // "Release" the data and/or the object.
-    if (rawfree) {
-        return _Py_CallInInterpreterAndRawFree(interp, _call_clear_xidata, xidata);
-    }
-    else {
-        return _Py_CallInInterpreter(interp, _call_clear_xidata, xidata);
+        return 0;
     }
 }
 

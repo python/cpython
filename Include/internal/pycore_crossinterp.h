@@ -42,6 +42,12 @@ typedef struct _xidata _PyXIData_t;
 typedef PyObject *(*xid_newobjfunc)(_PyXIData_t *);
 typedef void (*xid_freefunc)(void *);
 
+typedef enum {
+    _PyXIData_STATUS_ACTIVE = 0,
+    _PyXIData_STATUS_CLAIMED_BY_SENDER_TEARDOWN,
+    _PyXIData_STATUS_RELEASED,
+} _PyXIData_status_t;
+
 // _PyXIData_t is similar to Py_buffer as an effectively
 // opaque struct that holds data outside the object machinery.  This
 // is necessary to pass safely between interpreters in the same process.
@@ -82,10 +88,14 @@ struct _xidata {
     // to PyMem_RawFree (the default if not explicitly set to NULL).
     // The call will happen with the original interpreter activated.
     xid_freefunc free;
+    _Py_atomic_int status;   /* one of _PyXIData_status_t */
+    struct _xidata *xid_next;
+    struct _xidata *xid_prev;
 };
 
 PyAPI_FUNC(_PyXIData_t *) _PyXIData_New(void);
 PyAPI_FUNC(void) _PyXIData_Free(_PyXIData_t *data);
+PyAPI_FUNC(void) _PyXIData_CleanupRegistry(PyInterpreterState *interp);
 
 #define _PyXIData_DATA(DATA) ((DATA)->data)
 #define _PyXIData_OBJ(DATA) ((DATA)->obj)
