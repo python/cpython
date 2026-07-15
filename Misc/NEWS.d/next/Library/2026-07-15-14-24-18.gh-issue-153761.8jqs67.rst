@@ -1,0 +1,2 @@
+Fix cancelling :meth:`asyncio.BaseSelectorEventLoop._sock_accept` dropping a pending
+connection.
