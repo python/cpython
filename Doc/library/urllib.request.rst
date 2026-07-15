@@ -557,7 +557,7 @@ request.
    If *data* is a file-like object and the request may be sent more than once
    (for example when an :class:`HTTPBasicAuthHandler` or
    :class:`HTTPDigestAuthHandler` retries after a ``401`` response), *data* must
-   be :term:`seekable`. If a non-seekable body is retried during HTTP
+   be seekable. If a non-seekable body is retried during HTTP
    authentication, :exc:`ValueError` is raised.
 
 
