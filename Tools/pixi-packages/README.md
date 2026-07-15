@@ -30,7 +30,7 @@ for details of how to use this. Currently defined package variants:
 
 ## Maintenance
 
-- Keep the `abi_tag` and `version` fields in `variants.yaml` up to date with the
+- Keep the `version` field in `variants.yaml` up to date with the
   Python version
 - Update `build.sh` for any breaking changes in the `configure` and `make` workflow
 
