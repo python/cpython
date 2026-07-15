@@ -17,7 +17,7 @@ else
     exit 1
 fi
 
-VER_REF=$(cat configure.ac | grep "\[PYTHON_VERSION\]\, \[" | sed -n 's/.*\[\([0-9.]*\)\].*/\1/p')
+VER_REF=$(grep "\[PYTHON_VERSION\]\, \[" configure.ac | sed -n 's/.*\[\([0-9.]*\)\].*/\1/p')
 VER=$(echo ${PKG_VERSION} | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
 
 if [[ "${VER_REF}" != "${VER}" ]]; then
