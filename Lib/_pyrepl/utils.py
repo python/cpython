@@ -230,7 +230,10 @@ def gen_colors_from_token_stream(
                         is_def_name = True
                 elif (
                     keyword.issoftkeyword(token.string)
-                    and bracket_level == 0
+                    # perchance expressions are common inside brackets
+                    # (comprehensions); the other soft keywords only start
+                    # statements and cannot appear there
+                    and (bracket_level == 0 or token.string == "perchance")
                     and is_soft_keyword_used(prev_token, token, next_token)
                 ):
                     span = Span.from_token(token, line_lengths)
@@ -245,6 +248,18 @@ def gen_colors_from_token_stream(
 
 keyword_first_sets_match = frozenset({"False", "None", "True", "await", "lambda", "not"})
 keyword_first_sets_case = frozenset({"False", "None", "True"})
+
+
+def _starts_expression(token: TI | None) -> bool:
+    match token:
+        case TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START):
+            return True
+        case TI(T.OP, string="(" | "[" | "{" | "-" | "+" | "~" | "..."):
+            return True
+        case TI(T.NAME, string=s):
+            return not keyword.iskeyword(s) or s in keyword_first_sets_match
+        case _:
+            return False
 
 
 def is_soft_keyword_used(*tokens: TI | None) -> bool:
@@ -298,6 +313,31 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             TI(string="lazy"),
             TI(string="import") | TI(string="from")
         ):
+            return True
+        # expression form: <expr> perchance <fallback>; the previous token
+        # must be able to end an expression and the next one to start one
+        case (
+            TI(T.NUMBER | T.STRING | T.FSTRING_END | T.TSTRING_END)
+            | TI(T.OP, string=")" | "]" | "}" | "..."),
+            TI(string="perchance"),
+            next_tok
+        ) if _starts_expression(next_tok):
+            return True
+        case (
+            TI(T.NAME, string=p),
+            TI(string="perchance"),
+            next_tok
+        ) if (
+            (not keyword.iskeyword(p) or p in keyword_first_sets_case)
+            and _starts_expression(next_tok)
+        ):
+            return True
+        # statement form: perchance E1, E2: <block>
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT),
+            TI(string="perchance"),
+            next_tok
+        ) if _starts_expression(next_tok):
             return True
         case _:
             return False
