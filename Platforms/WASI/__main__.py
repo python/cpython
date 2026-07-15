@@ -176,12 +176,14 @@ def main():
             # Configure and build the build Python
             _build.configure_build_python(context)
             _build.make_build_python(context)
-            _build.pythoninfo_build_python(context)
+            if not context.quiet:
+                _build.pythoninfo_build_python(context)
 
             # Configure and build the host/WASI Python
             _build.configure_wasi_python(context)
             _build.make_wasi_python(context)
-            _build.pythoninfo_wasi_python(context)
+            if not context.quiet:
+                _build.pythoninfo_wasi_python(context)
         case "clean":
             _build.clean_contents(context)
         case "package":
