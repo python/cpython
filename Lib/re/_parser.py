@@ -310,7 +310,7 @@ class Tokenizer:
             msg = "bad character in group name %r" % name
             raise self.error(msg, len(name) + offset)
 
-def _property_escape(source, escape, in_set=False):
+def _property_escape(source, escape):
     # handle \p{...} and \P{...} (UTS #18 1.2.4, "Property Syntax")
     from . import _properties
     if not source.match('{'):
@@ -319,10 +319,6 @@ def _property_escape(source, escape, in_set=False):
     code = _properties.parse_property(name, escape[1] == 'P')
     if code is None:
         raise source.error("unknown property name %r" % name,
-                           len(name) + len(r'\p{}'))
-    if in_set and code[1][0] == (NEGATE, None):
-        # A negated multi-range property cannot be a member of a set.
-        raise source.error("bad escape %s in character class" % escape,
                            len(name) + len(r'\p{}'))
     return code
 
@@ -369,7 +365,7 @@ def _class_escape(source, escape):
                                    len(charname) + len(r'\N{}')) from None
             return LITERAL, c
         elif c in "pP" and source.istext:
-            return _property_escape(source, escape, in_set=True)
+            return _property_escape(source, escape)
         elif c in OCTDIGITS:
             # octal escape (up to three digits)
             escape += source.getwhile(2, OCTDIGITS)
@@ -536,14 +532,19 @@ def _charset_node(items):
         return items[0]
     return (IN, items)
 
-def _flat_items(elements):
-    # The items if `elements` is a single flat charset (no complement), else
-    # None -- the dual of _charset_node: a lone LITERAL or CATEGORY is an item.
+def _flat_items(elements, complement=False):
+    # The items if `elements` is a single flat charset, else None -- the dual
+    # of _charset_node: a lone LITERAL or CATEGORY is an item.  A complemented
+    # charset (a NEGATE-bearing IN) qualifies only when `complement` is true.
     if len(elements) == 1:
         op, av = elements[0]
         if op in _SETITEMCODES:
             return [elements[0]]
-        if op is IN and all(o is not NEGATE for o, _av in av):
+        if op is IN:
+            if not complement:
+                for o, _av in av:
+                    if o is NEGATE:
+                        return None
             return av
     return None
 
@@ -569,11 +570,15 @@ def _difference(left, right, state):
 # with the next operand.
 _SETOPS = {'||': _union, '&&': _intersect, '--': _difference}
 
-def _operand_elements(set, compound):
-    # The operand's elements: a standalone nested set, else the member union.
+def _operand_elements(set, compound, negated, state):
+    # The operand's elements: a standalone nested set, else the member union,
+    # with any negated-property members alternated in (see addmember).
     if compound is not None:
         return compound
-    return [_charset_node(_uniq(set))]
+    result = [_charset_node(_uniq(set))] if set or not negated else None
+    for neg in negated:
+        result = [neg] if result is None else _union(result, [neg], state)
+    return result
 
 def _parse_operand(source, state, nested, here, allow_nested):
     # Read one operand, stopping at a set operator or the closing ']'.  An
@@ -586,10 +591,15 @@ def _parse_operand(source, state, nested, here, allow_nested):
     sourcematch = source.match
     set = []
     setappend = set.append
+    negated = []        # \P{...} negated-range props, alternated in at the end
     def addmember(code):
-        # Flatten a \p{...} property's IN into the member set.
+        # Flatten a \p{...} property's IN into the member set; a negated one is a
+        # complemented charset, set aside to _union in (it can't join the union).
         if code[0] is IN:
-            set.extend(code[1])
+            if code[1][0][0] is NEGATE:
+                negated.append(code)
+            else:
+                set.extend(code[1])
         else:
             setappend(code)
     compound = None     # elements of a standalone nested-set operand
@@ -602,9 +612,9 @@ def _parse_operand(source, state, nested, here, allow_nested):
         if this is None:
             raise source.error("unterminated character set",
                                source.tell() - here)
-        if set or compound is not None:
+        if set or compound is not None or negated:
             if this == "]":
-                return _operand_elements(set, compound), None
+                return _operand_elements(set, compound, negated, state), None
             if this in '-&|~' and source.next == this:
                 if this == '~':
                     import warnings
@@ -616,7 +626,7 @@ def _parse_operand(source, state, nested, here, allow_nested):
                 else:
                     # '--', '&&' or '||' ends this operand and starts the next.
                     sourceget()  # consume the second operator character
-                    return _operand_elements(set, compound), this + this
+                    return _operand_elements(set, compound, negated, state), this + this
         if this[0] == "\\":
             code1 = _class_escape(source, this)
         else:
@@ -636,12 +646,12 @@ def _parse_operand(source, state, nested, here, allow_nested):
                 # A trailing '-' is a literal.
                 addmember(code1)
                 setappend((LITERAL, _ord("-")))
-                return [_charset_node(_uniq(set))], None
+                return _operand_elements(set, None, negated, state), None
             if that == "-":
                 # 'X--': difference, not a range.  '--' after a single member
                 # lands here because the range probe consumed the first '-'.
                 addmember(code1)
-                return [_charset_node(_uniq(set))], "--"
+                return _operand_elements(set, None, negated, state), "--"
             if that[0] == "\\":
                 code2 = _class_escape(source, that)
             else:
@@ -703,6 +713,8 @@ def _parse_charset(source, state, nested):
     #   [A--B]  ->  A (?<![B])           difference
     #   [A&&B]  ->  A (?<=[B])           intersection
     #   [A||B]  ->  [AB] or (?:A|B)      union
+    # A flat-operand difference [A--B] is later fused back into a single charset
+    # by Lib/re/_optimizer.py (see that module).
     # Operators chain left-to-right with no precedence.  A leading '^' negates by
     # De Morgan, pushing the negation into the operands (no lookahead needed):
     #   [^A--B] -> [^A] | B ; [^A&&B] -> [^A] | [^B] ; [^A||B] -> [^A] && [^B]

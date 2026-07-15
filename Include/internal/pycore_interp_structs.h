@@ -235,6 +235,12 @@ struct _gc_runtime_state {
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_stats *generation_stats;
+#ifdef Py_GIL_DISABLED
+    /* Protects generation_stats between gc_get_stats_impl() (reader) and
+       gc_collect_main() (writer); both resolve the stats slot (buffer index)
+       under this lock so they agree on which slot to touch (gh-151646). */
+    PyMutex stats_mutex;
+#endif
     /* true if we are currently running the collector */
     int collecting;
     // The frame that started the current collection. It might be NULL even when

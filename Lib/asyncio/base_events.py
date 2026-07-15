@@ -1219,21 +1219,26 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None, context=None):
 
-        sock.setblocking(False)
-        context = context if context is not None else contextvars.copy_context()
+        try:
+            sock.setblocking(False)
+            context = context if context is not None else contextvars.copy_context()
 
-        protocol = protocol_factory()
-        waiter = self.create_future()
-        if ssl:
-            sslcontext = None if isinstance(ssl, bool) else ssl
-            transport = self._make_ssl_transport(
-                sock, protocol, sslcontext, waiter,
-                server_side=server_side, server_hostname=server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout,
-                ssl_shutdown_timeout=ssl_shutdown_timeout,
-                context=context)
-        else:
-            transport = self._make_socket_transport(sock, protocol, waiter, context=context)
+            protocol = protocol_factory()
+            waiter = self.create_future()
+            if ssl:
+                sslcontext = None if isinstance(ssl, bool) else ssl
+                transport = self._make_ssl_transport(
+                    sock, protocol, sslcontext, waiter,
+                    server_side=server_side, server_hostname=server_hostname,
+                    ssl_handshake_timeout=ssl_handshake_timeout,
+                    ssl_shutdown_timeout=ssl_shutdown_timeout,
+                    context=context)
+            else:
+                transport = self._make_socket_transport(sock, protocol, waiter, context=context)
+        except:
+            # gh-153133: close the socket if the transport is never created.
+            sock.close()
+            raise
 
         try:
             await waiter
@@ -1283,7 +1288,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     raise
 
         if not fallback:
-            raise RuntimeError(
+            raise exceptions.SendfileNotAvailableError(
                 f"fallback is disabled and native sendfile is not "
                 f"supported for transport {transport!r}")
         return await self._sendfile_fallback(transport, file,
@@ -1296,7 +1301,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _sendfile_fallback(self, transp, file, offset, count):
         if hasattr(file, 'seek'):
             file.seek(offset)
-        blocksize = min(count, 16384) if count else 16384
+        blocksize = (
+            min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
+            if count else constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        )
         buf = bytearray(blocksize)
         total_sent = 0
         proto = _SendfileFallbackProtocol(transp)
