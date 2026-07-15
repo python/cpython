@@ -94,9 +94,9 @@ gen_traverse(PyObject *self, visitproc visit, void *arg)
         }
     }
     else {
-        // We still need to visit the code object when the frame is cleared to
+        // We still need to visit the function object when the frame is cleared to
         // ensure that it's kept alive if the reference is deferred.
-        Py_VISIT(gen->gi_iframe.f_executable);
+        _Py_VISIT_STACKREF(gen->gi_iframe.f_funcobj);
     }
     /* No need to visit cr_origin, because it's just tuples/str/int, so can't
        participate in a reference cycle. */
@@ -231,7 +231,7 @@ gen_dealloc(PyObject *self)
         gen_clear_frame(gen);
     }
     assert(gen->gi_exc_state.exc_value == NULL);
-    Py_CLEAR(gen->gi_iframe.f_executable);
+    gen->gi_iframe.f_executable = NULL;
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
 
@@ -1176,10 +1176,11 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     assert(f->f_frame->frame_obj == NULL);
     assert(f->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
-    _PyFrame_CopyForGenerators((_PyInterpreterFrame *)f->_f_frame_data, frame);
+    _PyFrame_Copy((_PyInterpreterFrame *)f->_f_frame_data, frame);
     gen->gi_frame_state = FRAME_CREATED;
     assert(frame->frame_obj == f);
     f->f_frame = frame;
+    frame->owner = FRAME_OWNED_BY_GENERATOR;
     assert(PyObject_GC_IsTracked((PyObject *)f));
     Py_DECREF(f);
     gen->gi_weakreflist = NULL;

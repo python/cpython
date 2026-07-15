@@ -51,8 +51,6 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     _PyFrame_Copy(frame, new_frame);
-    // _PyFrame_Copy takes the reference to the executable,
-    // so we need to restore it.
     f->f_frame = new_frame;
     new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(new_frame)) {
