@@ -370,7 +370,7 @@ def archive(context):
             "-c",
             "-f", os.fsdecode(file_path),
             "--sort=name",
-            f"--mtime", "{mtime}",
+            f"--mtime", mtime,
             "--clamp-mtime",
             "--owner=0",
             "--group=0",
