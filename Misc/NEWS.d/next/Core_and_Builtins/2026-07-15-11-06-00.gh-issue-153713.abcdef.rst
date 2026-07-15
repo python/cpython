@@ -1,1 +1,1 @@
-Fix a memory leak in :c:func:`_xidata_release` when the originating interpreter of a :c:type:`_PyXIData_t` object is destroyed before the receiving interpreter releases it. The fix implements a lock-free compare-and-swap mechanism to safely coordinate teardown and release across interpreters.
+Fix a memory leak in ``_xidata_release`` when the originating interpreter of a ``_PyXIData_t`` object is destroyed before the receiving interpreter releases it. The fix implements a lock-free compare-and-swap mechanism to safely coordinate teardown and release across interpreters.
