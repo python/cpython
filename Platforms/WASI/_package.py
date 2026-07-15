@@ -1,5 +1,7 @@
+import os
 import pathlib
 import shutil
+import subprocess
 
 import _shared
 
@@ -276,7 +278,7 @@ def symlink_files(files, base):
         (base / target).symlink_to(base / source)
 
 
-def package(context):
+def gather(context):
     dist = context.checkout / "dist"
     if dist.exists():
         _shared.log("🧹", f"Deleting {dist} ...")
@@ -335,3 +337,50 @@ def package(context):
     man_path = man_file(context)
     copy_files([man_path], base)
     symlink_files([man_symlink(man_path[0], context)], base)
+
+    return base
+
+
+def archive(context):
+    file_name = f"{filename_stem(context)}.tar.xz"
+    file_path = context.checkout / "dist" / file_name
+    if file_path.exists():
+        _shared.log("🧹", f"Deleting {file_path} ...")
+        file_path.unlink()
+    to_compress = context.checkout / "dist" / filename_stem(context)
+    _shared.log("🗜️", f"Compressing to {file_path} ...")
+    mtime = subprocess.run(
+        [
+            "git",
+            "log",
+            "-1",
+            "--format=tformat:%cd",
+            "--date=format:%Y-%m-%dT%H:%M:%SZ",
+            os.fsdecode(context.checkout),
+        ],
+        env={"TZ": "UTC0"},
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    subprocess.run(
+        [
+            "tar",
+            "-c",
+            "-f", os.fsdecode(file_path),
+            "--sort=name",
+            f"--mtime", "{mtime}",
+            "--clamp-mtime",
+            "--owner=0",
+            "--group=0",
+            "--numeric-owner",
+            "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
+            "--mode=go+u,go-w",
+            "--use-compress-program", "xz -T 0",
+            os.fsdecode(to_compress),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )

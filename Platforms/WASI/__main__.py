@@ -161,7 +161,8 @@ def main():
         case "clean":
             _build.clean_contents(context)
         case "package":
-            _package.package(context)
+            _package.gather(context)
+            _package.archive(context)
         case _:
             raise ValueError(f"Unknown subcommand {context.subcommand!r}")
 
