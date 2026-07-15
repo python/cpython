@@ -1,8 +1,14 @@
 import os
 import sys
 
+from dataclasses import dataclass
+
 lazy import shutil
 lazy import subprocess
+
+lazy import annotationlib
+lazy from typing import Annotated, get_args, ClassVar, get_origin
+lazy from ctypes import Structure, BigEndianStructure, LittleEndianStructure
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -490,6 +496,86 @@ if (os.name == "posix" and
             _dl_iterate_phdr(_info_callback,
                              ctypes.byref(ctypes.py_object(libraries)))
             return libraries
+
+
+@dataclass(slots=True, frozen=True)
+class CFieldInfo:
+    anonymous: bool = False
+    bit_width: int | None = None
+
+
+def _process_struct(klass, /, *, align, layout, endian, pack):
+    fields = []
+    anonymous = []
+    if issubclass(klass, (Structure, LittleEndianStructure, BigEndianStructure)):
+        fields.extend(klass._fields_)
+        anonymous.extend(klass._anonymous_)
+
+    for name, hint in annotationlib.get_annotations(klass).items():
+        if get_origin(hint) is ClassVar:
+            continue
+
+        field = [name, hint]
+        if get_origin(hint) is Annotated:
+            field_info = get_args(hint)[1]
+            if not isinstance(field_info, CFieldInfo):
+                raise TypeError(f"expected CFieldInfo in Annotated, got {field_info!r}")
+
+            if field_info.bit_width is not None:
+                field.append(field_info.bit_width)
+
+            if field_info.anonymous is True:
+                anonymous.append(name)
+
+            continue
+
+        fields.append(field)
+
+    if endian == 'big':
+        endian_class = BigEndianStructure
+    elif endian == 'little':
+        endian_class = LittleEndianStructure
+    elif endian == 'native':
+        endian_class = Structure
+    else:
+        raise ValueError(f"expected 'big', 'little', or 'native', but got {endian!r}")
+
+    # These fields don't apply correctly when set later.
+    # As a workaround, we have this weird _StructData thing to set the attributes
+    # in advance.
+    class _StructData:
+        pass
+
+    if align is not None:
+        _StructData._align_ = align
+
+    if layout is not None:
+        _StructData._layout_ = layout
+
+    if pack is not None:
+        _StructData._pack_ = pack
+
+    for attr, value in klass.__dict__.items():
+        if attr != "__dict__":
+            setattr(_StructData, attr, value)
+
+    class _Struct(_StructData, endian_class):
+        _fields_ = fields
+        _anonymous_ = anonymous
+
+    _Struct.__name__ = klass.__name__
+    _Struct.__qualname__ = klass.__qualname__
+    return _Struct
+
+
+def struct(class_or_none=None, /, *, align=None, layout=None, endian='native', pack=None):
+    if class_or_none is None:
+        def inner(klass):
+            return _process_struct(klass, align=align, layout=layout, endian=endian, pack=pack)
+
+        return inner
+
+    return _process_struct(class_or_none, align=align, layout=layout, endian=endian, pack=pack)
 
 ################################################################
 # test code
