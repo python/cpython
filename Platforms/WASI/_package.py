@@ -279,6 +279,9 @@ def symlink_files(files, base):
 
 
 def gather(context):
+    py_version = python_version(context)
+    py_d_version = python_version(context, debug_ok=True)
+
     dist = context.checkout / "dist"
     if dist.exists():
         _shared.log("🧹", f"Deleting {dist} ...")
@@ -289,31 +292,31 @@ def gather(context):
     _shared.log("📝", f"Copying files to {base} ...")
 
     _shared.log("📁", "bin/", spacing=indent * 2)
-    _shared.log("📄", "pythonN.Md?-config", spacing=indent * 3)
+    _shared.log("📄", f"python{py_d_version}-config", spacing=indent * 3)
     config_location = config_file(context)
     copy_files([config_location], base)
     symlink_files(config_symlink(config_location[0], context), base)
 
-    _shared.log("📄", "pythonN.Md?.wasmtime", spacing=indent * 3)
+    _shared.log("📄", f"python{py_d_version}.wasmtime", spacing=indent * 3)
     script_path = python_wasmtime_script(base, context)
     symlink_files(python_wasmtime_symlink(script_path, context), base)
 
     _shared.log("📁", "etc/", spacing=indent * 2)
-    _shared.log("📁", "pythonN.M/", spacing=indent * 3)
+    _shared.log("📁", f"python{py_version}/", spacing=indent * 3)
     _shared.log("📄", "wasmtime.toml", spacing=indent * 4)
     copy_files([wasmtime_config_file(context)], base)
 
     _shared.log("📁", "include/", spacing=indent * 2)
-    _shared.log("📁", "pythonN.Md?/", spacing=indent * 3)
+    _shared.log("📁", f"python{py_version}/", spacing=indent * 3)
     _shared.log("📄", "pyconfig.h", spacing=indent * 4)
     copy_files([pyconfig_file(context)], base)
     _shared.log("📄", "**/*.h", spacing=indent * 4)
     copy_files(header_files(context), base)
 
     _shared.log("📁", "lib/", spacing=indent * 2)
-    _shared.log("📁", "pythonN.M/", spacing=indent * 3)
+    _shared.log("📁", f"python{py_version}/", spacing=indent * 3)
     _shared.log("📁", "lib-wasm", spacing=indent * 4)
-    _shared.log("📄", "pythonN.Md?.wasm", spacing=indent * 5)
+    _shared.log("📄", f"python{py_d_version}.wasm", spacing=indent * 5)
     copy_files([wasm_file(context)], base)
     _shared.log("📄", "LICENSE.txt", spacing=indent * 4)
     copy_files([license_file(context)], base)
