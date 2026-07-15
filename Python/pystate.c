@@ -1033,6 +1033,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     zapthreads(interp);
 
+    _PyXIData_CleanupRegistry(interp);
+
     // XXX These two calls should be done at the end of clear_interpreter(),
     // but currently some objects get decref'ed after that.
 #ifdef Py_REF_DEBUG
@@ -1068,8 +1070,6 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     _PyObject_FiniState(interp);
 
     PyConfig_Clear(&interp->config);
-
-    _PyXIData_CleanupRegistry(interp);
 
     free_interpreter(interp);
 }

@@ -57,13 +57,16 @@ _PyXIData_CleanupRegistry(PyInterpreterState *interp)
     _PyXIData_t *curr = head;
     while (curr != NULL) {
         _PyXIData_t *next = curr->xid_next;
+        void *data = curr->data;
+        xid_freefunc free_func = curr->free;
+        PyObject *obj = curr->obj;
+        
         int expected = _PyXIData_STATUS_ACTIVE;
         if (_Py_atomic_compare_exchange_int(&curr->status, &expected, _PyXIData_STATUS_CLAIMED_BY_SENDER_TEARDOWN)) {
-            if (curr->free != NULL) {
-                curr->free(curr->data);
+            if (free_func != NULL) {
+                free_func(data);
             }
-            curr->data = NULL;
-            Py_CLEAR(curr->obj);
+            Py_XDECREF(obj);
         }
         curr = next;
     }
