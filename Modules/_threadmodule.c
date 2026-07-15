@@ -146,6 +146,14 @@ typedef struct {
     // for a more detailed explanation.
     PyEvent thread_is_exiting;
 
+    // Set by the thread when its Python-level bootstrap has signalled
+    // startup (see threading.Thread._bootstrap_inner), or on thread exit
+    // if the bootstrap terminated before doing so.  threading.Thread.start()
+    // waits on this event rather than on the Python-level started event
+    // alone, so that it cannot hang forever if the thread dies during its
+    // bootstrap (e.g. a MemoryError, see gh-140746).
+    PyEvent thread_started;
+
     // Serializes calls to `join` and `set_done`.
     _PyOnceFlag once;
 
@@ -232,6 +240,7 @@ ThreadHandle_new(void)
     self->os_handle = 0;
     self->has_os_handle = 0;
     self->thread_is_exiting = (PyEvent){0};
+    self->thread_started = (PyEvent){0};
     self->mutex = (PyMutex){_Py_UNLOCKED};
     self->once = (_PyOnceFlag){0};
     self->state = THREAD_HANDLE_NOT_STARTED;
@@ -323,6 +332,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
         handle->once = (_PyOnceFlag){_Py_ONCE_INITIALIZED};
         handle->mutex = (PyMutex){_Py_UNLOCKED};
         _PyEvent_Notify(&handle->thread_is_exiting);
+        _PyEvent_Notify(&handle->thread_started);
         llist_remove(node);
         remove_from_shutdown_handles(handle);
     }
@@ -408,6 +418,12 @@ thread_run(void *boot_raw)
 exit:
     // Don't need to wait for this thread anymore
     remove_from_shutdown_handles(handle);
+
+    // gh-140746: Unblock any thread waiting in Thread.start().  If the
+    // bootstrap function terminated before signalling startup (e.g. a
+    // MemoryError while calling it), this is the only notification the
+    // waiter will get.  If startup was already signalled, this is a no-op.
+    _PyEvent_Notify(&handle->thread_started);
 
     _PyEvent_Notify(&handle->thread_is_exiting);
     ThreadHandle_decref(handle);
@@ -709,6 +725,28 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
 }
 
 static PyObject *
+PyThreadHandleObject_set_started(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
+    _PyEvent_Notify(&self->handle->thread_started);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+PyThreadHandleObject_wait_for_started(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
+    while (!PyEvent_WaitTimed(&self->handle->thread_started, -1,
+                              /*detach=*/1)) {
+        // Interrupted
+        if (Py_MakePendingCalls() < 0) {
+            return NULL;
+        }
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
@@ -741,6 +779,9 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 static PyMethodDef ThreadHandle_methods[] = {
     {"join", PyThreadHandleObject_join, METH_VARARGS, NULL},
     {"_set_done", PyThreadHandleObject_set_done, METH_NOARGS, NULL},
+    {"_set_started", PyThreadHandleObject_set_started, METH_NOARGS, NULL},
+    {"_wait_for_started", PyThreadHandleObject_wait_for_started,
+     METH_NOARGS, NULL},
     {"is_done", PyThreadHandleObject_is_done, METH_NOARGS, NULL},
     {0, 0}
 };
