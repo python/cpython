@@ -25,6 +25,8 @@ outputs:
   build:
     flags:
       - ${{ variant }}
+    variant:
+      down_prioritize_variant: ${{ 0 if variant == "default" else 1 }}
     string: "0_${{ abi_tag }}"
     files:
       exclude:
