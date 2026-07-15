@@ -604,8 +604,9 @@ Forgetting to call a geometry manager is a common early mistake:
 the widget is created, but nothing shows up.
 
 Tk provides three geometry managers.
-Each is inherited by every widget, so any widget can be managed by any of them;
-the choice depends on the kind of layout you want.
+Each is inherited by every widget, so any widget can be managed by any of them
+(but see the warning below about the incompatibility of grid and pack).
+The choice depends on the kind of layout you want.
 
 :meth:`grid <Grid.grid_configure>`
    Arranges widgets in a two-dimensional table of rows and columns.
@@ -646,7 +647,8 @@ the choice depends on the kind of layout you want.
       badge.place(relx=1.0, rely=0.0, anchor="ne")
 
 Layouts are built up by nesting:
-grid or pack widgets inside a frame, and frames inside other frames.
+grid or pack widgets, including frames, inside a frame or toplevel.
+Toplevels are managed by the OS window manager.
 Classic and themed :mod:`tkinter.ttk` widgets can be managed interchangeably.
 
 .. warning::
