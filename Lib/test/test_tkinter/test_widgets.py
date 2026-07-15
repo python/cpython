@@ -2013,9 +2013,13 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     def test_identify(self):
         widget = self.create()
         widget.pack()
-        widget.update_idletasks()
-        self.assertIn(widget.identify(5, 5),
-                      ('slider', 'trough1', 'trough2', ''))
+        # Probe a point on the trough centreline (Scale.coords()) rather than
+        # a fixed pixel: (5, 5) lies outside the trough and always identifies
+        # as '', so it would not actually exercise identify().
+        if wait_until_mapped(widget):
+            x, y = widget.coords()
+            self.assertIn(widget.identify(int(x), int(y)),
+                          ('slider', 'trough1', 'trough2'))
         self.assertRaises(TclError, widget.identify, 'a', 'b')
 
 
