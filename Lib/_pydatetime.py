@@ -55,7 +55,7 @@ def _days_before_year(year):
 
 def _days_in_month(year, month):
     "year, month -> number of days in that month in that year."
-    assert 1 <= month <= 12, month
+    assert 1 <= month <= 12, f"month must be in 1..12, not {month}"
     if month == 2 and _is_leap(year):
         return 29
     return _DAYS_IN_MONTH[month]
@@ -272,12 +272,12 @@ def _wrap_strftime(object, format, timetuple):
                     newformat.append(Zreplace)
                 # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
                 # year 1000 for %G can go on the fast path.
-                elif ((ch in 'YG' or ch in 'FC') and
-                        object.year < 1000 and _need_normalize_century()):
+                elif (ch in 'YGFC' and timetuple[0] < 1000 and
+                        _need_normalize_century()):
                     if ch == 'G':
                         year = int(_time.strftime("%G", timetuple))
                     else:
-                        year = object.year
+                        year = timetuple[0]
                     if ch == 'C':
                         push('{:02}'.format(year // 100))
                     else:
@@ -358,7 +358,8 @@ def _find_isoformat_datetime_separator(dtstr):
 def _parse_isoformat_date(dtstr):
     # It is assumed that this is an ASCII-only string of lengths 7, 8 or 10,
     # see the comment on Modules/_datetimemodule.c:_find_isoformat_datetime_separator
-    assert len(dtstr) in (7, 8, 10)
+    if len(dtstr) not in (7, 8, 10):
+        raise ValueError("Invalid isoformat string")
     year = int(dtstr[0:4])
     has_sep = dtstr[4] == '-'
 
@@ -1987,7 +1988,7 @@ class datetime(date):
                 if became_next_day:
                     year, month, day = date_components
                     # Only wrap day/month when it was previously valid
-                    if month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
+                    if 1 <= month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
                         # Calculate midnight of the next day
                         day += 1
                         if day > days_in_month:
