@@ -299,15 +299,16 @@ __lazy_import__ as builtin___lazy_import__
 
 Lazily imports a module.
 
-Returns either the module to be imported or a imp.lazy_module object
-which indicates the module to be lazily imported.
+Returns either the imported object or a proxy for the lazy import.
+
+Creating a lazy import proxy requires globals to be an exact dict.
 [clinic start generated code]*/
 
 static PyObject *
 builtin___lazy_import___impl(PyObject *module, PyObject *name,
                              PyObject *globals, PyObject *locals,
                              PyObject *fromlist, int level)
-/*[clinic end generated code: output=300f1771094b9e8c input=9c85cccd6a885b9b]*/
+/*[clinic end generated code: output=300f1771094b9e8c input=acafb35a7969f5ea]*/
 {
     PyObject *builtins;
     PyThreadState *tstate = PyThreadState_GET();
@@ -324,6 +325,8 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
         locals = globals;
     }
 
+    // Dict subclasses remain valid for the filter-controlled eager fallback;
+    // the proxy creation path enforces its stronger binding-owner contract.
     if (!PyDict_Check(globals)) {
         PyErr_Format(PyExc_TypeError,
                      "expect dict for globals, got %T", globals);

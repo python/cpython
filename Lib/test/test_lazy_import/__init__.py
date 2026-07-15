@@ -1007,6 +1007,92 @@ class GlobalsAndDictTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_resolve_writeback_reentrancy(self):
+        code = textwrap.dedent("""
+            import builtins
+            import types
+
+            real_import = builtins.__import__
+            calls = []
+            holder = []
+            nested = []
+            armed = False
+            raising = False
+
+            class CollidingKey:
+                def __hash__(self):
+                    return hash("target")
+
+                def __eq__(self, other):
+                    global armed
+                    if armed:
+                        armed = False
+                        try:
+                            holder[0].resolve()
+                        except ImportCycleError:
+                            nested.append("cycle")
+                        else:
+                            nested.append("resolved")
+                    return False
+
+            class RaisingKey:
+                def __hash__(self):
+                    return hash("retry")
+
+                def __eq__(self, other):
+                    global raising
+                    if raising:
+                        raising = False
+                        raise RuntimeError("writeback failed")
+                    return False
+
+            def custom_import(name, globals=None, locals=None,
+                              fromlist=None, level=0):
+                if name in {"target_module", "retry_module"}:
+                    module = types.ModuleType(name)
+                    calls.append(module)
+                    return module
+                return real_import(name, globals, locals, fromlist, level)
+
+            globals()[CollidingKey()] = None
+            globals()[RaisingKey()] = None
+            lazy import target_module as target
+            lazy import retry_module as retry
+            holder.append(globals()["target"])
+            holder.append(globals()["retry"])
+
+            builtins.__import__ = custom_import
+            try:
+                armed = True
+                resolved = holder[0].resolve()
+
+                assert nested == ["cycle"]
+                assert calls == [resolved]
+                assert holder[0].resolve() is resolved
+                assert globals()["target"] is resolved
+
+                raising = True
+                try:
+                    holder[1].resolve()
+                except RuntimeError as exc:
+                    assert str(exc) == "writeback failed"
+                else:
+                    raise AssertionError("writeback unexpectedly succeeded")
+
+                assert [module.__name__ for module in calls] == [
+                    "target_module", "retry_module"]
+                assert globals()["retry"] is holder[1]
+
+                retry_resolved = holder[1].resolve()
+                assert [module.__name__ for module in calls] == [
+                    "target_module", "retry_module", "retry_module"]
+                assert holder[1].resolve() is retry_resolved
+                assert globals()["retry"] is retry_resolved
+            finally:
+                builtins.__import__ = real_import
+        """)
+        assert_python_ok("-c", code)
+
     def test_dict_subclass_globals_store_and_load(self):
         code = textwrap.dedent("""
             import builtins

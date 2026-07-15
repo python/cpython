@@ -4096,15 +4096,16 @@ error:
     }
 
 ok:
-    if (PySet_Discard(importing, lazy_import) < 0) {
-        Py_CLEAR(obj);
-    }
-    else if (obj != NULL) {
-        // Cache the result and update the original global before releasing
-        // the import lock, so later reification through this proxy reuses it.
+    if (obj != NULL) {
+        // Keep the proxy marked as importing while publishing the result.
+        // Updating the globals dict can invoke a colliding key's equality
+        // method, which may otherwise re-enter resolution through this proxy.
         if (_PyLazyImport_FinishResolve(lazy_import, obj) < 0) {
             Py_CLEAR(obj);
         }
+    }
+    if (PySet_Discard(importing, lazy_import) < 0) {
+        Py_CLEAR(obj);
     }
 
     // Release the global import lock.
@@ -4580,6 +4581,8 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         }
     }
 
+    // Reification conditionally replaces the original binding by identity.
+    // Mapping overrides cannot provide that atomic check-and-replace contract.
     if (!PyDict_CheckExact(globals)) {
         Py_DECREF(abs_name);
         PyErr_SetString(PyExc_TypeError,

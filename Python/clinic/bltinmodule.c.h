@@ -121,8 +121,9 @@ PyDoc_STRVAR(builtin___lazy_import____doc__,
 "\n"
 "Lazily imports a module.\n"
 "\n"
-"Returns either the module to be imported or a imp.lazy_module object\n"
-"which indicates the module to be lazily imported.");
+"Returns either the imported object or a proxy for the lazy import.\n"
+"\n"
+"Creating a lazy import proxy requires globals to be an exact dict.");
 
 #define BUILTIN___LAZY_IMPORT___METHODDEF    \
     {"__lazy_import__", _PyCFunction_CAST(builtin___lazy_import__), METH_FASTCALL|METH_KEYWORDS, builtin___lazy_import____doc__},
@@ -1387,4 +1388,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84efa9c5cc737ce5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e55fd33f99065ac input=a9049054013a1b77]*/
