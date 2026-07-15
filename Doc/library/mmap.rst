@@ -14,7 +14,8 @@ where :class:`bytearray` are expected; for example, you can use the :mod:`re`
 module to search through a memory-mapped file.  You can also change a single
 byte by doing ``obj[index] = 97``, or change a subsequence by assigning to a
 slice: ``obj[i1:i2] = b'...'``.  You can also read and write data starting at
-the current file position, and :meth:`seek` through the file to different positions.
+the current file position, and :meth:`~mmap.mmap.seek` through the file to
+different positions.
 
 A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
@@ -30,21 +31,26 @@ still needs to be closed when done).
    that local modifications to the buffers are actually available to the
    mapping.
 
-For both the Unix and Windows versions of the constructor, *access* may be
-specified as an optional keyword parameter. *access* accepts one of four
-values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY` to
-specify read-only, write-through or copy-on-write memory respectively, or
-:const:`ACCESS_DEFAULT` to defer to *prot*.  *access* can be used on both Unix
-and Windows.  If *access* is not specified, Windows mmap returns a
-write-through mapping.  The initial memory values for all three access types
-are taken from the specified file.  Assignment to an :const:`ACCESS_READ`
-memory map raises a :exc:`TypeError` exception.  Assignment to an
-:const:`ACCESS_WRITE` memory map affects both memory and the underlying file.
-Assignment to an :const:`ACCESS_COPY` memory map affects memory but does not
-update the underlying file.
+.. data:: ACCESS_DEFAULT
+          ACCESS_READ
+          ACCESS_WRITE
+          ACCESS_COPY
 
-.. versionchanged:: 3.7
-   Added :const:`ACCESS_DEFAULT` constant.
+   For both the Unix and Windows versions of the constructor, *access* may be
+   specified as an optional keyword parameter. *access* accepts one of four
+   values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY`
+   to specify read-only, write-through or copy-on-write memory respectively,
+   or :const:`ACCESS_DEFAULT` to defer to *prot*.  *access* can be used on both
+   Unix and Windows.  If *access* is not specified, Windows mmap returns a
+   write-through mapping.  The initial memory values for all three access
+   types are taken from the specified file.  Assignment to an
+   :const:`ACCESS_READ` memory map raises a :exc:`TypeError` exception.
+   Assignment to an :const:`ACCESS_WRITE` memory map affects both memory and
+   the underlying file. Assignment to an :const:`ACCESS_COPY` memory map
+   affects memory but does not update the underlying file.
+
+   .. versionchanged:: 3.7
+      Added :const:`ACCESS_DEFAULT` constant.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
@@ -103,7 +109,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    *prot*, if specified, gives the desired memory protection; the two most
    useful values are :const:`PROT_READ` and :const:`PROT_WRITE`, to specify
    that the pages may be read or written.  *prot* defaults to
-   :const:`PROT_READ \| PROT_WRITE`.
+   :const:`PROT_READ` \| :const:`PROT_WRITE`.
 
    *access* may be specified in lieu of *flags* and *prot* as an optional
    keyword parameter.  It is an error to specify both *flags*, *prot* and
@@ -385,6 +391,36 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       position of the file pointer; the file position is advanced by ``1``. If
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
+
+.. _page-size-constants:
+
+Page Size Constants
++++++++++++++++++++
+
+.. data:: PAGESIZE
+          ALLOCATIONGRANULARITY
+
+   :const:`PAGESIZE` is the system memory page size in bytes.
+   :const:`ALLOCATIONGRANULARITY` is the minimum alignment in bytes required
+   for the *offset* argument of :class:`mmap`. On Unix,
+   :const:`ALLOCATIONGRANULARITY` is equal to :const:`PAGESIZE`.
+
+.. _prot-constants:
+
+PROT_* Constants
+++++++++++++++++
+
+.. data:: PROT_READ
+          PROT_WRITE
+          PROT_EXEC
+
+   Memory protection flags accepted by the *prot* argument of :class:`mmap`.
+   :const:`PROT_READ` allows pages to be read, :const:`PROT_WRITE` allows pages
+   to be written, and :const:`PROT_EXEC` allows pages to be executed. Values
+   can be combined using the bitwise OR operator. Not every option is present
+   on every system.
+
+   Availability: Unix.
 
 .. _madvise-constants:
 
