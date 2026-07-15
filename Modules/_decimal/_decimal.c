@@ -1499,6 +1499,10 @@ static int
 context_clear(PyObject *op)
 {
     PyDecContextObject *self = _PyDecContextObject_CAST(op);
+    PyDecSignalDictObject *traps = _PyDecSignalDictObject_CAST(self->traps);
+    PyDecSignalDictObject *flags = _PyDecSignalDictObject_CAST(self->flags);
+    traps->flags = NULL;
+    flags->flags = NULL;
     Py_CLEAR(self->traps);
     Py_CLEAR(self->flags);
     return 0;
