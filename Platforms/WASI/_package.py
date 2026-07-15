@@ -16,11 +16,11 @@ script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
 root=$(CDPATH= cd "$script_dir/.." && pwd -P)
 wasm_file="$root/lib/python{python_version(context)}/lib-wasm/python{python_version(context, debug_ok=True)}.wasm"
 
-exec wasmtime run \
-	--argv0 "$wasm_file" \
-	--config "$root/etc/python{python_version(context)}/wasmtime.toml" \
-    --dir "/" \
-	"$wasm_file" "$@"
+exec wasmtime run \\
+    --argv0 "$wasm_file" \\
+    --config "$root/etc/python{python_version(context)}/wasmtime.toml" \\
+    --dir "/" \\
+    "$wasm_file" "$@"
 """
 
 
