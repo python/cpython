@@ -351,7 +351,7 @@ def archive(context):
         _shared.log("🧹", f"Deleting {file_path} ...")
         file_path.unlink()
     to_compress = context.checkout / "dist" / filename_stem(context)
-    _shared.log("🗜️", f"Compressing to {file_path} ...")
+    _shared.log("🗜️", f"Archiving to {file_path} ...")
     mtime = subprocess.run(
         [
             "git",
