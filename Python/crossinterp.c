@@ -60,7 +60,7 @@ _PyXIData_CleanupRegistry(PyInterpreterState *interp)
         void *data = curr->data;
         xid_freefunc free_func = curr->free;
         PyObject *obj = curr->obj;
-        
+
         int expected = _PyXIData_STATUS_ACTIVE;
         if (_Py_atomic_compare_exchange_int(&curr->status, &expected, _PyXIData_STATUS_CLAIMED_BY_SENDER_TEARDOWN)) {
             if (free_func != NULL) {
