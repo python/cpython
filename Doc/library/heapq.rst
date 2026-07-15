@@ -50,6 +50,83 @@ To create a heap, use a list initialized as ``[]``, or transform an existing lis
 into a min-heap or max-heap using the :func:`heapify` or :func:`heapify_max`
 functions, respectively.
 
+Alternatively, the :class:`MinHeap` and :class:`MaxHeap` classes offer an
+object-oriented interface, described next; the module-level functions that they
+build upon are documented afterwards.
+
+
+Heap classes
+------------
+
+The :class:`MinHeap` and :class:`MaxHeap` classes wrap the module's heap
+operations in an object that owns its own storage.  Compared with the functions
+below, there is no separate list to pass to every call or to accidentally
+break the heap invariant with an unrelated list operation.
+
+.. class:: MinHeap(iterable=None)
+           MaxHeap(iterable=None)
+
+   Create a new heap.  If *iterable* is given, the heap is initialized from its
+   items in linear time; otherwise it starts empty.
+
+   A :class:`MinHeap` keeps its smallest item at the top, while a
+   :class:`MaxHeap` keeps its largest item at the top.  The two classes share
+   the same interface and differ only in that ordering --- that is, in which
+   item :meth:`~MinHeap.pop` removes and which item the other methods treat as
+   the top.  As with the functions below, only the ``<`` operator is used to
+   compare items.
+
+   The methods documented below belong to both classes; a :class:`MinHeap` is
+   used in the descriptions, with *MaxHeap* behaving the same way once
+   "smallest" is read as "largest".
+
+   .. method:: push(item)
+
+      Push the value *item* onto the heap, maintaining the heap invariant.
+
+   .. method:: pop()
+
+      Pop and return the smallest item from the heap, maintaining the heap
+      invariant.  If the heap is empty, :exc:`IndexError` is raised.
+
+   .. method:: pushpop(item)
+
+      Push *item* on the heap, then pop and return the smallest item.  The
+      combined action runs more efficiently than :meth:`push` followed by a
+      separate call to :meth:`pop`.
+
+   .. method:: replace(item)
+
+      Pop and return the smallest item from the heap, and also push the new
+      *item*.  The heap size doesn't change.  If the heap is empty,
+      :exc:`IndexError` is raised.
+
+      This one step operation is more efficient than a :meth:`pop` followed by
+      :meth:`push` and can be more appropriate when using a fixed-size heap.
+      The value returned may be larger than the *item* added; consider using
+      :meth:`pushpop` instead if that is not desired.
+
+   .. method:: nsmallest(n, key=None)
+
+      Return a list with the *n* smallest items from the heap, from smallest to
+      largest, without modifying the heap.  Behaves like the module-level
+      :func:`nsmallest` function applied to the heap's items.
+
+   .. method:: nlargest(n, key=None)
+
+      Return a list with the *n* largest items from the heap, from largest to
+      smallest, without modifying the heap.  Behaves like the module-level
+      :func:`nlargest` function applied to the heap's items.
+
+   In addition, ``len(heap)`` returns the number of items on the heap, and an
+   empty heap is falsy, so ``bool(heap)`` is ``False`` when it holds no items.
+
+   .. versionadded:: 3.16
+
+
+Heap functions
+--------------
+
 The following functions are provided for min-heaps:
 
 
@@ -213,6 +290,15 @@ time::
 
 This is similar to ``sorted(iterable)``, but unlike :func:`sorted`, this
 implementation is not stable.
+
+Using the object-oriented interface, the same sort becomes::
+
+   >>> def heapsort(iterable):
+   ...     heap = MinHeap(iterable)
+   ...     return [heap.pop() for _ in range(len(heap))]
+   ...
+   >>> heapsort([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
+   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Heap elements can be tuples.  This is useful for assigning comparison values
 (such as task priorities) alongside the main record being tracked::
