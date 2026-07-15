@@ -1,1 +1,0 @@
-Update the :mod:`socket` module's WSA error messages to match official documentation.

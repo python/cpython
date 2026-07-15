@@ -1,1 +1,0 @@
-Generate consistent colors for :mod:`pdb` commands in :mod:`pdb` REPL.

@@ -1254,17 +1254,19 @@ def getargs(co):
 FullArgSpec = namedtuple('FullArgSpec',
     'args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations')
 
-def getfullargspec(func):
+def getfullargspec(func, *, annotation_format=Format.VALUE):
     """Get the names and default values of a callable object's parameters.
 
-    A tuple of seven things is returned:
-    (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations).
+    A FullArgSpec namedtuple is returned, which has the following attributes:
     'args' is a list of the parameter names.
     'varargs' and 'varkw' are the names of the * and ** parameters or None.
     'defaults' is an n-tuple of the default values of the last n parameters.
     'kwonlyargs' is a list of keyword-only parameter names.
     'kwonlydefaults' is a dictionary mapping names from kwonlyargs to defaults.
     'annotations' is a dictionary mapping parameter names to annotations.
+
+    The *annotation_format* parameter controls the format of the annotations.
+    See the annotationlib documentation for details.
 
     Notable differences from inspect.signature():
       - the "self" parameter is always reported, even for bound methods
@@ -1291,7 +1293,8 @@ def getfullargspec(func):
                                        follow_wrapper_chains=False,
                                        skip_bound_arg=False,
                                        sigcls=Signature,
-                                       eval_str=False)
+                                       eval_str=False,
+                                       annotation_format=annotation_format)
     except Exception as ex:
         # Most of the times 'signature' will raise ValueError.
         # But, it can also raise AttributeError, and, maybe something
@@ -1706,9 +1709,13 @@ def _check_instance(obj, attr):
 
 
 def _check_class(klass, attr):
+    last_meta = None
     for entry in _static_getmro(klass):
-        if _shadowed_dict(type(entry)) is _sentinel and attr in entry.__dict__:
-            return entry.__dict__[attr]
+        meta = type(entry)
+        if meta is last_meta or _shadowed_dict(meta) is _sentinel:
+            last_meta = meta
+            if attr in entry.__dict__:
+                return entry.__dict__[attr]
     return _sentinel
 
 
@@ -1740,6 +1747,9 @@ def _shadowed_dict(klass):
     # destroyed, and the dynamically created classes happen to be the only
     # objects that hold strong references to other objects that take up a
     # significant amount of memory.
+    # Fast path: `type` is the dominant caller; result is always _sentinel.
+    if klass is type:
+        return _sentinel
     return _shadowed_dict_from_weakref_mro_tuple(
         *[make_weakref(entry) for entry in _static_getmro(klass)]
     )
@@ -2197,7 +2207,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise ValueError
 
-        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+        if isinstance(value, (str, int, float, bytes, bool, type(None),
+                              sentinel)):
             return ast.Constant(value)
         raise ValueError
 

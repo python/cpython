@@ -1,2 +1,0 @@
-Improve import time of :mod:`dataclasses` module by lazy importing :mod:`re`
-and :mod:`copy` modules.

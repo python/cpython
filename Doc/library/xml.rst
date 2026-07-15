@@ -54,7 +54,7 @@ This module also defines utility functions.
    "!", "?", and "=" are forbidden.
    The name cannot start with a digit or a character like "-", ".", and "·".
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: is_valid_text(data)
@@ -66,7 +66,7 @@ This module also defines utility functions.
    characters (excluding TAB, CR and LF), surrogate characters and special
    Unicode characters U+FFFE and U+FFFF.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _xml-security:

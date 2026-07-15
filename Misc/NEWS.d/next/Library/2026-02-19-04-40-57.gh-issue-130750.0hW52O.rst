@@ -1,2 +1,0 @@
-Restore quoting of choices in :mod:`argparse` error messages for improved clarity and consistency with documentation.
-

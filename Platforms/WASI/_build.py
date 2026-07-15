@@ -287,3 +287,15 @@ def clean_contents(context):
             _shared.log(
                 "🧹", f"Deleting generated {context.setup_local_path} ..."
             )
+
+
+@subdir("build_python_path")
+def pythoninfo_build_python(context, working_dir):
+    """Display build info of the build Python."""
+    call(["make", "pythoninfo"], context=context)
+
+
+@subdir("wasi_build_path")
+def pythoninfo_wasi_python(context, working_dir):
+    """Display build info of the host/WASI Python."""
+    call(["make", "pythoninfo"], context=context)

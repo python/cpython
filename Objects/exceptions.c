@@ -225,7 +225,7 @@ BaseException___reduce___impl(PyBaseExceptionObject *self)
  */
 
 /*[clinic input]
-@critical_section
+@critical_section state
 BaseException.__setstate__
     state: object
     /
@@ -233,7 +233,7 @@ BaseException.__setstate__
 
 static PyObject *
 BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
-/*[clinic end generated code: output=f3834889950453ab input=5524b61cfe9b9856]*/
+/*[clinic end generated code: output=f3834889950453ab input=f9b1aea70382cdb6]*/
 {
     PyObject *d_key, *d_value;
     Py_ssize_t i = 0;
@@ -1743,7 +1743,8 @@ static PyMemberDef BaseExceptionGroup_members[] = {
 
 static PyMethodDef BaseExceptionGroup_methods[] = {
     {"__class_getitem__", Py_GenericAlias,
-      METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+     METH_O|METH_CLASS,
+     PyDoc_STR("Exception groups are generic over the type of their contained exceptions")},
     BASEEXCEPTIONGROUP_DERIVE_METHODDEF
     BASEEXCEPTIONGROUP_SPLIT_METHODDEF
     BASEEXCEPTIONGROUP_SUBGROUP_METHODDEF
@@ -2139,10 +2140,10 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
                 return -1;
         }
         else {
-            self->filename = Py_NewRef(filename);
+            Py_XSETREF(self->filename, Py_NewRef(filename));
 
             if (filename2 && filename2 != Py_None) {
-                self->filename2 = Py_NewRef(filename2);
+                Py_XSETREF(self->filename2, Py_NewRef(filename2));
             }
 
             if (nargs >= 2 && nargs <= 5) {
@@ -2157,10 +2158,10 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
             }
         }
     }
-    self->myerrno = Py_XNewRef(myerrno);
-    self->strerror = Py_XNewRef(strerror);
+    Py_XSETREF(self->myerrno, Py_XNewRef(myerrno));
+    Py_XSETREF(self->strerror, Py_XNewRef(strerror));
 #ifdef MS_WINDOWS
-    self->winerror = Py_XNewRef(winerror);
+    Py_XSETREF(self->winerror, Py_XNewRef(winerror));
 #endif
 
     /* Steals the reference to args */

@@ -322,6 +322,16 @@ class Family:
     size: str
     members: list[Instruction]
 
+    def get_member_record_names(self) -> tuple[str, ...]:
+        seen: set[str] = set()
+        names: list[str] = []
+        for member in self.members:
+            for part in member.parts:
+                if part.properties.records_value and part.name not in seen:
+                    seen.add(part.name)
+                    names.append(part.name)
+        return tuple(names)
+
     def dump(self, indent: str) -> None:
         print(indent, self.name, "= ", ", ".join([m.name for m in self.members]))
 
@@ -599,6 +609,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
+    "PyStackRef_DupImmortal",
     "PyStackRef_False",
     "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
@@ -616,6 +627,9 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_RefcountOnObject",
     "PyStackRef_TYPE",
     "PyStackRef_True",
+    "PyBytes_GET_SIZE",
+    "PyDict_GET_SIZE",
+    "PySet_GET_SIZE",
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
@@ -643,6 +657,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_PushUnchecked",
     "_PyFrame_SetStackPointer",
     "_PyFrame_StackPush",
+    "_PyFrame_StackAssertInvalid",
     "_PyFunction_SetVersion",
     "_PyGen_GetGeneratorFromFrame",
     "gen_try_set_executing",
@@ -992,7 +1007,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         eval_breaker="CHECK_PERIODIC" in op.name,
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
-        sync_sp=variable_used(op, "SYNC_SP"),
+        sync_sp=variable_used(op, "SYNC_SP") or variable_used(op, "SAVE_STACK") or variable_used(op, "RELOAD_STACK"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=variable_used(op, "GETLOCAL") and not has_free,

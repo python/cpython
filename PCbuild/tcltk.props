@@ -2,7 +2,7 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="pyproject.props" Condition="$(__PyProject_Props_Imported) != 'true'" />
   <PropertyGroup>
-    <TclVersion Condition="$(TclVersion) == ''">8.6.15.0</TclVersion>
+    <TclVersion Condition="$(TclVersion) == ''">9.0.3.0</TclVersion>
     <TkVersion Condition="$(TkVersion) == ''">$(TclVersion)</TkVersion>
     <TclMajorVersion>$([System.Version]::Parse($(TclVersion)).Major)</TclMajorVersion>
     <TclMinorVersion>$([System.Version]::Parse($(TclVersion)).Minor)</TclMinorVersion>
@@ -12,7 +12,9 @@
     <TkMinorVersion>$([System.Version]::Parse($(TkVersion)).Minor)</TkMinorVersion>
     <TkPatchLevel>$([System.Version]::Parse($(TkVersion)).Build)</TkPatchLevel>
     <TkRevision>$([System.Version]::Parse($(TkVersion)).Revision)</TkRevision>
-    <tclDir Condition="$(tclDir) == ''">$(ExternalsDir)tcl-core-$(TclVersion)\</tclDir>
+    <!-- Back compat hack.  If you're here wondering about -core vs not, do us both a favor and just override the whole tclDir variable -->
+    <tclDir Condition="$(tclDir) == '' and $(TclMajorVersion) == '8'">$(ExternalsDir)tcl-core-$(TclVersion)\</tclDir>
+    <tclDir Condition="$(tclDir) == ''">$(ExternalsDir)tcl-$(TclVersion)\</tclDir>
     <tkDir Condition="$(tkDir) == ''">$(ExternalsDir)tk-$(TkVersion)\</tkDir>
     <tcltkDir Condition="$(tcltkDir) == ''">$(ExternalsDir)tcltk-$(TclVersion)\$(ArchName)\</tcltkDir>
     <tcltkSuffix Condition="'$(TclMajorVersion)' == '8'">t</tcltkSuffix>

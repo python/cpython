@@ -238,7 +238,7 @@ are not available.
 .. c:function:: void PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m);
                 void PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2);
 
-   .. (These need to be in a separate section without a Stable ABI anotation.)
+   .. (These need to be in a separate section without a Stable ABI annotation.)
 
    To be used only as in the macro expansions
    listed :ref:`earlier in this section <critical-section-macros>`.
