@@ -1,3 +1,0 @@
-Fix the docstring of :meth:`asyncio.loop.sock_sendto`, which was mistakenly
-copied from :meth:`asyncio.loop.sock_sendall` and described stream semantics
-instead of a datagram send.
