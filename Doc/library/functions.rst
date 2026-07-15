@@ -1292,6 +1292,8 @@ are always available.  They are listed here in alphabetical order.
    Return a "memory view" object created from the given argument.  See
    :ref:`typememoryview` for more information.
 
+   This class cannot be subclassed.
+
 
 .. function:: min(iterable, /, *, key=None)
               min(iterable, /, *, default, key=None)
@@ -1749,6 +1751,8 @@ are always available.  They are listed here in alphabetical order.
    Rather than being a function, :class:`range` is actually an immutable
    sequence type, as documented in :ref:`typesseq-range` and :ref:`typesseq`.
 
+   This class cannot be subclassed.
+
 
 .. function:: repr(object, /)
 
@@ -1919,6 +1923,8 @@ are always available.  They are listed here in alphabetical order.
 
    See :func:`itertools.islice` for an alternate version that returns an
    :term:`iterator`.
+
+   This class cannot be subclassed.
 
    .. attribute:: slice.start
                   slice.stop
