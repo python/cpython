@@ -2103,7 +2103,6 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(_body_from_request_chunks(groups[0]), body)
         self.assertEqual(_body_from_request_chunks(groups[1]), body)
 
-    @requires_subprocess()
     def test_basic_auth_retry_non_seekable_body(self):
         realm = "acme"
         url = "http://example.com/"
@@ -2119,19 +2118,25 @@ class HandlerTests(unittest.TestCase):
         password_manager.add_password(realm, url, "user", "pass")
         auth_handler = HTTPBasicAuthHandler(password_manager)
 
-        cmd = [sys.executable, "-c", "import sys; sys.stdout.buffer.write(b'pipe-data')"]
+        class NonSeekableReader:
+            _data = b"pipe-data"
 
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
-            opener = OpenerDirector()
-            opener.add_handler(auth_handler)
-            opener.add_handler(http_handler_cls())
-            opener.add_handler(HTTPErrorProcessor())
-            opener.add_handler(HTTPDefaultErrorHandler())
+            def read(self, n=-1):
+                if self._data is None:
+                    return b""
+                chunk = self._data
+                self._data = None
+                return chunk
 
-            req = Request(url, proc.stdout, method="POST")
-            with self.assertRaisesRegex(ValueError, "seekable file-like Request.data"):
+        opener = OpenerDirector()
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler_cls())
+        opener.add_handler(HTTPErrorProcessor())
+        opener.add_handler(HTTPDefaultErrorHandler())
+
+        req = Request(url, NonSeekableReader(), method="POST")
+        with self.assertRaisesRegex(ValueError, "seekable file-like Request.data"):
                 opener.open(req)
-
 
     def test_http_closed(self):
         """Test the connection is cleaned up when the response is closed"""
