@@ -88,7 +88,7 @@ struct _xidata {
     // to PyMem_RawFree (the default if not explicitly set to NULL).
     // The call will happen with the original interpreter activated.
     xid_freefunc free;
-    _Py_atomic_int status;   /* one of _PyXIData_status_t */
+    int status;   /* one of _PyXIData_status_t */
     struct _xidata *xid_next;
     struct _xidata *xid_prev;
 };
