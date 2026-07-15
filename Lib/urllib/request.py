@@ -924,8 +924,6 @@ def _prepare_auth_retry_body(request):
     """Allow authentication retries to resend a consumed file-like object."""
     data = request.data
     if data is None or not hasattr(data, 'read'):
-        return
-    if isinstance(data, _AuthBodyReiterator):
         return None
     if not getattr(data, 'seekable', lambda: hasattr(data, 'seek'))():
         raise ValueError("seekable file-like Request.data is required when "
