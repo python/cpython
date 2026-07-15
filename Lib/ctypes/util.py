@@ -565,6 +565,7 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
 
     _Struct.__name__ = klass.__name__
     _Struct.__qualname__ = klass.__qualname__
+    _Struct.__module__ = klass.__module__
     return _Struct
 
 
