@@ -20,7 +20,7 @@ clone or build steps. Instead, Pixi will automatically handle both the build
 and installation of the package.
 
 Each package variant carries a 'flag' to enable selection of that variant — see
-[the Pixi docs](https://pixi.prefix.dev/latest/concepts/package_specifications/#extras-and-flags
+[the Pixi docs](https://pixi.prefix.dev/latest/concepts/package_specifications/#extras-and-flags)
 for details of how to use this. Currently defined package variants:
 
 - `default`
