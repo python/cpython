@@ -1,0 +1,3 @@
+Fix :func:`xmlrpc.client.loads` raising :exc:`IndexError` instead of
+:exc:`~xmlrpc.client.ResponseError` for a malformed ``<struct>``.  Patch by
+tonghuaroot.
