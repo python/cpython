@@ -505,14 +505,14 @@ class CFieldInfo:
     bit_width: int | None = None
 
 
-def _process_struct(klass, /, *, align, layout, endian, pack):
+def _process_struct(decorated_class, /, *, align, layout, endian, pack):
     fields = []
     anonymous = []
-    if issubclass(klass, Structure):
-        fields.extend(klass._fields_)
-        anonymous.extend(klass._anonymous_)
+    if issubclass(decorated_class, Structure):
+        fields.extend(decorated_class._fields_)
+        anonymous.extend(decorated_class._anonymous_)
 
-    for name, hint in annotationlib.get_annotations(klass).items():
+    for name, hint in annotationlib.get_annotations(decorated_class).items():
         if get_origin(hint) is ClassVar:
             continue
 
@@ -542,9 +542,9 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
     else:
         raise ValueError(f"expected 'big', 'little', or 'native', but got {endian!r}")
 
-    @functools.wraps(klass, updated=())
+    @functools.wraps(decorated_class, updated=())
     class _Struct(endian_class):
-        vars().update(vars(klass))
+        vars().update(vars(decorated_class))
         if align is not None:
             _align_ = align
         if layout is not None:
@@ -567,8 +567,8 @@ def struct(class_or_none=None, /, *, align=None, layout=None, endian='native', p
     )
 
     if class_or_none is None:
-        def inner(klass):
-            return process_the_struct(klass)
+        def inner(decorated_class):
+            return process_the_struct(decorated_class)
 
         return inner
 
