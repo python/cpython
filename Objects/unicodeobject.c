@@ -113,7 +113,9 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #endif
 
 #ifdef Py_GIL_DISABLED
-#  define LOCK_INTERNED(interp) PyMutex_Lock(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex))
+#  define LOCK_INTERNED(interp) \
+    PyMutex_LockFlags(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex), \
+                      _Py_LOCK_DONT_DETACH)
 #  define UNLOCK_INTERNED(interp) PyMutex_Unlock(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex))
 #else
 #  define LOCK_INTERNED(interp)
