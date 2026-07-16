@@ -2709,12 +2709,13 @@ AttributeError_str(PyObject *op)
     PyObject *arg, *obj = NULL, *name;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    if (self->obj && self->name && PyUnicode_Check(self->name)
+    if (
+        self->obj && self->name && PyUnicode_Check(self->name)
         && ((PyTuple_GET_SIZE(self->args) == 1
              && PyUnicode_Check(arg = PyTuple_GET_ITEM(self->args, 0))
              && PyUnicode_Equal(arg, self->name))
-            || PyTuple_GET_SIZE(self->args) == 0))
-    {
+            || PyTuple_GET_SIZE(self->args) == 0)
+    ) {
         obj = Py_NewRef(self->obj);
         name = Py_NewRef(self->name);
     }
