@@ -1355,7 +1355,7 @@ location listed above.
         if data:
             contents = []
             for key, value in data:
-                contents.append(self.docother(value, key, name, maxlen=70))
+                contents.append(self.docother(value, key, name, maxlen=76))
             result = result + self.section('DATA', '\n'.join(contents))
 
         if version := self._get_version(object):
@@ -1478,7 +1478,7 @@ location listed above.
                         obj = getattr(object, name)
                     except AttributeError:
                         obj = homecls.__dict__[name]
-                    push(self.docother(obj, name, mod, maxlen=70, doc=doc) +
+                    push(self.docother(obj, name, mod, maxlen=72, doc=doc) +
                          '\n')
             return attrs
 
@@ -1629,7 +1629,7 @@ location listed above.
         if maxlen:
             line = (name and name + ' = ' or '') + repr
             chop = maxlen - len(line)
-            if chop < 0: repr = repr[:chop] + '...'
+            if chop < 0: repr = repr[:chop-3] + '...'
         line = (name and self.bold(name) + ' = ' or '') + repr
         if not doc:
             doc = getdoc(object)
@@ -1844,6 +1844,7 @@ class Helper:
         'async': ('async', ''),
         'await': ('await', ''),
         'break': ('break', 'while for'),
+        'case': 'match',
         'class': ('class', 'CLASSES SPECIALMETHODS'),
         'continue': ('continue', 'while for'),
         'def': ('function', ''),
@@ -1855,12 +1856,13 @@ class Helper:
         'for': ('for', 'break continue while'),
         'from': 'import',
         'global': ('global', 'nonlocal NAMESPACES'),
-        'if': ('if', 'TRUTHVALUE'),
+        'if': ('if', 'TRUTHVALUE match'),
         'import': ('import', 'MODULES'),
         'in': ('in', 'SEQUENCEMETHODS'),
         'is': 'COMPARISON',
         'lambda': ('lambda', 'FUNCTIONS'),
         'lazy': ('lazy', 'MODULES'),
+        'match': ('match', 'if'),
         'nonlocal': ('nonlocal', 'global NAMESPACES'),
         'not': 'BOOLEAN',
         'or': 'BOOLEAN',

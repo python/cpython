@@ -21,7 +21,7 @@ by Apache's log4j system.
 
 Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 
-To use, simply 'import logging' and log away!
+To use, simply 'import logging.config' and log away!
 """
 
 import errno

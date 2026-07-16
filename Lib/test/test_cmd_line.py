@@ -314,7 +314,7 @@ class CmdLineTest(unittest.TestCase):
             # decodable from ASCII) and run_command() failed on
             # PyUnicode_AsUTF8String(). This is the expected behaviour on
             # Linux.
-            pattern = b"Unable to decode the command from the command line:"
+            pattern = b"python: Unable to decode the command from the command line:"
         elif p.returncode == 0:
             # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
             # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris
@@ -1313,6 +1313,17 @@ class CmdLineTest(unittest.TestCase):
         entrypoint = "test.test_cmd_line:presite.attr.func"
         proc = assert_python_ok("-X", f"presite={entrypoint}", "-c", "pass")
         self.assertEqual(proc.out.rstrip(), b"presite func")
+
+    def test_dump_path_config(self):
+        # gh-151253: At the first import (import encodings) during Python
+        # startup, if the import fails, dump the Python path configuration.
+        nonexistent = '/nonexistent-python-path'
+        # Use -X frozen_modules=off to disable frozen encodings module
+        # on release build.
+        cmd = ["-X", "frozen_modules=off", "-c", "pass"]
+        proc = assert_python_failure(*cmd, PYTHONHOME=nonexistent)
+        self.assertIn(b'Python path configuration:', proc.err)
+        self.assertIn(f"PYTHONHOME = '{nonexistent}'".encode(), proc.err)
 
 
 @unittest.skipIf(interpreter_requires_environment(),

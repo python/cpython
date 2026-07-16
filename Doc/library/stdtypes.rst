@@ -1720,7 +1720,11 @@ category.
 |                          |  :meth:`str.strip`                        |  :meth:`bytes.strip`                              |
 |                          +--------------------+----------------------+----------------------+----------------------------+
 |                          | :meth:`str.lstrip` | :meth:`str.rstrip`   | :meth:`bytes.lstrip` | :meth:`bytes.rstrip`       |
-+--------------------------+--------------------+----------------------+----------------------+----------------------------+
+|                          +--------------------+----------------------+----------------------+----------------------------+
+|                          |  :meth:`str.removeprefix`                 |  :meth:`bytes.removeprefix`                       |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.removesuffix`                 |  :meth:`bytes.removesuffix`                       |
++--------------------------+-------------------------------------------+---------------------------------------------------+
 | Translation and Encoding |  :meth:`str.translate`                    |  :meth:`bytes.translate`                          |
 |                          +-------------------------------------------+---------------------------------------------------+
 |                          |  :meth:`str.maketrans`                    |  :meth:`bytes.maketrans`                          |
@@ -5756,6 +5760,13 @@ Frozen dictionaries
 
    Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
    signifying (respectively) the types of the frozendict's keys and values.
+
+   .. classmethod:: fromkeys(iterable, value=None, /)
+
+      Similar to :meth:`dict.fromkeys`, but call again the type constructor
+      with an initialized :class:`frozendict` if the type is a
+      :class:`frozendict` subclass or if the constructor returned a
+      :class:`frozendict`.
 
    .. versionadded:: 3.15
 

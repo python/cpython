@@ -429,7 +429,8 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
         }
     }
 
-    tstate->interp->long_state.max_str_digits = config->int_max_str_digits;
+    _Py_atomic_store_int(&tstate->interp->long_state.max_str_digits,
+                         config->int_max_str_digits);
 
     // Update the sys module for the new configuration
     if (_PySys_UpdateConfig(tstate) < 0) {
@@ -3731,7 +3732,9 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
        This function already did its best to display a traceback.
        Disable faulthandler to prevent writing a second traceback
        on abort(). */
-    _PyFaulthandler_Fini();
+    if (has_tstate_and_gil) {
+        _PyFaulthandler_Fini();
+    }
 
     /* Check if the current Python thread hold the GIL */
     if (has_tstate_and_gil) {
