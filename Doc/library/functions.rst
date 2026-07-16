@@ -610,10 +610,9 @@ are always available.  They are listed here in alphabetical order.
       This function executes arbitrary code. Calling it with
       untrusted user-supplied input will lead to security vulnerabilities.
 
-   The *source* argument is parsed and evaluated as a Python expression
-   (technically speaking, a condition list) using the *globals* and *locals*
-   mappings as global and local namespace.  If the *globals* dictionary is
-   present and does not contain a value for the key ``__builtins__``, a
+The *source* argument is parsed and evaluated as a Python expression
+using the *globals* and *locals* mappings as global and local namespace
+.If the *globals* dictionary is present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *source* is parsed.
    Overriding ``__builtins__`` can be used to restrict or change the available
