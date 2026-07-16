@@ -21,7 +21,7 @@ VER_REF=$(grep "\[PYTHON_VERSION\]\, \[" configure.ac | sed -n 's/.*\[\([0-9.]*\
 VER=$(echo ${PKG_VERSION} | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
 
 if [[ "${VER_REF}" != "${VER}" ]]; then
-    echo "Unexpected version from conda package. Got ${VER}. Expected ${VER_REF}. Do you need to update 'version' in `variants.yaml`?"
+    echo "Unexpected version from conda package. Got ${VER}. Expected ${VER_REF}. Do you need to update 'version' in 'variants.yaml'?"
     exit 1
 fi
 
