@@ -557,13 +557,21 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
 
 
 def struct(class_or_none=None, /, *, align=None, layout=None, endian='native', pack=None):
+    process_the_struct = functools.partial(
+        _process_struct,
+        align=align,
+        layout=layout,
+        endian=endian,
+        pack=pack
+    )
+
     if class_or_none is None:
         def inner(klass):
-            return _process_struct(klass, align=align, layout=layout, endian=endian, pack=pack)
+            return process_the_struct(klass)
 
         return inner
 
-    return _process_struct(class_or_none, align=align, layout=layout, endian=endian, pack=pack)
+    return process_the_struct(class_or_none)
 
 ################################################################
 # test code
