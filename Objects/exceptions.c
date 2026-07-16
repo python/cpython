@@ -2718,7 +2718,7 @@ AttributeError_str(PyObject *op)
         ret = BaseException_str(op);
     } else {
         ret = PyUnicode_FromFormat("%R has no attribute '%U'",
-                                    self->obj, self->name);
+                                   self->obj, self->name);
     }
     Py_END_CRITICAL_SECTION();
     return ret;
