@@ -2082,7 +2082,7 @@ class AttributeErrorTests(unittest.TestCase):
             raise AttributeError
         mod2.__getattr__ = bare_raise
 
-        mod3 = ModuleType("bareraise")
+        mod3 = ModuleType("custom")
         def raise_custom(name):
             raise AttributeError("custom")
         mod3.__getattr__ = raise_custom
