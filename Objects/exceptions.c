@@ -2706,14 +2706,24 @@ static PyObject *
 AttributeError_str(PyObject *op)
 {
     PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
-    if (!self->obj || !self->name || PyTuple_GET_SIZE(self->args) > 1
+    PyObject *ret, *arg;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (
+        !self->obj || !self->name || !PyUnicode_Check(self->name)
+        || PyTuple_GET_SIZE(self->args) > 1
         || (PyTuple_GET_SIZE(self->args) == 1
-            && !PyUnicode_Equal(PyTuple_GET_ITEM(self->args, 0), self->name)))
-    {
-        return BaseException_str(op);
+            && PyUnicode_Check(arg = PyTuple_GET_ITEM(self->args, 0))
+            && !PyUnicode_Equal(arg, self->name))
+    ) {
+        ret = BaseException_str(op);
     }
-    return PyUnicode_FromFormat("%R has no attribute '%U'",
-                                self->obj, self->name);
+    else {
+        ret = PyUnicode_FromFormat("%R has no attribute '%U'",
+                                    self->obj, self->name);
+    }
+    Py_END_CRITICAL_SECTION();
+    return ret;
+
 }
 
 static int
