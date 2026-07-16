@@ -2722,7 +2722,6 @@ AttributeError_str(PyObject *op)
     }
     Py_END_CRITICAL_SECTION();
     return ret;
-
 }
 
 static int
