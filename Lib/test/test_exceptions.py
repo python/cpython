@@ -2071,7 +2071,7 @@ class AttributeErrorTests(unittest.TestCase):
         self._test_generated_message(BareRaise(), "missing2")
         self._test_generated_message(RaiseCustom(), "custom")
 
-    def test_module_getattr_attribute_error_message(self):
+    def test_module_getattr_error_message(self):
         mod1 = ModuleType("raisewithname")
         def raise_with_name(name):
             raise AttributeError(name)
