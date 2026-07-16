@@ -2156,14 +2156,14 @@ Return a tuple containing unpacked values.
 
 Values are unpacked according to the struct format string.  The
 buffer's size in bytes, starting at position offset, must be at
-least the struct size.  See help(struct) for more on format
-strings.
+least the struct size.  A negative offset counts from the end of
+the buffer.  See help(struct) for more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
-/*[clinic end generated code: output=57fac875e0977316 input=57cfcf84c088faa4]*/
+/*[clinic end generated code: output=57fac875e0977316 input=49b7c90dd8faeb97]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     ENSURE_STRUCT_IS_READY(self);
@@ -2497,15 +2497,16 @@ Pack values and write the packed bytes into the buffer.
 
 Pack the provided values according to the struct format string
 and write the packed bytes into the writable buffer starting at
-offset.  Note that the offset is a required argument.  See
-help(struct) for more on format strings.
+offset.  Note that the offset is a required argument.  A negative
+offset counts from the end of the buffer.  See help(struct) for
+more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
 Struct_pack_into_impl(PyStructObject *self, Py_buffer *buffer,
                       Py_ssize_t offset, PyObject * const *values,
                       Py_ssize_t values_length)
-/*[clinic end generated code: output=aa9d9a93f5f8f77b input=9d842a368ee14245]*/
+/*[clinic end generated code: output=aa9d9a93f5f8f77b input=a2b8749e3843f01b]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
 
@@ -2735,15 +2736,15 @@ Pack values and write the packed bytes into the buffer.
 
 Pack the provided values according to the format string and write the
 packed bytes into the writable buffer starting at offset.  Note that the
-offset is a required argument.  See help(struct) for more on format
-strings.
+offset is a required argument.  A negative offset counts from the end of
+the buffer.  See help(struct) for more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
 pack_into_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer,
                Py_ssize_t offset, PyObject * const *values,
                Py_ssize_t values_length)
-/*[clinic end generated code: output=e8bf7d422b2088ef input=086867c0f5d8a8e4]*/
+/*[clinic end generated code: output=e8bf7d422b2088ef input=548c35c57db7436a]*/
 {
     return Struct_pack_into_impl(s_object, buffer, offset,
                                  values, values_length);
@@ -2781,14 +2782,15 @@ unpack_from
 
 Return a tuple containing values unpacked according to the format string.
 
-The buffer's size, minus offset, must be at least calcsize(format).  See
+The buffer must contain at least calcsize(format) bytes starting at
+offset.  A negative offset counts from the end of the buffer.  See
 help(struct) for more on format strings.
 [clinic start generated code]*/
 
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
                  Py_buffer *buffer, Py_ssize_t offset)
-/*[clinic end generated code: output=1042631674c6e0d3 input=3e46619756fb0293]*/
+/*[clinic end generated code: output=1042631674c6e0d3 input=fb755400a7a47a51]*/
 {
     return Struct_unpack_from_impl(s_object, buffer, offset);
 }
