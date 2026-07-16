@@ -211,6 +211,7 @@ class isearch_end(commands.Command):
         r.pop_input_trans()
         r.invalidate_prompt()
 
+
 class isearch_bracketed_paste(commands.Command):
     def do(self) -> None:
         r = self.reader
