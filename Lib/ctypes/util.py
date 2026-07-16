@@ -516,9 +516,11 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
         if get_origin(hint) is ClassVar:
             continue
 
-        field = [name, hint]
+        field = [name]
         if get_origin(hint) is Annotated:
-            field_info = get_args(hint)[1]
+            args = get_args(hint)
+            field.append(args[0])
+            field_info = args[1]
             if not isinstance(field_info, CFieldInfo):
                 raise TypeError(f"expected CFieldInfo in Annotated, got {field_info!r}")
 
@@ -527,8 +529,8 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
 
             if field_info.anonymous is True:
                 anonymous.append(name)
-
-            continue
+        else:
+            field.append(hint)
 
         fields.append(field)
 
