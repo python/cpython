@@ -3,7 +3,12 @@
 
 context:
   # Keep up to date
+  # We could use git.latest_tag(".")[1:], but tags will be wrong until the first alpha
+  # release is tagged.
+  version: 3.16
   freethreading_tag: ${{ "t" if "freethreading" in variant else "" }}
+  abi_prefix: ${{ (variant | split("-"))[0] + "_" if "san" in variant else "" }}
+  abi_tag: ${{ abi_prefix }}cp${{ (version | split('.'))[:2] | join('') }}
 
 recipe:
   name: python
