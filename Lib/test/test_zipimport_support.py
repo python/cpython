@@ -253,7 +253,7 @@ class ZipSupportTests(unittest.TestCase):
                 warnings.filterwarnings('error', module='test_mod')
                 import test_pkg.test_mod
             self.assertEqual(sorted(wm.lineno for wm in wlog),
-                             sorted([4, 7, 10, 13, 14, 21]*2))
+                             [4, 7, 10, 13, 14, 21])
             filename = test_pkg.test_mod.__file__
             for wm in wlog:
                 self.assertEqual(wm.filename, filename)
