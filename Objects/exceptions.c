@@ -2716,8 +2716,7 @@ AttributeError_str(PyObject *op)
         || PyTuple_GET_SIZE(self->args) != 0
     ) {
         ret = BaseException_str(op);
-    }
-    else {
+    } else {
         ret = PyUnicode_FromFormat("%R has no attribute '%U'",
                                     self->obj, self->name);
     }
