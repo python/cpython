@@ -2706,21 +2706,22 @@ static PyObject *
 AttributeError_str(PyObject *op)
 {
     PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
-    PyObject *ret, *arg;
+    PyObject *ret = NULL, *arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     if (
-        !self->obj || !self->name || !PyUnicode_Check(self->name)
-        || (PyTuple_GET_SIZE(self->args) == 1
-            && PyUnicode_Check(arg = PyTuple_GET_ITEM(self->args, 0))
-            && !PyUnicode_Equal(arg, self->name))
-        || PyTuple_GET_SIZE(self->args) != 0
+        self->obj && self->name && PyUnicode_Check(self->name)
+        && ((PyTuple_GET_SIZE(self->args) == 1
+             && PyUnicode_Check(arg = PyTuple_GET_ITEM(self->args, 0))
+             && PyUnicode_Equal(arg, self->name))
+            || PyTuple_GET_SIZE(self->args) == 0)
     ) {
-        ret = BaseException_str(op);
-    } else {
         ret = PyUnicode_FromFormat("%R has no attribute '%U'",
                                    self->obj, self->name);
     }
     Py_END_CRITICAL_SECTION();
+    if (!ret) {
+        ret = BaseException_str(op);
+    }
     return ret;
 }
 
