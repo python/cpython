@@ -1851,7 +1851,7 @@ os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os_listvolumes__doc__,
 "listvolumes($module, /)\n"
@@ -1873,7 +1873,7 @@ os_listvolumes(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_listvolumes_impl(module);
 }
 
-#endif /* (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
@@ -13733,4 +13733,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=250ea2e34fdd133f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d81494ceb6ce44ed input=a9049054013a1b77]*/
