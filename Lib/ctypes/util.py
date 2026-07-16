@@ -518,9 +518,8 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
 
         field = [name]
         if get_origin(hint) is Annotated:
-            args = get_args(hint)
-            field.append(args[0])
-            field_info = args[1]
+            cls, field_info = get_args(hint)
+            field.append(cls)
             if not isinstance(field_info, CFieldInfo):
                 raise TypeError(f"expected CFieldInfo in Annotated, got {field_info!r}")
 
