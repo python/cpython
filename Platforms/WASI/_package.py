@@ -380,6 +380,9 @@ def archive(context):
             "--numeric-owner",
             "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
             "--mode=go+u,go-w",
+            # Explicitly using `-T` because if you don't compress with threads you can't
+            # uncompress with them and the size difference is negligible when using
+            # single-threaded compression.
             "--use-compress-program", "xz -T 0",
             os.fsdecode(to_compress),
         ],
