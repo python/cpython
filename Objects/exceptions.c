@@ -2710,10 +2710,10 @@ AttributeError_str(PyObject *op)
     Py_BEGIN_CRITICAL_SECTION(self);
     if (
         !self->obj || !self->name || !PyUnicode_Check(self->name)
-        || PyTuple_GET_SIZE(self->args) > 1
         || (PyTuple_GET_SIZE(self->args) == 1
             && PyUnicode_Check(arg = PyTuple_GET_ITEM(self->args, 0))
             && !PyUnicode_Equal(arg, self->name))
+        || PyTuple_GET_SIZE(self->args) != 0
     ) {
         ret = BaseException_str(op);
     }
