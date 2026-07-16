@@ -2707,8 +2707,8 @@ AttributeError_str(PyObject *op)
 {
     PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
     if (!self->obj || !self->name || PyTuple_GET_SIZE(self->args) > 1
-        || (PyTuple_GET_SIZE(self->args) == 1 &&
-            !PyUnicode_Equal(PyTuple_GET_ITEM(self->args, 0), self->name)))
+        || (PyTuple_GET_SIZE(self->args) == 1
+            && !PyUnicode_Equal(PyTuple_GET_ITEM(self->args, 0), self->name)))
     {
         return BaseException_str(op);
     }
