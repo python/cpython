@@ -16,8 +16,8 @@ release schedule.  Python 2.5 was released on September 19, 2006.
 The changes in Python 2.5 are an interesting mix of language and library
 improvements. The library enhancements will be more important to Python's user
 community, I think, because several widely useful packages were added.  New
-modules include ElementTree for XML processing (:mod:`xml.etree`),
-the SQLite database module (:mod:`sqlite`), and the :mod:`ctypes`
+modules include ElementTree for XML processing (:mod:`xml.etree.ElementTree`),
+the SQLite database module (:mod:`sqlite3`), and the :mod:`ctypes`
 module for calling C functions.
 
 The language changes are of middling significance.  Some pleasant new features
@@ -134,14 +134,14 @@ PEP 309: Partial Function Application
 The :mod:`functools` module is intended to contain tools for functional-style
 programming.
 
-One useful tool in this module is the :func:`partial` function. For programs
+One useful tool in this module is the :func:`~functools.partial` function. For programs
 written in a functional style, you'll sometimes want to construct variants of
 existing functions that have some of the parameters filled in.  Consider a
 Python function ``f(a, b, c)``; you could create a new function ``g(b, c)`` that
 was equivalent to ``f(1, b, c)``.  This is called "partial function
 application".
 
-:func:`partial` takes the arguments ``(function, arg1, arg2, ... kwarg1=value1,
+:func:`~functools.partial` takes the arguments ``(function, arg1, arg2, ... kwarg1=value1,
 kwarg2=value2)``.  The resulting object is callable, so you can just call it to
 invoke *function* with the filled-in arguments.
 
@@ -159,7 +159,7 @@ Here's a small but realistic example::
 
 Here's another example, from a program that uses PyGTK.  Here a context-sensitive
 pop-up menu is being constructed dynamically.  The callback provided
-for the menu option is a partially applied version of the :meth:`open_item`
+for the menu option is a partially applied version of the ``open_item()``
 method, where the first argument has been provided. ::
 
    ...
@@ -172,7 +172,7 @@ method, where the first argument has been provided. ::
 
 Another function in the :mod:`functools` module is the
 ``update_wrapper(wrapper, wrapped)`` function that helps you write
-well-behaved decorators.  :func:`update_wrapper` copies the name, module, and
+well-behaved decorators.  :func:`~functools.update_wrapper` copies the name, module, and
 docstring attribute to a wrapper function so that tracebacks inside the wrapped
 function are easier to understand.  For example, you might write::
 
@@ -183,7 +183,7 @@ function are easier to understand.  For example, you might write::
        functools.update_wrapper(wrapper, f)
        return wrapper
 
-:func:`wraps` is a decorator that can be used inside your own decorators to copy
+:func:`~functools.wraps` is a decorator that can be used inside your own decorators to copy
 the wrapped function's information.  An alternate  version of the previous
 example would be::
 
@@ -209,7 +209,7 @@ example would be::
 PEP 314: Metadata for Python Software Packages v1.1
 ===================================================
 
-Some simple dependency support was added to Distutils.  The :func:`setup`
+Some simple dependency support was added to Distutils.  The :func:`!setup`
 function now has ``requires``, ``provides``, and ``obsoletes`` keyword
 parameters.  When you build a source distribution using the ``sdist`` command,
 the dependency information will be recorded in the :file:`PKG-INFO` file.
@@ -271,26 +271,26 @@ Let's say you have a package directory like this::
    pkg/main.py
    pkg/string.py
 
-This defines a package named :mod:`pkg` containing the :mod:`pkg.main` and
-:mod:`pkg.string` submodules.
+This defines a package named ``pkg`` containing the ``pkg.main`` and
+``pkg.string`` submodules.
 
 Consider the code in the :file:`main.py` module.  What happens if it executes
 the statement ``import string``?  In Python 2.4 and earlier, it will first look
 in the package's directory to perform a relative import, finds
 :file:`pkg/string.py`, imports the contents of that file as the
-:mod:`pkg.string` module, and that module is bound to the name ``string`` in the
-:mod:`pkg.main` module's namespace.
+``pkg.string`` module, and that module is bound to the name ``string`` in the
+``pkg.main`` module's namespace.
 
-That's fine if :mod:`pkg.string` was what you wanted.  But what if you wanted
+That's fine if ``pkg.string`` was what you wanted.  But what if you wanted
 Python's standard :mod:`string` module?  There's no clean way to ignore
-:mod:`pkg.string` and look for the standard module; generally you had to look at
+``pkg.string`` and look for the standard module; generally you had to look at
 the contents of ``sys.modules``, which is slightly unclean.    Holger Krekel's
-:mod:`py.std` package provides a tidier way to perform imports from the standard
+:mod:`!py.std` package provides a tidier way to perform imports from the standard
 library, ``import py; py.std.string.join()``, but that package isn't available
 on all Python installations.
 
 Reading code which relies on relative imports is also less clear, because a
-reader may be confused about which module, :mod:`string` or :mod:`pkg.string`,
+reader may be confused about which module, :mod:`string` or ``pkg.string``,
 is intended to be used.  Python users soon learned not to duplicate the names of
 standard library modules in the names of their packages' submodules, but you
 can't protect against having your submodule's name being used for a new module
@@ -313,9 +313,9 @@ name when using the ``from ... import`` form::
    from . import string
 
 This imports the :mod:`string` module relative to the current package, so in
-:mod:`pkg.main` this will import *name1* and *name2* from :mod:`pkg.string`.
+``pkg.main`` this will import *name1* and *name2* from ``pkg.string``.
 Additional leading periods perform the relative import starting from the parent
-of the current package.  For example, code in the :mod:`A.B.C` module can do::
+of the current package.  For example, code in the ``A.B.C`` module can do::
 
    from . import D                 # Imports A.B.D
    from .. import E                # Imports A.E
@@ -331,7 +331,7 @@ statement, only the ``from ... import`` form.
       PEP written by Aahz; implemented by Thomas Wouters.
 
    https://pylib.readthedocs.io/
-      The py library by Holger Krekel, which contains the :mod:`py.std` package.
+      The py library by Holger Krekel, which contains the :mod:`!py.std` package.
 
 .. ======================================================================
 
@@ -347,7 +347,7 @@ Python interpreter, the switch now uses an implementation in a new module,
 :mod:`runpy`.
 
 The :mod:`runpy` module implements a more sophisticated import mechanism so that
-it's now possible to run modules in a package such as :mod:`pychecker.checker`.
+it's now possible to run modules in a package such as :mod:`!pychecker.checker`.
 The module also supports alternative import mechanisms such as the
 :mod:`zipimport` module.  This means you can add a .zip archive's path to
 ``sys.path`` and then use the :option:`-m` switch to execute code from the
@@ -392,8 +392,8 @@ write::
 
 The code in *block-1* is executed.  If the code raises an exception, the various
 :keyword:`except` blocks are tested: if the exception is of class
-:class:`Exception1`, *handler-1* is executed; otherwise if it's of class
-:class:`Exception2`, *handler-2* is executed, and so forth.  If no exception is
+``Exception1``, *handler-1* is executed; otherwise if it's of class
+``Exception2``, *handler-2* is executed, and so forth.  If no exception is
 raised, the *else-block* is executed.
 
 No matter what happened previously, the *final-block* is executed once the code
@@ -492,21 +492,21 @@ And here's an example of changing the counter::
 
 :keyword:`yield` will usually return :const:`None`, so you should always check
 for this case.  Don't just use its value in expressions unless you're sure that
-the :meth:`send` method will be the only method used to resume your generator
+the :meth:`~generator.send` method will be the only method used to resume your generator
 function.
 
-In addition to :meth:`send`, there are two other new methods on generators:
+In addition to :meth:`~generator.send`, there are two other new methods on generators:
 
 * ``throw(type, value=None, traceback=None)`` is used to raise an exception
   inside the generator; the exception is raised by the :keyword:`yield` expression
   where the generator's execution is paused.
 
-* :meth:`close` raises a new :exc:`GeneratorExit` exception inside the generator
+* :meth:`~generator.close` raises a new :exc:`GeneratorExit` exception inside the generator
   to terminate the iteration.  On receiving this exception, the generator's code
   must either raise :exc:`GeneratorExit` or :exc:`StopIteration`.  Catching the
   :exc:`GeneratorExit` exception and returning a value is illegal and will trigger
   a :exc:`RuntimeError`; if the function raises some other exception, that
-  exception is propagated to the caller.  :meth:`close` will also be called by
+  exception is propagated to the caller.  :meth:`~generator.close` will also be called by
   Python's garbage collector when the generator is garbage-collected.
 
   If you need to run cleanup code when a :exc:`GeneratorExit` occurs, I suggest
@@ -521,8 +521,8 @@ function, and a :keyword:`return` statement), but coroutines can be entered,
 exited, and resumed at many different points (the :keyword:`yield` statements).
 We'll have to figure out patterns for using coroutines effectively in Python.
 
-The addition of the :meth:`close` method has one side effect that isn't obvious.
-:meth:`close` is called when a generator is garbage-collected, so this means the
+The addition of the :meth:`~generator.close` method has one side effect that isn't obvious.
+:meth:`~generator.close` is called when a generator is garbage-collected, so this means the
 generator's code gets one last chance to run before the generator is destroyed.
 This last chance means that ``try...finally`` statements in generators can now
 be guaranteed to work; the :keyword:`finally` clause will now always get a
@@ -534,8 +534,8 @@ seems like a minor bit of language trivia, but using generators and
 in the following  section.
 
 Another even more esoteric effect of this change: previously, the
-:attr:`gi_frame` attribute of a generator was always a frame object. It's now
-possible for :attr:`gi_frame` to be ``None`` once the generator has been
+:attr:`!gi_frame` attribute of a generator was always a frame object. It's now
+possible for :attr:`!gi_frame` to be ``None`` once the generator has been
 exhausted.
 
 
@@ -622,7 +622,7 @@ The :mod:`threading` module's locks and condition variables  also support the
 The lock is acquired before the block is executed and always released once  the
 block is complete.
 
-The new :func:`localcontext` function in the :mod:`decimal` module makes it easy
+The new :func:`~decimal.localcontext` function in the :mod:`decimal` module makes it easy
 to save and restore the current decimal context, which encapsulates the desired
 precision and rounding characteristics for computations::
 
@@ -692,7 +692,7 @@ be to let the user write code like this::
 
 The transaction should be committed if the code in the block runs flawlessly or
 rolled back if there's an exception. Here's the basic interface for
-:class:`DatabaseConnection` that I'll assume::
+``DatabaseConnection`` that I'll assume::
 
    class DatabaseConnection:
        # Database interface
@@ -910,7 +910,7 @@ may therefore need to have some variables changed to :c:type:`Py_ssize_t`.
 The :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` functions have a new
 conversion code, ``n``, for :c:type:`Py_ssize_t`.   :c:func:`PyArg_ParseTuple`'s
 ``s#`` and ``t#`` still output :c:expr:`int` by default, but you can define the
-macro  :c:macro:`PY_SSIZE_T_CLEAN` before including :file:`Python.h`  to make
+macro  :c:macro:`!PY_SSIZE_T_CLEAN` before including :file:`Python.h`  to make
 them return :c:type:`Py_ssize_t`.
 
 :pep:`353` has a section on conversion guidelines that  extension authors should
@@ -931,19 +931,19 @@ PEP 357: The '__index__' method
 ===============================
 
 The NumPy developers had a problem that could only be solved by adding a new
-special method, :meth:`__index__`.  When using slice notation, as in
+special method, :meth:`~object.__index__`.  When using slice notation, as in
 ``[start:stop:step]``, the values of the *start*, *stop*, and *step* indexes
 must all be either integers or long integers.  NumPy defines a variety of
 specialized integer types corresponding to unsigned and signed integers of 8,
 16, 32, and 64 bits, but there was no way to signal that these types could be
 used as slice indexes.
 
-Slicing can't just use the existing :meth:`__int__` method because that method
+Slicing can't just use the existing :meth:`~object.__int__` method because that method
 is also used to implement coercion to integers.  If slicing used
-:meth:`__int__`, floating-point numbers would also become legal slice indexes
+:meth:`~object.__int__`, floating-point numbers would also become legal slice indexes
 and that's clearly an undesirable behaviour.
 
-Instead, a new special method called :meth:`__index__` was added.  It takes no
+Instead, a new special method called :meth:`~object.__index__` was added.  It takes no
 arguments and returns an integer giving the slice index to use.  For example::
 
    class C:
@@ -957,7 +957,7 @@ interpreter will check that the type returned is correct, and raises a
 A corresponding :c:member:`~PyNumberMethods.nb_index` slot was added to the C-level
 :c:type:`PyNumberMethods` structure to let C extensions implement this protocol.
 ``PyNumber_Index(obj)`` can be used in extension code to call the
-:meth:`__index__` function and retrieve its result.
+:meth:`~object.__index__` function and retrieve its result.
 
 
 .. seealso::
@@ -978,7 +978,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 * The :class:`dict` type has a new hook for letting subclasses provide a default
   value when a key isn't contained in the dictionary. When a key isn't found, the
   dictionary's ``__missing__(key)`` method will be called.  This hook is used
-  to implement the new :class:`defaultdict` class in the :mod:`collections`
+  to implement the new :class:`~collections.defaultdict` class in the :mod:`collections`
   module.  The following example defines a dictionary  that returns zero for any
   missing key::
 
@@ -1017,7 +1017,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 
   (Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
 
-* The :meth:`startswith` and :meth:`endswith` methods of string types now accept
+* The :meth:`~str.startswith` and :meth:`~str.endswith` methods of string types now accept
   tuples of strings to check for. ::
 
      def is_image_file (filename):
@@ -1028,7 +1028,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
   .. RFE #1491485
 
 * The :func:`min` and :func:`max` built-in functions gained a ``key`` keyword
-  parameter analogous to the ``key`` argument for :meth:`sort`.  This parameter
+  parameter analogous to the ``key`` argument for :meth:`~list.sort`.  This parameter
   supplies a function that takes a single argument and is called for every value
   in the list; :func:`min`/:func:`max` will return the element with the
   smallest/largest return value from this function. For example, to find the
@@ -1049,12 +1049,12 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
   returned by the iterator evaluate as true. (Suggested by Guido van Rossum, and
   implemented by Raymond Hettinger.)
 
-* The result of a class's :meth:`__hash__` method can now be either a long
+* The result of a class's :meth:`~object.__hash__` method can now be either a long
   integer or a regular integer.  If a long integer is returned, the hash of that
   value is taken.  In earlier versions the hash value was required to be a
   regular integer, but in 2.5 the :func:`id` built-in was changed to always
   return non-negative numbers, and users often seem to use ``id(self)`` in
-  :meth:`__hash__` methods (though this is discouraged).
+  :meth:`~object.__hash__` methods (though this is discouraged).
 
   .. Bug #1536021
 
@@ -1166,7 +1166,7 @@ marked in the following list.
   .. Patch 1442927
 
 * It's now illegal to mix iterating over a file  with ``for line in file`` and
-  calling  the file object's :meth:`read`/:meth:`readline`/:meth:`readlines`
+  calling  the file object's :meth:`!read`/:meth:`!readline`/:meth:`!readlines`
   methods.  Iteration uses an internal buffer and the  :meth:`!read\*` methods
   don't use that buffer.   Instead they would return the data following the
   buffer, causing the data to appear out of order.  Mixing iteration and these
@@ -1204,7 +1204,7 @@ marked in the following list.
   Sean Reifschneider at the NeedForSpeed sprint.)
 
 * Importing now caches the paths tried, recording whether  they exist or not so
-  that the interpreter makes fewer  :c:func:`open` and :c:func:`stat` calls on
+  that the interpreter makes fewer  :c:func:`!open` and :c:func:`!stat` calls on
   startup. (Contributed by Martin von Löwis and Georg Brandl.)
 
   .. Patch 921466
@@ -1226,23 +1226,24 @@ complete list of changes, or look through the SVN logs for all the details.
   u-LAW encoding has been improved.  (Contributed by Lars Immisch.)
 
 * The :mod:`codecs` module gained support for incremental codecs.  The
-  :func:`codec.lookup` function now returns a :class:`CodecInfo` instance instead
-  of a tuple. :class:`CodecInfo` instances behave like a 4-tuple to preserve
-  backward compatibility but also have the attributes :attr:`encode`,
-  :attr:`decode`, :attr:`incrementalencoder`, :attr:`incrementaldecoder`,
-  :attr:`streamwriter`, and :attr:`streamreader`.  Incremental codecs  can receive
+  :func:`codecs.lookup` function now returns a :class:`~codecs.CodecInfo` instance instead
+  of a tuple. :class:`~codecs.CodecInfo` instances behave like a 4-tuple to preserve
+  backward compatibility but also have the attributes :attr:`~codecs.CodecInfo.encode`,
+  :attr:`~codecs.CodecInfo.decode`, :attr:`~codecs.CodecInfo.incrementalencoder`,
+  :attr:`~codecs.CodecInfo.incrementaldecoder`, :attr:`~codecs.CodecInfo.streamwriter`,
+  and :attr:`~codecs.CodecInfo.streamreader`.  Incremental codecs  can receive
   input and produce output in multiple chunks; the output is the same as if the
   entire input was fed to the non-incremental codec. See the :mod:`codecs` module
   documentation for details. (Designed and implemented by Walter Dörwald.)
 
   .. Patch  1436130
 
-* The :mod:`collections` module gained a new type, :class:`defaultdict`, that
+* The :mod:`collections` module gained a new type, :class:`~collections.defaultdict`, that
   subclasses the standard :class:`dict` type.  The new type mostly behaves like a
   dictionary but constructs a default value when a key isn't present,
   automatically adding it to the dictionary for the requested key value.
 
-  The first argument to :class:`defaultdict`'s constructor is a factory function
+  The first argument to :class:`~collections.defaultdict`'s constructor is a factory function
   that gets called whenever a key is requested but not found. This factory
   function receives no arguments, so you can use built-in type constructors such
   as :func:`list` or :func:`int`.  For example,  you can make an index of words
@@ -1268,7 +1269,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   (Contributed by Guido van Rossum.)
 
-* The :class:`deque` double-ended queue type supplied by the :mod:`collections`
+* The :class:`~collections.deque` double-ended queue type supplied by the :mod:`collections`
   module now has a ``remove(value)`` method that removes the first occurrence
   of *value* in the queue, raising :exc:`ValueError` if the value isn't found.
   (Contributed by Raymond Hettinger.)
@@ -1287,15 +1288,15 @@ complete list of changes, or look through the SVN logs for all the details.
 
   Also, the :mod:`pstats` module for analyzing the data measured by the profiler
   now supports directing the output to any file object by supplying a *stream*
-  argument to the :class:`Stats` constructor. (Contributed by Skip Montanaro.)
+  argument to the :class:`~pstats.Stats` constructor. (Contributed by Skip Montanaro.)
 
 * The :mod:`csv` module, which parses files in comma-separated value format,
   received several enhancements and a number of bugfixes.  You can now set the
   maximum size in bytes of a field by calling the
   ``csv.field_size_limit(new_limit)`` function; omitting the *new_limit*
-  argument will return the currently set limit.  The :class:`reader` class now has
-  a :attr:`line_num` attribute that counts the number of physical lines read from
-  the source; records can span multiple physical lines, so :attr:`line_num` is not
+  argument will return the currently set limit.  The :class:`~csv.reader` class now has
+  a :attr:`~csv.csvreader.line_num` attribute that counts the number of physical lines read from
+  the source; records can span multiple physical lines, so :attr:`~csv.csvreader.line_num` is not
   the same as the number of records read.
 
   The CSV parser is now stricter about multi-line quoted fields. Previously, if a
@@ -1318,7 +1319,7 @@ complete list of changes, or look through the SVN logs for all the details.
      ts = dt.datetime.strptime('10:13:15 2006-03-07',
                                '%H:%M:%S %Y-%m-%d')
 
-* The :meth:`SequenceMatcher.get_matching_blocks` method in the :mod:`difflib`
+* The :meth:`difflib.SequenceMatcher.get_matching_blocks` method in the :mod:`difflib`
   module now guarantees to return a minimal list of blocks describing matching
   subsequences.  Previously, the algorithm would occasionally break a block of
   matching elements into two list entries. (Enhancement by Tim Peters.)
@@ -1327,8 +1328,8 @@ complete list of changes, or look through the SVN logs for all the details.
   being executed at all.  This is intended for code snippets that are usage
   examples intended for the reader and aren't actually test cases.
 
-  An *encoding* parameter was added to the :func:`testfile` function and the
-  :class:`DocFileSuite` class to specify the file's encoding.  This makes it
+  An *encoding* parameter was added to the :func:`~doctest.testfile` function and the
+  :class:`~doctest.DocFileSuite` class to specify the file's encoding.  This makes it
   easier to use non-ASCII characters in  tests contained within a docstring.
   (Contributed by Bjorn Tillenius.)
 
@@ -1347,20 +1348,20 @@ complete list of changes, or look through the SVN logs for all the details.
   :func:`input` function to allow opening files in binary or :term:`universal
   newlines` mode.  Another new parameter, *openhook*, lets you use a function
   other than :func:`open`  to open the input files.  Once you're iterating over
-  the set of files, the :class:`FileInput` object's new :meth:`~fileinput.fileno` returns
+  the set of files, the :class:`~fileinput.FileInput` object's new :meth:`~fileinput.fileno` returns
   the file descriptor for the currently opened file. (Contributed by Georg
   Brandl.)
 
-* In the :mod:`gc` module, the new :func:`get_count` function returns a 3-tuple
+* In the :mod:`gc` module, the new :func:`~gc.get_count` function returns a 3-tuple
   containing the current collection counts for the three GC generations.  This is
   accounting information for the garbage collector; when these counts reach a
   specified threshold, a garbage collection sweep will be made.  The existing
   :func:`gc.collect` function now takes an optional *generation* argument of 0, 1,
   or 2 to specify which generation to collect. (Contributed by Barry Warsaw.)
 
-* The :func:`nsmallest` and  :func:`nlargest` functions in the :mod:`heapq`
+* The :func:`~heapq.nsmallest` and  :func:`~heapq.nlargest` functions in the :mod:`heapq`
   module  now support a ``key`` keyword parameter similar to the one provided by
-  the :func:`min`/:func:`max` functions and the :meth:`sort` methods.  For
+  the :func:`min`/:func:`max` functions and the :meth:`~list.sort` methods.  For
   example::
 
      >>> import heapq
@@ -1382,7 +1383,7 @@ complete list of changes, or look through the SVN logs for all the details.
   (Contributed by Raymond Hettinger.)
 
 * The :func:`format` function in the :mod:`locale` module has been modified and
-  two new functions were added, :func:`format_string` and :func:`currency`.
+  two new functions were added, :func:`~locale.format_string` and :func:`~locale.currency`.
 
   The :func:`format` function's *val* parameter could previously be a string as
   long as no more than one %char specifier appeared; now the parameter must be
@@ -1391,10 +1392,10 @@ complete list of changes, or look through the SVN logs for all the details.
   formatting currency in placing a separator between groups of three digits.
 
   To format strings with multiple %char specifiers, use the new
-  :func:`format_string` function that works like :func:`format` but also supports
+  :func:`~locale.format_string` function that works like :func:`format` but also supports
   mixing %char specifiers with arbitrary text.
 
-  A new :func:`currency` function was also added that formats a number according
+  A new :func:`~locale.currency` function was also added that formats a number according
   to the current locale's settings.
 
   (Contributed by Georg Brandl.)
@@ -1403,9 +1404,11 @@ complete list of changes, or look through the SVN logs for all the details.
 
 * The :mod:`mailbox` module underwent a massive rewrite to add the capability to
   modify mailboxes in addition to reading them.  A new set of classes that include
-  :class:`mbox`, :class:`MH`, and :class:`Maildir` are used to read mailboxes, and
+  :class:`~mailbox.mbox`, :class:`~mailbox.MH`, and :class:`~mailbox.Maildir`
+  are used to read mailboxes, and
   have an ``add(message)`` method to add messages, ``remove(key)`` to
-  remove messages, and :meth:`lock`/:meth:`unlock` to lock/unlock the mailbox.
+  remove messages, and :meth:`~mailbox.Mailbox.lock`/:meth:`~mailbox.Mailbox.unlock`
+  to lock/unlock the mailbox.
   The following example converts a maildir-format mailbox into an mbox-format
   one::
 
@@ -1430,19 +1433,19 @@ complete list of changes, or look through the SVN logs for all the details.
   default domain by supplying a *domain* argument to the :func:`!nis.match` and
   :func:`!nis.maps` functions. (Contributed by Ben Bell.)
 
-* The :mod:`operator` module's :func:`itemgetter`  and :func:`attrgetter`
+* The :mod:`operator` module's :func:`~operator.itemgetter`  and :func:`~operator.attrgetter`
   functions now support multiple fields.   A call such as
   ``operator.attrgetter('a', 'b')`` will return a function  that retrieves the
-  :attr:`a` and :attr:`b` attributes.  Combining  this new feature with the
-  :meth:`sort` method's ``key`` parameter  lets you easily sort lists using
+  ``a`` and ``b`` attributes.  Combining  this new feature with the
+  :meth:`~list.sort` method's ``key`` parameter  lets you easily sort lists using
   multiple fields. (Contributed by Raymond Hettinger.)
 
 * The :mod:`optparse` module was updated to version 1.5.1 of the Optik library.
-  The :class:`OptionParser` class gained an :attr:`epilog` attribute, a string
-  that will be printed after the help message, and a :meth:`destroy` method to
+  The :class:`~optparse.OptionParser` class gained an :attr:`!epilog` attribute, a string
+  that will be printed after the help message, and a :meth:`!destroy` method to
   break reference cycles created by the object. (Contributed by Greg Ward.)
 
-* The :mod:`os` module underwent several changes.  The :attr:`stat_float_times`
+* The :mod:`os` module underwent several changes.  The :attr:`!stat_float_times`
   variable now defaults to true, meaning that :func:`os.stat` will now return time
   values as floats.  (This doesn't necessarily mean that :func:`os.stat` will
   return times that are precise to fractions of a second; not all systems support
@@ -1453,19 +1456,20 @@ complete list of changes, or look through the SVN logs for all the details.
   :func:`os.lseek` function.  Two new constants for locking are
   :const:`os.O_SHLOCK` and :const:`os.O_EXLOCK`.
 
-  Two new functions, :func:`wait3` and :func:`wait4`, were added.  They're similar
-  the :func:`waitpid` function which waits for a child process to exit and returns
-  a tuple of the process ID and its exit status, but :func:`wait3` and
-  :func:`wait4` return additional information.  :func:`wait3` doesn't take a
+  Two new functions, :func:`~os.wait3` and :func:`~os.wait4`, were added.  They're similar
+  the :func:`~os.waitpid` function which waits for a child process to exit and returns
+  a tuple of the process ID and its exit status, but :func:`~os.wait3` and
+  :func:`~os.wait4` return additional information.  :func:`~os.wait3` doesn't take a
   process ID as input, so it waits for any child process to exit and returns a
   3-tuple of *process-id*, *exit-status*, *resource-usage* as returned from the
   :func:`resource.getrusage` function. ``wait4(pid)`` does take a process ID.
   (Contributed by Chad J. Schroeder.)
 
   On FreeBSD, the :func:`os.stat` function now returns  times with nanosecond
-  resolution, and the returned object now has :attr:`st_gen` and
-  :attr:`st_birthtime`. The :attr:`st_flags` attribute is also available, if the
-  platform supports it. (Contributed by Antti Louko and  Diego Pettenò.)
+  resolution, and the returned object now has :attr:`~os.stat_result.st_gen` and
+  :attr:`~os.stat_result.st_birthtime`. The :attr:`~os.stat_result.st_flags`
+  attribute is also available, if the platform supports it.
+  (Contributed by Antti Louko and Diego Pettenò.)
 
   .. (Patch 1180695, 1212117)
 
@@ -1495,21 +1499,21 @@ complete list of changes, or look through the SVN logs for all the details.
   instead of performing many different operations and reducing the result to a
   single number as :file:`pystone.py` does.
 
-* The :mod:`pyexpat` module now uses version 2.0 of the Expat parser.
+* The :mod:`!pyexpat` module now uses version 2.0 of the Expat parser.
   (Contributed by Trent Mick.)
 
-* The :class:`~queue.Queue` class provided by the :mod:`Queue` module gained two new
-  methods.  :meth:`join` blocks until all items in the queue have been retrieved
+* The :class:`~queue.Queue` class provided by the :mod:`queue` module gained two new
+  methods.  :meth:`~queue.Queue.join` blocks until all items in the queue have been retrieved
   and all processing work on the items  have been completed.  Worker threads call
-  the other new method,  :meth:`task_done`, to signal that processing for an item
+  the other new method,  :meth:`~queue.Queue.task_done`, to signal that processing for an item
   has been completed.  (Contributed by Raymond Hettinger.)
 
-* The old :mod:`regex` and :mod:`regsub` modules, which have been  deprecated
+* The old :mod:`!regex` and :mod:`!regsub` modules, which have been  deprecated
   ever since Python 2.0, have finally been deleted.   Other deleted modules:
-  :mod:`statcache`, :mod:`tzparse`, :mod:`whrandom`.
+  :mod:`!statcache`, :mod:`!tzparse`, :mod:`!whrandom`.
 
 * Also deleted: the :file:`lib-old` directory, which includes ancient modules
-  such as :mod:`dircmp` and :mod:`ni`, was removed.  :file:`lib-old` wasn't on the
+  such as :mod:`!dircmp` and :mod:`!ni`, was removed.  :file:`lib-old` wasn't on the
   default ``sys.path``, so unless your programs explicitly added the directory to
   ``sys.path``, this removal shouldn't affect your code.
 
@@ -1519,14 +1523,16 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #1472854
 
-* The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now have a
-  :attr:`rpc_paths` attribute that constrains XML-RPC operations to a limited set
+* The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer
+  <xmlrpc.server>`  classes now have a :attr:`~xmlrpc.server.SimpleXMLRPCRequestHandler.rpc_paths`
+  attribute that constrains XML-RPC operations to a limited set
   of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.  Setting
-  :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path checking.
+  :attr:`~xmlrpc.server.SimpleXMLRPCRequestHandler.rpc_paths` to ``None`` or an
+  empty tuple disables  this path checking.
 
   .. Bug #1473048
 
-* The :mod:`socket` module now supports :const:`AF_NETLINK` sockets on Linux,
+* The :mod:`socket` module now supports :const:`!AF_NETLINK` sockets on Linux,
   thanks to a patch from Philippe Biondi.   Netlink sockets are a Linux-specific
   mechanism for communications between a user-space process and kernel code; an
   introductory  article about them is at https://www.linuxjournal.com/article/7356.
@@ -1538,19 +1544,19 @@ complete list of changes, or look through the SVN logs for all the details.
   supports the buffer protocol instead of returning the data as a string.  This
   means you can put the data directly into an array or a memory-mapped file.
 
-  Socket objects also gained :meth:`getfamily`, :meth:`gettype`, and
-  :meth:`getproto` accessor methods to retrieve the family, type, and protocol
+  Socket objects also gained :meth:`!getfamily`, :meth:`!gettype`, and
+  :meth:`!getproto` accessor methods to retrieve the family, type, and protocol
   values for the socket.
 
 * New module: the :mod:`!spwd` module provides functions for accessing the shadow
   password database on systems that support  shadow passwords.
 
 * The :mod:`struct` is now faster because it  compiles format strings into
-  :class:`Struct` objects with :meth:`pack` and :meth:`unpack` methods.  This is
+  :class:`~struct.Struct` objects with :meth:`~struct.Struct.pack` and :meth:`~struct.Struct.unpack` methods.  This is
   similar to how the :mod:`re` module lets you create compiled regular expression
-  objects.  You can still use the module-level  :func:`pack` and :func:`unpack`
-  functions; they'll create  :class:`Struct` objects and cache them.  Or you can
-  use  :class:`Struct` instances directly::
+  objects.  You can still use the module-level  :func:`~struct.pack` and :func:`~struct.unpack`
+  functions; they'll create  :class:`~struct.Struct` objects and cache them.  Or you can
+  use  :class:`~struct.Struct` instances directly::
 
      s = struct.Struct('ih3s')
 
@@ -1562,7 +1568,7 @@ complete list of changes, or look through the SVN logs for all the details.
   offset)`` methods.  This lets you store data directly into an array or a
   memory-mapped file.
 
-  (:class:`Struct` objects were implemented by Bob Ippolito at the NeedForSpeed
+  (:class:`~struct.Struct` objects were implemented by Bob Ippolito at the NeedForSpeed
   sprint.  Support for buffer objects was added by Martin Blais, also at the
   NeedForSpeed sprint.)
 
@@ -1582,8 +1588,8 @@ complete list of changes, or look through the SVN logs for all the details.
   topmost stack frame currently active in that thread at the time the function is
   called.  (Contributed by Tim Peters.)
 
-* The :class:`TarFile` class in the :mod:`tarfile` module now has an
-  :meth:`extractall` method that extracts all members from the archive into the
+* The :class:`~tarfile.TarFile` class in the :mod:`tarfile` module now has an
+  :meth:`~tarfile.TarFile.extractall` method that extracts all members from the archive into the
   current working directory.  It's also possible to set a different directory as
   the extraction target, and to unpack only a subset of the archive's members.
 
@@ -1607,8 +1613,8 @@ complete list of changes, or look through the SVN logs for all the details.
 * New module: the  :mod:`uuid` module generates  universally unique identifiers
   (UUIDs) according to :rfc:`4122`.  The RFC defines several different UUID
   versions that are generated from a starting string, from system properties, or
-  purely randomly.  This module contains a :class:`UUID` class and  functions
-  named :func:`uuid1`, :func:`uuid3`, :func:`uuid4`,  and  :func:`uuid5` to
+  purely randomly.  This module contains a :class:`~uuid.UUID` class and  functions
+  named :func:`~uuid.uuid1`, :func:`~uuid.uuid3`, :func:`~uuid.uuid4`,  and  :func:`~uuid.uuid5` to
   generate different versions of UUID.  (Version 2 UUIDs  are not specified in
   :rfc:`4122` and are not supported by this module.) ::
 
@@ -1631,18 +1637,18 @@ complete list of changes, or look through the SVN logs for all the details.
 
   (Contributed by Ka-Ping Yee.)
 
-* The :mod:`weakref` module's :class:`WeakKeyDictionary` and
-  :class:`WeakValueDictionary` types gained new methods for iterating over the
-  weak references contained in the dictionary.  :meth:`iterkeyrefs` and
-  :meth:`keyrefs` methods were added to :class:`WeakKeyDictionary`, and
-  :meth:`itervaluerefs` and :meth:`valuerefs` were added to
-  :class:`WeakValueDictionary`.  (Contributed by Fred L. Drake, Jr.)
+* The :mod:`weakref` module's :class:`~weakref.WeakKeyDictionary` and
+  :class:`~weakref.WeakValueDictionary` types gained new methods for iterating over the
+  weak references contained in the dictionary.  :meth:`!iterkeyrefs` and
+  :meth:`~weakref.WeakKeyDictionary.keyrefs` methods were added to :class:`~weakref.WeakKeyDictionary`, and
+  :meth:`!itervaluerefs` and :meth:`~weakref.WeakValueDictionary.valuerefs` were added to
+  :class:`~weakref.WeakValueDictionary`.  (Contributed by Fred L. Drake, Jr.)
 
 * The :mod:`webbrowser` module received a number of enhancements. It's now
   usable as a script with ``python -m webbrowser``, taking a URL as the argument;
   there are a number of switches  to control the behaviour (:option:`!-n` for a new
   browser window,  :option:`!-t` for a new tab).  New module-level functions,
-  :func:`open_new` and :func:`open_new_tab`, were added  to support this.  The
+  :func:`~webbrowser.open_new` and :func:`~webbrowser.open_new_tab`, were added  to support this.  The
   module's :func:`open` function supports an additional feature, an *autoraise*
   parameter that signals whether to raise the open window when possible. A number
   of additional browsers were added to the supported list such as Firefox, Opera,
@@ -1663,9 +1669,9 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch 1446489
 
-* The :mod:`zlib` module's :class:`Compress` and :class:`Decompress` objects now
+* The :mod:`zlib` module's :class:`!Compress` and :class:`!Decompress` objects now
   support a :meth:`copy` method that makes a copy of the  object's internal state
-  and returns a new  :class:`Compress` or :class:`Decompress` object.
+  and returns a new  :class:`!Compress` or :class:`!Decompress` object.
   (Contributed by Chris AtLee.)
 
   .. Patch 1435422
@@ -1685,34 +1691,34 @@ provides functions for loading shared libraries and calling functions in them.
 The :mod:`ctypes` package is much fancier.
 
 To load a shared library or DLL, you must create an instance of the
-:class:`CDLL` class and provide the name or path of the shared library or DLL.
+:class:`~ctypes.CDLL` class and provide the name or path of the shared library or DLL.
 Once that's done, you can call arbitrary functions by accessing them as
-attributes of the :class:`CDLL` object.   ::
+attributes of the :class:`~ctypes.CDLL` object.   ::
 
    import ctypes
 
    libc = ctypes.CDLL('libc.so.6')
    result = libc.printf("Line of output\n")
 
-Type constructors for the various C types are provided: :func:`c_int`,
-:func:`c_float`, :func:`c_double`, :func:`c_char_p` (equivalent to :c:expr:`char
+Type constructors for the various C types are provided: :func:`~ctypes.c_int`,
+:func:`~ctypes.c_float`, :func:`~ctypes.c_double`, :func:`~ctypes.c_char_p` (equivalent to :c:expr:`char
 \*`), and so forth.  Unlike Python's types, the C versions are all mutable; you
-can assign to their :attr:`value` attribute to change the wrapped value.  Python
+can assign to their :attr:`~ctypes._SimpleCData.value` attribute to change the wrapped value.  Python
 integers and strings will be automatically converted to the corresponding C
 types, but for other types you  must call the correct type constructor.  (And I
 mean *must*;  getting it wrong will often result in the interpreter crashing
 with a segmentation fault.)
 
-You shouldn't use :func:`c_char_p` with a Python string when the C function will
+You shouldn't use :func:`~ctypes.c_char_p` with a Python string when the C function will
 be modifying the memory area, because Python strings are  supposed to be
 immutable; breaking this rule will cause puzzling bugs.  When you need a
-modifiable memory area, use :func:`create_string_buffer`::
+modifiable memory area, use :func:`~ctypes.create_string_buffer`::
 
    s = "this is a string"
    buf = ctypes.create_string_buffer(s)
    libc.strfry(buf)
 
-C functions are assumed to return integers, but you can set the :attr:`restype`
+C functions are assumed to return integers, but you can set the :attr:`~ctypes._CFuncPtr.restype`
 attribute of the function object to  change this::
 
    >>> libc.atof('2.71828')
@@ -1760,9 +1766,9 @@ The ElementTree package
 -----------------------
 
 A subset of Fredrik Lundh's ElementTree library for processing XML has been
-added to the standard library as :mod:`xml.etree`.  The available modules are
-:mod:`ElementTree`, :mod:`ElementPath`, and :mod:`ElementInclude` from
-ElementTree 1.2.6.    The :mod:`cElementTree` accelerator module is also
+added to the standard library as :mod:`!xml.etree`.  The available modules are
+:mod:`!ElementTree`, :mod:`!ElementPath`, and :mod:`!ElementInclude` from
+ElementTree 1.2.6.    The :mod:`!cElementTree` accelerator module is also
 included.
 
 The rest of this section will provide a brief overview of using ElementTree.
@@ -1770,14 +1776,15 @@ Full documentation for ElementTree is available at
 https://web.archive.org/web/20201124024954/http://effbot.org/zone/element-index.htm.
 
 ElementTree represents an XML document as a tree of element nodes. The text
-content of the document is stored as the :attr:`text` and :attr:`tail`
+content of the document is stored as the :attr:`~xml.etree.ElementTree.Element.text`
+and :attr:`~xml.etree.ElementTree.Element.tail`
 attributes of  (This is one of the major differences between ElementTree and
 the Document Object Model; in the DOM there are many different types of node,
-including :class:`TextNode`.)
+including :class:`!TextNode`.)
 
-The most commonly used parsing function is :func:`parse`, that takes either a
+The most commonly used parsing function is :func:`~xml.etree.ElementTree.parse`, that takes either a
 string (assumed to contain a filename) or a file-like object and returns an
-:class:`ElementTree` instance::
+:class:`~xml.etree.ElementTree.ElementTree` instance::
 
    from xml.etree import ElementTree as ET
 
@@ -1787,11 +1794,13 @@ string (assumed to contain a filename) or a file-like object and returns an
              'http://planet.python.org/rss10.xml')
    tree = ET.parse(feed)
 
-Once you have an :class:`ElementTree` instance, you can call its :meth:`getroot`
-method to get the root :class:`Element` node.
+Once you have an :class:`~xml.etree.ElementTree.ElementTree` instance, you can
+call its :meth:`~xml.etree.ElementTree.ElementTree.getroot`
+method to get the root :class:`~xml.etree.ElementTree.Element` node.
 
-There's also an :func:`XML` function that takes a string literal and returns an
-:class:`Element` node (not an :class:`ElementTree`).   This function provides a
+There's also an :func:`~xml.etree.ElementTree.XML` function that takes a string
+literal and returns an :class:`~xml.etree.ElementTree.Element` node (not an
+:class:`~xml.etree.ElementTree.ElementTree`).   This function provides a
 tidy way to incorporate XML fragments, approaching the convenience of an XML
 literal::
 
@@ -1834,7 +1843,7 @@ list-like operations are used to access child nodes.
 | ``del elem.attrib[name]``     | Deletes attribute *name*.                  |
 +-------------------------------+--------------------------------------------+
 
-Comments and processing instructions are also represented as :class:`Element`
+Comments and processing instructions are also represented as :class:`~xml.etree.ElementTree.Element`
 nodes.  To check if a node is a comment or processing instructions::
 
    if elem.tag is ET.Comment:
@@ -1842,8 +1851,8 @@ nodes.  To check if a node is a comment or processing instructions::
    elif elem.tag is ET.ProcessingInstruction:
        ...
 
-To generate XML output, you should call the :meth:`ElementTree.write` method.
-Like :func:`parse`, it can take either a string or a file-like object::
+To generate XML output, you should call the :meth:`xml.etree.ElementTree.ElementTree.write` method.
+Like :func:`~xml.etree.ElementTree.parse`, it can take either a string or a file-like object::
 
    # Encoding is US-ASCII
    tree.write('output.xml')
@@ -1913,7 +1922,7 @@ differently. ::
 
 Once a hash object has been created, its methods are the same as before:
 ``update(string)`` hashes the specified string into the  current digest
-state, :meth:`digest` and :meth:`hexdigest` return the digest value as a binary
+state, :meth:`~hashlib.hash.digest` and :meth:`~hashlib.hash.hexdigest` return the digest value as a binary
 string or a string of hex digits, and :meth:`copy` returns a new hashing object
 with the same digest state.
 
@@ -1949,7 +1958,7 @@ doesn't include the SQLite code, only the wrapper module. You'll need to have
 the SQLite libraries and headers installed before compiling Python, and the
 build process will compile the module when the necessary headers are available.
 
-To use the module, you must first create a :class:`Connection` object that
+To use the module, you must first create a :class:`~sqlite3.Connection` object that
 represents the database.  Here the data will be stored in the
 :file:`/tmp/example` file::
 
@@ -1957,8 +1966,8 @@ represents the database.  Here the data will be stored in the
 
 You can also supply the special name ``:memory:`` to create a database in RAM.
 
-Once you have a :class:`Connection`, you can create a :class:`Cursor`  object
-and call its :meth:`execute` method to perform SQL commands::
+Once you have a :class:`~sqlite3.Connection`, you can create a :class:`~sqlite3.Cursor`  object
+and call its :meth:`~sqlite3.Cursor.execute` method to perform SQL commands::
 
    c = conn.cursor()
 
@@ -1977,7 +1986,7 @@ is insecure; it makes your program vulnerable to an SQL injection attack.
 
 Instead, use the DB-API's parameter substitution.  Put ``?`` as a placeholder
 wherever you want to use a value, and then provide a tuple of values as the
-second argument to the cursor's :meth:`execute` method.  (Other database modules
+second argument to the cursor's :meth:`~sqlite3.Cursor.execute` method.  (Other database modules
 may use a different placeholder, such as ``%s`` or ``:1``.) For example::
 
    # Never do this -- insecure!
@@ -1996,8 +2005,8 @@ may use a different placeholder, such as ``%s`` or ``:1``.) For example::
        c.execute('insert into stocks values (?,?,?,?,?)', t)
 
 To retrieve data after executing a SELECT statement, you can either  treat the
-cursor as an iterator, call the cursor's :meth:`fetchone` method to retrieve a
-single matching row,  or call :meth:`fetchall` to get a list of the matching
+cursor as an iterator, call the cursor's :meth:`~sqlite3.Cursor.fetchone` method to retrieve a
+single matching row,  or call :meth:`~sqlite3.Cursor.fetchall` to get a list of the matching
 rows.
 
 This example uses the iterator form::
@@ -2118,7 +2127,7 @@ Changes to Python's build process and to the C API include:
   discusses the design.  To start learning about the code, read the definition of
   the various AST nodes in :file:`Parser/Python.asdl`.  A Python script reads this
   file and generates a set of C structure definitions in
-  :file:`Include/Python-ast.h`.  The :c:func:`PyParser_ASTFromString` and
+  :file:`Include/Python-ast.h`.  The :c:func:`!PyParser_ASTFromString` and
   :c:func:`!PyParser_ASTFromFile`, defined in :file:`Include/pythonrun.h`, take
   Python source as input and return the root of an AST representing the contents.
   This AST can then be turned into a code object by :c:func:`!PyAST_Compile`.  For
@@ -2235,9 +2244,9 @@ code:
   encoding declaration.  In Python 2.4 this triggered a warning, not a syntax
   error.
 
-* Previously, the :attr:`gi_frame` attribute of a generator was always a frame
+* Previously, the :attr:`!gi_frame` attribute of a generator was always a frame
   object.  Because of the :pep:`342` changes described in section :ref:`pep-342`,
-  it's now possible for :attr:`gi_frame` to be ``None``.
+  it's now possible for :attr:`!gi_frame` to be ``None``.
 
 * A new warning, :class:`UnicodeWarning`, is triggered when  you attempt to
   compare a Unicode string and an 8-bit string that can't be converted to Unicode
@@ -2258,11 +2267,12 @@ code:
   return a tuple of arguments instead.  The modules also no longer accept the
   deprecated *bin* keyword parameter.
 
-* Library: The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now
-  have a :attr:`rpc_paths` attribute that constrains XML-RPC operations to a
+* Library: The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer
+  <xmlrpc.server>`  classes now have a :attr:`~xmlrpc.server.SimpleXMLRPCRequestHandler.rpc_paths`
+  attribute that constrains XML-RPC operations to a
   limited set of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.
-  Setting  :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path
-  checking.
+  Setting  :attr:`~xmlrpc.server.SimpleXMLRPCRequestHandler.rpc_paths` to ``None``
+  or an empty tuple disables this path checking.
 
 * C API: Many functions now use :c:type:`Py_ssize_t`  instead of :c:expr:`int` to
   allow processing more data on 64-bit machines.  Extension code may need to make

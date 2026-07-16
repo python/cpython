@@ -229,8 +229,9 @@ import_name[stmt_ty]:
 
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
+    | invalid_import_from
     | lazy="lazy"? 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), lazy, EXTRA) }
+        _PyPegen_checked_from_import(p, a, b, c, lazy, EXTRA) }
     | lazy="lazy"? 'from' a=('.' | '...')+ 'import' b=import_from_targets {
         _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), lazy ? 1 : 0, EXTRA) }
 import_from_targets[asdl_alias_seq*]:
@@ -834,7 +835,6 @@ bitwise_and[expr_ty]:
 shift_expr[expr_ty]:
     | a=shift_expr '<<' b=sum { _PyAST_BinOp(a, LShift, b, EXTRA) }
     | a=shift_expr '>>' b=sum { _PyAST_BinOp(a, RShift, b, EXTRA) }
-    | invalid_arithmetic
     | sum
 
 # Arithmetic operators
@@ -843,6 +843,7 @@ shift_expr[expr_ty]:
 sum[expr_ty]:
     | a=sum '+' b=term { _PyAST_BinOp(a, Add, b, EXTRA) }
     | a=sum '-' b=term { _PyAST_BinOp(a, Sub, b, EXTRA) }
+    | invalid_arithmetic
     | term
 
 term[expr_ty]:
@@ -851,7 +852,6 @@ term[expr_ty]:
     | a=term '//' b=factor { _PyAST_BinOp(a, FloorDiv, b, EXTRA) }
     | a=term '%' b=factor { _PyAST_BinOp(a, Mod, b, EXTRA) }
     | a=term '@' b=factor { CHECK_VERSION(expr_ty, 5, "The '@' operator is", _PyAST_BinOp(a, MatMult, b, EXTRA)) }
-    | invalid_factor
     | factor
 
 factor[expr_ty] (memo):
@@ -859,6 +859,7 @@ factor[expr_ty] (memo):
     | '-' a=factor { _PyAST_UnaryOp(USub, a, EXTRA) }
     | '~' a=factor { _PyAST_UnaryOp(Invert, a, EXTRA) }
     | power
+    | invalid_factor
 
 power[expr_ty]:
     | a=await_primary '**' b=factor { _PyAST_BinOp(a, Pow, b, EXTRA) }
@@ -1444,6 +1445,11 @@ invalid_import_from_as_name:
     | NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) a=expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
             "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
+
+invalid_import_from:
+    | 'from' ('.' | '...')* dotted_name a="lazy" 'import' import_from_targets {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
+            "use 'lazy from ... ' instead of 'from ... lazy import'") }
 
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {

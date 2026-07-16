@@ -5827,33 +5827,6 @@
             DISPATCH();
         }
 
-        TARGET(DELETE_ATTR) {
-            #if _Py_TAIL_CALL_INTERP
-            int opcode = DELETE_ATTR;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(DELETE_ATTR);
-            _PyStackRef owner;
-            owner = stack_pointer[-1];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            int err = PyObject_DelAttr(PyStackRef_AsPyObjectBorrow(owner), name);
-            _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(owner);
-            _PyFrame_StackPointerInvalidate(frame);
-            if (err) {
-                JUMP_TO_LABEL(error);
-            }
-            DISPATCH();
-        }
-
         TARGET(DELETE_DEREF) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_DEREF;
@@ -9193,18 +9166,7 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _GUARD_KEYS_VERSION
-            {
-                uint32_t keys_version = read_u32(&this_instr[4].cache);
-                PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
-                PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-                PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
-                if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
-                    UPDATE_MISS_STATS(LOAD_ATTR);
-                    assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
-                }
-            }
+            /* Skip 2 cache entries */
             // _LOAD_ATTR_METHOD_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -9389,18 +9351,7 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _GUARD_KEYS_VERSION
-            {
-                uint32_t keys_version = read_u32(&this_instr[4].cache);
-                PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
-                PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-                PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
-                if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
-                    UPDATE_MISS_STATS(LOAD_ATTR);
-                    assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
-                }
-            }
+            /* Skip 2 cache entries */
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -12076,22 +12027,25 @@
             PREDICTED_STORE_ATTR:;
             _Py_CODEUNIT* const this_instr = next_instr - 5;
             (void)this_instr;
-            _PyStackRef owner;
             _PyStackRef v;
+            _PyStackRef owner;
             // _SPECIALIZE_STORE_ATTR
             {
                 owner = stack_pointer[-1];
+                v = stack_pointer[-2];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
-                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                    next_instr = this_instr;
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyFrame_StackPointerValidate(frame);
-                    _Py_Specialize_StoreAttr(owner, next_instr, name);
-                    _PyFrame_StackPointerInvalidate(frame);
-                    DISPATCH_SAME_OPARG();
+                    if (!PyStackRef_IsNull(v)) {
+                        PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+                        next_instr = this_instr;
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _PyFrame_StackPointerValidate(frame);
+                        _Py_Specialize_StoreAttr(owner, next_instr, name);
+                        _PyFrame_StackPointerInvalidate(frame);
+                        DISPATCH_SAME_OPARG();
+                    }
                 }
                 OPCODE_DEFERRED_INC(STORE_ATTR);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
@@ -12100,29 +12054,24 @@
             /* Skip 3 cache entries */
             // _STORE_ATTR
             {
-                v = stack_pointer[-2];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 int err = PyObject_SetAttr(PyStackRef_AsPyObjectBorrow(owner),
                                        name, PyStackRef_AsPyObjectBorrow(v));
                 _PyFrame_StackPointerInvalidate(frame);
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyStackRef tmp = owner;
-                owner = PyStackRef_NULL;
-                stack_pointer[-1] = owner;
-                PyStackRef_CLOSE(tmp);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                tmp = v;
-                v = PyStackRef_NULL;
-                stack_pointer[-2] = v;
-                PyStackRef_CLOSE(tmp);
-                _PyFrame_StackPointerInvalidate(frame);
-                stack_pointer += -2;
+                stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_CLOSE(owner);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_XCLOSE(v);
+                _PyFrame_StackPointerInvalidate(frame);
                 if (err) {
                     JUMP_TO_LABEL(error);
                 }

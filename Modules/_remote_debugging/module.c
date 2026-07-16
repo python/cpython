@@ -14,7 +14,7 @@
 typedef struct {
     PyObject_HEAD
     BinaryWriter *writer;
-    uint32_t cached_total_samples;  /* Preserved after finalize */
+    uint64_t cached_total_samples;  /* Preserved after finalize */
 } BinaryWriterObject;
 
 typedef struct {
@@ -1784,9 +1784,9 @@ _remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
- * flushes pending RLE samples via flush_pending_rle(), which increments
- * writer->total_samples for each one. Caching before finalize would lose
- * those trailing samples. */
+ * flushes pending RLE records and updates the file header before the writer is
+ * destroyed. Caching before finalize would preserve a count for a file that
+ * might still fail to finish. */
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
 {
@@ -1916,9 +1916,9 @@ BinaryWriter_get_total_samples(PyObject *op, void *closure)
     BinaryWriterObject *self = BinaryWriter_CAST(op);
     if (!self->writer) {
         /* Use cached value after finalize/close */
-        return PyLong_FromUnsignedLong(self->cached_total_samples);
+        return PyLong_FromUnsignedLongLong(self->cached_total_samples);
     }
-    return PyLong_FromUnsignedLong(self->writer->total_samples);
+    return PyLong_FromUnsignedLongLong(self->writer->total_samples);
 }
 
 static PyGetSetDef BinaryWriter_getset[] = {
@@ -2141,7 +2141,7 @@ BinaryReader_get_sample_count(BinaryReaderObject *self, void *closure)
     if (!self->reader) {
         return PyLong_FromLong(0);
     }
-    return PyLong_FromUnsignedLong(self->reader->sample_count);
+    return PyLong_FromUnsignedLongLong(self->reader->sample_count);
 }
 
 static PyObject *
