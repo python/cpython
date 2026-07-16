@@ -2702,6 +2702,23 @@ AttributeError_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
+static PyObject *
+AttributeError_str(PyObject *op)
+{
+    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
+    if (
+        self->obj
+        && (!PyTuple_GET_SIZE(self->args)
+        || (PyTuple_GET_SIZE(self->args) == 1
+            && PyUnicode_Equal(PyTuple_GET_ITEM(self->args, 0), self->name))
+        )
+    ) {
+        return PyUnicode_FromFormat("%R has no attribute '%U'",
+                                    self->obj, self->name);
+    }
+    return BaseException_str(op);
+}
+
 static int
 AttributeError_traverse(PyObject *op, visitproc visit, void *arg)
 {
@@ -2770,7 +2787,7 @@ static PyMethodDef AttributeError_methods[] = {
 ComplexExtendsException(PyExc_Exception, AttributeError,
                         AttributeError, 0,
                         AttributeError_methods, AttributeError_members,
-                        0, BaseException_str, 0, "Attribute not found.");
+                        0, AttributeError_str, 0, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception
