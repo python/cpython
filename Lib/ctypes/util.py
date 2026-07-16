@@ -507,7 +507,7 @@ class CFieldInfo:
 def _process_struct(klass, /, *, align, layout, endian, pack):
     fields = []
     anonymous = []
-    if issubclass(klass, (Structure, LittleEndianStructure, BigEndianStructure)):
+    if issubclass(klass, Structure):
         fields.extend(klass._fields_)
         anonymous.extend(klass._anonymous_)
 
@@ -540,26 +540,14 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
     else:
         raise ValueError(f"expected 'big', 'little', or 'native', but got {endian!r}")
 
-    # These fields don't apply correctly when set later.
-    # As a workaround, we have this weird _StructData thing to set the attributes
-    # in advance.
-    class _StructData:
-        pass
-
-    if align is not None:
-        _StructData._align_ = align
-
-    if layout is not None:
-        _StructData._layout_ = layout
-
-    if pack is not None:
-        _StructData._pack_ = pack
-
-    for attr, value in klass.__dict__.items():
-        if attr != "__dict__":
-            setattr(_StructData, attr, value)
-
-    class _Struct(_StructData, endian_class):
+    class _Struct(endian_class):
+        vars().update(vars(klass))
+        if align is not None:
+            _align_ = align
+        if layout is not None:
+            _layout_ = layout
+        if pack is not None:
+            _pack_ = pack
         _fields_ = fields
         _anonymous_ = anonymous
 
