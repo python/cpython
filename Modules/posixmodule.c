@@ -26,6 +26,7 @@
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_MUTEX_LOCK()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_time.h"          // _PyLong_FromTime_t()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
@@ -16841,32 +16842,24 @@ typedef struct {
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
 
-#ifdef Py_GIL_DISABLED
-#  define SCANDIR_ITERATOR_LOCK(iterator) PyMutex_Lock(&(iterator)->mutex)
-#  define SCANDIR_ITERATOR_UNLOCK(iterator) PyMutex_Unlock(&(iterator)->mutex)
-#else
-#  define SCANDIR_ITERATOR_LOCK(iterator) ((void)0)
-#  define SCANDIR_ITERATOR_UNLOCK(iterator) ((void)0)
-#endif
-
 #ifdef MS_WINDOWS
 
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    SCANDIR_ITERATOR_LOCK(iterator);
+    FT_MUTEX_LOCK(&iterator->mutex);
     int closed = iterator->handle == INVALID_HANDLE_VALUE;
-    SCANDIR_ITERATOR_UNLOCK(iterator);
+    FT_MUTEX_UNLOCK(&iterator->mutex);
     return closed;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    SCANDIR_ITERATOR_LOCK(iterator);
+    FT_MUTEX_LOCK(&iterator->mutex);
     HANDLE handle = iterator->handle;
     iterator->handle = INVALID_HANDLE_VALUE;
-    SCANDIR_ITERATOR_UNLOCK(iterator);
+    FT_MUTEX_UNLOCK(&iterator->mutex);
 
     if (handle != INVALID_HANDLE_VALUE) {
         Py_BEGIN_ALLOW_THREADS
@@ -16884,7 +16877,7 @@ ScandirIterator_iternext(PyObject *op)
     DWORD error = ERROR_SUCCESS;
     int found = 0;
 
-    SCANDIR_ITERATOR_LOCK(iterator);
+    FT_MUTEX_LOCK(&iterator->mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
     while (iterator->handle != INVALID_HANDLE_VALUE) {
         if (!iterator->first_time) {
@@ -16911,7 +16904,7 @@ ScandirIterator_iternext(PyObject *op)
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
-    SCANDIR_ITERATOR_UNLOCK(iterator);
+    FT_MUTEX_UNLOCK(&iterator->mutex);
 
     if (found) {
         PyObject *module = PyType_GetModule(Py_TYPE(iterator));
@@ -16935,19 +16928,19 @@ ScandirIterator_iternext(PyObject *op)
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    SCANDIR_ITERATOR_LOCK(iterator);
+    FT_MUTEX_LOCK(&iterator->mutex);
     int closed = iterator->dirp == NULL;
-    SCANDIR_ITERATOR_UNLOCK(iterator);
+    FT_MUTEX_UNLOCK(&iterator->mutex);
     return closed;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    SCANDIR_ITERATOR_LOCK(iterator);
+    FT_MUTEX_LOCK(&iterator->mutex);
     DIR *dirp = iterator->dirp;
     iterator->dirp = NULL;
-    SCANDIR_ITERATOR_UNLOCK(iterator);
+    FT_MUTEX_UNLOCK(&iterator->mutex);
 
     if (dirp != NULL) {
         Py_BEGIN_ALLOW_THREADS
@@ -16977,7 +16970,7 @@ ScandirIterator_iternext(PyObject *op)
     unsigned char d_type = 0;
 #endif
 
-    SCANDIR_ITERATOR_LOCK(iterator);
+    FT_MUTEX_LOCK(&iterator->mutex);
     /* Happens if the iterator is iterated twice, or closed explicitly */
     while (iterator->dirp != NULL) {
         Py_BEGIN_ALLOW_THREADS
@@ -17014,7 +17007,7 @@ ScandirIterator_iternext(PyObject *op)
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
-    SCANDIR_ITERATOR_UNLOCK(iterator);
+    FT_MUTEX_UNLOCK(&iterator->mutex);
 
     if (found) {
         PyObject *module = PyType_GetModule(Py_TYPE(iterator));
