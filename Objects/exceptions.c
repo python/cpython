@@ -2710,8 +2710,8 @@ AttributeError_str(PyObject *op)
         self->obj
         && self->name
         && (!PyTuple_GET_SIZE(self->args)
-        || (PyTuple_GET_SIZE(self->args) == 1
-            && PyUnicode_Equal(PyTuple_GET_ITEM(self->args, 0), self->name))
+            || (PyTuple_GET_SIZE(self->args) == 1
+                && PyUnicode_Equal(PyTuple_GET_ITEM(self->args, 0), self->name))
         )
     ) {
         return PyUnicode_FromFormat("%R has no attribute '%U'",
