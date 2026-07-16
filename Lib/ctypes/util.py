@@ -3,6 +3,7 @@ import sys
 
 from dataclasses import dataclass
 
+lazy import functools
 lazy import shutil
 lazy import subprocess
 
@@ -540,6 +541,7 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
     else:
         raise ValueError(f"expected 'big', 'little', or 'native', but got {endian!r}")
 
+    @functools.wraps(klass, updated=())
     class _Struct(endian_class):
         vars().update(vars(klass))
         if align is not None:
@@ -551,9 +553,6 @@ def _process_struct(klass, /, *, align, layout, endian, pack):
         _fields_ = fields
         _anonymous_ = anonymous
 
-    _Struct.__name__ = klass.__name__
-    _Struct.__qualname__ = klass.__qualname__
-    _Struct.__module__ = klass.__module__
     return _Struct
 
 
