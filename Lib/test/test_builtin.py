@@ -266,7 +266,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         def f_frozenset():
             return frozenset(2*x for x in [1,2,3])
 
-        funcs = [f_all, f_any, f_tuple, f_list, f_set, f_frozenset]
+        def f_frozendict():
+            return frozendict(2*x for x in [1,2])
+
+        funcs = [f_all, f_any, f_tuple, f_list, f_set, f_frozenset, f_frozendict]
 
         for f in funcs:
             # check that generator code object is not duplicated
@@ -276,8 +279,8 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # check the overriding the builtins works
 
-        global all, any, tuple, list, set, frozenset
-        saved = all, any, tuple, list, set, frozenset
+        global all, any, tuple, list, set, frozenset, frozendict
+        saved = all, any, tuple, list, set, frozenset, frozendict
         try:
             all = lambda x : "all"
             any = lambda x : "any"
@@ -285,14 +288,15 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             list = lambda x : "list"
             set = lambda x : "set"
             frozenset = lambda x : "frozenset"
+            frozendict = lambda x: "frozendict"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple, list, set, frozenset = saved
+            all, any, tuple, list, set, frozenset, frozendict = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set', 'frozenset'])
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set', 'frozenset', 'frozendict'])
         # Now repeat, overriding the builtins module as well
-        saved = all, any, tuple, list, set, frozenset
+        saved = all, any, tuple, list, set, frozenset, frozendict
         try:
             builtins.all = all = lambda x : "all"
             builtins.any = any = lambda x : "any"
@@ -300,13 +304,14 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             builtins.list = list = lambda x : "list"
             builtins.set = set = lambda x : "set"
             builtins.frozenset = frozenset = lambda x : "frozenset"
+            builtins.frozendict = frozendict = lambda x: "frozendict"
 
             overridden_outputs = [f() for f in funcs]
         finally:
-            all, any, tuple, list, set, frozenset = saved
-            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set, builtins.frozenset = saved
+            all, any, tuple, list, set, frozenset, frozendict = saved
+            builtins.all, builtins.any, builtins.tuple, builtins.list, builtins.set, builtins.frozenset, builtins.frozendict = saved
 
-        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set', 'frozenset'])
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple', 'list', 'set', 'frozenset', 'frozendict'])
 
     def test_builtin_call_async_genexpr_no_crash(self):
         async def f_all():
