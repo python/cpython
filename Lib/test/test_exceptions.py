@@ -10,6 +10,7 @@ import errno
 from codecs import BOM_UTF8
 from itertools import product
 from textwrap import dedent
+from types import ModuleType
 
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
@@ -2046,6 +2047,38 @@ class AttributeErrorTests(unittest.TestCase):
         except AttributeError as exc:
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
+
+    def _test_generated_message(self, obj, name):
+        with self.assertRaises(AttributeError) as cm:
+            getattr(obj, name)
+        self.assertEqual(str(cm.exception),
+                         f"{obj!r} has no attribute {name!r}")
+
+    def test_getattr_error_message(self):
+        class RaiseWithName:
+            def __getattr__(self, name):
+                raise AttributeError(name)
+
+        class BareRaise:
+            def __getattr__(self, name):
+                raise AttributeError
+
+        self._test_generated_message(RaiseWithName(), "missing1")
+        self._test_generated_message(BareRaise(), "missing2")
+
+    def test_module_getattr_attribute_error_message(self):
+        mod1 = ModuleType("raisewithname")
+        def raise_with_name(name):
+            raise AttributeError(name)
+        mod1.__getattr__ = raise_with_name
+
+        mod2 = ModuleType("bareraise")
+        def bare_raise(name):
+            raise AttributeError
+        mod2.__getattr__ = bare_raise
+
+        self._test_generated_message(mod1, "missing3")
+        self._test_generated_message(mod2, "missing4")
 
     # Note: name suggestion tests live in `test_traceback`.
 
