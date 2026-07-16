@@ -2063,8 +2063,13 @@ class AttributeErrorTests(unittest.TestCase):
             def __getattr__(self, name):
                 raise AttributeError
 
+        class RaiseCustom:
+            def __getattr__(self, name):
+                raise AttributeError("custom")
+
         self._test_generated_message(RaiseWithName(), "missing1")
         self._test_generated_message(BareRaise(), "missing2")
+        self._test_generated_message(RaiseCustom(), "custom")
 
     def test_module_getattr_attribute_error_message(self):
         mod1 = ModuleType("raisewithname")
@@ -2077,8 +2082,14 @@ class AttributeErrorTests(unittest.TestCase):
             raise AttributeError
         mod2.__getattr__ = bare_raise
 
+        mod3 = ModuleType("bareraise")
+        def raise_custom(name):
+            raise AttributeError("custom")
+        mod3.__getattr__ = raise_custom
+
         self._test_generated_message(mod1, "missing3")
         self._test_generated_message(mod2, "missing4")
+        self._test_generated_message(mod3, "custom")
 
     # Note: name suggestion tests live in `test_traceback`.
 
