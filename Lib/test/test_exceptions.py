@@ -2052,7 +2052,6 @@ class AttributeErrorTests(unittest.TestCase):
         class RaiseWithName:
             def __getattr__(self, name):
                 raise AttributeError(name)
-
         with self.assertRaises(AttributeError) as cm:
             getattr(RaiseWithName(), "missing1")
         self.assertEqual(str(cm.exception),
@@ -2061,7 +2060,6 @@ class AttributeErrorTests(unittest.TestCase):
         class BareRaise:
             def __getattr__(self, name):
                 raise AttributeError
-
         with self.assertRaises(AttributeError) as cm:
             getattr(BareRaise(), "missing2")
         self.assertEqual(str(cm.exception),
@@ -2070,7 +2068,6 @@ class AttributeErrorTests(unittest.TestCase):
         class RaiseCustom:
             def __getattr__(self, name):
                 raise AttributeError("custom")
-
         with self.assertRaises(AttributeError) as cm:
             getattr(RaiseCustom(), "missing3")
         self.assertEqual(str(cm.exception), "custom")
