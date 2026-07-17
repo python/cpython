@@ -16,11 +16,12 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 
 from abc import get_cache_token
 from collections import namedtuple
-# import weakref  # Deferred to single_dispatch() and cached_method()
 from operator import itemgetter
 from reprlib import recursive_repr
 from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
+
+lazy import weakref
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -907,11 +908,6 @@ def singledispatch(func):
     implementations can be registered using the register() attribute of the
     generic function.
     """
-    # There are many programs that use functools without singledispatch, so we
-    # trade-off making singledispatch marginally slower for the benefit of
-    # making start-up of such applications slightly faster.
-    import weakref
-
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
@@ -1234,10 +1230,6 @@ class _cached_method:
         return self._get_or_create_cached_func(instance)
 
     def _get_or_create_cached_func(self, instance):
-        # similar to singledispatch(), defer use of weakref until/unless it
-        # is needed
-        import weakref
-
         instance_id = id(instance)
 
         try:
