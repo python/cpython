@@ -2383,4 +2383,6 @@ are always available.  They are listed here in alphabetical order.
 
 .. [#] Note that the parser only accepts the Unix-style end of line convention.
    If you are reading the code from a file, make sure to use newline conversion
-   mode to convert Windows or Mac-style newlines.
+   mode to convert Windows or Mac-style newlines.ECHO is on.
+   
+ECHO is on.
