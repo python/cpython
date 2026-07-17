@@ -877,46 +877,14 @@ _overlapped_Overlapped_cancel_impl(OverlappedObject *self)
     Py_RETURN_NONE;
 }
 
-/*[clinic input]
-_overlapped.Overlapped.getresult
-
-    wait: BOOL(c_default='FALSE') = False
-    /
-
-Retrieve result of operation.
-
-If wait is true then it blocks until the operation is finished.  If
-wait is false and the operation is still pending then an error is
-raised.
-[clinic start generated code]*/
-
 static PyObject *
-_overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
-/*[clinic end generated code: output=8c9bd04d08994f6c input=852fbd817cbd2b3d]*/
+check_getresult_error(OverlappedObject *self, DWORD transferred)
 {
-    DWORD transferred = 0;
-    BOOL ret;
-    DWORD err;
-    PyObject *addr;
+    PyObject *addr = NULL;
     PyObject *transferred_obj;
+    DWORD err = self->error;
 
-    if (self->type == TYPE_NONE) {
-        PyErr_SetString(PyExc_ValueError, "operation not yet attempted");
-        return NULL;
-    }
-
-    if (self->type == TYPE_NOT_STARTED) {
-        PyErr_SetString(PyExc_ValueError, "operation failed to start");
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    ret = GetOverlappedResult(self->handle, &self->overlapped, &transferred,
-                              wait);
-    Py_END_ALLOW_THREADS
-
-    self->error = err = ret ? ERROR_SUCCESS : GetLastError();
-    switch (err) {
+    switch (self->error) {
         case ERROR_SUCCESS:
         case ERROR_MORE_DATA:
             break;
@@ -1000,6 +968,88 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
     }
+}
+
+/*[clinic input]
+_overlapped.Overlapped.getresult
+
+    wait: BOOL(c_default='FALSE') = False
+    /
+
+Retrieve result of operation.
+
+If wait is true then it blocks until the operation is finished.  If
+wait is false and the operation is still pending then an error is
+raised.
+[clinic start generated code]*/
+
+static PyObject *
+_overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
+/*[clinic end generated code: output=8c9bd04d08994f6c input=852fbd817cbd2b3d]*/
+{
+    DWORD transferred = 0;
+    BOOL ret;
+
+    if (self->type == TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation not yet attempted");
+        return NULL;
+    }
+
+    if (self->type == TYPE_NOT_STARTED) {
+        PyErr_SetString(PyExc_ValueError, "operation failed to start");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = GetOverlappedResult(self->handle, &self->overlapped, &transferred,
+                              wait);
+    Py_END_ALLOW_THREADS
+
+    self->error = ret ? ERROR_SUCCESS : GetLastError();
+
+    return check_getresult_error(self, transferred);
+}
+
+/*[clinic input]
+_overlapped.Overlapped.getresultex
+
+    milliseconds: DWORD
+    alertable: BOOL
+    /
+
+Retrieve result of operation, waiting up to milliseconds.
+
+If the operation does not finish within milliseconds, a
+WAIT_TIMEOUT error is raised.  If alertable is true the wait can
+also be interrupted to run queued APCs.
+[clinic start generated code]*/
+
+static PyObject *
+_overlapped_Overlapped_getresultex_impl(OverlappedObject *self,
+                                        DWORD milliseconds, BOOL alertable)
+/*[clinic end generated code: output=ce0eb6ffb9618e54 input=9891d8ae4afe2b00]*/
+{
+    DWORD transferred = 0;
+    BOOL ret;
+
+    if (self->type == TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation not yet attempted");
+        return NULL;
+    }
+
+    if (self->type == TYPE_NOT_STARTED) {
+        PyErr_SetString(PyExc_ValueError, "operation failed to start");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = GetOverlappedResultEx(self->handle, &self->overlapped, &transferred,
+                                milliseconds, alertable);
+    Py_END_ALLOW_THREADS
+
+    self->error = ret ? ERROR_SUCCESS : GetLastError();
+
+    return check_getresult_error(self, transferred);
 }
 
 static PyObject *
@@ -1952,6 +2002,7 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
 
 static PyMethodDef Overlapped_methods[] = {
     _OVERLAPPED_OVERLAPPED_GETRESULT_METHODDEF
+    _OVERLAPPED_OVERLAPPED_GETRESULTEX_METHODDEF
     _OVERLAPPED_OVERLAPPED_CANCEL_METHODDEF
     _OVERLAPPED_OVERLAPPED_READFILE_METHODDEF
     _OVERLAPPED_OVERLAPPED_READFILEINTO_METHODDEF

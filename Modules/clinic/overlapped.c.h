@@ -562,6 +562,46 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_overlapped_Overlapped_getresultex__doc__,
+"getresultex($self, milliseconds, alertable, /)\n"
+"--\n"
+"\n"
+"Retrieve result of operation, waiting up to milliseconds.\n"
+"\n"
+"If the operation does not finish within milliseconds, a\n"
+"WAIT_TIMEOUT error is raised.  If alertable is true the wait can\n"
+"also be interrupted to run queued APCs.");
+
+#define _OVERLAPPED_OVERLAPPED_GETRESULTEX_METHODDEF    \
+    {"getresultex", _PyCFunction_CAST(_overlapped_Overlapped_getresultex), METH_FASTCALL, _overlapped_Overlapped_getresultex__doc__},
+
+static PyObject *
+_overlapped_Overlapped_getresultex_impl(OverlappedObject *self,
+                                        DWORD milliseconds, BOOL alertable);
+
+static PyObject *
+_overlapped_Overlapped_getresultex(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    DWORD milliseconds;
+    BOOL alertable;
+
+    if (!_PyArg_CheckPositional("getresultex", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedLong_Converter(args[0], &milliseconds)) {
+        goto exit;
+    }
+    alertable = PyLong_AsInt(args[1]);
+    if (alertable == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _overlapped_Overlapped_getresultex_impl((OverlappedObject *)self, milliseconds, alertable);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_overlapped_Overlapped_ReadFile__doc__,
 "ReadFile($self, handle, size, /)\n"
 "--\n"
@@ -1243,4 +1283,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=0ecaf45a09539599 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05e84dc50eddda53 input=a9049054013a1b77]*/
