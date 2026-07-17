@@ -2761,6 +2761,9 @@ class TestAscii(unittest.TestCase):
         self.assertEqual(ctrl('\n'), '\n')
         self.assertEqual(ctrl('@'), '\0')
         self.assertEqual(ctrl(ord('J')), ord('\n'))
+        # A non-ASCII argument is returned unchanged (no control character).
+        self.assertEqual(ctrl('\xe9'), '\xe9')
+        self.assertEqual(ctrl(0xe9), 0xe9)
 
     def test_alt(self):
         alt = curses.ascii.alt
@@ -2784,6 +2787,38 @@ class TestAscii(unittest.TestCase):
         self.assertEqual(unctrl('\xc1'), '!A')
         self.assertEqual(unctrl(ord('\x8a')), '!^J')
         self.assertEqual(unctrl(ord('\xc1')), '!A')
+
+    @unittest.skipUnless(hasattr(curses, 'complexchar'),
+                         'requires the curses.complexchar type')
+    def test_complexchar(self):
+        # The predicates, ctrl() and unctrl() accept a complexchar too, using
+        # its single character.  A narrow build just forms fewer cells.
+        cc = curses.complexchar
+        def storable(s):
+            try:
+                cc(s)
+            except ValueError:
+                return False
+            return True
+
+        self.assertTrue(curses.ascii.isupper(cc('A')))
+        self.assertTrue(curses.ascii.isalpha(cc('A', curses.A_BOLD)))
+        self.assertFalse(curses.ascii.isdigit(cc('A')))
+        self.assertTrue(curses.ascii.isdigit(cc('7')))
+        self.assertTrue(curses.ascii.iscntrl(cc('\n')))
+        self.assertEqual(curses.ascii.ctrl(cc('J')), '\n')
+        self.assertEqual(curses.ascii.unctrl(cc('\n')), '^J')
+        self.assertEqual(curses.ascii.unctrl(cc('A')), 'A')
+        # A non-ASCII character: classified by code point, no control character.
+        if storable('\xe9'):
+            self.assertFalse(curses.ascii.isascii(cc('\xe9')))
+            self.assertTrue(curses.ascii.ismeta(cc('\xe9')))
+            self.assertEqual(curses.ascii.ctrl(cc('\xe9')), '\xe9')
+        # A cell with combining marks is not a single character, so no
+        # predicate matches it (needs a wide build to store).
+        if storable('e\u0301'):
+            self.assertFalse(curses.ascii.isalpha(cc('e\u0301')))
+            self.assertFalse(curses.ascii.isascii(cc('e\u0301')))
 
 
 def lorem_ipsum(win):

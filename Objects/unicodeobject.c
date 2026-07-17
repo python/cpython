@@ -14722,7 +14722,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     }
 #endif
 
-    FT_MUTEX_LOCK(INTERN_MUTEX);
+    FT_MUTEX_LOCK_FLAGS(INTERN_MUTEX, _Py_LOCK_DONT_DETACH);
     PyObject *t;
     {
         int res = PyDict_SetDefaultRef(interned, s, s, &t);
