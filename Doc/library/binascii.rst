@@ -33,7 +33,7 @@ The :mod:`!binascii` module defines the following functions:
 
 .. function:: a2b_uu(string)
 
-   Convert a single line of uuencoded data back to binary and return the binary
+   Convert a single line of unencoded data back to binary and return the binary
    data. Lines normally contain 45 (binary) bytes, except for the last line. Line
    data may be followed by whitespace.
 
