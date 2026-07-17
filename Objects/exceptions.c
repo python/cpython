@@ -2722,7 +2722,7 @@ AttributeError_str(PyObject *op)
     Py_END_CRITICAL_SECTION();
 
     if (!obj) {
-        return BaseException_str(op);
+        return BaseException_str(op);  /* re-acquires lock */
     }
 
     PyObject *result = PyUnicode_FromFormat("%.200R has no attribute '%U'",
