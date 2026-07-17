@@ -1,2 +1,0 @@
-Improve :exc:`TypeError` error message, when richcomparing two
-:class:`types.SimpleNamespace` objects.

@@ -63,7 +63,7 @@
 # endif
 #endif
 
-#if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
+#if defined(__CYGWIN__) || defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
 # define FD_DIR "/dev/fd"
 #else
 # define FD_DIR "/proc/self/fd"
@@ -514,7 +514,13 @@ _close_open_fds_maybe_unsafe(int start_fd, int *fds_to_keep,
         proc_fd_dir = NULL;
     else
 #endif
+#if defined(_AIX)
+        char fd_path[PATH_MAX];
+        snprintf(fd_path, sizeof(fd_path), "/proc/%ld/fd", (long)getpid());
+        proc_fd_dir = opendir(fd_path);
+#else
         proc_fd_dir = opendir(FD_DIR);
+#endif
     if (!proc_fd_dir) {
         /* No way to get a list of open fds. */
         _close_range_except(start_fd, -1, fds_to_keep, fds_to_keep_len,
@@ -630,7 +636,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * (v)fork to set things up and call exec().
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * This restriction is documented at
@@ -956,7 +962,6 @@ do_fork_exec(char *const exec_array[],
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _posixsubprocess.fork_exec as subprocess_fork_exec
     args as process_args: object
     executable_list: object
@@ -984,15 +989,15 @@ _posixsubprocess.fork_exec as subprocess_fork_exec
 
 Spawn a fresh new child process.
 
-Fork a child process, close parent file descriptors as appropriate in the
-child and duplicate the few that are needed before calling exec() in the
-child process.
+Fork a child process, close parent file descriptors as appropriate in
+the child and duplicate the few that are needed before calling exec() in
+the child process.
 
-If close_fds is True, close file descriptors 3 and higher, except those listed
-in the sorted tuple pass_fds.
+If close_fds is True, close file descriptors 3 and higher, except those
+listed in the sorted tuple pass_fds.
 
-The preexec_fn, if supplied, will be called immediately before closing file
-descriptors and exec.
+The preexec_fn, if supplied, will be called immediately before closing
+file descriptors and exec.
 
 WARNING: preexec_fn is NOT SAFE if your application uses threads.
          It may trigger infrequent, difficult to debug deadlocks.
@@ -1017,7 +1022,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
                           PyObject *preexec_fn)
-/*[clinic end generated code: output=288464dc56e373c7 input=58e0db771686f4f6]*/
+/*[clinic end generated code: output=288464dc56e373c7 input=5e56eac3e036e349]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
@@ -1085,8 +1090,14 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                 goto cleanup;
             }
             borrowed_arg = PySequence_Fast_GET_ITEM(fast_args, arg_num);
-            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0)
+            /* borrowed_arg is only borrowed; its __fspath__() may run Python
+               that drops fast_args' last reference to it. */
+            Py_INCREF(borrowed_arg);
+            if (PyUnicode_FSConverter(borrowed_arg, &converted_arg) == 0) {
+                Py_DECREF(borrowed_arg);
                 goto cleanup;
+            }
+            Py_DECREF(borrowed_arg);
             PyTuple_SET_ITEM(converted_args, arg_num, converted_arg);
         }
 
@@ -1331,6 +1342,7 @@ static PyMethodDef module_methods[] = {
 };
 
 static PyModuleDef_Slot _posixsubprocess_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

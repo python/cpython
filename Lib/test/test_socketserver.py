@@ -223,12 +223,16 @@ class SocketServerTest(unittest.TestCase):
                             self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
+                     "gh-140702: Test fails regularly on iOS simulator on GitHub Actions")
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
+                     "gh-140702: Test fails regularly on iOS simulator on GitHub Actions")
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
@@ -509,6 +513,16 @@ class MiscTestCase(unittest.TestCase):
                 server.handle_request()
         self.assertLess(len(server._threads), 10)
         server.server_close()
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(socketserver, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

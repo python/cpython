@@ -4,13 +4,6 @@
 .. module:: functools
    :synopsis: Higher-order functions and operations on callable objects.
 
-.. moduleauthor:: Peter Harris <scav@blueyonder.co.uk>
-.. moduleauthor:: Raymond Hettinger <python@rcn.com>
-.. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
-.. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
-.. moduleauthor:: Pablo Galindo <pablogsal@gmail.com>
-.. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
-
 **Source code:** :source:`Lib/functools.py`
 
 .. testsetup:: default
@@ -20,11 +13,11 @@
 
 --------------
 
-The :mod:`functools` module is for higher-order functions: functions that act on
+The :mod:`!functools` module is for higher-order functions: functions that act on
 or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
 
-The :mod:`functools` module defines the following functions:
+The :mod:`!functools` module defines the following functions:
 
 .. decorator:: cache(user_function)
 
@@ -34,7 +27,7 @@ The :mod:`functools` module defines the following functions:
    Returns the same as ``lru_cache(maxsize=None)``, creating a thin
    wrapper around a dictionary lookup for the function arguments.  Because it
    never needs to evict old values, this is smaller and faster than
-   :func:`lru_cache` with a size limit.
+   :deco:`lru_cache` with a size limit.
 
    For example::
 
@@ -42,11 +35,11 @@ The :mod:`functools` module defines the following functions:
         def factorial(n):
             return n * factorial(n-1) if n else 1
 
-        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        >>> factorial(10)   # no previously cached result, makes 11 recursive calls
         3628800
-        >>> factorial(5)       # just looks up cached value result
+        >>> factorial(5)    # no new calls, just returns the cached result
         120
-        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        >>> factorial(12)   # two new recursive calls, factorial(10) is cached
         479001600
 
    The cache is threadsafe so that the wrapped function can be used in
@@ -57,6 +50,10 @@ The :mod:`functools` module defines the following functions:
    another thread makes an additional call before the initial call has been
    completed and cached.
 
+   Call-once behavior is not guaranteed because locks are not held during the
+   function call. Potentially another call with the same arguments could
+   occur while the first call is still running.
+
    .. versionadded:: 3.9
 
 
@@ -64,7 +61,7 @@ The :mod:`functools` module defines the following functions:
 
    Transform a method of a class into a property whose value is computed once
    and then cached as a normal attribute for the life of the instance. Similar
-   to :func:`property`, with the addition of caching. Useful for expensive
+   to :deco:`property`, with the addition of caching. Useful for expensive
    computed properties of instances that are otherwise effectively immutable.
 
    Example::
@@ -78,8 +75,8 @@ The :mod:`functools` module defines the following functions:
            def stdev(self):
                return statistics.stdev(self._data)
 
-   The mechanics of :func:`cached_property` are somewhat different from
-   :func:`property`.  A regular property blocks attribute writes unless a
+   The mechanics of :deco:`cached_property` are somewhat different from
+   :deco:`property`.  A regular property blocks attribute writes unless a
    setter is defined. In contrast, a *cached_property* allows writes.
 
    The *cached_property* decorator only runs on lookups and only when an
@@ -111,14 +108,14 @@ The :mod:`functools` module defines the following functions:
    (as such classes don't provide a ``__dict__`` attribute at all).
 
    If a mutable mapping is not available or if space-efficient key sharing is
-   desired, an effect similar to :func:`cached_property` can also be achieved by
-   stacking :func:`property` on top of :func:`lru_cache`. See
-   :ref:`faq-cache-method-calls` for more details on how this differs from :func:`cached_property`.
+   desired, an effect similar to :deco:`cached_property` can also be achieved by
+   stacking :deco:`property` on top of :deco:`lru_cache`. See
+   :ref:`faq-cache-method-calls` for more details on how this differs from :deco:`cached_property`.
 
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.12
-      Prior to Python 3.12, ``cached_property`` included an undocumented lock to
+      Prior to Python 3.12, :deco:`!cached_property` included an undocumented lock to
       ensure that in multi-threaded usage the getter function was guaranteed to
       run only once per instance. However, the lock was per-property, not
       per-instance, which could result in unacceptably high lock contention. In
@@ -176,8 +173,8 @@ The :mod:`functools` module defines the following functions:
    the *maxsize* at its default value of 128::
 
        @lru_cache
-       def count_vowels(sentence):
-           return sum(sentence.count(vowel) for vowel in 'AEIOUaeiou')
+       def count_vowels(word):
+           return sum(word.count(vowel) for vowel in 'AEIOUaeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.
@@ -190,7 +187,7 @@ The :mod:`functools` module defines the following functions:
 
    Note, type specificity applies only to the function's immediate arguments
    rather than their contents.  The scalar arguments, ``Decimal(42)`` and
-   ``Fraction(42)`` are be treated as distinct calls with distinct results.
+   ``Fraction(42)`` are treated as distinct calls with distinct results.
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
@@ -471,7 +468,7 @@ The :mod:`functools` module defines the following functions:
 
    Roughly equivalent to::
 
-      initial_missing = object()
+      initial_missing = sentinel('initial_missing')
 
       def reduce(function, iterable, /, initial=initial_missing):
           it = iter(iterable)
@@ -672,7 +669,7 @@ The :mod:`functools` module defines the following functions:
    dispatch>` :term:`generic function`.
 
    To define a generic method, decorate it with the ``@singledispatchmethod``
-   decorator. When defining a function using ``@singledispatchmethod``, note
+   decorator. When defining a method using ``@singledispatchmethod``, note
    that the dispatch happens on the type of the first non-*self* or non-*cls*
    argument::
 
@@ -690,7 +687,7 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    ``@singledispatchmethod`` supports nesting with other decorators such as
-   :func:`@classmethod<classmethod>`. Note that to allow for
+   :deco:`classmethod`. Note that to allow for
    ``dispatcher.register``, ``singledispatchmethod`` must be the *outer most*
    decorator. Here is the ``Negator`` class with the ``neg`` methods bound to
    the class, rather than an instance of the class::
@@ -712,10 +709,12 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    The same pattern can be used for other similar decorators:
-   :func:`@staticmethod<staticmethod>`,
-   :func:`@abstractmethod<abc.abstractmethod>`, and others.
+   :deco:`staticmethod`, :deco:`~abc.abstractmethod`, and others.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.15
+      Added support of non-:term:`descriptor` callables.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
@@ -733,7 +732,7 @@ The :mod:`functools` module defines the following functions:
    function's :attr:`~function.__dict__`, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
-   (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
+   (e.g. bypassing a caching decorator such as :deco:`lru_cache`), this function
    automatically adds a ``__wrapped__`` attribute to the wrapper that refers to
    the function being wrapped.
 

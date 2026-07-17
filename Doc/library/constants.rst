@@ -22,7 +22,7 @@ A small number of constants live in the built-in namespace.  They are:
    An object frequently used to represent the absence of a value, as when
    default arguments are not passed to a function. Assignments to ``None``
    are illegal and raise a :exc:`SyntaxError`.
-   ``None`` is the sole instance of the :data:`~types.NoneType` type.
+   ``None`` is the sole instance of the :class:`~types.NoneType` type.
 
 
 .. data:: NotImplemented
@@ -33,7 +33,7 @@ A small number of constants live in the built-in namespace.  They are:
    the other type; may be returned by the in-place binary special methods
    (e.g. :meth:`~object.__imul__`, :meth:`~object.__iand__`, etc.) for the same purpose.
    It should not be evaluated in a boolean context.
-   :data:`!NotImplemented` is the sole instance of the :data:`types.NotImplementedType` type.
+   :data:`!NotImplemented` is the sole instance of the :class:`types.NotImplementedType` type.
 
    .. note::
 
@@ -65,9 +65,10 @@ A small number of constants live in the built-in namespace.  They are:
 .. index:: single: ...; ellipsis literal
 .. data:: Ellipsis
 
-   The same as the ellipsis literal "``...``". Special value used mostly in conjunction
-   with extended slicing syntax for user-defined container data types.
-   ``Ellipsis`` is the sole instance of the :data:`types.EllipsisType` type.
+   The same as the ellipsis literal "``...``", an object frequently used to
+   indicate that something is omitted. Assignment to ``Ellipsis`` is possible, but
+   assignment to  ``...`` raises a :exc:`SyntaxError`.
+   ``Ellipsis`` is the sole instance of the :class:`types.EllipsisType` type.
 
 
 .. data:: __debug__

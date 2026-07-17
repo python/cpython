@@ -71,6 +71,8 @@ Queue
       Return an item if one is immediately available, else raise
       :exc:`QueueEmpty`.
 
+      Raises :exc:`QueueShutDown` if the queue has been shut down and is empty.
+
    .. method:: join()
       :async:
 
@@ -96,6 +98,8 @@ Queue
 
       If no free slot is immediately available, raise :exc:`QueueFull`.
 
+      Raises :exc:`QueueShutDown` if the queue has been shut down.
+
    .. method:: qsize()
 
       Return the number of items in the queue.
@@ -107,7 +111,7 @@ Queue
       The queue can no longer grow.
       Future calls to :meth:`~Queue.put` raise :exc:`QueueShutDown`.
       Currently blocked callers of :meth:`~Queue.put` will be unblocked
-      and will raise :exc:`QueueShutDown` in the formerly blocked thread.
+      and will raise :exc:`QueueShutDown` in the formerly awaiting task.
 
       If *immediate* is false (the default), the queue can be wound
       down normally with :meth:`~Queue.get` calls to extract tasks
@@ -188,8 +192,9 @@ Exceptions
 
 .. exception:: QueueShutDown
 
-   Exception raised when :meth:`~Queue.put` or :meth:`~Queue.get` is
-   called on a queue which has been shut down.
+   Exception raised when :meth:`~Queue.put`, :meth:`~Queue.put_nowait`,
+   :meth:`~Queue.get` or :meth:`~Queue.get_nowait` is called
+   on a queue which has been shut down.
 
    .. versionadded:: 3.13
 

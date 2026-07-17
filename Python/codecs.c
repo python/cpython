@@ -10,6 +10,8 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_codecs.h"        // export _PyCodec_LookupTextEncoding()
+#include "pycore_initconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -83,16 +85,15 @@ PyCodec_Unregister(PyObject *search_function)
     return 0;
 }
 
-extern int _Py_normalize_encoding(const char *, char *, size_t);
+/* Convert a string to a normalized Python string: all ASCII letters are
+   converted to lower case, spaces are replaced with hyphens. */
 
-/* Convert a string to a normalized Python string(decoded from UTF-8): all characters are
-   converted to lower case, spaces and hyphens are replaced with underscores. */
-
-static
-PyObject *normalizestring(const char *string)
+static PyObject*
+normalizestring(const char *string)
 {
+    size_t i;
     size_t len = strlen(string);
-    char *encoding;
+    char *p;
     PyObject *v;
 
     if (len > PY_SSIZE_T_MAX) {
@@ -100,28 +101,30 @@ PyObject *normalizestring(const char *string)
         return NULL;
     }
 
-    encoding = PyMem_Malloc(len + 1);
-    if (encoding == NULL)
+    p = PyMem_Malloc(len + 1);
+    if (p == NULL)
         return PyErr_NoMemory();
-
-    if (!_Py_normalize_encoding(string, encoding, len + 1))
-    {
-        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
-        PyMem_Free(encoding);
-        return NULL;
+    for (i = 0; i < len; i++) {
+        char ch = string[i];
+        if (ch == ' ')
+            ch = '-';
+        else
+            ch = Py_TOLOWER(Py_CHARMASK(ch));
+        p[i] = ch;
     }
-
-    v = PyUnicode_FromString(encoding);
-    PyMem_Free(encoding);
+    p[i] = '\0';
+    v = PyUnicode_FromString(p);
+    PyMem_Free(p);
     return v;
 }
 
 /* Lookup the given encoding and return a tuple providing the codec
    facilities.
 
-   The encoding string is looked up converted to all lower-case
-   characters. This makes encodings looked up through this mechanism
-   effectively case-insensitive.
+   ASCII letters in the encoding string is looked up converted to all
+   lower case. This makes encodings looked up through this mechanism
+   effectively case-insensitive. Spaces are replaced with hyphens for
+   names like "US ASCII" and "ISO 8859-1".
 
    If no codec is found, a LookupError is set and NULL returned.
 
@@ -142,8 +145,8 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     assert(interp->codecs.initialized);
 
     /* Convert the encoding to a normalized Python string: all
-       characters are converted to lower case, spaces and hyphens are
-       replaced with underscores. */
+       ASCII letters are converted to lower case, spaces are
+       replaced with hyphens. */
     PyObject *v = normalizestring(encoding);
     if (v == NULL) {
         return NULL;
@@ -1684,6 +1687,8 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     // search functions, so this is done after everything else is initialized.
     PyObject *mod = PyImport_ImportModule("encodings");
     if (mod == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        _Py_DumpPathConfig(tstate);
         return PyStatus_Error("Failed to import encodings module");
     }
     Py_DECREF(mod);

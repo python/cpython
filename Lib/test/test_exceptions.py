@@ -224,6 +224,8 @@ class ExceptionTests(unittest.TestCase):
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
+                if lineno == 1:
+                    line = line.removeprefix('\ufeff')
                 self.assertIn(line, cm.exception.text)
 
     def test_error_offset_continuation_characters(self):
@@ -239,7 +241,9 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
+        check(b'\n\n\nPython = "\xcf\xb3\xf2\xee\xed" +', 4, 12)
+        check(b'\xef\xbb\xbfPython = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
@@ -248,7 +252,16 @@ class ExceptionTests(unittest.TestCase):
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 9)
-        check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
+        check(dedent("""\
+          match ...:
+            case {**rest1, "after": after}:
+              ...
+        """), 2, 11)
+        check(dedent("""\
+          match ...:
+            case {"before": before, **rest2, "after": after}:
+              ...
+        """), 2, 29)
         check("[a b c d e f]", 1, 2)
         check("for x yfff:", 1, 7)
         check("f(a for a in b, c)", 1, 3, 1, 15)
@@ -287,7 +300,7 @@ class ExceptionTests(unittest.TestCase):
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
-        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 1, 0)
         check("""f'''
             {
             (123_a)
@@ -324,7 +337,6 @@ class ExceptionTests(unittest.TestCase):
         check('x=1\nfrom __future__ import division', 2, 1)
         check('foo(1=2)', 1, 5)
         check('def f():\n  x, y: int', 2, 3)
-        check('[*x for x in xs]', 1, 2)
         check('foo(x for x in range(10), 100)', 1, 5)
         check('for 1 in []: pass', 1, 5)
         check('(yield i) = 2', 1, 2)
@@ -1571,11 +1583,7 @@ class ExceptionTests(unittest.TestCase):
             sys.setrecursionlimit(recursionlimit)
 
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.nomemtest
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1702,6 +1710,20 @@ class ExceptionTests(unittest.TestCase):
         gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
+    def test_oserror_reinit_leak(self):
+        # gh-150988: Check for memory leak when re-initializing OSError.
+        # Previously, setting OSError attributes in a subclass
+        # before calling super().__init__() leaked memory.
+        class LeakingOSError(OSError):
+            def __init__(self, code, message, filename, filename2):
+                self.strerror = message
+                self.filename = filename
+                self.filename2 = filename2
+                super().__init__(code, message, filename, None, filename2)
+
+        exc = LeakingOSError(1, "some message", "filename.py", "filename2.py")
+        exc.__init__(2, "another message", "filename3.py", "filename4.py")
+
     def test_errno_ENOTDIR(self):
         # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
         with self.assertRaises(OSError) as cm:
@@ -1748,11 +1770,7 @@ class ExceptionTests(unittest.TestCase):
                     self.assertIn("test message", report)
                 self.assertEndsWith(report, "\n")
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.nomemtest
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1908,6 +1926,35 @@ class ExceptionTests(unittest.TestCase):
             # Break any potential reference cycle
             exc1 = None
             exc2 = None
+
+
+    @support.nomemtest
+    def test_exec_set_nomemory_hang(self):
+        # gh-134163: A MemoryError inside code that was wrapped by a try/except
+        # block would lead to an infinite loop.
+
+        # The frame_lasti needs to be greater than 257 to prevent
+        # PyLong_FromLong() from returning cached integers, which
+        # don't require a memory allocation. Prepend some dummy code
+        # to artificially increase the instruction index.
+        warmup_code = "a = list(range(0, 1))\n" * 60
+        user_input = warmup_code + dedent("""
+            try:
+                import _testcapi
+                _testcapi.set_nomemory(0)
+                b = list(range(1000, 2000))
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+            """)
+        with SuppressCrashReport():
+            with script_helper.spawn_python('-c', user_input) as p:
+                p.wait()
+                output = p.stdout.read()
+
+        self.assertIn(p.returncode, (0, 1))
+        self.assertGreater(len(output), 0)  # At minimum, should not hang
+        self.assertIn(b"MemoryError", output)
 
 
 class NameErrorTests(unittest.TestCase):
@@ -2387,7 +2434,8 @@ class SyntaxErrorTests(unittest.TestCase):
         )
         err = run_script(source.encode('cp437'))
         self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
-        self.assertEqual(err[-2], '                            ^^^')
+        self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        self.assertEqual(err[-1], 'SyntaxError: Generator expression must be parenthesized')
 
         # Check backwards tokenizer errors
         source = '# -*- coding: ascii -*-\n\n(\n'
@@ -2514,6 +2562,30 @@ class SyntaxErrorTests(unittest.TestCase):
 
         args = ("bad.py", 1, 2, "abcdefg", 1)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
+    def test_syntax_error_memory_leak(self):
+        # gh-146250: memory leak with re-initialization of SyntaxError
+        e = SyntaxError("msg", ("file.py", 1, 2, "txt", 2, 3))
+        e.__init__("new_msg", ("new_file.py", 2, 3, "new_txt", 3, 4))
+        self.assertEqual(e.msg, "new_msg")
+        self.assertEqual(e.args, ("new_msg", ("new_file.py", 2, 3, "new_txt", 3, 4)))
+        self.assertEqual(e.filename, "new_file.py")
+        self.assertEqual(e.lineno, 2)
+        self.assertEqual(e.offset, 3)
+        self.assertEqual(e.text, "new_txt")
+        self.assertEqual(e.end_lineno, 3)
+        self.assertEqual(e.end_offset, 4)
+
+        e = SyntaxError("msg", ("file.py", 1, 2, "txt", 2, 3))
+        e.__init__("new_msg", ("new_file.py", 2, 3, "new_txt"))
+        self.assertEqual(e.msg, "new_msg")
+        self.assertEqual(e.args, ("new_msg", ("new_file.py", 2, 3, "new_txt")))
+        self.assertEqual(e.filename, "new_file.py")
+        self.assertEqual(e.lineno, 2)
+        self.assertEqual(e.offset, 3)
+        self.assertEqual(e.text, "new_txt")
+        self.assertIsNone(e.end_lineno)
+        self.assertIsNone(e.end_offset)
 
 
 class TestInvalidExceptionMatcher(unittest.TestCase):

@@ -123,7 +123,7 @@ if sys.platform.lower().startswith("win"):
         10004: "The operation was interrupted.",
         10009: "A bad file handle was passed.",
         10013: "Permission denied.",
-        10014: "A fault occurred on the network??",
+        10014: "An invalid pointer was passed.",
         10022: "An invalid operation was attempted.",
         10024: "Too many open files.",
         10035: "The socket operation would block.",
@@ -181,7 +181,7 @@ if sys.platform.lower().startswith("win"):
         11001: "Host not found.",
         11002: "Nonauthoritative host not found.",
         11003: "This is a nonrecoverable error.",
-        11004: "Valid name, no data record requested type.",
+        11004: "Valid name, no data record of requested type.",
         11005: "QoS receivers.",
         11006: "QoS senders.",
         11007: "No QoS senders.",
@@ -197,7 +197,7 @@ if sys.platform.lower().startswith("win"):
         11017: "QoS flowspec error.",
         11018: "Invalid QoS provider buffer.",
         11019: "Invalid QoS filter style.",
-        11020: "Invalid QoS filter style.",
+        11020: "Invalid QoS filter type.",
         11021: "Incorrect QoS filter count.",
         11022: "Invalid QoS object length.",
         11023: "Incorrect QoS flow count.",
@@ -649,18 +649,22 @@ def _fallback_socketpair(family=AF_INET, type=SOCK_STREAM, proto=0):
     # Authenticating avoids using a connection from something else
     # able to connect to {host}:{port} instead of us.
     # We expect only AF_INET and AF_INET6 families.
-    try:
-        if (
-            ssock.getsockname() != csock.getpeername()
-            or csock.getsockname() != ssock.getpeername()
-        ):
-            raise ConnectionError("Unexpected peer connection")
-    except:
-        # getsockname() and getpeername() can fail
-        # if either socket isn't connected.
-        ssock.close()
-        csock.close()
-        raise
+    #
+    # Note that we skip this on WASI because on that platorm the client socket
+    # may not have finished connecting by the time we've reached this point (gh-146139).
+    if sys.platform != "wasi":
+        try:
+            if (
+                    ssock.getsockname() != csock.getpeername()
+                    or csock.getsockname() != ssock.getpeername()
+            ):
+                raise ConnectionError("Unexpected peer connection")
+        except:
+            # getsockname() and getpeername() can fail
+            # if either socket isn't connected.
+            ssock.close()
+            csock.close()
+            raise
 
     return (ssock, csock)
 

@@ -136,7 +136,7 @@ import sys
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import count, groupby, repeat
+from itertools import compress, count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erfc, tau, log, fsum, sumprod
 from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
@@ -145,6 +145,7 @@ from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
+_SQRT2PI = sqrt(tau)
 _random = random
 
 ## Exceptions ##############################################################
@@ -194,9 +195,9 @@ def fmean(data, weights=None):
             n = len(data)
         except TypeError:
             # Handle iterators that do not define __len__().
-            counter = count()
-            total = fsum(map(itemgetter(0), zip(data, counter)))
-            n = next(counter)
+            counter = count(1)
+            total = fsum(compress(data, counter))
+            n = next(counter) - 1
         else:
             total = fsum(data)
 
@@ -247,7 +248,7 @@ def geometric_mean(data):
             elif x == 0.0:
                 found_zero = True
             else:
-                raise StatisticsError('No negative inputs allowed', x)
+                raise StatisticsError(f'No negative inputs allowed: {x!r}')
 
     total = fsum(map(log, count_positive(data)))
 
@@ -619,9 +620,14 @@ def stdev(data, xbar=None):
     if n < 2:
         raise StatisticsError('stdev requires at least two data points')
     mss = ss / (n - 1)
+    try:
+        mss_numerator = mss.numerator
+        mss_denominator = mss.denominator
+    except AttributeError:
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
+    return _float_sqrt_of_frac(mss_numerator, mss_denominator)
 
 
 def pstdev(data, mu=None):
@@ -637,9 +643,14 @@ def pstdev(data, mu=None):
     if n < 1:
         raise StatisticsError('pstdev requires at least one data point')
     mss = ss / n
+    try:
+        mss_numerator = mss.numerator
+        mss_denominator = mss.denominator
+    except AttributeError:
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
+    return _float_sqrt_of_frac(mss_numerator, mss_denominator)
 
 
 ## Statistics for relations between two inputs #############################
@@ -883,7 +894,7 @@ def _quartic_invcdf_estimate(p):
 
 @register('quartic', 'biweight')
 def quartic_kernel():
-    pdf = lambda t: 15/16 * (1.0 - t * t) ** 2
+    pdf = lambda t: 15/16 * (u := 1.0 - t * t) * u
     cdf = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
                             (t**5, t**3, t, 1.0))
     invcdf = _newton_raphson(_quartic_invcdf_estimate, f=cdf, f_prime=pdf)
@@ -1247,11 +1258,11 @@ class NormalDist:
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
-        variance = self._sigma * self._sigma
-        if not variance:
+        sigma = self._sigma
+        if not sigma:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        diff = x - self._mu
-        return exp(diff * diff / (-2.0 * variance)) / sqrt(tau * variance)
+        z = (x - self._mu) / sigma
+        return exp(-0.5 * z * z) / (_SQRT2PI * sigma)
 
     def cdf(self, x):
         "Cumulative distribution function.  P(X <= x)"
@@ -1475,15 +1486,13 @@ def _sum(data):
     """
     count = 0
     types = set()
-    types_add = types.add
     partials = {}
-    partials_get = partials.get
 
     for typ, values in groupby(data, type):
-        types_add(typ)
+        types.add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
-            partials[d] = partials_get(d, 0) + n
+            partials[d] = partials.get(d, 0) + n
 
     if None in partials:
         # The sum will be a NAN or INF. We can ignore all the finite
@@ -1513,12 +1522,11 @@ def _ss(data, c=None):
 
     count = 0
     types = set()
-    types_add = types.add
     sx_partials = defaultdict(int)
     sxx_partials = defaultdict(int)
 
     for typ, values in groupby(data, type):
-        types_add(typ)
+        types.add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             sx_partials[d] += n

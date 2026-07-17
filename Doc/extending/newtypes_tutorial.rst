@@ -6,11 +6,6 @@
 Defining Extension Types: Tutorial
 **********************************
 
-.. sectionauthor:: Michael Hudson <mwh@python.net>
-.. sectionauthor:: Dave Kuhlman <dkuhlman@rexx.com>
-.. sectionauthor:: Jim Fulton <jim@zope.com>
-
-
 Python allows the writer of a C extension module to define new types that
 can be manipulated from Python code, much like the built-in :class:`str`
 and :class:`list` types.  The code for all extension types follows a

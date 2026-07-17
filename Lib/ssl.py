@@ -13,6 +13,9 @@ Exceptions:
 
 Functions:
 
+  get_sigalgs          -- return a list of all available TLS signature
+                          algorithms (requires OpenSSL 3.4 or later)
+
   cert_time_to_seconds -- convert time string used for certificate
                           notBefore and notAfter functions to integer
                           seconds past the Epoch (the time values
@@ -107,11 +110,7 @@ from _ssl import (
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes
-try:
-    from _ssl import RAND_egd
-except ImportError:
-    # RAND_egd is not supported on some platforms
-    pass
+from _ssl import get_sigalgs
 
 
 from _ssl import (
@@ -151,7 +150,8 @@ _IntEnum._convert_(
     source=_ssl)
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
-_PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
+_PROTOCOL_NAMES = frozendict({
+    value: name for name, value in _SSLMethod.__members__.items()})
 
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 
@@ -186,7 +186,7 @@ class _TLSContentType:
 class _TLSAlertType:
     """Alert types for TLSContentType.ALERT messages
 
-    See RFC 8466, section B.2
+    See RFC 8446, section B.2
     """
     CLOSE_NOTIFY = 0
     UNEXPECTED_MESSAGE = 10
@@ -721,10 +721,9 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
-            context.keylog_filename = keylogfile
+    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if keylogfile and not sys.flags.ignore_environment:
+        context.keylog_filename = keylogfile
     return context
 
 def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
@@ -775,10 +774,9 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
     # OpenSSL 1.1.1 keylog file
-    if hasattr(context, 'keylog_filename'):
-        keylogfile = os.environ.get('SSLKEYLOGFILE')
-        if keylogfile and not sys.flags.ignore_environment:
-            context.keylog_filename = keylogfile
+    keylogfile = os.environ.get('SSLKEYLOGFILE')
+    if keylogfile and not sys.flags.ignore_environment:
+        context.keylog_filename = keylogfile
     return context
 
 # Used by http.client if no context is explicitly passed.
@@ -935,6 +933,14 @@ class SSLObject:
         """Return the currently selected key agreement group name."""
         return self._sslobj.group()
 
+    def client_sigalg(self):
+        """Return the selected client authentication signature algorithm."""
+        return self._sslobj.client_sigalg()
+
+    def server_sigalg(self):
+        """Return the selected server handshake signature algorithm."""
+        return self._sslobj.server_sigalg()
+
     def shared_ciphers(self):
         """Return a list of ciphers shared by the client during the handshake or
         None if this is not a valid server connection.
@@ -1047,7 +1053,12 @@ class SSLSocket(socket):
                     notconn_pre_handshake_data = self.recv(1)
                 except OSError as e:
                     # EINVAL occurs for recv(1) on non-connected on unix sockets.
-                    if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                    if e.errno in (errno.ENOTCONN, errno.EINVAL):
+                        pass
+                    elif sys.platform == 'cygwin' and e.errno == errno.EAGAIN:
+                        # EAGAIN occurs on Cygwin.
+                        pass
+                    else:
                         raise
                     notconn_pre_handshake_data = b''
                 self.setblocking(blocking)
@@ -1221,6 +1232,22 @@ class SSLSocket(socket):
             return None
         else:
             return self._sslobj.group()
+
+    @_sslcopydoc
+    def client_sigalg(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.client_sigalg()
+
+    @_sslcopydoc
+    def server_sigalg(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.server_sigalg()
 
     @_sslcopydoc
     def shared_ciphers(self):
@@ -1511,11 +1538,8 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
     """Takes a certificate in binary DER format and returns the
     PEM version of it as a string."""
 
-    f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
-    ss = [PEM_HEADER]
-    ss += [f[i:i+64] for i in range(0, len(f), 64)]
-    ss.append(PEM_FOOTER + '\n')
-    return '\n'.join(ss)
+    f = str(base64.b64encode(der_cert_bytes, wrapcol=64), 'ASCII')
+    return f'{PEM_HEADER}\n{f}\n{PEM_FOOTER}\n'
 
 def PEM_cert_to_DER_cert(pem_cert_string):
     """Takes a certificate in ASCII PEM format and returns the
