@@ -39,6 +39,8 @@ jobs:
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         # On ubuntu-26.04 image, clang is clang-21 by default
+        # NOTE: when bumping to a new version of clang,
+        # please update the versions in `Tools/pixi-packages/variants.yaml` too.
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
     - name: TSan option setup

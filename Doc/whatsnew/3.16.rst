@@ -290,6 +290,17 @@ imaplib
   the criteria are sent using the connection encoding instead.
   (Contributed by Serhiy Storchaka in :gh:`153494`.)
 
+* Command methods now accept structured arguments,
+  so the module takes care of quoting instead of the caller.
+  A *message_set* and lists of flags or other atoms
+  can be passed as sequences instead of preformatted strings,
+  and the :meth:`~imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.fetch`,
+  :meth:`~imaplib.IMAP4.sort`, :meth:`~imaplib.IMAP4.thread` and
+  :meth:`~imaplib.IMAP4.uid` methods accept a *params* keyword argument
+  that substitutes and quotes ``?`` placeholders,
+  in the manner of :mod:`sqlite3` parameter substitution.
+  (Contributed by Serhiy Storchaka in :gh:`153521`.)
+
 
 ipaddress
 ---------
