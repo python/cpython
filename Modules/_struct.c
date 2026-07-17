@@ -2613,7 +2613,8 @@ static PyType_Spec PyStructType_spec = {
 static int
 cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
 {
-    PyObject * s_object;
+    PyObject *s_object;
+    PyObject *key;
     _structmodulestate *state = get_struct_state(module);
 
     if (fmt == NULL) {
@@ -2621,24 +2622,41 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
         return 1;
     }
 
-    if (PyDict_GetItemRef(state->cache, fmt, &s_object) < 0) {
+    /* Use a str cache key: an equal str and bytes would collide and be
+       compared, raising BytesWarning under -bb. */
+    if (PyBytes_Check(fmt)) {
+        key = PyUnicode_DecodeASCII(PyBytes_AS_STRING(fmt),
+                                    PyBytes_GET_SIZE(fmt), "surrogateescape");
+        if (key == NULL) {
+            return 0;
+        }
+    }
+    else {
+        key = Py_NewRef(fmt);
+    }
+
+    if (PyDict_GetItemRef(state->cache, key, &s_object) < 0) {
+        Py_DECREF(key);
         return 0;
     }
     if (s_object != NULL) {
+        Py_DECREF(key);
         *ptr = PyStructObject_CAST(s_object);
         return Py_CLEANUP_SUPPORTED;
     }
 
-    s_object = PyObject_CallOneArg(state->PyStructType, fmt);
+    s_object = PyObject_CallOneArg(state->PyStructType, key);
     if (s_object != NULL) {
         if (PyDict_GET_SIZE(state->cache) >= MAXCACHE)
             PyDict_Clear(state->cache);
         /* Attempt to cache the result */
-        if (PyDict_SetItem(state->cache, fmt, s_object) == -1)
+        if (PyDict_SetItem(state->cache, key, s_object) == -1)
             PyErr_Clear();
+        Py_DECREF(key);
         *ptr = (PyStructObject *)s_object;
         return Py_CLEANUP_SUPPORTED;
     }
+    Py_DECREF(key);
     return 0;
 }
 
