@@ -169,6 +169,14 @@ class TestMessageAPI(TestEmailBase):
         subpart = msg.get_payload(1)
         eq(subpart.get_filename(), 'dingusfish.gif')
 
+    
+    def test_unquoted_apostrophe_in_parameter(self):
+        msg = email.message_from_string(
+            "Content-Disposition: attachment; filename=O'Brien.pdf\n\n",
+            policy=email.policy.default,
+        )
+        self.assertEqual(msg.get_filename(), "O'Brien.pdf")    
+
     def test_get_filename_with_name_parameter(self):
         eq = self.assertEqual
 
