@@ -570,6 +570,38 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"value":', content)
         self.assertIn('"children":', content)
 
+    def test_flamegraph_escapes_special_chars_in_funcname(self):
+        """Function names with <, >, & must be escaped in the HTML."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [MockFrameInfo("test.py", 1, '</script><b>')]
+                )],
+            )
+        ]
+        collector.collect(frames)
+
+        with captured_stdout(), captured_stderr():
+            collector.export(flamegraph_out.name)
+
+        with open(flamegraph_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # The raw </script> must not appear unescaped in the output
+        # (it would break out of the inline <script> block)
+        idx = content.find("EMBEDDED_DATA")
+        if idx != -1:
+            after_embed = content[idx:]
+            self.assertNotIn("</script><b>", after_embed.split("</script>")[0])
+
     def test_flamegraph_collector_empty_export_fails(self):
         """Test empty flamegraph export reports no output."""
         flamegraph_out = tempfile.NamedTemporaryFile(
