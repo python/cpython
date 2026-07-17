@@ -220,7 +220,6 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.10
       Added the :attr:`name` and :attr:`obj` attributes.
 
-
 .. exception:: EOFError
 
    Raised when the :func:`input` function hits an end-of-file condition (EOF)
