@@ -2076,36 +2076,36 @@ class AttributeErrorTests(unittest.TestCase):
         self.assertEqual(str(cm.exception), "custom")
 
     def test_module_getattr_error_message(self):
-        mod1 = ModuleType("raisewithname")
+        raisewithname_mod = ModuleType("raisewithname")
         def raise_with_name(name):
             raise AttributeError(name)
-        mod1.__getattr__ = raise_with_name
+        raisewithname_mod.__getattr__ = raise_with_name
         with self.assertRaises(AttributeError) as cm:
-            getattr(mod1, "missing1")
+            getattr(raisewithname_mod, "missing1")
         self.assertEqual(str(cm.exception),
                          "module 'raisewithname' has no attribute 'missing1'")
 
-        mod2 = ModuleType("bareraise")
+        bareraise_mod = ModuleType("bareraise")
         def bare_raise(name):
             raise AttributeError
-        mod2.__getattr__ = bare_raise
+        bareraise_mod.__getattr__ = bare_raise
         with self.assertRaises(AttributeError) as cm:
-            getattr(mod2, "missing2")
+            getattr(bareraise_mod, "missing2")
         self.assertEqual(str(cm.exception),
                          "module 'bareraise' has no attribute 'missing2'")
 
-        mod3 = ModuleType("custom")
+        custom_mod = ModuleType("custom")
         def raise_custom(name):
             raise AttributeError("custom")
-        mod3.__getattr__ = raise_custom
+        custom_mod.__getattr__ = raise_custom
         with self.assertRaises(AttributeError) as cm:
-            getattr(mod3, "missing3")
+            getattr(custom_mod, "missing3")
         self.assertEqual(str(cm.exception), "custom")
 
-        mod4 = ModuleType.__new__(ModuleType)
-        mod4.__getattr__ = raise_with_name
+        nameless_mod = ModuleType.__new__(ModuleType)
+        nameless_mod.__getattr__ = raise_with_name
         with self.assertRaises(AttributeError) as cm:
-            getattr(mod4, "missing4")
+            getattr(nameless_mod, "missing4")
         self.assertEqual(str(cm.exception), "module has no attribute 'missing4'")
 
     # Note: name suggestion tests live in `test_traceback`.
