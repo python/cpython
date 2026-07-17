@@ -1,0 +1,2 @@
+Fix :mod:`email` parsing of MIME parameters containing unquoted apostrophes. Such
+values are now correctly accepted as tokens under ``policy.default``.
