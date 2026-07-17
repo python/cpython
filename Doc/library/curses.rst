@@ -1327,9 +1327,6 @@ Reading window contents
    not fit in a single byte, or a color pair outside the :func:`color_pair`
    range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
 
-   .. versionchanged:: next
-      On a wide build, a non-ASCII character is returned as its locale-encoded byte.
-
 .. method:: window.in_wch([y, x])
 
    Return the complex character at the given position in the window as a

@@ -774,15 +774,10 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
     return rtn;
 }
 
-/* winch() is the X/Open single-byte reader: it returns only the low 8 bits of a
-   cell's character.  On a wide build that low byte is the low byte of the wide
-   code point, which for a character representable in the locale's single-byte
-   encoding differs from the locale byte the string readers (instr()) return --
-   e.g. U+20AC under ISO-8859-15 yields 0xAC here but its locale byte is 0xA4.
-   Recover the locale byte from the wide cell when the character maps to exactly
-   one byte, preserving the attribute and color bits already in RTN.  A
-   character with no single-byte form (a combining cell, or anything multibyte
-   in the locale) is left as winch() reported it; in_wch() reads those in full. */
+/* winch() returns the low 8 bits of the character's code point with no locale
+   conversion, unlike instr(), so recover the locale byte from the wide cell
+   when the character maps to exactly one byte, keeping the attribute and color
+   bits in RTN.  A character with no single-byte form is left to winch(). */
 static chtype
 curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
 {
