@@ -357,7 +357,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 For simple text calendars this module provides the following functions.
 
-.. function:: setfirstweekday(weekday)
+.. function:: setfirstweekday(firstweekday)
 
    Sets the weekday (``0`` is Monday, ``6`` is Sunday) to start each week. The
    values :const:`MONDAY`, :const:`TUESDAY`, :const:`WEDNESDAY`, :const:`THURSDAY`,
