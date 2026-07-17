@@ -14,6 +14,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_tuple.h"         // _PyTuple_FromPair
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include "osdefs.h"               // SEP
 #include "clinic/exceptions.c.h"
@@ -2713,7 +2714,7 @@ AttributeError_str(PyObject *op)
         self->obj && self->name && PyUnicode_Check(self->name)
         && ((PyTuple_GET_SIZE(self->args) == 1
              && PyUnicode_Check(arg = PyTuple_GET_ITEM(self->args, 0))
-             && PyUnicode_Equal(arg, self->name))
+             && _PyUnicode_Equal(arg, self->name))
             || PyTuple_GET_SIZE(self->args) == 0)
     ) {
         obj = Py_NewRef(self->obj);
