@@ -1,0 +1,2 @@
+Skip non-regular and oversized files in the ``profiling.sampling`` heatmap
+exporter instead of reading them unconditionally.  Patch by tonghuaroot.
