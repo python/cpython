@@ -379,6 +379,14 @@ shlex
   (Contributed by Jay Berry in :gh:`148846`.)
 
 
+symtable
+--------
+
+* :func:`symtable.symtable` now accepts an AST object,
+  like the builtin :func:`compile`.
+  (Contributed by Serhiy Storchaka in :gh:`153844`.)
+
+
 tkinter
 -------
 
