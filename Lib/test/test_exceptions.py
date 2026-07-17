@@ -2048,12 +2048,6 @@ class AttributeErrorTests(unittest.TestCase):
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
 
-    def _test_generated_message(self, obj, name):
-        with self.assertRaises(AttributeError) as cm:
-            getattr(obj, name)
-        self.assertEqual(str(cm.exception),
-                         f"{obj!r} has no attribute {name!r}")
-
     def test_getattr_error_message(self):
         class RaiseWithName:
             def __getattr__(self, name):
@@ -2067,8 +2061,15 @@ class AttributeErrorTests(unittest.TestCase):
             def __getattr__(self, name):
                 raise AttributeError("custom")
 
-        self._test_generated_message(RaiseWithName(), "missing1")
-        self._test_generated_message(BareRaise(), "missing2")
+        with self.assertRaises(AttributeError) as cm:
+            getattr(RaiseWithName(), "missing1")
+        self.assertEqual(str(cm.exception),
+                         "'RaiseWithName' object has no attribute 'missing1'")
+
+        with self.assertRaises(AttributeError) as cm:
+            getattr(BareRaise(), "missing2")
+        self.assertEqual(str(cm.exception),
+                         "'BareRaise' object has no attribute 'missing2'")
 
         with self.assertRaises(AttributeError) as cm:
             getattr(RaiseCustom(), "missing3")
@@ -2090,8 +2091,15 @@ class AttributeErrorTests(unittest.TestCase):
             raise AttributeError("custom")
         mod3.__getattr__ = raise_custom
 
-        self._test_generated_message(mod1, "missing4")
-        self._test_generated_message(mod2, "missing5")
+        with self.assertRaises(AttributeError) as cm:
+            getattr(mod1, "missing4")
+        self.assertEqual(str(cm.exception),
+                         "module 'raisewithname' has no attribute 'missing4'")
+
+        with self.assertRaises(AttributeError) as cm:
+            getattr(mod2, "missing5")
+        self.assertEqual(str(cm.exception),
+                         "module 'bareraise' has no attribute 'missing5'")
 
         with self.assertRaises(AttributeError) as cm:
             getattr(mod3, "missing6")

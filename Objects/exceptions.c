@@ -2726,8 +2726,21 @@ AttributeError_str(PyObject *op)
         return BaseException_str(op);  /* re-acquires lock */
     }
 
-    PyObject *result = PyUnicode_FromFormat("%.200R has no attribute '%U'",
-                                            obj, name);
+    PyObject *result;
+    if (PyModule_Check(obj)) {
+        PyModuleObject *mod = _PyModule_CAST(obj);
+        /* In a typical case, module's __name__ is examined instead. */
+        if (mod->md_name) {
+            result = PyUnicode_FromFormat("module '%U' has no attribute '%U'",
+                                          mod->md_name,
+                                          name);
+        } else {
+            result = PyUnicode_FromFormat("module has no attribute '%U'", name);
+        }
+    } else {
+        result = PyUnicode_FromFormat("'%.200s' object has no attribute '%U'",
+                                      Py_TYPE(obj)->tp_name, name);
+    }
     Py_DECREF(obj);
     Py_DECREF(name);
     return result;
