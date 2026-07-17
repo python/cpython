@@ -2102,6 +2102,12 @@ class AttributeErrorTests(unittest.TestCase):
             getattr(mod3, "missing3")
         self.assertEqual(str(cm.exception), "custom")
 
+        mod4 = ModuleType.__new__(ModuleType)
+        mod4.__getattr__ = raise_with_name
+        with self.assertRaises(AttributeError) as cm:
+            getattr(mod4, "missing4")
+        self.assertEqual(str(cm.exception), "module has no attribute 'missing4'")
+
     # Note: name suggestion tests live in `test_traceback`.
 
 
