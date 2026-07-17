@@ -611,9 +611,10 @@ are always available.  They are listed here in alphabetical order.
       untrusted user-supplied input will lead to security vulnerabilities.
 
    The *source* argument is parsed and evaluated as a Python expression
-   (technically speaking, an :ref:`expression list <exprlists>`) , using 
-   the *globals* and *locals* mappings as global and local namespace. If the *globals* 
-   dictionary is present and does not contain a value for the key ``__builtins__``, a
+   (technically speaking, an :ref:`expression list <exprlists>`)
+   using the *globals* and *locals* mappings as global and local namespace.
+   If the *globals* dictionary is present and does not contain a value for the
+   key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *source* is parsed.
    Overriding ``__builtins__`` can be used to restrict or change the available
@@ -634,7 +635,7 @@ are always available.  They are listed here in alphabetical order.
       2
 
       >>> eval("1, 2")
-      (1,2)
+      (1, 2)
 
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case, pass a code object instead
@@ -2383,6 +2384,4 @@ are always available.  They are listed here in alphabetical order.
 
 .. [#] Note that the parser only accepts the Unix-style end of line convention.
    If you are reading the code from a file, make sure to use newline conversion
-   mode to convert Windows or Mac-style newlines.ECHO is on.
-   
-ECHO is on.
+   mode to convert Windows or Mac-style newlines.
