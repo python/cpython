@@ -783,12 +783,10 @@ class HeatmapCollector(StackTraceCollector):
                           line_counts: Dict[int, int], self_counts: Dict[int, int],
                           file_stat: FileStats):
         """Generate HTML for a single source file with heatmap coloring."""
-        _MAX_SOURCE_SIZE = 10 * 1024 * 1024
         source_lines = [f"# Source file not available: {filename}"]
         try:
             resolved = Path(filename).resolve()
-            if (resolved.is_file()
-                    and resolved.stat().st_size <= _MAX_SOURCE_SIZE):
+            if resolved.is_file():
                 source_lines = resolved.read_text(
                     encoding='utf-8', errors='replace').splitlines()
         except (IOError, OSError):
