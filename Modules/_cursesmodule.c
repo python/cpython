@@ -774,6 +774,35 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
     return rtn;
 }
 
+/* winch() is the X/Open single-byte reader: it returns only the low 8 bits of a
+   cell's character.  On a wide build that low byte is the low byte of the wide
+   code point, which for a character representable in the locale's single-byte
+   encoding differs from the locale byte the string readers (instr()) return --
+   e.g. U+20AC under ISO-8859-15 yields 0xAC here but its locale byte is 0xA4.
+   Recover the locale byte from the wide cell when the character maps to exactly
+   one byte, preserving the attribute and color bits already in RTN.  A
+   character with no single-byte form (a combining cell, or anything multibyte
+   in the locale) is left as winch() reported it; in_wch() reads those in full. */
+static chtype
+curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
+{
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attrs;
+    int pair;
+    if (curses_getcchar(cell, wstr, &attrs, &pair) == ERR
+        || wstr[0] == L'\0' || wstr[1] != L'\0')
+    {
+        return rtn;
+    }
+    /* wctob() mirrors ncurses' own _nc_to_char(): the single-byte form, or EOF
+       when the character has none in this locale. */
+    int byte = wctob(wstr[0]);
+    if (byte != EOF) {
+        rtn = (rtn & ~(chtype)A_CHARTEXT) | (unsigned char)byte;
+    }
+    return rtn;
+}
+
 /* Hash one cell by value (text, attributes, pair) -- consistent with the
    equality comparison, not the raw cchar_t whose padding and unused text tail
    it ignores.  Zero the key first so those bytes are deterministic, then
@@ -3609,6 +3638,14 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
         curses_window_set_error(self, funcname, "inch");
         return NULL;
     }
+#ifdef HAVE_NCURSESW
+    curses_cell_t cell = {0};
+    if ((group_right_1 ? mvwin_wch(self->win, y, x, &cell)
+                       : win_wch(self->win, &cell)) != ERR)
+    {
+        rtn = curses_cell_locale_byte(rtn, &cell);
+    }
+#endif
     return PyLong_FromUnsignedLong(rtn);
 }
 

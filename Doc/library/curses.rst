@@ -1321,9 +1321,14 @@ Reading window contents
    The bottom 8 bits are the character proper and the upper bits are the attributes;
    extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
    and the color pair with :func:`pair_number`.
+   The character byte is the locale-encoded byte of the cell's character,
+   consistent with :meth:`instr`.
    It cannot represent a cell holding combining characters, a character that does
    not fit in a single byte, or a color pair outside the :func:`color_pair`
    range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
+
+   .. versionchanged:: next
+      On a wide build, a non-ASCII character is returned as its locale-encoded byte.
 
 .. method:: window.in_wch([y, x])
 
