@@ -227,6 +227,12 @@ class Token(TokenList):
     token_type = 'token'
     encode_as_ew = False
 
+    @property
+    def stripped_value(self):
+        for token in self:
+            if token.token_type == 'ttext':
+                return token.value
+
 
 class EncodedWord(TokenList):
     token_type = 'encoded-word'
@@ -734,7 +740,7 @@ class Value(TokenList):
         if token.token_type == 'cfws':
             token = self[1]
         if token.token_type.endswith(
-                ('quoted-string', 'attribute', 'extended-attribute')):
+                ('quoted-string', 'attribute', 'extended-attribute', 'token')):
             return token.stripped_value
         return self.value
 
@@ -2458,8 +2464,8 @@ def get_section(value):
     return section, value
 
 
-def get_value(value):
-    """ quoted-string / attribute
+def get_value(value, *, extended=False):
+    """ quoted-string / token / extended-attribute
 
     """
     v = Value()
@@ -2473,8 +2479,10 @@ def get_value(value):
                                       "only {}".format(leader))
     if value[0] == '"':
         token, value = get_quoted_string(value)
-    else:
+    elif extended:
         token, value = get_extended_attribute(value)
+    else:
+        token, value = get_token(value)
     if leader is not None:
         token[:0] = [leader]
     v.append(token)
@@ -2560,7 +2568,13 @@ def get_parameter(value):
     if value and value[0] == "'":
         token = None
     else:
-        token, value = get_value(value)
+        # Preserve legacy recovery for unencoded *0 continuations using the
+        # charset'language'value form.  Unsectioned parameters are MIME tokens.
+        parse_as_extended = (
+            param.extended or
+            (param.sectioned and param.section_number == 0)
+        )
+        token, value = get_value(value, extended=parse_as_extended)
     if not param.extended or param.section_number > 0:
         if not value or value[0] != "'":
             appendto.append(token)
@@ -2614,7 +2628,7 @@ def get_parameter(value):
             v.append(token)
         token = v
     else:
-        token, value = get_value(value)
+        token, value = get_value(value, extended=True)
     appendto.append(token)
     if remainder is not None:
         assert not value, value
