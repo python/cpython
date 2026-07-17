@@ -1150,6 +1150,36 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
 }
 
 void
+_Py_attribute_data_to_stat_UWP(FILE_STANDARD_INFO* standard_info, ULONG reparse_tag,
+                               FILE_BASIC_INFO* basic_info, struct _Py_stat_struct* result)
+{
+    memset(result, 0, sizeof(*result));
+    result->st_mode = attributes_to_mode(basic_info->FileAttributes);
+    result->st_size = standard_info->EndOfFile.QuadPart;
+    result->st_dev = 1;
+
+    /* st_ctime is deprecated, but we preserve the legacy value in our caller, not here */
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
+
+    result->st_nlink = standard_info->NumberOfLinks;
+    result->st_ino = basic_info->CreationTime.QuadPart;
+
+    /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
+       open other name surrogate reparse points without traversing them. To
+       detect/handle these, check st_file_attributes and st_reparse_tag. */
+    result->st_reparse_tag = reparse_tag;
+    if (basic_info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+        /* set the bits that make this a symlink */
+        result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
+    }
+    result->st_file_attributes = basic_info->FileAttributes;
+}
+
+void
 _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
                             struct _Py_stat_struct *result)
 {
@@ -1213,6 +1243,29 @@ _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
     }
 }
 
+void
+_Py_find_data_to_stat(WIN32_FIND_DATAW* find_data, struct _Py_stat_struct* result)
+{
+    memset(result, 0, sizeof(*result));
+    result->st_mode = attributes_to_mode(find_data->dwFileAttributes);
+    FILE_TIME_to_time_t_nsec(&find_data->ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
+    FILE_TIME_to_time_t_nsec(&find_data->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    FILE_TIME_to_time_t_nsec(&find_data->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    result->st_size = (((long long)find_data->nFileSizeHigh) << 32) | find_data->nFileSizeLow;
+
+    if (find_data->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+        result->st_reparse_tag = find_data->dwReserved0;
+
+    if (find_data->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        find_data->dwReserved0 == IO_REPARSE_TAG_SYMLINK) {
+        /* first clear the S_IFMT bits */
+        result->st_mode ^= (result->st_mode & S_IFMT);
+        /* now set the bits that make this a symlink */
+        result->st_mode |= S_IFLNK;
+    }
+    result->st_file_attributes = find_data->dwFileAttributes;
+}
+
 #endif
 
 /* Return information about a file.
@@ -1231,9 +1284,10 @@ int
 _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
 {
 #ifdef MS_WINDOWS
-    BY_HANDLE_FILE_INFORMATION info;
-    FILE_BASIC_INFO basicInfo;
-    FILE_ID_INFO idInfo;
+    BY_HANDLE_FILE_INFORMATION info = {0};
+    FILE_STANDARD_INFO standardInfo = {0};
+    FILE_BASIC_INFO basicInfo = {0};
+    FILE_ID_INFO idInfo = {0};
     FILE_ID_INFO *pIdInfo = &idInfo;
     HANDLE h;
     int type;
@@ -1266,8 +1320,13 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         return 0;
     }
 
+#ifdef MS_WINDOWS_DESKTOP
     if (!GetFileInformationByHandle(h, &info) ||
         !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
+#else
+    if (!GetFileInformationByHandleEx(h,FileStandardInfo, &standardInfo, sizeof(standardInfo)) ||
+        !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
+#endif
         /* The Win32 error is already set, but we also set errno for
            callers who expect it */
         errno = winerror_to_errno(GetLastError());
@@ -1279,7 +1338,11 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         pIdInfo = NULL;
     }
 
+#ifdef MS_WINDOWS_DESKTOP
     _Py_attribute_data_to_stat(&info, 0, &basicInfo, pIdInfo, status);
+#else
+    _Py_attribute_data_to_stat_UWP(&standardInfo, 0, &basicInfo, status);
+#endif
     return 0;
 #else
     return fstat(fd, status);
