@@ -2090,11 +2090,11 @@ class AttributeErrorTests(unittest.TestCase):
             raise AttributeError("custom")
         mod3.__getattr__ = raise_custom
 
-        self._test_generated_message(mod1, "missing3")
-        self._test_generated_message(mod2, "missing4")
+        self._test_generated_message(mod1, "missing4")
+        self._test_generated_message(mod2, "missing5")
 
         with self.assertRaises(AttributeError) as cm:
-            getattr(mod3, "missing5")
+            getattr(mod3, "missing6")
         self.assertEqual(str(cm.exception), "custom")
 
     # Note: name suggestion tests live in `test_traceback`.
