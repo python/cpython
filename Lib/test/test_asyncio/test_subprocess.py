@@ -464,7 +464,7 @@ class SubprocessMixin:
             try:
                 # Ensure we start waiting before the process is killed.
                 wait_proc = asyncio.create_task(proc.wait())
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0)
                 proc.kill()
                 await asyncio.wait_for(wait_proc, timeout=2.0)
             finally:
