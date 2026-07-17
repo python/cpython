@@ -2074,7 +2074,6 @@ class AttributeErrorTests(unittest.TestCase):
             getattr(RaiseCustom(), "missing3")
         self.assertEqual(str(cm.exception), "custom")
 
-
     def test_module_getattr_error_message(self):
         mod1 = ModuleType("raisewithname")
         def raise_with_name(name):
