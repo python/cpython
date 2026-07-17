@@ -188,6 +188,8 @@ class BaseRequestRateTest(BaseRobotTest):
                         parsed_request_rate.seconds,
                         self.request_rate.seconds
                     )
+                else:
+                    self.assertIsNone(parsed_request_rate)
 
 
 class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
@@ -257,6 +259,8 @@ Request-rate: ²/5
     """
     good = ['/foo.html']
     bad = ['/tmp/']
+    crawl_delay = None
+    request_rate = None
 
 
 class NonDecimalDenominatorTest(BaseRequestRateTest, unittest.TestCase):
@@ -266,6 +270,7 @@ Disallow: /tmp/
 Request-rate: 5/²
     """
     good = ['/foo.html']
+    request_rate = None
     bad = ['/tmp/']
 
 
