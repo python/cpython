@@ -14,7 +14,6 @@ __all__ = ['Pool', 'ThreadPool']
 #
 
 import collections
-import functools
 import itertools
 import os
 import queue
