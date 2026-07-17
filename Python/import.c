@@ -3883,6 +3883,76 @@ _PyImport_ResolveName(PyThreadState *tstate, PyObject *name,
 }
 
 PyObject *
+_PyImport_ResolveLazyImportFromAttr(PyThreadState *tstate,
+                                    PyObject *package_name,
+                                    PyObject *name, PyObject *attr)
+{
+    /* Lazy from-imports repair evicted package submodules without
+       changing eager from-import behavior. */
+    if (!PyModule_Check(attr) || package_name == NULL
+        || !PyUnicode_Check(package_name)) {
+        return Py_NewRef(attr);
+    }
+
+    PyObject *package = PyImport_GetModule(package_name);
+    if (package == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            return NULL;
+        }
+        return Py_NewRef(attr);
+    }
+
+    int is_package = PyObject_HasAttrWithError(package, &_Py_ID(__path__));
+    Py_DECREF(package);
+    if (is_package <= 0) {
+        if (is_package < 0) {
+            return NULL;
+        }
+        return Py_NewRef(attr);
+    }
+
+    PyObject *fullmodname = PyUnicode_FromFormat("%U.%U", package_name, name);
+    if (fullmodname == NULL) {
+        return NULL;
+    }
+
+    PyObject *attr_name;
+    if (PyObject_GetOptionalAttr(attr, &_Py_ID(__name__), &attr_name) < 0) {
+        Py_DECREF(fullmodname);
+        return NULL;
+    }
+
+    int matches = (attr_name != NULL && PyUnicode_Check(attr_name))
+        ? PyObject_RichCompareBool(attr_name, fullmodname, Py_EQ)
+        : 0;
+    Py_XDECREF(attr_name);
+    if (matches <= 0) {
+        Py_DECREF(fullmodname);
+        return matches < 0 ? NULL : Py_NewRef(attr);
+    }
+
+    PyObject *submod = import_get_module(tstate, fullmodname);
+    if (submod == NULL && !_PyErr_Occurred(tstate)) {
+        PyObject *imported = PyImport_ImportModuleLevelObject(
+            fullmodname, NULL, NULL, NULL, 0);
+        if (imported == NULL) {
+            Py_DECREF(fullmodname);
+            return NULL;
+        }
+        Py_DECREF(imported);
+        submod = import_get_module(tstate, fullmodname);
+    }
+    Py_DECREF(fullmodname);
+    if (submod != NULL) {
+        return submod;
+    }
+    if (_PyErr_Occurred(tstate)) {
+        return NULL;
+    }
+    return Py_NewRef(attr);
+}
+
+PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
     PyObject *obj = NULL;
@@ -4001,7 +4071,20 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
         PyObject *from = obj;
-        obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
+        obj = NULL;
+        PyObject *attr;
+        if (PyObject_GetOptionalAttr(from, lz->lz_attr, &attr) < 0) {
+            Py_DECREF(from);
+            goto error;
+        }
+        if (attr != NULL) {
+            obj = _PyImport_ResolveLazyImportFromAttr(
+                tstate, lz->lz_from, lz->lz_attr, attr);
+            Py_DECREF(attr);
+        }
+        else {
+            obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
+        }
         Py_DECREF(from);
         if (obj == NULL) {
             goto error;

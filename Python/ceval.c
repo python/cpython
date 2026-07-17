@@ -3331,8 +3331,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
     PyLazyImportObject *d = (PyLazyImportObject *)v;
     PyObject *mod = PyImport_GetModule(d->lz_from);
     if (mod != NULL) {
-        // Check if the module already has the attribute, if so, resolve it
-        // eagerly.
+        /* If the parent is already imported, resolve any module-valued
+           attribute through the same stale-submodule check. */
         if (PyModule_Check(mod)) {
             PyObject *mod_dict = PyModule_GetDict(mod);
             if (mod_dict != NULL) {
@@ -3341,8 +3341,11 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObje
                     return NULL;
                 }
                 if (ret != NULL) {
+                    PyObject *resolved = _PyImport_ResolveLazyImportFromAttr(
+                        tstate, d->lz_from, name, ret);
+                    Py_DECREF(ret);
                     Py_DECREF(mod);
-                    return ret;
+                    return resolved;
                 }
             }
         }
