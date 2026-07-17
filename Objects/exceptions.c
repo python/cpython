@@ -2725,7 +2725,7 @@ AttributeError_str(PyObject *op)
         return BaseException_str(op);
     }
 
-    PyObject *result = PyUnicode_FromFormat("%R has no attribute '%U'",
+    PyObject *result = PyUnicode_FromFormat("%.200R has no attribute '%U'",
                                             obj, name);
     Py_DECREF(obj);
     Py_DECREF(name);
