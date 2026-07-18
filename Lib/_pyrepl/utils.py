@@ -24,6 +24,7 @@ ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = frozenset({"def", "class"})
 KEYWORD_CONSTANTS = frozenset({"True", "False", "None"})
 BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
+# Keep this in sync with _pyrepl.simple_interact.REPL_COMMANDS
 COMMANDS = frozenset({"exit", "quit", "copyright", "help", "clear"})
 
 
