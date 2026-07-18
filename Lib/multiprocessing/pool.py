@@ -412,18 +412,19 @@ class Pool(object):
         except Exception as e:
             yield (result_job, i+1, _helper_reraises_exception, (e,), {})
 
-    def imap(self, func, iterable, chunksize=1, buffersize=None):
+    def imap(self, func, iterable, chunksize=1, *, buffersize=None):
         '''
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
-        return self._imap(IMapIterator, func, iterable, chunksize, buffersize)
+        return self._imap(IMapIterator, func, iterable, chunksize,
+                          buffersize=buffersize)
 
-    def imap_unordered(self, func, iterable, chunksize=1, buffersize=None):
+    def imap_unordered(self, func, iterable, chunksize=1, *, buffersize=None):
         '''
         Like `imap()` method but ordering of results is arbitrary.
         '''
         return self._imap(IMapUnorderedIterator, func, iterable, chunksize,
-                          buffersize)
+                          buffersize=buffersize)
 
     def apply_async(self, func, args=(), kwds={}, callback=None,
             error_callback=None):
@@ -473,7 +474,7 @@ class Pool(object):
         return result
 
     def _imap(self, iterator_cls, func, iterable, chunksize=1,
-              buffersize=None):
+              *, buffersize=None):
         self._check_running()
         self._check_chunksize(chunksize)
         self._check_buffersize(buffersize)
@@ -862,7 +863,7 @@ class MapResult(ApplyResult):
 
 class IMapIterator(object):
 
-    def __init__(self, pool, buffersize=None):
+    def __init__(self, pool, *, buffersize=None):
         self._pool = pool
         self._cond = threading.Condition(threading.Lock())
         self._job = next(job_counter)
