@@ -1225,7 +1225,7 @@ importlib.metadata
   would return an empty ``PackageMetadata`` object as if the file
   was present but empty. Now, a ``MetadataNotFound`` exception is raised.
   See `importlib_metadata#493 <https://github.com/python/importlib_metadata/issues/493>`_
-  for background and rationale and and :gh:`143387` for rationale on the
+  for background and rationale and :gh:`143387` for rationale on the
   compatibility concerns.
   (Contributed by Jason R. Coombs.)
 
