@@ -1,3 +1,1 @@
-Fix a data race on a socket's timeout in the :term:`free-threaded <free
-threading>` build: the timeout is now read and written atomically. Detected
-by ThreadSanitizer.
+Fix a data race on a socket's timeout in the :term:`free-threaded build`.
