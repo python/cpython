@@ -85,6 +85,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    with inter-line and intra-line change highlights.  The table can be generated in
    either full or contextual difference mode.
 
+   .. warning::
+
+      The trailing newlines get stripped before the diff, so the result can be
+      incomplete. See :gh:`71896` for details.
+
    The constructor for this class is:
 
 
