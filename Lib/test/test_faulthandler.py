@@ -33,6 +33,11 @@ CURRENT_THREAD_ID = fr'Current thread 0x[0-9a-f]+{THREAD_NAME}'
 CURRENT_THREAD_HEADER = fr'{CURRENT_THREAD_ID} \(most recent call first\):'
 
 
+def skip_if_sanitizer_signal(signame):
+    return support.skip_if_sanitizer(f"TSAN/UBSan itercepts {signame}",
+                                     thread=True, ub=True)
+
+
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
     regex += '  File "<string>", line %s in func\n' % lineno1
@@ -224,7 +229,7 @@ class FaultHandlerTests(unittest.TestCase):
             func='faulthandler_fatal_error_thread',
             py_fatal_error=True)
 
-    @support.skip_if_sanitizer("TSAN itercepts SIGABRT", thread=True)
+    @skip_if_sanitizer_signal("SIGABRT")
     def test_sigabrt(self):
         self.check_fatal_error("""
             import faulthandler
@@ -236,7 +241,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == 'win32',
                      "SIGFPE cannot be caught on Windows")
-    @support.skip_if_sanitizer("TSAN itercepts SIGFPE", thread=True)
+    @skip_if_sanitizer_signal("SIGFPE")
     def test_sigfpe(self):
         self.check_fatal_error("""
             import faulthandler
@@ -248,7 +253,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')
-    @support.skip_if_sanitizer("TSAN itercepts SIGBUS", thread=True)
+    @skip_if_sanitizer_signal("SIGBUS")
     @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
@@ -263,7 +268,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGILL'), 'need signal.SIGILL')
-    @support.skip_if_sanitizer("TSAN itercepts SIGILL", thread=True)
+    @skip_if_sanitizer_signal("SIGILL")
     @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""

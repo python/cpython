@@ -1316,6 +1316,11 @@ class TypeVarTupleTests(BaseTestCase):
     def test_bound(self):
         Ts_bound = TypeVarTuple('Ts_bound', bound=int)
         self.assertIs(Ts_bound.__bound__, int)
+        Ts_tuple_bound = TypeVarTuple('Ts_tuple_bound', bound=(int, str))
+        self.assertEqual(Ts_tuple_bound.__bound__, (int, str))
+        obj = object()
+        Ts_object = TypeVarTuple('Ts_object', bound=obj)
+        self.assertIs(Ts_object.__bound__, obj)
         Ts_no_bound = TypeVarTuple('Ts_no_bound')
         self.assertIsNone(Ts_no_bound.__bound__)
 
@@ -2796,8 +2801,14 @@ class LiteralTests(BaseTestCase):
         self.assertEqual(Literal[1, 2, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, 2, 3, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, Literal[2], Literal[3, 4]].__args__, (1, 2, 3, 4))
-        # Mutable arguments will not be deduplicated
-        self.assertEqual(Literal[[], []].__args__, ([], []))
+        # Unhashable arguments will be deduplicated too
+        self.assertEqual(Literal[[], []].__args__, ([],))
+        self.assertEqual(Literal[{"a": 1}, {"a": 1}].__args__, ({"a": 1},))
+        self.assertEqual(
+            Literal[1, {'a': 'b'}, 2, {'a': 'b'}, 3].__args__,
+            (1, {'a': 'b'}, 2, 3),
+        )
+        self.assertEqual(Literal[{1}, {1}, {2}, {2}].__args__, ({1}, {2}))
 
     def test_flatten(self):
         l1 = Literal[Literal[1], Literal[2], Literal[3]]
@@ -5848,6 +5859,27 @@ class GenericTests(BaseTestCase):
 
         foo(42)
 
+    def test_genericalias_instance_isclass(self):
+        # test against user-defined generic classes
+        T = TypeVar('T')
+
+        class Node(Generic[T]):
+            def __init__(self, label: T,
+                         left: 'Node[T] | None' = None,
+                         right: 'Node[T] | None' = None):
+                self.label = label
+                self.left = left
+                self.right = right
+
+        self.assertTrue(inspect.isclass(Node))
+        self.assertFalse(inspect.isclass(Node[int]))
+        self.assertFalse(inspect.isclass(Node[str]))
+
+        # test against standard generic classes
+        self.assertFalse(inspect.isclass(set[int]))
+        self.assertFalse(inspect.isclass(list[bytes]))
+        self.assertFalse(inspect.isclass(dict[str, str]))
+
     def test_implicit_any(self):
         T = TypeVar('T')
 
@@ -7561,6 +7593,18 @@ class EvaluateForwardRefTests(BaseTestCase):
         typing.evaluate_forward_ref(
             fwdref_module.fw,)
 
+    def test_evaluate_forward_ref_string_format(self):
+        # Test evaluating forward references in STRING format
+        # does not 'leak' internal names
+        # See https://github.com/python/cpython/issues/150641
+
+        def f(arg: unknown | str | int | list[str] | tuple[int, ...]): ...
+
+        ref = annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF)['arg']
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref, format=annotationlib.Format.STRING),
+            "unknown | str | int | list[str] | tuple[int, ...]",
+        )
 
 class CollectionsAbcTests(BaseTestCase):
 
@@ -10512,6 +10556,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1[[int, str], float], List[C])
         self.assertEqual(G2[[int, str], float], list[C])
         self.assertEqual(G3[[int, str], float], list[C] | int)
+
+    def test_paramspec_bound(self):
+        P = ParamSpec('P', bound=[int, str])
+        self.assertEqual(P.__bound__, [int, str])
+        P2 = ParamSpec('P2', bound=(int, str))
+        self.assertEqual(P2.__bound__, (int, str))
+        obj = object()
+        P3 = ParamSpec('P3', bound=obj)
+        self.assertIs(P3.__bound__, obj)
+        P4 = ParamSpec('P4')
+        self.assertIs(P4.__bound__, None)
 
     def test_paramspec_gets_copied(self):
         # bpo-46581

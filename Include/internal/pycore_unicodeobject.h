@@ -182,6 +182,22 @@ extern int _PyUnicodeWriter_FormatV(
     const char *format,
     va_list vargs);
 
+/* --- iconv Codec -------------------------------------------------------- */
+
+#ifdef HAVE_ICONV
+extern PyObject* _PyUnicode_DecodeIconv(
+    const char *encoding,       /* iconv encoding name */
+    const char *string,         /* encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed);      /* bytes consumed, or NULL for non-stateful */
+
+extern PyObject* _PyUnicode_EncodeIconv(
+    const char *encoding,       /* iconv encoding name */
+    PyObject *unicode,          /* Unicode object */
+    const char *errors);        /* error handling */
+#endif
+
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 extern PyObject* _PyUnicode_EncodeUTF7(

@@ -1,0 +1,2 @@
+Fix crash in :func:`!_interpqueues.create` whe :exc:`MemoryError`
+happens on queue creation.

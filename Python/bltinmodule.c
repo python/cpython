@@ -313,6 +313,12 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
     PyThreadState *tstate = PyThreadState_GET();
     if (globals == NULL) {
         globals = PyEval_GetGlobals();
+        if (globals == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "__lazy_import__() missing globals "
+                            "when called without a frame");
+            return NULL;
+        }
     }
     if (locals == NULL) {
         locals = globals;
@@ -954,9 +960,9 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     tstate->suppress_co_const_immortalization++;
 #endif
 
-    result = _Py_CompileStringObjectWithModule(str, filename,
-                                               start[compile_mode], &cf,
-                                               optimize, modname);
+    result = _Py_CompileString(str, filename,
+                               start[compile_mode], &cf,
+                               optimize, modname);
 
 #ifdef Py_GIL_DISABLED
     tstate->suppress_co_const_immortalization--;
