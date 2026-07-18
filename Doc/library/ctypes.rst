@@ -697,7 +697,7 @@ see the reference manual for details.
 Specifying function pointers using type annotations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. function:: wrap_dll_function(dll)
+.. decorator:: wrap_dll_function(dll)
    :module: ctypes.util
 
    A :term:`decorator` that generates :attr:`~_CFuncPtr.argtypes` and
