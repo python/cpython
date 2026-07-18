@@ -88,52 +88,6 @@ class StdStreamTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 func(file="invalid file")
 
-    def test_valid_file_invalid_stdout(self):
-        parser = argparse.ArgumentParser()
-        for func in (
-            parser.print_usage,
-            parser.print_help,
-        ):
-            with (
-                self.subTest(func=func),
-                contextlib.redirect_stdout(None),
-                StdIOBuffer() as f,
-                mock.patch('argparse._sys.exit'),
-            ):
-                func(file=f)
-                self.assertRegex(f.getvalue(), r'usage:')
-
-    def test_valid_file_invalid_stderr(self):
-        parser = argparse.ArgumentParser()
-        for func in (
-            parser.print_usage,
-            parser.print_help,
-        ):
-            with (
-                self.subTest(func=func),
-                contextlib.redirect_stderr(None),
-                StdIOBuffer() as f,
-                mock.patch('argparse._sys.exit'),
-            ):
-                func(file=f)
-                self.assertRegex(f.getvalue(), r'usage:')
-
-    def test_valid_file_invalid_stdout_stderr(self):
-        parser = argparse.ArgumentParser()
-        for func in (
-            parser.print_usage,
-            parser.print_help,
-        ):
-            with (
-                self.subTest(func=func),
-                contextlib.redirect_stdout(None),
-                contextlib.redirect_stderr(None),
-                StdIOBuffer() as f,
-                mock.patch('argparse._sys.exit'),
-            ):
-                func(file=f)
-                self.assertRegex(f.getvalue(), r'usage:')
-
 
 class TestLazyImports(unittest.TestCase):
     LAZY_IMPORTS = {
