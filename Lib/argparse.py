@@ -2886,12 +2886,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._print_message(help_text, file)
 
     def _print_message(self, message, file=None):
+        if not message:
+            return
         if file is None:
-            if _sys.stderr is not None:
-                _sys.stderr.write(message)
-        else:
-            if not isinstance(file, _io.IOBase):
-                raise ValueError(f"invalid file object {file}")
+            file = _sys.stderr
+        elif not isinstance(file, _io.IOBase):
+            raise ValueError(f"invalid file object {file}")
+        if file is not None:
             file.write(message)
 
     def _get_theme(self, file=None):
