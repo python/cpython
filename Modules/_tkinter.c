@@ -43,7 +43,7 @@ Copyright (C) 1994 Steen Lumholt.
 /* As we require that Tcl is compiled for threads, we must also define
    TCL_THREADS. We define it always; if Tcl is not threaded, the thread
    functions in Tcl are empty. We check if Tcl is actually compiled for
-   threads when importing this module.  */
+   threads when creating a tkapp.  */
 #define TCL_THREADS
 
 #ifdef TK_FRAMEWORK
@@ -282,23 +282,6 @@ Tkinter_TkInit(Tcl_Interp *interp)
    dispatch in different threads. So we use the Tcl TLS API.
 
 */
-
-#if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
-static int
-_check_tcl_threaded(void)
-{
-    Tcl_Interp* interp;
-    Tcl_Obj* threaded;
-    interp = Tcl_CreateInterp();
-    threaded = Tcl_GetVar2Ex(interp,
-                             "tcl_platform",
-                             "threaded",
-                             TCL_GLOBAL_ONLY);
-    Tcl_DeleteInterp(interp);
-    if (threaded == NULL) return 0;
-    else return 1;
-}
-#endif
 
 static Tcl_ThreadDataKey state_key;
 #define tcl_tstate \
@@ -633,6 +616,9 @@ Tkapp_New(const char *screenName, const char *className,
 {
     TkappObject *v;
     char *argv0;
+#if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
+    static Tcl_Obj* threaded = NULL;
+#endif
 
     PyTypeObject *tp = (PyTypeObject *)Tkapp_Type;
     v = (TkappObject *)tp->tp_alloc(tp, 0);
@@ -640,6 +626,20 @@ Tkapp_New(const char *screenName, const char *className,
         return NULL;
 
     v->interp = Tcl_CreateInterp();
+#if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
+    if (threaded == NULL) {
+        threaded = Tcl_GetVar2Ex(v->interp,
+                                 "tcl_platform",
+                                 "threaded",
+                                 TCL_GLOBAL_ONLY);
+        if (threaded == NULL) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "Tcl must be compiled with thread support");
+            Py_DECREF(v);
+            return NULL;
+        }
+    }
+#endif
     v->wantobjects = wantobjects;
 #if TCL_MAJOR_VERSION >= 9
     v->threaded = 1;
@@ -1645,10 +1645,9 @@ done:
 
 /* This is the main entry point for calling a Tcl command.
    It supports two cases, with regard to threading:
-   2. Caller of the command is in the interpreter thread:
-      Execute the command in the calling thread. Since the Tcl lock will
-      not be used, we can merge that with case 1.
-   3. Caller is in a different thread: Must queue an event to
+   1. Caller of the command is in the interpreter thread:
+      Execute the command in the calling thread.
+   2. Caller is in a different thread: Must queue an event to
       the interpreter thread. Allocation of Tcl objects needs to occur in the
       interpreter thread, so we ship the PyObject* args to the target thread,
       and perform processing there. */
