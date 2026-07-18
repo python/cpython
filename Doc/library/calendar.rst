@@ -422,12 +422,12 @@ For simple text calendars this module provides the following functions.
    of the :class:`TextCalendar` class.
 
 
-.. function:: prcal(year, w=0, l=0, c=6, m=3)
+.. function:: prcal(theyear, w=0, l=0, c=6, m=3)
 
    Prints the calendar for an entire year as returned by  :func:`calendar`.
 
 
-.. function:: calendar(year, w=2, l=1, c=6, m=3)
+.. function:: calendar(theyear, w=2, l=1, c=6, m=3)
 
    Returns a 3-column calendar for an entire year as a multi-line string using
    the :meth:`~TextCalendar.formatyear` of the :class:`TextCalendar` class.
