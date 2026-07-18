@@ -504,7 +504,7 @@ class Pool(object):
     def _check_chunksize(chunksize):
         if chunksize < 1:
             raise ValueError(
-                "Chunksize must be 1+, not {0:n}".format(chunksize)
+                f"Chunksize must be 1+, not {chunksize}"
             )
 
     @staticmethod
