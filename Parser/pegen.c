@@ -100,6 +100,7 @@ _PyPegen_insert_memo(Parser *p, int mark, int type, void *node)
     m->mark = p->mark;
     m->next = p->tokens[mark]->memo;
     p->tokens[mark]->memo = m;
+    p->tokens[mark]->memo_mask |= 1ULL << (type & 63);
     return 0;
 }
 
@@ -359,6 +360,10 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
     }
 
     Token *t = p->tokens[p->mark];
+
+    if (!(t->memo_mask & (1ULL << (type & 63)))) {
+        return 0;
+    }
 
     for (Memo *m = t->memo; m != NULL; m = m->next) {
         if (m->type == type) {
