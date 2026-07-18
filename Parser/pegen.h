@@ -42,6 +42,10 @@ typedef struct {
     int level;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
+    // Filter over the rule types present in `memo` (bit `type & 63` is set
+    // for every entry): lets lookups skip walking the list on definite
+    // misses, which are the common case.
+    uint64_t memo_mask;
     PyObject *metadata;
 } Token;
 
