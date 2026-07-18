@@ -235,26 +235,18 @@ _PyTok_SourceLine(const _PyTok_SourceText *source, int lineno,
     int current = checkpoint * LINE_CHECKPOINT_INTERVAL + 1;
     _PyTok_Off start = source->line_checkpoints[checkpoint];
     while (current < lineno) {
-        const char *newline = memchr(
-            source->bytes + start, '\n', source->len - start);
-        if (newline == NULL) {
-            PyErr_SetString(PyExc_SystemError,
-                            "corrupt tokenizer source line index");
+        start = _PyTok_SourceFindLineEnd(source, start);
+        if (start < 0) {
             return -1;
         }
-        start = newline - source->bytes + 1;
         current++;
     }
     _PyTok_Off end = source->len;
     if (lineno < source->nlines) {
-        const char *newline = memchr(
-            source->bytes + start, '\n', source->len - start);
-        if (newline == NULL) {
-            PyErr_SetString(PyExc_SystemError,
-                            "corrupt tokenizer source line index");
+        end = _PyTok_SourceFindLineEnd(source, start);
+        if (end < 0) {
             return -1;
         }
-        end = newline - source->bytes + 1;
     }
     *line = (_PyTok_Line){
         .start = start,
@@ -306,14 +298,10 @@ _PyTok_SourceLocation(const _PyTok_SourceText *source, _PyTok_Off offset,
     int lineno = checkpoint * LINE_CHECKPOINT_INTERVAL + 1;
     _PyTok_Off start = source->line_checkpoints[checkpoint];
     while (lineno < source->nlines) {
-        const char *newline = memchr(
-            source->bytes + start, '\n', source->len - start);
-        if (newline == NULL) {
-            PyErr_SetString(PyExc_SystemError,
-                            "corrupt tokenizer source line index");
+        _PyTok_Off end = _PyTok_SourceFindLineEnd(source, start);
+        if (end < 0) {
             return -1;
         }
-        _PyTok_Off end = newline - source->bytes + 1;
         if (offset < end ||
                 (offset == end && affinity == _PYTOK_AFFINITY_LEFT)) {
             break;
