@@ -2799,9 +2799,11 @@ class TestAscii(unittest.TestCase):
         # its single character.  A narrow build just forms fewer cells.
         cc = curses.complexchar
         def storable(s):
+            # ValueError if s has combining marks on a narrow build.
+            # OverflowError if s is a multibyte character on a narrow build.
             try:
                 cc(s)
-            except ValueError:
+            except (ValueError, OverflowError):
                 return False
             return True
 
