@@ -82,6 +82,11 @@ class JoinTestBase:
         p = self.cls(r'\\a\b\c\d')
         self.assertEqual(str(p), '\\\\a\\b\\c\\d')
 
+    def test_invalid_vspath(self):
+        msg = "expected JoinablePath object, not NoneType"
+        with self.assertRaisesRegex(TypeError, msg):
+            vfspath(None)
+
     def test_parts(self):
         P = self.cls
         p = P(r'c:a\b')
