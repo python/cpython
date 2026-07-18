@@ -1,8 +1,8 @@
 Expose automated junk heruistic flag to the public in difflib.
 
 This changes aims to expose autojunk flag (automated junk heuristic) of
-:class:`SequenceMatcher`    (which by default is set up to be True) for the
-public methods and functions of the difflib module    in order that the user
+SequenceMatcher class (which by default is set up to be True) for the
+public methods and functions of the difflib module in order that the user
 can choose behavior of this option.
 
 # # Uncomment one of these "section:" lines to specify which section # this
