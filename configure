@@ -7266,9 +7266,11 @@ case $ac_sys_system in #(
  ;;
 esac
 
+if test x$SOABI_PLATFORM != x; then
 
 printf "%s\n" "#define SOABI_PLATFORM \"${SOABI_PLATFORM}\"" >>confdefs.h
 
+fi
 
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
