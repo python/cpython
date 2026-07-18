@@ -143,7 +143,9 @@ class CalledProcessError(SubprocessError):
         self.stderr = stderr
 
     def __str__(self):
-        if self.returncode and self.returncode < 0:
+        if self.returncode is None:
+            return "Command %r returned an unknown exit status." % (self.cmd,)
+        elif self.returncode < 0:
             try:
                 return "Command %r died with %r." % (
                         self.cmd, signal.Signals(-self.returncode))

@@ -1,0 +1,3 @@
+Calling :func:`str` on a :exc:`subprocess.CalledProcessError` whose
+:attr:`!returncode` is ``None`` no longer raises :exc:`TypeError`. It now
+returns a message reporting an unknown exit status.
