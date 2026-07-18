@@ -89,7 +89,7 @@ Why *not* do this
 
 There are two main downsides to the Stable ABI.
 
-First, you extension may become slower, since the Stable ABI prioritizes
+First, your extension may become slower, since the Stable ABI prioritizes
 compatibility over performance.
 The difference is usually not noticeable, and often can be mitigated by
 using the same source to build both a Stable ABI build and a few
