@@ -14431,9 +14431,9 @@ case $PLATFORM_TRIPLET in #(
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
     perf_trampoline=yes ;; #(
-  x86_64-linux-gnu) :
-    perf_trampoline=yes ;; #(
   x86_64-linux-musl) :
+    perf_trampoline=yes ;; #(
+  aarch64-linux-musl) :
     perf_trampoline=yes ;; #(
   darwin) :
     case $MACOSX_DEPLOYMENT_TARGET in #(
