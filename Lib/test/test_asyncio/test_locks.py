@@ -190,7 +190,6 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(ta.done())
         self.assertTrue(tb.cancelled())
         await tc
-        self.assertTrue(tc.done())
 
     async def test_cancel_release_race(self):
         # Issue 32734
