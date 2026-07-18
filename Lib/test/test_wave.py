@@ -531,10 +531,14 @@ class WaveReadErrorTest(unittest.TestCase):
             self.assertEqual(r.getnframes(), 4)
             self.assertEqual(r.readframes(4), data)
 
-    def test_getfp_returns_underlying_file(self):
+    def test_getfp(self):
         b = self._wave_file((b'fmt ', self.FMT_PCM), (b'data', b''))
-        with wave.open(io.BytesIO(b)) as r:
-            self.assertIsNotNone(r.getfp())
+        fp = io.BytesIO(b)
+        with wave.open(fp) as r:
+            chunk = r.getfp()
+            self.assertIsNotNone(chunk)
+            self.assertIs(chunk.file, fp)
+            self.assertEqual(chunk.chunkname, b'RIFF')
 
     def test_open_invalid_mode(self):
         with self.assertRaisesRegex(wave.Error, "mode must be"):
