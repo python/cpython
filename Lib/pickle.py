@@ -1627,7 +1627,7 @@ class _Unpickler:
                 value = klass(*args)
             except TypeError as err:
                 raise TypeError("in constructor for %s: %s" %
-                                (klass.__name__, str(err)), err.__traceback__)
+                                (klass.__name__, str(err))) from err
         else:
             value = klass.__new__(klass)
         self.append(value)

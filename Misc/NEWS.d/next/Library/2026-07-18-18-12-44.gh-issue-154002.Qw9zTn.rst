@@ -1,0 +1,4 @@
+Fix exception handling in the pure-Python :mod:`pickle` unpickler when a
+class constructor raises :exc:`TypeError` while unpickling an old-style
+instance. The original error is now chained with ``from`` instead of having
+its traceback object stored in the raised exception's ``args``.
