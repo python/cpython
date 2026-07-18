@@ -116,11 +116,11 @@ behavior of the module.
       Previously, Windows registry settings were ignored.
 
 
-.. function:: read_mime_types(filename)
+.. function:: read_mime_types(file)
 
-   Load the type map given in the file *filename*, if it exists.  The type map is
-   returned as a dictionary mapping filename extensions, including the leading dot
-   (``'.'``), to strings of the form ``'type/subtype'``.  If the file *filename*
+   Load the type map given in the file *file*, if it exists.  The type map is
+   returned as a dictionary mapping file extensions, including the leading dot
+   (``'.'``), to strings of the form ``'type/subtype'``.  If the file *file*
    does not exist or cannot be read, ``None`` is returned.
 
 
