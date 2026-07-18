@@ -23,7 +23,7 @@ import io
 import os
 import sys
 
-import ctypes
+import ctypes.util
 import types
 from dataclasses import dataclass
 from ctypes.wintypes import (
@@ -37,7 +37,7 @@ from ctypes.wintypes import (
     WCHAR,
     SHORT,
 )
-from ctypes import Structure, POINTER, Union
+from ctypes import POINTER, Union
 from typing import TYPE_CHECKING
 
 from _colorize import ANSIColors
@@ -723,61 +723,56 @@ class WindowsConsole(Console):
 
 
 # Windows interop
-class CONSOLE_SCREEN_BUFFER_INFO(Structure):
-    _fields_ = [
-        ("dwSize", _COORD),
-        ("dwCursorPosition", _COORD),
-        ("wAttributes", WORD),
-        ("srWindow", SMALL_RECT),
-        ("dwMaximumWindowSize", _COORD),
-    ]
+@ctypes.util.struct
+class CONSOLE_SCREEN_BUFFER_INFO:
+    dwSize: _COORD
+    dwCursorPosition: _COORD
+    wAttributes: WORD
+    srWindow: SMALL_RECT
+    dwMaximumWindowSize: _COORD
 
 
-class CONSOLE_CURSOR_INFO(Structure):
-    _fields_ = [
-        ("dwSize", DWORD),
-        ("bVisible", BOOL),
-    ]
+@ctypes.util.struct
+class CONSOLE_CURSOR_INFO:
+    dwSize: DWORD
+    bVisible: BOOL
 
 
-class CHAR_INFO(Structure):
-    _fields_ = [
-        ("UnicodeChar", WCHAR),
-        ("Attributes", WORD),
-    ]
+@ctypes.util.struct
+class CHAR_INFO:
+    UnicodeChar: WCHAR
+    Attributes: WORD
 
 
 class Char(Union):
-    _fields_ = [
-        ("UnicodeChar", WCHAR),
-        ("Char", CHAR),
-    ]
+    UnicodeChar: WCHAR
+    Char: CHAR
 
 
-class KeyEvent(ctypes.Structure):
-    _fields_ = [
-        ("bKeyDown", BOOL),
-        ("wRepeatCount", WORD),
-        ("wVirtualKeyCode", WORD),
-        ("wVirtualScanCode", WORD),
-        ("uChar", Char),
-        ("dwControlKeyState", DWORD),
-    ]
+@ctypes.util.struct
+class KeyEvent:
+    bKeyDown: BOOL
+    wRepeatCount: WORD
+    wVirtualKeyCode: WORD
+    wVirtualScanCode: WORD
+    uChar: Char
+    dwControlKeyState: DWORD
 
 
-class WindowsBufferSizeEvent(ctypes.Structure):
-    _fields_ = [("dwSize", _COORD)]
+@ctypes.util.struct
+class WindowsBufferSizeEvent:
+    dwSize: _COORD
 
 
 class ConsoleEvent(ctypes.Union):
-    _fields_ = [
-        ("KeyEvent", KeyEvent),
-        ("WindowsBufferSizeEvent", WindowsBufferSizeEvent),
-    ]
+    KeyEvent: KeyEvent
+    WindowsBufferSizeEvent: WindowsBufferSizeEvent
 
 
-class INPUT_RECORD(Structure):
-    _fields_ = [("EventType", WORD), ("Event", ConsoleEvent)]
+@ctypes.util.struct
+class INPUT_RECORD:
+    EventType: WORD
+    Event: ConsoleEvent
 
 
 KEY_EVENT = 0x01

@@ -1,5 +1,5 @@
 # The most useful windows datatypes
-import ctypes
+import ctypes.util
 
 BYTE = ctypes.c_ubyte
 WORD = ctypes.c_ushort
@@ -102,75 +102,84 @@ SERVICE_STATUS_HANDLE = HANDLE
 ################################################################
 # Some important structure definitions
 
-class RECT(ctypes.Structure):
-    _fields_ = [("left", LONG),
-                ("top", LONG),
-                ("right", LONG),
-                ("bottom", LONG)]
+@ctypes.util.struct
+class RECT:
+    left: LONG
+    top: LONG
+    right: LONG
+    bottom: LONG
 tagRECT = _RECTL = RECTL = RECT
 
-class _SMALL_RECT(ctypes.Structure):
-    _fields_ = [('Left', SHORT),
-                ('Top', SHORT),
-                ('Right', SHORT),
-                ('Bottom', SHORT)]
+@ctypes.util.struct
+class _SMALL_RECT:
+    Left: SHORT
+    Top: SHORT
+    Right: SHORT
+    Bottom: SHORT
 SMALL_RECT = _SMALL_RECT
 
-class _COORD(ctypes.Structure):
-    _fields_ = [('X', SHORT),
-                ('Y', SHORT)]
+@ctypes.util.struct
+class _COORD:
+    X: SHORT
+    Y: SHORT
 
-class POINT(ctypes.Structure):
-    _fields_ = [("x", LONG),
-                ("y", LONG)]
+@ctypes.util.struct
+class POINT:
+    x: LONG
+    y: LONG
 tagPOINT = _POINTL = POINTL = POINT
 
-class SIZE(ctypes.Structure):
-    _fields_ = [("cx", LONG),
-                ("cy", LONG)]
+@ctypes.util.struct
+class SIZE:
+    cx: LONG
+    cy: LONG
 tagSIZE = SIZEL = SIZE
 
 def RGB(red, green, blue):
     return red + (green << 8) + (blue << 16)
 
-class FILETIME(ctypes.Structure):
-    _fields_ = [("dwLowDateTime", DWORD),
-                ("dwHighDateTime", DWORD)]
+@ctypes.util.struct
+class FILETIME:
+    dwLowDateTime: DWORD
+    dwHighDateTime: DWORD
 _FILETIME = FILETIME
 
-class MSG(ctypes.Structure):
-    _fields_ = [("hWnd", HWND),
-                ("message", UINT),
-                ("wParam", WPARAM),
-                ("lParam", LPARAM),
-                ("time", DWORD),
-                ("pt", POINT)]
+@ctypes.util.struct
+class MSG:
+    hWnd: HWND
+    message: UINT
+    wParam: WPARAM
+    lParam: LPARAM
+    time: DWORD
+    pt: POINT
 tagMSG = MSG
 MAX_PATH = 260
 
-class WIN32_FIND_DATAA(ctypes.Structure):
-    _fields_ = [("dwFileAttributes", DWORD),
-                ("ftCreationTime", FILETIME),
-                ("ftLastAccessTime", FILETIME),
-                ("ftLastWriteTime", FILETIME),
-                ("nFileSizeHigh", DWORD),
-                ("nFileSizeLow", DWORD),
-                ("dwReserved0", DWORD),
-                ("dwReserved1", DWORD),
-                ("cFileName", CHAR * MAX_PATH),
-                ("cAlternateFileName", CHAR * 14)]
+@ctypes.util.struct
+class WIN32_FIND_DATAA:
+    dwFileAttributes: DWORD
+    ftCreationTime: FILETIME
+    ftLastAccessTime: FILETIME
+    ftLastWriteTime: FILETIME
+    nFileSizeHigh: DWORD
+    nFileSizeLow: DWORD
+    dwReserved0: DWORD
+    dwReserved1: DWORD
+    cFileName: CHAR * MAX_PATH
+    cAlternateFileName: CHAR * 14
 
-class WIN32_FIND_DATAW(ctypes.Structure):
-    _fields_ = [("dwFileAttributes", DWORD),
-                ("ftCreationTime", FILETIME),
-                ("ftLastAccessTime", FILETIME),
-                ("ftLastWriteTime", FILETIME),
-                ("nFileSizeHigh", DWORD),
-                ("nFileSizeLow", DWORD),
-                ("dwReserved0", DWORD),
-                ("dwReserved1", DWORD),
-                ("cFileName", WCHAR * MAX_PATH),
-                ("cAlternateFileName", WCHAR * 14)]
+@ctypes.util.struct
+class WIN32_FIND_DATAW:
+    dwFileAttributes: DWORD
+    ftCreationTime: FILETIME
+    ftLastAccessTime: FILETIME
+    ftLastWriteTime: FILETIME
+    nFileSizeHigh: DWORD
+    nFileSizeLow: DWORD
+    dwReserved0: DWORD
+    dwReserved1: DWORD
+    cFileName: WCHAR * MAX_PATH
+    cAlternateFileName: WCHAR * 14
 
 ################################################################
 # Pointer types
