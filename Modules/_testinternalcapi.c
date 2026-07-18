@@ -1514,6 +1514,169 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
+/* ---- signal-safe buffer helpers ----------------------------------------
+ * Both helpers use only memcpy and arithmetic — no libc printf, no locale,
+ * unambiguously async-signal-safe on all POSIX platforms.
+ * ------------------------------------------------------------------------- */
+
+/* Append `len` bytes from `src` into buf[pos..cap-1].
+ * Returns the new position, or cap (saturated) on overflow. */
+static int
+_yaml_write(char *buf, int pos, int cap, const char *src, int len)
+{
+    if (pos + len >= cap) { return cap; }
+    memcpy(buf + pos, src, len);
+    return pos + len;
+}
+
+/* Append a string literal whose length is known at compile time. */
+#define _yaml_lit(buf, pos, cap, lit) \
+    _yaml_write((buf), (pos), (cap), (lit), (int)(sizeof(lit) - 1))
+
+/* Append a decimal integer. */
+static int
+_yaml_decimal(char *buf, int pos, int cap, int value)
+{
+    char tmp[12];
+    int len = 0;
+    int neg = value < 0;
+    if (neg) { value = -value; }
+    do { tmp[len++] = '0' + value % 10; value /= 10; } while (value);
+    if (neg) { tmp[len++] = '-'; }
+    for (int i = 0, j = len - 1; i < j; i++, j--) {
+        char t = tmp[i]; tmp[i] = tmp[j]; tmp[j] = t;
+    }
+    return _yaml_write(buf, pos, cap, tmp, len);
+}
+
+/* ---- signal-safe stack-to-YAML ----------------------------------------- */
+
+#define STACK_YAML_BUFSZ 8192
+
+/* Walk the call stack and write a YAML sequence into buf using only
+ * public PyUnstable_* APIs and signal-safe operations: no allocation,
+ * no refcount changes, no GIL release.
+ * Returns bytes written (excluding NUL), or -1 on overflow. */
+static int _Py_NO_SANITIZE_THREAD
+_emit_stack_yaml_nosignal(char *buf, int cap, PyThreadState *tstate)
+{
+    int pos = 0;
+    struct _PyInterpreterFrame *frame =
+        PyUnstable_ThreadState_GetCurrentFrame(tstate);
+    while (frame != NULL && pos < cap) {
+        PyCodeObject *code =
+            (PyCodeObject *)PyUnstable_InterpreterFrame_GetCodeBorrowed(frame);
+        if (code == NULL) { break; }
+        int lineno = PyUnstable_InterpreterFrame_GetLineChecked(frame);
+
+        PyObject *filename = code->co_filename;
+        PyObject *name     = code->co_name;
+
+        pos = _yaml_lit(buf, pos, cap, "- filename: ");
+        if (filename && PyUnicode_IS_ASCII(filename)) {
+            pos = _yaml_write(buf, pos, cap,
+                              (const char *)PyUnicode_DATA(filename),
+                              (int)PyUnicode_GET_LENGTH(filename));
+        } else { pos = _yaml_lit(buf, pos, cap, "???"); }
+
+        pos = _yaml_lit(buf, pos, cap, "\n  name: ");
+        if (name && PyUnicode_IS_ASCII(name)) {
+            pos = _yaml_write(buf, pos, cap,
+                              (const char *)PyUnicode_DATA(name),
+                              (int)PyUnicode_GET_LENGTH(name));
+        } else { pos = _yaml_lit(buf, pos, cap, "???"); }
+
+        pos = _yaml_lit(buf, pos, cap, "\n  lineno: ");
+        pos = lineno >= 0 ? _yaml_decimal(buf, pos, cap, lineno)
+                          : _yaml_lit(buf, pos, cap, "null");
+        pos = _yaml_lit(buf, pos, cap, "\n");
+
+        frame = PyUnstable_InterpreterFrame_GetCaller(frame);
+    }
+    if (pos >= cap) { return -1; }
+    buf[pos] = '\0';
+    return pos;
+}
+
+/* Return the current call stack as a YAML string.
+ * The walk and emission are entirely signal-safe (no allocation, no refcount
+ * changes, no GIL release).  The only non-signal-safe step is the final
+ * PyUnicode_FromStringAndSize call after the walk completes. */
+static PyObject *
+stack_to_yaml(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    char buf[STACK_YAML_BUFSZ];
+    PyThreadState *tstate = _PyThreadState_GET();
+    int len = _emit_stack_yaml_nosignal(buf, sizeof(buf), tstate);
+    if (len < 0) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "stack YAML output exceeded buffer");
+        return NULL;
+    }
+    return PyUnicode_FromStringAndSize(buf, len);
+}
+
+static PyObject *
+iframe_getcaller(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    struct _PyInterpreterFrame *next = PyUnstable_InterpreterFrame_GetCaller(f);
+    if (next == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *result = (PyObject *)_PyFrame_GetFrameObject(next);
+    if (result == NULL) {
+        return NULL;
+    }
+    return Py_NewRef(result);
+}
+
+static PyObject *
+tstate_getcurrentframe(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    struct _PyInterpreterFrame *f = PyUnstable_ThreadState_GetCurrentFrame(tstate);
+    if (f == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *result = (PyObject *)_PyFrame_GetFrameObject(f);
+    if (result == NULL) {
+        return NULL;
+    }
+    return Py_NewRef(result);
+}
+
+static PyObject *
+iframe_getcodeborrowed(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    PyObject *code = PyUnstable_InterpreterFrame_GetCodeBorrowed(f);
+    if (code == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(code);
+}
+
+
+static PyObject *
+iframe_getlinechecked(PyObject *self, PyObject *frame)
+{
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLineChecked(f));
+}
+
 static PyObject *
 code_returns_only_none(PyObject *self, PyObject *arg)
 {
@@ -3306,6 +3469,11 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"iframe_getcaller", iframe_getcaller, METH_O, NULL},
+    {"iframe_getcodeborrowed", iframe_getcodeborrowed, METH_O, NULL},
+    {"iframe_getlinechecked", iframe_getlinechecked, METH_O, NULL},
+    {"tstate_getcurrentframe", tstate_getcurrentframe, METH_NOARGS, NULL},
+    {"stack_to_yaml", stack_to_yaml, METH_NOARGS, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
