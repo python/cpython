@@ -146,7 +146,7 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
             def noexist():
                 pass
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "PyObject_GetAttrString missing return type annotation"):
             @wrap_dll_function(ctypes.pythonapi)
             def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p):
                 pass
