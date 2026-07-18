@@ -2568,7 +2568,7 @@ with the :class:`Pool` class.
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
 
-      .. versionadded:: next
+      .. versionchanged:: next
          Added the *buffersize* parameter.
 
    .. method:: starmap(func, iterable[, chunksize])
