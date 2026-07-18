@@ -329,6 +329,7 @@ PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFra
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
 PyAPI_FUNC(_PyStackRef) _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *null_or_index, int yield_from);
+PyAPI_FUNC(int) _PyEval_StoreName(PyThreadState *tstate, _PyStackRef v, PyObject *name, PyObject* ns);
 
 /*
  * Indicate whether a special method of given 'oparg' can use the (improved)

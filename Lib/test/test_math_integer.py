@@ -15,6 +15,19 @@ class MyIndexable(object):
     def __index__(self):
         return self.value
 
+# int subclass with broken arithmetic operators; implementations must
+# convert their arguments to exact ints instead of using these.
+class BadIntSubclass(int):
+    def _binop(self, other='ignored', mod=None):
+        return 42
+    __add__ = __radd__ = __sub__ = __rsub__ = _binop
+    __mul__ = __rmul__ = __mod__ = __rmod__ = _binop
+    __divmod__ = __rdivmod__ = __pow__ = __rpow__ = _binop
+    __floordiv__ = __rfloordiv__ = _binop
+    __lshift__ = __rlshift__ = __rshift__ = __rrshift__ = _binop
+    __and__ = __rand__ = __or__ = __ror__ = __xor__ = __rxor__ = _binop
+    __lt__ = __le__ = __gt__ = __ge__ = _binop
+
 # Here's a pure Python version of the math.integer.factorial algorithm, for
 # documentation and comparison purposes.
 #
@@ -225,6 +238,11 @@ class IntMathTests(unittest.TestCase):
         self.assertIntEqual(isqrt(True), 1)
         self.assertIntEqual(isqrt(False), 0)
         self.assertIntEqual(isqrt(MyIndexable(1729)), 41)
+
+        # Overridden operators of an int subclass must not affect the
+        # result.
+        self.assertIntEqual(isqrt(BadIntSubclass(10**20)), 10**10)
+        self.assertIntEqual(isqrt(BadIntSubclass(10**20 - 1)), 10**10 - 1)
 
         with self.assertRaises(ValueError):
             isqrt(MyIndexable(-3))

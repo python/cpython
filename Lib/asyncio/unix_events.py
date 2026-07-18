@@ -965,11 +965,5 @@ def can_use_pidfd():
     return True
 
 
-class _UnixDefaultEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
-    """UNIX event loop policy"""
-    _loop_factory = _UnixSelectorEventLoop
-
-
 SelectorEventLoop = _UnixSelectorEventLoop
-_DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
 EventLoop = SelectorEventLoop

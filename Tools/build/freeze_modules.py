@@ -54,6 +54,7 @@ FROZEN = [
         'encodings.aliases',
         'encodings.utf_8',
         'encodings._win_cp_codecs',
+        'encodings._iconv_codecs',
         'io',
         ]),
     ('stdlib - startup, with site', [

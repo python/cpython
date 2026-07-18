@@ -1544,6 +1544,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_filters));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_finalizing));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_find_and_load));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_find_and_load_lazy_submodule));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_fix_up_module));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_flags_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_get_sourcefile));
@@ -1794,7 +1795,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(generation));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_debug));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_event_loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_source));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(getattr));
