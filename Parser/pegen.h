@@ -67,6 +67,8 @@ typedef struct {
     int end_col_offset;
 } location;
 
+typedef struct _identifier_cache_entry IdentifierCacheEntry;
+
 typedef struct {
     struct tok_state *tok;
     Token **tokens;
@@ -91,6 +93,7 @@ typedef struct {
     int call_invalid_rules;
     int debug;
     location last_stmt_location;
+    IdentifierCacheEntry *identifier_cache;
 } Parser;
 
 typedef struct {
