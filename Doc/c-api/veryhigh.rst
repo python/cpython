@@ -345,9 +345,9 @@ the same library that the Python runtime is using.
 
    .. rubric:: Low-level flags
 
-   The following flags serve narrow needs of the standard library and
-   interactive interpreters.  Code outside the standard library rarely
-   has a reason to use them.
+   The following flags and masks serve narrow needs of the standard
+   library and interactive interpreters.  Code outside the standard
+   library rarely has a reason to use them.
 
    .. c:macro:: PyCF_ALLOW_INCOMPLETE_INPUT
 
@@ -433,8 +433,6 @@ the same library that the Python runtime is using.
    as :c:macro:`CO_FUTURE_ANNOTATIONS` to enable features normally
    selectable using :ref:`future statements <future>`.
    See :ref:`c_codeobject_flags` for a complete list.
-
-   .. rubric:: Flag masks
 
    The following masks combine several flags:
 
