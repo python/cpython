@@ -23,6 +23,7 @@ from unittest.mock import (
 builtin_string = 'builtins'
 
 PTModule = sys.modules[__name__]
+lazy from json import dumps
 MODNAME = '%s.PTModule' % __name__
 
 
@@ -2100,6 +2101,11 @@ class PatchTest(unittest.TestCase):
 
         test()
 
+
+    def test_patch_autospec_lazy_import(self):
+        with patch(f"{__name__}.dumps", autospec=True) as mock_dumps:
+            mock_dumps({})
+            mock_dumps.assert_called_once_with({})
 
 if __name__ == '__main__':
     unittest.main()
