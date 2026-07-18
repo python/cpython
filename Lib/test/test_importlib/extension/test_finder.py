@@ -77,9 +77,9 @@ class FinderTests(abc.FinderTests):
 
             if platform:
                 if Py_GIL_DISABLED:
-                    self.assertNotIn(f".abi3.so-{platform}", suffixes)
+                    self.assertNotIn(f".abi3-{platform}.so", suffixes)
                 else:
-                    self.assertIn(f".abi3.so-{platform}", suffixes)
+                    self.assertIn(f".abi3-{platform}.so", suffixes)
                 self.assertIn(f".abi3t-{platform}.so", suffixes)
 
 
