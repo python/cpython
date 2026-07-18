@@ -776,10 +776,13 @@ def Literal(self, *parameters):
     # values, not types.
     parameters = _flatten_literal_params(parameters)
 
-    try:
-        parameters = tuple(p for p, _ in _deduplicate(list(_value_and_type_iter(parameters))))
-    except TypeError:  # unhashable parameters
-        pass
+    parameters = tuple(
+        p
+        for p, _ in _deduplicate(
+            list(_value_and_type_iter(parameters)),
+            unhashable_fallback=True,
+        )
+    )
 
     return _LiteralGenericAlias(self, parameters)
 

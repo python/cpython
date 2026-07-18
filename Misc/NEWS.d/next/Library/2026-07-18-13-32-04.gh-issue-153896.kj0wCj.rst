@@ -1,0 +1,1 @@
+Deduplicate mutable args in :data:`typing.Literal`.
