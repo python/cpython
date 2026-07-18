@@ -476,8 +476,15 @@ class Pool(object):
     def _imap(self, iterator_cls, func, iterable, chunksize=1,
               *, buffersize=None):
         self._check_running()
-        self._check_chunksize(chunksize)
-        self._check_buffersize(buffersize)
+        if chunksize < 1:
+            raise ValueError(
+                f"Chunksize must be 1+, not {chunksize}"
+            )
+        if buffersize is not None:
+            if not isinstance(buffersize, int):
+                raise TypeError("buffersize must be an integer or None")
+            if buffersize < 1:
+                raise ValueError("buffersize must be None or > 0")
 
         result = iterator_cls(self, buffersize)
         if chunksize == 1:
@@ -500,22 +507,6 @@ class Pool(object):
                 )
             )
             return (item for chunk in result for item in chunk)
-
-    @staticmethod
-    def _check_chunksize(chunksize):
-        if chunksize < 1:
-            raise ValueError(
-                f"Chunksize must be 1+, not {chunksize}"
-            )
-
-    @staticmethod
-    def _check_buffersize(buffersize):
-        if buffersize is None:
-            return
-        if not isinstance(buffersize, int):
-            raise TypeError("buffersize must be an integer or None")
-        if buffersize < 1:
-            raise ValueError("buffersize must be None or > 0")
 
     @staticmethod
     def _wait_for_updates(sentinels, change_notifier, timeout=None):
