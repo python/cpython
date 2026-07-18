@@ -2436,7 +2436,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             elif lineno == exc_lineno:
                 s += '>>'
             if self.colorize:
-                line = self._colorize_code(line)
+                line = self._colorize_code(line.rstrip())
             self.message(s + '\t' + line.rstrip())
 
     def do_whatis(self, arg):
