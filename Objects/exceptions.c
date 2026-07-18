@@ -2738,8 +2738,8 @@ AttributeError_str(PyObject *op)
             result = PyUnicode_FromFormat("module has no attribute '%U'", name);
         }
     } else {
-        result = PyUnicode_FromFormat("'%.200s' object has no attribute '%U'",
-                                      Py_TYPE(obj)->tp_name, name);
+        result = PyUnicode_FromFormat("'%T' object has no attribute '%U'",
+                                      obj, name);
     }
     Py_DECREF(obj);
     Py_DECREF(name);

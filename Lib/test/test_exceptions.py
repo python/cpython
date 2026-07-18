@@ -2054,16 +2054,16 @@ class AttributeErrorTests(unittest.TestCase):
                 raise AttributeError(name)
         with self.assertRaises(AttributeError) as cm:
             getattr(RaiseWithName(), "missing1")
-        self.assertEqual(str(cm.exception),
-                         "'RaiseWithName' object has no attribute 'missing1'")
+        self.assertRegex(str(cm.exception),
+                         r"'.+\.RaiseWithName' object has no attribute 'missing1'")
 
         class BareRaise:
             def __getattr__(self, name):
                 raise AttributeError
         with self.assertRaises(AttributeError) as cm:
             getattr(BareRaise(), "missing2")
-        self.assertEqual(str(cm.exception),
-                         "'BareRaise' object has no attribute 'missing2'")
+        self.assertRegex(str(cm.exception),
+                         r"'.+\.BareRaise' object has no attribute 'missing2'")
 
         class RaiseCustom:
             def __getattr__(self, name):
