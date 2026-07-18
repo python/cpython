@@ -400,9 +400,9 @@ For simple text calendars this module provides the following functions.
    *month* (``1``--``12``), *day* (``1``--``31``).
 
 
-.. function:: weekheader(n)
+.. function:: weekheader(width)
 
-   Return a header containing abbreviated weekday names. *n* specifies the width in
+   Return a header containing abbreviated weekday names. *width* specifies the width in
    characters for one weekday.
 
 
