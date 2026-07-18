@@ -75,8 +75,7 @@ class FinderTests(abc.FinderTests):
                 self.assertIn(".abi3.so", suffixes)
             if platform:
                 self.assertIn(f".abi3t-{platform}.so", suffixes)
-            else:
-                self.assertIn(".abi3t.so", suffixes)
+            self.assertIn(".abi3t.so", suffixes)
 
 
 (Frozen_FinderTests,
