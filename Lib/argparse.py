@@ -86,6 +86,7 @@ __all__ = [
 ]
 
 
+import io as _io
 import os as _os
 import re as _re
 import sys as _sys
@@ -2885,12 +2886,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._print_message(help_text, file)
 
     def _print_message(self, message, file=None):
-        if message:
-            file = file or _sys.stderr
-            try:
-                file.write(message)
-            except (AttributeError, OSError):
-                pass
+        if file is None:
+            if _sys.stderr is not None:
+                _sys.stderr.write(message)
+        else:
+            if not isinstance(file, _io.IOBase):
+                raise ValueError(f"invalid file object {file}")
+            file.write(message)
 
     def _get_theme(self, file=None):
         # If self.color is False, _colorize is not imported
