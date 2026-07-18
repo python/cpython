@@ -33,6 +33,7 @@ from asyncio import selector_events
 from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
@@ -3132,6 +3133,101 @@ class TestAbstractServer(unittest.TestCase):
     def test_get_loop(self):
         with self.assertRaises(NotImplementedError):
             events.AbstractServer().get_loop()
+
+
+@unittest.skipIf(sys.platform == 'win32', 'Unix pipe transport semantics')
+class UnixPipeObjectSupportTests(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.SelectorEventLoop()
+        self.addCleanup(self.loop.close)
+
+    def check_accepted(self, connect, pipeobj):
+        lost = self.loop.create_future()
+
+        class Proto(asyncio.Protocol):
+            def connection_lost(self, exc):
+                if not lost.done():
+                    lost.set_result(exc)
+
+        async def run():
+            transport, protocol = await connect(Proto, pipeobj)
+            self.assertIsInstance(protocol, Proto)
+            self.assertFalse(pipeobj.closed)
+            transport.close()
+            self.assertIsNone(await lost)
+
+        self.loop.run_until_complete(run())
+        self.assertTrue(pipeobj.closed)
+
+    def check_rejected(self, connect, pipeobj):
+        self.addCleanup(pipeobj.close)
+        with self.assertRaisesRegex(ValueError, 'Pipe transport is'):
+            self.loop.run_until_complete(connect(asyncio.Protocol, pipeobj))
+
+    def test_read_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, wfd)
+        self.check_accepted(self.loop.connect_read_pipe, open(rfd, 'rb', 0))
+
+    def test_write_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.check_accepted(self.loop.connect_write_pipe, open(wfd, 'wb', 0))
+
+    def test_read_fifo(self):
+        path = os_helper.TESTFN
+        os.mkfifo(path)
+        self.addCleanup(os_helper.unlink, path)
+        rfd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+        wfd = os.open(path, os.O_WRONLY)
+        self.addCleanup(os.close, wfd)
+        self.check_accepted(self.loop.connect_read_pipe, open(rfd, 'rb', 0))
+
+    def test_write_fifo(self):
+        path = os_helper.TESTFN
+        os.mkfifo(path)
+        self.addCleanup(os_helper.unlink, path)
+        rfd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+        self.addCleanup(os.close, rfd)
+        wfd = os.open(path, os.O_WRONLY)
+        self.check_accepted(self.loop.connect_write_pipe, open(wfd, 'wb', 0))
+
+    def test_read_socket(self):
+        rsock, wsock = socket.socketpair()
+        self.addCleanup(wsock.close)
+        self.check_accepted(self.loop.connect_read_pipe,
+                            open(rsock.detach(), 'rb', 0))
+
+    def test_write_socket(self):
+        rsock, wsock = socket.socketpair()
+        self.addCleanup(rsock.close)
+        self.check_accepted(self.loop.connect_write_pipe,
+                            open(wsock.detach(), 'wb', 0))
+
+    @unittest.skipUnless(hasattr(os, 'openpty'), 'need os.openpty()')
+    def test_read_character_device(self):
+        master, slave = os.openpty()
+        self.addCleanup(os.close, slave)
+        self.check_accepted(self.loop.connect_read_pipe, open(master, 'rb', 0))
+
+    @unittest.skipUnless(hasattr(os, 'openpty'), 'need os.openpty()')
+    def test_write_character_device(self):
+        master, slave = os.openpty()
+        self.addCleanup(os.close, master)
+        self.check_accepted(self.loop.connect_write_pipe, open(slave, 'wb', 0))
+
+    def test_read_regular_file(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'wb') as f:
+            f.write(b'spam')
+        self.check_rejected(self.loop.connect_read_pipe,
+                            open(os_helper.TESTFN, 'rb', 0))
+
+    def test_write_regular_file(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        self.check_rejected(self.loop.connect_write_pipe,
+                            open(os_helper.TESTFN, 'wb', 0))
 
 
 if __name__ == '__main__':

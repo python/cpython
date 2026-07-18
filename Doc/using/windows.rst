@@ -162,7 +162,9 @@ omitted in cases where the tag refers to an official release and starts with
    $> py -V:3-arm64 ...
 
 Runtimes from other distributors may require the *company* to be included as
-well. This should be separated from the tag by a slash, and may be a prefix.
+well.
+It should be separated from the tag by a slash (either ``/`` or ``\``),
+and may be shortened to any prefix of its full value.
 Specifying the company is optional when it is ``PythonCore``, and specifying the
 tag is optional (but not the slash) when you want the latest release from a
 specific company.

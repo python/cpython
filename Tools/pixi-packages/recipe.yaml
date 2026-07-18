@@ -1,15 +1,13 @@
-# NOTE: Please always only modify default/recipe.yaml and then run clone-recipe.sh to
-# propagate the changes to the other variants.
-
 context:
-  # Keep up to date
   freethreading_tag: ${{ "t" if "freethreading" in variant else "" }}
+  abi_prefix: ${{ (variant | split("_"))[0] + "_" if "san" in variant else "" }}
+  abi_tag: ${{ abi_prefix }}cp${{ (version | split('.'))[:2] | join('') }}${{ freethreading_tag }}
 
 recipe:
   name: python
 
 source:
-  - path: ../../..
+  - path: ../..
 
 outputs:
 - package:
@@ -25,12 +23,16 @@ outputs:
     name: python
     version: ${{ version }}
   build:
+    flags:
+      - ${{ variant }}
+    variant:
+      down_prioritize_variant: ${{ 0 if variant == "default" else 1 }}
     string: "0_${{ abi_tag }}"
     files:
       exclude:
         - "*.o"
     script:
-      file: ../build.sh
+      file: build.sh
       env:
         PYTHON_VARIANT: ${{ variant }}
     python:
@@ -70,9 +72,6 @@ outputs:
           - libuuid
       - libmpdec-devel
       - expat
-      - if: linux and "san" in variant
-        then:
-          - libsanitizer
       - if: osx and "san" in variant
         then:
           - libcompiler-rt
