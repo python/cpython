@@ -2536,7 +2536,7 @@ with the :class:`Pool` class.
       Callbacks should complete immediately since otherwise the thread which
       handles the results will get blocked.
 
-   .. method:: imap(func, iterable[, chunksize[, buffersize]])
+   .. method:: imap(func, iterable, chunksize=1, *, buffersize=None)
 
       A lazier version of :meth:`.map`.
 
@@ -2562,7 +2562,7 @@ with the :class:`Pool` class.
       .. versionchanged:: next
          Added the *buffersize* parameter.
 
-   .. method:: imap_unordered(func, iterable[, chunksize[, buffersize]])
+   .. method:: imap_unordered(func, iterable, chunksize=1, *, buffersize=None)
 
       The same as :meth:`imap` except that the ordering of the results from the
       returned iterator should be considered arbitrary.  (Only when there is
