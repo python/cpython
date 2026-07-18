@@ -1,0 +1,1 @@
+The :mod:`asyncio` REPL now ignores :envvar:`PYTHONSTARTUP` and :envvar:`PYTHON_BASIC_REPL` when :option:`-E` or :option:`-I` is used. Patch by Jonathan Dung.
