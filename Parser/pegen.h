@@ -67,6 +67,8 @@ typedef struct {
     int end_col_offset;
 } location;
 
+typedef struct _identifier_cache_entry IdentifierCacheEntry;
+
 typedef struct {
     struct tok_state *tok;
     Token **tokens;
@@ -91,16 +93,8 @@ typedef struct {
     int call_invalid_rules;
     int debug;
     location last_stmt_location;
-    struct _identifier_cache_entry {
-        const char *key;   // borrowed; points into arena-owned token bytes
-        Py_ssize_t len;
-        uint32_t hash;
-        PyObject *value;   // borrowed; arena-owned interned identifier
-    } *ident_cache;
+    IdentifierCacheEntry *identifier_cache;
 } Parser;
-
-#define _PYPEGEN_IDENT_CACHE_SIZE 2048  // power of two
-#define _PYPEGEN_IDENT_CACHE_MAX_PROBES 8
 
 typedef struct {
     cmpop_ty cmpop;

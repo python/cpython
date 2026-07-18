@@ -12,6 +12,16 @@
 #include "tokenizer/helpers.h"
 #include "pegen.h"
 
+#define IDENTIFIER_CACHE_SIZE 2048  // Must be a power of two.
+#define IDENTIFIER_CACHE_MAX_PROBES 8
+
+struct _identifier_cache_entry {
+    const char *key;   // Borrowed from arena-owned token bytes.
+    Py_ssize_t len;
+    uint32_t hash;
+    PyObject *value;   // Borrowed from an arena-owned identifier.
+};
+
 // Internal parser functions
 
 asdl_stmt_seq*
@@ -561,6 +571,20 @@ error:
     return NULL;
 }
 
+static uint32_t
+identifier_hash(const char *str, Py_ssize_t len)
+{
+    // 32-bit FNV-1a parameters.
+    const uint32_t offset_basis = 2166136261U;
+    const uint32_t prime = 16777619U;
+
+    uint32_t hash = offset_basis;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        hash = (hash ^ (unsigned char)str[i]) * prime;
+    }
+    return hash;
+}
+
 static expr_ty
 _PyPegen_name_from_token(Parser *p, Token* t)
 {
@@ -578,21 +602,20 @@ _PyPegen_name_from_token(Parser *p, Token* t)
     // so borrowed references are valid for the lifetime of the parse
     // (including the second error pass, which reuses parser and arena).
     Py_ssize_t len = PyBytes_GET_SIZE(t->bytes);
-    uint32_t hash = 2166136261u;
-    for (Py_ssize_t i = 0; i < len; i++) {
-        hash = (hash ^ (unsigned char)s[i]) * 16777619u;
-    }
-    struct _identifier_cache_entry *free_slot = NULL;
-    size_t idx = hash & (_PYPEGEN_IDENT_CACHE_SIZE - 1);
-    for (int probe = 0; probe < _PYPEGEN_IDENT_CACHE_MAX_PROBES; probe++) {
-        struct _identifier_cache_entry *e =
-            &p->ident_cache[(idx + probe) & (_PYPEGEN_IDENT_CACHE_SIZE - 1)];
-        if (e->key == NULL) {
-            free_slot = e;
+    uint32_t hash = identifier_hash(s, len);
+    IdentifierCacheEntry *free_slot = NULL;
+    size_t idx = hash & (IDENTIFIER_CACHE_SIZE - 1);
+    for (int probe = 0; probe < IDENTIFIER_CACHE_MAX_PROBES; probe++) {
+        IdentifierCacheEntry *entry = &p->identifier_cache[
+            (idx + probe) & (IDENTIFIER_CACHE_SIZE - 1)];
+        if (entry->key == NULL) {
+            free_slot = entry;
             break;
         }
-        if (e->hash == hash && e->len == len && memcmp(e->key, s, len) == 0) {
-            return _PyAST_Name(e->value, Load, t->lineno, t->col_offset,
+        if (entry->hash == hash && entry->len == len &&
+            memcmp(entry->key, s, len) == 0)
+        {
+            return _PyAST_Name(entry->value, Load, t->lineno, t->col_offset,
                                t->end_lineno, t->end_col_offset, p->arena);
         }
     }
@@ -874,9 +897,9 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->flags = flags;
     p->feature_version = feature_version;
     p->known_err_token = NULL;
-    p->ident_cache = PyMem_Calloc(_PYPEGEN_IDENT_CACHE_SIZE,
-                                  sizeof(struct _identifier_cache_entry));
-    if (p->ident_cache == NULL) {
+    p->identifier_cache = PyMem_Calloc(
+        IDENTIFIER_CACHE_SIZE, sizeof(*p->identifier_cache));
+    if (p->identifier_cache == NULL) {
         growable_comment_array_deallocate(&p->type_ignore_comments);
         PyMem_Free(p->tokens[0]);
         PyMem_Free(p->tokens);
@@ -898,7 +921,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
 void
 _PyPegen_Parser_Free(Parser *p)
 {
-    PyMem_Free(p->ident_cache);
+    PyMem_Free(p->identifier_cache);
     Py_XDECREF(p->normalize);
     for (int i = 0; i < p->size; i++) {
         PyMem_Free(p->tokens[i]);
