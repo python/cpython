@@ -168,6 +168,8 @@ def _seq_range(item):
 
 
 def _format_sequence_set(arg):
+    if isinstance(arg, (bytes, bytearray)):
+        return str(arg, 'ascii')
     if isinstance(arg, (int, str)):
         return str(arg)
     # A sequence of message numbers and ranges.
