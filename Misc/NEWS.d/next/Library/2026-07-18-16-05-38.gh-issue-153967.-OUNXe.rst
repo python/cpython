@@ -1,0 +1,2 @@
+:func:`argparse.print_usage` and :func:`argparse.print_help` won't silently
+fail when an invalid file object is specified. Patch by Timothy Poon.
