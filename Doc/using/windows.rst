@@ -128,7 +128,7 @@ difference between the two commands is when running without any arguments:
 help (``pymanager exec ...`` provides equivalent behaviour to ``py ...``).
 
 Each of these commands also has a windowed version that avoids creating a
-console window. These are ``pyw``, ``pythonw`` and ``pymanagerw``. A ``python3``
+console window. These are ``pyw``, ``pythonw`` and ``pywmanager``. A ``python3``
 command is also included that mimics the ``python`` command. It is intended to
 catch accidental uses of the typical POSIX command on Windows, but is not meant
 to be widely used or recommended.
