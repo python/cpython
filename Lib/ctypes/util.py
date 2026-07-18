@@ -574,6 +574,24 @@ def struct(class_or_none=None, /, *, align=None, layout=None, endian='native', p
 
     return process_the_struct(class_or_none)
 
+
+def wrap_dll_function(dll):
+    def decorator(func):
+        name = func.__name__
+        ptr = getattr(dll, name)
+        annotations = annotationlib.get_annotations(func)
+
+        try:
+            restype = annotations.pop("return")
+        except KeyError as error:
+            raise ValueError(f"{name!r} missing return type annotation") from error
+
+        ptr.restype = restype
+        ptr.argtypes = tuple(annotations.values())
+        return ptr
+
+    return decorator
+
 ################################################################
 # test code
 
