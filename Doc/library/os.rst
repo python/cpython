@@ -1642,6 +1642,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_APPEND`
    - :data:`RWF_DONTCACHE`
    - :data:`RWF_ATOMIC`
+   - :data:`RWF_NOSIGNAL`
 
    Return the total number of bytes actually written.
 
@@ -1689,6 +1690,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Linux >= 4.16.
 
    .. versionadded:: 3.10
+
+
+.. data:: RWF_NOSIGNAL
+
+   Prevent pipe and socket writes from raising :const:`~signal.SIGPIPE`.
+   This flag is meaningful only for :func:`os.pwritev`.
+
+   .. availability:: Linux >= 6.18.
+
+   .. versionadded:: 3.16
 
 
 .. function:: read(fd, n, /)
