@@ -588,11 +588,7 @@ def wrap_dll_function(dll):
 
         ptr.restype = restype
 
-        argtypes = []
-        for argtype in annotations.values():
-            argtypes.append(argtype)
-
-        ptr.argtypes = argtypes
+        ptr.argtypes = list(annotations.values())
         return ptr
 
     return decorator
