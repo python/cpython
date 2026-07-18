@@ -25,14 +25,10 @@ _PyTok_CursorSetLine(_PyTok_Cursor *cursor, int lineno)
         _PyTok_Off start = cursor->line_end;
         _PyTok_Off end = source->len;
         if (lineno < source->nlines) {
-            const char *newline = memchr(
-                source->bytes + start, '\n', source->len - start);
-            if (newline == NULL) {
-                PyErr_SetString(PyExc_SystemError,
-                                "corrupt tokenizer source line index");
+            end = _PyTok_SourceFindLineEnd(source, start);
+            if (end < 0) {
                 return -1;
             }
-            end = newline - source->bytes + 1;
         }
         set_line(cursor, lineno, start, end);
         return 0;
@@ -74,14 +70,10 @@ _PyTok_CursorSetOffset(_PyTok_Cursor *cursor, _PyTok_Off offset)
     _PyTok_Off start = offset - loc.byte_col;
     _PyTok_Off end = source->len;
     if (loc.lineno < source->nlines) {
-        const char *newline = memchr(
-            source->bytes + start, '\n', source->len - start);
-        if (newline == NULL) {
-            PyErr_SetString(PyExc_SystemError,
-                            "corrupt tokenizer source line index");
+        end = _PyTok_SourceFindLineEnd(source, start);
+        if (end < 0) {
             return -1;
         }
-        end = newline - source->bytes + 1;
     }
     set_line(cursor, loc.lineno, start, end);
     cursor->pos = offset;

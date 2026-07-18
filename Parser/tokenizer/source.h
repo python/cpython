@@ -67,4 +67,22 @@ _PyTok_SpanIsValid(_PyTok_Span span)
     return span.start >= 0 && span.end >= span.start;
 }
 
+static inline _PyTok_Off
+_PyTok_SourceFindLineEnd(const _PyTok_SourceText *source, _PyTok_Off start)
+{
+    if (source->bytes == NULL || start < 0 || start >= source->len) {
+        PyErr_SetString(PyExc_SystemError,
+                        "corrupt tokenizer source line index");
+        return -1;
+    }
+    const char *newline = memchr(
+        source->bytes + start, '\n', source->len - start);
+    if (newline == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "corrupt tokenizer source line index");
+        return -1;
+    }
+    return newline - source->bytes + 1;
+}
+
 #endif
