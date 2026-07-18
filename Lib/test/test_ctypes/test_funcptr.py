@@ -134,7 +134,7 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
     def test_wrap_dll_function(self):
         @wrap_dll_function(ctypes.pythonapi)
         def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object) -> ctypes.py_object:
-            ...
+            pass
 
         class Foo:
             a = "abc"
@@ -144,12 +144,12 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
         with self.assertRaises(AttributeError):
             @wrap_dll_function(ctypes.pythonapi)
             def noexist():
-                ...
+                pass
 
         with self.assertRaises(ValueError):
             @wrap_dll_function(ctypes.pythonapi)
             def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p):
-                ...
+                pass
 
 
 if __name__ == '__main__':
