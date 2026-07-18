@@ -168,6 +168,7 @@ gen_clear_frame(PyGenObject *gen)
 {
     assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_CLEARED);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
+    _PyThreadState_UpdateLastProfiledFrame(_PyThreadState_GET(), frame, frame->previous);
     frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
@@ -681,6 +682,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                'yield from' or awaiting on with 'await'. */
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
+            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             tstate->current_frame = prev;
             frame->previous = NULL;
         }
@@ -701,6 +703,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             frame->previous = prev;
             tstate->current_frame = frame;
             ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
+            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
             tstate->current_frame = prev;
             frame->previous = NULL;
             Py_DECREF(meth);
@@ -1023,7 +1026,8 @@ static PyMethodDef gen_methods[] = {
     {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close", gen_close, METH_NOARGS, close_doc},
     {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("generators are generic over the types of their yield, send, and return values")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1374,7 +1378,8 @@ static PyMethodDef coro_methods[] = {
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close", gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("coroutines are generic over the types of their yield, send, and return values")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1820,7 +1825,7 @@ static PyMethodDef async_gen_methods[] = {
     {"aclose", async_gen_aclose, METH_NOARGS, async_aclose_doc},
     {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       PyDoc_STR("async generators are generic over the types of their yield and send values")},
     {NULL, NULL}        /* Sentinel */
 };
 

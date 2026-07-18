@@ -6,7 +6,7 @@ from unittest import mock
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 def capture_test_stack(*, fut=None, depth=1):

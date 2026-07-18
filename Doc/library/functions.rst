@@ -19,24 +19,25 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`sentinel`     |
-| |  :func:`bool`         | |                     | |                     | |  :func:`slice`        |
-| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`sorted`       |
-| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  :func:`staticmethod` |
-| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  |func-str|_          |
-| |                       | |                     | |  **O**              | |  :func:`sum`          |
-| |  **C**                | |  **H**              | |  :func:`object`     | |  :func:`super`        |
-| |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
-| |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
-| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
-| |  :func:`compile`      | |  :func:`hex`        | |                     | |                       |
-| |  :func:`complex`      | |                     | |  **P**              | |  **V**                |
-| |                       | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
-| |  **D**                | |  :func:`id`         | |  :func:`print`      | |                       |
-| |  :func:`delattr`      | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
-| |  |func-dict|_         | |  :func:`int`        | |                     | |  :func:`zip`          |
-| |  :func:`dir`          | |  :func:`isinstance` | |                     | |                       |
-| |  :func:`divmod`       | |  :func:`issubclass` | |                     | |  **_**                |
+| |  :func:`bin`          | |  |func-frozendict|_ | |  :func:`min`        | |  :func:`sentinel`     |
+| |  :func:`bool`         | |  |func-frozenset|_  | |                     | |  :func:`slice`        |
+| |  :func:`breakpoint`   | |                     | |  **N**              | |  :func:`sorted`       |
+| |  |func-bytearray|_    | |  **G**              | |  :func:`next`       | |  :func:`staticmethod` |
+| |  |func-bytes|_        | |  :func:`getattr`    | |                     | |  |func-str|_          |
+| |                       | |  :func:`globals`    | |  **O**              | |  :func:`sum`          |
+| |  **C**                | |                     | |  :func:`object`     | |  :func:`super`        |
+| |  :func:`callable`     | |  **H**              | |  :func:`oct`        | |                       |
+| |  :func:`chr`          | |  :func:`hasattr`    | |  :func:`open`       | |  **T**                |
+| |  :func:`classmethod`  | |  :func:`hash`       | |  :func:`ord`        | |  |func-tuple|_        |
+| |  :func:`compile`      | |  :func:`help`       | |                     | |  :func:`type`         |
+| |  :func:`complex`      | |  :func:`hex`        | |  **P**              | |                       |
+| |                       | |                     | |  :func:`pow`        | |  **V**                |
+| |  **D**                | |  **I**              | |  :func:`print`      | |  :func:`vars`         |
+| |  :func:`delattr`      | |  :func:`id`         | |  :func:`property`   | |                       |
+| |  |func-dict|_         | |  :func:`input`      | |                     | |  **Z**                |
+| |  :func:`dir`          | |  :func:`int`        | |                     | |  :func:`zip`          |
+| |  :func:`divmod`       | |  :func:`isinstance` | |                     | |                       |
+| |                       | |  :func:`issubclass` | |                     | |  **_**                |
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
@@ -44,6 +45,7 @@ are always available.  They are listed here in alphabetical order.
    used, with replacement texts to make the output in the table consistent
 
 .. |func-dict| replace:: ``dict()``
+.. |func-frozendict| replace:: ``frozendict()``
 .. |func-frozenset| replace:: ``frozenset()``
 .. |func-memoryview| replace:: ``memoryview()``
 .. |func-set| replace:: ``set()``
@@ -483,10 +485,10 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
+   See also :ref:`typesmapping` for documentation about this class.
 
-   For other containers see the built-in :class:`list`, :class:`set`, and
-   :class:`tuple` classes, as well as the :mod:`collections` module.
+   For other containers see the built-in :class:`frozendict`, :class:`list`,
+   :class:`set`, and :class:`tuple` classes, as well as the :mod:`collections` module.
 
 
 .. function:: dir()
@@ -864,12 +866,27 @@ are always available.  They are listed here in alphabetical order.
       if *format_spec* is not an empty string.
 
 
+.. _func-frozendict:
+.. class:: frozendict(**kwargs)
+           frozendict(mapping, /, **kwargs)
+           frozendict(iterable, /, **kwargs)
+   :noindex:
+
+   Create a new frozen dictionary.  The :class:`frozendict` object is a built-in class.
+   See also :ref:`typesmapping` for documentation about this class.
+
+   For other containers see the built-in :class:`dict`, :class:`list`, :class:`set`,
+   and :class:`tuple` classes, as well as the :mod:`collections` module.
+
+   .. versionadded:: 3.15
+
+
 .. _func-frozenset:
 .. class:: frozenset(iterable=(), /)
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
-   *iterable*.  ``frozenset`` is a built-in class.  See :class:`frozenset` and
+   *iterable*.  :class:`frozenset` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`set`, :class:`list`,
@@ -1663,7 +1680,7 @@ are always available.  They are listed here in alphabetical order.
 
    If given, *doc* will be the docstring of the property attribute. Otherwise, the
    property will copy *fget*'s docstring (if it exists).  This makes it possible to
-   create read-only properties easily using :func:`property` as a :term:`decorator`::
+   create read-only properties easily using :deco:`property` as a :term:`decorator`::
 
       class Parrot:
           def __init__(self):
@@ -1797,7 +1814,7 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
-   *iterable*.  ``set`` is a built-in class.  See :class:`set` and
+   *iterable*.  :class:`set` is a built-in class.  See also
    :ref:`types-set` for documentation about this class.
 
    For other containers see the built-in :class:`frozenset`, :class:`list`,
@@ -1827,14 +1844,20 @@ are always available.  They are listed here in alphabetical order.
       :func:`setattr`.
 
 
-.. class:: sentinel(name, /)
+.. class:: sentinel(name, /, *, repr=None)
 
    Return a new unique sentinel object.  *name* must be a :class:`str`, and is
-   used as the returned object's representation::
+   used by default as the returned object's representation::
 
       >>> MISSING = sentinel("MISSING")
       >>> MISSING
       MISSING
+
+   The optional *repr* argument can be used to specify a different representation::
+
+      >>> MISSING = sentinel("MISSING", repr="<MISSING>")
+      >>> MISSING
+      <MISSING>
 
    Sentinel objects are truthy and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
@@ -1879,7 +1902,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. attribute:: __module__
 
-      The name of the module where the sentinel was created.
+      The name of the module where the sentinel was created. This attribute is writable.
 
    .. versionadded:: 3.15
 
@@ -1961,7 +1984,7 @@ are always available.  They are listed here in alphabetical order.
    be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
-   :func:`classmethod` for a variant that is useful for creating alternate class
+   :deco:`classmethod` for a variant that is useful for creating alternate class
    constructors.
 
    Like all decorators, it is also possible to call ``staticmethod`` as

@@ -17,7 +17,7 @@ import linecache
 import zipapp
 import zipfile
 
-from asyncio.events import _set_event_loop_policy
+from asyncio import set_event_loop
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
@@ -5312,7 +5312,7 @@ def load_tests(loader, tests, pattern):
         # Ensure that asyncio state has been cleared at the end of the test.
         # This prevents a "test altered the execution environment" warning if
         # asyncio features are used.
-        _set_event_loop_policy(None)
+        set_event_loop(None)
 
         # A doctest of pdb could have residues. For example, pdb could still
         # be running, or breakpoints might be left uncleared. These residues
