@@ -58,18 +58,6 @@ PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
 # cpython/fileobject.h
 Py_UniversalNewlineFgets
-# cpython/ceval.h
-PyUnstable_CopyPerfMapFile
-PyUnstable_PerfTrampoline_CompileCode
-PyUnstable_PerfTrampoline_SetPersistAfterFork
-# cpython/pyerrors.h
-PyException_HEAD
-# cpython/pyframe.h
-PyUnstable_EXECUTABLE_KINDS
-PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
-PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
-PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
-PyUnstable_EXECUTABLE_KIND_SKIP
 # cpython/pylifecycle.h
 Py_FrozenMain
 # pythonrun.h
