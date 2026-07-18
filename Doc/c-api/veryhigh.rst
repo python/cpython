@@ -343,6 +343,24 @@ the same library that the Python runtime is using.
       :py:mod:`!ast` Python module, which exports these constants under
       the same names.
 
+   .. c:macro:: PyCF_ALLOW_INCOMPLETE_INPUT
+
+      This flag is an implementation detail of the :mod:`codeop` module.
+      Do not use it elsewhere; its behavior is unsupported and may
+      change without warning.
+
+      With this flag set, when compilation fails because the source text
+      ends where more input is expected, for example in the middle of an
+      indented block or an unterminated string literal, the error raised
+      is the undocumented ``_IncompleteInputError``, a subclass of
+      :exc:`SyntaxError`.  The :mod:`codeop` module sets this flag,
+      together with :c:macro:`PyCF_DONT_IMPLY_DEDENT`, to tell input
+      that is incomplete apart from input with a real syntax error, so
+      that interactive interpreters know when to prompt for another
+      line instead of reporting an error.
+
+      .. versionadded:: 3.11
+
    .. c:macro:: PyCF_DONT_IMPLY_DEDENT
 
       By default, when compiling with the :c:var:`Py_single_input` start
@@ -421,6 +439,18 @@ the same library that the Python runtime is using.
       contains a ``from __future__ import`` statement, the flag for the
       imported feature is added to *flags*, so that code executed later
       in the same context inherits it.
+
+   .. c:macro:: PyCF_MASK_OBSOLETE
+
+      Do not use this mask in new code.  It is kept only so that old
+      code passing its flags to :func:`compile` keeps working.
+
+      Bitmask of flags for future features that are long obsolete.
+      It contains only :c:macro:`CO_NESTED`
+      (:py:data:`__future__.nested_scopes`), which has had no effect
+      since nested scopes became mandatory in Python 2.2.
+      The :func:`compile` built-in function accepts flags in this mask,
+      but ignores them.
 
    .. c:macro:: PyCF_COMPILE_MASK
 
