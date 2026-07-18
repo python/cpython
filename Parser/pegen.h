@@ -100,8 +100,8 @@ typedef struct {
     location last_stmt_location;
     IdentifierCacheEntry *identifier_cache;
     PyThreadState *tstate;
-    // Cached copy of tstate->c_stack_soft_limit plus one margin, so the
-    // per-rule stack check is a single inline comparison.
+    // Cached copy of tstate->c_stack_soft_limit offset by one margin toward
+    // the stack top, so the per-rule stack check is a single inline comparison.
     uintptr_t stack_soft_limit;
 } Parser;
 
