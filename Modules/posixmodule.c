@@ -12941,6 +12941,7 @@ following flags:
 - RWF_APPEND
 - RWF_DONTCACHE
 - RWF_ATOMIC
+- RWF_NOSIGNAL
 
 Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
@@ -12948,7 +12949,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=b2e352a22f030e9a]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=c202f24f01fa66c9]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -18245,6 +18246,9 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
+#endif
+#ifdef RWF_NOSIGNAL
+    if (PyModule_AddIntConstant(m, "RWF_NOSIGNAL", RWF_NOSIGNAL)) return -1;
 #endif
 
 /* constants for splice */
