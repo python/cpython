@@ -1,1 +1,0 @@
-Fix data race in repr in itertools.counter() for freethreading builds
