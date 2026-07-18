@@ -453,12 +453,8 @@ the same library that the Python runtime is using.
       Do not use this mask in new code.  It is kept only so that old
       code passing its flags to :func:`compile` keeps working.
 
-      Bitmask of flags for future features that are long obsolete.
-      It contains only :c:macro:`CO_NESTED`
-      (:py:data:`__future__.nested_scopes`), which has had no effect
-      since nested scopes became mandatory in Python 2.2.
-      The :func:`compile` built-in function accepts flags in this mask,
-      but ignores them.
+      Bitmask of flags for obsolete future features that no longer
+      have any effect.
 
    .. c:macro:: PyCF_COMPILE_MASK
 
