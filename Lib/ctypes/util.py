@@ -584,7 +584,7 @@ def wrap_dll_function(dll):
         try:
             restype = annotations.pop("return")
         except KeyError as error:
-            raise ValueError(f"{name} missing return type annotation") from error
+            raise ValueError(f"{name!r} missing return type annotation") from error
 
         ptr.restype = restype
         ptr.argtypes = tuple(annotations.values())
