@@ -60,7 +60,7 @@ class GetoptTests(unittest.TestCase):
             getopt.long_has_args, 'abc', ['def'], message='option --abc not recognized'
         )
         self.assertError(getopt.long_has_args, 'abc', [])
-        self.assertError(getopt.long_has_args, 'abc', ['abcd', 'abcde'])
+        self.assertError(getopt.long_has_args, 'abc', ['abcd','abcde'])
         self.assertErrorMessage(
             getopt.long_has_args,
             'abc',
@@ -142,15 +142,7 @@ class GetoptTests(unittest.TestCase):
         # Much like the preceding, except with a non-alpha character ("-") in
         # option name that precedes "="; failed in
         # https://bugs.python.org/issue126863
-        opts, args = getopt.do_longs(
-            [],
-            'foo=42',
-            [
-                'foo-bar',
-                'foo=',
-            ],
-            [],
-        )
+        opts, args = getopt.do_longs([], 'foo=42', ['foo-bar', 'foo=',], [])
         self.assertEqual(opts, [('--foo', '42')])
         self.assertEqual(args, [])
 
@@ -169,49 +161,21 @@ class GetoptTests(unittest.TestCase):
         # note: the empty string between '-a' and '--beta' is significant:
         # it simulates an empty string option argument ('-a ""') on the
         # command line.
-        cmdline = [
-            '-a1',
-            '-b',
-            '--alpha=2',
-            '--beta',
-            '-a',
-            '3',
-            '-a',
-            '',
-            '--beta',
-            'arg1',
-            'arg2',
-        ]
+        cmdline = ['-a1', '-b', '--alpha=2', '--beta', '-a', '3', '-a',
+                   '', '--beta', 'arg1', 'arg2']
 
         opts, args = getopt.getopt(cmdline, 'a:b', ['alpha=', 'beta'])
-        self.assertEqual(
-            opts,
-            [
-                ('-a', '1'),
-                ('-b', ''),
-                ('--alpha', '2'),
-                ('--beta', ''),
-                ('-a', '3'),
-                ('-a', ''),
-                ('--beta', ''),
-            ],
-        )
+        self.assertEqual(opts, [('-a', '1'), ('-b', ''),
+                                ('--alpha', '2'), ('--beta', ''),
+                                ('-a', '3'), ('-a', ''), ('--beta', '')])
         # Note ambiguity of ('-b', '') and ('-a', '') above. This must be
         # accounted for in the code that calls getopt().
         self.assertEqual(args, ['arg1', 'arg2'])
 
         cmdline = ['-a1', '--alpha=2', '--alpha=', '-a', '--alpha', 'arg1', 'arg2']
         opts, args = getopt.getopt(cmdline, 'a::', ['alpha=?'])
-        self.assertEqual(
-            opts,
-            [
-                ('-a', '1'),
-                ('--alpha', '2'),
-                ('--alpha', ''),
-                ('-a', ''),
-                ('--alpha', ''),
-            ],
-        )
+        self.assertEqual(opts, [('-a', '1'), ('--alpha', '2'), ('--alpha', ''),
+                                ('-a', ''), ('--alpha', '')])
         self.assertEqual(args, ['arg1', 'arg2'])
 
         self.assertError(getopt.getopt, cmdline, 'a:b', ['alpha', 'beta'])
@@ -225,38 +189,19 @@ class GetoptTests(unittest.TestCase):
 
     def test_gnu_getopt(self):
         # Test handling of GNU style scanning mode.
-        cmdline = [
-            '-a',
-            'arg1',
-            '-b',
-            '1',
-            '--alpha',
-            '--beta=2',
-            '--beta',
-            '3',
-            'arg2',
-        ]
+        cmdline = ['-a', 'arg1', '-b', '1', '--alpha', '--beta=2', '--beta',
+                   '3', 'arg2']
 
         # GNU style
         opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
         self.assertEqual(args, ['arg1', 'arg2'])
-        self.assertEqual(
-            opts,
-            [
-                ('-a', ''),
-                ('-b', '1'),
-                ('--alpha', ''),
-                ('--beta', '2'),
-                ('--beta', '3'),
-            ],
-        )
+        self.assertEqual(opts, [('-a', ''), ('-b', '1'), ('--alpha', ''),
+                                ('--beta', '2'), ('--beta', '3')])
 
         opts, args = getopt.gnu_getopt(cmdline, 'ab::', ['alpha', 'beta=?'])
         self.assertEqual(args, ['arg1', '1', '3', 'arg2'])
-        self.assertEqual(
-            opts,
-            [('-a', ''), ('-b', ''), ('--alpha', ''), ('--beta', '2'), ('--beta', '')],
-        )
+        self.assertEqual(opts, [('-a', ''), ('-b', ''), ('--alpha', ''),
+                                ('--beta', '2'), ('--beta', '')])
 
         # recognize "-" as an argument
         opts, args = getopt.gnu_getopt(['-a', '-', '-b', '-'], 'ab:', [])
@@ -266,32 +211,21 @@ class GetoptTests(unittest.TestCase):
         # Return positional arguments intermixed with options.
         opts, args = getopt.gnu_getopt(cmdline, '-ab:', ['alpha', 'beta='])
         self.assertEqual(args, ['arg2'])
-        self.assertEqual(
-            opts,
-            [
-                ('-a', ''),
-                (None, ['arg1']),
-                ('-b', '1'),
-                ('--alpha', ''),
-                ('--beta', '2'),
-                ('--beta', '3'),
-            ],
-        )
+        self.assertEqual(opts, [('-a', ''), (None, ['arg1']), ('-b', '1'), ('--alpha', ''),
+                                ('--beta', '2'), ('--beta', '3')])
 
         # Posix style via +
         opts, args = getopt.gnu_getopt(cmdline, '+ab:', ['alpha', 'beta='])
         self.assertEqual(opts, [('-a', '')])
-        self.assertEqual(
-            args, ['arg1', '-b', '1', '--alpha', '--beta=2', '--beta', '3', 'arg2']
-        )
+        self.assertEqual(args, ['arg1', '-b', '1', '--alpha', '--beta=2',
+                                '--beta', '3', 'arg2'])
 
         # Posix style via POSIXLY_CORRECT
-        self.env['POSIXLY_CORRECT'] = '1'
+        self.env["POSIXLY_CORRECT"] = "1"
         opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
         self.assertEqual(opts, [('-a', '')])
-        self.assertEqual(
-            args, ['arg1', '-b', '1', '--alpha', '--beta=2', '--beta', '3', 'arg2']
-        )
+        self.assertEqual(args, ['arg1', '-b', '1', '--alpha', '--beta=2',
+                                '--beta', '3', 'arg2'])
 
     def test_issue4629(self):
         longopts, shortopts = getopt.getopt(['--help='], '', ['help='])
