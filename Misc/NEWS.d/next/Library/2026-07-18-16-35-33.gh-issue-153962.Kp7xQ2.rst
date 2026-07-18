@@ -1,0 +1,4 @@
+On POSIX, :meth:`subprocess.Popen.poll` now re-raises an unexpected
+:exc:`OSError` from the underlying :func:`os.waitpid` call instead of
+silently ignoring it and leaving :attr:`!returncode` set to ``None``. The
+special handling of :const:`~errno.ECHILD` is unchanged.
