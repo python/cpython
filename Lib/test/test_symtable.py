@@ -2,8 +2,7 @@
 Test the API of the symtable module.
 """
 
-import re
-import textwrap
+import ast
 import symtable
 import warnings
 import unittest
@@ -364,87 +363,6 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.spam.lookup("x").get_name(), "x")
         self.assertEqual(self.Mine.get_name(), "Mine")
 
-    def test_class_get_methods(self):
-        deprecation_mess = (
-            re.escape('symtable.Class.get_methods() is deprecated '
-                      'and will be removed in Python 3.16.')
-        )
-
-        with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
-            self.assertEqual(self.Mine.get_methods(), ('a_method',))
-
-        top = symtable.symtable(TEST_COMPLEX_CLASS_CODE, "?", "exec")
-        this = find_block(top, "ComplexClass")
-
-        with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
-            self.assertEqual(this.get_methods(), (
-                'a_method', 'a_method_pep_695',
-                'an_async_method', 'an_async_method_pep_695',
-                'a_classmethod', 'a_classmethod_pep_695',
-                'an_async_classmethod', 'an_async_classmethod_pep_695',
-                'a_staticmethod', 'a_staticmethod_pep_695',
-                'an_async_staticmethod', 'an_async_staticmethod_pep_695',
-                'a_fakemethod', 'a_fakemethod_pep_695',
-                'an_async_fakemethod', 'an_async_fakemethod_pep_695',
-                'glob_unassigned_meth', 'glob_unassigned_meth_pep_695',
-                'glob_unassigned_async_meth', 'glob_unassigned_async_meth_pep_695',
-                'glob_assigned_meth', 'glob_assigned_meth_pep_695',
-                'glob_assigned_async_meth', 'glob_assigned_async_meth_pep_695',
-            ))
-
-        # Test generator expressions that are of type TYPE_FUNCTION
-        # but will not be reported by get_methods() since they are
-        # not functions per se.
-        #
-        # Other kind of comprehensions such as list, set or dict
-        # expressions do not have the TYPE_FUNCTION type.
-
-        def check_body(body, expected_methods):
-            indented = textwrap.indent(body, ' ' * 4)
-            top = symtable.symtable(f"class A:\n{indented}", "?", "exec")
-            this = find_block(top, "A")
-            with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
-                self.assertEqual(this.get_methods(), expected_methods)
-
-        # statements with 'genexpr' inside it
-        GENEXPRS = (
-            'x = (x for x in [])',
-            'x = (x async for x in [])',
-            'type x[genexpr = (x for x in [])] = (x for x in [])',
-            'type x[genexpr = (x async for x in [])] = (x async for x in [])',
-            'genexpr = (x for x in [])',
-            'genexpr = (x async for x in [])',
-            'type genexpr[genexpr = (x for x in [])] = (x for x in [])',
-            'type genexpr[genexpr = (x async for x in [])] = (x async for x in [])',
-        )
-
-        for gen in GENEXPRS:
-            # test generator expression
-            with self.subTest(gen=gen):
-                check_body(gen, ())
-
-            # test generator expression + variable named 'genexpr'
-            with self.subTest(gen=gen, isvar=True):
-                check_body('\n'.join((gen, 'genexpr = 1')), ())
-                check_body('\n'.join(('genexpr = 1', gen)), ())
-
-        for paramlist in ('()', '(x)', '(x, y)', '(z: T)'):
-            for func in (
-                f'def genexpr{paramlist}:pass',
-                f'async def genexpr{paramlist}:pass',
-                f'def genexpr[T]{paramlist}:pass',
-                f'async def genexpr[T]{paramlist}:pass',
-            ):
-                with self.subTest(func=func):
-                    # test function named 'genexpr'
-                    check_body(func, ('genexpr',))
-
-                for gen in GENEXPRS:
-                    with self.subTest(gen=gen, func=func):
-                        # test generator expression + function named 'genexpr'
-                        check_body('\n'.join((gen, func)), ('genexpr',))
-                        check_body('\n'.join((func, gen)), ('genexpr',))
-
     def test_filename_correct(self):
         ### Bug tickler: SyntaxError file name correct whether error raised
         ### while parsing or building symbol table.
@@ -635,6 +553,77 @@ class ComprehensionTests(unittest.TestCase):
                 ids = []
                 self.get_identifiers_recursive(st, ids)
                 self.assertEqual(len([x for x in ids if x == 'x']), 1)
+
+
+class ASTInputTests(unittest.TestCase):
+    maxDiff = None
+
+    def dump(self, table):
+        return (table.get_name(), table.get_type(), table.get_lineno(),
+                [repr(symbol) for symbol in table.get_symbols()],
+                [self.dump(child) for child in table.get_children()])
+
+    def test_exec(self):
+        top = symtable.symtable(ast.parse(TEST_CODE), "?", "exec")
+        self.assertIsNotNone(find_block(top, "Mine"))
+
+    def test_eval(self):
+        table = symtable.symtable(ast.parse("a + b", mode="eval"), "?", "eval")
+        self.assertEqual(sorted(table.get_identifiers()), ["a", "b"])
+
+    def test_single(self):
+        table = symtable.symtable(ast.parse("x = 1", mode="single"),
+                                  "?", "single")
+        self.assertIn("x", table.get_identifiers())
+
+    def test_same_result_as_string(self):
+        cases = [
+            (TEST_CODE, "exec"),
+            ("from __future__ import annotations\n"
+             "def f(x: int) -> int: return x\n", "exec"),
+            ("[x*y for x in a]", "eval"),
+            ("def f(): pass\n", "single"),
+        ]
+        for source, mode in cases:
+            with self.subTest(source=source, mode=mode):
+                from_str = symtable.symtable(source, "?", mode)
+                from_ast = symtable.symtable(ast.parse(source, mode=mode),
+                                             "?", mode)
+                self.assertEqual(self.dump(from_ast), self.dump(from_str))
+
+    def test_synthesized_ast(self):
+        # An AST created programmatically, without any source.
+        node = ast.Module(body=[
+            ast.FunctionDef(
+                name="f",
+                args=ast.arguments(args=[ast.arg(arg="x")]),
+                body=[ast.Return(ast.Name("x", ast.Load()))])])
+        ast.fix_missing_locations(node)
+        top = symtable.symtable(node, "?", "exec")
+        f = find_block(top, "f")
+        self.assertTrue(f.lookup("x").is_parameter())
+
+    def test_mode_mismatch(self):
+        tree = ast.parse("x = 1")
+        for mode in ("eval", "single"):
+            with self.subTest(mode=mode):
+                with self.assertRaises(TypeError):
+                    symtable.symtable(tree, "?", mode)
+        with self.assertRaises(TypeError):
+            symtable.symtable(ast.parse("x", mode="eval"), "?", "exec")
+
+    def test_invalid_ast(self):
+        node = ast.Expression(ast.Name("x", ast.Store()))
+        ast.fix_missing_locations(node)
+        with self.assertRaises(ValueError):
+            symtable.symtable(node, "?", "eval")
+
+    def test_misplaced_future_import(self):
+        # The parser does not enforce the placement of future imports in
+        # an existing AST; the symbol table construction does.
+        tree = ast.parse("x = 1\nfrom __future__ import annotations\n")
+        with self.assertRaises(SyntaxError):
+            symtable.symtable(tree, "?", "exec")
 
 
 class CommandLineTest(unittest.TestCase):

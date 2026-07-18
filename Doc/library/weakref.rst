@@ -63,11 +63,14 @@ exposed by the :mod:`!weakref` module for the benefit of advanced uses.
 Not all objects can be weakly referenced. Objects which support weak references
 include class instances, functions written in Python (but not in C), instance methods,
 sets, frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
-type objects, sockets, arrays, deques, regular expression pattern objects, and code
-objects.
+type objects, sockets, arrays, deques, regular expression pattern objects, code
+objects, and frame objects.
 
 .. versionchanged:: 3.2
    Added support for thread.lock, threading.Lock, and code objects.
+
+.. versionchanged:: 3.16
+   Added support for frame objects.
 
 Several built-in types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::
@@ -120,6 +123,9 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    This is a subclassable type rather than a factory function.
 
+   Weak references are :ref:`generic <generics>` over the type of the object they
+   reference.
+
    .. attribute:: __callback__
 
       This read-only attribute returns the callback currently associated to the
@@ -128,6 +134,9 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    .. versionchanged:: 3.4
       Added the :attr:`__callback__` attribute.
+
+   .. versionchanged:: next
+      Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
 .. function:: proxy(object[, callback])
@@ -147,6 +156,9 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
+
+   .. versionchanged:: next
+      Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
 
 .. function:: getweakrefcount(object)
@@ -324,17 +336,17 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    .. versionadded:: 3.4
 
 
-.. data:: ReferenceType
+.. class:: ReferenceType
 
    The type object for weak references objects.
 
 
-.. data:: ProxyType
+.. class:: ProxyType
 
    The type object for proxies of objects which are not callable.
 
 
-.. data:: CallableProxyType
+.. class:: CallableProxyType
 
    The type object for proxies of callable objects.
 

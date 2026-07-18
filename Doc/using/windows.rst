@@ -128,7 +128,7 @@ difference between the two commands is when running without any arguments:
 help (``pymanager exec ...`` provides equivalent behaviour to ``py ...``).
 
 Each of these commands also has a windowed version that avoids creating a
-console window. These are ``pyw``, ``pythonw`` and ``pymanagerw``. A ``python3``
+console window. These are ``pyw``, ``pythonw`` and ``pywmanager``. A ``python3``
 command is also included that mimics the ``python`` command. It is intended to
 catch accidental uses of the typical POSIX command on Windows, but is not meant
 to be widely used or recommended.
@@ -162,7 +162,9 @@ omitted in cases where the tag refers to an official release and starts with
    $> py -V:3-arm64 ...
 
 Runtimes from other distributors may require the *company* to be included as
-well. This should be separated from the tag by a slash, and may be a prefix.
+well.
+It should be separated from the tag by a slash (either ``/`` or ``\``),
+and may be shortened to any prefix of its full value.
 Specifying the company is optional when it is ``PythonCore``, and specifying the
 tag is optional (but not the slash) when you want the latest release from a
 specific company.
@@ -455,6 +457,12 @@ customization.
        Python runtimes, or false to prevent it.
        By default, true.
 
+   * - ``shebang_templates``
+     - (none)
+     - Mapping from shebang line template to alternative command, such as
+       ``py -V:<tag>`` or a substitute string.
+       See :ref:`pymanager-shebang` for more details.
+
    * - ``log_level``
      - ``PYMANAGER_VERBOSE``, ``PYMANAGER_DEBUG``
      - Set the default level of output (0-50).
@@ -567,6 +575,30 @@ shells. These paths may be quoted, and may include multiple arguments, after
 which the path to the script and any additional arguments will be appended.
 This functionality may be disabled by the ``shebang_can_run_anything``
 configuration option.
+
+Since version 26.3 of the Python install manager, custom shebang templates may
+be added to your configuration file. Add the ``shebang_templates`` object with
+one member for each template (the string to match) and the command to use when
+the template is matched. Most commands should be ``py -V:<tag>`` (or ``pyw``) to
+launch one of your installed runtimes. The ``py -3.<version>`` form is also
+allowed, as is a plain ``py`` to launch the default. No other arguments are
+supported.
+
+.. code:: json5
+
+   {
+       "shebang_templates": {
+           "/usr/bin/python": "py",
+           "/usr/bin/my_custom_python": "py -V:MyCustomPython/3"
+       }
+   }
+
+If the substitute command is not ``py`` or ``pyw``, it will be written back into
+the shebang and regular handling continues. If launching arbitrary executables
+is permitted, then providing a full path will allow you to redirect from Python
+to any executable. The template should match either the entire line (ignoring
+leading and trailing whitespace), or up to the first space in the shebang line.
+
 
 .. note::
 
@@ -1144,9 +1176,9 @@ on using nuget. What follows is a summary that is sufficient for Python
 developers.
 
 The ``nuget.exe`` command line tool may be downloaded directly from
-``https://aka.ms/nugetclidl``, for example, using curl or PowerShell. With the
-tool, the latest version of Python for 64-bit or 32-bit machines is installed
-using::
+``https://dist.nuget.org/win-x86-commandline/latest/nuget.exe``, for example,
+using curl or PowerShell. With the tool, the latest version of Python for
+64-bit or 32-bit machines is installed using::
 
    nuget.exe install python -ExcludeVersion -OutputDirectory .
    nuget.exe install pythonx86 -ExcludeVersion -OutputDirectory .
