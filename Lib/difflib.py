@@ -828,7 +828,7 @@ class Differ:
           module-level function `IS_CHARACTER_JUNK` may be used to filter out
           whitespace characters (a blank or tab; **note**: bad idea to include
           newline in this!).  Use of IS_CHARACTER_JUNK is recommended.
-        - `autojunk`: automatic junk diff heruistic
+        - `autojunk`: automatic junk diff heuristic
           (refer to :class:`SequenceMatcher` for specifics).
         """
 
@@ -1123,7 +1123,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     'git diff --color'. Even if enabled, it can be
     controlled using environment variables such as 'NO_COLOR'.
 
-    Set `autojunk` to False if you don't want automated junk heruistic.
+    Set `autojunk` to False if you don't want automated junk heuristic.
     See details in :class:`SequenceMatcher.
 
     The unidiff format normally has a header for filenames and modification
@@ -1222,7 +1222,7 @@ def context_diff(a, b, fromfile='', tofile='',
     The modification times are normally expressed in the ISO 8601 format.
     If not specified, the strings default to blanks.
 
-    The kwarg `autojunk` sets up automated junk hereuistic with
+    The kwarg `autojunk` sets up automated junk heuristic with
     :class:`SequenceMatcher`, which is used under the hood in this function.
     See documentation of :class:`SequenceMatcher` for details.
 
