@@ -186,10 +186,11 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
         tb.cancel()
         self.assertTrue(lock._waiters[0].cancelled())
         await asyncio.sleep(0)
-        self.assertFalse(lock.locked())
+        self.assertTrue(lock.locked())
         self.assertTrue(ta.done())
         self.assertTrue(tb.cancelled())
         await tc
+        self.assertTrue(tc.done())
 
     async def test_cancel_release_race(self):
         # Issue 32734
