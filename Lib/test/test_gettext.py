@@ -10,9 +10,7 @@ from test.support import cpython_only, os_helper
 from test.support.import_helper import ensure_lazy_imports
 
 
-# TODO:
-#  - Add new tests, for example for "dgettext"
-#  - Tests should have only one assert.
+# Tests should have only one assert.
 
 GNU_MO_DATA = b'''\
 3hIElQAAAAAJAAAAHAAAAGQAAAAAAAAArAAAAAAAAACsAAAAFQAAAK0AAAAjAAAAwwAAAKEAAADn
@@ -942,6 +940,190 @@ class TranslationFallbackTestCase(unittest.TestCase):
         with os_helper.temp_cwd() as tempdir:
             t = gettext.translation('gettext', localedir=tempdir, fallback=True)
             self.assertIsInstance(t, gettext.NullTranslations)
+
+
+class DGettextTests(GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
+
+    def test_dgettext_returns_translation(self):
+        self.assertEqual(gettext.dgettext('gettext', 'nudge nudge'), 'wink wink')
+
+    def test_dgettext_returns_message_on_missing_domain(self):
+        self.assertEqual(gettext.dgettext('nonexistent', 'nudge nudge'), 'nudge nudge')
+
+    def test_dgettext_returns_message_on_missing_translation(self):
+        self.assertEqual(gettext.dgettext('gettext', 'albatross'), 'albatross')
+
+    def test_dgettext_with_current_domain_context(self):
+        self.assertEqual(gettext.dgettext('gettext', 'mullusk'), 'bacon')
+
+    def test_dgettext_returns_string_type(self):
+        result = gettext.dgettext('gettext', 'nudge nudge')
+        self.assertIsInstance(result, str)
+
+    def test_dgettext_with_special_characters(self):
+        self.assertEqual(
+            gettext.dgettext('gettext', 'Raymond Luxury Yach-t'),
+            'Throatwobbler Mangrove'
+        )
+
+    def test_dgettext_with_multiline_string(self):
+        expected = '''Guvf zbqhyr cebivqrf vagreangvbanyvmngvba naq ybpnyvmngvba
+fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
+trggrkg zrffntr pngnybt yvoenel.'''
+        result = gettext.dgettext('gettext', '''This module provides internationalization and localization
+support for your Python programs by providing an interface to the GNU
+gettext message catalog library.''')
+        self.assertEqual(result, expected)
+
+
+class DnGettextTests(GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
+
+    def test_dngettext_returns_singular(self):
+        self.assertEqual(
+            gettext.dngettext('gettext', 'There is %s file', 'There are %s files', 1),
+            'Hay %s fichero'
+        )
+
+    def test_dngettext_returns_plural(self):
+        self.assertEqual(
+            gettext.dngettext('gettext', 'There is %s file', 'There are %s files', 5),
+            'Hay %s ficheros'
+        )
+
+    def test_dngettext_returns_message_on_missing_domain(self):
+        self.assertEqual(
+            gettext.dngettext('nonexistent', 'There is %s file', 'There are %s files', 1),
+            'There is %s file'
+        )
+
+    def test_dngettext_returns_plural_message_on_missing_domain(self):
+        self.assertEqual(
+            gettext.dngettext('nonexistent', 'There is %s file', 'There are %s files', 5),
+            'There are %s files'
+        )
+
+    def test_dngettext_returns_message_on_missing_translation(self):
+        self.assertEqual(
+            gettext.dngettext('gettext', '%d file deleted', '%d files deleted', 1),
+            '%d file deleted'
+        )
+
+    def test_dngettext_with_integer_format(self):
+        self.assertEqual(
+            gettext.dngettext('gettext', '%d file deleted', '%d files deleted', 5),
+            '%d files deleted'
+        )
+
+    def test_dngettext_with_large_number(self):
+        self.assertEqual(
+            gettext.dngettext('gettext', 'There is %s file', 'There are %s files', 100),
+            'Hay %s ficheros'
+        )
+
+
+class DpGettextTests(GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
+
+    def test_dpgettext_returns_translation(self):
+        self.assertEqual(
+            gettext.dpgettext('gettext', 'my context', 'nudge nudge'),
+            'wink wink (in "my context")'
+        )
+
+    def test_dpgettext_returns_message_on_missing_domain(self):
+        self.assertEqual(
+            gettext.dpgettext('nonexistent', 'my context', 'nudge nudge'),
+            'nudge nudge'
+        )
+
+    def test_dpgettext_returns_message_on_missing_translation(self):
+        self.assertEqual(
+            gettext.dpgettext('gettext', 'my context', 'albatross'),
+            'albatross'
+        )
+
+    def test_dpgettext_with_different_contexts(self):
+        self.assertEqual(
+            gettext.dpgettext('gettext', 'my other context', 'nudge nudge'),
+            'wink wink (in "my other context")'
+        )
+
+    def test_dpgettext_returns_string_type(self):
+        result = gettext.dpgettext('gettext', 'my context', 'nudge nudge')
+        self.assertIsInstance(result, str)
+
+    def test_dpgettext_with_wrong_context(self):
+        self.assertEqual(
+            gettext.dpgettext('gettext', 'wrong context', 'nudge nudge'),
+            'nudge nudge'
+        )
+
+
+class DnpGettextTests(GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
+
+    def test_dnpgettext_returns_singular(self):
+        self.assertEqual(
+            gettext.dnpgettext('gettext', 'With context',
+                               'There is %s file', 'There are %s files', 1),
+            'Hay %s fichero (context)'
+        )
+
+    def test_dnpgettext_returns_plural(self):
+        self.assertEqual(
+            gettext.dnpgettext('gettext', 'With context',
+                               'There is %s file', 'There are %s files', 5),
+            'Hay %s ficheros (context)'
+        )
+
+    def test_dnpgettext_returns_message_on_missing_domain(self):
+        self.assertEqual(
+            gettext.dnpgettext('nonexistent', 'With context',
+                               'There is %s file', 'There are %s files', 1),
+            'There is %s file'
+        )
+
+    def test_dnpgettext_returns_plural_message_on_missing_domain(self):
+        self.assertEqual(
+            gettext.dnpgettext('nonexistent', 'With context',
+                               'There is %s file', 'There are %s files', 5),
+            'There are %s files'
+        )
+
+    def test_dnpgettext_returns_message_on_missing_translation(self):
+        self.assertEqual(
+            gettext.dnpgettext('gettext', 'With context',
+                               '%d file deleted', '%d files deleted', 1),
+            '%d file deleted'
+        )
+
+    def test_dnpgettext_with_wrong_context(self):
+        self.assertEqual(
+            gettext.dnpgettext('gettext', 'Wrong context',
+                               'There is %s file', 'There are %s files', 1),
+            'There is %s file'
+        )
+
+    def test_dnpgettext_with_integer_format(self):
+        self.assertEqual(
+            gettext.dnpgettext('gettext', 'With context',
+                               '%d file deleted', '%d files deleted', 5),
+            '%d files deleted'
+        )
 
 
 if __name__ == '__main__':
