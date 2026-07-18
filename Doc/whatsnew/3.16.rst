@@ -229,6 +229,16 @@ curses
   wide-character support.
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
 
+
+ctypes
+------
+
+* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
+  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
+  is used.
+  (Contributed by Peter Bierma in :gh:`104533`.)
+
+
 encodings
 ---------
 
