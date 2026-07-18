@@ -2063,7 +2063,7 @@ class TestSourcePositions(unittest.TestCase):
 
     def test_multiline_list_comprehension(self):
         snippet = textwrap.dedent("""\
-            [(x,
+            _ = [(x,
                 2*x)
                 for x
                 in [1,2,3] if (x > 0
@@ -2073,14 +2073,14 @@ class TestSourcePositions(unittest.TestCase):
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LIST_APPEND',
-            line=1, end_line=2, column=1, end_column=8, occurrence=1)
+            line=1, end_line=2, column=5, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
-            line=1, end_line=2, column=1, end_column=8, occurrence=1)
+            line=1, end_line=2, column=5, end_column=8, occurrence=1)
 
     def test_multiline_async_list_comprehension(self):
         snippet = textwrap.dedent("""\
             async def f():
-                [(x,
+                _ = [(x,
                     2*x)
                     async for x
                     in [1,2,3] if (x > 0
@@ -2093,11 +2093,11 @@ class TestSourcePositions(unittest.TestCase):
         compiled_code = g['f'].__code__
         self.assertIsInstance(compiled_code, types.CodeType)
         self.assertOpcodeSourcePositionIs(compiled_code, 'LIST_APPEND',
-            line=2, end_line=3, column=5, end_column=12, occurrence=1)
+            line=2, end_line=3, column=9, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
-            line=2, end_line=3, column=5, end_column=12, occurrence=1)
+            line=2, end_line=3, column=9, end_column=12, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
-            line=2, end_line=7, column=4, end_column=36, occurrence=1)
+            line=2, end_line=2, column=4, end_column=5, occurrence=1)
 
     def test_multiline_set_comprehension(self):
         snippet = textwrap.dedent("""\
@@ -2369,7 +2369,10 @@ class TestSourcePositions(unittest.TestCase):
         source = "del (\n lhs  \n   .    \n     rhs      \n       )"
         code = compile(source, "<test>", "exec")
         self.assertOpcodeSourcePositionIs(
-            code, "DELETE_ATTR", line=4, end_line=4, column=5, end_column=8
+            code, "PUSH_NULL", line=4, end_line=4, column=5, end_column=8
+        )
+        self.assertOpcodeSourcePositionIs(
+            code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
         )
 
     def test_attribute_load(self):

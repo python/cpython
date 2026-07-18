@@ -1141,6 +1141,38 @@ class LzmaDetectReadTest(LzmaTest, DetectReadTest):
 class ZstdDetectReadTest(ZstdTest, DetectReadTest):
     pass
 
+
+@support.requires_zstd()
+class ZstdOpenTest(unittest.TestCase):
+    """
+    See: https://github.com/python/cpython/issues/150077
+    """
+    def test_zstopen_closes_fileobj_on_base_exception(self):
+        path = os_helper.TESTFN + ".tar.zst"
+        self.addCleanup(os_helper.unlink, path)
+        with tarfile.open(path, "w:zst"):
+            pass
+
+        opened = []
+        real_ZstdFile = zstd.ZstdFile
+
+        def tracking_ZstdFile(*args, **kwargs):
+            fileobj = real_ZstdFile(*args, **kwargs)
+            opened.append(fileobj)
+            return fileobj
+
+        with (
+            unittest.mock.patch("compression.zstd.ZstdFile", tracking_ZstdFile),
+            unittest.mock.patch.object(
+                tarfile.TarFile, "taropen", side_effect=KeyboardInterrupt),
+            self.assertRaises(KeyboardInterrupt),
+        ):
+            tarfile.TarFile.zstopen(path)
+
+        self.assertEqual(len(opened), 1)
+        self.assertTrue(opened[0].closed)
+
+
 class GzipBrokenHeaderCorrectException(GzipTest, unittest.TestCase):
     """
     See: https://github.com/python/cpython/issues/107396
@@ -1663,6 +1695,22 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             try:
                 tarinfo = tar.gettarinfo(path)
                 self.assertEqual(tarinfo.size, 0)
+            finally:
+                tar.close()
+        finally:
+            os_helper.unlink(path)
+
+    @os_helper.skip_unless_symlink
+    def test_symlink_target_normalization(self):
+        # Test for gh-151669.
+        path = os.path.join(TEMPDIR, "symlink")
+        target = "subdir/link/target"
+        os.symlink(target.replace("/", os.sep), path)
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            try:
+                tarinfo = tar.gettarinfo(path)
+                self.assertEqual(tarinfo.linkname, target)
             finally:
                 tar.close()
         finally:
@@ -4538,6 +4586,98 @@ class TestExtractionFilters(unittest.TestCase):
                 if sys.platform != "win32":
                     st_mode = cc.outerdir.stat().st_mode
                     self.assertNotEqual(st_mode & 0o777, 0o777)
+
+    @symlink_test
+    @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
+    @unittest.skipUnless(hasattr(os, 'lchown'), "missing os.lchown")
+    @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
+    @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
+    def test_chown_links_on_extract(self, link_type):
+        with ArchiveMaker() as arc:
+            arc.add("test.txt",
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+            arc.add("link",
+                    type=link_type,
+                    linkname='test.txt',
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+
+        with (
+            os_helper.temp_dir() as tmpdir,
+            arc.open() as tar,
+            unittest.mock.patch("os.chown") as mock_chown,
+            unittest.mock.patch("os.lchown") as mock_lchown,
+            unittest.mock.patch("os.geteuid") as mock_geteuid,
+        ):
+            # Set UID to 0 so chown() is attempted.
+            mock_geteuid.return_value = 0
+            tar.extract("link", path=tmpdir, filter='data')
+            extract_path = os.path.join(tmpdir, "link")
+
+            if link_type == tarfile.SYMTYPE:
+                mock_chown.assert_not_called()
+                mock_lchown.assert_called_once_with(extract_path, -1, -1)
+            else:
+                mock_chown.assert_has_calls([
+                    unittest.mock.call(extract_path, -1, -1),
+                    unittest.mock.call(extract_path, -1, -1)
+                ])
+                mock_lchown.assert_not_called()
+
+    @symlink_test
+    @unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
+    @unittest.skipUnless(hasattr(os, 'lchown'), "missing os.lchown")
+    @unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
+    @support.subTests('link_type', (tarfile.SYMTYPE, tarfile.LNKTYPE))
+    def test_chown_links_on_extractall(self, link_type):
+        with ArchiveMaker() as arc:
+            arc.add("test.txt",
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+            arc.add("link",
+                    type=link_type,
+                    linkname='test.txt',
+                    uid=1337, gid=1337, uname="", gname="", mode='-rwxr-xr-x')
+
+        with (
+            os_helper.temp_dir() as tmpdir,
+            arc.open() as tar,
+            unittest.mock.patch("os.chown") as mock_chown,
+            unittest.mock.patch("os.lchown") as mock_lchown,
+            unittest.mock.patch("os.geteuid") as mock_geteuid,
+        ):
+            # Set UID to 0 so chown() is attempted.
+            mock_geteuid.return_value = 0
+            tar.extractall(path=tmpdir, filter='data')
+            extract_link_path = os.path.join(tmpdir, "link")
+            extract_file_path = os.path.join(tmpdir, "test.txt")
+
+            if link_type == tarfile.SYMTYPE:
+                mock_chown.assert_called_once_with(extract_file_path, -1, -1)
+                mock_lchown.assert_called_once_with(extract_link_path, -1, -1)
+            else:
+                mock_chown.assert_has_calls([
+                    unittest.mock.call(extract_file_path, -1, -1),
+                    unittest.mock.call(extract_link_path, -1, -1)
+                ])
+                mock_lchown.assert_not_called()
+
+    def test_extract_filters_target(self):
+        # Test that when extract() falls back to extracting (rather than
+        # linking) a hardlink target, it filters the target.
+        with ArchiveMaker() as arc:
+            arc.add("target")
+            arc.add("link", hardlink_to="target")
+        def testing_filter(member, path):
+            if member.name == 'target':
+                # target: set read-only
+                return member.replace(mode=stat.S_IRUSR)
+            # link: don't overwrite the mode
+            return member.replace(mode=None)
+        tempdir = pathlib.Path(TEMPDIR) / 'extract'
+        with os_helper.temp_dir(tempdir), arc.open() as tar:
+            tar.extract("link", path=tempdir, filter=testing_filter)
+            path = tempdir / 'link'
+            if os_helper.can_chmod():
+                self.assertFalse(path.stat().st_mode & stat.S_IWUSR)
 
     def test_link_fallback_normalizes(self):
         # Make sure hardlink fallbacks work for non-normalized paths for all

@@ -1,0 +1,6 @@
+On platforms providing the C library's :manpage:`iconv(3)` function,
+the :mod:`codecs` module now exposes every encoding known to ``iconv``
+for which Python has no built-in codec.
+Such an encoding can be used by its name (for example ``"cp1133"``)
+or, to force the ``iconv``-based engine even when a built-in codec exists,
+with an ``"iconv:"`` prefix (for example ``"iconv:latin1"``).
