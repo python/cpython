@@ -192,9 +192,9 @@ class Pool(object):
         self._taskqueue = queue.SimpleQueue()
         # The _taskqueue_buffersize_semaphores exist to allow calling .release()
         # on every active semaphore when the pool is terminating to let task_handler
-        # wake up to stop. It's a dict so that each iterator object can efficiently
+        # wake up to stop. It's a set so that each iterator object can efficiently
         # deregister its semaphore when iterator finishes.
-        self._taskqueue_buffersize_semaphores = {}
+        self._taskqueue_buffersize_semaphores = set()
         # The _change_notifier queue exist to wake up self._handle_workers()
         # when the cache (self._cache) is empty or when there is a change in
         # the _state variable of the thread that runs _handle_workers.
@@ -712,11 +712,9 @@ class Pool(object):
 
         task_handler._state = TERMINATE
         # Release all semaphores to wake up task_handler to stop.
-        for job_id, buffersize_sema in tuple(
-            taskqueue_buffersize_semaphores.items()
-        ):
+        for buffersize_sema in tuple(taskqueue_buffersize_semaphores):
             buffersize_sema.release()
-            taskqueue_buffersize_semaphores.pop(job_id, None)
+            taskqueue_buffersize_semaphores.discard(buffersize_sema)
 
         util.debug('helping task handler/workers to finish')
         cls._help_stuff_finish(inqueue, task_handler, len(pool))
@@ -877,9 +875,7 @@ class IMapIterator(object):
             self._buffersize_sema = None
         else:
             self._buffersize_sema = threading.Semaphore(buffersize)
-            self._pool._taskqueue_buffersize_semaphores[self._job] = (
-                self._buffersize_sema
-            )
+            self._pool._taskqueue_buffersize_semaphores.add(self._buffersize_sema)
 
     def __iter__(self):
         return self
@@ -910,7 +906,7 @@ class IMapIterator(object):
     def _stop_iterator(self):
         if self._pool is not None:
             # `self._pool` could be set to `None` in previous `.next()` calls
-            self._pool._taskqueue_buffersize_semaphores.pop(self._job, None)
+            self._pool._taskqueue_buffersize_semaphores.discard(self._buffersize_sema)
         self._pool = None
         raise StopIteration from None
 
