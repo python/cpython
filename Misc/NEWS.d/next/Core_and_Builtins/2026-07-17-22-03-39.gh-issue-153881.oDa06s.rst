@@ -1,0 +1,1 @@
+Fix potential data race when calling :meth:`object.__getstate__`.
