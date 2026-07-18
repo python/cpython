@@ -18,7 +18,7 @@
 struct _identifier_cache_entry {
     const char *key;   // Borrowed from arena-owned token bytes.
     Py_ssize_t len;
-    uint32_t hash;
+    Py_hash_t hash;
     PyObject *value;   // Borrowed from an arena-owned identifier.
 };
 
@@ -571,20 +571,6 @@ error:
     return NULL;
 }
 
-static uint32_t
-identifier_hash(const char *str, Py_ssize_t len)
-{
-    // 32-bit FNV-1a parameters.
-    const uint32_t offset_basis = 2166136261U;
-    const uint32_t prime = 16777619U;
-
-    uint32_t hash = offset_basis;
-    for (Py_ssize_t i = 0; i < len; i++) {
-        hash = (hash ^ (unsigned char)str[i]) * prime;
-    }
-    return hash;
-}
-
 static expr_ty
 _PyPegen_name_from_token(Parser *p, Token* t)
 {
@@ -602,9 +588,13 @@ _PyPegen_name_from_token(Parser *p, Token* t)
     // so borrowed references are valid for the lifetime of the parse
     // (including the second error pass, which reuses parser and arena).
     Py_ssize_t len = PyBytes_GET_SIZE(t->bytes);
-    uint32_t hash = identifier_hash(s, len);
+    Py_hash_t hash = PyObject_Hash(t->bytes);
+    if (hash == -1) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     IdentifierCacheEntry *free_slot = NULL;
-    size_t idx = hash & (IDENTIFIER_CACHE_SIZE - 1);
+    size_t idx = (size_t)hash & (IDENTIFIER_CACHE_SIZE - 1);
     for (int probe = 0; probe < IDENTIFIER_CACHE_MAX_PROBES; probe++) {
         IdentifierCacheEntry *entry = &p->identifier_cache[
             (idx + probe) & (IDENTIFIER_CACHE_SIZE - 1)];
