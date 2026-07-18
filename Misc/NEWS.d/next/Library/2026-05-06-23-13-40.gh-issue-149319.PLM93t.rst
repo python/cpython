@@ -1,1 +1,1 @@
-Made the asyncio REPL omit the execution of ``PYTHONSTARTUP`` and consideration of ``PYTHON_BASIC_REPL`` when ``python -E`` is used. Contributed by Jonathan Dung.
+The :mod:`asyncio` REPL now ignores :envvar:`PYTHONSTARTUP` and :envvar:`PYTHON_BASIC_REPL` when :option:`-E` or :option:`-I` is used. Patch by Jonathan Dung.
