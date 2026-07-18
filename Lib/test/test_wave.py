@@ -475,5 +475,172 @@ class WaveOpen(unittest.TestCase):
                         pass
 
 
+class WaveReadErrorTest(unittest.TestCase):
+    """Cover error and edge paths of Wave_read, _Chunk and wave.open()."""
+
+    FMT_PCM = struct.pack('<HHLLHH', wave.WAVE_FORMAT_PCM, 1, 11025, 11025, 1, 8)
+
+    @staticmethod
+    def _wave_file(*chunks):
+        """Build in-memory WAVE bytes from (name, payload) chunks.
+
+        Each chunk stores its real payload length and is padded to an even
+        number of bytes, and the RIFF size is computed to match.
+        """
+        body = b'WAVE'
+        for name, payload in chunks:
+            body += name + struct.pack('<L', len(payload)) + payload
+            if len(payload) & 1:
+                body += b'\x00'
+        return b'RIFF' + struct.pack('<L', len(body)) + body
+
+    def test_read_unknown_extensible_subformat(self):
+        # A WAVE_FORMAT_EXTENSIBLE fmt chunk whose SubFormat GUID is not
+        # KSDATAFORMAT_SUBTYPE_PCM must be rejected.
+        fmt = struct.pack('<HHLLH', wave.WAVE_FORMAT_EXTENSIBLE, 2, 11025,
+                          11025 * 2 * 3, 6)
+        fmt += struct.pack('<H', 24)            # bits per sample
+        fmt += struct.pack('<HHL', 22, 24, 3)   # cbSize, valid bits, channel mask
+        fmt += b'\xff' * 16                      # bogus SubFormat GUID
+        b = self._wave_file((b'fmt ', fmt), (b'data', b''))
+        with self.assertRaisesRegex(wave.Error, 'unknown extended format'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_truncated_fmt_chunk_header(self):
+        # fmt chunk too short for the fixed 14-byte header.
+        fmt = struct.pack('<H', wave.WAVE_FORMAT_PCM) + b'\x00' * 8
+        b = self._wave_file((b'fmt ', fmt))
+        with self.assertRaises(EOFError):
+            wave.open(io.BytesIO(b))
+
+    def test_read_truncated_fmt_chunk_sampwidth(self):
+        # fmt chunk holds the 14-byte header but is missing the sample width.
+        fmt = struct.pack('<HHLLH', wave.WAVE_FORMAT_PCM, 1, 11025, 11025, 1)
+        b = self._wave_file((b'fmt ', fmt))
+        with self.assertRaises(EOFError):
+            wave.open(io.BytesIO(b))
+
+    def test_read_skips_unknown_chunk(self):
+        # An unknown, odd-sized chunk between fmt and data must be skipped
+        # (including its pad byte) so the data chunk is still found.
+        data = b'\x01\x02\x03\x04'
+        b = self._wave_file((b'fmt ', self.FMT_PCM),
+                            (b'LIST', b'abc'),   # odd size, forces alignment
+                            (b'data', data))
+        with wave.open(io.BytesIO(b)) as r:
+            self.assertEqual(r.getnframes(), 4)
+            self.assertEqual(r.readframes(4), data)
+
+    def test_getfp_returns_underlying_file(self):
+        b = self._wave_file((b'fmt ', self.FMT_PCM), (b'data', b''))
+        with wave.open(io.BytesIO(b)) as r:
+            self.assertIsNotNone(r.getfp())
+
+    def test_open_invalid_mode(self):
+        with self.assertRaisesRegex(wave.Error, "mode must be"):
+            wave.open(io.BytesIO(), 'xb')
+
+    def test_open_path_closes_file_on_error(self):
+        # When opening by path fails to parse, the file we opened is closed
+        # and the parse error is propagated.
+        with tempfile.NamedTemporaryFile(delete=False) as fp:
+            fp.write(b'not a wave file')
+            filename = fp.name
+        self.addCleanup(unlink, filename)
+        with self.assertRaises(wave.Error):
+            wave.open(filename, 'rb')
+
+
+class WaveWriteValidationTest(unittest.TestCase):
+    """Cover parameter-validation paths of Wave_write."""
+
+    def open_writer(self):
+        w = wave.open(io.BytesIO(), 'wb')
+        self.addCleanup(self._close_quietly, w)
+        return w
+
+    @staticmethod
+    def _close_quietly(w):
+        # A writer whose required parameters are never set raises on close;
+        # swallow that so it does not mask the behaviour under test.
+        try:
+            w.close()
+        except wave.Error:
+            pass
+
+    def test_setnchannels_rejects_nonpositive(self):
+        w = self.open_writer()
+        with self.assertRaisesRegex(wave.Error, 'bad # of channels'):
+            w.setnchannels(0)
+
+    def test_getnchannels_not_set(self):
+        w = self.open_writer()
+        with self.assertRaisesRegex(wave.Error, 'number of channels not set'):
+            w.getnchannels()
+
+    def test_setsampwidth_rejects_out_of_range(self):
+        for width in (0, 5):
+            with self.subTest(width=width):
+                w = self.open_writer()
+                with self.assertRaisesRegex(wave.Error, 'bad sample width'):
+                    w.setsampwidth(width)
+
+    def test_getsampwidth_not_set(self):
+        w = self.open_writer()
+        with self.assertRaisesRegex(wave.Error, 'sample width not set'):
+            w.getsampwidth()
+
+    def test_getframerate_not_set(self):
+        w = self.open_writer()
+        with self.assertRaisesRegex(wave.Error, 'frame rate not set'):
+            w.getframerate()
+
+    def test_setcomptype_rejects_unknown(self):
+        w = self.open_writer()
+        with self.assertRaisesRegex(wave.Error, 'unsupported compression type'):
+            w.setcomptype('ADPCM', 'unsupported')
+
+    def test_setformat_rejects_unknown(self):
+        w = self.open_writer()
+        with self.assertRaisesRegex(wave.Error, 'unsupported wave format'):
+            w.setformat(0x1234)
+
+    def test_getparams_incomplete(self):
+        w = self.open_writer()
+        w.setnchannels(1)
+        with self.assertRaisesRegex(wave.Error, 'not all parameters set'):
+            w.getparams()
+
+    def test_tell_reports_frames_written(self):
+        w = self.open_writer()
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(44100)
+        self.assertEqual(w.tell(), 0)
+        w.writeframes(b'\x00\x00' * 5)
+        self.assertEqual(w.tell(), 5)
+
+    def test_cannot_change_params_after_write(self):
+        setters = (
+            ('setnchannels', (1,)),
+            ('setsampwidth', (2,)),
+            ('setframerate', (44100,)),
+            ('setnframes', (10,)),
+            ('setcomptype', ('NONE', 'not compressed')),
+            ('setformat', (wave.WAVE_FORMAT_PCM,)),
+            ('setparams', ((1, 2, 44100, 0, 'NONE', 'not compressed'),)),
+        )
+        for name, args in setters:
+            with self.subTest(setter=name):
+                w = self.open_writer()
+                w.setnchannels(1)
+                w.setsampwidth(2)
+                w.setframerate(44100)
+                w.writeframes(b'\x00\x00')
+                with self.assertRaisesRegex(wave.Error,
+                                            'cannot change parameters'):
+                    getattr(w, name)(*args)
+
+
 if __name__ == '__main__':
     unittest.main()
