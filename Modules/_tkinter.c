@@ -3276,7 +3276,7 @@ Tkapp_Dealloc(PyObject *op)
     TkappObject *self = (TkappObject *)op;
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(op);
-    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+    if (self->thread_id != Tcl_GetCurrentThread()) {
         /* Deleting the interpreter from another thread aborts the process
            ("Tcl_AsyncDelete: async handler deleted by the wrong thread").
            Leak it instead (gh-83274). */
