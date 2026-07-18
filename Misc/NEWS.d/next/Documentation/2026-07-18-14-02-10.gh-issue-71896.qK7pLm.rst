@@ -1,3 +1,0 @@
-Document a long-standing bug where :class:`~difflib.HtmlDiff` strips trailing
-newlines from input lines before diffing, causing some differences to be
-missed. A regression test now pins down this behavior.
