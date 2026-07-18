@@ -1041,6 +1041,9 @@ class BasicTest(TestCase):
         self.assertEqual(exception.partial, b"")
         self.assertIsNone(exception.expected)
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
     def test_host_port(self):
         # Check invalid host_port
