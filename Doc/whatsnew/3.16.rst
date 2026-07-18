@@ -237,6 +237,9 @@ ctypes
   from an annotation-based syntax, similar to how the :mod:`dataclasses` module
   is used.
   (Contributed by Peter Bierma in :gh:`104533`.)
+* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
+  through a function signature.
+  (Contributed by Peter Bierma in :gh:`153903`.)
 
 
 encodings
