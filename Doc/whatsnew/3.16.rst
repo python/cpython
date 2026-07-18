@@ -75,14 +75,6 @@ New features
 Other language changes
 ======================
 
-* Stable ABI extensions now include a multiarch tuple in the
-  filename, e.g. ``foo.abi3-x86-64-linux-gnu.so``.
-  This permits stable ABI extensions for multiple architectures to be
-  co-installed into the same directory, without clashing with each
-  other, as regular dynamic extensions do. Build tools will generate
-  these multiarch tagged filenames, by default, when targeting
-  compatibility with at least Python 3.15.
-  (Contributed by Stefano Rivera in :gh:`122931`.)
 
 
 New modules
