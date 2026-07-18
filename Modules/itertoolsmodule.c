@@ -3676,9 +3676,7 @@ count_repr(PyObject *op)
 {
     countobject *lz = countobject_CAST(op);
     if (lz->long_cnt == NULL) {
-        /* Match the atomic access in count_next(); a concurrent next() may
-           be advancing lz->cnt via _Py_atomic_compare_exchange_ssize(). */
-        Py_ssize_t cnt = _Py_atomic_load_ssize_relaxed(&lz->cnt);
+        Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
         return PyUnicode_FromFormat("%s(%zd)",
                                     _PyType_Name(Py_TYPE(lz)), cnt);
     }
