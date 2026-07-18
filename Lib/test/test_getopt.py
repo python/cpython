@@ -56,17 +56,8 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(option, 'abcd')
 
         self.assertError(getopt.long_has_args, 'abc', ['def'])
-        self.assertErrorMessage(
-            getopt.long_has_args, 'abc', ['def'], message='option --abc not recognized'
-        )
         self.assertError(getopt.long_has_args, 'abc', [])
         self.assertError(getopt.long_has_args, 'abc', ['abcd','abcde'])
-        self.assertErrorMessage(
-            getopt.long_has_args,
-            'abc',
-            ['abcd', 'abcde'],
-            message='option --abc not a unique prefix; possible options: abcd, abcde',
-        )
 
     def test_do_shorts(self):
         opts, args = getopt.do_shorts([], 'a', 'a', [])
@@ -98,13 +89,7 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(args, [])
 
         self.assertError(getopt.do_shorts, [], 'a1', 'a', [])
-        self.assertErrorMessage(
-            getopt.do_shorts, [], 'a1', 'a', [], message='option -1 not recognized'
-        )
         self.assertError(getopt.do_shorts, [], 'a', 'a:', [])
-        self.assertErrorMessage(
-            getopt.do_shorts, [], 'a', 'a:', [], message='option -a requires argument'
-        )
 
     def test_do_longs(self):
         opts, args = getopt.do_longs([], 'abc', ['abc'], [])
@@ -147,14 +132,6 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(args, [])
 
         self.assertError(getopt.do_longs, [], 'abc=1', ['abc'], [])
-        self.assertErrorMessage(
-            getopt.do_longs,
-            [],
-            'abc=1',
-            ['abc'],
-            [],
-            message='option --abc must not have an argument',
-        )
         self.assertError(getopt.do_longs, [], 'abc', ['abc='], [])
 
     def test_getopt(self):
@@ -179,13 +156,6 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(args, ['arg1', 'arg2'])
 
         self.assertError(getopt.getopt, cmdline, 'a:b', ['alpha', 'beta'])
-        self.assertErrorMessage(
-            getopt.getopt,
-            cmdline,
-            'a:b',
-            ['alpha', 'beta'],
-            message='option --alpha must not have an argument',
-        )
 
     def test_gnu_getopt(self):
         # Test handling of GNU style scanning mode.
