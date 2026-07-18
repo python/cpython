@@ -334,10 +334,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     raise ValueError("unreasonable length http version")
                 version_number = int(version_number[0]), int(version_number[1])
             except (ValueError, IndexError):
+                # Send the error response with a status line and headers.
+                self.request_version = ''
                 self.send_error(
                     HTTPStatus.BAD_REQUEST,
                     "Bad request version (%r)" % version)
                 return False
+            self.request_version = version
             if version_number >= (1, 1) and self.protocol_version >= "HTTP/1.1":
                 self.close_connection = False
             if version_number >= (2, 0):
@@ -345,9 +348,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     HTTPStatus.HTTP_VERSION_NOT_SUPPORTED,
                     "Invalid HTTP version (%s)" % base_version_number)
                 return False
-            self.request_version = version
 
         if not 2 <= len(words) <= 3:
+            self.request_version = ''
             self.send_error(
                 HTTPStatus.BAD_REQUEST,
                 "Bad request syntax (%r)" % requestline)
@@ -356,6 +359,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         if len(words) == 2:
             self.close_connection = True
             if command != 'GET':
+                self.request_version = ''
                 self.send_error(
                     HTTPStatus.BAD_REQUEST,
                     "Bad HTTP/0.9 request type (%r)" % command)

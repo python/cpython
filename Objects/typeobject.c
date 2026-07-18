@@ -1162,8 +1162,8 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
 #endif
 }
 
-static void
-type_modified_unlocked(PyTypeObject *type)
+void
+_PyType_Modified_Unlocked(PyTypeObject *type)
 {
     /* Invalidate any cached data for the specified type and all
        subclasses.  This function is called after the base
@@ -1203,7 +1203,7 @@ type_modified_unlocked(PyTypeObject *type)
             if (subclass == NULL) {
                 continue;
             }
-            type_modified_unlocked(subclass);
+            _PyType_Modified_Unlocked(subclass);
             Py_DECREF(subclass);
         }
     }
@@ -1248,7 +1248,7 @@ PyType_Modified(PyTypeObject *type)
     }
 
     BEGIN_TYPE_LOCK();
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
 }
 
@@ -1741,7 +1741,7 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     }
 
     BEGIN_TYPE_LOCK();
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
     types_stop_world();
     if (abstract)
         type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
@@ -1968,7 +1968,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
             goto bail;
         }
         /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
-        type_modified_unlocked(type);
+        _PyType_Modified_Unlocked(type);
     }
     else {
         res = 0;
@@ -3684,7 +3684,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
     if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
-        type_modified_unlocked(type);
+        _PyType_Modified_Unlocked(type);
     }
     else {
         /* For static builtin types, this is only called during init
@@ -5031,6 +5031,13 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
 
     if (winner != ctx->metatype) {
         if (winner->tp_new != type_new) {
+            /* Check if tp_new is NULL (cannot instantiate this type) */
+            if (winner->tp_new == NULL) {
+                PyErr_Format(PyExc_TypeError,
+                             "cannot create '%.400s' instances",
+                             winner->tp_name);
+                return -1;
+            }
             /* Pass it to the winner */
             *type = winner->tp_new(winner, ctx->args, ctx->kwds);
             if (*type == NULL) {
@@ -6500,14 +6507,14 @@ _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long 
 {
     BEGIN_TYPE_LOCK();
     /* Ideally, changing flags and invalidating the old version tag would
-       happen in one step. But type_modified_unlocked() is re-entrant and
+       happen in one step. But _PyType_Modified_Unlocked() is re-entrant and
        cannot run with the world stopped, so we must invalidate first.
        Immutable/static-builtin types are skipped because
        set_flags_recursive() does not modify them. */
     if (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
         (self->tp_flags & mask) != flags)
     {
-        type_modified_unlocked(self);
+        _PyType_Modified_Unlocked(self);
     }
     /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
        can reassign a version tag before the flag update. */
@@ -6688,7 +6695,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
                  PyObject *value, PyObject **old_value)
 {
     // We don't want any re-entrancy between when we update the dict
-    // and call type_modified_unlocked, including running the destructor
+    // and call _PyType_Modified_Unlocked, including running the destructor
     // of the current value as it can observe the cache in an inconsistent
     // state.  Because we have an exact unicode and our dict has exact
     // unicodes we know that this will all complete without releasing
@@ -6702,7 +6709,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         update_subclasses() recursion in update_slot(), but carefully:
         they each have their own conditions on which to stop
         recursing into subclasses. */
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
 
     if (_PyDict_SetItem_LockHeld(dict, name, value) < 0) {
         PyErr_Format(PyExc_AttributeError,
@@ -7026,7 +7033,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
     if (et->ht_cached_keys) {
-        _PyDictKeys_DecRef(et->ht_cached_keys);
+        _PyDict_RemoveKeysForClass(et);
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
@@ -12517,7 +12524,7 @@ PyType_Freeze(PyTypeObject *type)
     type_add_flags(type, Py_TPFLAGS_IMMUTABLETYPE);
     types_start_world();
     ASSERT_TYPE_LOCK_HELD();
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
 
     return 0;

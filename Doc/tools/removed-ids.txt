@@ -6,7 +6,11 @@ c-api/file.html: deprecated-api
 
 # Removed sections
 library/asyncio-task.html: terminating-a-task-group
+library/dis.html: opcode-DELETE_ATTR
+library/dis.html: opcode-DELETE_GLOBAL
+library/dis.html: opcode-DELETE_NAME
 library/asyncio-llapi-index.html: event-loop-policies
+
 deprecations/index.html: pending-removal-in-python-3-15
 deprecations/index.html: pending-removal-in-python-3-16
 deprecations/index.html: c-api-pending-removal-in-python-3-15
