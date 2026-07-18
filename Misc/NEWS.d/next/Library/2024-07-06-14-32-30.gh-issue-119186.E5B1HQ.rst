@@ -1,2 +1,0 @@
-Slightly speed up :func:`os.walk` by calling :func:`os.path.join` less
-often.

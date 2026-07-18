@@ -196,9 +196,8 @@ class MultiProcessingCmdLineMixin():
     def test_script_compiled(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script')
-            py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             self._check_script(pyc_file)
 
     def test_directory(self):
@@ -213,9 +212,8 @@ class MultiProcessingCmdLineMixin():
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__',
                                             source=source)
-            py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             self._check_script(script_dir)
 
     def test_zipfile(self):
@@ -231,7 +229,8 @@ class MultiProcessingCmdLineMixin():
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__',
                                             source=source)
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name)
 
@@ -273,9 +272,8 @@ class MultiProcessingCmdLineMixin():
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, '__main__',
                                             source=source)
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            pyc_file = import_helper.make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            pyc_file = import_helper.make_legacy_pyc(script_name)
             launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
             self._check_script(launch_name)
 

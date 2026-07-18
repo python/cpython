@@ -1,1 +1,0 @@
-Fix performance regression in calling a :mod:`ctypes` function pointer in :term:`free threading`.

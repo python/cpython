@@ -1,2 +1,0 @@
-Fix :exc:`SyntaxWarning` emitted for erroneous subscript expressions involving
-:ref:`template string literals <t-strings>`. Patch by Brian Schubert.

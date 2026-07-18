@@ -22,7 +22,7 @@ static PyObject *
 pyimport_getmagictag(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     const char *tag = PyImport_GetMagicTag();
-    return PyUnicode_FromString(tag);
+    return tag ? PyUnicode_FromString(tag) : Py_NewRef(Py_None);
 }
 
 

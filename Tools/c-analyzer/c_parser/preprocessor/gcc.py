@@ -11,6 +11,7 @@ FILES_WITHOUT_INTERNAL_CAPI = frozenset((
     '_testclinic_limited.c',
     'xxlimited.c',
     'xxlimited_35.c',
+    'xxlimited_3_13.c',
 ))
 
 # C files in the fhe following directories must not be built with
@@ -64,6 +65,8 @@ POST_ARGS = (
     #'-Wextra',
     '-E',
 )
+
+EXIT_MARKERS = {'# 0 "<command-line>" 2', '# 1 "<command-line>" 2'}
 
 
 def preprocess(filename,
@@ -138,6 +141,7 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
             filter_reqfile,
             make_info,
             raw,
+            EXIT_MARKERS
         )
         last = included
     # The last one is always the requested file.
@@ -146,7 +150,7 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
 
 def _iter_top_include_lines(lines, topfile, cwd,
                             filter_reqfile, make_info,
-                            raw):
+                            raw, exit_markers):
     partial = 0  # depth
     files = [topfile]
     # We start at 1 in case there are source lines (including blank ones)
@@ -154,12 +158,20 @@ def _iter_top_include_lines(lines, topfile, cwd,
     # _parse_marker_line() that the preprocessor reported lno as 1.
     lno = 1
     for line in lines:
-        if line == '# 0 "<command-line>" 2' or line == '# 1 "<command-line>" 2':
+        if line in exit_markers:
             # We're done with this top-level include.
             return
 
         _lno, included, flags = _parse_marker_line(line)
         if included:
+            # HACK:
+            # Mixes curses.h and ncurses.h marker lines
+            # gcc silently passes this, while clang fails
+            # See: /Include/py_curses.h #if-elif directives
+            # And compare with preprocessor output
+            if os.path.basename(included) == 'curses.h':
+                included = os.path.join(os.path.dirname(included), 'ncurses.h')
+
             lno = _lno
             included = _normpath(included, cwd)
             # We hit a marker line.
