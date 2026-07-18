@@ -1088,7 +1088,9 @@ class BadFileZipImportTestCase(unittest.TestCase):
         os_helper.unlink(TESTMOD)
         with open(TESTMOD, 'wb') as fp:
             fp.write(cdh + eocd)
-        self.assertZipFailure(TESTMOD)
+        with self.assertRaises(zipimport.ZipImportError) as cm:
+            zipimport.zipimporter(TESTMOD)
+        self.assertIsInstance(cm.exception.__cause__, UnicodeDecodeError)
 
     # XXX: disabled until this works on Big-endian machines
     def _testBogusZipFile(self):
