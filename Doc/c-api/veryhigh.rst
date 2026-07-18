@@ -347,7 +347,8 @@ the same library that the Python runtime is using.
 
    The following flags and masks serve narrow needs of the standard
    library and interactive interpreters.  Code outside the standard
-   library rarely has a reason to use them.
+   library rarely has a reason to use them.  They are considered
+   implementation details and may change at any time.
 
    .. c:macro:: PyCF_ALLOW_INCOMPLETE_INPUT
 
