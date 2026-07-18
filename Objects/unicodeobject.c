@@ -41,7 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
-#include "pycore_bytesobject.h"   // _PyBytes_Repeat()
+#include "pycore_bytesobject.h"   // _PyBytes_RepeatBuffer()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_critical_section.h" // Py_*_CRITICAL_SECTION_SEQUENCE_FAST
@@ -67,6 +67,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+#ifdef HAVE_ICONV
+#include <iconv.h>                 // iconv_open()
+#endif
+
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 #  include "pycore_fileutils.h"   // _Py_LocaleUsesNonUnicodeWchar()
 #endif
@@ -86,14 +90,12 @@ class Py_UCS4_converter(CConverter):
     type = 'Py_UCS4'
     converter = 'convert_uc'
 
-    def converter_init(self):
-        if self.default is not unspecified:
-            self.c_default = ascii(self.default)
-            if len(self.c_default) > 4 or self.c_default[0] != "'":
-                self.c_default = hex(ord(self.default))
+    def c_default_init(self):
+        import libclinic
+        self.c_default = libclinic.c_unichar_repr(self.default)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=88f5dd06cd8e7a61]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=22f057b68fd9a65a]*/
 
 /* --- Globals ------------------------------------------------------------
 
@@ -591,6 +593,14 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 {
 #define CHECK(expr) \
     do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG(op, Py_STRINGIFY(expr)); } } while (0)
+#ifdef Py_GIL_DISABLED
+# define CHECK_IF_GIL(expr) (void)(expr)
+# define CHECK_IF_FT(expr) CHECK(expr)
+#else
+# define CHECK_IF_GIL(expr) CHECK(expr)
+# define CHECK_IF_FT(expr) (void)(expr)
+#endif
+
 
     assert(op != NULL);
     CHECK(PyUnicode_Check(op));
@@ -671,11 +681,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 
     /* Check interning state */
 #ifdef Py_DEBUG
-    // Note that we do not check `_Py_IsImmortal(op)`, since stable ABI
-    // extensions can make immortal strings mortal (but with a high enough
-    // refcount).
-    // The other way is extremely unlikely (worth a potential failed assertion
-    // in a debug build), so we do check `!_Py_IsImmortal(op)`.
+    // Note that we do not check `_Py_IsImmortal(op)` in the GIL-enabled build
+    // since stable ABI extensions can make immortal strings mortal (but with a
+    // high enough refcount).
     switch (PyUnicode_CHECK_INTERNED(op)) {
         case SSTATE_NOT_INTERNED:
             if (ascii->state.statically_allocated) {
@@ -685,18 +693,20 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                 //   are static but use SSTATE_NOT_INTERNED
             }
             else {
-                CHECK(!_Py_IsImmortal(op));
+                CHECK_IF_GIL(!_Py_IsImmortal(op));
             }
             break;
         case SSTATE_INTERNED_MORTAL:
             CHECK(!ascii->state.statically_allocated);
-            CHECK(!_Py_IsImmortal(op));
+            CHECK_IF_GIL(!_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL:
             CHECK(!ascii->state.statically_allocated);
+            CHECK_IF_FT(_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
             CHECK(ascii->state.statically_allocated);
+            CHECK_IF_FT(_Py_IsImmortal(op));
             break;
         default:
             Py_UNREACHABLE();
@@ -2226,7 +2236,7 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
 
 int
 PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *pub_writer,
-                          Py_UCS4 *str,
+                          const Py_UCS4 *str,
                           Py_ssize_t size)
 {
     _PyUnicodeWriter *writer = (_PyUnicodeWriter*)pub_writer;
@@ -5220,7 +5230,7 @@ unicode_decode_utf8_impl(_PyUnicodeWriter *writer,
             }
 
             if (_PyUnicodeWriter_Prepare(writer, end - s, 127) < 0) {
-                return -1;
+                goto onError;
             }
         }
     }
@@ -5582,15 +5592,14 @@ _Py_EncodeUTF8Ex(const wchar_t *text, char **str, size_t *error_pos,
         Py_ssize_t ch_pos = i;
         Py_UCS4 ch = text[i];
         i++;
-#if Py_UNICODE_SIZE == 2
-        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
+        if (sizeof(wchar_t) == 2
+            && Py_UNICODE_IS_HIGH_SURROGATE(ch)
             && i < len
             && Py_UNICODE_IS_LOW_SURROGATE(text[i]))
         {
             ch = Py_UNICODE_JOIN_SURROGATES(ch, text[i]);
             i++;
         }
-#endif
 
         if (ch < 0x80) {
             /* Encode ASCII */
@@ -8187,6 +8196,380 @@ PyUnicode_AsMBCSString(PyObject *unicode)
 
 #endif /* MS_WINDOWS */
 
+/* --- iconv Codec -------------------------------------------------------- */
+
+#ifdef HAVE_ICONV
+
+/* iconv pivot: native-endian UTF-32, a raw array of Py_UCS4.  One input unit is
+   one code point, so error handlers get the exact position.  A platform whose
+   iconv lacks a UTF-32 endpoint (e.g. UTF-8-only OpenBSD) reports every encoding
+   as unavailable. */
+#if PY_BIG_ENDIAN
+#  define ICONV_PIVOT "UTF-32BE"
+#else
+#  define ICONV_PIVOT "UTF-32LE"
+#endif
+
+/* A 2-byte string can be fed to iconv as "UCS-2" only where that is a strict
+   array of independent code points.  Some implementations alias "UCS-2" to
+   "UTF-16" and would combine an adjacent surrogate pair (a 2-byte string may
+   hold one as two code points); there the 2-byte kind is widened to UTF-32.
+   glibc and GNU libiconv keep UCS-2 and UTF-16 separate. */
+#if defined(__GLIBC__) || defined(_LIBICONV_VERSION)
+#  if PY_BIG_ENDIAN
+#    define ICONV_UCS2_PIVOT "UCS-2BE"
+#  else
+#    define ICONV_UCS2_PIVOT "UCS-2LE"
+#  endif
+#endif
+
+static iconv_t
+iconv_open_or_set_error(const char *tocode, const char *fromcode,
+                        const char *encoding)
+{
+    iconv_t cd = iconv_open(tocode, fromcode);
+    if (cd == (iconv_t)-1) {
+        if (errno == EINVAL) {
+            PyErr_Format(PyExc_LookupError, "unknown encoding: %s", encoding);
+        }
+        else {
+            PyErr_SetFromErrno(PyExc_OSError);
+        }
+    }
+    return cd;
+}
+
+/*
+ * Decode bytes with iconv() into a str.
+ *
+ * The input is converted to native-endian UTF-32 one chunk at a time and
+ * appended to a _PyUnicodeWriter.  If *consumed* is non-NULL the decode is
+ * stateful: a trailing incomplete sequence stops and sets *consumed*.
+ */
+PyObject *
+_PyUnicode_DecodeIconv(const char *encoding,
+                       const char *s, Py_ssize_t size,
+                       const char *errors, Py_ssize_t *consumed)
+{
+    if (size < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    iconv_t cd = iconv_open_or_set_error(ICONV_PIVOT, encoding, encoding);
+    if (cd == (iconv_t)-1) {
+        return NULL;
+    }
+
+    /* Scratch buffer for one iconv() output chunk, as UTF-32 code points. */
+    Py_UCS4 chunk[1024];
+    const char *starts = s;
+    const char *in = s;
+    const char *inend = s + size;
+    _PyUnicodeWriter writer;
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
+
+    _PyUnicodeWriter_Init(&writer);
+    writer.min_length = size;
+
+    while (in < inend) {
+        char *inptr = (char *)in;
+        size_t inleft = (size_t)(inend - in);
+        char *outptr = (char *)chunk;
+        size_t outleft = sizeof(chunk);
+
+        size_t ret = iconv(cd, &inptr, &inleft, &outptr, &outleft);
+        int err = errno;
+        in = inptr;
+
+        /* Append whatever code points this call produced. */
+        Py_ssize_t nch = (Py_UCS4 *)outptr - chunk;
+        if (nch > 0 && PyUnicodeWriter_WriteUCS4((PyUnicodeWriter *)&writer,
+                                                 chunk, nch) < 0) {
+            goto error;
+        }
+
+        if (ret != (size_t)-1) {
+            assert(in == inend);
+            break;
+        }
+
+        if (err == E2BIG) {
+            /* The scratch buffer filled up; drain it and continue. */
+            continue;
+        }
+
+        const char *reason;
+        if (err == EINVAL) {
+            /* Incomplete multibyte sequence at the end of the input. */
+            if (consumed != NULL) {
+                /* Stateful decoding: stop and report the consumed bytes. */
+                break;
+            }
+            reason = "incomplete multibyte sequence";
+        }
+        else if (err == EILSEQ) {
+            reason = "invalid multibyte sequence";
+        }
+        else {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto error;
+        }
+
+        Py_ssize_t startinpos = in - starts;
+        Py_ssize_t endinpos = startinpos + 1;
+        if (unicode_decode_call_errorhandler_writer(
+                errors, &errorHandler, encoding, reason,
+                &starts, &inend, &startinpos, &endinpos, &exc, &in,
+                &writer)) {
+            goto error;
+        }
+        /* The error handler may have skipped bytes; reset the conversion
+           descriptor to the initial shift state before continuing. */
+        iconv(cd, NULL, NULL, NULL, NULL);
+    }
+
+    if (consumed != NULL) {
+        *consumed = in - starts;
+    }
+    iconv_close(cd);
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    return _PyUnicodeWriter_Finish(&writer);
+
+error:
+    iconv_close(cd);
+    _PyUnicodeWriter_Dealloc(&writer);
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    return NULL;
+}
+
+/* Grow the output buffer of a PyBytesWriter, keeping the raw cursor *pout and
+   the end pointer *poutend valid.  Returns 0 on success, -1 on error. */
+static int
+iconv_grow_writer(PyBytesWriter *writer, char **pout, char **poutend)
+{
+    char *base = PyBytesWriter_GetData(writer);
+    Py_ssize_t used = *pout - base;
+    Py_ssize_t cursize = PyBytesWriter_GetSize(writer);
+    Py_ssize_t growby = cursize > 0 ? cursize : 16;
+    if (PyBytesWriter_Grow(writer, growby) < 0) {
+        return -1;
+    }
+    base = PyBytesWriter_GetData(writer);
+    *pout = base + used;
+    *poutend = base + PyBytesWriter_GetSize(writer);
+    return 0;
+}
+
+/*
+ * Encode a str to bytes with iconv().
+ *
+ * The string's own buffer is fed to iconv() using the source encoding for its
+ * kind, avoiding a widening copy: Latin-1 for 1-byte (not ASCII: it may hold
+ * U+0080..U+00FF), UTF-32 for 4-byte, and UCS-2 -- or a UTF-32 copy where that
+ * is unsafe (see ICONV_UCS2_PIVOT) -- for 2-byte.  One input unit is one code
+ * point, so the unit index is the string position.
+ */
+PyObject *
+_PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
+                       const char *errors)
+{
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return NULL;
+    }
+
+    Py_ssize_t ulen = PyUnicode_GET_LENGTH(unicode);
+    const char *source;         /* iconv source encoding for this kind */
+    const char *data;           /* the units to encode */
+    Py_ssize_t unit;            /* bytes per code point in *data */
+    Py_UCS4 *widened = NULL;    /* owned UTF-32 copy of a 2-byte string */
+    int kind = PyUnicode_KIND(unicode);
+    if (kind == PyUnicode_1BYTE_KIND) {
+        source = "ISO-8859-1";
+        data = (const char *)PyUnicode_1BYTE_DATA(unicode);
+        unit = 1;
+    }
+    else if (kind == PyUnicode_4BYTE_KIND) {
+        source = ICONV_PIVOT;
+        data = (const char *)PyUnicode_4BYTE_DATA(unicode);
+        unit = 4;
+    }
+    else {
+#ifdef ICONV_UCS2_PIVOT
+        /* Known-strict UCS-2: feed the 2-byte buffer directly. */
+        source = ICONV_UCS2_PIVOT;
+        data = (const char *)PyUnicode_2BYTE_DATA(unicode);
+        unit = 2;
+#else
+        /* UCS-2 may be aliased to UTF-16 here; widen to UTF-32 to be safe. */
+        widened = PyUnicode_AsUCS4Copy(unicode);
+        if (widened == NULL) {
+            return NULL;
+        }
+        source = ICONV_PIVOT;
+        data = (const char *)widened;
+        unit = 4;
+#endif
+    }
+
+    iconv_t cd = iconv_open_or_set_error(encoding, source, encoding);
+    if (cd == (iconv_t)-1) {
+        PyMem_Free(widened);
+        return NULL;
+    }
+
+    PyBytesWriter *writer = NULL;
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
+    PyObject *result = NULL;
+    const char *ustart = data;
+    const char *up = data;
+    const char *uend = data + (size_t)ulen * unit;
+    int flushing = 0;
+    int careful = 0;            /* feed one code point per iconv() call */
+
+    /* A generous initial estimate for the output size. */
+    writer = PyBytesWriter_Create(ulen + (ulen >> 1) + 16);
+    if (writer == NULL) {
+        goto done;
+    }
+    char *out = PyBytesWriter_GetData(writer);
+    char *outend = out + PyBytesWriter_GetSize(writer);
+
+    for (;;) {
+        char *inptr = (char *)up;
+        size_t inleft = (size_t)(uend - up);
+        /* One code point at a time, to pin a substitution to its position. */
+        if (careful && inleft > (size_t)unit) {
+            inleft = (size_t)unit;
+        }
+        char *out_before = out;
+        size_t outleft = (size_t)(outend - out);
+        /* When the whole string is converted, a final iconv() call with a
+           NULL input flushes any pending shift sequence (e.g. ISO-2022). */
+        size_t ret = iconv(cd, flushing ? NULL : &inptr, &inleft, &out, &outleft);
+        if (!flushing) {
+            up = inptr;
+        }
+
+        if (ret != (size_t)-1) {
+            /* A positive result counts nonreversible conversions: iconv()
+               substituted an unencodable character instead of failing with
+               EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
+               and re-run one code point at a time to locate it. */
+            if (ret > 0) {
+                if (!careful) {
+                    careful = 1;
+                    iconv(cd, NULL, NULL, NULL, NULL);
+                    out = PyBytesWriter_GetData(writer);
+                    outend = out + PyBytesWriter_GetSize(writer);
+                    up = ustart;
+                    continue;
+                }
+                /* This code point was substituted; drop it and report it. */
+                out = out_before;
+                up -= unit;
+            }
+            else if (flushing) {
+                break;
+            }
+            else if (careful && up < uend) {
+                continue;
+            }
+            else {
+                /* All input consumed; switch to flushing the shift state. */
+                flushing = 1;
+                continue;
+            }
+        }
+        else if (errno == E2BIG) {
+            if (iconv_grow_writer(writer, &out, &outend) < 0) {
+                goto done;
+            }
+            continue;
+        }
+        else if (errno != EILSEQ && errno != EINVAL) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto done;
+        }
+
+        /* An unencodable code point at *up; one input unit is one code point. */
+        Py_ssize_t pos = (up - ustart) / unit;
+        Py_ssize_t newpos;
+        PyObject *rep = unicode_encode_call_errorhandler(
+                errors, &errorHandler, encoding, "invalid character",
+                unicode, &exc, pos, pos + 1, &newpos);
+        if (rep == NULL) {
+            goto done;
+        }
+
+        const char *repdata;
+        Py_ssize_t replen;
+        PyObject *repbytes = NULL;
+        if (PyBytes_Check(rep)) {
+            repdata = PyBytes_AS_STRING(rep);
+            replen = PyBytes_GET_SIZE(rep);
+        }
+        else {
+            /* A str replacement is encoded through the same codec. */
+            assert(PyUnicode_Check(rep));
+            repbytes = _PyUnicode_EncodeIconv(encoding, rep, errors);
+            Py_DECREF(rep);
+            if (repbytes == NULL) {
+                goto done;
+            }
+            repdata = PyBytes_AS_STRING(repbytes);
+            replen = PyBytes_GET_SIZE(repbytes);
+        }
+
+        while (outend - out < replen) {
+            if (iconv_grow_writer(writer, &out, &outend) < 0) {
+                if (repbytes != NULL) {
+                    Py_DECREF(repbytes);
+                }
+                else {
+                    Py_DECREF(rep);
+                }
+                goto done;
+            }
+        }
+        memcpy(out, repdata, replen);
+        out += replen;
+        if (repbytes != NULL) {
+            Py_DECREF(repbytes);
+        }
+        else {
+            Py_DECREF(rep);
+        }
+        up = ustart + (size_t)newpos * unit;
+        /* Reset the shift state after the injected replacement bytes. */
+        iconv(cd, NULL, NULL, NULL, NULL);
+    }
+
+    if (PyBytesWriter_Resize(writer, out - (char *)PyBytesWriter_GetData(writer)) < 0) {
+        goto done;
+    }
+    result = PyBytesWriter_Finish(writer);
+    writer = NULL;
+
+done:
+    if (writer != NULL) {
+        PyBytesWriter_Discard(writer);
+    }
+    iconv_close(cd);
+    PyMem_Free(widened);
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    return result;
+}
+
+#endif /* HAVE_ICONV */
+
 /* --- Character Mapping Codec -------------------------------------------- */
 
 static int
@@ -8353,7 +8736,7 @@ charmap_decode_mapping(const char *s,
                 goto Undefined;
             if (value < 0 || value > MAX_UNICODE) {
                 PyErr_Format(PyExc_TypeError,
-                             "character mapping must be in range(0x%x)",
+                             "character mapping must be in range(0x%lx)",
                              (unsigned long)MAX_UNICODE + 1);
                 goto onError;
             }
@@ -9144,8 +9527,8 @@ charmaptranslate_lookup(Py_UCS4 c, PyObject *mapping, PyObject **result, Py_UCS4
         long value = PyLong_AsLong(x);
         if (value < 0 || value > MAX_UNICODE) {
             PyErr_Format(PyExc_ValueError,
-                         "character mapping must be in range(0x%x)",
-                         MAX_UNICODE+1);
+                         "character mapping must be in range(0x%lx)",
+                         (unsigned long)MAX_UNICODE + 1);
             Py_DECREF(x);
             return -1;
         }
@@ -10748,9 +11131,9 @@ replace(PyObject *self, PyObject *str1,
     }
 
   done:
-    assert(srelease == (sbuf != PyUnicode_DATA(self)));
-    assert(release1 == (buf1 != PyUnicode_DATA(str1)));
-    assert(release2 == (buf2 != PyUnicode_DATA(str2)));
+    assert(srelease == (sbuf != NULL && sbuf != PyUnicode_DATA(self)));
+    assert(release1 == (buf1 != NULL && buf1 != PyUnicode_DATA(str1)));
+    assert(release2 == (buf2 != NULL && buf2 != PyUnicode_DATA(str2)));
     if (srelease)
         PyMem_Free((void *)sbuf);
     if (release1)
@@ -10762,9 +11145,9 @@ replace(PyObject *self, PyObject *str1,
 
   nothing:
     /* nothing to replace; return original string (when possible) */
-    assert(srelease == (sbuf != PyUnicode_DATA(self)));
-    assert(release1 == (buf1 != PyUnicode_DATA(str1)));
-    assert(release2 == (buf2 != PyUnicode_DATA(str2)));
+    assert(srelease == (sbuf != NULL && sbuf != PyUnicode_DATA(self)));
+    assert(release1 == (buf1 != NULL && buf1 != PyUnicode_DATA(str1)));
+    assert(release2 == (buf2 != NULL && buf2 != PyUnicode_DATA(str2)));
     if (srelease)
         PyMem_Free((void *)sbuf);
     if (release1)
@@ -10774,9 +11157,9 @@ replace(PyObject *self, PyObject *str1,
     return unicode_result_unchanged(self);
 
   error:
-    assert(srelease == (sbuf != PyUnicode_DATA(self)));
-    assert(release1 == (buf1 != PyUnicode_DATA(str1)));
-    assert(release2 == (buf2 != PyUnicode_DATA(str2)));
+    assert(srelease == (sbuf != NULL && sbuf != PyUnicode_DATA(self)));
+    assert(release1 == (buf1 != NULL && buf1 != PyUnicode_DATA(str1)));
+    assert(release2 == (buf2 != NULL && buf2 != PyUnicode_DATA(str2)));
     if (srelease)
         PyMem_Free((void *)sbuf);
     if (release1)
@@ -10789,35 +11172,33 @@ replace(PyObject *self, PyObject *str1,
 /* --- Unicode Object Methods --------------------------------------------- */
 
 /*[clinic input]
-@permit_long_docstring_body
 str.title as unicode_title
 
 Return a version of the string where each word is titlecased.
 
-More specifically, words start with uppercased characters and all remaining
-cased characters have lower case.
+More specifically, words start with uppercased characters and all
+remaining cased characters have lower case.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_title_impl(PyObject *self)
-/*[clinic end generated code: output=c75ae03809574902 input=533ce0eb6a7f5d1b]*/
+/*[clinic end generated code: output=c75ae03809574902 input=2a07e2c7df94627a]*/
 {
     return case_operation(self, do_title);
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.capitalize as unicode_capitalize
 
 Return a capitalized version of the string.
 
-More specifically, make the first character have upper case and the rest lower
-case.
+More specifically, make the first character have upper case and the
+rest lower case.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_capitalize_impl(PyObject *self)
-/*[clinic end generated code: output=e49a4c333cdb7667 input=a4a15ade41f6f9e9]*/
+/*[clinic end generated code: output=e49a4c333cdb7667 input=e50e50ed45a654cf]*/
 {
     if (PyUnicode_GET_LENGTH(self) == 0)
         return unicode_result_unchanged(self);
@@ -10871,12 +11252,13 @@ str.center as unicode_center
 
 Return a centered string of length width.
 
-Padding is done using the specified fill character (default is a space).
+Padding is done using the specified fill character (default is
+a space).
 [clinic start generated code]*/
 
 static PyObject *
 unicode_center_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar)
-/*[clinic end generated code: output=420c8859effc7c0c input=b42b247eb26e6519]*/
+/*[clinic end generated code: output=420c8859effc7c0c input=df91017dfd186a78]*/
 {
     Py_ssize_t marg, left;
 
@@ -11436,13 +11818,14 @@ str.count as unicode_count -> Py_ssize_t
 
 Return the number of non-overlapping occurrences of substring sub in string S[start:end].
 
-Optional arguments start and end are interpreted as in slice notation.
+Optional arguments start and end are interpreted as in slice
+notation.
 [clinic start generated code]*/
 
 static Py_ssize_t
 unicode_count_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
                    Py_ssize_t end)
-/*[clinic end generated code: output=8fcc3aef0b18edbf input=8590716ee228b935]*/
+/*[clinic end generated code: output=8fcc3aef0b18edbf input=c9209e05438cc352]*/
 {
     assert(PyUnicode_Check(str));
     assert(PyUnicode_Check(substr));
@@ -11515,8 +11898,8 @@ str.encode as unicode_encode
     errors: str(c_default="NULL") = 'strict'
         The error handling scheme to use for encoding errors.
         The default is 'strict' meaning that encoding errors raise a
-        UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
-        'xmlcharrefreplace' as well as any other name registered with
+        UnicodeEncodeError.  Other possible values are 'ignore', 'replace'
+        and 'xmlcharrefreplace' as well as any other name registered with
         codecs.register_error that can handle UnicodeEncodeErrors.
 
 Encode the string using the codec registered for encoding.
@@ -11524,7 +11907,7 @@ Encode the string using the codec registered for encoding.
 
 static PyObject *
 unicode_encode_impl(PyObject *self, const char *encoding, const char *errors)
-/*[clinic end generated code: output=bf78b6e2a9470e3c input=f0a9eb293d08fe02]*/
+/*[clinic end generated code: output=bf78b6e2a9470e3c input=b85a9645cb33b729]*/
 {
     return PyUnicode_AsEncodedString(self, encoding, errors);
 }
@@ -11621,14 +12004,14 @@ str.find as unicode_find = str.count
 
 Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
 
-Optional arguments start and end are interpreted as in slice notation.
-Return -1 on failure.
+Optional arguments start and end are interpreted as in slice
+notation.  Return -1 on failure.
 [clinic start generated code]*/
 
 static Py_ssize_t
 unicode_find_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
                   Py_ssize_t end)
-/*[clinic end generated code: output=51dbe6255712e278 input=3a9d650fe4c24695]*/
+/*[clinic end generated code: output=51dbe6255712e278 input=f57e93c59d1ee927]*/
 {
     Py_ssize_t result = any_find_slice(str, substr, start, end, 1);
     if (result < 0) {
@@ -11685,14 +12068,14 @@ str.index as unicode_index = str.count
 
 Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
 
-Optional arguments start and end are interpreted as in slice notation.
-Raises ValueError when the substring is not found.
+Optional arguments start and end are interpreted as in slice
+notation.  Raises ValueError when the substring is not found.
 [clinic start generated code]*/
 
 static Py_ssize_t
 unicode_index_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
                    Py_ssize_t end)
-/*[clinic end generated code: output=77558288837cdf40 input=ae5e48f69ed75b06]*/
+/*[clinic end generated code: output=77558288837cdf40 input=5900ab84de55e628]*/
 {
     Py_ssize_t result = any_find_slice(str, substr, start, end, 1);
     if (result == -1) {
@@ -11705,6 +12088,7 @@ unicode_index_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
 }
 
 /*[clinic input]
+@permit_long_summary
 str.isascii as unicode_isascii
 
 Return True if all characters in the string are ASCII, False otherwise.
@@ -11715,24 +12099,23 @@ Empty string is ASCII too.
 
 static PyObject *
 unicode_isascii_impl(PyObject *self)
-/*[clinic end generated code: output=c5910d64b5a8003f input=5a43cbc6399621d5]*/
+/*[clinic end generated code: output=c5910d64b5a8003f input=dc74e1ced821159f]*/
 {
     return PyBool_FromLong(PyUnicode_IS_ASCII(self));
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.islower as unicode_islower
 
 Return True if the string is a lowercase string, False otherwise.
 
-A string is lowercase if all cased characters in the string are lowercase and
-there is at least one cased character in the string.
+A string is lowercase if all cased characters in the string are
+lowercase and there is at least one cased character in the string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_islower_impl(PyObject *self)
-/*[clinic end generated code: output=dbd41995bd005b81 input=c6fc0295241a1aaa]*/
+/*[clinic end generated code: output=dbd41995bd005b81 input=1879b48dfc628366]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11765,18 +12148,17 @@ unicode_islower_impl(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.isupper as unicode_isupper
 
 Return True if the string is an uppercase string, False otherwise.
 
-A string is uppercase if all cased characters in the string are uppercase and
-there is at least one cased character in the string.
+A string is uppercase if all cased characters in the string are
+uppercase and there is at least one cased character in the string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isupper_impl(PyObject *self)
-/*[clinic end generated code: output=049209c8e7f15f59 input=8d5cb33e67efde72]*/
+/*[clinic end generated code: output=049209c8e7f15f59 input=77d29904aef0e3a0]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11865,18 +12247,17 @@ unicode_istitle_impl(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.isspace as unicode_isspace
 
 Return True if the string is a whitespace string, False otherwise.
 
-A string is whitespace if all characters in the string are whitespace and there
-is at least one character in the string.
+A string is whitespace if all characters in the string are
+whitespace and there is at least one character in the string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isspace_impl(PyObject *self)
-/*[clinic end generated code: output=163a63bfa08ac2b9 input=44fe05e248c6e159]*/
+/*[clinic end generated code: output=163a63bfa08ac2b9 input=29e09560fc23fbeb]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11904,18 +12285,17 @@ unicode_isspace_impl(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.isalpha as unicode_isalpha
 
 Return True if the string is an alphabetic string, False otherwise.
 
-A string is alphabetic if all characters in the string are alphabetic and there
-is at least one character in the string.
+A string is alphabetic if all characters in the string are
+alphabetic and there is at least one character in the string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isalpha_impl(PyObject *self)
-/*[clinic end generated code: output=cc81b9ac3883ec4f input=c233000624a56e0d]*/
+/*[clinic end generated code: output=cc81b9ac3883ec4f input=9906a07f3e04892e]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -11942,18 +12322,18 @@ unicode_isalpha_impl(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 str.isalnum as unicode_isalnum
 
 Return True if the string is an alpha-numeric string, False otherwise.
 
-A string is alpha-numeric if all characters in the string are alpha-numeric and
-there is at least one character in the string.
+A string is alpha-numeric if all characters in the string are
+alpha-numeric and there is at least one character in the string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isalnum_impl(PyObject *self)
-/*[clinic end generated code: output=a5a23490ffc3660c input=5d63ba9c9bafdb6b]*/
+/*[clinic end generated code: output=a5a23490ffc3660c input=892f64ebc171fd4f]*/
 {
     int kind;
     const void *data;
@@ -11982,18 +12362,17 @@ unicode_isalnum_impl(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.isdecimal as unicode_isdecimal
 
 Return True if the string is a decimal string, False otherwise.
 
-A string is a decimal string if all characters in the string are decimal and
-there is at least one character in the string.
+A string is a decimal string if all characters in the string are
+decimal and there is at least one character in the string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isdecimal_impl(PyObject *self)
-/*[clinic end generated code: output=fb2dcdb62d3fc548 input=8e84a58b414935a3]*/
+/*[clinic end generated code: output=fb2dcdb62d3fc548 input=63b0453c48cad0af]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -12020,18 +12399,17 @@ unicode_isdecimal_impl(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.isdigit as unicode_isdigit
 
 Return True if the string is a digit string, False otherwise.
 
-A string is a digit string if all characters in the string are digits and there
-is at least one character in the string.
+A string is a digit string if all characters in the string are
+digits and there is at least one character in the string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isdigit_impl(PyObject *self)
-/*[clinic end generated code: output=10a6985311da6858 input=99e284affb54d4a0]*/
+/*[clinic end generated code: output=10a6985311da6858 input=353b03747b062e4b]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -12059,18 +12437,17 @@ unicode_isdigit_impl(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.isnumeric as unicode_isnumeric
 
 Return True if the string is a numeric string, False otherwise.
 
-A string is numeric if all characters in the string are numeric and there is at
-least one character in the string.
+A string is numeric if all characters in the string are numeric and
+there is at least one character in the string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isnumeric_impl(PyObject *self)
-/*[clinic end generated code: output=9172a32d9013051a input=e9f5b6b8b29b0ee6]*/
+/*[clinic end generated code: output=9172a32d9013051a input=83b2a072ed7aff48]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -12140,18 +12517,18 @@ PyUnicode_IsIdentifier(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 str.isidentifier as unicode_isidentifier
 
 Return True if the string is a valid Python identifier, False otherwise.
 
-Call keyword.iskeyword(s) to test whether string s is a reserved identifier,
-such as "def" or "class".
+Call keyword.iskeyword(s) to test whether string s is a reserved
+identifier, such as "def" or "class".
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isidentifier_impl(PyObject *self)
-/*[clinic end generated code: output=fe585a9666572905 input=86315dd889d7bd04]*/
+/*[clinic end generated code: output=fe585a9666572905 input=cabde62c20a3be6b]*/
 {
     return PyBool_FromLong(PyUnicode_IsIdentifier(self));
 }
@@ -12191,7 +12568,6 @@ unicode_isprintable_impl(PyObject *self)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.join as unicode_join
 
     iterable: object
@@ -12199,15 +12575,15 @@ str.join as unicode_join
 
 Concatenate any number of strings.
 
-The string whose method is called is inserted in between each given string.
-The result is returned as a new string.
+The string whose method is called is inserted in between each given
+string.  The result is returned as a new string.
 
 Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
 [clinic start generated code]*/
 
 static PyObject *
 unicode_join(PyObject *self, PyObject *iterable)
-/*[clinic end generated code: output=6857e7cecfe7bf98 input=bac724ed412ef3f8]*/
+/*[clinic end generated code: output=6857e7cecfe7bf98 input=fd330a11ee845fb2]*/
 {
     return PyUnicode_Join(self, iterable);
 }
@@ -12227,12 +12603,13 @@ str.ljust as unicode_ljust
 
 Return a left-justified string of length width.
 
-Padding is done using the specified fill character (default is a space).
+Padding is done using the specified fill character (default is
+a space).
 [clinic start generated code]*/
 
 static PyObject *
 unicode_ljust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar)
-/*[clinic end generated code: output=1cce0e0e0a0b84b3 input=3ab599e335e60a32]*/
+/*[clinic end generated code: output=1cce0e0e0a0b84b3 input=8a55f06694c20ed6]*/
 {
     if (PyUnicode_GET_LENGTH(self) >= width)
         return unicode_result_unchanged(self);
@@ -12310,6 +12687,18 @@ _PyUnicode_XStrip(PyObject *self, int striptype, PyObject *sepobj)
     }
 
     return PyUnicode_Substring(self, i, j);
+}
+
+PyObject*
+_PyUnicode_BinarySlice(PyObject *container, PyObject *start_o, PyObject *stop_o)
+{
+    assert(PyUnicode_CheckExact(container));
+    Py_ssize_t len = PyUnicode_GET_LENGTH(container);
+    Py_ssize_t istart, istop;
+    if (!_PyEval_UnpackIndices(start_o, stop_o, len, &istart, &istop)) {
+        return NULL;
+    }
+    return PyUnicode_Substring(container, istart, istop);
 }
 
 PyObject*
@@ -12485,8 +12874,8 @@ unicode_rstrip_impl(PyObject *self, PyObject *chars)
 }
 
 
-static PyObject*
-unicode_repeat(PyObject *str, Py_ssize_t len)
+PyObject *
+_PyUnicode_Repeat(PyObject *str, Py_ssize_t len)
 {
     PyObject *u;
     Py_ssize_t nchars, n;
@@ -12531,7 +12920,7 @@ unicode_repeat(PyObject *str, Py_ssize_t len)
     else {
         Py_ssize_t char_size = PyUnicode_KIND(str);
         char *to = (char *) PyUnicode_DATA(u);
-        _PyBytes_Repeat(to, nchars * char_size, PyUnicode_DATA(str),
+        _PyBytes_RepeatBuffer(to, nchars * char_size, PyUnicode_DATA(str),
             PyUnicode_GET_LENGTH(str) * char_size);
     }
 
@@ -12552,7 +12941,6 @@ PyUnicode_Replace(PyObject *str,
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.replace as unicode_replace
 
     old: unicode
@@ -12564,20 +12952,19 @@ str.replace as unicode_replace
 
 Return a copy with all occurrences of substring old replaced by new.
 
-If the optional argument count is given, only the first count occurrences are
-replaced.
+If count is given, only the first count occurrences are replaced.
+If count is not specified or -1, then all occurrences are replaced.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count)
-/*[clinic end generated code: output=b63f1a8b5eebf448 input=f27ca92ac46b65a1]*/
+/*[clinic end generated code: output=b63f1a8b5eebf448 input=d15a6886b05e2edc]*/
 {
     return replace(self, old, new, count);
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.removeprefix as unicode_removeprefix
 
     prefix: unicode
@@ -12585,13 +12972,14 @@ str.removeprefix as unicode_removeprefix
 
 Return a str with the given prefix string removed if present.
 
-If the string starts with the prefix string, return string[len(prefix):].
-Otherwise, return a copy of the original string.
+If the string starts with the prefix string, return
+string[len(prefix):].  Otherwise, return a copy of the original
+string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_removeprefix_impl(PyObject *self, PyObject *prefix)
-/*[clinic end generated code: output=f1e5945e9763bcb9 input=1989a856dbb813f1]*/
+/*[clinic end generated code: output=f1e5945e9763bcb9 input=90d162724944bfa7]*/
 {
     int match = tailmatch(self, prefix, 0, PY_SSIZE_T_MAX, -1);
     if (match == -1) {
@@ -12612,14 +13000,14 @@ str.removesuffix as unicode_removesuffix
 
 Return a str with the given suffix string removed if present.
 
-If the string ends with the suffix string and that suffix is not empty,
-return string[:-len(suffix)]. Otherwise, return a copy of the original
-string.
+If the string ends with the suffix string and that suffix is not
+empty, return string[:-len(suffix)].  Otherwise, return a copy of
+the original string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_removesuffix_impl(PyObject *self, PyObject *suffix)
-/*[clinic end generated code: output=d36629e227636822 input=12cc32561e769be4]*/
+/*[clinic end generated code: output=d36629e227636822 input=6efc96152d4bfcd5]*/
 {
     int match = tailmatch(self, suffix, 0, PY_SSIZE_T_MAX, +1);
     if (match == -1) {
@@ -12729,14 +13117,14 @@ str.rfind as unicode_rfind = str.count
 
 Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
 
-Optional arguments start and end are interpreted as in slice notation.
-Return -1 on failure.
+Optional arguments start and end are interpreted as in slice
+notation.  Return -1 on failure.
 [clinic start generated code]*/
 
 static Py_ssize_t
 unicode_rfind_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
                    Py_ssize_t end)
-/*[clinic end generated code: output=880b29f01dd014c8 input=7f7e97d5cd3299a2]*/
+/*[clinic end generated code: output=880b29f01dd014c8 input=2e67789533baf2f5]*/
 {
     Py_ssize_t result = any_find_slice(str, substr, start, end, -1);
     if (result < 0) {
@@ -12751,14 +13139,14 @@ str.rindex as unicode_rindex = str.count
 
 Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
 
-Optional arguments start and end are interpreted as in slice notation.
-Raises ValueError when the substring is not found.
+Optional arguments start and end are interpreted as in slice
+notation.  Raises ValueError when the substring is not found.
 [clinic start generated code]*/
 
 static Py_ssize_t
 unicode_rindex_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
                     Py_ssize_t end)
-/*[clinic end generated code: output=5f3aef124c867fe1 input=0363a324740b3e62]*/
+/*[clinic end generated code: output=5f3aef124c867fe1 input=e29d446c8234c9d9]*/
 {
     Py_ssize_t result = any_find_slice(str, substr, start, end, -1);
     if (result == -1) {
@@ -12779,12 +13167,13 @@ str.rjust as unicode_rjust
 
 Return a right-justified string of length width.
 
-Padding is done using the specified fill character (default is a space).
+Padding is done using the specified fill character (default is
+a space).
 [clinic start generated code]*/
 
 static PyObject *
 unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar)
-/*[clinic end generated code: output=804a1a57fbe8d5cf input=d05f550b5beb1f72]*/
+/*[clinic end generated code: output=804a1a57fbe8d5cf input=1256a8d659589907]*/
 {
     if (PyUnicode_GET_LENGTH(self) >= width)
         return unicode_result_unchanged(self);
@@ -12808,9 +13197,9 @@ str.split as unicode_split
     sep: object = None
         The separator used to split the string.
 
-        When set to None (the default value), will split on any whitespace
-        character (including \n \r \t \f and spaces) and will discard
-        empty strings from the result.
+        When set to None (the default value), will split on any
+        whitespace character (including \n \r \t \f and spaces) and
+        will discard empty strings from the result.
     maxsplit: Py_ssize_t = -1
         Maximum number of splits.
         -1 (the default value) means no limit.
@@ -12819,15 +13208,15 @@ Return a list of the substrings in the string, using sep as the separator string
 
 Splitting starts at the front of the string and works to the end.
 
-Note, str.split() is mainly useful for data that has been intentionally
-delimited.  With natural text that includes punctuation, consider using
-the regular expression module.
+Note, str.split() is mainly useful for data that has been
+intentionally delimited.  With natural text that includes
+punctuation, consider using the regular expression module.
 
 [clinic start generated code]*/
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=2c1fd08a78e038b8]*/
+/*[clinic end generated code: output=3a65b1db356948dc input=288cfd6bc8828f5a]*/
 {
     if (sep == Py_None)
         return split(self, NULL, maxsplit);
@@ -12944,7 +13333,6 @@ PyUnicode_RPartition(PyObject *str_obj, PyObject *sep_obj)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.partition as unicode_partition
 
     sep: object
@@ -12952,38 +13340,38 @@ str.partition as unicode_partition
 
 Partition the string into three parts using the given separator.
 
-This will search for the separator in the string.  If the separator is found,
-returns a 3-tuple containing the part before the separator, the separator
-itself, and the part after it.
+This will search for the separator in the string.  If the separator
+is found, returns a 3-tuple containing the part before the
+separator, the separator itself, and the part after it.
 
-If the separator is not found, returns a 3-tuple containing the original string
-and two empty strings.
+If the separator is not found, returns a 3-tuple containing
+the original string and two empty strings.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_partition(PyObject *self, PyObject *sep)
-/*[clinic end generated code: output=e4ced7bd253ca3c4 input=4d854b520d7b0e97]*/
+/*[clinic end generated code: output=e4ced7bd253ca3c4 input=e45faa8c26270cb1]*/
 {
     return PyUnicode_Partition(self, sep);
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 str.rpartition as unicode_rpartition = str.partition
 
 Partition the string into three parts using the given separator.
 
-This will search for the separator in the string, starting at the end. If
-the separator is found, returns a 3-tuple containing the part before the
-separator, the separator itself, and the part after it.
+This will search for the separator in the string, starting at the
+end.  If the separator is found, returns a 3-tuple containing the
+part before the separator, the separator itself, and the part after
+it.
 
-If the separator is not found, returns a 3-tuple containing two empty strings
-and the original string.
+If the separator is not found, returns a 3-tuple containing two
+empty strings and the original string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_rpartition(PyObject *self, PyObject *sep)
-/*[clinic end generated code: output=1aa13cf1156572aa input=a6adabe91e75b486]*/
+/*[clinic end generated code: output=1aa13cf1156572aa input=53a7f8cb19975b7c]*/
 {
     return PyUnicode_RPartition(self, sep);
 }
@@ -13022,20 +13410,20 @@ unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 str.splitlines as unicode_splitlines
 
     keepends: bool = False
 
 Return a list of the lines in the string, breaking at line boundaries.
 
-Line breaks are not included in the resulting list unless keepends is given and
-true.
+Line breaks are not included in the resulting list unless keepends
+is given and true.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends)
-/*[clinic end generated code: output=f664dcdad153ec40 input=39eeafbfef61c827]*/
+/*[clinic end generated code: output=f664dcdad153ec40 input=b45ea0f87645a06d]*/
 {
     return PyUnicode_Splitlines(self, keepends);
 }
@@ -13060,6 +13448,45 @@ unicode_swapcase_impl(PyObject *self)
     return case_operation(self, do_swapcase);
 }
 
+static int
+unicode_maketrans_from_dict(PyObject *x, PyObject *newdict)
+{
+    PyObject *key, *value;
+    Py_ssize_t i = 0;
+    int res;
+    while (PyDict_Next(x, &i, &key, &value)) {
+        if (PyUnicode_Check(key)) {
+            PyObject *newkey;
+            int kind;
+            const void *data;
+            if (PyUnicode_GET_LENGTH(key) != 1) {
+                PyErr_SetString(PyExc_ValueError, "string keys in translate"
+                                "table must be of length 1");
+                return -1;
+            }
+            kind = PyUnicode_KIND(key);
+            data = PyUnicode_DATA(key);
+            newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
+            if (!newkey)
+                return -1;
+            res = PyDict_SetItem(newdict, newkey, value);
+            Py_DECREF(newkey);
+            if (res < 0)
+                return -1;
+        }
+        else if (PyLong_Check(key)) {
+            if (PyDict_SetItem(newdict, key, value) < 0)
+                return -1;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "keys in translate table must"
+                            "be strings or integers");
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*[clinic input]
 
 @staticmethod
@@ -13075,18 +13502,19 @@ str.maketrans as unicode_maketrans
 
 Return a translation table usable for str.translate().
 
-If there is only one argument, it must be a dictionary mapping Unicode
-ordinals (integers) or characters to Unicode ordinals, strings or None.
-Character keys will be then converted to ordinals.
-If there are two arguments, they must be strings of equal length, and
-in the resulting dictionary, each character in x will be mapped to the
-character at the same position in y. If there is a third argument, it
-must be a string, whose characters will be mapped to None in the result.
+If there is only one argument, it must be a dictionary mapping
+Unicode ordinals (integers) or characters to Unicode ordinals,
+strings or None.  Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length,
+and in the resulting dictionary, each character in x will be mapped
+to the character at the same position in y.  If there is a third
+argument, it must be a string, whose characters will be mapped to
+None in the result.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
-/*[clinic end generated code: output=a925c89452bd5881 input=7bfbf529a293c6c5]*/
+/*[clinic end generated code: output=a925c89452bd5881 input=66bc00a1b4258a6e]*/
 {
     PyObject *new = NULL, *key, *value;
     Py_ssize_t i = 0;
@@ -13145,44 +13573,19 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
             }
         }
     } else {
-        int kind;
-        const void *data;
-
         /* x must be a dict */
-        if (!PyDict_CheckExact(x)) {
+        if (!PyAnyDict_CheckExact(x)) {
             PyErr_SetString(PyExc_TypeError, "if you give only one argument "
                             "to maketrans it must be a dict");
             goto err;
         }
         /* copy entries into the new dict, converting string keys to int keys */
-        while (PyDict_Next(x, &i, &key, &value)) {
-            if (PyUnicode_Check(key)) {
-                /* convert string keys to integer keys */
-                PyObject *newkey;
-                if (PyUnicode_GET_LENGTH(key) != 1) {
-                    PyErr_SetString(PyExc_ValueError, "string keys in translate "
-                                    "table must be of length 1");
-                    goto err;
-                }
-                kind = PyUnicode_KIND(key);
-                data = PyUnicode_DATA(key);
-                newkey = PyLong_FromLong(PyUnicode_READ(kind, data, 0));
-                if (!newkey)
-                    goto err;
-                res = PyDict_SetItem(new, newkey, value);
-                Py_DECREF(newkey);
-                if (res < 0)
-                    goto err;
-            } else if (PyLong_Check(key)) {
-                /* just keep integer keys */
-                if (PyDict_SetItem(new, key, value) < 0)
-                    goto err;
-            } else {
-                PyErr_SetString(PyExc_TypeError, "keys in translate table must "
-                                "be strings or integers");
-                goto err;
-            }
-        }
+        int errcode;
+        Py_BEGIN_CRITICAL_SECTION(x);
+        errcode = unicode_maketrans_from_dict(x, new);
+        Py_END_CRITICAL_SECTION();
+        if (errcode < 0)
+            goto err;
     }
     return new;
   err:
@@ -13191,24 +13594,25 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
+@permit_long_summary
 str.translate as unicode_translate
 
     table: object
-        Translation table, which must be a mapping of Unicode ordinals to
-        Unicode ordinals, strings, or None.
+        Translation table, which must be a mapping of Unicode ordinals
+        to Unicode ordinals, strings, or None.
     /
 
 Replace each character in the string using the given translation table.
 
-The table must implement lookup/indexing via __getitem__, for instance a
-dictionary or list.  If this operation raises LookupError, the character is
-left untouched.  Characters mapped to None are deleted.
+The table must implement lookup/indexing via __getitem__, for
+instance a dictionary or list.  If this operation raises
+LookupError, the character is left untouched.  Characters mapped to
+None are deleted.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_translate(PyObject *self, PyObject *table)
-/*[clinic end generated code: output=3cb448ff2fd96bf3 input=699e5fa0ebf9f5e9]*/
+/*[clinic end generated code: output=3cb448ff2fd96bf3 input=48cf0efe06bc1b75]*/
 {
     return _PyUnicode_TranslateCharmap(self, table, "ignore");
 }
@@ -13404,6 +13808,7 @@ Return a formatted version of the string, using substitutions from mapping.\n\
 The substitutions are identified by braces ('{' and '}').");
 
 /*[clinic input]
+@permit_long_summary
 str.__format__ as unicode___format__
 
     format_spec: unicode
@@ -13414,7 +13819,7 @@ Return a formatted version of the string as described by format_spec.
 
 static PyObject *
 unicode___format___impl(PyObject *self, PyObject *format_spec)
-/*[clinic end generated code: output=45fceaca6d2ba4c8 input=5e135645d167a214]*/
+/*[clinic end generated code: output=45fceaca6d2ba4c8 input=77a2a19f3f7969f2]*/
 {
     _PyUnicodeWriter writer;
     int ret;
@@ -13555,7 +13960,8 @@ search_longest_common_leading_whitespace(
 }
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Intended to dedent Python source. Unlike `textwrap.dedent`, this
+   only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 PyObject *
@@ -13703,7 +14109,7 @@ static PyNumberMethods unicode_as_number = {
 static PySequenceMethods unicode_as_sequence = {
     unicode_length,     /* sq_length */
     PyUnicode_Concat,   /* sq_concat */
-    unicode_repeat,     /* sq_repeat */
+    _PyUnicode_Repeat,  /* sq_repeat */
     unicode_getitem,    /* sq_item */
     0,                  /* sq_slice */
     0,                  /* sq_ass_item */
@@ -13959,6 +14365,20 @@ onError:
     return NULL;
 }
 
+static _PyObjectIndexPair
+unicode_iteritem(PyObject *obj, Py_ssize_t index)
+{
+    if (index >= PyUnicode_GET_LENGTH(obj)) {
+        return (_PyObjectIndexPair) { .object = NULL, .index = index };
+    }
+    const void *data = PyUnicode_DATA(obj);
+    int kind = PyUnicode_KIND(obj);
+    Py_UCS4 ch = PyUnicode_READ(kind, data, index);
+    PyObject *result = unicode_char(ch);
+    index = (result == NULL) ? -1 : index + 1;
+    return (_PyObjectIndexPair) { .object = result, .index = index };
+}
+
 void
 _PyUnicode_ExactDealloc(PyObject *op)
 {
@@ -14024,6 +14444,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_new,                  /* tp_new */
     PyObject_Free,                /* tp_free */
     .tp_vectorcall = unicode_vectorcall,
+    ._tp_iteritem = unicode_iteritem,
 };
 
 /* Initialize the Unicode implementation */
@@ -14163,9 +14584,24 @@ immortalize_interned(PyObject *s)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
     _Py_SetImmortal(s);
+    // The switch to SSTATE_INTERNED_IMMORTAL must be the last thing done here
+    // to synchronize with the check in intern_common() that avoids locking if
+    // the string is already immortal.
+    FT_ATOMIC_STORE_UINT8(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
 }
+
+#ifdef Py_GIL_DISABLED
+static bool
+can_immortalize_safely(PyObject *s)
+{
+    if (_Py_IsOwnedByCurrentThread(s) || _Py_IsImmortal(s)) {
+        return true;
+    }
+    Py_ssize_t shared = _Py_atomic_load_ssize(&s->ob_ref_shared);
+    return _Py_REF_IS_MERGED(shared);
+}
+#endif
 
 static /* non-null */ PyObject*
 intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
@@ -14195,11 +14631,16 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
             // no, go on
             break;
         case SSTATE_INTERNED_MORTAL:
+#ifndef Py_GIL_DISABLED
             // yes but we might need to make it immortal
             if (immortalize) {
                 immortalize_interned(s);
             }
             return s;
+#else
+            // not fully interned yet; fall through to the locking path
+            break;
+#endif
         default:
             // all done
             return s;
@@ -14246,8 +14687,42 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     assert(interned != NULL);
 #ifdef Py_GIL_DISABLED
 #  define INTERN_MUTEX &_Py_INTERP_CACHED_OBJECT(interp, interned_mutex)
+    // Lock-free fast path: check if there's already an interned copy that
+    // is in its final immortal state.
+    PyObject *r;
+    int res = PyDict_GetItemRef(interned, s, &r);
+    if (res < 0) {
+        PyErr_Clear();
+        return s;
+    }
+    if (res > 0) {
+        unsigned int state = _Py_atomic_load_uint8(&_PyUnicode_STATE(r).interned);
+        if (state == SSTATE_INTERNED_IMMORTAL) {
+            Py_DECREF(s);
+            return r;
+        }
+        // Not yet fully interned; fall through to the locking path.
+        Py_DECREF(r);
+    }
 #endif
-    FT_MUTEX_LOCK(INTERN_MUTEX);
+
+#ifdef Py_GIL_DISABLED
+    // Immortalization writes to the refcount fields non-atomically. That
+    // races with Py_INCREF / Py_DECREF on the thread that owns `s`. If we
+    // don't own it (and its refcount hasn't been merged), intern a copy
+    // we own instead.
+    if (!can_immortalize_safely(s)) {
+        PyObject *copy = _PyUnicode_Copy(s);
+        if (copy == NULL) {
+            PyErr_Clear();
+            return s;
+        }
+        Py_DECREF(s);
+        s = copy;
+    }
+#endif
+
+    FT_MUTEX_LOCK_FLAGS(INTERN_MUTEX, _Py_LOCK_DONT_DETACH);
     PyObject *t;
     {
         int res = PyDict_SetDefaultRef(interned, s, s, &t);
@@ -14283,7 +14758,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         Py_DECREF(s);
         Py_DECREF(s);
     }
-    FT_ATOMIC_STORE_UINT8_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
+    FT_ATOMIC_STORE_UINT8(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
 
     /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
 
@@ -14828,33 +15303,6 @@ _PyUnicode_FiniEncodings(struct _Py_unicode_fs_codec *fs_codec)
 }
 
 
-#ifdef MS_WINDOWS
-int
-_PyUnicode_EnableLegacyWindowsFSEncoding(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyConfig *config = (PyConfig *)_PyInterpreterState_GetConfig(interp);
-
-    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
-    wchar_t *encoding = _PyMem_RawWcsdup(L"mbcs");
-    wchar_t *errors = _PyMem_RawWcsdup(L"replace");
-    if (encoding == NULL || errors == NULL) {
-        PyMem_RawFree(encoding);
-        PyMem_RawFree(errors);
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
-    PyMem_RawFree(config->filesystem_errors);
-    config->filesystem_errors = errors;
-
-    return init_fs_codec(interp);
-}
-#endif
-
-
 #ifdef Py_DEBUG
 static inline int
 unicode_is_finalizing(void)
@@ -14904,6 +15352,7 @@ static PyMethodDef _string_methods[] = {
 };
 
 static PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

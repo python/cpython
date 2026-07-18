@@ -4,9 +4,6 @@
 .. module:: mailbox
    :synopsis: Manipulate mailboxes in various formats
 
-.. moduleauthor:: Gregory K. Johnson <gkj@gregorykjohnson.com>
-.. sectionauthor:: Gregory K. Johnson <gkj@gregorykjohnson.com>
-
 **Source code:** :source:`Lib/mailbox.py`
 
 --------------
@@ -83,7 +80,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    returns the mailbox object as the context object, and at context end calls :meth:`close`,
    thereby releasing the lock.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Support for the :keyword:`with` statement was added.
 
    :class:`!Mailbox` instances have the following methods:

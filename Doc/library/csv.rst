@@ -4,8 +4,6 @@
 .. module:: csv
    :synopsis: Write and read tabular data to and from delimited files.
 
-.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
-
 **Source code:** :source:`Lib/csv.py`
 
 .. index::
@@ -83,6 +81,13 @@ The :mod:`!csv` module defines the following functions:
       Spam, Spam, Spam, Spam, Spam, Baked Beans
       Spam, Lovely Spam, Wonderful Spam
 
+   where :file:`eggs.csv` contains:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
+
 
 .. function:: writer(csvfile, /, dialect='excel', **fmtparams)
 
@@ -111,6 +116,13 @@ The :mod:`!csv` module defines the following functions:
                                   quotechar='|', quoting=csv.QUOTE_MINIMAL)
           spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
           spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+
+   which writes :file:`eggs.csv` containing:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
 
 
 .. function:: register_dialect(name, /, dialect='excel', **fmtparams)
@@ -193,6 +205,14 @@ The :mod:`!csv` module defines the following classes:
        >>> print(row)
        {'first_name': 'John', 'last_name': 'Cleese'}
 
+   where :file:`names.csv` contains:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Eric,Idle
+      John,Cleese
+
 
 .. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
                       dialect='excel', *args, **kwds)
@@ -229,6 +249,15 @@ The :mod:`!csv` module defines the following classes:
            writer.writerow({'first_name': 'Baked', 'last_name': 'Beans'})
            writer.writerow({'first_name': 'Lovely', 'last_name': 'Spam'})
            writer.writerow({'first_name': 'Wonderful', 'last_name': 'Spam'})
+
+   which writes :file:`names.csv` containing:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Baked,Beans
+      Lovely,Spam
+      Wonderful,Spam
 
 
 .. class:: Dialect

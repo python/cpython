@@ -4,9 +4,6 @@
 .. module:: logging.config
    :synopsis: Configuration of the logging module.
 
-.. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-.. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
-
 **Source code:** :source:`Lib/logging/config.py`
 
 .. sidebar:: Important
@@ -127,12 +124,12 @@ in :mod:`logging` itself) and defining handlers which are declared either in
         application (e.g. based on command-line parameters or other aspects
         of the runtime environment) before being passed to ``fileConfig``.
 
-    .. versionchanged:: 3.10
-       Added the *encoding* parameter.
+   .. versionchanged:: 3.10
+      Added the *encoding* parameter.
 
-    .. versionchanged:: 3.12
-       An exception will be thrown if the provided file
-       doesn't exist or is invalid or empty.
+   .. versionchanged:: 3.12
+      An exception will be thrown if the provided file
+      doesn't exist or is invalid or empty.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 

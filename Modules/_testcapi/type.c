@@ -110,9 +110,9 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    void *over_value = PyType_GetSlot(&PyLong_Type, Py_bf_releasebuffer + 1);
+    void *over_value = PyType_GetSlot(&PyLong_Type, Py_mod_name + 1);
     if (over_value != NULL) {
-        PyErr_SetString(PyExc_AssertionError, "mismatch: max+1 of long");
+        PyErr_SetString(PyExc_AssertionError, "mismatch: mod_name of long");
         return NULL;
     }
 

@@ -4,8 +4,6 @@
 .. module:: filecmp
    :synopsis: Compare files efficiently.
 
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
 **Source code:** :source:`Lib/filecmp.py`
 
 --------------

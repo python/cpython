@@ -4,9 +4,6 @@
 .. module:: email
    :synopsis: Package supporting the parsing, manipulating, and generating
               email messages.
-.. moduleauthor:: Barry A. Warsaw <barry@python.org>,
-                  R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
 
 **Source code:** :source:`Lib/email/__init__.py`
 
