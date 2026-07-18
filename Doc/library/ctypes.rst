@@ -700,8 +700,8 @@ Specifying function pointers using type annotations
 .. decorator:: wrap_dll_function(dll)
    :module: ctypes.util
 
-   A :term:`decorator` that generates :attr:`~_CFuncPtr.argtypes` and
-   :attr:`~_CFuncPtr.restype` from a function signature, using the
+   A :term:`decorator` that generates :attr:`~ctypes._CFuncPtr.argtypes` and
+   :attr:`~ctypes._CFuncPtr.restype` from a function signature, using the
    :attr:`~function.__name__` of the function and its :term:`type annotations <annotation>`.
 
    The decorated function should look like this::
