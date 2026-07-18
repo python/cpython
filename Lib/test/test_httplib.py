@@ -8,6 +8,7 @@ import array
 import re
 import socket
 import threading
+from functools import partial
 
 import unittest
 from unittest import mock
@@ -1012,7 +1013,11 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(2), b'Te')
         self.assertFalse(resp.isclosed())
         self.assertEqual(resp.read(2), b'xt')
-        self.assertEqual(resp.read(1), b'')
+        with self.assertRaises(client.IncompleteRead) as cm:
+            resp.read(1)
+        exception = cm.exception
+        self.assertEqual(exception.partial, b"")
+        self.assertIsNone(exception.expected)
         self.assertTrue(resp.isclosed())
 
     def test_partial_readintos_incomplete_body(self):
@@ -1030,12 +1035,12 @@ class BasicTest(TestCase):
         n = resp.readinto(b)
         self.assertEqual(n, 2)
         self.assertEqual(bytes(b), b'xt')
-        n = resp.readinto(b)
-        self.assertEqual(n, 0)
+        with self.assertRaises(client.IncompleteRead) as cm:
+            resp.readinto(b)
+        exception = cm.exception
+        self.assertEqual(exception.partial, b"")
+        self.assertIsNone(exception.expected)
         self.assertTrue(resp.isclosed())
-        self.assertFalse(resp.closed)
-        resp.close()
-        self.assertTrue(resp.closed)
 
     def test_host_port(self):
         # Check invalid host_port
@@ -1914,6 +1919,10 @@ class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
 
     def test_read_incomplete_read(self):
         self._test_incomplete_read(self.resp.read, expected_none=False)
+
+    def test_read_incomplete_read_n(self):
+        read_meth = partial(self.resp.read, len(self._body))
+        self._test_incomplete_read(read_meth, expected_none=True)
 
     def test_read1_incomplete_read(self):
         self._test_incomplete_read(self.resp.read1, expected_none=True)
