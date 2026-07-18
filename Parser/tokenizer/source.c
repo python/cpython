@@ -75,14 +75,8 @@ reserve_checkpoints(_PyTok_SourceText *source, int needed)
         PyErr_NoMemory();
         return -1;
     }
-    if ((size_t)cap > (size_t)PY_SSIZE_T_MAX /
-            sizeof(*source->line_checkpoints)) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    _PyTok_Off *checkpoints = PyMem_Realloc(
-        source->line_checkpoints,
-        (size_t)cap * sizeof(*source->line_checkpoints));
+    _PyTok_Off *checkpoints = source->line_checkpoints;
+    PyMem_Resize(checkpoints, _PyTok_Off, cap);
     if (checkpoints == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -190,10 +184,11 @@ _PyTok_SourceSpanView(const _PyTok_SourceText *source, _PyTok_Span span,
     return source->bytes == NULL ? "" : source->bytes + span.start;
 }
 
-static int
-line_is_implicit(const _PyTok_SourceText *source, int lineno)
+int
+_PyTok_SourceLineIsImplicit(const _PyTok_SourceText *source, int lineno)
 {
-    if ((lineno - 1) / 8 >= source->implicit_cap) {
+    if (lineno < 1 || lineno > source->nlines ||
+            (lineno - 1) / 8 >= source->implicit_cap) {
         return 0;
     }
     return (source->implicit_lines[(lineno - 1) / 8] >>
@@ -251,7 +246,7 @@ _PyTok_SourceLine(const _PyTok_SourceText *source, int lineno,
     *line = (_PyTok_Line){
         .start = start,
         .end = end,
-        .implicit_newline = line_is_implicit(source, lineno),
+        .implicit_newline = _PyTok_SourceLineIsImplicit(source, lineno),
         .contains_nul = memchr(
             source->bytes + start, 0, end - start) != NULL,
     };

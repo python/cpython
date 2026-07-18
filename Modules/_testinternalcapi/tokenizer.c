@@ -103,12 +103,16 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
             check(line.start == 6 && line.end == 9 &&
                       line.implicit_newline && !line.contains_nul,
                   "wrong second source line") < 0 ||
+            check(!_PyTok_SourceLineIsImplicit(&source, 1) &&
+                      _PyTok_SourceLineIsImplicit(&source, 2),
+                  "wrong early implicit newline flags") < 0 ||
             check(_PyTok_SourceLine(&source, 3, &line) == 0,
                   "cannot find third source line") < 0 ||
             check(line.contains_nul, "missing null byte flag") < 0 ||
             check(_PyTok_SourceLine(&source, final_line, &line) == 0,
                   "cannot find final source line") < 0 ||
-            check(line.implicit_newline,
+            check(line.implicit_newline &&
+                      _PyTok_SourceLineIsImplicit(&source, final_line),
                   "missing late implicit newline flag") < 0) {
         goto error;
     }
@@ -154,7 +158,11 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
             check(_PyTok_SourceLine(&source, final_line + 1, &line) == 0,
                   "cannot find virtual EOF line") < 0 ||
             check(line.start == source.len && line.end == source.len,
-                  "wrong virtual EOF line") < 0) {
+                  "wrong virtual EOF line") < 0 ||
+            check(!_PyTok_SourceLineIsImplicit(&source, 0) &&
+                      !_PyTok_SourceLineIsImplicit(
+                          &source, final_line + 1),
+                  "virtual or invalid line is implicit") < 0) {
         goto error;
     }
 
