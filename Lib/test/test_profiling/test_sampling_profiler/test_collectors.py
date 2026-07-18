@@ -505,6 +505,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("func1 (file.py:10)", resolve_name(child, strings))
         self.assertEqual(child["value"], 1)
         self.assertEqual(child["self"], 1)  # leaf: all time is self
+        self.assertEqual(data["stats"]["sample_interval_usec"], 1000)
 
     def test_flamegraph_collector_export(self):
         """Test flamegraph HTML export functionality."""
@@ -1555,6 +1556,57 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(func1_node["baseline"], 4.0)
         self.assertAlmostEqual(func1_node["diff"], 0.0)
         self.assertAlmostEqual(func1_node["diff_pct"], 0.0)
+
+    def test_diff_flamegraph_scale_factor_with_different_intervals(self):
+        """Scale factor normalizes profiles sampled at different rates."""
+        frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func1")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [frames] * 10,
+            baseline_interval=1000,
+            current_interval=10000,
+        )
+        diff.collect(frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 0.1)
+        self.assertEqual(data["stats"]["sample_interval_usec"], 10000)
+        self.assertAlmostEqual(data["baseline"], 1.0)
+        self.assertEqual(data["self_time"], 1)
+        self.assertAlmostEqual(data["diff"], 0.0)
+        self.assertAlmostEqual(data["diff_pct"], 0.0)
+
+    def test_diff_flamegraph_elided_scale_with_different_intervals(self):
+        """Elided values use the current profile's sample units."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "old_func")])
+            ])
+        ]
+        current_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 20, "new_func")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [baseline_frames] * 10,
+            baseline_interval=1000,
+            current_interval=10000,
+        )
+        diff.collect(current_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+        self.assertEqual(elided["stats"]["sample_interval_usec"], 10000)
+        self.assertAlmostEqual(elided["value"], 1.0)
+        self.assertAlmostEqual(elided["self"], 1.0)
+        self.assertAlmostEqual(elided["baseline"], 1.0)
+        self.assertAlmostEqual(elided["diff"], -1.0)
 
     def test_diff_flamegraph_elided_stacks(self):
         """Paths in baseline but not current produce elided stacks."""

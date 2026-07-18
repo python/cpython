@@ -70,7 +70,7 @@ class CollapsedStackCollector(StackTraceCollector):
 class FlamegraphCollector(StackTraceCollector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stats = {}
+        self.stats = {"sample_interval_usec": self.sample_interval_usec}
         self._root = {"samples": 0, "children": {}, "threads": set()}
         self._total_samples = 0
         self._sample_count = 0  # Track actual number of samples (not thread traces)
@@ -550,16 +550,19 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         current_stats = self._aggregate_path_samples(self._root)
         baseline_stats = self._aggregate_path_samples(self._baseline_collector._root)
 
-        # Scale baseline values to make them comparable, accounting for both
-        # sample count differences and sample interval differences.
+        # Scale baseline samples to the number of samples in the current
+        # profile. The sample interval is only needed when converting samples
+        # to time for display.
         baseline_total = self._baseline_collector._total_samples
         if baseline_total > 0 and self._total_samples > 0:
-            current_time = self._total_samples * self.sample_interval_usec
-            baseline_time = baseline_total * self._baseline_collector.sample_interval_usec
-            scale = current_time / baseline_time
+            scale = self._total_samples / baseline_total
         elif baseline_total > 0:
-            # Current profile is empty - use interval-based scale for elided display
-            scale = self.sample_interval_usec / self._baseline_collector.sample_interval_usec
+            # Express baseline samples in units of the current sample interval
+            # for the elided display.
+            scale = (
+                self._baseline_collector.sample_interval_usec
+                / self.sample_interval_usec
+            )
         else:
             scale = 1.0
 
@@ -653,6 +656,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         if not self._extract_elided_nodes(baseline_data, path=()):
             return None
 
+        self._scale_flamegraph_values(baseline_data, scale)
         self._add_elided_metadata(baseline_data, baseline_stats, scale, path=())
 
         # Merge only profiling metadata, not thread-level stats
@@ -665,6 +669,13 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         baseline_data["stats"]["current_samples"] = self._total_samples
 
         return baseline_data
+
+    def _scale_flamegraph_values(self, node, scale):
+        """Express flamegraph values in units of the current sample interval."""
+        node["value"] = node.get("value", 0) * scale
+        node["self"] = node.get("self", 0) * scale
+        for child in node.get("children", ()):
+            self._scale_flamegraph_values(child, scale)
 
     def _extract_elided_nodes(self, node, path):
         """Remove non-elided nodes and recalculate values bottom-up."""

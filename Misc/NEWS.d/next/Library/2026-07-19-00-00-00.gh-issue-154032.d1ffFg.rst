@@ -1,0 +1,2 @@
+Fix differential flamegraphs incorrectly reporting changes when the baseline
+and current profiles use different sampling rates.
