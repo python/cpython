@@ -85,7 +85,8 @@ class StdStreamTest(unittest.TestCase):
             parser.print_usage,
             parser.print_help,
         ):
-            self.assertRaises(ValueError, func, "invalid file")
+            with self.assertRaises(ValueError):
+                func(file="invalid file")
 
     def test_valid_file_invalid_stdout(self):
         parser = argparse.ArgumentParser()
