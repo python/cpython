@@ -2559,7 +2559,7 @@ with the :class:`Pool` class.
       (to consume *iterable* as you go), or even higher
       (to prefetch the next ``N=buffersize-processes`` arguments).
 
-      .. versionadded:: next
+      .. versionchanged:: next
          Added the *buffersize* parameter.
 
    .. method:: imap_unordered(func, iterable[, chunksize[, buffersize]])
