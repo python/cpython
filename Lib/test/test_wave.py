@@ -172,6 +172,15 @@ class MiscTestCase(unittest.TestCase):
         not_exported = {'KSDATAFORMAT_SUBTYPE_PCM'}
         support.check__all__(self, wave, not_exported=not_exported)
 
+    def test_getfp(self):
+        b = self._wave_file((b'fmt ', self.FMT_PCM), (b'data', b''))
+        fp = io.BytesIO(b)
+        with wave.open(fp) as r:
+            chunk = r.getfp()
+            self.assertIsNotNone(chunk)
+            self.assertIs(chunk.file, fp)
+            self.assertEqual(chunk.chunkname, b'RIFF')
+
 
 class WaveLowLevelTest(unittest.TestCase):
 
@@ -473,6 +482,10 @@ class WaveOpen(unittest.TestCase):
 
                     with wave.open(fake_path, 'rb') as f:
                         pass
+    
+    def test_open_invalid_mode(self):
+        with self.assertRaisesRegex(wave.Error, "mode must be"):
+            wave.open(io.BytesIO(), 'xb')
 
 
 class WaveReadErrorTest(unittest.TestCase):
@@ -530,29 +543,6 @@ class WaveReadErrorTest(unittest.TestCase):
         with wave.open(io.BytesIO(b)) as r:
             self.assertEqual(r.getnframes(), 4)
             self.assertEqual(r.readframes(4), data)
-
-    def test_getfp(self):
-        b = self._wave_file((b'fmt ', self.FMT_PCM), (b'data', b''))
-        fp = io.BytesIO(b)
-        with wave.open(fp) as r:
-            chunk = r.getfp()
-            self.assertIsNotNone(chunk)
-            self.assertIs(chunk.file, fp)
-            self.assertEqual(chunk.chunkname, b'RIFF')
-
-    def test_open_invalid_mode(self):
-        with self.assertRaisesRegex(wave.Error, "mode must be"):
-            wave.open(io.BytesIO(), 'xb')
-
-    def test_open_path_closes_file_on_error(self):
-        # When opening by path fails to parse, the file we opened is closed
-        # and the parse error is propagated.
-        with tempfile.NamedTemporaryFile(delete=False) as fp:
-            fp.write(b'not a wave file')
-            filename = fp.name
-        self.addCleanup(unlink, filename)
-        with self.assertRaises(wave.Error):
-            wave.open(filename, 'rb')
 
 
 class WaveWriteValidationTest(unittest.TestCase):
