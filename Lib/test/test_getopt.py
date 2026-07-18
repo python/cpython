@@ -229,6 +229,10 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(longopts, [('--help', 'x')])
         self.assertRaises(getopt.GetoptError, getopt.getopt, ['--help='], '', ['help'])
 
+    def test_getopt_error_str(self):
+        error  = getopt.GetoptError('option -a not recognized', 'a')
+        self.assertEqual(str(error), 'option -a not recognized')
+
 def test_libref_examples():
     """
     Examples from the Library Reference:  Doc/lib/libgetopt.tex
