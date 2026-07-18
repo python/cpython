@@ -486,7 +486,7 @@ class Pool(object):
             if buffersize < 1:
                 raise ValueError("buffersize must be None or > 0")
 
-        result = iterator_cls(self, buffersize)
+        result = iterator_cls(self, buffersize=buffersize)
         if chunksize == 1:
             self._taskqueue.put(
                 (
