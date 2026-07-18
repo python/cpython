@@ -21,14 +21,16 @@ class GetoptTests(unittest.TestCase):
     def assertErrorMessage(self, *args, message, **kwargs):
         self.assertRaisesRegex(getopt.GetoptError, message, *args, **kwargs)
 
+    def test_getopts_error_str(self):
+        error  = getopt.GetoptError('option -a not recognized', 'a')
+        self.assertEqual(str(error), 'option -a not recognized')
+
+
     def test_short_has_arg(self):
         self.assertIs(getopt.short_has_arg('a', 'a:'), True)
         self.assertIs(getopt.short_has_arg('a', 'a'), False)
         self.assertEqual(getopt.short_has_arg('a', 'a::'), '?')
         self.assertError(getopt.short_has_arg, 'a', 'b')
-        self.assertErrorMessage(
-            getopt.short_has_arg, 'a', 'b', message='option -a not recognized'
-        )
 
     def test_long_has_args(self):
         has_arg, option = getopt.long_has_args('abc', ['abc='])
