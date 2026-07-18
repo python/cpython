@@ -2103,6 +2103,8 @@ class PatchTest(unittest.TestCase):
 
 
     def test_patch_autospec_lazy_import(self):
+        self.assertIn("lazy_dumps", globals())
+        
         with patch(f"{__name__}.lazy_dumps", autospec=True) as mock_dumps:
             mock_dumps({})
             mock_dumps.assert_called_once_with({})
