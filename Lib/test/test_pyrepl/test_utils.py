@@ -162,12 +162,13 @@ class TestUtils(TestCase):
 
     def test_gen_colors_command_highlighting(self):
         cases = [
-            # highlights bare command names
+            # highlights bare command names (after stripping whitespaces)
             ("exit", [("exit", "command")]),
             ("quit", [("quit", "command")]),
             ("copyright", [("copyright", "command")]),
             ("help", [("help", "command")]),
             ("clear", [("clear", "command")]),
+            ("  clear ", [("clear", "command")]),
             # no highlight when not the only token on the line
             ("x = exit", [("=", "op"), ("exit", "builtin")]),
             ("obj.exit", [(".", "op")]),
