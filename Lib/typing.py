@@ -776,7 +776,13 @@ def Literal(self, *parameters):
     # values, not types.
     parameters = _flatten_literal_params(parameters)
     value_and_type_parameters = list(_value_and_type_iter(parameters))
-    deduplicated_parameters = tuple(p for p, _ in _deduplicate(value_and_type_parameters, unhashable_fallback=True))
+    deduplicated_parameters = tuple(
+        p
+        for p, _ in _deduplicate(
+            value_and_type_parameters,
+            unhashable_fallback=True,
+        )
+    )
 
     return _LiteralGenericAlias(self, deduplicated_parameters)
 
