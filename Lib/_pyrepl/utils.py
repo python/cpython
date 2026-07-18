@@ -239,7 +239,7 @@ def gen_colors_from_token_stream(
                     yield ColorSpan(span, "soft_keyword")
                 elif (
                     token.string in COMMANDS
-                    and (not prev_token or prev_token.exact_type == T.INDENT)
+                    and (not prev_token or prev_token.type == T.INDENT)
                     and (not next_token or next_token.type == T.NEWLINE)
                 ):
                     span = Span.from_token(token, line_lengths)
