@@ -343,11 +343,17 @@ the same library that the Python runtime is using.
       :py:mod:`!ast` Python module, which exports these constants under
       the same names.
 
+   .. rubric:: Low-level flags
+
+   The following flags serve narrow needs of the standard library and
+   interactive interpreters.  Code outside the standard library rarely
+   has a reason to use them.
+
    .. c:macro:: PyCF_ALLOW_INCOMPLETE_INPUT
 
-      This flag is an implementation detail of the :mod:`codeop` module.
-      Do not use it elsewhere; its behavior is unsupported and may
-      change without warning.
+      This flag is a private interface between the compiler and the
+      :mod:`codeop` module.  Do not use it; its behavior is unsupported
+      and may change without warning.
 
       With this flag set, when compilation fails because the source text
       ends where more input is expected, for example in the middle of an
@@ -427,6 +433,8 @@ the same library that the Python runtime is using.
    as :c:macro:`CO_FUTURE_ANNOTATIONS` to enable features normally
    selectable using :ref:`future statements <future>`.
    See :ref:`c_codeobject_flags` for a complete list.
+
+   .. rubric:: Flag masks
 
    The following masks combine several flags:
 
