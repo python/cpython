@@ -587,8 +587,7 @@ def wrap_dll_function(dll):
             raise ValueError(f"{name} missing return type annotation") from error
 
         ptr.restype = restype
-
-        ptr.argtypes = list(annotations.values())
+        ptr.argtypes = tuple(annotations.values())
         return ptr
 
     return decorator
