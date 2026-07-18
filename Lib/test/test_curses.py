@@ -1364,6 +1364,7 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(win.getmaxyx(), (5, 12))
             self.assertEqual(win.instr(2, 0), b' Lorem ipsum')
 
+    @requires_curses_func('scr_dump')
     def test_scr_dump(self):
         # Test scr_dump(), scr_restore(), scr_init() and scr_set().
         # scr_dump() writes the virtual screen to a named file; the other three
@@ -1722,6 +1723,9 @@ class TestCurses(unittest.TestCase):
             ('notimeout', 'is_notimeout'),
             ('scrollok', 'is_scrollok'),
         ]:
+            # is_keypad()/is_leaveok() are not available in every curses build.
+            if not hasattr(stdscr, getter):
+                continue
             getattr(stdscr, setter)(True)
             self.assertIs(getattr(stdscr, getter)(), True)
             getattr(stdscr, setter)(False)
