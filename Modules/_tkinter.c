@@ -617,7 +617,7 @@ Tkapp_New(const char *screenName, const char *className,
     TkappObject *v;
     char *argv0;
 #if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
-    static Tcl_Obj* threaded = NULL;
+    Tcl_Obj* threaded;
 #endif
 
     PyTypeObject *tp = (PyTypeObject *)Tkapp_Type;
@@ -627,17 +627,15 @@ Tkapp_New(const char *screenName, const char *className,
 
     v->interp = Tcl_CreateInterp();
 #if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
+    threaded = Tcl_GetVar2Ex(v->interp,
+                             "tcl_platform",
+                             "threaded",
+                             TCL_GLOBAL_ONLY);
     if (threaded == NULL) {
-        threaded = Tcl_GetVar2Ex(v->interp,
-                                 "tcl_platform",
-                                 "threaded",
-                                 TCL_GLOBAL_ONLY);
-        if (threaded == NULL) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "Tcl must be compiled with thread support");
-            Py_DECREF(v);
-            return NULL;
-        }
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Tcl must be compiled with thread support");
+        Py_DECREF(v);
+        return NULL;
     }
 #endif
     v->wantobjects = wantobjects;
