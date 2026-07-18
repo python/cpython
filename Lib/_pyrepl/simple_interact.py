@@ -68,6 +68,7 @@ def _clear_screen():
     reader.scheduled_commands.append("clear_screen")
 
 
+# Keep this in sync with _pyrepl.utils.COMMANDS
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
