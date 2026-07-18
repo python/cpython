@@ -676,52 +676,35 @@ class SysLazyImportsAPITests(LazyImportTestCase):
 
 @support.requires_subprocess()
 class ErrorHandlingTests(LazyImportTestCase):
-    """Tests for error handling during lazy import reification.
+    """Tests for error handling during lazy import reification."""
 
-    PEP 810: Errors during reification should show exception chaining with
-    both the lazy import definition location and the access location.
-    """
-
-    def test_import_error_shows_chained_traceback(self):
+    def test_missing_lazy_submodule_raises_attribute_error(self):
         """Accessing a nonexistent lazy submodule via parent attr raises AttributeError."""
         code = textwrap.dedent("""
-            import sys
             lazy import test.test_lazy_import.data.nonexistent_module
 
             try:
-                x = test.test_lazy_import.data.nonexistent_module
-            except AttributeError as e:
-                print("OK")
+                _ = test.test_lazy_import.data.nonexistent_module
+            except AttributeError:
+                pass
+            else:
+                raise AssertionError("AttributeError was not raised")
         """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("OK", result.stdout)
+        assert_python_ok("-c", code)
 
-    def test_attribute_error_on_from_import_shows_chained_traceback(self):
+    def test_missing_lazy_from_import_shows_chained_traceback(self):
         """Accessing missing attribute from lazy from-import should chain errors."""
-        # Tests 'lazy from module import nonexistent' behavior
         code = textwrap.dedent("""
-            import sys
             lazy from test.test_lazy_import.data.basic2 import nonexistent_name
 
             try:
-                x = nonexistent_name
+                _ = nonexistent_name
             except ImportError as e:
-                # PEP 810: Enhanced error reporting through exception chaining
                 assert e.__cause__ is not None, "Expected chained exception"
-                print("OK")
+            else:
+                raise AssertionError("ImportError was not raised")
         """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("OK", result.stdout)
+        assert_python_ok("-c", code)
 
     def test_reification_retries_on_failure(self):
         """Failed reification should allow retry on subsequent access.
@@ -731,53 +714,92 @@ class ErrorHandlingTests(LazyImportTestCase):
         """
         code = textwrap.dedent("""
             import sys
-            import types
 
-            lazy import test.test_lazy_import.data.broken_module
-
-            # First access - should fail
-            try:
-                x = test.test_lazy_import.data.broken_module
-            except AttributeError:
-                pass
-
-            # The lazy object should still be a lazy proxy (not reified)
-            g = globals()
-            lazy_obj = g['test']
-            # The root 'test' binding should still allow retry
-            # Second access - should also fail (retry the import)
-            try:
-                x = test.test_lazy_import.data.broken_module
-            except AttributeError:
-                print("OK - retry worked")
-        """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("OK", result.stdout)
-
-    def test_error_during_module_execution_propagates(self):
-        """Errors in module code during reification should propagate correctly."""
-        code = textwrap.dedent("""
-            import sys
             lazy import test.test_lazy_import.data.broken_module
 
             try:
                 _ = test.test_lazy_import.data.broken_module
-                print("FAIL - should have raised")
-            except AttributeError:
-                print("OK")
+            except ValueError as exc:
+                assert str(exc) == "This module always fails to import", exc
+            else:
+                raise AssertionError("ValueError was not raised")
+
+            assert "test.test_lazy_import.data.broken_module" not in sys.modules
+
+            try:
+                _ = test.test_lazy_import.data.broken_module
+            except ValueError as exc:
+                assert str(exc) == "This module always fails to import", exc
+            else:
+                raise AssertionError("ValueError was not raised")
         """)
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
-        self.assertIn("OK", result.stdout)
+        assert_python_ok("-c", code)
+
+    def test_lazy_submodule_traceback_hides_importlib_frames(self):
+        code = textwrap.dedent("""
+            import traceback
+
+            lazy import test.test_lazy_import.data.broken_module
+
+            try:
+                _ = test.test_lazy_import.data.broken_module
+            except ValueError as exc:
+                frames = traceback.extract_tb(exc.__traceback__)
+                assert [frame.name for frame in frames] == ["<module>", "<module>"], frames
+                assert frames[0].filename == "<string>", frames
+                assert frames[1].filename.endswith("broken_module.py"), frames
+            else:
+                raise AssertionError("ValueError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_module_not_found_during_module_execution_propagates(self):
+        code = textwrap.dedent("""
+            lazy import test.test_lazy_import.data.missing_dependency
+
+            try:
+                _ = test.test_lazy_import.data.missing_dependency
+            except ModuleNotFoundError as exc:
+                assert exc.name == "missing_dependency_for_lazy_import_test", exc.name
+                assert str(exc) == "No module named 'missing_dependency_for_lazy_import_test'", exc
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_self_named_module_not_found_during_module_execution_propagates(self):
+        code = textwrap.dedent("""
+            lazy import test.test_lazy_import.data.self_named_module_not_found
+
+            try:
+                _ = test.test_lazy_import.data.self_named_module_not_found
+            except ModuleNotFoundError as exc:
+                assert exc.name == "test.test_lazy_import.data.self_named_module_not_found", exc.name
+                assert str(exc) == "boom", exc
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_none_in_sys_modules_during_submodule_resolution_propagates(self):
+        code = textwrap.dedent("""
+            import sys
+
+            sys.modules["test.test_lazy_import.data.blocked_module"] = None
+            lazy import test.test_lazy_import.data.blocked_module
+
+            try:
+                _ = test.test_lazy_import.data.blocked_module
+            except ModuleNotFoundError as exc:
+                assert exc.name == "test.test_lazy_import.data.blocked_module", exc.name
+                assert str(exc) == (
+                    "import of test.test_lazy_import.data.blocked_module "
+                    "halted; None in sys.modules"
+                ), exc
+            else:
+                raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
 
     def test_circular_lazy_import_does_not_crash_for_gh_144727(self):
         with tempfile.TemporaryDirectory() as tmpdir:
