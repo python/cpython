@@ -106,6 +106,24 @@ class GetoptTests(unittest.TestCase):
         # accounted for in the code that calls getopt().
         self.assertEqual(args, ['arg1', 'arg2'])
 
+        opts, args = getopt.getopt(cmdline, 'a::', ['alpha=?'])
+        self.assertEqual(opts, [('-a', '1'), ('--alpha', '2'), ('--alpha', ''),
+                                ('-a', ''), ('--alpha', '')])
+        self.assertEqual(args, ['arg1', 'arg2'])
+
+        # Allow string for single long argument
+        opts, args = getopt.getopt(cmdline, 'a::', 'alpha=?')
+        self.assertEqual(opts, [('-a', '1'), ('--alpha', '2'), ('--alpha', ''),
+                                ('-a', ''), ('--alpha', '')])
+        self.assertEqual(args, ['arg1', 'arg2'])
+
+        # Pass everything after -- as args
+        cmdline = ['-a1', '--alpha=2', '--', '-b', '--beta=5']
+        opts, args = getopt.getopt(cmdline, 'a:b', ['alpha=', 'beta'])
+        self.assertEqual(opts, [('-a', '1'), ('--alpha', '2')])
+        self.assertEqual(args, ['-b', '--beta=5'])
+
+        cmdline = ['-a1', '--alpha=2', '--alpha=', '-a', '--alpha', 'arg1', 'arg2']
         self.assertError(getopt.getopt, cmdline, 'a:b', ['alpha', 'beta'])
 
     def test_gnu_getopt(self):
@@ -133,6 +151,25 @@ class GetoptTests(unittest.TestCase):
         opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
         self.assertEqual(opts, [('-a', '')])
         self.assertEqual(args, ['arg1', '-b', '1', '--alpha', '--beta=2'])
+
+        # Allow string for single long argument
+        opts, args = getopt.gnu_getopt(cmdline, 'ab:', 'alpha')
+        self.assertEqual(opts, [('-a', '')])
+        self.assertEqual(args, ['arg1', '-b', '1', '--alpha', '--beta=2',
+                                '--beta', '3', 'arg2'])
+
+        # Pass everything after -- as args
+        cmdline = ['-a1', '--alpha=2', '--', '-b', '--beta=5']
+        opts, args = getopt.gnu_getopt(cmdline, 'a:b', ['alpha=', 'beta'])
+        self.assertEqual(opts, [('-a', '1'), ('--alpha', '2')])
+        self.assertEqual(args, ['-b', '--beta=5'])
+
+        # In order arguments
+        cmdline = ["gamma", "--alpha=3"]
+        opts, args = getopt.gnu_getopt(cmdline, '-', ["alpha="])
+        self.assertEqual(opts, [(None, ['gamma']), ('--alpha', '3')])
+        self.assertEqual(args, [])
+
 
     def test_issue4629(self):
         longopts, shortopts = getopt.getopt(['--help='], '', ['help='])
