@@ -232,9 +232,9 @@ except ImportError:
 ### reduce() sequence to a single item
 ################################################################################
 
-_initial_missing = object()
+_initial_missing = sentinel('_initial_missing')
 
-def reduce(function, sequence, initial=_initial_missing):
+def reduce(function, sequence, /, initial=_initial_missing):
     """
     reduce(function, iterable, /[, initial]) -> value
 
@@ -263,6 +263,11 @@ def reduce(function, sequence, initial=_initial_missing):
         value = function(value, element)
 
     return value
+
+try:
+    from _functools import reduce
+except ImportError:
+    pass
 
 
 ################################################################################
@@ -558,16 +563,16 @@ def lru_cache(maxsize=128, typed=False):
     If *maxsize* is set to None, the LRU features are disabled and the cache
     can grow without bound.
 
-    If *typed* is True, arguments of different types will be cached separately.
-    For example, f(decimal.Decimal("3.0")) and f(3.0) will be treated as
-    distinct calls with distinct results. Some types such as str and int may
-    be cached separately even when typed is false.
+    If *typed* is True, arguments of different types will be cached
+    separately.  For example, f(decimal.Decimal("3.0")) and f(3.0) will be
+    treated as distinct calls with distinct results.  Some types such as
+    str and int may be cached separately even when typed is false.
 
     Arguments to the cached function must be hashable.
 
     View the cache statistics named tuple (hits, misses, maxsize, currsize)
-    with f.cache_info().  Clear the cache and statistics with f.cache_clear().
-    Access the underlying function with f.__wrapped__.
+    with f.cache_info().  Clear the cache and statistics with
+    f.cache_clear().  Access the underlying function with f.__wrapped__.
 
     See:  https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
 
@@ -1178,31 +1183,3 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
-
-def _warn_python_reduce_kwargs(py_reduce):
-    @wraps(py_reduce)
-    def wrapper(*args, **kwargs):
-        if 'function' in kwargs or 'sequence' in kwargs:
-            import os
-            import warnings
-            warnings.warn(
-                'Calling functools.reduce with keyword arguments '
-                '"function" or "sequence" '
-                'is deprecated in Python 3.14 and will be '
-                'forbidden in Python 3.16.',
-                DeprecationWarning,
-                skip_file_prefixes=(os.path.dirname(__file__),))
-        return py_reduce(*args, **kwargs)
-    return wrapper
-
-reduce = _warn_python_reduce_kwargs(reduce)
-del _warn_python_reduce_kwargs
-
-# The import of the C accelerated version of reduce() has been moved
-# here due to gh-121676. In Python 3.16, _warn_python_reduce_kwargs()
-# should be removed and the import block should be moved back right
-# after the definition of reduce().
-try:
-    from _functools import reduce
-except ImportError:
-    pass

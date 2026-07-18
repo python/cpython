@@ -33,6 +33,13 @@ under :ref:`reference counting <countingrefs>`.
    The members must not be accessed directly; instead use macros such as
    :c:macro:`Py_REFCNT` and :c:macro:`Py_TYPE`.
 
+   In the :ref:`Stable ABI <stable-abi>` for Free-Threaded Builds (``abi3t``),
+   this struct is opaque; its size and layout may change between
+   Python versions.
+   In Stable ABI for non-free-threaded builds (``abi3``), the
+   :c:member:`!ob_refcnt` and :c:member:`!ob_type` fields are available,
+   but using them directly is discouraged.
+
    .. c:member:: Py_ssize_t ob_refcnt
 
       The object's reference count, as returned by :c:macro:`Py_REFCNT`.
@@ -71,6 +78,19 @@ under :ref:`reference counting <countingrefs>`.
    As with :c:type:`!PyObject`, the members must not be accessed directly;
    instead use macros such as :c:macro:`Py_SIZE`, :c:macro:`Py_REFCNT` and
    :c:macro:`Py_TYPE`.
+
+   In the :ref:`Stable ABI <stable-abi>` for Free-Threaded Builds (``abi3t``),
+   this struct is opaque; its size and layout may change between
+   Python versions.
+   In Stable ABI for non-free-threaded builds (``abi3``), the
+   :c:member:`!ob_base` and :c:member:`!ob_size` fields are available,
+   but using them directly is discouraged.
+
+   .. c:member:: PyObject ob_base
+
+      Common object header.
+      Typically, this field is not accessed directly; instead
+      :c:type:`!PyVarObject` can be cast to :c:type:`PyObject`.
 
    .. c:member:: Py_ssize_t ob_size
 
@@ -434,8 +454,8 @@ method.
 
    The method will be passed the type object as the first parameter rather
    than an instance of the type.  This is used to create *class methods*,
-   similar to what is created when using the :func:`classmethod` built-in
-   function.
+   similar to what is created when using the :deco:`classmethod` built-in
+   decorator.
 
 
 .. c:macro:: METH_STATIC
@@ -444,7 +464,7 @@ method.
 
    The method will be passed ``NULL`` as the first parameter rather than an
    instance of the type.  This is used to create *static methods*, similar to
-   what is created when using the :func:`staticmethod` built-in function.
+   what is created when using the :deco:`staticmethod` built-in decorator.
 
 One other constant controls whether a method is loaded in place of another
 definition with the same method name.

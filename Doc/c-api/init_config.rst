@@ -623,6 +623,10 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    .. versionadded:: 3.14
 
+   .. versionchanged:: next
+      The function now replaces :data:`sys.flags` (create a new object),
+      instead of modifying :data:`sys.flags` in-place.
+
 
 .. _pyconfig_api:
 
@@ -1807,10 +1811,10 @@ PyConfig
 
    .. c:member:: wchar_t* run_presite
 
-      ``package.module`` path to module that should be imported before
-      ``site.py`` is run.
+      ``module`` or ``module:func`` entry point that should be executed before
+      the :mod:`site` module is imported.
 
-      Set by the :option:`-X presite=package.module <-X>` command-line
+      Set by the :option:`-X presite=module:func <-X>` command-line
       option and the :envvar:`PYTHON_PRESITE` environment variable.
       The command-line option takes precedence.
 

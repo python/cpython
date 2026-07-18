@@ -39,8 +39,8 @@ the information :func:`init` sets up.
    (e.g. :program:`compress` or :program:`gzip`). The encoding is suitable for use
    as a :mailheader:`Content-Encoding` header, **not** as a
    :mailheader:`Content-Transfer-Encoding` header. The mappings are table driven.
-   Encoding suffixes are case sensitive; type suffixes are first tried case
-   sensitively, then case insensitively.
+   Encoding suffixes are case-sensitive. Suffix mappings and type suffixes are
+   first tried case-sensitively, then case-insensitively.
 
    The optional *strict* argument is a flag specifying whether the list of known MIME types
    is limited to only the official types `registered with IANA
@@ -54,8 +54,8 @@ the information :func:`init` sets up.
    .. versionchanged:: 3.8
       Added support for *url* being a :term:`path-like object`.
 
-   .. deprecated:: 3.13
-      Passing a file path instead of URL is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.13
+      Passing a file path instead of URL.
       Use :func:`guess_file_type` for this.
 
 
@@ -129,9 +129,19 @@ behavior of the module.
    Add a mapping from the MIME type *type* to the extension *ext*. When the
    extension is already known, the new type will replace the old one. When the type
    is already known the extension will be added to the list of known extensions.
+   Valid extensions are empty or start with a ``'.'``.
+
+   Registered lower-case extensions are matched case-insensitively.
 
    When *strict* is ``True`` (the default), the mapping will be added to the
    official MIME types, otherwise to the non-standard ones.
+
+   .. deprecated:: 3.14
+      *ext* values that do not start with ``'.'`` are deprecated.
+
+   .. versionchanged:: next
+      *ext* now must start with ``'.'``. Otherwise :exc:`ValueError` is raised.
+
 
 
 .. data:: inited
@@ -304,12 +314,16 @@ than one MIME-type database; it provides an interface similar to the one of the
       extension is already known, the new type will replace the old one. When the type
       is already known the extension will be added to the list of known extensions.
 
+      Registered lower-case extensions are matched case-insensitively.
+
       When *strict* is ``True`` (the default), the mapping will be added to the
       official MIME types, otherwise to the non-standard ones.
 
-      .. deprecated-removed:: 3.14 3.16
-         Invalid, undotted extensions will raise a
-         :exc:`ValueError` in Python 3.16.
+      .. deprecated:: 3.14
+         *ext* values that do not start with ``'.'`` are deprecated.
+
+      .. versionchanged:: next
+         *ext* now must start with ``'.'``. Otherwise :exc:`ValueError` is raised.
 
 
 .. _mimetypes-cli:
@@ -348,7 +362,7 @@ it converts file extensions to MIME types.
 
 For each ``type`` entry, the script writes a line into the standard output
 stream. If an unknown type occurs, it writes an error message into the
-standard error stream and exits with the return code ``1``.
+standard output stream and exits with the return code ``1``.
 
 
 .. mimetypes-cli-example:
@@ -375,7 +389,7 @@ interface:
 
    $ # get a MIME type for a rare file extension
    $ python -m mimetypes filename.pict
-   error: unknown extension of filename.pict
+   error: media type unknown for filename.pict
 
    $ # now look in the extended database built into Python
    $ python -m mimetypes --lenient filename.pict
@@ -397,7 +411,8 @@ interface:
    $ python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
    type: application/x-sh encoding: None
    type: application/x-netcdf encoding: None
-   error: unknown extension of filename.xxx
+   error: media type unknown for filename.xxx
+   type: text/plain encoding: None
 
    $ # try to feed an unknown MIME type
    $ python -m mimetypes --extension audio/aac audio/opus audio/future audio/x-wav

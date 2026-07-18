@@ -304,6 +304,11 @@ Importing Modules
 
       Initialization function for a module built into the interpreter.
 
+      Note that the inittab uses "``PyInit``"
+      :ref:`initialization functions <extension-pyinit>`;
+      there is currently no way to include "``PyModExport_``"
+      :ref:`export hooks <extension-export-hook>`.
+
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
@@ -372,8 +377,10 @@ Importing Modules
 
    Sets the current lazy imports filter. The *filter* should be a callable that
    will receive ``(importing_module_name, imported_module_name, [fromlist])``
-   when an import can potentially be lazy and that must return ``True`` if
-   the import should be lazy and ``False`` otherwise.
+   when an import can potentially be lazy. The ``imported_module_name`` value
+   is the resolved module name, so ``lazy from .spam import eggs`` passes
+   ``package.spam``. The callable must return ``True`` if the import should be
+   lazy and ``False`` otherwise.
 
    Return ``0`` on success and ``-1`` with an exception set otherwise.
 
@@ -390,11 +397,6 @@ Importing Modules
    .. c:enumerator:: PyImport_LAZY_ALL
 
       Make all imports lazy by default.
-
-   .. c:enumerator:: PyImport_LAZY_NONE
-
-      Disable lazy imports entirely. Even explicit ``lazy`` statements become
-      eager imports.
 
    .. versionadded:: 3.15
 

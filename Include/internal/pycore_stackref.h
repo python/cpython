@@ -71,8 +71,10 @@ static const _PyStackRef PyStackRef_NULL = { .index = 0 };
 static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 
 #define PyStackRef_None ((_PyStackRef){ .index = (2 << Py_TAGGED_SHIFT) } )
-#define PyStackRef_False ((_PyStackRef){ .index = (3 << Py_TAGGED_SHIFT) })
-#define PyStackRef_True ((_PyStackRef){ .index = (4 << Py_TAGGED_SHIFT) })
+#define _Py_STACKREF_FALSE_INDEX (3 << Py_TAGGED_SHIFT)
+#define _Py_STACKREF_TRUE_INDEX (4 << Py_TAGGED_SHIFT)
+#define PyStackRef_False ((_PyStackRef){ .index = _Py_STACKREF_FALSE_INDEX })
+#define PyStackRef_True ((_PyStackRef){ .index = _Py_STACKREF_TRUE_INDEX })
 
 #define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
 
@@ -260,6 +262,18 @@ _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
     return new_ref;
 }
 #define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
+
+static inline _PyStackRef
+_PyStackRef_DupImmortal(_PyStackRef ref, const char *filename, int linenumber)
+{
+    assert(!PyStackRef_IsError(ref));
+    assert(!PyStackRef_IsTaggedInt(ref));
+    assert(!PyStackRef_RefcountOnObject(ref));
+    PyObject *obj = _Py_stackref_get_object(ref);
+    assert(_Py_IsImmortal(obj));
+    return _Py_stackref_create(obj, Py_TAG_REFCNT, filename, linenumber);
+}
+#define PyStackRef_DupImmortal(REF) _PyStackRef_DupImmortal((REF), __FILE__, __LINE__)
 
 static inline void
 _PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *filename, int linenumber)
@@ -631,6 +645,15 @@ PyStackRef_DUP(_PyStackRef ref)
 }
 #endif
 
+static inline _PyStackRef
+PyStackRef_DupImmortal(_PyStackRef ref)
+{
+    assert(!PyStackRef_IsNull(ref));
+    assert(!PyStackRef_RefcountOnObject(ref));
+    assert(_Py_IsImmortal(BITS_TO_PTR_MASKED(ref)));
+    return ref;
+}
+
 static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
 {
@@ -844,6 +867,18 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
                 return vret;                                            \
         }                                                               \
     } while (0)
+
+static inline void
+_PyStackRef_CloseStack(_PyStackRef *arguments, int total_args)
+{
+    // arguments is a pointer into the GC visible stack,
+    // so we must NULL out values as we clear them.
+    for (int i = total_args-1; i >= 0; i--) {
+        _PyStackRef tmp = arguments[i];
+        arguments[i] = PyStackRef_NULL;
+        PyStackRef_CLOSE(tmp);
+    }
+}
 
 #ifdef __cplusplus
 }
