@@ -252,10 +252,11 @@ PyList_New(Py_ssize_t size)
             return NULL;
         }
     }
-    if (size <= 0) {
-        op->ob_item = NULL;
-    }
-    else {
+    op->ob_item = NULL;
+    Py_SET_SIZE(op, 0);
+    op->allocated = 0;
+
+    if (size > 0) {
 #ifdef Py_GIL_DISABLED
         _PyListArray *array = list_allocate_array(size);
         if (array == NULL) {
