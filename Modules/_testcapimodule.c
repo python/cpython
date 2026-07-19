@@ -15,6 +15,10 @@
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
+#ifdef bool
+#  error "The public headers should not include <stdbool.h>, see gh-90904"
+#endif
+
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 #include <stddef.h>               // offsetof()
@@ -24,10 +28,6 @@
 #endif
 #ifdef HAVE_SYS_SYSCTL_H
 #  include <sys/sysctl.h>         // sysctlbyname()
-#endif
-
-#ifdef bool
-#  error "The public headers should not include <stdbool.h>, see gh-48924"
 #endif
 
 #include "_testcapi/util.h"
