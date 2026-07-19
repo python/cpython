@@ -479,6 +479,9 @@ Connection: close
         self.assertEqual(exc.reason, "foo")
         self.assertEqual(exc.hdrs, hdrs)
         self.assertEqual(exc.headers, hdrs)
+
+    def test_http_error_default_fp(self):
+        exc = urllib.error.HTTPError("http://something", 404, "foo", {}, None)
         self.assertIsInstance(exc.fp, io.BytesIO)
 
     def test_empty_socket(self):
