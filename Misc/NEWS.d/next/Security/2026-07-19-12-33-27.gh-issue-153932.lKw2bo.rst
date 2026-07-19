@@ -1,0 +1,1 @@
+Fix thread safety issue in enumerate.__reduce__ by protecting the read of ->en_index. Also added `TestThreadSafety` to test_enumerate.py.
