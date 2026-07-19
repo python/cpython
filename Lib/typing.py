@@ -775,13 +775,16 @@ def Literal(self, *parameters):
     # There is no '_type_check' call because arguments to Literal[...] are
     # values, not types.
     parameters = _flatten_literal_params(parameters)
+    value_and_type_parameters = list(_value_and_type_iter(parameters))
+    deduplicated_parameters = tuple(
+        p
+        for p, _ in _deduplicate(
+            value_and_type_parameters,
+            unhashable_fallback=True,
+        )
+    )
 
-    try:
-        parameters = tuple(p for p, _ in _deduplicate(list(_value_and_type_iter(parameters))))
-    except TypeError:  # unhashable parameters
-        pass
-
-    return _LiteralGenericAlias(self, parameters)
+    return _LiteralGenericAlias(self, deduplicated_parameters)
 
 
 @_SpecialForm
@@ -1019,7 +1022,7 @@ def evaluate_forward_ref(
 
     """
     if format == annotationlib.Format.STRING:
-        return forward_ref.__forward_arg__
+        return forward_ref.__resolved_str__
     if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
 

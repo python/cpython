@@ -1,0 +1,3 @@
+:class:`curses.textpad.Textbox` now enters and reads back the non-ASCII
+characters of an 8-bit locale encoding, instead of mangling them with a 7-bit
+mask.

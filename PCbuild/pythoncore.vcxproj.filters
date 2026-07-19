@@ -327,6 +327,9 @@
     <ClInclude Include="..\Parser\lexer\state.h">
       <Filter>Parser</Filter>
     </ClInclude>
+    <ClInclude Include="..\Parser\lexer\lexer_internal.h">
+      <Filter>Parser</Filter>
+    </ClInclude>
     <ClInclude Include="..\Parser\lexer\buffer.h">
       <Filter>Parser</Filter>
     </ClInclude>
@@ -1329,6 +1332,12 @@
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\lexer\lexer.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\lexer\number.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\lexer\string.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\lexer\state.c">

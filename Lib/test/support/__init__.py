@@ -236,20 +236,41 @@ def _is_gui_available():
         # if Python is running as a service (such as the buildbot service),
         # gui interaction may be disallowed
         import ctypes
+        import ctypes.util
         import ctypes.wintypes
+
         UOI_FLAGS = 1
         WSF_VISIBLE = 0x0001
-        class USEROBJECTFLAGS(ctypes.Structure):
-            _fields_ = [("fInherit", ctypes.wintypes.BOOL),
-                        ("fReserved", ctypes.wintypes.BOOL),
-                        ("dwFlags", ctypes.wintypes.DWORD)]
-        dll = ctypes.windll.user32
-        h = dll.GetProcessWindowStation()
+
+        @ctypes.util.struct
+        class USEROBJECTFLAGS:
+            fInherit: ctypes.wintypes.BOOL
+            fReserved: ctypes.wintypes.BOOL
+            dwFlags: ctypes.wintypes.DWORD
+
+        user32 = ctypes.windll.user32
+
+        @ctypes.util.wrap_dll_function(user32)
+        def GetProcessWindowStation() -> ctypes.wintypes.HANDLE:
+            ...
+
+        h = GetProcessWindowStation()
         if not h:
             raise ctypes.WinError()
+
+        @ctypes.util.wrap_dll_function(user32)
+        def GetUserObjectInformationW(
+            hObj: ctypes.wintypes.HANDLE,
+            nIndex: ctypes.c_int,
+            pvInfo: ctypes.c_void_p,
+            nLength: ctypes.wintypes.DWORD,
+            lpnLengthNeeded: ctypes.POINTER(ctypes.wintypes.DWORD),
+        ) -> ctypes.wintypes.BOOL:
+            ...
+
         uof = USEROBJECTFLAGS()
         needed = ctypes.wintypes.DWORD()
-        res = dll.GetUserObjectInformationW(h,
+        res = GetUserObjectInformationW(h,
             UOI_FLAGS,
             ctypes.byref(uof),
             ctypes.sizeof(uof),
@@ -2289,10 +2310,10 @@ class _SMALLEST:
 
 SMALLEST = _SMALLEST()
 
-def maybe_get_event_loop_policy():
-    """Return the global event loop policy if one is set, else return None."""
+def maybe_get_event_loop():
+    """Return the event loop set for the current thread, else return None."""
     import asyncio.events
-    return asyncio.events._event_loop_policy
+    return asyncio.events._local._loop
 
 # Helpers for testing hashing.
 NHASHBITS = sys.hash_info.width # number of bits in hash() result

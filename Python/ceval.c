@@ -1056,6 +1056,7 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject 
         // +1 in case PY_VECTORCALL_ARGUMENTS_OFFSET is set.
         result = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
         if (result == NULL) {
+            PyErr_NoMemory();
             return NULL;
         }
     }
@@ -1145,6 +1146,36 @@ _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *index_or_null, int yield_from
         return PyStackRef_ERROR;
     }
     return PyStackRef_FromPyObjectSteal(iter_o);
+}
+
+int _PyEval_StoreName(PyThreadState *tstate, _PyStackRef v, PyObject *name, PyObject* ns)
+{
+    int deletion = PyStackRef_IsNull(v);
+
+    if (ns == NULL) {
+        const char *msg = deletion
+            ? "no locals found when deleting %R"
+            : "no locals found when storing %R";
+        _PyErr_Format(tstate, PyExc_SystemError, msg, name);
+        return 1;
+    }
+
+    if (deletion) {
+        int error = PyObject_DelItem(ns, name);
+        if (error) {
+            _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG,
+                                    name);
+        }
+        return error;
+    }
+
+    PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
+    if (PyDict_CheckExact(ns)) {
+        return PyDict_SetItem(ns, name, v_o);
+    }
+
+    return PyObject_SetItem(ns, name, v_o);
 }
 
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)

@@ -1,8 +1,15 @@
 import os
 import sys
 
+from dataclasses import dataclass
+
+lazy import functools
 lazy import shutil
 lazy import subprocess
+
+lazy import annotationlib
+lazy from typing import Annotated, get_args, ClassVar, get_origin
+lazy from ctypes import Structure, BigEndianStructure, LittleEndianStructure
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -490,6 +497,102 @@ if (os.name == "posix" and
             _dl_iterate_phdr(_info_callback,
                              ctypes.byref(ctypes.py_object(libraries)))
             return libraries
+
+
+@dataclass(slots=True, frozen=True)
+class CFieldInfo:
+    anonymous: bool = False
+    bit_width: int | None = None
+
+
+def _process_struct(decorated_class, /, *, align, layout, endian, pack):
+    fields = []
+    anonymous = []
+    if issubclass(decorated_class, Structure):
+        fields.extend(decorated_class._fields_)
+        anonymous.extend(decorated_class._anonymous_)
+
+    annotations = annotationlib.get_annotations(decorated_class, eval_str=True)
+    for name, hint in annotations.items():
+        if get_origin(hint) is ClassVar:
+            continue
+
+        field = [name]
+        if get_origin(hint) is Annotated:
+            cls, field_info = get_args(hint)
+            field.append(cls)
+            if not isinstance(field_info, CFieldInfo):
+                raise TypeError(f"expected CFieldInfo in Annotated, got {field_info!r}")
+
+            if field_info.bit_width is not None:
+                field.append(field_info.bit_width)
+
+            if field_info.anonymous is True:
+                anonymous.append(name)
+        else:
+            field.append(hint)
+
+        # _fields_ is a list of tuples
+        fields.append(tuple(field))
+
+    if endian == 'big':
+        endian_class = BigEndianStructure
+    elif endian == 'little':
+        endian_class = LittleEndianStructure
+    elif endian == 'native':
+        endian_class = Structure
+    else:
+        raise ValueError(f"expected 'big', 'little', or 'native', but got {endian!r}")
+
+    @functools.wraps(decorated_class, updated=())
+    class _Struct(endian_class):
+        vars().update(vars(decorated_class))
+        if align is not None:
+            _align_ = align
+        if layout is not None:
+            _layout_ = layout
+        if pack is not None:
+            _pack_ = pack
+        _fields_ = fields
+        _anonymous_ = anonymous
+
+    return _Struct
+
+
+def struct(class_or_none=None, /, *, align=None, layout=None, endian='native', pack=None):
+    process_the_struct = functools.partial(
+        _process_struct,
+        align=align,
+        layout=layout,
+        endian=endian,
+        pack=pack
+    )
+
+    if class_or_none is None:
+        def inner(decorated_class):
+            return process_the_struct(decorated_class)
+
+        return inner
+
+    return process_the_struct(class_or_none)
+
+
+def wrap_dll_function(dll):
+    def decorator(func):
+        name = func.__name__
+        ptr = getattr(dll, name)
+        annotations = annotationlib.get_annotations(func, eval_str=True)
+
+        try:
+            restype = annotations.pop("return")
+        except KeyError as error:
+            raise ValueError(f"{name!r} missing return type annotation") from error
+
+        ptr.restype = restype
+        ptr.argtypes = tuple(annotations.values())
+        return ptr
+
+    return decorator
 
 ################################################################
 # test code

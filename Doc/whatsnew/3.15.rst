@@ -1225,7 +1225,7 @@ importlib.metadata
   would return an empty ``PackageMetadata`` object as if the file
   was present but empty. Now, a ``MetadataNotFound`` exception is raised.
   See `importlib_metadata#493 <https://github.com/python/importlib_metadata/issues/493>`_
-  for background and rationale and and :gh:`143387` for rationale on the
+  for background and rationale and :gh:`143387` for rationale on the
   compatibility concerns.
   (Contributed by Jason R. Coombs.)
 
@@ -1398,6 +1398,14 @@ shelve
   (Contributed by Furkan Onder in :gh:`99631`.)
 
 
+shutil
+------
+
+* :func:`shutil.copyfile` now also raises :exc:`~shutil.SpecialFileError` for
+  sockets and device files.
+  (Contributed by Savannah Ostrowski in :gh:`142693`.)
+
+
 socket
 ------
 
@@ -1541,6 +1549,9 @@ tarfile
   now replace slashes with backslashes in symlink targets on Windows to prevent
   creation of corrupted links.
   (Contributed by Christoph Walcher in :gh:`57911`.)
+* :func:`~tarfile.TarFile.gettarinfo` now replaces backslashes with slashes in
+  symlink targets on Windows to conform to the tar format standard. (Contributed
+  by Daniele Nicolodi in :gh:`151669`.)
 
 
 threading
