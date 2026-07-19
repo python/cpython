@@ -30,7 +30,7 @@ def _ctrl_handler(sig):
 ctrl_handler = HANDLER_ROUTINE(_ctrl_handler)
 
 
-@ctypes.util.wrap_dll_function(ctypes.windll.kernel32):
+@ctypes.util.wrap_dll_function(ctypes.windll.kernel32)
 def SetConsoleCtrlHandler(HandlerRoutine: HANDLER_ROUTINE,
                           Add: wintypes.BOOL) -> wintypes.BOOL:
     pass
