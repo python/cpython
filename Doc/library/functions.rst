@@ -2179,6 +2179,11 @@ are always available.  They are listed here in alphabetical order.
    in the same way that keywords in a class
    definition (besides *metaclass*) would.
 
+   Unlike a :keyword:`class` statement, the three argument form does not
+   call the metaclass ``__prepare__`` method (see :ref:`prepare`).  Use
+   :func:`types.new_class` to dynamically create a class using the
+   appropriate metaclass.
+
    See also :ref:`class-customization`.
 
    .. versionchanged:: 3.6
