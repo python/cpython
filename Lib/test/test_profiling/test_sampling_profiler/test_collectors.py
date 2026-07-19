@@ -1336,6 +1336,27 @@ class TestSampleProfilerComponents(unittest.TestCase):
             self.assertIn("gc_pct", thread_data)
             self.assertIn("total", thread_data)
 
+    def test_flamegraph_nodes_include_per_thread_values(self):
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        root = MockFrameInfo("app.py", 1, "main")
+        collector.process_frames(
+            [MockFrameInfo("app.py", 10, "worker_a"), root],
+            thread_id=1,
+            weight=2,
+        )
+        collector.process_frames(
+            [MockFrameInfo("app.py", 20, "worker_b"), root],
+            thread_id=2,
+            weight=3,
+        )
+
+        data = collector._convert_to_flamegraph_format()
+
+        self.assertEqual(data["thread_values"], {1: [2, 0], 2: [3, 0]})
+        children_by_line = {child["lineno"]: child for child in data["children"]}
+        self.assertEqual(children_by_line[10]["thread_values"], {1: [2, 2]})
+        self.assertEqual(children_by_line[20]["thread_values"], {2: [3, 3]})
+
     def test_flamegraph_collector_per_thread_gc_percentage(self):
         """Test that per-thread GC percentage uses total samples as denominator."""
         collector = FlamegraphCollector(sample_interval_usec=1000)
