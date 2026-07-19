@@ -467,6 +467,18 @@ Connection: close
             finally:
                 self.unfakehttp()
 
+    def test_http_error_attribute_values(self):
+        hdrs = {
+            "Authorization": "Bearer foobar",
+            "Accept": "application/json"
+        }
+        exc = urllib.error.HTTPError("http://something", 404, "foo", hdrs, None)
+        self.assertEqual(exc.url, "http://something")
+        self.assertEqual(exc.code, 404)
+        self.assertEqual(exc.msg, "foo")
+        self.assertEqual(exc.hdrs, hdrs)
+        self.assertIsInstance(exc.fp, io.BytesIO)
+
     def test_empty_socket(self):
         # urlopen() raises OSError if the underlying socket does not send any
         # data. (#1680230)
@@ -512,6 +524,12 @@ Connection: close
             urllib.request.urlopen('ftp://localhost/a/file/which/doesnot/exists.py')
         self.assertFalse(e.exception.filename)
         self.assertTrue(e.exception.reason)
+
+    def test_url_error_stringified(self):
+        reason = 'sixseven'
+        err = urllib.error.URLError(reason)
+        self.assertEqual(reason, err.reason)
+        self.assertEqual(str(err), '<urlopen error %s>' % reason)
 
 
 class urlopen_DataTests(unittest.TestCase):
