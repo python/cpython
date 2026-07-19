@@ -3568,6 +3568,24 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
     if (type == 0) {
         return NULL;
     }
+    if (type == 1) {
+        /* winsch() does not locale-decode a byte above 127 on a wide build,
+           unlike waddch(), so decode it here and insert it as a wide
+           character. (gh-153864) */
+        chtype cch = ch_ & A_CHARTEXT;
+        if (cch > 127) {
+            wint_t wc = btowc((int)cch);
+            if (wc != WEOF) {
+                wchar_t wstr[2] = { (wchar_t)wc, L'\0' };
+                attr_t cattr = (attr_t)((ch_ | attr) & ~(chtype)A_CHARTEXT);
+                if (curses_setcchar(&wch, wstr, cattr, PAIR_NUMBER(cattr)) == ERR) {
+                    curses_window_set_error(self, "setcchar", "insch");
+                    return NULL;
+                }
+                type = 2;
+            }
+        }
+    }
     if (type == 2) {
         if (!group_left_1) {
             rtn = wins_wch(self->win, &wch);
