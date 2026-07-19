@@ -1167,11 +1167,10 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
-const char*
+void
 PyUnstable_DumpTraceback(int fd, PyThreadState *tstate)
 {
     dump_traceback(fd, tstate, 1);
-    return NULL;
 }
 
 #if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
