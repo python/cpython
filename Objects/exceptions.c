@@ -2738,6 +2738,9 @@ AttributeError_str(PyObject *op)
         } else {
             result = PyUnicode_FromFormat("module has no attribute '%U'", name);
         }
+    } else if (PyType_Check(obj)) {
+        result = PyUnicode_FromFormat("type object '%N' has no attribute '%U'",
+                                      _PyType_CAST(obj), name);
     } else {
         result = PyUnicode_FromFormat("'%T' object has no attribute '%U'",
                                       obj, name);
