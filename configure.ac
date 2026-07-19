@@ -2410,8 +2410,6 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
-    dnl workaround for emscripten#27241, can remove when we update to emscripten 6.0.3
-    AS_VAR_APPEND([LINKFORSHARED], [" -sGROWABLE_ARRAYBUFFERS=0"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
