@@ -173,8 +173,12 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, wave, not_exported=not_exported)
 
     def test_getfp(self):
-        b = self._wave_file((b'fmt ', self.FMT_PCM), (b'data', b''))
-        fp = io.BytesIO(b)
+        fp = io.BytesIO()
+        with wave.open(fp, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(1)
+            w.setframerate(11025)
+        fp.seek(0)
         with wave.open(fp) as r:
             chunk = r.getfp()
             self.assertIsNotNone(chunk)
