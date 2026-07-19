@@ -49,12 +49,15 @@ Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
 IS_AWS_LC = "AWS-LC" in ssl.OPENSSL_VERSION
+IS_LIBRESSL = "LibreSSL" in ssl.OPENSSL_VERSION
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
 CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 CAN_GET_AVAILABLE_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 4)
-CAN_SET_CLIENT_SIGALGS = not IS_AWS_LC
+# LibreSSL does not provide SSL_CTX_set1_(client_)sigalgs_list().
+CAN_SET_CLIENT_SIGALGS = not IS_AWS_LC and not IS_LIBRESSL
+CAN_SET_SERVER_SIGALGS = not IS_LIBRESSL
 CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
@@ -1082,6 +1085,8 @@ class ContextTests(unittest.TestCase):
         if CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS:
             self.assertIsNone(ctx.set_client_sigalgs('rsa_pss_rsae_sha256:?foo'))
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_set_server_sigalgs(self):
         ctx = ssl.create_default_context()
 
@@ -4593,6 +4598,8 @@ class ThreadedTests(unittest.TestCase):
                                chatty=True, connectionchatty=True,
                                sni_name=hostname)
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_server_sigalgs(self):
         # server rsa_pss_rsae_sha384, client auto
         sigalg = "rsa_pss_rsae_sha384"
@@ -4613,6 +4620,8 @@ class ThreadedTests(unittest.TestCase):
         if CAN_GET_SELECTED_OPENSSL_SIGALG:
             self.assertEqual(stats['server_sigalg'], sigalg)
 
+    @unittest.skipUnless(CAN_SET_SERVER_SIGALGS,
+                         "SSL library doesn't support setting server sigalgs")
     def test_server_sigalgs_mismatch(self):
         client_context, server_context, hostname = testing_context()
         client_context.set_server_sigalgs("rsa_pss_rsae_sha256")
