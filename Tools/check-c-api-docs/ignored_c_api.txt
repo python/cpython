@@ -102,3 +102,5 @@ PyUnicode_AsDecodedObject
 PyUnicode_AsDecodedUnicode
 PyUnicode_AsEncodedObject
 PyUnicode_AsEncodedUnicode
+# Soft-deprecated in 3.15; will remain undocumented in 3.14 and 3.13
+PyException_HEAD
