@@ -881,9 +881,10 @@ class HTMLDoc(Doc):
         if data:
             contents = []
             for key, value in data:
-                contents.append(self.document(value, key))
+                contents.append(
+                    f'<dl class="doc"><dt>{self.document(value, key)}</dt></dl>')
             result = result + self.bigsection(
-                'Data', 'data', '<br>\n'.join(contents))
+                'Data', 'data', '\n'.join(contents))
         if hasattr(object, '__author__'):
             contents = self.markup(str(object.__author__), self.preformat)
             result = result + self.bigsection('Author', 'author', contents)
