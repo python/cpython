@@ -946,7 +946,9 @@ function formatDuration(seconds) {
 
 function populateProfileSummary(data) {
   const stats = data.stats || {};
-  const totalSamples = stats.total_samples || data.value || 0;
+  const totalSamples = currentThreadFilter !== 'all'
+    ? (data.value ?? 0)
+    : (stats.total_samples ?? data.value ?? 0);
   const duration = stats.duration_sec || 0;
   const sampleRate = stats.sample_rate || (duration > 0 ? totalSamples / duration : 0);
   const errorRate = stats.error_rate || 0;
@@ -1252,10 +1254,16 @@ function filterDataByThread(data, threadId) {
       return null;
     }
 
+    const {
+      thread_values: _threadValues,
+      thread_opcodes: threadOpcodes,
+      ...sharedNode
+    } = node;
     const filteredNode = {
-      ...node,
+      ...sharedNode,
       value: threadValues[0],
       self: threadValues[1],
+      opcodes: threadOpcodes?.[threadId] ?? {},
       children: []
     };
 

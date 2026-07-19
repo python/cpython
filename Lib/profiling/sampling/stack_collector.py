@@ -226,7 +226,18 @@ class FlamegraphCollector(StackTraceCollector):
             out = []
             for func, node in children.items():
                 samples = node["samples"]
-                if samples < min_samples:
+                significant_for_thread = any(
+                    thread_samples >= max(
+                        1,
+                        int(
+                            self._root["thread_samples"][thread_id]
+                            * 0.001
+                        ),
+                    )
+                    for thread_id, thread_samples
+                    in node["thread_samples"].items()
+                )
+                if samples < min_samples and not significant_for_thread:
                     continue
 
                 # Intern all string components for maximum efficiency
@@ -270,6 +281,14 @@ class FlamegraphCollector(StackTraceCollector):
                 opcodes = node.get("opcodes", {})
                 if opcodes:
                     child_entry["opcodes"] = dict(opcodes)
+                thread_opcodes = node.get("thread_opcodes")
+                if thread_opcodes:
+                    child_entry["thread_opcodes"] = {
+                        thread_id: dict(counts)
+                        for thread_id, counts in sorted(
+                            thread_opcodes.items()
+                        )
+                    }
 
                 # Recurse
                 child_entry["children"] = convert_children(
@@ -326,7 +345,25 @@ class FlamegraphCollector(StackTraceCollector):
         opcode_mapping = get_opcode_mapping()
 
         # If we only have one root child, make it the root to avoid redundant level
-        if len(root_children) == 1:
+        root_thread_values = {
+            thread_id: [samples, 0]
+            for thread_id, samples in sorted(
+                self._root["thread_samples"].items()
+            )
+        }
+        sole_root_covers_profile = (
+            len(root_children) == 1
+            and root_children[0]["value"] == total_samples
+            and {
+                thread_id: values[0]
+                for thread_id, values
+                in root_children[0]["thread_values"].items()
+            } == {
+                thread_id: values[0]
+                for thread_id, values in root_thread_values.items()
+            }
+        )
+        if sole_root_covers_profile:
             main_child = root_children[0]
             # Update name and label to indicate it's the program root
             old_name = self._string_table.get_string(main_child["name"])
@@ -355,12 +392,7 @@ class FlamegraphCollector(StackTraceCollector):
                 "per_thread_stats": per_thread_stats_with_pct
             },
             "threads": sorted(list(self._all_threads)),
-            "thread_values": {
-                thread_id: [samples, 0]
-                for thread_id, samples in sorted(
-                    self._root["thread_samples"].items()
-                )
-            },
+            "thread_values": root_thread_values,
             "strings": self._string_table.get_strings(),
             "opcode_mapping": opcode_mapping
         }
@@ -406,6 +438,10 @@ class FlamegraphCollector(StackTraceCollector):
 
             if opcode is not None:
                 node["opcodes"][opcode] += weight
+                thread_opcodes = node.setdefault("thread_opcodes", {})
+                thread_opcodes.setdefault(
+                    thread_id, collections.Counter()
+                )[opcode] += weight
 
             current = node
 
