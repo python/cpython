@@ -7345,6 +7345,17 @@ PY_CHECK_CURSES_FUNC([define_key])
 PY_CHECK_CURSES_FUNC([keyok])
 PY_CHECK_CURSES_FUNC([set_escdelay])
 PY_CHECK_CURSES_FUNC([set_tabsize])
+dnl The X/Open attr_t and soft-label attribute functions are absent on old
+dnl SVr4 curses (e.g. illumos).
+PY_CHECK_CURSES_FUNC([wattr_get])
+PY_CHECK_CURSES_FUNC([wattr_set])
+PY_CHECK_CURSES_FUNC([wattr_on])
+PY_CHECK_CURSES_FUNC([wattr_off])
+PY_CHECK_CURSES_FUNC([wcolor_set])
+PY_CHECK_CURSES_FUNC([slk_attr_on])
+PY_CHECK_CURSES_FUNC([slk_attr_off])
+PY_CHECK_CURSES_FUNC([slk_attr_set])
+PY_CHECK_CURSES_FUNC([slk_color])
 PY_CHECK_CURSES_VAR([ESCDELAY])
 PY_CHECK_CURSES_VAR([TABSIZE])
 
@@ -7360,9 +7371,10 @@ AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
   [AC_DEFINE([HAVE_CURSES_GETMOUSE], [1],
     [Define if you have the 'getmouse' function with the X/Open signature.])])
 
-dnl scr_dump and its companions scr_restore/scr_init/scr_set are an inseparable
-dnl group; probing scr_dump alone gates the whole family.
+dnl scr_dump gates scr_dump/scr_restore/scr_init; scr_set is separate, since
+dnl old SVr4 curses (e.g. illumos) has the former but not scr_set.
 PY_CHECK_CURSES_FUNC([scr_dump])
+PY_CHECK_CURSES_FUNC([scr_set])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env
