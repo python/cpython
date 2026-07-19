@@ -300,17 +300,17 @@ class ThreadSafety(EnumerateStartTestCase):
     def test_thread_safety_while_iterating(self):
         # gh-153932: calling reduce while iterating should pass with TSAN
 
-        en = enumerate(range(10_000)) 
+        en = enumerate(range(10_000))
         stop = threading.Event()
 
         def advance():
             for _ in en:
-                pass    
+                pass
             stop.set()
 
         def read():
             while not stop.is_set():
-                en.__reduce__() 
+                en.__reduce__()
 
         threads = [threading.Thread(target=advance), threading.Thread(target=read)]
 
