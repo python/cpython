@@ -479,10 +479,12 @@ Connection: close
         self.assertEqual(exc.reason, "foo")
         self.assertEqual(exc.hdrs, hdrs)
         self.assertEqual(exc.headers, hdrs)
+        exc.close()
 
     def test_http_error_default_fp(self):
         exc = urllib.error.HTTPError("http://something", 404, "foo", {}, None)
         self.assertIsInstance(exc.fp, io.BytesIO)
+        exc.close()
 
     def test_empty_socket(self):
         # urlopen() raises OSError if the underlying socket does not send any
