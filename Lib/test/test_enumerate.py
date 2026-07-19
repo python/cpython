@@ -7,6 +7,7 @@ import threading
 
 
 from test import support
+from test.support import threading_helper
 
 class G:
     'Sequence using __getitem__'
@@ -297,28 +298,25 @@ class TestLongStart(EnumerateStartTestCase):
 
 class ThreadSafety(EnumerateStartTestCase):
     def test_thread_safety_while_iterating(self):
-        range_stop = 10_000
-        en = enumerate(range(1, range_stop))   # next() ends after specified range
+        # gh-153932: calling reduce while iterating should pass with TSAN
+
+        en = enumerate(range(10_000)) 
         stop = threading.Event()
 
-
         def advance():
-            for _ in range(1, range_stop -1):
-                next(en)                    # enum_next: atomic write of en_index
+            for _ in en:
+                pass    
             stop.set()
-
 
         def read():
             while not stop.is_set():
-                en.__reduce__()             # enum_reduce: plain read of en_index
-
+                en.__reduce__() 
 
         threads = [threading.Thread(target=advance), threading.Thread(target=read)]
-        for t in threads:
-            t.start()
 
-        for t in threads:
-            t.join()
+        with threading_helper.start_threads(threads):
+            pass
+        
 
 
 if __name__ == "__main__":
