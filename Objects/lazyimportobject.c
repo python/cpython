@@ -94,8 +94,8 @@ lazy_import_getattro(PyObject *op, PyObject *name) {
             return NULL;
         }
         PyErr_Format(PyExc_AttributeError,
-                     "lazy import '%U' has no attribute '%U'",
-                     lz_name, name);
+                     "cannot access attribute '%U' on unresolved lazy import '%U'",
+                     name, lz_name);
         Py_DECREF(lz_name);
         return NULL;
     }
