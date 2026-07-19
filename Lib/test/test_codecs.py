@@ -39,7 +39,7 @@ def coding_checker(self, coder):
 # On small versions of Windows like Windows IoT or Windows Nano Server,
 # not all codepages are present
 def is_code_page_present(cp):
-    from ctypes import POINTER, WINFUNCTYPE, WinDLL, Structure
+    from ctypes import POINTER, WINFUNCTYPE, WinDLL
     from ctypes.util import struct
     from ctypes.wintypes import BOOL, BYTE, WCHAR, UINT, DWORD
 
