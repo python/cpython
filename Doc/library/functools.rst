@@ -49,6 +49,11 @@ The :mod:`!functools` module defines the following functions:
    It is possible for the wrapped function to be called more than once if
    another thread makes an additional call before the initial call has been
    completed and cached.
+   However, even when this happens all threads will return the same object.
+
+   .. versionchanged:: next
+      In earlier versions the unbound cache was not guaranteed idempotent
+      for threaded access.
 
    Call-once behavior is not guaranteed because locks are not held during the
    function call. Potentially another call with the same arguments could
@@ -90,9 +95,8 @@ The :mod:`!functools` module defines the following functions:
 
    The *cached_property* does not prevent a possible race condition in
    multi-threaded usage. The getter function could run more than once on the
-   same instance, with the latest run setting the cached value. If the cached
-   property is idempotent or otherwise not harmful to run more than once on an
-   instance, this is fine. If synchronization is needed, implement the necessary
+   same instance, with the first run setting the cached value.
+   If it is necessary to guarantee work is only done once, implement the necessary
    locking inside the decorated getter function or around the cached property
    access.
 
@@ -113,6 +117,11 @@ The :mod:`!functools` module defines the following functions:
    :ref:`faq-cache-method-calls` for more details on how this differs from :deco:`cached_property`.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: next
+      In earlier versions the :deco:`cached_property` decorator was not guaranteed
+      idempotent for threaded access.  For simultaneous access multiple threads
+      might all set the cached value.
 
    .. versionchanged:: 3.12
       Prior to Python 3.12, :deco:`!cached_property` included an undocumented lock to
