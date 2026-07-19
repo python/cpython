@@ -257,11 +257,26 @@
 /* Define if you have the 'scr_dump' function. */
 #undef HAVE_CURSES_SCR_DUMP
 
+/* Define if you have the 'scr_set' function. */
+#undef HAVE_CURSES_SCR_SET
+
 /* Define if you have the 'set_escdelay' function. */
 #undef HAVE_CURSES_SET_ESCDELAY
 
 /* Define if you have the 'set_tabsize' function. */
 #undef HAVE_CURSES_SET_TABSIZE
+
+/* Define if you have the 'slk_attr_off' function. */
+#undef HAVE_CURSES_SLK_ATTR_OFF
+
+/* Define if you have the 'slk_attr_on' function. */
+#undef HAVE_CURSES_SLK_ATTR_ON
+
+/* Define if you have the 'slk_attr_set' function. */
+#undef HAVE_CURSES_SLK_ATTR_SET
+
+/* Define if you have the 'slk_color' function. */
+#undef HAVE_CURSES_SLK_COLOR
 
 /* Define if you have the 'syncok' function. */
 #undef HAVE_CURSES_SYNCOK
@@ -284,8 +299,23 @@
 /* Define if you have the 'use_window' function. */
 #undef HAVE_CURSES_USE_WINDOW
 
+/* Define if you have the 'wattr_get' function. */
+#undef HAVE_CURSES_WATTR_GET
+
+/* Define if you have the 'wattr_off' function. */
+#undef HAVE_CURSES_WATTR_OFF
+
+/* Define if you have the 'wattr_on' function. */
+#undef HAVE_CURSES_WATTR_ON
+
+/* Define if you have the 'wattr_set' function. */
+#undef HAVE_CURSES_WATTR_SET
+
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
+
+/* Define if you have the 'wcolor_set' function. */
+#undef HAVE_CURSES_WCOLOR_SET
 
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H

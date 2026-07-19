@@ -534,6 +534,8 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_CURSES_WATTR_GET)
+
 PyDoc_STRVAR(_curses_window_attr_get__doc__,
 "attr_get($self, /)\n"
 "--\n"
@@ -551,6 +553,10 @@ _curses_window_attr_get(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _curses_window_attr_get_impl((PyCursesWindowObject *)self);
 }
+
+#endif /* defined(HAVE_CURSES_WATTR_GET) */
+
+#if defined(HAVE_CURSES_WATTR_SET)
 
 PyDoc_STRVAR(_curses_window_attr_set__doc__,
 "attr_set($self, attr, pair=0, /)\n"
@@ -591,6 +597,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_CURSES_WATTR_SET) */
+
+#if defined(HAVE_CURSES_WATTR_ON)
+
 PyDoc_STRVAR(_curses_window_attr_on__doc__,
 "attr_on($self, attr, /)\n"
 "--\n"
@@ -617,6 +627,10 @@ _curses_window_attr_on(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_CURSES_WATTR_ON) */
+
+#if defined(HAVE_CURSES_WATTR_OFF)
 
 PyDoc_STRVAR(_curses_window_attr_off__doc__,
 "attr_off($self, attr, /)\n"
@@ -645,6 +659,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_CURSES_WATTR_OFF) */
+
+#if defined(HAVE_CURSES_WCOLOR_SET)
+
 PyDoc_STRVAR(_curses_window_color_set__doc__,
 "color_set($self, pair, /)\n"
 "--\n"
@@ -671,6 +689,8 @@ _curses_window_color_set(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_CURSES_WCOLOR_SET) */
 
 PyDoc_STRVAR(_curses_window_getattrs__doc__,
 "getattrs($self, /)\n"
@@ -3104,7 +3124,7 @@ PyDoc_STRVAR(_curses_scr_init__doc__,
 
 #endif /* defined(HAVE_CURSES_SCR_DUMP) */
 
-#if defined(HAVE_CURSES_SCR_DUMP)
+#if defined(HAVE_CURSES_SCR_DUMP) && defined(HAVE_CURSES_SCR_SET)
 
 PyDoc_STRVAR(_curses_scr_set__doc__,
 "scr_set($module, filename, /)\n"
@@ -3120,7 +3140,7 @@ PyDoc_STRVAR(_curses_scr_set__doc__,
 #define _CURSES_SCR_SET_METHODDEF    \
     {"scr_set", (PyCFunction)_curses_scr_set, METH_O, _curses_scr_set__doc__},
 
-#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+#endif /* defined(HAVE_CURSES_SCR_DUMP) && defined(HAVE_CURSES_SCR_SET) */
 
 PyDoc_STRVAR(_curses_halfdelay__doc__,
 "halfdelay($module, tenths, /)\n"
@@ -4752,8 +4772,6 @@ exit:
     return return_value;
 }
 
-#if (defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM))
-
 PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 "update_lines_cols($module, /)\n"
 "--\n"
@@ -4773,8 +4791,6 @@ _curses_update_lines_cols(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_update_lines_cols_impl(module);
 }
-
-#endif /* (defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)) */
 
 PyDoc_STRVAR(_curses_raw__doc__,
 "raw($module, flag=True, /)\n"
@@ -5755,6 +5771,8 @@ _curses_slk_attr(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(NCURSES_EXT_FUNCS) || defined(PDCURSES)) */
 
+#if defined(HAVE_CURSES_SLK_ATTR_ON)
+
 PyDoc_STRVAR(_curses_slk_attr_on__doc__,
 "slk_attr_on($module, attr, /)\n"
 "--\n"
@@ -5782,6 +5800,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_CURSES_SLK_ATTR_ON) */
+
+#if defined(HAVE_CURSES_SLK_ATTR_OFF)
+
 PyDoc_STRVAR(_curses_slk_attr_off__doc__,
 "slk_attr_off($module, attr, /)\n"
 "--\n"
@@ -5808,6 +5830,10 @@ _curses_slk_attr_off(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_CURSES_SLK_ATTR_OFF) */
+
+#if defined(HAVE_CURSES_SLK_ATTR_SET)
 
 PyDoc_STRVAR(_curses_slk_attr_set__doc__,
 "slk_attr_set($module, attr, pair=0, /)\n"
@@ -5847,6 +5873,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_CURSES_SLK_ATTR_SET) */
+
+#if defined(HAVE_CURSES_SLK_COLOR)
+
 PyDoc_STRVAR(_curses_slk_color__doc__,
 "slk_color($module, pair, /)\n"
 "--\n"
@@ -5873,6 +5903,8 @@ _curses_slk_color(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_CURSES_SLK_COLOR) */
 
 #if defined(HAVE_CURSES_USE_ENV)
 
@@ -6002,6 +6034,26 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 {
     return _curses_has_extended_color_support_impl(module);
 }
+
+#ifndef _CURSES_WINDOW_ATTR_GET_METHODDEF
+    #define _CURSES_WINDOW_ATTR_GET_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_ATTR_GET_METHODDEF) */
+
+#ifndef _CURSES_WINDOW_ATTR_SET_METHODDEF
+    #define _CURSES_WINDOW_ATTR_SET_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_ATTR_SET_METHODDEF) */
+
+#ifndef _CURSES_WINDOW_ATTR_ON_METHODDEF
+    #define _CURSES_WINDOW_ATTR_ON_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_ATTR_ON_METHODDEF) */
+
+#ifndef _CURSES_WINDOW_ATTR_OFF_METHODDEF
+    #define _CURSES_WINDOW_ATTR_OFF_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_ATTR_OFF_METHODDEF) */
+
+#ifndef _CURSES_WINDOW_COLOR_SET_METHODDEF
+    #define _CURSES_WINDOW_COLOR_SET_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_COLOR_SET_METHODDEF) */
 
 #ifndef _CURSES_WINDOW_ENCLOSE_METHODDEF
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
@@ -6135,10 +6187,6 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_MOUSEMASK_METHODDEF
 #endif /* !defined(_CURSES_MOUSEMASK_METHODDEF) */
 
-#ifndef _CURSES_UPDATE_LINES_COLS_METHODDEF
-    #define _CURSES_UPDATE_LINES_COLS_METHODDEF
-#endif /* !defined(_CURSES_UPDATE_LINES_COLS_METHODDEF) */
-
 #ifndef _CURSES_RESIZETERM_METHODDEF
     #define _CURSES_RESIZETERM_METHODDEF
 #endif /* !defined(_CURSES_RESIZETERM_METHODDEF) */
@@ -6163,6 +6211,22 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_SLK_ATTR_METHODDEF
 #endif /* !defined(_CURSES_SLK_ATTR_METHODDEF) */
 
+#ifndef _CURSES_SLK_ATTR_ON_METHODDEF
+    #define _CURSES_SLK_ATTR_ON_METHODDEF
+#endif /* !defined(_CURSES_SLK_ATTR_ON_METHODDEF) */
+
+#ifndef _CURSES_SLK_ATTR_OFF_METHODDEF
+    #define _CURSES_SLK_ATTR_OFF_METHODDEF
+#endif /* !defined(_CURSES_SLK_ATTR_OFF_METHODDEF) */
+
+#ifndef _CURSES_SLK_ATTR_SET_METHODDEF
+    #define _CURSES_SLK_ATTR_SET_METHODDEF
+#endif /* !defined(_CURSES_SLK_ATTR_SET_METHODDEF) */
+
+#ifndef _CURSES_SLK_COLOR_METHODDEF
+    #define _CURSES_SLK_COLOR_METHODDEF
+#endif /* !defined(_CURSES_SLK_COLOR_METHODDEF) */
+
 #ifndef _CURSES_USE_ENV_METHODDEF
     #define _CURSES_USE_ENV_METHODDEF
 #endif /* !defined(_CURSES_USE_ENV_METHODDEF) */
@@ -6174,4 +6238,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=36fcacafc5044720 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae1359964feefd64 input=a9049054013a1b77]*/
