@@ -873,6 +873,86 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_remote_debugging_BinaryWriter_set_stats__doc__,
+"set_stats($self, /, duration_sec, sample_rate)\n"
+"--\n"
+"\n"
+"Store measured profile statistics in the binary file.");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER_SET_STATS_METHODDEF    \
+    {"set_stats", _PyCFunction_CAST(_remote_debugging_BinaryWriter_set_stats), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_BinaryWriter_set_stats__doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
+                                              double duration_sec,
+                                              double sample_rate);
+
+static PyObject *
+_remote_debugging_BinaryWriter_set_stats(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(duration_sec), &_Py_ID(sample_rate), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"duration_sec", "sample_rate", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_stats",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    double duration_sec;
+    double sample_rate;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        duration_sec = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        duration_sec = PyFloat_AsDouble(args[0]);
+        if (duration_sec == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        sample_rate = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        sample_rate = PyFloat_AsDouble(args[1]);
+        if (sample_rate == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = _remote_debugging_BinaryWriter_set_stats_impl((BinaryWriterObject *)self, duration_sec, sample_rate);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_remote_debugging_BinaryWriter_finalize__doc__,
 "finalize($self, /)\n"
 "--\n"
@@ -1588,4 +1668,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=22511c10d9224b28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d183ecfbd037996 input=a9049054013a1b77]*/

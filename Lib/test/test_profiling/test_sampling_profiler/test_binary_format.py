@@ -1581,7 +1581,7 @@ class TestTimestampPreservation(BinaryFormatTestBase):
 
 
 class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
-    def test_replay_includes_reconstructed_stats(self):
+    def test_replay_includes_persisted_stats(self):
         frames = [
             make_frame("hot.py", 99, "hot_func"),
             make_frame("main.py", 1, "main"),
@@ -1595,7 +1595,20 @@ class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
             ]
             for _ in range(5)
         ]
-        bin_path = self.create_binary_file(samples, interval=2000)
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as file:
+            bin_path = file.name
+        self.temp_files.append(bin_path)
+        collector = BinaryCollector(bin_path, 2000, compression="none")
+        for sample in samples:
+            collector.collect(sample)
+        collector.set_stats(2000, 1.25, 4.0)
+        collector.export(None)
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+        self.assertEqual(info["duration_sec"], 1.25)
+        self.assertEqual(info["sample_rate"], 4.0)
+
         with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as file:
             html_path = file.name
         self.temp_files.append(html_path)
@@ -1604,8 +1617,20 @@ class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
 
         with open(html_path, encoding="utf-8") as file:
             content = file.read()
-        self.assertIn('"duration_sec":', content)
-        self.assertIn('"sample_rate": 500.0', content)
+        self.assertIn('"duration_sec": 1.25', content)
+        self.assertIn('"sample_rate": 4.0', content)
+
+    def test_legacy_binary_has_no_measured_stats(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        bin_path = self.create_binary_file([
+            [make_interpreter(0, [make_thread(1, [frame])])]
+        ])
+
+        with BinaryReader(bin_path) as reader:
+            info = reader.get_info()
+
+        self.assertIsNone(info["duration_sec"])
+        self.assertIsNone(info["sample_rate"])
 
 
 class TestBinaryReplayToJsonl(BinaryFormatTestBase):
