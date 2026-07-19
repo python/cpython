@@ -512,7 +512,8 @@ def _process_struct(decorated_class, /, *, align, layout, endian, pack):
         fields.extend(decorated_class._fields_)
         anonymous.extend(decorated_class._anonymous_)
 
-    for name, hint in annotationlib.get_annotations(decorated_class).items():
+    annotations = annotationlib.get_annotations(decorated_class, eval_str=True)
+    for name, hint in annotations.items():
         if get_origin(hint) is ClassVar:
             continue
 
@@ -531,7 +532,8 @@ def _process_struct(decorated_class, /, *, align, layout, endian, pack):
         else:
             field.append(hint)
 
-        fields.append(field)
+        # _fields_ is a list of tuples
+        fields.append(tuple(field))
 
     if endian == 'big':
         endian_class = BigEndianStructure
@@ -579,7 +581,7 @@ def wrap_dll_function(dll):
     def decorator(func):
         name = func.__name__
         ptr = getattr(dll, name)
-        annotations = annotationlib.get_annotations(func)
+        annotations = annotationlib.get_annotations(func, eval_str=True)
 
         try:
             restype = annotations.pop("return")
