@@ -532,7 +532,8 @@ def _process_struct(decorated_class, /, *, align, layout, endian, pack):
         else:
             field.append(hint)
 
-        fields.append(field)
+        # _fields_ is a list of tuples
+        fields.append(tuple(field))
 
     if endian == 'big':
         endian_class = BigEndianStructure
