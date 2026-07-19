@@ -295,7 +295,7 @@ class TestLongStart(EnumerateStartTestCase):
                        (sys.maxsize+3,'c')]
 
 
-
+@threading_helper.requires_working_threading()
 class TestThreadSafety(EnumerateStartTestCase):
     def test_thread_safety_while_iterating(self):
         # gh-153932: calling reduce while iterating should pass with TSAN
@@ -316,7 +316,6 @@ class TestThreadSafety(EnumerateStartTestCase):
 
         with threading_helper.start_threads(threads):
             pass
-        
 
 
 if __name__ == "__main__":
