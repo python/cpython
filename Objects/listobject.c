@@ -253,8 +253,6 @@ PyList_New(Py_ssize_t size)
         }
     }
     op->ob_item = NULL;
-    Py_SET_SIZE(op, 0);
-    op->allocated = 0;
 
     if (size > 0) {
 #ifdef Py_GIL_DISABLED
