@@ -995,7 +995,7 @@ def collect_windows(info_add):
     # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
     # windows.is_admin: IsUserAnAdmin()
     try:
-        import ctypes
+        import ctypes.util
         if not hasattr(ctypes, 'WinDLL'):
             raise ImportError
     except ImportError:
