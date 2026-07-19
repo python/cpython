@@ -2046,7 +2046,7 @@ find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
 }
 
 static BOOL
-attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION* info, ULONG *reparse_tag, struct _Py_stat_struct* result)
+attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
@@ -2077,12 +2077,7 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION* info, ULONG *re
         return FALSE;
     }
     FindClose(hFindFile);
-
-#ifdef MS_WINDOWS_DESKTOP
     find_data_to_file_info(&FileData, info, reparse_tag);
-#else
-    _Py_find_data_to_stat(&FileData, result);
-#endif
     return TRUE;
 }
 
@@ -2140,7 +2135,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
         case ERROR_ACCESS_DENIED:     /* Cannot sync or read attributes. */
         case ERROR_SHARING_VIOLATION: /* It's a paging file. */
             /* Try reading the parent directory. */
-            if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag, result)) {
+            if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
                 switch (GetLastError()) {
                 case ERROR_FILE_NOT_FOUND: /* File cannot be found */
@@ -2156,11 +2151,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
                 return -1;
             }
 
-#ifdef MS_WINDOWS_DESKTOP
             if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-#else
-            if (result->st_file_attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-#endif
                 if (traverse ||
                     !IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
                     /* The stat call has to traverse but cannot, so fail. */
@@ -16721,14 +16712,10 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
             goto error;
     }
 
-#ifdef MS_WINDOWS_DESKTOP
     BY_HANDLE_FILE_INFORMATION file_info;
     ULONG reparse_tag;
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
     _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, NULL, &entry->win32_lstat);
-#else
-    _Py_find_data_to_stat(dataW, &entry->win32_lstat);
-#endif
 
     /* ctime is only deprecated from 3.12, so we copy birthtime across */
     entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;

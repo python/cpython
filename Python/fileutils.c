@@ -1243,29 +1243,6 @@ _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
     }
 }
 
-void
-_Py_find_data_to_stat(WIN32_FIND_DATAW* find_data, struct _Py_stat_struct* result)
-{
-    memset(result, 0, sizeof(*result));
-    result->st_mode = attributes_to_mode(find_data->dwFileAttributes);
-    FILE_TIME_to_time_t_nsec(&find_data->ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
-    FILE_TIME_to_time_t_nsec(&find_data->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-    FILE_TIME_to_time_t_nsec(&find_data->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
-    result->st_size = (((long long)find_data->nFileSizeHigh) << 32) | find_data->nFileSizeLow;
-
-    if (find_data->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-        result->st_reparse_tag = find_data->dwReserved0;
-
-    if (find_data->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-        find_data->dwReserved0 == IO_REPARSE_TAG_SYMLINK) {
-        /* first clear the S_IFMT bits */
-        result->st_mode ^= (result->st_mode & S_IFMT);
-        /* now set the bits that make this a symlink */
-        result->st_mode |= S_IFLNK;
-    }
-    result->st_file_attributes = find_data->dwFileAttributes;
-}
-
 #endif
 
 /* Return information about a file.
