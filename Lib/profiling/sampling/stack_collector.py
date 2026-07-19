@@ -623,8 +623,14 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         """Calculate elided paths and add elided flamegraph to stats."""
         self._elided_paths = baseline_stats.keys() - current_stats.keys()
 
-        parent_paths = {path[:-1] for path in self._elided_paths}
-        elided_stacks = self._elided_paths - parent_paths
+        # A sampled stack can end at an internal path that also has elided
+        # descendants.  Count every disappeared path with self samples, not
+        # just the leaves of the elided path tree.
+        elided_stacks = {
+            path
+            for path in self._elided_paths
+            if baseline_stats[path]["self"] > 0
+        }
         current_flamegraph["stats"]["elided_count"] = len(elided_stacks)
 
         if self._elided_paths:

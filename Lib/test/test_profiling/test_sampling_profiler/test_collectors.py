@@ -1598,8 +1598,16 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(child["diff"], -child["baseline"])
 
     def test_diff_flamegraph_counts_elided_stacks_not_paths(self):
-        """Nested missing paths count as one elided stack."""
-        baseline_frames = [
+        """Internal and leaf stack endings are counted separately."""
+        internal_stack = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 20, "old_mid"),
+                    MockFrameInfo("file.py", 10, "root"),
+                ])
+            ])
+        ]
+        leaf_stack = [
             MockInterpreterInfo(0, [
                 MockThreadInfo(1, [
                     MockFrameInfo("file.py", 30, "old_leaf"),
@@ -1614,11 +1622,13 @@ class TestSampleProfilerComponents(unittest.TestCase):
             ])
         ]
 
-        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        diff = make_diff_collector_with_mock_baseline(
+            [internal_stack, leaf_stack]
+        )
         diff.collect(current_frames)
 
         data = diff._convert_to_flamegraph_format()
-        self.assertEqual(data["stats"]["elided_count"], 1)
+        self.assertEqual(data["stats"]["elided_count"], 2)
 
     def test_diff_flamegraph_renders_small_elided_stack(self):
         """Elided stacks are not removed by the significance filter."""
