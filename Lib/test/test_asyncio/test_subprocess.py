@@ -250,7 +250,7 @@ class SubprocessMixin:
             # kills the process and all its children.
             creationflags = CREATE_NEW_PROCESS_GROUP
         proc = self.loop.run_until_complete(
-            asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
+            asyncio.create_subprocess_shell(blocking_shell_command,
             creationflags=creationflags)
         )
         self.loop.run_until_complete(asyncio.sleep(1))
