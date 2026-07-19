@@ -62,6 +62,8 @@ exception:
    option ``--fo`` will match as ``--foo``, but ``--f`` will
    not match uniquely, so :exc:`GetoptError` will be raised.
 
+   If *longopts* is a string it gets treated as a list of a single element.
+
    The return value consists of two elements: the first is a list of ``(option,
    value)`` pairs; the second is the list of program arguments left after the
    option list was stripped (this is a trailing slice of *args*).  Each

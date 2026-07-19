@@ -2,6 +2,7 @@ import ctypes
 import unittest
 from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
                     c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
+from ctypes.util import wrap_dll_function
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 from ._support import (_CData, PyCFuncPtrType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
@@ -129,6 +130,31 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
 
     def test_abstract(self):
         self.assertRaises(TypeError, _CFuncPtr, 13, "name", 42, "iid")
+
+    def test_wrap_dll_function(self):
+        @wrap_dll_function(ctypes.pythonapi)
+        def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object) -> ctypes.py_object:
+            pass
+
+        class Foo:
+            a = "abc"
+
+        self.assertEqual(PyObject_GetAttr(Foo, "a"), "abc")
+
+        with self.assertRaises(AttributeError):
+            @wrap_dll_function(ctypes.pythonapi)
+            def noexist():
+                pass
+
+        with self.assertRaisesRegex(ValueError, "'PyObject_GetAttrString' missing return type annotation"):
+            @wrap_dll_function(ctypes.pythonapi)
+            def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p):
+                pass
+
+    def test_wrap_dll_function_str_ann(self):
+        from test.test_ctypes import wrap_str_ann
+        version = wrap_str_ann.Py_GetVersion()
+        self.assertIsInstance(version, bytes)
 
 
 if __name__ == '__main__':
