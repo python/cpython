@@ -1174,7 +1174,7 @@ class cached_property:
             val = self.func(instance)
             try:
                 val = cache.setdefault(self.attrname, val)
-            except TypeError:
+            except AttributeError:
                 msg = (
                     f"The '__dict__' attribute on {type(instance).__name__!r} instance "
                     f"does not support item assignment for caching {self.attrname!r} property."
