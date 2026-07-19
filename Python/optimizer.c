@@ -1788,7 +1788,6 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
     }
     return 0;
 }
-
 static _PyExecutorObject *
 make_cold_executor(uint16_t opcode)
 {
@@ -1796,10 +1795,17 @@ make_cold_executor(uint16_t opcode)
     if (cold == NULL) {
         Py_FatalError("Cannot allocate core JIT code");
     }
+
     ((_PyUOpInstruction *)cold->trace)->opcode = opcode;
+
+    // Cold executors bypass _Py_ExecutorInit().
+    cold->vm_data.valid = true;
+    cold->vm_data.pending_deletion = 0;
+
     // This is initialized to false so we can prevent the executor
     // from being immediately detected as cold and invalidated.
     cold->vm_data.cold = false;
+
 #ifdef _Py_JIT
     cold->jit_code = NULL;
     cold->jit_size = 0;
@@ -1808,6 +1814,7 @@ make_cold_executor(uint16_t opcode)
         Py_FatalError("Cannot allocate core JIT code");
     }
 #endif
+
     _Py_SetImmortal((PyObject *)cold);
     return cold;
 }
