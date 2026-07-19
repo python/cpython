@@ -125,6 +125,56 @@ reader_parse_footer(BinaryReader *reader, const uint8_t *data, size_t file_size)
     return 0;
 }
 
+static inline int
+reader_parse_profile_stats(BinaryReader *reader, const uint8_t *data,
+                           size_t file_size)
+{
+    size_t minimum_size = FILE_FOOTER_SIZE + PROFILE_STATS_SIZE;
+    if (file_size < minimum_size) {
+        return 0;
+    }
+
+    const uint8_t *trailer = data + file_size - minimum_size;
+    if (memcmp(trailer + PST_OFF_MAGIC,
+               PROFILE_STATS_MAGIC, PROFILE_STATS_MAGIC_SIZE) != 0) {
+        return 0;
+    }
+
+    uint32_t version, size;
+    memcpy(&version, trailer + PST_OFF_VERSION, PST_SIZE_VERSION);
+    memcpy(&size, trailer + PST_OFF_SIZE, PST_SIZE_SIZE);
+    version = SWAP32_IF(reader->needs_swap, version);
+    size = SWAP32_IF(reader->needs_swap, size);
+
+    if (size < PROFILE_STATS_SIZE || size > file_size - FILE_FOOTER_SIZE) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Invalid profiling statistics size");
+        return -1;
+    }
+    if (version != PROFILE_STATS_VERSION) {
+        return 0;
+    }
+
+    trailer = data + file_size - FILE_FOOTER_SIZE - size;
+    uint64_t duration_bits, sample_rate_bits;
+    memcpy(&duration_bits, trailer + PST_OFF_DURATION, PST_SIZE_DURATION);
+    memcpy(&sample_rate_bits, trailer + PST_OFF_SAMPLE_RATE,
+           PST_SIZE_SAMPLE_RATE);
+    duration_bits = SWAP64_IF(reader->needs_swap, duration_bits);
+    sample_rate_bits = SWAP64_IF(reader->needs_swap, sample_rate_bits);
+    memcpy(&reader->duration_sec, &duration_bits, sizeof(duration_bits));
+    memcpy(&reader->sample_rate, &sample_rate_bits, sizeof(sample_rate_bits));
+
+    if (!isfinite(reader->duration_sec) || reader->duration_sec < 0.0 ||
+        !isfinite(reader->sample_rate) || reader->sample_rate < 0.0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Invalid profiling statistics values");
+        return -1;
+    }
+    reader->has_profile_stats = 1;
+    return 0;
+}
+
 #ifdef HAVE_ZSTD
 /* Maximum decompression buffer size to prevent memory exhaustion (1GB) */
 #define MAX_DECOMPRESS_SIZE (1ULL << 30)
@@ -536,6 +586,9 @@ binary_reader_open(PyObject *path)
         goto error;
     }
     if (reader_parse_footer(reader, data, file_size) < 0) {
+        goto error;
+    }
+    if (reader_parse_profile_stats(reader, data, file_size) < 0) {
         goto error;
     }
 
@@ -1270,8 +1323,21 @@ binary_reader_get_info(BinaryReader *reader)
     if (py_version == NULL) {
         return NULL;
     }
+    PyObject *duration = reader->has_profile_stats
+        ? PyFloat_FromDouble(reader->duration_sec) : Py_NewRef(Py_None);
+    if (duration == NULL) {
+        Py_DECREF(py_version);
+        return NULL;
+    }
+    PyObject *sample_rate = reader->has_profile_stats
+        ? PyFloat_FromDouble(reader->sample_rate) : Py_NewRef(Py_None);
+    if (sample_rate == NULL) {
+        Py_DECREF(py_version);
+        Py_DECREF(duration);
+        return NULL;
+    }
     return Py_BuildValue(
-        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i}",
+        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i, s:N, s:N}",
         "version", BINARY_FORMAT_VERSION,
         "python_version", py_version,
         "start_time_us", reader->start_time_us,
@@ -1280,7 +1346,9 @@ binary_reader_get_info(BinaryReader *reader)
         "thread_count", reader->thread_count,
         "string_count", reader->strings_count,
         "frame_count", reader->frames_count,
-        "compression_type", reader->compression_type
+        "compression_type", reader->compression_type,
+        "duration_sec", duration,
+        "sample_rate", sample_rate
     );
 }
 
