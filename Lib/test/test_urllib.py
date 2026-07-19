@@ -472,19 +472,19 @@ Connection: close
             "Authorization": "Bearer foobar",
             "Accept": "application/json"
         }
-        exc = urllib.error.HTTPError("http://something", 404, "foo", hdrs, None)
-        self.assertEqual(exc.filename, "http://something")
-        self.assertEqual(exc.code, 404)
-        self.assertEqual(exc.msg, "foo")
-        self.assertEqual(exc.reason, "foo")
-        self.assertEqual(exc.hdrs, hdrs)
-        self.assertEqual(exc.headers, hdrs)
-        exc.close()
+        err = urllib.error.HTTPError("http://something", 404, "foo", hdrs, None)
+        self.assertEqual(err.filename, "http://something")
+        self.assertEqual(err.code, 404)
+        self.assertEqual(err.msg, "foo")
+        self.assertEqual(err.reason, "foo")
+        self.assertEqual(err.hdrs, hdrs)
+        self.assertEqual(err.headers, hdrs)
+        err.close()
 
     def test_http_error_default_fp(self):
-        exc = urllib.error.HTTPError("http://something", 404, "foo", {}, None)
-        self.assertIsInstance(exc.fp, io.BytesIO)
-        exc.close()
+        err = urllib.error.HTTPError("http://something", 404, "foo", {}, None)
+        self.assertIsInstance(err.fp, io.BytesIO)
+        err.close()
 
     def test_empty_socket(self):
         # urlopen() raises OSError if the underlying socket does not send any
