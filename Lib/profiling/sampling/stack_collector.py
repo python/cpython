@@ -84,6 +84,7 @@ class FlamegraphCollector(StackTraceCollector):
         self._string_table = StringTable()
         self._module_cache = {}
         self._all_threads = set()
+        self._last_replay_timestamp_us = None
 
         # Thread status statistics (similar to LiveStatsCollector)
         self.thread_status_counts = {
@@ -103,6 +104,13 @@ class FlamegraphCollector(StackTraceCollector):
         """Override to track thread status statistics before processing frames."""
         # Weight is number of timestamps (samples with identical stack)
         weight = len(timestamps_us) if timestamps_us else 1
+        if timestamps_us:
+            last_timestamp_us = max(timestamps_us)
+            if (
+                self._last_replay_timestamp_us is None
+                or last_timestamp_us > self._last_replay_timestamp_us
+            ):
+                self._last_replay_timestamp_us = last_timestamp_us
 
         # Increment sample count by weight
         self._sample_count += weight
@@ -147,6 +155,27 @@ class FlamegraphCollector(StackTraceCollector):
             "missed_samples": missed_samples,
             "mode": mode
         }
+
+    def set_replay_stats(self, info):
+        """Set the statistics that can be reconstructed during replay."""
+        if self._last_replay_timestamp_us is None:
+            return
+
+        interval = info["sample_interval_us"]
+        if interval <= 0:
+            return
+        duration_us = max(
+            interval,
+            self._last_replay_timestamp_us - info["start_time_us"] + interval,
+        )
+        self.set_stats(
+            interval,
+            duration_us / 1_000_000,
+            1_000_000 / interval,
+            error_rate=None,
+            missed_samples=None,
+            mode=None,
+        )
 
     def export(self, filename):
         flamegraph_data = self._convert_to_flamegraph_format()
