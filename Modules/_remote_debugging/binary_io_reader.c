@@ -12,6 +12,7 @@
 #include "binary_io.h"
 #include "_remote_debugging.h"
 #include "pycore_bitutils.h"   /* _Py_bswap32, _Py_bswap64 for cross-endian reading */
+#include <math.h>
 #include <string.h>
 
 #ifdef HAVE_ZSTD
