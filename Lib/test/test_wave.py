@@ -486,7 +486,7 @@ class WaveOpen(unittest.TestCase):
 
                     with wave.open(fake_path, 'rb') as f:
                         pass
-    
+
     def test_open_invalid_mode(self):
         with self.assertRaisesRegex(wave.Error, "mode must be"):
             wave.open(io.BytesIO(), 'xb')
