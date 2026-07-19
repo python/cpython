@@ -2153,7 +2153,8 @@ class AttributeErrorTests(unittest.TestCase):
         self.assertIs(cm.exception.obj, custom_mod)
         self.assertEqual(cm.exception.name, "missing3")
 
-        nameless_mod = ModuleType.__new__(ModuleType)
+        nameless_mod = ModuleType("forgettable")
+        del nameless_mod.__dict__["__name__"]
         nameless_mod.__getattr__ = raise_with_name
         with self.assertRaises(AttributeError) as cm:
             getattr(nameless_mod, "missing4")
