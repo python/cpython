@@ -164,6 +164,7 @@ class Message:
         self.defects = []
         # Default content type
         self._default_type = 'text/plain'
+        self._is_signed_data = False
 
     def __str__(self):
         """Return the entire formatted message as a string.
@@ -188,9 +189,9 @@ class Message:
         policy = self.policy if policy is None else policy
         fp = StringIO()
         g = Generator(fp,
-                      mangle_from_=False,
-                      maxheaderlen=maxheaderlen,
-                      policy=policy)
+                    mangle_from_=False,
+                    maxheaderlen=maxheaderlen,
+                    policy=policy)
         g.flatten(self, unixfrom=unixfrom)
         return fp.getvalue()
 
@@ -533,6 +534,12 @@ class Message:
         This is an "internal" API, intended only for use by a generator.
         """
         return iter(self._headers.copy())
+
+    def set_is_signed_data(self, is_signed_data):
+        self._is_signed_data = is_signed_data
+
+    def is_signed_data(self):
+        return self._is_signed_data
 
     #
     # Additional useful stuff
