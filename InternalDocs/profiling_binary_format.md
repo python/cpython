@@ -570,9 +570,10 @@ one write() call (or feeds through the compression stream).
 ## Future Considerations
 
 The optional profile-statistics block provides an extensible metadata area.
-The 16-byte checksum field in the footer is currently unused. The version
-field allows incompatible changes with graceful rejection. New compression
-types could be added (compression_type > 1).
+The Python-version field retains one reserved byte. The 16-byte checksum
+field in the footer is currently unused. The version field allows
+incompatible changes with graceful rejection. New compression types could
+be added (compression_type > 1).
 
 Any changes that alter the meaning of existing fields or the parsing logic
 should increment the version number to prevent older readers from

@@ -120,7 +120,7 @@ def convert_binary_to_format(input_file, output_file, output_format,
         elif output_format == 'gecko':
             collector = GeckoCollector(interval)
         elif output_format == "jsonl":
-            collector = JsonlCollector(interval)
+            collector = JsonlCollector(interval, mode=info.get("mode"))
         else:
             raise ValueError(f"Unknown output format: {output_format}")
 
