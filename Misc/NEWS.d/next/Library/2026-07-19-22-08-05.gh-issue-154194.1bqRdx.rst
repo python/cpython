@@ -1,0 +1,3 @@
+Fix the Tachyon dropping entire samples when non-fatal reads fail. Frames
+now retain any readable metadata, and funcnames, filenames, asyncio tasks
+are just truncated. Patch by Maurycy Pawłowski-Wieroński.
