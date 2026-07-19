@@ -5484,9 +5484,7 @@ class TestWithDirectory(unittest.TestCase):
         zinfo.compress_size = 2
 
         archive = io.BytesIO()
-        with zipfile.ZipFile(
-            archive, "w", zipfile.ZIP_DEFLATED, compresslevel=9
-        ) as zf:
+        with zipfile.ZipFile(archive, "w") as zf:
             zf.mkdir(zinfo)
             self.assertEqual(zinfo.compress_level, 1)
 
