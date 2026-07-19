@@ -2104,6 +2104,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strict));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strict_mode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(string));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strip_ws));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sub_key));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(subcalls));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(symmetric_difference_update));

@@ -20,7 +20,7 @@ few nonprintable characters; the base64 encoding scheme available via the
 :mod:`base64` module is more compact if there are many such characters, as when
 sending a graphics file.
 
-.. function:: decode(input, output, header=False)
+.. function:: decode(input, output, header=False, strip_ws=False)
 
    Decode the contents of the *input* file and write the resulting decoded binary
    data to the *output* file. *input* and *output* must be :term:`binary file objects
@@ -28,6 +28,11 @@ sending a graphics file.
    will be decoded as space. This is used to decode "Q"-encoded headers as
    described in :rfc:`1522`: "MIME (Multipurpose Internet Mail Extensions)
    Part Two: Message Header Extensions for Non-ASCII Text".
+   If the optional argument *strip_ws* is true,
+   trailing whitespace is stripped from each line, as required by :rfc:`2045`.
+
+   .. versionchanged:: next
+      Added the *strip_ws* parameter.
 
 
 .. function:: encode(input, output, quotetabs, header=False)
@@ -43,10 +48,13 @@ sending a graphics file.
    as underscores as per :rfc:`1522`.
 
 
-.. function:: decodestring(s, header=False)
+.. function:: decodestring(s, header=False, strip_ws=False)
 
    Like :func:`decode`, except that it accepts a source :class:`bytes` and
    returns the corresponding decoded :class:`bytes`.
+
+   .. versionchanged:: next
+      Added the *strip_ws* parameter.
 
 
 .. function:: encodestring(s, quotetabs=False, header=False)

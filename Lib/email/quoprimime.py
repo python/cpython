@@ -229,10 +229,14 @@ def body_encode(body, maxlinelen=76, eol=NL):
 
 # BAW: I'm not sure if the intent was for the signature of this function to be
 # the same as base64MIME.decode() or not...
-def decode(encoded, eol=NL):
+def decode(encoded, eol=NL, strip_ws=True):
     """Decode a quoted-printable string.
 
     Lines are separated with eol, which defaults to \\n.
+
+    If strip_ws is true (the default), whitespace at the end of a line is
+    stripped, as required by RFC 2045 when decoding a quoted-printable body.
+    Pass strip_ws=False to keep it.
     """
     if not encoded:
         return encoded
@@ -242,7 +246,8 @@ def decode(encoded, eol=NL):
     decoded = ''
 
     for line in encoded.splitlines():
-        line = line.rstrip()
+        if strip_ws:
+            line = line.rstrip()
         if not line:
             decoded += eol
             continue
