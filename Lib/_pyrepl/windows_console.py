@@ -745,8 +745,10 @@ class CHAR_INFO:
 
 
 class Char(Union):
-    UnicodeChar: WCHAR
-    Char: CHAR
+    _fields_ = [
+        ("UnicodeChar", WCHAR),
+        ("Char", CHAR),
+    ]
 
 
 @ctypes.util.struct
@@ -765,8 +767,10 @@ class WindowsBufferSizeEvent:
 
 
 class ConsoleEvent(ctypes.Union):
-    KeyEvent: KeyEvent
-    WindowsBufferSizeEvent: WindowsBufferSizeEvent
+    _fields_ = [
+        ("KeyEvent", KeyEvent),
+        ("WindowsBufferSizeEvent", WindowsBufferSizeEvent),
+    ]
 
 
 @ctypes.util.struct
