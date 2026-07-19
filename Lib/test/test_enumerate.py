@@ -296,7 +296,7 @@ class TestLongStart(EnumerateStartTestCase):
 
 
 
-class ThreadSafety(EnumerateStartTestCase):
+class TestThreadSafety(EnumerateStartTestCase):
     def test_thread_safety_while_iterating(self):
         # gh-153932: calling reduce while iterating should pass with TSAN
 
