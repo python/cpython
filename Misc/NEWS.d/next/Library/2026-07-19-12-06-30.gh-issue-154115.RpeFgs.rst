@@ -1,0 +1,3 @@
+Subscripting a :mod:`typing` special form or generic alias with arguments that
+are rejected with a :exc:`TypeError` (such as ``typing.List[int, str]``) no
+longer evaluates the subscription twice before raising the error.

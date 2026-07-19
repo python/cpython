@@ -6554,6 +6554,92 @@ class InternalsTests(BaseTestCase):
             "annotationlib",
         })
 
+    def make_tp_cached(self, func, *, typed=False):
+        # Wrap *func* with typing._tp_cache, undoing the module-global
+        # registration afterwards so the test stays reference-leak clean.
+        before = len(typing._cleanups)
+        wrapped = typing._tp_cache(func, typed=typed)
+        self.addCleanup(typing._caches.__delitem__, func)
+        self.addCleanup(typing._cleanups.__delitem__, slice(before, None))
+        return wrapped
+
+    def test_tp_cache_does_not_swallow_type_error(self):
+        # gh-154115: A TypeError raised by the wrapped function itself used
+        # to be mistaken for an unhashable-argument error, causing the
+        # function to run a second time before the error propagated.
+        calls = []
+
+        @self.make_tp_cached
+        def func(*args, **kwds):
+            calls.append((args, kwds))
+            raise TypeError("boom")
+
+        with self.assertRaisesRegex(TypeError, "boom"):
+            func("hashable")
+        self.assertEqual(calls, [(("hashable",), {})])
+
+        calls.clear()
+        with self.assertRaisesRegex(TypeError, "boom"):
+            func(kwd="hashable")
+        self.assertEqual(calls, [((), {"kwd": "hashable"})])
+
+    def test_tp_cache_unhashable_fallback(self):
+        # Unhashable arguments cannot be cached, so the wrapped function is
+        # still used directly as a fallback and runs exactly once.
+        calls = []
+
+        @self.make_tp_cached
+        def func(*args, **kwds):
+            calls.append((args, kwds))
+            return "result"
+
+        unhashable = [1, 2, 3]
+        self.assertEqual(func(unhashable), "result")
+        self.assertEqual(func(kwd=unhashable), "result")
+        self.assertEqual(
+            calls, [((unhashable,), {}), ((), {"kwd": unhashable})]
+        )
+
+    def test_tp_cache_caches_repeated_calls(self):
+        # A successful call with hashable arguments is cached: calling again
+        # with the same arguments returns the same object without running
+        # the wrapped function a second time.
+        calls = []
+
+        @self.make_tp_cached
+        def func(arg):
+            calls.append(arg)
+            return object()
+
+        first = func(42)
+        second = func(42)
+        self.assertIs(first, second)
+        self.assertEqual(calls, [42])
+
+    def test_tp_cache_typed_falls_back_for_unhashable_type(self):
+        # gh-154115: with typed=True the cache key also includes the type of
+        # each argument, so a hashable value whose type is unhashable cannot
+        # be cached.  Such a call must fall back to the wrapped function
+        # rather than being mistaken for a function-raised TypeError.
+        class Meta(type):
+            __hash__ = None
+
+        class C(metaclass=Meta):
+            def __hash__(self):
+                return 0
+
+        calls = []
+
+        def func(arg):
+            calls.append(arg)
+            return "result"
+
+        func = self.make_tp_cached(func, typed=True)
+        obj = C()
+        self.assertEqual(func(obj), "result")
+        self.assertEqual(len(calls), 1)
+        self.assertIs(calls[0], obj)
+
 
 @lru_cache()
 def cached_func(x, y):
