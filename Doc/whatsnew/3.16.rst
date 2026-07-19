@@ -489,6 +489,10 @@ ipaddress
   and :meth:`IPv6Network.next_network() <ipaddress.IPv6Network.next_network>`
   methods to find the next nearest network with a specific prefix size.
   (Contributed by Faisal Mahmood in :gh:`87027`.)
+* Add :meth:`IPv4Network.prev_network() <ipaddress.IPv4Network.prev_network>`
+  and :meth:`IPv6Network.prev_network() <ipaddress.IPv6Network.prev_network>`
+  methods to find the previous nearest network with a specific prefix size.
+  (Contributed by Faisal Mahmood in :gh:`87027`.)
 
 
 logging
