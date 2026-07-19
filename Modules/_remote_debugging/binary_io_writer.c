@@ -12,6 +12,7 @@
 #include "binary_io.h"
 #include "_remote_debugging.h"
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
+#include <math.h>
 #include <string.h>
 
 #ifdef HAVE_ZSTD

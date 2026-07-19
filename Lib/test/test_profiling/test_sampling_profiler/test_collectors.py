@@ -1174,11 +1174,12 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
     def test_flamegraph_collector_leaves_legacy_replay_stats_unavailable(self):
         collector = FlamegraphCollector(1000)
+        original_stats = collector.stats.copy()
         collector.set_replay_stats({
             "duration_sec": None,
             "sample_rate": None,
         })
-        self.assertEqual(collector.stats, {})
+        self.assertEqual(collector.stats, original_stats)
 
     def test_flamegraph_collector_per_thread_stats(self):
         """Test per-thread statistics tracking in FlamegraphCollector."""
