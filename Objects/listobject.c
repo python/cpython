@@ -253,6 +253,8 @@ PyList_New(Py_ssize_t size)
         }
     }
     op->ob_item = NULL;
+    Py_SET_SIZE(op, size);
+    op->allocated = size;
 
     if (size > 0) {
 #ifdef Py_GIL_DISABLED
@@ -271,8 +273,6 @@ PyList_New(Py_ssize_t size)
             return PyErr_NoMemory();
         }
     }
-    Py_SET_SIZE(op, size);
-    op->allocated = size;
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
 }
