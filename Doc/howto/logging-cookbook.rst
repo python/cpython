@@ -1955,7 +1955,7 @@ Subclass ``QueueListener``
     class NNGSocketListener(logging.handlers.QueueListener):
 
         def __init__(self, uri, /, *handlers, **kwargs):
-            # Have a timeout for interruptability, and open a
+            # Have a timeout for interruptibility, and open a
             # subscriber socket
             socket = pynng.Sub0(listen=uri, recv_timeout=500)
             # The b'' subscription matches all topics
