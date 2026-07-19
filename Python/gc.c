@@ -1787,20 +1787,16 @@ void
 _PyGC_DeferAutomaticCollection(PyThreadState *tstate)
 {
     GCState *gcstate = &tstate->interp->gc;
-    int previous = _Py_atomic_add_int(
-        &gcstate->automatic_collection_pause_count, 1);
-    (void)previous;
-    assert(previous >= 0);
+    assert(gcstate->automatic_collection_pause_count >= 0);
+    gcstate->automatic_collection_pause_count++;
 }
 
 void
 _PyGC_ResumeAutomaticCollection(PyThreadState *tstate)
 {
     GCState *gcstate = &tstate->interp->gc;
-    int previous = _Py_atomic_add_int(
-        &gcstate->automatic_collection_pause_count, -1);
-    (void)previous;
-    assert(previous > 0);
+    assert(gcstate->automatic_collection_pause_count > 0);
+    gcstate->automatic_collection_pause_count--;
 }
 
 /* Public API to invoke gc.collect() from C */
@@ -2003,10 +1999,9 @@ _PyObject_GC_Link(PyObject *op)
     gc->_gc_prev = 0;
     gcstate->generations[0].count++; /* number of allocated GC objects */
     if (gcstate->generations[0].count > gcstate->generations[0].threshold &&
-        gcstate->enabled &&
-        !_Py_atomic_load_int_relaxed(
-            &gcstate->automatic_collection_pause_count) &&
         gcstate->generations[0].threshold &&
+        gcstate->enabled &&
+        !gcstate->automatic_collection_pause_count &&
         !_Py_atomic_load_int_relaxed(&gcstate->collecting) &&
         !_PyErr_Occurred(tstate))
     {
@@ -2019,8 +2014,7 @@ _Py_RunGC(PyThreadState *tstate)
 {
     GCState *gcstate = get_gc_state();
     if (!gcstate->enabled ||
-        _Py_atomic_load_int_relaxed(
-            &gcstate->automatic_collection_pause_count)) {
+        gcstate->automatic_collection_pause_count) {
         return;
     }
     gc_collect_main(tstate, GENERATION_AUTO, _Py_GC_REASON_HEAP);

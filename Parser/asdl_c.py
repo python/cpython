@@ -2118,7 +2118,6 @@ PyObject* PyAST_mod2obj(mod_ty t)
         return NULL;
     }
     PyThreadState *tstate = _PyThreadState_GET();
-    // The new objects cannot be cyclic until the completed tree is returned.
     _PyGC_DeferAutomaticCollection(tstate);
     PyObject *result = ast2obj_mod(state, t);
     _PyGC_ResumeAutomaticCollection(tstate);
