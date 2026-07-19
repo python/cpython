@@ -256,7 +256,7 @@ Installing free-threaded binaries
 
 The ``python.org`` :ref:`Python for macOS <getting-and-installing-macpython>`
 installer package installs, by default, an additional build of
-Python |version| that supports :pep:`703`, the free-threading feature
+Python |version| that supports :term:`free threading`
 (running with the :term:`global interpreter lock` disabled).
 Check the release page on ``python.org`` for possible updated information.
 
