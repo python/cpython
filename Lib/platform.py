@@ -544,6 +544,7 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device="",
     if sys.platform == "android":
         try:
             from ctypes import CDLL, c_char_p, create_string_buffer
+            from ctypes.util import wrap_dll_function
         except ImportError:
             pass
         else:
@@ -552,7 +553,7 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device="",
             # private name mangling.
             libc = CDLL("libc.so")
 
-            @ctypes.util.wrap_dll_function(libc)
+            @wrap_dll_function(libc)
             def __system_property_get(name: c_char_p, value: c_char_p) -> c_int:
                 pass
 
