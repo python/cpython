@@ -550,14 +550,17 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device="",
             # An NDK developer confirmed that this is an officially-supported
             # API (https://stackoverflow.com/a/28416743). Use `getattr` to avoid
             # private name mangling.
-            system_property_get = getattr(CDLL("libc.so"), "__system_property_get")
-            system_property_get.argtypes = (c_char_p, c_char_p)
+            libc = CDLL("libc.so")
+
+            @ctypes.util.wrap_dll_function(libc)
+            def __system_property_get(name: c_char_p, value: c_char_p) -> c_int:
+                pass
 
             def getprop(name, default):
                 # https://android.googlesource.com/platform/bionic/+/refs/tags/android-5.0.0_r1/libc/include/sys/system_properties.h#39
                 PROP_VALUE_MAX = 92
                 buffer = create_string_buffer(PROP_VALUE_MAX)
-                length = system_property_get(name.encode("UTF-8"), buffer)
+                length = __system_property_get(name.encode("UTF-8"), buffer)
                 if length == 0:
                     # This API doesn’t distinguish between an empty property and
                     # a missing one.
