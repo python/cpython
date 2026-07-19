@@ -721,6 +721,7 @@ New deprecations
     which is the return type of :func:`tempfile.NamedTemporaryFile`.
 
 * :mod:`threading`:
+
   * ``threading.Condition.notifyAll``, ``threading.Event.isSet``,  and
     ``threading.activeCount`` will be removed in Python 3.21. Use the snake case
     names (e.g., ``notify_all``) instead.

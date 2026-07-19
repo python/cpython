@@ -30,6 +30,7 @@ Pending removal in Python 3.21
     public :class:`tempfile.TemporaryFileWrapper` instead.
 
 * :mod:`threading`:
+
   * ``threading.Condition.notifyAll``, ``threading.Event.isSet``,  and
     ``threading.activeCount`` will be removed in Python 3.21. Use the snake case
     names (e.g., ``notify_all``) instead.
