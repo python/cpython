@@ -723,6 +723,20 @@ class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
             ipaddress.IPv6Network('::1/128').subnet_of(
                 ipaddress.IPv4Network('10.0.0.0/30'))
 
+    def test_subnet_of_non_network(self):
+        # Passing something that is not a network object (e.g. an address)
+        # must raise a clear TypeError rather than masking an internal
+        # AttributeError (gh-153769).
+        net = ipaddress.IPv4Network('10.0.0.0/30')
+        for other in (ipaddress.IPv4Address('10.0.0.1'), '10.0.0.0/30', 42):
+            for method in (net.subnet_of, net.supernet_of):
+                with self.assertRaises(TypeError) as cm:
+                    method(other)
+                self.assertIn('network', str(cm.exception))
+                # The error should not be a swallowed AttributeError.
+                self.assertNotIsInstance(cm.exception.__context__,
+                                         AttributeError)
+
 
 class NetmaskTestMixin_v6(CommonTestMixin_v6):
     """Input validation on interfaces and networks is very similar"""

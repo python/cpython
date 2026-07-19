@@ -1026,15 +1026,14 @@ class _BaseNetwork(_IPAddressBase):
 
     @staticmethod
     def _is_subnet_of(a, b):
-        try:
-            # Always false if one is v4 and the other is v6.
-            if a.version != b.version:
-                raise TypeError(f"{a} and {b} are not of the same version")
-            return (b.network_address <= a.network_address and
-                    b.broadcast_address >= a.broadcast_address)
-        except AttributeError:
-            raise TypeError(f"Unable to test subnet containment "
-                            f"between {a} and {b}")
+        if not (isinstance(a, _BaseNetwork) and isinstance(b, _BaseNetwork)):
+            raise TypeError(f"Unable to test subnet containment between "
+                            f"{a} and {b}: both must be network objects")
+        # Always false if one is v4 and the other is v6.
+        if a.version != b.version:
+            raise TypeError(f"{a} and {b} are not of the same version")
+        return (b.network_address <= a.network_address and
+                b.broadcast_address >= a.broadcast_address)
 
     def subnet_of(self, other):
         """Return True if this network is a subnet of other."""

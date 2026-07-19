@@ -1,0 +1,5 @@
+:meth:`~ipaddress.IPv4Network.subnet_of` and
+:meth:`~ipaddress.IPv4Network.supernet_of` now raise a clear
+:exc:`TypeError` when passed an argument that is not a network object,
+such as an address, instead of a confusing error that masked an internal
+:exc:`AttributeError`.
