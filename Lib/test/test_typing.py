@@ -6574,14 +6574,12 @@ class InternalsTests(BaseTestCase):
             calls.append((args, kwds))
             raise TypeError("boom")
 
-        with self.assertRaisesRegex(TypeError, "boom"):
-            func("hashable")
-        self.assertEqual(calls, [(("hashable",), {})])
-
-        calls.clear()
-        with self.assertRaisesRegex(TypeError, "boom"):
-            func(kwd="hashable")
-        self.assertEqual(calls, [((), {"kwd": "hashable"})])
+        for args, kwds in [(("hashable",), {}), ((), {"kwd": "hashable"})]:
+            with self.subTest(args=args, kwds=kwds):
+                calls.clear()
+                with self.assertRaisesRegex(TypeError, "boom"):
+                    func(*args, **kwds)
+                self.assertEqual(calls, [(args, kwds)])
 
     def test_tp_cache_unhashable_fallback(self):
         # Unhashable arguments cannot be cached, so the wrapped function is
@@ -6594,11 +6592,11 @@ class InternalsTests(BaseTestCase):
             return "result"
 
         unhashable = [1, 2, 3]
-        self.assertEqual(func(unhashable), "result")
-        self.assertEqual(func(kwd=unhashable), "result")
-        self.assertEqual(
-            calls, [((unhashable,), {}), ((), {"kwd": unhashable})]
-        )
+        for args, kwds in [((unhashable,), {}), ((), {"kwd": unhashable})]:
+            with self.subTest(args=args, kwds=kwds):
+                calls.clear()
+                self.assertEqual(func(*args, **kwds), "result")
+                self.assertEqual(calls, [(args, kwds)])
 
     def test_tp_cache_caches_repeated_calls(self):
         # A successful call with hashable arguments is cached: calling again
