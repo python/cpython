@@ -29,8 +29,8 @@ Installation steps
 For `current Python versions <https://www.python.org/downloads/>`_
 (other than those in ``security`` status), the release team produces a
 **Python for macOS** installer package for each new release.
-A list of available installers
-is available `here <https://www.python.org/downloads/macos/>`_.
+A list of available installers is provided on the
+`macOS downloads page <https://www.python.org/downloads/macos/>`__.
 We recommend using the most recent supported Python version where possible.
 Current installers provide a
 `universal2 binary <https://en.wikipedia.org/wiki/Universal_binary>`_ build
@@ -39,14 +39,14 @@ supported by a wide range of macOS versions,
 currently typically from at least **macOS 10.15 Catalina** on.
 
 The downloaded file is a standard macOS installer package file (``.pkg``).
-File integrity information (checksum, size, sigstore signature, etc) for each file is included
+File integrity information (such as checksum, size, and Sigstore signature) for each file is included
 on the release download page. Installer packages and their contents are signed and notarized
 with ``Python Software Foundation`` Apple Developer ID certificates
 to meet `macOS Gatekeeper requirements <https://support.apple.com/en-us/102445>`_.
 
 For a default installation, double-click on the downloaded installer package file.
 This should launch the standard macOS Installer app and display the first of several
-installer windows steps.
+installer steps.
 
 .. image:: mac_installer_01_introduction.png
 
@@ -98,7 +98,7 @@ for its use.
 
 .. image:: mac_installer_08_install_certificates.png
 
-If ``Successfully installed certifi`` and ``update complete`` appears
+If ``Successfully installed certifi`` and ``update complete`` appear
 in the terminal window, the installation is complete.
 Close this terminal window and the installer window.
 
@@ -288,7 +288,7 @@ Known cautions and limitations:
   the free-threaded interpreter, and |python_x_dot_y_t_literal_config|,
   a configuration utility which may be useful for package builders.
   Since :file:`/usr/local/bin` is typically included in your shell ``PATH``,
-  in most cases no changes to your ``PATH`` environment variables should
+  in most cases no changes to your ``PATH`` environment variable should
   be needed to use |python_x_dot_y_t_literal|.
 
 - For this release, the **Shell profile updater** package and the
