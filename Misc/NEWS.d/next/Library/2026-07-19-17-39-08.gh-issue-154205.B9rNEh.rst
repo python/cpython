@@ -1,0 +1,5 @@
+The methods ``threading.Condition.notifyAll``, ``threading.Event.isSet``,
+``threading.Thread.isDaemon``, ``threading.Thread.setDaemon``,
+``threading.Thread.getName``, ``threading.Thread.setName``, and the function
+``threading.activeCount``, which have been deprecated since Python 3.10, are
+now scheduled for removal in Python 3.21.
