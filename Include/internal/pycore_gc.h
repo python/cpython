@@ -330,6 +330,14 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
+
+// These calls nest across all threads in an interpreter. Allocation counters
+// continue advancing, explicit collections remain enabled, and a collection
+// that becomes due remains eligible at the next normal scheduling opportunity.
+// An automatic collection already starting concurrently may emit callbacks,
+// but the free-threaded collector will not traverse the protected object graph.
+PyAPI_FUNC(void) _PyGC_DeferAutomaticCollection(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyGC_ResumeAutomaticCollection(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
 union _PyStackRef;
