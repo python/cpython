@@ -1664,6 +1664,63 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(child["diff"], 0.0, places=1)
         self.assertAlmostEqual(child["diff_pct"], 0.0, places=1)
 
+    def test_diff_flamegraph_does_not_duplicate_line_values(self):
+        """Function aggregates are apportioned across line nodes."""
+        def sample(line):
+            return [
+                MockInterpreterInfo(0, [
+                    MockThreadInfo(1, [
+                        MockFrameInfo("file.py", line, "func"),
+                        MockFrameInfo("file.py", 1, "caller"),
+                    ])
+                ])
+            ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [sample(10), sample(20)]
+        )
+        diff.collect(sample(10))
+        diff.collect(sample(20))
+
+        data = diff._convert_to_flamegraph_format()
+        children = data["children"]
+        self.assertEqual(sum(node["self"] for node in children), 2)
+        self.assertEqual(sum(node["self_time"] for node in children), 2)
+        self.assertEqual(sum(node["baseline"] for node in children), 2)
+        for node in children:
+            self.assertEqual(node["self"], 1)
+            self.assertEqual(node["self_time"], 1)
+            self.assertAlmostEqual(node["baseline"], 1.0)
+            self.assertAlmostEqual(node["diff"], 0.0)
+
+    def test_diff_flamegraph_does_not_duplicate_elided_line_values(self):
+        """Elided metadata uses each rendered line node's samples."""
+        def sample(line, funcname="old_func"):
+            return [
+                MockInterpreterInfo(0, [
+                    MockThreadInfo(1, [
+                        MockFrameInfo("file.py", line, funcname),
+                        MockFrameInfo("file.py", 1, "caller"),
+                    ])
+                ])
+            ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [sample(10), sample(20)]
+        )
+        diff.collect(sample(30, "new_func"))
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+        children = elided["children"]
+        scale = data["stats"]["baseline_scale"]
+        self.assertEqual(sum(node["self"] for node in children), 2)
+        self.assertEqual(sum(node["baseline"] for node in children), 2 * scale)
+        for node in children:
+            self.assertEqual(node["self"], 1)
+            self.assertAlmostEqual(node["baseline"], scale)
+            self.assertAlmostEqual(node["diff"], -scale)
+
     def test_diff_flamegraph_empty_current(self):
         """Empty current profile still produces differential metadata and elided paths."""
         baseline_frames = [

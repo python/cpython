@@ -592,9 +592,22 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         current_data = current_stats.get(path_key, {"total": 0, "self": 0})
         baseline_data = baseline_stats.get(path_key, {"total": 0, "self": 0})
 
-        current_self = current_data["self"]
-        baseline_self = baseline_data["self"] * scale
-        baseline_total = baseline_data["total"] * scale
+        current_self = node.get("self", 0)
+        current_total = node.get("value", 0)
+
+        if current_data["self"] > 0:
+            self_weight = current_self / current_data["self"]
+        elif current_data["total"] > 0:
+            self_weight = current_total / current_data["total"]
+        else:
+            self_weight = 0
+
+        total_weight = (
+            current_total / current_data["total"]
+            if current_data["total"] > 0 else 0
+        )
+        baseline_self = baseline_data["self"] * scale * self_weight
+        baseline_total = baseline_data["total"] * scale * total_weight
 
         diff = current_self - baseline_self
         if baseline_self > 0:
@@ -705,9 +718,8 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         baseline_self = 0
         baseline_total = 0
         if func_key and current_path in baseline_stats:
-            baseline_data = baseline_stats[current_path]
-            baseline_self = baseline_data["self"] * scale
-            baseline_total = baseline_data["total"] * scale
+            baseline_self = node.get("self", 0) * scale
+            baseline_total = node.get("value", 0) * scale
 
             node["baseline"] = baseline_self
             node["baseline_total"] = baseline_total
