@@ -728,10 +728,11 @@ class OpenTests(unittest.TestCase):
         with contextlib.closing(sqlite.connect(database=":memory:")) as cx:
             self.assertEqual(type(cx), sqlite.Connection)
 
-    # @hashbrowncipher skipped this test on mac, don't know why, rerunning to test it
     def test_wal_preservation(self):
         with tempfile.TemporaryDirectory() as dirname:
             path = os.path.join(dirname, "db.sqlite")
+
+            # Set flag to 1, check that WAL file is not deleted on close:
             with contextlib.closing(sqlite.connect(path)) as cx:
                 cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, 1)
                 # Check that it was set successfully:
@@ -746,10 +747,20 @@ class OpenTests(unittest.TestCase):
                 self.assertTrue(os.path.exists(path + "-wal"))
             self.assertTrue(os.path.exists(path + "-wal"))
 
+            # Set flag to 0, check that WAL file is deleted on close:
             with contextlib.closing(sqlite.connect(path)) as cx:
                 # Check that we can read the default value when we didn't set it explicitly:
                 rc = cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, -1)
-                assert rc == 0, f"SQLITE_FCNTL_PERSIST_WAL should be 0 by default, not {rc}"
+
+                # The default value should be 0, but on MacOS when compiling with the SDK (not a
+                # custom build of SQLite) it defaults to 0, perhaps customised by Apple?
+                default_value = (1 if sys.platform == "darwin" else 0)
+                assert rc == default_value, f"SQLITE_FCNTL_PERSIST_WAL should be {default_value} " \
+                    "by default, not {rc}"
+
+                # Set it to 0 explicitly so that this test passes on Darwin too:
+                rc = cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, 0)
+                assert rc == 0, f"cx.file_control(SQLITE_FCNTL_PERSIST_WAL) failed to set flag"
 
                 cu = cx.cursor()
                 self.assertTrue(os.path.exists(path + "-wal"))
