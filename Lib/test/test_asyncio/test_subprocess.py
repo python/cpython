@@ -412,37 +412,36 @@ class SubprocessMixin:
         # despite the returncode being known.
 
         async def run():
-            # Just setup a pipe to pass to the grandchild for reading to ensure it dies.
-            # Inheritable is to allow it to be passed on windows
-            r, w = os.pipe()
-            os.set_inheritable(r, True)
-
-            code = textwrap.dedent(f"""\
+            # The grandchild inherits the child's stdin and stdout pipes and
+            # keeps both open after the child is killed.  It writes "ready"
+            # so we know it has started, and exits once its stdin hits EOF.
+            code = textwrap.dedent("""\
                 import subprocess, sys
-                subprocess.run([sys.executable, "-c", "import sys;sys.stdin.read()"])
+                subprocess.run([sys.executable, "-c",
+                    "import sys; sys.stdout.write('ready');"
+                    " sys.stdout.flush(); sys.stdin.read()"])
                 """)
 
             proc = await asyncio.create_subprocess_exec(
                 sys.executable, "-c", code,
-                # This will be inherited by granchild and should not prevent
-                # *this* process from firing .wait().
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stdin=r,
-                pass_fds=(r,) if sys.platform != "win32" else (),
-                close_fds=False if sys.platform == "win32" else True,
             )
-            os.close(r)
-
             try:
-                # Ensure we start waiting before the process is killed.
                 wait_proc = asyncio.create_task(proc.wait())
-                await asyncio.sleep(0)
+                # Wait until the grandchild holds the inherited pipes; this
+                # also lets the wait() task register its waiter.
+                await proc.stdout.readexactly(5)
                 proc.kill()
-                await asyncio.wait_for(wait_proc, timeout=support.SHORT_TIMEOUT)
+                returncode = await asyncio.wait_for(
+                    wait_proc, timeout=support.SHORT_TIMEOUT)
+                if sys.platform == 'win32':
+                    self.assertIsInstance(returncode, int)
+                else:
+                    self.assertEqual(-signal.SIGKILL, returncode)
             finally:
-                os.close(w) # Allows the grandchild to exit
-                if proc.stdout is not None:
-                    await proc.stdout.read()
+                proc.stdin.close()  # let the grandchild exit
+                await proc.stdout.read()
 
         self.loop.run_until_complete(run())
 
