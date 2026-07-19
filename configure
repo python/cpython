@@ -6392,6 +6392,8 @@ cat > conftest.c <<EOF
   emcc
 #elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
   icx
+#elif defined(__INTEL_COMPILER) || defined(__ICC)
+  icc
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
   xlc
 #elif defined(_MSC_VER)
@@ -7021,6 +7023,116 @@ if test -z "$ac_cv_path_CXX"; then
   ac_pt_CXX=$CXX
   # Extract the first word of "icpx", so it can be a program name with args.
 set dummy icpx; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_ac_pt_CXX+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) case $ac_pt_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_CXX="$ac_pt_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_CXX="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac ;;
+esac
+fi
+ac_pt_CXX=$ac_cv_path_ac_pt_CXX
+if test -n "$ac_pt_CXX"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_pt_CXX" >&5
+printf "%s\n" "$ac_pt_CXX" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+  if test "x$ac_pt_CXX" = x; then
+    CXX="notfound"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+printf "%s\n" "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    CXX=$ac_pt_CXX
+  fi
+else
+  CXX="$ac_cv_path_CXX"
+fi
+ ;;
+        icc)    if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}icpc", so it can be a program name with args.
+set dummy ${ac_tool_prefix}icpc; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_CXX+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) case $CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CXX="$CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_CXX="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac ;;
+esac
+fi
+CXX=$ac_cv_path_CXX
+if test -n "$CXX"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
+printf "%s\n" "$CXX" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_CXX"; then
+  ac_pt_CXX=$CXX
+  # Extract the first word of "icpc", so it can be a program name with args.
+set dummy icpc; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 printf %s "checking for $ac_word... " >&6; }
 if test ${ac_cv_path_ac_pt_CXX+y}
@@ -9231,6 +9343,12 @@ fi
     LLVM_PROF_MERGER="true"
     LLVM_PROF_FILE=""
     ;;
+  icc)
+    PGO_PROF_GEN_FLAG="-prof-gen"
+    PGO_PROF_USE_FLAG="-prof-use"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
+    ;;
 esac
 
 # BOLT optimization. Always configured after PGO since it always runs after PGO.
@@ -10693,6 +10811,11 @@ then :
   BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
 fi
 
+    # ICC doesn't recognize the option, but only emits a warning
+    ## XXX does it emit an unused result warning and can it be disabled?
+    case "$ac_cv_cc_name" in #(
+  icc) :
+    ac_cv_disable_unused_result_warning=no
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if we can disable $CC unused-result warning" >&5
@@ -10730,7 +10853,10 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_result_warning" >&5
 printf "%s\n" "$ac_cv_disable_unused_result_warning" >&6; }
 
-
+ ;; #(
+  *) :
+     ;;
+esac
     if test "x$ac_cv_disable_unused_result_warning" = xyes
 then :
   BASECFLAGS="$BASECFLAGS -Wno-unused-result"
@@ -11394,6 +11520,10 @@ mpicc)
 icx)
     # ICX needs fp-model=precise (the default in clang) or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -ffp-model=precise"
+    ;;
+icc)
+    # ICC needs -fp-model strict or floats behave badly
+    CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
     ;;
 xlc)
     CFLAGS_NODIST="$CFLAGS_NODIST -qalias=noansi -qmaxmem=-1"
@@ -26827,8 +26957,8 @@ esac
 # rounding precision of 64 bits.  For gcc/x86, we can fix this by
 # using inline assembler to get and set the x87 FPU control word.
 
-# This inline assembler syntax may also work for suncc and icx,
-# so we try it on all platforms.
+# This inline assembler syntax works for icx and may also work for
+# suncc and icc, so we try it on all platforms.
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether we can use gcc inline assembler to get and set x87 control word" >&5
 printf %s "checking whether we can use gcc inline assembler to get and set x87 control word... " >&6; }

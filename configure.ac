@@ -1092,6 +1092,8 @@ cat > conftest.c <<EOF
   emcc
 #elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
   icx
+#elif defined(__INTEL_COMPILER) || defined(__ICC)
+  icc
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
   xlc
 #elif defined(_MSC_VER)
@@ -1141,6 +1143,7 @@ then
         cc)     AC_PATH_TOOL([CXX], [c++], [notfound]) ;;
         clang)  AC_PATH_TOOL([CXX], [clang++], [notfound]) ;;
         icx)    AC_PATH_TOOL([CXX], [icpx], [notfound]) ;;
+        icc)    AC_PATH_TOOL([CXX], [icpc], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -2135,6 +2138,12 @@ case "$ac_cv_cc_name" in
     LLVM_PROF_MERGER="true"
     LLVM_PROF_FILE=""
     ;;
+  icc)
+    PGO_PROF_GEN_FLAG="-prof-gen"
+    PGO_PROF_USE_FLAG="-prof-use"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
+    ;;
 esac
 
 # BOLT optimization. Always configured after PGO since it always runs after PGO.
@@ -2661,7 +2670,11 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     AS_VAR_IF([ac_cv_no_strict_aliasing], [yes],
               [BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"])
 
-    PY_CHECK_CC_WARNING([disable], [unused-result])
+    # ICC doesn't recognize the option, but only emits a warning
+    ## XXX does it emit an unused result warning and can it be disabled?
+    AS_CASE(["$ac_cv_cc_name"],
+            [icc], [ac_cv_disable_unused_result_warning=no]
+            [PY_CHECK_CC_WARNING([disable], [unused-result])])
     AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
               [BASECFLAGS="$BASECFLAGS -Wno-unused-result"
                CFLAGS_NODIST="$CFLAGS_NODIST -Wno-unused-result"])
@@ -2960,6 +2973,10 @@ mpicc)
 icx)
     # ICX needs fp-model=precise (the default in clang) or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -ffp-model=precise"
+    ;;
+icc)
+    # ICC needs -fp-model strict or floats behave badly
+    CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
     ;;
 xlc)
     CFLAGS_NODIST="$CFLAGS_NODIST -qalias=noansi -qmaxmem=-1"
@@ -6286,8 +6303,8 @@ AX_C_FLOAT_WORDS_BIGENDIAN(
 # rounding precision of 64 bits.  For gcc/x86, we can fix this by
 # using inline assembler to get and set the x87 FPU control word.
 
-# This inline assembler syntax may also work for suncc and icx,
-# so we try it on all platforms.
+# This inline assembler syntax works for icx and may also work for
+# suncc and icc, so we try it on all platforms.
 
 AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set x87 control word], [ac_cv_gcc_asm_for_x87], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
