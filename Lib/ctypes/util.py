@@ -579,7 +579,7 @@ def wrap_dll_function(dll):
     def decorator(func):
         name = func.__name__
         ptr = getattr(dll, name)
-        annotations = annotationlib.get_annotations(func)
+        annotations = annotationlib.get_annotations(func, eval_str=True)
 
         try:
             restype = annotations.pop("return")

@@ -151,6 +151,11 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
             def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p):
                 pass
 
+    def test_wrap_dll_function_str_ann(self):
+        from test.test_ctypes import wrap_str_ann
+        version = wrap_str_ann.Py_GetVersion()
+        self.assertIsInstance(version, bytes)
+
 
 if __name__ == '__main__':
     unittest.main()
