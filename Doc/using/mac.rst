@@ -171,7 +171,7 @@ be certain of what you are about to run.
 
 .. _alternative_bundles:
 
-Alternative Distributions
+Alternative distributions
 =========================
 
 Besides the standard ``python.org`` for macOS installer, there are third-party
@@ -199,7 +199,7 @@ other libraries, and are not maintained or supported by the core Python team.
 
 .. _mac-package-manager:
 
-Installing Additional Python Packages
+Installing additional Python packages
 =====================================
 
 Refer to the `Python Packaging User Guide`_ for more information.
@@ -211,7 +211,7 @@ Refer to the `Python Packaging User Guide`_ for more information.
 
 .. _gui-programming-on-the-mac:
 
-GUI Programming
+GUI programming
 ===============
 
 There are several options for building GUI applications on the Mac with Python.
@@ -241,12 +241,12 @@ A number of alternative macOS GUI toolkits are available including:
   supports desktop operating systems.
 
 
-Advanced Topics
+Advanced topics
 ===============
 
 .. _install-freethreaded-macos:
 
-Installing Free-threaded Binaries
+Installing free-threaded binaries
 ---------------------------------
 
 .. versionadded:: 3.13
@@ -429,7 +429,7 @@ After a default install, you can test that both builds are available with someth
 
 .. _distributing-python-applications-on-the-mac:
 
-Distributing Python Applications
+Distributing Python applications
 --------------------------------
 
 A range of tools exist for converting your Python code into a standalone
@@ -446,7 +446,7 @@ distributable application:
 * `PyInstaller <https://pyinstaller.org/>`_: A cross-platform packaging tool that creates
   a single file or folder as a distributable artifact.
 
-App Store Compliance
+App Store compliance
 --------------------
 
 Apps submitted for distribution through the macOS App Store must pass Apple's
@@ -468,7 +468,7 @@ This patch is not normally required to use CPython on a Mac; nor is it required
 if you are distributing an app *outside* the macOS App Store. It is *only*
 required if you are using the macOS App Store as a distribution channel.
 
-Other Resources
+Other resources
 ===============
 
 The `python.org Help page <https://www.python.org/about/help/>`_ has links to many useful resources.
