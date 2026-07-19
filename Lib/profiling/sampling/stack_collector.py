@@ -764,8 +764,10 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         if not self._extract_elided_nodes(baseline_data, path=()):
             return None
 
-        self._scale_flamegraph_values(baseline_data, scale)
+        # Metadata is calculated from raw baseline sample counts.  Scale the
+        # rendered geometry only after those counts have been annotated.
         self._add_elided_metadata(baseline_data, baseline_stats, scale, path=())
+        self._scale_flamegraph_values(baseline_data, scale)
 
         # Merge only profiling metadata, not thread-level stats
         for key in ("sample_interval_usec", "duration_sec", "sample_rate",
