@@ -9,6 +9,7 @@
 #include "Python.h"
 #include "pycore_call.h"             // _PyObject_CallNoArgs()
 #include "pycore_code.h"             // _PyCode_New()
+#include "pycore_gc.h"               // _PyGC_DeferAutomaticCollection()
 #include "pycore_hashtable.h"        // _Py_hashtable_t
 #include "pycore_long.h"             // _PyLong_IsZero()
 #include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
@@ -1772,12 +1773,19 @@ read_object(RFILE *p)
         if (PySys_Audit("marshal.loads", "y#", p->ptr, (Py_ssize_t)(p->end - p->ptr)) < 0) {
             return NULL;
         }
+        PyThreadState *tstate = _PyThreadState_GET();
+        _PyGC_DeferAutomaticCollection(tstate);
+        v = r_object(p);
+        _PyGC_ResumeAutomaticCollection(tstate);
     } else if (p->fp || p->readable) {
         if (PySys_Audit("marshal.load", NULL) < 0) {
             return NULL;
         }
+        v = r_object(p);
     }
-    v = r_object(p);
+    else {
+        v = r_object(p);
+    }
     if (v == NULL && !PyErr_Occurred())
         PyErr_SetString(PyExc_TypeError, "NULL object in marshal data for object");
     return v;
