@@ -939,17 +939,24 @@ static PyObject *
 ga_iternext(PyObject *op)
 {
     gaiterobject *gi = (gaiterobject*)op;
-    if (gi->obj == NULL) {
+#ifdef Py_GIL_DISABLED
+    PyObject *obj = _Py_atomic_exchange_ptr(&gi->obj, NULL);
+#else
+    PyObject* obj = gi->obj;
+    gi->obj = NULL;
+#endif
+    if (obj == NULL) {
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
     }
-    gaobject *alias = (gaobject *)gi->obj;
+    gaobject *alias = (gaobject *)obj;
     PyObject *starred_alias = Py_GenericAlias(alias->origin, alias->args);
     if (starred_alias == NULL) {
+        Py_DECREF(obj);
         return NULL;
     }
     ((gaobject *)starred_alias)->starred = true;
-    Py_SETREF(gi->obj, NULL);
+    Py_SETREF(obj, NULL);
     return starred_alias;
 }
 
