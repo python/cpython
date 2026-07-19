@@ -12,9 +12,16 @@ _winapi = import_helper.import_module('_winapi', required_on=['win'])
 MAXIMUM_WAIT_OBJECTS = 64
 MAXIMUM_BATCHED_WAIT_OBJECTS = (MAXIMUM_WAIT_OBJECTS - 1) ** 2
 
+
+def close_events(events):
+    for handle in events:
+        _winapi.CloseHandle(handle)
+
+
 class WinAPIBatchedWaitForMultipleObjectsTests(unittest.TestCase):
     def _events_waitall_test(self, n):
         evts = [_winapi.CreateEventW(0, False, False, None) for _ in range(n)]
+        self.addCleanup(close_events, evts)
 
         with self.assertRaises(TimeoutError):
             _winapi.BatchedWaitForMultipleObjects(evts, True, 100)
@@ -42,6 +49,7 @@ class WinAPIBatchedWaitForMultipleObjectsTests(unittest.TestCase):
 
     def _events_waitany_test(self, n):
         evts = [_winapi.CreateEventW(0, False, False, None) for _ in range(n)]
+        self.addCleanup(close_events, evts)
 
         with self.assertRaises(TimeoutError):
             _winapi.BatchedWaitForMultipleObjects(evts, False, 100)
