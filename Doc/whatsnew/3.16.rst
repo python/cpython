@@ -237,6 +237,9 @@ ctypes
   from an annotation-based syntax, similar to how the :mod:`dataclasses` module
   is used.
   (Contributed by Peter Bierma in :gh:`104533`.)
+* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
+  through a function signature.
+  (Contributed by Peter Bierma in :gh:`153903`.)
 
 
 encodings
@@ -764,6 +767,15 @@ Build changes
   same tree to avoid ``build-details.json`` clashes.
 
   (Contributed by Stefano Rivera in :gh:`131372`.)
+
+* Add the :option:`--with-curses` :program:`configure` option to select the
+  curses backend for the :mod:`curses` and :mod:`curses.panel` modules.
+  In addition to ``ncursesw`` and ``ncurses``, it can now build against the
+  system's native ``curses`` library (for example on NetBSD or Solaris), with
+  wide-character support when the library provides it.  :option:`--without-curses`
+  excludes the modules from the build.
+
+  (Contributed by Serhiy Storchaka in :gh:`136687`.)
 
 
 C API changes
