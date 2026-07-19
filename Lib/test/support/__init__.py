@@ -258,6 +258,7 @@ def _is_gui_available():
         if not h:
             raise ctypes.WinError()
 
+        @ctypes.util.wrap_dll_function(user32)
         def GetUserObjectInformationW(
             hObj: ctypes.wintypes.HANDLE,
             nIndex: ctypes.c_int,
@@ -271,9 +272,9 @@ def _is_gui_available():
         needed = ctypes.wintypes.DWORD()
         res = GetUserObjectInformationW(h,
             UOI_FLAGS,
-            uof,
+            ctypes.byref(uof),
             ctypes.sizeof(uof),
-            needed)
+            ctypes.byref(needed))
         if not res:
             raise ctypes.WinError()
         if not bool(uof.dwFlags & WSF_VISIBLE):
