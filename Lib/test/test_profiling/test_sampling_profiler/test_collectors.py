@@ -1584,7 +1584,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
             ])
         ]
 
-        # Baseline: 2 samples, current: 4, scale = 2.0
+        # Baseline: 2 samples, current: 4. Profiles are compared in absolute
+        # time rather than normalized to the same total duration.
         diff = make_diff_collector_with_mock_baseline(
             [hot_leaf_sample, cold_leaf_sample]
         )
@@ -1594,7 +1595,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         data = diff._convert_to_flamegraph_format()
         strings = data.get("strings", [])
-        self.assertAlmostEqual(data["stats"]["baseline_scale"], 2.0)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
 
         children = data.get("children", [])
         hot_node = find_child_by_name(children, strings, "hot_leaf")
@@ -1602,20 +1603,20 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIsNotNone(hot_node)
         self.assertIsNotNone(cold_node)
 
-        # hot_leaf regressed (+50%)
-        self.assertAlmostEqual(hot_node["baseline"], 2.0)
+        # hot_leaf regressed (+200%)
+        self.assertAlmostEqual(hot_node["baseline"], 1.0)
         self.assertEqual(hot_node["self_time"], 3)
-        self.assertAlmostEqual(hot_node["diff"], 1.0)
-        self.assertAlmostEqual(hot_node["diff_pct"], 50.0)
+        self.assertAlmostEqual(hot_node["diff"], 2.0)
+        self.assertAlmostEqual(hot_node["diff_pct"], 200.0)
 
-        # cold_leaf improved (-50%)
-        self.assertAlmostEqual(cold_node["baseline"], 2.0)
+        # cold_leaf is unchanged
+        self.assertAlmostEqual(cold_node["baseline"], 1.0)
         self.assertEqual(cold_node["self_time"], 1)
-        self.assertAlmostEqual(cold_node["diff"], -1.0)
-        self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
+        self.assertAlmostEqual(cold_node["diff"], 0.0)
+        self.assertAlmostEqual(cold_node["diff_pct"], 0.0)
 
-    def test_diff_flamegraph_scale_factor(self):
-        """Scale factor adjusts when sample counts differ."""
+    def test_diff_flamegraph_does_not_normalize_duration(self):
+        """A longer current run is compared in absolute time."""
         baseline_frames = [
             MockInterpreterInfo(0, [
                 MockThreadInfo(1, [
@@ -1630,15 +1631,37 @@ class TestSampleProfilerComponents(unittest.TestCase):
             diff.collect(baseline_frames)
 
         data = diff._convert_to_flamegraph_format()
-        self.assertAlmostEqual(data["stats"]["baseline_scale"], 4.0)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
 
         children = data.get("children", [])
         self.assertEqual(len(children), 1)
         func1_node = children[0]
         self.assertEqual(func1_node["self_time"], 4)
-        self.assertAlmostEqual(func1_node["baseline"], 4.0)
-        self.assertAlmostEqual(func1_node["diff"], 0.0)
-        self.assertAlmostEqual(func1_node["diff_pct"], 0.0)
+        self.assertAlmostEqual(func1_node["baseline"], 1.0)
+        self.assertAlmostEqual(func1_node["diff"], 3.0)
+        self.assertAlmostEqual(func1_node["diff_pct"], 300.0)
+
+    def test_diff_flamegraph_scale_factor_uses_sample_intervals(self):
+        """Baseline samples are converted to current sample units."""
+        frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func1")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [frames] * 10,
+            baseline_interval=1000,
+            current_interval=10000,
+        )
+        diff.collect(frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 0.1)
+        self.assertAlmostEqual(data["baseline"], 1.0)
+        self.assertEqual(data["self_time"], 1)
+        self.assertAlmostEqual(data["diff"], 0.0)
+        self.assertAlmostEqual(data["diff_pct"], 0.0)
 
     def test_diff_flamegraph_elided_stacks(self):
         """Paths in baseline but not current produce elided stacks."""
@@ -2117,7 +2140,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
             make_frame("file.py", 20, "caller"),
         ])])]
 
-        # Baseline: 2 samples, current: 4, scale = 2.0
+        # Baseline: 2 samples, current: 4. Profiles are compared in absolute
+        # time rather than normalized to the same total duration.
         bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
         self.addCleanup(close_and_unlink, bin_file)
 
@@ -2147,7 +2171,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         strings = data.get("strings", [])
 
         self.assertTrue(data["stats"]["is_differential"])
-        self.assertAlmostEqual(data["stats"]["baseline_scale"], 2.0)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
 
         children = data.get("children", [])
         hot_node = find_child_by_name(children, strings, "hot_leaf")
@@ -2155,17 +2179,17 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIsNotNone(hot_node)
         self.assertIsNotNone(cold_node)
 
-        # hot_leaf regressed (+50%)
-        self.assertAlmostEqual(hot_node["baseline"], 2.0)
+        # hot_leaf regressed (+200%)
+        self.assertAlmostEqual(hot_node["baseline"], 1.0)
         self.assertEqual(hot_node["self_time"], 3)
-        self.assertAlmostEqual(hot_node["diff"], 1.0)
-        self.assertAlmostEqual(hot_node["diff_pct"], 50.0)
+        self.assertAlmostEqual(hot_node["diff"], 2.0)
+        self.assertAlmostEqual(hot_node["diff_pct"], 200.0)
 
-        # cold_leaf improved (-50%)
-        self.assertAlmostEqual(cold_node["baseline"], 2.0)
+        # cold_leaf is unchanged
+        self.assertAlmostEqual(cold_node["baseline"], 1.0)
         self.assertEqual(cold_node["self_time"], 1)
-        self.assertAlmostEqual(cold_node["diff"], -1.0)
-        self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
+        self.assertAlmostEqual(cold_node["diff"], 0.0)
+        self.assertAlmostEqual(cold_node["diff_pct"], 0.0)
 
     def test_jsonl_collector_export_exact_output(self):
         jsonl_out = tempfile.NamedTemporaryFile(delete=False)
