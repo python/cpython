@@ -958,7 +958,7 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
     def test_string_annotations(self):
         from test.test_ctypes import struct_str_ann
         Point = struct_str_ann.Point
-        fields = [['x', c_int], ['y', c_int]]
+        fields = [('x', c_int), ('y', c_int)]
         self.assertEqual(Point._fields_, fields)
 
 
