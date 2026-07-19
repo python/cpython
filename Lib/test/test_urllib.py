@@ -473,10 +473,12 @@ Connection: close
             "Accept": "application/json"
         }
         exc = urllib.error.HTTPError("http://something", 404, "foo", hdrs, None)
-        self.assertEqual(exc.url, "http://something")
+        self.assertEqual(exc.filename, "http://something")
         self.assertEqual(exc.code, 404)
         self.assertEqual(exc.msg, "foo")
+        self.assertEqual(exc.reason, "foo")
         self.assertEqual(exc.hdrs, hdrs)
+        self.assertEqual(exc.headers, hdrs)
         self.assertIsInstance(exc.fp, io.BytesIO)
 
     def test_empty_socket(self):
@@ -528,8 +530,7 @@ Connection: close
     def test_url_error_stringified(self):
         reason = 'sixseven'
         err = urllib.error.URLError(reason)
-        self.assertEqual(reason, err.reason)
-        self.assertEqual(str(err), '<urlopen error %s>' % reason)
+        self.assertEqual(str(err), f'<urlopen error {reason}>')
 
 
 class urlopen_DataTests(unittest.TestCase):
