@@ -761,6 +761,7 @@ def _replay_with_reader(args, reader):
 
     collector = _create_collector(
         args.format, interval, skip_idle=False,
+        mode=info.get("mode"),
         diff_baseline=args.diff_baseline
     )
 

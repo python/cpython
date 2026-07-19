@@ -29,6 +29,7 @@ from profiling.sampling.cli import (
     _create_collector,
     _generate_output_filename,
     _handle_output,
+    _replay_with_reader,
     main,
 )
 from profiling.sampling.constants import (
@@ -962,6 +963,39 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertEqual(
             str(cm.exception),
             "Error: Unsupported format version 2",
+        )
+
+    def test_cli_replay_propagates_recorded_mode(self):
+        reader = mock.MagicMock()
+        reader.get_info.return_value = {
+            "sample_interval_us": 1000,
+            "sample_count": 0,
+            "compression_type": 0,
+            "mode": PROFILING_MODE_CPU,
+        }
+        reader.replay_samples.return_value = 0
+        collector = mock.MagicMock()
+        collector.export.return_value = True
+        args = SimpleNamespace(
+            format="diff_flamegraph",
+            input_file="current.bin",
+            diff_baseline="baseline.bin",
+            outfile="diff.html",
+            browser=False,
+        )
+
+        with mock.patch(
+            "profiling.sampling.cli._create_collector",
+            return_value=collector,
+        ) as create_collector:
+            _replay_with_reader(args, reader)
+
+        create_collector.assert_called_once_with(
+            "diff_flamegraph",
+            1000,
+            skip_idle=False,
+            mode=PROFILING_MODE_CPU,
+            diff_baseline="baseline.bin",
         )
 
     def test_cli_jsonl_format_mutually_exclusive_with_pstats(self):

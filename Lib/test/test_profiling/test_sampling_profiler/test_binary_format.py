@@ -1598,8 +1598,10 @@ class TestTimestampPreservation(BinaryFormatTestBase):
 class TestBinaryReplayToJsonl(BinaryFormatTestBase):
     """Tests for binary -> JSONL replay via convert_binary_to_format."""
 
-    def _replay_to_jsonl(self, samples, interval=1000):
-        bin_path = self.create_binary_file(samples, interval=interval)
+    def _replay_to_jsonl(self, samples, interval=1000, mode=None):
+        bin_path = self.create_binary_file(
+            samples, interval=interval, mode=mode
+        )
         with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
             jsonl_path = f.name
         self.temp_files.append(jsonl_path)
@@ -1628,6 +1630,16 @@ class TestBinaryReplayToJsonl(BinaryFormatTestBase):
 
         self.assertEqual(len(frame_defs), 1)
         self.assertEqual(frame_defs[0]["line"], 99)
+
+    def test_binary_replay_to_jsonl_preserves_mode(self):
+        frame = make_frame("hot.py", 99, "hot_func")
+        records = self._replay_to_jsonl(
+            [[make_interpreter(0, [make_thread(1, [frame])])]],
+            mode=PROFILING_MODE_CPU,
+        )
+
+        meta = next(record for record in records if record["type"] == "meta")
+        self.assertEqual(meta["mode"], "cpu")
 
     def test_binary_replay_to_jsonl_rle_weight_propagation(self):
         """RLE-batched identical samples land as a single agg entry with the right total."""
