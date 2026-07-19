@@ -2055,25 +2055,34 @@ class AttributeErrorTests(unittest.TestCase):
         class RaiseWithName:
             def __getattr__(self, name):
                 raise AttributeError(name)
+        obj = RaiseWithName()
         with self.assertRaises(AttributeError) as cm:
-            getattr(RaiseWithName(), "missing1")
+            getattr(obj, "missing1")
         self.assertEqual(str(cm.exception),
                          f"'{fqn(RaiseWithName)}' object has no attribute 'missing1'")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing1")
 
         class BareRaise:
             def __getattr__(self, name):
                 raise AttributeError
+        obj = BareRaise()
         with self.assertRaises(AttributeError) as cm:
-            getattr(BareRaise(), "missing2")
+            getattr(obj, "missing2")
         self.assertEqual(str(cm.exception),
                          f"'{fqn(BareRaise)}' object has no attribute 'missing2'")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing2")
 
         class RaiseCustom:
             def __getattr__(self, name):
                 raise AttributeError("custom")
+        obj = RaiseCustom()
         with self.assertRaises(AttributeError) as cm:
-            getattr(RaiseCustom(), "missing3")
+            getattr(obj, "missing3")
         self.assertEqual(str(cm.exception), "custom")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing3")
 
     def test_module_getattr_error_message(self):
         raisewithname_mod = ModuleType("raisewithname")
@@ -2084,6 +2093,8 @@ class AttributeErrorTests(unittest.TestCase):
             getattr(raisewithname_mod, "missing1")
         self.assertEqual(str(cm.exception),
                          "module 'raisewithname' has no attribute 'missing1'")
+        self.assertIs(cm.exception.obj, raisewithname_mod)
+        self.assertEqual(cm.exception.name, "missing1")
 
         bareraise_mod = ModuleType("bareraise")
         def bare_raise(name):
@@ -2093,6 +2104,8 @@ class AttributeErrorTests(unittest.TestCase):
             getattr(bareraise_mod, "missing2")
         self.assertEqual(str(cm.exception),
                          "module 'bareraise' has no attribute 'missing2'")
+        self.assertIs(cm.exception.obj, bareraise_mod)
+        self.assertEqual(cm.exception.name, "missing2")
 
         custom_mod = ModuleType("custom")
         def raise_custom(name):
@@ -2101,12 +2114,16 @@ class AttributeErrorTests(unittest.TestCase):
         with self.assertRaises(AttributeError) as cm:
             getattr(custom_mod, "missing3")
         self.assertEqual(str(cm.exception), "custom")
+        self.assertIs(cm.exception.obj, custom_mod)
+        self.assertEqual(cm.exception.name, "missing3")
 
         nameless_mod = ModuleType.__new__(ModuleType)
         nameless_mod.__getattr__ = raise_with_name
         with self.assertRaises(AttributeError) as cm:
             getattr(nameless_mod, "missing4")
         self.assertEqual(str(cm.exception), "module has no attribute 'missing4'")
+        self.assertIs(cm.exception.obj, nameless_mod)
+        self.assertEqual(cm.exception.name, "missing4")
 
     # Note: name suggestion tests live in `test_traceback`.
 
