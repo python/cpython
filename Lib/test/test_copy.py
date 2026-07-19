@@ -73,6 +73,10 @@ class TestCopy(unittest.TestCase):
             def __reduce__(self):
                 c.append(1)
                 return ""
+            def __getattribute__(self, name):
+                if name == "__reduce_ex__":
+                    raise AttributeError(name)
+                return object.__getattribute__(self, name)
         c = []
         x = C()
         y = copy.copy(x)
@@ -342,6 +346,10 @@ class TestCopy(unittest.TestCase):
             def __reduce__(self):
                 c.append(1)
                 return ""
+            def __getattribute__(self, name):
+                if name == "__reduce_ex__":
+                    raise AttributeError(name)
+                return object.__getattribute__(self, name)
         c = []
         x = C()
         y = copy.deepcopy(x)
