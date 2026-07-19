@@ -23,6 +23,7 @@ from test.support import (
     requires_remote_subprocess_debugging,
 )
 
+from profiling.sampling.binary_reader import BinaryReader
 from profiling.sampling.cli import (
     FORMAT_EXTENSIONS,
     _create_collector,
@@ -1004,6 +1005,23 @@ class TestSampleProfilerCLI(unittest.TestCase):
             records = [json.loads(line) for line in f]
         meta = next(r for r in records if r["type"] == "meta")
         self.assertEqual(meta["mode"], "cpu")
+
+    def test_cli_binary_create_collector_propagates_mode(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            binary_path = f.name
+        self.addCleanup(os.unlink, binary_path)
+        collector = _create_collector(
+            "binary",
+            sample_interval_usec=1000,
+            skip_idle=True,
+            mode=PROFILING_MODE_CPU,
+            output_file=binary_path,
+            compression="none",
+        )
+        collector.export(None)
+
+        with BinaryReader(binary_path) as reader:
+            self.assertEqual(reader.get_info()["mode"], PROFILING_MODE_CPU)
 
     def test_cli_jsonl_rejects_opcodes_combination(self):
         """--opcodes is incompatible with --jsonl per opcodes_compatible_formats."""
