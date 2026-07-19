@@ -174,7 +174,7 @@ class FlamegraphCollector(StackTraceCollector):
             1_000_000 / interval,
             error_rate=None,
             missed_samples=None,
-            mode=None,
+            mode=info.get("mode"),
         )
 
     def export(self, filename):
