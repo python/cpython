@@ -1268,7 +1268,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _colorize_code(self, code):
         if self.colorize and _pyrepl:
             colors = list(_pyrepl.utils.gen_colors(code))
-            chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
+            chars, _ = _pyrepl.utils.disp_str(
+                code,
+                colors=colors,
+                force_color=True,
+                escape=False
+            )
             code = "".join(chars)
         return code
 
@@ -2436,7 +2441,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             elif lineno == exc_lineno:
                 s += '>>'
             if self.colorize:
-                line = self._colorize_code(line.rstrip())
+                line = self._colorize_code(line)
             self.message(s + '\t' + line.rstrip())
 
     def do_whatis(self, arg):
