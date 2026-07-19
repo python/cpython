@@ -2,7 +2,7 @@ import threading
 import unittest
 
 from concurrent.futures import ThreadPoolExecutor
-from threading import Thread
+from threading import Barrier, Thread
 from unittest import TestCase
 
 from test.support import threading_helper
@@ -159,6 +159,84 @@ class TestType(TestCase):
                 Derived.__base__
 
         self.run_one(writer, reader)
+
+    def test_race_type_attr_added(self):
+        NROUNDS = 50
+        NSTOPPERS = 4
+        NWRITERS = 4
+        WARM = 8
+        KEY = "foo"
+        def make_reader():
+            ns = {}
+            exec(
+                "def read(o):\n return o.%s\n" % KEY, ns
+            )  # fresh code object per round
+            return ns["read"]
+
+
+        stop_all = [False]
+
+
+        def stopper():
+            class Dummy:
+                pass
+
+            Dummy()
+            while not stop_all[0]:
+                try:
+                    Dummy.__abstractmethods__ = frozenset()
+                except Exception:
+                    pass
+
+
+        box = {}
+        bugs = []  # (round, tid, stored, read_back)
+
+        def writer(tid):
+            for _ in range(NROUNDS):
+                box["start"].wait()
+                sentinel = box["sentinel"]
+                reader = box["reader"]
+                obj = box["objs"][tid]
+                val = box["vals"][tid]
+                # 1) warm THIS thread's own copy while KEY is absent -> NDV cached at V
+                for _ in range(WARM):
+                    reader(obj)
+                box["race"].wait()
+                # 2) race: store, then read back through our own NDV site
+                setattr(obj, KEY, val)
+                got = reader(obj)
+                if got is sentinel:
+                    bugs.append((box["round"], tid, val, got))
+                box["end"].wait()
+
+        box["start"] = Barrier(NWRITERS + 1)
+        box["race"] = Barrier(NWRITERS)
+        box["end"] = Barrier(NWRITERS + 1)
+
+        stoppers = [Thread(target=stopper, daemon=True) for _ in range(NSTOPPERS)]
+        writers = [Thread(target=writer, args=(i,)) for i in range(NWRITERS)]
+        for t in stoppers + writers:
+            t.start()
+
+        for r in range(NROUNDS):
+            sentinel = type(
+                "SENTINEL_%d" % r, (), {}
+            )  # non-descriptor, deferred refcount
+            C = type("C", (), {KEY: sentinel})
+            box["round"] = r
+            box["sentinel"] = sentinel
+            box["reader"] = make_reader()
+            box["objs"] = [C() for _ in range(NWRITERS)]
+            box["vals"] = [["value-%d-%d" % (r, i)] for i in range(NWRITERS)]
+            box["start"].wait()
+            box["end"].wait()
+
+        stop_all[0] = True
+        for t in writers:
+            t.join()
+
+        self.assertFalse(bugs)
 
     def run_one(self, writer_func, reader_func):
         barrier = threading.Barrier(NTHREADS)

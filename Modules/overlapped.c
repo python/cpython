@@ -885,13 +885,14 @@ _overlapped.Overlapped.getresult
 
 Retrieve result of operation.
 
-If wait is true then it blocks until the operation is finished.  If wait
-is false and the operation is still pending then an error is raised.
+If wait is true then it blocks until the operation is finished.  If
+wait is false and the operation is still pending then an error is
+raised.
 [clinic start generated code]*/
 
 static PyObject *
 _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
-/*[clinic end generated code: output=8c9bd04d08994f6c input=aa5b03e9897ca074]*/
+/*[clinic end generated code: output=8c9bd04d08994f6c input=852fbd817cbd2b3d]*/
 {
     DWORD transferred = 0;
     BOOL ret;
@@ -1909,6 +1910,11 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
         return NULL;
     }
 #endif
+
+    if (bufobj->len < (Py_ssize_t)size) {
+        PyErr_SetString(PyExc_ValueError, "nbytes is greater than the length of the buffer");
+        return NULL;
+    }
 
     wsabuf.buf = bufobj->buf;
     wsabuf.len = size;

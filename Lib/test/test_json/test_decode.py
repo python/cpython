@@ -1,4 +1,5 @@
 import decimal
+import unittest.mock
 from io import StringIO
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
@@ -87,6 +88,13 @@ class TestDecode:
 
         self.assertEqual(self.loads('[]', array_hook=tuple), ())
 
+    def test_load_array_hook(self):
+        # json.load must forward array_hook to loads
+        fp = StringIO('[10, 20, 30]')
+        result = self.json.load(fp, array_hook=tuple)
+        self.assertEqual(result, (10, 20, 30))
+        self.assertEqual(type(result), tuple)
+
     def test_decoder_optimizations(self):
         # Several optimizations were made that skip over calls to
         # the whitespace regex, so this test is designed to try and
@@ -141,12 +149,25 @@ class TestDecode:
         d = self.json.JSONDecoder()
         self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
 
+    def test_unterminated_string(self):
+        d = self.json.JSONDecoder()
+        self.assertRaises(self.JSONDecodeError, d.raw_decode, '"\\')
+
     def test_limit_int(self):
         maxdigits = 5000
         with support.adjust_int_max_str_digits(maxdigits):
             self.loads('1' * maxdigits)
             with self.assertRaises(ValueError):
                 self.loads('1' * (maxdigits + 1))
+
+    def test_explicit_cls_skips_json_decoder_default(self):
+        class CustomDecoder:
+            pass
+
+        with unittest.mock.patch.object(
+                CustomDecoder, 'decode', create=True) as mock_decode:
+            self.loads('{}', cls=CustomDecoder)
+        mock_decode.assert_called_once()
 
 
 class TestPyDecode(TestDecode, PyTest): pass

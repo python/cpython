@@ -5,7 +5,7 @@ from ctypes import (Structure, CDLL, CFUNCTYPE,
                     c_short, c_int, c_long, c_longlong,
                     c_byte, c_wchar, c_float, c_double,
                     ArgumentError)
-from test.support import import_helper, skip_if_sanitizer
+from test.support import import_helper, skip_if_sanitizer, skip_emscripten_stack_overflow
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
@@ -193,6 +193,7 @@ class BasicWrapTestCase(unittest.TestCase):
                              (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
     @skip_if_sanitizer('requires deep stack', thread=True)
+    @skip_emscripten_stack_overflow()
     def test_recursive_as_param(self):
         class A:
             pass
