@@ -12,6 +12,7 @@
 #include "pycore_lock.h"          // _PyOnceFlag_CallOnce()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -2246,7 +2247,12 @@ unpackiter_len(PyObject *op, PyObject *Py_UNUSED(dummy))
         len = 0;
     }
     else {
-        len = (self->buf.len - self->index) / self->so->s_size;
+        Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->index);
+        len = (self->buf.len - index) / self->so->s_size;
+        if (len < 0) {
+            /* index may briefly overshoot buf.len on a concurrent iteration */
+            len = 0;
+        }
     }
     return PyLong_FromSsize_t(len);
 }
@@ -2261,22 +2267,31 @@ unpackiter_iternext(PyObject *op)
 {
     unpackiterobject *self = unpackiterobject_CAST(op);
     _structmodulestate *state = get_struct_state_iterinst(self);
-    PyObject *result;
     if (self->so == NULL) {
         return NULL;
     }
-    if (self->index >= self->buf.len) {
-        /* Iterator exhausted */
-        Py_CLEAR(self->so);
-        PyBuffer_Release(&self->buf);
-        return NULL;
-    }
-    assert(self->index + self->so->s_size <= self->buf.len);
-    result = s_unpack_internal(self->so,
-                               (char*)self->buf.buf + self->index,
-                               state);
-    self->index += self->so->s_size;
-    return result;
+    Py_ssize_t size = self->so->s_size;
+
+    #ifdef Py_GIL_DISABLED
+        /* Claim a unique, in-bounds slot; buffer/Struct released only in dealloc,
+           so a concurrent reader can never observe a freed buffer. */
+        Py_ssize_t off = _Py_atomic_load_ssize_relaxed(&self->index);
+        do {
+            if (off + size > self->buf.len) {
+                return NULL;   /* exhausted */
+            }
+        } while (!_Py_atomic_compare_exchange_ssize(&self->index, &off, off + size));
+    #else
+        Py_ssize_t off = self->index;      /* GIL build: keep eager release */
+        if (off >= self->buf.len) {
+            Py_CLEAR(self->so);
+            PyBuffer_Release(&self->buf);
+            return NULL;
+        }
+        assert(off + size <= self->buf.len);
+        self->index = off + size;
+    #endif
+    return s_unpack_internal(self->so, (char*)self->buf.buf + off, state);
 }
 
 static PyType_Slot unpackiter_type_slots[] = {
