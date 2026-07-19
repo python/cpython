@@ -764,6 +764,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         if not self._extract_elided_nodes(baseline_data, path=()):
             return None
 
+        self._scale_flamegraph_values(baseline_data, scale)
         self._add_elided_metadata(baseline_data, baseline_stats, scale, path=())
 
         # Merge only profiling metadata, not thread-level stats
@@ -776,6 +777,13 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         baseline_data["stats"]["current_samples"] = self._total_samples
 
         return baseline_data
+
+    def _scale_flamegraph_values(self, node, scale):
+        """Express flamegraph values in units of the current sample interval."""
+        node["value"] = node.get("value", 0) * scale
+        node["self"] = node.get("self", 0) * scale
+        for child in node.get("children", ()):
+            self._scale_flamegraph_values(child, scale)
 
     def _extract_elided_nodes(self, node, path):
         """Remove non-elided nodes and recalculate values bottom-up."""

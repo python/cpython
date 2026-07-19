@@ -1663,6 +1663,33 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(data["diff"], 0.0)
         self.assertAlmostEqual(data["diff_pct"], 0.0)
 
+    def test_diff_flamegraph_elided_values_use_current_interval(self):
+        """Elided geometry and metadata use the same sample units."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "old_func")])
+            ])
+        ]
+        current_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 20, "new_func")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [baseline_frames] * 10,
+            baseline_interval=1000,
+            current_interval=10000,
+        )
+        diff.collect(current_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+        self.assertAlmostEqual(elided["value"], 1.0)
+        self.assertAlmostEqual(elided["self"], 1.0)
+        self.assertAlmostEqual(elided["baseline"], 1.0)
+        self.assertAlmostEqual(elided["diff"], -1.0)
+
     def test_diff_flamegraph_elided_stacks(self):
         """Paths in baseline but not current produce elided stacks."""
         baseline_frames_1 = [
