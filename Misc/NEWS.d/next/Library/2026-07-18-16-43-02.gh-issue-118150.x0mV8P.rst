@@ -1,9 +1,13 @@
 Expose automated junk heruistic flag to the public in difflib.
 
-This changes aims to expose autojunk flag (automated junk heuristic) of
-SequenceMatcher class (which by default is set up to be True) for the
-public methods and functions of the difflib module in order that the user
-can choose behavior of this option.
+.. section: Library
+
+   This change exposes the *autojunk* kwarg — used for turning on/off
+   the automated junk heuristic in the :class:`SequenceMatcher` (which
+   defaults to ``True``, meaning this heuristic was always performed
+   in :mod:`difflib`) — to the public methods and functions of
+   the :mod:`difflib`, so that users can change the behavior of this option.
+   See the :class:`SequenceMatcher` documentation for details.
 
 # # Uncomment one of these "section:" lines to specify which section # this
 entry should go in in Misc/NEWS.d. # #.. section: Security #.. section: Core
