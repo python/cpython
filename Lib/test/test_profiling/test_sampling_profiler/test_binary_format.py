@@ -1580,6 +1580,34 @@ class TestTimestampPreservation(BinaryFormatTestBase):
         self.assertEqual(ts_collector.all_timestamps, expected_timestamps)
 
 
+class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
+    def test_replay_includes_reconstructed_stats(self):
+        frames = [
+            make_frame("hot.py", 99, "hot_func"),
+            make_frame("main.py", 1, "main"),
+        ]
+        samples = [
+            [
+                make_interpreter(
+                    0,
+                    [make_thread(1, frames, THREAD_STATUS_HAS_GIL)],
+                )
+            ]
+            for _ in range(5)
+        ]
+        bin_path = self.create_binary_file(samples, interval=2000)
+        with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as file:
+            html_path = file.name
+        self.temp_files.append(html_path)
+
+        convert_binary_to_format(bin_path, html_path, "flamegraph")
+
+        with open(html_path, encoding="utf-8") as file:
+            content = file.read()
+        self.assertIn('"duration_sec":', content)
+        self.assertIn('"sample_rate": 500.0', content)
+
+
 class TestBinaryReplayToJsonl(BinaryFormatTestBase):
     """Tests for binary -> JSONL replay via convert_binary_to_format."""
 
