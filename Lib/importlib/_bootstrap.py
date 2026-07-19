@@ -1260,7 +1260,7 @@ def _sanity_check(name, package, level):
 
 _ERR_MSG_PREFIX = 'No module named '
 
-def _find_and_load_unlocked(name, import_):
+def _find_and_load_unlocked(name, import_, *, lazy_submodule=False):
     path = None
     sys.audit(
         "import",
@@ -1283,6 +1283,8 @@ def _find_and_load_unlocked(name, import_):
         try:
             path = parent_module.__path__
         except AttributeError:
+            if lazy_submodule:
+                return None
             msg = f'{_ERR_MSG_PREFIX}{name!r}; {parent!r} is not a package'
             raise ModuleNotFoundError(msg, name=name) from None
         parent_spec = parent_module.__spec__
@@ -1295,6 +1297,8 @@ def _find_and_load_unlocked(name, import_):
         child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
+        if lazy_submodule:
+            return None
         raise ModuleNotFoundError(f'{_ERR_MSG_PREFIX}{name!r}', name=name)
     else:
         if parent_spec:
@@ -1326,7 +1330,7 @@ def _find_and_load_unlocked(name, import_):
 _NEEDS_LOADING = object()
 
 
-def _find_and_load(name, import_):
+def _find_and_load(name, import_, *, lazy_submodule=False):
     """Find and load the module."""
 
     # Optimization: we avoid unneeded module locking if the module
@@ -1343,7 +1347,8 @@ def _find_and_load(name, import_):
         with lock_manager:
             module = sys.modules.get(name, _NEEDS_LOADING)
             if module is _NEEDS_LOADING:
-                return _find_and_load_unlocked(name, import_)
+                return _find_and_load_unlocked(
+                    name, import_, lazy_submodule=lazy_submodule)
 
         # Optimization: only call _bootstrap._lock_unlock_module() if
         # module.__spec__._initializing is True.
@@ -1357,13 +1362,17 @@ def _find_and_load(name, import_):
         # to preserve normal semantics: the caller gets the exception from
         # the actual import failure rather than a synthetic error.
         if sys.modules.get(name) is not module:
-            return _find_and_load(name, import_)
+            return _find_and_load(name, import_, lazy_submodule=lazy_submodule)
 
     if module is None:
         message = f'import of {name} halted; None in sys.modules'
         raise ModuleNotFoundError(message, name=name)
 
     return module
+
+
+def _find_and_load_lazy_submodule(name, import_):
+    return _find_and_load(name, import_, lazy_submodule=True)
 
 
 def _gcd_import(name, package=None, level=0):
