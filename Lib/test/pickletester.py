@@ -1755,8 +1755,60 @@ class AbstractUnpickleTests:
             [ToBeUnpickled] * 2)
 
 
+class WeakrefTarget:
+    # Weakly referenceable, picklable, and not hashable -- the weak-only
+    # error path must not assume hashable referents.
+    __hash__ = None
+
+
 class AbstractPicklingErrorTests:
     # Subclass must define self.dumps, self.pickler.
+
+    def test_unpicklable_weakref_referent(self):
+        # Pickling a weak reference pickles its referent too, so it fails when
+        # the referent is not picklable (a lambda).
+        f = lambda: 42
+        wr = weakref.ref(f)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                self.assertRaises(pickle.PicklingError, self.dumps, wr, proto)
+
+    def test_weakref_without_strong_ref(self):
+        # The error names the distinct referent types: bounded however many
+        # referents there are, and not requiring them to be hashable.
+        referents = [WeakrefTarget() for _ in range(5)]
+        wrs = [weakref.ref(obj) for obj in referents]
+        typename = f'{WeakrefTarget.__module__}.{WeakrefTarget.__qualname__}'
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                with self.assertRaises(pickle.PicklingError) as cm:
+                    self.dumps(wrs, proto)
+                self.assertEqual(str(cm.exception),
+                    'cannot pickle weak reference(s) whose referent(s) have no '
+                    'strong reference in the pickle: ' + typename)
+
+    def test_weakref_reused_pickler(self):
+        # Both re-initializing the pickler and clearing its memo reset the
+        # weak-only bookkeeping left by a refused dump.
+        obj = WeakrefTarget()
+        wr = weakref.ref(obj)
+        p = self.pickler(io.BytesIO())
+        self.assertRaises(pickle.PicklingError, p.dump, wr)
+        f = io.BytesIO()
+        p.__init__(f)
+        p.dump([obj, wr])
+        obj2, wr2 = pickle.loads(f.getvalue())
+        self.assertIs(wr2(), obj2)
+
+        f = io.BytesIO()
+        p = self.pickler(f)
+        self.assertRaises(pickle.PicklingError, p.dump, wr)
+        p.clear_memo()
+        f.seek(0)
+        f.truncate()
+        p.dump([obj, wr])
+        obj2, wr2 = pickle.loads(f.getvalue())
+        self.assertIs(wr2(), obj2)
 
     def test_bad_reduce_result(self):
         obj = REX([print, ()])
@@ -3528,6 +3580,47 @@ class AbstractPickleTests:
                     detail = (proto, C, B, x, y, type(y))
                     self.assertEqual(B(x), B(y), detail)
                     self.assertEqual(x.__dict__, y.__dict__, detail)
+
+    def test_weakref(self):
+        obj = WeakrefTarget()
+        wr = weakref.ref(obj)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                obj2, wr2 = self.loads(self.dumps([obj, wr], proto))
+                self.assertIs(type(wr2), weakref.ref)
+                self.assertIs(wr2(), obj2)
+                # Identity holds regardless of pickling order.
+                wr2, obj2 = self.loads(self.dumps([wr, obj], proto))
+                self.assertIs(wr2(), obj2)
+
+    def test_weakref_callback(self):
+        # The callback is not preserved: pickling it strongly would defeat
+        # the weak-only detection.
+        obj = WeakrefTarget()
+        wr = weakref.ref(obj, lambda r: None)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                obj2, wr2 = self.loads(self.dumps([obj, wr], proto))
+                self.assertIs(wr2(), obj2)
+                self.assertIsNone(wr2.__callback__)
+
+    def test_dead_weakref(self):
+        # A dead reference stays dead, and all dead references unpickle as
+        # the same object.
+        obj = WeakrefTarget()
+        wr = weakref.ref(obj)
+        obj2 = WeakrefTarget()
+        wr2 = weakref.ref(obj2)
+        del obj, obj2
+        support.gc_collect()
+        self.assertIsNone(wr())
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                a, b = self.loads(self.dumps([wr, wr2], proto))
+                self.assertIs(type(a), weakref.ref)
+                self.assertIs(a, b)
+                support.gc_collect()
+                self.assertIsNone(a())
 
     def test_newobj_overridden_new(self):
         # Test that Python class with C implemented __new__ is pickleable
