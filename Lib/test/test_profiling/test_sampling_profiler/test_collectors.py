@@ -1664,6 +1664,88 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertAlmostEqual(child["diff"], 0.0, places=1)
         self.assertAlmostEqual(child["diff_pct"], 0.0, places=1)
 
+    def test_diff_flamegraph_matches_different_checkout_paths(self):
+        """Functions match when only the checkout prefix changes."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("/old/cpython/demo.py", 10, "func1")
+                ])
+            ])
+        ]
+        current_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("/new/cpython/demo.py", 10, "func1")
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        diff.collect(current_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["elided_count"], 0)
+        self.assertEqual(data["self_time"], 1)
+        self.assertAlmostEqual(data["baseline"], 1.0)
+        self.assertAlmostEqual(data["diff"], 0.0)
+
+    def test_diff_flamegraph_matches_unique_path_suffixes(self):
+        """Duplicate basenames match using longer unique suffixes."""
+        baseline_samples = []
+        current_samples = []
+        for package in ("package_a", "package_b"):
+            baseline_samples.append([
+                MockInterpreterInfo(0, [
+                    MockThreadInfo(1, [
+                        MockFrameInfo(
+                            f"/old/cpython/{package}/common.py", 10, package
+                        )
+                    ])
+                ])
+            ])
+            current_samples.append([
+                MockInterpreterInfo(0, [
+                    MockThreadInfo(1, [
+                        MockFrameInfo(
+                            f"/new/cpython/{package}/common.py", 10, package
+                        )
+                    ])
+                ])
+            ])
+
+        diff = make_diff_collector_with_mock_baseline(baseline_samples)
+        for sample in current_samples:
+            diff.collect(sample)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["elided_count"], 0)
+        for node in data["children"]:
+            self.assertAlmostEqual(node["diff"], 0.0)
+
+    def test_diff_flamegraph_does_not_match_ambiguous_paths(self):
+        """Ambiguous common suffixes are not matched arbitrarily."""
+        baseline_samples = [
+            [MockInterpreterInfo(0, [MockThreadInfo(1, [
+                MockFrameInfo(f"/old/{package}/common.py", 10, "func")
+            ])])]
+            for package in ("package_a", "package_b")
+        ]
+        current_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("/new/common.py", 10, "func")
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(baseline_samples)
+        diff.collect(current_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertEqual(data["baseline"], 0)
+        self.assertGreater(data["stats"]["elided_count"], 0)
+
     def test_diff_flamegraph_empty_current(self):
         """Empty current profile still produces differential metadata and elided paths."""
         baseline_frames = [

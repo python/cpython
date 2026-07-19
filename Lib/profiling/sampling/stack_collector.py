@@ -489,6 +489,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         self.baseline_binary_path = baseline_binary_path
         self._baseline_collector = None
         self._elided_paths = set()
+        self._filename_keys = {}
 
     def _load_baseline(self):
         """Load baseline profile from binary file."""
@@ -515,7 +516,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
         for func, node in root_node["children"].items():
             filename, _lineno, funcname = func
-            func_key = (filename, funcname)
+            func_key = (self._filename_keys.get(filename, filename), funcname)
             path_key = path + (func_key,)
 
             total_samples = node.get("samples", 0)
@@ -540,6 +541,90 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
         return stats
 
+    def _collect_filenames(self, root_node):
+        filenames = set()
+        for func, node in root_node["children"].items():
+            filenames.add(func[0])
+            filenames.update(self._collect_filenames(node))
+        return filenames
+
+    @staticmethod
+    def _path_parts(filename):
+        if not filename or filename.startswith(("<", "[")):
+            return (filename,)
+        return tuple(
+            part for part in filename.replace("\\", "/").split("/") if part
+        )
+
+    @classmethod
+    def _common_path_suffix_length(cls, left, right):
+        left_parts = cls._path_parts(left)
+        right_parts = cls._path_parts(right)
+        count = 0
+        for left_part, right_part in zip(
+            reversed(left_parts), reversed(right_parts)
+        ):
+            if left_part != right_part:
+                break
+            count += 1
+        return count
+
+    def _match_filenames(self):
+        """Match filenames using unique common path suffixes."""
+        current_files = self._collect_filenames(self._root)
+        baseline_files = self._collect_filenames(
+            self._baseline_collector._root
+        )
+        filename_keys = {filename: filename for filename in current_files}
+
+        current_by_name = collections.defaultdict(list)
+        baseline_by_name = collections.defaultdict(list)
+        for filename in current_files:
+            current_by_name[self._path_parts(filename)[-1]].append(filename)
+        for filename in baseline_files:
+            baseline_by_name[self._path_parts(filename)[-1]].append(filename)
+
+        for name in current_by_name.keys() & baseline_by_name.keys():
+            current_group = current_by_name[name]
+            baseline_group = baseline_by_name[name]
+            scores = {
+                (current, baseline): self._common_path_suffix_length(
+                    current, baseline
+                )
+                for current in current_group
+                for baseline in baseline_group
+            }
+
+            best_baseline = {}
+            for current in current_group:
+                best_score = max(
+                    scores[current, baseline] for baseline in baseline_group
+                )
+                matches = [
+                    baseline for baseline in baseline_group
+                    if scores[current, baseline] == best_score
+                ]
+                if best_score and len(matches) == 1:
+                    best_baseline[current] = matches[0]
+
+            best_current = {}
+            for baseline in baseline_group:
+                best_score = max(
+                    scores[current, baseline] for current in current_group
+                )
+                matches = [
+                    current for current in current_group
+                    if scores[current, baseline] == best_score
+                ]
+                if best_score and len(matches) == 1:
+                    best_current[baseline] = matches[0]
+
+            for current, baseline in best_baseline.items():
+                if best_current.get(baseline) == current:
+                    filename_keys[baseline] = current
+
+        return filename_keys
+
     def _convert_to_flamegraph_format(self):
         """Convert to flamegraph format with differential annotations."""
         if self._baseline_collector is None:
@@ -547,6 +632,7 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
         current_flamegraph = super()._convert_to_flamegraph_format()
 
+        self._filename_keys = self._match_filenames()
         current_stats = self._aggregate_path_samples(self._root)
         baseline_stats = self._aggregate_path_samples(self._baseline_collector._root)
 
@@ -741,4 +827,4 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             return None
         filename = string_table.get_string(node["filename"])
         funcname = string_table.get_string(node["funcname"])
-        return (filename, funcname)
+        return (self._filename_keys.get(filename, filename), funcname)
