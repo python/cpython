@@ -1366,7 +1366,7 @@ Control flow
 
    ``try`` blocks which are followed by ``except*`` clauses. The attributes are the
    same as for :class:`Try` but the :class:`ExceptHandler` nodes in ``handlers``
-   are interpreted as ``except*`` blocks rather then ``except``.
+   are interpreted as ``except*`` blocks rather than ``except``.
 
    .. doctest::
 
