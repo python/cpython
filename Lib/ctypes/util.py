@@ -17,16 +17,21 @@ if os.name == "nt":
     def _get_build_version():
         """Return the version of MSVC that was used to build Python.
 
-        For Python 2.3 and up, the version number is included in
-        sys.version.  For earlier versions, assume the compiler is MSVC 6.
+        The version number is included in sys.version.  Return None if it
+        cannot be found there, for example because Python was not built
+        with MSVC or because sys.version has been truncated.
         """
         # This function was copied from Lib/distutils/msvccompiler.py
         prefix = "MSC v."
         i = sys.version.find(prefix)
         if i == -1:
-            return 6
+            # We don't know what version of the compiler this is.
+            return None
         i = i + len(prefix)
-        s, rest = sys.version[i:].split(" ", 1)
+        s, sep, _ = sys.version[i:].partition(" ")
+        if not sep:
+            # sys.version was truncated inside the version number.
+            return None
         majorVersion = int(s[:-2]) - 6
         if majorVersion >= 13:
             majorVersion += 1

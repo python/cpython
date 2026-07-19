@@ -1,0 +1,8 @@
+Fix :func:`ctypes.util.find_msvcrt` on Windows builds whose :data:`sys.version`
+does not contain the ``MSC v.`` marker, which happens on ``clang-cl`` builds
+because the compiler banner is truncated to 80 characters. Instead of assuming
+MSVC 6 and returning ``msvcrt.dll`` -- a C runtime that does not share its
+``errno`` with the one the :mod:`!_ctypes` extension module is linked against
+-- the compiler version is now reported as unknown, so
+:func:`!ctypes.util.find_msvcrt` and ``find_library('c')`` return ``None``,
+matching builds made with modern versions of MSVC.

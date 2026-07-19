@@ -1,3 +1,4 @@
+import ctypes.util
 import os.path
 import sys
 import test.support
@@ -219,6 +220,57 @@ class FindLibraryEmscripten(unittest.TestCase):
                 self.assertIsNone(result)
                 result = find_library('other')
                 self.assertIsNone(result)
+
+
+@unittest.skipUnless(os.name == 'nt', 'Test only valid for Windows')
+class FindLibraryWindows(unittest.TestCase):
+    # gh-154199: Python/getversion.c formats the compiler identification with
+    # "%.80s", so a long banner (as emitted by clang-cl builds) can be cut off
+    # before the "MSC v." marker.  The build version must then be reported as
+    # unknown instead of defaulting to MSVC 6, which would make find_msvcrt()
+    # hand out msvcrt.dll -- a CRT that does not share its errno with the one
+    # the _ctypes extension module was linked against.
+    TRUNCATED_CLANG_VERSION = (
+        '3.16.0a0 free-threading build (heads/main:0123456789ab, '
+        'Jan  1 2026, 00:00:00) [Clang 22.1.8 '
+        '(https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174d'
+    )
+    # Truncated just after the marker, so the version digits are missing.
+    TRUNCATED_IN_MARKER_VERSION = (
+        '3.16.0a0 (main:0123456789ab, Jan  1 2026, 00:00:00) '
+        '[Clang 22.1.8 (https://example.invalid) 64 bit (AMD64) with MSC v.1944'
+    )
+    MSVC_VERSION = (
+        '3.16.0a0 (main:0123456789ab, Jan  1 2026, 00:00:00) '
+        '[MSC v.1944 64 bit (AMD64)]'
+    )
+
+    @thread_unsafe('patches sys.version')
+    def test_get_build_version_truncated(self):
+        with unittest.mock.patch.object(sys, 'version',
+                                        self.TRUNCATED_CLANG_VERSION):
+            self.assertIsNone(ctypes.util._get_build_version())
+
+    @thread_unsafe('patches sys.version')
+    def test_get_build_version_truncated_in_marker(self):
+        with unittest.mock.patch.object(sys, 'version',
+                                        self.TRUNCATED_IN_MARKER_VERSION):
+            self.assertIsNone(ctypes.util._get_build_version())
+
+    @thread_unsafe('patches sys.version')
+    def test_find_msvcrt_truncated(self):
+        with unittest.mock.patch.object(sys, 'version',
+                                        self.TRUNCATED_CLANG_VERSION):
+            self.assertIsNone(ctypes.util.find_msvcrt())
+            self.assertIsNone(find_library('c'))
+            self.assertIsNone(find_library('m'))
+
+    @thread_unsafe('patches sys.version')
+    def test_get_build_version_msvc(self):
+        with unittest.mock.patch.object(sys, 'version', self.MSVC_VERSION):
+            self.assertEqual(ctypes.util._get_build_version(), 14.4)
+            # Recent versions of the CRT are not directly loadable.
+            self.assertIsNone(ctypes.util.find_msvcrt())
 
 
 if __name__ == "__main__":
