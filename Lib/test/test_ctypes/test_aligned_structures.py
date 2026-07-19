@@ -409,8 +409,7 @@ class TestAlignedStructures(unittest.TestCase, StructCheckMixin):
             self.assertEqual(Main.union.size, 4)
             self.assertEqual(Main.first.size, 2)
 
-    @subTests("use_struct_util", [False, True])
-    def test_larger_aligned_subclassed_union(self, use_struct_util):
+    def test_larger_aligned_subclassed_union(self):
         for uendian, e in (
             ('little', "<"),
             ('big', ">"),
