@@ -466,7 +466,7 @@ class SubprocessMixin:
                 wait_proc = asyncio.create_task(proc.wait())
                 await asyncio.sleep(0)
                 proc.kill()
-                await asyncio.wait_for(wait_proc, timeout=2.0)
+                await asyncio.wait_for(wait_proc, timeout=support.SHORT_TIMEOUT)
             finally:
                 os.close(w) # Allows the grandchild to exit
                 if proc.stdout is not None:
