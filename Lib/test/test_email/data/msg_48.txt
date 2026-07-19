@@ -1,7 +1,7 @@
 From: <foo@bar.baz>
 To: <baz@bar.foo>
 Subject: test
-In-Reply-To: somelonglonglonglonglongunwrappablemessageidtoreplyto@mail.foo.bar>
+In-Reply-To: <somelonglonglonglonglongunwrappablemessageidtoreplyto@mail.foo.bar>
 MIME-Version: 1.0
 Content-Type: multipart/signed; boundary="borderline";
 	protocol="application/pgp-signature"; micalg=pgp-sha1
