@@ -612,18 +612,6 @@ Available Functions
    for the attribute to exist on the overload as returned by
    :func:`typing.get_overloads`.
 
-   ``deprecated`` is implemented as a class, so applying it (for example,
-   ``deprecated("Use B instead")``) returns an instance that acts as the
-   decorator.  The arguments passed to it are available as attributes of the
-   same names on that instance:
-
-   * ``message``: the deprecation message (a :class:`str`; a
-     :exc:`TypeError` is raised if it is not).
-   * ``category``: the warning category, or ``None`` if no runtime warning
-     should be emitted.
-   * ``stacklevel``: the number of stack frames to skip when emitting the
-     warning (an :class:`int`).
-
    .. versionadded:: 3.13
       See :pep:`702`.
 
