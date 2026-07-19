@@ -88,13 +88,14 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
         self.assertEqual(sizeof(X), min(8, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(8, longlong_align))
 
-        with self.assertRaises(ValueError):
-            if use_struct_util:
+        if use_struct_util:
+            with self.assertRaises(NameError):
                 @struct_util(pack=-1, layout='ms')
                 class X:
                     a: "b"
                     b: "q"
-            else:
+        else:
+            with self.assertRaises(ValueError):
                 class X(Structure):
                     _fields_ = [("a", "b"), ("b", "q")]
                     _pack_ = -1
@@ -953,6 +954,12 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             pass
 
         self.assertEqual(Foo.__name__, "Foo")
+
+    def test_string_annotations(self):
+        from test.test_ctypes import struct_str_ann
+        Point = struct_str_ann.Point
+        fields = [['x', c_int], ['y', c_int]]
+        self.assertEqual(Point._fields_, fields)
 
 
 if __name__ == '__main__':
