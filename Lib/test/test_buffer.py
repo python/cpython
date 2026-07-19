@@ -37,6 +37,7 @@ except ImportError:
 
 try:
     import ctypes
+    import ctypes.util
 except ImportError:
     ctypes = None
 
@@ -2849,8 +2850,11 @@ class TestBufferProtocol(unittest.TestCase):
 
         if ctypes:
             # format: "T{>l:x:>d:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_double)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_double
+
             point = BEPoint(100, 200.1)
             m1 = memoryview(point)
             m2 = m1.cast('B')
@@ -3250,8 +3254,11 @@ class TestBufferProtocol(unittest.TestCase):
         # Some ctypes format strings are unknown to the struct module.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_long
+
             point = BEPoint(100, 200)
             a = memoryview(point)
             b = memoryview(point)
@@ -3988,8 +3995,11 @@ class TestBufferProtocol(unittest.TestCase):
         # Unknown formats are handled: tobytes() purely depends on itemsize.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
-            class BEPoint(ctypes.BigEndianStructure):
-                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            @ctypes.util.struct(endian='big')
+            class BEPoint:
+                x: ctypes.c_long
+                y: ctypes.c_long
+
             point = BEPoint(100, 200)
             a = memoryview(point)
             self.assertEqual(a.tobytes(), bytes(point))

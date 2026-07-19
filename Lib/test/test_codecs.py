@@ -36,21 +36,25 @@ def coding_checker(self, coder):
         self.assertEqual(coder(input), (expect, len(input)))
     return check
 
-# On small versions of Windows like Windows IoT or Windows Nano Server not all codepages are present
+# On small versions of Windows like Windows IoT or Windows Nano Server,
+# not all codepages are present
 def is_code_page_present(cp):
-    from ctypes import POINTER, WINFUNCTYPE, WinDLL, Structure
+    from ctypes import POINTER, WINFUNCTYPE, WinDLL
+    from ctypes.util import struct
     from ctypes.wintypes import BOOL, BYTE, WCHAR, UINT, DWORD
 
     MAX_LEADBYTES = 12  # 5 ranges, 2 bytes ea., 0 term.
     MAX_DEFAULTCHAR = 2 # single or double byte
     MAX_PATH = 260
-    class CPINFOEXW(Structure):
-        _fields_ = [("MaxCharSize", UINT),
-                    ("DefaultChar", BYTE*MAX_DEFAULTCHAR),
-                    ("LeadByte", BYTE*MAX_LEADBYTES),
-                    ("UnicodeDefaultChar", WCHAR),
-                    ("CodePage", UINT),
-                    ("CodePageName", WCHAR*MAX_PATH)]
+
+    @struct
+    class CPINFOEXW:
+        MaxCharSize: UINT
+        DefaultChar: BYTE * MAX_DEFAULTCHAR
+        LeadByte: BYTE * MAX_LEADBYTES
+        UnicodeDefaultChar: WCHAR
+        CodePage: UINT
+        CodePageName: WCHAR * MAX_PATH
 
     prototype = WINFUNCTYPE(BOOL, UINT, DWORD, POINTER(CPINFOEXW))
     GetCPInfoEx = prototype(("GetCPInfoExW", WinDLL("kernel32")))

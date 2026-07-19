@@ -54,8 +54,10 @@ class RefcountTestCase(unittest.TestCase):
         gc.collect()
         self.assertEqual(sys.getrefcount(func), orig_refcount)
 
-        class X(ctypes.Structure):
-            _fields_ = [("a", OtherCallback)]
+        @ctypes.util.struct
+        class X:
+            a: OtherCallback
+
         x = X()
         x.a = OtherCallback(func)
 
