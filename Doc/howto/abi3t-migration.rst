@@ -8,7 +8,7 @@ Migrating to Stable ABI for free threading (``abi3t``)
 
 Starting with the 3.15 release, CPython supports a variant of the Stable ABI
 that supports :term:`free-threaded <free threading>` Python:
-The Stable ABI for Free-Threaded Builds, or ``abi3t`` for short.
+the Stable ABI for Free-Threaded Builds, or ``abi3t`` for short.
 This document describes how to adapt C API extensions to support free threading.
 
 Why do this
