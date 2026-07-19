@@ -875,6 +875,11 @@ class Reader:
         """Called when a command signals that we're finished."""
         pass
 
+    def debug(self, msg: str) -> None:
+        # Uncomment for debugging:
+        # self.error(f"[debug] {msg}")
+        pass
+
     def error(self, msg: str = "none") -> None:
         error_prefix = self.error_prefix
         if self.can_colorize:

@@ -336,7 +336,7 @@ class backspace_dedent(commands.Command):
             del b[r.pos : r.pos + repeat]
             r.invalidate_buffer(r.pos)
         else:
-            self.reader.error("can't backspace at start")
+            self.reader.debug("can't backspace at start")
 
 
 # ____________________________________________________________
