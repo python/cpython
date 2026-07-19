@@ -3043,7 +3043,7 @@ class TestVersions(unittest.TestCase):
 
     def test_pack_full_version_ctypes(self):
         ctypes = import_helper.import_module('ctypes')
-        import ctypes.util
+        import ctypes.util  # noqa: F811
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def Py_PACK_FULL_VERSION(
@@ -3062,7 +3062,7 @@ class TestVersions(unittest.TestCase):
 
     def test_pack_version_ctypes(self):
         ctypes = import_helper.import_module('ctypes')
-        import ctypes.util
+        import ctypes.util  # noqa: F811
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def Py_PACK_VERSION(

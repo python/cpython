@@ -440,7 +440,7 @@ class ExceptionTests(unittest.TestCase):
     def test_windows_message(self):
         """Should fill in unknown error code in Windows error message"""
         ctypes = import_module('ctypes')
-        import ctypes.util
+        import ctypes.util  # noqa: F811
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyErr_SetFromWindowsErr(ierr: ctypes.c_int) -> ctypes.py_object:

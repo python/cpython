@@ -821,7 +821,7 @@ class TestFrameCApi(unittest.TestCase):
     def test_basic(self):
         x = 1
         ctypes = import_helper.import_module('ctypes')
-        import ctypes.util
+        import ctypes.util  # noqa: F811
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyEval_GetFrameLocals() -> ctypes.py_object:

@@ -326,7 +326,7 @@ class ThreadTests(BaseTestCase):
     @cpython_only
     def test_PyThreadState_SetAsyncExc(self):
         ctypes = import_module("ctypes")
-        import ctypes.util
+        import ctypes.util  # noqa: F811
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyThreadState_SetAsyncExc(id: ctypes.c_ulong,
