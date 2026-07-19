@@ -239,8 +239,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
-    /* When resizing to 0, always reset to the empty-bytes constant to avoid
-       complexity in the realloc path below (see gh-153419). */
+    /* resize to 0 resets to empty bytes (see issue #153419)*/
     if (requested_size == 0) {
         Py_XSETREF(obj->ob_bytes_object,
                    Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
@@ -954,7 +953,6 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         return -1;
     }
 
-    /* PyByteArray_Resize(,0) should always leave the empty bytes constant */
     assert(self->ob_bytes_object == Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_BYTES));
     assert(self->ob_exports == 0);
 
