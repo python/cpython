@@ -3854,5 +3854,155 @@ recurse({depth})
             client_socket.sendall(b"done")
 
 
+@requires_remote_subprocess_debugging()
+@skip_if_not_supported
+@unittest.skipIf(
+    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+    "Test only runs on Linux with process_vm_readv support",
+)
+class TestMetadataDegradation(RemoteInspectionTestBase):
+    """Tests for graceful degradation of oversized code-object metadata."""
+
+    @contextmanager
+    def _running_target(self, script_body):
+        """Run a target script (socket handshake prepended), yield (process, socket)."""
+        port = find_unused_port()
+        script = (
+            textwrap.dedent(
+                f"""\
+                import time, socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(('localhost', {port}))
+                """
+            )
+            + textwrap.dedent(script_body)
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = _create_server_socket(port)
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+
+            try:
+                with _managed_subprocess([sys.executable, script_name]) as p:
+                    client_socket, _ = server_socket.accept()
+                    server_socket.close()
+                    server_socket = None
+                    yield p, client_socket
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
+    def _sample_until_frame(self, pid, predicate):
+        """Sample until a frame matching predicate appears; return that frame."""
+        unwinder = RemoteUnwinder(pid, all_threads=True)
+        traces = _get_stack_trace_with_retry(
+            unwinder,
+            condition=lambda t: self._find_frame_in_trace(t, predicate)
+            is not None,
+        )
+        return self._find_frame_in_trace(traces, predicate)
+
+    def test_long_qualname_truncated_not_dropped(self):
+        """A qualname longer than 1024 chars is truncated with a marker
+        instead of failing the whole sample."""
+        script_body = """\
+            src = ("def " + "f" * 1100 + "():\\n"
+                   "    sock.sendall(b'ready')\\n"
+                   "    time.sleep(10_000)\\n")
+            ns = {"sock": sock, "time": time}
+            exec(src, ns)
+            ns["f" * 1100]()
+            """
+        with self._running_target(script_body) as (p, client_socket):
+            _wait_for_signal(client_socket, b"ready")
+            frame = self._sample_until_frame(
+                p.pid, lambda f: f.funcname.startswith("fff")
+            )
+            self.assertEqual(
+                frame.funcname, "f" * 1024 + "(len=1100)"
+            )
+
+    def test_long_filename_truncated(self):
+        """A filename longer than 1024 chars is truncated with a marker
+        instead of failing the whole sample."""
+        script_body = """\
+            src = ("def g():\\n"
+                   "    sock.sendall(b'ready')\\n"
+                   "    time.sleep(10_000)\\n")
+            ns = {"sock": sock, "time": time}
+            exec(compile(src, "x" * 1500 + ".py", "exec"), ns)
+            ns["g"]()
+            """
+        with self._running_target(script_body) as (p, client_socket):
+            _wait_for_signal(client_socket, b"ready")
+            frame = self._sample_until_frame(
+                p.pid, lambda f: f.funcname == "g"
+            )
+            self.assertEqual(
+                frame.filename, "x" * 1024 + "(len=1503)"
+            )
+
+    def test_large_linetable_keeps_line_numbers(self):
+        """A linetable larger than the old 4096-byte cap keeps line numbers."""
+        script_body = """\
+            body = "\\n".join("    x%d = %d" % (i, i) for i in range(4000))
+            src = ("def big():\\n" + body + "\\n"
+                   "    sock.sendall(b'ready')\\n"
+                   "    time.sleep(10_000)\\n")
+            ns = {"sock": sock, "time": time}
+            exec(src, ns)
+            sock.sendall(b"lt:%d\\n" % len(ns["big"].__code__.co_linetable))
+            ns["big"]()
+            """
+        with self._running_target(script_body) as (p, client_socket):
+            buffer = _wait_for_signal(client_socket, [b"lt:", b"ready"])
+            linetable_size = int(
+                buffer.partition(b"lt:")[2].partition(b"\n")[0]
+            )
+            self.assertGreater(linetable_size, 4096)
+
+            frame = self._sample_until_frame(
+                p.pid, lambda f: f.funcname == "big"
+            )
+            self.assertIsNotNone(
+                frame.location, "line info degraded for large linetable"
+            )
+            self.assertGreater(frame.location.lineno, 4000)
+
+    @unittest.skipIf(
+        sys.platform == "win32",
+        "Process death maps to ProcessLookupError only on POSIX platforms",
+    )
+    def test_dead_process_raises_not_degrades(self):
+        """Death of the target raises ProcessLookupError instead of
+        degrading to synthetic frames."""
+        script_body = """\
+            sock.sendall(b"ready")
+            time.sleep(10_000)
+            """
+        with self._running_target(script_body) as (p, client_socket):
+            _wait_for_signal(client_socket, b"ready")
+            unwinder = RemoteUnwinder(p.pid, all_threads=True)
+            _get_stack_trace_with_retry(unwinder)
+
+            p.kill()
+            p.wait()
+
+            for _ in busy_retry(SHORT_TIMEOUT, error=False):
+                try:
+                    unwinder.get_stack_trace()
+                except ProcessLookupError:
+                    break
+                except RuntimeError:
+                    continue
+            else:
+                self.fail(
+                    "ProcessLookupError never raised for dead process"
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

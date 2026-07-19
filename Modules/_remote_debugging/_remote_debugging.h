@@ -144,6 +144,7 @@ typedef enum _WIN32_THREADSTATE {
 #define SIZEOF_INTERPRETER_STATE sizeof(PyInterpreterState)
 
 /* Maximum sizes for validation to prevent buffer overflows from corrupted data */
+#define MAX_REMOTE_READ ((Py_ssize_t)(256 * 1024))  /* 256 KB max for variable-length object reads */
 #define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
 #define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
 #define MAX_SET_TABLE_SIZE (1 << 20)  /* 1 million entries max for set iteration */
@@ -180,7 +181,7 @@ typedef enum _WIN32_THREADSTATE {
 #define set_exception_cause(unwinder, exc_type, message)                              \
     do {                                                                              \
         assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
-        if (unwinder->debug && !_Py_RemoteDebug_HasPermissionError()) {               \
+        if (unwinder->debug && !_Py_RemoteDebug_IsFatalReadError()) {                 \
             _set_debug_exception_cause(exc_type, message);                            \
         }                                                                             \
     } while (0)

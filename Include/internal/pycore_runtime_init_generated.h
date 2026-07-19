@@ -1329,6 +1329,9 @@ extern "C" {
     INIT_STR(native, "<native>"), \
     INIT_STR(str_replace_inf, "1e309"), \
     INIT_STR(type_params, ".type_params"), \
+    INIT_STR(unknown_file, "<unknown file>"), \
+    INIT_STR(unknown_function, "<unknown function>"), \
+    INIT_STR(unreadable_frame, "<unreadable frame>"), \
     INIT_STR(utf_8, "utf-8"), \
 }
 
