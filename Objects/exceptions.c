@@ -2708,7 +2708,14 @@ static PyObject *
 AttributeError_str(PyObject *op)
 {
     PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
-    PyObject *arg, *obj = NULL, *name;
+    PyObject *arg;  // borrowed ref
+    PyObject *obj = NULL, *name = NULL;
+
+     /* .name and .obj are set automatically when attribute lookup fails, so
+        synthesize a more informative message from them when the caller
+        didn't supply a meaningful one of their own -- that is, when args is
+        empty, or contains only the attribute name.  Otherwise, use the
+        message the caller gave. */
 
     Py_BEGIN_CRITICAL_SECTION(self);
     if (
