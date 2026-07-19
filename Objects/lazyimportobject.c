@@ -82,6 +82,27 @@ lazy_import_dealloc(PyObject *op)
 }
 
 static PyObject *
+lazy_import_getattro(PyObject *op, PyObject *name) {
+    /* Suppress to override the error message. */
+    PyObject *value = _PyObject_GenericGetAttrWithDict(op, name, NULL, /* suppress */1);
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        PyObject *lz_name = _PyLazyImport_GetName(op);
+        if (lz_name == NULL) {
+            return NULL;
+        }
+        PyErr_Format(PyExc_AttributeError,
+                     "lazy import '%U' has no attribute '%U'",
+                     lz_name, name);
+        Py_DECREF(lz_name);
+        return NULL;
+    }
+    return value;
+}
+
+static PyObject *
 lazy_import_name(PyLazyImportObject *m)
 {
     if (m->lz_attr != NULL) {
@@ -149,6 +170,7 @@ PyTypeObject PyLazyImport_Type = {
     .tp_repr = lazy_import_repr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_doc = lazy_import_doc,
+    .tp_getattro = lazy_import_getattro,
     .tp_traverse = lazy_import_traverse,
     .tp_clear = lazy_import_clear,
     .tp_methods = lazy_import_methods,
