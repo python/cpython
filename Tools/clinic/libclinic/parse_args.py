@@ -1105,6 +1105,9 @@ class ParseArgsCodeGen:
         assert func.vectorcall is not None
         if not func.vectorcall.exact_only:
             return []
+        # The DSL parser only allows @vectorcall on __init__/__new__,
+        # which are required to be class methods.
+        assert func.cls is not None
         type_obj = func.cls.type_object
         self.codegen.add_include('pycore_call.h', '_PyObject_MakeTpCall()')
         return [libclinic.normalize_snippet(f"""
