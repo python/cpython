@@ -1881,6 +1881,34 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
     return PyCursesCheckERR_ForWin(self, rtn, "insch");
 }
 
+#ifdef HAVE_NCURSESW
+/* winch() returns the low 8 bits of the character's code point with no locale
+   conversion, unlike instr(), so recover the locale byte from the wide cell
+   when the character maps to exactly one byte, keeping the attribute and color
+   bits in RTN.  A character with no single-byte form is left to winch(). */
+static chtype
+curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
+{
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attrs;
+    short pair;
+    /* getcchar() is not guaranteed to write the text of an empty cell. */
+    wstr[0] = L'\0';
+    if (getcchar(cell, wstr, &attrs, &pair, NULL) == ERR
+        || wstr[0] == L'\0' || wstr[1] != L'\0')
+    {
+        return rtn;
+    }
+    /* wctob() mirrors ncurses' own _nc_to_char(): the single-byte form, or EOF
+       when the character has none in this locale. */
+    int byte = wctob(wstr[0]);
+    if (byte != EOF) {
+        rtn = (rtn & ~(chtype)A_CHARTEXT) | (unsigned char)byte;
+    }
+    return rtn;
+}
+#endif
+
 /*[clinic input]
 _curses.window.inch -> unsigned_long
 
@@ -1911,7 +1939,14 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     else {
         rtn = mvwinch(self->win, y, x);
     }
-
+#ifdef HAVE_NCURSESW
+    cchar_t cell = {0};
+    if ((group_right_1 ? mvwin_wch(self->win, y, x, &cell)
+                       : win_wch(self->win, &cell)) != ERR)
+    {
+        rtn = curses_cell_locale_byte(rtn, &cell);
+    }
+#endif
     return rtn;
 }
 
