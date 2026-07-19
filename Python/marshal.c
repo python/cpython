@@ -1765,26 +1765,28 @@ static PyObject *
 read_object(RFILE *p)
 {
     PyObject *v;
+    int from_memory = p->ptr && p->end;
     if (PyErr_Occurred()) {
         fprintf(stderr, "XXX readobject called with exception set\n");
         return NULL;
     }
-    if (p->ptr && p->end) {
+    if (from_memory) {
         if (PySys_Audit("marshal.loads", "y#", p->ptr, (Py_ssize_t)(p->end - p->ptr)) < 0) {
             return NULL;
         }
-        PyThreadState *tstate = _PyThreadState_GET();
-        _PyGC_DeferAutomaticCollection(tstate);
-        v = r_object(p);
-        _PyGC_ResumeAutomaticCollection(tstate);
     } else if (p->fp || p->readable) {
         if (PySys_Audit("marshal.load", NULL) < 0) {
             return NULL;
         }
-        v = r_object(p);
     }
-    else {
-        v = r_object(p);
+    PyThreadState *tstate;
+    if (from_memory) {
+        tstate = _PyThreadState_GET();
+        _PyGC_DeferAutomaticCollection(tstate);
+    }
+    v = r_object(p);
+    if (from_memory) {
+        _PyGC_ResumeAutomaticCollection(tstate);
     }
     if (v == NULL && !PyErr_Occurred())
         PyErr_SetString(PyExc_TypeError, "NULL object in marshal data for object");

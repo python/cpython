@@ -2001,10 +2001,12 @@ gc_should_collect(GCState *gcstate)
 {
     int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
     int threshold = gcstate->young.threshold;
-    int gc_enabled = _Py_atomic_load_int_relaxed(&gcstate->enabled);
-    int pause_count = _Py_atomic_load_int_relaxed(
-        &gcstate->automatic_collection_pause_count);
-    if (count <= threshold || threshold == 0 || !gc_enabled || pause_count) {
+    if (count <= threshold || threshold == 0) {
+        return false;
+    }
+    if (!_Py_atomic_load_int_relaxed(&gcstate->enabled) ||
+        _Py_atomic_load_int_relaxed(
+            &gcstate->automatic_collection_pause_count)) {
         return false;
     }
     if (gcstate->old[0].threshold == 0) {
@@ -2073,8 +2075,7 @@ gc_collect_internal(PyInterpreterState *interp,
 {
     _PyEval_StopTheWorld(interp);
 
-    // A concurrent deferral may begin after this collection has emitted its
-    // start notification, but it must take effect before any heap traversal.
+    // Close the race with a deferral that started before the world stopped.
     if (state->reason == _Py_GC_REASON_HEAP &&
         _Py_atomic_load_int(
             &state->gcstate->automatic_collection_pause_count)) {
@@ -2246,8 +2247,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         s->object_stats.object_visits = 0;
     }
 #endif
-    GC_STAT_ADD(generation, collections, 1);
-
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(tstate, "start", generation, 0, 0, 0, 0.0);
     }
@@ -2282,6 +2281,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         _Py_atomic_store_int(&gcstate->collecting, 0);
         return 0;
     }
+    GC_STAT_ADD(generation, collections, 1);
 
     m = state.collected;
     n = state.uncollectable;

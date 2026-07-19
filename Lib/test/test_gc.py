@@ -144,6 +144,7 @@ class GCTests(unittest.TestCase):
                 gc.disable()
 
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    @threading_helper.requires_working_threading()
     def test_defer_automatic_collection_across_threads(self):
         was_enabled = gc.isenabled()
         gc.enable()
@@ -158,6 +159,7 @@ class GCTests(unittest.TestCase):
                             [] for _ in range(10_000)))
                     thread.start()
                     thread.join()
+                    self.assertEqual(len(objects), 10_000)
                     self.assertEqual(self.total_collections(), before)
                 finally:
                     _testinternalcapi.resume_automatic_gc()
