@@ -1,0 +1,3 @@
+Add :func:`itertools.sliding_window`, an iterator over overlapping windows of
+a given width taken from the input iterable.  Previously a documented recipe,
+it generalizes :func:`itertools.pairwise` to windows of any length.

@@ -1039,6 +1039,87 @@ class TestBasicOps(unittest.TestCase):
         check(3, [])
         check(4, [(([2], [3]), [4])])
 
+    def test_sliding_window(self):
+        self.assertEqual(list(sliding_window('', 1)), [])
+        self.assertEqual(list(sliding_window('', 3)), [])
+        self.assertEqual(list(sliding_window('ABCDEFG', 1)),
+                         [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)])
+        # A window of width 2 is exactly pairwise().
+        self.assertEqual(list(sliding_window('ABCDEFG', 2)),
+                         list(pairwise('ABCDEFG')))
+        self.assertEqual(list(sliding_window('ABCDEFG', 3)),
+                         [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'),
+                          ('D', 'E', 'F'), ('E', 'F', 'G')])
+        self.assertEqual(list(sliding_window('ABCDEFG', 7)),
+                         [tuple('ABCDEFG')])
+        # No windows when the input has fewer than n items.
+        self.assertEqual(list(sliding_window('ABCDEFG', 8)), [])
+        self.assertEqual(list(sliding_window('ABCDEFG', 100)), [])
+        # The n argument may be passed by keyword.
+        self.assertEqual(list(sliding_window('ABCD', n=3)),
+                         [('A', 'B', 'C'), ('B', 'C', 'D')])
+
+        # Each window is a distinct, freshly built tuple.
+        windows = list(sliding_window('ABCDE', 3))
+        self.assertEqual(len(set(map(id, windows))), len(windows))
+
+        # Exhaustive check of the output against slicing, including the
+        # empty-output cases where len(iterable) < n.
+        for length in range(10):
+            for n in range(1, 6):
+                data = list(range(length))
+                expected = [tuple(data[i:i + n])
+                            for i in range(length - n + 1)]
+                self.assertEqual(list(sliding_window(data, n)), expected)
+                self.assertEqual(len(list(sliding_window(data, n))),
+                                 max(0, length - n + 1))
+
+        # Large inputs, exercising both the recycle path (windows discarded
+        # each step) and the fresh-tuple path (windows retained in a list).
+        for n in (1, 2, 3, 4, 50):
+            data = list(range(1000))
+            expected = [tuple(data[i:i + n]) for i in range(len(data) - n + 1)]
+            self.assertEqual(list(sliding_window(data, n)), expected)
+            self.assertEqual([sum(w) for w in sliding_window(data, n)],
+                             [sum(w) for w in expected])
+
+        with self.assertRaises(TypeError):
+            sliding_window('ABC')                   # too few arguments
+        with self.assertRaises(TypeError):
+            sliding_window('ABC', 2, 3)             # too many arguments
+        with self.assertRaises(TypeError):
+            sliding_window('ABC', 'x')              # n is not an integer
+        with self.assertRaises(TypeError):
+            sliding_window(None, 2)                 # non-iterable argument
+        with self.assertRaises(ValueError):
+            sliding_window('ABC', 0)                # n is zero
+        with self.assertRaises(ValueError):
+            sliding_window('ABC', -1)               # n is negative
+
+    def test_sliding_window_reenter(self):
+        # A pathological iterator that reenters the sliding_window while it is
+        # advancing (e.g. from a destructor) must not crash, leak, or emit
+        # malformed windows.  Cover reentry during both the initial priming
+        # (count <= n) and the sliding phase (count > n).
+        for reenter_at in (1, 2, 3, 4, 6):
+            with self.subTest(reenter_at=reenter_at):
+                target = None
+                class I:
+                    def __init__(self):
+                        self.count = 0
+                    def __iter__(self):
+                        return self
+                    def __next__(self):
+                        self.count += 1
+                        if self.count == reenter_at and target is not None:
+                            next(target, None)
+                        if self.count > 20:
+                            raise StopIteration
+                        return [self.count]     # new object each time
+                target = sliding_window(I(), 3)
+                for window in target:
+                    self.assertEqual(len(window), 3)
+
     def test_product(self):
         for args, result in [
             ([], [()]),                     # zero iterables
@@ -1513,6 +1594,15 @@ class TestBasicOps(unittest.TestCase):
         self.assertTrue(gc.is_tracked(next(it)))
 
     @support.cpython_only
+    def test_sliding_window_result_gc(self):
+        # Ditto for sliding_window, for both the primed and recycled tuple.
+        it = sliding_window([None, None, None], 2)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
     def test_immutable_types(self):
         from itertools import _grouper, _tee, _tee_dataobject
         dataset = (
@@ -1533,6 +1623,7 @@ class TestBasicOps(unittest.TestCase):
             permutations,
             product,
             repeat,
+            sliding_window,
             starmap,
             takewhile,
             _tee,
@@ -2094,6 +2185,10 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(pairwise([a]*5), a)
 
+    def test_sliding_window(self):
+        a = []
+        self.makecycle(sliding_window([a]*5, 3), a)
+
     def test_permutations(self):
         a = []
         self.makecycle(permutations([1,2,a,3], 3), a)
@@ -2339,6 +2434,19 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, pairwise, X(s))
             self.assertRaises(TypeError, pairwise, N(s))
             self.assertRaises(ZeroDivisionError, list, pairwise(E(s)))
+
+    def test_sliding_window(self):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
+            for n in (1, 3):
+                for g in (G, I, Ig, S, L, R):
+                    seq = list(g(s))
+                    expected = [tuple(seq[i:i+n])
+                                for i in range(len(seq) - n + 1)]
+                    actual = list(sliding_window(g(s), n))
+                    self.assertEqual(actual, expected)
+                self.assertRaises(TypeError, sliding_window, X(s), n)
+                self.assertRaises(TypeError, sliding_window, N(s), n)
+                self.assertRaises(ZeroDivisionError, list, sliding_window(E(s), n))
 
     def test_starmap(self):
         for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):

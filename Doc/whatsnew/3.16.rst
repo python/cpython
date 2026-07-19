@@ -310,6 +310,16 @@ Add :meth:`~ipaddress.IPv4Network.next_network` and
 network with a specific prefix size.
 
 
+itertools
+---------
+
+* Add :func:`itertools.sliding_window`, an iterator returning overlapping
+  windows of a given width taken from the input iterable.  It generalizes
+  :func:`itertools.pairwise` to windows of any length and was previously
+  a documented recipe.
+  (Contributed by Vyron Vasileiadis in :gh:`154083`.)
+
+
 logging
 -------
 

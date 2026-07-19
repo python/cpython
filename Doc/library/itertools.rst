@@ -44,6 +44,7 @@ Iterator                        Arguments                       Results         
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)            ``groupby(['A','B','DEF'], len) → (1, A B) (3, DEF)``
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) → C D E F G``
 :func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') → AB BC CD DE EF FG``
+:func:`sliding_window`          iterable, n                     (p[0], ..., p[n-1]), (p[1], ..., p[n]), ...         ``sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG``
 :func:`repeat`                  elem [,n]                       elem, elem, elem, ... endlessly or up to n times    ``repeat(10, 3) → 10 10 10``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) → 32 9 1000``
 :func:`takewhile`               predicate, seq                  seq[0], seq[1], until predicate fails               ``takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4``
@@ -646,6 +647,34 @@ loops that truncate the stream.
       [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
 
+.. function:: sliding_window(iterable, n)
+
+   Return successive overlapping windows of width *n* taken from the input
+   *iterable*.
+
+       sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
+
+   The number of windows in the output iterator is
+   ``max(0, len(iterable) - n + 1)``.  It will be empty if the input iterable
+   has fewer than *n* values.  When *n* is ``2``, this is equivalent to
+   :func:`pairwise`.
+
+   Roughly equivalent to::
+
+       def sliding_window(iterable, n):
+           # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
+
+           iterator = iter(iterable)
+           window = deque(islice(iterator, n - 1), maxlen=n)
+           for x in iterator:
+               window.append(x)
+               yield tuple(window)
+
+   If *n* is less than ``1``, :exc:`ValueError` is raised.
+
+   .. versionadded:: 3.16
+
+
 .. function:: starmap(function, iterable)
 
    Make an iterator that computes the *function* using arguments obtained
@@ -815,9 +844,9 @@ well as with the built-in itertools such as ``map()``, ``filter()``,
 ``reversed()``, and ``enumerate()``.
 
 A secondary purpose of the recipes is to serve as an incubator.  The
-``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
-recipes.  Currently, the ``sliding_window()``, ``derangements()``, and ``sieve()``
-recipes are being tested to see whether they prove their worth.
+``accumulate()``, ``compress()``, ``pairwise()``, and ``sliding_window()``
+itertools started out as recipes.  Currently, the ``derangements()`` and
+``sieve()`` recipes are being tested to see whether they prove their worth.
 
 Substantially all of these recipes and many, many others can be installed from
 the :pypi:`more-itertools` project found
@@ -837,7 +866,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    from itertools import (accumulate, batched, chain, combinations, compress,
         count, cycle, filterfalse, groupby, islice, permutations, product,
-        repeat, starmap, tee, zip_longest)
+        repeat, sliding_window, starmap, tee, zip_longest)
    from collections import Counter, deque
    from contextlib import suppress
    from functools import reduce
@@ -940,15 +969,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
        # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
        sequenced = sorted(iterable, key=key, reverse=reverse)
        return unique_justseen(sequenced, key=key)
-
-   def sliding_window(iterable, n):
-       "Collect data into overlapping fixed-length chunks or blocks."
-       # sliding_window('ABCDEFG', 3) → ABC BCD CDE DEF EFG
-       iterator = iter(iterable)
-       window = deque(islice(iterator, n - 1), maxlen=n)
-       for x in iterator:
-           window.append(x)
-           yield tuple(window)
 
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
        "Collect data into non-overlapping fixed-length chunks or blocks."

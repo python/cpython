@@ -137,6 +137,83 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sliding_window_new__doc__,
+"sliding_window(iterable, n)\n"
+"--\n"
+"\n"
+"Return an iterator of overlapping length-n windows from the iterable.\n"
+"\n"
+"    sliding_window(\'ABCDEFG\', 4) --> ABCD BCDE CDEF DEFG\n"
+"\n"
+"Each window is a tuple of the n most recent items.  The number of\n"
+"windows is max(0, len(iterable) - n + 1), so no windows are produced\n"
+"when the input has fewer than n items.  When n equals 2, this is the\n"
+"same as pairwise().");
+
+static PyObject *
+sliding_window_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n);
+
+static PyObject *
+sliding_window_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('n'), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"iterable", "n", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sliding_window",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *iterable;
+    Py_ssize_t n;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    iterable = fastargs[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(fastargs[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        n = ival;
+    }
+    return_value = sliding_window_new_impl(type, iterable, n);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
 "--\n"
@@ -980,4 +1057,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a34a31f60100e0ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10d2c885d6995f25 input=a9049054013a1b77]*/

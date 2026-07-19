@@ -32,6 +32,7 @@ typedef struct {
     PyTypeObject *permutations_type;
     PyTypeObject *product_type;
     PyTypeObject *repeat_type;
+    PyTypeObject *sliding_window_type;
     PyTypeObject *starmap_type;
     PyTypeObject *takewhile_type;
     PyTypeObject *tee_type;
@@ -85,8 +86,9 @@ class itertools.compress "compressobject *" "clinic_state()->compress_type"
 class itertools.filterfalse "filterfalseobject *" "clinic_state()->filterfalse_type"
 class itertools.count "countobject *" "clinic_state()->count_type"
 class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
+class itertools.sliding_window "slidingwindowobject *" "clinic_state()->sliding_window_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=aa48fe4de9d4080f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8b311ccb31b06648]*/
 
 #define clinic_state() (find_state_by_type(type))
 #define clinic_state_by_cls() (get_module_state_by_cls(base_tp))
@@ -417,6 +419,194 @@ static PyType_Spec pairwise_spec = {
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pairwise_slots,
+};
+
+
+/* sliding_window object *****************************************************/
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it;
+    Py_ssize_t n;
+    PyObject *result;
+} slidingwindowobject;
+
+#define slidingwindowobject_CAST(op)  ((slidingwindowobject *)(op))
+
+/*[clinic input]
+@classmethod
+itertools.sliding_window.__new__ as sliding_window_new
+    iterable: object
+    n: Py_ssize_t
+
+Return an iterator of overlapping length-n windows from the iterable.
+
+    sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
+
+Each window is a tuple of the n most recent items.  The number of
+windows is max(0, len(iterable) - n + 1), so no windows are produced
+when the input has fewer than n items.  When n equals 2, this is the
+same as pairwise().
+[clinic start generated code]*/
+
+static PyObject *
+sliding_window_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
+/*[clinic end generated code: output=a8c0fe21a87ec1dc input=150e215d37d04c52]*/
+{
+    PyObject *it;
+    slidingwindowobject *sw;
+
+    if (n < 1) {
+        PyErr_SetString(PyExc_ValueError, "n must be at least one");
+        return NULL;
+    }
+    it = PyObject_GetIter(iterable);
+    if (it == NULL) {
+        return NULL;
+    }
+    sw = (slidingwindowobject *)type->tp_alloc(type, 0);
+    if (sw == NULL) {
+        Py_DECREF(it);
+        return NULL;
+    }
+    sw->it = it;
+    sw->n = n;
+    sw->result = NULL;
+    return (PyObject *)sw;
+}
+
+static void
+sliding_window_dealloc(PyObject *op)
+{
+    slidingwindowobject *sw = slidingwindowobject_CAST(op);
+    PyTypeObject *tp = Py_TYPE(sw);
+    PyObject_GC_UnTrack(sw);
+    Py_XDECREF(sw->it);
+    Py_XDECREF(sw->result);
+    tp->tp_free(sw);
+    Py_DECREF(tp);
+}
+
+static int
+sliding_window_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    slidingwindowobject *sw = slidingwindowobject_CAST(op);
+    Py_VISIT(Py_TYPE(sw));
+    Py_VISIT(sw->it);
+    Py_VISIT(sw->result);
+    return 0;
+}
+
+static PyObject *
+sliding_window_next(PyObject *op)
+{
+    slidingwindowobject *sw = slidingwindowobject_CAST(op);
+    PyObject *it = sw->it;
+    Py_ssize_t n = sw->n;
+    PyObject *result = sw->result;
+    PyObject *item;
+
+    if (it == NULL) {
+        return NULL;
+    }
+    iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
+
+    if (result == NULL) {
+        /* First call: fill the initial window with n items.  Each iternext()
+           call can run arbitrary Python that reenters this iterator, so
+           (like pairwise) re-read sw->it after every step and publish the
+           finished window with Py_XSETREF, in case a reentrant call already
+           installed one. */
+        result = PyTuple_New(n);
+        if (result == NULL) {
+            return NULL;
+        }
+        PyObject **items = _PyTuple_ITEMS(result);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            item = iternext(it);
+            if (item == NULL) {
+                /* Fewer than n items: no window is produced. */
+                Py_DECREF(result);
+                Py_CLEAR(sw->it);
+                return NULL;
+            }
+            items[i] = item;
+            it = sw->it;
+            if (it == NULL) {
+                /* A reentrant call exhausted the underlying iterator. */
+                Py_DECREF(result);
+                return NULL;
+            }
+        }
+        Py_XSETREF(sw->result, result);
+        return Py_NewRef(result);
+    }
+
+    /* Slide the window forward by one item. */
+    item = iternext(it);
+    if (item == NULL) {
+        Py_CLEAR(sw->it);
+        return NULL;
+    }
+
+    if (_PyObject_IsUniquelyReferenced(result)) {
+        /* Recycle the result tuple: drop the oldest item, shift the rest
+           down by one, and append the new item at the end. */
+        Py_INCREF(result);
+        PyObject **items = _PyTuple_ITEMS(result);
+        PyObject *oldest = items[0];
+        for (Py_ssize_t i = 1; i < n; i++) {
+            items[i - 1] = items[i];
+        }
+        items[n - 1] = item;
+        // bpo-42536: The GC may have untracked this result tuple.  Since we're
+        // recycling it, make sure it's tracked again:
+        _PyTuple_Recycle(result);
+        // Drop the evicted item last: it may run arbitrary code (__del__),
+        // and by now the window is fully consistent.
+        Py_DECREF(oldest);
+        return result;
+    }
+
+    /* The previous window is still referenced elsewhere; build a fresh one. */
+    PyObject *newresult = PyTuple_New(n);
+    if (newresult == NULL) {
+        /* The just-pulled item cannot be preserved (there is no spare slot);
+           stop cleanly so that retrying after the error reports exhaustion
+           rather than silently dropping an element from a later window. */
+        Py_DECREF(item);
+        Py_CLEAR(sw->it);
+        return NULL;
+    }
+    PyObject **src = _PyTuple_ITEMS(result);
+    PyObject **dst = _PyTuple_ITEMS(newresult);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        dst[i - 1] = Py_NewRef(src[i]);
+    }
+    dst[n - 1] = item;
+    Py_SETREF(sw->result, newresult);
+    return Py_NewRef(newresult);
+}
+
+static PyType_Slot sliding_window_slots[] = {
+    {Py_tp_dealloc, sliding_window_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)sliding_window_new__doc__},
+    {Py_tp_traverse, sliding_window_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, sliding_window_next},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, sliding_window_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec sliding_window_spec = {
+    .name = "itertools.sliding_window",
+    .basicsize = sizeof(slidingwindowobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = sliding_window_slots,
 };
 
 
@@ -4090,6 +4280,7 @@ filterfalse(predicate, seq) --> elements of seq where predicate(elem) is False\n
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
 pairwise(s) --> (s[0],s[1]), (s[1],s[2]), (s[2], s[3]), ...\n\
+sliding_window(s, n) --> (s[0],...,s[n-1]), (s[1],...,s[n]), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 takewhile(predicate, seq) --> seq[0], seq[1], until predicate fails\n\
@@ -4123,6 +4314,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->permutations_type);
     Py_VISIT(state->product_type);
     Py_VISIT(state->repeat_type);
+    Py_VISIT(state->sliding_window_type);
     Py_VISIT(state->starmap_type);
     Py_VISIT(state->takewhile_type);
     Py_VISIT(state->tee_type);
@@ -4152,6 +4344,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->product_type);
     Py_CLEAR(state->repeat_type);
+    Py_CLEAR(state->sliding_window_type);
     Py_CLEAR(state->starmap_type);
     Py_CLEAR(state->takewhile_type);
     Py_CLEAR(state->tee_type);
@@ -4198,6 +4391,7 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->permutations_type, &permutations_spec);
     ADD_TYPE(mod, state->product_type, &product_spec);
     ADD_TYPE(mod, state->repeat_type, &repeat_spec);
+    ADD_TYPE(mod, state->sliding_window_type, &sliding_window_spec);
     ADD_TYPE(mod, state->starmap_type, &starmap_spec);
     ADD_TYPE(mod, state->takewhile_type, &takewhile_spec);
     ADD_TYPE(mod, state->tee_type, &tee_spec);
