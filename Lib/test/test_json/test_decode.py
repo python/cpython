@@ -1,4 +1,5 @@
 import decimal
+import unittest.mock
 from io import StringIO
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
@@ -154,6 +155,15 @@ class TestDecode:
             self.loads('1' * maxdigits)
             with self.assertRaises(ValueError):
                 self.loads('1' * (maxdigits + 1))
+
+    def test_explicit_cls_skips_json_decoder_default(self):
+        class CustomDecoder:
+            pass
+
+        with unittest.mock.patch.object(
+                CustomDecoder, 'decode', create=True) as mock_decode:
+            self.loads('{}', cls=CustomDecoder)
+        mock_decode.assert_called_once()
 
 
 class TestPyDecode(TestDecode, PyTest): pass
