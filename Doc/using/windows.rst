@@ -1183,7 +1183,7 @@ using curl or PowerShell. With the tool, the latest version of Python for
    nuget.exe install python -ExcludeVersion -OutputDirectory .
    nuget.exe install pythonx86 -ExcludeVersion -OutputDirectory .
 
-Resolve error `Unable to find package 'python'` from a misconfigured `nuget.config` using::
+Resolve error ``Unable to find package 'python'`` from a misconfigured ``nuget.config`` using::
 
    nuget.exe sources add -Name "nuget.org" -source "https://api.nuget.org/v3/index.json"
 
