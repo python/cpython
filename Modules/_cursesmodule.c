@@ -1871,6 +1871,27 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
     if (!PyCurses_ConvertToChtype(self, ch, &ch_))
         return NULL;
 
+#ifdef HAVE_NCURSESW
+    /* winsch() does not locale-decode a byte above 127 on a wide build,
+       unlike waddch(), so decode it here and insert it as a wide character. */
+    chtype cch = ch_ & A_CHARTEXT;
+    if (cch > 127) {
+        wint_t wc = btowc((int)cch);
+        if (wc != WEOF) {
+            cchar_t wch;
+            wchar_t wstr[2] = { (wchar_t)wc, L'\0' };
+            attr_t cattr = (attr_t)((ch_ | (attr_t)attr) & ~(chtype)A_CHARTEXT);
+            setcchar(&wch, wstr, cattr, PAIR_NUMBER(cattr), NULL);
+            if (!group_left_1) {
+                rtn = wins_wch(self->win, &wch);
+            }
+            else {
+                rtn = mvwins_wch(self->win, y, x, &wch);
+            }
+            return PyCursesCheckERR_ForWin(self, rtn, "insch");
+        }
+    }
+#endif
     if (!group_left_1) {
         rtn = winsch(self->win, ch_ | (attr_t)attr);
     }

@@ -326,13 +326,10 @@ class TestCurses(unittest.TestCase):
                 stdscr.move(2, 0)
                 stdscr.echochar(v)
                 self.assertEqual(self._read_char(2, 0), c)
-                # insch() round-trips a byte only where its code point equals
-                # the byte value (Latin-1): on a wide build ncurses winsch
-                # stores a printable byte directly as a code point instead of
-                # decoding it through the locale.
-                if ord(c) < 0x100:
-                    stdscr.insch(1, 0, v)
-                    self.assertEqual(self._read_char(1, 0), c)
+                # insch() decodes the byte through the locale like addch(), so
+                # it round-trips the same character.
+                stdscr.insch(1, 0, v)
+                self.assertEqual(self._read_char(1, 0), c)
 
         # The same characters supplied as a str.  Unlike the int path above, a
         # str is stored as a wide-character cell on a wide build, so every
