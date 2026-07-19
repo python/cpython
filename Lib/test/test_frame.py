@@ -825,11 +825,11 @@ class TestFrameCApi(unittest.TestCase):
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyEval_GetFrameLocals() -> ctypes.py_object:
-            ...
+            pass
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyEval_GetFrameGlobals() -> ctypes.py_object:
-            ...
+            pass
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyEval_GetFrameBuiltins() -> ctypes.py_object:
@@ -837,7 +837,7 @@ class TestFrameCApi(unittest.TestCase):
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyFrame_GetLocals(frame: ctypes.py_object) -> ctypes.py_object:
-            ...
+            pass
 
         frame_locals = PyEval_GetFrameLocals()
         self.assertTrue(type(frame_locals), dict)

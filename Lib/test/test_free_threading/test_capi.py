@@ -8,7 +8,7 @@ from test.support.threading_helper import run_concurrently
 
 @ctypes.util.wrap_dll_function(ctypes.pythonapi)
 def PyImport_AddModuleRef(name: ctypes.c_char_p) -> ctypes.py_object:
-    ...
+    pass
 
 
 @threading_helper.requires_working_threading()

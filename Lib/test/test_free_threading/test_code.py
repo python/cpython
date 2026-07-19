@@ -18,21 +18,21 @@ if ctypes is not None:
 
     @ctypes.util.wrap_dll_function(ctypes.pythonapi)
     def PyUnstable_Eval_RequestCodeExtraIndex(free: freefunc) -> ctypes.c_ssize_t:
-        ...
+        pass
     RequestCodeExtraIndex = PyUnstable_Eval_RequestCodeExtraIndex
 
     @ctypes.util.wrap_dll_function(ctypes.pythonapi)
     def PyUnstable_Code_SetExtra(code: ctypes.py_object,
                                  index: ctypes.c_ssize_t,
                                  extra: ctypes.c_voidp) -> ctypes.c_int:
-        ...
+        pass
     SetExtra = PyUnstable_Code_SetExtra
 
     @ctypes.util.wrap_dll_function(ctypes.pythonapi)
     def PyUnstable_Code_GetExtra(code: ctypes.py_object,
                                  index: ctypes.c_ssize_t,
                                  extra: ctypes.POINTER(ctypes.c_voidp)) -> ctypes.c_int:
-        ...
+        pass
     GetExtra = PyUnstable_Code_GetExtra
 
 # Note: each call to RequestCodeExtraIndex permanently allocates a slot

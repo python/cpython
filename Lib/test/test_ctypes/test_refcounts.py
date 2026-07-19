@@ -129,7 +129,7 @@ class PyObjectRestypeTest(unittest.TestCase):
         # without setting an exception does not crash.
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyErr_Occurred() -> ctypes.py_object:
-            ...
+            pass
 
         # At this point, there's no exception set, so PyErr_Occurred
         # returns NULL. Given the restype is py_object, the

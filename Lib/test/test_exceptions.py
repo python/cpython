@@ -444,7 +444,7 @@ class ExceptionTests(unittest.TestCase):
 
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyErr_SetFromWindowsErr(ierr: ctypes.c_int) -> ctypes.py_object:
-            ...
+            pass
 
         # this error code has no message, Python formats it as hexadecimal
         code = 3765269347

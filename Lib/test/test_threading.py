@@ -331,7 +331,7 @@ class ThreadTests(BaseTestCase):
         @ctypes.util.wrap_dll_function(ctypes.pythonapi)
         def PyThreadState_SetAsyncExc(id: ctypes.c_ulong,
                                       exc: ctypes.py_object) -> ctypes.c_int:
-            ...
+            pass
         set_async_exc = PyThreadState_SetAsyncExc
 
         class AsyncExc(Exception):
@@ -495,11 +495,11 @@ class ThreadTests(BaseTestCase):
 
             @ctypes.util.wrap_dll_function(ctypes.pythonapi)
             def PyGILState_Ensure() -> PyGILState_STATE:
-                ...
+                pass
 
             @ctypes.util.wrap_dll_function(ctypes.pythonapi)
             def PyGILState_Release(oldstate: PyGILState_STATE) -> None:
-                ...
+                pass
 
             # This lock is used as a simple event variable.
             ready = _thread.allocate_lock()

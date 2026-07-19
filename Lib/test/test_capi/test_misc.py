@@ -3053,7 +3053,7 @@ class TestVersions(unittest.TestCase):
             level: ctypes.c_int,
             serial: ctypes.c_int,
         ) -> ctypes.c_uint32:
-            ...
+            pass
 
         for *args, expected in self.full_cases:
             with self.subTest(hexversion=hex(expected)):
@@ -3069,7 +3069,7 @@ class TestVersions(unittest.TestCase):
             x: ctypes.c_int,
             y: ctypes.c_int,
         ) -> ctypes.c_uint32:
-            ...
+            pass
 
         for *args, expected in self.xy_cases:
             with self.subTest(hexversion=hex(expected)):

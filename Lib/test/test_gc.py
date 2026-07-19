@@ -1438,7 +1438,7 @@ class GCCallbackTests(unittest.TestCase):
 
             @ctypes.util.wrap_dll_function(ctypes.pythonapi)
             def Py_DecRef(o: ctypes.py_object) -> None:
-                ...
+                pass
 
             a = [1, 2, 3]
             b = [a, a]
