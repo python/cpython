@@ -49,7 +49,7 @@ class BinaryCollector(Collector):
     """
 
     def __init__(self, filename, sample_interval_usec, *, skip_idle=False,
-                 compression='auto'):
+                 compression='auto', mode=None):
         """Create a new binary collector.
 
         Args:
@@ -57,6 +57,7 @@ class BinaryCollector(Collector):
             sample_interval_usec: Sampling interval in microseconds
             skip_idle: If True, skip idle threads (not used in binary format)
             compression: 'auto', 'zstd', 'none', or int (0=none, 1=zstd)
+            mode: Profiling mode, or None if unknown
         """
         self.filename = filename
         self.sample_interval_usec = sample_interval_usec
@@ -65,7 +66,9 @@ class BinaryCollector(Collector):
         compression_type = _resolve_compression(compression)
         start_time_us = int(time.monotonic() * 1_000_000)
         self._writer = _remote_debugging.BinaryWriter(
-            filename, sample_interval_usec, start_time_us, compression=compression_type
+            filename, sample_interval_usec, start_time_us,
+            compression=compression_type,
+            mode=-1 if mode is None else mode,
         )
 
     def collect(self, stack_frames, timestamp_us=None):

@@ -661,7 +661,8 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
         return collector_class(
             sample_interval_usec,
             baseline_binary_path=diff_baseline,
-            skip_idle=skip_idle
+            skip_idle=skip_idle,
+            mode=mode,
         )
 
     # Binary format requires output file and compression
@@ -669,7 +670,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
         if output_file is None:
             raise ValueError("Binary format requires an output file")
         return collector_class(output_file, sample_interval_usec, skip_idle=skip_idle,
-                              compression=compression)
+                              compression=compression, mode=mode)
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
     # and is the only format that uses opcodes for interval markers
@@ -776,6 +777,8 @@ def _replay_with_reader(args, reader):
             )
 
     count = reader.replay_samples(collector, progress_callback)
+    if hasattr(collector, "set_mode"):
+        collector.set_mode(info.get("mode"))
     print()
 
     if args.format == "pstats":
@@ -789,7 +792,8 @@ def _replay_with_reader(args, reader):
             sort_mode = _sort_to_mode(sort_choice)
             collector.print_stats(
                 sort_mode, limit, not args.no_summary,
-                PROFILING_MODE_WALL
+                info.get("mode") if info.get("mode") is not None
+                else PROFILING_MODE_WALL
             )
     else:
         filename = (

@@ -82,14 +82,17 @@ with a single seek to `file_size - 32`, without first reading the header.
 |        |      |         | reserved)                              |
 |   12   |  8   | uint64  | Start timestamp (microseconds)         |
 |   20   |  8   | uint64  | Sample interval (microseconds)         |
-|   28   |  4   | uint32  | Total sample count                     |
-|   32   |  4   | uint32  | Thread count                           |
-|   36   |  8   | uint64  | String table offset                    |
-|   44   |  8   | uint64  | Frame table offset                     |
-|   52   |  4   | uint32  | Compression type (0=none, 1=zstd)      |
-|   56   |  8   | bytes   | Reserved (zero-filled)                 |
+|   28   |  8   | uint64  | Total sample count                     |
+|   36   |  4   | uint32  | Thread count                           |
+|   40   |  8   | uint64  | String table offset                    |
+|   48   |  8   | uint64  | Frame table offset                     |
+|   56   |  4   | uint32  | Compression type (0=none, 1=zstd)      |
+|   60   |  4   | uint32  | Profiling mode plus one (0=unknown)     |
 +--------+------+---------+----------------------------------------+
 ```
+
+Profiling modes use their `_remote_debugging.PROFILING_MODE_*` value plus one,
+leaving zero available for binaries written before this field was defined.
 
 The magic number `0x54414348` ("TACH" for Tachyon) identifies the file format
 and also serves as an **endianness marker**. When read on a system with
