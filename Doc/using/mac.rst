@@ -73,8 +73,8 @@ display. For most uses, the standard set of installation operations is appropria
 By pressing the **Customize** button, you can choose to omit or select certain package
 components of the installer. Click on each package name to see a description of
 what it installs.
-To also install support for the optional free-threaded feature,
-see :ref:`install-freethreaded-macos`.
+For details of the optional free-threaded feature, which is installed
+by default, see :ref:`install-freethreaded-macos`.
 
 .. image:: mac_installer_05_custom_install.png
 
@@ -251,8 +251,11 @@ Installing Free-threaded Binaries
 
 .. versionadded:: 3.13
 
+.. versionchanged:: 3.15
+   Free-threading support is now installed by default.
+
 The ``python.org`` :ref:`Python for macOS <getting-and-installing-macpython>`
-installer package can optionally install an additional build of
+installer package installs, by default, an additional build of
 Python |version| that supports :pep:`703`, the free-threading feature
 (running with the :term:`global interpreter lock` disabled).
 Check the release page on ``python.org`` for possible updated information.
@@ -262,14 +265,15 @@ there is some additional overhead in single-threaded workloads compared
 to the regular build. Additionally, third-party packages, in particular ones
 with an :term:`extension module`, may not be ready for use in a
 free-threaded build, and will re-enable the :term:`GIL`.
-Therefore, the support for free-threading
-is not installed by default. It is packaged as a separate install option,
-available by clicking the **Customize** button on the **Installation Type**
+As of Python 3.15, free-threading support is installed by default.
+It is packaged as a separate install option, which can be deselected
+by clicking the **Customize** button on the **Installation Type**
 step of the installer as described above.
 
 .. image:: mac_installer_09_custom_install_free_threaded.png
 
-If the box next to the **Free-threaded Python** package name is checked,
+If the box next to the **Free-threaded Python** package name is checked
+(as it is by default),
 a separate :file:`PythonT.framework` will also be installed
 alongside the normal :file:`Python.framework` in :file:`/Library/Frameworks`.
 This configuration allows a free-threaded Python |version| build to co-exist
@@ -367,8 +371,8 @@ the macOS command line :command:`installer` utility lets you select non-default
 options, too. If you are not familiar with :command:`installer`, it can be
 somewhat cryptic (see :command:`man installer` for more information).
 As an example, the following shell snippet shows one way to do it,
-using the |x_dot_y_b2_literal| release and selecting the free-threaded interpreter
-option:
+using the |x_dot_y_b2_literal| release and deselecting the free-threaded
+interpreter option:
 
 .. parsed-literal::
 
@@ -378,7 +382,7 @@ option:
     curl -O \https://www.python.org/ftp/python/\ |version|\ .0/${RELEASE}
 
     # create installer choicechanges to customize the install:
-    #    enable the PythonTFramework-\ |version|\  package
+    #    disable the PythonTFramework-\ |version|\  package
     #    while accepting the other defaults (install all other packages)
     cat > ./choicechanges.plist <<EOF
     <?xml version="1.0" encoding="UTF-8"?>
@@ -387,7 +391,7 @@ option:
     <array>
             <dict>
                     <key>attributeSetting</key>
-                    <integer>1</integer>
+                    <integer>0</integer>
                     <key>choiceAttribute</key>
                     <string>selected</string>
                     <key>choiceIdentifier</key>
@@ -400,7 +404,7 @@ option:
     sudo installer -pkg ./${RELEASE} -applyChoiceChangesXML ./choicechanges.plist -target /
 
 
-You can then test that both installer builds are now available with something like:
+After a default install, you can test that both builds are available with something like:
 
 .. parsed-literal::
 
