@@ -234,15 +234,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             logger.info('%r exited with return code %r', self, returncode)
         self._returncode = returncode
 
-        # gh-119710: Wake up futures waiting for wait() as soon as the process
-        # exits. The pipe transports now check for the loop being closed before
-        # scheduling a callback preventing gh-114177. This is consistent with
-        # the behavior prior to 3.11 and the documented semantics in _wait().
-        for waiter in self._exit_waiters:
-            if not waiter.done():
-                waiter.set_result(returncode)
-        self._exit_waiters = None
-
         if self._proc.returncode is None:
             # asyncio uses a child watcher: copy the status into the Popen
             # object. On Python 3.6, it is required to avoid a ResourceWarning.
@@ -250,6 +241,13 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._call(self._protocol.process_exited)
 
         self._try_finish()
+
+        # gh-119710: Wake up futures waiting for wait() as soon as the process
+        # exits.
+        for waiter in self._exit_waiters:
+            if not waiter.done():
+                waiter.set_result(returncode)
+        self._exit_waiters = None
 
     async def _wait(self):
         """Wait until the process exit and return the process return code.
