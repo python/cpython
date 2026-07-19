@@ -25,6 +25,7 @@ try:
     )
     from profiling.sampling.binary_collector import BinaryCollector
     from profiling.sampling.binary_reader import BinaryReader, convert_binary_to_format
+    from profiling.sampling.constants import PROFILING_MODE_CPU
     from profiling.sampling.gecko_collector import GeckoCollector
 
     ZSTD_AVAILABLE = _remote_debugging.zstd_available()
@@ -151,19 +152,23 @@ class BinaryFormatTestBase(unittest.TestCase):
             if os.path.exists(f):
                 os.unlink(f)
 
-    def create_binary_file(self, samples, interval=1000, compression="none"):
+    def create_binary_file(self, samples, interval=1000, compression="none",
+                           mode=None):
         """Create a test binary file and track it for cleanup."""
-        filename, _ = self.write_binary_file(samples, interval, compression)
+        filename, _ = self.write_binary_file(
+            samples, interval, compression, mode
+        )
         return filename
 
-    def write_binary_file(self, samples, interval=1000, compression="none"):
+    def write_binary_file(self, samples, interval=1000, compression="none",
+                          mode=None):
         """Like create_binary_file but also returns the writer collector."""
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
             filename = f.name
         self.temp_files.append(filename)
 
         collector = BinaryCollector(
-            filename, interval, compression=compression
+            filename, interval, compression=compression, mode=mode
         )
         for sample in samples:
             collector.collect(sample)
@@ -515,6 +520,16 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
                 with BinaryReader(filename) as reader:
                     info = reader.get_info()
                     self.assertEqual(info["sample_interval_us"], interval)
+
+    def test_profiling_mode_preserved(self):
+        filename = self.create_binary_file([], mode=PROFILING_MODE_CPU)
+        with BinaryReader(filename) as reader:
+            self.assertEqual(reader.get_info()["mode"], PROFILING_MODE_CPU)
+
+    def test_missing_profiling_mode_is_unknown(self):
+        filename = self.create_binary_file([])
+        with BinaryReader(filename) as reader:
+            self.assertIsNone(reader.get_info()["mode"])
 
     def test_threads_interleaved_samples(self):
         """Multiple threads with interleaved varying samples."""

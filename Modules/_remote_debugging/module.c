@@ -1717,6 +1717,7 @@ _remote_debugging.BinaryWriter.__init__
     start_time_us: unsigned_long_long
     *
     compression: int = 0
+    mode: int = -1
 
 High-performance binary writer for profiling data.
 
@@ -1726,6 +1727,7 @@ Arguments:
     start_time_us: Start timestamp in microseconds (from
         time.monotonic() * 1e6)
     compression: 0=none, 1=zstd (default: 0)
+    mode: Profiling mode, or -1 if unknown (default: -1)
 
 Use as a context manager or call finalize() when done.
 [clinic start generated code]*/
@@ -1735,14 +1737,19 @@ _remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
                                              PyObject *filename,
                                              unsigned long long sample_interval_us,
                                              unsigned long long start_time_us,
-                                             int compression)
-/*[clinic end generated code: output=00446656ea2e5986 input=2e3f298c69fc7666]*/
+                                             int compression, int mode)
+/*[clinic end generated code: output=d8448fc02a8bb7aa input=8f6aea7952dcfe28]*/
 {
+    if (mode < -1 || mode > PROFILING_MODE_EXCEPTION) {
+        PyErr_SetString(PyExc_ValueError, "invalid profiling mode");
+        return -1;
+    }
     if (self->writer) {
         binary_writer_destroy(self->writer);
     }
 
-    self->writer = binary_writer_create(filename, sample_interval_us, compression, start_time_us);
+    self->writer = binary_writer_create(
+        filename, sample_interval_us, compression, start_time_us, mode);
     if (!self->writer) {
         return -1;
     }

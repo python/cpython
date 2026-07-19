@@ -162,6 +162,8 @@ class FlamegraphCollector(StackTraceCollector):
             missed_samples=info.get("missed_samples"),
             mode=self.stats.get("mode"),
         )
+    def set_mode(self, mode):
+        self.stats["mode"] = mode
 
     def export(self, filename):
         flamegraph_data = self._convert_to_flamegraph_format()
@@ -566,13 +568,15 @@ class FlamegraphCollector(StackTraceCollector):
 class DiffFlamegraphCollector(FlamegraphCollector):
     """Differential flamegraph collector that compares against a baseline binary profile."""
 
-    def __init__(self, sample_interval_usec, *, baseline_binary_path, skip_idle=False):
+    def __init__(self, sample_interval_usec, *, baseline_binary_path,
+                 skip_idle=False, mode=None):
         super().__init__(sample_interval_usec, skip_idle=skip_idle)
         if not os.path.exists(baseline_binary_path):
             raise ValueError(f"Baseline file not found: {baseline_binary_path}")
         self.baseline_binary_path = baseline_binary_path
         self._baseline_collector = None
         self._elided_paths = set()
+        self.mode = mode
 
     def _load_baseline(self):
         """Load baseline profile from binary file."""
@@ -580,6 +584,16 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
         with BinaryReader(self.baseline_binary_path) as reader:
             info = reader.get_info()
+
+            baseline_mode = info.get("mode")
+            if (
+                baseline_mode is not None
+                and self.mode is not None
+                and baseline_mode != self.mode
+            ):
+                raise ValueError(
+                    "Baseline profiling mode does not match current mode"
+                )
 
             baseline_collector = FlamegraphCollector(
                 sample_interval_usec=info['sample_interval_us'],
