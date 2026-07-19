@@ -189,9 +189,9 @@ class Message:
         policy = self.policy if policy is None else policy
         fp = StringIO()
         g = Generator(fp,
-                    mangle_from_=False,
-                    maxheaderlen=maxheaderlen,
-                    policy=policy)
+                      mangle_from_=False,
+                      maxheaderlen=maxheaderlen,
+                      policy=policy)
         g.flatten(self, unixfrom=unixfrom)
         return fp.getvalue()
 
