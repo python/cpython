@@ -543,7 +543,7 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device="",
                 is_emulator=False):
     if sys.platform == "android":
         try:
-            from ctypes import CDLL, c_char_p, create_string_buffer
+            from ctypes import CDLL, c_int, c_char_p, create_string_buffer
             from ctypes.util import wrap_dll_function
         except ImportError:
             pass
