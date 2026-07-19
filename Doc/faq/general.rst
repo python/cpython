@@ -154,7 +154,7 @@ In other words, all versions labeled *2.0aN* precede the versions labeled
 
 You may also find version numbers with a "+dev" suffix, such as "3.15.0b3+dev".
 These are unreleased versions, built directly from the CPython development
-repository. In practice, after a final feature release is made, the version is
+repository. After the first beta release is made, the version is
 incremented to the next feature version, which becomes the "a0" version,
 such as "3.16.0a0".
 
