@@ -768,6 +768,15 @@ Build changes
 
   (Contributed by Stefano Rivera in :gh:`131372`.)
 
+* Add the :option:`--with-curses` :program:`configure` option to select the
+  curses backend for the :mod:`curses` and :mod:`curses.panel` modules.
+  In addition to ``ncursesw`` and ``ncurses``, it can now build against the
+  system's native ``curses`` library (for example on NetBSD or Solaris), with
+  wide-character support when the library provides it.  :option:`--without-curses`
+  excludes the modules from the build.
+
+  (Contributed by Serhiy Storchaka in :gh:`136687`.)
+
 
 C API changes
 =============
