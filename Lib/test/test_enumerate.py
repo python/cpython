@@ -3,6 +3,9 @@ import operator
 import sys
 import pickle
 import gc
+import itertools
+import threading
+
 
 from test import support
 
@@ -290,6 +293,35 @@ class TestLongStart(EnumerateStartTestCase):
 
     seq, res = 'abc', [(sys.maxsize+1,'a'), (sys.maxsize+2,'b'),
                        (sys.maxsize+3,'c')]
+
+
+
+class ThreadSafety(EnumerateStartTestCase):
+    def test_thread_safety_while_iterating(self):
+        en = enumerate(itertools.count())   # infinite inner iterator: next() never ends
+        stop = threading.Event()
+
+        def advance():
+            while not stop.is_set():
+                next(en)                    # enum_next: atomic write of en_index
+
+
+        def read():
+            while not stop.is_set():
+                en.__reduce__()             # enum_reduce: plain read of en_index
+
+
+        threads = [
+            threading.Thread(target=advance),
+            threading.Thread(target=read)
+            ]
+
+        for t in threads:
+            t.start()
+        threading.Event().wait(2.0)
+        stop.set()
+        for t in threads:
+            t.join()
 
 
 if __name__ == "__main__":
