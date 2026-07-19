@@ -41,9 +41,10 @@ class TestAndroidOutput(unittest.TestCase):
 
         try:
             from ctypes import CDLL, c_char_p, c_int
+            from ctypes.util import wrap_dll_function
             liblog = CDLL("liblog.so")
 
-            @ctypes.util.wrap_dll_function(liblog)
+            @wrap_dll_function(liblog)
             def __android_log_write(prio: c_int, tag: c_char_p,
                                     text: c_char_p) -> c_int:
                 pass
