@@ -214,13 +214,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyByteArrayObject *obj = ((PyByteArrayObject *)self);
 
-    /* If ob_bytes_object has not been initialized yet, eagerly initialize
-       it here so the following code can reason about state more easily,
-       and things like pointer comparisons are valid. */
-    if (obj->ob_bytes_object == NULL) {
-        obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-        bytearray_reinit_from_bytes(obj, 0, 0);
-    }
+    assert(obj->ob_bytes_object != NULL);
 
     /* All computations are done unsigned to avoid integer overflows
        (see issue #22335). */
@@ -920,6 +914,19 @@ bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
     return ret;
 }
 
+static PyObject *
+bytearray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *self = PyType_GenericNew(type, args, kwds);
+    if (self == NULL) {
+        return NULL;
+    }
+    PyByteArrayObject *obj = _PyByteArray_CAST(self);
+    obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    bytearray_reinit_from_bytes(obj, 0, 0);
+    return self;
+}
+
 /*[clinic input]
 bytearray.__init__
 
@@ -942,8 +949,7 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         return -1;
     }
 
-    /* Empty any previous contents (do this first of all!).
-       Also initializes ob_bytes_object if needed */
+    /* Empty any previous contents (do this first of all!). */
     if (PyByteArray_Resize((PyObject *)self, 0) < 0) {
         return -1;
     }
@@ -1622,8 +1628,6 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     if (_PyBytes_Resize(&self->ob_bytes_object, to_take) == -1) {
-        /* _PyBytes_Resize has made ob_bytes_object NULL here. We need to
-           ensure that the other bytearray fields are consistent. */
         self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         bytearray_reinit_from_bytes(self, 0, 0);
         Py_DECREF(remaining);
@@ -2956,7 +2960,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_dictoffset */
     bytearray___init__,                 /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+    bytearray_new,                      /* tp_new */
     PyObject_Free,                      /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTEARRAY,
 };

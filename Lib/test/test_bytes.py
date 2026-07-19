@@ -2200,10 +2200,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_uninitialized_instance(self):
         # A bytearray created with __new__ so that __init__ is never called
         # (often as a side-effect of a subclass not calling super().__init__)
-        # is left with ob_bytes_object == NULL.  It's easy for implementation
-        # code to not realize that ob_bytes_object can be NULL, so these
-        # checks exercise code paths that have historically crashed or
-        # asserted (see gh-153419).
+        # must be left in a state where methods called on it do not crash or
+        # assert (see gh-153419).
         def uninitialized():
             return bytearray.__new__(bytearray)
 
