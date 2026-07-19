@@ -2739,8 +2739,14 @@ class LiteralTests(BaseTestCase):
         self.assertEqual(Literal[1, 2, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, 2, 3, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, Literal[2], Literal[3, 4]].__args__, (1, 2, 3, 4))
-        # Mutable arguments will not be deduplicated
-        self.assertEqual(Literal[[], []].__args__, ([], []))
+        # Unhashable arguments will be deduplicated too
+        self.assertEqual(Literal[[], []].__args__, ([],))
+        self.assertEqual(Literal[{"a": 1}, {"a": 1}].__args__, ({"a": 1},))
+        self.assertEqual(
+            Literal[1, {'a': 'b'}, 2, {'a': 'b'}, 3].__args__,
+            (1, {'a': 'b'}, 2, 3),
+        )
+        self.assertEqual(Literal[{1}, {1}, {2}, {2}].__args__, ({1}, {2}))
 
     def test_flatten(self):
         l1 = Literal[Literal[1], Literal[2], Literal[3]]
