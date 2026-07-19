@@ -512,7 +512,8 @@ def _process_struct(decorated_class, /, *, align, layout, endian, pack):
         fields.extend(decorated_class._fields_)
         anonymous.extend(decorated_class._anonymous_)
 
-    for name, hint in annotationlib.get_annotations(decorated_class).items():
+    annotations = annotationlib.get_annotations(decorated_class, eval_str=True)
+    for name, hint in annotations.items():
         if get_origin(hint) is ClassVar:
             continue
 
@@ -573,6 +574,24 @@ def struct(class_or_none=None, /, *, align=None, layout=None, endian='native', p
         return inner
 
     return process_the_struct(class_or_none)
+
+
+def wrap_dll_function(dll):
+    def decorator(func):
+        name = func.__name__
+        ptr = getattr(dll, name)
+        annotations = annotationlib.get_annotations(func, eval_str=True)
+
+        try:
+            restype = annotations.pop("return")
+        except KeyError as error:
+            raise ValueError(f"{name!r} missing return type annotation") from error
+
+        ptr.restype = restype
+        ptr.argtypes = tuple(annotations.values())
+        return ptr
+
+    return decorator
 
 ################################################################
 # test code

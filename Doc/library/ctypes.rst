@@ -694,6 +694,46 @@ through the :attr:`~_CFuncPtr.errcheck` attribute;
 see the reference manual for details.
 
 
+Specifying function pointers using type annotations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. decorator:: wrap_dll_function(dll)
+   :module: ctypes.util
+
+   A :term:`decorator` that generates :attr:`~ctypes._CFuncPtr.argtypes` and
+   :attr:`~ctypes._CFuncPtr.restype` from a function signature, using the
+   :attr:`~function.__name__` of the function and its :term:`type annotations <annotation>`.
+
+   The decorated function should look like this::
+
+      @wrap_dll_function(dll_to_wrap)
+      def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
+         # There should be no body
+         pass
+
+   The body of the decorated function is ignored, and any parameters that are
+   missing type annotations are skipped. The names of the parameters are ignored
+   and do not have to match the underlying C implementation.
+
+   If the decorated function does not have a return type annotation, a
+   :exc:`ValueError` is raised. If the name of the function does not exist
+   in *dll*, an :exc:`AttributeError` is raised.
+
+   For example::
+
+      import ctypes
+      from ctypes.util import wrap_dll_function
+
+      @wrap_dll_function(ctypes.pythonapi)
+      def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p) -> ctypes.py_object:
+         pass
+
+      PyObject_GetAttrString(42, b"real")
+
+
+   .. versionadded:: next
+
+
 .. _ctypes-passing-pointers:
 
 Passing pointers (or: passing parameters by reference)
