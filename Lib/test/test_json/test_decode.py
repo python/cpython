@@ -149,6 +149,10 @@ class TestDecode:
         d = self.json.JSONDecoder()
         self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
 
+    def test_unterminated_string(self):
+        d = self.json.JSONDecoder()
+        self.assertRaises(self.JSONDecodeError, d.raw_decode, '"\\')
+
     def test_limit_int(self):
         maxdigits = 5000
         with support.adjust_int_max_str_digits(maxdigits):
