@@ -186,6 +186,10 @@ PyObject *
 _Py_make_parameters(PyObject *args)
 {
     assert(PyTuple_Check(args) || PyList_Check(args));
+    if (Py_EnterRecursiveCall(" in __parameter__ calculation")) {
+        return NULL;
+    }
+
     const bool is_args_list = PyList_Check(args);
     PyObject *tuple_args = NULL;
     if (is_args_list) {
@@ -210,9 +214,7 @@ _Py_make_parameters(PyObject *args)
         }
         int rc = PyObject_HasAttrWithError(t, &_Py_ID(__typing_subst__));
         if (rc < 0) {
-            Py_DECREF(parameters);
-            Py_XDECREF(tuple_args);
-            return NULL;
+            goto error;
         }
         if (rc) {
             iparam += tuple_add(parameters, iparam, t);
@@ -221,18 +223,14 @@ _Py_make_parameters(PyObject *args)
             PyObject *subparams;
             if (PyObject_GetOptionalAttr(t, &_Py_ID(__parameters__),
                                      &subparams) < 0) {
-                Py_DECREF(parameters);
-                Py_XDECREF(tuple_args);
-                return NULL;
+                goto error;
             }
             if (!subparams && (PyTuple_Check(t) || PyList_Check(t))) {
                 // Recursively call _Py_make_parameters for lists/tuples and
                 // add the results to the current parameters.
                 subparams = _Py_make_parameters(t);
                 if (subparams == NULL) {
-                    Py_DECREF(parameters);
-                    Py_XDECREF(tuple_args);
-                    return NULL;
+                    goto error;
                 }
             }
             if (subparams && PyTuple_Check(subparams)) {
@@ -242,9 +240,8 @@ _Py_make_parameters(PyObject *args)
                     len += needed;
                     if (_PyTuple_Resize(&parameters, len) < 0) {
                         Py_DECREF(subparams);
-                        Py_DECREF(parameters);
                         Py_XDECREF(tuple_args);
-                        return NULL;
+                        goto cleanup;
                     }
                 }
                 for (Py_ssize_t j = 0; j < len2; j++) {
@@ -257,13 +254,19 @@ _Py_make_parameters(PyObject *args)
     }
     if (iparam < len) {
         if (_PyTuple_Resize(&parameters, iparam) < 0) {
-            Py_XDECREF(parameters);
-            Py_XDECREF(tuple_args);
-            return NULL;
+            goto error;
         }
     }
     Py_XDECREF(tuple_args);
+    Py_LeaveRecursiveCall();
     return parameters;
+
+error:
+    Py_XDECREF(parameters);
+    Py_XDECREF(tuple_args);
+cleanup:
+    Py_LeaveRecursiveCall();
+    return NULL;
 }
 
 /* If obj is a generic alias, substitute type variables params
@@ -413,6 +416,9 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                             self);
     }
     item = _unpack_args(item);
+    if (item == NULL) {
+        return NULL;
+    }
     for (Py_ssize_t i = 0; i < nparams; i++) {
         PyObject *param = PyTuple_GET_ITEM(parameters, i);
         PyObject *prepare, *tmp;
@@ -570,7 +576,8 @@ PyDoc_STRVAR(genericalias__doc__,
 "--\n\n"
 "Represent a PEP 585 generic type\n"
 "\n"
-"E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).");
+"For example, for t = list[int], t.__origin__ is list and t.__args__\n"
+"is (int,).");
 
 static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
@@ -650,7 +657,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
               size_t nargsf, PyObject *kwnames)
 {
     gaobject *alias = (gaobject *) self;
-    PyObject *obj = PyVectorcall_Function(alias->origin)(alias->origin, args, nargsf, kwnames);
+    PyObject *obj = PyObject_Vectorcall(alias->origin, args, nargsf, kwnames);
     return set_orig_class(obj, self);
 }
 
@@ -838,7 +845,7 @@ static PyMemberDef ga_members[] = {
 };
 
 static PyObject *
-ga_parameters(PyObject *self, void *unused)
+ga_parameters_lock_held(PyObject *self)
 {
     gaobject *alias = (gaobject *)self;
     if (alias->parameters == NULL) {
@@ -848,6 +855,16 @@ ga_parameters(PyObject *self, void *unused)
         }
     }
     return Py_NewRef(alias->parameters);
+}
+
+static PyObject *
+ga_parameters(PyObject *self, void *unused)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = ga_parameters_lock_held(self);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *

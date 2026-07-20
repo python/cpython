@@ -85,6 +85,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    with inter-line and intra-line change highlights.  The table can be generated in
    either full or contextual difference mode.
 
+   .. warning::
+
+      The trailing newlines get stripped before the diff, so the result can be
+      incomplete. See :gh:`71896` for details.
+
    The constructor for this class is:
 
 
@@ -724,7 +729,7 @@ Finally, we compare the two:
 
    >>> result = list(d.compare(text1, text2))
 
-``result`` is a list of strings, so let's pretty-print it:
+``result`` is a list of strings, so let's pretty-print it::
 
    >>> from pprint import pprint
    >>> pprint(result)
@@ -739,7 +744,7 @@ Finally, we compare the two:
     '?           ++++ ^                      ^\n',
     '+   5. Flat is better than nested.\n']
 
-As a single multi-line string it looks like this:
+As a single multi-line string it looks like this::
 
    >>> import sys
    >>> sys.stdout.writelines(result)

@@ -67,6 +67,10 @@ class ThreadSafetyMixin:
             barrier.wait()
             b.readinto(into)
 
+        def peek(barrier, b, *ignore):
+            barrier.wait()
+            b.peek()
+
         def close(barrier, b, *ignore):
             barrier.wait()
             b.close()
@@ -103,6 +107,7 @@ class ThreadSafetyMixin:
         self.check([truncate] + [readline] * 10, self.ioclass(b'0\n'*20480))
         self.check([truncate] + [readlines] * 10, self.ioclass(b'0\n'*20480))
         self.check([truncate] + [readinto] * 10, self.ioclass(b'0\n'*204800), bytearray(b'0\n'*204800))
+        self.check([truncate] + [peek] * 10, self.ioclass(b'0\n'*204800))
         self.check([close] + [write] * 10, self.ioclass())
         self.check([truncate] + [getvalue] * 10, self.ioclass(b'0\n'*204800))
         self.check([truncate] + [getbuffer] * 10, self.ioclass(b'0\n'*204800))
@@ -116,6 +121,35 @@ class ThreadSafetyMixin:
 
 class CBytesIOTest(ThreadSafetyMixin, TestCase):
     ioclass = io.BytesIO
+
+    @threading_helper.requires_working_threading()
+    @threading_helper.reap_threads
+    def test_concurrent_whole_buffer_read_and_resize(self):
+        shared = self.ioclass(b"x" * 64)
+        writers = 2
+        readers = 8
+        loops = 2000
+        barrier = threading.Barrier(writers + readers)
+
+        def writer():
+            barrier.wait()
+            for i in range(loops):
+                shared.seek(0)
+                shared.write(b"a" * (64 + (i & 63)))
+
+        def reader():
+            barrier.wait()
+            for _ in range(loops):
+                shared.seek(0)
+                shared.read()
+                shared.seek(0)
+                shared.peek()
+                shared.getvalue()
+
+        threads = [threading.Thread(target=writer) for _ in range(writers)]
+        threads += [threading.Thread(target=reader) for _ in range(readers)]
+        with threading_helper.start_threads(threads):
+            pass
 
 class PyBytesIOTest(ThreadSafetyMixin, TestCase):
      ioclass = pyio.BytesIO

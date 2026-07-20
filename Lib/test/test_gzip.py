@@ -10,6 +10,7 @@ import struct
 import sys
 import unittest
 from subprocess import PIPE, Popen
+from unittest import mock
 from test.support import catch_unraisable_exception
 from test.support import force_not_colorized_test_class, import_helper
 from test.support import os_helper
@@ -349,6 +350,37 @@ class TestGzip(BaseTest):
             dataRead = fRead.read()
             self.assertEqual(dataRead, data1)
             self.assertEqual(fRead.mtime, mtime)
+
+    def test_mtime_with_open(self):
+        mtime = 123456789
+        with gzip.open(self.filename, "wb", mtime=mtime) as fWrite:
+            fWrite.write(data1)
+        with gzip.open(self.filename, "rb") as fRead:
+            self.assertTrue(hasattr(fRead, 'mtime'))
+            self.assertIsNone(fRead.mtime)
+            dataRead = fRead.read()
+            self.assertEqual(dataRead, data1)
+            self.assertEqual(fRead.mtime, mtime)
+
+    def test_mtime_out_of_range(self):
+        for mtime in (-1, 2**32):
+            with gzip.GzipFile(self.filename, 'w', mtime=mtime) as fWrite:
+                fWrite.write(data1)
+            with gzip.GzipFile(self.filename) as fRead:
+                fRead.read(1)
+                self.assertEqual(fRead.mtime, 0)
+            datac = gzip.compress(data1, mtime=mtime)
+            with gzip.GzipFile(fileobj=io.BytesIO(datac)) as fRead:
+                fRead.read(1)
+                self.assertEqual(fRead.mtime, 0)
+
+        for mtime in (-1, 2**32):
+            with mock.patch('time.time', return_value=float(mtime)):
+                with gzip.GzipFile(self.filename, 'w') as fWrite:
+                    fWrite.write(data1)
+                with gzip.GzipFile(self.filename) as fRead:
+                    fRead.read(1)
+                    self.assertEqual(fRead.mtime, 0)
 
     def test_metadata(self):
         mtime = 123456789
@@ -794,6 +826,35 @@ class TestGzip(BaseTest):
     def test_decompress_missing_trailer(self):
         compressed_data = gzip.compress(data1)
         self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
+
+    def test_truncated_header(self):
+        truncated_headers = [
+            b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00",             # Missing OS byte
+            b"\x1f\x8b\x08\x02\x00\x00\x00\x00\x00\xff",         # FHRC, but no checksum
+            b"\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff",         # FEXTRA, but no xlen
+            b"\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff\xaa\x00", # FEXTRA, xlen, but no data
+            b"\x1f\x8b\x08\x08\x00\x00\x00\x00\x00\xff",         # FNAME but no fname
+            b"\x1f\x8b\x08\x10\x00\x00\x00\x00\x00\xff",         # FCOMMENT, but no fcomment
+        ]
+        for header in truncated_headers:
+            with self.subTest(header=header):
+                with self.assertRaises(EOFError):
+                    gzip.decompress(header)
+
+    def test_corrupted_gzip_header(self):
+        header = (b"\x1f\x8b\x08\x1f\x00\x00\x00\x00\x00\xff"  # All flags set
+                  b"\x05\x00"  # Xlen = 5
+                  b"extra"
+                  b"name\x00"
+                  b"comment\x00")
+        true_crc = zlib.crc32(header) & 0xFFFF
+        corrupted_crc = true_crc ^ 0xFFFF
+        corrupted_header = header + corrupted_crc.to_bytes(2, "little")
+        with self.assertRaises(gzip.BadGzipFile) as err:
+            gzip.decompress(corrupted_header)
+        self.assertEqual(str(err.exception),
+                         f"Corrupted gzip header. Checksums do not "
+                         f"match: {true_crc:04x} != {corrupted_crc:04x}")
 
     def test_read_truncated(self):
         data = data1*50

@@ -438,7 +438,7 @@ class TestPartial:
         self.assertIs(type(r[0]), tuple)
 
     @support.skip_if_sanitizer("thread sanitizer crashes in __tsan::FuncEntry", thread=True)
-    @support.skip_if_unlimited_stack_size
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
@@ -1134,6 +1134,14 @@ class TestReduce:
         self.assertRaises(TypeError, self.reduce, add, [0, 1], initial="")
         self.assertEqual(self.reduce(42, "", initial="1"), "1") # func is never called with one item
 
+    def test_reduce_with_kwargs(self):
+        with self.assertRaises(TypeError):
+            self.reduce(function=lambda x, y: (x or 1) + y, sequence=[1, 2, 3, 4, 5])
+        with self.assertRaises(TypeError):
+            self.reduce(function=lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
+        with self.assertRaises(TypeError):
+            self.reduce(lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestReduceC(TestReduce, unittest.TestCase):
@@ -1143,12 +1151,6 @@ class TestReduceC(TestReduce, unittest.TestCase):
 
 class TestReducePy(TestReduce, unittest.TestCase):
     reduce = staticmethod(py_functools.reduce)
-
-    def test_reduce_with_kwargs(self):
-        with self.assertWarns(DeprecationWarning):
-            self.reduce(function=lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
-        with self.assertWarns(DeprecationWarning):
-            self.reduce(lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
 
 
 class TestCmpToKey:
@@ -3357,6 +3359,21 @@ class TestSingleDispatch(unittest.TestCase):
         msg = 't requires at least 1 positional argument'
         with self.assertRaisesRegex(TypeError, msg):
             A().t(a=1)
+
+    def test_positional_only_argument(self):
+        @functools.singledispatch
+        def f(arg, /, extra):
+            return "base"
+        @f.register
+        def f_int(arg: int, /, extra: str):
+            return "int"
+        @f.register
+        def f_str(arg: str, /, extra: int):
+            return "str"
+
+        self.assertEqual(f(None, "extra"), "base")
+        self.assertEqual(f(1, "extra"), "int")
+        self.assertEqual(f("s", "extra"), "str")
 
     def test_union(self):
         @functools.singledispatch
