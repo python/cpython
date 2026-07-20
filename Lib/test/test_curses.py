@@ -326,13 +326,10 @@ class TestCurses(unittest.TestCase):
                 stdscr.move(2, 0)
                 stdscr.echochar(v)
                 self.assertEqual(self._read_char(2, 0), c)
-                # insch() round-trips a byte only where its code point equals
-                # the byte value (Latin-1): on a wide build ncurses winsch
-                # stores a printable byte directly as a code point instead of
-                # decoding it through the locale.
-                if ord(c) < 0x100:
-                    stdscr.insch(1, 0, v)
-                    self.assertEqual(self._read_char(1, 0), c)
+                # insch() decodes the byte through the locale like addch(), so
+                # it round-trips the same character.
+                stdscr.insch(1, 0, v)
+                self.assertEqual(self._read_char(1, 0), c)
 
         # The same characters supplied as a str.  Unlike the int path above, a
         # str is stored as a wide-character cell on a wide build, so every
@@ -506,10 +503,9 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 0, 2, -2)
         # A non-ASCII character of an 8-bit locale reads back as its encoded
-        # byte (see _encodable for the set).  instr() returns the locale bytes
-        # for any single-byte character; inch() packs the text into a chtype, so
-        # on a wide build it only round-trips a Latin-1 codepoint (byte ==
-        # codepoint).
+        # byte (see _encodable for the set).  Both instr() and inch() return the
+        # locale byte for any character that fits the locale's single-byte
+        # encoding.
         encoding = stdscr.encoding
         for ch in ('A', 'é', '¤', '€', 'є'):
             try:
@@ -521,8 +517,7 @@ class TestCurses(unittest.TestCase):
             with self.subTest(ch=ch):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
-                if ord(ch) < 0x100:
-                    self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
+                self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
