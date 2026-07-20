@@ -975,6 +975,45 @@ if sys.platform != 'win32':
             else:
                 self.assertIsInstance(watcher, unix_events._ThreadedChildWatcher)
 
+        @unittest.skipUnless(hasattr(os, 'waitid'), 'needs os.waitid()')
+        def test_send_signal_never_targets_reaped_pid(self):
+            # gh-127049: there must be no window between the child watcher
+            # reaping the child and asyncio publishing the exit in which
+            # send_signal() signals the freed (possibly recycled) PID.
+            reaped_pids = set()
+            stale_kills = []
+            orig_waitpid = os.waitpid
+            orig_kill = os.kill
+
+            def waitpid(pid, options):
+                res = orig_waitpid(pid, options)
+                if res[0] != 0:
+                    reaped_pids.add(res[0])
+                return res
+
+            def kill(pid, sig):
+                if pid in reaped_pids:
+                    stale_kills.append(pid)
+                    return
+                orig_kill(pid, sig)
+
+            async def run():
+                with mock.patch('os.waitpid', waitpid), \
+                        mock.patch('os.kill', kill):
+                    proc = await asyncio.create_subprocess_exec(
+                        *PROGRAM_BLOCKED)
+                    proc.kill()
+                    deadline = self.loop.time() + support.SHORT_TIMEOUT
+                    while proc.returncode is None:
+                        if self.loop.time() > deadline:
+                            self.fail('child exit was not published in time')
+                        proc.kill()
+                        await asyncio.sleep(0)
+                    await proc.wait()
+                self.assertEqual(stale_kills, [])
+
+            self.loop.run_until_complete(run())
+
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
@@ -987,6 +1026,35 @@ if sys.platform != 'win32':
         def tearDown(self):
             unix_events.can_use_pidfd = self._original_can_use_pidfd
             return super().tearDown()
+
+        @unittest.skipUnless(hasattr(os, 'waitid'), 'needs os.waitid()')
+        def test_pid_not_reaped_before_exit_published(self):
+            # gh-127049: the watcher thread must wait for the child
+            # without reaping it: the PID must stay reserved until the
+            # event loop thread reaps it and publishes the exit as one
+            # atomic step.
+            async def run():
+                proc = await asyncio.create_subprocess_exec(
+                    *PROGRAM_BLOCKED)
+                thread = self.loop._watcher._threads.get(proc.pid)
+                self.assertIsNotNone(thread)
+                proc.kill()
+                # Wait for the watcher thread to observe the exit while
+                # the event loop cannot process the notification yet.
+                thread.join(support.SHORT_TIMEOUT)
+                self.assertFalse(thread.is_alive())
+                # The exit has not been published yet...
+                self.assertIsNone(proc.returncode)
+                # ...so the child must still be an unreaped zombie and
+                # signalling its PID must still be safe.  waitid() raises
+                # ChildProcessError if the PID was already reaped (and
+                # possibly recycled by the kernel).
+                os.waitid(os.P_PID, proc.pid,
+                          os.WEXITED | os.WNOWAIT | os.WNOHANG)
+                proc.kill()
+                self.assertEqual(await proc.wait(), -signal.SIGKILL)
+
+            self.loop.run_until_complete(run())
 
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),
