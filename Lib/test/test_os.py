@@ -4954,6 +4954,13 @@ class PseudoterminalTests(unittest.TestCase):
         son_path = os.ptsname(mother_fd)
         son_fd = os.open(son_path, os.O_RDWR|os.O_NOCTTY)
         self.addCleanup(os.close, son_fd)
+        if sys.platform.startswith('sunos'):
+            # The slave is not a terminal until these STREAMS modules
+            # are pushed onto it.
+            import fcntl
+            I_PUSH = 0x5302
+            fcntl.ioctl(son_fd, I_PUSH, b'ptem\0')
+            fcntl.ioctl(son_fd, I_PUSH, b'ldterm\0')
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
     @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
