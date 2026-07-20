@@ -923,6 +923,7 @@ bytearray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyByteArrayObject *obj = _PyByteArray_CAST(self);
     obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     bytearray_reinit_from_bytes(obj, 0, 0);
+    obj->ob_exports = 0;
     return self;
 }
 
@@ -944,6 +945,8 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
 
+    /* Disallow any __init__ call if the object is not resizable (has exports)
+       to make the handling of non-null `source` init values simpler. */
     if (!_canresize(self)) {
         return -1;
     }

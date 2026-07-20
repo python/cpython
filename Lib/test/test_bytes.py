@@ -2197,11 +2197,9 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
         self.assertRaises(BufferError, ba.hex, S(b':'))
 
-    def test_uninitialized_instance(self):
-        # A bytearray created with __new__ so that __init__ is never called
-        # (often as a side-effect of a subclass not calling super().__init__)
-        # must be left in a state where methods called on it do not crash or
-        # assert (see gh-153419).
+    def test_no_init_called(self):
+        # A bytearray created without calling bytearray.__init__
+        # should not crash the interpreter (see gh-153419).
         def uninitialized():
             return bytearray.__new__(bytearray)
 
@@ -2223,7 +2221,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         a = uninitialized()
         a[:] = b"xyz"
 
-    def test_reinit_length1(self):
+    def test_reinit_length(self):
         # There is a shortcut taken when resizing, where alloc/2 < newsize.
         # In this case, the existing buffer is reused, rather than reset.
         # If this happens when newsize == 0 and alloc == 1, then various

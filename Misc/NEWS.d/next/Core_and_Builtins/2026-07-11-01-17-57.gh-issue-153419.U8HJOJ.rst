@@ -1,1 +1,1 @@
-Fix several :class:`bytearray` crashes caused by calling :meth:`~object.__init__`/:meth:`~object.__new__` in unusual ways.
+Fix multiple :class:`bytearray` crashes and reference leaks caused by skipping :meth:`~object.__init__` and broken state setup code.
