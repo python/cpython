@@ -310,9 +310,6 @@ Known values:
     You should always use the *upcoming* tag. For example, if 3.12a6 came out
     a week ago, I should put "Python 3.12a7" next to my new magic number.
 
-Whenever PYC_MAGIC_NUMBER is changed, the ranges in the magic_values array in
-PC/launcher.c must also be updated.
-
 */
 
 #define PYC_MAGIC_NUMBER 3704

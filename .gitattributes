@@ -19,7 +19,7 @@
 *.zip binary
 
 # Specific binary files
-PC/classicAppCompat.* binary
+# -- None right now --
 
 # Text files that should not be subject to eol conversion
 [attr]noeol -text

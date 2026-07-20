@@ -50,7 +50,7 @@ gmon.out
 
 *.exe
 
-# Ignore core dumps... but not Tools/msi/core/ or the like.
+# Ignore core dumps... but not .../core/ subdirectories
 core
 !core/
 
@@ -158,7 +158,6 @@ Tools/unicode/data/
 /coverage/
 /externals/
 /htmlcov/
-Tools/msi/obj
 Tools/ssl/amd64
 Tools/ssl/win32
 Tools/freeze/test/outdir

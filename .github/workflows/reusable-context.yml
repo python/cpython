@@ -47,9 +47,6 @@ on:  # yamllint disable-line rule:truthy
       run-wasi:
         description: Whether to run the WASI tests
         value: ${{ jobs.compute-changes.outputs.run-wasi }}  # bool
-      run-windows-msi:
-        description: Whether to run the MSI installer smoke tests
-        value: ${{ jobs.compute-changes.outputs.run-windows-msi }}  # bool
       run-windows-tests:
         description: Whether to run the Windows tests
         value: ${{ jobs.compute-changes.outputs.run-windows-tests }}  # bool
@@ -73,7 +70,6 @@ jobs:
       run-ubuntu: ${{ steps.changes.outputs.run-ubuntu }}
       run-emscripten: ${{ steps.changes.outputs.run-emscripten }}
       run-wasi: ${{ steps.changes.outputs.run-wasi }}
-      run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
       run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}
     steps:
     - name: Set up Python

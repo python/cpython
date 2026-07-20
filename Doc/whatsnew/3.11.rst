@@ -522,7 +522,7 @@ Other CPython Implementation Changes
   have been removed, as they can be derived from ``exc_value``.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
-* A new :ref:`command line option <install-quiet-option>`, ``AppendPath``,
+* A new command line option, ``AppendPath``,
   has been added for the Windows installer.
   It behaves similarly to ``PrependPath``,
   but appends the install and scripts directories instead of prepending them.
