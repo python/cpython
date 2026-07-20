@@ -1523,6 +1523,7 @@ class ExceptionTests(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     @force_not_colorized
+    @support.skip_if_huge_c_stack()
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating

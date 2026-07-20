@@ -6,7 +6,7 @@ import sys
 from functools import cmp_to_key
 
 from test import seq_tests
-from test.support import ALWAYS_EQ, NEVER_EQ
+from test.support import ALWAYS_EQ, NEVER_EQ, skip_if_huge_c_stack
 from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 
 
@@ -60,6 +60,7 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(str(a2), "[0, 1, 2, [...], 3]")
         self.assertEqual(repr(a2), "[0, 1, 2, [...], 3]")
 
+    @skip_if_huge_c_stack(200_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_repr_deep(self):

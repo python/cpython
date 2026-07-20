@@ -3,7 +3,7 @@ from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
                           set_recursion_limit, skip_on_s390x,
                           skip_emscripten_stack_overflow,
                           skip_wasi_stack_overflow, skip_if_sanitizer,
-                          import_helper)
+                          skip_if_huge_c_stack, import_helper)
 try:
     import _testcapi
 except ImportError:
@@ -1062,6 +1062,7 @@ class TestRecursion(unittest.TestCase):
     @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     @skip_if_sanitizer("requires deep stack", thread=True)
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @skip_if_huge_c_stack(90_000)
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_super_deep(self):

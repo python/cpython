@@ -724,6 +724,7 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.skip_if_huge_c_stack(100_000 if sys.platform == "android" else 500_000)
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
