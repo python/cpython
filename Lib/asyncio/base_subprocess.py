@@ -165,6 +165,9 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
     else:
         def send_signal(self, signal):
             self._check_proc()
+            if self._returncode is not None:
+                # The process already exited
+                return
             try:
                 os.kill(self._proc.pid, signal)
             except ProcessLookupError:
