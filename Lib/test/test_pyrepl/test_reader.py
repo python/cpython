@@ -4,7 +4,8 @@ import rlcompleter
 from textwrap import dedent
 from unittest import TestCase
 from unittest.mock import MagicMock
-from test.support import force_colorized_test_class, force_not_colorized_test_class
+from test.support import force_colorized, force_colorized_test_class
+from test.support import force_not_colorized_test_class
 
 from .support import handle_all_events, handle_events_narrow_console
 from .support import ScreenEqualMixin, code_to_events
@@ -455,6 +456,109 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(8, 0)
         self.assertEqual(reader.pos, 7)
+
+
+@force_not_colorized_test_class
+class TestErrorMessages(TestCase):
+    @force_colorized
+    def test_colorized_error_message(self):
+        console = prepare_console(code_to_events("\x19"))
+        reader = prepare_reader(console)
+
+        reader.handle1()
+
+        theme = default_theme.syntax
+        self.assertEqual(
+            reader.msg,
+            f"{theme.error}! {theme.reset}nothing to yank",
+        )
+
+    def _test_error_message(
+        self,
+        keys: str,
+        expected: str,
+        *,
+        command: str | None = None,
+        binding: str | None = None,
+        **reader_kwargs,
+    ):
+        console = prepare_console(code_to_events(keys))
+        reader = prepare_reader(console, **reader_kwargs)
+        if command is not None:
+            reader.bind(binding or keys, command)
+
+        while not reader.msg:
+            reader.handle1()
+
+        self.assertEqual(reader.msg, f"! {expected}")
+        self.assertEqual(reader.screen[-1], f"! {expected}")
+        console.beep.assert_called_once()
+
+    def test_invalid_key_message(self):
+        self._test_error_message("\x1bo", "no command is bound to this key")
+
+    def test_unimplemented_command_message(self):
+        self._test_error_message(
+            "x",
+            "command 'missing-command' is not implemented",
+            command="missing-command",
+        )
+
+    def test_nothing_to_yank_message(self):
+        self._test_error_message("\x19", "nothing to yank")
+
+    def test_yank_pop_with_empty_kill_ring_message(self):
+        self._test_error_message("\x1by", "nothing to yank")
+
+    def test_yank_pop_after_other_command_message(self):
+        self._test_error_message(
+            "x\x01\x0b\x1by",
+            "previous command was not a yank",
+        )
+
+    def test_start_of_history_message(self):
+        self._test_error_message("\x10", "start of history list")
+
+    def test_end_of_history_message(self):
+        self._test_error_message("\x0e", "end of history list")
+
+    def test_yank_arg_at_beginning_of_history_message(self):
+        self._test_error_message(
+            "\x1b.\x1b.\x1b.",
+            "beginning of history list",
+            history=["one"],
+            historyi=1,
+        )
+
+    def test_yank_arg_with_no_argument_message(self):
+        self._test_error_message(
+            "\x1b.",
+            "no such arg",
+            history=[""],
+            historyi=1,
+        )
+
+    def test_empty_incremental_search_backspace_message(self):
+        self._test_error_message(
+            "x",
+            "nothing to rubout",
+            command="isearch-backspace",
+        )
+
+    def test_history_search_not_found_message(self):
+        self._test_error_message(
+            "missingx",
+            "not found",
+            command="history-search-backward",
+            binding="x",
+        )
+
+    def test_incremental_search_not_found_message(self):
+        self._test_error_message("\x12x", "not found")
+
+    def test_no_completion_matches_message(self):
+        self._test_error_message("does_not_exist\t", "no matches")
+
 
 @force_colorized_test_class
 class TestReaderInColor(ScreenEqualMixin, TestCase):

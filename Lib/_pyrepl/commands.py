@@ -469,15 +469,13 @@ class help(Command):
 
 class invalid_key(Command):
     def do(self) -> None:
-        pending = self.reader.console.getpending()
-        s = "".join(self.event) + pending.data
-        self.reader.error("`%r' not bound" % s)
+        self.reader.console.getpending()
+        self.reader.error("no command is bound to this key")
 
 
 class invalid_command(Command):
     def do(self) -> None:
-        s = self.event_name
-        self.reader.error("command `%s' not known" % s)
+        self.reader.error(f"command {self.event_name!r} is not implemented")
 
 
 class show_history(Command):
