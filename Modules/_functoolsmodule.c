@@ -382,9 +382,16 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         return NULL;
     }
 
-    PyObject **pto_args = _PyTuple_ITEMS(pto->args);
-    Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
-    Py_ssize_t pto_nkwds = PyDict_GET_SIZE(pto->kw);
+    /* Hold strong references to pto->args and pto->kw across the function.
+     * A keyword hash callback (line ~460) can reentrantly mutate the partial
+     * via __setstate__, replacing pto->args/pto->kw and freeing the originals.
+     * Without these references, pto_args becomes a dangling pointer (UAF). */
+    PyObject *args_ref = Py_NewRef(pto->args);
+    PyObject *kw_ref = Py_NewRef(pto->kw);
+
+    PyObject **pto_args = _PyTuple_ITEMS(args_ref);
+    Py_ssize_t pto_nargs = PyTuple_GET_SIZE(args_ref);
+    Py_ssize_t pto_nkwds = PyDict_GET_SIZE(kw_ref);
     Py_ssize_t nkwds = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
     Py_ssize_t nargskw = nargs + nkwds;
 
@@ -392,8 +399,11 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     if (!pto_nkwds) {
         /* Fast path if we're called without arguments */
         if (nargskw == 0) {
-            return _PyObject_VectorcallTstate(tstate, pto->fn, pto_args,
+            PyObject *ret = _PyObject_VectorcallTstate(tstate, pto->fn, pto_args,
                                               pto_nargs, NULL);
+            Py_DECREF(args_ref);
+            Py_DECREF(kw_ref);
+            return ret;
         }
 
         /* Use PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
@@ -405,6 +415,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             PyObject *ret = _PyObject_VectorcallTstate(tstate, pto->fn, newargs,
                                                        nargs + 1, kwnames);
             newargs[0] = tmp;
+            Py_DECREF(args_ref);
+            Py_DECREF(kw_ref);
             return ret;
         }
     }
@@ -435,6 +447,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     else {
         stack = PyMem_Malloc(init_stack_size * sizeof(PyObject *));
         if (stack == NULL) {
+            Py_DECREF(args_ref);
+            Py_DECREF(kw_ref);
             return PyErr_NoMemory();
         }
     }
@@ -457,13 +471,13 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         for (Py_ssize_t i = 0; i < nkwds; ++i) {
             key = PyTuple_GET_ITEM(kwnames, i);
             val = args[nargs + i];
-            int contains = PyDict_Contains(pto->kw, key);
+            int contains = PyDict_Contains(kw_ref, key);
             if (contains < 0) {
                 goto error;
             }
             else if (contains == 1) {
                 if (pto_kw_merged == NULL) {
-                    pto_kw_merged = PyDict_Copy(pto->kw);
+                    pto_kw_merged = PyDict_Copy(kw_ref);
                     if (pto_kw_merged == NULL) {
                         goto error;
                     }
@@ -496,7 +510,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Copy pto_keywords with overlapping call keywords merged
          * Note, tail is already coppied. */
         Py_ssize_t pos = 0, i = 0;
-        PyObject *keyword_dict = n_merges ? pto_kw_merged : pto->kw;
+        PyObject *keyword_dict = n_merges ? pto_kw_merged : kw_ref;
         Py_BEGIN_CRITICAL_SECTION(keyword_dict);
         while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
             assert(i < pto_nkwds);
@@ -518,6 +532,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
                 if (stack != small_stack) {
                     PyMem_Free(stack);
                 }
+                Py_DECREF(args_ref);
+                Py_DECREF(kw_ref);
                 return PyErr_NoMemory();
             }
             stack = tmp_stack;
@@ -555,12 +571,16 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     if (pto_nkwds) {
         Py_DECREF(tot_kwnames);
     }
+    Py_DECREF(args_ref);
+    Py_DECREF(kw_ref);
     return ret;
 
  error:
     if (stack != small_stack) {
         PyMem_Free(stack);
     }
+    Py_DECREF(args_ref);
+    Py_DECREF(kw_ref);
     return NULL;
 }
 
