@@ -53,6 +53,10 @@ VMADDR_CID_LOCAL = 1
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
 SOLARIS = sys.platform.startswith("sunos")
+# NetBSD, OpenBSD and DragonFly deliver the file descriptors from only one
+# SCM_RIGHTS control message when several are sent in a single sendmsg().
+BSD_COMBINES_SCM_RIGHTS = sys.platform.startswith(
+    ("netbsd", "openbsd", "dragonfly"))
 WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
@@ -3972,6 +3976,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
+    @unittest.skipIf(BSD_COMBINES_SCM_RIGHTS, "skipping, see gh-125860")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
         # Pass two FDs in two separate arrays.  Arrays may be combined
@@ -3984,6 +3989,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
+    @unittest.skipIf(BSD_COMBINES_SCM_RIGHTS, "skipping, see gh-125860")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
         self.assertEqual(
@@ -3998,6 +4004,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
+    @unittest.skipIf(BSD_COMBINES_SCM_RIGHTS, "skipping, see gh-125860")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
         # Pass two FDs in two separate arrays, receiving them into the
@@ -4013,6 +4020,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
+    @unittest.skipIf(BSD_COMBINES_SCM_RIGHTS, "skipping, see gh-125860")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
         self.assertEqual(
