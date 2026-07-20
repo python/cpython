@@ -1300,7 +1300,8 @@ class GeneralModuleTests(unittest.TestCase):
         # protocol, at least for modern Linuxes.
         if (
             sys.platform.startswith(
-                ('linux', 'android', 'freebsd', 'netbsd', 'gnukfreebsd'))
+                ('linux', 'android', 'freebsd', 'dragonfly', 'netbsd',
+                 'gnukfreebsd'))
             or is_apple
         ):
             # avoid the 'echo' service on this platform, as there is an
