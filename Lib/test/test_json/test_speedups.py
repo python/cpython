@@ -46,7 +46,7 @@ class TestEncode(CTest):
             return None
         enc = self.json.encoder.c_make_encoder(None, lambda obj: str(obj),
                                                bad_encoder1, None, ': ', ', ',
-                                               False, False, False)
+                                               False, False, False, {})
         with self.assertRaises(TypeError):
             enc('spam', 4)
         with self.assertRaises(TypeError):
@@ -56,7 +56,7 @@ class TestEncode(CTest):
             1/0
         enc = self.json.encoder.c_make_encoder(None, lambda obj: str(obj),
                                                bad_encoder2, None, ': ', ', ',
-                                               False, False, False)
+                                               False, False, False, {})
         with self.assertRaises(ZeroDivisionError):
             enc('spam', 4)
 
@@ -67,7 +67,7 @@ class TestEncode(CTest):
             r'make_encoder\(\) argument 1 must be dict or None, not int',
         ):
             self.json.encoder.c_make_encoder(1, None, None, None, ': ', ', ',
-                                             False, False, False)
+                                             False, False, False, {})
 
     def test_bad_bool_args(self):
         def test(name):
@@ -92,7 +92,8 @@ class TestEncode(CTest):
             item_separator=', ',
             sort_keys=False,
             skipkeys=False,
-            allow_nan=False)
+            allow_nan=False,
+            dispatch_table={})
         expected = (
             '[\n'
             '\t"spam", \n'
@@ -139,7 +140,7 @@ class TestEncode(CTest):
             None, lambda o: "null",
             encode_str, None,
             ": ", ", ", False,
-            False, True
+            False, True, {}
         )
 
         # Must not crash (use-after-free under ASan before fix)
@@ -164,7 +165,7 @@ class TestEncode(CTest):
             None, default,
             self.json.encoder.c_encode_basestring, None,
             ": ", ", ", False,
-            False, True
+            False, True, {}
         )
 
         # Must not crash (use-after-free under ASan before fix)

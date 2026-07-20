@@ -1444,6 +1444,7 @@ extern "C" {
     INIT_ID(__iter__), \
     INIT_ID(__itruediv__), \
     INIT_ID(__ixor__), \
+    INIT_ID(__json__), \
     INIT_ID(__lazy_import__), \
     INIT_ID(__lazy_modules__), \
     INIT_ID(__le__), \
@@ -1481,6 +1482,7 @@ extern "C" {
     INIT_ID(__qualname__), \
     INIT_ID(__radd__), \
     INIT_ID(__rand__), \
+    INIT_ID(__raw_json__), \
     INIT_ID(__rdivmod__), \
     INIT_ID(__reduce__), \
     INIT_ID(__reduce_ex__), \

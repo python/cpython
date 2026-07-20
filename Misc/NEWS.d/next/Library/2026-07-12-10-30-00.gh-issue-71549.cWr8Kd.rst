@@ -1,0 +1,14 @@
+Add support for JSON serialization of custom types.
+A class can define the JSON representation of its instances
+with the new :meth:`~object.__json__` and :meth:`~object.__raw_json__`
+methods.
+A serialization function for instances of a specific type
+can be registered with the new :func:`copyreg.json`
+and overridden per encoder
+with the new :attr:`json.JSONEncoder.dispatch_table` attribute.
+The new :class:`copyreg.RawJSON` wrapper includes
+an already encoded JSON string in the serialized data verbatim.
+:class:`collections.deque`, :class:`types.MappingProxyType`,
+:class:`collections.ChainMap`, :class:`collections.UserDict`,
+:class:`collections.UserList` and :class:`collections.UserString`
+are now serializable out of the box.

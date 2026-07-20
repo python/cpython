@@ -1446,6 +1446,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__iter__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__itruediv__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__ixor__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__json__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lazy_import__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__lazy_modules__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__le__));
@@ -1483,6 +1484,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__qualname__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__radd__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__rand__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__raw_json__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__rdivmod__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__reduce__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__reduce_ex__));

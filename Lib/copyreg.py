@@ -1,10 +1,11 @@
-"""Helper to provide extensibility for pickle.
+"""Helper to provide extensibility for pickle and JSON.
 
-This is only useful to add pickle support for extension types defined in
-C, not for instances of user-defined classes.
+This is only useful to add support for types that cannot be modified,
+such as extension types defined in C, not for instances of user-defined
+classes.
 """
 
-__all__ = ["pickle", "constructor",
+__all__ = ["pickle", "constructor", "json", "RawJSON",
            "add_extension", "remove_extension", "clear_extension_cache"]
 
 dispatch_table = {}
@@ -22,6 +23,34 @@ def pickle(ob_type, pickle_function, constructor_ob=None):
 def constructor(object):
     if not callable(object):
         raise TypeError("constructors must be callable")
+
+# Support for JSON serialization
+
+json_dispatch_table = {}
+
+def json(ob_type, json_function):
+    if not callable(json_function):
+        raise TypeError("json functions must be callable")
+    json_dispatch_table[ob_type] = json_function
+
+
+class RawJSON:
+    """Wrapper for already encoded JSON strings.
+
+    It is serialized by the JSON encoder as is.
+    """
+
+    def __init__(self, encoded_json):
+        self._encoded_json = encoded_json
+
+    def __json__(self):
+        return self
+
+    def __raw_json__(self):
+        return self._encoded_json
+
+    def __str__(self):
+        return self._encoded_json
 
 # Example: provide pickling support for complex numbers.
 

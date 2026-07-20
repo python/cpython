@@ -49,6 +49,23 @@ class CopyRegTestCase(unittest.TestCase):
         import copy
         self.assertEqual(True, copy.copy(True))
 
+    def test_json(self):
+        copyreg.json(C, str)
+        try:
+            self.assertIs(copyreg.json_dispatch_table[C], str)
+        finally:
+            del copyreg.json_dispatch_table[C]
+
+    def test_noncallable_json(self):
+        self.assertRaises(TypeError, copyreg.json,
+                          C, "not a callable")
+
+    def test_raw_json(self):
+        raw = copyreg.RawJSON('[1, 2]')
+        self.assertEqual(str(raw), '[1, 2]')
+        self.assertEqual(raw.__raw_json__(), '[1, 2]')
+        self.assertIs(raw.__json__(), raw)
+
     def test_extension_registry(self):
         mod, func, code = 'junk1 ', ' junk2', 0xabcd
         e = ExtensionSaver(code)

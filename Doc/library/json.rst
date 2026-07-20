@@ -243,6 +243,11 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. versionchanged:: next
+      Serialization can now be customized per type
+      with the :meth:`~object.__json__` method and :func:`copyreg.json`.
+      See :ref:`json-protocol`.
+
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -560,6 +565,14 @@ Encoders and Decoders
    .. versionchanged:: 3.6
       All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. versionchanged:: next
+      The encoder now consults the dispatch table
+      (:attr:`~JSONEncoder.dispatch_table`
+      or :data:`copyreg.json_dispatch_table`)
+      and the :meth:`~object.__json__` method of the object's class
+      before falling back to *default*.
+      See :ref:`json-protocol`.
+
 
    .. method:: default(o)
 
@@ -597,6 +610,106 @@ Encoders and Decoders
 
             for chunk in json.JSONEncoder().iterencode(bigobject):
                 mysocket.write(chunk)
+
+   .. attribute:: dispatch_table
+
+      A mapping of types to serialization functions,
+      used instead of the global :data:`copyreg.json_dispatch_table`.
+      It can be set as a class attribute of a subclass
+      or as an attribute of an encoder instance.
+      See :ref:`json-protocol`.
+
+      .. versionadded:: next
+
+
+.. _json-protocol:
+
+Serializing custom objects
+--------------------------
+
+Serialization of objects of types that are not supported natively
+(see the :ref:`conversion table <py-to-json-table>`)
+can be customized at three levels:
+
+* The author of a class can define the JSON representation of its instances
+  by giving it a :meth:`~object.__json__` method.
+
+* An application can register a serialization function
+  for instances of a type it does not control
+  with :func:`copyreg.json`.
+
+* A particular call can use its own type-to-function mapping
+  by setting the :attr:`~JSONEncoder.dispatch_table` attribute
+  of a :class:`JSONEncoder` subclass or instance.
+
+The more specific level takes precedence:
+a registered function is used before ``__json__``,
+and an encoder's own dispatch table completely replaces
+the global :data:`copyreg.json_dispatch_table`.
+The *default* function is called last,
+only for objects that none of the above handled.
+
+.. currentmodule:: None
+
+.. method:: object.__json__()
+
+   Return a substitute object to be serialized instead of *self*.
+   Called by the JSON encoder for an object
+   whose type is not supported natively
+   and has no entry in the dispatch table.
+
+   If the result is of a serializable type, it is serialized as usual
+   (but a ``__json__`` method of the result is not consulted).
+   Otherwise the result is interpreted by duck typing:
+
+   * an object with :meth:`~object.__index__` is serialized
+     as a JSON number;
+   * an object with :meth:`~object.__float__` is serialized
+     as a JSON number;
+   * an iterable with a :meth:`!keys` method and
+     :meth:`~object.__getitem__` is serialized as a JSON object;
+   * any other iterable is serialized as a JSON array;
+   * an object with :meth:`~object.__raw_json__` is included
+     in the output verbatim.
+
+   .. versionadded:: next
+
+.. method:: object.__raw_json__()
+
+   Return a string to be included in the JSON output verbatim,
+   without validation of its content.
+   Consulted only for the result of a registered serialization function
+   or a :meth:`~object.__json__` method.
+   To include an already encoded fragment directly in the serialized data,
+   wrap it in :class:`copyreg.RawJSON` instead.
+
+   .. versionadded:: next
+
+.. currentmodule:: json
+
+For example, a class can serialize itself as a JSON object::
+
+   class Point:
+       def __init__(self, x, y):
+           self.x = x
+           self.y = y
+
+       def __json__(self):
+           return {'x': self.x, 'y': self.y}
+
+An application can choose how :class:`decimal.Decimal` is serialized —
+as a JSON string::
+
+   copyreg.json(decimal.Decimal, str)
+
+or as a JSON number with full precision, using :class:`copyreg.RawJSON`::
+
+   copyreg.json(decimal.Decimal, lambda d: copyreg.RawJSON(str(d)))
+
+A number of standard library container types define
+:meth:`~object.__json__` and are therefore serializable out of the box.
+
+.. versionadded:: next
 
 
 Exceptions

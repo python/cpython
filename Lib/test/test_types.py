@@ -1203,6 +1203,7 @@ class MappingProxyTests(unittest.TestCase):
              '__class_getitem__',
              '__ior__',
              '__iter__',
+             '__json__',
              '__len__',
              '__or__',
              '__reversed__',

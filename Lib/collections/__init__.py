@@ -1164,6 +1164,9 @@ class ChainMap(_collections_abc.MutableMapping):
             m.update(child)
         return self.__class__(m)
 
+    def __json__(self):
+        return self
+
 
 ################################################################################
 ### UserDict
@@ -1273,6 +1276,9 @@ class UserDict(_collections_abc.MutableMapping):
         for key in iterable:
             d[key] = value
         return d
+
+    def __json__(self):
+        return self.data
 
 
 ################################################################################
@@ -1406,6 +1412,9 @@ class UserList(_collections_abc.MutableSequence):
             self.data.extend(other.data)
         else:
             self.data.extend(other)
+
+    def __json__(self):
+        return self.data
 
 
 ################################################################################
@@ -1662,3 +1671,6 @@ class UserString(_collections_abc.Sequence):
 
     def zfill(self, width):
         return self.__class__(self.data.zfill(width))
+
+    def __json__(self):
+        return self.data

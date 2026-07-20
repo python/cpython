@@ -1800,6 +1800,12 @@ deque___sizeof___impl(dequeobject *deque)
 }
 
 static PyObject *
+deque_json(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_NewRef(self);
+}
+
+static PyObject *
 deque_get_maxlen(PyObject *self, void *Py_UNUSED(closure))
 {
     dequeobject *deque = dequeobject_CAST(self);
@@ -1856,6 +1862,8 @@ static PyMethodDef deque_methods[] = {
     DEQUE___SIZEOF___METHODDEF
     {"__class_getitem__",       Py_GenericAlias,
     METH_O|METH_CLASS,          PyDoc_STR("deques are generic over the type of their contents")},
+    {"__json__",                deque_json,
+    METH_NOARGS,                NULL},
     {NULL,              NULL}   /* sentinel */
 };
 

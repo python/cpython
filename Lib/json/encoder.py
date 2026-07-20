@@ -1,6 +1,8 @@
 """Implementation of JSONEncoder
 """
+import operator
 import re
+from copyreg import json_dispatch_table
 
 try:
     from _json import encode_basestring_ascii as c_encode_basestring_ascii
@@ -254,70 +256,70 @@ class JSONEncoder(object):
             _iterencode = c_make_encoder(
                 markers, self.default, _encoder, indent,
                 self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, self.allow_nan)
+                self.skipkeys, self.allow_nan,
+                getattr(self, 'dispatch_table', json_dispatch_table)
+                )
         else:
             _iterencode = _make_iterencode(
                 markers, self.default, _encoder, indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, _one_shot)
+                self.skipkeys, _one_shot,
+                getattr(self, 'dispatch_table', json_dispatch_table))
         return _iterencode(o, 0)
 
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
+        dispatch_table,
     ):
 
+    _simple_encoders = {
+        str: _encoder,
+        type(None): lambda o: 'null',
+        bool: lambda o: 'true' if o else 'false',
+        # Subclasses of int/float may override __repr__, but we still
+        # want to encode them as integers/floats in JSON. One example
+        # within the standard library is IntEnum.  They are handled in
+        # _iterencode().
+        int: int.__repr__,
+        float: _floatstr,
+    }
+
     def _iterencode_list(lst, _current_indent_level):
-        if not lst:
-            yield '[]'
-            return
-        if markers is not None:
-            markerid = id(lst)
-            if markerid in markers:
-                raise ValueError("Circular reference detected")
-            markers[markerid] = lst
-        buf = '['
-        if _indent is not None:
-            _current_indent_level += 1
-            newline_indent = '\n' + _indent * _current_indent_level
-            separator = _item_separator + newline_indent
-            buf += newline_indent
-        else:
-            newline_indent = None
-            separator = _item_separator
+        first = True
         for i, value in enumerate(lst):
-            if i:
+            if first:
+                first = False
+                if markers is not None:
+                    markerid = id(lst)
+                    if markerid in markers:
+                        raise ValueError("Circular reference detected")
+                    markers[markerid] = lst
+                buf = '['
+                if _indent is not None:
+                    _current_indent_level += 1
+                    newline_indent = '\n' + _indent * _current_indent_level
+                    separator = _item_separator + newline_indent
+                    buf += newline_indent
+                else:
+                    newline_indent = None
+                    separator = _item_separator
+            else:
                 buf = separator
             try:
-                if isinstance(value, str):
-                    yield buf + _encoder(value)
-                elif value is None:
-                    yield buf + 'null'
-                elif value is True:
-                    yield buf + 'true'
-                elif value is False:
-                    yield buf + 'false'
-                elif isinstance(value, int):
-                    # Subclasses of int/float may override __repr__, but we still
-                    # want to encode them as integers/floats in JSON. One example
-                    # within the standard library is IntEnum.
-                    yield buf + int.__repr__(value)
-                elif isinstance(value, float):
-                    # see comment above for int
-                    yield buf + _floatstr(value)
+                encoder = _simple_encoders.get(type(value))
+                if encoder is not None:
+                    yield buf + encoder(value)
                 else:
                     yield buf
-                    if isinstance(value, (list, tuple)):
-                        chunks = _iterencode_list(value, _current_indent_level)
-                    elif isinstance(value, (dict, frozendict)):
-                        chunks = _iterencode_dict(value, _current_indent_level)
-                    else:
-                        chunks = _iterencode(value, _current_indent_level)
-                    yield from chunks
+                    yield from _iterencode(value, _current_indent_level)
             except GeneratorExit:
                 raise
             except BaseException as exc:
                 exc.add_note(f'when serializing {type(lst).__name__} item {i}')
                 raise
+        if first:
+            yield '[]'
+            return
         if newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
@@ -326,28 +328,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             del markers[markerid]
 
     def _iterencode_dict(dct, _current_indent_level):
-        if not dct:
-            yield '{}'
-            return
-        if markers is not None:
-            markerid = id(dct)
-            if markerid in markers:
-                raise ValueError("Circular reference detected")
-            markers[markerid] = dct
-        yield '{'
-        if _indent is not None:
-            _current_indent_level += 1
-            newline_indent = '\n' + _indent * _current_indent_level
-            item_separator = _item_separator + newline_indent
-        else:
-            newline_indent = None
-            item_separator = _item_separator
         first = True
         if _sort_keys:
-            items = sorted(dct.items())
+            keys = sorted(dct)
         else:
-            items = dct.items()
-        for key, value in items:
+            keys = dct
+        for key in keys:
+            value = dct[key]
             if isinstance(key, str):
                 pass
             # JavaScript is weakly typed for these, so it makes sense to
@@ -371,56 +358,78 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                                 f'not {key.__class__.__name__}')
             if first:
                 first = False
-                if newline_indent is not None:
+                if markers is not None:
+                    markerid = id(dct)
+                    if markerid in markers:
+                        raise ValueError("Circular reference detected")
+                    markers[markerid] = dct
+                yield '{'
+                if _indent is not None:
+                    _current_indent_level += 1
+                    newline_indent = '\n' + _indent * _current_indent_level
+                    item_separator = _item_separator + newline_indent
                     yield newline_indent
+                else:
+                    newline_indent = None
+                    item_separator = _item_separator
             else:
                 yield item_separator
             yield _encoder(key)
             yield _key_separator
             try:
-                if isinstance(value, str):
-                    yield _encoder(value)
-                elif value is None:
-                    yield 'null'
-                elif value is True:
-                    yield 'true'
-                elif value is False:
-                    yield 'false'
-                elif isinstance(value, int):
-                    # see comment for int/float in _make_iterencode
-                    yield int.__repr__(value)
-                elif isinstance(value, float):
-                    # see comment for int/float in _make_iterencode
-                    yield _floatstr(value)
+                encoder = _simple_encoders.get(type(value))
+                if encoder is not None:
+                    yield encoder(value)
                 else:
-                    if isinstance(value, (list, tuple)):
-                        chunks = _iterencode_list(value, _current_indent_level)
-                    elif isinstance(value, (dict, frozendict)):
-                        chunks = _iterencode_dict(value, _current_indent_level)
-                    else:
-                        chunks = _iterencode(value, _current_indent_level)
-                    yield from chunks
+                    yield from _iterencode(value, _current_indent_level)
             except GeneratorExit:
                 raise
             except BaseException as exc:
                 exc.add_note(f'when serializing {type(dct).__name__} item {key!r}')
                 raise
-        if not first and newline_indent is not None:
+        if first:
+            yield '{}'
+            return
+        if newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
         yield '}'
         if markers is not None:
             del markers[markerid]
 
+    # The branch order in _iterencode() is a performance invariant:
+    # exact basic types are encoded without any attribute lookup; the
+    # dispatch table and __json__ are consulted before the isinstance()
+    # fallbacks, solely so that subclasses of basic types can customize
+    # their serialization; duck typing of a hook result (including
+    # __raw_json__) applies only if a hook has fired, so that objects
+    # bound for default() pay no extra lookups.
     def _iterencode(o, _current_indent_level):
+        cls = type(o)
+        encoder = _simple_encoders.get(cls)
+        if encoder is not None:
+            yield encoder(o)
+            return
+        if cls is list or cls is tuple:
+            yield from _iterencode_list(o, _current_indent_level)
+            return
+        if cls is dict or cls is frozendict:
+            yield from _iterencode_dict(o, _current_indent_level)
+            return
+
+        asjson = dispatch_table.get(cls)
+        if asjson is None:
+            asjson = getattr(cls, '__json__', None)
+        if asjson is not None:
+            o = asjson(o)
+            cls = type(o)
+            encoder = _simple_encoders.get(cls)
+            if encoder is not None:
+                yield encoder(o)
+                return
+
         if isinstance(o, str):
             yield _encoder(o)
-        elif o is None:
-            yield 'null'
-        elif o is True:
-            yield 'true'
-        elif o is False:
-            yield 'false'
         elif isinstance(o, int):
             # see comment for int/float in _make_iterencode
             yield int.__repr__(o)
@@ -431,6 +440,29 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield from _iterencode_list(o, _current_indent_level)
         elif isinstance(o, (dict, frozendict)):
             yield from _iterencode_dict(o, _current_indent_level)
+        elif asjson is not None:
+            # The result of __json__() or a dispatch table function is
+            # not directly serializable.  Interpret it by duck typing.
+            if getattr(cls, '__index__', None) is not None:
+                yield int.__repr__(operator.index(o))
+            elif getattr(cls, '__float__', None) is not None:
+                yield _floatstr(float(o))
+            elif getattr(cls, '__iter__', None) is not None:
+                if (getattr(cls, '__getitem__', None) is not None
+                        and hasattr(cls, 'keys')):
+                    yield from _iterencode_dict(o, _current_indent_level)
+                else:
+                    yield from _iterencode_list(o, _current_indent_level)
+            else:
+                asrawjson = getattr(cls, '__raw_json__', None)
+                if asrawjson is None:
+                    raise TypeError(f'Object of type {cls.__name__} '
+                                    f'is not JSON serializable')
+                raw = asrawjson(o)
+                if not isinstance(raw, str):
+                    raise TypeError(f'__raw_json__() must return a string, '
+                                    f'not {raw.__class__.__name__}')
+                yield raw
         else:
             if markers is not None:
                 markerid = id(o)

@@ -58,6 +58,10 @@ The class can be used to simulate nested scopes and is useful in templating.
     one of the underlying mappings gets updated, those changes will be reflected
     in :class:`ChainMap`.
 
+    .. versionchanged:: next
+       Added the :meth:`~object.__json__` method;
+       instances are now serializable by the :mod:`json` module.
+
     All of the usual dictionary methods are supported.  In addition, there is a
     *maps* attribute, a method for creating new subcontexts, and a property for
     accessing all but the first mapping:
@@ -485,6 +489,10 @@ or subtracting from an empty counter.
     where only the most recent activity is of interest.
 
     Deques are :ref:`generic <generics>` over the type of their contents.
+
+    .. versionchanged:: next
+       Added the :meth:`~object.__json__` method;
+       instances are now serializable by the :mod:`json` module.
 
 
     Deque objects support the following methods:
@@ -1343,6 +1351,10 @@ attribute.
     :class:`!UserDict` instances.  If arguments are provided, they are used to
     initialize :attr:`data`, like a regular dictionary.
 
+    .. versionchanged:: next
+       Added the :meth:`~object.__json__` method;
+       instances are now serializable by the :mod:`json` module.
+
     In addition to supporting the methods and operations of mappings,
     :class:`!UserDict` instances provide the following attribute:
 
@@ -1379,6 +1391,10 @@ to work with because the underlying list is accessible as an attribute.
     instances.  The instance's contents are initially set to a copy of *list*,
     defaulting to the empty list ``[]``.  *list* can be any iterable, for
     example a real Python list or a :class:`UserList` object.
+
+    .. versionchanged:: next
+       Added the :meth:`~object.__json__` method;
+       instances are now serializable by the :mod:`json` module.
 
     In addition to supporting the methods and operations of mutable sequences,
     :class:`UserList` instances provide the following attribute:
@@ -1429,3 +1445,7 @@ attribute.
     .. versionchanged:: 3.5
        New methods ``__getnewargs__``, ``__rmod__``, ``casefold``,
        ``format_map``, ``isprintable``, and ``maketrans``.
+
+    .. versionchanged:: next
+       Added the :meth:`~object.__json__` method;
+       instances are now serializable by the :mod:`json` module.

@@ -397,6 +397,10 @@ Standard names are defined for the following types:
       Updated to support the new union (``|``) operator from :pep:`584`, which
       simply delegates to the underlying mapping.
 
+   .. versionchanged:: next
+      Added the :meth:`~object.__json__` method;
+      instances are now serializable by the :mod:`json` module.
+
    .. describe:: key in proxy
 
       Return ``True`` if the underlying mapping has a key *key*, else

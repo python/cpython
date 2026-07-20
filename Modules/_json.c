@@ -60,6 +60,7 @@ typedef struct _PyEncoderObject {
     PyObject *indent;
     PyObject *key_separator;
     PyObject *item_separator;
+    PyObject *dispatch_table;
     char sort_keys;
     char skipkeys;
     int allow_nan;
@@ -1309,17 +1310,18 @@ static PyType_Spec PyScannerType_spec = {
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
+    static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", "dispatch_table", NULL};
 
     PyEncoderObject *s;
     PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
-    PyObject *item_separator;
+    PyObject *item_separator, *dispatch_table;
     int sort_keys, skipkeys, allow_nan;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppp:make_encoder", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUpppO!:make_encoder", kwlist,
         &markers, &defaultfn, &encoder, &indent,
         &key_separator, &item_separator,
-        &sort_keys, &skipkeys, &allow_nan))
+        &sort_keys, &skipkeys, &allow_nan,
+        &PyDict_Type, &dispatch_table))
         return NULL;
 
     if (markers != Py_None && !PyDict_Check(markers)) {
@@ -1339,6 +1341,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->indent = Py_NewRef(indent);
     s->key_separator = Py_NewRef(key_separator);
     s->item_separator = Py_NewRef(item_separator);
+    s->dispatch_table = Py_NewRef(dispatch_table);
     s->sort_keys = sort_keys;
     s->skipkeys = skipkeys;
     s->allow_nan = allow_nan;
@@ -1569,7 +1572,15 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
                        PyObject *obj,
                        Py_ssize_t indent_level, PyObject *indent_cache)
 {
-    /* Encode Python object obj to a JSON term */
+    /* Encode Python object obj to a JSON term.
+
+       The branch order is a performance invariant: exact basic types
+       are encoded without any attribute lookup; the dispatch table and
+       __json__ are consulted before the subtype checks, solely so that
+       subclasses of basic types can customize their serialization;
+       duck typing of a hook result (including __raw_json__) applies
+       only if a hook has fired, so that objects bound for the default
+       function pay no extra lookups. */
     PyObject *newobj;
     int rv;
 
@@ -1582,87 +1593,235 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
     else if (obj == Py_False) {
       return PyUnicodeWriter_WriteASCII(writer, "false", 5);
     }
-    else if (PyUnicode_Check(obj)) {
+    else if (PyUnicode_CheckExact(obj)) {
         return encoder_write_string(s, writer, obj);
     }
-    else if (PyLong_Check(obj)) {
-        if (PyLong_CheckExact(obj)) {
-            // Fast-path for exact integers
-            return PyUnicodeWriter_WriteRepr(writer, obj);
-        }
-        PyObject *encoded = PyLong_Type.tp_repr(obj);
-        if (encoded == NULL)
-            return -1;
-        return _steal_accumulate(writer, encoded);
+    else if (PyLong_CheckExact(obj)) {
+        // Fast-path for exact integers
+        return PyUnicodeWriter_WriteRepr(writer, obj);
     }
-    else if (PyFloat_Check(obj)) {
+    else if (PyFloat_CheckExact(obj)) {
         PyObject *encoded = encoder_encode_float(s, obj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(writer, encoded);
     }
-    else if (PyList_Check(obj) || PyTuple_Check(obj)) {
+    else if (PyList_CheckExact(obj) || PyTuple_CheckExact(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_list(s, writer, obj, indent_level, indent_cache);
         _Py_LeaveRecursiveCall();
         return rv;
     }
-    else if (PyAnyDict_Check(obj)) {
+    else if (PyAnyDict_CheckExact(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_dict(s, writer, obj, indent_level, indent_cache);
         _Py_LeaveRecursiveCall();
         return rv;
     }
-    else {
-        PyObject *ident = NULL;
-        if (s->markers != Py_None) {
-            int has_key;
-            ident = PyLong_FromVoidPtr(obj);
-            if (ident == NULL)
-                return -1;
-            has_key = PyDict_Contains(s->markers, ident);
-            if (has_key) {
-                if (has_key != -1)
-                    PyErr_SetString(PyExc_ValueError, "Circular reference detected");
-                Py_DECREF(ident);
-                return -1;
-            }
-            if (PyDict_SetItem(s->markers, ident, obj)) {
-                Py_DECREF(ident);
-                return -1;
-            }
-        }
-        newobj = PyObject_CallOneArg(s->defaultfn, obj);
+
+    PyObject *asjson;
+    if (PyDict_GetItemRef(s->dispatch_table, (PyObject *)Py_TYPE(obj),
+                          &asjson) < 0)
+    {
+        return -1;
+    }
+    if (asjson == NULL
+        && PyObject_GetOptionalAttr((PyObject *)Py_TYPE(obj),
+                                    &_Py_ID(__json__), &asjson) < 0)
+    {
+        return -1;
+    }
+    newobj = NULL;
+    if (asjson != NULL) {
+        obj = newobj = PyObject_CallOneArg(asjson, obj);
+        Py_DECREF(asjson);
         if (newobj == NULL) {
-            Py_XDECREF(ident);
             return -1;
         }
-
-        if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
+        if (obj == Py_None) {
             Py_DECREF(newobj);
-            Py_XDECREF(ident);
-            return -1;
+            return PyUnicodeWriter_WriteASCII(writer, "null", 4);
         }
-        rv = encoder_listencode_obj(s, writer, newobj, indent_level, indent_cache);
-        _Py_LeaveRecursiveCall();
+        else if (obj == Py_True) {
+            Py_DECREF(newobj);
+            return PyUnicodeWriter_WriteASCII(writer, "true", 4);
+        }
+        else if (obj == Py_False) {
+            Py_DECREF(newobj);
+            return PyUnicodeWriter_WriteASCII(writer, "false", 5);
+        }
+    }
 
-        Py_DECREF(newobj);
-        if (rv) {
-            _PyErr_FormatNote("when serializing %T object", obj);
-            Py_XDECREF(ident);
-            return -1;
-        }
-        if (ident != NULL) {
-            if (PyDict_DelItem(s->markers, ident)) {
-                Py_XDECREF(ident);
-                return -1;
-            }
-            Py_XDECREF(ident);
-        }
+    if (PyUnicode_Check(obj)) {
+        rv = encoder_write_string(s, writer, obj);
+        Py_XDECREF(newobj);
         return rv;
     }
+    else if (PyLong_Check(obj)) {
+        PyObject *encoded = PyLong_Type.tp_repr(obj);
+        Py_XDECREF(newobj);
+        if (encoded == NULL)
+            return -1;
+        return _steal_accumulate(writer, encoded);
+    }
+    else if (PyFloat_Check(obj)) {
+        PyObject *encoded = encoder_encode_float(s, obj);
+        Py_XDECREF(newobj);
+        if (encoded == NULL)
+            return -1;
+        return _steal_accumulate(writer, encoded);
+    }
+    else if (PyList_Check(obj) || PyTuple_Check(obj)) {
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
+            Py_XDECREF(newobj);
+            return -1;
+        }
+        rv = encoder_listencode_list(s, writer, obj, indent_level, indent_cache);
+        _Py_LeaveRecursiveCall();
+        Py_XDECREF(newobj);
+        return rv;
+    }
+    else if (PyAnyDict_Check(obj)) {
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
+            Py_XDECREF(newobj);
+            return -1;
+        }
+        rv = encoder_listencode_dict(s, writer, obj, indent_level, indent_cache);
+        _Py_LeaveRecursiveCall();
+        Py_XDECREF(newobj);
+        return rv;
+    }
+    else if (newobj != NULL) {
+        /* The result of __json__() or a dispatch table function is not
+           directly serializable.  Interpret it by duck typing. */
+        if (PyIndex_Check(obj)) {
+            PyObject *tmp = PyNumber_Index(obj);
+            Py_DECREF(newobj);
+            if (tmp == NULL) {
+                return -1;
+            }
+            PyObject *encoded = PyLong_Type.tp_repr(tmp);
+            Py_DECREF(tmp);
+            if (encoded == NULL)
+                return -1;
+            return _steal_accumulate(writer, encoded);
+        }
+        if (Py_TYPE(obj)->tp_as_number != NULL
+            && Py_TYPE(obj)->tp_as_number->nb_float != NULL)
+        {
+            PyObject *tmp = PyNumber_Float(obj);
+            Py_DECREF(newobj);
+            if (tmp == NULL) {
+                return -1;
+            }
+            PyObject *encoded = encoder_encode_float(s, tmp);
+            Py_DECREF(tmp);
+            if (encoded == NULL)
+                return -1;
+            return _steal_accumulate(writer, encoded);
+        }
+        if (Py_TYPE(obj)->tp_iter != NULL) {
+            PyObject *func;
+            if (PyObject_GetOptionalAttr(obj, &_Py_ID(keys), &func) < 0) {
+                Py_DECREF(newobj);
+                return -1;
+            }
+            if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
+                Py_XDECREF(func);
+                Py_DECREF(newobj);
+                return -1;
+            }
+            if (func != NULL) {
+                Py_DECREF(func);
+                rv = encoder_listencode_dict(s, writer, obj, indent_level,
+                                             indent_cache);
+            }
+            else {
+                rv = encoder_listencode_list(s, writer, obj, indent_level,
+                                             indent_cache);
+            }
+            _Py_LeaveRecursiveCall();
+            Py_DECREF(newobj);
+            return rv;
+        }
+        PyObject *asrawjson;
+        if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(obj),
+                                     &_Py_ID(__raw_json__), &asrawjson) < 0)
+        {
+            Py_DECREF(newobj);
+            return -1;
+        }
+        if (asrawjson != NULL) {
+            PyObject *encoded = PyObject_CallOneArg(asrawjson, obj);
+            Py_DECREF(asrawjson);
+            Py_DECREF(newobj);
+            if (encoded == NULL) {
+                return -1;
+            }
+            if (!PyUnicode_Check(encoded)) {
+                PyErr_Format(PyExc_TypeError,
+                             "__raw_json__() must return a string, not %.80s",
+                             Py_TYPE(encoded)->tp_name);
+                Py_DECREF(encoded);
+                return -1;
+            }
+            return _steal_accumulate(writer, encoded);
+        }
+        PyErr_Format(PyExc_TypeError,
+                     "Object of type %.100s is not JSON serializable",
+                     Py_TYPE(obj)->tp_name);
+        Py_DECREF(newobj);
+        return -1;
+    }
+
+    PyObject *ident = NULL;
+    if (s->markers != Py_None) {
+        int has_key;
+        ident = PyLong_FromVoidPtr(obj);
+        if (ident == NULL)
+            return -1;
+        has_key = PyDict_Contains(s->markers, ident);
+        if (has_key) {
+            if (has_key != -1)
+                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
+            Py_DECREF(ident);
+            return -1;
+        }
+        if (PyDict_SetItem(s->markers, ident, obj)) {
+            Py_DECREF(ident);
+            return -1;
+        }
+    }
+    newobj = PyObject_CallOneArg(s->defaultfn, obj);
+    if (newobj == NULL) {
+        Py_XDECREF(ident);
+        return -1;
+    }
+
+    if (_Py_EnterRecursiveCall(" while encoding a JSON object")) {
+        Py_DECREF(newobj);
+        Py_XDECREF(ident);
+        return -1;
+    }
+    rv = encoder_listencode_obj(s, writer, newobj, indent_level, indent_cache);
+    _Py_LeaveRecursiveCall();
+
+    Py_DECREF(newobj);
+    if (rv) {
+        _PyErr_FormatNote("when serializing %T object", obj);
+        Py_XDECREF(ident);
+        return -1;
+    }
+    if (ident != NULL) {
+        if (PyDict_DelItem(s->markers, ident)) {
+            Py_XDECREF(ident);
+            return -1;
+        }
+        Py_XDECREF(ident);
+    }
+    return rv;
 }
 
 static int
@@ -1802,7 +1961,7 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *ident = NULL;
     bool first = true;
 
-    if (PyDict_GET_SIZE(dct) == 0) {
+    if (PyAnyDict_Check(dct) && PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
         return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
     }
@@ -2012,6 +2171,7 @@ encoder_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->indent);
     Py_VISIT(self->key_separator);
     Py_VISIT(self->item_separator);
+    Py_VISIT(self->dispatch_table);
     return 0;
 }
 
@@ -2026,10 +2186,11 @@ encoder_clear(PyObject *op)
     Py_CLEAR(self->indent);
     Py_CLEAR(self->key_separator);
     Py_CLEAR(self->item_separator);
+    Py_CLEAR(self->dispatch_table);
     return 0;
 }
 
-PyDoc_STRVAR(encoder_doc, "Encoder(markers, default, encoder, indent, key_separator, item_separator, sort_keys, skipkeys, allow_nan)");
+PyDoc_STRVAR(encoder_doc, "Encoder(markers, default, encoder, indent, key_separator, item_separator, sort_keys, skipkeys, allow_nan, dispatch_table)");
 
 static PyType_Slot PyEncoderType_slots[] = {
     {Py_tp_doc, (void *)encoder_doc},

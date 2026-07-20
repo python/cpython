@@ -1156,6 +1156,12 @@ mappingproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
+mappingproxy_json(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_NewRef(self);
+}
+
+static PyObject *
 mappingproxy_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     mappingproxyobject *pp = (mappingproxyobject *)self;
@@ -1181,6 +1187,8 @@ static PyMethodDef mappingproxy_methods[] = {
      PyDoc_STR("mappingproxy objects are generic over two types, signifying (respectively) the types of their keys and values")},
     {"__reversed__", mappingproxy_reversed, METH_NOARGS,
      PyDoc_STR("D.__reversed__() -> reverse iterator")},
+    {"__json__",  mappingproxy_json,       METH_NOARGS,
+     NULL},
     {0}
 };
 
