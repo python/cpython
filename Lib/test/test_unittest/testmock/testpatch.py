@@ -13,6 +13,7 @@ from test.test_unittest.testmock.support import SomeClass, is_instance
 
 from test.support.import_helper import DirsOnSysPath
 from test.test_importlib.util import uncache
+lazy from json import dumps as lazy_dumps # noqa: F401
 from unittest.mock import (
     NonCallableMock, CallableMixin, sentinel,
     MagicMock, Mock, NonCallableMagicMock, patch, _patch,
@@ -23,7 +24,6 @@ from unittest.mock import (
 builtin_string = 'builtins'
 
 PTModule = sys.modules[__name__]
-lazy from json import dumps as lazy_dumps # noqa: F401
 MODNAME = '%s.PTModule' % __name__
 
 

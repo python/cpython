@@ -1470,9 +1470,9 @@ class _patch(object):
         except (AttributeError, KeyError):
             original = getattr(target, name, DEFAULT)
         else:
-             local = True
-             if isinstance(original, types.LazyImportType):
-              original = original.resolve()
+            local = True
+            if isinstance(original, types.LazyImportType):
+             original = original.resolve()
 
         if name in _builtins and isinstance(target, ModuleType):
             self.create = True
