@@ -2162,6 +2162,15 @@ class AttributeErrorTests(unittest.TestCase):
         self.assertIs(cm.exception.obj, nameless_mod)
         self.assertEqual(cm.exception.name, "missing4")
 
+        nameless_mod = ModuleType("broken")
+        nameless_mod.__dict__["__name__"] = 10j
+        nameless_mod.__getattr__ = raise_with_name
+        with self.assertRaises(AttributeError) as cm:
+            getattr(nameless_mod, "missing4")
+        self.assertEqual(str(cm.exception), "module has no attribute 'missing4'")
+        self.assertIs(cm.exception.obj, nameless_mod)
+        self.assertEqual(cm.exception.name, "missing4")
+
     # Note: name suggestion tests live in `test_traceback`.
 
 

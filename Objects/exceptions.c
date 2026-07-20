@@ -2741,16 +2741,17 @@ AttributeError_str(PyObject *op)
         if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__name__), &modname) < 0) {
             goto error;
         }
-        if (modname) {
+        if (modname && PyUnicode_Check(modname)) {
             result = PyUnicode_FromFormat("module '%U' has no attribute '%U'",
                                           modname, name);
             Py_DECREF(modname);
         } else {
+            Py_XDECREF(modname);
             result = PyUnicode_FromFormat("module has no attribute '%U'", name);
         }
     } else if (PyType_Check(obj)) {
         result = PyUnicode_FromFormat("type object '%N' has no attribute '%U'",
-                                      _PyType_CAST(obj), name);
+                                      obj, name);
     } else {
         result = PyUnicode_FromFormat("'%T' object has no attribute '%U'",
                                       obj, name);
