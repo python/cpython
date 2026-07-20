@@ -3051,7 +3051,7 @@ Buffer Object Structures
 
    * Resource cleanup when the counter reaches zero must be done atomically,
      as the final release may race with concurrent releases from other
-     threads and dellocation must only happen once.
+     threads and deallocation must only happen once.
 
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
    track of buffer-specific resources. This field is guaranteed to remain
