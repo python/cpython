@@ -900,7 +900,9 @@ def has_dualstack_ipv6():
     try:
         with socket(AF_INET6, SOCK_STREAM) as sock:
             sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
-            return True
+            # On some platforms (e.g. DragonFly BSD) setting IPV6_V6ONLY to 0
+            # silently has no effect, so check that it was actually cleared.
+            return sock.getsockopt(IPPROTO_IPV6, IPV6_V6ONLY) == 0
     except error:
         return False
 
