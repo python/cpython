@@ -1269,8 +1269,14 @@ os.does_not_exist
             pass
         spec = Spec()
 
-        spec.name = "sys"
-        self.assertIs(_imp.create_builtin(spec), sys)
+        # Reloading a core module copies back the module dict snapshot taken
+        # when it was first initialized, in which __spec__ and __loader__ are
+        # still None.  Swap them back so the rest of the suite sees a sys that
+        # carries its import metadata.
+        with (swap_attr(sys, '__spec__', sys.__spec__),
+              swap_attr(sys, '__loader__', sys.__loader__)):
+            spec.name = "sys"
+            self.assertIs(_imp.create_builtin(spec), sys)
 
         spec.name = None
         with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
