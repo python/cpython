@@ -57,6 +57,9 @@ SOLARIS = sys.platform.startswith("sunos")
 # SCM_RIGHTS control message when several are sent in a single sendmsg().
 BSD_COMBINES_SCM_RIGHTS = sys.platform.startswith(
     ("netbsd", "openbsd", "dragonfly"))
+# OpenBSD and DragonFly fail recvmsg() with EMSGSIZE, instead of setting
+# MSG_CTRUNC, when the ancillary data buffer is too small for a cmsghdr.
+CMSG_TRUNC_RAISES_EMSGSIZE = sys.platform.startswith(("openbsd", "dragonfly"))
 WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
@@ -4265,6 +4268,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     # (but still too small) buffer sizes.
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTrunc1(self):
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG), 1))
 
@@ -4273,6 +4277,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTrunc2Int(self):
         # The cmsghdr structure has at least three members, two of
         # which are ints, so we still shouldn't see any ancillary
@@ -4285,6 +4290,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen0Minus1(self):
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG),
                                                  socket.CMSG_LEN(0) - 1))
@@ -4322,6 +4328,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.checkFDs(fds)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen0(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(0), maxdata=0)
 
@@ -4330,6 +4337,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen0Plus1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(0) + 1, maxdata=1)
 
@@ -4338,6 +4346,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(2)
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(SIZEOF_INT),
                                  maxdata=SIZEOF_INT)
@@ -4348,6 +4357,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
 
     @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testCmsgTruncLen2Minus1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(2 * SIZEOF_INT) - 1,
                                  maxdata=(2 * SIZEOF_INT) - 1)
@@ -4620,6 +4630,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
     # (but still too small) buffer sizes.
 
     @requireAttrs(socket, "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSingleCmsgTrunc1(self):
         self.checkHopLimitTruncatedHeader(ancbufsize=1)
 
@@ -4629,6 +4640,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.sendToServer(MSG)
 
     @requireAttrs(socket, "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSingleCmsgTrunc2Int(self):
         self.checkHopLimitTruncatedHeader(ancbufsize=2 * SIZEOF_INT)
 
@@ -4638,6 +4650,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.sendToServer(MSG)
 
     @requireAttrs(socket, "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSingleCmsgTruncLen0Minus1(self):
         self.checkHopLimitTruncatedHeader(ancbufsize=socket.CMSG_LEN(0) - 1)
 
@@ -4647,6 +4660,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.sendToServer(MSG)
 
     @requireAttrs(socket, "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSingleCmsgTruncInData(self):
         # Test truncation of a control message inside its associated
         # data.  The message may be returned with its data truncated,
@@ -4719,6 +4733,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSecondCmsgTrunc1(self):
         self.checkTruncatedSecondHeader(socket.CMSG_SPACE(SIZEOF_INT) + 1)
 
@@ -4729,6 +4744,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSecondCmsgTrunc2Int(self):
         self.checkTruncatedSecondHeader(socket.CMSG_SPACE(SIZEOF_INT) +
                                         2 * SIZEOF_INT)
@@ -4740,6 +4756,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSecondCmsgTruncLen0Minus1(self):
         self.checkTruncatedSecondHeader(socket.CMSG_SPACE(SIZEOF_INT) +
                                         socket.CMSG_LEN(0) - 1)
@@ -4751,6 +4768,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
+    @unittest.skipIf(CMSG_TRUNC_RAISES_EMSGSIZE, "skipping, see gh-154240")
     def testSecondCmsgTruncInData(self):
         # Test truncation of the second of two control messages inside
         # its associated data.
