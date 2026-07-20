@@ -223,6 +223,9 @@ class Completion(unittest.TestCase):
         readline = import_module("readline")
         if readline.backend == "editline":
             raise unittest.SkipTest("libedit readline is not supported")
+        if sys.platform.startswith("openbsd"):
+            # OpenBSD's readline does not honor "completion-query-items 0".
+            raise unittest.SkipTest("OpenBSD readline hangs on completion")
 
     def write_input(self, input_, env=None):
         script = textwrap.dedent("""
