@@ -233,7 +233,6 @@ class SubprocessMixin:
             # expect 1 but sometimes get 0
         else:
             self.assertEqual(-signal.SIGKILL, returncode)
-        self.loop.run_until_complete(proc.stdout.read())
 
     def test_terminate(self):
         args = PROGRAM_BLOCKED
