@@ -579,6 +579,42 @@ class TestPartial:
         with self.assertRaises(RuntimeError):
             result = p(**{BadStr("poison"): "new_value"})
 
+    def test_call_safety_against_reentrant_mutation(self):
+        # gh-154189: partial_vectorcall cached a raw pointer to pto->args
+        # before the keyword merge loop. If a key's __hash__ reentrantly
+        # called __setstate__, pto->args was freed and the pointer dangled.
+        import gc
+
+        def original(*args, **kwargs):
+            return "original"
+
+        def replacement(*args, **kwargs):
+            return "replacement"
+
+        g = None
+
+        class EvilKey(str):
+            armed = False
+            def __hash__(self):
+                if EvilKey.armed and g is not None:
+                    EvilKey.armed = False
+                    g.__setstate__((replacement, (), {"k": 1}, None))
+                    gc.collect()
+                return str.__hash__(self)
+            def __eq__(self, other):
+                return str.__eq__(self, other)
+
+        stored = tuple(object() for _ in range(5))
+        g = self.partial(original, *stored, k=0)
+        del stored
+
+        ek = EvilKey("zzz")
+        kwargs = {ek: 2}
+        EvilKey.armed = True
+        # Must not crash (use-after-free in the C partial before the fix).
+        g(**kwargs)
+        self.assertFalse(EvilKey.armed)  # the re-entrant __setstate__ ran
+
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
     if c_functools:

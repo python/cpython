@@ -1,0 +1,3 @@
+Fix use-after-free in :func:`functools.partial` vectorcall path. A reentrant
+``__hash__`` on a keyword argument key could trigger ``__setstate__`` on the
+partial mid-call, freeing the cached args tuple and leaving a dangling pointer.
