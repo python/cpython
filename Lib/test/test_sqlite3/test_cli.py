@@ -378,10 +378,10 @@ class Completion(unittest.TestCase):
         self.assertIn("main", candidates)
         self.assertIn("temp", candidates)
 
-    @unittest.skipIf(sys.platform.startswith("freebsd"),
+    @unittest.skipIf(sys.platform.startswith(("freebsd", "dragonfly", "sunos")),
                     "Two actual tabs are inserted when there are no matching"
                     " completions in the pseudo-terminal opened by run_pty()"
-                    " on FreeBSD")
+                    " on this platform")
     def test_complete_no_match(self):
         input_ = b"xyzzy\t\t\b\b\b\b\b\b\b.quit\n"
         # Set NO_COLOR to disable coloring for self.PS1.
