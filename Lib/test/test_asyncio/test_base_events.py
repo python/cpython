@@ -29,7 +29,7 @@ class CustomError(Exception):
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 def mock_socket_module():
@@ -1092,7 +1092,11 @@ class BaseEventLoopTests(test_utils.TestCase):
                 await asyncio.sleep(1)
             sock.connect(address)
 
-        loop = asyncio.new_event_loop()
+        # gh-151540: use a selector event loop instead of the platform
+        # default; the Windows proactor loop would register the mocked
+        # socket with a real IOCP handle instead of the mocked
+        # _add_reader/_add_writer below.
+        loop = asyncio.SelectorEventLoop()
         loop._add_writer = mock.Mock()
         loop._add_writer = mock.Mock()
         loop._add_reader = mock.Mock()
@@ -1124,7 +1128,8 @@ class BaseEventLoopTests(test_utils.TestCase):
                 await asyncio.sleep(1)
             sock.connect(address)
 
-        loop = asyncio.new_event_loop()
+        # gh-151540: see test_create_connection_happy_eyeballs above.
+        loop = asyncio.SelectorEventLoop()
         loop._add_writer = mock.Mock()
         loop._add_writer = mock.Mock()
         loop._add_reader = mock.Mock()
@@ -1281,6 +1286,47 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             with self.assertRaises(asyncio.TimeoutError):
                 self.loop.run_until_complete(coro)
             self.assertTrue(sock.close.called)
+
+    def test_create_connection_sock_transport_error_closes_sock(self):
+        # gh-153133: a user-provided socket is closed if the transport is
+        # never created.
+        sock = mock.Mock()
+        sock.type = socket.SOCK_STREAM
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.create_connection(factory, sock=sock)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+    @patch_socket
+    def test_create_connection_transport_error_closes_sock(self, m_socket):
+        # gh-153133: an internally created socket is closed if the transport
+        # is never created.
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+
+        def getaddrinfo(*args, **kw):
+            fut = self.loop.create_future()
+            addr = (socket.AF_INET, socket.SOCK_STREAM, 0, '',
+                    ('127.0.0.1', 80))
+            fut.set_result([addr])
+            return fut
+        self.loop.getaddrinfo = getaddrinfo
+
+        async def sock_connect(sock, address):
+            return None
+
+        def factory():
+            raise ZeroDivisionError
+
+        with mock.patch.object(self.loop, 'sock_connect', sock_connect):
+            coro = self.loop.create_connection(factory, '127.0.0.1', 80)
+            with self.assertRaises(ZeroDivisionError):
+                self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
 
     @patch_socket
     def test_create_connection_happy_eyeballs_empty_exceptions(self, m_socket):
@@ -1696,7 +1742,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             server_side=False,
             server_hostname='python.org',
             ssl_handshake_timeout=handshake_timeout,
-            ssl_shutdown_timeout=shutdown_timeout)
+            ssl_shutdown_timeout=shutdown_timeout,
+            context=ANY)
         # Next try an explicit server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
@@ -1711,7 +1758,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             server_side=False,
             server_hostname='perl.com',
             ssl_handshake_timeout=handshake_timeout,
-            ssl_shutdown_timeout=shutdown_timeout)
+            ssl_shutdown_timeout=shutdown_timeout,
+            context=ANY)
         # Finally try an explicit empty server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
@@ -1726,7 +1774,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 server_side=False,
                 server_hostname='',
                 ssl_handshake_timeout=handshake_timeout,
-                ssl_shutdown_timeout=shutdown_timeout)
+                ssl_shutdown_timeout=shutdown_timeout,
+                context=ANY)
 
     def test_create_connection_no_ssl_server_hostname_errors(self):
         # When not using ssl, server_hostname must be None.
@@ -2104,7 +2153,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             constants.ACCEPT_RETRY_DELAY,
             # self.loop._start_serving
             mock.ANY,
-            MyProto, sock, None, None, mock.ANY, mock.ANY, mock.ANY)
+            MyProto, sock, None, None, mock.ANY, mock.ANY, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
         async def simple_coroutine():

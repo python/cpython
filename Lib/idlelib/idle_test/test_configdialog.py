@@ -1544,6 +1544,17 @@ class VarTraceTest(unittest.TestCase):
         self.assertEqual(changes['main']['section']['option'], '42')
         changes.clear()
 
+        # gh-83653: a blank int entry is not saved as bad config data.
+        sv = StringVar(root)
+        cb = self.tracers.make_callback(sv, ('main', 'section', 'option'))
+        sv.set('')
+        cb()
+        self.assertNotIn('section', changes['main'])
+        sv.set('5')
+        cb()
+        self.assertEqual(changes['main']['section']['option'], '5')
+        changes.clear()
+
     def test_attach_detach(self):
         tr = self.tracers
         iv = tr.add(self.iv, self.var_changed_increment)

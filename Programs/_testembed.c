@@ -10,6 +10,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_lock.h"          // PyEvent
 #include "pycore_pythread.h"      // PyThread_start_joinable_thread()
+#include "pycore_pystate.h"       // _PyInterpreterState_GuardCountdown
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
@@ -40,8 +41,13 @@ char **main_argv;
 #define PROGRAM "test_embed"
 
 /* Use path starting with "./" avoids a search along the PATH */
-#define PROGRAM_NAME L"./_testembed"
-#define PROGRAM_NAME_UTF8 "./_testembed"
+#ifdef __CYGWIN__
+#  define PROGRAM_NAME L"./_testembed.exe"
+#  define PROGRAM_NAME_UTF8 "./_testembed.exe"
+#else
+#  define PROGRAM_NAME L"./_testembed"
+#  define PROGRAM_NAME_UTF8 "./_testembed"
+#endif
 
 #define INIT_LOOPS 4
 
@@ -55,6 +61,53 @@ static void error(const char *msg)
 {
     fprintf(stderr, "ERROR: %s\n", msg);
     fflush(stderr);
+}
+
+
+static void error_fmt(const char *format, ...)
+{
+    va_list vargs;
+    va_start(vargs, format);
+    fprintf(stderr, "ERROR: ");
+    vfprintf(stderr, format, vargs);
+    fprintf(stderr, "\n");
+    va_end(vargs);
+    fflush(stderr);
+}
+
+
+static wchar_t* py_getenv(const char *name)
+{
+    const char *env = getenv(name);
+    if (env == NULL) {
+        error_fmt("need %s env var", name);
+        return NULL;
+    }
+
+    wchar_t *result = Py_DecodeLocale(env, NULL);
+    if (result == NULL) {
+        error("Py_DecodeLocale() failed");
+        return NULL;
+    }
+    return result;
+}
+
+
+static wchar_t* get_cmdline_arg(const char *arg_name)
+{
+    if (main_argc < 3) {
+        const char *test = main_argv[1];
+        fprintf(stderr, "usage: %s %s %s\n", PROGRAM, test, arg_name);
+        return NULL;
+    }
+    const char *arg = main_argv[2];
+
+    wchar_t *result = Py_DecodeLocale(arg, NULL);
+    if (result == NULL) {
+        error_fmt("failed to decode %s command line argument", arg_name);
+        return NULL;
+    }
+    return result;
 }
 
 
@@ -1558,14 +1611,8 @@ fail:
 
 static int test_init_setpath(void)
 {
-    char *env = getenv("TESTPATH");
-    if (!env) {
-        error("missing TESTPATH env var");
-        return 1;
-    }
-    wchar_t *path = Py_DecodeLocale(env, NULL);
+    wchar_t *path = py_getenv("TESTPATH");
     if (path == NULL) {
-        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1591,14 +1638,8 @@ static int test_init_setpath_config(void)
         Py_ExitStatusException(status);
     }
 
-    char *env = getenv("TESTPATH");
-    if (!env) {
-        error("missing TESTPATH env var");
-        return 1;
-    }
-    wchar_t *path = Py_DecodeLocale(env, NULL);
+    wchar_t *path = py_getenv("TESTPATH");
     if (path == NULL) {
-        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1620,14 +1661,8 @@ static int test_init_setpath_config(void)
 
 static int test_init_setpythonhome(void)
 {
-    char *env = getenv("TESTHOME");
-    if (!env) {
-        error("missing TESTHOME env var");
-        return 1;
-    }
-    wchar_t *home = Py_DecodeLocale(env, NULL);
+    wchar_t *home = py_getenv("TESTHOME");
     if (home == NULL) {
-        error("failed to decode TESTHOME");
         return 1;
     }
     Py_SetPythonHome(home);
@@ -1645,14 +1680,8 @@ static int test_init_is_python_build(void)
 {
     // gh-91985: in-tree builds fail to check for build directory landmarks
     // under the effect of 'home' or PYTHONHOME environment variable.
-    char *env = getenv("TESTHOME");
-    if (!env) {
-        error("missing TESTHOME env var");
-        return 1;
-    }
-    wchar_t *home = Py_DecodeLocale(env, NULL);
+    wchar_t *home = py_getenv("TESTHOME");
     if (home == NULL) {
-        error("failed to decode TESTHOME");
         return 1;
     }
 
@@ -1666,7 +1695,7 @@ static int test_init_is_python_build(void)
     // Use an impossible value so we can detect whether it isn't updated
     // during initialization.
     config._is_python_build = INT_MAX;
-    env = getenv("NEGATIVE_ISPYTHONBUILD");
+    char *env = getenv("NEGATIVE_ISPYTHONBUILD");
     if (env && strcmp(env, "0") != 0) {
         config._is_python_build = INT_MIN;
     }
@@ -1991,6 +2020,111 @@ static int test_init_run_main(void)
 }
 
 
+static int test_init_run_main_exitcode(Py_ssize_t argc, wchar_t * const *argv)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config.parse_argv = 1;
+    config_set_argv(&config, argc, argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+
+    init_from_config_clear(&config);
+
+    int exitcode = Py_RunMain();
+    if (exitcode != 123) {
+        error_fmt("Py_RunMain() returned %i, expected 123", exitcode);
+        return 1;
+    }
+
+    // If Py_RunMain() calls Py_Exit(), this message is not written to stdout
+    printf("ok! Py_RunMain() returned 123\n");
+
+    return 0;
+}
+
+
+static int test_init_run_main_script_exitcode(void)
+{
+    wchar_t *filename = get_cmdline_arg("FILENAME");
+    if (filename == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", filename};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(filename);
+
+    return res;
+}
+
+
+static int test_init_run_main_module_exitcode(void)
+{
+    wchar_t *module = get_cmdline_arg("MODULE");
+    if (module == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", L"-m", module};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(module);
+
+    return res;
+}
+
+
+static int test_init_run_main_interactive_exitcode(void)
+{
+    wchar_t* argv[] = {L"python3", L"-i"};
+    return test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+}
+
+
+static int test_init_run_main_code_exitcode(void)
+{
+    wchar_t *code = get_cmdline_arg("CODE");
+    if (code == NULL) {
+        return 1;
+    }
+
+    wchar_t* argv[] = {L"python3", L"-c", code};
+    int res = test_init_run_main_exitcode(Py_ARRAY_LENGTH(argv), argv);
+    PyMem_RawFree(code);
+
+    return res;
+}
+
+
+static int test_init_main(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    configure_init_main(&config);
+    config._init_main = 0;
+    init_from_config_clear(&config);
+
+    assert(Py_IsInitialized() == 0);
+
+    /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
+    int res = PyRun_SimpleString(
+        "import sys; "
+        "print('Run Python code before _Py_InitializeMain', "
+               "file=sys.stderr)");
+    if (res < 0) {
+        exit(1);
+    }
+
+    PyStatus status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    return Py_RunMain();
+}
+
+
 static int test_run_main(void)
 {
     PyConfig config;
@@ -2174,6 +2308,52 @@ static int test_init_in_background_thread(void)
         return -1;
     }
     return PyThread_join_thread(handle);
+}
+
+/* gh-146302: Py_IsInitialized() must not return true during site import. */
+static int _initialized_during_site_import = -1;  /* -1 = not observed */
+
+static int hook_check_initialized_on_site_import(
+    const char *event, PyObject *args, void *userData)
+{
+    if (strcmp(event, "import") == 0 && args != NULL) {
+        PyObject *name = PyTuple_GetItem(args, 0);
+        if (name != NULL && PyUnicode_Check(name)
+            && PyUnicode_CompareWithASCIIString(name, "site") == 0
+            && _initialized_during_site_import == -1)
+        {
+            _initialized_during_site_import = Py_IsInitialized();
+        }
+    }
+    return 0;
+}
+
+static int test_isinitialized_false_during_site_import(void)
+{
+    _initialized_during_site_import = -1;
+
+    /* Register audit hook before initialization */
+    PySys_AddAuditHook(hook_check_initialized_on_site_import, NULL);
+
+    _testembed_initialize();
+
+    if (_initialized_during_site_import == -1) {
+        error("audit hook never observed site import");
+        Py_Finalize();
+        return 1;
+    }
+    if (_initialized_during_site_import != 0) {
+        error("Py_IsInitialized() was true during site import");
+        Py_Finalize();
+        return 1;
+    }
+    if (!Py_IsInitialized()) {
+        error("Py_IsInitialized() was false after Py_Initialize()");
+        return 1;
+    }
+
+    Py_Finalize();
+    return 0;
 }
 
 
@@ -2595,6 +2775,214 @@ test_gilstate_after_finalization(void)
     return PyThread_detach_thread(handle);
 }
 
+
+const char *THREAD_CODE = \
+    "import time\n"
+    "time.sleep(0.2)\n"
+    "def fib(n):\n"
+    "  if n <= 1:\n"
+    "    return n\n"
+    "  else:\n"
+    "    return fib(n - 1) + fib(n - 2)\n"
+    "fib(10)";
+
+typedef struct {
+    void *argument;
+    int done;
+    PyEvent event;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyThreadStateToken *tokens[4];
+    PyInterpreterGuard *guard = data->argument;
+    tokens[0] = PyThreadState_Ensure(guard);
+    tokens[1] = PyThreadState_Ensure(guard);
+    tokens[2] = PyThreadState_Ensure(guard);
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    tokens[3] = PyThreadState_Ensure(guard);
+    assert(tokens[0] != NULL);
+    assert(tokens[1] != NULL);
+    assert(tokens[2] != NULL);
+    assert(tokens[3] != NULL);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    PyThreadState_Release(tokens[3]);
+    PyGILState_Release(gstate);
+    PyThreadState_Release(tokens[2]);
+    PyThreadState_Release(tokens[1]);
+    PyThreadState_Release(tokens[0]);
+    _Py_atomic_store_int(&data->done, 1);
+    PyInterpreterGuard_Close(guard);
+}
+
+static int
+test_thread_state_ensure(void)
+{
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+    assert(guard != NULL);
+    ThreadData data = { guard };
+    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterGuard_Close(guard);
+        return -1;
+    }
+    // We hold an interpreter guard, so we don't
+    // have to worry about the interpreter shutting down before
+    // we finalize.
+    Py_Finalize();
+    assert(_Py_atomic_load_int(&data.done) == 1);
+    PyThread_join_thread(handle);
+    return 0;
+}
+
+static int
+test_main_interpreter_view(void)
+{
+    PyInterpreterView *view = PyInterpreterView_FromMain();
+    assert(view != NULL);
+    // These should fail -- the main interpreter is not available yet.
+    assert(PyInterpreterGuard_FromView(view) == NULL);
+    assert(PyThreadState_EnsureFromView(view) == NULL);
+
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    // Main interpreter is initialized and ready at this point.
+
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
+    assert(guard != NULL);
+    PyInterpreterGuard_Close(guard);
+
+    Py_Finalize();
+
+    // We shouldn't be able to get locks for the interpreter now
+    guard = PyInterpreterGuard_FromView(view);
+    assert(guard == NULL);
+
+    PyInterpreterView_Close(view);
+
+    return 0;
+}
+
+static void
+do_tstate_ensure_from_view(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyInterpreterView *view = data->argument;
+    assert(view != NULL);
+    PyThreadStateToken *token = PyThreadState_EnsureFromView(view);
+    assert(token != NULL);
+    _PyEvent_Notify(&data->event);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    _Py_atomic_store_int(&data->done, 1);
+    PyThreadState_Release(token);
+}
+
+static int
+test_thread_state_ensure_from_view(void)
+{
+    _testembed_initialize();
+    assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterView *view = PyInterpreterView_FromCurrent();
+    assert(view != NULL);
+
+    ThreadData data = { view };
+    if (PyThread_start_joinable_thread(do_tstate_ensure_from_view, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterView_Close(view);
+        return -1;
+    }
+
+    PyEvent_Wait(&data.event);
+    Py_Finalize();
+    assert(_Py_atomic_load_int(&data.done) == 1);
+    PyThread_join_thread(handle);
+    return 0;
+}
+
+#define NUM_THREADS 4
+
+static void
+stress_func(void *arg)
+{
+    PyInterpreterGuard *guard = (PyInterpreterGuard *)arg;
+
+    for (int i = 0; i < 1000; ++i) {
+        assert(guard != NULL);
+        PyThreadStateToken *token = PyThreadState_Ensure(guard);
+        assert(token != NULL);
+
+        PyGILState_STATE gstate = PyGILState_Ensure();
+
+        PyInterpreterView *view = PyInterpreterView_FromCurrent();
+        assert(view != NULL);
+
+        PyThreadStateToken *token2 = PyThreadState_EnsureFromView(view);
+        assert(token2 != NULL);
+        PyThreadState_Release(token2);
+
+        PyGILState_Release(gstate);
+
+        PyThreadState_Release(token);
+
+        PyInterpreterGuard_Close(guard);
+
+        guard = PyInterpreterGuard_FromView(view);
+        PyInterpreterView_Close(view);
+
+        if (guard == NULL) {
+            // The interpreter is shutting down. Bail out now.
+            return;
+        }
+    }
+
+    PyInterpreterGuard_Close(guard);
+}
+
+static int
+test_concurrent_finalization_stress(void)
+{
+    for (int j = 0; j < 50; ++j) {
+        _testembed_initialize();
+        assert(_PyInterpreterState_GuardCountdown(_PyInterpreterState_GET()) == 0);
+        PyThread_handle_t handles[NUM_THREADS];
+        PyThread_ident_t idents[NUM_THREADS];
+        PyInterpreterGuard *guards[NUM_THREADS];
+
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            guards[i] = PyInterpreterGuard_FromCurrent();
+            assert(guards[i] != NULL);
+            if (PyThread_start_joinable_thread(stress_func, guards[i], &idents[i], &handles[i]) < 0) {
+                for (int x = 0; x < i; ++x) {
+                    PyInterpreterGuard_Close(guards[x]);
+                    PyThread_detach_thread(handles[x]);
+                }
+                return -1;
+            }
+        }
+
+        Py_Finalize();
+
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            PyThread_join_thread(handles[i]);
+        }
+    }
+
+    return 0;
+}
+
+#undef NUM_THREADS
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -2649,6 +3037,11 @@ static struct TestCase TestCases[] = {
     {"test_preinit_parse_argv", test_preinit_parse_argv},
     {"test_preinit_dont_parse_argv", test_preinit_dont_parse_argv},
     {"test_init_run_main", test_init_run_main},
+    {"test_init_run_main_code_exitcode", test_init_run_main_code_exitcode},
+    {"test_init_run_main_script_exitcode", test_init_run_main_script_exitcode},
+    {"test_init_run_main_module_exitcode", test_init_run_main_module_exitcode},
+    {"test_init_run_main_interactive_exitcode", test_init_run_main_interactive_exitcode},
+    {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
@@ -2665,6 +3058,7 @@ static struct TestCase TestCases[] = {
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
     {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
     {"test_init_in_background_thread", test_init_in_background_thread},
+    {"test_isinitialized_false_during_site_import", test_isinitialized_false_during_site_import},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
@@ -2687,6 +3081,10 @@ static struct TestCase TestCases[] = {
     {"test_create_module_from_initfunc", test_create_module_from_initfunc},
     {"test_inittab_submodule_multiphase", test_inittab_submodule_multiphase},
     {"test_inittab_submodule_singlephase", test_inittab_submodule_singlephase},
+    {"test_thread_state_ensure", test_thread_state_ensure},
+    {"test_main_interpreter_view", test_main_interpreter_view},
+    {"test_thread_state_ensure_from_view", test_thread_state_ensure_from_view},
+    {"test_concurrent_finalization_stress", test_concurrent_finalization_stress},
     {NULL, NULL}
 };
 
