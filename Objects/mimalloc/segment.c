@@ -1286,6 +1286,7 @@ static bool mi_segment_check_free(mi_segment_t* segment, size_t slices_needed, s
         _mi_stat_decrease(&tld->stats->pages_abandoned, 1);
 #ifdef Py_GIL_DISABLED
         page->qsbr_goal = 0;
+        mi_assert_internal(page->qsbr_node.next == NULL);
 #endif
         segment->abandoned--;
         slice = mi_segment_page_clear(page, tld); // re-assign slice due to coalesce!
@@ -1361,6 +1362,7 @@ static mi_segment_t* mi_segment_reclaim(mi_segment_t* segment, mi_heap_t* heap, 
         // if everything free by now, free the page
 #ifdef Py_GIL_DISABLED
         page->qsbr_goal = 0;
+        mi_assert_internal(page->qsbr_node.next == NULL);
 #endif
         slice = mi_segment_page_clear(page, tld);   // set slice again due to coalesceing
       }

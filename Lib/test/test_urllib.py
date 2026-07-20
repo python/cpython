@@ -10,6 +10,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import control_characters_c0
 import os
 import socket
 try:
@@ -466,6 +467,25 @@ Connection: close
             finally:
                 self.unfakehttp()
 
+    def test_http_error_attribute_values(self):
+        hdrs = {
+            "Authorization": "Bearer foobar",
+            "Accept": "application/json"
+        }
+        err = urllib.error.HTTPError("http://something", 404, "foo", hdrs, None)
+        self.assertEqual(err.filename, "http://something")
+        self.assertEqual(err.code, 404)
+        self.assertEqual(err.msg, "foo")
+        self.assertEqual(err.reason, "foo")
+        self.assertEqual(err.hdrs, hdrs)
+        self.assertEqual(err.headers, hdrs)
+        err.close()
+
+    def test_http_error_default_fp(self):
+        err = urllib.error.HTTPError("http://something", 404, "foo", {}, None)
+        self.assertIsInstance(err.fp, io.BytesIO)
+        err.close()
+
     def test_empty_socket(self):
         # urlopen() raises OSError if the underlying socket does not send any
         # data. (#1680230)
@@ -511,6 +531,11 @@ Connection: close
             urllib.request.urlopen('ftp://localhost/a/file/which/doesnot/exists.py')
         self.assertFalse(e.exception.filename)
         self.assertTrue(e.exception.reason)
+
+    def test_url_error_stringified(self):
+        reason = 'sixseven'
+        err = urllib.error.URLError(reason)
+        self.assertEqual(str(err), f'<urlopen error {reason}>')
 
 
 class urlopen_DataTests(unittest.TestCase):
@@ -590,6 +615,13 @@ class urlopen_DataTests(unittest.TestCase):
         # missing padding character
         self.assertRaises(ValueError,urllib.request.urlopen,'data:;base64,Cg=')
 
+    def test_invalid_mediatype(self):
+        for c0 in control_characters_c0():
+            self.assertRaises(ValueError,urllib.request.urlopen,
+                              f'data:text/html;{c0},data')
+        for c0 in control_characters_c0():
+            self.assertRaises(ValueError,urllib.request.urlopen,
+                              f'data:text/html{c0};base64,ZGF0YQ==')
 
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
@@ -1526,6 +1558,14 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
         self.assertEqual(fn('data:blah'), 'data:blah')
         self.assertEqual(fn('data://blah'), f'data:{sep}{sep}blah')
+        self.assertEqual(fn('foo?bar'), 'foo')
+        self.assertEqual(fn('foo#bar'), 'foo')
+        self.assertEqual(fn('foo?bar=baz'), 'foo')
+        self.assertEqual(fn('foo?bar#baz'), 'foo')
+        self.assertEqual(fn('foo%3Fbar'), 'foo?bar')
+        self.assertEqual(fn('foo%23bar'), 'foo#bar')
+        self.assertEqual(fn('foo%3Fbar%3Dbaz'), 'foo?bar=baz')
+        self.assertEqual(fn('foo%3Fbar%23baz'), 'foo?bar#baz')
 
     def test_url2pathname_require_scheme(self):
         sep = os.path.sep
@@ -1582,6 +1622,10 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_win(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/C:/'), 'C:\\')
+        self.assertEqual(fn('//C:'), 'C:')
+        self.assertEqual(fn('//C:/'), 'C:\\')
+        self.assertEqual(fn('//C:\\'), 'C:\\')
+        self.assertEqual(fn('//C:80/'), 'C:80\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
         self.assertEqual(fn('///C:/'), 'C:\\')

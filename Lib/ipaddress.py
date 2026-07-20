@@ -8,9 +8,6 @@ and networks.
 
 """
 
-__version__ = '1.0'
-
-
 import functools
 
 IPV4LENGTH = 32
@@ -1122,6 +1119,47 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
+    def next_network(self, next_prefix=None):
+        """Get the next closest network with a specific prefix.
+
+        Args:
+            next_prefix: The desired next prefix length, if not specified the
+            same self.prefixlen will be used
+
+        Returns:
+            An IPv(4|6) Network object of the next closest network.
+
+        """
+        if next_prefix is None:
+            next_prefix = self.prefixlen
+            new_netmask = self.netmask
+        else:
+            if next_prefix < 1 or next_prefix > self.max_prefixlen:
+                raise ValueError(
+                    f"next prefix must be between 1 and {self.max_prefixlen}"
+                )
+            new_netmask, _ = self._make_netmask(next_prefix)
+
+        bit_shift = (
+            self.max_prefixlen - next_prefix
+            if next_prefix <= self.prefixlen
+            else self.max_prefixlen - self.prefixlen
+        )
+
+        next_ip = (
+            ((new_netmask._ip & self.network_address._ip) >> bit_shift) + 1
+        ) << bit_shift
+
+        try:
+            return self.__class__(
+                f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
+            )
+        except OverflowError:
+            raise ValueError(
+                f"out of address space, cannot make another /{next_prefix} "
+                "network"
+            ) from None
+
 
 class _BaseConstants:
 
@@ -1479,6 +1517,10 @@ class IPv4Interface(IPv4Address):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
                           self.hostmask)
 
+    @property
+    def is_unspecified(self):
+        return self._ip == 0 and self.network.is_unspecified
+
 
 class IPv4Network(_BaseV4, _BaseNetwork):
 
@@ -1545,7 +1587,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
         elif self._prefixlen == (self.max_prefixlen):
-            self.hosts = lambda: [IPv4Address(addr)]
+            self.hosts = lambda: iter((IPv4Address(addr),))
 
     @property
     @functools.lru_cache()
@@ -2336,7 +2378,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
         elif self._prefixlen == self.max_prefixlen:
-            self.hosts = lambda: [IPv6Address(addr)]
+            self.hosts = lambda: iter((IPv6Address(addr),))
 
     def hosts(self):
         """Generate Iterator over usable hosts in a network.
@@ -2415,3 +2457,12 @@ class _IPv6Constants:
 
 IPv6Address._constants = _IPv6Constants
 IPv6Network._constants = _IPv6Constants
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

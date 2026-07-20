@@ -1,5 +1,10 @@
 # This file contains suppressions for the default (with GIL) build.
-# reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+#
+# Reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+#
+# When adding a suppression, include a comment referencing a GitHub issue
+# that describes how to reproduce the race and includes the relevant TSan
+# output.
 
-# https://gist.github.com/mpage/daaf32b39180c1989572957b943eb665
-thread:pthread_create
+# There are currently no active suppressions. This file is kept so tooling
+# that expects it can still find it.

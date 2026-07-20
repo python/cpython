@@ -62,7 +62,6 @@ async def staggered_race(coro_fns, delay, *, loop=None):
           coroutine's entry is ``None``.
 
     """
-    # TODO: when we have aiter() and anext(), allow async iterables in coro_fns.
     loop = loop or events.get_running_loop()
     parent_task = tasks.current_task(loop)
     enum_coro_fns = enumerate(coro_fns)

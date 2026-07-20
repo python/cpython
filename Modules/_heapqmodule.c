@@ -247,6 +247,7 @@ _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section heap
 _heapq.heappushpop
 
@@ -262,7 +263,7 @@ a separate call to heappop().
 
 static PyObject *
 _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=67231dc98ed5774f input=db05c81b1dd92c44]*/
+/*[clinic end generated code: output=67231dc98ed5774f input=491178a1c7d417ba]*/
 {
     PyObject *returnitem;
     int cmp;
@@ -463,11 +464,11 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
         return -1;
     }
 
-    /* Bubble up the smaller child until hitting a leaf. */
+    /* Bubble up the larger child until hitting a leaf. */
     arr = _PyList_ITEMS(heap);
     limit = endpos >> 1;         /* smallest pos that has no child */
     while (pos < limit) {
-        /* Set childpos to index of smaller child.   */
+        /* Set childpos to index of larger child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
         if (childpos + 1 < endpos) {
             PyObject* a = arr[childpos + 1];
@@ -487,7 +488,7 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
                 return -1;
             }
         }
-        /* Move the smaller child up. */
+        /* Move the larger child up. */
         tmp1 = arr[childpos];
         tmp2 = arr[pos];
         FT_ATOMIC_STORE_PTR_RELAXED(arr[childpos], tmp2);
@@ -593,13 +594,13 @@ _heapq.heappushpop_max
 
 Maxheap variant of heappushpop.
 
-The combined action runs more efficiently than heappush_max() followed by
-a separate call to heappop_max().
+The combined action runs more efficiently than heappush_max()
+followed by a separate call to heappop_max().
 [clinic start generated code]*/
 
 static PyObject *
 _heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
-/*[clinic end generated code: output=ff0019f0941aca0d input=24d0defa6fd6df4a]*/
+/*[clinic end generated code: output=ff0019f0941aca0d input=52030929667a4c08]*/
 {
     PyObject *returnitem;
     int cmp;
@@ -786,6 +787,7 @@ heapq_exec(PyObject *m)
 }
 
 static struct PyModuleDef_Slot heapq_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, heapq_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

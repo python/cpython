@@ -18,7 +18,7 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from . import curses
+from .terminfo import TermInfo
 from .trace import trace
 from .base_eventqueue import BaseEventQueue
 from termios import tcgetattr, VERASE
@@ -54,22 +54,23 @@ CTRL_ARROW_KEYCODES= {
     b'\033Oc': 'ctrl right',
 }
 
-def get_terminal_keycodes() -> dict[bytes, str]:
+def get_terminal_keycodes(ti: TermInfo) -> dict[bytes, str]:
     """
     Generates a dictionary mapping terminal keycodes to human-readable names.
     """
     keycodes = {}
     for key, terminal_code in TERMINAL_KEYNAMES.items():
-        keycode = curses.tigetstr(terminal_code)
+        keycode = ti.get(terminal_code)
         trace('key {key} tiname {terminal_code} keycode {keycode!r}', **locals())
         if keycode:
             keycodes[keycode] = key
     keycodes.update(CTRL_ARROW_KEYCODES)
     return keycodes
 
+
 class EventQueue(BaseEventQueue):
-    def __init__(self, fd: int, encoding: str) -> None:
-        keycodes = get_terminal_keycodes()
+    def __init__(self, fd: int, encoding: str, ti: TermInfo) -> None:
+        keycodes = get_terminal_keycodes(ti)
         if os.isatty(fd):
             backspace = tcgetattr(fd)[6][VERASE]
             keycodes[backspace] = "backspace"
