@@ -148,7 +148,15 @@ _tokenizer_error(tokenizeriterobject *it)
         goto exit;
     }
 
-    Py_ssize_t offset = _PyPegen_byte_offset_to_character_offset(error_line, tok->inp - tok->buf);
+    Py_ssize_t byte_offset = tok->inp - tok->buf;
+    if (tok->done == E_DEDENT || tok->done == E_TABSPACE || tok->done == E_TOODEEP) {
+        const char *line_start = tok->line_start ? tok->line_start : tok->buf;
+        byte_offset = line_start - tok->buf;
+        while (byte_offset < size && (tok->buf[byte_offset] == ' ' || tok->buf[byte_offset] == '\t')) {
+            byte_offset++;
+        }
+    }
+    Py_ssize_t offset = _PyPegen_byte_offset_to_character_offset(error_line, byte_offset);
     if (offset == -1) {
         result = -1;
         goto exit;
