@@ -1800,6 +1800,7 @@ make_cold_executor(uint16_t opcode)
     // Cold executors bypass _Py_ExecutorInit().
     cold->vm_data.valid = true;
     cold->vm_data.pending_deletion = 0;
+    cold->vm_data.code = NULL;
 
     // This is initialized to false so we can prevent the executor
     // from being immediately detected as cold and invalidated.
