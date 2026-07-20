@@ -9,12 +9,9 @@ Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/email.charset.rst
 Doc/library/email.parser.rst
-Doc/library/http.cookiejar.rst
-Doc/library/http.server.rst
 Doc/library/importlib.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
-Doc/library/lzma.rst
 Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
@@ -35,6 +32,4 @@ Doc/library/xml.sax.reader.rst
 Doc/library/xml.sax.rst
 Doc/library/xmlrpc.client.rst
 Doc/library/xmlrpc.server.rst
-Doc/whatsnew/2.4.rst
-Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst

@@ -209,14 +209,26 @@
 /* Define if you have the 'filter' function. */
 #undef HAVE_CURSES_FILTER
 
+/* Define if you have the 'getmouse' function with the X/Open signature. */
+#undef HAVE_CURSES_GETMOUSE
+
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
 
 /* Define if you have the 'has_key' function. */
 #undef HAVE_CURSES_HAS_KEY
 
+/* Define if you have the 'has_mouse' function. */
+#undef HAVE_CURSES_HAS_MOUSE
+
 /* Define if you have the 'immedok' function. */
 #undef HAVE_CURSES_IMMEDOK
+
+/* Define if you have the 'is_keypad' function. */
+#undef HAVE_CURSES_IS_KEYPAD
+
+/* Define if you have the 'is_leaveok' function. */
+#undef HAVE_CURSES_IS_LEAVEOK
 
 /* Define if you have the 'is_pad' function. */
 #undef HAVE_CURSES_IS_PAD
@@ -245,11 +257,26 @@
 /* Define if you have the 'scr_dump' function. */
 #undef HAVE_CURSES_SCR_DUMP
 
+/* Define if you have the 'scr_set' function. */
+#undef HAVE_CURSES_SCR_SET
+
 /* Define if you have the 'set_escdelay' function. */
 #undef HAVE_CURSES_SET_ESCDELAY
 
 /* Define if you have the 'set_tabsize' function. */
 #undef HAVE_CURSES_SET_TABSIZE
+
+/* Define if you have the 'slk_attr_off' function. */
+#undef HAVE_CURSES_SLK_ATTR_OFF
+
+/* Define if you have the 'slk_attr_on' function. */
+#undef HAVE_CURSES_SLK_ATTR_ON
+
+/* Define if you have the 'slk_attr_set' function. */
+#undef HAVE_CURSES_SLK_ATTR_SET
+
+/* Define if you have the 'slk_color' function. */
+#undef HAVE_CURSES_SLK_COLOR
 
 /* Define if you have the 'syncok' function. */
 #undef HAVE_CURSES_SYNCOK
@@ -272,8 +299,23 @@
 /* Define if you have the 'use_window' function. */
 #undef HAVE_CURSES_USE_WINDOW
 
+/* Define if you have the 'wattr_get' function. */
+#undef HAVE_CURSES_WATTR_GET
+
+/* Define if you have the 'wattr_off' function. */
+#undef HAVE_CURSES_WATTR_OFF
+
+/* Define if you have the 'wattr_on' function. */
+#undef HAVE_CURSES_WATTR_ON
+
+/* Define if you have the 'wattr_set' function. */
+#undef HAVE_CURSES_WATTR_SET
+
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
+
+/* Define if you have the 'wcolor_set' function. */
+#undef HAVE_CURSES_WCOLOR_SET
 
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
@@ -690,6 +732,12 @@
 
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
+
+/* Define if you have a working iconv() function. */
+#undef HAVE_ICONV
+
+/* Define to 1 if you have the <iconv.h> header file. */
+#undef HAVE_ICONV_H
 
 /* Define to 1 if you have the 'if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
@@ -1140,6 +1188,9 @@
 
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
+
+/* Define if you have readline 6.3 */
+#undef HAVE_RL_CHANGE_ENVIRONMENT
 
 /* Define to 1 if the system has the type 'rl_compdisp_func_t'. */
 #undef HAVE_RL_COMPDISP_FUNC_T
@@ -2091,6 +2142,9 @@
 
 /* Define to include mbstate_t for mbrtowc */
 #undef _INCLUDE__STDC_A1_SOURCE
+
+/* Define to activate ISO C23 library declarations */
+#undef _ISOC23_SOURCE
 
 /* This must be defined on some systems to enable large file support. */
 #undef _LARGEFILE_SOURCE

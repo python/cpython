@@ -4905,15 +4905,16 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 
 
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
+static wchar_t *
+join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
+                    int normalize);
+
 static PyObject *
 _listdir_windows_no_opendir(path_t *path, PyObject *list)
 {
     PyObject *v;
     HANDLE hFindFile = INVALID_HANDLE_VALUE;
     BOOL result, return_bytes;
-    wchar_t namebuf[MAX_PATH+4]; /* Overallocate for "\*.*" */
-    /* only claim to have space for MAX_PATH */
-    Py_ssize_t len = Py_ARRAY_LENGTH(namebuf)-4;
     wchar_t *wnamebuf = NULL;
 
     WIN32_FIND_DATAW wFileData;
@@ -4921,26 +4922,17 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
 
     if (!path->wide) { /* Default arg: "." */
         po_wchars = L".";
-        len = 1;
         return_bytes = 0;
     } else {
         po_wchars = path->wide;
-        len = wcslen(path->wide);
         return_bytes = PyBytes_Check(path->object);
     }
-    /* The +5 is so we can append "\\*.*\0" */
-    wnamebuf = PyMem_New(wchar_t, len + 5);
-    if (!wnamebuf) {
-        PyErr_NoMemory();
+
+    wnamebuf = join_path_filenameW(po_wchars, L"*.*", 1);
+    if (wnamebuf == NULL) {
         goto exit;
     }
-    wcscpy(wnamebuf, po_wchars);
-    if (len > 0) {
-        wchar_t wch = wnamebuf[len-1];
-        if (wch != SEP && wch != ALTSEP && wch != L':')
-            wnamebuf[len++] = SEP;
-        wcscpy(wnamebuf + len, L"*.*");
-    }
+
     if ((list = PyList_New(0)) == NULL) {
         goto exit;
     }
@@ -5205,7 +5197,7 @@ os_listdrives_impl(PyObject *module)
 
 #endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listvolumes
@@ -5268,7 +5260,7 @@ os_listvolumes_impl(PyObject *module)
     return result;
 }
 
-#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
@@ -9194,7 +9186,9 @@ os_posix_openpt_impl(PyObject *module, int oflag)
 {
     int fd;
 
-#if defined(O_CLOEXEC)
+    // OpenBSD posix_openpt() rejects any flag other than O_RDWR and
+    // O_NOCTTY; the fd is made non-inheritable below in any case.
+#if defined(O_CLOEXEC) && !defined(__OpenBSD__)
     oflag |= O_CLOEXEC;
 #endif
 
@@ -9437,11 +9431,30 @@ os_openpty_impl(PyObject *module)
         goto posix_error;
 
 #if defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC)
+    // Pushing "ptem" makes the slave a terminal, which a session leader
+    // without a controlling terminal then acquires as one despite O_NOCTTY.
+    // Note whether we already had one, so a new one can be disowned below.
+    int had_ctty = 0;
+#ifdef TIOCNOTTY
+    int tty_fd = open("/dev/tty", O_RDONLY | O_NOCTTY);
+    if (tty_fd >= 0) {
+        had_ctty = 1;
+        close(tty_fd);
+    }
+#endif
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
     ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
 #endif /* __hpux */
+#ifdef TIOCNOTTY
+    if (!had_ctty && getsid(0) == getpid()) {
+        // Disown it; TIOCNOTTY sends SIGHUP to the session leader.
+        PyOS_sighandler_t sig_saved = PyOS_setsig(SIGHUP, SIG_IGN);
+        ioctl(slave_fd, TIOCNOTTY);
+        PyOS_setsig(SIGHUP, sig_saved);
+    }
+#endif
 #endif /* defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC) */
 #endif /* HAVE_OPENPTY */
 
@@ -9941,6 +9954,7 @@ os_setpgrp_impl(PyObject *module)
 #include <winternl.h>
 #include <ProcessSnapshot.h>
 
+#ifdef MS_WINDOWS_DESKTOP
 // The structure definition in winternl.h may be incomplete.
 // This structure is the full version from the MSDN documentation.
 typedef struct _PROCESS_BASIC_INFORMATION_FULL {
@@ -10013,6 +10027,7 @@ win32_getppid_fast(void)
     cached_ppid = (ULONG) basic_information.InheritedFromUniqueProcessId;
     return cached_ppid;
 }
+#endif // MS_WINDOWS_DESKTOP
 
 static PyObject*
 win32_getppid(void)
@@ -10021,12 +10036,13 @@ win32_getppid(void)
     PyObject* result = NULL;
     HANDLE process = GetCurrentProcess();
     HPSS snapshot = NULL;
-    ULONG pid;
 
-    pid = win32_getppid_fast();
+#ifdef MS_WINDOWS_DESKTOP
+    ULONG pid = win32_getppid_fast();
     if (pid != 0) {
         return PyLong_FromUnsignedLong(pid);
     }
+#endif
 
     // If failure occurs in win32_getppid_fast(), fall back to using the PSS API.
 
@@ -12946,6 +12962,7 @@ following flags:
 - RWF_APPEND
 - RWF_DONTCACHE
 - RWF_ATOMIC
+- RWF_NOSIGNAL
 
 Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
@@ -12953,7 +12970,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=b2e352a22f030e9a]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=c202f24f01fa66c9]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -16008,7 +16025,9 @@ os_cpu_count_impl(PyObject *module)
 # ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 # else
-    ncpu = 0;
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    ncpu = sysinfo.dwNumberOfProcessors;
 # endif
 
 #elif defined(__hpux)
@@ -16608,13 +16627,19 @@ static PyType_Spec DirEntryType_spec = {
 
 #ifdef MS_WINDOWS
 
+static int
+is_extended_path(const wchar_t *path)
+{
+    return wcsncmp(path, L"\\\\?\\", 4) == 0;
+}
+
 static wchar_t *
-join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
+join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
+                    int normalize)
 {
     Py_ssize_t path_len;
-    Py_ssize_t size;
     wchar_t *result;
-    wchar_t ch;
+    wchar_t *path_allocated = NULL;
 
     if (!path_wide) { /* Default arg: "." */
         path_wide = L".";
@@ -16624,20 +16649,44 @@ join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
         path_len = wcslen(path_wide);
     }
 
-    /* The +1's are for the path separator and the NUL */
-    size = path_len + 1 + wcslen(filename) + 1;
+    if (path_len == 0) {
+        result = PyMem_New(wchar_t, 1);
+        if (result == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        result[0] = L'\0';
+        return result;
+    }
+
+    if (normalize && !is_extended_path(path_wide)) {
+        int err = _PyOS_getfullpathname(path_wide, &path_allocated);
+        if (err < 0) {
+            PyErr_SetFromWindowsErr(0);
+            return NULL;
+        }
+        if (path_allocated == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        path_wide = path_allocated;
+        path_len = wcslen(path_wide);
+    }
+
+    size_t size = (size_t)path_len + 1 + wcslen(filename) + 1;
     result = PyMem_New(wchar_t, size);
-    if (!result) {
+    if (result == NULL) {
+        PyMem_RawFree(path_allocated);
         PyErr_NoMemory();
         return NULL;
     }
     wcscpy(result, path_wide);
-    if (path_len > 0) {
-        ch = result[path_len - 1];
-        if (ch != SEP && ch != ALTSEP && ch != L':')
-            result[path_len++] = SEP;
-        wcscpy(result + path_len, filename);
+    wchar_t ch = result[path_len - 1];
+    if (ch != SEP && ch != ALTSEP && ch != L':') {
+        result[path_len++] = SEP;
     }
+    wcscpy(result + path_len, filename);
+    PyMem_RawFree(path_allocated);
     return result;
 }
 
@@ -16669,7 +16718,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
             goto error;
     }
 
-    joined_path = join_path_filenameW(path->wide, dataW->cFileName);
+    joined_path = join_path_filenameW(path->wide, dataW->cFileName, 0);
     if (!joined_path)
         goto error;
 
@@ -17105,7 +17154,7 @@ os_scandir_impl(PyObject *module, path_t *path)
 #ifdef MS_WINDOWS
     iterator->first_time = 1;
 
-    path_strW = join_path_filenameW(iterator->path.wide, L"*.*");
+    path_strW = join_path_filenameW(iterator->path.wide, L"*.*", 1);
     if (!path_strW)
         goto error;
 
@@ -18218,6 +18267,9 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
+#endif
+#ifdef RWF_NOSIGNAL
+    if (PyModule_AddIntConstant(m, "RWF_NOSIGNAL", RWF_NOSIGNAL)) return -1;
 #endif
 
 /* constants for splice */

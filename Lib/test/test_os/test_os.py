@@ -4727,6 +4727,13 @@ class PseudoterminalTests(unittest.TestCase):
         son_path = os.ptsname(mother_fd)
         son_fd = os.open(son_path, os.O_RDWR|os.O_NOCTTY)
         self.addCleanup(os.close, son_fd)
+        if sys.platform.startswith('sunos'):
+            # The slave is not a terminal until these STREAMS modules
+            # are pushed onto it.
+            import fcntl
+            I_PUSH = 0x5302
+            fcntl.ioctl(son_fd, I_PUSH, b'ptem\0')
+            fcntl.ioctl(son_fd, I_PUSH, b'ldterm\0')
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
@@ -5057,6 +5064,30 @@ class TestScandir(unittest.TestCase):
                              [os.path.basename(filename)])
         finally:
             os.chdir(old_dir)
+
+    @unittest.skipIf(sys.platform != 'win32', "Win32 specific test")
+    def test_windows_trailing_space_path(self):
+        import pathlib
+
+        filename = self.create_file("file.txt")
+        path = self.path + " "
+
+        self.assertTrue(os.path.exists(path))
+        os.stat(path)
+        with open(filename + " ", "rb") as file:
+            self.assertEqual(file.read(), b"python")
+
+        self.assertEqual(os.listdir(path), ["file.txt"])
+        with os.scandir(path) as entries:
+            self.assertEqual([entry.name for entry in entries], ["file.txt"])
+        pathlib_entries = list(pathlib.Path(path).iterdir())
+        self.assertEqual([entry.name for entry in pathlib_entries], ["file.txt"])
+        del pathlib_entries
+
+        extended_path = "\\\\?\\" + path
+        self.assertFalse(os.path.exists(extended_path))
+        self.assertRaises(FileNotFoundError, os.listdir, extended_path)
+        self.assertRaises(FileNotFoundError, os.scandir, extended_path)
 
     def test_repr(self):
         entry = self.create_file_entry()

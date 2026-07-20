@@ -935,6 +935,12 @@ then
 
   AC_DEFINE([_POSIX_C_SOURCE], [202405L],
             [Define to activate features from IEEE Std 1003.1-2024])
+
+  # Defining _POSIX_C_SOURCE and _XOPEN_SOURCE hides C23 library
+  # declarations on FreeBSD (e.g. sinpi() in math.h) when compiling
+  # with -std=c11.  Defining _ISOC23_SOURCE makes them visible again.
+  AC_DEFINE([_ISOC23_SOURCE], [1],
+            [Define to activate ISO C23 library declarations])
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -2411,10 +2417,6 @@ AS_CASE([$ac_sys_system],
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
 
-    dnl Workaround for a bug in Emscipten libc's getentropy. See
-    dnl __wrap_getentropy in Python/emscripten_syscalls.c.
-    AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--wrap=getentropy"])
-
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
     ])
@@ -3878,7 +3880,11 @@ PERF_TRAMPOLINE_OBJ=""
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes
                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o],
+  [x86_64-linux-musl], [perf_trampoline=yes
+                        PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_x86_64.o],
   [aarch64-linux-gnu], [perf_trampoline=yes
+                         PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o],
+  [aarch64-linux-musl], [perf_trampoline=yes
                          PERF_TRAMPOLINE_OBJ=Python/asm_trampoline_aarch64.o],
   [darwin], [AS_CASE([$MACOSX_DEPLOYMENT_TARGET],
                 [[10.[0-9]|10.1[0-1]]], [perf_trampoline=no],
@@ -3912,6 +3918,48 @@ AC_SUBST([PERF_TRAMPOLINE_OBJ])
 AC_CHECK_LIB([sendfile], [sendfile])
 AC_CHECK_LIB([dl], [dlopen])       # Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB([dld], [shl_load])    # Dynamic linking for HP-UX
+
+dnl Check for a working iconv() for the iconv codec.  On glibc it is part of
+dnl the C library; on some systems it lives in a separate libiconv.
+dnl The wasm platforms (Emscripten, WASI) ship a non-conforming iconv() that
+dnl does not report unencodable characters, which would make the iconv codec
+dnl silently lossy, so treat iconv as unavailable there.
+AC_CHECK_HEADERS([iconv.h])
+AS_CASE([$ac_sys_system],
+  [Emscripten|WASI], [py_have_iconv=no],
+  [py_have_iconv=$ac_cv_header_iconv_h])
+if test "$py_have_iconv" = yes; then
+  AC_CACHE_CHECK([for iconv], [ac_cv_have_iconv], [
+    ac_cv_have_iconv=no
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+#include <iconv.h>
+    ]], [[
+      iconv_t cd = iconv_open("", "");
+      iconv(cd, NULL, NULL, NULL, NULL);
+      iconv_close(cd);
+    ]])], [ac_cv_have_iconv=yes], [
+      py_save_LIBS="$LIBS"
+      LIBS="-liconv $LIBS"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+#include <iconv.h>
+      ]], [[
+        iconv_t cd = iconv_open("", "");
+        iconv(cd, NULL, NULL, NULL, NULL);
+        iconv_close(cd);
+      ]])], [ac_cv_have_iconv=-liconv])
+      LIBS="$py_save_LIBS"
+    ])
+  ])
+  if test "$ac_cv_have_iconv" != no; then
+    AC_DEFINE([HAVE_ICONV], [1],
+              [Define if you have a working iconv() function.])
+    if test "$ac_cv_have_iconv" = -liconv; then
+      LIBS="-liconv $LIBS"
+    fi
+  fi
+fi
 
 
 dnl for faulthandler
@@ -4576,8 +4624,8 @@ WITH_SAVE_ENV([
       #  error "Tk older than 8.5.12 not supported"
       #endif
     ], [
-      void *x1 = Tcl_Init;
-      void *x2 = Tk_Init;
+      Tcl_Init(NULL);
+      Tk_Init(NULL);
     ])
   ], [
     have_tcltk=yes
@@ -6830,6 +6878,17 @@ AS_VAR_IF([with_readline], [no], [
       AC_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
     ])
 
+    # rl_change_environment is in readline 6.3, but not in editline
+    AC_CACHE_CHECK([for rl_change_environment in -l$LIBREADLINE], [ac_cv_readline_rl_change_environment], [
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([readline_includes], [int x = rl_change_environment])],
+        [ac_cv_readline_rl_change_environment=yes], [ac_cv_readline_rl_change_environment=no]
+      )
+    ])
+    AS_VAR_IF([ac_cv_readline_rl_change_environment], [yes], [
+      AC_DEFINE([HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
+    ])
+
     # check for readline 4.2
     AC_CACHE_CHECK([for rl_completion_matches in -l$LIBREADLINE], [ac_cv_readline_rl_completion_matches], [
       AC_LINK_IFELSE(
@@ -7033,11 +7092,27 @@ then
 fi
 
 dnl check for ncursesw/ncurses and panelw/panel
-dnl NOTE: old curses is not detected.
 dnl have_curses=[no, yes]
 dnl have_panel=[no, yes]
 have_curses=no
 have_panel=no
+
+dnl Select the curses backend, or disable the curses and _curses_panel modules.
+dnl "auto" (the default) prefers ncursesw and falls back to ncurses, both via
+dnl pkg-config.  "curses" links the system's native curses (e.g. on NetBSD or
+dnl Solaris), which has no pkg-config file and is never chosen by "auto".
+AC_MSG_CHECKING([for --with-curses])
+AC_ARG_WITH(
+  [curses],
+  [AS_HELP_STRING([--with(out)-curses@<:@=ncursesw|ncurses|curses|no@:>@],
+                  [select the curses backend for the curses and _curses_panel
+                   modules, or disable them (default: auto)])],
+  [AS_CASE([$with_curses],
+     [yes|auto], [with_curses=auto],
+     [ncursesw|ncurses|curses|no], [],
+     [AC_MSG_ERROR([proper usage is --with(out)-curses@<:@=ncursesw|ncurses|curses|no@:>@])])],
+  [with_curses=auto])
+AC_MSG_RESULT([$with_curses])
 
 dnl PY_CHECK_CURSES(LIBCURSES, LIBPANEL)
 dnl Sets 'have_curses' and 'have_panel'.
@@ -7053,34 +7128,54 @@ PKG_CHECK_MODULES([CURSES], [$1],
    PKG_CHECK_MODULES([PANEL], [$2],
     [AC_DEFINE([HAVE_]panel_var, [1], [Define if you have the '$2' library])
      AS_VAR_SET([have_panel], [yes])],
-    [AS_VAR_SET([have_panel], [no])])],
+    [dnl pkgsrc renames the ncurses panel to "gnupanel" so it does not clash
+     dnl with a system libpanel; it Requires the same ncurses, so it matches.
+     PKG_CHECK_MODULES([PANEL], [gnupanel],
+      [AS_VAR_SET([have_panel], [yes])],
+      [AS_VAR_SET([have_panel], [no])])])],
   [AS_VAR_SET([have_curses], [no])])
 AS_VAR_POPDEF([curses_var])
 AS_VAR_POPDEF([panel_var])])
 
-# Check for ncursesw/panelw first. If that fails, try ncurses/panel.
-PY_CHECK_CURSES([ncursesw], [panelw])
-AS_VAR_IF([have_curses], [no],
-          [PY_CHECK_CURSES([ncurses], [panel])])
+# Detect the selected backend.  ncursesw/ncurses are found via pkg-config;
+# native curses has no .pc file and is left to the header/link probes below.
+# curses_libs/panel_libs drive the AC_SEARCH_LIBS fallback; for "no" they are
+# empty so nothing links and have_curses stays "no".
+AS_CASE([$with_curses],
+  [ncursesw], [PY_CHECK_CURSES([ncursesw], [panelw])
+               curses_libs="ncursesw"; panel_libs="panelw gnupanel"],
+  [ncurses],  [PY_CHECK_CURSES([ncurses], [panel])
+               curses_libs="ncurses"; panel_libs="panel gnupanel"],
+  [curses],   [curses_libs="curses"; panel_libs="panel"],
+  [no],       [curses_libs=""; panel_libs=""],
+  [dnl auto: prefer ncursesw, fall back to ncurses; never native curses.
+   PY_CHECK_CURSES([ncursesw], [panelw])
+   AS_VAR_IF([have_curses], [no], [PY_CHECK_CURSES([ncurses], [panel])])
+   curses_libs="ncursesw ncurses"; panel_libs="panelw panel gnupanel"])
 
 WITH_SAVE_ENV([
-  # Make sure we've got the header defines.
+  # Make sure we've got the header defines.  For the native "curses" backend,
+  # probe only the plain headers: a system may also have ncurses headers (e.g.
+  # ncurses/curses.h), and picking those while linking the native library mixes
+  # incompatible declarations (e.g. tparm()) with the native <term.h>.
   AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS $PANEL_CFLAGS"])
-  AC_CHECK_HEADERS(m4_normalize([
-    ncursesw/curses.h ncursesw/ncurses.h ncursesw/panel.h
-    ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
-    curses.h ncurses.h panel.h
-  ]))
+  AS_VAR_IF([with_curses], [curses],
+    [AC_CHECK_HEADERS([curses.h panel.h])],
+    [AC_CHECK_HEADERS(m4_normalize([
+      ncursesw/curses.h ncursesw/ncurses.h ncursesw/panel.h
+      ncurses/curses.h ncurses/ncurses.h ncurses/panel.h
+      curses.h ncurses.h panel.h
+    ]))])
 
   # Check that we're able to link with crucial curses/panel functions. This
   # also serves as a fallback in case pkg-config failed.
   AS_VAR_APPEND([LIBS], [" $CURSES_LIBS $PANEL_LIBS"])
-  AC_SEARCH_LIBS([initscr], [ncursesw ncurses],
+  AC_SEARCH_LIBS([initscr], [$curses_libs],
     [AS_VAR_IF([have_curses], [no],
       [AS_VAR_SET([have_curses], [yes])
        CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}])],
     [AS_VAR_SET([have_curses], [no])])
-  AC_SEARCH_LIBS([update_panels], [panelw panel],
+  AC_SEARCH_LIBS([update_panels], [$panel_libs],
     [AS_VAR_IF([have_panel], [no],
       [AS_VAR_SET([have_panel], [yes])
        PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}])],
@@ -7108,7 +7203,7 @@ AC_DEFUN([_CURSES_INCLUDES],dnl
 #endif
 ])
 
-AS_IF([test "have_curses" != "no"], [
+AS_IF([test "$have_curses" != "no"], [
 dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
@@ -7127,6 +7222,27 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
 
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+
+dnl Native curses ("curses") may be wide-character capable (e.g. on NetBSD)
+dnl even though it is not ncursesw.  Probe for the wide API; if present, build
+dnl the module against it like ncursesw by defining HAVE_NCURSESW.  ncursesw
+dnl already defines HAVE_NCURSESW, and ncurses must stay narrow, so only the
+dnl native backend is probed here.
+AS_VAR_IF([with_curses], [curses], [
+  AC_CACHE_CHECK([whether curses supports wide characters],
+    [ac_cv_curses_wide],
+    [AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([_CURSES_INCLUDES], [[
+        cchar_t wcval;
+        setcchar(&wcval, L"x", A_NORMAL, 0, NULL);
+        add_wch(&wcval);
+      ]])],
+      [ac_cv_curses_wide=yes],
+      [ac_cv_curses_wide=no])])
+  dnl HAVE_NCURSESW marks the wide (cchar_t) curses API; its template comes
+  dnl from the ncursesw pkg-config check above, so no description here.
+  AS_VAR_IF([ac_cv_curses_wide], [yes], [AC_DEFINE([HAVE_NCURSESW], [1])])
+])
 
 # On Solaris, term.h requires curses.h
 AC_CHECK_HEADERS([term.h], [], [], _CURSES_INCLUDES)
@@ -7219,6 +7335,9 @@ PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
 PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
+PY_CHECK_CURSES_FUNC([has_mouse])
+PY_CHECK_CURSES_FUNC([is_keypad])
+PY_CHECK_CURSES_FUNC([is_leaveok])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
 PY_CHECK_CURSES_FUNC([new_prescr])
@@ -7230,11 +7349,36 @@ PY_CHECK_CURSES_FUNC([define_key])
 PY_CHECK_CURSES_FUNC([keyok])
 PY_CHECK_CURSES_FUNC([set_escdelay])
 PY_CHECK_CURSES_FUNC([set_tabsize])
+dnl The X/Open attr_t and soft-label attribute functions are absent on old
+dnl SVr4 curses (e.g. illumos).
+PY_CHECK_CURSES_FUNC([wattr_get])
+PY_CHECK_CURSES_FUNC([wattr_set])
+PY_CHECK_CURSES_FUNC([wattr_on])
+PY_CHECK_CURSES_FUNC([wattr_off])
+PY_CHECK_CURSES_FUNC([wcolor_set])
+PY_CHECK_CURSES_FUNC([slk_attr_on])
+PY_CHECK_CURSES_FUNC([slk_attr_off])
+PY_CHECK_CURSES_FUNC([slk_attr_set])
+PY_CHECK_CURSES_FUNC([slk_color])
 PY_CHECK_CURSES_VAR([ESCDELAY])
 PY_CHECK_CURSES_VAR([TABSIZE])
-dnl scr_dump and its companions scr_restore/scr_init/scr_set are an inseparable
-dnl group; probing scr_dump alone gates the whole family.
+
+dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
+dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
+AC_CACHE_CHECK([for ncurses-style curses function getmouse],
+  [ac_cv_lib_curses_getmouse],
+  [AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(_CURSES_INCLUDES, [MEVENT event; (void)getmouse(&event);])],
+    [ac_cv_lib_curses_getmouse=yes],
+    [ac_cv_lib_curses_getmouse=no])])
+AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
+  [AC_DEFINE([HAVE_CURSES_GETMOUSE], [1],
+    [Define if you have the 'getmouse' function with the X/Open signature.])])
+
+dnl scr_dump gates scr_dump/scr_restore/scr_init; scr_set is separate, since
+dnl old SVr4 curses (e.g. illumos) has the former but not scr_set.
 PY_CHECK_CURSES_FUNC([scr_dump])
+PY_CHECK_CURSES_FUNC([scr_set])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

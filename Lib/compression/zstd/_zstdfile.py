@@ -246,6 +246,7 @@ class ZstdFile(_streams.BaseStream):
         return self._buffer.peek(size)
 
     def __next__(self):
+        self._check_can_read()
         if ret := self._buffer.readline():
             return ret
         raise StopIteration
