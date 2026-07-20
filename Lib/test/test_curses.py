@@ -84,10 +84,15 @@ def requires_colors(test):
 term = os.environ.get('TERM')
 SHORT_MAX = 0x7fff
 
-# ncurses before 6.5 can crash on repeated newterm().  Fall back to initscr()
-# and skip the tests that need several screens.
+# ncurses before 6.5, and the native curses of NetBSD and illumos/Solaris,
+# crash on repeated newterm()/delscreen(); fall back to initscr() and skip the
+# multi-screen tests.  The native ones are keyed off the platform so a fixed
+# version can be excluded later.
 _ncurses_version = getattr(curses, 'ncurses_version', None)
-BROKEN_NEWTERM = _ncurses_version is not None and _ncurses_version < (6, 5)
+if _ncurses_version is not None:
+    BROKEN_NEWTERM = _ncurses_version < (6, 5)
+else:
+    BROKEN_NEWTERM = sys.platform.startswith(('netbsd', 'sunos'))
 USE_NEWTERM = hasattr(curses, 'newterm') and not BROKEN_NEWTERM
 
 # Older macOS reports a variation selector as a spacing character (wcwidth()
@@ -785,13 +790,10 @@ class TestCurses(unittest.TestCase):
                 stdscr.move(2, 0)
                 stdscr.echochar(v)
                 self.assertEqual(self._read_char(2, 0), c)
-                # insch() round-trips a byte only where its code point equals
-                # the byte value (Latin-1): on a wide build ncurses winsch
-                # stores a printable byte directly as a code point instead of
-                # decoding it through the locale.
-                if ord(c) < 0x100:
-                    stdscr.insch(1, 0, v)
-                    self.assertEqual(self._read_char(1, 0), c)
+                # insch() decodes the byte through the locale like addch(), so
+                # it round-trips the same character.
+                stdscr.insch(1, 0, v)
+                self.assertEqual(self._read_char(1, 0), c)
 
         # The same characters supplied as a str.  Unlike the int path above, a
         # str is stored as a wide-character cell on a wide build, so every
@@ -958,10 +960,9 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(ValueError, stdscr.instr, -2)
         self.assertRaises(ValueError, stdscr.instr, 0, 2, -2)
         # A non-ASCII character of an 8-bit locale reads back as its encoded
-        # byte (see _encodable for the set).  instr() returns the locale bytes
-        # for any single-byte character; inch() packs the text into a chtype, so
-        # on a wide build it only round-trips a Latin-1 codepoint (byte ==
-        # codepoint).
+        # byte (see _encodable for the set).  Both instr() and inch() return the
+        # locale byte for any character that fits the locale's single-byte
+        # encoding.
         encoding = stdscr.encoding
         for ch in ('A', 'é', '¤', '€', 'є'):
             try:
@@ -973,8 +974,7 @@ class TestCurses(unittest.TestCase):
             with self.subTest(ch=ch):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
-                if ord(ch) < 0x100:
-                    self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
+                self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
@@ -1145,8 +1145,17 @@ class TestCurses(unittest.TestCase):
         win.standout()
         win.standend()
 
+        # attron()/attroff()/attrset() reject a bad attribute.
+        self.assertRaises(OverflowError, win.attron, 1 << 64)
+        self.assertRaises(OverflowError, win.attroff, -1)
+        self.assertRaises(OverflowError, win.attrset, 1 << 64)
+        self.assertRaises(TypeError, win.attron, 'x')
+
+    @requires_curses_window_meth('attr_set')
+    def test_attr(self):
         # The attr_*() family works on attr_t attributes paired with a color
         # pair, unlike the chtype-based attron()/attroff()/attrset().
+        win = curses.newwin(5, 15, 5, 2)
         win.attr_set(curses.A_BOLD | curses.A_UNDERLINE)
         attrs, pair = win.attr_get()
         self.assertTrue(attrs & curses.A_BOLD)
@@ -1172,13 +1181,9 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(OverflowError, win.attr_set, -1)
         self.assertRaises(OverflowError, win.attr_on, -1)
         self.assertRaises(OverflowError, win.attr_set, 1 << 64)
-        # attron()/attroff()/attrset() reject a bad attribute too.
-        self.assertRaises(OverflowError, win.attron, 1 << 64)
-        self.assertRaises(OverflowError, win.attroff, -1)
-        self.assertRaises(OverflowError, win.attrset, 1 << 64)
-        self.assertRaises(TypeError, win.attron, 'x')
 
     @requires_colors
+    @requires_curses_window_meth('attr_set')
     def test_attr_color_pair(self):
         win = curses.newwin(5, 15, 5, 2)
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
@@ -1364,6 +1369,7 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(win.getmaxyx(), (5, 12))
             self.assertEqual(win.instr(2, 0), b' Lorem ipsum')
 
+    @requires_curses_func('scr_dump')
     def test_scr_dump(self):
         # Test scr_dump(), scr_restore(), scr_init() and scr_set().
         # scr_dump() writes the virtual screen to a named file; the other three
@@ -1387,8 +1393,10 @@ class TestCurses(unittest.TestCase):
             stdscr.refresh()
             self.assertIsNone(curses.scr_restore(dump))
             # scr_init() and scr_set() also accept a dump file and return None.
+            # scr_set() is not available on every curses (e.g. old SVr4).
             self.assertIsNone(curses.scr_init(dump))
-            self.assertIsNone(curses.scr_set(dump))
+            if hasattr(curses, 'scr_set'):
+                self.assertIsNone(curses.scr_set(dump))
             # A bytes (path-like) filename is accepted too.
             curses.scr_dump(os.fsencode(dump))
             # Restoring from a missing file is an error.
@@ -1722,6 +1730,9 @@ class TestCurses(unittest.TestCase):
             ('notimeout', 'is_notimeout'),
             ('scrollok', 'is_scrollok'),
         ]:
+            # is_keypad()/is_leaveok() are not available in every curses build.
+            if not hasattr(stdscr, getter):
+                continue
             getattr(stdscr, setter)(True)
             self.assertIs(getattr(stdscr, getter)(), True)
             getattr(stdscr, setter)(False)
@@ -1847,9 +1858,11 @@ class TestCurses(unittest.TestCase):
     def test_tabsize(self):
         tabsize = curses.get_tabsize()
         self.assertIsInstance(tabsize, int)
-        curses.set_tabsize(4)
-        self.assertEqual(curses.get_tabsize(), 4)
-        curses.set_tabsize(tabsize)
+        # set_tabsize() is not available on every curses (e.g. old SVr4).
+        if hasattr(curses, 'set_tabsize'):
+            curses.set_tabsize(4)
+            self.assertEqual(curses.get_tabsize(), 4)
+            curses.set_tabsize(tabsize)
 
     @requires_curses_func('getsyx')
     def test_getsyx(self):
@@ -2761,6 +2774,9 @@ class TestAscii(unittest.TestCase):
         self.assertEqual(ctrl('\n'), '\n')
         self.assertEqual(ctrl('@'), '\0')
         self.assertEqual(ctrl(ord('J')), ord('\n'))
+        # A non-ASCII argument is returned unchanged (no control character).
+        self.assertEqual(ctrl('\xe9'), '\xe9')
+        self.assertEqual(ctrl(0xe9), 0xe9)
 
     def test_alt(self):
         alt = curses.ascii.alt
@@ -2784,6 +2800,40 @@ class TestAscii(unittest.TestCase):
         self.assertEqual(unctrl('\xc1'), '!A')
         self.assertEqual(unctrl(ord('\x8a')), '!^J')
         self.assertEqual(unctrl(ord('\xc1')), '!A')
+
+    @unittest.skipUnless(hasattr(curses, 'complexchar'),
+                         'requires the curses.complexchar type')
+    def test_complexchar(self):
+        # The predicates, ctrl() and unctrl() accept a complexchar too, using
+        # its single character.  A narrow build just forms fewer cells.
+        cc = curses.complexchar
+        def storable(s):
+            # ValueError if s has combining marks on a narrow build.
+            # OverflowError if s is a multibyte character on a narrow build.
+            try:
+                cc(s)
+            except (ValueError, OverflowError):
+                return False
+            return True
+
+        self.assertTrue(curses.ascii.isupper(cc('A')))
+        self.assertTrue(curses.ascii.isalpha(cc('A', curses.A_BOLD)))
+        self.assertFalse(curses.ascii.isdigit(cc('A')))
+        self.assertTrue(curses.ascii.isdigit(cc('7')))
+        self.assertTrue(curses.ascii.iscntrl(cc('\n')))
+        self.assertEqual(curses.ascii.ctrl(cc('J')), '\n')
+        self.assertEqual(curses.ascii.unctrl(cc('\n')), '^J')
+        self.assertEqual(curses.ascii.unctrl(cc('A')), 'A')
+        # A non-ASCII character: classified by code point, no control character.
+        if storable('\xe9'):
+            self.assertFalse(curses.ascii.isascii(cc('\xe9')))
+            self.assertTrue(curses.ascii.ismeta(cc('\xe9')))
+            self.assertEqual(curses.ascii.ctrl(cc('\xe9')), '\xe9')
+        # A cell with combining marks is not a single character, so no
+        # predicate matches it (needs a wide build to store).
+        if storable('e\u0301'):
+            self.assertFalse(curses.ascii.isalpha(cc('e\u0301')))
+            self.assertFalse(curses.ascii.isascii(cc('e\u0301')))
 
 
 def lorem_ipsum(win):

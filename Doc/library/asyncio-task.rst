@@ -377,7 +377,7 @@ and reliable way to wait for all tasks in the group to finish.
 
       * call it from the task group body based on some condition or event
       * pass the task group instance to child tasks via :meth:`create_task`, allowing a child
-        task to conditionally cancel the entire entire group
+        task to conditionally cancel the entire group
       * pass the task group instance or bound :meth:`cancel` method to some other task *before*
         opening the task group, allowing remote cancellation
 

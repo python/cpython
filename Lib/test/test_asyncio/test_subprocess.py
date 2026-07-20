@@ -112,37 +112,6 @@ class SubprocessTransportTests(test_utils.TestCase):
         )
         transport.close()
 
-    def test_proc_exited_no_invalid_state_error_on_exit_waiters(self):
-        # gh-145541: when _connect_pipes hasn't completed (so
-        # _pipes_connected is False) and the process exits, _try_finish()
-        # sets the result on exit waiters. Then _call_connection_lost() must
-        # not call set_result() again on the same waiters.
-        self.loop.set_exception_handler(
-            lambda loop, context: self.fail(
-                f"unexpected exception: {context}")
-        )
-        waiter = self.loop.create_future()
-        transport, protocol = self.create_transport(waiter)
-
-        # Simulate a waiter registered via _wait() before the process exits.
-        exit_waiter = self.loop.create_future()
-        transport._exit_waiters.append(exit_waiter)
-
-        # _connect_pipes hasn't completed, so _pipes_connected is False.
-        self.assertFalse(transport._pipes_connected)
-
-        # Simulate process exit. _try_finish() will set the result on
-        # exit_waiter because _pipes_connected is False, and then schedule
-        # _call_connection_lost() because _pipes is empty (vacuously all
-        # disconnected). _call_connection_lost() must skip exit_waiter
-        # because it's already done.
-        transport._process_exited(6)
-        self.loop.run_until_complete(waiter)
-
-        self.assertEqual(exit_waiter.result(), 6)
-
-        transport.close()
-
 
 class SubprocessMixin:
 
@@ -251,7 +220,7 @@ class SubprocessMixin:
             # kills the process and all its children.
             creationflags = CREATE_NEW_PROCESS_GROUP
         proc = self.loop.run_until_complete(
-            asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
+            asyncio.create_subprocess_shell(blocking_shell_command,
             creationflags=creationflags)
         )
         self.loop.run_until_complete(asyncio.sleep(1))
@@ -435,6 +404,46 @@ class SubprocessMixin:
         output, exitcode = self.loop.run_until_complete(len_message(b'abc'))
         self.assertEqual(output.rstrip(), b'3')
         self.assertEqual(exitcode, 0)
+
+    def test_wait_even_if_pipe_is_open(self):
+        # gh-119710: Process.wait() must return once the process exits even
+        # if its stdout pipe is inherited by a grandchild that keeps it open,
+        # so the pipe never reaches EOF. Otherwise wait() hangs forever
+        # despite the returncode being known.
+
+        async def run():
+            # The grandchild inherits the child's stdin and stdout pipes and
+            # keeps both open after the child is killed.  It writes "ready"
+            # so we know it has started, and exits once its stdin hits EOF.
+            code = textwrap.dedent("""\
+                import subprocess, sys
+                subprocess.run([sys.executable, "-c",
+                    "import sys; sys.stdout.write('ready');"
+                    " sys.stdout.flush(); sys.stdin.read()"])
+                """)
+
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-c", code,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            try:
+                wait_proc = asyncio.create_task(proc.wait())
+                # Wait until the grandchild holds the inherited pipes; this
+                # also lets the wait() task register its waiter.
+                await proc.stdout.readexactly(5)
+                proc.kill()
+                returncode = await asyncio.wait_for(
+                    wait_proc, timeout=support.SHORT_TIMEOUT)
+                if sys.platform == 'win32':
+                    self.assertIsInstance(returncode, int)
+                else:
+                    self.assertEqual(-signal.SIGKILL, returncode)
+            finally:
+                proc.stdin.close()  # let the grandchild exit
+                await proc.stdout.read()
+
+        self.loop.run_until_complete(run())
 
     def test_empty_input(self):
 
@@ -965,6 +974,45 @@ if sys.platform != 'win32':
             else:
                 self.assertIsInstance(watcher, unix_events._ThreadedChildWatcher)
 
+        @unittest.skipUnless(hasattr(os, 'waitid'), 'needs os.waitid()')
+        def test_send_signal_never_targets_reaped_pid(self):
+            # gh-127049: there must be no window between the child watcher
+            # reaping the child and asyncio publishing the exit in which
+            # send_signal() signals the freed (possibly recycled) PID.
+            reaped_pids = set()
+            stale_kills = []
+            orig_waitpid = os.waitpid
+            orig_kill = os.kill
+
+            def waitpid(pid, options):
+                res = orig_waitpid(pid, options)
+                if res[0] != 0:
+                    reaped_pids.add(res[0])
+                return res
+
+            def kill(pid, sig):
+                if pid in reaped_pids:
+                    stale_kills.append(pid)
+                    return
+                orig_kill(pid, sig)
+
+            async def run():
+                with mock.patch('os.waitpid', waitpid), \
+                        mock.patch('os.kill', kill):
+                    proc = await asyncio.create_subprocess_exec(
+                        *PROGRAM_BLOCKED)
+                    proc.kill()
+                    deadline = self.loop.time() + support.SHORT_TIMEOUT
+                    while proc.returncode is None:
+                        if self.loop.time() > deadline:
+                            self.fail('child exit was not published in time')
+                        proc.kill()
+                        await asyncio.sleep(0)
+                    await proc.wait()
+                self.assertEqual(stale_kills, [])
+
+            self.loop.run_until_complete(run())
+
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
@@ -977,6 +1025,35 @@ if sys.platform != 'win32':
         def tearDown(self):
             unix_events.can_use_pidfd = self._original_can_use_pidfd
             return super().tearDown()
+
+        @unittest.skipUnless(hasattr(os, 'waitid'), 'needs os.waitid()')
+        def test_pid_not_reaped_before_exit_published(self):
+            # gh-127049: the watcher thread must wait for the child
+            # without reaping it: the PID must stay reserved until the
+            # event loop thread reaps it and publishes the exit as one
+            # atomic step.
+            async def run():
+                proc = await asyncio.create_subprocess_exec(
+                    *PROGRAM_BLOCKED)
+                thread = self.loop._watcher._threads.get(proc.pid)
+                self.assertIsNotNone(thread)
+                proc.kill()
+                # Wait for the watcher thread to observe the exit while
+                # the event loop cannot process the notification yet.
+                thread.join(support.SHORT_TIMEOUT)
+                self.assertFalse(thread.is_alive())
+                # The exit has not been published yet...
+                self.assertIsNone(proc.returncode)
+                # ...so the child must still be an unreaped zombie and
+                # signalling its PID must still be safe.  waitid() raises
+                # ChildProcessError if the PID was already reaped (and
+                # possibly recycled by the kernel).
+                os.waitid(os.P_PID, proc.pid,
+                          os.WEXITED | os.WNOWAIT | os.WNOHANG)
+                proc.kill()
+                self.assertEqual(await proc.wait(), -signal.SIGKILL)
+
+            self.loop.run_until_complete(run())
 
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),
