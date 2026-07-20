@@ -491,24 +491,24 @@ _get_xidata(PyThreadState *tstate,
             Py_DECREF(obj);
             return -1;
         }
-        // Fall back to obj
-        Py_DECREF(obj);
         if (!_PyErr_Occurred(tstate)) {
             _set_xid_lookup_failure(tstate, obj, NULL, NULL);
         }
+        Py_DECREF(obj);
         return -1;
     }
     int res = getdata.basic != NULL
         ? getdata.basic(tstate, obj, xidata)
         : getdata.fallback(tstate, obj, fallback, xidata);
-    Py_DECREF(obj);
     if (res != 0) {
         PyObject *cause = _PyErr_GetRaisedException(tstate);
         assert(cause != NULL);
         _set_xid_lookup_failure(tstate, obj, NULL, cause);
         Py_XDECREF(cause);
+        Py_DECREF(obj);
         return -1;
     }
+    Py_DECREF(obj);
 
     // Fill in the blanks and validate the result.
     _PyXIData_INTERPID(xidata) = PyInterpreterState_GetID(interp);

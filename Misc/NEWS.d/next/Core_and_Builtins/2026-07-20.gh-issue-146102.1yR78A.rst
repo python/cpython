@@ -1,0 +1,1 @@
+Fixed a use-after-free in _ensure_notshareableerror and an exception leak in _PyXI_UnwrapNotShareableError and a use-after-free in _get_xidata within the cross-interpreter data subsystem.
