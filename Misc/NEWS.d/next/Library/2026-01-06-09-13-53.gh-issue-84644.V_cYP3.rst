@@ -1,5 +1,5 @@
-When registering a callable or descriptor to :func:`functools.singledispatch`
-or :func:`functools.singledispatchmethod` via a type annotation,
-it is now validated that the first non-*self* or non-*cls* parameter is used.
-Previously, a callable could be registered based on its return type
-annotation or an irrelevant parameter type annotation. Patch by Bartosz Sławecki.
+Deprecate using a return annotation to infer the dispatch type for
+:func:`functools.singledispatch` and
+:class:`functools.singledispatchmethod`. It will raise :exc:`TypeError` in
+Python 3.18. Annotate the dispatch parameter or pass the dispatch type
+explicitly instead. Patch by Bartosz Sławecki.
