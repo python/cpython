@@ -37,6 +37,7 @@ from .content import (
     process_prompt as build_prompt_content,
 )
 from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
+from .layout import wrapped_row_end
 from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay
 from .utils import ANSI_ESCAPE_SEQUENCE, ColorSpan, THEME, StyleRef, gen_colors
 from .trace import trace
@@ -588,15 +589,16 @@ class Reader:
         width = self.console.width
         render_lines: list[RenderLine] = []
         for message_line in self.msg.split("\n"):
-            # If self.msg is larger than console width, make it fit.
-            # TODO: try to split between words?
-            if not message_line:
-                render_lines.append(RenderLine.from_rendered_text(""))
+            line = RenderLine.from_rendered_text(message_line)
+            if not line.cells:
+                render_lines.append(line)
                 continue
-            for offset in range(0, len(message_line), width):
-                render_lines.append(
-                    RenderLine.from_rendered_text(message_line[offset : offset + width])
-                )
+            widths = tuple(cell.width for cell in line.cells)
+            start = 0
+            while start < len(line.cells):
+                end = wrapped_row_end(widths, start, width)
+                render_lines.append(RenderLine.from_cells(line.cells[start:end]))
+                start = end
         return tuple(render_lines)
 
     def get_screen_overlays(self) -> tuple[ScreenOverlay, ...]:

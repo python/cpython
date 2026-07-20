@@ -72,6 +72,31 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_events_narrow_console(events)
         self.assert_screen_equal(reader, f"{8*"a"}\\\n樂")
 
+    def test_messages_wrap_on_tight_screens(self):
+        console = prepare_console((), width=3)
+        reader = prepare_reader(console)
+
+        reader.msg = "\x1b[31mabcdef\x1b[0m"
+        lines = reader._render_message_lines()
+        self.assertEqual(
+            [line.text for line in lines],
+            ["\x1b[31mabc\x1b[0m", "\x1b[31mdef\x1b[0m"],
+        )
+
+        reader.msg = "ab樂c"
+        console.width = 4
+        lines = reader._render_message_lines()
+        self.assertEqual([line.text for line in lines], ["ab樂", "c"])
+        self.assertEqual([line.width for line in lines], [4, 1])
+
+        reader.msg = "ab\N{COMBINING ACUTE ACCENT}cd"
+        console.width = 3
+        lines = reader._render_message_lines()
+        self.assertEqual(
+            [line.text for line in lines],
+            ["ab\N{COMBINING ACUTE ACCENT}c", "d"],
+        )
+
     def test_calc_screen_wrap_three_lines(self):
         events = code_to_events(20 * "a")
         reader, _ = handle_events_narrow_console(events)

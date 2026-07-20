@@ -141,6 +141,23 @@ class LayoutResult:
     line_end_offsets: tuple[int, ...]
 
 
+def wrapped_row_end(
+    widths: tuple[int, ...],
+    start: int,
+    available_width: int,
+) -> int:
+    """Return index of *widths* to split on to fit new row within *available_width*.
+
+    If the first width does not fit, split after it anyway ("force progress").
+    """
+    end = start
+    column = 0
+    while end < len(widths) and column + widths[end] <= available_width:
+        column += widths[end]
+        end += 1
+    return end if end > start else start + 1
+
+
 def layout_content_lines(
     lines: tuple[ContentLine, ...],
     width: int,
@@ -208,16 +225,12 @@ def layout_content_lines(
         total = len(body)
         while True:
             # Find how many characters fit on this row.
-            index_to_wrap_before = 0
-            column = 0
-            for char_width in body_widths[start:]:
-                if column + char_width + current_prompt_width >= width:
-                    break
-                index_to_wrap_before += 1
-                column += char_width
-
-            if index_to_wrap_before == 0 and start < total:
-                index_to_wrap_before = 1  # force progress
+            end = wrapped_row_end(
+                body_widths,
+                start,
+                width - current_prompt_width - 1,
+            )
+            index_to_wrap_before = end - start
 
             at_line_end = (start + index_to_wrap_before) >= total
             if at_line_end:
@@ -231,7 +244,6 @@ def layout_content_lines(
                 suffix_width = 1
                 buffer_advance = index_to_wrap_before
 
-            end = start + index_to_wrap_before
             row_fragments = body[start:end]
             row_widths = body_widths[start:end]
             line_end_offsets.append(offset)
