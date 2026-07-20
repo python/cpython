@@ -1809,7 +1809,7 @@ make_cold_executor(uint16_t opcode)
     cold->jit_code = NULL;
     cold->jit_size = 0;
     if (_PyJIT_Compile(cold, cold->trace, 1)) {
-        PyExecutor_Free(cold);
+        _PyExecutor_Free(cold);
         Py_FatalError("Cannot allocate core JIT code");
     }
 #endif
