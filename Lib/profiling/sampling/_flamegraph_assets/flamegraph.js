@@ -100,8 +100,7 @@ function getDisplayName(moduleName, filename) {
 }
 
 function samplesToMilliseconds(samples, data) {
-  const sampleIntervalUsec = data.stats.sample_interval_usec;
-  return samples * sampleIntervalUsec / 1000;
+  return (samples * data.stats.sample_interval_usec / 1000).toFixed(2);
 }
 
 function selectFlamegraphData(selectedThreadId = null) {
