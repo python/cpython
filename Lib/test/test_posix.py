@@ -415,8 +415,10 @@ class PosixTester(unittest.TestCase):
             if inst.errno == errno.EINVAL and sys.platform.startswith(
                 ('sunos', 'freebsd', 'openbsd', 'gnukfreebsd')):
                 raise unittest.SkipTest("test may fail on ZFS filesystems")
-            elif inst.errno == errno.EOPNOTSUPP and sys.platform.startswith("netbsd"):
-                raise unittest.SkipTest("test may fail on FFS filesystems")
+            elif inst.errno == errno.EOPNOTSUPP:
+                # ZFS on FreeBSD, FFS on NetBSD, etc.
+                raise unittest.SkipTest(
+                    "the file system does not support posix_fallocate()")
             else:
                 raise
         finally:
