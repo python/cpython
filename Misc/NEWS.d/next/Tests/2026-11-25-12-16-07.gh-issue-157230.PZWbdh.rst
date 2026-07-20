@@ -1,0 +1,3 @@
+Fix order-dependent failures in ``test_pickle`` and ``test_pickletools`` by
+restoring module ``__spec__`` and ``__loader__`` attributes after import
+tests.
