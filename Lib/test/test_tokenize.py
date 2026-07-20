@@ -151,8 +151,25 @@ def k(x):
         self.assertEqual(
             e.exception.msg,
             'unindent does not match any outer indentation level')
-        self.assertEqual(e.exception.offset, 9)
+        self.assertEqual(e.exception.offset, 2)
         self.assertEqual(e.exception.text, '  x += 5')
+
+        # gh-153837: offset should point to the indentation error, not end of line
+        indent_error_long_line = b"""\
+def foo():
+    x = 1
+   x = "some_very_long_expression"
+"""
+        readline = BytesIO(indent_error_long_line).readline
+        with self.assertRaisesRegex(IndentationError,
+                                    "unindent does not match any "
+                                    "outer indentation level") as e:
+            for tok in tokenize.tokenize(readline):
+                pass
+        self.assertEqual(e.exception.lineno, 3)
+        self.assertEqual(e.exception.offset, 3)
+        self.assertEqual(e.exception.text,
+                         '   x = "some_very_long_expression"')
 
     def test_int(self):
         # Ordinary integers and binary operators

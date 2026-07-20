@@ -1,0 +1,1 @@
+Fix incorrect column offset in :exc:`IndentationError` raised by the :mod:`tokenize` module. The offset now points to the first non-whitespace character on the line where the indentation error occurs, instead of incorrectly pointing to the end of the line.
