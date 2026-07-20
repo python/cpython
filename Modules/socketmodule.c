@@ -1170,7 +1170,7 @@ new_sockobject(socket_state *state, SOCKET_T fd, int family, int type,
 /* Lock to allow python interpreter to continue, but only allow one
    thread to be in gethostbyname or getaddrinfo */
 #if defined(USE_GETHOSTBYNAME_LOCK)
-static PyThread_type_lock netdb_lock;
+static PyMutex netdb_lock = {0};
 #endif
 
 
@@ -6219,7 +6219,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
-    PyThread_acquire_lock(netdb_lock, 1);
+    PyMutex_Lock(&netdb_lock);
 #endif
     _Py_COMP_DIAG_PUSH
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
@@ -6235,7 +6235,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr),
                          sa->sa_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
-    PyThread_release_lock(netdb_lock);
+    PyMutex_Unlock(&netdb_lock);
 #endif
 finally:
     PyMem_Free(name);
@@ -6326,7 +6326,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
-    PyThread_acquire_lock(netdb_lock, 1);
+    PyMutex_Lock(&netdb_lock);
 #endif
     _Py_COMP_DIAG_PUSH
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
@@ -6336,7 +6336,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
     ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af);
 #ifdef USE_GETHOSTBYNAME_LOCK
-    PyThread_release_lock(netdb_lock);
+    PyMutex_Unlock(&netdb_lock);
 #endif
 finally:
     PyMem_Free(ip_num);
@@ -9291,15 +9291,6 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, RCVALL_MAX);
 #endif
 #endif /* _MSTCPIP_ */
-
-    /* Initialize gethostbyname lock */
-#if defined(USE_GETHOSTBYNAME_LOCK)
-    netdb_lock = PyThread_allocate_lock();
-    if (netdb_lock == NULL) {
-        PyErr_NoMemory();
-        goto error;
-    }
-#endif
 
 #ifdef MS_WINDOWS
     /* remove some flags on older version Windows during run-time */

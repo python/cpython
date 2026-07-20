@@ -960,9 +960,9 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     tstate->suppress_co_const_immortalization++;
 #endif
 
-    result = _Py_CompileStringObjectWithModule(str, filename,
-                                               start[compile_mode], &cf,
-                                               optimize, modname);
+    result = _Py_CompileString(str, filename,
+                               start[compile_mode], &cf,
+                               optimize, modname);
 
 #ifdef Py_GIL_DISABLED
     tstate->suppress_co_const_immortalization--;
