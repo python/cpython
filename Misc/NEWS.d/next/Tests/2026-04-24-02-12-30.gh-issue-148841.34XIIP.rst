@@ -1,0 +1,2 @@
+When calling fallocate() on a zfs filesystem, FreeBSD 15 returns EOPNOTSUPP,
+as NetBSD does. This is causing test_os to fail - Handle this case as well.
