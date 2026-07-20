@@ -9807,7 +9807,6 @@ fi
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
-        as_fn_append LINKFORSHARED " -sGROWABLE_ARRAYBUFFERS=0"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
