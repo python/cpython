@@ -220,6 +220,12 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 static double
 m_acospi(double x)
 {
+    if (x >= 0.5) {
+        /* acos(x) = 2*asin(sqrt((1 - x)/2)).  1 - x is exact here.
+           Some libms (old fdlibm derivatives) lose precision in acos(x)
+           near x = 1, while asin() is accurate for small arguments. */
+        return 2.0*asin(sqrt((1.0 - x)/2.0))/pi;
+    }
     double r = acos(x)/pi;
     if (isgreater(r, 1.0)) {
         return 1.0;
