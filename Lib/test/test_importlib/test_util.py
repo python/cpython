@@ -33,6 +33,32 @@ except ModuleNotFoundError:
     _interpreters = None
 
 
+class ImportImportlibTests(unittest.TestCase):
+
+    def test_restores_missing_builtin_import_metadata(self):
+        missing = object()
+        attrs = {
+            attr: getattr(util.builtins, attr, missing)
+            for attr in ('__loader__', '__spec__')
+        }
+        try:
+            for attr in attrs:
+                if hasattr(util.builtins, attr):
+                    delattr(util.builtins, attr)
+
+            util.import_importlib('importlib')
+
+            for attr in attrs:
+                self.assertFalse(hasattr(util.builtins, attr))
+        finally:
+            for attr, value in attrs.items():
+                if value is missing:
+                    if hasattr(util.builtins, attr):
+                        delattr(util.builtins, attr)
+                else:
+                    setattr(util.builtins, attr, value)
+
+
 class DecodeSourceBytesTests:
 
     source = "string ='ü'"

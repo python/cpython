@@ -68,8 +68,24 @@ def import_importlib(module_name):
     """Import a module from importlib both w/ and w/o _frozen_importlib."""
     fresh = ('importlib',) if '.' in module_name else ()
     frozen = import_helper.import_fresh_module(module_name)
-    source = import_helper.import_fresh_module(module_name, fresh=fresh,
-                                         blocked=('_frozen_importlib', '_frozen_importlib_external'))
+    missing = object()
+    builtin_attrs = {
+        attr: getattr(builtins, attr, missing)
+        for attr in ('__loader__', '__spec__')
+    }
+    try:
+        source = import_helper.import_fresh_module(
+            module_name,
+            fresh=fresh,
+            blocked=('_frozen_importlib', '_frozen_importlib_external'),
+        )
+    finally:
+        for attr, value in builtin_attrs.items():
+            if value is missing:
+                if hasattr(builtins, attr):
+                    delattr(builtins, attr)
+            else:
+                setattr(builtins, attr, value)
     return {'Frozen': frozen, 'Source': source}
 
 
