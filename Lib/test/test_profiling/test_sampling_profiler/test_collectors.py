@@ -571,7 +571,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"value":', content)
         self.assertIn('"children":', content)
         self.assertIn('"sample_interval_usec": 10000', content)
-        self.assertIn("samples * sampleIntervalUsec / 1000", content)
+        self.assertIn("samples * data.stats.sample_interval_usec / 1000", content)
 
     def test_flamegraph_collector_empty_export_fails(self):
         """Test empty flamegraph export reports no output."""
