@@ -16665,10 +16665,10 @@ join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
 static PyObject *
 DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 {
-    DirEntry* entry;
+    DirEntry *entry;
     BY_HANDLE_FILE_INFORMATION file_info;
     ULONG reparse_tag;
-    wchar_t* joined_path;
+    wchar_t *joined_path;
 
     PyObject *DirEntryType = get_posix_state(module)->DirEntryType;
     entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
