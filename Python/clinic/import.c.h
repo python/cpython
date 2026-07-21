@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_imp_lock_held__doc__,
 "lock_held($module, /)\n"
@@ -34,8 +34,9 @@ PyDoc_STRVAR(_imp_acquire_lock__doc__,
 "\n"
 "Acquires the interpreter\'s import lock for the current thread.\n"
 "\n"
-"This lock should be used by import hooks to ensure thread-safety when importing\n"
-"modules. On platforms without threads, this function does nothing.");
+"This lock should be used by import hooks to ensure thread-safety when\n"
+"importing modules.  On platforms without threads, this function does\n"
+"nothing.");
 
 #define _IMP_ACQUIRE_LOCK_METHODDEF    \
     {"acquire_lock", (PyCFunction)_imp_acquire_lock, METH_NOARGS, _imp_acquire_lock__doc__},
@@ -199,9 +200,11 @@ _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(withdata), },
     };
     #undef NUM_KEYWORDS
@@ -223,7 +226,8 @@ _imp_find_frozen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *name;
     int withdata = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -411,7 +415,7 @@ _imp__override_frozen_modules_for_tests(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int override;
 
-    override = _PyLong_AsInt(arg);
+    override = PyLong_AsInt(arg);
     if (override == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -442,7 +446,7 @@ _imp__override_multi_interp_extensions_check(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int override;
 
-    override = _PyLong_AsInt(arg);
+    override = PyLong_AsInt(arg);
     if (override == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -571,9 +575,11 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(source), },
     };
     #undef NUM_KEYWORDS
@@ -594,7 +600,8 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     long key;
     Py_buffer source = {NULL, NULL};
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -603,10 +610,6 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &source, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&source, 'C')) {
-        _PyArg_BadArgument("source_hash", "argument 'source'", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _imp_source_hash_impl(module, key, &source);
@@ -620,6 +623,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp__set_lazy_attributes__doc__,
+"_set_lazy_attributes($module, modobj, name, /)\n"
+"--\n"
+"\n"
+"Sets attributes to lazy submodules on the module, as side effects.");
+
+#define _IMP__SET_LAZY_ATTRIBUTES_METHODDEF    \
+    {"_set_lazy_attributes", _PyCFunction_CAST(_imp__set_lazy_attributes), METH_FASTCALL, _imp__set_lazy_attributes__doc__},
+
+static PyObject *
+_imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
+                               PyObject *name);
+
+static PyObject *
+_imp__set_lazy_attributes(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *modobj;
+    PyObject *name;
+
+    if (!_PyArg_CheckPositional("_set_lazy_attributes", nargs, 2, 2)) {
+        goto exit;
+    }
+    modobj = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("_set_lazy_attributes", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    name = args[1];
+    return_value = _imp__set_lazy_attributes_impl(module, modobj, name);
+
+exit:
+    return return_value;
+}
+
 #ifndef _IMP_CREATE_DYNAMIC_METHODDEF
     #define _IMP_CREATE_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_CREATE_DYNAMIC_METHODDEF) */
@@ -627,4 +665,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=a95ec234672280a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0974db098d601372 input=a9049054013a1b77]*/

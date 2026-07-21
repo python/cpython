@@ -1,5 +1,0 @@
-When installed from the Microsoft Store, ``pip`` no longer defaults to
-per-user installs. However, as the install directory is unwritable, it
-should automatically decide to do a per-user install anyway. This should
-resolve issues when ``pip`` is passed an option that conflicts with
-``--user``.

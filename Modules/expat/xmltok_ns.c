@@ -12,6 +12,7 @@
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2017-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2025      Alfonso Gregory <gfunni234@gmail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -98,13 +99,13 @@ NS(findEncoding)(const ENCODING *enc, const char *ptr, const char *end) {
   int i;
   XmlUtf8Convert(enc, &ptr, end, &p, p + ENCODING_MAX - 1);
   if (ptr != end)
-    return 0;
+    return NULL;
   *p = 0;
   if (streqci(buf, KW_UTF_16) && enc->minBytesPerChar == 2)
     return enc;
   i = getEncodingIndex(buf);
   if (i == UNKNOWN_ENC)
-    return 0;
+    return NULL;
   return NS(encodings)[i];
 }
 
