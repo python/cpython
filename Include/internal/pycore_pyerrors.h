@@ -186,7 +186,6 @@ extern int _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 extern void _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
 // Exported for external JIT support
 PyAPI_FUNC(PyObject *) _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
-extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
