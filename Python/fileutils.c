@@ -1103,15 +1103,22 @@ typedef union {
 
 
 void
-_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
-                           FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
+_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, FILE_STANDARD_INFO* standard_info,
+                           ULONG reparse_tag, FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
                            struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
-    result->st_mode = attributes_to_mode(info->dwFileAttributes);
-    result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
-    result->st_dev = id_info ? id_info->VolumeSerialNumber : info->dwVolumeSerialNumber;
-    result->st_rdev = 0;
+
+    if (info) {
+        result->st_size = (((__int64)info->nFileSizeHigh) << 32) + info->nFileSizeLow;
+        result->st_nlink = info->nNumberOfLinks;
+        result->st_dev = id_info ? id_info->VolumeSerialNumber : info->dwVolumeSerialNumber;
+    }
+    if (standard_info && !info) {
+        result->st_size = standard_info->EndOfFile.QuadPart;
+        result->st_nlink = standard_info->NumberOfLinks;
+    }
+
     /* st_ctime is deprecated, but we preserve the legacy value in our caller, not here */
     if (basic_info) {
         LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
@@ -1123,7 +1130,6 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
         FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
         FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
     }
-    result->st_nlink = info->nNumberOfLinks;
 
     if (id_info) {
         id_128_to_ino file_id;
@@ -1134,49 +1140,31 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
     if (!result->st_ino && !result->st_ino_high) {
         /* should only occur for DirEntry_from_find_data, in which case the
            index is likely to be zero anyway. */
-        result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
+        if (info)
+            result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
     }
+
+    const DWORD fileAttributes = basic_info ? basic_info->FileAttributes : info->dwFileAttributes;
+
+    result->st_file_attributes = fileAttributes;
+    result->st_mode = attributes_to_mode(fileAttributes);
 
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
        open other name surrogate reparse points without traversing them. To
        detect/handle these, check st_file_attributes and st_reparse_tag. */
     result->st_reparse_tag = reparse_tag;
-    if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+    if (result->st_file_attributes & FILE_ATTRIBUTE_REPARSE_POINT &&
         reparse_tag == IO_REPARSE_TAG_SYMLINK) {
         /* set the bits that make this a symlink */
         result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
     }
-    result->st_file_attributes = info->dwFileAttributes;
-}
 
-void
-_Py_attribute_data_to_stat_UWP(FILE_STANDARD_INFO* standard_info, ULONG reparse_tag,
-                               FILE_BASIC_INFO* basic_info, struct _Py_stat_struct* result)
-{
-    memset(result, 0, sizeof(*result));
-    result->st_mode = attributes_to_mode(basic_info->FileAttributes);
-    result->st_size = standard_info->EndOfFile.QuadPart;
+    // For UWP compatibility since is not possible obtain the VolumeSerialNumber
+    // and FileId due security restriction and App isolation
+#ifndef MS_WINDOWS_DESKTOP
     result->st_dev = 1;
-
-    /* st_ctime is deprecated, but we preserve the legacy value in our caller, not here */
-    LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
-    LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
-    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
-
-    result->st_nlink = standard_info->NumberOfLinks;
-    result->st_ino = basic_info->CreationTime.QuadPart;
-
-    /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
-       open other name surrogate reparse points without traversing them. To
-       detect/handle these, check st_file_attributes and st_reparse_tag. */
-    result->st_reparse_tag = reparse_tag;
-    if (basic_info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-        reparse_tag == IO_REPARSE_TAG_SYMLINK) {
-        /* set the bits that make this a symlink */
-        result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
-    }
-    result->st_file_attributes = basic_info->FileAttributes;
+    basic_info->CreationTime.QuadPart;
+#endif
 }
 
 void
@@ -1316,9 +1304,9 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     }
 
 #ifdef MS_WINDOWS_DESKTOP
-    _Py_attribute_data_to_stat(&info, 0, &basicInfo, pIdInfo, status);
+    _Py_attribute_data_to_stat(&info, NULL, 0, &basicInfo, pIdInfo, status);
 #else
-    _Py_attribute_data_to_stat_UWP(&standardInfo, 0, &basicInfo, status);
+    _Py_attribute_data_to_stat(NULL, &standardInfo, 0, &basicInfo, NULL, status);
 #endif
     return 0;
 #else

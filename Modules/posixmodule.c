@@ -829,13 +829,11 @@ PyOS_AfterFork(void)
 #ifdef MS_WINDOWS
 /* defined in fileutils.c */
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
-void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *, ULONG,
-                                FILE_BASIC_INFO *, FILE_ID_INFO *,
+void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *, FILE_STANDARD_INFO*,
+                                ULONG, FILE_BASIC_INFO *, FILE_ID_INFO *,
                                 struct _Py_stat_struct *);
 void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
                                  struct _Py_stat_struct *);
-void _Py_attribute_data_to_stat_UWP(FILE_STANDARD_INFO*, ULONG,
-                                    FILE_BASIC_INFO*, struct _Py_stat_struct*);
 #endif
 
 
@@ -2278,9 +2276,9 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
     }
 
 #ifdef MS_WINDOWS_DESKTOP
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
+    _Py_attribute_data_to_stat(&fileInfo, NULL, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
 #else
-    _Py_attribute_data_to_stat_UWP(&standardInfo, tagInfo.ReparseTag, &basicInfo, result);
+    _Py_attribute_data_to_stat(NULL, &standardInfo, tagInfo.ReparseTag, &basicInfo, NULL, result);
 #endif
     update_st_mode_from_path(path, basicInfo.FileAttributes, result);
 
@@ -16714,7 +16712,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     BY_HANDLE_FILE_INFORMATION file_info;
     ULONG reparse_tag;
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
-    _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, NULL, &entry->win32_lstat);
+    _Py_attribute_data_to_stat(&file_info, NULL, reparse_tag, NULL, NULL, &entry->win32_lstat);
 
     /* ctime is only deprecated from 3.12, so we copy birthtime across */
     entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;
