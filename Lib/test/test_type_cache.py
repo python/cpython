@@ -1,6 +1,7 @@
 """ Tests for the internal type cache in CPython. """
 import collections.abc
 import dis
+import sys
 import unittest
 import warnings
 from test import support
@@ -279,6 +280,164 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
             not instance
 
         self._check_specialization(to_bool_2, H(), "TO_BOOL", should_specialize=False)
+
+
+@support.cpython_only
+class PerTypeLookupCacheTests(unittest.TestCase):
+    """Tests for the per-type lookup cache."""
+
+    type_cache_lookup = staticmethod(_testinternalcapi.type_cache_lookup)
+    type_cache_invalidate = staticmethod(_testinternalcapi.type_cache_invalidate)
+
+    def _make_type(self):
+        class C:
+            x = "x-value"
+        return C
+
+    def test_lookup_miss_on_empty_cache(self):
+        # A freshly-created type has not cached any names yet; the cache
+        # should report a miss for an arbitrary name.
+        C = self._make_type()
+        hit, value, version = self.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 0)
+        self.assertIsNone(value)
+        self.assertEqual(version, 0)
+
+    def test_lookup_hit_after_access(self):
+        # Reading an attribute goes through _PyType_Lookup which
+        # caches the result. Subsequent lookups for the same name
+        # should hit the cache.
+        C = self._make_type()
+        hit, value, version = self.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 0)
+        attr = C.x
+        hit, value, version = self.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 1)
+        self.assertIs(value, attr)
+        self.assertNotEqual(version, 0)
+        self.assertEqual(version, type_get_version(C))
+
+    def test_lookup_caches_missing_name(self):
+        # _PyType_Lookup caches negative results too: a name that is not in
+        # the MRO should still produce a cache hit with a None value.
+        C = self._make_type()
+        with self.assertRaises(AttributeError):
+            C.does_not_exist
+        hit, value, _ = self.type_cache_lookup(C, "does_not_exist")
+        self.assertEqual(hit, 1)
+        self.assertIsNone(value)
+
+    def test_lookup_on_static_type(self):
+        # The cache for static types is stored on interpreter for isolation
+        # between subinterpreters, test that cache works for them as well.
+        self.type_cache_invalidate(int)
+        name = sys.intern("bit_length")
+        self.assertEqual(self.type_cache_lookup(int, name)[0], 0)
+        attr = getattr(int, name)
+        hit, value, _ = self.type_cache_lookup(int, name)
+        self.assertEqual(hit, 1)
+        self.assertIs(value, attr)
+
+    def test_invalidate_clears_cache(self):
+        C = self._make_type()
+        C.x  # populate cache
+        self.assertEqual(self.type_cache_lookup(C, "x")[0], 1)
+
+        self.type_cache_invalidate(C)
+        hit, value, _ = self.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 0)
+        self.assertIsNone(value)
+
+    def test_setattr_invalidates_cache(self):
+        # Mutating a type's attributes must invalidate any cached entries
+        # for that type.
+        C = self._make_type()
+        C.x
+        self.assertEqual(self.type_cache_lookup(C, "x")[0], 1)
+
+        C.x = "new-value"
+        hit, _, _ = self.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 0)
+
+        # The next access should re-populate the cache with the new value.
+        self.assertEqual(C.x, "new-value")
+        hit, value, _ = self.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 1)
+        self.assertEqual(value, "new-value")
+
+    def test_setattr_on_subclass_preserves_base(self):
+        # Adding an attribute to a subclass changes the lookup result for
+        # the subclass, so its cache must be invalidated, but the base's
+        # cache for the same name stays valid.
+        class Base:
+            x = "base"
+        class Sub(Base):
+            pass
+
+        self.assertEqual(Sub.x, "base")
+        self.assertEqual(Base.x, "base")
+        self.assertEqual(self.type_cache_lookup(Sub, "x")[0], 1)
+        self.assertEqual(self.type_cache_lookup(Base, "x")[0], 1)
+
+        Sub.x = "sub"
+        # Sub's cache should be invalidated.
+        self.assertEqual(self.type_cache_lookup(Sub, "x")[0], 0)
+        # Base is untouched.
+        hit, value, _ = self.type_cache_lookup(Base, "x")
+        self.assertEqual(hit, 1)
+        self.assertEqual(value, "base")
+
+    def test_setattr_on_base_invalidates_subclass(self):
+        class Base:
+            x = "base"
+        class Sub(Base):
+            pass
+
+        Sub.x
+        self.assertEqual(self.type_cache_lookup(Sub, "x")[0], 1)
+
+        Base.x = "new-base"
+        # Modifying the base must invalidate the subclass cache too.
+        self.assertEqual(self.type_cache_lookup(Sub, "x")[0], 0)
+
+    def test_lookup_detects_stale_cache_version(self):
+        # The cache stores the type's tp_version_tag alongside its entries
+        # and re-checks it after locating a hit. If the type version moves
+        # forward without the cache being invalidated (the race window in
+        # lock-free invalidation), the consistency check must downgrade
+        # the hit to a miss.
+        C = self._make_type()
+        C.x  # populate cache
+        orig_version = type_get_version(C)
+        self.assertNotEqual(orig_version, 0)
+        self.assertEqual(self.type_cache_lookup(C, "x")[0], 1)
+
+        # Bump the type version directly without touching the cache slot
+        # (PyType_Modified would also invalidate, defeating the test).
+        type_assign_specific_version_unsafe(C, orig_version + 1)
+        self.assertEqual(type_get_version(C), orig_version + 1)
+
+        hit, value, _ = self.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 0)
+        self.assertIsNone(value)
+
+    def test_setattr_on_unrelated_type_preserves_cache(self):
+        # Modifying one type must not invalidate a sibling's cache.
+        class A:
+            x = "a"
+        class B:
+            x = "b"
+
+        A.x
+        B.x
+        self.assertEqual(self.type_cache_lookup(A, "x")[0], 1)
+        self.assertEqual(self.type_cache_lookup(B, "x")[0], 1)
+
+        B.x = "b2"
+        # A's cache is unaffected.
+        hit, value, _ = self.type_cache_lookup(A, "x")
+        self.assertEqual(hit, 1)
+        self.assertEqual(value, "a")
 
 
 if __name__ == "__main__":
