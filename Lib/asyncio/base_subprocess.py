@@ -272,8 +272,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         try:
             return await waiter
         finally:
-            # _process_exited() sets _exit_waiters to None after waking
-            # all waiters; only discard if cancelled before process exit.
             if self._exit_waiters is not None:
                 self._exit_waiters.discard(waiter)
 
