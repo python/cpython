@@ -836,7 +836,6 @@ void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
                                  struct _Py_stat_struct *);
 void _Py_attribute_data_to_stat_UWP(FILE_STANDARD_INFO*, ULONG,
                                     FILE_BASIC_INFO*, struct _Py_stat_struct*);
-void _Py_find_data_to_stat(WIN32_FIND_DATAW* find_data, struct _Py_stat_struct* result);
 #endif
 
 
