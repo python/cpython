@@ -87,8 +87,46 @@ class FutureTest(unittest.TestCase):
             from __future__ import rested_snopes  # typo error here: nested => rested
         """
         self.assertSyntaxError(
-            code, lineno=2,
-            message='future feature rested_snopes is not defined', offset=24,
+            code,
+            lineno=2,
+            message=(
+                "future feature 'rested_snopes' is not defined. "
+                "Did you mean: 'nested_scopes'?"
+            ),
+            offset=24,
+        )
+
+    def test_typos_in_future_imports(self):
+        for typo, origin in {
+            "nest_scopes": "nested_scopes",
+            "gneretors": "generators",
+            "divicion": "division",
+            "absolute_imports": "absolute_import",
+            "print_func": "print_function",
+            "unicode_literal": "unicode_literals",
+            "barry_as_bdfl": "barry_as_FLUFL",
+            "generatorstop": "generator_stop",
+            "anotations": "annotations",
+            "brces": "braces",
+            "brace": "braces",
+        }.items():
+            with self.subTest(typo=typo, origin=origin):
+                self.assertSyntaxError(
+                    f"from __future__ import {typo}",
+                    lineno=1,
+                    message=(
+                        f"future feature '{typo}' is not defined. "
+                        f"Did you mean: '{origin}'?"
+                    ),
+                    offset=24,
+                )
+
+    def test_no_suggestion_on_missing_name(self):
+        self.assertSyntaxError(
+            "from __future__ import missing_name",
+            lineno=1,
+            message="future feature 'missing_name' is not defined",
+            offset=24,
         )
 
     def test_future_import_not_on_top(self):
@@ -137,7 +175,7 @@ class FutureTest(unittest.TestCase):
         code = """
             from __future__ import *
         """
-        self.assertSyntaxError(code, message='future feature * is not defined', offset=24)
+        self.assertSyntaxError(code, message="future feature '*' is not defined", offset=24)
 
     def test_future_import_braces(self):
         code = """
