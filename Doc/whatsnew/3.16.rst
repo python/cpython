@@ -101,6 +101,21 @@ codecs
   even when a built-in codec of the same name exists.
   (Contributed by Serhiy Storchaka in :gh:`152997`.)
 
+csv
+---
+
+* :meth:`csv.Sniffer.sniff` now deduces the dialect by trial parsing
+  instead of heuristics based on matching isolated fragments
+  and on character frequencies,
+  so the result is consistent with how :func:`csv.reader` will parse the sample.
+  It can now detect the *escapechar* parameter,
+  accepts non-ASCII delimiters in the *delimiters* argument,
+  no longer misdetects the delimiter
+  when the sample contains delimiter characters inside quoted fields,
+  and no longer takes quadratic time on quoted samples.
+  The results may differ from those of earlier Python versions.
+  (Contributed by Serhiy Storchaka in :gh:`83273`.)
+
 curses
 ------
 
@@ -800,7 +815,8 @@ New features
 Porting to Python 3.16
 ----------------------
 
-* TODO
+* :c:func:`PyType_ClearCache` is now a no-op as the type cache is now
+  implemented per-type. It still returns the current version tag.
 
 Deprecated C APIs
 -----------------
