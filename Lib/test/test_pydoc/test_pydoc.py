@@ -369,7 +369,7 @@ def html2text(html):
 
     Tailored for pydoc tests only.
     """
-    html = html.replace("<dd>", "\n")
+    html = re.sub(r"<dd\b[^>]*>", "\n", html)
     html = html.replace("<hr>", "-"*70)
     html = re.sub("<.*?>", "", html)
     html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
@@ -1913,7 +1913,7 @@ foo
 
         html = pydoc.HTMLDoc().document(coro_function)
         self.assertIn(
-            'async <a name="-coro_function"><strong>coro_function',
+            'async <a id="-coro_function"><strong>coro_function',
             html)
 
     def test_async_generator_annotation(self):
@@ -1925,7 +1925,7 @@ foo
 
         html = pydoc.HTMLDoc().document(an_async_generator)
         self.assertIn(
-            'async <a name="-an_async_generator"><strong>an_async_generator',
+            'async <a id="-an_async_generator"><strong>an_async_generator',
             html)
 
     @requires_docstrings
@@ -2091,7 +2091,7 @@ class PydocFodderTest(unittest.TestCase):
         doc = pydoc.HTMLDoc()
         result = doc.docmodule(pydocfodder)
         result = html2text(result)
-        lines = self.getsection(result, ' Functions', None)
+        lines = self.getsection(result, 'Functions', None)
         # function alias
         self.assertIn(' global_func_alias = global_func(x, y)', lines)
         self.assertIn(' A_staticmethod(x, y)', lines)
