@@ -297,6 +297,7 @@ _Py_make_parameters(PyObject *args)
             goto error;
         }
     }
+    Py_LeaveRecursiveCall();
     return parameters;
 
 error:
