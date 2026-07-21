@@ -6,15 +6,17 @@ Time complexity of operations on built-in types
 
 This page documents the time-complexity of various operations on built-in types
 in CPython. Other Python implementations may have different performance
-characteristics. Additionally, the listed costs assume exact built-in types as
-instances of subclasses often miss CPython's internal fast paths.
+characteristics. Additionally, the listed costs assume exact built-in types, as
+instances of subclasses may have different costs.
 
 We use |big O notation|_ to describe how the running time of an operation grows
-with the size of its input. Generally, *n* is the number of elements currently
-in the container, and *k* is either the value of a parameter or the number of
-elements in the parameter. For a pragmatic approach to assessing time complexity,
-see Ned Batchelder's `Big-O: How Code Slows as Data Grows
-<https://nedbatchelder.com/text/bigo>`__ talk and blog post.
+with the size of its input. Unless stated otherwise, *n* denotes the number of
+elements currently in the container, and *k* is either the value of a parameter
+or the number of elements in the parameter.
+
+For a pragmatic approach to assessing time complexity, see Ned Batchelder's
+`Big-O: How Code Slows as Data Grows <https://nedbatchelder.com/text/bigo>`__
+talk and blog post.
 
 .. |big O notation| replace:: Big *O* notation
 .. _big O notation: https://en.wikipedia.org/wiki/Big_O_notation
@@ -23,51 +25,51 @@ see Ned Batchelder's `Big-O: How Code Slows as Data Grows
 :class:`!list`
 ==============
 
-Lists are mutable sequences. Internally, a :class:`list` is represented as an
-array; for more detail see :ref:`how-are-lists-implemented`. The largest costs
-come from growing beyond the current allocation size (because everything must move),
-or from inserting or deleting somewhere near the beginning (because everything
-after that must move). If you need to add or remove at both ends,
-consider using a :class:`collections.deque` instead.
+Lists are mutable sequences; for more detail on the implementation see
+:ref:`how-are-lists-implemented`. The largest costs come from growing beyond the
+current allocation size (because everything must move), or from inserting or
+deleting somewhere near the beginning (because everything after that must move).
+If you need to add or remove at both ends, consider using a
+:class:`collections.deque` instead.
 
 .. list-table::
    :header-rows: 1
 
    * - Operation
      - Complexity
-   * - Copy
+   * - Copy (``s.copy()``)
      - *O*\ (*n*)
-   * - Append [1]_
+   * - Append (``s.append(x)``) [1]_
      - *O*\ (1)
-   * - Pop [1]_ [2]_
+   * - Pop (``s.pop(k)``) [1]_ [2]_
      - *O*\ (*n* - *k*)
-   * - Insert [1]_ [2]_
+   * - Insert (``s.insert(k, x)``) [1]_ [2]_
      - *O*\ (*n* - *k*)
-   * - Get item
+   * - Get item (``s[k]``)
      - *O*\ (1)
-   * - Set item
+   * - Set item (``s[k] = x``)
      - *O*\ (1)
-   * - Delete item [2]_
+   * - Delete item (``del s[k]``) [2]_
      - *O*\ (*n* - *k*)
    * - Iteration
      - *O*\ (*n*)
-   * - Get slice
+   * - Get slice (``s[i:j]``)
      - *O*\ (*k*)
-   * - Set slice
+   * - Set slice (``s[i:j] = t``)
      - *O*\ (*k* + *n*)
-   * - Delete slice
+   * - Delete slice (``del s[i:j]``)
      - *O*\ (*n*)
-   * - Extend [1]_
+   * - Extend (``s.extend(t)``) [1]_
      - *O*\ (*k*)
-   * - Sort [3]_
+   * - Sort (``s.sort()``) [3]_
      - *O*\ (*n* log *n*)
-   * - Multiply
+   * - Multiply (``s * k``)
      - *O*\ (*nk*)
    * - ``x in s``
      - *O*\ (*n*)
    * - ``min(s)``, ``max(s)``
      - *O*\ (*n*)
-   * - Get length [4]_
+   * - Get length (``len(s)``) [4]_
      - *O*\ (1)
 
 
@@ -83,15 +85,15 @@ time as the same object is returned.
 
    * - Operation
      - Complexity
-   * - Copy
+   * - Copy (``tuple(s)``)
      - *O*\ (1)
-   * - Get item
+   * - Get item (``s[k]``)
      - *O*\ (1)
-   * - Get slice
+   * - Get slice (``s[i:j]``)
      - *O*\ (*k*)
    * - Concatenate (``s + t``)
      - *O*\ (*n* + *k*)
-   * - Multiply
+   * - Multiply (``s * k``)
      - *O*\ (*nk*)
    * - Iteration
      - *O*\ (*n*)
@@ -99,7 +101,7 @@ time as the same object is returned.
      - *O*\ (*n*)
    * - ``min(s)``, ``max(s)``
      - *O*\ (*n*)
-   * - Get length [4]_
+   * - Get length (``len(s)``) [4]_
      - *O*\ (1)
 
 
@@ -114,27 +116,27 @@ to the same value, each of the *O*\ (1) operations below instead takes
 *O*\ (*n*) time. For more detail on the implementation, see
 :ref:`how-are-dictionaries-implemented`.
 
-A :class:`frozendict` is immutable, but the non-mutating operations below
-apply to it at the same costs.
+A :class:`frozendict` is immutable, so it does not support setting or deleting
+items; the other operations below apply to it at the same costs.
 
 .. list-table::
    :header-rows: 1
 
    * - Operation
      - Complexity
-   * - ``k in d``
+   * - ``key in d``
      - *O*\ (1)
-   * - Copy [5]_ [6]_
+   * - Copy (``d.copy()``) [5]_ [6]_
      - *O*\ (*n*)
-   * - Get item
+   * - Get item (``d[key]``)
      - *O*\ (1)
-   * - Set item [1]_
+   * - Set item (``d[key] = value``) [1]_
      - *O*\ (1)
-   * - Delete item
+   * - Delete item (``del d[key]``)
      - *O*\ (1)
    * - Iteration [6]_
      - *O*\ (*n*)
-   * - Get length [4]_
+   * - Get length (``len(d)``) [4]_
      - *O*\ (1)
 
 
@@ -146,8 +148,9 @@ intentionally very similar, and the same hash collision caveat applies.
 In the worst case, *O*\ (1) operations instead take *O*\ (*n*) time,
 and operations that look up every element of an operand degrade accordingly.
 
-A :class:`frozenset` is :term:`immutable`, but the non-mutating operations below
-apply to it at the same costs.
+A :class:`frozenset` is :term:`immutable`, so it does not support adding,
+discarding, or the in-place update operations; the others below apply to it at
+the same costs.
 
 .. list-table::
    :header-rows: 1
@@ -172,7 +175,7 @@ apply to it at the same costs.
      - *O*\ (len(*s*) + len(*t*))
    * - Symmetric difference update (``s.symmetric_difference_update(t)``) [1]_ [6]_
      - *O*\ (len(*t*))
-   * - Get length [4]_
+   * - Get length (``len(s)``) [4]_
      - *O*\ (1)
 
 
@@ -191,13 +194,13 @@ bytes, and is amortized *O*\ (1).
 
    * - Operation
      - Complexity
-   * - Get item
+   * - Get item (``s[k]``)
      - *O*\ (1)
-   * - Get slice
+   * - Get slice (``s[i:j]``)
      - *O*\ (*k*)
    * - Concatenate (``s + t``)
      - *O*\ (*n* + *k*)
-   * - Multiply
+   * - Multiply (``s * k``)
      - *O*\ (*nk*)
    * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``) [9]_
      - *O*\ (*n*)
@@ -205,7 +208,7 @@ bytes, and is amortized *O*\ (1).
      - *O*\ (*n*)
    * - Iteration
      - *O*\ (*n*)
-   * - Get length [4]_
+   * - Get length (``len(s)``) [4]_
      - *O*\ (1)
 
 
@@ -222,15 +225,15 @@ buffer.
 
    * - Operation
      - Complexity
-   * - Create
+   * - Create (``memoryview(obj)``)
      - *O*\ (1)
-   * - Get item
+   * - Get item (``v[k]``)
      - *O*\ (1)
-   * - Get slice
+   * - Get slice (``v[i:j]``)
      - *O*\ (1)
    * - Convert to bytes (``v.tobytes()``, ``bytes(v)``)
      - *O*\ (*n*)
-   * - Get length [4]_
+   * - Get length (``len(v)``) [4]_
      - *O*\ (1)
 
 
@@ -245,9 +248,9 @@ A :class:`range` object computes its items on demand from its *start*, *stop* an
 
    * - Operation
      - Complexity
-   * - Get item
+   * - Get item (``s[k]``)
      - *O*\ (1)
-   * - Get slice
+   * - Get slice (``s[i:j]``)
      - *O*\ (1)
    * - ``x in s`` [10]_
      - *O*\ (1)
@@ -257,7 +260,7 @@ A :class:`range` object computes its items on demand from its *start*, *stop* an
      - *O*\ (*n*)
    * - ``min(s)``, ``max(s)``
      - *O*\ (*n*)
-   * - Get length [4]_
+   * - Get length (``len(s)``) [4]_
      - *O*\ (1)
 
 
