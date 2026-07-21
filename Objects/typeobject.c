@@ -21,7 +21,8 @@
 #include "pycore_slots.h"         // _PySlotIterator_Init
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
-#include "pycore_typeobject.h"    // struct type_cache
+#include "pycore_typecache.h"     // _PyTypeCache_Lookup()
+#include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
@@ -41,21 +42,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 /* Support type attribute lookup cache */
 
-/* The cache can keep references to the names alive for longer than
-   they normally would.  This is why the maximum size is limited to
-   MCACHE_MAX_ATTR_SIZE, since it might be a problem if very large
-   strings are used as attribute names. */
-#define MCACHE_MAX_ATTR_SIZE    100
-#define MCACHE_HASH(version, name_hash)                                 \
-        (((unsigned int)(version) ^ (unsigned int)(name_hash))          \
-         & ((1 << MCACHE_SIZE_EXP) - 1))
-
-#define MCACHE_HASH_METHOD(type, name)                                  \
-    MCACHE_HASH(FT_ATOMIC_LOAD_UINT_RELAXED((type)->tp_version_tag),   \
-                ((Py_ssize_t)(name)) >> 3)
-#define MCACHE_CACHEABLE_NAME(name)                             \
-        (PyUnicode_CheckExact(name) &&                           \
-         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE))
+#define MCACHE_CACHEABLE_NAME(name) (PyUnicode_CheckExact(name) && PyUnicode_CHECK_INTERNED(name))
 
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
@@ -969,75 +956,17 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
 }
 
 
-static struct type_cache*
-get_type_cache(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->types.type_cache;
-}
-
-
-static void
-type_cache_clear(struct type_cache *cache, PyObject *value)
-{
-    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-        struct type_cache_entry *entry = &cache->hashtable[i];
-#ifdef Py_GIL_DISABLED
-        _PySeqLock_LockWrite(&entry->sequence);
-#endif
-        entry->version = 0;
-        Py_XSETREF(entry->name, _Py_XNewRef(value));
-        entry->value = NULL;
-#ifdef Py_GIL_DISABLED
-        _PySeqLock_UnlockWrite(&entry->sequence);
-#endif
-    }
-}
-
-
-void
-_PyType_InitCache(PyInterpreterState *interp)
-{
-    struct type_cache *cache = &interp->types.type_cache;
-    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-        struct type_cache_entry *entry = &cache->hashtable[i];
-        assert(entry->name == NULL);
-
-        entry->version = 0;
-        // Set to None so _PyType_LookupRef() can use Py_SETREF(),
-        // rather than using slower Py_XSETREF().
-        entry->name = Py_None;
-        entry->value = NULL;
-    }
-}
-
-
-static unsigned int
-_PyType_ClearCache(PyInterpreterState *interp)
-{
-    struct type_cache *cache = &interp->types.type_cache;
-    // Set to None, rather than NULL, so _PyType_LookupRef() can
-    // use Py_SETREF() rather than using slower Py_XSETREF().
-    type_cache_clear(cache, Py_None);
-
-    return NEXT_VERSION_TAG(interp) - 1;
-}
-
-
 unsigned int
 PyType_ClearCache(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyType_ClearCache(interp);
+    return NEXT_VERSION_TAG(interp) - 1;
 }
 
 
 void
 _PyTypes_Fini(PyInterpreterState *interp)
 {
-    struct type_cache *cache = &interp->types.type_cache;
-    type_cache_clear(cache, NULL);
-
     // All the managed static types should have been finalized already.
     assert(interp->types.for_extensions.num_initialized == 0);
     for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_EXT_TYPES; i++) {
@@ -1231,6 +1160,7 @@ _PyType_Modified_Unlocked(PyTypeObject *type)
     }
 
     set_version_unlocked(type, 0); /* 0 is not a valid version tag */
+    _PyTypeCache_Invalidate(type);
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1314,6 +1244,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases)
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
+    _PyTypeCache_Invalidate(type);
     type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
@@ -6212,69 +6143,6 @@ is_dunder_name(PyObject *name)
     return 0;
 }
 
-static PyObject *
-update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
-{
-    _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
-    assert(PyUnstable_Unicode_GET_CACHED_HASH(name) != -1);
-    OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
-    // We're releasing this under the lock for simplicity sake because it's always a
-    // exact unicode object or Py_None so it's safe to do so.
-    PyObject *old_name = entry->name;
-    _Py_atomic_store_ptr_relaxed(&entry->name, Py_NewRef(name));
-    // We must write the version last to avoid _Py_TryXGetStackRef()
-    // operating on an invalid (already deallocated) value inside
-    // _PyType_LookupRefAndVersion().  If we write the version first then a
-    // reader could pass the "entry_version == type_version" check but could
-    // be using the old entry value.
-    _Py_atomic_store_uint32_release(&entry->version, version_tag);
-    return old_name;
-}
-
-#if Py_GIL_DISABLED
-
-static void
-update_cache_gil_disabled(struct type_cache_entry *entry, PyObject *name,
-                          unsigned int version_tag, PyObject *value)
-{
-    _PySeqLock_LockWrite(&entry->sequence);
-
-    // update the entry
-    if (entry->name == name &&
-        entry->value == value &&
-        entry->version == version_tag) {
-        // We raced with another update, bail and restore previous sequence.
-        _PySeqLock_AbandonWrite(&entry->sequence);
-        return;
-    }
-
-    PyObject *old_value = update_cache(entry, name, version_tag, value);
-
-    // Then update sequence to the next valid value
-    _PySeqLock_UnlockWrite(&entry->sequence);
-
-    Py_DECREF(old_value);
-}
-
-#endif
-
-void
-_PyTypes_AfterFork(void)
-{
-#ifdef Py_GIL_DISABLED
-    struct type_cache *cache = get_type_cache();
-    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-        struct type_cache_entry *entry = &cache->hashtable[i];
-        if (_PySeqLock_AfterFork(&entry->sequence)) {
-            // Entry was in the process of updating while forking, clear it...
-            entry->value = NULL;
-            Py_SETREF(entry->name, Py_None);
-            entry->version = 0;
-        }
-    }
-#endif
-}
-
 /* Internal API to look for a name through the MRO.
    This returns a strong reference, and doesn't set an exception!
    If nonzero, version is set to the value of type->tp_version at the time of
@@ -6305,45 +6173,16 @@ should_assign_version_tag(PyTypeObject *type, PyObject *name, unsigned int versi
 unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    unsigned int h = MCACHE_HASH_METHOD(type, name);
-    struct type_cache *cache = get_type_cache();
-    struct type_cache_entry *entry = &cache->hashtable[h];
-#ifdef Py_GIL_DISABLED
-    // synchronize-with other writing threads by doing an acquire load on the sequence
-    while (1) {
-        uint32_t sequence = _PySeqLock_BeginRead(&entry->sequence);
-        uint32_t entry_version = _Py_atomic_load_uint32_acquire(&entry->version);
-        uint32_t type_version = _Py_atomic_load_uint32_acquire(&type->tp_version_tag);
-        if (entry_version == type_version &&
-            _Py_atomic_load_ptr_relaxed(&entry->name) == name) {
+    int cacheable = MCACHE_CACHEABLE_NAME(name);
+    if (cacheable) {
+        struct _PyTypeCacheLookupResult r = _PyTypeCache_Lookup(type, name);
+        if (r.cache_hit) {
             OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
             OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
-            if (_Py_TryXGetStackRef(&entry->value, out)) {
-                // If the sequence is still valid then we're done
-                if (_PySeqLock_EndRead(&entry->sequence, sequence)) {
-                    return entry_version;
-                }
-                PyStackRef_XCLOSE(*out);
-            }
-            else {
-                // If we can't incref the object we need to fallback to locking
-                break;
-            }
-        }
-        else {
-            // cache miss
-            break;
+            *out = r.value;
+            return r.version_tag;
         }
     }
-#else
-    if (entry->version == type->tp_version_tag && entry->name == name) {
-        assert(type->tp_version_tag);
-        OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
-        OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
-        *out = entry->value ? PyStackRef_FromPyObjectNew(entry->value) : PyStackRef_NULL;
-        return entry->version;
-    }
-#endif
     OBJECT_STAT_INC_COND(type_cache_misses, !is_dunder_name(name));
     OBJECT_STAT_INC_COND(type_cache_dunder_misses, is_dunder_name(name));
 
@@ -6354,14 +6193,25 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     unsigned int version_tag = FT_ATOMIC_LOAD_UINT(type->tp_version_tag);
-    if (should_assign_version_tag(type, name, version_tag)) {
+    if (cacheable &&
+        (version_tag != 0 || should_assign_version_tag(type, name, version_tag)))
+    {
         BEGIN_TYPE_LOCK();
-        assign_version_tag(interp, type);
         version_tag = type->tp_version_tag;
+        if (version_tag == 0) {
+            assign_version_tag(interp, type);
+            version_tag = type->tp_version_tag;
+        }
         res = find_name_in_mro(type, name, out);
+        // find_name_in_mro can release the type lock and another thread can
+        // modify the type, so we need to check version tag again before caching the result.
+        if (res >= 0 && version_tag != 0 && version_tag == type->tp_version_tag) {
+            _PyTypeCache_Insert(type, name, PyStackRef_AsPyObjectBorrow(*out));
+        }
         END_TYPE_LOCK();
     }
     else {
+        version_tag = 0;
         res = find_name_in_mro(type, name, out);
     }
 
@@ -6371,17 +6221,6 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         return 0;
     }
 
-    if (version_tag == 0 || !MCACHE_CACHEABLE_NAME(name)) {
-        return 0;
-    }
-
-    PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
-#if Py_GIL_DISABLED
-    update_cache_gil_disabled(entry, name, version_tag, res_obj);
-#else
-    PyObject *old_value = update_cache(entry, name, version_tag, res_obj);
-    Py_DECREF(old_value);
-#endif
     return version_tag;
 }
 
@@ -6840,7 +6679,10 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
 done:
     Py_DECREF(name);
     Py_XDECREF(descr);
-    Py_XDECREF(old_value);
+    // delay decref of the old value as lock-free type cache readers may access it
+    if (old_value != NULL && !_Py_IsImmortal(old_value)) {
+        _PyObject_XDecRefDelayed(old_value);
+    }
     return res;
 }
 
@@ -6912,6 +6754,7 @@ clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type,
     if (final) {
         Py_CLEAR(type->tp_cache);
     }
+    _PyTypeCache_Invalidate(type);
     clear_tp_dict(type);
     clear_tp_bases(type, final);
     clear_tp_mro(type, final);
@@ -7022,6 +6865,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     clear_tp_subclasses(type);
+    _PyTypeCache_Invalidate(type);
 
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
@@ -9535,6 +9379,8 @@ type_ready(PyTypeObject *type, int initial)
     if (type_ready_pre_checks(type) < 0) {
         goto error;
     }
+
+    _PyTypeCache_InitType(type);
 
 #ifdef Py_TRACE_REFS
     /* PyType_Ready is the closest thing we have to a choke point
