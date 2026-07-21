@@ -1,13 +1,25 @@
 import unittest
 
-from test.support import threading_helper
 from test.support import import_helper
+from test.support import threading_helper
 
 readline = import_helper.import_module("readline")
 
 
 @threading_helper.requires_working_threading()
 class TestReadlineRaces(unittest.TestCase):
+    def test_completer_delims_get_set(self):
+        def worker():
+            for _ in range(100):
+                readline.get_completer_delims()
+                readline.set_completer_delims(
+                    ' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
+                readline.set_completer_delims(
+                    ' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
+                readline.get_completer_delims()
+
+        threading_helper.run_concurrently(worker, nthreads=40)
+
     # get_completer()/get_pre_input_hook() must take the module critical
     # section like their setters do; otherwise reading and Py_NewRef-ing the
     # stored hook races the setter replacing it (gh-153291).
