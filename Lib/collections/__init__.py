@@ -1286,7 +1286,7 @@ class UserList(_collections_abc.MutableSequence):
         self.data = []
         if initlist is not None:
             # XXX should this accept an arbitrary sequence?
-            if type(initlist) == type(self.data):
+            if type(initlist) is list:
                 self.data[:] = initlist
             elif isinstance(initlist, UserList):
                 self.data[:] = initlist.data[:]
@@ -1335,21 +1335,21 @@ class UserList(_collections_abc.MutableSequence):
     def __add__(self, other):
         if isinstance(other, UserList):
             return self.__class__(self.data + other.data)
-        elif isinstance(other, type(self.data)):
+        elif isinstance(other, list):
             return self.__class__(self.data + other)
         return self.__class__(self.data + list(other))
 
     def __radd__(self, other):
         if isinstance(other, UserList):
             return self.__class__(other.data + self.data)
-        elif isinstance(other, type(self.data)):
+        elif isinstance(other, list):
             return self.__class__(other + self.data)
         return self.__class__(list(other) + self.data)
 
     def __iadd__(self, other):
         if isinstance(other, UserList):
             self.data += other.data
-        elif isinstance(other, type(self.data)):
+        elif isinstance(other, list):
             self.data += other
         else:
             self.data += list(other)
