@@ -1197,6 +1197,9 @@ class _cached_method:
 
 
 def cached_method(func=None, /, maxsize=None, typed=False):
+    if maxsize is not None and not isinstance(maxsize, int) and not callable(maxsize):
+        raise TypeError(
+            'Expected maxsize to be an integer, a callable, or None')
     if func is None:
         def decorator(func):
             return _cached_method(func, maxsize=maxsize, typed=typed)
