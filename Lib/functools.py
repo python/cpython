@@ -1134,7 +1134,7 @@ class _singledispatchmethod_get:
 
 def _cached_method_weakref_callback(cache_dict, id_key):
     def callback(ref):
-        cache_dict.pop(id_key)
+        cache_dict.pop(id_key, None)
     return callback
 
 
