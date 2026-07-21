@@ -108,12 +108,11 @@ this behavior, try `build.bat -h` to learn more.
 Custom Output Directory
 -----------------------
 
-If you want to move the build outputs to a different directory, do not use the
-standard MSBuild `/p:OutDir=` property, as CPython has many assumptions about
-where the source repository is relative to the built files. Instead, you can
-override the output directory by setting `Py_OutDir` as an environment
-variable or by passing it to build.bat (for example,
-`build.bat "/p:Py_OutDir=C:\MyOutput"`).
+If you want to move the build outputs to a different directory, use the
+`Py_OutDir` property either as a standard MSBuild `/p:Py_OutDir=` argument
+(for example, `build.bat "/p:Py_OutDir=C:\MyOutput"`) or an environment
+variable. Using the standard MSBuild `/p:OutDir=` property will more
+directly override the output location, which may result in a broken build.
 
 However, be aware that the compiled binaries probably won't run directly from
 that location. If you want to make an install-shaped layout without creating the
