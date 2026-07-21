@@ -703,7 +703,7 @@ but need extra remarks for use as slots:
 
    .. soft-deprecated:: 3.15
 
-      When not targetting older Python versions, pefer :c:macro:`!Py_tp_bases`.
+      When not targeting older Python versions, prefer :c:macro:`!Py_tp_bases`.
 
 The following slots do not correspond to public fields in the
 underlying structures:

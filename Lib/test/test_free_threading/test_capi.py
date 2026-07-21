@@ -1,4 +1,4 @@
-import ctypes
+import ctypes.util
 import sys
 import unittest
 
@@ -6,9 +6,9 @@ from test.support import threading_helper
 from test.support.threading_helper import run_concurrently
 
 
-_PyImport_AddModuleRef = ctypes.pythonapi.PyImport_AddModuleRef
-_PyImport_AddModuleRef.argtypes = (ctypes.c_char_p,)
-_PyImport_AddModuleRef.restype = ctypes.py_object
+@ctypes.util.wrap_dll_function(ctypes.pythonapi)
+def PyImport_AddModuleRef(name: ctypes.c_char_p) -> ctypes.py_object:
+    pass
 
 
 @threading_helper.requires_working_threading()
@@ -26,7 +26,7 @@ class TestImportCAPI(unittest.TestCase):
         results = []
 
         def worker():
-            module = _PyImport_AddModuleRef(module_name_bytes)
+            module = PyImport_AddModuleRef(module_name_bytes)
             results.append(module)
 
         for _ in range(NUM_ITERS):

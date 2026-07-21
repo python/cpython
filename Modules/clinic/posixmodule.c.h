@@ -8801,6 +8801,7 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "- RWF_APPEND\n"
 "- RWF_DONTCACHE\n"
 "- RWF_ATOMIC\n"
+"- RWF_NOSIGNAL\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -13733,4 +13734,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=d81494ceb6ce44ed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d641f02a97057666 input=a9049054013a1b77]*/

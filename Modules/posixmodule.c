@@ -9186,7 +9186,9 @@ os_posix_openpt_impl(PyObject *module, int oflag)
 {
     int fd;
 
-#if defined(O_CLOEXEC)
+    // OpenBSD posix_openpt() rejects any flag other than O_RDWR and
+    // O_NOCTTY; the fd is made non-inheritable below in any case.
+#if defined(O_CLOEXEC) && !defined(__OpenBSD__)
     oflag |= O_CLOEXEC;
 #endif
 
@@ -9429,11 +9431,30 @@ os_openpty_impl(PyObject *module)
         goto posix_error;
 
 #if defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC)
+    // Pushing "ptem" makes the slave a terminal, which a session leader
+    // without a controlling terminal then acquires as one despite O_NOCTTY.
+    // Note whether we already had one, so a new one can be disowned below.
+    int had_ctty = 0;
+#ifdef TIOCNOTTY
+    int tty_fd = open("/dev/tty", O_RDONLY | O_NOCTTY);
+    if (tty_fd >= 0) {
+        had_ctty = 1;
+        close(tty_fd);
+    }
+#endif
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
     ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
 #endif /* __hpux */
+#ifdef TIOCNOTTY
+    if (!had_ctty && getsid(0) == getpid()) {
+        // Disown it; TIOCNOTTY sends SIGHUP to the session leader.
+        PyOS_sighandler_t sig_saved = PyOS_setsig(SIGHUP, SIG_IGN);
+        ioctl(slave_fd, TIOCNOTTY);
+        PyOS_setsig(SIGHUP, sig_saved);
+    }
+#endif
 #endif /* defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC) */
 #endif /* HAVE_OPENPTY */
 
@@ -12941,6 +12962,7 @@ following flags:
 - RWF_APPEND
 - RWF_DONTCACHE
 - RWF_ATOMIC
+- RWF_NOSIGNAL
 
 Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
@@ -12948,7 +12970,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=b2e352a22f030e9a]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=c202f24f01fa66c9]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -16003,7 +16025,9 @@ os_cpu_count_impl(PyObject *module)
 # ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 # else
-    ncpu = 0;
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    ncpu = sysinfo.dwNumberOfProcessors;
 # endif
 
 #elif defined(__hpux)
@@ -18243,6 +18267,9 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
+#endif
+#ifdef RWF_NOSIGNAL
+    if (PyModule_AddIntConstant(m, "RWF_NOSIGNAL", RWF_NOSIGNAL)) return -1;
 #endif
 
 /* constants for splice */
