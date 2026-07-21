@@ -123,7 +123,7 @@ The :mod:`!functools` module defines the following functions:
 
 
 .. decorator:: cached_method(func)
-               cached_method(maxsize=128, typed=False)
+               cached_method(maxsize=None, typed=False)
 
    Decorator to wrap a method with a bounded or unbounded cache.
 
@@ -164,7 +164,7 @@ The :mod:`!functools` module defines the following functions:
    *maxsize* and *typed* are supported as keyword arguments to the decorator,
    and are passed to the underlying :func:`lru_cache`.
 
-   .. versionadded:: 3.16
+   .. versionadded:: next
 
 
 .. function:: cmp_to_key(func)

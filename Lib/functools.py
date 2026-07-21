@@ -20,7 +20,6 @@ from operator import itemgetter
 from reprlib import recursive_repr
 from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
-
 lazy import weakref
 
 ################################################################################
@@ -1181,7 +1180,7 @@ class cached_property:
     __class_getitem__ = classmethod(GenericAlias)
 
 ################################################################################
-### cached_method -- a version of lru_cache() which uses `id(self)`
+### cached_method -- a version of lru_cache() which uses id(self)
 ################################################################################
 
 
