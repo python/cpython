@@ -935,6 +935,12 @@ then
 
   AC_DEFINE([_POSIX_C_SOURCE], [202405L],
             [Define to activate features from IEEE Std 1003.1-2024])
+
+  # Defining _POSIX_C_SOURCE and _XOPEN_SOURCE hides C23 library
+  # declarations on FreeBSD (e.g. sinpi() in math.h) when compiling
+  # with -std=c11.  Defining _ISOC23_SOURCE makes them visible again.
+  AC_DEFINE([_ISOC23_SOURCE], [1],
+            [Define to activate ISO C23 library declarations])
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -2410,8 +2416,6 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
-    dnl workaround for emscripten#27241, can remove when we update to emscripten 6.0.3
-    AS_VAR_APPEND([LINKFORSHARED], [" -sGROWABLE_ARRAYBUFFERS=0"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
       AS_VAR_APPEND([LINKFORSHARED], [" -sMAIN_MODULE"])
