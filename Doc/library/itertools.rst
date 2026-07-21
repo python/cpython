@@ -757,6 +757,14 @@ loops that truncate the stream.
    most or all of the data before another iterator starts, it is faster to use
    :func:`list` instead of :func:`tee`.
 
+   .. impl-detail::
+
+      Internally, CPython's :func:`tee` groups cached items into fixed-size
+      batches (57 items each currently) and only frees a batch once all
+      iterators have consumed it. Memory usage is thus bounded by the gap
+      between the fastest and slowest iterator plus up to one batch, not by
+      that gap alone.
+
 
 .. function:: zip_longest(*iterables, fillvalue=None)
 
