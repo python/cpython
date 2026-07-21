@@ -150,7 +150,7 @@ The :mod:`!functools` module defines the following functions:
    On instances, :func:`cached_method` behaves very similarly to :func:`cache`,
    providing :func:`!cache_info` and :func:`!cache_clear`.
 
-   The *cached_method* does not prevent all possible race conditions in
+   :func:`cached_method` does not prevent all possible race conditions in
    multi-threaded usage. The function could run more than once on the
    same instance, with the same inputs, with the latest run setting the cached
    value. The per-instance cache is lazily initialized on first access (via the
