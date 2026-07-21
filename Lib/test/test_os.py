@@ -4955,12 +4955,27 @@ class PseudoterminalTests(unittest.TestCase):
         son_fd = os.open(son_path, os.O_RDWR|os.O_NOCTTY)
         self.addCleanup(os.close, son_fd)
         if sys.platform.startswith('sunos'):
-            # The slave is not a terminal until these STREAMS modules
-            # are pushed onto it.
             import fcntl
             I_PUSH = 0x5302
+            TIOCNOTTY = 0x7471
+            # Pushing "ptem" makes the slave a terminal, which a session
+            # leader without a controlling terminal then acquires as one
+            # despite O_NOCTTY.  Note whether we already had one.
+            try:
+                os.close(os.open('/dev/tty', os.O_RDONLY|os.O_NOCTTY))
+                had_ctty = True
+            except OSError:
+                had_ctty = False
             fcntl.ioctl(son_fd, I_PUSH, b'ptem\0')
             fcntl.ioctl(son_fd, I_PUSH, b'ldterm\0')
+            if not had_ctty and os.getsid(0) == os.getpid():
+                # Disown it, otherwise closing the file descriptors sends
+                # SIGHUP to the session.  TIOCNOTTY sends it too.
+                old_handler = signal.signal(signal.SIGHUP, signal.SIG_IGN)
+                try:
+                    fcntl.ioctl(son_fd, TIOCNOTTY)
+                finally:
+                    signal.signal(signal.SIGHUP, old_handler)
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
     @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
