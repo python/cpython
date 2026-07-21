@@ -1,0 +1,1 @@
+Fix race condition in :mod:`tkinter.simpledialog` tests by explicitly setting focus to entry before generating events.

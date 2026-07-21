@@ -444,7 +444,7 @@ class QueryDialogTest(AbstractTkTest, unittest.TestCase):
         d.focus_force()
         d.update()
         return d
-    
+
     def enter(self, d, value, key='<Return>'):
         d.entry.delete(0, 'end')
         d.entry.insert(0, value)
