@@ -2147,7 +2147,6 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
                 return -1;
             }
-
             if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
                 if (traverse ||
                     !IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
@@ -16666,8 +16665,13 @@ join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
 static PyObject *
 DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 {
+    DirEntry* entry;
+    BY_HANDLE_FILE_INFORMATION file_info;
+    ULONG reparse_tag;
+    wchar_t* joined_path;
+
     PyObject *DirEntryType = get_posix_state(module)->DirEntryType;
-    DirEntry* entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
+    entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
     if (!entry)
         return NULL;
     entry->name = NULL;
@@ -16686,7 +16690,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
             goto error;
     }
 
-    wchar_t* joined_path = join_path_filenameW(path->wide, dataW->cFileName, 0);
+    joined_path = join_path_filenameW(path->wide, dataW->cFileName, 0);
     if (!joined_path)
         goto error;
 
@@ -16700,8 +16704,6 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
             goto error;
     }
 
-    BY_HANDLE_FILE_INFORMATION file_info;
-    ULONG reparse_tag;
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
     _Py_attribute_data_to_stat(&file_info, NULL, reparse_tag, NULL, NULL, &entry->win32_lstat);
 
