@@ -1,4 +1,4 @@
-// Lock-free per type method cache implementation.
+// Per-type method cache implementation
 
 // The cache is used for method and attribute lookups on type objects.
 // The stored names are always interned strings, and the
