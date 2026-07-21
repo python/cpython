@@ -2248,13 +2248,8 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             }
         }
 
-#ifdef MS_WINDOWS_DESKTOP
-        if (!GetFileInformationByHandle(hFile, &fileInfo) ||
-            !GetFileInformationByHandleEx(hFile, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
-#else
         if (!GetFileInformationByHandleEx(hFile, FileStandardInfo, &standardInfo, sizeof(standardInfo)) ||
             !GetFileInformationByHandleEx(hFile, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
-#endif
             switch (GetLastError()) {
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
@@ -2275,11 +2270,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
         }
     }
 
-#ifdef MS_WINDOWS_DESKTOP
-    _Py_attribute_data_to_stat(&fileInfo, NULL, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
-#else
-    _Py_attribute_data_to_stat(NULL, &standardInfo, tagInfo.ReparseTag, &basicInfo, NULL, result);
-#endif
+    _Py_attribute_data_to_stat(NULL, &standardInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
     update_st_mode_from_path(path, basicInfo.FileAttributes, result);
 
 cleanup:

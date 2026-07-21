@@ -1112,7 +1112,8 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, FILE_STANDARD_INFO*
     if (info) {
         result->st_size = (((__int64)info->nFileSizeHigh) << 32) + info->nFileSizeLow;
         result->st_nlink = info->nNumberOfLinks;
-        result->st_dev = id_info ? id_info->VolumeSerialNumber : info->dwVolumeSerialNumber;
+        if (!id_info)
+            result->st_dev = info->dwVolumeSerialNumber;
     }
     if (standard_info && !info) {
         result->st_size = standard_info->EndOfFile.QuadPart;
@@ -1132,6 +1133,7 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, FILE_STANDARD_INFO*
     }
 
     if (id_info) {
+        result->st_dev = id_info->VolumeSerialNumber;
         id_128_to_ino file_id;
         file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
@@ -1249,7 +1251,6 @@ int
 _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
 {
 #ifdef MS_WINDOWS
-    BY_HANDLE_FILE_INFORMATION info = {0};
     FILE_STANDARD_INFO standardInfo = {0};
     FILE_BASIC_INFO basicInfo = {0};
     FILE_ID_INFO idInfo = {0};
@@ -1285,13 +1286,8 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         return 0;
     }
 
-#ifdef MS_WINDOWS_DESKTOP
-    if (!GetFileInformationByHandle(h, &info) ||
-        !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
-#else
     if (!GetFileInformationByHandleEx(h,FileStandardInfo, &standardInfo, sizeof(standardInfo)) ||
         !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
-#endif
         /* The Win32 error is already set, but we also set errno for
            callers who expect it */
         errno = winerror_to_errno(GetLastError());
@@ -1303,11 +1299,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         pIdInfo = NULL;
     }
 
-#ifdef MS_WINDOWS_DESKTOP
-    _Py_attribute_data_to_stat(&info, NULL, 0, &basicInfo, pIdInfo, status);
-#else
-    _Py_attribute_data_to_stat(NULL, &standardInfo, 0, &basicInfo, NULL, status);
-#endif
+    _Py_attribute_data_to_stat(NULL, &standardInfo, 0, &basicInfo, pIdInfo, status);
     return 0;
 #else
     return fstat(fd, status);
