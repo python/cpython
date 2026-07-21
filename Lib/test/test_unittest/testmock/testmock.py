@@ -4,7 +4,7 @@ import re
 import sys
 import tempfile
 
-from test.support import ALWAYS_EQ
+from test.support import ALWAYS_EQ, requires_working_socket
 import unittest
 from test.test_unittest.testmock.support import is_instance
 from unittest import mock
@@ -765,6 +765,7 @@ class MockTest(unittest.TestCase):
                           sentinel.c, e=sentinel.e)
 
 
+    @requires_working_socket()
     def test_mock_autospec_all_members_async(self):
         for spec in [SomethingAsync, SomethingAsync()]:
             mock_something = AsyncMock(autospec=spec)
@@ -2057,6 +2058,7 @@ class MockTest(unittest.TestCase):
             self._check_autospeced_something(mock_something)
 
 
+    @requires_working_socket()
     def test_mock_add_spec_autospec_all_members_async(self):
         for spec in [SomethingAsync, SomethingAsync()]:
             mock_something = Mock()
