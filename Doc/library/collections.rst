@@ -473,8 +473,7 @@ or subtracting from an empty counter.
     Though :class:`list` objects support similar operations, they are optimized for
     fast fixed-length operations and incur *O*\ (*n*) memory movement costs for
     ``pop(0)`` and ``insert(0, v)`` operations which change both the size and
-    position of the underlying data representation.  See :ref:`time-complexity`
-    for more information.
+    position of the underlying data representation.
 
 
     If *maxlen* is not specified or is ``None``, deques may grow to an
