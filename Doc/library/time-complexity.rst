@@ -141,13 +141,13 @@ apply to it at the same costs.
 :class:`!set`, :class:`!frozenset`
 ==================================
 
-See :class:`dict` -- the :class:`set` and :class:`frozenset` implementation is
-intentionally very similar, and the same hash collision caveat applies:
-in the worst case, *O*\ (1) operations instead take *O*\ (*n*) time,
+See :class:`dict` as the :class:`set` and :class:`frozenset` implementations are
+intentionally very similar, and the same hash collision caveat applies.
+In the worst case, *O*\ (1) operations instead take *O*\ (*n*) time,
 and operations that look up every element of an operand degrade accordingly.
 
-A frozenset is immutable, but the non-mutating operations below apply to it at
-the same costs.
+A :class:`frozenset` is :term:`immutable`, but the non-mutating operations below
+apply to it at the same costs.
 
 .. list-table::
    :header-rows: 1
@@ -180,7 +180,7 @@ the same costs.
 ===================================================
 
 :class:`str` and :class:`bytes` objects are immutable sequences of characters and
-bytes respectively; as with tuples, copying one returns the original object.
+bytes respectively; As with tuples, copying one returns the original object.
 A :class:`bytearray` is mutable, and additionally supports the mutating operations
 of :class:`list` (except :meth:`!sort`), at the same costs. However, deleting at
 the front only advances the start of the buffer instead of moving the remaining
@@ -278,8 +278,8 @@ Notes
    *O*\ (1).
 
 .. [3] This is the worst case scenario. Sorting is adaptive and input that is
-   already sorted or reverse-sorted takes only *O*\ (*n*) comparisons; see
-   :source:`Objects/listsort.txt` for more information.
+   already sorted or reverse-sorted takes only *O*\ (*n*) comparisons.
+   See :source:`Objects/listsort.txt` for more information.
 
 .. [4] The number of elements is stored in the object, so ``len()`` does
    not need to count them.
@@ -298,7 +298,7 @@ Notes
 .. [9] A naive substring search would need *O*\ (*nk*) comparisons in the
    worst case, where *k* is the length of the substring searched for, but
    CPython uses search algorithms with a linear worst case for forward
-   searches; see :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`
+   searches. See :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`
    for details.
 
 .. [10] Assuming :class:`int` or :class:`bool` arguments. For other types,
