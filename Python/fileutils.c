@@ -1163,7 +1163,7 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, FILE_STANDARD_INFO*
     // and FileId due security restriction and App isolation
 #ifndef MS_WINDOWS_DESKTOP
     result->st_dev = 1;
-    basic_info->CreationTime.QuadPart;
+    result->st_ino = basic_info->CreationTime.QuadPart;
 #endif
 }
 
