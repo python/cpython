@@ -951,12 +951,11 @@ ga_iternext(PyObject *op)
     }
     gaobject *alias = (gaobject *)obj;
     PyObject *starred_alias = Py_GenericAlias(alias->origin, alias->args);
+    Py_DECREF(obj);
     if (starred_alias == NULL) {
-        Py_DECREF(obj);
         return NULL;
     }
     ((gaobject *)starred_alias)->starred = true;
-    Py_SETREF(obj, NULL);
     return starred_alias;
 }
 
