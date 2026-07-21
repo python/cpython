@@ -815,7 +815,8 @@ New features
 Porting to Python 3.16
 ----------------------
 
-* TODO
+* :c:func:`PyType_ClearCache` is now a no-op as the type cache is now
+  implemented per-type. It still returns the current version tag.
 
 Deprecated C APIs
 -----------------
