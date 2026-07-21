@@ -1,0 +1,1 @@
+Optimize the type checks in :class:`collections.UserList` to use the :class:`list` type directly instead of ``type(self.data)``.
