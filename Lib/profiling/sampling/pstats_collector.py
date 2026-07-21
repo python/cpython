@@ -1,11 +1,12 @@
 import collections
 import marshal
 import pstats
-lazy from _colorize import ANSIColors
+from _colorize import get_colors
 
 from .collector import Collector, extract_lineno
 from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 
+ANSIColors = get_colors()
 
 class PstatsCollector(Collector):
     aggregating = True
