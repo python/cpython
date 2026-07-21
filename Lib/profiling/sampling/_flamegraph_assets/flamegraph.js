@@ -255,7 +255,7 @@ function updateStatusBar(nodeData, rootValue, data) {
   const filename = resolveString(nodeData.filename) || "";
   const moduleName = resolveString(nodeData.module) || "";
   const lineno = nodeData.lineno;
-  const timeMs = samplesToMilliseconds(nodeData.value, data).toFixed(2);
+  const timeMs = samplesToMilliseconds(nodeData.value, data);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
 
   const brandEl = document.getElementById('status-brand');
@@ -317,9 +317,9 @@ function createPythonTooltip(data) {
         .style("opacity", 0);
     }
 
-    const timeMs = samplesToMilliseconds(d.data.value, data).toFixed(2);
+    const timeMs = samplesToMilliseconds(d.data.value, data);
     const selfSamples = d.data.self || 0;
-    const selfMs = samplesToMilliseconds(selfSamples, data).toFixed(2);
+    const selfMs = samplesToMilliseconds(selfSamples, data);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
     const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100)).toFixed(2);
     const calls = d.data.calls || 0;
@@ -403,9 +403,9 @@ function createPythonTooltip(data) {
     // Differential stats section
     let diffSection = "";
     if (d.data.diff !== undefined && d.data.baseline !== undefined) {
-      const baselineSelf = samplesToMilliseconds(d.data.baseline, data).toFixed(2);
-      const currentSelf = samplesToMilliseconds(d.data.self_time || 0, data).toFixed(2);
-      const diffMs = samplesToMilliseconds(d.data.diff, data).toFixed(2);
+      const baselineSelf = samplesToMilliseconds(d.data.baseline, data);
+      const currentSelf = samplesToMilliseconds(d.data.self_time || 0, data);
+      const diffMs = samplesToMilliseconds(d.data.diff, data);
       const diffPct = d.data.diff_pct;
       const sign = d.data.diff >= 0 ? "+" : "";
       const diffClass = d.data.diff > 0 ? "regression" : (d.data.diff < 0 ? "improvement" : "neutral");
