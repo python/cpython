@@ -1,0 +1,2 @@
+Fix potential data race when calling :meth:`~object.__getstate__`
+under the :term:`free-threaded build`.
