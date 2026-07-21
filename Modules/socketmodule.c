@@ -110,7 +110,7 @@ Local naming conventions:
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 #include "pycore_object.h"        // _PyObject_VisitType()
-#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_INT64_RELAXED()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_INT64_ACQUIRE()
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
@@ -592,6 +592,12 @@ get_sock_fd(PySocketSockObject *s)
 #endif
 }
 
+static inline PyTime_t
+get_sock_timeout(PySocketSockObject *s)
+{
+    return FT_ATOMIC_LOAD_INT64_ACQUIRE(s->sock_timeout);
+}
+
 #define _PySocketSockObject_CAST(op)    ((PySocketSockObject *)(op))
 
 static inline socket_state *
@@ -682,7 +688,7 @@ class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
 #else
 /* If there's no timeout left, we don't have to call select, so it's a safe,
  * little white lie. */
-#define IS_SELECTABLE(s) (_PyIsSelectable_fd((s)->sock_fd) || FT_ATOMIC_LOAD_INT64_RELAXED((s)->sock_timeout) <= 0)
+#define IS_SELECTABLE(s) (_PyIsSelectable_fd((s)->sock_fd) || get_sock_timeout(s) <= 0)
 #endif
 
 // SCM_RIGHTS, sendmsg(), recvmsg() and sethostname() don't work properly on
@@ -1069,7 +1075,7 @@ sock_call_ex(PySocketSockObject *s,
             /* retry sock_func() */
         }
 
-        if (FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout) > 0
+        if (get_sock_timeout(s) > 0
             && (CHECK_ERRNO(EWOULDBLOCK) || CHECK_ERRNO(EAGAIN))) {
             /* False positive: sock_func() failed with EWOULDBLOCK or EAGAIN.
 
@@ -1096,7 +1102,7 @@ sock_call(PySocketSockObject *s,
           void *data)
 {
     return sock_call_ex(s, writing, func, data, 0, NULL,
-                        FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout));
+                        get_sock_timeout(s));
 }
 
 
@@ -1160,6 +1166,9 @@ new_sockobject(socket_state *state, SOCKET_T fd, int family, int type,
     if (s == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    s->sock_timeout_mutex = (PyMutex){0};
+#endif
     if (init_sockobject(state, s, fd, family, type, proto) == -1) {
         Py_DECREF(s);
         return NULL;
@@ -3170,10 +3179,15 @@ sock_setblocking(PyObject *self, PyObject *arg)
     if (block < 0)
         return NULL;
 
-   PySocketSockObject *s = _PySocketSockObject_CAST(self);
-    FT_ATOMIC_STORE_INT64_RELAXED(s->sock_timeout,
-                                   _PyTime_FromSeconds(block ? -1 : 0));
-    if (internal_setblocking(s, block) == -1) {
+    PySocketSockObject *s = _PySocketSockObject_CAST(self);
+    FT_MUTEX_LOCK(&s->sock_timeout_mutex);
+    int result = internal_setblocking(s, block);
+    if (result == 0) {
+        FT_ATOMIC_STORE_INT64_RELEASE(
+            s->sock_timeout, _PyTime_FromSeconds(block ? -1 : 0));
+    }
+    FT_MUTEX_UNLOCK(&s->sock_timeout_mutex);
+    if (result < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3193,8 +3207,8 @@ setblocking(False) is equivalent to settimeout(0.0).");
 static PyObject *
 sock_getblocking(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-   PySocketSockObject *s = _PySocketSockObject_CAST(self);
-    if (FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout)) {
+    PySocketSockObject *s = _PySocketSockObject_CAST(self);
+    if (get_sock_timeout(s)) {
         Py_RETURN_TRUE;
     }
     else {
@@ -3264,8 +3278,6 @@ sock_settimeout(PyObject *self, PyObject *arg)
         return NULL;
 
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
-    FT_ATOMIC_STORE_INT64_RELAXED(s->sock_timeout, timeout);
-
     int block = timeout < 0;
     /* Blocking mode for a Python socket object means that operations
        like :meth:`recv` or :meth:`sendall` will block the execution of
@@ -3288,7 +3300,13 @@ sock_settimeout(PyObject *self, PyObject *arg)
         ``> 0``              ``True``              non-blocking
     */
 
-    if (internal_setblocking(s, block) == -1) {
+    FT_MUTEX_LOCK(&s->sock_timeout_mutex);
+    int result = internal_setblocking(s, block);
+    if (result == 0) {
+        FT_ATOMIC_STORE_INT64_RELEASE(s->sock_timeout, timeout);
+    }
+    FT_MUTEX_UNLOCK(&s->sock_timeout_mutex);
+    if (result < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3308,7 +3326,7 @@ static PyObject *
 sock_gettimeout_impl(PyObject *self, void *Py_UNUSED(ignored))
 {
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
-    PyTime_t sock_timeout = FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout);
+    PyTime_t sock_timeout = get_sock_timeout(s);
     if (sock_timeout < 0) {
         Py_RETURN_NONE;
     }
@@ -3710,11 +3728,10 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
            If the socket is non-blocking, raise InterruptedError. The caller is
            responsible to wait until the connection completes, fails or timed
            out (it's the case in asyncio for example). */
-        wait_connect = (FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout) != 0
-                        && IS_SELECTABLE(s));
+        wait_connect = (get_sock_timeout(s) != 0 && IS_SELECTABLE(s));
     }
     else {
-        wait_connect = (FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout) > 0
+        wait_connect = (get_sock_timeout(s) > 0
                         && err == SOCK_INPROGRESS_ERR
                         && IS_SELECTABLE(s));
     }
@@ -3733,15 +3750,13 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     if (raise) {
         /* socket.connect() raises an exception on error */
         if (sock_call_ex(s, 1, sock_connect_impl, NULL,
-                         1, NULL,
-                         FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout)) < 0)
+                         1, NULL, get_sock_timeout(s)) < 0)
             return -1;
     }
     else {
         /* socket.connect_ex() returns the error code on error */
         if (sock_call_ex(s, 1, sock_connect_impl, NULL,
-                         1, &err,
-                         FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout)) < 0)
+                         1, &err, get_sock_timeout(s)) < 0)
             return err;
     }
     return 0;
@@ -4696,7 +4711,7 @@ _socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
     char *buf;
     Py_ssize_t len, n;
     struct sock_send ctx;
-    PyTime_t timeout = FT_ATOMIC_LOAD_INT64_RELAXED(s->sock_timeout);
+    PyTime_t timeout = get_sock_timeout(s);
     int has_timeout = (timeout > 0);
     PyTime_t deadline = 0;
     int deadline_initialized = 0;
@@ -5612,6 +5627,9 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (new != NULL) {
         ((PySocketSockObject *)new)->sock_fd = INVALID_SOCKET;
         ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
+#ifdef Py_GIL_DISABLED
+        ((PySocketSockObject *)new)->sock_timeout_mutex = (PyMutex){0};
+#endif
         ((PySocketSockObject *)new)->errorhandler = &set_error;
 #ifdef MS_WINDOWS
         ((PySocketSockObject *)new)->quickack = 0;
