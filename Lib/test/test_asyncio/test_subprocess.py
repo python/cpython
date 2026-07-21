@@ -11,7 +11,7 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
-from test.support import os_helper, warnings_helper, gc_collect
+from test.support import os_helper, gc_collect
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -919,7 +919,6 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(main())
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
     def test_subprocess_read_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()
@@ -930,7 +929,6 @@ class SubprocessMixin:
         asyncio.run(main())
         gc_collect()
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
     def test_subprocess_write_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()
@@ -941,7 +939,6 @@ class SubprocessMixin:
         asyncio.run(main())
         gc_collect()
 
-    @warnings_helper.ignore_warnings(category=ResourceWarning)
     def test_subprocess_read_write_pipe_cancelled(self):
         async def main():
             loop = asyncio.get_running_loop()
