@@ -444,11 +444,13 @@ class QueryDialogTest(AbstractTkTest, unittest.TestCase):
         d.focus_force()
         d.update()
         return d
-    # Temporary commit to trigger CI testing
+    
     def enter(self, d, value, key='<Return>'):
         d.entry.delete(0, 'end')
         d.entry.insert(0, value)
-        d.event_generate(key)
+        d.entry.focus_set()
+        d.update_idletasks()
+        d.entry.event_generate(key)
         d.update()
 
     # --- Prompt and entry ---
