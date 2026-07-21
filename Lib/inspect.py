@@ -925,50 +925,73 @@ _filesbymodname = {}
 
 def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
+
+    modules = sys.modules
+    get_module = modules.get
+    mbf = modulesbyfile
+    fbm = _filesbymodname
+    
     if ismodule(object):
         return object
-    if hasattr(object, '__module__'):
-        return sys.modules.get(object.__module__)
+    
+    module_name = getattr(object, "__module__", None)
+    if module_name is not None:
+        return get_module(module_name)
 
     # Try the filename to modulename cache
-    if _filename is not None and _filename in modulesbyfile:
-        return sys.modules.get(modulesbyfile[_filename])
+    if _filename is not None:
+        modname = mbf.get(_filename)
+        if modname is not None:
+            return get_module(modname)
+            
     # Try the cache again with the absolute file name
     try:
         file = getabsfile(object, _filename)
     except (TypeError, FileNotFoundError):
         return None
-    if file in modulesbyfile:
-        return sys.modules.get(modulesbyfile[file])
+    
+    modname = mbf.get(file)
+    if modname is not None:
+        return get_module(modname)
+        
     # Update the filename to module name cache and check yet again
     # Copy sys.modules in order to cope with changes while iterating
     for modname, module in sys.modules.copy().items():
-        if ismodule(module) and hasattr(module, '__file__'):
-            f = module.__file__
-            if f == _filesbymodname.get(modname, None):
-                # Have already mapped this module, so skip it
-                continue
-            _filesbymodname[modname] = f
-            f = getabsfile(module)
-            # Always map to the name the module knows itself by
-            modulesbyfile[f] = modulesbyfile[
-                os.path.realpath(f)] = module.__name__
-    if file in modulesbyfile:
-        return sys.modules.get(modulesbyfile[file])
-    # Check the main module
-    main = sys.modules['__main__']
-    if not hasattr(object, '__name__'):
+        if not ismodule(module):
+            continue
+
+        f = getattr(module, "__file__", None)
+        if f is None:
+            continue
+        if f == fbm.get(modname):
+            continue
+
+        fbm[modname] = f
+
+        absf = getabsfile(module)
+        name = module.__name__
+        mbf[absf] = name
+        mbf[os.path.realpath(absf)] = name
+        
+    modname = mbf.get(file)
+    if modname is not None:
+        return get_module(modname)
+
+    objname = getattr(object, "__name__", None)
+    if objname is None:
         return None
-    if hasattr(main, object.__name__):
-        mainobject = getattr(main, object.__name__)
-        if mainobject is object:
-            return main
+    
+    # Check the main module
+    main = modules['__main__']
+    if getattr(main, objname, None) is object:
+        return main
+        
     # Check builtins
-    builtin = sys.modules['builtins']
-    if hasattr(builtin, object.__name__):
-        builtinobject = getattr(builtin, object.__name__)
-        if builtinobject is object:
-            return builtin
+    builtin = modules['builtins']
+    if getattr(builtin, objname, None) is object:
+        return builtin
+
+    return None
 
 
 class ClassFoundException(Exception):
