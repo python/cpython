@@ -3,7 +3,7 @@
 import __future__
 import ast
 import unittest
-from test.support import force_not_colorized, import_helper
+from test.support import force_not_colorized, import_helper, subTests
 from test.support.script_helper import spawn_python, kill_python
 from textwrap import dedent
 import os
@@ -96,30 +96,29 @@ class FutureTest(unittest.TestCase):
             offset=24,
         )
 
-    def test_typos_in_future_imports(self):
-        for typo, origin in {
-            "nest_scopes": "nested_scopes",
-            "gneretors": "generators",
-            "divicion": "division",
-            "absolute_imports": "absolute_import",
-            "print_func": "print_function",
-            "unicode_literal": "unicode_literals",
-            "barry_as_bdfl": "barry_as_FLUFL",
-            "generatorstop": "generator_stop",
-            "anotations": "annotations",
-            "brces": "braces",
-            "brace": "braces",
-        }.items():
-            with self.subTest(typo=typo, origin=origin):
-                self.assertSyntaxError(
-                    f"from __future__ import {typo}",
-                    lineno=1,
-                    message=(
-                        f"future feature '{typo}' is not defined. "
-                        f"Did you mean: '{origin}'?"
-                    ),
-                    offset=24,
-                )
+    @subTests("typo, origin", [
+        ("nest_scopes", "nested_scopes"),
+        ("gneretors", "generators"),
+        ("divicion", "division"),
+        ("absolute_imports", "absolute_import"),
+        ("print_func", "print_function"),
+        ("unicode_literal", "unicode_literals"),
+        ("barry_as_bdfl", "barry_as_FLUFL"),
+        ("generatorstop", "generator_stop"),
+        ("anotations", "annotations"),
+        ("brces", "braces"),
+        ("brace", "braces"),
+    ])
+    def test_typos_in_future_imports(self, typo, origin):
+        self.assertSyntaxError(
+            f"from __future__ import {typo}",
+            lineno=1,
+            message=(
+                f"future feature '{typo}' is not defined. "
+                f"Did you mean: '{origin}'?"
+            ),
+            offset=24,
+        )
 
     def test_no_suggestion_on_missing_name(self):
         self.assertSyntaxError(

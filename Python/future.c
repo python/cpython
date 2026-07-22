@@ -1,8 +1,8 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
 #include "pycore_symtable.h"      // _PyFutureFeatures
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
-#include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
 
 #define UNDEFINED_FUTURE_FEATURE "future feature '%.100s' is not defined"
 
@@ -69,6 +69,8 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
                 PyErr_Format(PyExc_SyntaxError,
                              UNDEFINED_FUTURE_FEATURE ". Did you mean: %R?",
                              feature, suggestion);
+                Py_DECREF(future_features);
+                Py_DECREF(suggestion);
             }
             else {
                 // Do not fail on missing suggestion,
