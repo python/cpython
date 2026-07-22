@@ -824,8 +824,7 @@ class PosixTester(unittest.TestCase):
         # a special case for NODEV, on others this is just an implementation
         # artifact.
         if (hasattr(posix, 'NODEV') and
-            sys.platform.startswith(('linux', 'macos', 'freebsd', 'dragonfly',
-                                     'sunos'))):
+            sys.platform.startswith(('linux', 'macos', 'freebsd', 'sunos'))):
             NODEV = posix.NODEV
             self.assertEqual(posix.major(NODEV), NODEV)
             self.assertEqual(posix.minor(NODEV), NODEV)

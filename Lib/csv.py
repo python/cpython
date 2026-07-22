@@ -260,6 +260,10 @@ class Sniffer:
         beginning, then, after eliminating the combinations which are
         clearly worse than the leader, a several times larger part,
         and so on.
+
+        If several combinations fit the sample equally well, the
+        delimiters listed in the preferred attribute are preferred, in
+        that order, no matter how many times each of them occurs.
         """
         import re
         from collections import defaultdict

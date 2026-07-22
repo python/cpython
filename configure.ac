@@ -1365,6 +1365,20 @@ AC_ARG_ENABLE([wasm-pthreads],
 ])
 AC_MSG_RESULT([$enable_wasm_pthreads])
 
+AC_MSG_CHECKING([for --enable-emscripten-syscalls])
+AC_ARG_ENABLE([emscripten-syscalls],
+  [AS_HELP_STRING([--disable-emscripten-syscalls],
+                  [Disable the Emscripten syscall overrides in Python/emscripten_syscalls.c (default is enabled for Emscripten)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [AC_MSG_ERROR([--enable-emscripten-syscalls only applies to Emscripten])]
+  )
+], [
+  enable_emscripten_syscalls=yes
+])
+AC_MSG_RESULT([$enable_emscripten_syscalls])
+
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
             [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
@@ -5380,7 +5394,10 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'])
+    AS_VAR_IF([enable_emscripten_syscalls], [yes], [
+      AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
+    ])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
