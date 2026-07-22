@@ -29,20 +29,14 @@ class StandardTtkOptionsTests(StandardOptionsTests):
 
     def test_configure_padding(self):
         widget = self.create()
-        if get_tk_patchlevel(self.root) < (8, 6, 14):
-            def padding_conv(value):
-                self.assertIsInstance(value, tuple)
-                return tuple(map(str, value))
-        else:
-            padding_conv = None
-        self.checkParam(widget, 'padding', 0, expected=(0,), conv=padding_conv)
-        self.checkParam(widget, 'padding', 5, expected=(5,), conv=padding_conv)
+        self.checkParam(widget, 'padding', 0, expected=(0,))
+        self.checkParam(widget, 'padding', 5, expected=(5,))
         self.checkParam(widget, 'padding', (5, 6),
-                        expected=(5, 6), conv=padding_conv)
+                        expected=(5, 6))
         self.checkParam(widget, 'padding', (5, 6, 7),
-                        expected=(5, 6, 7), conv=padding_conv)
+                        expected=(5, 6, 7))
         self.checkParam(widget, 'padding', (5, 6, 7, 8),
-                        expected=(5, 6, 7, 8), conv=padding_conv)
+                        expected=(5, 6, 7, 8))
         self.checkParam(widget, 'padding', ('5p', '6p', '7p', '8p'))
         self.checkParam(widget, 'padding', (), expected='')
 
@@ -310,7 +304,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
                 b = ttk.Checkbutton(f, text=j)
                 b.pack()
                 buttons.append(b)
-        variables = [str(b['variable']) for b in buttons]
+        variables = [b['variable'] for b in buttons]
         self.assertEqual(len(set(variables)), 4, variables)
 
     def test_unique_variables2(self):
@@ -331,7 +325,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
             buttons.append(b)
         names = [str(b) for b in buttons]
         self.assertEqual(len(set(names)), len(buttons), names)
-        variables = [str(b['variable']) for b in buttons]
+        variables = [b['variable'] for b in buttons]
         self.assertEqual(len(set(variables)), len(buttons), variables)
 
 
@@ -356,6 +350,19 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
 
     def create(self, **kwargs):
         return ttk.Entry(self.root, **kwargs)
+
+    def _arrow_x(self, widget, y, arrow):
+        # Return an x coordinate on the up/down *arrow* element in row y,
+        # found by scanning inward from the right edge of the widget.  A
+        # fixed inset such as width - 5 lands in the arrow element's
+        # right-hand border, which scales with the display scaling, so at a
+        # high DPI identify() there returns 'field' instead of the arrow.
+        self.assertTrue(wait_until_mapped(widget, full_size=True))
+        width = widget.winfo_width()
+        for x in range(width - 1, width // 2, -1):
+            if widget.identify(x, y).endswith(arrow):
+                return x
+        self.fail(f'no {arrow} found in row {y}')
 
     def test_configure_invalidcommand(self):
         widget = self.create()
@@ -391,7 +398,12 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         # Identifying the element under a point requires the widget to be
         # mapped with a real size; the rest of the checks do not.
         if wait_until_mapped(self.entry):
-            self.assertIn(self.entry.identify(5, 5), self.IDENTIFY_AS)
+            # Probe the centre of the widget: a fixed pixel such as (5, 5)
+            # lands in the field at a normal scaling but in the surrounding
+            # padding at a high DPI.
+            x = self.entry.winfo_width() // 2
+            y = self.entry.winfo_height() // 2
+            self.assertIn(self.entry.identify(x, y), self.IDENTIFY_AS)
         self.assertEqual(self.entry.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.entry.identify, None, 5)
@@ -492,10 +504,11 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.checkParams(widget, 'height', 100, 101.2, 102.6, -100, 0, '1i')
 
     def _show_drop_down_listbox(self):
-        width = self.combo.winfo_width()
-        x, y = width - 5, 5
+        y = 5
         if sys.platform != 'darwin':  # there's no down arrow on macOS
-            self.assertRegex(self.combo.identify(x, y), r'.*downarrow\z')
+            x = self._arrow_x(self.combo, y, 'downarrow')
+        else:
+            x = self.combo.winfo_width() - 5
         self.combo.event_generate('<Button-1>', x=x, y=y)
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
 
@@ -618,14 +631,14 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_orient(self):
         widget = self.create()
-        self.assertEqual(str(widget['orient']), 'vertical')
+        self.assertEqual(widget['orient'], 'vertical')
         errmsg='attempt to change read-only option'
         if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'orient', 'horizontal',
                 errmsg=errmsg)
         widget2 = self.create(orient='horizontal')
-        self.assertEqual(str(widget2['orient']), 'horizontal')
+        self.assertEqual(widget2['orient'], 'horizontal')
 
     def test_add(self):
         # attempt to add a child that is not a direct child of the paned window
@@ -790,7 +803,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
         self.assertEqual(myvar.get(),
             conv(cbtn.tk.globalgetvar(cbtn['variable'])))
 
-        self.assertEqual(str(cbtn['variable']), str(cbtn2['variable']))
+        self.assertEqual(cbtn['variable'], cbtn2['variable'])
 
 
 @add_configure_tests(StandardTtkOptionsTests)
@@ -985,13 +998,13 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_step(self):
         widget = self.create(maximum=100, mode='determinate')
-        self.assertEqual(float(widget['value']), 0.0)
+        self.assertEqual(widget['value'], self._str(0.0))
         widget.step()  # The default increment is 1.0.
-        self.assertEqual(float(widget['value']), 1.0)
+        self.assertEqual(widget['value'], self._str(1.0))
         widget.step(5)
-        self.assertEqual(float(widget['value']), 6.0)
+        self.assertEqual(widget['value'], self._str(6.0))
         widget.step(-2)
-        self.assertEqual(float(widget['value']), 4.0)
+        self.assertEqual(widget['value'], self._str(4.0))
 
     def test_start_stop(self):
         widget = self.create(maximum=100, mode='determinate')
@@ -1000,9 +1013,9 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
         widget.update()
         widget.stop()   # Cancel it.
         # After stopping, the value no longer changes.
-        value = float(widget['value'])
+        value = widget['value']
         widget.update()
-        self.assertEqual(float(widget['value']), value)
+        self.assertEqual(widget['value'], value)
 
 
 @unittest.skipIf(sys.platform == 'darwin',
@@ -1068,21 +1081,15 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.nb.pack()
         self.nb.update()
-        if sys.platform == 'darwin':
-            tb_idx = "@20,5"
-        else:
-            tb_idx = "@5,5"
-        self.assertEqual(self.nb.tab(tb_idx), self.nb.tab('current'))
+        # Address a tab by a point taken from Tk's own geometry rather than a
+        # fixed pixel, which can land on a different tab or miss the tabs
+        # entirely (e.g. on Aqua the tabs are inset) as the display scaling
+        # changes.
+        x, y = self._tab_point(self.nb.index('current'))
+        self.assertEqual(self.nb.tab(f'@{x},{y}'), self.nb.tab('current'))
 
-        for i in range(5, 100, 5):
-            try:
-                if self.nb.tab('@%d, 5' % i, text=None) == 'a':
-                    break
-            except tkinter.TclError:
-                pass
-
-        else:
-            self.fail("Tab with text 'a' not found")
+        x, y = self._tab_point(self.nb.index(self.child1))
+        self.assertEqual(self.nb.tab(f'@{x},{y}', text=None), 'a')
 
     def test_add_and_hidden(self):
         self.assertRaises(tkinter.TclError, self.nb.hide, -1)
@@ -1212,20 +1219,43 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.assertEqual(self.nb.tabs(), ())
 
+    def _tab_point(self, index):
+        # Return a window coordinate that really lies on tab *index*, taken
+        # from Tk's own geometry (ttk::notebook index @x,y), so that it is
+        # correct regardless of the theme, platform and display scaling.  A
+        # fixed pixel such as (5, 5) can land on a different tab element
+        # depending on the DPI, or miss the tabs entirely (e.g. on Aqua the
+        # tabs are inset), which would make a click there test nothing.
+        self.assertTrue(wait_until_mapped(self.nb, full_size=True))
+        w, h = self.nb.winfo_width(), self.nb.winfo_height()
+        # The selected pane fills the widget except for the tab strip, so skip
+        # that large tab-free region instead of querying every pixel in it.
+        pane = self.nb.nametowidget(self.nb.select())
+        px, py = pane.winfo_x(), pane.winfo_y()
+        pw, ph = pane.winfo_width(), pane.winfo_height()
+        for y in range(h):
+            inside_y = py <= y < py + ph
+            for x in range(w):
+                if inside_y and px <= x < px + pw:
+                    continue
+                try:
+                    if self.nb.index(f'@{x},{y}') == index:
+                        return x, y
+                except TclError:
+                    continue
+        self.fail(f'no point found on tab {index}')
+
     def test_traversal(self):
         self.nb.pack()
         self.nb.update()
 
-        self.nb.select(0)
+        # A mouse click selects the tab it lands on.
+        self.nb.select(1)
+        self.assertEqual(self.nb.select(), str(self.child2))
+        simulate_mouse_click(self.nb, *self._tab_point(0))
+        self.assertEqual(self.nb.select(), str(self.child1))
 
-        if sys.platform == 'darwin':
-            focus_identify_as = ''
-        elif sys.platform == 'win32':
-            focus_identify_as = 'focus'
-        else:
-            focus_identify_as = 'focus' if tk_version < (8, 7) else 'padding'
-        self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
-        simulate_mouse_click(self.nb, 5, 5)
+        # Control-Tab and Shift-Control-Tab traverse the tabs.
         self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
         self.assertEqual(self.nb.select(), str(self.child2))
@@ -1240,20 +1270,25 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.tab(self.child2, text='e', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
-        self.assertEqual(self.nb.identify(5, 5), focus_identify_as)
-        simulate_mouse_click(self.nb, 5, 5)
-        # on macOS Emacs-style keyboard shortcuts are region-dependent;
-        # let's use the regular arrow keys instead
+
+        # A click still selects the tab it lands on after enable_traversal().
+        self.nb.select(1)
+        self.assertEqual(self.nb.select(), str(self.child2))
+        simulate_mouse_click(self.nb, *self._tab_point(0))
+        self.assertEqual(self.nb.select(), str(self.child1))
+
+        # Mnemonics traverse the tabs (macOS uses region-dependent
+        # Emacs-style shortcuts, so use the regular arrow keys there).
         if sys.platform == 'darwin':
             begin = '<Left>'
             end = '<Right>'
         else:
             begin = '<Alt-a>'
             end = '<Alt-e>'
-        self.nb.event_generate(begin)
-        self.assertEqual(self.nb.select(), str(self.child1))
         self.nb.event_generate(end)
         self.assertEqual(self.nb.select(), str(self.child2))
+        self.nb.event_generate(begin)
+        self.assertEqual(self.nb.select(), str(self.child1))
 
 
 @add_configure_tests(IntegerSizeTests, StandardTtkOptionsTests)
@@ -1279,22 +1314,16 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
     def _click_increment_arrow(self):
         self.require_mapped(self.spin)
-        width = self.spin.winfo_width()
-        height = self.spin.winfo_height()
-        x = width - 5
-        y = height//2 - 5
-        self.assertRegex(self.spin.identify(x, y), r'.*uparrow\z')
+        y = self.spin.winfo_height()//2 - 5
+        x = self._arrow_x(self.spin, y, 'uparrow')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
 
     def _click_decrement_arrow(self):
         self.require_mapped(self.spin)
-        width = self.spin.winfo_width()
-        height = self.spin.winfo_height()
-        x = width - 5
-        y = height//2 + 4
-        self.assertRegex(self.spin.identify(x, y), r'.*downarrow\z')
+        y = self.spin.winfo_height()//2 + 4
+        x = self._arrow_x(self.spin, y, 'downarrow')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
@@ -1500,8 +1529,13 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_selectmode(self):
         widget = self.create()
-        self.checkEnumParam(widget, 'selectmode',
-                            'none', 'browse', 'extended')
+        if tk_version >= (9, 1):
+            self.checkEnumParam(widget, 'selectmode',
+                                'none', 'single', 'browse', 'extended',
+                                'multiple')
+        else:
+            self.checkEnumParam(widget, 'selectmode',
+                                'none', 'browse', 'extended')
 
     @requires_tk(8, 7)
     def test_configure_selecttype(self):
@@ -1676,9 +1710,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.get_children(item_id), ())
 
     def test_exists(self):
-        self.assertEqual(self.tv.exists('something'), False)
-        self.assertEqual(self.tv.exists(''), True)
-        self.assertEqual(self.tv.exists({}), False)
+        self.assertIs(self.tv.exists('something'), False)
+        self.assertIs(self.tv.exists(''), True)
+        self.assertIs(self.tv.exists({}), False)
 
         # the following will make a tk.call equivalent to
         # tk.call(treeview, "exists") which should result in an error
@@ -1784,6 +1818,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         commands = self.tv.master._tclCommands
         self.tv.heading('#0', command=str(self.tv.heading('#0', command=None)))
         self.assertEqual(commands, self.tv.master._tclCommands)
+        # Click elsewhere first, so the second heading click is not reported
+        # as a double click (which does not invoke the command).
+        simulate_mouse_click(self.tv, 5, 50)
         simulate_heading_click(5, 5)
         if not success:
             self.fail("The command associated to the treeview heading wasn't "
@@ -1892,10 +1929,11 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             value)
 
         # test for values which are not None
+        keep_type = self.wantobjects and tk_version >= (9, 1)
         itemid = self.tv.insert('', 'end', 0)
-        self.assertEqual(itemid, '0')
+        self.assertEqual(itemid, 0 if keep_type else '0')
         itemid = self.tv.insert('', 'end', 0.0)
-        self.assertEqual(itemid, '0.0')
+        self.assertEqual(itemid, 0.0 if keep_type else '0.0')
         # this is because False resolves to 0 and element with 0 iid is already present
         self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end', False)
         self.assertRaises(tkinter.TclError, self.tv.insert, '', 'end', '')
@@ -1955,7 +1993,10 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
         self.tv.insert('', 'end', id=b'bytes\xe2\x82\xac')
         self.tv.selection_set(b'bytes\xe2\x82\xac')
-        self.assertEqual(self.tv.selection(), ('bytes\xe2\x82\xac',))
+        self.assertEqual(self.tv.selection(),
+                         (b'bytes\xe2\x82\xac',)
+                         if self.wantobjects and tk_version >= (9, 1)
+                         else ('bytes\xe2\x82\xac',))
 
         self.tv.selection_set()
         self.assertEqual(self.tv.selection(), ())
@@ -2004,14 +2045,19 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
     def test_set(self):
         self.tv['columns'] = ['A', 'B']
         item = self.tv.insert('', 'end', values=['a', 'b'])
-        self.assertEqual(self.tv.set(item), {'A': 'a', 'B': 'b'})
+        values = self.tv.set(item)
+        if tk_version >= (9, 1):
+            self.assertEqual(values.pop('#0'), '')
+        self.assertEqual(values, {'A': 'a', 'B': 'b'})
 
         self.tv.set(item, 'B', 'a')
         self.assertEqual(self.tv.item(item, values=None),
                          ('a', 'a') if self.wantobjects else 'a a')
 
         self.tv['columns'] = ['B']
-        self.assertEqual(self.tv.set(item), {'B': 'a'})
+        values = self.tv.set(item)
+        values.pop('#0', None)
+        self.assertEqual(values, {'B': 'a'})
 
         self.tv.set(item, 'B', 'b')
         self.assertEqual(self.tv.set(item, column='B'), 'b')
@@ -2023,7 +2069,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
                          123 if self.wantobjects else '123')
         self.assertEqual(self.tv.item(item, values=None),
                          (123, 'a') if self.wantobjects else '123 a')
-        self.assertEqual(self.tv.set(item),
+        values = self.tv.set(item)
+        values.pop('#0', None)
+        self.assertEqual(values,
                          {'B': 123} if self.wantobjects else {'B': '123'})
 
         # inexistent column
@@ -2045,14 +2093,17 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.pack()
         self.tv.update()
 
+        # Find the y coordinate of each item.  Scan the whole height of the
+        # widget rather than a fixed pixel range, since the row height grows
+        # with the display scaling.
         pos_y = set()
         found = set()
-        for i in range(0, 100, 10):
+        for y in range(self.tv.winfo_height()):
             if len(found) == 2: # item1 and item2 already found
                 break
-            item_id = self.tv.identify_row(i)
+            item_id = self.tv.identify_row(y)
             if item_id and item_id not in found:
-                pos_y.add(i)
+                pos_y.add(y)
                 found.add(item_id)
 
         self.assertEqual(len(pos_y), 2) # item1 and item2 y pos
