@@ -17,6 +17,7 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "&zstd_compressor_type_spec"
 #include "_zstdmodule.h"
 #include "buffer.h"
 #include "internal/pycore_lock.h" // PyMutex_IsLocked
+#include "internal/pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_INT_RELAXED
 
 #include <stddef.h>               // offsetof()
 #include <zstd.h>                 // ZSTD_*()
@@ -629,10 +630,10 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
     }
 
     if (ret) {
-        self->last_mode = mode;
+        FT_ATOMIC_STORE_INT_RELAXED(self->last_mode, mode);
     }
     else {
-        self->last_mode = ZSTD_e_end;
+        FT_ATOMIC_STORE_INT_RELAXED(self->last_mode, ZSTD_e_end);
 
         /* Resetting cctx's session never fail */
         ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
@@ -677,10 +678,10 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
     ret = compress_lock_held(self, NULL, mode);
 
     if (ret) {
-        self->last_mode = mode;
+        FT_ATOMIC_STORE_INT_RELAXED(self->last_mode, mode);
     }
     else {
-        self->last_mode = ZSTD_e_end;
+        FT_ATOMIC_STORE_INT_RELAXED(self->last_mode, ZSTD_e_end);
 
         /* Resetting cctx's session never fail */
         ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
