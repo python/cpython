@@ -156,7 +156,8 @@ class MiscTests(unittest.TestCase):
                         # ("The filename or extension is too long")
                         break
                     except OSError as exc:
-                        if exc.errno == errno.ENAMETOOLONG:
+                        # DragonFly BSD raises EFAULT for a too long path.
+                        if exc.errno in (errno.ENAMETOOLONG, errno.EFAULT):
                             break
                         else:
                             raise
