@@ -6704,7 +6704,14 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         self.assertTrue(found, msg=msg)
 
     def test_rollover_at_midnight(self, weekly=False):
+        # Create the log file in a fresh directory under a never used name:
+        # on Windows, NTFS file tunneling restores the original creation time
+        # of a file recreated with the same name.
         os_helper.unlink(self.fn)
+        dirname = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dirname)
+        self.fn = os.path.join(dirname, 'test_rollover.log')
+
         # Emit the first records a little after the beginning of a whole
         # second, so that their file times fall inside that second and not the
         # previous one, which would cause an unwanted rollover.
@@ -6730,7 +6737,24 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         # changed, so the rollover cannot be forced by back-dating the file.
         # Wait until the clock reaches a rollover time set one second ahead.
         rollover = int(time.time()) + 1
+        if rollover - time.time() < 0.1:
+            # Leave time to emit a record before the rollover time.
+            rollover += 1
         atTime = datetime.datetime.fromtimestamp(rollover).time()
+        rolloverDate = (datetime.datetime.fromtimestamp(rollover)
+                        - datetime.timedelta(days=7 if weekly else 1))
+        otherfn = f'{self.fn}.{rolloverDate:%Y-%m-%d}'
+
+        # A record emitted before the rollover time is not rolled over.
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when=when, atTime=atTime)
+        fh.setFormatter(fmt)
+        r2 = logging.makeLogRecord({'msg': 'testing1 3'})
+        fh.emit(r2)
+        fh.close()
+        self.assertFalse(os.path.exists(otherfn),
+                         msg=f'{otherfn} was rolled over too early')
+
         while time.time() < rollover:
             time.sleep(rollover - time.time())
         for i in range(2):
@@ -6740,9 +6764,6 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             r2 = logging.makeLogRecord({'msg': f'testing2 {i}'})
             fh.emit(r2)
             fh.close()
-        rolloverDate = (datetime.datetime.fromtimestamp(rollover)
-                        - datetime.timedelta(days=7 if weekly else 1))
-        otherfn = f'{self.fn}.{rolloverDate:%Y-%m-%d}'
         self.assertLogFile(otherfn)
         with open(self.fn, encoding="utf-8") as f:
             for i, line in enumerate(f):
