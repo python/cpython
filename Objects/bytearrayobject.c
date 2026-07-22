@@ -239,7 +239,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
-    /* resize to 0 resets to empty bytes (see issue #153419)*/
+    /* Resize to 0 resets to empty bytes (see issue #153419). */
     if (requested_size == 0) {
         Py_SETREF(obj->ob_bytes_object,
                    Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
