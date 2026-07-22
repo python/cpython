@@ -69,7 +69,6 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
                 PyErr_Format(PyExc_SyntaxError,
                              UNDEFINED_FUTURE_FEATURE ". Did you mean: %R?",
                              feature, suggestion);
-                Py_DECREF(future_features);
                 Py_DECREF(suggestion);
             }
             else {
@@ -79,6 +78,7 @@ future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
                              UNDEFINED_FUTURE_FEATURE,
                              feature);
             }
+            Py_XDECREF(future_features);
             PyErr_RangedSyntaxLocationObject(filename,
                                              name->lineno,
                                              name->col_offset + 1,
