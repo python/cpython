@@ -1,11 +1,14 @@
 __lazy_modules__ = [
+    "functools",
     "json",
     "os",
+    "pathlib",
     "subprocess",
     "sysconfig",
     "tempfile",
     "tomllib",
 ]
+
 import functools
 import json
 import os

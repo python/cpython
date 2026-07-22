@@ -1,6 +1,13 @@
-#!/usr/bin/env python3
-
-__lazy_modules__ = ["shutil", "sys", "tempfile"]
+__lazy_modules__ = [
+    "contextlib",
+    "functools",
+    "os",
+    "pathlib",
+    "shutil",
+    "subprocess",
+    "sys",
+    "tempfile",
+]
 
 import contextlib
 import functools

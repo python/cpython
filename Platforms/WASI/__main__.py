@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-__lazy_modules__ = ["_build", "_package"]
+__lazy_modules__ = ["argparse", "os", "pathlib", "_build", "_package", "_shared"]
 
 import argparse
 import os

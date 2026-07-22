@@ -1,3 +1,5 @@
+__lazy_modules__ = ["os", "pathlib", "shutil", "subprocess", "_shared"]
+
 import os
 import pathlib
 import shutil
