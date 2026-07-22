@@ -1,0 +1,3 @@
+.. section: Library 
+ 
+Refactor hsv_to_rgb in colorsys to remove a dead code branch.
