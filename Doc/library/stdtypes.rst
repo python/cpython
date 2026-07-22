@@ -926,6 +926,8 @@ support:
    :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python
    objects in the Python/C API.
 
+.. _stdtypes-iterators:
+
 Iterators
 ---------
 
@@ -963,8 +965,10 @@ Implementations that do not obey this property are deemed broken.
 Generator Types
 ---------------
 
-Python's :term:`generators <generator>` provide a convenient way to implement
-the iterator protocol.
+Python's :term:`generators <generator>` -- or more precisely,
+:term:`generator functions <generator function>` and
+:term:`generator iterators <generator iterator>` -- provide a convenient way
+to implement the iterator protocol.
 
 A function that contains one or more :ref:`yield expressions <yieldexpr>`
 is a :term:`generator function`.
@@ -976,9 +980,10 @@ For example::
    ...     yield 2
    ...     yield 3
 
-Generator functions behave as regular :ref:`user-defined functions <user-defined-funcs>`
-(for example, they have the same attributes).
-Calling a generator function returns a :term:`generator iterator`::
+Generator functions behave as regular
+:ref:`user-defined functions <user-defined-funcs>`
+(for example, they have the same attributes), except that calling a generator
+function returns a :ref:`generator iterator <generator-methods>`::
 
    >>> count_to_three()
    <generator object count_to_three at 0x7f33a2305000>
@@ -993,8 +998,12 @@ generator function, producing each :keyword:`yield`\ed value in turn::
    2
    3
 
-The :meth:`~object.__iter__` method of custom iterable objects may be
-implemented directly as a generator function. For example::
+   >>> list(count_to_three())
+   [0, 1, 2, 3]
+
+One common use for generator functions is implementing the
+:meth:`~object.__iter__` method of custom iterable objects.
+For example::
 
    >>> class CardDeck:
    ...    def __iter__(self):
@@ -1011,56 +1020,64 @@ implemented directly as a generator function. For example::
 Generator iterators
 ^^^^^^^^^^^^^^^^^^^
 
-Generator iterators implement the iterator protocol.
+Generator iterators implement the
+:ref:`iterator protocol <stdtypes-iterators>`.
 Iterating them drives execution of the underlying generator function.
 
 .. index:: pair: exception; StopIteration
 
 .. method:: generator.__next__()
 
-   Starts the execution of a generator function or resumes it at the last
-   executed yield expression.  When a generator function is resumed with a
-   :meth:`~generator.__next__` method, the current yield expression always
-   evaluates to :const:`None`.  The execution then continues to the next yield
-   expression, where the generator is suspended again, and the value of the
-   :token:`~python-grammar:yield_list` is returned to :meth:`__next__`'s
-   caller.  If the generator exits without yielding another value, a
-   :exc:`StopIteration` exception is raised.
+   Starts the execution of a generator function or resumes it at the
+   :ref:`yield expression <yieldexpr>` where the function is currently suspended.
+   When a generator function is resumed with a :meth:`~generator.__next__`
+   method, the current yield expression always evaluates to :const:`None`.
+   The execution then continues to the next yield expression, where the
+   generator is suspended again, and the value of the expression after the
+   :keyword:`yield` keyword is returned to :meth:`~generator.__next__`'s
+   caller.
+   If the generator exits without yielding another value,
+   :meth:`~generator.__next__` raises a :exc:`StopIteration` exception,
+   signalling that iteration has completed.
 
-   This method is normally called implicitly, e.g. by a :keyword:`for` loop, or
-   by the built-in :func:`next` function.
+   This method is normally called implicitly, for example by a :keyword:`for`
+   loop, or by the built-in :func:`next` function.
 
-Generator iterators have a few more functions than generic iterators.
-
-This subsection describes the methods of a generator iterator.  They can
-be used to control the execution of a generator function.
-
-Note that calling any of the generator methods below when the generator
-is already executing raises a :exc:`ValueError` exception.
-
+Generator iterators have a few more methods than generic iterators, which
+can be used to control the execution of the underlying generator function:
 
 .. method:: generator.send(value)
 
-   Resumes the execution and "sends" a value into the generator function.  The
-   *value* argument becomes the result of the current yield expression.  The
-   :meth:`send` method returns the next value yielded by the generator, or
-   raises :exc:`StopIteration` if the generator exits without yielding another
-   value.  When :meth:`send` is called to start the generator, it must be called
-   with :const:`None` as the argument, because there is no yield expression that
-   could receive the value.
+   "Sends" a value into the generator function: the *value* argument becomes
+   the result of the current yield expression.
+
+   Otherwise, this method behaves like :meth:`~generator.__next__`: it resumes
+   the underlying function and either returns the next yielded value or raises
+   :exc:`StopIteration`.
+
+   When :meth:`send` is called to start the generator, it must be called
+   with :const:`None` as the argument, because there is no current yield
+   expression that could receive the value.
 
 
 .. method:: generator.throw(value)
             generator.throw(type[, value[, traceback]])
 
-   Raises an exception at the point where the generator was paused,
-   and returns the next value yielded by the generator function.  If the generator
-   exits without yielding another value, a :exc:`StopIteration` exception is
-   raised.  If the generator function does not catch the passed-in exception, or
+   Raises an exception at the point where the generator is currently suspended.
+
+   Otherwise, this method behaves like :meth:`~generator.__next__`: it resumes
+   the underlying function and either returns the next yielded value or raises
+   :exc:`StopIteration`.
+   If the generator function does not catch the passed-in exception, or
    raises a different exception, then that exception propagates to the caller.
 
-   In typical use, this is called with a single exception instance similar to the
-   way the :keyword:`raise` keyword is used.
+   When :meth:`throw` is called to start the generator, the generator
+   immediately exits (that is, subsequent calls to :meth:`~generator.__next__`
+   will raise :exc:`StopIteration`) and the thrown exception is propagated to
+   :meth:`throw`'s caller.
+
+   In typical use, this is called with a single argument, an exception instance,
+   similar to the way the :keyword:`raise` keyword is used.
 
    For backwards compatibility, however, the second signature is
    supported, following a convention from older versions of Python.
@@ -1078,35 +1095,41 @@ is already executing raises a :exc:`ValueError` exception.
 
 .. index:: pair: exception; GeneratorExit
 
-
 .. method:: generator.close()
 
    Raises a :exc:`GeneratorExit` exception at the point where the generator
-   function was paused (equivalent to calling ``throw(GeneratorExit)``).
-   The exception is raised by the yield expression where the generator was paused.
-   If the generator function catches the exception and returns a
-   value, this value is returned from :meth:`close`.  If the generator function
-   is already closed, or raises :exc:`GeneratorExit` (by not catching the
-   exception), :meth:`close` returns :const:`None`.  If the generator yields a
-   value, a :exc:`RuntimeError` is raised.  If the generator raises any other
-   exception, it is propagated to the caller.  If the generator has already
-   exited due to an exception or normal exit, :meth:`close` returns
-   :const:`None` and has no other effect.
+   function is currently suspended (equivalent to calling ``throw(GeneratorExit)``).
+
+   If the generator function has already exited (due to an exception or
+   normal return), or raises :exc:`GeneratorExit` (by not catching the
+   exception), :meth:`close` returns :const:`None`.
+   If the generator yields a value, a :exc:`RuntimeError` is raised.
+   If the generator raises any other exception, it is propagated to the caller.
+
+   When a generator iterator is garbage collected before it has exited,
+   :meth:`~generator.close` is called automatically.
 
    .. versionchanged:: 3.13
 
       If a generator returns a value upon being closed, the value is returned
       by :meth:`close`.
+      Previously, the value was returned from :meth:`~generator.close`.
+
+
+Calling any of the generator methods (:meth:`~generator.__next__`,
+:meth:`~generator.send`, :meth:`~generator.throw`, :meth:`~generator.close`)
+while one of these methods is already executing
+raises a :exc:`ValueError` exception.
 
 
 .. index:: pair: object; asynchronous-generator
 .. _asynchronous-generator-methods:
 
-Asynchronous generator-iterator methods
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Asynchronous generator-iterators
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This subsection describes the methods of an asynchronous generator iterator,
-which are used to control the execution of a generator function.
+which are used to control the execution of an asynchronous generator function.
 
 
 .. index:: pair: exception; StopAsyncIteration
@@ -1114,32 +1137,39 @@ which are used to control the execution of a generator function.
 .. method:: agen.__anext__()
    :async:
 
-   Returns an awaitable which when run starts to execute the asynchronous
-   generator or resumes it at the last executed yield expression.  When an
-   asynchronous generator function is resumed with an :meth:`~agen.__anext__`
-   method, the current yield expression always evaluates to :const:`None` in the
-   returned awaitable, which when run will continue to the next yield
-   expression. The value of the :token:`~python-grammar:yield_list` of the
-   yield expression is the value of the :exc:`StopIteration` exception raised by
-   the completing coroutine.  If the asynchronous generator exits without
-   yielding another value, the awaitable instead raises a
-   :exc:`StopAsyncIteration` exception, signalling that the asynchronous
-   iteration has completed.
+   Returns an :term:`awaitable` which when run starts to execute the
+   asynchronous generator function or resumes it at the
+   :ref:`yield expression <yieldexpr>` where the function is currently suspended.
+   When an asynchronous generator function is resumed with an
+   :meth:`~agen.__anext__` method, the current yield expression always
+   evaluates to :const:`None` in the returned awaitable, which when run will
+   continue to the next yield expression.
+   The value of the expression after the :keyword:`yield` keyword is the value
+   of the :exc:`StopIteration` exception raised by the completing coroutine.
+   If the asynchronous generator exits without yielding another value, the
+   awaitable instead raises a :exc:`StopAsyncIteration` exception,
+   signalling that the asynchronous iteration has completed.
 
-   This method is normally called implicitly by a :keyword:`async for` loop.
+   This method is normally called implicitly by a :keyword:`async for` loop,
+   or by the built-in :func:`anext` function.
 
+
+Asynchronous generator-iterators have a few more methods than generic
+asynchronous iterators, which can be used to control the execution of
+the underlying generator function:
 
 .. method:: agen.asend(value)
    :async:
 
-   Returns an awaitable which when run resumes the execution of the
-   asynchronous generator. As with the :meth:`~generator.send` method for a
-   generator, this "sends" a value into the asynchronous generator function,
-   and the *value* argument becomes the result of the current yield expression.
-   The awaitable returned by the :meth:`asend` method will return the next
-   value yielded by the generator as the value of the raised
-   :exc:`StopIteration`, or raises :exc:`StopAsyncIteration` if the
-   asynchronous generator exits without yielding another value.  When
+   Returns an awaitable which, when run, "sends" a value into the underlying
+   asynchronous generator function: the *value* argument becomes
+   the result of the current yield expression.
+
+   Otherwise, this method behaves like :meth:`~agen.__anext__`: when the
+   returned awaitable runs, it resumes the underlying function and either
+   returns the next yielded value as the value of the raised
+   :exc:`StopIteration`, or raises :exc:`StopAsyncIteration`.
+
    :meth:`asend` is called to start the asynchronous
    generator, it must be called with :const:`None` as the argument,
    because there is no yield expression that could receive the value.
@@ -1149,34 +1179,80 @@ which are used to control the execution of a generator function.
             agen.athrow(type[, value[, traceback]])
    :async:
 
-   Returns an awaitable that raises an exception of type ``type`` at the point
-   where the asynchronous generator was paused, and returns the next value
-   yielded by the generator function as the value of the raised
-   :exc:`StopIteration` exception.  If the asynchronous generator exits
-   without yielding another value, a :exc:`StopAsyncIteration` exception is
-   raised by the awaitable.
-   If the generator function does not catch the passed-in exception, or
-   raises a different exception, then when the awaitable is run that exception
-   propagates to the caller of the awaitable.
+   Returns an awaitable that, when run, raises an exception at the point where
+   the underlying asynchronous generator function is currently suspended.
+
+   Otherwise, this method behaves like :meth:`~agen.__anext__`: when the
+   returned awaitable runs, it resumes the underlying function (with an
+   exception raised) and either returns the next yielded value as the value of
+   the raised :exc:`StopIteration`, or raises :exc:`StopAsyncIteration`.
+   If the underlying function does not catch the passed-in exception, or
+   raises a different exception, then when the awaitable is run, that
+   exception propagates to the caller of the awaitable.
+
+   When :meth:`~agen.athrow` is called to start the generator, the generator
+   exits when the awaitable runs (that is, subsequent results from
+   :meth:`~agen.__anext__` will raise :exc:`StopAsyncIteration` when run)
+   and the thrown exception is propagated to the awaitable's caller.
+
+   In typical use, this is called with a single argument, an exception instance,
+   similar to the way the :keyword:`raise` keyword is used.
+
+   For backwards compatibility, however, the second signature is
+   supported.
+   An exception instance is created from three arguments in the same way as in
+   :meth:`generator.__throw__`
 
    .. versionchanged:: 3.12
 
       The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
       may be removed in a future version of Python.
 
-.. index:: pair: exception; GeneratorExit
 
+   TODO::: reword agen.aclose()
+
+               Raises a :exc:`GeneratorExit` exception at the point where the generator
+               function is currently suspended (equivalent to calling ``throw(GeneratorExit)``).
+
+               If the generator function has already exited (due to an exception or
+               normal return), or raises :exc:`GeneratorExit` (by not catching the
+               exception), :meth:`close` returns :const:`None`.
+               If the generator yields a value, a :exc:`RuntimeError` is raised.
+               If the generator raises any other exception, it is propagated to the caller.
+
+               When a generator iterator is garbage collected before it has exited,
+               :meth:`~generator.close` is called automatically.
+
+               .. versionchanged:: 3.13
+
+                  If a generator returns a value upon being closed, the value is returned
+                  by :meth:`close`.
+                  Previously, the value was returned from :meth:`~generator.close`.
+
+
+            Calling any of the generator methods (:meth:`~generator.__next__`,
+            :meth:`~generator.send`, :meth:`~generator.throw`, :meth:`~generator.close`)
+            while one of these methods is already executing
+            raises a :exc:`ValueError` exception.
+
+
+
+.. index:: pair: exception; GeneratorExit
 
 .. method:: agen.aclose()
    :async:
 
    Returns an awaitable that when run will throw a :exc:`GeneratorExit` into
-   the asynchronous generator function at the point where it was paused.
+   the underlying asynchronous generator function at the point where it is
+   currently suspended (equivalent to calling ``athrow(GeneratorExit)``).
+
    If the asynchronous generator function then exits gracefully, is already
    closed, or raises :exc:`GeneratorExit` (by not catching the exception),
    then the returned awaitable will raise a :exc:`StopIteration` exception.
    Any further awaitables returned by subsequent calls to the asynchronous
-   generator will raise a :exc:`StopAsyncIteration` exception.  If the
+   generator will raise a :exc:`StopAsyncIteration` exception.
+
+   If the
    asynchronous generator yields a value, a :exc:`RuntimeError` is raised
    by the awaitable.  If the asynchronous generator raises any other exception,
    it is propagated to the caller of the awaitable.  If the asynchronous
