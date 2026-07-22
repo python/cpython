@@ -1,7 +1,7 @@
 # Any data that can vary between Python versions is to be kept in this file.
 # This allows for blanket copying of the Emscripten build code between supported
 # Python versions.
-emscripten-version = "6.0.0"
+emscripten-version = "6.0.3"
 node-version = "24"
 test-args = [
     "-m", "test",

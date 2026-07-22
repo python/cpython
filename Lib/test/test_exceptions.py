@@ -440,10 +440,16 @@ class ExceptionTests(unittest.TestCase):
     def test_windows_message(self):
         """Should fill in unknown error code in Windows error message"""
         ctypes = import_module('ctypes')
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyErr_SetFromWindowsErr(ierr: ctypes.c_int) -> ctypes.py_object:
+            pass
+
         # this error code has no message, Python formats it as hexadecimal
         code = 3765269347
-        with self.assertRaisesRegex(OSError, 'Windows Error 0x%x' % code):
-            ctypes.pythonapi.PyErr_SetFromWindowsErr(code)
+        with self.assertRaisesRegex(OSError, f'Windows Error 0x{code:x}'):
+            PyErr_SetFromWindowsErr(code)
 
     def testAttributes(self):
         # test that exception attributes are happy
@@ -1517,6 +1523,7 @@ class ExceptionTests(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     @force_not_colorized
+    @support.skip_if_huge_c_stack()
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
@@ -1583,11 +1590,7 @@ class ExceptionTests(unittest.TestCase):
             sys.setrecursionlimit(recursionlimit)
 
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.nomemtest
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1774,11 +1777,7 @@ class ExceptionTests(unittest.TestCase):
                     self.assertIn("test message", report)
                 self.assertEndsWith(report, "\n")
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.nomemtest
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1936,12 +1935,8 @@ class ExceptionTests(unittest.TestCase):
             exc2 = None
 
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.nomemtest
     def test_exec_set_nomemory_hang(self):
-        import_module("_testcapi")
         # gh-134163: A MemoryError inside code that was wrapped by a try/except
         # block would lead to an infinite loop.
 

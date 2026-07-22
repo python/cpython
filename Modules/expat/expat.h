@@ -1094,7 +1094,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 */
 #  define XML_MAJOR_VERSION 2
 #  define XML_MINOR_VERSION 8
-#  define XML_MICRO_VERSION 1
+#  define XML_MICRO_VERSION 2
 
 #  ifdef __cplusplus
 }

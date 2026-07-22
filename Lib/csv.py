@@ -233,6 +233,11 @@ class Sniffer:
     "Sniffs" the format of a CSV file (i.e. delimiter, quotechar)
     Returns a Dialect object.
     '''
+    # Characters which can be guessed as a delimiter if the delimiters
+    # argument is not specified.
+    _delimiter_candidates = [c for c in map(chr, range(128))
+                             if not c.isalnum()]
+
     def __init__(self):
         # in case there is more than one possible delimiter
         self.preferred = [',', '\t', ';', ' ', ':']
@@ -240,214 +245,340 @@ class Sniffer:
 
     def sniff(self, sample, delimiters=None):
         """
-        Returns a dialect (or None) corresponding to the sample
+        Analyze the sample and return a Dialect subclass reflecting the
+        parameters found.  If the optional delimiters parameter is
+        given, it is interpreted as a string containing possible valid
+        delimiter characters.  Raises Error if the dialect cannot be
+        determined.
+
+        The dialect is guessed by parsing the sample with every
+        plausible combination of delimiter, quotechar and escapechar,
+        and choosing the combination which splits the sample into rows
+        with the most consistent number of fields.
+
+        A large sample is parsed incrementally: first only its
+        beginning, then, after eliminating the combinations which are
+        clearly worse than the leader, a several times larger part,
+        and so on.
+
+        If several combinations fit the sample equally well, the
+        delimiters listed in the preferred attribute are preferred, in
+        that order, no matter how many times each of them occurs.
         """
+        import re
+        from collections import defaultdict
 
-        quotechar, doublequote, delimiter, skipinitialspace = \
-                   self._guess_quote_and_delimiter(sample, delimiters)
-        if not delimiter:
-            delimiter, skipinitialspace = self._guess_delimiter(sample,
-                                                                delimiters)
-
-        if not delimiter:
+        if self._parses_as_single_column(sample):
+            # There is no delimiter to find; any combination could
+            # only find a bogus one inside the quoted fields.
             raise Error("Could not determine delimiter")
+
+        chars = set(sample)
+        if delimiters is None:
+            delimiters = self._delimiter_candidates
+        delimiters = [d for d in delimiters
+                      if d in chars and d not in '\r\n"\'\\']
+        # Combinations to try, numbered by preference for breaking
+        # ties.  The unquoted combinations are parsed from the start;
+        # the rest stay dormant until the quote character occurs at
+        # the start of a field (see _split_dormant).
+        groups = defaultdict(list)
+        order = 0
+        # Only '\\' is tried as an escape character: others are not
+        # seen in the wild.
+        for escapechar in ('', '\\') if '\\' in chars else ('',):
+            for quotechar in '"', "'", '':
+                if quotechar and quotechar not in chars:
+                    continue
+                for delimiter in delimiters:
+                    groups[quotechar].append(
+                        (order, delimiter, quotechar, escapechar))
+                    order += 1
+        active = groups.pop('', [])
+        # Only non-empty groups were created; a plain dict cannot
+        # grow one by accident.
+        dormant = dict(groups)
+
+        # The initial window should cover the minimal number of rows
+        # required for elimination (see _eliminate_worse) at a typical
+        # line length, so that the first round can already eliminate.
+        window = 2000
+        # A line with its line break: '\r', '\n' or '\r\n' (the
+        # reader treats other line boundary characters as ordinary
+        # data, but does not support a bare '\r' inside a chunk).
+        # The \z alternative produces one final empty match.
+        line_re = re.compile(r'[^\r\n]*(?:\r\n|[\r\n]|\z)')
+        parsed = []
+        lines = []
+        first_round = True
+        while active or dormant:
+            end = min(window, len(sample))
+            part = sample[:end]
+            lines = line_re.findall(part)
+            del lines[-1]
+            cut = not part.endswith(('\r', '\n'))
+            for quotechar in list(dormant):
+                activated, still = self._split_dormant(
+                    part, quotechar, dormant[quotechar])
+                active += activated
+                if still:
+                    dormant[quotechar] = still
+                else:
+                    del dormant[quotechar]
+            parsed = [(combo, self._try_dialect(lines, cut, *combo[1:]))
+                      for combo in active]
+            if end == len(sample):
+                break
+            active = self._eliminate_worse(parsed, not first_round)
+            first_round = False
+            if len(active) <= 3:
+                # Quoted data most often leaves three survivors: the
+                # true dialect, its equally consistent unquoted shadow,
+                # and one accident.  Parsing the whole sample with them
+                # is cheaper than another elimination round.
+                window = len(sample)
+            else:
+                # Too small a factor would increase the total
+                # re-parsing cost, too large -- the cost of the next
+                # round if this one did not eliminate enough.
+                window *= 4
+
+        best = None
+        best_score = None
+        for combo, rows in sorted(parsed):
+            if rows is None:
+                continue
+            _, delimiter, quotechar, escapechar = combo
+            nfields, share = self._modal_share(rows)
+            if nfields < 2:
+                # The delimiter does not delimit anything.
+                continue
+            try:
+                preference = -self.preferred.index(delimiter)
+            except ValueError:
+                preference = -len(self.preferred)
+            # A successful quoted parse is direct evidence; the preferred
+            # delimiters list is only a nudge.
+            score = (share, len(rows), bool(quotechar), preference)
+            if best_score is None or score > best_score:
+                best_score = score
+                best = combo[1:]
+
+        if best is None:
+            raise Error("Could not determine delimiter")
+        delimiter, quotechar, escapechar = best
+        doublequote = self._detect_doublequote(lines, *best)
+        skipinitialspace = self._detect_skipinitialspace(lines, *best,
+                                                         doublequote)
 
         class dialect(Dialect):
             _name = "sniffed"
             lineterminator = '\r\n'
             quoting = QUOTE_MINIMAL
-            # escapechar = ''
 
-        dialect.doublequote = doublequote
         dialect.delimiter = delimiter
         # _csv.reader won't accept a quotechar of ''
         dialect.quotechar = quotechar or '"'
+        dialect.escapechar = escapechar or None
+        dialect.doublequote = doublequote
         dialect.skipinitialspace = skipinitialspace
 
         return dialect
 
-
-    def _guess_quote_and_delimiter(self, data, delimiters):
+    def _parses_as_single_column(self, sample):
         """
-        Looks for text enclosed between two identical quotes
-        (the probable quotechar) which are preceded and followed
-        by the same character (the probable delimiter).
-        For example:
-                         ,'some text',
-        The quote with the most wins, same with the delimiter.
-        If there is no quotechar the delimiter can't be determined
-        this way.
+        True if the whole sample parses as a single column of quoted
+        fields (the last one may be cut off in the middle), so there
+        is no delimiter to find.
         """
         import re
 
-        matches = []
-        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',   #  ".*?",
-                      r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)',   # ,".*?"
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):                            #  ".*?" (no delim, no space)
-            regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
-            matches = regexp.findall(data)
-            if matches:
+        for q in '"', "'":
+            if q in sample:
+                row_re = (fr' *+{q}(?:[^{q}]|{q}{q})*+'
+                          fr'(?:{q} *+(?:[\r\n]++|\z)|\z)')
+                if re.fullmatch(fr'(?:{row_re})++', sample):
+                    return True
+        return False
+
+    def _split_dormant(self, part, quotechar, combos):
+        """
+        Split the dormant combinations into those ready for trial
+        parsing and the rest.
+
+        A combination is ready when its quote character occurs in
+        *part* at the start of a field, i.e. at the start of a line or
+        after its delimiter; until then parsing would not differ from
+        the unquoted variant.  Spaces before the quote are allowed even
+        for the space delimiter: a false activation only costs a trial
+        parse.
+        """
+        import re
+
+        remaining = {combo[1] for combo in combos}
+        found = set()
+        pos = 0
+        while remaining:
+            # Include only the delimiters not found yet, so that the
+            # search skips over the found ones; the compiled patterns
+            # come from the re cache.
+            cls = re.escape(''.join(sorted(remaining)))
+            m = re.compile(fr'(?:^|([\r\n{cls}]))'
+                           fr' *{quotechar}').search(part, pos)
+            if m is None:
                 break
+            pre = m[1]
+            if pre is None or pre in '\r\n':
+                # A quote at the start of a line starts a field for
+                # every delimiter.
+                found |= remaining
+                break
+            found.add(pre)
+            remaining.discard(pre)
+            pos = m.end()
+        activated = [combo for combo in combos if combo[1] in found]
+        still_dormant = [combo for combo in combos if combo[1] not in found]
+        return activated, still_dormant
 
-        if not matches:
-            # (quotechar, doublequote, delimiter, skipinitialspace)
-            return ('', False, None, 0)
-        quotes = {}
-        delims = {}
-        spaces = 0
-        groupindex = regexp.groupindex
-        for m in matches:
-            n = groupindex['quote'] - 1
-            key = m[n]
-            if key:
-                quotes[key] = quotes.get(key, 0) + 1
-            try:
-                n = groupindex['delim'] - 1
-                key = m[n]
-            except KeyError:
-                continue
-            if key and (delimiters is None or key in delimiters):
-                delims[key] = delims.get(key, 0) + 1
-            try:
-                n = groupindex['space'] - 1
-            except KeyError:
-                continue
-            if m[n]:
-                spaces += 1
-
-        quotechar = max(quotes, key=quotes.get)
-
-        if delims:
-            delim = max(delims, key=delims.get)
-            skipinitialspace = delims[delim] == spaces
-            if delim == '\n': # most likely a file with a single column
-                delim = ''
-        else:
-            # there is *no* delimiter, it's a single column of quoted data
-            delim = ''
-            skipinitialspace = 0
-
-        # if we see an extra quote between delimiters, we've got a
-        # double quoted format
-        dq_regexp = re.compile(
-                               r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
-                               {'delim':re.escape(delim), 'quote':quotechar}, re.MULTILINE)
-
-
-
-        if dq_regexp.search(data):
-            doublequote = True
-        else:
-            doublequote = False
-
-        return (quotechar, doublequote, delim, skipinitialspace)
-
-
-    def _guess_delimiter(self, data, delimiters):
+    def _make_reader(self, lines, delimiter, quotechar, escapechar,
+                     doublequote=True, skipinitialspace=None):
         """
-        The delimiter /should/ occur the same number of times on
-        each row. However, due to malformed data, it may not. We don't want
-        an all or nothing approach, so we allow for small variations in this
-        number.
-          1) build a table of the frequency of each character on every line.
-          2) build a table of frequencies of this frequency (meta-frequency?),
-             e.g.  'x occurred 5 times in 10 rows, 6 times in 1000 rows,
-             7 times in 2 rows'
-          3) use the mode of the meta-frequency to determine the /expected/
-             frequency for that character
-          4) find out how often the character actually meets that goal
-          5) the character that best meets its goal is the delimiter
-        For performance reasons, the data is evaluated in chunks, so it can
-        try and evaluate the smallest portion of the data possible, evaluating
-        additional chunks as necessary.
+        Create a reader for trial parsing.  quotechar '' means no
+        quoting and escapechar '' means no escape character.
         """
-        from collections import Counter, defaultdict
+        if skipinitialspace is None:
+            # Be lenient to spaces after a delimiter, unless the
+            # delimiter is a space itself.
+            skipinitialspace = delimiter != ' '
+        return reader(lines, delimiter=delimiter,
+                      quotechar=quotechar or '"',
+                      quoting=QUOTE_MINIMAL if quotechar else QUOTE_NONE,
+                      escapechar=escapechar or None,
+                      doublequote=doublequote,
+                      skipinitialspace=skipinitialspace,
+                      strict=True)
 
-        data = list(filter(None, data.split('\n')))
+    def _try_dialect(self, lines, cut, delimiter, quotechar, escapechar):
+        """
+        Parse the sample, pre-split into *lines*, and return the list
+        of the number of fields in every parsed row, or None if not a
+        single row was parsed.
 
-        # build frequency tables
-        chunkLength = min(10, len(data))
-        iteration = 0
-        num_lines = 0
-        # {char -> {count_per_line -> num_lines_with_that_count}}
-        char_frequency = defaultdict(Counter)
-        modes = {}
-        delims = {}
-        start, end = 0, chunkLength
-        while start < len(data):
-            iteration += 1
-            for line in data[start:end]:
-                num_lines += 1
-                for char, count in Counter(line).items():
-                    if char.isascii():
-                        char_frequency[char][count] += 1
+        If the sample cannot be parsed to the end (for example it is
+        cut off in the middle of a quoted field, or the combination
+        does not fit the sample), the rows parsed so far are counted.
+        The last row is not counted if *cut* is true: the sample can
+        be cut off in the middle of it.
+        """
+        rows = []
+        try:
+            rows.extend(map(len, self._make_reader(lines, delimiter,
+                                                   quotechar, escapechar)))
+        except Error:
+            # The row which failed to parse is not counted.
+            pass
+        else:
+            if cut and len(rows) > 1:
+                rows.pop()
+        if 0 in rows:
+            # Blank lines produce empty rows.
+            rows = [nfields for nfields in rows if nfields]
+        return rows or None
 
-            for char, counts in char_frequency.items():
-                items = list(counts.items())
-                missed_lines = num_lines - sum(counts.values())
-                if missed_lines:
-                    # Store the number of lines 'char' was missing from.
-                    items.append((0, missed_lines))
-                if len(items) == 1 and items[0][0] == 0:
-                    continue
-                # get the mode of the frequencies
-                if len(items) > 1:
-                    modes[char] = max(items, key=lambda x: x[1])
-                    # adjust the mode - subtract the sum of all
-                    # other frequencies
-                    items.remove(modes[char])
-                    modes[char] = (modes[char][0], modes[char][1]
-                                   - sum(item[1] for item in items))
+    def _eliminate_worse(self, parsed, judge_hopeless):
+        """
+        Return the combinations from *parsed* (a list of (combination,
+        rows) pairs) without those which are clearly worse than the
+        leader.  Combinations with too few parsed rows (e.g. if the
+        parsed part ends in the middle of a large quoted field) are
+        not judged yet.
+
+        If *judge_hopeless* is false, keep the combinations whose
+        delimiter does not delimit anything.  Unlike the comparison
+        with the leader, which self-normalizes when the parsed part is
+        not representative, this verdict is absolute and irreversible,
+        so it is not trusted to the first part, which covers the least
+        representative beginning of the sample (titles, headers,
+        preamble).
+        """
+        # Judging a combination by fewer rows is too noisy.
+        min_rows = 16
+        hopeless = set()
+        scores = {}
+        for combo, rows in parsed:
+            if rows is not None and len(rows) >= min_rows:
+                nfields, share = self._modal_share(rows)
+                if nfields < 2:
+                    if judge_hopeless:
+                        hopeless.add(combo)
                 else:
-                    modes[char] = items[0]
+                    scores[combo] = share
+        threshold = max(scores.values(), default=0.0) - 0.1
+        return [combo for combo, _ in parsed
+                if combo not in hopeless
+                and scores.get(combo, threshold) >= threshold]
 
-            # build a list of possible delimiters
-            modeList = modes.items()
-            total = float(min(chunkLength * iteration, len(data)))
-            # (rows of consistent data) / (number of rows) = 100%
-            consistency = 1.0
-            # minimum consistency threshold
-            threshold = 0.9
-            while len(delims) == 0 and consistency >= threshold:
-                for k, v in modeList:
-                    if v[0] > 0 and v[1] > 0:
-                        if ((v[1]/total) >= consistency and
-                            (delimiters is None or k in delimiters)):
-                            delims[k] = v
-                consistency -= 0.01
+    def _modal_share(self, rows):
+        """
+        The most common number of fields in a row and its share of all
+        rows.  Prefer the smaller number of fields in the case of a
+        tie: a candidate delimiter which delimits only half of the rows
+        is not convincing.
+        """
+        from collections import Counter
 
-            if len(delims) == 1:
-                delim = list(delims.keys())[0]
-                skipinitialspace = (data[0].count(delim) ==
-                                    data[0].count("%c " % delim))
-                return (delim, skipinitialspace)
+        counts = Counter(rows)
+        nfields = max(counts, key=lambda n: (counts[n], -n))
+        return nfields, counts[nfields] / len(rows)
 
-            # analyze another chunkLength lines
-            start = end
-            end += chunkLength
+    def _detect_doublequote(self, lines, delimiter, quotechar, escapechar):
+        """
+        True if a doubled quote character represents a single quote
+        character in the sample: interpreting it so changes the result
+        of parsing.
+        """
+        if not quotechar or not any(quotechar * 2 in line
+                                    for line in lines):
+            return False
+        readers = [self._make_reader(
+                lines, delimiter, quotechar, escapechar,
+                doublequote=doublequote)
+            for doublequote in (False, True)]
+        while True:
+            rows = []
+            for rdr in readers:
+                try:
+                    rows.append(next(rdr))
+                except (StopIteration, Error):
+                    # Ending cleanly and failing are equivalent here:
+                    # after equal rows both readers are at the same
+                    # position, so they cannot end for different
+                    # reasons.
+                    rows.append(None)
+            if rows[0] != rows[1]:
+                return True
+            if rows == [None, None]:
+                return False
 
-        if not delims:
-            return ('', 0)
-
-        # if there's more than one, fall back to a 'preferred' list
-        if len(delims) > 1:
-            for d in self.preferred:
-                if d in delims.keys():
-                    skipinitialspace = (data[0].count(d) ==
-                                        data[0].count("%c " % d))
-                    return (d, skipinitialspace)
-
-        # nothing else indicates a preference, pick the character that
-        # dominates(?)
-        items = [(v,k) for (k,v) in delims.items()]
-        items.sort()
-        delim = items[-1][1]
-
-        skipinitialspace = (data[0].count(delim) ==
-                            data[0].count("%c " % delim))
-        return (delim, skipinitialspace)
-
+    def _detect_skipinitialspace(self, lines, delimiter, quotechar,
+                                 escapechar, doublequote):
+        """
+        True only if every field following a delimiter starts with
+        a space.
+        """
+        skipinitialspace = False
+        try:
+            for row in self._make_reader(lines, delimiter, quotechar,
+                                         escapechar,
+                                         doublequote=doublequote,
+                                         skipinitialspace=False):
+                for field in row[1:]:
+                    if not field.startswith(' '):
+                        return False
+                    skipinitialspace = True
+        except Error:
+            pass
+        return skipinitialspace
 
     def has_header(self, sample):
         # Creates a dictionary of types of data in each column. If any

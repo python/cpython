@@ -1,0 +1,7 @@
+The :mod:`curses` module now raises :exc:`OverflowError` instead of silently
+truncating an out-of-range value: :func:`curses.color_pair` rejects a color
+pair number that does not fit in the ``chtype`` color field, and the
+``attr`` argument of the character-cell and attribute methods
+(:meth:`~curses.window.addch`, :meth:`~curses.window.addstr`,
+:meth:`~curses.window.attron`, :meth:`~curses.window.attrset` and others) is
+checked against the ``chtype`` range.

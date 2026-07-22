@@ -52,6 +52,8 @@ import types
 from test.support import (
     captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     subTests, EqualToForwardRef,
+    exceeds_recursion_limit, skip_if_huge_c_stack, skip_wasi_stack_overflow,
+    skip_emscripten_stack_overflow,
 )
 from test.typinganndata import (
     ann_module695, mod_generics_cache, _typed_dict_helper,
@@ -1316,6 +1318,11 @@ class TypeVarTupleTests(BaseTestCase):
     def test_bound(self):
         Ts_bound = TypeVarTuple('Ts_bound', bound=int)
         self.assertIs(Ts_bound.__bound__, int)
+        Ts_tuple_bound = TypeVarTuple('Ts_tuple_bound', bound=(int, str))
+        self.assertEqual(Ts_tuple_bound.__bound__, (int, str))
+        obj = object()
+        Ts_object = TypeVarTuple('Ts_object', bound=obj)
+        self.assertIs(Ts_object.__bound__, obj)
         Ts_no_bound = TypeVarTuple('Ts_no_bound')
         self.assertIsNone(Ts_no_bound.__bound__)
 
@@ -2796,8 +2803,14 @@ class LiteralTests(BaseTestCase):
         self.assertEqual(Literal[1, 2, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, 2, 3, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, Literal[2], Literal[3, 4]].__args__, (1, 2, 3, 4))
-        # Mutable arguments will not be deduplicated
-        self.assertEqual(Literal[[], []].__args__, ([], []))
+        # Unhashable arguments will be deduplicated too
+        self.assertEqual(Literal[[], []].__args__, ([],))
+        self.assertEqual(Literal[{"a": 1}, {"a": 1}].__args__, ({"a": 1},))
+        self.assertEqual(
+            Literal[1, {'a': 'b'}, 2, {'a': 'b'}, 3].__args__,
+            (1, {'a': 'b'}, 2, 3),
+        )
+        self.assertEqual(Literal[{1}, {1}, {2}, {2}].__args__, ({1}, {2}))
 
     def test_flatten(self):
         l1 = Literal[Literal[1], Literal[2], Literal[3]]
@@ -5082,6 +5095,17 @@ class GenericTests(BaseTestCase):
         class MM2(collections.abc.MutableMapping, MutableMapping[str, str]):
             pass
         self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
+
+    @cpython_only
+    @skip_if_huge_c_stack()
+    @skip_wasi_stack_overflow()
+    @skip_emscripten_stack_overflow()
+    def test_parameters_deep_recursion(self):
+        x = [0]
+        for _ in range(exceeds_recursion_limit()):
+            x = [x]
+        with self.assertRaisesRegex(RecursionError, "in __parameter__ calculation"):
+            list[x].__parameters__
 
     def test_orig_bases(self):
         T = TypeVar('T')
@@ -7582,6 +7606,18 @@ class EvaluateForwardRefTests(BaseTestCase):
         typing.evaluate_forward_ref(
             fwdref_module.fw,)
 
+    def test_evaluate_forward_ref_string_format(self):
+        # Test evaluating forward references in STRING format
+        # does not 'leak' internal names
+        # See https://github.com/python/cpython/issues/150641
+
+        def f(arg: unknown | str | int | list[str] | tuple[int, ...]): ...
+
+        ref = annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF)['arg']
+        self.assertEqual(
+            typing.evaluate_forward_ref(ref, format=annotationlib.Format.STRING),
+            "unknown | str | int | list[str] | tuple[int, ...]",
+        )
 
 class CollectionsAbcTests(BaseTestCase):
 
@@ -10533,6 +10569,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G1[[int, str], float], List[C])
         self.assertEqual(G2[[int, str], float], list[C])
         self.assertEqual(G3[[int, str], float], list[C] | int)
+
+    def test_paramspec_bound(self):
+        P = ParamSpec('P', bound=[int, str])
+        self.assertEqual(P.__bound__, [int, str])
+        P2 = ParamSpec('P2', bound=(int, str))
+        self.assertEqual(P2.__bound__, (int, str))
+        obj = object()
+        P3 = ParamSpec('P3', bound=obj)
+        self.assertIs(P3.__bound__, obj)
+        P4 = ParamSpec('P4')
+        self.assertIs(P4.__bound__, None)
 
     def test_paramspec_gets_copied(self):
         # bpo-46581
