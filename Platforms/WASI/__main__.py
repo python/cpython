@@ -1,4 +1,11 @@
-__lazy_modules__ = ["argparse", "os", "pathlib", "_build", "_package", "_shared"]
+__lazy_modules__ = [
+    "argparse",
+    "os",
+    "pathlib",
+    "_build",
+    "_package",
+    "_shared",
+]
 
 import argparse
 import os
