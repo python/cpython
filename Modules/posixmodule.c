@@ -12879,6 +12879,10 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -12926,6 +12930,10 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
