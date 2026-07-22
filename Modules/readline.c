@@ -578,6 +578,7 @@ readline_set_pre_input_hook_impl(PyObject *module, PyObject *function)
 /* Get pre-input hook */
 
 /*[clinic input]
+@critical_section
 readline.get_pre_input_hook
 
 Get the current pre-input hook function.
@@ -585,7 +586,7 @@ Get the current pre-input hook function.
 
 static PyObject *
 readline_get_pre_input_hook_impl(PyObject *module)
-/*[clinic end generated code: output=ad56b77a8e8981ca input=fb1e1b1fbd94e4e5]*/
+/*[clinic end generated code: output=ad56b77a8e8981ca input=fbbf0106bd015414]*/
 {
     readlinestate *state = get_readline_state(module);
     if (state->pre_input_hook == NULL) {
@@ -886,6 +887,7 @@ readline_set_completer_impl(PyObject *module, PyObject *function)
 }
 
 /*[clinic input]
+@critical_section
 readline.get_completer
 
 Get the current completer function.
@@ -893,7 +895,7 @@ Get the current completer function.
 
 static PyObject *
 readline_get_completer_impl(PyObject *module)
-/*[clinic end generated code: output=6e6bbd8226d14475 input=6457522e56d70d13]*/
+/*[clinic end generated code: output=6e6bbd8226d14475 input=0df9ba4107115c44]*/
 {
     readlinestate *state = get_readline_state(module);
     if (state->completer == NULL) {

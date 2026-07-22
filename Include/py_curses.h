@@ -43,6 +43,15 @@
 #  define PDC_NCMOUSE
 #endif
 
+/* On Solaris/illumos, the SVr4 <curses.h> does "typedef char bool;", which
+   clashes with C's bool from <stdbool.h>.  Define _BOOL to suppress it, and
+   include <stdbool.h> for the bool the header then needs.  ncurses ignores
+   _BOOL. */
+#if defined(__sun) && !defined(_BOOL)
+#  include <stdbool.h>
+#  define _BOOL
+#endif
+
 #if defined(HAVE_NCURSESW_NCURSES_H)
 #  include <ncursesw/ncurses.h>
 #elif defined(HAVE_NCURSESW_CURSES_H)
