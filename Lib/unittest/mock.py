@@ -107,6 +107,11 @@ def _get_signature_object(func, as_instance, eat_self):
             eat_self = True
         # Use the original decorated method to extract the correct function signature
         func = func.__func__
+    elif isinstance(func, partial):
+        # inspect.signature() already accounts for a partial's bound
+        # arguments; going through func.__call__ (a builtin method-wrapper)
+        # would lose that and fail to produce a signature at all.
+        pass
     elif not isinstance(func, FunctionTypes):
         # If we really want to model an instance of the passed type,
         # __call__ should be looked up, not __init__.
@@ -477,19 +482,29 @@ class NonCallableMock(Base):
         __dict__['_mock_new_name'] = _new_name
         __dict__['_mock_new_parent'] = _new_parent
         __dict__['_mock_sealed'] = False
-        __dict__['_autospec'] = autospec
+        __dict__['_mock_autospec'] = autospec
 
         if spec_set is not None:
             spec = spec_set
             spec_set = True
+
+        extra_spec_props = None
         if autospec is not None:
             # autospec is even stricter than spec_set.
+            # an explicit spec given as a list of attribute names is preserved
+            # as additional allowed attributes (e.g.: instance attributes set
+            # in __init__, which won't show up via autospec).
+            if spec is not None and _is_list(spec):
+                extra_spec_props = spec
             spec = autospec
             autospec = True
+
         if _eat_self is None:
             _eat_self = parent is not None
 
         self._mock_add_spec(spec, spec_set, _spec_as_instance, _eat_self)
+        if extra_spec_props is not None:
+            self._mock_extend_spec_methods(extra_spec_props)
 
         __dict__['_mock_children'] = {}
         __dict__['_mock_wraps'] = wraps
@@ -539,7 +554,7 @@ class NonCallableMock(Base):
         checked.
         """
         if autospec is not None:
-            self.__dict__['_autospec'] = autospec
+            self.__dict__['_mock_autospec'] = autospec
         self._mock_add_spec(spec, spec_set)
 
 
@@ -558,7 +573,7 @@ class NonCallableMock(Base):
             else:
                 _spec_class = type(spec)
 
-            if self.__dict__.get('_autospec') is None:
+            if self.__dict__.get('_mock_autospec') is None:
                 res = _get_signature_object(spec, _spec_as_instance, _eat_self)
             else:
                 res = _check_signature(spec, self, _eat_self,
@@ -732,7 +747,7 @@ class NonCallableMock(Base):
                     wraps = getattr(self._mock_wraps, name)
 
                 kwargs = {}
-                if self.__dict__.get('_autospec') is not None:
+                if self.__dict__.get('_mock_autospec') is not None:
                     # get the mock's spec attribute with the same name and
                     # pass it to the child.
                     spec_class = self.__dict__.get('_spec_class')
