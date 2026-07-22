@@ -479,6 +479,8 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+    interp->thread_inherit_context_warn =
+        _PyConfig_ThreadInheritContextWarn(config);
     config = _PyInterpreterState_GetConfig(interp);
 
     if (config->_install_importlib) {
@@ -691,6 +693,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+    interp->thread_inherit_context_warn =
+        _PyConfig_ThreadInheritContextWarn(src_config);
 
     /* Auto-thread-state API */
     status = _PyGILState_Init(interp);
@@ -2679,22 +2683,26 @@ new_interpreter(PyThreadState **tstate_p,
     }
 
     /* Copy the current interpreter config into the new interpreter */
-    const PyConfig *src_config;
+    PyInterpreterState *src_interp;
     if (save_tstate != NULL) {
-        src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
+        src_interp = save_tstate->interp;
     }
     else
     {
         /* No current thread state, copy from the main interpreter */
-        PyInterpreterState *main_interp = _PyInterpreterState_Main();
-        src_config = _PyInterpreterState_GetConfig(main_interp);
+        src_interp = _PyInterpreterState_Main();
     }
+    const PyConfig *src_config = _PyInterpreterState_GetConfig(src_interp);
 
     /* This does not require that the GIL be held. */
     status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
+
+    /* Copy this flag from source interpreter too. */
+    interp->thread_inherit_context_warn =
+        src_interp->thread_inherit_context_warn;
 
     /* This does not require that the GIL be held. */
     status = init_interp_settings(interp, config);

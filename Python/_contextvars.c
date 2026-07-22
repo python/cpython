@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_context.h"      // _PyContext_NewForThread()
 
 #include "clinic/_contextvars.c.h"
 
@@ -20,10 +21,23 @@ _contextvars_copy_context_impl(PyObject *module)
 }
 
 
+/*[clinic input]
+_contextvars._thread_start_context
+[clinic start generated code]*/
+
+static PyObject *
+_contextvars__thread_start_context_impl(PyObject *module)
+/*[clinic end generated code: output=7e656d156c385a65 input=4575c5d2223de58d]*/
+{
+    return _PyContext_NewForThread();
+}
+
+
 PyDoc_STRVAR(module_doc, "Context Variables");
 
 static PyMethodDef _contextvars_methods[] = {
     _CONTEXTVARS_COPY_CONTEXT_METHODDEF
+    _CONTEXTVARS__THREAD_START_CONTEXT_METHODDEF
     {NULL, NULL}
 };
 
