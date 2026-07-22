@@ -336,12 +336,12 @@ options. Valid filter IDs are as follows:
 
 * Branch-Call-Jump (BCJ) filters:
 
-  * :const:`FILTER_X86`
-  * :const:`FILTER_IA64`
-  * :const:`FILTER_ARM`
-  * :const:`FILTER_ARMTHUMB`
-  * :const:`FILTER_POWERPC`
-  * :const:`FILTER_SPARC`
+  * :const:`!FILTER_X86`
+  * :const:`!FILTER_IA64`
+  * :const:`!FILTER_ARM`
+  * :const:`!FILTER_ARMTHUMB`
+  * :const:`!FILTER_POWERPC`
+  * :const:`!FILTER_SPARC`
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be
