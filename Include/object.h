@@ -240,7 +240,11 @@ _Py_SIZE_impl(PyObject *ob)
 {
     assert(Py_TYPE(ob) != &PyLong_Type);
     assert(Py_TYPE(ob) != &PyBool_Type);
-    return  _PyVarObject_CAST(ob)->ob_size;
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&(_PyVarObject_CAST(ob)->ob_size));
+#else
+    return _PyVarObject_CAST(ob)->ob_size;
+#endif
 }
 
 static inline int
