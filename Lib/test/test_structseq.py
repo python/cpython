@@ -48,6 +48,15 @@ class StructSeqTest(unittest.TestCase):
         self.assertIn("st_ino=", rep)
         self.assertIn("st_dev=", rep)
 
+        # Issue #154387: unnamed fields should not be mislabeled with named field names.
+        st = os.stat_result(range(10))
+        rep = repr(st)
+        self.assertEqual(
+            rep,
+            "os.stat_result(st_mode=0, st_ino=1, st_dev=2, st_nlink=3, "
+            "st_uid=4, st_gid=5, st_size=6, 7, 8, 9)"
+        )
+
     def test_concat(self):
         t1 = time.gmtime()
         t2 = t1 + tuple(t1)

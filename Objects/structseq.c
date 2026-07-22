@@ -305,20 +305,23 @@ structseq_repr(PyObject *op)
         }
 
         // Write name
-        const char *name_utf8 = typ->tp_members[i].name;
-        if (name_utf8 == NULL) {
-            PyErr_Format(PyExc_SystemError,
-                         "In structseq_repr(), member %zd name is NULL"
-                         " for type %.500s", i, typ->tp_name);
-            goto error;
-        }
-        if (PyUnicodeWriter_WriteUTF8(writer, name_utf8, -1) < 0) {
-            goto error;
+        const char *name_utf8 = NULL;
+        Py_ssize_t expected_offset = offsetof(PyStructSequence, ob_item) + i * sizeof(PyObject*);
+        for (Py_ssize_t k = 0; typ->tp_members[k].name != NULL; k++) {
+            if (typ->tp_members[k].offset == expected_offset) {
+                name_utf8 = typ->tp_members[k].name;
+                break;
+            }
         }
 
-        // Write "=" + repr(value)
-        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
-            goto error;
+        if (name_utf8 != NULL) {
+            if (PyUnicodeWriter_WriteUTF8(writer, name_utf8, -1) < 0) {
+                goto error;
+            }
+            // Write "="
+            if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
+                goto error;
+            }
         }
         PyObject *value = PyStructSequence_GetItem((PyObject*)obj, i);
         assert(value != NULL);
