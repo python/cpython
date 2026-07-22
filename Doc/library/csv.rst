@@ -322,6 +322,12 @@ The :mod:`!csv` module defines the following classes:
       in particular if it is a single column,
       so there is no delimiter to find.
 
+      If several combinations fit the sample equally well ---
+      for example if both ``','`` and ``';'`` split every row consistently ---
+      the delimiters ``','``, ``'\t'``, ``';'``, ``' '`` and ``':'``
+      are preferred, in this order,
+      no matter how many times each of them occurs.
+
       .. versionchanged:: next
          The dialect is now deduced by trial parsing
          and the results may differ from those of earlier Python versions.
