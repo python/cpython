@@ -3,8 +3,8 @@ Expose automated junk heruistic flag to the public in difflib.
 .. section: Library
 
    This change exposes the *autojunk* kwarg — used for turning on/off
-   the automated junk heuristic in the :class:`SequenceMatcher` (which
-   defaults to ``True``, meaning this heuristic was always performed
+   the automated junk heuristic in the :class:`difflib.SequenceMatcher`
+   (which defaults to ``True``, meaning this heuristic was always performed
    in :mod:`difflib`) — to the public methods and functions of
    the :mod:`difflib`, so that users can change the behavior of this option.
-   See the :class:`SequenceMatcher` documentation for details.
+   See the :class:`difflib.SequenceMatcher` documentation for details.
