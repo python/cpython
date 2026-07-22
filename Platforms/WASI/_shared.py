@@ -150,6 +150,12 @@ class Context:
                 wasi_sdk_path = potential_sdks[0]
             elif (default_path := opt_path / "wasi-sdk").is_dir():
                 wasi_sdk_path = default_path
+            elif potential_sdks:
+                raise ValueError(
+                    f"Multiple WASI SDKs found in {opt_path} w/o knowing which to use"
+                )
+            else:
+                raise ValueError(f"WASI SDK not found in {opt_path}")
 
         # Starting with WASI SDK 25, a VERSION file is included in the root
         # of the SDK directory that we can read to warn folks when they are using
