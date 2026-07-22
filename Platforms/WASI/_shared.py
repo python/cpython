@@ -80,8 +80,9 @@ class Context:
     @functools.cached_property
     def is_debug(self):
         pybuilddir = self._pybuilddir(self.build_python_path)
-        if pybuilddir.is_file():
-            build_details = json.loads(pybuilddir.read_text())
+        if pybuilddir.exists():
+            build_details_path = pybuilddir / "build-details.json"
+            build_details = json.loads(build_details_path.read_text())
             return "d" in build_details["abi"]["flags"]
         else:
             # Python 3.13 and older.
