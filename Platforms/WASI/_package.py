@@ -1,5 +1,13 @@
-__lazy_modules__ = ["os", "pathlib", "shutil", "subprocess", "_shared"]
+__lazy_modules__ = [
+    "datetime",
+    "os",
+    "pathlib",
+    "shutil",
+    "subprocess",
+    "_shared",
+]
 
+import datetime
 import os
 import pathlib
 import shutil
@@ -356,20 +364,26 @@ def archive(context):
         file_path.unlink()
     to_compress = context.checkout / "dist" / filename_stem(context)
     _shared.log("🗜️", f"Archiving to {file_path} ...")
-    mtime = subprocess.run(
-        [
-            "git",
-            "log",
-            "-1",
-            "--format=tformat:%cd",
-            "--date=format:%Y-%m-%dT%H:%M:%SZ",
-            os.fsdecode(context.checkout),
-        ],
-        env={"TZ": "UTC0"},
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.strip()
+    mtime_format = "%Y-%m-%dT%H:%M:%SZ"
+    if source_date_epoch := os.environ.get("SOURCE_DATE_EPOCH"):
+        mtime = datetime.datetime.fromtimestamp(
+            int(source_date_epoch), datetime.UTC
+        ).strftime(mtime_format)
+    else:
+        mtime = subprocess.run(
+            [
+                "git",
+                "log",
+                "-1",
+                "--format=tformat:%cd",
+                f"--date=format:{mtime_format}",
+                os.fsdecode(context.checkout),
+            ],
+            env={"TZ": "UTC0"},
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
 
     subprocess.run(
         [
