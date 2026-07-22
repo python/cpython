@@ -2105,6 +2105,21 @@ error:
                          "n must be greater than 0");
 }
 
+// Return true if we should warn about threads *not* inheriting context
+// from the starting thread.
+int
+_PyConfig_ThreadInheritContextWarn(const PyConfig *config)
+{
+#ifdef Py_GIL_DISABLED
+    (void)config;
+    return 0;
+#else
+    return (config->thread_inherit_context == 0
+            && config_get_env(config, "PYTHON_THREAD_INHERIT_CONTEXT") == NULL
+            && config_get_xoption(config, L"thread_inherit_context") == NULL);
+#endif
+}
+
 static PyStatus
 config_init_thread_inherit_context(PyConfig *config)
 {
