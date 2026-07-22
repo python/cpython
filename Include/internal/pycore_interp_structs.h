@@ -977,6 +977,7 @@ struct _is {
     struct _obmalloc_state *obmalloc;
 
     PyObject *audit_hooks;
+    PyMutex audit_hooks_mutex;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
     PyContext_WatchCallback context_watchers[CONTEXT_MAX_WATCHERS];

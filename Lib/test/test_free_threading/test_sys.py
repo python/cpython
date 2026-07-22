@@ -44,6 +44,20 @@ class SysModuleTest(unittest.TestCase):
         workers = [lambda: worker(i) for i in range(5)]
         threading_helper.run_concurrently(workers)
 
+    def test_sys_audit_hooks(self):
+        def _hook(*args):
+            return None
+
+        def adder():
+            for _ in range(100):
+                sys.addaudithook(_hook)
+
+        def auditor():
+            for _ in range(2000):
+                sys.audit("fusil.tsan.test")
+
+        threading_helper.run_concurrently([adder, auditor])
+
 
 if __name__ == "__main__":
     unittest.main()
