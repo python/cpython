@@ -1,0 +1,1 @@
+Fix :c:func:`structseq_repr` mislabeling unnamed :c:type:`PyStructSequence` fields. Patch by Pranav Choudhary.
