@@ -161,9 +161,10 @@ PRELOAD = ['__main__', 'test.test_multiprocessing_forkserver']
 #
 
 try:
-    from ctypes import Structure, c_int, c_double, c_longlong
+    from ctypes.util import struct as ctypes_struct
+    from ctypes import c_int, c_double, c_longlong
 except ImportError:
-    Structure = object
+    def ctypes_struct(cls): return cls
     c_int = c_double = c_longlong = None
 
 
@@ -4390,12 +4391,11 @@ class _TestHeap(BaseTestCase):
 #
 #
 
-class _Foo(Structure):
-    _fields_ = [
-        ('x', c_int),
-        ('y', c_double),
-        ('z', c_longlong,)
-        ]
+@ctypes_struct
+class _Foo:
+    x: c_int
+    y: c_double
+    z: c_longlong
 
 class _TestSharedCTypes(BaseTestCase):
 
