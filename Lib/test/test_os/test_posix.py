@@ -46,7 +46,8 @@ def _supports_sched():
     try:
         posix.sched_getscheduler(0)
     except OSError as e:
-        if e.errno == errno.ENOSYS:
+        # DragonFly BSD requires privileges to use the scheduler API.
+        if e.errno in (errno.ENOSYS, errno.EPERM):
             return False
     return True
 
@@ -823,8 +824,7 @@ class PosixTester(unittest.TestCase):
         # a special case for NODEV, on others this is just an implementation
         # artifact.
         if (hasattr(posix, 'NODEV') and
-            sys.platform.startswith(('linux', 'macos', 'freebsd', 'dragonfly',
-                                     'sunos'))):
+            sys.platform.startswith(('linux', 'macos', 'freebsd', 'sunos'))):
             NODEV = posix.NODEV
             self.assertEqual(posix.major(NODEV), NODEV)
             self.assertEqual(posix.minor(NODEV), NODEV)
@@ -1453,6 +1453,7 @@ class PosixTester(unittest.TestCase):
         del sched_priority, param  # should not crash
         support.gc_collect()  # just to be sure
 
+    @requires_sched
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
         try:
