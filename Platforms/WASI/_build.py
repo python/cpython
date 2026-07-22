@@ -294,6 +294,7 @@ def clean_contents(context):
             _shared.log(
                 "🧹", f"Deleting generated {context.setup_local_path} ..."
             )
+            context.setup_local_path.unlink()
 
 
 @subdir("build_python_path")
