@@ -275,7 +275,11 @@ def copy_files(files, base):
 
 def symlink_files(files, base):
     for target, source in files:
-        (base / target).symlink_to(base / source)
+        target_path = base / target
+        source_path = base / source
+        target_path.symlink_to(
+            os.path.relpath(source_path, start=target_path.parent)
+        )
 
 
 def gather(context):
