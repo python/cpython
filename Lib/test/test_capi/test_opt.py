@@ -5127,6 +5127,16 @@ class TestUopsOptimization(unittest.TestCase):
                               f" {executor} at offset {idx} rather"
                               f" than expected _EXIT_TRACE")
 
+    def test_jit_shutdown_after_cold_executor_creation(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent(f"""
+            def f():
+                for x in range({TIER2_THRESHOLD + 3}):
+                    for y in range({TIER2_THRESHOLD + 3}):
+                        z = x + y
+
+            f()
+        """), PYTHON_JIT="1")
+
     def test_enter_executor_valid_op_arg(self):
         script_helper.assert_python_ok("-c", textwrap.dedent("""
             import sys
