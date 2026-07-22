@@ -328,7 +328,9 @@ def gather(context):
     _shared.log("📁", "lib/", spacing=indent * 2)
     _shared.log("📁", f"python{py_version}/", spacing=indent * 3)
     _shared.log("📁", "lib-dynload/", spacing=indent * 4)
-    (base / lib_python(context) / "lib-dynload").mkdir(parents=True, exist_ok=True)
+    (base / lib_python(context) / "lib-dynload").mkdir(
+        parents=True, exist_ok=True
+    )
     _shared.log("📄", "<empty>", spacing=indent * 5)
 
     _shared.log("📁", "lib-wasm/", spacing=indent * 4)
