@@ -151,8 +151,8 @@ class CalledProcessError(SubprocessError):
                 return "Command %r died with unknown signal %d." % (
                         self.cmd, -self.returncode)
         else:
-            return (f"Command {self.cmd!r} returned non-zero "
-                    f"exit status {self.returncode}.")
+            return "Command %r returned non-zero exit status %d." % (
+                    self.cmd, self.returncode)
 
     @property
     def stdout(self):
