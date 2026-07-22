@@ -783,8 +783,16 @@ class BasicTest(BaseTest):
         shadows one of those builtins (a common pattern for `.`-style directory
         navigators) must not hijack the prompt or break status restoration.
         """
-        fish = shutil.which('fish')
-        if fish is None:
+        # Some systems have an unrelated "fish" game (see fish(6)), which
+        # can precede the fish shell in PATH.
+        for dirname in None, *os.get_exec_path():
+            fish = shutil.which('fish', path=dirname)
+            if fish is not None and subprocess.run(
+                    [fish, '-c', 'echo $FISH_VERSION'],
+                    stdin=subprocess.DEVNULL,
+                    capture_output=True).stdout.strip():
+                break
+        else:
             self.skipTest('fish required for this test')
         rmtree(self.env_dir)
         builder = venv.EnvBuilder(clear=True)
