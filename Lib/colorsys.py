@@ -161,6 +161,6 @@ def hsv_to_rgb(h, s, v):
         return p, q, v
     if i == 4:
         return t, p, v
-    if i == 5:
+    else:
         return v, p, q
     # Cannot get here
