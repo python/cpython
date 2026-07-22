@@ -714,6 +714,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return await fut
 
     def _sock_accept(self, fut, sock):
+        # gh-153761: _sock_accept must not scheduled with already cancelled future
+        if fut.done():
+            return
         fd = sock.fileno()
         try:
             conn, address = sock.accept()
