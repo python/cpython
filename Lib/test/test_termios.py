@@ -117,7 +117,7 @@ class TestFunctions(unittest.TestCase):
     @support.skip_android_selinux('tcsendbreak')
     def test_tcsendbreak(self):
         with skip_enotty_error(self, 'tcsendbreak',
-                               ('freebsd', 'netbsd', 'cygwin')):
+                               ('freebsd', 'netbsd', 'openbsd', 'cygwin')):
             termios.tcsendbreak(self.fd, 1)
             termios.tcsendbreak(self.stream, 1)
 
