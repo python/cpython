@@ -104,7 +104,7 @@ class TestFunctions(unittest.TestCase):
         try:
             termios.tcsendbreak(self.fd, 1)
         except termios.error as exc:
-            if exc.args[0] == errno.ENOTTY and sys.platform.startswith(('freebsd', "netbsd")):
+            if exc.args[0] == errno.ENOTTY and sys.platform.startswith(('freebsd', 'netbsd', 'openbsd')):
                 self.skipTest('termios.tcsendbreak() is not supported '
                               'with pseudo-terminals (?) on this platform')
             raise
