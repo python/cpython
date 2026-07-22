@@ -11,7 +11,7 @@ from functools import partial
 from test.support import force_not_colorized_test_class
 from typing import Iterable
 from unittest import TestCase
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
 from .support import handle_all_events, code_to_events
 from .support import prepare_reader as default_prepare_reader

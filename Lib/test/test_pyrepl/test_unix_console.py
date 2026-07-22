@@ -7,7 +7,7 @@ import threading
 import unittest
 from functools import partial
 from _colorize import ANSIColors
-from test.support import force_color, os_helper, force_not_colorized_test_class
+from test.support import os_helper, force_not_colorized_test_class
 from test.support import threading_helper
 
 from unittest import TestCase

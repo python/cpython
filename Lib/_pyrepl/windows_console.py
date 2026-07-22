@@ -37,7 +37,6 @@ from ctypes.wintypes import (
     SHORT,
 )
 from ctypes import Structure, POINTER, Union
-from typing import TYPE_CHECKING
 
 from _colorize import ANSIColors
 
