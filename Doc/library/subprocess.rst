@@ -236,7 +236,7 @@ underlying :class:`Popen` interface can be used directly.
 
     .. attribute:: returncode
 
-        Exit status of the child process, always an integer.  If the process
+        Exit status of the child process, an integer.  If the process
         exited due to a signal, this will be the negative signal number.
 
     .. attribute:: cmd
@@ -259,6 +259,10 @@ underlying :class:`Popen` interface can be used directly.
 
     .. versionchanged:: 3.5
         *stdout* and *stderr* attributes added
+
+    .. versionchanged:: 3.16
+        The constructor now raises :exc:`TypeError` if *returncode* is
+        neither an integer nor ``None``.
 
 
 .. _frequently-used-arguments:

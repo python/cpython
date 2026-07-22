@@ -137,12 +137,18 @@ class CalledProcessError(SubprocessError):
       cmd, returncode, stdout, stderr, output
     """
     def __init__(self, returncode, cmd, output=None, stderr=None):
+        if returncode is not None and not isinstance(returncode, int):
+            raise TypeError(
+                "returncode must be an integer or None, not "
+                f"{type(returncode).__name__}")
         self.returncode = returncode
         self.cmd = cmd
         self.output = output
         self.stderr = stderr
 
     def __str__(self):
+        # A None returncode is falsy, so it skips the '< 0' comparison
+        # below and is formatted by the final branch instead.
         if self.returncode and self.returncode < 0:
             try:
                 return "Command %r died with %r." % (
@@ -151,8 +157,8 @@ class CalledProcessError(SubprocessError):
                 return "Command %r died with unknown signal %d." % (
                         self.cmd, -self.returncode)
         else:
-            return "Command %r returned non-zero exit status %d." % (
-                    self.cmd, self.returncode)
+            return (f"Command {self.cmd!r} returned non-zero "
+                    f"exit status {self.returncode}.")
 
     @property
     def stdout(self):

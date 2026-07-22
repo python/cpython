@@ -86,7 +86,7 @@ class TestScriptHelperEnvironment(unittest.TestCase):
     def test_interpreter_requires_environment_true(self, mock_check_call):
         with mock.patch.dict(os.environ):
             os.environ.pop('PYTHONHOME', None)
-            mock_check_call.side_effect = subprocess.CalledProcessError('', '')
+            mock_check_call.side_effect = subprocess.CalledProcessError(1, 'cmd')
             self.assertTrue(script_helper.interpreter_requires_environment())
             self.assertTrue(script_helper.interpreter_requires_environment())
             self.assertEqual(1, mock_check_call.call_count)
