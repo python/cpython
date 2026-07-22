@@ -144,7 +144,9 @@ class Context:
                 for path in opt_path.glob(f"wasi-sdk-{wasi_sdk_version}.0*")
                 if path.is_dir()
             ]
-            if len(potential_sdks) == 1:
+            if not potential_sdks:
+                raise ValueError(f"WASI SDK {wasi_sdk_version} not found in {opt_path}")
+            elif len(potential_sdks) == 1:
                 wasi_sdk_path = potential_sdks[0]
             elif (default_path := opt_path / "wasi-sdk").is_dir():
                 wasi_sdk_path = default_path
