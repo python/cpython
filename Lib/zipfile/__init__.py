@@ -2593,9 +2593,7 @@ class ZipFile:
         else:
             raise TypeError("Expected type str or ZipInfo")
 
-        zinfo.compress_size = 0
-        zinfo.CRC = 0
-        zinfo.file_size = 0
+        zinfo.CRC = zinfo.compress_size = zinfo.file_size = 0
 
         with self._lock:
             if self._seekable:
