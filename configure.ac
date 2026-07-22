@@ -1096,6 +1096,8 @@ AC_CACHE_CHECK([for CC compiler name], [ac_cv_cc_name], [
 cat > conftest.c <<EOF
 #if defined(__EMSCRIPTEN__)
   emcc
+#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+  icx
 #elif defined(__INTEL_COMPILER) || defined(__ICC)
   icc
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
@@ -1145,8 +1147,9 @@ then
         case "$ac_cv_cc_name" in
         gcc)    AC_PATH_TOOL([CXX], [g++], [notfound]) ;;
         cc)     AC_PATH_TOOL([CXX], [c++], [notfound]) ;;
-        clang)             AC_PATH_TOOL([CXX], [clang++], [notfound]) ;;
-        icc)               AC_PATH_TOOL([CXX], [icpc], [notfound]) ;;
+        clang)  AC_PATH_TOOL([CXX], [clang++], [notfound]) ;;
+        icx)    AC_PATH_TOOL([CXX], [icpx], [notfound]) ;;
+        icc)    AC_PATH_TOOL([CXX], [icpc], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -2091,7 +2094,7 @@ fi
 LLVM_PROF_ERR=no
 
 case "$ac_cv_cc_name" in
-  clang)
+  clang|icx)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
@@ -2968,6 +2971,10 @@ fi
 case "$ac_cv_cc_name" in
 mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
+icx)
+    # ICX needs fp-model=precise (the default in clang) or floats behave badly
+    CFLAGS_NODIST="$CFLAGS_NODIST -ffp-model=precise"
     ;;
 icc)
     # ICC needs -fp-model strict or floats behave badly
@@ -6345,8 +6352,8 @@ AX_C_FLOAT_WORDS_BIGENDIAN(
 # rounding precision of 64 bits.  For gcc/x86, we can fix this by
 # using inline assembler to get and set the x87 FPU control word.
 
-# This inline assembler syntax may also work for suncc and icc,
-# so we try it on all platforms.
+# This inline assembler syntax works for icx and may also work for
+# suncc and icc, so we try it on all platforms.
 
 AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set x87 control word], [ac_cv_gcc_asm_for_x87], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
