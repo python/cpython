@@ -163,12 +163,13 @@ also provides these miscellaneous utilities:
    The resulting objects
    are :term:`iterable`\ s. As the object is iterated over, the
    optional *blksize* parameter will be repeatedly passed to the *filelike*
-   object's :meth:`read` method to obtain bytestrings to yield.  When :meth:`read`
-   returns an empty bytestring, iteration is ended and is not resumable.
+   object's :meth:`~io.BufferedIOBase.read` method to obtain bytestrings to
+   yield.  When :meth:`~io.BufferedIOBase.read` returns an empty bytestring,
+   iteration is ended and is not resumable.
 
-   If *filelike* has a :meth:`close` method, the returned object will also have a
-   :meth:`close` method, and it will invoke the *filelike* object's :meth:`close`
-   method when called.
+   If *filelike* has a :meth:`~io.IOBase.close` method, the returned object will
+   also have a :meth:`!close` method, and it will invoke the *filelike* object's
+   :meth:`~io.IOBase.close` method when called.
 
    Example usage::
 
@@ -218,12 +219,13 @@ manipulation of WSGI response headers using a mapping-like interface.
    nonexistent header just returns ``None``, and deleting a nonexistent header does
    nothing.
 
-   :class:`Headers` objects also support :meth:`keys`, :meth:`values`, and
-   :meth:`items` methods.  The lists returned by :meth:`keys` and :meth:`items` can
-   include the same key more than once if there is a multi-valued header.  The
-   ``len()`` of a :class:`Headers` object is the same as the length of its
-   :meth:`items`, which is the same as the length of the wrapped header list.  In
-   fact, the :meth:`items` method just returns a copy of the wrapped header list.
+   :class:`Headers` objects also support :meth:`!keys`, :meth:`!values`, and
+   :meth:`!items` methods.  The lists returned by :meth:`!keys` and
+   :meth:`!items` can include the same key more than once if there is a
+   multi-valued header.  The ``len()`` of a :class:`Headers` object is the same
+   as the length of its :meth:`!items`, which is the same as the length of the
+   wrapped header list.  In fact, the :meth:`!items` method just returns a copy
+   of the wrapped header list.
 
    Calling ``bytes()`` on a :class:`Headers` object returns a formatted bytestring
    suitable for transmission as HTTP response headers.  Each header is placed on a
@@ -282,7 +284,7 @@ that serves WSGI applications.  Each server instance serves a single WSGI
 application on a given host and port.  If you want to serve multiple
 applications on a single host and port, you should create a WSGI application
 that parses ``PATH_INFO`` to select which application to invoke for each
-request.  (E.g., using the :func:`shift_path_info` function from
+request.  (E.g., using the :func:`~wsgiref.util.shift_path_info` function from
 :mod:`wsgiref.util`.)
 
 
@@ -329,8 +331,9 @@ request.  (E.g., using the :func:`shift_path_info` function from
    function can handle all the details for you.
 
    :class:`WSGIServer` is a subclass of :class:`http.server.HTTPServer`, so all
-   of its methods (such as :meth:`serve_forever` and :meth:`handle_request`) are
-   available. :class:`WSGIServer` also provides these WSGI-specific methods:
+   of its methods (such as :meth:`~socketserver.BaseServer.serve_forever` and
+   :meth:`~socketserver.BaseServer.handle_request`) are available.
+   :class:`WSGIServer` also provides these WSGI-specific methods:
 
 
    .. method:: WSGIServer.set_app(application)
@@ -365,7 +368,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
       Return a :data:`~wsgiref.types.WSGIEnvironment` dictionary for a
       request.  The default
       implementation copies the contents of the :class:`WSGIServer` object's
-      :attr:`base_environ` dictionary attribute and then adds various headers derived
+      :attr:`!base_environ` dictionary attribute and then adds various headers derived
       from the HTTP request.  Each call to this method should return a new dictionary
       containing all of the relevant CGI environment variables as specified in
       :pep:`3333`.
@@ -403,7 +406,7 @@ absence of errors from this module does not necessarily mean that errors do not
 exist.  However, if this module does produce an error, then it is virtually
 certain that either the server or application is not 100% compliant.
 
-This module is based on the :mod:`paste.lint` module from Ian Bicking's "Python
+This module is based on the :mod:`!paste.lint` module from Ian Bicking's "Python
 Paste" library.
 
 
@@ -531,8 +534,8 @@ input, output, and error streams.
    :meth:`~BaseHandler._write`, and :meth:`~BaseHandler._flush` methods to
    support explicitly setting the
    environment and streams via the constructor.  The supplied environment and
-   streams are stored in the :attr:`stdin`, :attr:`stdout`, :attr:`stderr`, and
-   :attr:`environ` attributes.
+   streams are stored in the :attr:`!stdin`, :attr:`!stdout`, :attr:`!stderr`,
+   and :attr:`!environ` attributes.
 
    The :meth:`~io.BufferedIOBase.write` method of *stdout* should write
    each chunk in full, like :class:`io.BufferedIOBase`.
@@ -588,7 +591,8 @@ input, output, and error streams.
 
    .. method:: BaseHandler.add_cgi_vars()
 
-      Insert CGI variables for the current request into the :attr:`environ` attribute.
+      Insert CGI variables for the current request into the :attr:`!environ`
+      attribute.
 
    Here are some other methods and attributes you may wish to override. This list
    is only a summary, however, and does not include every method that can be
@@ -645,14 +649,14 @@ input, output, and error streams.
    .. method:: BaseHandler.get_scheme()
 
       Return the URL scheme being used for the current request.  The default
-      implementation uses the :func:`guess_scheme` function from :mod:`wsgiref.util`
-      to guess whether the scheme should be "http" or "https", based on the current
-      request's :attr:`environ` variables.
+      implementation uses the :func:`~wsgiref.util.guess_scheme` function from
+      :mod:`wsgiref.util` to guess whether the scheme should be "http" or
+      "https", based on the current request's :attr:`!environ` variables.
 
 
    .. method:: BaseHandler.setup_environ()
 
-      Set the :attr:`environ` attribute to a fully populated WSGI environment.  The
+      Set the :attr:`!environ` attribute to a fully populated WSGI environment.  The
       default implementation uses all of the above methods and attributes, plus the
       :meth:`get_stdin`, :meth:`get_stderr`, and :meth:`add_cgi_vars` methods and the
       :attr:`wsgi_file_wrapper` attribute.  It also inserts a ``SERVER_SOFTWARE`` key
