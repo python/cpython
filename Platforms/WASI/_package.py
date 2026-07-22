@@ -387,8 +387,9 @@ def archive(context):
             # single-threaded compression.
             "--use-compress-program",
             "xz -T 0",
-            os.fsdecode(to_compress),
+            to_compress.name,
         ],
+        cwd=to_compress.parent,
         capture_output=True,
         text=True,
         check=True,
