@@ -88,8 +88,6 @@ def pkgconfig_files(context):
     Each file ends up being listed under `python3` and `python-3.N`.
     """
     misc_dir = context.wasi_build_path / "Misc"
-    details = context.wasi_build_details
-    major = details["language"]["version_info"]["major"]
     pkgconfig = pathlib.PurePath("lib") / "pkgconfig"
     return [
         (
@@ -376,7 +374,7 @@ def archive(context):
             "-f",
             os.fsdecode(file_path),
             "--sort=name",
-            f"--mtime",
+            "--mtime",
             mtime,
             "--clamp-mtime",
             "--owner=0",
