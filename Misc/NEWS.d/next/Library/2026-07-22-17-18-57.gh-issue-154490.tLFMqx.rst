@@ -1,0 +1,5 @@
+Fix :meth:`zipfile.ZipFile.mkdir` so that only the permission bits of the
+*mode* argument are stored.  Previously, file type bits in *mode* could mark
+the created entry as something other than a directory.  Also change the
+default value of *mode* in the signature and documentation from ``511`` to
+the equivalent but clearer ``0o777``.
