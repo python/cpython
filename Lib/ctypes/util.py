@@ -590,6 +590,8 @@ def wrap_dll_function(dll):
 
         ptr.restype = restype
         ptr.argtypes = tuple(annotations.values())
+        functools.update_wrapper(ptr, func, updated=())
+
         return ptr
 
     return decorator
