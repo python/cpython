@@ -566,7 +566,7 @@ Available Functions
    and calls to :func:`simplefilter`.
 
 
-.. decorator:: deprecated(msg, *, category=DeprecationWarning, stacklevel=1)
+.. decorator:: deprecated(message, /, *, category=DeprecationWarning, stacklevel=1)
 
    Decorator to indicate that a class, function or overload is deprecated.
 
