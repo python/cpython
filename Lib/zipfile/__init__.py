@@ -2529,8 +2529,6 @@ class ZipFile:
                                   strict_timestamps=self._strict_timestamps)
 
         if zinfo.is_dir():
-            zinfo.compress_size = 0
-            zinfo.CRC = 0
             self.mkdir(zinfo)
         else:
             if compress_type is not None:
