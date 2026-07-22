@@ -371,9 +371,11 @@ def archive(context):
         [
             "tar",
             "-c",
-            "-f", os.fsdecode(file_path),
+            "-f",
+            os.fsdecode(file_path),
             "--sort=name",
-            f"--mtime", mtime,
+            f"--mtime",
+            mtime,
             "--clamp-mtime",
             "--owner=0",
             "--group=0",
@@ -383,7 +385,8 @@ def archive(context):
             # Explicitly using `-T` because if you don't compress with threads you can't
             # uncompress with them and the size difference is negligible when using
             # single-threaded compression.
-            "--use-compress-program", "xz -T 0",
+            "--use-compress-program",
+            "xz -T 0",
             os.fsdecode(to_compress),
         ],
         capture_output=True,
