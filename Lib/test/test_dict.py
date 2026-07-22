@@ -1919,17 +1919,20 @@ class FrozenDictTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
             hash(fd)
 
+    @support.skip_if_huge_c_stack()
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_hash_deeply_nested(self):
         # This should raise a RecursionError and not crash.
         # Nesting through *values*: unlike keys, values are not hashed at
         # construction time, so hashing recurses the full depth.
         # See https://github.com/python/cpython/issues/154318.
         fd = frozendict({0: 0})
-        for _ in range(500_000):
+        for _ in range(support.exceeds_recursion_limit()):
             fd = frozendict({0: fd})
-        with support.infinite_recursion():
-            with self.assertRaises(RecursionError):
-                hash(fd)
+        with self.assertRaisesRegex(RecursionError,
+                                    "while hashing a frozendict"):
+            hash(fd)
 
     @support.cpython_only
     def test_hash_cpython(self):
