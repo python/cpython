@@ -763,7 +763,9 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
     /* getcchar() is not guaranteed to write the text of an empty cell, so make
        the output an empty string by default. */
     wstr[0] = L'\0';
-#if _NCURSES_EXTENDED_COLOR_FUNCS
+    /* getcchar()'s opts slot returns the extended color pair, but ncurses
+       returned ERR for a non-NULL opts until 6.3 (patch 20210116). */
+#if _NCURSES_EXTENDED_COLOR_FUNCS && NCURSES_VERSION_PATCH+0 >= 20210116
     int rtn = getcchar(wcval, wstr, attrs, &spair, pair);
 #else
     int rtn = getcchar(wcval, wstr, attrs, &spair, NULL);
