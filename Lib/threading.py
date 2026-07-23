@@ -1034,8 +1034,9 @@ class Thread:
         *context* is the contextvars.Context value to use for the thread.
         The default value is None, which means to check
         sys.flags.thread_inherit_context.  If that flag is true, use a copy
-        of the context of the caller.  If false, use an empty context.  To
-        explicitly start with an empty context, pass a new instance of
+        of the context of the caller.  If false, use a context containing only
+        the bindings of thread-inheritable context variables.  To explicitly
+        start with an empty context, pass a new instance of
         contextvars.Context().  To explicitly start with a copy of the current
         context, pass the value from contextvars.copy_context().
 
@@ -1127,15 +1128,16 @@ class Thread:
         with _active_limbo_lock:
             _limbo[self] = self
 
-        if self._context is None:
+        context_is_implicit = self._context is None
+        if context_is_implicit:
             # No context provided
             if _sys.flags.thread_inherit_context:
                 # start with a copy of the context of the caller
                 self._context = _contextvars.copy_context()
             else:
-                # Start with an empty context while retaining the context that
-                # would be inherited.  This retained context is used to warn
-                # about the future default setting of thread_inherit_context.
+                # Start with a context containing only the bindings of
+                # thread-inheritable context variables (see
+                # ContextVar.thread_inheritable); usually empty.
                 self._context = _contextvars._thread_start_context()
 
         try:
@@ -1145,6 +1147,9 @@ class Thread:
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
+            if context_is_implicit:
+                # Capture the caller's context again if start() is retried.
+                self._context = None
             raise
         self._started.wait()  # Will set ident and native_id
 
@@ -1224,6 +1229,8 @@ class Thread:
                 # Free context, we don't need it anymore.
                 self._context = None
         finally:
+            # Break references held by the context after any bootstrap path.
+            self._context = None
             self._delete()
 
     def _delete(self):

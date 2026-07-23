@@ -26,6 +26,11 @@ struct _pycontextobject {
     PyHamtObject *ctx_vars;
     PyObject *ctx_weakreflist;
     int ctx_entered;
+    // Redundant subset of ctx_vars holding only the bindings of
+    // thread-inheritable context variables (see
+    // ContextVar.thread_inheritable()).  Used to efficiently create the
+    // starting context of a new thread.
+    PyHamtObject *ctx_thread_inheritable_vars;
     // used to emit warnings about thread_inherit_context
     PyHamtObject *ctx_starter_vars;
 };
@@ -35,6 +40,7 @@ struct _pycontextvarobject {
     PyObject_HEAD
     PyObject *var_name;
     PyObject *var_default;
+    char var_thread_inheritable;
 #ifndef Py_GIL_DISABLED
     PyObject *var_cached;
     uint64_t var_cached_tsid;

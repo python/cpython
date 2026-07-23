@@ -1,0 +1,6 @@
+Add :meth:`contextvars.ContextVar.thread_inheritable`, an alternative
+constructor for context variables whose bindings are inherited by new
+:class:`threading.Thread` instances even when
+:data:`sys.flags.thread_inherit_context` is false.  This lets libraries opt
+individual context variables in to thread inheritance without requiring the
+application to enable the flag process-wide.

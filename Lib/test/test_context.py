@@ -52,7 +52,46 @@ class ContextTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             c.name = 'bbb'
 
+        inheritable = contextvars.ContextVar.thread_inheritable('inheritable')
+        self.assertIs(type(inheritable), contextvars.ContextVar)
+        self.assertEqual(inheritable.name, 'inheritable')
+
+        inheritable_with_default = (
+            contextvars.ContextVar.thread_inheritable(
+                'inheritable_with_default', default=42,
+            )
+        )
+        self.assertEqual(inheritable_with_default.get(), 42)
+
+        with self.assertRaisesRegex(TypeError, 'must be a str'):
+            contextvars.ContextVar.thread_inheritable(1)
+        with self.assertRaises(TypeError):
+            contextvars.ContextVar.thread_inheritable('var', None)
+        with self.assertRaises(TypeError):
+            contextvars.ContextVar('var', inherit=True)
+
         self.assertNotEqual(hash(c), hash('aaa'))
+
+    def test_thread_inheritable_context_var_gc(self):
+        class Value:
+            pass
+
+        def make_cycle():
+            var = contextvars.ContextVar.thread_inheritable('var')
+            ctx = contextvars.Context()
+            value = Value()
+            value_ref = weakref.ref(value)
+
+            def bind():
+                var.set(value)
+                value.context = contextvars.copy_context()
+
+            ctx.run(bind)
+            return value_ref
+
+        value_ref = make_cycle()
+        support.gc_collect()
+        self.assertIsNone(value_ref())
 
     @isolated_context
     def test_context_var_repr_1(self):
@@ -817,6 +856,262 @@ assert result == ['warning'], result
         ctx1.run(var.set, ReentrantHash())
         ctx2.run(var.set, ReentrantHash())
         ctx1 == ctx2
+
+
+@threading_helper.requires_working_threading()
+class ThreadInheritableVarTest(unittest.TestCase):
+    # These tests run in a subprocess with -X thread_inherit_context pinned,
+    # since its default depends on the build (true on free-threaded builds).
+
+    def run_with_flag(self, flag, source):
+        _, _, stderr = script_helper.assert_python_ok(
+            '-X', f'thread_inherit_context={flag}', '-c', source)
+        self.assertEqual(stderr, b'')
+
+    def test_thread_inheritance(self):
+        self.run_with_flag(0, """if True:
+            import threading
+            from contextvars import ContextVar, copy_context
+
+            inh = ContextVar.thread_inheritable('inh', default='default')
+            plain = ContextVar('plain')
+            inh.set('inherited')
+            plain.set('not inherited')
+
+            def child():
+                # The binding is a real binding in the thread's context:
+                # visible to get(), copy_context() and Context methods.
+                assert inh.get() == 'inherited'
+                ctx = copy_context()
+                assert inh in ctx
+                assert ctx[inh] == 'inherited'
+                assert ctx.run(inh.get) == 'inherited'
+                # Non-inheritable vars are not visible.
+                assert plain not in ctx
+                try:
+                    plain.get()
+                except LookupError:
+                    pass
+                else:
+                    raise AssertionError('plain was inherited')
+
+            t = threading.Thread(target=child)
+            t.start()
+            t.join()
+            """)
+
+    def test_inheritance_captured_at_start_and_context_copy(self):
+        self.run_with_flag(0, """if True:
+            import threading
+            from contextvars import Context, ContextVar
+
+            inh = ContextVar.thread_inheritable('inh')
+            values = []
+
+            # The binding is captured by start(), not by Thread().
+            t = threading.Thread(target=lambda: values.append(inh.get()))
+            inh.set('at start')
+            t.start()
+            t.join()
+
+            def start_and_join():
+                t = threading.Thread(
+                    target=lambda: values.append(inh.get()))
+                t.start()
+                t.join()
+
+            # Context.run() and Context.copy() preserve the inheritable subset.
+            ctx = Context()
+            ctx.run(inh.set, 'context')
+            ctx.run(start_and_join)
+            ctx_copy = ctx.copy()
+            ctx_copy.run(inh.set, 'copy')
+            ctx_copy.run(start_and_join)
+
+            assert values == ['at start', 'context', 'copy']
+            """)
+
+    def test_thread_start_retry_recaptures_context(self):
+        self.run_with_flag(0, """if True:
+            import threading
+            from contextvars import ContextVar
+
+            inh = ContextVar.thread_inheritable('inh')
+            inh.set('first attempt')
+            values = []
+            t = threading.Thread(target=lambda: values.append(inh.get()))
+
+            start_joinable_thread = threading._start_joinable_thread
+
+            def fail_start(*args, **kwargs):
+                raise threading.ThreadError
+
+            threading._start_joinable_thread = fail_start
+            try:
+                try:
+                    t.start()
+                except threading.ThreadError:
+                    pass
+                else:
+                    raise AssertionError('thread start did not fail')
+            finally:
+                threading._start_joinable_thread = start_joinable_thread
+
+            inh.set('retry')
+            t.start()
+            t.join()
+            assert values == ['retry']
+            """)
+
+    def test_thread_set_and_reset(self):
+        self.run_with_flag(0, """if True:
+            import threading
+            from contextvars import ContextVar
+
+            inh = ContextVar.thread_inheritable('inh')
+            inh.set('inherited')
+
+            def child():
+                token = inh.set('child value')
+                assert inh.get() == 'child value'
+                inh.reset(token)
+                assert inh.get() == 'inherited'
+
+            t = threading.Thread(target=child)
+            t.start()
+            t.join()
+            # The thread's set() does not affect the parent.
+            assert inh.get() == 'inherited'
+            """)
+
+    def test_thread_inheritance_transitive(self):
+        self.run_with_flag(0, """if True:
+            import threading
+            from contextvars import ContextVar
+
+            inh = ContextVar.thread_inheritable('inh')
+            inh.set('inherited')
+
+            def grandchild():
+                assert inh.get() == 'inherited'
+
+            def child():
+                # The child never sets the var; the binding must still
+                # propagate to threads it starts.
+                t = threading.Thread(target=grandchild)
+                t.start()
+                t.join()
+
+            t = threading.Thread(target=child)
+            t.start()
+            t.join()
+            """)
+
+    def test_thread_inheritance_unset_or_deleted(self):
+        self.run_with_flag(0, """if True:
+            import threading
+            from contextvars import ContextVar
+
+            unset = ContextVar.thread_inheritable('unset', default='default')
+            deleted = ContextVar.thread_inheritable('deleted')
+            token = deleted.set('inherited')
+            deleted.reset(token)
+
+            def child():
+                assert unset.get() == 'default'
+                try:
+                    deleted.get()
+                except LookupError:
+                    pass
+                else:
+                    raise AssertionError('deleted binding was inherited')
+
+            t = threading.Thread(target=child)
+            t.start()
+            t.join()
+            """)
+
+    def test_thread_explicit_context(self):
+        self.run_with_flag(0, """if True:
+            import threading
+            from contextvars import ContextVar, Context
+
+            inh = ContextVar.thread_inheritable('inh', default='default')
+            inh.set('inherited')
+
+            def child():
+                assert inh.get() == 'default'
+
+            t = threading.Thread(target=child, context=Context())
+            t.start()
+            t.join()
+            """)
+
+    def test_thread_inheritance_asyncio(self):
+        self.run_with_flag(0, """if True:
+            import asyncio
+            import threading
+            from contextvars import ContextVar
+
+            inh = ContextVar.thread_inheritable('inh')
+            plain = ContextVar('plain')
+            inh.set('inherited')
+            plain.set('not inherited')
+
+            def check_plain_not_set():
+                try:
+                    plain.get()
+                except LookupError:
+                    pass
+                else:
+                    raise AssertionError('plain was inherited')
+
+            async def task():
+                # Tasks run in a copy of the thread's context, which
+                # includes the inherited binding.
+                assert inh.get() == 'inherited'
+                check_plain_not_set()
+                # A set() inside the task is confined to the task.
+                inh.set('task value')
+
+            async def main():
+                assert inh.get() == 'inherited'
+                await asyncio.gather(task(), task())
+                assert inh.get() == 'inherited'
+                # Callbacks also run in a copy of the current context.
+                loop = asyncio.get_running_loop()
+                fut = loop.create_future()
+                loop.call_soon(
+                    lambda: fut.set_result((inh.get(), plain.get(None))))
+                assert await fut == ('inherited', None)
+
+            def child():
+                asyncio.run(main())
+
+            t = threading.Thread(target=child)
+            t.start()
+            t.join()
+            """)
+
+    def test_thread_inherit_context_flag_true(self):
+        self.run_with_flag(1, """if True:
+            import threading
+            from contextvars import ContextVar
+
+            inh = ContextVar.thread_inheritable('inh')
+            plain = ContextVar('plain')
+            inh.set('inherited')
+            plain.set('also inherited')
+
+            def child():
+                # With the flag set, the full context is copied.
+                assert inh.get() == 'inherited'
+                assert plain.get() == 'also inherited'
+
+            t = threading.Thread(target=child)
+            t.start()
+            t.join()
+            """)
 
 
 # HAMT Tests

@@ -152,8 +152,9 @@ is set to true by default which causes threads created with
 :class:`threading.Thread` to start with a copy of the
 :class:`~contextvars.Context()` of the caller of
 :meth:`~threading.Thread.start`.  In the default GIL-enabled build, the flag
-defaults to false so threads start with an
-empty :class:`~contextvars.Context()`.
+defaults to false, so threads start with a context containing only the caller's
+current bindings for context variables created by
+:meth:`~contextvars.ContextVar.thread_inheritable`.
 
 
 Warning filters
