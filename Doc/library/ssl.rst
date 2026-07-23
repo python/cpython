@@ -1315,6 +1315,9 @@ SSL sockets also have the following additional methods and attributes:
    Return the group used for doing key agreement on this connection. If no
    connection has been established, returns ``None``.
 
+   This method requires OpenSSL 3.2 or later; it raises
+   :exc:`NotImplementedError` when linked against an older version.
+
    .. versionadded:: 3.15
 
 .. method:: SSLSocket.client_sigalg()
@@ -1707,6 +1710,9 @@ to speed up repeated connections from the same clients.
    :const:`True` this method will also return any associated aliases such as
    the ECDH curve names supported in older versions of OpenSSL.
 
+   This method requires OpenSSL 3.5 or later; it raises
+   :exc:`NotImplementedError` when linked against an older version.
+
    .. versionadded:: 3.15
 
 .. method:: SSLContext.set_default_verify_paths()
@@ -1753,6 +1759,19 @@ to speed up repeated connections from the same clients.
    Set the groups allowed for key agreement for sockets created with this
    context.  It should be a string in the `OpenSSL group list format
    <https://docs.openssl.org/master/man3/SSL_CTX_set1_groups_list/>`_.
+
+   This is a more general replacement for :meth:`~SSLContext.set_ecdh_curve`:
+   it accepts several groups in order of preference and supports finite-field
+   and post-quantum hybrid groups in addition to ECDH curves.  For example,
+   to prefer the post-quantum hybrid group ``X25519MLKEM768`` and fall back
+   to the classical ``X25519`` group::
+
+       >>> ctx = ssl.create_default_context()
+       >>> ctx.set_groups("X25519MLKEM768:X25519")  # doctest: +SKIP
+
+   Post-quantum hybrid groups such as ``X25519MLKEM768`` require OpenSSL 3.5
+   or later.  Requesting a group that the linked OpenSSL does not recognize
+   raises an :class:`SSLError`.
 
    .. note::
 
@@ -1910,6 +1929,10 @@ to speed up repeated connections from the same clients.
    :data:`OP_SINGLE_ECDH_USE` option to further improve security.
 
    This method is not available if :data:`HAS_ECDH` is ``False``.
+
+   For more control, including selecting several groups in order of
+   preference or offering post-quantum hybrid groups, use the more general
+   :meth:`~SSLContext.set_groups` method.
 
    .. versionadded:: 3.3
 
@@ -2933,6 +2956,10 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
   and the method :meth:`SSLSocket.cipher` returns information about the
   negotiated cipher for both TLS 1.3 and earlier versions once a connection
   is established.
+- Key agreement can use post-quantum hybrid groups such as
+  ``X25519MLKEM768`` when linked against OpenSSL 3.5 or later, which offers
+  them by default.  Use :meth:`SSLContext.set_groups` to choose which groups
+  are offered and :meth:`SSLSocket.group` to see which one was negotiated.
 - Session tickets are no longer sent as part of the initial handshake and
   are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
   are not compatible with TLS 1.3.
