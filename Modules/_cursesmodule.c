@@ -151,6 +151,16 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define _CURSES_PAIR_CONTENT_FUNC       pair_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
+/* getcchar() returned ERR for a non-NULL opts before ncurses 6.3 (patch
+   20210116, https://invisible-island.net/ncurses/), so read a cchar_t's color
+   pair through the plain short slot rather than the extended-color opts slot on
+   older libraries.  setcchar() is unaffected: it accepts opts on every version. */
+#if _NCURSES_EXTENDED_COLOR_FUNCS && NCURSES_VERSION_PATCH+0 >= 20210116
+#define _NCURSES_GETCCHAR_EXTENDED_PAIR 1
+#else
+#define _NCURSES_GETCCHAR_EXTENDED_PAIR 0
+#endif
+
 typedef struct {
     PyObject *error;                // curses exception type
     PyTypeObject *window_type;      // exposed by PyCursesWindow_Type
@@ -763,7 +773,7 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
     /* getcchar() is not guaranteed to write the text of an empty cell, so make
        the output an empty string by default. */
     wstr[0] = L'\0';
-#if _NCURSES_EXTENDED_COLOR_FUNCS
+#if _NCURSES_GETCCHAR_EXTENDED_PAIR
     int rtn = getcchar(wcval, wstr, attrs, &spair, pair);
 #else
     int rtn = getcchar(wcval, wstr, attrs, &spair, NULL);
