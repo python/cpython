@@ -87,8 +87,8 @@ Use `python -m profiling.sampling <command> --help` for command-specific help.""
 
 
 # Constants for socket synchronization
-_SYNC_TIMEOUT_SEC = 5.0
-_PROCESS_KILL_TIMEOUT_SEC = 2.0
+_SYNC_TIMEOUT_SEC = 15.0
+_PROCESS_KILL_TIMEOUT_SEC = 5.0
 _READY_MESSAGE = b"ready"
 _RECV_BUFFER_SIZE = 1024
 _BINARY_PROFILE_HEADER_SIZE = 64

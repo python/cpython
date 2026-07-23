@@ -774,6 +774,30 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
     return rtn;
 }
 
+/* winch() returns the low 8 bits of the character's code point with no locale
+   conversion, unlike instr(), so recover the locale byte from the wide cell
+   when the character maps to exactly one byte, keeping the attribute and color
+   bits in RTN.  A character with no single-byte form is left to winch(). */
+static chtype
+curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
+{
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attrs;
+    int pair;
+    if (curses_getcchar(cell, wstr, &attrs, &pair) == ERR
+        || wstr[0] == L'\0' || wstr[1] != L'\0')
+    {
+        return rtn;
+    }
+    /* wctob() mirrors ncurses' own _nc_to_char(): the single-byte form, or EOF
+       when the character has none in this locale. */
+    int byte = wctob(wstr[0]);
+    if (byte != EOF) {
+        rtn = (rtn & ~(chtype)A_CHARTEXT) | (unsigned char)byte;
+    }
+    return rtn;
+}
+
 /* Hash one cell by value (text, attributes, pair) -- consistent with the
    equality comparison, not the raw cchar_t whose padding and unused text tail
    it ignores.  Zero the key first so those bytes are deterministic, then
@@ -2409,6 +2433,7 @@ _curses_window_attrset_impl(PyCursesWindowObject *self, attr_t attr)
     return curses_window_check_err(self, rtn, "wattrset", "attrset");
 }
 
+#ifdef HAVE_CURSES_WATTR_GET
 /*[clinic input]
 _curses.window.attr_get
 
@@ -2434,7 +2459,9 @@ _curses_window_attr_get_impl(PyCursesWindowObject *self)
     }
     return Py_BuildValue("(ki)", (unsigned long)attrs, (int)pair);
 }
+#endif /* HAVE_CURSES_WATTR_GET */
 
+#ifdef HAVE_CURSES_WATTR_SET
 /*[clinic input]
 _curses.window.attr_set
 
@@ -2458,7 +2485,9 @@ _curses_window_attr_set_impl(PyCursesWindowObject *self, attr_t attr,
 #endif
     return curses_window_check_err(self, rtn, "wattr_set", "attr_set");
 }
+#endif /* HAVE_CURSES_WATTR_SET */
 
+#ifdef HAVE_CURSES_WATTR_ON
 /*[clinic input]
 _curses.window.attr_on
 
@@ -2475,7 +2504,9 @@ _curses_window_attr_on_impl(PyCursesWindowObject *self, attr_t attr)
     int rtn = wattr_on(self->win, attr, NULL);
     return curses_window_check_err(self, rtn, "wattr_on", "attr_on");
 }
+#endif /* HAVE_CURSES_WATTR_ON */
 
+#ifdef HAVE_CURSES_WATTR_OFF
 /*[clinic input]
 _curses.window.attr_off
 
@@ -2492,7 +2523,9 @@ _curses_window_attr_off_impl(PyCursesWindowObject *self, attr_t attr)
     int rtn = wattr_off(self->win, attr, NULL);
     return curses_window_check_err(self, rtn, "wattr_off", "attr_off");
 }
+#endif /* HAVE_CURSES_WATTR_OFF */
 
+#ifdef HAVE_CURSES_WCOLOR_SET
 /*[clinic input]
 _curses.window.color_set
 
@@ -2514,6 +2547,7 @@ _curses_window_color_set_impl(PyCursesWindowObject *self, int pair)
 #endif
     return curses_window_check_err(self, rtn, "wcolor_set", "color_set");
 }
+#endif /* HAVE_CURSES_WCOLOR_SET */
 
 /*[clinic input]
 _curses.window.getattrs
@@ -3544,6 +3578,24 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
     if (type == 0) {
         return NULL;
     }
+    if (type == 1) {
+        /* winsch() does not locale-decode a byte above 127 on a wide build,
+           unlike waddch(), so decode it here and insert it as a wide
+           character. (gh-153864) */
+        chtype cch = ch_ & A_CHARTEXT;
+        if (cch > 127) {
+            wint_t wc = btowc((int)cch);
+            if (wc != WEOF) {
+                wchar_t wstr[2] = { (wchar_t)wc, L'\0' };
+                attr_t cattr = (attr_t)((ch_ | attr) & ~(chtype)A_CHARTEXT);
+                if (curses_setcchar(&wch, wstr, cattr, PAIR_NUMBER(cattr)) == ERR) {
+                    curses_window_set_error(self, "setcchar", "insch");
+                    return NULL;
+                }
+                type = 2;
+            }
+        }
+    }
     if (type == 2) {
         if (!group_left_1) {
             rtn = wins_wch(self->win, &wch);
@@ -3609,6 +3661,14 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
         curses_window_set_error(self, funcname, "inch");
         return NULL;
     }
+#ifdef HAVE_NCURSESW
+    curses_cell_t cell = {0};
+    if ((group_right_1 ? mvwin_wch(self->win, y, x, &cell)
+                       : win_wch(self->win, &cell)) != ERR)
+    {
+        rtn = curses_cell_locale_byte(rtn, &cell);
+    }
+#endif
     return PyLong_FromUnsignedLong(rtn);
 }
 
@@ -6033,6 +6093,7 @@ _curses_scr_init(PyObject *module, PyObject *filename)
 /*[clinic end generated code: output=2e861d381d710419 input=81c45e4702124ef6]*/
 ScreenDumpFunctionBody(scr_init)
 
+#ifdef HAVE_CURSES_SCR_SET
 /*[clinic input]
 _curses.scr_set
 
@@ -6049,6 +6110,7 @@ static PyObject *
 _curses_scr_set(PyObject *module, PyObject *filename)
 /*[clinic end generated code: output=6056fdec12c5935f input=d248c20543cc289b]*/
 ScreenDumpFunctionBody(scr_set)
+#endif /* HAVE_CURSES_SCR_SET */
 #endif /* HAVE_CURSES_SCR_DUMP */
 
 /*[clinic input]
@@ -7412,9 +7474,10 @@ _curses_qiflush_impl(PyObject *module, int flag)
     Py_RETURN_NONE;
 }
 
-#if defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)
 /* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
- * and _curses.COLS. Returns 1 on success and 0 on failure. */
+ * and _curses.COLS. Returns 1 on success and 0 on failure.  Used
+ * unconditionally (e.g. by set_term()), so it must not be gated on resizeterm().
+ */
 static int
 update_lines_cols(PyObject *private_module)
 {
@@ -7482,8 +7545,6 @@ _curses_update_lines_cols_impl(PyObject *module)
     }
     Py_RETURN_NONE;
 }
-
-#endif
 
 /*[clinic input]
 _curses.raw
@@ -8321,6 +8382,7 @@ _curses_slk_attr_impl(PyObject *module)
 }
 #endif
 
+#ifdef HAVE_CURSES_SLK_ATTR_ON
 /*[clinic input]
 _curses.slk_attr_on
 
@@ -8338,7 +8400,9 @@ _curses_slk_attr_on_impl(PyObject *module, attr_t attr)
     return curses_check_err(module, slk_attr_on(attr, NULL),
                             "slk_attr_on", NULL);
 }
+#endif /* HAVE_CURSES_SLK_ATTR_ON */
 
+#ifdef HAVE_CURSES_SLK_ATTR_OFF
 /*[clinic input]
 _curses.slk_attr_off
 
@@ -8356,7 +8420,9 @@ _curses_slk_attr_off_impl(PyObject *module, attr_t attr)
     return curses_check_err(module, slk_attr_off(attr, NULL),
                             "slk_attr_off", NULL);
 }
+#endif /* HAVE_CURSES_SLK_ATTR_OFF */
 
+#ifdef HAVE_CURSES_SLK_ATTR_SET
 /*[clinic input]
 _curses.slk_attr_set
 
@@ -8380,7 +8446,9 @@ _curses_slk_attr_set_impl(PyObject *module, attr_t attr, int pair)
 #endif
     return curses_check_err(module, rtn, "slk_attr_set", NULL);
 }
+#endif /* HAVE_CURSES_SLK_ATTR_SET */
 
+#ifdef HAVE_CURSES_SLK_COLOR
 /*[clinic input]
 _curses.slk_color
 
@@ -8397,6 +8465,7 @@ _curses_slk_color_impl(PyObject *module, int pair)
     PyCursesStatefulInitialised(module);
     return curses_check_err(module, slk_color((short)pair), "slk_color", NULL);
 }
+#endif /* HAVE_CURSES_SLK_COLOR */
 
 #ifdef HAVE_CURSES_USE_ENV
 /*[clinic input]

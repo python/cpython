@@ -1145,12 +1145,21 @@ convenient.
 
    *sock* must be a non-blocking socket.
 
+   With :class:`SelectorEventLoop`, *address* does not need to be resolved:
+   for :const:`~socket.AF_INET` and :const:`~socket.AF_INET6` sockets,
+   ``sock_connect`` first checks whether *address* is already resolved by
+   calling :func:`socket.inet_pton`, and uses :meth:`loop.getaddrinfo` to
+   resolve it if it is not.
+
+   :class:`ProactorEventLoop`, the default event loop on Windows, does not
+   resolve *address*.  The host must already be a numeric IP address; passing
+   a host name raises :exc:`OSError`.  Resolve the address with
+   :meth:`loop.getaddrinfo` first, or use :meth:`loop.create_connection`,
+   which resolves the address on every platform.
+
    .. versionchanged:: 3.5.2
-      ``address`` no longer needs to be resolved.  ``sock_connect``
-      will try to check if the *address* is already resolved by calling
-      :func:`socket.inet_pton`.  If not,
-      :meth:`loop.getaddrinfo` will be used to resolve the
-      *address*.
+      With :class:`SelectorEventLoop`, ``address`` no longer needs to be
+      resolved.
 
    .. seealso::
 
@@ -1254,7 +1263,9 @@ Working with pipes
    *protocol_factory* must be a callable returning an
    :ref:`asyncio protocol <asyncio-protocol>` implementation.
 
-   *pipe* is a :term:`file-like object <file object>`.
+   *pipe* is a :term:`file-like object <file object>`.  See
+   :ref:`Supported pipe objects <asyncio-pipe-objects>` for the objects
+   supported as *pipe*.
 
    Return pair ``(transport, protocol)``, where *transport* supports
    the :class:`ReadTransport` interface and *protocol* is an object
@@ -1271,7 +1282,9 @@ Working with pipes
    *protocol_factory* must be a callable returning an
    :ref:`asyncio protocol <asyncio-protocol>` implementation.
 
-   *pipe* is :term:`file-like object <file object>`.
+   *pipe* is a :term:`file-like object <file object>`.  See
+   :ref:`Supported pipe objects <asyncio-pipe-objects>` for the objects
+   supported as *pipe*.
 
    Return pair ``(transport, protocol)``, where *transport* supports
    :class:`WriteTransport` interface and *protocol* is an object
@@ -1279,6 +1292,33 @@ Working with pipes
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
+
+.. _asyncio-pipe-objects:
+
+.. rubric:: Supported pipe objects
+
+These methods only work with objects the operating system can poll for
+readiness or perform overlapped I/O on.  Regular files on disk are **not**
+supported on any platform.  There is no asynchronous file I/O in asyncio;
+use :meth:`loop.run_in_executor` to read and write regular files without
+blocking the event loop.
+
+On Unix, with :class:`SelectorEventLoop`, *pipe* must wrap one of the
+following:
+
+* a pipe, such as an end of an :func:`os.pipe` pair or a FIFO created with
+  :func:`os.mkfifo`;
+* a socket;
+* a character device, such as a terminal.
+
+On Windows, where only :class:`ProactorEventLoop` implements these methods,
+*pipe* must wrap a handle opened for overlapped I/O (that is, created with the
+``FILE_FLAG_OVERLAPPED`` flag), since the handle has to be associated with an
+I/O completion port.  Handles that were not opened for overlapped I/O are
+rejected.  In particular, the standard streams (:data:`sys.stdin`,
+:data:`sys.stdout` and :data:`sys.stderr`), console handles, and the pipes
+created by :func:`os.pipe` are **not** opened for overlapped I/O and therefore
+cannot be used with these methods.
 
 .. note::
 

@@ -1,0 +1,3 @@
+Added the :meth:`!tk_print` method to :class:`tkinter.Canvas` and
+:class:`tkinter.Text` which prints the contents of the widget using the
+native print dialog.  It requires Tk 8.7/9.0 or newer.
