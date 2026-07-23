@@ -1103,34 +1103,20 @@ typedef union {
 
 
 void
-_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, FILE_STANDARD_INFO* standard_info,
-                           ULONG reparse_tag, FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
+_Py_attribute_data_to_stat(FILE_STANDARD_INFO* standard_info, ULONG reparse_tag,
+                           FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
                            struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
 
-    if (info) {
-        result->st_size = (((__int64)info->nFileSizeHigh) << 32) + info->nFileSizeLow;
-        result->st_nlink = info->nNumberOfLinks;
-        if (!id_info)
-            result->st_dev = info->dwVolumeSerialNumber;
-    }
-    if (standard_info && !info) {
-        result->st_size = standard_info->EndOfFile.QuadPart;
-        result->st_nlink = standard_info->NumberOfLinks;
-    }
+    result->st_size = standard_info->EndOfFile.QuadPart;
+    result->st_nlink = standard_info->NumberOfLinks;
 
     /* st_ctime is deprecated, but we preserve the legacy value in our caller, not here */
-    if (basic_info) {
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
-    } else {
-        FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
-        FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-        FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
-    }
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
 
     if (id_info) {
         result->st_dev = id_info->VolumeSerialNumber;
@@ -1138,18 +1124,15 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, FILE_STANDARD_INFO*
         file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
         result->st_ino_high = file_id.st_ino_high;
-    }
-    if (!result->st_ino && !result->st_ino_high) {
-        /* should only occur for DirEntry_from_find_data, in which case the
-           index is likely to be zero anyway. */
-        if (info)
-            result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
+    } else {
+        // use these fallback values for systems where it's not possible
+        // to obtain VolumeSerialNumber / FileId (e.g. Windows UWP)
+        result->st_dev = 1;
+        result->st_ino = basic_info->CreationTime.QuadPart;
     }
 
-    const DWORD fileAttributes = basic_info ? basic_info->FileAttributes : info->dwFileAttributes;
-
-    result->st_file_attributes = fileAttributes;
-    result->st_mode = attributes_to_mode(fileAttributes);
+    result->st_file_attributes = basic_info->FileAttributes;
+    result->st_mode = attributes_to_mode(result->st_file_attributes);
 
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
        open other name surrogate reparse points without traversing them. To
@@ -1160,13 +1143,6 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, FILE_STANDARD_INFO*
         /* set the bits that make this a symlink */
         result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
     }
-
-    // For UWP compatibility since is not possible obtain the VolumeSerialNumber
-    // and FileId due security restriction and App isolation
-#ifndef MS_WINDOWS_DESKTOP
-    result->st_dev = 1;
-    result->st_ino = basic_info->CreationTime.QuadPart;
-#endif
 }
 
 void
@@ -1299,7 +1275,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         pIdInfo = NULL;
     }
 
-    _Py_attribute_data_to_stat(NULL, &standardInfo, 0, &basicInfo, pIdInfo, status);
+    _Py_attribute_data_to_stat(&standardInfo, 0, &basicInfo, pIdInfo, status);
     return 0;
 #else
     return fstat(fd, status);
