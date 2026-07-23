@@ -1639,7 +1639,7 @@ _io_TextIOWrapper_detach_impl(textio *self)
     if (buffer == NULL) {
         return NULL;
     }
-    self->buffer = NULL;
+    FT_ATOMIC_STORE_PTR_RELAXED(self->buffer, NULL);
     self->detached = 1;
     return buffer;
 }

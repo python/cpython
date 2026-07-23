@@ -204,3 +204,20 @@ class IncrementalNewlineDecoderTest(TestCase):
                 decoder.reset()
 
         run_concurrently([decode_worker] * 2 + [reset_worker] * 2)
+
+
+class TextIOWrapperTest(TestCase):
+    def test_buffer_detach_race(self):
+        make = lambda: io.TextIOWrapper(io.BytesIO())
+        slot = [make()]
+
+        def reader():
+            for _ in range(1000):
+                slot[0].buffer
+
+        def detacher():
+            for _ in range(1000):
+                slot[0] = make()
+                slot[0].detach()
+
+        run_concurrently([reader, detacher])
