@@ -60,7 +60,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 c.append(1)
                 return ""
-            def __reduce__(self):
+            def __reduce__(*args):
                 self.fail("shouldn't call this")
         c = []
         x = C()
@@ -335,7 +335,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 c.append(1)
                 return ""
-            def __reduce__(self):
+            def __reduce__(*args):
                 self.fail("shouldn't call this")
         c = []
         x = C()
