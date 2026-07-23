@@ -1,0 +1,5 @@
+Fixed data-race in :term:`free-threaded build` in
+:class:`collections.defaultdict` when calling :func:`repr` and when adding a
+new entry to :class:`~collections.defaultdict` that calls
+:attr:`defaultdict.default_factory
+<collections.defaultdict.default_factory>`.
