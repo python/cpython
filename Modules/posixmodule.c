@@ -2025,17 +2025,23 @@ win32_wchdir(LPCWSTR path)
 
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
-                       BY_HANDLE_FILE_INFORMATION *info,
+                       FILE_BASIC_INFO* basic_info,
+                       FILE_STANDARD_INFO* standard_info,
                        ULONG *reparse_tag)
 {
-    memset(info, 0, sizeof(*info));
-    info->dwFileAttributes = pFileData->dwFileAttributes;
-    info->ftCreationTime   = pFileData->ftCreationTime;
-    info->ftLastAccessTime = pFileData->ftLastAccessTime;
-    info->ftLastWriteTime  = pFileData->ftLastWriteTime;
-    info->nFileSizeHigh    = pFileData->nFileSizeHigh;
-    info->nFileSizeLow     = pFileData->nFileSizeLow;
-/*  info->nNumberOfLinks   = 1; */
+    memset(basic_info, 0, sizeof(*basic_info));
+    memset(standard_info, 0, sizeof(*standard_info));
+
+    basic_info->FileAttributes = pFileData->dwFileAttributes;
+    basic_info->CreationTime.HighPart = pFileData->ftCreationTime.dwHighDateTime;
+    basic_info->CreationTime.LowPart = pFileData->ftCreationTime.dwLowDateTime;
+    basic_info->LastAccessTime.HighPart = pFileData->ftLastAccessTime.dwHighDateTime;
+    basic_info->LastAccessTime.LowPart = pFileData->ftLastAccessTime.dwLowDateTime;
+    basic_info->LastWriteTime.HighPart = pFileData->ftLastWriteTime.dwHighDateTime;
+    basic_info->LastWriteTime.LowPart = pFileData->ftLastWriteTime.dwLowDateTime;
+    standard_info->EndOfFile.HighPart = pFileData->nFileSizeHigh;
+    standard_info->EndOfFile.LowPart = pFileData->nFileSizeLow;
+
     if (pFileData->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
         *reparse_tag = pFileData->dwReserved0;
     else
@@ -2043,7 +2049,7 @@ find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
 }
 
 static BOOL
-attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
+attributes_from_dir(LPCWSTR pszFile, FILE_BASIC_INFO *basic_info, FILE_STANDARD_INFO* standard_info, ULONG *reparse_tag)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
@@ -2074,7 +2080,7 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
         return FALSE;
     }
     FindClose(hFindFile);
-    find_data_to_file_info(&FileData, info, reparse_tag);
+    find_data_to_file_info(&FileData, basic_info, standard_info, reparse_tag);
     return TRUE;
 }
 
@@ -2108,7 +2114,6 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
                       BOOL traverse)
 {
     HANDLE hFile;
-    BY_HANDLE_FILE_INFORMATION fileInfo = {0};
     FILE_STANDARD_INFO standardInfo = {0};
     FILE_BASIC_INFO basicInfo = {0};
     FILE_ID_INFO idInfo = {0};
@@ -2132,7 +2137,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
         case ERROR_ACCESS_DENIED:     /* Cannot sync or read attributes. */
         case ERROR_SHARING_VIOLATION: /* It's a paging file. */
             /* Try reading the parent directory. */
-            if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
+            if (!attributes_from_dir(path, &basicInfo, &standardInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
                 switch (GetLastError()) {
                 case ERROR_FILE_NOT_FOUND: /* File cannot be found */
@@ -16666,7 +16671,8 @@ static PyObject *
 DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 {
     DirEntry *entry;
-    BY_HANDLE_FILE_INFORMATION file_info;
+    FILE_BASIC_INFO basic_info;
+    FILE_STANDARD_INFO standard_info;
     ULONG reparse_tag;
     wchar_t *joined_path;
 
@@ -16704,8 +16710,8 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
             goto error;
     }
 
-    find_data_to_file_info(dataW, &file_info, &reparse_tag);
-    _Py_attribute_data_to_stat(&file_info, NULL, reparse_tag, NULL, NULL, &entry->win32_lstat);
+    find_data_to_file_info(dataW, &basic_info, &standard_info, &reparse_tag);
+    _Py_attribute_data_to_stat(NULL, &standard_info, reparse_tag, &basic_info, NULL, &entry->win32_lstat);
 
     /* ctime is only deprecated from 3.12, so we copy birthtime across */
     entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;
