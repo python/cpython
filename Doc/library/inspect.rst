@@ -1375,6 +1375,31 @@ Classes and functions
       This function was inadvertently marked as deprecated in Python 3.5.
 
 
+.. function:: formatannotation(annotation, base_module=None, *, quote_annotation_strings=True)
+
+   Format *annotation* for pretty-printing, as used internally when
+   rendering :class:`Signature` and :class:`Parameter` objects as strings.
+
+   If *annotation* is a :class:`type` whose ``__module__`` is ``'builtins'``
+   or equal to *base_module*, only its :attr:`~definition.__qualname__` is
+   returned; otherwise the module name is included as a prefix.  ``typing``
+   module prefixes are always stripped from the ``repr`` of *annotation*,
+   and a :class:`~typing.ForwardRef` is rendered as its forward-referenced
+   argument string.
+
+   If *quote_annotation_strings* is false, an *annotation* that is already
+   a :class:`str` is returned unchanged instead of being re-quoted, to avoid
+   double-quoting stringified annotations.
+
+
+.. function:: formatannotationrelativeto(object)
+
+   Return a version of :func:`formatannotation` that uses the
+   ``__module__`` of *object* as the *base_module*, so annotations
+   referring to classes defined in the same module as *object* are
+   formatted without a module prefix.
+
+
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
 
    Format a pretty argument spec from the four values returned by
@@ -1605,6 +1630,15 @@ line.
 
    .. versionchanged:: 3.11
       A :class:`Traceback` object is returned instead of a named tuple.
+
+
+.. function:: getlineno(frame)
+
+   Get the current line number of *frame* from its :attr:`~frame.f_lineno`
+   attribute.  This function exists as a separate entry point so that how
+   the line number is obtained can be optimized independently of its
+   callers; currently it returns ``frame.f_lineno`` directly.
+
 
 .. function:: getouterframes(frame, context=1)
 
