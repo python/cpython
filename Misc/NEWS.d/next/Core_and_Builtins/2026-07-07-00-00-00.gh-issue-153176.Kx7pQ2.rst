@@ -1,4 +1,0 @@
-Fix a crash on free-threaded debug builds when destroying a subinterpreter.
-An overly-restrictive assertion in ``_PyMem_mi_page_reclaimed`` wrongly
-assumed the reclaimed page's owning thread state always matched the current
-thread state, which is not true during stop-the-world events.

@@ -10,9 +10,10 @@ import_helper.import_module('_testinternalcapi')
 
 class InterpreterTeardownTests(unittest.TestCase):
     def test_destroy_subinterpreter_does_not_abort(self):
-        # gh-153176: On a free-threaded debug build, destroying a
-        # subinterpreter used to trip an overly-restrictive assertion in
-        # _PyMem_mi_page_reclaimed and abort the process.  Run the
+        # gh-153176: destroy_interpreter(basic=True) used to call
+        # PyThreadState_Clear() on a non-current thread state, which on a
+        # free-threaded debug build reclaimed mimalloc pages into a heap not
+        # owned by the current thread and aborted the process.  Run the
         # reproduction in a subprocess so that a regression surfaces as a
         # non-zero exit / SIGABRT instead of killing the test runner.
         script = textwrap.dedent("""
