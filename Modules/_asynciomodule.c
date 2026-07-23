@@ -2966,13 +2966,12 @@ TaskObj_dealloc(PyObject *self)
     if (PyObject_CallFinalizerFromDealloc(self) < 0) {
         return; // resurrected
     }
+    PyObject_GC_UnTrack(self);
     // unregister the task after finalization so that
     // if the task gets resurrected, it remains registered
     unregister_task((TaskObj *)self);
 
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-
     PyObject_ClearWeakRefs(self);
 
     (void)TaskObj_clear(self);
