@@ -1415,6 +1415,9 @@ ghi\0jkl
     sample18.append("v,twenty_one")  # 'u' was not skipped
     sample18 = '\n'.join(sample18)
 
+    sample19 = ('time,title\r\n'
+                '2020-10-01,"Pocket - Save news, videos, stories and more"\r\n')
+
     def test_issue43625(self):
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.sample12))
@@ -1443,13 +1446,16 @@ ghi\0jkl
 
     def test_guess_quote_and_delimiter(self):
         sniffer = csv.Sniffer()
-        for header in (";'123;4';", "'123;4';", ";'123;4'", "'123;4'"):
+        for header in (";'123;4';", "'123;4';", ";'123;4'"):
             with self.subTest(header):
                 dialect = sniffer.sniff(header, ",;")
                 self.assertEqual(dialect.delimiter, ';')
                 self.assertEqual(dialect.quotechar, "'")
                 self.assertIs(dialect.doublequote, False)
                 self.assertIs(dialect.skipinitialspace, False)
+        # A single quoted field is a single column without a delimiter.
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, "'123;4'", ",;")
 
     def test_sniff(self):
         sniffer = csv.Sniffer()
@@ -1494,6 +1500,199 @@ ghi\0jkl
                                sniffer.sniff, self.sample15)
         self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
                                sniffer.sniff, self.sample16)
+        dialect = sniffer.sniff(self.sample19)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.quotechar, '"')
+
+    def test_sniff_escapechar(self):
+        # gh-83273: escaped delimiters make the delimiter frequencies
+        # inconsistent, but the escape character can be detected by trial
+        # parsing.
+        sniffer = csv.Sniffer()
+        sample = 'ab,cd\\,ef\ngh\\,ij,kl\nmn,op\n'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.escapechar, '\\')
+        self.assertIs(dialect.doublequote, False)
+        self.assertEqual(list(csv.reader(StringIO(sample), dialect)),
+                         [['ab', 'cd,ef'], ['gh,ij', 'kl'], ['mn', 'op']])
+        # No escape character in the sample -- none is detected.
+        dialect = sniffer.sniff('ab,cd\ngh,ij\n')
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertIsNone(dialect.escapechar)
+
+    def test_sniff_quoted_rows_among_unquoted(self):
+        # Rows which happen to consist of a single quoted or unquoted
+        # field must not be mistaken for a single column of quoted fields.
+        sniffer = csv.Sniffer()
+        sample = '"header line"\na|b\nc|d\ne|f\n'
+        self.assertEqual(sniffer.sniff(sample).delimiter, '|')
+        # Even if an unterminated quote breaks the quoted parse.
+        sample = '"header"\na|"b c\nd|e\nf|g\n'
+        self.assertEqual(sniffer.sniff(sample).delimiter, '|')
+
+    def test_sniff_single_column_quoted(self):
+        # gh-98820: a sample consisting of a single column of quoted fields
+        # has no delimiter to detect, even if the quoted content contains
+        # characters which could pass for one.  It also used to take
+        # quadratic time before failing.
+        sniffer = csv.Sniffer()
+        sample = '\n'.join('"%02d-%02d-%02d"' % (i, i, i) for i in range(50))
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, sample)
+        # Even if none of the requested delimiters occurs in the sample.
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, sample, ',:|\t')
+        # A mix of quoted and unquoted single-field rows.
+        sample = '"abc"\ndef\n"ghi"\njkl\n' * 10
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, sample)
+        # Even if the quoted fields contain delimiter characters.
+        sample = '"a,b"\ncd\n' * 20
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, sample)
+        # Even if the content of the quoted fields parses consistently
+        # with the other quote character.
+        sample = '''"a-'b'-c"\n"d-'e'-f"\n''' * 10
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, sample)
+
+    def test_sniff_non_ascii_delimiter(self):
+        # gh-111820: an explicitly requested delimiter can be non-ASCII.
+        sniffer = csv.Sniffer()
+        sample = 'aaa\xacbbb\xacccc\nddd\xaceee\xacfff\nggg\xachhh\xaciii\n'
+        dialect = sniffer.sniff(sample, delimiters='\xac')
+        self.assertEqual(dialect.delimiter, '\xac')
+
+    def test_sniff_preamble(self):
+        # A preamble (title or comment lines) before the data must not
+        # prevent detection, even if it is larger than the part of the
+        # sample which is parsed first.  It is enough for the data rows
+        # to slightly outnumber the preamble lines.
+        sniffer = csv.Sniffer()
+        for n in 3, 24, 80, 320:
+            preamble = ''.join(f'Comment line {i:05}\n' for i in range(n))
+            for ndata in n + 2, 2 * n + 5:
+                with self.subTest(preamble_lines=n, data_lines=ndata):
+                    sample = preamble + 'aaa,bbb,ccc\n' * ndata
+                    self.assertEqual(sniffer.sniff(sample).delimiter, ',')
+
+    def test_sniff_line_boundary_characters(self):
+        # Only '\r', '\n' and '\r\n' are row separators; characters like
+        # '\x1c' or '\x85', which str.splitlines() treats as line
+        # boundaries, are ordinary data for the reader -- '\x1c' can
+        # even be the delimiter.
+        sniffer = csv.Sniffer()
+        sample = 'aa\x1cbb\ncc\x1cdd\nee\x1cff\n'
+        self.assertEqual(sniffer.sniff(sample).delimiter, '\x1c')
+        sample = 'a\x85b,c\nd,e\nf,g\n'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(next(csv.reader(StringIO(sample), dialect)),
+                         ['a\x85b', 'c'])
+
+    def test_sniff_delimiter_in_quoted_field(self):
+        # gh-97611: a delimiter inside a quoted field should not win over
+        # the delimiter which actually separates the fields.
+        sniffer = csv.Sniffer()
+        sample = (
+            'Surname;First Name;Year of birth\n'
+            '"\tDoe;Jane"\t;1971\n'
+        )
+        dialect = sniffer.sniff(sample, delimiters=',;\t')
+        self.assertEqual(dialect.delimiter, ';')
+        sample = (
+            'Surname;First Name;Year of birth\n'
+            '"\t";"\t";1971\n'
+            '"Le Trec";"Mary Ann";1486\n'
+        )
+        dialect = sniffer.sniff(sample, delimiters=',;\t')
+        self.assertEqual(dialect.delimiter, ';')
+        self.assertEqual(dialect.quotechar, '"')
+
+    def test_sniff_embedded_lists(self):
+        # gh-119123: commas in bracketed lists adjacent to quotes should
+        # not be mistaken for the delimiter.
+        sniffer = csv.Sniffer()
+        sample = (
+            "id;is_sort;cost;group;merge\n"
+            "1;True;62.25;['345'];UNKNOWN\n"
+            "2;True;54.00;['235'];UNKNOWN\n"
+            "3;True;237.00;['567', '568'];UNKNOWN\n"
+            "4;True;46.50;['112', '112'];UNKNOWN\n"
+        )
+        dialect = sniffer.sniff(sample, delimiters=',;')
+        self.assertEqual(dialect.delimiter, ';')
+
+    def test_sniff_space_adjacent_to_quotes(self):
+        # gh-88843: a space adjacent to stray quotes should not be
+        # detected as the delimiter.
+        sniffer = csv.Sniffer()
+        sample = "a|b\nc| 'd\ne|' f"
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, '|')
+
+    def test_sniff_crlf_lineterminator(self):
+        # gh-103925: a quote at the end of a \r\n-terminated line.
+        sniffer = csv.Sniffer()
+        sample = (
+            'Timestamp,URL,Title\r\n'
+            '2020-10-01 17:17:37+08:00,'
+            'https://www.mozilla.org/en-US/firefox/welcome/2/,'
+            '"Pocket - Save news, videos, stories and more"\r\n'
+        )
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.quotechar, '"')
+
+    def test_sniff_excel_tab_with_quotes(self):
+        # gh-62029: tab-delimited data with a quoted field containing
+        # spaces and doubled quotes.
+        sniffer = csv.Sniffer()
+        sample = ('foo\tbar\t"baz ""quoted"" here"\tspam eggs\n'
+                  'ham\teggs\tx y\tz w\n')
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, '\t')
+        self.assertEqual(dialect.quotechar, '"')
+        self.assertIs(dialect.doublequote, True)
+
+    def test_sniff_truncated_sample(self):
+        # A sample cut off in the middle of a quoted field should not
+        # spoil the detection.
+        sniffer = csv.Sniffer()
+        sample = '"a,a";"b"\n"c";"d"\n"e";"f,f\n'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ';')
+        self.assertEqual(dialect.quotechar, '"')
+        # Cut off in the middle of the last row.
+        sample = 'a,b,c\nd,e,f\ng,h,i\nj,k'
+        self.assertEqual(sniffer.sniff(sample).delimiter, ',')
+        # Cut off in the middle of an escaped sequence.
+        sample = 'ab,cd\\,ef\ngh\\,ij,kl\nmn,op\nqr,st\\'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.escapechar, '\\')
+        # Cut off at a line end in the middle of a quoted field.
+        sample = '"a","b"\n"c","d"\n"e","multi\nline'
+        self.assertEqual(sniffer.sniff(sample).delimiter, ',')
+        # An unclosed quote consumes everything to the end of the sample,
+        # but the rows before it still count.
+        sample = 'a|b\nc|d\ne|f\ng|"h\ni|j\nk|l'
+        self.assertEqual(sniffer.sniff(sample).delimiter, '|')
+
+    def test_sniff_skipinitialspace_quoted(self):
+        sniffer = csv.Sniffer()
+        sample = "'a': 'b': 'c'\n'd': 'e': 'f'\n"
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ':')
+        self.assertEqual(dialect.quotechar, "'")
+        self.assertIs(dialect.skipinitialspace, True)
+
+    def test_sniff_regex_backtracking(self):
+        # gh-109638: this artificial sample used to take minutes.
+        sniffer = csv.Sniffer()
+        sample = '"",' * 100 + '"' * 100 + '0' + '"' * 100 + '0'
+        self.assertEqual(sniffer.sniff(sample).delimiter, ',')
 
     def test_doublequote(self):
         sniffer = csv.Sniffer()
@@ -1507,6 +1706,15 @@ ghi\0jkl
         self.assertFalse(dialect.doublequote)
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
+        # A doubled quote character in an unquoted field or an empty
+        # quoted field is not evidence of doubling.
+        dialect = sniffer.sniff('"x",a""b\n"y",c\n')
+        self.assertIs(dialect.doublequote, False)
+        dialect = sniffer.sniff('a,"",c\nd,"",f\n')
+        self.assertIs(dialect.doublequote, False)
+        # A doubled quote character inside a quoted field is.
+        dialect = sniffer.sniff('"a""b",c\n"d",e\n')
+        self.assertIs(dialect.doublequote, True)
 
     def test_guess_delimiter_crlf_not_chosen(self):
         # Ensure that we pick the real delimiter ("|") over "\r" in a tie.

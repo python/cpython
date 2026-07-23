@@ -9186,7 +9186,9 @@ os_posix_openpt_impl(PyObject *module, int oflag)
 {
     int fd;
 
-#if defined(O_CLOEXEC)
+    // OpenBSD posix_openpt() rejects any flag other than O_RDWR and
+    // O_NOCTTY; the fd is made non-inheritable below in any case.
+#if defined(O_CLOEXEC) && !defined(__OpenBSD__)
     oflag |= O_CLOEXEC;
 #endif
 
@@ -9429,11 +9431,30 @@ os_openpty_impl(PyObject *module)
         goto posix_error;
 
 #if defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC)
+    // Pushing "ptem" makes the slave a terminal, which a session leader
+    // without a controlling terminal then acquires as one despite O_NOCTTY.
+    // Note whether we already had one, so a new one can be disowned below.
+    int had_ctty = 0;
+#ifdef TIOCNOTTY
+    int tty_fd = open("/dev/tty", O_RDONLY | O_NOCTTY);
+    if (tty_fd >= 0) {
+        had_ctty = 1;
+        close(tty_fd);
+    }
+#endif
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
     ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
 #endif /* __hpux */
+#ifdef TIOCNOTTY
+    if (!had_ctty && getsid(0) == getpid()) {
+        // Disown it; TIOCNOTTY sends SIGHUP to the session leader.
+        PyOS_sighandler_t sig_saved = PyOS_setsig(SIGHUP, SIG_IGN);
+        ioctl(slave_fd, TIOCNOTTY);
+        PyOS_setsig(SIGHUP, sig_saved);
+    }
+#endif
 #endif /* defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC) */
 #endif /* HAVE_OPENPTY */
 
@@ -13487,6 +13508,10 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -13534,6 +13559,10 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
