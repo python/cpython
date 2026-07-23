@@ -1,0 +1,1 @@
+Fix :func:`ctypes.util.find_library` returning ``None`` in non-UTF-8 locales.

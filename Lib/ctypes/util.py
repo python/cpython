@@ -429,8 +429,7 @@ elif os.name == "posix":
             result = None
             try:
                 p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     universal_newlines=True)
+                                     stderr=subprocess.PIPE)
                 out, _ = p.communicate()
                 res = re.findall(expr, os.fsdecode(out))
                 for file in res:
