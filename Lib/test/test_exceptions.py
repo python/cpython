@@ -440,10 +440,16 @@ class ExceptionTests(unittest.TestCase):
     def test_windows_message(self):
         """Should fill in unknown error code in Windows error message"""
         ctypes = import_module('ctypes')
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyErr_SetFromWindowsErr(ierr: ctypes.c_int) -> ctypes.py_object:
+            pass
+
         # this error code has no message, Python formats it as hexadecimal
         code = 3765269347
-        with self.assertRaisesRegex(OSError, 'Windows Error 0x%x' % code):
-            ctypes.pythonapi.PyErr_SetFromWindowsErr(code)
+        with self.assertRaisesRegex(OSError, f'Windows Error 0x{code:x}'):
+            PyErr_SetFromWindowsErr(code)
 
     def testAttributes(self):
         # test that exception attributes are happy
@@ -1517,6 +1523,7 @@ class ExceptionTests(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     @force_not_colorized
+    @support.skip_if_huge_c_stack()
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
