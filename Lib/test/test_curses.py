@@ -1997,12 +1997,15 @@ class TestCurses(unittest.TestCase):
         pair = curses.alloc_pair(fg, bg)
         self.assertGreater(pair, 0)
         self.assertEqual(curses.pair_content(pair), (fg, bg))
-        # The same combination of colors reuses the same pair.
-        self.assertEqual(curses.alloc_pair(fg, bg), pair)
-        self.assertEqual(curses.find_pair(fg, bg), pair)
-        # Once freed, the pair is no longer found.
-        self.assertIsNone(curses.free_pair(pair))
-        self.assertEqual(curses.find_pair(fg, bg), -1)
+        if getattr(curses, 'ncurses_version', (6, 3)) >= (6, 3):
+            # The same combination of colors reuses the same pair.
+            self.assertEqual(curses.alloc_pair(fg, bg), pair)
+            self.assertEqual(curses.find_pair(fg, bg), pair)
+            # Once freed, the pair is no longer found.
+            self.assertIsNone(curses.free_pair(pair))
+            self.assertEqual(curses.find_pair(fg, bg), -1)
+        else:
+            self.assertIsNone(curses.free_pair(pair))
 
         # Error paths.
         for color in self.bad_colors2():
