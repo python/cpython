@@ -1,1 +1,2 @@
-Modernize fileutils to allow build for Windows UWP.
+Modernize fileutils removing GetFileInformationByHandle API calls and allow
+build for Universal Windows Platform.
