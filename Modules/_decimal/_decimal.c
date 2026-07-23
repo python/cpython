@@ -31,6 +31,7 @@
 
 #include <Python.h>
 #include "pycore_object.h"        // _PyObject_VisitType()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED() and FT_ATOMIC_STORE_SSIZE_RELAXED()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_typeobject.h"
@@ -5921,11 +5922,13 @@ static Py_hash_t
 dec_hash(PyObject *op)
 {
     PyDecObject *self = _PyDecObject_CAST(op);
-    if (self->hash == -1) {
-        self->hash = _dec_hash(self);
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hash);
+    if (hash == -1) {
+        hash = _dec_hash(self);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self->hash, hash);
     }
 
-    return self->hash;
+    return hash;
 }
 
 /*[clinic input]
