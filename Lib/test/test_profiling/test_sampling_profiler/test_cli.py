@@ -37,6 +37,7 @@ from profiling.sampling.constants import (
 )
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
 from profiling.sampling.jsonl_collector import JsonlCollector
+from profiling.sampling.perfetto_collector import PerfettoCollector
 
 class TestSampleProfilerCLI(unittest.TestCase):
     def _setup_sync_mocks(self, mock_socket, mock_popen):
@@ -985,6 +986,36 @@ class TestSampleProfilerCLI(unittest.TestCase):
         """FORMAT_EXTENSIONS maps 'jsonl' -> 'jsonl' so default filenames work."""
         self.assertEqual(FORMAT_EXTENSIONS["jsonl"], "jsonl")
         self.assertEqual(_generate_output_filename("jsonl", 12345), "jsonl_12345.jsonl")
+
+    def test_cli_perfetto_create_collector_propagates_target_pid(self):
+        collector = _create_collector(
+            "perfetto",
+            sample_interval_usec=1000,
+            skip_idle=False,
+            target_pid=12345,
+        )
+        self.assertIsInstance(collector, PerfettoCollector)
+        self.assertEqual(collector.pid, 12345)
+
+    def test_perfetto_export_rejects_terminal_output(self):
+        collector = PerfettoCollector(sample_interval_usec=1000)
+        terminal = mock.Mock()
+        terminal.isatty.return_value = True
+        with mock.patch.object(sys, "stdout", terminal):
+            with self.assertRaisesRegex(
+                ValueError, "binary and cannot be written to a terminal"
+            ):
+                collector.export(None)
+
+    def test_perfetto_export_allows_redirected_stdout(self):
+        collector = PerfettoCollector(sample_interval_usec=1000)
+        collector._trace.extend(b"trace data")
+        stdout = mock.Mock()
+        stdout.isatty.return_value = False
+        stdout.buffer = io.BytesIO()
+        with mock.patch.object(sys, "stdout", stdout):
+            self.assertTrue(collector.export(None))
+        self.assertEqual(stdout.buffer.getvalue(), b"trace data")
 
     def test_cli_jsonl_create_collector_propagates_mode(self):
         """_create_collector('jsonl', ..., mode=X) lands X in the meta record."""

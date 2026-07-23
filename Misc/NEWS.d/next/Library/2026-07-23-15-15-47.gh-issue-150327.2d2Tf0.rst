@@ -1,0 +1,2 @@
+Add a ``--perfetto`` output format to :mod:`profiling.sampling`, generating
+sampling profiles that can be viewed in the Perfetto UI.
