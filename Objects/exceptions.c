@@ -2731,6 +2731,7 @@ AttributeError_str(PyObject *op)
     Py_END_CRITICAL_SECTION();
 
     if (!obj) {
+        assert(!name);
         return BaseException_str(op);  /* re-acquires lock */
     }
 
@@ -2739,7 +2740,7 @@ AttributeError_str(PyObject *op)
         PyModuleObject *mod = _PyModule_CAST(obj);
         PyObject *modname;
         if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__name__), &modname) < 0) {
-            goto error;
+            goto done;
         }
         if (modname && PyUnicode_Check(modname)) {
             result = PyUnicode_FromFormat("module '%U' has no attribute '%U'",
@@ -2756,7 +2757,7 @@ AttributeError_str(PyObject *op)
         result = PyUnicode_FromFormat("'%T' object has no attribute '%U'",
                                       obj, name);
     }
-error:
+done:
     Py_DECREF(obj);
     Py_DECREF(name);
     return result;
