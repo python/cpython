@@ -1,12 +1,10 @@
 import collections
 import marshal
 import pstats
-from _colorize import get_colors
+lazy from _colorize import get_colors
 
 from .collector import Collector, extract_lineno
 from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
-
-ANSIColors = get_colors()
 
 class PstatsCollector(Collector):
     aggregating = True
@@ -179,6 +177,8 @@ class PstatsCollector(Collector):
         }
 
         # Print header with colors and proper alignment
+        ANSIColors = get_colors()
+
         print(f"{ANSIColors.BOLD_BLUE}Profile Stats:{ANSIColors.RESET}")
 
         header_nsamples = f"{ANSIColors.BOLD_BLUE}{'nsamples':>{col_widths['nsamples']}}{ANSIColors.RESET}"
@@ -270,6 +270,8 @@ class PstatsCollector(Collector):
 
     def _print_summary(self, stats_list, total_samples):
         """Print summary of interesting functions."""
+        ANSIColors = get_colors()
+
         print(
             f"\n{ANSIColors.BOLD_BLUE}Summary of Interesting Functions:{ANSIColors.RESET}"
         )
