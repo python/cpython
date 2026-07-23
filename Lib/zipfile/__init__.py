@@ -1186,6 +1186,13 @@ class ZipExtFile(io.BufferedIOBase):
             data = self._decompressor.unconsumed_tail
             if n > len(data):
                 data += self._read2(n - len(data))
+        elif (self._compress_type == ZIP_ZSTANDARD and
+              self._decompressor.eof):
+            # Continue with the next Zstandard frame.
+            data = self._decompressor.unused_data
+            self._decompressor = _get_decompressor(self._compress_type)
+            if not data:
+                data = self._read2(n)
         else:
             data = self._read2(n)
 
@@ -1199,6 +1206,10 @@ class ZipExtFile(io.BufferedIOBase):
                          not self._decompressor.unconsumed_tail)
             if self._eof:
                 data += self._decompressor.flush()
+        elif self._compress_type == ZIP_ZSTANDARD:
+            data = self._decompressor.decompress(data)
+            self._eof = (self._compress_left <= 0 and
+                         not self._decompressor.unused_data)
         else:
             data = self._decompressor.decompress(data)
             self._eof = self._decompressor.eof or self._compress_left <= 0
