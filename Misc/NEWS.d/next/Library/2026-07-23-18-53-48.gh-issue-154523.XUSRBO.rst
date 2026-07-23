@@ -1,2 +1,2 @@
-Fixed data-race when calling :meth:`io.TextIOWrapper.detach` in
+Fixed data-race when calling :meth:`io.TextIOBase.detach` in
 :term:`free-threaded build`.
