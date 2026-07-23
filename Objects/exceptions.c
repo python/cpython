@@ -2743,18 +2743,18 @@ AttributeError_str(PyObject *op)
             goto done;
         }
         if (modname && PyUnicode_Check(modname)) {
-            result = PyUnicode_FromFormat("module '%U' has no attribute '%U'",
+            result = PyUnicode_FromFormat("module %R has no attribute %R",
                                           modname, name);
             Py_DECREF(modname);
         } else {
             Py_XDECREF(modname);
-            result = PyUnicode_FromFormat("module has no attribute '%U'", name);
+            result = PyUnicode_FromFormat("module has no attribute %R", name);
         }
     } else if (PyType_Check(obj)) {
-        result = PyUnicode_FromFormat("type object '%N' has no attribute '%U'",
+        result = PyUnicode_FromFormat("type object '%N' has no attribute %R",
                                       obj, name);
     } else {
-        result = PyUnicode_FromFormat("'%T' object has no attribute '%U'",
+        result = PyUnicode_FromFormat("'%T' object has no attribute %R",
                                       obj, name);
     }
 done:
