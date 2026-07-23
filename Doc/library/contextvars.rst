@@ -45,6 +45,72 @@ Context Variables
    :class:`!ContextVar`\s are :ref:`generic <generics>` over the type of
    their contained value.
 
+   .. classmethod:: ContextVar.thread_inheritable(name, [*, default])
+
+      Return a new context variable whose binding is inherited by new
+      :class:`threading.Thread` instances.  When
+      :meth:`threading.Thread.start` would otherwise start the thread with
+      an empty context (that is, when
+      :data:`sys.flags.thread_inherit_context` is false and no explicit
+      :class:`Context` was supplied), the new thread's context is initialized
+      with the caller's current bindings for all thread-inheritable variables.
+      This allows individual context variables to opt in to thread inheritance
+      on a per-variable basis.
+
+      These are ordinary bindings in the new thread's context: they are
+      visible to :func:`copy_context`, may be changed independently with
+      :meth:`ContextVar.set`, and are in turn inherited by threads started
+      from the new thread.  Threads started with an explicitly supplied
+      context are unaffected, as are threads started by means other than
+      :meth:`threading.Thread.start`, such as
+      :func:`_thread.start_new_thread` or the C API.
+
+      The *name* and *default* parameters have the same meaning as for the
+      :class:`ContextVar` constructor.  When
+      :data:`sys.flags.thread_inherit_context` is true, a variable created
+      with this method behaves identically to one created with
+      :class:`ContextVar`, so it is safe to use unconditionally.
+
+      Libraries that also support Python versions without this method must
+      choose how to degrade on those versions.  For state with a safe
+      default in a new thread (the behavior that :class:`threading.local`
+      based state has always had), fall back to an ordinary context
+      variable::
+
+          _new_var = getattr(ContextVar, "thread_inheritable", ContextVar)
+          var = _new_var("var")
+
+      With this fallback, on older versions new threads see the variable's
+      default rather than the starting thread's binding, unless the
+      application enables :option:`-X thread_inherit_context <-X>`.
+
+      For state that was previously a module-level global, reverting to the
+      default in new threads may break existing threaded code, since such
+      code has always seen the current global value.  Those libraries can
+      instead pick the best semantics each interpreter supports::
+
+          if hasattr(ContextVar, "thread_inheritable"):
+              # Context-local and inherited by new threads.
+              _new_var = ContextVar.thread_inheritable
+          elif getattr(sys.flags, "thread_inherit_context", False):
+              # Threads inherit the whole context, so an ordinary
+              # context variable is inherited too.
+              _new_var = ContextVar
+          else:
+              # Keep the library's historical global semantics.
+              _new_var = _GlobalVar
+
+      Here ``_GlobalVar`` is a class provided by the library that stores a
+      single process-wide value.  To be substitutable for
+      :class:`ContextVar` it must accept the same constructor arguments
+      (*name* positional, keyword-only *default*), distinguish a missing
+      *default* from ``default=None``, and provide ``get()``, ``set()``
+      returning a token, and ``reset()``.  This case gives up task-local
+      isolation: concurrent tasks and threads share one value, exactly as
+      they did before the library adopted context variables.
+
+      .. versionadded:: 3.16
+
    .. attribute:: ContextVar.name
 
       The name of the variable.  This is a read-only property.
