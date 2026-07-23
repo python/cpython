@@ -230,6 +230,9 @@ Signature algorithms
    :meth:`SSLContext.set_client_sigalgs` and
    :meth:`SSLContext.set_server_sigalgs` methods.
 
+   This function requires OpenSSL 3.4 or later; it raises
+   :exc:`NotImplementedError` when linked against an older version.
+
    .. versionadded:: 3.15
 
 
@@ -1323,6 +1326,9 @@ SSL sockets also have the following additional methods and attributes:
    authentication on this connection, or ``None`` if no connection has been
    established or client authentication didn't occur.
 
+   This method requires OpenSSL 3.5 or later; it raises
+   :exc:`NotImplementedError` when linked against an older version.
+
    .. versionadded:: 3.15
 
 .. method:: SSLSocket.server_sigalg()
@@ -1330,6 +1336,9 @@ SSL sockets also have the following additional methods and attributes:
    Return the signature algorithm used by the server to complete the TLS
    handshake on this connection, or ``None`` if no connection has been
    established or the cipher suite has no signature.
+
+   This method requires OpenSSL 3.5 or later; it raises
+   :exc:`NotImplementedError` when linked against an older version.
 
    .. versionadded:: 3.15
 
