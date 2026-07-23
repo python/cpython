@@ -1,3 +1,0 @@
-Fix ``_testinternalcapi.destroy_interpreter()`` calling
-``PyThreadState_Clear()`` on a non-current thread state, which aborted
-free-threaded debug builds when destroying a subinterpreter.
