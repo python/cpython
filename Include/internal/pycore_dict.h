@@ -226,7 +226,12 @@ struct _dictkeysobject {
     } dk_entries;
 };
 
-/* The _dictkeysobject is allocated directly afterwards */
+/* For split dictionaries, the allocation layout is:
+    [_instancekeysobject    ]
+    [dk_indices[] array     ]
+    [PyDictKeysObject header]
+    [dk_entries[] array     ]
+*/
 struct _instancekeysobject {
     PyTypeObject* dsk_owning_type;
 };
