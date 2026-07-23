@@ -249,11 +249,17 @@ static PyObject *
 msvcrt_getch(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
+    int _return_value;
     char s[1];
 
-    s[0] = msvcrt_getch_impl(module);
+    _return_value = msvcrt_getch_impl(module);
+    if ((_return_value == EOF) && PyErr_Occurred()) {
+        goto exit;
+    }
+    s[0] = (char)_return_value;
     return_value = PyBytes_FromStringAndSize(s, 1);
 
+exit:
     return return_value;
 }
 
@@ -278,8 +284,12 @@ msvcrt_getwch(PyObject *module, PyObject *Py_UNUSED(ignored))
     wchar_t _return_value;
 
     _return_value = msvcrt_getwch_impl(module);
+    if ((_return_value == WEOF) && PyErr_Occurred()) {
+        goto exit;
+    }
     return_value = PyUnicode_FromOrdinal(_return_value);
 
+exit:
     return return_value;
 }
 
@@ -301,11 +311,17 @@ static PyObject *
 msvcrt_getche(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
+    int _return_value;
     char s[1];
 
-    s[0] = msvcrt_getche_impl(module);
+    _return_value = msvcrt_getche_impl(module);
+    if ((_return_value == EOF) && PyErr_Occurred()) {
+        goto exit;
+    }
+    s[0] = (char)_return_value;
     return_value = PyBytes_FromStringAndSize(s, 1);
 
+exit:
     return return_value;
 }
 
@@ -330,8 +346,12 @@ msvcrt_getwche(PyObject *module, PyObject *Py_UNUSED(ignored))
     wchar_t _return_value;
 
     _return_value = msvcrt_getwche_impl(module);
+    if ((_return_value == WEOF) && PyErr_Occurred()) {
+        goto exit;
+    }
     return_value = PyUnicode_FromOrdinal(_return_value);
 
+exit:
     return return_value;
 }
 
@@ -743,4 +763,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=f67eaf745685429d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9daceaf7020298ef input=a9049054013a1b77]*/
