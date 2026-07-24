@@ -3133,7 +3133,10 @@ class SLKTests(NewtermTestBase):
         except UnicodeEncodeError:
             self.skipTest('the locale cannot encode %r' % label)
         curses.slk_set(1, label, 0)
-        self.assertEqual(curses.slk_label(1), label)
+        # The label can be truncated to fit the soft label width, e.g. in the
+        # EUC-JP locale, where "Å" and "ö" are double-width JIS X 0212
+        # characters, so the 8-column label only fits "Ångstr".
+        self.assertIn(curses.slk_label(1), (label, 'Ångstr'))
 
     def test_set_bad_justify(self):
         self.make_slk_screen()
