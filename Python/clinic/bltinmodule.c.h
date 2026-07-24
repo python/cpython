@@ -25,9 +25,10 @@ PyDoc_STRVAR(builtin___import____doc__,
 "empty list to emulate ``import name``.\n"
 "When importing a module from a package, note that __import__(\'A.B\', ...)\n"
 "returns package A when fromlist is empty, but its submodule B when\n"
-"fromlist is not empty.  The level argument is used to determine whether to\n"
-"perform absolute or relative imports: 0 is absolute, while a positive number\n"
-"is the number of parent directories to search relative to the current module.");
+"fromlist is not empty.  The level argument is used to determine whether\n"
+"to perform absolute or relative imports: 0 is absolute, while a positive\n"
+"number is the number of parent directories to search relative to the\n"
+"current module.");
 
 #define BUILTIN___IMPORT___METHODDEF    \
     {"__import__", _PyCFunction_CAST(builtin___import__), METH_FASTCALL|METH_KEYWORDS, builtin___import____doc__},
@@ -113,8 +114,103 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin___lazy_import____doc__,
+"__lazy_import__($module, /, name, globals=None, locals=None,\n"
+"                fromlist=(), level=0)\n"
+"--\n"
+"\n"
+"Lazily imports a module.\n"
+"\n"
+"Returns either the module to be imported or a imp.lazy_module object\n"
+"which indicates the module to be lazily imported.");
+
+#define BUILTIN___LAZY_IMPORT___METHODDEF    \
+    {"__lazy_import__", _PyCFunction_CAST(builtin___lazy_import__), METH_FASTCALL|METH_KEYWORDS, builtin___lazy_import____doc__},
+
+static PyObject *
+builtin___lazy_import___impl(PyObject *module, PyObject *name,
+                             PyObject *globals, PyObject *locals,
+                             PyObject *fromlist, int level);
+
+static PyObject *
+builtin___lazy_import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(name), &_Py_ID(globals), &_Py_ID(locals), &_Py_ID(fromlist), &_Py_ID(level), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", "globals", "locals", "fromlist", "level", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__lazy_import__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name;
+    PyObject *globals = NULL;
+    PyObject *locals = NULL;
+    PyObject *fromlist = NULL;
+    int level = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    name = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        globals = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[2]) {
+        locals = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[3]) {
+        fromlist = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    level = PyLong_AsInt(args[4]);
+    if (level == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = builtin___lazy_import___impl(module, name, globals, locals, fromlist, level);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_abs__doc__,
-"abs($module, x, /)\n"
+"abs($module, number, /)\n"
 "--\n"
 "\n"
 "Return the absolute value of the argument.");
@@ -159,7 +255,7 @@ PyDoc_STRVAR(builtin_ascii__doc__,
     {"ascii", (PyCFunction)builtin_ascii, METH_O, builtin_ascii__doc__},
 
 PyDoc_STRVAR(builtin_bin__doc__,
-"bin($module, number, /)\n"
+"bin($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the binary representation of an integer.\n"
@@ -238,21 +334,23 @@ PyDoc_STRVAR(builtin_chr__doc__,
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
-"        dont_inherit=False, optimize=-1, *, _feature_version=-1)\n"
+"        dont_inherit=False, optimize=-1, *, module=None,\n"
+"        _feature_version=-1)\n"
 "--\n"
 "\n"
 "Compile source into a code object that can be executed by exec() or eval().\n"
 "\n"
-"The source code may represent a Python module, statement or expression.\n"
+"The source code may represent a Python module, statement or\n"
+"expression.\n"
 "The filename will be used for run-time error messages.\n"
 "The mode must be \'exec\' to compile a module, \'single\' to compile a\n"
 "single (interactive) statement, or \'eval\' to compile an expression.\n"
-"The flags argument, if present, controls which future statements influence\n"
-"the compilation of the code.\n"
+"The flags argument, if present, controls which future statements\n"
+"influence the compilation of the code.\n"
 "The dont_inherit argument, if true, stops the compilation inheriting\n"
 "the effects of any future statements in effect in the code calling\n"
-"compile; if absent or false these statements do influence the compilation,\n"
-"in addition to any features explicitly specified.");
+"compile; if absent or false these statements do influence the\n"
+"compilation, in addition to any features explicitly specified.");
 
 #define BUILTIN_COMPILE_METHODDEF    \
     {"compile", _PyCFunction_CAST(builtin_compile), METH_FASTCALL|METH_KEYWORDS, builtin_compile__doc__},
@@ -260,7 +358,7 @@ PyDoc_STRVAR(builtin_compile__doc__,
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize, int feature_version);
+                     int optimize, PyObject *modname, int feature_version);
 
 static PyObject *
 builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -268,7 +366,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 7
+    #define NUM_KEYWORDS 8
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -277,7 +375,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(source), &_Py_ID(filename), &_Py_ID(mode), &_Py_ID(flags), &_Py_ID(dont_inherit), &_Py_ID(optimize), &_Py_ID(_feature_version), },
+        .ob_item = { &_Py_ID(source), &_Py_ID(filename), &_Py_ID(mode), &_Py_ID(flags), &_Py_ID(dont_inherit), &_Py_ID(optimize), &_Py_ID(module), &_Py_ID(_feature_version), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -286,21 +384,22 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "_feature_version", NULL};
+    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "module", "_feature_version", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "compile",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[7];
+    PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *source;
-    PyObject *filename;
+    PyObject *filename = NULL;
     const char *mode;
     int flags = 0;
     int dont_inherit = 0;
     int optimize = -1;
+    PyObject *modname = Py_None;
     int feature_version = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -359,14 +458,23 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    feature_version = PyLong_AsInt(args[6]);
+    if (args[6]) {
+        modname = args[6];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    feature_version = PyLong_AsInt(args[7]);
     if (feature_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, feature_version);
+    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, modname, feature_version);
 
 exit:
+    /* Cleanup for filename */
+    Py_XDECREF(filename);
+
     return return_value;
 }
 
@@ -577,8 +685,8 @@ PyDoc_STRVAR(builtin_globals__doc__,
 "\n"
 "Return the dictionary containing the current scope\'s global variables.\n"
 "\n"
-"NOTE: Updates to this dictionary *will* affect name lookups in the current\n"
-"global scope and vice-versa.");
+"NOTE: Updates to this dictionary *will* affect name lookups in the\n"
+"current global scope and vice-versa.");
 
 #define BUILTIN_GLOBALS_METHODDEF    \
     {"globals", (PyCFunction)builtin_globals, METH_NOARGS, builtin_globals__doc__},
@@ -720,16 +828,18 @@ PyDoc_STRVAR(builtin_hash__doc__,
 "hash($module, obj, /)\n"
 "--\n"
 "\n"
-"Return the hash value for the given object.\n"
+"Return the integer hash value for the given object.\n"
 "\n"
-"Two objects that compare equal must also have the same hash value, but the\n"
-"reverse is not necessarily true.");
+"Two objects that compare equal must also have the same hash value, but\n"
+"the reverse is not necessarily true.  Hash values may differ between\n"
+"Python processes.  Not all objects are hashable; calling hash() on an\n"
+"unhashable object raises TypeError.");
 
 #define BUILTIN_HASH_METHODDEF    \
     {"hash", (PyCFunction)builtin_hash, METH_O, builtin_hash__doc__},
 
 PyDoc_STRVAR(builtin_hex__doc__,
-"hex($module, number, /)\n"
+"hex($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the hexadecimal representation of an integer.\n"
@@ -750,7 +860,7 @@ PyDoc_STRVAR(builtin_aiter__doc__,
     {"aiter", (PyCFunction)builtin_aiter, METH_O, builtin_aiter__doc__},
 
 PyDoc_STRVAR(builtin_anext__doc__,
-"anext($module, aiterator, default=<unrepresentable>, /)\n"
+"anext($module, async_iterator, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return the next item from the async iterator.\n"
@@ -802,9 +912,10 @@ PyDoc_STRVAR(builtin_locals__doc__,
 "\n"
 "Return a dictionary containing the current scope\'s local variables.\n"
 "\n"
-"NOTE: Whether or not updates to this dictionary will affect name lookups in\n"
-"the local scope and vice-versa is *implementation dependent* and not\n"
-"covered by any backwards compatibility guarantees.");
+"NOTE: Whether or not updates to this dictionary will affect name\n"
+"lookups in the local scope and vice-versa is *implementation\n"
+"dependent* and not covered by any backwards compatibility\n"
+"guarantees.");
 
 #define BUILTIN_LOCALS_METHODDEF    \
     {"locals", (PyCFunction)builtin_locals, METH_NOARGS, builtin_locals__doc__},
@@ -819,7 +930,7 @@ builtin_locals(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(builtin_oct__doc__,
-"oct($module, number, /)\n"
+"oct($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the octal representation of an integer.\n"
@@ -851,8 +962,8 @@ PyDoc_STRVAR(builtin_pow__doc__,
 "\n"
 "Equivalent to base**exp with 2 arguments or base**exp % mod with 3 arguments\n"
 "\n"
-"Some types, such as ints, are able to use a more efficient algorithm when\n"
-"invoked using the three argument form.");
+"Some types, such as ints, are able to use a more efficient algorithm\n"
+"when invoked using the three argument form.");
 
 #define BUILTIN_POW_METHODDEF    \
     {"pow", _PyCFunction_CAST(builtin_pow), METH_FASTCALL|METH_KEYWORDS, builtin_pow__doc__},
@@ -917,7 +1028,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_print__doc__,
-"print($module, /, *args, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
+"print($module, /, *objects, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
 "--\n"
 "\n"
 "Prints the values to a stream, or to sys.stdout by default.\n"
@@ -935,8 +1046,8 @@ PyDoc_STRVAR(builtin_print__doc__,
     {"print", _PyCFunction_CAST(builtin_print), METH_FASTCALL|METH_KEYWORDS, builtin_print__doc__},
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject * const *args,
-                   Py_ssize_t args_length, PyObject *sep, PyObject *end,
+builtin_print_impl(PyObject *module, PyObject * const *objects,
+                   Py_ssize_t objects_length, PyObject *sep, PyObject *end,
                    PyObject *file, int flush);
 
 static PyObject *
@@ -973,8 +1084,8 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject * const *__clinic_args;
-    Py_ssize_t args_length;
+    PyObject * const *objects;
+    Py_ssize_t objects_length;
     PyObject *sep = Py_None;
     PyObject *end = Py_None;
     PyObject *file = Py_None;
@@ -1011,9 +1122,9 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto exit;
     }
 skip_optional_kwonly:
-    __clinic_args = args;
-    args_length = nargs;
-    return_value = builtin_print_impl(module, __clinic_args, args_length, sep, end, file, flush);
+    objects = args;
+    objects_length = nargs;
+    return_value = builtin_print_impl(module, objects, objects_length, sep, end, file, flush);
 
 exit:
     return return_value;
@@ -1028,7 +1139,8 @@ PyDoc_STRVAR(builtin_input__doc__,
 "The prompt string, if given, is printed to standard output without a\n"
 "trailing newline before reading input.\n"
 "\n"
-"If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise EOFError.\n"
+"If the user hits EOF (*nix: Ctrl-D, Windows: Ctrl-Z+Return), raise\n"
+"EOFError.\n"
 "On *nix systems, readline is used if available.");
 
 #define BUILTIN_INPUT_METHODDEF    \
@@ -1074,8 +1186,9 @@ PyDoc_STRVAR(builtin_round__doc__,
 "\n"
 "Round a number to a given precision in decimal digits.\n"
 "\n"
-"The return value is an integer if ndigits is omitted or None.  Otherwise\n"
-"the return value has the same type as the number.  ndigits may be negative.");
+"The return value is an integer if ndigits is omitted or None.\n"
+"Otherwise the return value has the same type as the number.  ndigits\n"
+"may be negative.");
 
 #define BUILTIN_ROUND_METHODDEF    \
     {"round", _PyCFunction_CAST(builtin_round), METH_FASTCALL|METH_KEYWORDS, builtin_round__doc__},
@@ -1143,8 +1256,8 @@ PyDoc_STRVAR(builtin_sum__doc__,
 "Return the sum of a \'start\' value (default: 0) plus an iterable of numbers\n"
 "\n"
 "When the iterable is empty, return the start value.\n"
-"This function is intended specifically for use with numeric values and may\n"
-"reject non-numeric types.");
+"This function is intended specifically for use with numeric values and\n"
+"may reject non-numeric types.");
 
 #define BUILTIN_SUM_METHODDEF    \
     {"sum", _PyCFunction_CAST(builtin_sum), METH_FASTCALL|METH_KEYWORDS, builtin_sum__doc__},
@@ -1211,9 +1324,9 @@ PyDoc_STRVAR(builtin_isinstance__doc__,
 "\n"
 "Return whether an object is an instance of a class or of a subclass thereof.\n"
 "\n"
-"A tuple, as in ``isinstance(x, (A, B, ...))``, may be given as the target to\n"
-"check against. This is equivalent to ``isinstance(x, A) or isinstance(x, B)\n"
-"or ...`` etc.");
+"A tuple, as in ``isinstance(x, (A, B, ...))``, may be given as the\n"
+"target to check against.  This is equivalent to ``isinstance(x, A) or\n"
+"isinstance(x, B) or ...`` etc.");
 
 #define BUILTIN_ISINSTANCE_METHODDEF    \
     {"isinstance", _PyCFunction_CAST(builtin_isinstance), METH_FASTCALL, builtin_isinstance__doc__},
@@ -1246,9 +1359,9 @@ PyDoc_STRVAR(builtin_issubclass__doc__,
 "\n"
 "Return whether \'cls\' is derived from another class or is the same class.\n"
 "\n"
-"A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to\n"
-"check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)\n"
-"or ...``.");
+"A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the\n"
+"target to check against.  This is equivalent to ``issubclass(x, A) or\n"
+"issubclass(x, B) or ...``.");
 
 #define BUILTIN_ISSUBCLASS_METHODDEF    \
     {"issubclass", _PyCFunction_CAST(builtin_issubclass), METH_FASTCALL, builtin_issubclass__doc__},
@@ -1274,4 +1387,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cd5f80e3dc3082d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84efa9c5cc737ce5 input=a9049054013a1b77]*/

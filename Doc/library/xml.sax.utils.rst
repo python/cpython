@@ -4,14 +4,11 @@
 .. module:: xml.sax.saxutils
    :synopsis: Convenience functions and classes for use with SAX.
 
-.. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
-.. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 **Source code:** :source:`Lib/xml/sax/saxutils.py`
 
 --------------
 
-The module :mod:`xml.sax.saxutils` contains a number of classes and functions
+The module :mod:`!xml.sax.saxutils` contains a number of classes and functions
 that are commonly useful when creating SAX applications, either in direct use,
 or as base classes.
 
@@ -37,7 +34,7 @@ or as base classes.
 
    You can unescape other strings of data by passing a dictionary as the optional
    *entities* parameter.  The keys and values must all be strings; each key will be
-   replaced with its corresponding value.  ``'&amp'``, ``'&lt;'``, and ``'&gt;'``
+   replaced with its corresponding value.  ``'&amp;'``, ``'&lt;'``, and ``'&gt;'``
    are always unescaped, even if *entities* is provided.
 
 

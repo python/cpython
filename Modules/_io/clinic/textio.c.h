@@ -16,7 +16,8 @@ PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
 "\n"
 "Separate the underlying buffer from the TextIOBase and return it.\n"
 "\n"
-"After the underlying buffer has been detached, the TextIO is in an unusable state.");
+"After the underlying buffer has been detached, the TextIO is in\n"
+"an unusable state.");
 
 #define _IO__TEXTIOBASE_DETACH_METHODDEF    \
     {"detach", _PyCFunction_CAST(_io__TextIOBase_detach), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_detach__doc__},
@@ -40,8 +41,8 @@ PyDoc_STRVAR(_io__TextIOBase_read__doc__,
 "\n"
 "Read at most size characters from stream.\n"
 "\n"
-"Read from underlying buffer until we have size characters or we hit EOF.\n"
-"If size is negative or omitted, read until EOF.");
+"Read from underlying buffer until we have size characters or we hit\n"
+"EOF.  If size is negative or omitted, read until EOF.");
 
 #define _IO__TEXTIOBASE_READ_METHODDEF    \
     {"read", _PyCFunction_CAST(_io__TextIOBase_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__TextIOBase_read__doc__},
@@ -430,7 +431,9 @@ _io_IncrementalNewlineDecoder_decode(PyObject *self, PyObject *const *args, Py_s
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_IncrementalNewlineDecoder_decode_impl((nldecoder_object *)self, input, final);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -450,7 +453,13 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self);
 static PyObject *
 _io_IncrementalNewlineDecoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_IncrementalNewlineDecoder_getstate_impl((nldecoder_object *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_IncrementalNewlineDecoder_getstate_impl((nldecoder_object *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_IncrementalNewlineDecoder_setstate__doc__,
@@ -470,7 +479,9 @@ _io_IncrementalNewlineDecoder_setstate(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_IncrementalNewlineDecoder_setstate_impl((nldecoder_object *)self, state);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -489,7 +500,13 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self);
 static PyObject *
 _io_IncrementalNewlineDecoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_IncrementalNewlineDecoder_reset_impl((nldecoder_object *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_IncrementalNewlineDecoder_reset_impl((nldecoder_object *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_TextIOWrapper___init____doc__,
@@ -649,7 +666,9 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_TextIOWrapper___init___impl((textio *)self, buffer, encoding, errors, newline, line_buffering, write_through);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -948,8 +967,8 @@ PyDoc_STRVAR(_io_TextIOWrapper_tell__doc__,
 "\n"
 "Return the stream position as an opaque number.\n"
 "\n"
-"The return value of tell() can be given as input to seek(), to restore a\n"
-"previous stream position.");
+"The return value of tell() can be given as input to seek(), to\n"
+"restore a previous stream position.");
 
 #define _IO_TEXTIOWRAPPER_TELL_METHODDEF    \
     {"tell", (PyCFunction)_io_TextIOWrapper_tell, METH_NOARGS, _io_TextIOWrapper_tell__doc__},
@@ -1312,4 +1331,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 
     return return_value;
 }
-/*[clinic end generated code: output=30404271a1151056 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c571c9dba87d2b1 input=a9049054013a1b77]*/

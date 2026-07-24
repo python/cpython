@@ -163,6 +163,7 @@ class _testcapi.VectorCallClass "PyObject *" "&PyType_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=95c63c1a47f9a995]*/
 
 /*[clinic input]
+@permit_long_summary
 _testcapi.VectorCallClass.set_vectorcall
 
     type: object(subclass_of="&PyType_Type", type="PyTypeObject *")
@@ -174,7 +175,7 @@ Set self's vectorcall function for `type` to one that returns "vectorcall"
 static PyObject *
 _testcapi_VectorCallClass_set_vectorcall_impl(PyObject *self,
                                               PyTypeObject *type)
-/*[clinic end generated code: output=b37f0466f15da903 input=840de66182c7d71a]*/
+/*[clinic end generated code: output=b37f0466f15da903 input=170fefc7ee77fd36]*/
 {
     if (!PyObject_TypeCheck(self, type)) {
         return PyErr_Format(

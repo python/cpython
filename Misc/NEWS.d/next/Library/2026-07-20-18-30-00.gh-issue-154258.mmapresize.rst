@@ -1,0 +1,3 @@
+Fix a crash in :meth:`mmap.mmap.resize` on NetBSD when growing a shared
+anonymous mapping.  :meth:`!resize` now raises :exc:`ValueError` in this
+case, as it already did on Linux.

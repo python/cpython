@@ -11,17 +11,65 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.2
 
+
 .. c:type:: Py_uhash_t
 
    Hash value type: unsigned integer.
 
    .. versionadded:: 3.2
 
+
+.. c:macro:: Py_HASH_ALGORITHM
+
+   A numerical value indicating the algorithm for hashing of :class:`str`,
+   :class:`bytes`, and :class:`memoryview`.
+
+   The algorithm name is exposed by :data:`sys.hash_info.algorithm`.
+
+   .. versionadded:: 3.4
+
+
+.. c:macro:: Py_HASH_FNV
+             Py_HASH_SIPHASH24
+             Py_HASH_SIPHASH13
+
+   Numerical values to compare to :c:macro:`Py_HASH_ALGORITHM` to determine
+   which algorithm is used for hashing. The hash algorithm can be configured
+   via the configure :option:`--with-hash-algorithm` option.
+
+   .. versionadded:: 3.4
+      Add :c:macro:`!Py_HASH_FNV` and :c:macro:`!Py_HASH_SIPHASH24`.
+
+   .. versionadded:: 3.11
+      Add :c:macro:`!Py_HASH_SIPHASH13`.
+
+
+.. c:macro:: Py_HASH_CUTOFF
+
+   Buffers of length in range ``[1, Py_HASH_CUTOFF)`` are hashed using DJBX33A
+   instead of the algorithm described by :c:macro:`Py_HASH_ALGORITHM`.
+
+   - A :c:macro:`!Py_HASH_CUTOFF` of 0 disables the optimization.
+   - :c:macro:`!Py_HASH_CUTOFF` must be non-negative and less or equal than 7.
+
+   32-bit platforms should use a cutoff smaller than 64-bit platforms because
+   it is easier to create colliding strings. A cutoff of 7 on 64-bit platforms
+   and 5 on 32-bit platforms should provide a decent safety margin.
+
+   This corresponds to the :data:`sys.hash_info.cutoff` constant.
+
+   .. versionadded:: 3.4
+
+
 .. c:macro:: PyHASH_MODULUS
 
-   The `Mersenne prime <https://en.wikipedia.org/wiki/Mersenne_prime>`_ ``P = 2**n -1``, used for numeric hash scheme.
+   The `Mersenne prime <https://en.wikipedia.org/wiki/Mersenne_prime>`_ ``P = 2**n -1``,
+   used for numeric hash scheme.
+
+   This corresponds to the :data:`sys.hash_info.modulus` constant.
 
    .. versionadded:: 3.13
+
 
 .. c:macro:: PyHASH_BITS
 
@@ -29,23 +77,31 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.13
 
+
 .. c:macro:: PyHASH_MULTIPLIER
 
    Prime multiplier used in string and various other hashes.
 
    .. versionadded:: 3.13
 
+
 .. c:macro:: PyHASH_INF
 
    The hash value returned for a positive infinity.
 
+   This corresponds to the :data:`sys.hash_info.inf` constant.
+
    .. versionadded:: 3.13
+
 
 .. c:macro:: PyHASH_IMAG
 
    The multiplier used for the imaginary part of a complex number.
 
+   This corresponds to the :data:`sys.hash_info.imag` constant.
+
    .. versionadded:: 3.13
+
 
 .. c:type:: PyHash_FuncDef
 
@@ -59,13 +115,19 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
       Hash function name (UTF-8 encoded string).
 
+      This corresponds to the :data:`sys.hash_info.algorithm` constant.
+
    .. c:member:: const int hash_bits
 
       Internal size of the hash value in bits.
 
+      This corresponds to the :data:`sys.hash_info.hash_bits` constant.
+
    .. c:member:: const int seed_bits
 
       Size of seed input in bits.
+
+      This corresponds to the :data:`sys.hash_info.seed_bits` constant.
 
    .. versionadded:: 3.4
 

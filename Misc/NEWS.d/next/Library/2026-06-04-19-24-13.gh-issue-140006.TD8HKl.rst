@@ -1,0 +1,4 @@
+The :mod:`venv` ``activate.fish`` script now calls fish builtins through
+``builtin`` so a user function that shadows ``.``/``source``, ``echo``,
+``printf``, ``set_color``, or ``functions`` can no longer hijack the virtual
+environment prompt or break exit-status reporting.

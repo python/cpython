@@ -1,1 +1,0 @@
-Fix debug assertion failure in :func:`locale.setlocale` on Windows.

@@ -5,12 +5,10 @@ import codecs
 import locale
 import os
 import sys
+import sysconfig
 import tempfile
 import textwrap
-import threading
 import unittest
-from test import support
-from test.support import threading_helper
 from test.support import verbose
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink, temp_dir, TESTFN
@@ -413,26 +411,35 @@ readline.write_history_file(history_file)
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
 
+    @unittest.skipUnless(sysconfig.get_config_var("HAVE_RL_CHANGE_ENVIRONMENT"),
+                         "readline can modify the environment")
+    def test_environment_is_not_modified(self):
+        # os.environ contains environment at the time "os" module was loaded, so
+        # before the "readline" module is loaded.
+        original_env = dict(os.environ)
 
-@unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
-class FreeThreadingTest(unittest.TestCase):
-    @threading_helper.reap_threads
-    @threading_helper.requires_working_threading()
-    def test_free_threading(self):
-        def completer_delims(b):
-            b.wait()
-            for _ in range(100):
-                readline.get_completer_delims()
-                readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
-                readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
-                readline.get_completer_delims()
+        # Force refresh of os.environ and make sure it is the same as before the
+        # refresh.
+        os.reload_environ()
+        self.assertEqual(dict(os.environ), original_env)
 
-        count   = 40
-        barrier = threading.Barrier(count)
-        threads = [threading.Thread(target=completer_delims, args=(barrier,)) for _ in range(count)]
+    @unittest.skipUnless(hasattr(readline, "get_pre_input_hook"),
+                         "get_pre_input_hook not available")
+    def test_get_pre_input_hook(self):
+        # Save and restore the original hook to avoid side effects
+        original_hook = readline.get_pre_input_hook()
+        self.addCleanup(readline.set_pre_input_hook, original_hook)
 
-        with threading_helper.start_threads(threads):
+        # Test that get_pre_input_hook returns None when no hook is set
+        readline.set_pre_input_hook(None)
+        self.assertIsNone(readline.get_pre_input_hook())
+
+        # Set a hook and verify we can retrieve it
+        def my_hook():
             pass
+
+        readline.set_pre_input_hook(my_hook)
+        self.assertIs(readline.get_pre_input_hook(), my_hook)
 
 
 if __name__ == "__main__":

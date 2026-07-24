@@ -263,6 +263,8 @@ In general, structured switch statements execute one block of code
 when an expression has a particular value or set of values.
 Since Python 3.10 one can easily match literal values, or constants
 within a namespace, with a ``match ... case`` statement.
+See :ref:`the specification <match>` and :ref:`the tutorial <tut-match>`
+for more information about :keyword:`match` statements.
 An older alternative is a sequence of ``if... elif... elif... else``.
 
 For cases where you need to choose from a very large number of possibilities,
@@ -591,9 +593,9 @@ exhaustive test suites that exercise every line of code in a module.
 An appropriate testing discipline can help build large complex applications in
 Python as well as having interface specifications would.  In fact, it can be
 better because an interface specification cannot test certain properties of a
-program.  For example, the :meth:`!list.append` method is expected to add new elements
+program.  For example, the :meth:`list.append` method is expected to add new elements
 to the end of some internal list; an interface specification cannot test that
-your :meth:`!list.append` implementation will actually do this correctly, but it's
+your :meth:`list.append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
 Writing test suites is very helpful, and you might want to design your code to

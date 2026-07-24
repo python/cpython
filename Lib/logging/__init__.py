@@ -45,9 +45,6 @@ import threading
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-# The following module attributes are no longer updated.
-__version__ = "0.5.1.2"
-__date__    = "07 February 2010"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -625,6 +622,9 @@ class Formatter(object):
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
+    def __repr__(self):
+        return '<%s (%s)>' % (self.__class__.__name__, self._fmt)
+
     default_time_format = '%Y-%m-%d %H:%M:%S'
     default_msec_format = '%s,%03d'
 
@@ -796,6 +796,9 @@ class Filter(object):
         """
         self.name = name
         self.nlen = len(name)
+
+    def __repr__(self):
+        return '<%s (%s)>' % (self.__class__.__name__, self.name)
 
     def filter(self, record):
         """
@@ -1370,9 +1373,17 @@ class Manager(object):
         logger and fix up the parent/child references which pointed to the
         placeholder to now point to the logger.
         """
-        rv = None
         if not isinstance(name, str):
             raise TypeError('A logger name must be a string')
+        # Fast path: an already-registered, non-placeholder logger can be
+        # returned without taking the lock. dict.get() is atomic under both
+        # the GIL and free threading. A Logger is inserted into loggerDict only
+        # after it is fully wired up (parent/child references fixed) under the
+        # lock, so the fast path never observes a logger whose parent is not yet
+        # set.
+        rv = self.loggerDict.get(name)
+        if rv is not None and not isinstance(rv, PlaceHolder):
+            return rv
         with _lock:
             if name in self.loggerDict:
                 rv = self.loggerDict[name]
@@ -1380,14 +1391,18 @@ class Manager(object):
                     ph = rv
                     rv = (self.loggerClass or _loggerClass)(name)
                     rv.manager = self
-                    self.loggerDict[name] = rv
                     self._fixupChildren(ph, rv)
                     self._fixupParents(rv)
+                    # Publish only after rv is fully wired: the fast path reads
+                    # loggerDict without the lock.
+                    self.loggerDict[name] = rv
             else:
                 rv = (self.loggerClass or _loggerClass)(name)
                 rv.manager = self
-                self.loggerDict[name] = rv
                 self._fixupParents(rv)
+                # Publish only after rv is fully wired: the fast path reads
+                # loggerDict without the lock.
+                self.loggerDict[name] = rv
         return rv
 
     def setLoggerClass(self, klass):
@@ -1852,9 +1867,9 @@ class LoggerAdapter(object):
 
     def __init__(self, logger, extra=None, merge_extra=False):
         """
-        Initialize the adapter with a logger and a dict-like object which
-        provides contextual information. This constructor signature allows
-        easy stacking of LoggerAdapters, if so desired.
+        Initialize the adapter with a logger and an optional dict-like object
+        which provides contextual information. This constructor signature
+        allows easy stacking of LoggerAdapters, if so desired.
 
         You can effectively pass keyword arguments as shown in the
         following example:
@@ -1885,8 +1900,9 @@ class LoggerAdapter(object):
         Normally, you'll only need to override this one method in a
         LoggerAdapter subclass for your specific needs.
         """
-        if self.merge_extra and "extra" in kwargs:
-            kwargs["extra"] = {**self.extra, **kwargs["extra"]}
+        if self.merge_extra and kwargs.get("extra") is not None:
+            if self.extra is not None:
+                kwargs["extra"] = {**self.extra, **kwargs["extra"]}
         else:
             kwargs["extra"] = self.extra
         return msg, kwargs
@@ -2341,3 +2357,16 @@ def captureWarnings(capture):
         if _warnings_showwarning is not None:
             warnings.showwarning = _warnings_showwarning
             _warnings_showwarning = None
+
+
+def __getattr__(name):
+    if name in ("__version__", "__date__"):
+        from warnings import _deprecated
+
+        _deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "0.5.1.2",
+            "__date__": "07 February 2010",
+        }[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

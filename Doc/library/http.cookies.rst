@@ -4,14 +4,11 @@
 .. module:: http.cookies
    :synopsis: Support for HTTP state management (cookies).
 
-.. moduleauthor:: Timothy O'Malley <timo@alum.mit.edu>
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
 **Source code:** :source:`Lib/http/cookies.py`
 
 --------------
 
-The :mod:`http.cookies` module defines classes for abstracting the concept of
+The :mod:`!http.cookies` module defines classes for abstracting the concept of
 cookies, an HTTP state management mechanism. It supports both simple string-only
 cookies, and provides an abstraction for having any serializable data-type as
 cookie value.
@@ -65,7 +62,7 @@ in a cookie name (as :attr:`~Morsel.key`).
 
    Module :mod:`http.cookiejar`
       HTTP cookie handling for web *clients*.  The :mod:`http.cookiejar` and
-      :mod:`http.cookies` modules do not depend on each other.
+      :mod:`!http.cookies` modules do not depend on each other.
 
    :rfc:`2109` - HTTP State Management Mechanism
       This is the state management specification implemented by this module.
@@ -109,6 +106,12 @@ Cookie Objects
    supports JavaScript, will act the same as if the HTTP headers was sent.
 
    The meaning for *attrs* is the same as in :meth:`output`.
+
+   .. deprecated-removed:: 3.15 3.19
+      This method generates a JavaScript snippet to set cookies in the browser,
+      which is no longer considered a standard or recommended approach.
+      Use :meth:`~http.cookies.BaseCookie.output` instead to generate HTTP
+      headers.
 
 
 .. method:: BaseCookie.load(rawdata)
@@ -226,6 +229,12 @@ Morsel Objects
 
    The meaning for *attrs* is the same as in :meth:`output`.
 
+   .. deprecated-removed:: 3.15 3.19
+      This method generates a JavaScript snippet to set cookies in the browser,
+      which is no longer considered a standard or recommended approach.
+      Use :meth:`~http.cookies.Morsel.output` instead to generate HTTP
+      headers.
+
 
 .. method:: Morsel.OutputString(attrs=None)
 
@@ -264,7 +273,7 @@ Morsel Objects
 Example
 -------
 
-The following example demonstrates how to use the :mod:`http.cookies` module.
+The following example demonstrates how to use the :mod:`!http.cookies` module.
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
@@ -292,9 +301,9 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    Set-Cookie: chips=ahoy
    Set-Cookie: vienna=finger
    >>> C = cookies.SimpleCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=;"
    >>> C = cookies.SimpleCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"

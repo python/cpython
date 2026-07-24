@@ -4,10 +4,6 @@
 .. module:: difflib
    :synopsis: Helpers for computing differences between objects.
 
-.. moduleauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
-.. Markup by Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/difflib.py`
 
 .. testsetup::
@@ -88,6 +84,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    containing the table) showing a side by side, line by line comparison of text
    with inter-line and intra-line change highlights.  The table can be generated in
    either full or contextual difference mode.
+
+   .. warning::
+
+      The trailing newlines get stripped before the diff, so the result can be
+      incomplete. See :gh:`71896` for details.
 
    The constructor for this class is:
 
@@ -231,7 +232,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    *linejunk*: A function that accepts a single string argument, and returns
    true if the string is junk, or false if not. The default is ``None``. There
    is also a module-level function :func:`IS_LINE_JUNK`, which filters out lines
-   without visible characters, except for at most one pound character (``'#'``)
+   without visible characters, except for at most one hash character (``'#'``)
    -- however the underlying :class:`SequenceMatcher` class does a dynamic
    analysis of which lines are so frequent as to constitute noise, and this
    usually works better than using this function.
@@ -323,7 +324,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    See :ref:`difflib-interface` for a more detailed example.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *color* parameter.
 
 
@@ -366,7 +367,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. _sequence-matcher:
 
-SequenceMatcher Objects
+SequenceMatcher objects
 -----------------------
 
 The :class:`SequenceMatcher` class has this constructor:
@@ -594,7 +595,7 @@ are always at least as large as :meth:`~SequenceMatcher.ratio`:
 
 .. _sequencematcher-examples:
 
-SequenceMatcher Examples
+SequenceMatcher examples
 ------------------------
 
 This example compares two strings, considering blanks to be "junk":
@@ -645,7 +646,7 @@ If you want to know how to change the first sequence into the second, use
 
 .. _differ-objects:
 
-Differ Objects
+Differ objects
 --------------
 
 Note that :class:`Differ`\ -generated deltas make no claim to be **minimal**
@@ -694,7 +695,7 @@ The :class:`Differ` class has this constructor:
 
 .. _differ-examples:
 
-Differ Example
+Differ example
 --------------
 
 This example compares two texts. First we set up the texts, sequences of
@@ -728,7 +729,7 @@ Finally, we compare the two:
 
    >>> result = list(d.compare(text1, text2))
 
-``result`` is a list of strings, so let's pretty-print it:
+``result`` is a list of strings, so let's pretty-print it::
 
    >>> from pprint import pprint
    >>> pprint(result)
@@ -743,7 +744,7 @@ Finally, we compare the two:
     '?           ++++ ^                      ^\n',
     '+   5. Flat is better than nested.\n']
 
-As a single multi-line string it looks like this:
+As a single multi-line string it looks like this::
 
    >>> import sys
    >>> sys.stdout.writelines(result)

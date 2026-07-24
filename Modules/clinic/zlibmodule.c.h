@@ -189,6 +189,11 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto exit;
         }
         bufsize = ival;
+        if (bufsize < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "bufsize cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_pos:
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
@@ -205,7 +210,7 @@ exit:
 PyDoc_STRVAR(zlib_compressobj__doc__,
 "compressobj($module, /, level=Z_DEFAULT_COMPRESSION, method=DEFLATED,\n"
 "            wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL,\n"
-"            strategy=Z_DEFAULT_STRATEGY, zdict=None)\n"
+"            strategy=Z_DEFAULT_STRATEGY, zdict=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Return a compressor object.\n"
@@ -498,8 +503,8 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "    Unconsumed input data will be stored in\n"
 "    the unconsumed_tail attribute.\n"
 "\n"
-"After calling this function, some of the input data may still be stored in\n"
-"internal buffers for later processing.\n"
+"After calling this function, some of the input data may still be\n"
+"stored in internal buffers for later processing.\n"
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
@@ -567,6 +572,11 @@ zlib_Decompress_decompress(PyObject *self, PyTypeObject *cls, PyObject *const *a
             goto exit;
         }
         max_length = ival;
+        if (max_length < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "max_length cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_pos:
     return_value = zlib_Decompress_decompress_impl((compobject *)self, cls, &data, max_length);
@@ -898,34 +908,36 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(zlib_ZlibDecompressor_decompress__doc__,
+PyDoc_STRVAR(zlib__ZlibDecompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
 "\n"
 "Decompress *data*, returning uncompressed data as bytes.\n"
 "\n"
-"If *max_length* is nonnegative, returns at most *max_length* bytes of\n"
-"decompressed data. If this limit is reached and further output can be\n"
-"produced, *self.needs_input* will be set to ``False``. In this case, the next\n"
-"call to *decompress()* may provide *data* as b\'\' to obtain more of the output.\n"
+"If *max_length* is nonnegative, returns at most *max_length* bytes\n"
+"of decompressed data.  If this limit is reached and further output\n"
+"can be produced, *self.needs_input* will be set to ``False``.  In\n"
+"this case, the next call to *decompress()* may provide *data* as b\'\'\n"
+"to obtain more of the output.\n"
 "\n"
-"If all of the input data was decompressed and returned (either because this\n"
-"was less than *max_length* bytes, or because *max_length* was negative),\n"
-"*self.needs_input* will be set to True.\n"
+"If all of the input data was decompressed and returned (either\n"
+"because this was less than *max_length* bytes, or because\n"
+"*max_length* was negative), *self.needs_input* will be set to True.\n"
 "\n"
-"Attempting to decompress data after the end of stream is reached raises an\n"
-"EOFError.  Any data found after the end of the stream is ignored and saved in\n"
-"the unused_data attribute.");
+"Attempting to decompress data after the end of stream is reached\n"
+"raises an EOFError.  Any data found after the end of the stream is\n"
+"ignored and saved in the unused_data attribute.");
 
-#define ZLIB_ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", _PyCFunction_CAST(zlib_ZlibDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, zlib_ZlibDecompressor_decompress__doc__},
+#define ZLIB__ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF    \
+    {"decompress", _PyCFunction_CAST(zlib__ZlibDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, zlib__ZlibDecompressor_decompress__doc__},
 
 static PyObject *
-zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
-                                      Py_buffer *data, Py_ssize_t max_length);
+zlib__ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
+                                       Py_buffer *data,
+                                       Py_ssize_t max_length);
 
 static PyObject *
-zlib_ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib__ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -984,7 +996,7 @@ zlib_ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize
         max_length = ival;
     }
 skip_optional_pos:
-    return_value = zlib_ZlibDecompressor_decompress_impl((ZlibDecompressor *)self, &data, max_length);
+    return_value = zlib__ZlibDecompressor_decompress_impl((ZlibDecompressor *)self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -992,6 +1004,86 @@ exit:
        PyBuffer_Release(&data);
     }
 
+    return return_value;
+}
+
+PyDoc_STRVAR(zlib__ZlibDecompressor__doc__,
+"_ZlibDecompressor(wbits=MAX_WBITS, zdict=b\'\')\n"
+"--\n"
+"\n"
+"Create a decompressor object for decompressing data incrementally.\n"
+"\n"
+"  zdict\n"
+"    The predefined compression dictionary. This is a sequence of bytes\n"
+"    (such as a bytes object) containing subsequences that are expected\n"
+"    to occur frequently in the data that is to be compressed. Those\n"
+"    subsequences that are expected to be most common should come at the\n"
+"    end of the dictionary. This must be the same dictionary as used by the\n"
+"    compressor that produced the input data.");
+
+static PyObject *
+zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict);
+
+static PyObject *
+zlib__ZlibDecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(wbits), &_Py_ID(zdict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"wbits", "zdict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_ZlibDecompressor",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    int wbits = MAX_WBITS;
+    PyObject *zdict = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        wbits = PyLong_AsInt(fastargs[0]);
+        if (wbits == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    zdict = fastargs[1];
+skip_optional_pos:
+    return_value = zlib__ZlibDecompressor_impl(type, wbits, zdict);
+
+exit:
     return return_value;
 }
 
@@ -1311,4 +1403,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=3054c8894aa44568 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9a60fe6600a2e4d input=a9049054013a1b77]*/
