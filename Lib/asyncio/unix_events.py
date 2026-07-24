@@ -665,12 +665,12 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # ever report a false disconnection (gh-145030). The same xnu
         # behaviour applies on iOS/tvOS/watchOS (sys.platform is not
         # "darwin" there).
-        is_named_fifo_on_macos = (
+        is_named_fifo_on_apple = (
             sys.platform in {"darwin", "ios", "tvos", "watchos"}
             and is_fifo and pipe_stat.st_nlink > 0)
         if is_socket or (is_fifo
                          and not sys.platform.startswith("aix")
-                         and not is_named_fifo_on_macos):
+                         and not is_named_fifo_on_apple):
             # only start reading when connection_made() has been called
             self._loop.call_soon(self._loop._add_reader,
                                  self._fileno, self._read_ready)

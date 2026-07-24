@@ -1735,6 +1735,7 @@ class EventLoopTestsMixin:
         # and close itself.
         path = os_helper.TESTFN
         os.mkfifo(path)
+        self.assertNotEqual(os.stat(path).st_nlink, 0)
         self.addCleanup(os_helper.unlink, path)
         rfd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
         self.addCleanup(os.close, rfd)
