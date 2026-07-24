@@ -886,8 +886,9 @@ class SysLogHandler(logging.Handler):
         """
         Initialize a handler.
 
-        If address is specified as a string, a UNIX socket is used. To log to a
-        local syslogd, "SysLogHandler(address="/dev/log")" can be used.
+        If address is specified as a string or bytes, a UNIX socket is used.
+        To log to a local syslogd, "SysLogHandler(address="/dev/log")" can be
+        used.
         If address is None, the syslog module is used to log to the local
         system logger; this works even where there is no syslog socket, such
         as on recent versions of macOS.
@@ -946,7 +947,7 @@ class SysLogHandler(logging.Handler):
         address = self.address
         socktype = self.socktype
 
-        if isinstance(address, str):
+        if not isinstance(address, (list, tuple)):
             self.unixsocket = True
             # Syslog server may be unavailable during handler initialisation.
             # C's openlog() function also ignores connection errors.

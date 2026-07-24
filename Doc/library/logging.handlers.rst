@@ -631,7 +631,8 @@ supports sending logging messages to a remote or local Unix syslog.
    the form of a ``(host, port)`` tuple.  If *address* is not specified,
    ``('localhost', 514)`` is used.  The address is used to open a socket.  An
    alternative to providing a ``(host, port)`` tuple is providing an address as a
-   string, for example '/dev/log'. In this case, a Unix domain socket is used to
+   string or a :class:`bytes` object, for example '/dev/log'.
+   In this case, a Unix domain socket is used to
    send the message to the syslog.
    If *address* is ``None``, the :mod:`syslog` module is used to log to the
    local system logger; this works even where there is no syslog socket, such
@@ -670,6 +671,7 @@ supports sending logging messages to a remote or local Unix syslog.
       *timeout* was added.
 
    .. versionchanged:: next
+      *address* can now be a :class:`bytes` object.
       *address* can now be ``None`` to use the :mod:`syslog` module.
 
    .. method:: close()
