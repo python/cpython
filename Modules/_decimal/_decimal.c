@@ -1502,8 +1502,7 @@ context_clear(PyObject *op)
     /* Since traps and flags hold a borrowed reference to the
        flags stored in the context object, these references need
        to be cleared when the context object is deallocated
-       because other objects could hold references to the
-       traps and/or flags objects. See gh-146011. */
+       because traps and flags can survive. See gh-146011. */
     PyDecSignalDictObject *traps = _PyDecSignalDictObject_CAST(self->traps);
     PyDecSignalDictObject *flags = _PyDecSignalDictObject_CAST(self->flags);
 
