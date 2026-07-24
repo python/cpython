@@ -1637,6 +1637,35 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         bytes_header_size = sys.getsizeof(b'')
         self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
 
+    def test_take_bytes_reentrant_resize(self):
+        # gh-153570: n.__index__() can resize the bytearray, so take_bytes()
+        # must re-read the size afterwards.  It cached the size before the
+        # call and used it for the bounds check and the buffer reads, so a
+        # reentrant clear() returned freed memory (a use-after-free read).
+        def take(target, resize, n):
+            class Evil:
+                def __index__(self):
+                    resize(target)
+                    return n
+            return target.take_bytes(Evil())
+
+        # clear() during __index__: nothing is left to take.
+        ba = bytearray(b'abcdefgh')
+        with self.assertRaises(IndexError):
+            take(ba, lambda b: b.clear(), 8)
+        self.assertEqual(ba, b'')
+
+        # shrink during __index__: n past the new size is out of range.
+        ba = bytearray(b'abcdefgh')
+        with self.assertRaises(IndexError):
+            take(ba, lambda b: b.__delitem__(slice(4, None)), 8)
+        self.assertEqual(ba, b'abcd')
+
+        # grow during __index__: the take runs against the new, larger size.
+        ba = bytearray(b'abcd')
+        self.assertEqual(take(ba, lambda b: b.extend(b'efgh'), 8), b'abcdefgh')
+        self.assertEqual(ba, b'')
+
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
             b[i] = val
