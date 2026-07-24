@@ -4147,6 +4147,15 @@ class ContextFlags:
 @requires_cdecimal
 class CContextFlags(ContextFlags, unittest.TestCase):
     decimal = C
+
+    def test_signaldict_repr(self):
+        Context = self.decimal.Context
+        ctx = Context(prec=7)
+        mapping = ctx.flags
+        del ctx
+        with self.assertRaisesRegex(ValueError, 'invalid signal dict'):
+            repr(mapping)
+
 class PyContextFlags(ContextFlags, unittest.TestCase):
     decimal = P
 
