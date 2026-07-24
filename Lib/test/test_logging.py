@@ -2207,6 +2207,7 @@ class LocalSysLogHandlerTest(BaseTest):
     def test_emit(self):
         h = logging.handlers.SysLogHandler(address=None)
         self.addCleanup(h.close)
+        self.assertFalse(h.unixsocket)
         h.setFormatter(logging.Formatter('%(message)s'))
         record = self.next_message()
         logrec = logging.makeLogRecord({'msg': record, 'levelname': 'WARNING',
@@ -2215,6 +2216,13 @@ class LocalSysLogHandlerTest(BaseTest):
             h.emit(logrec)
         mock_syslog.assert_called_once_with(
             syslog.LOG_USER | syslog.LOG_WARNING, record)
+
+    def test_reject_socktype_and_timeout(self):
+        with self.assertRaises(ValueError):
+            logging.handlers.SysLogHandler(address=None,
+                                           socktype=socket.SOCK_DGRAM)
+        with self.assertRaises(ValueError):
+            logging.handlers.SysLogHandler(address=None, timeout=1)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()

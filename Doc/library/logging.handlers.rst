@@ -635,8 +635,11 @@ supports sending logging messages to a remote or local Unix syslog.
    In this case, a Unix domain socket is used to
    send the message to the syslog.
    If *address* is ``None``, the :mod:`syslog` module is used to log to the
-   local system logger; this works even where there is no syslog socket, such
-   as on recent versions of macOS.
+   local system logger;
+   this works even where there is no syslog socket,
+   such as on recent versions of macOS.
+   In this case *socktype* and *timeout* are not applicable
+   and passing them raises :exc:`ValueError`.
    If *facility* is not specified,
    :const:`LOG_USER` is used. The type of socket opened depends on the
    *socktype* argument, which defaults to :const:`socket.SOCK_DGRAM` and thus

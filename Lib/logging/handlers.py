@@ -907,7 +907,12 @@ class SysLogHandler(logging.Handler):
         self.socket = None
         if address is None:
             # Use the syslog module to log to the local system logger.
+            if socktype is not None:
+                raise ValueError("socktype is not supported if address is None")
+            if timeout is not None:
+                raise ValueError("timeout is not supported if address is None")
             import syslog
+            self.unixsocket = False
             self.syslog = syslog
         else:
             self.createSocket()
