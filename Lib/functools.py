@@ -997,7 +997,7 @@ def singledispatch(func):
                     "Using the return annotation to infer the dispatch type "
                     "is deprecated and will raise TypeError in Python 3.18. "
                     "Annotate the dispatch parameter or pass the dispatch "
-                    "type explicitly to register().",
+                    "type explicitly to register() decorator.",
                     DeprecationWarning,
                     skip_file_prefixes=(os.path.dirname(__file__),),
                 )
