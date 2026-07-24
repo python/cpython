@@ -1,4 +1,4 @@
-Fix :func:`array._array_reconstructor` (used internally for unpickling
+Fix ``array._array_reconstructor`` (used internally for unpickling
 :class:`array.array`) ignoring the requested byte order for the
 ``IEEE_754_FLOAT16_LE``/``IEEE_754_FLOAT16_BE`` machine format codes: it
 compared against the 32-bit float constant instead of the float16 one, so
