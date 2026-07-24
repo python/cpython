@@ -68,11 +68,11 @@ def _read_output(commandstring, capture_stderr=False):
             os.getpid(),), "w+b")
 
     with contextlib.closing(fp) as fp:
-        if capture_stderr:
-            cmd = "%s >'%s' 2>&1" % (commandstring, fp.name)
-        else:
-            cmd = "%s 2>/dev/null >'%s'" % (commandstring, fp.name)
-        return fp.read().decode('utf-8').strip() if not os.system(cmd) else None
+        import subprocess
+        stderr = subprocess.STDOUT if capture_stderr else subprocess.DEVNULL
+        rc = subprocess.call(commandstring, shell=True, stdout=fp, stderr=stderr)
+        fp.seek(0)
+        return fp.read().decode('utf-8').strip() if not rc else None
 
 
 def _find_build_tool(toolname):
