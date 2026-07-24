@@ -2312,8 +2312,7 @@ destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
         }
         t2 = PyThreadState_New(interp);
         prev = PyThreadState_Swap(t2);
-        PyThreadState_Clear(t1);
-        PyThreadState_Delete(t1);
+        // t1 is deliberately left alive; Py_EndInterpreter() must clean it up.
         Py_EndInterpreter(t2);
         PyThreadState_Swap(prev);
     }
