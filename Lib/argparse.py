@@ -760,7 +760,7 @@ class HelpFormatter(object):
             return spec % params
 
         return self._apply_text_markup(
-            _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
+            _re.sub(fmt_spec, colorize, str(help_string), flags=_re.VERBOSE)
         )
 
     def _iter_indented_subactions(self, action):
