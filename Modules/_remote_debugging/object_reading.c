@@ -70,7 +70,7 @@ read_py_str(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid string length in remote Unicode object");
         return NULL;
     }
-    Py_ssize_t read_len = Py_MIN(len, Py_MIN(max_len, MAX_REMOTE_STR_READ));
+    Py_ssize_t read_len = Py_MIN(len, max_len);
     int truncated = read_len != len;
 
     // Inspect state to pick the right data offset and character width.
@@ -113,8 +113,10 @@ read_py_str(
         ? (size_t)unwinder->debug_offsets.unicode_object.asciiobject_size
         : (size_t)unwinder->debug_offsets.unicode_object.compactunicodeobject_size;
 
-    // read_len <= MAX_REMOTE_READ and kind <= 4, so nbytes stays small even
-    // when the remote `length` is corrupted.
+    // read_len * kind is bounded by max_len * 4 (kind <= 4, len <= max_len), so
+    // the multiplication can't overflow for any caller-sane max_len, but the
+    // explicit cap here keeps a corrupted remote `length` from later turning
+    // into a giant allocation.
     size_t nbytes = (size_t)read_len * (size_t)kind;
 
     PyObject *result = PyUnicode_New(read_len, max_char);

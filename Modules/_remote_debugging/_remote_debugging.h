@@ -143,9 +143,6 @@ typedef enum _WIN32_THREADSTATE {
 #define SIZEOF_GC_RUNTIME_STATE sizeof(struct _gc_runtime_state)
 #define SIZEOF_INTERPRETER_STATE sizeof(PyInterpreterState)
 
-/* Sanity cap for a single string read that are truncated, not rejected. */
-#define MAX_REMOTE_STR_READ ((Py_ssize_t)(256 * 1024))
-
 /* Maximum sizes for validation to prevent buffer overflows from corrupted data */
 #define MAX_STACK_CHUNK_SIZE (16 * 1024 * 1024)  /* 16 MB max for stack chunks */
 #define MAX_LONG_DIGITS 64  /* Allows values up to ~2^1920 */
