@@ -213,6 +213,9 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyByteArrayObject *obj = ((PyByteArrayObject *)self);
+
+    assert(obj->ob_bytes_object != NULL);
+
     /* All computations are done unsigned to avoid integer overflows
        (see issue #22335). */
     size_t alloc = (size_t) obj->ob_alloc;
@@ -234,6 +237,14 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
     }
     if (!_canresize(obj)) {
         return -1;
+    }
+
+    /* Resize to 0 resets to empty bytes (see issue #153419). */
+    if (requested_size == 0) {
+        Py_SETREF(obj->ob_bytes_object,
+                   Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
+        bytearray_reinit_from_bytes(obj, 0, 0);
+        return 0;
     }
 
     if (size + logical_offset <= alloc) {
@@ -902,6 +913,20 @@ bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
     return ret;
 }
 
+static PyObject *
+bytearray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *op = PyType_GenericNew(type, args, kwds);
+    if (op == NULL) {
+        return NULL;
+    }
+    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    bytearray_reinit_from_bytes(self, 0, 0);
+    self->ob_exports = 0;
+    return op;
+}
+
 /*[clinic input]
 bytearray.__init__
 
@@ -920,20 +945,16 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
 
-    /* First __init__; set ob_bytes_object so ob_bytes is always non-null. */
-    if (self->ob_bytes_object == NULL) {
-        self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-        bytearray_reinit_from_bytes(self, 0, 0);
-        self->ob_exports = 0;
+    /* Disallow any __init__ call if the object is not resizable (has exports)
+       to make the handling of non-null `source` init values simpler. */
+    if (!_canresize(self)) {
+        return -1;
     }
 
-    if (Py_SIZE(self) != 0) {
-        /* Empty previous contents (yes, do this first of all!) */
-        if (PyByteArray_Resize((PyObject *)self, 0) < 0)
-            return -1;
+    /* Empty any previous contents (do this first of all!). */
+    if (PyByteArray_Resize((PyObject *)self, 0) < 0) {
+        return -1;
     }
-
-    /* Should be caused by first init or the resize to 0. */
     assert(self->ob_bytes_object == Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_BYTES));
     assert(self->ob_exports == 0);
 
@@ -1609,6 +1630,9 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     if (_PyBytes_Resize(&self->ob_bytes_object, to_take) == -1) {
+        assert(self->ob_bytes_object == NULL);
+        self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+        bytearray_reinit_from_bytes(self, 0, 0);
         Py_DECREF(remaining);
         return NULL;
     }
@@ -2939,7 +2963,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_dictoffset */
     bytearray___init__,                 /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+    bytearray_new,                      /* tp_new */
     PyObject_Free,                      /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTEARRAY,
 };
