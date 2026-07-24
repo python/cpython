@@ -1,0 +1,4 @@
+:exc:`AttributeError`: The default error message is now generated from ``name``
+and ``obj`` attributes when both are set and the exception was constructed with
+no positional arguments, or with a single positional argument equal to ``name``.
+Patch by Bartosz Sławecki.

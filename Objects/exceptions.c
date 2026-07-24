@@ -11,9 +11,11 @@
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_moduleobject.h"  // _PyModule_CAST()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_tuple.h"         // _PyTuple_FromPair
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include "osdefs.h"               // SEP
 #include "clinic/exceptions.c.h"
@@ -2702,6 +2704,65 @@ AttributeError_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
+static PyObject *
+AttributeError_str(PyObject *op)
+{
+    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
+    PyObject *arg;  // borrowed ref
+    PyObject *obj = NULL, *name = NULL;
+
+     /* .name and .obj are set automatically when attribute lookup fails, so
+        synthesize a more informative message from them when the caller
+        didn't supply a meaningful one of their own -- that is, when args is
+        empty, or contains only the attribute name.  Otherwise, use the
+        message the caller gave. */
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (
+        self->obj && self->name && PyUnicode_Check(self->name)
+        && ((PyTuple_GET_SIZE(self->args) == 1
+             && PyUnicode_Check(arg = PyTuple_GET_ITEM(self->args, 0))
+             && _PyUnicode_Equal(arg, self->name))
+            || PyTuple_GET_SIZE(self->args) == 0)
+    ) {
+        obj = Py_NewRef(self->obj);
+        name = Py_NewRef(self->name);
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (!obj) {
+        assert(!name);
+        return BaseException_str(op);  /* re-acquires lock */
+    }
+
+    PyObject *result = NULL;
+    if (PyModule_Check(obj)) {
+        PyModuleObject *mod = _PyModule_CAST(obj);
+        PyObject *modname;
+        if (PyDict_GetItemRef(mod->md_dict, &_Py_ID(__name__), &modname) < 0) {
+            goto done;
+        }
+        if (modname && PyUnicode_Check(modname)) {
+            result = PyUnicode_FromFormat("module %R has no attribute %R",
+                                          modname, name);
+            Py_DECREF(modname);
+        } else {
+            Py_XDECREF(modname);
+            result = PyUnicode_FromFormat("module has no attribute %R", name);
+        }
+    } else if (PyType_Check(obj)) {
+        result = PyUnicode_FromFormat("type object '%N' has no attribute %R",
+                                      obj, name);
+    } else {
+        result = PyUnicode_FromFormat("'%T' object has no attribute %R",
+                                      obj, name);
+    }
+done:
+    Py_DECREF(obj);
+    Py_DECREF(name);
+    return result;
+}
+
 static int
 AttributeError_traverse(PyObject *op, visitproc visit, void *arg)
 {
@@ -2770,7 +2831,7 @@ static PyMethodDef AttributeError_methods[] = {
 ComplexExtendsException(PyExc_Exception, AttributeError,
                         AttributeError, 0,
                         AttributeError_methods, AttributeError_members,
-                        0, BaseException_str, 0, "Attribute not found.");
+                        0, AttributeError_str, 0, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception
