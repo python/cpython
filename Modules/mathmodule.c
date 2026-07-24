@@ -1720,6 +1720,53 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
 
 
 /*[clinic input]
+math.lerp
+
+    a: double
+    b: double
+    t: double
+    /
+
+Linear interpolation between a and b using parameter t.
+
+Returns a + t * (b - a), computed in a way that guarantees intended
+mathematical behavior:
+
+* lerp(a, b, 0.0) == a
+* lerp(a, b, 1.0) == b
+* lerp(a, b, t) is monotonic in t, when a <= b
+* t outside [0.0, 1.0] is allowed, for extrapolation
+[clinic start generated code]*/
+
+static PyObject *
+math_lerp_impl(PyObject *module, double a, double b, double t)
+/*[clinic end generated code: output=7ca02ba2e81fd287 input=978d065447b6b7e0]*/
+{
+    /* This is the algorithm standardized for std::lerp in C++20
+     * ([c.math.lerp], from WG21 P0811R3 "Well-behaved interpolation
+     * for numbers and pointers" by S. Davis Herring). It guarantees
+     * properties the naive "a + t * (b - a)" formula does not: exact
+     * endpoints, monotonicity, and lerp(a, a, t) == a for finite t.
+     */
+    if ((a <= 0.0 && b >= 0.0) || (a >= 0.0 && b <= 0.0)) {
+        return PyFloat_FromDouble(t * b + (1.0 - t) * a);
+    }
+
+    if (t == 1.0) {
+        return PyFloat_FromDouble(b);
+    }
+
+    double x = a + t * (b - a);
+    if ((t > 1.0) == (b > a)) {
+        return PyFloat_FromDouble(b < x ? x : b);
+    }
+    else {
+        return PyFloat_FromDouble(x < b ? x : b);
+    }
+}
+
+
+/*[clinic input]
 math.modf
 
     x: double
@@ -3264,6 +3311,7 @@ static PyMethodDef math_methods[] = {
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_LDEXP_METHODDEF
+    MATH_LERP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     {"log",             _PyCFunction_CAST(math_log),       METH_FASTCALL,  math_log_doc},
     {"log1p",           math_log1p,     METH_O,         math_log1p_doc},

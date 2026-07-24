@@ -2847,6 +2847,112 @@ class FMATests(unittest.TestCase):
         )
 
 
+class LerpTests(unittest.TestCase):
+    """ Tests for math.lerp. """
+
+    def test_basic(self):
+        self.assertEqual(math.lerp(0.0, 10.0, 0.5), 5.0)
+        self.assertEqual(math.lerp(1.0, 3.0, 2.0), 5.0)  # extrapolation
+        self.assertEqual(math.lerp(1.0, 3.0, -1.0), -1.0)  # extrapolation
+        self.assertEqual(math.lerp(-5.0, 5.0, 0.5), 0.0)
+
+    def test_int_arguments_are_accepted(self):
+        # Clinic converts ints to float, like other math functions.
+        self.assertEqual(math.lerp(0, 10, 0), 0.0)
+        self.assertEqual(math.lerp(0, 10, 1), 10.0)
+
+    def test_endpoints_are_exact(self):
+        # t == 0.0 and t == 1.0 must return the endpoints exactly, even
+        # where the naive "a + t * (b - a)" formula would round off.
+        cases = [
+            (0.0, 10.0), (10.0, 0.0), (-5.0, 5.0), (1e300, -1e300),
+            (524560164915884.0, -995787893297778.6),
+        ]
+        for a, b in cases:
+            with self.subTest(a=a, b=b):
+                self.assertEqual(math.lerp(a, b, 0.0), a)
+                self.assertEqual(math.lerp(a, b, 1.0), b)
+
+    def test_naive_formula_would_be_inexact_at_t1(self):
+        # Concrete demonstration of why lerp() special-cases t == 1.0
+        # rather than using "a + t * (b - a)" directly.
+        a = 524560164915884.0
+        b = -995787893297778.6
+        naive = a + 1.0 * (b - a)
+        self.assertNotEqual(naive, b)
+        self.assertEqual(math.lerp(a, b, 1.0), b)
+
+    def test_a_equals_b(self):
+        # lerp(a, a, t) == a for any finite t, including outside [0, 1].
+        for t in [-100.0, -1.0, 0.0, 0.5, 1.0, 2.0, 100.0]:
+            with self.subTest(t=t):
+                self.assertEqual(math.lerp(3.5, 3.5, t), 3.5)
+
+    def test_monotonic(self):
+        random.seed(163875206)
+        for _ in range(1000):
+            a = random.uniform(-1e10, 1e10)
+            b = random.uniform(-1e10, 1e10)
+            lo, hi = min(a, b), max(a, b)
+            ts = sorted(random.uniform(-2.0, 2.0) for _ in range(8))
+            values = [math.lerp(lo, hi, t) for t in ts]
+            self.assertEqual(values, sorted(values))
+
+    def test_matches_cpp20_stdlerp_reference_values(self):
+        # Bit-for-bit reference values captured from libc++'s std::lerp
+        # (LLVM main, clang -std=c++20), including edge cases involving
+        # zero, signed infinities, and NaN. math.lerp intentionally
+        # implements the same standardized algorithm, so it should match
+        # exactly, including cases where NaN in 'a' does not propagate
+        # (a documented characteristic of the algorithm itself, not a
+        # special case added here).
+        nan = math.nan
+        inf = math.inf
+        reference = [
+            ((0.0, 10.0, 0.5), 5.0),
+            ((10.0, 0.0, 0.0), 10.0),
+            ((10.0, 0.0, 1.0), 0.0),
+            ((1.0, 1.0, 100.0), 1.0),
+            ((1.0, 1.0, -100.0), 1.0),
+            ((-0.0, 10.0, 0.5), 5.0),
+            ((1e300, 1e300, 5.0), 1e300),
+            ((1e308, -1e308, 3.0), -inf),
+            ((-1e308, 1e308, 3.0), inf),
+            ((5.0, -5.0, 0.5), 0.0),
+        ]
+        for (a, b, t), expected in reference:
+            with self.subTest(a=a, b=b, t=t):
+                self.assertEqual(math.lerp(a, b, t), expected)
+
+        nan_cases = [
+            (5.0, nan, 0.5),
+            (0.0, 10.0, nan),
+            (-inf, inf, 0.5),
+        ]
+        for a, b, t in nan_cases:
+            with self.subTest(a=a, b=b, t=t):
+                self.assertTrue(math.isnan(math.lerp(a, b, t)))
+
+        # These do NOT produce NaN, even though 'a' or 't' is infinite/NaN
+        # in one operand: this matches std::lerp's documented behavior,
+        # where the t == 1 and clamping branches can return a or b
+        # without evaluating an expression that would propagate NaN.
+        self.assertEqual(math.lerp(nan, 5.0, 0.5), 5.0)
+        self.assertEqual(math.lerp(inf, 5.0, 0.5), 5.0)
+        self.assertEqual(math.lerp(5.0, inf, 0.5), inf)
+
+    def test_wrong_number_of_arguments(self):
+        self.assertRaises(TypeError, math.lerp)
+        self.assertRaises(TypeError, math.lerp, 1.0)
+        self.assertRaises(TypeError, math.lerp, 1.0, 2.0)
+        self.assertRaises(TypeError, math.lerp, 1.0, 2.0, 3.0, 4.0)
+
+    def test_wrong_argument_type(self):
+        self.assertRaises(TypeError, math.lerp, 'a', 2.0, 0.5)
+        self.assertRaises(TypeError, math.lerp, 1.0, 'b', 0.5)
+        self.assertRaises(TypeError, math.lerp, 1.0, 2.0, 't')
+
+
 def load_tests(loader, tests, pattern):
     from doctest import DocFileSuite
     tests.addTest(DocFileSuite(os.path.join("mathdata", "ieee754.txt")))

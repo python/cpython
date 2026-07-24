@@ -351,6 +351,31 @@ Floating point manipulation functions
    :func:`frexp`.
 
 
+.. function:: lerp(a, b, t)
+
+   Linear interpolation between *a* and *b*, using *t* as the interpolation
+   parameter. Returns ``a + t * (b - a)``, computed in a way that is
+   guaranteed to be numerically well-behaved:
+
+   * ``lerp(a, b, 0.0)`` returns *a* exactly.
+   * ``lerp(a, b, 1.0)`` returns *b* exactly.
+   * ``lerp(a, b, t)`` is monotonic in *t*, for finite *a* and *b* with
+     ``a <= b`` and finite *t*.
+   * *t* is not restricted to ``[0.0, 1.0]``; values outside that range
+     perform extrapolation.
+
+   The naive formula ``a + t * (b - a)`` does not guarantee any of the
+   above; it can, for example, fail to return *b* exactly when *t* is
+   ``1.0`` due to floating-point rounding. :func:`lerp` uses the
+   algorithm standardized for C++20's ``std::lerp``, which fixes these
+   issues. As a consequence, results involving infinities or NaN follow
+   from ordinary floating-point arithmetic rules on each branch of that
+   algorithm, rather than a general guarantee that NaN inputs always
+   produce a NaN result.
+
+   .. versionadded:: 3.16
+
+
 .. function:: nextafter(x, y, steps=1)
 
    Return the floating-point value *steps* steps after *x* towards *y*.

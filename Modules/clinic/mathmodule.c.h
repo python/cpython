@@ -271,6 +271,73 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_lerp__doc__,
+"lerp($module, a, b, t, /)\n"
+"--\n"
+"\n"
+"Linear interpolation between a and b using parameter t.\n"
+"\n"
+"Returns a + t * (b - a), computed in a way that guarantees intended\n"
+"mathematical behavior:\n"
+"\n"
+"* lerp(a, b, 0.0) == a\n"
+"* lerp(a, b, 1.0) == b\n"
+"* lerp(a, b, t) is monotonic in t, when a <= b\n"
+"* t outside [0.0, 1.0] is allowed, for extrapolation");
+
+#define MATH_LERP_METHODDEF    \
+    {"lerp", _PyCFunction_CAST(math_lerp), METH_FASTCALL, math_lerp__doc__},
+
+static PyObject *
+math_lerp_impl(PyObject *module, double a, double b, double t);
+
+static PyObject *
+math_lerp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double a;
+    double b;
+    double t;
+
+    if (!_PyArg_CheckPositional("lerp", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        a = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        a = PyFloat_AsDouble(args[0]);
+        if (a == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        b = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        b = PyFloat_AsDouble(args[1]);
+        if (b == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[2])) {
+        t = PyFloat_AS_DOUBLE(args[2]);
+    }
+    else
+    {
+        t = PyFloat_AsDouble(args[2]);
+        if (t == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_lerp_impl(module, a, b, t);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_modf__doc__,
 "modf($module, x, /)\n"
 "--\n"
@@ -1164,4 +1231,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3452ce8caa2d1bd7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3bd652589e637390 input=a9049054013a1b77]*/

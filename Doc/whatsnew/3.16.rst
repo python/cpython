@@ -371,6 +371,11 @@ math
   754-2019 and standardized in C23.
   (Contributed by Jeff Epler in :gh:`150534`.)
 
+* Added :func:`math.lerp` for linear interpolation, using the algorithm
+  standardized for C++20's ``std::lerp``, which guarantees exact
+  endpoints and monotonicity.
+  (Contributed by PhysicistJohn in :gh:`154573`.)
+
 
 os
 --

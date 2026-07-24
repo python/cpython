@@ -1,0 +1,5 @@
+Add :func:`math.lerp`, computing linear interpolation between two
+values using the algorithm standardized for C++20's ``std::lerp``,
+which guarantees exact endpoints (``lerp(a, b, 0.0) == a`` and
+``lerp(a, b, 1.0) == b``) and monotonicity, properties the naive
+``a + t * (b - a)`` formula does not have. Patch by PhysicistJohn.
