@@ -1611,6 +1611,20 @@ class ComplexDoubleTest(CFPTest, unittest.TestCase):
     typecode = 'Zd'
     minitemsize = 16
 
+    def test_byteswap_single_call_result(self):
+        # A single byteswap() must swap each 16-byte item's two 8-byte
+        # halves (real, imag) independently. The pre-existing test only
+        # checked that byteswap() twice round-trips to the original,
+        # which passes even if a single call scrambles multi-item arrays.
+        a = array.array(self.typecode, [1+2j, 3+4j, 5+6j])
+        original = a.tobytes()
+        a.byteswap()
+        expected = bytearray()
+        for i in range(0, len(original), 16):
+            item = original[i:i + 16]
+            expected += item[7::-1] + item[15:7:-1]
+        self.assertEqual(a.tobytes(), bytes(expected))
+
 
 class LargeArrayTest(unittest.TestCase):
     typecode = 'b'
