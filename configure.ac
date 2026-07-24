@@ -4457,6 +4457,22 @@ if test "$ac_cv_ffi_complex_double_supported" = "yes"; then
               [Defined if _Complex C type can be used with libffi.])
 fi
 
+# Check for native half-float type.
+AC_CACHE_CHECK([for _Float16 support], [ac_cv_float16_supported],
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+int main(void)
+{
+    _Float16 val = 1.0f16;
+    return 0;
+}
+]])], [ac_cv_float16_supported=yes],
+[ac_cv_float16_supported=no],
+[ac_cv_float16_supported=no]))
+if test "$ac_cv_float16_supported" = "yes"; then
+    AC_DEFINE([HAVE_FLOAT16], [1],
+              [Defined if _Float16 C type is supported])
+fi
+
 dnl Check for libmpdec >= 2.5.0
 PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
   WITH_SAVE_ENV([
