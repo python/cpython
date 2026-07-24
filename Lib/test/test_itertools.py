@@ -157,6 +157,25 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaises(TypeError):
             list(accumulate([10, 20], 100))
 
+    def test_accumulate_reenter(self):
+        # A source iterable (or binop) that calls back into next() on the
+        # same accumulate object must not be allowed to silently corrupt
+        # the running total.
+        class I:
+            count = 0
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.count += 1
+                if self.count == 2:
+                    return next(it)
+                return self.count
+
+        it = accumulate(I())
+        self.assertEqual(next(it), 1)
+        with self.assertRaisesRegex(RuntimeError, "accumulate"):
+            next(it)
+
     def test_batched(self):
         self.assertEqual(list(batched('ABCDEFG', 3)),
                              [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)])

@@ -3079,6 +3079,7 @@ typedef struct {
     PyObject *binop;
     PyObject *initial;
     itertools_state *state;
+    int running;
 } accumulateobject;
 
 #define accumulateobject_CAST(op)   ((accumulateobject *)(op))
@@ -3120,6 +3121,7 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
     lz->it = it;
     lz->initial = Py_XNewRef(initial);
     lz->state = find_state_by_type(type);
+    lz->running = 0;
     return (PyObject *)lz;
 }
 
@@ -3160,12 +3162,21 @@ accumulate_next_lock_held(PyObject *op)
         lz->initial = Py_NewRef(Py_None);
         return Py_NewRef(lz->total);
     }
-    val = (*Py_TYPE(lz->it)->tp_iternext)(lz->it);
-    if (val == NULL)
+    if (lz->running) {
+        PyErr_SetString(PyExc_RuntimeError,
+                         "cannot re-enter the accumulate iterator");
         return NULL;
+    }
+    lz->running = 1;
+    val = (*Py_TYPE(lz->it)->tp_iternext)(lz->it);
+    if (val == NULL) {
+        lz->running = 0;
+        return NULL;
+    }
 
     if (lz->total == NULL) {
         lz->total = Py_NewRef(val);
+        lz->running = 0;
         return lz->total;
     }
 
@@ -3174,6 +3185,7 @@ accumulate_next_lock_held(PyObject *op)
     else
         newtotal = PyObject_CallFunctionObjArgs(lz->binop, lz->total, val, NULL);
     Py_DECREF(val);
+    lz->running = 0;
     if (newtotal == NULL)
         return NULL;
 
