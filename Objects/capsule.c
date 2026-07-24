@@ -246,18 +246,17 @@ PyCapsule_Import(const char *name, int Py_UNUSED(no_block))
             *dot = '\0';
         }
         if (object) {
-            Py_SETREF(object, PyObject_GetAttrString(object, trace));
+            PyObject *attr;
+            if (PyObject_GetOptionalAttrString(object, trace, &attr) < 0) {
+                Py_CLEAR(object);
+                break;
+            }
+            Py_SETREF(object, attr);
         }
         if (!dot) {
             break;
         }
         if (!object) {
-            if (PyErr_Occurred()) {
-                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    break;
-                }
-                PyErr_Clear();
-            }
             object = PyImport_ImportModule(name_dup);
             if (!object) {
                 break;
@@ -272,7 +271,7 @@ PyCapsule_Import(const char *name, int Py_UNUSED(no_block))
         PyCapsule *capsule = (PyCapsule *)object;
         return_value = capsule->pointer;
     }
-    else if (object || trace == name_dup) {
+    else if (!PyErr_Occurred()) {
         PyErr_Format(PyExc_AttributeError,
             "PyCapsule_Import \"%s\" is not valid",
             name);
