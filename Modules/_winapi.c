@@ -3175,6 +3175,23 @@ _winapi_GetTickCount64_impl(PyObject *module)
     return PyLong_FromUnsignedLongLong(ticks);
 }
 
+/*[clinic input]
+_winapi.IsWindowsDesktop
+
+Return TRUE for Windows desktop build or FALSE for UWP build.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_IsWindowsDesktop_impl(PyObject *module)
+/*[clinic end generated code: output=6c1a044078bba5fd input=cf5bd7f013ba4bff]*/
+{
+#ifdef MS_WINDOWS_DESKTOP
+    return PyBool_FromLong(TRUE);
+#else
+    return PyBool_FromLong(FALSE);
+#endif
+}
+
 
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
@@ -3228,6 +3245,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_COPYFILE2_METHODDEF
     _WINAPI_GETPROCESSMEMORYINFO_METHODDEF
     _WINAPI_GETTICKCOUNT64_METHODDEF
+    _WINAPI_ISWINDOWSDESKTOP_METHODDEF
     {NULL, NULL}
 };
 

@@ -2376,7 +2376,25 @@ _winapi_GetTickCount64(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _winapi_GetTickCount64_impl(module);
 }
 
+PyDoc_STRVAR(_winapi_IsWindowsDesktop__doc__,
+"IsWindowsDesktop($module, /)\n"
+"--\n"
+"\n"
+"Return TRUE for Windows desktop build or FALSE for UWP build.");
+
+#define _WINAPI_ISWINDOWSDESKTOP_METHODDEF    \
+    {"IsWindowsDesktop", (PyCFunction)_winapi_IsWindowsDesktop, METH_NOARGS, _winapi_IsWindowsDesktop__doc__},
+
+static PyObject *
+_winapi_IsWindowsDesktop_impl(PyObject *module);
+
+static PyObject *
+_winapi_IsWindowsDesktop(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_IsWindowsDesktop_impl(module);
+}
+
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=713a8ce97185b017 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=166fed414568108f input=a9049054013a1b77]*/
