@@ -40,13 +40,18 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    complicated way on how many elements the sequences have in common; best case
    time is linear.
 
-   **Automatic junk heuristic:** :class:`SequenceMatcher` supports a heuristic that
-   automatically treats certain sequence items as junk. The heuristic counts how many
-   times each individual item appears in the sequence. If an item's duplicates (after
-   the first one) account for more than 1% of the sequence and the sequence is at least
-   200 items long, this item is marked as "popular" and is treated as junk for
-   the purpose of sequence matching. This heuristic can be turned off by setting
-   the ``autojunk`` argument to ``False`` when creating the :class:`SequenceMatcher`.
+   **Junk**: :class:`SequenceMatcher` accepts an ``isjunk`` predicate and an
+   ``autojunk`` flag. Items that are considered as junk will not be considered
+   to find similar content blocks. This can produce better results for humans
+   (typically breaking on whitespace) and faster (because it reduces the number
+   of possible combinations). But it can also cause pathological cases where
+   too many items considered junk cause an unexpectedly large (but correct)
+   diff result.
+   You should consider tuning them or turning them off depending on your data.
+   Moreover, only the second sequence is inspected for junk. This causes the diff
+   output to not be symmetrical.
+   When ``autojunk=True``, it will consider as junk the items that account for more
+   than 1% of the sequence, if it is at least 200 items long.
 
    .. versionchanged:: 3.2
       Added the *autojunk* parameter.
@@ -557,16 +562,6 @@ The :class:`SequenceMatcher` class has this constructor:
       :meth:`get_opcodes` hasn't already been called, in which case you may want
       to try :meth:`quick_ratio` or :meth:`real_quick_ratio` first to get an
       upper bound.
-
-      .. note::
-
-         Caution: The result of a :meth:`ratio` call may depend on the order of
-         the arguments. For instance::
-
-            >>> SequenceMatcher(None, 'tide', 'diet').ratio()
-            0.25
-            >>> SequenceMatcher(None, 'diet', 'tide').ratio()
-            0.5
 
 
    .. method:: quick_ratio()
