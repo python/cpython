@@ -90,12 +90,12 @@ import os as _os
 import sys as _sys
 
 lazy import _colorize
-lazy import copy as _copy
-lazy import difflib as _difflib
+lazy import copy
+lazy import difflib
 lazy import re as _re
-lazy import shutil as _shutil
-lazy import textwrap as _textwrap
-lazy import warnings as _warnings
+lazy import shutil
+lazy import textwrap
+lazy import warnings
 lazy from gettext import gettext as _
 lazy from gettext import ngettext
 
@@ -150,7 +150,7 @@ def _copy_items(items):
     # actions, and it is needed only when the default value isn't a list.
     if type(items) is list:
         return items[:]
-    return _copy.copy(items)
+    return copy.copy(items)
 
 
 def _identity(value):
@@ -189,7 +189,7 @@ class HelpFormatter(object):
     ):
         # default setting for width
         if width is None:
-            width = _shutil.get_terminal_size().columns
+            width = shutil.get_terminal_size().columns
             width -= 2
 
         self._prog = prog
@@ -775,11 +775,11 @@ class HelpFormatter(object):
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        return _textwrap.wrap(text, width)
+        return textwrap.wrap(text, width)
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        return _textwrap.fill(text, width,
+        return textwrap.fill(text, width,
                              initial_indent=indent,
                              subsequent_indent=indent)
 
@@ -1456,7 +1456,7 @@ class FileType(object):
     """
 
     def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
-        _warnings.warn(
+        warnings.warn(
             "FileType is deprecated. Simply open files after parsing arguments.",
             category=PendingDeprecationWarning,
             stacklevel=2
@@ -1866,7 +1866,7 @@ class _ArgumentGroup(_ActionsContainer):
                 "The use of the undocumented 'prefix_chars' parameter in "
                 "ArgumentParser.add_argument_group() is deprecated."
             )
-            _warnings.warn(depr_msg, DeprecationWarning, stacklevel=3)
+            warnings.warn(depr_msg, DeprecationWarning, stacklevel=3)
 
         # add any missing keyword arguments by checking the container
         update = kwargs.setdefault
@@ -2792,7 +2792,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
             if self.suggest_on_error and isinstance(value, str):
                 if all(isinstance(choice, str) for choice in action.choices):
-                    suggestions = _difflib.get_close_matches(value, action.choices, 1)
+                    suggestions = difflib.get_close_matches(value, action.choices, 1)
                     if suggestions:
                         args['closest'] = suggestions[0]
                         msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
@@ -2931,6 +2931,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
 def __getattr__(name):
     if name == "__version__":
-        _warnings._deprecated("__version__", remove=(3, 20))
+        warnings._deprecated("__version__", remove=(3, 20))
         return "1.1"  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

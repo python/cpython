@@ -12,6 +12,7 @@ import stat
 import sys
 import textwrap
 import tempfile
+import types
 import unittest
 import argparse
 import warnings
@@ -7100,7 +7101,10 @@ class TestImportStar(TestCase):
             name
             for name, value in vars(argparse).items()
             if not (name.startswith("_") or name == 'ngettext')
-            if not inspect.ismodule(value)
+            if not (
+                inspect.ismodule(value)
+                or isinstance(value, types.LazyImportType)
+            )
         ]
         self.assertEqual(sorted(items), sorted(argparse.__all__))
 
