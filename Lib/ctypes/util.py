@@ -429,8 +429,7 @@ elif os.name == "posix":
             result = None
             try:
                 p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     universal_newlines=True)
+                                     stderr=subprocess.PIPE)
                 out, _ = p.communicate()
                 res = re.findall(expr, os.fsdecode(out))
                 for file in res:
@@ -590,6 +589,8 @@ def wrap_dll_function(dll):
 
         ptr.restype = restype
         ptr.argtypes = tuple(annotations.values())
+        functools.update_wrapper(ptr, func, updated=())
+
         return ptr
 
     return decorator
