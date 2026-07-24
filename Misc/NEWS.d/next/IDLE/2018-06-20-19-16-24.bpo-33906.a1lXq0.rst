@@ -1,2 +1,0 @@
-Rename idlelib.windows as window Match Window on the main menu and remove
-last plural module name.

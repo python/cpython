@@ -5,7 +5,9 @@
 
 .. module:: email.message
    :synopsis: The base class representing email messages in a fashion
-              backward compatible with python3.2
+              backward compatible with Python 3.2
+   :noindex:
+   :no-index:
 
 
 The :class:`Message` class is very similar to the
@@ -22,7 +24,7 @@ policy :attr:`~email.policy.Compat32`.  If you are going to use another policy,
 you should be using the :class:`~email.message.EmailMessage` class instead.
 
 An email message consists of *headers* and a *payload*.  Headers must be
-:rfc:`5233` style names and values, where the field name and value are
+:rfc:`5322` style names and values, where the field name and value are
 separated by a colon.  The colon is not part of either the field name or the
 field value.  The payload may be a simple text message, or a binary object, or
 a structured sequence of sub-messages each with their own set of headers and
@@ -82,7 +84,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.Generator` instance and use its
       :meth:`~email.generator.Generator.flatten` method directly.  For example::
 
@@ -103,7 +105,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __str__()
 
-      Equivalent to :meth:`.as_string()`.  Allows ``str(msg)`` to produce a
+      Equivalent to :meth:`.as_string`.  Allows ``str(msg)`` to produce a
       string containing the formatted message.
 
 
@@ -124,7 +126,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.BytesGenerator` instance and use its
       :meth:`~email.generator.BytesGenerator.flatten` method directly.
       For example::
@@ -141,7 +143,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the formatted message.
 
       .. versionadded:: 3.4
@@ -149,10 +151,10 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: is_multipart()
 
-      Return ``True`` if the message's payload is a list of sub-\
-      :class:`Message` objects, otherwise return ``False``.  When
+      Return ``True`` if the message's payload is a list of
+      sub-\ :class:`Message` objects, otherwise return ``False``.  When
       :meth:`is_multipart` returns ``False``, the payload should be a string
-      object (which might be a CTE encoded binary payload.  (Note that
+      object (which might be a CTE encoded binary payload).  (Note that
       :meth:`is_multipart` returning ``True`` does not necessarily mean that
       "msg.get_content_maintype() == 'multipart'" will return the ``True``.
       For example, ``is_multipart`` will return ``True`` when the
@@ -179,7 +181,7 @@ Here are the methods of the :class:`Message` class:
       :meth:`set_payload` instead.
 
       This is a legacy method.  On the
-      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      :class:`~email.message.EmailMessage` class its functionality is
       replaced by :meth:`~email.message.EmailMessage.set_content` and the
       related ``make`` and ``add`` methods.
 
@@ -222,7 +224,7 @@ Here are the methods of the :class:`Message` class:
       ASCII charset.
 
       This is a legacy method.  On the
-      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      :class:`~email.message.EmailMessage` class its functionality is
       replaced by :meth:`~email.message.EmailMessage.get_content` and
       :meth:`~email.message.EmailMessage.iter_parts`.
 
@@ -234,7 +236,7 @@ Here are the methods of the :class:`Message` class:
       the message's default character set; see :meth:`set_charset` for details.
 
       This is a legacy method.  On the
-      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      :class:`~email.message.EmailMessage` class its functionality is
       replaced by :meth:`~email.message.EmailMessage.set_content`.
 
 
@@ -263,9 +265,9 @@ Here are the methods of the :class:`Message` class:
       using that :mailheader:`Content-Transfer-Encoding` and is not modified.
 
       This is a legacy method.  On the
-      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      :class:`~email.message.EmailMessage` class its functionality is
       replaced by the *charset* parameter of the
-      :meth:`email.emailmessage.EmailMessage.set_content` method.
+      :meth:`email.message.EmailMessage.set_content` method.
 
 
    .. method:: get_charset()
@@ -274,7 +276,7 @@ Here are the methods of the :class:`Message` class:
       message's payload.
 
       This is a legacy method.  On the
-      :class:`~email.emailmessage.EmailMessage` class it always returns
+      :class:`~email.message.EmailMessage` class it always returns
       ``None``.
 
 
@@ -297,7 +299,7 @@ Here are the methods of the :class:`Message` class:
    In a model generated from bytes, any header values that (in contravention of
    the RFCs) contain non-ASCII bytes will, when retrieved through this
    interface, be represented as :class:`~email.header.Header` objects with
-   a charset of `unknown-8bit`.
+   a charset of ``unknown-8bit``.
 
 
    .. method:: __len__()
@@ -307,7 +309,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __contains__(name)
 
-      Return true if the message object has a field named *name*. Matching is
+      Return ``True`` if the message object has a field named *name*. Matching is
       done case-insensitively and *name* should not include the trailing colon.
       Used for the ``in`` operator, e.g.::
 
@@ -366,7 +368,7 @@ Here are the methods of the :class:`Message` class:
    .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
-      :meth:`__getitem__` except that optional *failobj* is returned if the
+      :meth:`~object.__getitem__` except that optional *failobj* is returned if the
       named header is missing (defaults to ``None``).
 
    Here are some additional useful methods:
@@ -484,7 +486,7 @@ Here are the methods of the :class:`Message` class:
       search instead of :mailheader:`Content-Type`.
 
       This is a legacy method.  On the
-      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      :class:`~email.message.EmailMessage` class its functionality is
       replaced by the *params* property of the individual header objects
       returned by the header access methods.
 
@@ -522,7 +524,7 @@ Here are the methods of the :class:`Message` class:
       to ``False``.
 
       This is a legacy method.  On the
-      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      :class:`~email.message.EmailMessage` class its functionality is
       replaced by the *params* property of the individual header objects
       returned by the header access methods.
 
@@ -577,7 +579,7 @@ Here are the methods of the :class:`Message` class:
       header is also added.
 
       This is a legacy method.  On the
-      :class:`~email.emailmessage.EmailMessage` class its functionality is
+      :class:`~email.message.EmailMessage` class its functionality is
       replaced by the ``make_`` and ``add_`` methods.
 
 

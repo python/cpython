@@ -2,19 +2,21 @@
    Roger E. Masse
 """
 
+import collections.abc
 import unittest
 from test import support
+from test.support import import_helper, script_helper
+from test.support import os_helper
+from test.support import _2G
+from test.support import subTests
 import weakref
 import pickle
 import operator
 import struct
 import sys
-import warnings
 
 import array
 from array import _array_reconstructor as array_reconstructor
-
-sizeof_wchar = array.array('u').itemsize
 
 
 class ArraySubclass(array.array):
@@ -24,15 +26,56 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = 'ubBhHiIlLfdqQ'
+typecodes = array.typecodes
+
 
 class MiscTest(unittest.TestCase):
+
+    def test_array_type_importable(self):
+        from array import ArrayType
+
+        self.assertIs(array.array, ArrayType)
+
+    def test_array_is_sequence(self):
+        self.assertIsInstance(array.array("B"), collections.abc.MutableSequence)
+        self.assertIsInstance(array.array("B"), collections.abc.Reversible)
 
     def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)
         self.assertRaises(TypeError, array.array, spam=42)
-        self.assertRaises(TypeError, array.array, 'xx')
+        self.assertRaises(ValueError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
+        self.assertRaises(ValueError, array.array, 'Z')
+
+    @support.cpython_only
+    def test_does_not_crash_on_broken_imports(self):
+        # gh-153210
+        code = """if 1:
+            import collections.abc
+
+            del collections.abc.MutableSequence
+
+            try:
+                import array  # it used to crash before
+            except AttributeError:
+                pass
+            else:
+                raise AssertionError('AttributeError was not raised')
+        """
+        script_helper.assert_python_ok('-c', code)
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        my_array = array.array("I")
+        support.check_disallow_instantiation(
+            self, type(iter(my_array)), my_array
+        )
+
+    @support.cpython_only
+    def test_immutable(self):
+        # bpo-43908: check that array.array is immutable
+        with self.assertRaises(TypeError):
+            array.array.foo = 1
 
     def test_empty(self):
         # Exercise code for handling zero-length arrays
@@ -43,6 +86,29 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(len(a * 3), 0)
         a += a
         self.assertEqual(len(a), 0)
+
+    def test_fromlist_reentrant_index_mutation(self):
+
+        class Evil:
+            def __init__(self, lst):
+                self.lst = lst
+            def __index__(self):
+                self.lst.clear()
+                return "not an int"
+
+        for typecode in ('I', 'L', 'Q'):
+            with self.subTest(typecode=typecode):
+                lst = []
+                lst.append(Evil(lst))
+                a = array.array(typecode)
+                with self.assertRaises(TypeError):
+                    a.fromlist(lst)
+
+    def test_typecodes(self):
+        self.assertIsInstance(array.typecodes, tuple)
+        for typecode in array.typecodes:
+            self.assertIsInstance(typecode, str)
+            self.assertGreaterEqual(len(typecode), 1)
 
 
 # Machine format codes.
@@ -72,6 +138,15 @@ UTF16_LE = 18
 UTF16_BE = 19
 UTF32_LE = 20
 UTF32_BE = 21
+IEEE_754_FLOAT_COMPLEX_LE = 22
+IEEE_754_FLOAT_COMPLEX_BE = 23
+IEEE_754_DOUBLE_COMPLEX_LE = 24
+IEEE_754_DOUBLE_COMPLEX_BE = 25
+IEEE_754_FLOAT16_LE = 26
+IEEE_754_FLOAT16_BE = 27
+
+MACHINE_FORMAT_CODE_MAX = 27
+
 
 class ArrayReconstructorTest(unittest.TestCase):
 
@@ -89,7 +164,7 @@ class ArrayReconstructorTest(unittest.TestCase):
         self.assertRaises(ValueError, array_reconstructor,
                           array.array, "b", UNKNOWN_FORMAT, b"")
         self.assertRaises(ValueError, array_reconstructor,
-                          array.array, "b", 22, b"")
+                          array.array, "b", MACHINE_FORMAT_CODE_MAX + 1, b"")
         self.assertRaises(ValueError, array_reconstructor,
                           array.array, "d", 16, b"a")
 
@@ -141,7 +216,15 @@ class ArrayReconstructorTest(unittest.TestCase):
             (['d'], IEEE_754_DOUBLE_LE, '<dddd',
              [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
             (['d'], IEEE_754_DOUBLE_BE, '>dddd',
-             [9006104071832581.0, float('inf'), float('-inf'), -0.0])
+             [9006104071832581.0, float('inf'), float('-inf'), -0.0]),
+            (['Zf'], IEEE_754_FLOAT_COMPLEX_LE, '<ZfZfZfZf',
+             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['Zf'], IEEE_754_FLOAT_COMPLEX_BE, '>ZfZfZfZf',
+             [16711938.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['Zd'], IEEE_754_DOUBLE_COMPLEX_LE, '<ZdZdZdZd',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
+            (['Zd'], IEEE_754_DOUBLE_COMPLEX_BE, '>ZdZdZdZd',
+             [9006104071832581.0j, float('inf'), complex('1-infj'), -0.0]),
         )
         for testcase in testcases:
             valid_typecodes, mformat_code, struct_fmt, values = testcase
@@ -166,9 +249,9 @@ class ArrayReconstructorTest(unittest.TestCase):
         )
         for testcase in testcases:
             mformat_code, encoding = testcase
-            a = array.array('u', teststr)
+            a = array.array('w', teststr)
             b = array_reconstructor(
-                array.array, 'u', mformat_code, teststr.encode(encoding))
+                array.array, 'w', mformat_code, teststr.encode(encoding))
             self.assertEqual(a, b,
                 msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
 
@@ -214,13 +297,13 @@ class BaseTest:
         self.assertEqual(bi[1], len(a))
 
     def test_byteswap(self):
-        if self.typecode == 'u':
+        if self.typecode == 'w':
             example = '\U00100100'
         else:
             example = self.example
         a = array.array(self.typecode, example)
         self.assertRaises(TypeError, a.byteswap, 42)
-        if a.itemsize in (1, 2, 4, 8):
+        if a.itemsize in (1, 2, 4, 8, 16):
             b = array.array(self.typecode, example)
             b.byteswap()
             if a.itemsize==1:
@@ -248,7 +331,7 @@ class BaseTest:
         a = array.array(self.typecode, self.example)
         for protocol in range(3):
             self.assertIs(a.__reduce_ex__(protocol)[0], array.array)
-        for protocol in range(3, pickle.HIGHEST_PROTOCOL):
+        for protocol in range(3, pickle.HIGHEST_PROTOCOL + 1):
             self.assertIs(a.__reduce_ex__(protocol)[0], array_reconstructor)
 
     def test_pickle(self):
@@ -330,6 +413,67 @@ class BaseTest:
         self.assertEqual(list(empit), [self.outside])
         self.assertEqual(list(a), list(self.example) + [self.outside])
 
+    def test_reverse_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        self.assertEqual(list(reversed(a)), list(iter(a))[::-1])
+
+    def test_reverse_iterator_picking(self):
+        orig = array.array(self.typecode, self.example)
+        data = list(orig)
+        data2 = [self.outside] + data
+        rev_data = data[len(data)-2::-1] + [self.outside]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            # initial iterator
+            itorig = reversed(orig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), rev_data)
+            self.assertEqual(list(a), data2)
+
+            # running iterator
+            next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), rev_data[1:])
+            self.assertEqual(list(a), data2)
+
+            # empty iterator
+            for i in range(1, len(data)):
+                next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), [])
+            self.assertEqual(list(a), data2)
+
+            # exhausted iterator
+            self.assertRaises(StopIteration, next, itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(list(it), [])
+            self.assertEqual(list(a), data2)
+
+    def test_exhausted_reverse_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        exhit = reversed(a)
+        empit = reversed(a)
+        for x in exhit:  # exhaust the iterator
+            next(empit)  # Pointing past the 0th position.
+        a.insert(0, self.outside)
+        self.assertEqual(list(exhit), [])
+        # The iterator index points past the 0th position so inserting
+        # an element in the beginning does not make it appear.
+        self.assertEqual(list(empit), [])
+        self.assertEqual(list(a), [self.outside] + list(self.example))
+
     def test_insert(self):
         a = array.array(self.typecode, self.example)
         a.insert(0, self.example[0])
@@ -366,13 +510,13 @@ class BaseTest:
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
-        support.unlink(support.TESTFN)
-        f = open(support.TESTFN, 'wb')
+        os_helper.unlink(os_helper.TESTFN)
+        f = open(os_helper.TESTFN, 'wb')
         try:
             a.tofile(f)
             f.close()
             b = array.array(self.typecode)
-            f = open(support.TESTFN, 'rb')
+            f = open(os_helper.TESTFN, 'rb')
             self.assertRaises(TypeError, b.fromfile)
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
@@ -383,27 +527,27 @@ class BaseTest:
         finally:
             if not f.closed:
                 f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_fromfile_ioerror(self):
         # Issue #5395: Check if fromfile raises a proper OSError
         # instead of EOFError.
         a = array.array(self.typecode)
-        f = open(support.TESTFN, 'wb')
+        f = open(os_helper.TESTFN, 'wb')
         try:
             self.assertRaises(OSError, a.fromfile, f, len(self.example))
         finally:
             f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_filewrite(self):
         a = array.array(self.typecode, 2*self.example)
-        f = open(support.TESTFN, 'wb')
+        f = open(os_helper.TESTFN, 'wb')
         try:
             f.write(a)
             f.close()
             b = array.array(self.typecode)
-            f = open(support.TESTFN, 'rb')
+            f = open(os_helper.TESTFN, 'rb')
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
             self.assertNotEqual(a, b)
@@ -413,7 +557,7 @@ class BaseTest:
         finally:
             if not f.closed:
                 f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)
@@ -424,26 +568,6 @@ class BaseTest:
         self.assertRaises(TypeError, b.fromlist, [None])
         b.fromlist(a.tolist())
         self.assertEqual(a, b)
-
-    def test_tofromstring(self):
-        # Warnings not raised when arguments are incorrect as Argument Clinic
-        # handles that before the warning can be raised.
-        nb_warnings = 2
-        with warnings.catch_warnings(record=True) as r:
-            warnings.filterwarnings("always",
-                                    message=r"(to|from)string\(\) is deprecated",
-                                    category=DeprecationWarning)
-            a = array.array(self.typecode, 2*self.example)
-            b = array.array(self.typecode)
-            self.assertRaises(TypeError, a.tostring, 42)
-            self.assertRaises(TypeError, b.fromstring)
-            self.assertRaises(TypeError, b.fromstring, 42)
-            b.fromstring(a.tostring())
-            self.assertEqual(a, b)
-            if a.itemsize>1:
-                self.assertRaises(ValueError, b.fromstring, "x")
-                nb_warnings += 1
-        self.assertEqual(len(r), nb_warnings)
 
     def test_tofrombytes(self):
         a = array.array(self.typecode, 2*self.example)
@@ -745,7 +869,7 @@ class BaseTest:
         # Test extended slicing by comparing with list slicing
         # (Assumes list conversion works correctly, too)
         a = array.array(self.typecode, self.example)
-        indices = (0, None, 1, 3, 19, 100, -1, -2, -31, -100)
+        indices = (0, None, 1, 3, 19, 100, sys.maxsize, -1, -2, -31, -100)
         for start in indices:
             for stop in indices:
                 # Everything except the initial 0 (invalid step)
@@ -843,7 +967,7 @@ class BaseTest:
         self.assertRaises(TypeError, a.__setitem__, slice(0, 1), b)
 
     def test_extended_set_del_slice(self):
-        indices = (0, None, 1, 3, 19, 100, -1, -2, -31, -100)
+        indices = (0, None, 1, 3, 19, 100, sys.maxsize, -1, -2, -31, -100)
         for start in indices:
             for stop in indices:
                 # Everything except the initial 0 (invalid step)
@@ -870,6 +994,17 @@ class BaseTest:
             self.assertEqual(a.index(x), example.index(x))
         self.assertRaises(ValueError, a.index, None)
         self.assertRaises(ValueError, a.index, self.outside)
+
+        a = array.array('i', [-2, -1, 0, 0, 1, 2])
+        self.assertEqual(a.index(0), 2)
+        self.assertEqual(a.index(0, 2), 2)
+        self.assertEqual(a.index(0, -4), 2)
+        self.assertEqual(a.index(-2, -10), 0)
+        self.assertEqual(a.index(0, 3), 3)
+        self.assertEqual(a.index(0, -3), 3)
+        self.assertEqual(a.index(0, 3, 4), 3)
+        self.assertEqual(a.index(0, -3, -2), 3)
+        self.assertRaises(ValueError, a.index, 2, 0, -10)
 
     def test_count(self):
         example = 2*self.example
@@ -920,6 +1055,29 @@ class BaseTest:
             a,
             array.array(self.typecode, self.example[3:]+self.example[:-1])
         )
+
+    def test_clear(self):
+        a = array.array(self.typecode, self.example)
+        with self.assertRaises(TypeError):
+            a.clear(42)
+        a.clear()
+        self.assertEqual(len(a), 0)
+        self.assertEqual(a.typecode, self.typecode)
+
+        a = array.array(self.typecode)
+        a.clear()
+        self.assertEqual(len(a), 0)
+        self.assertEqual(a.typecode, self.typecode)
+
+        a = array.array(self.typecode, self.example)
+        a.clear()
+        a.append(self.example[2])
+        a.append(self.example[3])
+        self.assertEqual(a, array.array(self.typecode, self.example[2:4]))
+
+        with memoryview(a):
+            with self.assertRaises(BufferError):
+                a.clear()
 
     def test_reverse(self):
         a = array.array(self.typecode, self.example)
@@ -1007,7 +1165,7 @@ class BaseTest:
         self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, a.frombytes, a.tobytes())
         self.assertEqual(m.tobytes(), expected)
-        if self.typecode == 'u':
+        if self.typecode == 'w':
             self.assertRaises(BufferError, a.fromunicode, a.tounicode())
             self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, operator.imul, a, 2)
@@ -1026,6 +1184,7 @@ class BaseTest:
         p = weakref.proxy(s)
         self.assertEqual(p.tobytes(), s.tobytes())
         s = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, len, p)
 
     @unittest.skipUnless(hasattr(sys, 'getrefcount'),
@@ -1062,28 +1221,31 @@ class BaseTest:
         support.check_sizeof(self, a, basesize)
 
     def test_initialize_with_unicode(self):
-        if self.typecode != 'u':
+        if self.typecode != 'w':
             with self.assertRaises(TypeError) as cm:
                 a = array.array(self.typecode, 'foo')
             self.assertIn("cannot use a str", str(cm.exception))
             with self.assertRaises(TypeError) as cm:
-                a = array.array(self.typecode, array.array('u', 'foo'))
+                a = array.array(self.typecode, array.array('w', 'foo'))
             self.assertIn("cannot use a unicode array", str(cm.exception))
         else:
             a = array.array(self.typecode, "foo")
-            a = array.array(self.typecode, array.array('u', 'foo'))
+            a = array.array(self.typecode, array.array('w', 'foo'))
 
     @support.cpython_only
     def test_obsolete_write_lock(self):
-        from _testcapi import getbuffer_with_null_view
+        _testcapi = import_helper.import_module('_testcapi')
         a = array.array('B', b"")
-        self.assertRaises(BufferError, getbuffer_with_null_view, a)
+        self.assertRaises(BufferError, _testcapi.getbuffer_with_null_view, a)
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, array.array,
                                            (self.typecode,))
         support.check_free_after_iterating(self, reversed, array.array,
                                            (self.typecode,))
+
+    def test_known_typecode(self):
+        self.assertIn(self.typecode, array.typecodes)
 
 class StringTest(BaseTest):
 
@@ -1093,44 +1255,33 @@ class StringTest(BaseTest):
         self.assertRaises(TypeError, a.__setitem__, 0, self.example[:2])
 
 class UnicodeTest(StringTest, unittest.TestCase):
-    typecode = 'u'
+    typecode = 'w'
     example = '\x01\u263a\x00\ufeff'
     smallerexample = '\x01\u263a\x00\ufefe'
     biggerexample = '\x01\u263a\x01\ufeff'
     outside = str('\x33')
-    minitemsize = 2
+    minitemsize = 4
 
     def test_unicode(self):
         self.assertRaises(TypeError, array.array, 'b', 'foo')
 
-        a = array.array('u', '\xa0\xc2\u1234')
+        a = array.array(self.typecode, '\xa0\xc2\u1234')
         a.fromunicode(' ')
         a.fromunicode('')
         a.fromunicode('')
         a.fromunicode('\x11abc\xff\u1234')
         s = a.tounicode()
         self.assertEqual(s, '\xa0\xc2\u1234 \x11abc\xff\u1234')
-        self.assertEqual(a.itemsize, sizeof_wchar)
+        self.assertEqual(a.itemsize, self.minitemsize)
 
         s = '\x00="\'a\\b\x80\xff\u0000\u0001\u1234'
-        a = array.array('u', s)
+        a = array.array(self.typecode, s)
         self.assertEqual(
             repr(a),
-            "array('u', '\\x00=\"\\'a\\\\b\\x80\xff\\x00\\x01\u1234')")
+            f"array('{self.typecode}', '\\x00=\"\\'a\\\\b\\x80\xff\\x00\\x01\u1234')")
 
         self.assertRaises(TypeError, a.fromunicode)
 
-    def test_issue17223(self):
-        # this used to crash
-        if sizeof_wchar == 4:
-            # U+FFFFFFFF is an invalid code point in Unicode 6.0
-            invalid_str = b'\xff\xff\xff\xff'
-        else:
-            # PyUnicode_FromUnicode() cannot fail with 16-bit wchar_t
-            self.skipTest("specific to 32-bit wchar_t")
-        a = array.array('u', invalid_str)
-        self.assertRaises(ValueError, a.tounicode)
-        self.assertRaises(ValueError, str, a)
 
 class NumberTest(BaseTest):
 
@@ -1242,6 +1393,8 @@ class IntegerNumberTest(NumberTest):
 class Intable:
     def __init__(self, num):
         self._num = num
+    def __index__(self):
+        return self._num
     def __int__(self):
         return self._num
     def __sub__(self, other):
@@ -1361,12 +1514,68 @@ class FPTest(NumberTest):
             if a.itemsize==1:
                 self.assertEqual(a, b)
             else:
-                # On alphas treating the byte swapped bit patters as
-                # floats/doubles results in floating point exceptions
+                # On alphas treating the byte swapped bit patterns as
+                # floats/doubles results in floating-point exceptions
                 # => compare the 8bit string values instead
                 self.assertNotEqual(a.tobytes(), b.tobytes())
             b.byteswap()
             self.assertEqual(a, b)
+
+class CFPTest(NumberTest):
+    example = [-42j, 0, 42+1j, 1e5j, -1e10]
+    outside = 23
+
+    def assertEntryEqual(self, entry1, entry2):
+        self.assertAlmostEqual(entry1, entry2)
+
+    def test_cmp(self):
+        a = array.array(self.typecode, self.example)
+        self.assertIs(a == 42, False)
+        self.assertIs(a != 42, True)
+
+        self.assertIs(a == a, True)
+        self.assertIs(a != a, False)
+        self.assertIs(a < a, False)
+        self.assertIs(a <= a, True)
+        self.assertIs(a > a, False)
+        self.assertIs(a >= a, True)
+
+        self.assertIs(a == 2*a, False)
+        self.assertIs(a != 2*a, True)
+        self.assertIs(a < 2*a, True)
+        self.assertIs(a <= 2*a, True)
+        self.assertIs(a > 2*a, False)
+        self.assertIs(a >= 2*a, False)
+
+    def test_nan(self):
+        a = array.array(self.typecode, [float('nan')])
+        b = array.array(self.typecode, [float('nan')])
+        self.assertIs(a != b, True)
+        self.assertIs(a == b, False)
+
+    def test_byteswap(self):
+        a = array.array(self.typecode, self.example)
+        self.assertRaises(TypeError, a.byteswap, 42)
+        if a.itemsize in (1, 2, 4, 8, 16):
+            b = array.array(self.typecode, self.example)
+            b.byteswap()
+            if a.itemsize == 1:
+                self.assertEqual(a, b)
+            else:
+                # On alphas treating the byte swapped bit patterns as
+                # floats/doubles results in floating-point exceptions
+                # => compare the 8bit string values instead
+                self.assertNotEqual(a.tobytes(), b.tobytes())
+            b.byteswap()
+            self.assertEqual(a, b)
+
+
+class HalfFloatTest(FPTest, unittest.TestCase):
+    example = [-42.0, 0, 42, 1e2, -1e4]
+    smallerexample = [-42.0, 0, 42, 1e2, -2e4]
+    biggerexample = [-42.0, 0, 42, 1e2, 1e4]
+    typecode = 'e'
+    minitemsize = 2
 
 class FloatTest(FPTest, unittest.TestCase):
     typecode = 'f'
@@ -1392,6 +1601,202 @@ class DoubleTest(FPTest, unittest.TestCase):
             pass
         else:
             self.fail("Array of size > maxsize created - MemoryError expected")
+
+
+class ComplexFloatTest(CFPTest, unittest.TestCase):
+    typecode = 'Zf'
+    minitemsize = 8
+
+class ComplexDoubleTest(CFPTest, unittest.TestCase):
+    typecode = 'Zd'
+    minitemsize = 16
+
+
+class LargeArrayTest(unittest.TestCase):
+    typecode = 'b'
+
+    def example(self, size):
+        # We assess a base memuse of <=2.125 for constructing this array
+        base = array.array(self.typecode, [0, 1, 2, 3, 4, 5, 6, 7]) * (size // 8)
+        base += array.array(self.typecode, [99]*(size % 8) + [8, 9, 10, 11])
+        return base
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_example_data(self, size):
+        example = self.example(size)
+        self.assertEqual(len(example), size+4)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_access(self, size):
+        example = self.example(size)
+        self.assertEqual(example[0], 0)
+        self.assertEqual(example[-(size+4)], 0)
+        self.assertEqual(example[size], 8)
+        self.assertEqual(example[-4], 8)
+        self.assertEqual(example[size+3], 11)
+        self.assertEqual(example[-1], 11)
+
+    @support.bigmemtest(_2G, memuse=2.125+1)
+    def test_slice(self, size):
+        example = self.example(size)
+        self.assertEqual(list(example[:4]), [0, 1, 2, 3])
+        self.assertEqual(list(example[-4:]), [8, 9, 10, 11])
+        part = example[1:-1]
+        self.assertEqual(len(part), size+2)
+        self.assertEqual(part[0], 1)
+        self.assertEqual(part[-1], 10)
+        del part
+        part = example[::2]
+        self.assertEqual(len(part), (size+5)//2)
+        self.assertEqual(list(part[:4]), [0, 2, 4, 6])
+        if size % 2:
+            self.assertEqual(list(part[-2:]), [9, 11])
+        else:
+            self.assertEqual(list(part[-2:]), [8, 10])
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_count(self, size):
+        example = self.example(size)
+        self.assertEqual(example.count(0), size//8)
+        self.assertEqual(example.count(11), 1)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_append(self, size):
+        example = self.example(size)
+        example.append(12)
+        self.assertEqual(example[-1], 12)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_extend(self, size):
+        example = self.example(size)
+        example.extend(iter([12, 13, 14, 15]))
+        self.assertEqual(len(example), size+8)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11, 12, 13, 14, 15])
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_frombytes(self, size):
+        example = self.example(size)
+        example.frombytes(b'abcd')
+        self.assertEqual(len(example), size+8)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11] + list(b'abcd'))
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_fromlist(self, size):
+        example = self.example(size)
+        example.fromlist([12, 13, 14, 15])
+        self.assertEqual(len(example), size+8)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11, 12, 13, 14, 15])
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_index(self, size):
+        example = self.example(size)
+        self.assertEqual(example.index(0), 0)
+        self.assertEqual(example.index(1), 1)
+        self.assertEqual(example.index(7), 7)
+        self.assertEqual(example.index(11), size+3)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_insert(self, size):
+        example = self.example(size)
+        example.insert(0, 12)
+        example.insert(10, 13)
+        example.insert(size+1, 14)
+        self.assertEqual(len(example), size+7)
+        self.assertEqual(example[0], 12)
+        self.assertEqual(example[10], 13)
+        self.assertEqual(example[size+1], 14)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_pop(self, size):
+        example = self.example(size)
+        self.assertEqual(example.pop(0), 0)
+        self.assertEqual(example[0], 1)
+        self.assertEqual(example.pop(size+1), 10)
+        self.assertEqual(example[size+1], 11)
+        self.assertEqual(example.pop(1), 2)
+        self.assertEqual(example[1], 3)
+        self.assertEqual(len(example), size+1)
+        self.assertEqual(example.pop(), 11)
+        self.assertEqual(len(example), size)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_remove(self, size):
+        example = self.example(size)
+        example.remove(0)
+        self.assertEqual(len(example), size+3)
+        self.assertEqual(example[0], 1)
+        example.remove(10)
+        self.assertEqual(len(example), size+2)
+        self.assertEqual(example[size], 9)
+        self.assertEqual(example[size+1], 11)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_reverse(self, size):
+        example = self.example(size)
+        example.reverse()
+        self.assertEqual(len(example), size+4)
+        self.assertEqual(example[0], 11)
+        self.assertEqual(example[3], 8)
+        self.assertEqual(example[-1], 0)
+        example.reverse()
+        self.assertEqual(len(example), size+4)
+        self.assertEqual(list(example[:4]), [0, 1, 2, 3])
+        self.assertEqual(list(example[-4:]), [8, 9, 10, 11])
+
+    # list takes about 9 bytes per element
+    @support.bigmemtest(_2G, memuse=2.125+9)
+    def test_tolist(self, size):
+        example = self.example(size)
+        ls = example.tolist()
+        self.assertEqual(len(ls), len(example))
+        self.assertEqual(ls[:8], list(example[:8]))
+        self.assertEqual(ls[-8:], list(example[-8:]))
+
+    def test_gh_128961(self):
+        a = array.array('i')
+        it = iter(a)
+        list(it)
+        it.__setstate__(0)
+        self.assertRaises(StopIteration, next, it)
+
+    # Tests for NULL pointer dereference in array.__setitem__
+    # when the index conversion mutates the array.
+    # See: https://github.com/python/cpython/issues/142555.
+
+    @subTests("dtype", ["b", "B", "h", "H", "i", "l", "q", "I", "L", "Q"])
+    def test_setitem_use_after_clear_with_int_data(self, dtype):
+        victim = array.array(dtype, list(range(64)))
+
+        class Index:
+            def __index__(self):
+                victim.clear()
+                return 0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Index())
+        self.assertEqual(len(victim), 0)
+
+    def test_setitem_use_after_shrink_with_int_data(self):
+        victim = array.array('b', [1, 2, 3])
+
+        class Index:
+            def __index__(self):
+                victim.pop()
+                victim.pop()
+                return 0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Index())
+
+    @subTests("dtype", ["f", "d"])
+    def test_setitem_use_after_clear_with_float_data(self, dtype):
+        victim = array.array(dtype, [1.0, 2.0, 3.0])
+
+        class Float:
+            def __float__(self):
+                victim.clear()
+                return 0.0
+
+        self.assertRaises(IndexError, victim.__setitem__, 1, Float())
+        self.assertEqual(len(victim), 0)
 
 
 if __name__ == "__main__":

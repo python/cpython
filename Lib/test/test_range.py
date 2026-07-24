@@ -4,6 +4,7 @@ import unittest
 import sys
 import pickle
 import itertools
+from test.support import ALWAYS_EQ
 
 # pure Python implementations (3 args only), for comparison
 def pyrange(start, stop, step):
@@ -39,7 +40,7 @@ class RangeTest(unittest.TestCase):
                 self.fail('{}: unexpected excess element {} at '
                           'position {}'.format(test_id, x, i))
             else:
-                self.fail('{}: wrong element at position {};'
+                self.fail('{}: wrong element at position {}; '
                           'expected {}, got {}'.format(test_id, i, y, x))
 
     def test_range(self):
@@ -89,6 +90,19 @@ class RangeTest(unittest.TestCase):
 
         r = range(-sys.maxsize, sys.maxsize, 2)
         self.assertEqual(len(r), sys.maxsize)
+
+    def test_range_constructor_error_messages(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                "range expected at least 1 argument, got 0"
+        ):
+            range()
+
+        with self.assertRaisesRegex(
+                TypeError,
+                "range expected at most 3 arguments, got 6"
+        ):
+            range(1, 2, 3, 4, 5, 6)
 
     def test_large_operands(self):
         x = range(10**20, 10**20+10, 3)
@@ -289,11 +303,7 @@ class RangeTest(unittest.TestCase):
         self.assertRaises(ValueError, range(1, 2**100, 2).index, 2**87)
         self.assertEqual(range(1, 2**100, 2).index(2**87+1), 2**86)
 
-        class AlwaysEqual(object):
-            def __eq__(self, other):
-                return True
-        always_equal = AlwaysEqual()
-        self.assertEqual(range(10).index(always_equal), 0)
+        self.assertEqual(range(10).index(ALWAYS_EQ), 0)
 
     def test_user_index_method(self):
         bignum = 2*sys.maxsize
@@ -344,11 +354,7 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(range(1, 2**100, 2).count(2**87), 0)
         self.assertEqual(range(1, 2**100, 2).count(2**87+1), 1)
 
-        class AlwaysEqual(object):
-            def __eq__(self, other):
-                return True
-        always_equal = AlwaysEqual()
-        self.assertEqual(range(10).count(always_equal), 10)
+        self.assertEqual(range(10).count(ALWAYS_EQ), 10)
 
         self.assertEqual(len(range(sys.maxsize, sys.maxsize+10)), 10)
 
@@ -368,26 +374,43 @@ class RangeTest(unittest.TestCase):
                                      list(r))
 
     def test_iterator_pickling(self):
-        testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
-                     (13, 21, 3), (-2, 2, 2), (2**65, 2**65+2)]
+        testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1), (13, 21, 3),
+                     (-2, 2, 2)]
+        for M in 2**31, 2**63:
+            testcases += [
+                (M-3, M-1), (4*M, 4*M+2),
+                (M-2, M-1, 2), (-M+1, -M, -2),
+                (1, 2, M-1), (-1, -2, -M),
+                (1, M-1, M-1), (-1, -M, -M),
+            ]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for t in testcases:
-                it = itorg = iter(range(*t))
-                data = list(range(*t))
+                with self.subTest(proto=proto, t=t):
+                    it = itorg = iter(range(*t))
+                    data = list(range(*t))
 
+                    d = pickle.dumps(it, proto)
+                    it = pickle.loads(d)
+                    self.assertEqual(type(itorg), type(it))
+                    self.assertEqual(list(it), data)
+
+                    it = pickle.loads(d)
+                    try:
+                        next(it)
+                    except StopIteration:
+                        continue
+                    d = pickle.dumps(it, proto)
+                    it = pickle.loads(d)
+                    self.assertEqual(list(it), data[1:])
+
+    def test_iterator_pickling_overflowing_index(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                it = iter(range(2**32 + 2))
+                it.__setstate__(2**32 + 1)  # undocumented way to advance an iterator
                 d = pickle.dumps(it, proto)
                 it = pickle.loads(d)
-                self.assertEqual(type(itorg), type(it))
-                self.assertEqual(list(it), data)
-
-                it = pickle.loads(d)
-                try:
-                    next(it)
-                except StopIteration:
-                    continue
-                d = pickle.dumps(it, proto)
-                it = pickle.loads(d)
-                self.assertEqual(list(it), data[1:])
+                self.assertEqual(next(it), 2**32 + 1)
 
     def test_exhausted_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -415,6 +438,48 @@ class RangeTest(unittest.TestCase):
             self.assertEqual(list(i), [])
             self.assertEqual(list(i2), [])
 
+    def test_iterator_unpickle_compat(self):
+        testcases = [
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(I10\nI20\nI2\ntRtRI2\nb.',
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(K\nK\x14K\x02tRtRK\x02b.',
+            b'\x80\x02c__builtin__\niter\nc__builtin__\nxrange\nK\nK\x14K\x02\x87R\x85RK\x02b.',
+            b'\x80\x03cbuiltins\niter\ncbuiltins\nrange\nK\nK\x14K\x02\x87R\x85RK\x02b.',
+            b'\x80\x04\x951\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x8c\x04iter\x93\x8c\x08builtins\x8c\x05range\x93K\nK\x14K\x02\x87R\x85RK\x02b.',
+
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(L-36893488147419103232L\nI20\nI2\ntRtRL18446744073709551623L\nb.',
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(L-36893488147419103232L\nK\x14K\x02tRtRL18446744073709551623L\nb.',
+            b'\x80\x02c__builtin__\niter\nc__builtin__\nxrange\n\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+            b'\x80\x03cbuiltins\niter\ncbuiltins\nrange\n\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+            b'\x80\x04\x95C\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x8c\x04iter\x93\x8c\x08builtins\x8c\x05range\x93\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+        ]
+        for t in testcases:
+            it = pickle.loads(t)
+            self.assertEqual(list(it), [14, 16, 18])
+
+    def test_iterator_setstate(self):
+        it = iter(range(10, 20, 2))
+        it.__setstate__(2)
+        self.assertEqual(list(it), [14, 16, 18])
+        it = reversed(range(10, 20, 2))
+        it.__setstate__(3)
+        self.assertEqual(list(it), [12, 10])
+        it = iter(range(-2**65, 20, 2))
+        it.__setstate__(2**64 + 7)
+        self.assertEqual(list(it), [14, 16, 18])
+        it = reversed(range(10, 2**65, 2))
+        it.__setstate__(2**64 - 7)
+        self.assertEqual(list(it), [12, 10])
+
+    def test_iterator_invalid_setstate(self):
+        for invalid_value in (1.0, ""):
+            ranges = (('rangeiter', range(10, 100, 2)),
+                      ('longrangeiter', range(10, 2**65, 2)))
+            for rng_name, rng in ranges:
+                with self.subTest(invalid_value=invalid_value, range=rng_name):
+                    it = iter(rng)
+                    with self.assertRaises(TypeError):
+                        it.__setstate__(invalid_value)
+
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"
         # because the range validation step was eating the exception
@@ -429,9 +494,7 @@ class RangeTest(unittest.TestCase):
         self.assertIn(True, range(3))
         self.assertIn(1+0j, range(3))
 
-        class C1:
-            def __eq__(self, other): return True
-        self.assertIn(C1(), range(3))
+        self.assertIn(ALWAYS_EQ, range(3))
 
         # Objects are never coerced into other types for comparison.
         class C2:
@@ -489,6 +552,7 @@ class RangeTest(unittest.TestCase):
                        for start in limits
                        for end in limits
                        for step in (-2**63, -2**31, -2, -1, 1, 2)]
+        test_ranges += [(-2**63, 2**63-2, 1)] # regression test for gh-100810
 
         for start, end, step in test_ranges:
             iter1 = range(start, end, step)
@@ -644,11 +708,17 @@ class RangeTest(unittest.TestCase):
         self.assert_attrs(range(0, 10, 3), 0, 10, 3)
         self.assert_attrs(range(10, 0, -1), 10, 0, -1)
         self.assert_attrs(range(10, 0, -3), 10, 0, -3)
+        self.assert_attrs(range(True), 0, 1, 1)
+        self.assert_attrs(range(False, True), 0, 1, 1)
+        self.assert_attrs(range(False, True, True), 0, 1, 1)
 
     def assert_attrs(self, rangeobj, start, stop, step):
         self.assertEqual(rangeobj.start, start)
         self.assertEqual(rangeobj.stop, stop)
         self.assertEqual(rangeobj.step, step)
+        self.assertIs(type(rangeobj.start), int)
+        self.assertIs(type(rangeobj.stop), int)
+        self.assertIs(type(rangeobj.step), int)
 
         with self.assertRaises(AttributeError):
             rangeobj.start = 0
