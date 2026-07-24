@@ -3079,7 +3079,7 @@ typedef struct {
     PyObject *binop;
     PyObject *initial;
     itertools_state *state;
-    int running;
+    uint8_t running;
 } accumulateobject;
 
 #define accumulateobject_CAST(op)   ((accumulateobject *)(op))

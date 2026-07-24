@@ -1,6 +1,2 @@
 Fix :func:`itertools.accumulate` silently corrupting its running total
-when the source iterable (or the ``func`` callable) re-enters the same
-:func:`!accumulate` iterator via a nested call to :func:`!next`. It now
-raises :exc:`RuntimeError` on re-entry instead of producing wrong,
-silently-dropped values, matching the existing behavior of
-:func:`itertools.tee`.
+on reentrancy; it now raises :exc:`RuntimeError` instead.
