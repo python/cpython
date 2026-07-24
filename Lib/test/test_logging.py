@@ -2138,6 +2138,45 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         self.addCleanup(os_helper.unlink, self.address)
         SysLogHandlerTest.setUp(self)
 
+    def test_bytes_address(self):
+        # The Unix socket address can also be specified as bytes.
+        if self.server_exception:
+            self.skipTest(self.server_exception)
+        hdlr = logging.handlers.SysLogHandler(os.fsencode(self.address))
+        self.addCleanup(hdlr.close)
+        self.assertTrue(hdlr.unixsocket)
+        logger = logging.getLogger("slh-bytes")
+        logger.addHandler(hdlr)
+        self.addCleanup(logger.removeHandler, hdlr)
+        logger.error("sp\xe4m")
+        self.handled.wait(support.LONG_TIMEOUT)
+        self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
+
+@unittest.skipUnless(sys.platform in ('linux', 'android'),
+                     'Linux specific test')
+class AbstractNamespaceSysLogHandlerTest(BaseTest):
+
+    """Test for SysLogHandler with a socket in the abstract namespace."""
+
+    def check(self, address):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+        sock.bind(address)
+        sock.settimeout(support.LONG_TIMEOUT)
+        hdlr = logging.handlers.SysLogHandler(address)
+        self.addCleanup(hdlr.close)
+        self.assertTrue(hdlr.unixsocket)
+        hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertEqual(sock.recv(1024), b'<12>sp\xc3\xa4m\x00')
+
+    def test_str_address(self):
+        # A str address is encoded with the filesystem encoding.
+        self.check('\0' + os_helper.TESTFN)
+
+    def test_bytes_address(self):
+        # The name is an arbitrary byte sequence, it need not be decodable.
+        self.check(b'\0test_logging_%d_\xff\xfe' % os.getpid())
+
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
