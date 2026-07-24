@@ -3945,15 +3945,40 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
                 frame.filename, "x" * 1024 + "(len=1503)"
             )
 
-    def test_large_linetable_keeps_line_numbers(self):
-        """A linetable larger than the old 4096-byte cap keeps line numbers."""
+    def test_long_task_name_truncated(self):
+        """An asyncio task name longer than 255 chars is truncated with a
+        marker instead of failing the whole sample."""
         script_body = """\
-            body = "\\n".join("    x%d = %d" % (i, i) for i in range(4000))
+            import asyncio
+
+            async def worker():
+                sock.sendall(b"ready")
+                await asyncio.sleep(10_000)
+
+            async def main():
+                await asyncio.create_task(worker(), name="T" * 300)
+
+            asyncio.run(main())
+            """
+        with self._running_target(script_body) as (p, client_socket):
+            _wait_for_signal(client_socket, b"ready")
+            names = [
+                task.task_name
+                for awaited_info in get_all_awaited_by(p.pid)
+                for task in awaited_info.awaited_by
+            ]
+            self.assertIn("T" * 255 + "(len=300)", names)
+
+    def test_oversized_linetable_degrades_to_no_location(self):
+        """A linetable over MAX_LINETABLE_SIZE degrades to a frame without
+        location instead of failing the whole sample."""
+        script_body = """\
+            body = "    x = 1\\n" * 16_000
             src = ("def big():\\n" + body + "\\n"
                    "    sock.sendall(b'ready')\\n"
                    "    time.sleep(10_000)\\n")
             ns = {"sock": sock, "time": time}
-            exec(src, ns)
+            exec(compile(src, "big_linetable.py", "exec"), ns)
             sock.sendall(b"lt:%d\\n" % len(ns["big"].__code__.co_linetable))
             ns["big"]()
             """
@@ -3962,15 +3987,13 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
             linetable_size = int(
                 buffer.partition(b"lt:")[2].partition(b"\n")[0]
             )
-            self.assertGreater(linetable_size, 4096)
+            self.assertGreater(linetable_size, 64 * 1024)
 
             frame = self._sample_until_frame(
                 p.pid, lambda f: f.funcname == "big"
             )
-            self.assertIsNotNone(
-                frame.location, "line info degraded for large linetable"
-            )
-            self.assertGreater(frame.location.lineno, 4000)
+            self.assertIsNone(frame.location)
+            self.assertEqual(frame.filename, "big_linetable.py")
 
     @unittest.skipIf(
         sys.platform == "win32",
