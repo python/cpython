@@ -140,21 +140,18 @@ class TaskGroup:
         assert not self._tasks
 
         if self._base_error is not None:
-            if isinstance(self._base_error, GeneratorExit):
-                # Unlike SystemExit/KeyboardInterrupt, GeneratorExit can
-                # only reach here via the "async with" body itself being
-                # closed (e.g. an enclosing async generator's aclose()),
-                # not via a child task, so any collected task errors are
-                # about to be discarded silently.  Report them instead of
-                # losing them.  See gh-135736.
-                for suppressed_exc in self._errors:
-                    self._loop.call_exception_handler({
-                        'message': 'TaskGroup task exception was not '
-                                   'propagated because the TaskGroup body '
-                                   'is being closed via GeneratorExit',
-                        'exception': suppressed_exc,
-                        'task_group': self,
-                    })
+            # self._base_error (e.g. SystemExit, KeyboardInterrupt, or
+            # GeneratorExit) is about to propagate out of this method,
+            # which discards any other collected task errors silently.
+            # Report them instead of losing them.  See gh-135736.
+            for suppressed_exc in self._errors:
+                self._loop.call_exception_handler({
+                    'message': 'TaskGroup task exception was not '
+                               'propagated because the TaskGroup body '
+                               'is being closed with a BaseException',
+                    'exception': suppressed_exc,
+                    'task_group': self,
+                })
             try:
                 raise self._base_error
             finally:
