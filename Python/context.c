@@ -295,16 +295,29 @@ PyContext_Exit(PyObject *octx)
 }
 
 
-PyObject *
-PyContextVar_New(const char *name, PyObject *def)
+static PyObject *
+contextvar_new_from_utf8(const char *name, PyObject *def,
+                         int thread_inheritable)
 {
     PyObject *pyname = PyUnicode_FromString(name);
     if (pyname == NULL) {
         return NULL;
     }
-    PyContextVar *var = contextvar_new(pyname, def, 0);
+    PyContextVar *var = contextvar_new(pyname, def, thread_inheritable);
     Py_DECREF(pyname);
     return (PyObject *)var;
+}
+
+PyObject *
+PyContextVar_New(const char *name, PyObject *def)
+{
+    return contextvar_new_from_utf8(name, def, 0);
+}
+
+PyObject *
+PyContextVar_NewThreadInheritable(const char *name, PyObject *def)
+{
+    return contextvar_new_from_utf8(name, def, 1);
 }
 
 

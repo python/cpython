@@ -157,6 +157,14 @@ Context variable functions:
    a default value for the context variable, or ``NULL`` for no default.
    If an error has occurred, this function returns ``NULL``.
 
+.. c:function:: PyObject *PyContextVar_NewThreadInheritable(const char *name, PyObject *def)
+
+   Create a new ``ContextVar`` object whose bindings are inherited by new
+   :class:`threading.Thread` instances.  The parameters and return value are
+   the same as for :c:func:`PyContextVar_New`.
+
+   .. versionadded:: 3.16
+
 .. c:function:: int PyContextVar_Get(PyObject *var, PyObject *default_value, PyObject **value)
 
    Get the value of a context variable.  Returns ``-1`` if an error has
