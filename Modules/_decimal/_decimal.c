@@ -1423,8 +1423,8 @@ context_clear(PyDecContextObject *self)
        flags stored in the context object, these references need
        to be cleared when the context object is deallocated
        because traps and flags can survive. See gh-146011. */
-    PyDecSignalDictObject *traps = _PyDecSignalDictObject_CAST(self->traps);
-    PyDecSignalDictObject *flags = _PyDecSignalDictObject_CAST(self->flags);
+    PyDecSignalDictObject *traps = (PyDecSignalDictObject *)self->traps;
+    PyDecSignalDictObject *flags = (PyDecSignalDictObject *)self->flags;
 
     if (traps != NULL) {
         traps->flags = NULL;
