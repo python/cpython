@@ -36,6 +36,7 @@ noted otherwise, all return values are floats.
 :func:`fmax(x, y) <fmax>`                             Maximum of two floating-point values
 :func:`fmin(x, y) <fmin>`                             Minimum of two floating-point values
 :func:`fmod(x, y) <fmod>`                             Remainder of division ``x / y``
+:func:`lerp(a, b, t) <lerp>`                          Linear interpolation between *a* and *b* using parameter *t*
 :func:`modf(x) <modf>`                                Fractional and integer parts of *x*
 :func:`remainder(x, y) <remainder>`                   Remainder of *x* with respect to *y*
 :func:`trunc(x) <trunc>`                              Integer part of *x*
