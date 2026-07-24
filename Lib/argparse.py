@@ -86,7 +86,6 @@ __all__ = [
 ]
 
 
-import io as _io
 import os as _os
 import re as _re
 import sys as _sys
@@ -2890,8 +2889,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             return
         if file is None:
             file = _sys.stderr
-        elif not isinstance(file, _io.IOBase):
-            raise ValueError(f"invalid file object {file}")
         if file is not None:
             file.write(message)
 

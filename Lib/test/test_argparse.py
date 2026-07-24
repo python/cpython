@@ -85,7 +85,7 @@ class StdStreamTest(unittest.TestCase):
             for invalid_f in ("invalid file", "", 0):
                 with (
                     self.subTest(func=func, invalid_f=invalid_f),
-                    self.assertRaises(ValueError),
+                    self.assertRaises(AttributeError),
                 ):
                     func(file=invalid_f)
 
