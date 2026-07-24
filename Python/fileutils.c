@@ -1124,11 +1124,6 @@ _Py_attribute_data_to_stat(FILE_STANDARD_INFO* standard_info, ULONG reparse_tag,
         file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
         result->st_ino_high = file_id.st_ino_high;
-    } else {
-        // use these fallback values for systems where it's not possible
-        // to obtain VolumeSerialNumber / FileId (e.g. Windows UWP)
-        result->st_dev = 1;
-        result->st_ino = basic_info->CreationTime.QuadPart;
     }
 
     result->st_file_attributes = basic_info->FileAttributes;
