@@ -1653,25 +1653,25 @@ typedef struct {
 Py_LOCAL_INLINE(void)
 sortslice_copy(sortslice *s1, Py_ssize_t i, sortslice *s2, Py_ssize_t j)
 {
-    s1->keys[i] = s2->keys[j];
+    FT_ATOMIC_STORE_PTR_RELEASE(s1->keys[i], s2->keys[j]);
     if (s1->values != NULL)
-        s1->values[i] = s2->values[j];
+        FT_ATOMIC_STORE_PTR_RELEASE(s1->values[i], s2->values[j]);
 }
 
 Py_LOCAL_INLINE(void)
 sortslice_copy_incr(sortslice *dst, sortslice *src)
 {
-    *dst->keys++ = *src->keys++;
+    FT_ATOMIC_STORE_PTR_RELEASE(*dst->keys++, *src->keys++);
     if (dst->values != NULL)
-        *dst->values++ = *src->values++;
+        FT_ATOMIC_STORE_PTR_RELEASE(*dst->values++, *src->values++);
 }
 
 Py_LOCAL_INLINE(void)
 sortslice_copy_decr(sortslice *dst, sortslice *src)
 {
-    *dst->keys-- = *src->keys--;
+    FT_ATOMIC_STORE_PTR_RELEASE(*dst->keys--, *src->keys--);
     if (dst->values != NULL)
-        *dst->values-- = *src->values--;
+        FT_ATOMIC_STORE_PTR_RELEASE(*dst->values--, *src->values--);
 }
 
 
@@ -1855,22 +1855,22 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
         for (M = ok - 1; M >= 0; --M) {
             k = ISLT(pivot, a[M]);
             if (k < 0) {
-                a[M + 1] = pivot;
+                FT_ATOMIC_STORE_PTR_RELEASE(a[M + 1], pivot);
                 if (has_values)
-                    v[M + 1] = vpivot;
+                    FT_ATOMIC_STORE_PTR_RELEASE(v[M + 1], vpivot);
                 goto fail;
             }
             else if (k) {
-                a[M + 1] = a[M];
+                FT_ATOMIC_STORE_PTR_RELEASE(a[M + 1], a[M]);
                 if (has_values)
-                    v[M + 1] = v[M];
+                    FT_ATOMIC_STORE_PTR_RELEASE(v[M + 1], v[M]);
             }
             else
                 break;
         }
-        a[M + 1] = pivot;
+        FT_ATOMIC_STORE_PTR_RELEASE(a[M + 1], pivot);
         if (has_values)
-            v[M + 1] = vpivot;
+            FT_ATOMIC_STORE_PTR_RELEASE(v[M + 1], vpivot);
     }
 #else // binary insertion sort
     Py_ssize_t L, R;
@@ -1915,13 +1915,13 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
            usually moving many slots. Years later: under Visual Studio 2022,
            memmove seems just slightly slower than doing it "by hand". */
         for (M = ok; M > L; --M)
-            a[M] = a[M - 1];
-        a[L] = pivot;
+            FT_ATOMIC_STORE_PTR_RELEASE(a[M], a[M - 1]);
+        FT_ATOMIC_STORE_PTR_RELEASE(a[L], pivot);
         if (has_values) {
             pivot = v[ok];
             for (M = ok; M > L; --M)
-                v[M] = v[M - 1];
-            v[L] = pivot;
+                FT_ATOMIC_STORE_PTR_RELEASE(v[M], v[M - 1]);
+            FT_ATOMIC_STORE_PTR_RELEASE(v[L], pivot);
         }
     }
 #endif // pick binary or regular insertion sort
