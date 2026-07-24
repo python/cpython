@@ -2878,7 +2878,7 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertEqual(m2.suboffsets, ())
 
     def test_memoryview_cast_f_contiguous_ND_1D(self):
-        nd = ndarray(list(range(12)),shape=[3, 4], format='B', flags=ND_FORTRAN)
+        nd = ndarray(list(range(12)), shape=[3, 4], format='B', flags=ND_FORTRAN)
         m = memoryview(nd)
         self.assertTrue(m.f_contiguous)
         self.assertTrue(m.contiguous)
