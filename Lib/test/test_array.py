@@ -239,6 +239,28 @@ class ArrayReconstructorTest(unittest.TestCase):
                 self.assertEqual(a, b,
                     msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
 
+    def test_float16_endianness(self):
+        # gh-issue: the slow-path decoder for IEEE_754_FLOAT16_LE/BE
+        # compared mformat_code against the 32-bit float constant
+        # (IEEE_754_FLOAT_LE) instead of the float16 one, so it always
+        # decoded as big-endian regardless of what was requested.
+        #
+        # A real 'e'-typecode array only exercises the slow (converting)
+        # path when the requested mformat disagrees with the *native*
+        # float16 format, so which of LE/BE actually exercises the buggy
+        # branch depends on the test machine's endianness, and the other
+        # direction happens to come out "correct by coincidence" because
+        # the bug unconditionally decodes as big-endian. Using a
+        # typecode ('d') whose native mformat can never match
+        # IEEE_754_FLOAT16_LE/BE forces the slow path deterministically
+        # on any machine, so both directions are actually exercised.
+        le_bytes = struct.pack('<e', 1.0)
+        be_bytes = struct.pack('>e', 1.0)
+        b_le = array_reconstructor(array.array, 'd', IEEE_754_FLOAT16_LE, le_bytes)
+        b_be = array_reconstructor(array.array, 'd', IEEE_754_FLOAT16_BE, be_bytes)
+        self.assertEqual(b_le.tolist(), [1.0])
+        self.assertEqual(b_be.tolist(), [1.0])
+
     def test_unicode(self):
         teststr = "Bonne Journ\xe9e \U0002030a\U00020347"
         testcases = (
