@@ -4153,7 +4153,7 @@ class CContextFlags(ContextFlags, unittest.TestCase):
         ctx = Context(prec=7)
         mapping = ctx.flags
         del ctx
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'invalid signal dict'):
             repr(mapping)
 
 class PyContextFlags(ContextFlags, unittest.TestCase):
