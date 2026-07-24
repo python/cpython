@@ -776,7 +776,35 @@ class HelpFormatter(object):
         # The textwrap module is used only for formatting help.
         # Delay its import for speeding up the common usage of argparse.
         import textwrap
-        return textwrap.wrap(text, width)
+        decolored = self._decolor(text)
+        if decolored == text:
+            return textwrap.wrap(text, width)
+
+        # gh-142035: colors inflate textwrap's length counts, so wrap
+        # the decolored text and re-apply colors per word; if textwrap
+        # split a word, keep the plain lines (colors can't be mapped).
+        plain = self._whitespace_matcher.sub(' ', decolored).strip()
+        if not plain:
+            # nothing visible to wrap (e.g. an empty interpolated value)
+            return [text]
+        plain_lines = textwrap.wrap(plain, width)
+        plain_words = plain.split()
+        colored_words = text.split()
+        # Drop escape-only tokens (e.g. an empty interpolated value).
+        if len(colored_words) != len(plain_words):
+            colored_words = [
+                word for word in colored_words if self._decolor(word)
+            ]
+        colored_lines = []
+        start = 0
+        for plain_line in plain_lines:
+            plain_line_words = plain_line.split()
+            end = start + len(plain_line_words)
+            if plain_words[start:end] != plain_line_words:
+                return plain_lines
+            colored_lines.append(' '.join(colored_words[start:end]))
+            start = end
+        return colored_lines
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
