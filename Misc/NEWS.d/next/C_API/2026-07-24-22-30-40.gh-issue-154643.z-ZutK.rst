@@ -1,0 +1,2 @@
+In ``pyport.h`` and ``pyatomic.h`` don't use ``__STDC_VERSION__`` when it is
+not defined, fixing build errors for C++ code built with ``-Werror=undef``.
