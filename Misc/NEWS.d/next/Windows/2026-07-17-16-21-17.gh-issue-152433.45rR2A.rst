@@ -1,0 +1,2 @@
+Modernize fileutils removing GetFileInformationByHandle API calls and allow
+build for Universal Windows Platform.
