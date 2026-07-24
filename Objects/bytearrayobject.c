@@ -1555,6 +1555,8 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         if (to_take == -1 && PyErr_Occurred()) {
             return NULL;
         }
+        // n.__index__() may have resized self; use the current size.
+        size = Py_SIZE(self);
         if (to_take < 0) {
             to_take += size;
         }
