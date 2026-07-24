@@ -2226,6 +2226,46 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
         self.assertRaises(BufferError, ba.hex, S(b':'))
 
+    def test_no_init_called(self):
+        # A bytearray created without calling bytearray.__init__
+        # should not crash the interpreter (see gh-153419).
+        def bytearray_new():
+            return bytearray.__new__(bytearray)
+
+        bytearray_new().insert(0, 1)
+        bytearray_new().extend(b"x")
+        bytearray_new().extend([1, 2, 3])
+        bytearray_new().resize(4)
+        bytearray_new().__init__(5)
+        bytearray_new().__init__(b"xyz")
+        bytearray_new().take_bytes()
+        bytearray_new().take_bytes(0)
+
+        a = bytearray_new()
+        a.append(1)
+
+        a = bytearray_new()
+        a += b"x"
+
+        a = bytearray_new()
+        a[:] = b"xyz"
+
+    def test_reinit_length(self):
+        # There is a shortcut taken when resizing, where alloc/2 < newsize.
+        # In this case, the existing buffer is reused, rather than reset.
+        # If this happens when newsize == 0 and alloc == 1, then various
+        # code assumptions can be violated.  This test should catch those
+        # in debug builds. (see gh-153419)
+        a = bytearray(1)
+        a.__init__()
+        self.assertEqual(a, b"")
+
+    def test_reinit_with_view(self):
+        a = bytearray()
+        with memoryview(a):
+            self.assertRaises(BufferError, a.__init__, "x", "ascii")
+        self.assertEqual(a, b"")
+
 
 class AssortedBytesTest(unittest.TestCase):
     #
