@@ -1569,6 +1569,22 @@ class CFPTest(NumberTest):
             b.byteswap()
             self.assertEqual(a, b)
 
+    def test_byteswap_single_call_result(self):
+        # A single byteswap() must swap each item's two halves (real,
+        # imag) independently. test_byteswap above only checks that
+        # byteswap() twice round-trips to the original, which passes
+        # even if a single call scrambles multi-item arrays.
+        a = array.array(self.typecode, self.example)
+        original = a.tobytes()
+        a.byteswap()
+        itemsize = a.itemsize
+        half = itemsize // 2
+        expected = bytearray()
+        for i in range(0, len(original), itemsize):
+            item = original[i:i + itemsize]
+            expected += item[half - 1::-1] + item[itemsize - 1:half - 1:-1]
+        self.assertEqual(a.tobytes(), bytes(expected))
+
 
 class HalfFloatTest(FPTest, unittest.TestCase):
     example = [-42.0, 0, 42, 1e2, -1e4]
@@ -1610,20 +1626,6 @@ class ComplexFloatTest(CFPTest, unittest.TestCase):
 class ComplexDoubleTest(CFPTest, unittest.TestCase):
     typecode = 'Zd'
     minitemsize = 16
-
-    def test_byteswap_single_call_result(self):
-        # A single byteswap() must swap each 16-byte item's two 8-byte
-        # halves (real, imag) independently. The pre-existing test only
-        # checked that byteswap() twice round-trips to the original,
-        # which passes even if a single call scrambles multi-item arrays.
-        a = array.array(self.typecode, [1+2j, 3+4j, 5+6j])
-        original = a.tobytes()
-        a.byteswap()
-        expected = bytearray()
-        for i in range(0, len(original), 16):
-            item = original[i:i + 16]
-            expected += item[7::-1] + item[15:7:-1]
-        self.assertEqual(a.tobytes(), bytes(expected))
 
 
 class LargeArrayTest(unittest.TestCase):
