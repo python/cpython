@@ -1332,7 +1332,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     }
     else {
         PyErr_Format(PyExc_AttributeError,
-                    "'%.100s' object has no attribute '%U'",
+                    "'%s' object has no attribute %R",
                     tp->tp_name, name);
     }
 
@@ -1379,7 +1379,7 @@ _PyObject_GetAttrStackRef(PyObject *v, PyObject *name)
     }
     else {
         PyErr_Format(PyExc_AttributeError,
-                    "'%.100s' object has no attribute '%U'",
+                    "'%s' object has no attribute %R",
                     tp->tp_name, name);
     }
 
@@ -1550,14 +1550,14 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     _PyObject_ASSERT(name, Py_REFCNT(name) >= 1);
     if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
         PyErr_Format(PyExc_TypeError,
-                     "'%.100s' object has no attributes "
+                     "'%s' object has no attributes "
                      "(%s .%U)",
                      tp->tp_name,
                      value==NULL ? "del" : "assign to",
                      name);
     else
         PyErr_Format(PyExc_TypeError,
-                     "'%.100s' object has only read-only attributes "
+                     "'%s' object has only read-only attributes "
                      "(%s .%U)",
                      tp->tp_name,
                      value==NULL ? "del" : "assign to",
@@ -1739,7 +1739,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
 
     PyErr_Format(PyExc_AttributeError,
-                 "'%.100s' object has no attribute '%U'",
+                 "'%s' object has no attribute %R",
                  tp->tp_name, name);
 
     _PyObject_SetAttributeErrorContext(obj, name);
@@ -1873,7 +1873,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
     }
 
     PyErr_Format(PyExc_AttributeError,
-                 "'%.100s' object has no attribute '%U'",
+                 "'%s' object has no attribute %R",
                  tp->tp_name, name);
 
     _PyObject_SetAttributeErrorContext(obj, name);
@@ -2010,7 +2010,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 
     if (!suppress) {
         PyErr_Format(PyExc_AttributeError,
-                     "'%.100s' object has no attribute '%U'",
+                     "'%s' object has no attribute %R",
                      tp->tp_name, name);
 
         _PyObject_SetAttributeErrorContext(obj, name);
@@ -2085,13 +2085,13 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             if (descr == NULL) {
                 if (tp->tp_setattro == PyObject_GenericSetAttr) {
                     PyErr_Format(PyExc_AttributeError,
-                                "'%.100s' object has no attribute '%U' and no "
+                                "'%s' object has no attribute %R and no "
                                 "__dict__ for setting new attributes",
                                 tp->tp_name, name);
                 }
                 else {
                     PyErr_Format(PyExc_AttributeError,
-                                "'%.100s' object has no attribute '%U'",
+                                "'%s' object has no attribute %R",
                                 tp->tp_name, name);
                 }
                 _PyObject_SetAttributeErrorContext(obj, name);
@@ -2118,7 +2118,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
   error_check:
     if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
         PyErr_Format(PyExc_AttributeError,
-                        "'%.100s' object has no attribute '%U'",
+                        "'%s' object has no attribute %R",
                         tp->tp_name, name);
         _PyObject_SetAttributeErrorContext(obj, name);
     }
