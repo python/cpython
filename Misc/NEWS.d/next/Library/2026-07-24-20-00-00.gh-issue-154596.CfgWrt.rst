@@ -1,0 +1,3 @@
+Fix :meth:`configparser.ConfigParser.write` outputting unnamed-section
+items after the ``[DEFAULT]`` header, causing them to be absorbed into
+DEFAULT on re-read.  Patch by tonghuaroot.
