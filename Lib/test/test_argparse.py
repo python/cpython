@@ -7612,7 +7612,11 @@ class TestColorized(TestCase):
                     env["COLUMNS"] = columns
                     colored = build(color=True, path=path).format_help()
                     plain = build(color=False, path=path).format_help()
-                    self.assertIn("\x1b[", colored)
+                    self.assertIn(
+                        f"{self.theme.interpolated_value}auto"
+                        f"{self.theme.reset}",
+                        colored,
+                    )
                     self.assertEqual(_colorize.decolor(colored), plain)
 
     def test_argparse_color_preserved_when_wrapping_between_words(self):
