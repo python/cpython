@@ -418,3 +418,15 @@ def clean_contents(context):
     if LOCAL_SETUP.exists():
         if LOCAL_SETUP.read_bytes() == LOCAL_SETUP_MARKER:
             log("🧹", f"Deleting generated {LOCAL_SETUP} ...")
+
+
+@subdir(BUILD_DIR)
+def pythoninfo_build_python(context, working_dir):
+    """Display build info of the build Python."""
+    call(["make", "pythoninfo"], context=context)
+
+
+@subdir(lambda context: CROSS_BUILD_DIR / host_triple(context))
+def pythoninfo_wasi_python(context, working_dir):
+    """Display build info of the host/WASI Python."""
+    call(["make", "pythoninfo"], context=context)

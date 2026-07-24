@@ -188,7 +188,7 @@ find_state_ternary(PyObject *left, PyObject *right, PyObject *modulus)
  *    sizeof(size_t) == sizeof(mpd_uint_t) == sizeof(mpd_ssize_t)
  */
 
-#ifdef TEST_COVERAGE
+#ifdef Py_DEBUG
   #undef Py_LOCAL_INLINE
   #define Py_LOCAL_INLINE Py_LOCAL
 #endif
@@ -6993,7 +6993,7 @@ _decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
                             PyObject *x)
 /*[clinic end generated code: output=f8a7142d47ad4ff3 input=388e66ca82733516]*/
 {
-    return _decimal_Context__apply(context, x);
+    return _decimal_Context__apply_impl(context, cls, x);
 }
 #endif
 

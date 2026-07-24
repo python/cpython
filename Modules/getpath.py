@@ -129,8 +129,7 @@
 # checked by looking for the BUILDDIR_TXT file, which contains the
 # relative path to the platlib dir. The executable_dir value is
 # derived from joining the VPATH preprocessor variable to the
-# directory containing pybuilddir.txt. If it is not found, the
-# BUILD_LANDMARK file is found, which is part of the source tree.
+# directory containing pybuilddir.txt.
 # prefix is then found by searching up for a file that should only
 # exist in the source tree, and the stdlib dir is set to prefix/Lib.
 
@@ -177,7 +176,6 @@ ABI_THREAD = ABI_THREAD or ''
 
 if os_name == 'posix' or os_name == 'darwin':
     BUILDDIR_TXT = 'pybuilddir.txt'
-    BUILD_LANDMARK = 'Modules/Setup.local'
     DEFAULT_PROGRAM_NAME = f'python{VERSION_MAJOR}'
     STDLIB_SUBDIR = f'{platlibdir}/python{VERSION_MAJOR}.{VERSION_MINOR}{ABI_THREAD}'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}/os.py', f'{STDLIB_SUBDIR}/os.pyc']
@@ -190,7 +188,6 @@ if os_name == 'posix' or os_name == 'darwin':
 
 elif os_name == 'nt':
     BUILDDIR_TXT = 'pybuilddir.txt'
-    BUILD_LANDMARK = f'{VPATH}\\Modules\\Setup.local'
     DEFAULT_PROGRAM_NAME = f'python'
     STDLIB_SUBDIR = 'Lib'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}\\os.py', f'{STDLIB_SUBDIR}\\os.pyc']
@@ -513,13 +510,9 @@ if ((not home_was_set and real_executable_dir and not py_setpath)
         platstdlib_dir = real_executable_dir
         build_prefix = joinpath(real_executable_dir, VPATH)
     except (FileNotFoundError, PermissionError):
-        if isfile(joinpath(real_executable_dir, BUILD_LANDMARK)):
-            build_prefix = joinpath(real_executable_dir, VPATH)
-            if os_name == 'nt':
-                # QUIRK: Windows builds need platstdlib_dir to be the executable
-                # dir. Normally the builddir marker handles this, but in this
-                # case we need to correct manually.
-                platstdlib_dir = real_executable_dir
+        # We used to check for an alternate landmark here, but now we require
+        # BUILDDIR_TXT to exist. (gh-151544; CVE-2026-12003)
+        pass
 
     if build_prefix:
         if os_name == 'nt':
