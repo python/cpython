@@ -350,7 +350,7 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 import contextvars
 from _contextvars import _current_context_depth
 
-_current_context_var = contextvars.ContextVar('decimal_context')
+_current_context_var = contextvars.ContextVar.thread_inheritable('decimal_context')
 
 _context_attributes = frozenset(
     ['prec', 'Emin', 'Emax', 'capitals', 'clamp', 'rounding', 'flags', 'traps']

@@ -83,7 +83,8 @@ class _GlobalContext(_Context):
 _global_context = _GlobalContext()
 
 
-_warnings_context = _contextvars.ContextVar('warnings_context')
+_warnings_context = _contextvars.ContextVar.thread_inheritable(
+    'warnings_context')
 
 
 def _get_context():

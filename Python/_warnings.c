@@ -158,7 +158,8 @@ _PyWarnings_InitState(PyInterpreterState *interp)
     }
 
     if (st->context == NULL) {
-        st->context = PyContextVar_New("_warnings_context", NULL);
+        st->context = PyContextVar_NewThreadInheritable(
+            "_warnings_context", NULL);
         if (st->context == NULL) {
             return -1;
         }

@@ -1807,12 +1807,11 @@ class PyAsyncTests(AsyncTests, unittest.TestCase):
 
 class ThreadTests(BaseTest):
     """Verifies that the catch_warnings() context manager behaves as
-    expected when used within threads.  This requires that both the
-    context_aware_warnings flag and thread_inherit_context flags are enabled.
+    expected when used within threads.  This requires the
+    context_aware_warnings flag to be enabled.
     """
 
-    ENABLE_THREAD_TESTS = (sys.flags.context_aware_warnings and
-                           sys.flags.thread_inherit_context)
+    ENABLE_THREAD_TESTS = sys.flags.context_aware_warnings
 
     def setUp(self):
         super().setUp()

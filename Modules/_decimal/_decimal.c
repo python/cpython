@@ -7931,7 +7931,7 @@ _decimal_exec(PyObject *m)
                PyUnicode_FromString("___DECIMAL_CTX__"));
     CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_False));
 #else
-    ASSIGN_PTR(state->current_context_var, PyContextVar_New("decimal_context", NULL));
+    ASSIGN_PTR(state->current_context_var, PyContextVar_NewThreadInheritable("decimal_context", NULL));
     CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_True));
 #endif
     CHECK_INT(PyModule_AddObjectRef(m, "HAVE_THREADS", Py_True));
