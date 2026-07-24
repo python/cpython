@@ -1,0 +1,3 @@
+Fix :func:`copy.deepcopy` memo lookup using ``None`` as the miss sentinel,
+which prevented memoization of objects whose deep copy result is ``None``.
+Use a private sentinel object instead. Patch by tonghuaroot.
