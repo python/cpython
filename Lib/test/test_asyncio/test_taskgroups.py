@@ -690,11 +690,12 @@ class BaseTestTaskGroup:
         self.assertEqual(get_error_types(cm.exception), {GeneratorExit})
 
     async def test_taskgroup_20f(self):
-        # See gh-135736: a *non*-GeneratorExit base error (here MyBaseExc,
-        # standing in for SystemExit/KeyboardInterrupt) must also report a
-        # sibling task's suppressed exception via the loop's exception
-        # handler, the same as the GeneratorExit case in
-        # test_taskgroup_20c, instead of discarding it silently.
+        # Same setup as test_taskgroup_20 (a KeyboardInterrupt from the
+        # "async with" body itself, alongside a sibling task's exception),
+        # but confirms the gh-135736 fix also applies to non-GeneratorExit
+        # base errors: the sibling's exception must be reported via the
+        # loop's exception handler, the same as test_taskgroup_20c, instead
+        # of being discarded silently.
         async def crash_soon():
             await asyncio.sleep(0.1)
             1 / 0
@@ -703,7 +704,7 @@ class BaseTestTaskGroup:
             try:
                 await asyncio.sleep(10)
             finally:
-                raise MyBaseExc
+                raise KeyboardInterrupt
 
         async def runner():
             async with taskgroups.TaskGroup() as g:
@@ -714,7 +715,7 @@ class BaseTestTaskGroup:
         loop = asyncio.get_running_loop()
         loop.set_exception_handler(lambda loop, context: contexts.append(context))
 
-        with self.assertRaises(MyBaseExc):
+        with self.assertRaises(KeyboardInterrupt):
             await runner()
 
         self.assertEqual(len(contexts), 1)
