@@ -87,12 +87,17 @@ __all__ = [
 
 
 import os as _os
-import re as _re
 import sys as _sys
-from gettext import gettext as _
-from gettext import ngettext
 
 lazy import _colorize
+lazy import copy
+lazy import difflib
+lazy import re as _re
+lazy import shutil
+lazy import textwrap
+lazy import warnings
+lazy from gettext import gettext as _
+lazy from gettext import ngettext
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -143,10 +148,8 @@ def _copy_items(items):
         return []
     # The copy module is used only in the 'append' and 'append_const'
     # actions, and it is needed only when the default value isn't a list.
-    # Delay its import for speeding up the common case.
     if type(items) is list:
         return items[:]
-    import copy
     return copy.copy(items)
 
 
@@ -186,7 +189,6 @@ class HelpFormatter(object):
     ):
         # default setting for width
         if width is None:
-            import shutil
             width = shutil.get_terminal_size().columns
             width -= 2
 
@@ -773,9 +775,6 @@ class HelpFormatter(object):
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        # The textwrap module is used only for formatting help.
-        # Delay its import for speeding up the common usage of argparse.
-        import textwrap
         decolored = self._decolor(text)
         if decolored == text:
             return textwrap.wrap(text, width)
@@ -808,7 +807,6 @@ class HelpFormatter(object):
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        import textwrap
         return textwrap.fill(text, width,
                              initial_indent=indent,
                              subsequent_indent=indent)
@@ -1486,7 +1484,6 @@ class FileType(object):
     """
 
     def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
-        import warnings
         warnings.warn(
             "FileType is deprecated. Simply open files after parsing arguments.",
             category=PendingDeprecationWarning,
@@ -1893,7 +1890,6 @@ class _ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
         if 'prefix_chars' in kwargs:
-            import warnings
             depr_msg = (
                 "The use of the undocumented 'prefix_chars' parameter in "
                 "ArgumentParser.add_argument_group() is deprecated."
@@ -2824,7 +2820,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
             if self.suggest_on_error and isinstance(value, str):
                 if all(isinstance(choice, str) for choice in action.choices):
-                    import difflib
                     suggestions = difflib.get_close_matches(value, action.choices, 1)
                     if suggestions:
                         args['closest'] = suggestions[0]
@@ -2964,8 +2959,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
-
-        _deprecated("__version__", remove=(3, 20))
+        warnings._deprecated("__version__", remove=(3, 20))
         return "1.1"  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

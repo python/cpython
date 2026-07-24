@@ -3,7 +3,6 @@
 import _colorize
 import contextlib
 import functools
-import inspect
 import io
 import operator
 import os
@@ -12,6 +11,7 @@ import stat
 import sys
 import textwrap
 import tempfile
+import types
 import unittest
 import argparse
 import warnings
@@ -85,6 +85,8 @@ class TestLazyImports(unittest.TestCase):
         "_colorize",
         "copy",
         "difflib",
+        "gettext",
+        "re",
         "shutil",
         "textwrap",
         "warnings",
@@ -99,7 +101,7 @@ class TestLazyImports(unittest.TestCase):
         # Test imports are still unused after
         # creating a parser
         create_parser = "argparse.ArgumentParser()"
-        imported_modules = {"shutil"}
+        imported_modules = {"gettext", "re", "shutil"}
 
         import_helper.ensure_lazy_imports(
             "argparse",
@@ -114,7 +116,7 @@ class TestLazyImports(unittest.TestCase):
             parser.add_subparsers(dest='command', required=False)
             """
         )
-        imported_modules = {"shutil"}
+        imported_modules = {"gettext", "re", "shutil"}
 
         import_helper.ensure_lazy_imports(
             "argparse",
@@ -132,7 +134,7 @@ class TestLazyImports(unittest.TestCase):
             parser.parse_args(['BAR', '--foo', 'FOO'])
             """
         )
-        imported_modules = {"shutil"}
+        imported_modules = {"gettext", "re", "shutil"}
         import_helper.ensure_lazy_imports(
             "argparse",
             self.LAZY_IMPORTS - imported_modules,
@@ -7098,7 +7100,10 @@ class TestImportStar(TestCase):
             name
             for name, value in vars(argparse).items()
             if not (name.startswith("_") or name == 'ngettext')
-            if not inspect.ismodule(value)
+            if not isinstance(
+                value,
+                (types.ModuleType, types.LazyImportType),
+            )
         ]
         self.assertEqual(sorted(items), sorted(argparse.__all__))
 
