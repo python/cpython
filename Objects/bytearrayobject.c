@@ -916,15 +916,15 @@ bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
 static PyObject *
 bytearray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *self = PyType_GenericNew(type, args, kwds);
-    if (self == NULL) {
+    PyObject *obj = PyType_GenericNew(type, args, kwds);
+    if (obj == NULL) {
         return NULL;
     }
-    PyByteArrayObject *obj = _PyByteArray_CAST(self);
-    obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-    bytearray_reinit_from_bytes(obj, 0, 0);
-    obj->ob_exports = 0;
-    return self;
+    PyByteArrayObject *self = _PyByteArray_CAST(obj);
+    self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    bytearray_reinit_from_bytes(self, 0, 0);
+    self->ob_exports = 0;
+    return obj;
 }
 
 /*[clinic input]
@@ -955,7 +955,6 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
     if (PyByteArray_Resize((PyObject *)self, 0) < 0) {
         return -1;
     }
-
     assert(self->ob_bytes_object == Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_BYTES));
     assert(self->ob_exports == 0);
 
@@ -1629,6 +1628,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     if (_PyBytes_Resize(&self->ob_bytes_object, to_take) == -1) {
+        assert(self.ob_bytes_object == NULL);
         self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         bytearray_reinit_from_bytes(self, 0, 0);
         Py_DECREF(remaining);

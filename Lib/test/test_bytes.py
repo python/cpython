@@ -2200,25 +2200,25 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_no_init_called(self):
         # A bytearray created without calling bytearray.__init__
         # should not crash the interpreter (see gh-153419).
-        def uninitialized():
+        def bytearray_new():
             return bytearray.__new__(bytearray)
 
-        uninitialized().insert(0, 1)
-        uninitialized().extend(b"x")
-        uninitialized().extend([1, 2, 3])
-        uninitialized().resize(4)
-        uninitialized().__init__(5)
-        uninitialized().__init__(b"xyz")
-        uninitialized().take_bytes()
-        uninitialized().take_bytes(0)
+        bytearray_new().insert(0, 1)
+        bytearray_new().extend(b"x")
+        bytearray_new().extend([1, 2, 3])
+        bytearray_new().resize(4)
+        bytearray_new().__init__(5)
+        bytearray_new().__init__(b"xyz")
+        bytearray_new().take_bytes()
+        bytearray_new().take_bytes(0)
 
-        a = uninitialized()
+        a = bytearray_new()
         a.append(1)
 
-        a = uninitialized()
+        a = bytearray_new()
         a += b"x"
 
-        a = uninitialized()
+        a = bytearray_new()
         a[:] = b"xyz"
 
     def test_reinit_length(self):
