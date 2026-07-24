@@ -991,7 +991,6 @@ def singledispatch(func):
                         f"{cls!r} is not a class."
                     )
             if argname == 'return':
-                import os
                 import warnings
                 warnings.warn(
                     "Using the return annotation to infer the dispatch type "
@@ -999,7 +998,7 @@ def singledispatch(func):
                     "Annotate the dispatch parameter or pass the dispatch "
                     "type explicitly to register() decorator.",
                     DeprecationWarning,
-                    skip_file_prefixes=(os.path.dirname(__file__),),
+                    skip_file_prefixes=(__file__,),
                 )
 
         if isinstance(cls, UnionType):

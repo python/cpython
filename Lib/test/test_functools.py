@@ -3339,33 +3339,26 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_return_annotation_deprecated(self):
         msg = "Using the return annotation to infer the dispatch type"
-        register = compile(
-            "dispatcher.register(impl)", "<singledispatch caller>", "exec"
-        )
 
         @functools.singledispatch
         def func(arg):
             return "base"
-
         def impl(arg) -> int:
             return "int"
-
         with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
-            exec(register, {'dispatcher': func, 'impl': impl})
-        self.assertEqual(cm.filename, "<singledispatch caller>")
+            func.register(impl)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(func.registry[int], impl)
 
         class C:
             @functools.singledispatchmethod
             def method(self, arg):
                 return "base"
-
         def method_impl(self) -> str:
             return "str"
-
         with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
-            exec(register, {'dispatcher': C.method, 'impl': method_impl})
-        self.assertEqual(cm.filename, "<singledispatch caller>")
+            C.method.register(method_impl)
+        self.assertEqual(cm.filename, __file__)
         dispatcher = C.__dict__['method'].dispatcher
         self.assertIs(dispatcher.registry[str], method_impl)
 
