@@ -148,7 +148,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         futures.future_add_to_awaited_by(first_task, parent_task)
         running_tasks.add(first_task)
         first_task.add_done_callback(task_done)
-        # first_task has been appended to running_tasks so first_task is ok to start.
+        # first_task has been appended to running_tasks before the event loop starts running it.
         propagate_cancellation_error = None
         # Make sure no tasks are left running if we leave this function
         while running_tasks:
