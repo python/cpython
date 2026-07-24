@@ -3,7 +3,6 @@
 import _colorize
 import contextlib
 import functools
-import inspect
 import io
 import operator
 import os
@@ -7101,9 +7100,9 @@ class TestImportStar(TestCase):
             name
             for name, value in vars(argparse).items()
             if not (name.startswith("_") or name == 'ngettext')
-            if not (
-                inspect.ismodule(value)
-                or isinstance(value, types.LazyImportType)
+            if not isinstance(
+                value,
+                (types.ModuleType, types.LazyImportType),
             )
         ]
         self.assertEqual(sorted(items), sorted(argparse.__all__))
