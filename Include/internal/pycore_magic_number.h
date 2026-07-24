@@ -301,6 +301,7 @@ Known values:
     Python 3.16a0 3701 (Add CONSTANT_EMPTY_TUPLE to LOAD_COMMON_CONSTANT)
     Python 3.16a1 3702 (Replace DELETE_NAME with PUSH_NULL; STORE_NAME)
     Python 3.16a1 3703 (Replace DELETE_GLOBAL with PUSH_NULL; STORE_GLOBAL)
+    Python 3.16a1 3704 (Replace DELETE_ATTR with PUSH_NULL; STORE_ATTR)
 
 
     Python 3.17 will start with 3750
@@ -309,12 +310,9 @@ Known values:
     You should always use the *upcoming* tag. For example, if 3.12a6 came out
     a week ago, I should put "Python 3.12a7" next to my new magic number.
 
-Whenever PYC_MAGIC_NUMBER is changed, the ranges in the magic_values array in
-PC/launcher.c must also be updated.
-
 */
 
-#define PYC_MAGIC_NUMBER 3703
+#define PYC_MAGIC_NUMBER 3704
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

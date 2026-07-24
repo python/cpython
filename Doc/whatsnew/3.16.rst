@@ -75,6 +75,11 @@ New features
 Other language changes
 ======================
 
+* :ref:`Frame objects <frame-objects>` now support :mod:`weak references
+  <weakref>`.  This allows associating extra data with active frames,
+  for example in debuggers, without keeping the frames (and everything
+  they reference) alive indefinitely.
+  (Contributed by Łukasz Langa in :gh:`102960`.)
 
 
 New modules
@@ -86,15 +91,33 @@ New modules
 Improved modules
 ================
 
-curses
+codecs
 ------
 
-* Add support for multiple terminals to the :mod:`curses` module:
-  the new functions :func:`curses.newterm`, :func:`curses.set_term`
-  and :func:`curses.new_prescr`,
-  the corresponding :ref:`screen <curses-screen-objects>` object,
-  and the :meth:`window.use() <curses.window.use>` method.
-  (Contributed by Serhiy Storchaka in :gh:`90092`.)
+* On platforms that provide the C library's :manpage:`iconv(3)` function,
+  every encoding known to ``iconv`` for which Python has no built-in codec
+  is now available (for example ``cp1133``).
+  Prefixing an encoding name with ``iconv:`` forces the ``iconv``-based codec
+  even when a built-in codec of the same name exists.
+  (Contributed by Serhiy Storchaka in :gh:`152997`.)
+
+csv
+---
+
+* :meth:`csv.Sniffer.sniff` now deduces the dialect by trial parsing
+  instead of heuristics based on matching isolated fragments
+  and on character frequencies,
+  so the result is consistent with how :func:`csv.reader` will parse the sample.
+  It can now detect the *escapechar* parameter,
+  accepts non-ASCII delimiters in the *delimiters* argument,
+  no longer misdetects the delimiter
+  when the sample contains delimiter characters inside quoted fields,
+  and no longer takes quadratic time on quoted samples.
+  The results may differ from those of earlier Python versions.
+  (Contributed by Serhiy Storchaka in :gh:`83273`.)
+
+curses
+------
 
 * The :mod:`curses` character-cell window methods now accept a full character
   cell --- a spacing character optionally followed by combining characters ---
@@ -115,40 +138,6 @@ curses
   without combining marks, representable as one byte in the window's encoding,
   and :meth:`~curses.window.in_wstr` returns its decoded text.
   (Contributed by Serhiy Storchaka in :gh:`151757`.)
-
-* The wide-character :mod:`curses` functions and methods
-  :meth:`~curses.window.get_wch`, :meth:`~curses.window.get_wstr`,
-  :func:`curses.unget_wch`, :func:`curses.erasewchar`,
-  :func:`curses.killwchar` and :func:`curses.wunctrl` now also work when Python
-  is not built against a wide-character-aware curses library, on an 8-bit
-  locale, where each character is a single byte in the relevant encoding.
-  :func:`curses.ungetch` now also accepts a one-character string, like
-  :func:`curses.unget_wch`; on a wide-character build it can be any character
-  (previously a multibyte character raised :exc:`OverflowError`).
-  (Contributed by Serhiy Storchaka in :gh:`152470`.)
-
-* Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
-  (Contributed by Serhiy Storchaka in :gh:`151744`.)
-
-* Add the :mod:`curses` functions :func:`curses.alloc_pair`,
-  :func:`curses.find_pair`, :func:`curses.free_pair` and
-  :func:`curses.reset_color_pairs` for dynamic color-pair management,
-  available when built against a wide-character ncurses with extended-color
-  support.
-  (Contributed by Serhiy Storchaka in :gh:`151774`.)
-
-* Add :mod:`curses` functions and window methods that report state which could
-  previously only be set, such as :meth:`curses.window.is_keypad`,
-  :meth:`curses.window.getparent` and :func:`curses.is_cbreak`,
-  available when built against an ncurses with ``NCURSES_EXT_FUNCS``.
-  (Contributed by Serhiy Storchaka in :gh:`151776`.)
-
-* Add the :mod:`curses` window methods :meth:`~curses.window.attr_get`,
-  :meth:`~curses.window.attr_set`, :meth:`~curses.window.attr_on`,
-  :meth:`~curses.window.attr_off` and :meth:`~curses.window.color_set`, which
-  pass the color pair as a separate argument instead of packing it into the
-  attribute value, and the corresponding ``WA_*`` attribute constants.
-  (Contributed by Serhiy Storchaka in :gh:`152219`.)
 
 * Add the :class:`curses.complexchar` type, representing a styled
   character cell (its text, attributes and color pair), and the window
@@ -173,14 +162,51 @@ curses
   library.
   (Contributed by Serhiy Storchaka in :gh:`152233`.)
 
-* Add the :mod:`curses` window method :meth:`~curses.window.dupwin`, which
-  returns a new window that is an independent duplicate of an existing one.
-  (Contributed by Serhiy Storchaka in :gh:`152258`.)
+* The wide-character :mod:`curses` functions and methods
+  :meth:`~curses.window.get_wch`, :meth:`~curses.window.get_wstr`,
+  :func:`curses.unget_wch`, :func:`curses.erasewchar`,
+  :func:`curses.killwchar` and :func:`curses.wunctrl` now also work when Python
+  is not built against a wide-character-aware curses library, on an 8-bit
+  locale, where each character is a single byte in the relevant encoding.
+  :func:`curses.ungetch` now also accepts a one-character string, like
+  :func:`curses.unget_wch`; on a wide-character build it can be any character
+  (previously a multibyte character raised :exc:`OverflowError`).
+  (Contributed by Serhiy Storchaka in :gh:`152470`.)
+
+* Add support for multiple terminals to the :mod:`curses` module:
+  the new functions :func:`curses.newterm`, :func:`curses.set_term`
+  and :func:`curses.new_prescr`,
+  the corresponding :ref:`screen <curses-screen-objects>` object,
+  and the :meth:`window.use() <curses.window.use>` method.
+  (Contributed by Serhiy Storchaka in :gh:`90092`.)
+
+* Add the :mod:`curses` window methods :meth:`~curses.window.attr_get`,
+  :meth:`~curses.window.attr_set`, :meth:`~curses.window.attr_on`,
+  :meth:`~curses.window.attr_off` and :meth:`~curses.window.color_set`, which
+  pass the color pair as a separate argument instead of packing it into the
+  attribute value, and the corresponding ``WA_*`` attribute constants.
+  (Contributed by Serhiy Storchaka in :gh:`152219`.)
+
+* Add the :func:`curses.term_attrs` function, which returns the supported
+  video attributes as :ref:`WA_* <curses-wa-constants>` values, the
+  counterpart of :func:`curses.termattrs`.
+  (Contributed by Serhiy Storchaka in :gh:`152332`.)
+
+* Add the :mod:`curses` functions :func:`curses.alloc_pair`,
+  :func:`curses.find_pair`, :func:`curses.free_pair` and
+  :func:`curses.reset_color_pairs` for dynamic color-pair management,
+  available when built against a wide-character ncurses with extended-color
+  support.
+  (Contributed by Serhiy Storchaka in :gh:`151774`.)
 
 * Add the :mod:`curses` functions :func:`~curses.scr_dump`,
   :func:`~curses.scr_restore`, :func:`~curses.scr_init` and
   :func:`~curses.scr_set`, which dump the whole screen to a file and restore it.
   (Contributed by Serhiy Storchaka in :gh:`152260`.)
+
+* Add the :mod:`curses` window method :meth:`~curses.window.dupwin`, which
+  returns a new window that is an independent duplicate of an existing one.
+  (Contributed by Serhiy Storchaka in :gh:`152258`.)
 
 * Add the soft-label-key functions to the :mod:`curses` module, which manage a
   row of labels along the bottom line of the screen:
@@ -194,11 +220,6 @@ curses
   :func:`~curses.slk_attr_set`, and :func:`~curses.slk_color`.
   (Contributed by Serhiy Storchaka in :gh:`152263`.)
 
-* Add the :func:`curses.term_attrs` function, which returns the supported
-  video attributes as :ref:`WA_* <curses-wa-constants>` values, the
-  counterpart of :func:`curses.termattrs`.
-  (Contributed by Serhiy Storchaka in :gh:`152332`.)
-
 * Add the :mod:`curses` key-management functions :func:`~curses.define_key`,
   :func:`~curses.key_defined` and :func:`~curses.keyok`, available when built
   against an ncurses with ``NCURSES_EXT_FUNCS``.
@@ -209,10 +230,40 @@ curses
   mouse interface.
   (Contributed by Serhiy Storchaka in :gh:`152325`.)
 
+* Add :mod:`curses` functions and window methods that report state which could
+  previously only be set, such as :meth:`curses.window.is_keypad`,
+  :meth:`curses.window.getparent` and :func:`curses.is_cbreak`,
+  available when built against an ncurses with ``NCURSES_EXT_FUNCS``.
+  (Contributed by Serhiy Storchaka in :gh:`151776`.)
+
+* Add :func:`curses.nofilter`, which undoes the effect of :func:`curses.filter`.
+  (Contributed by Serhiy Storchaka in :gh:`151744`.)
+
 * :class:`curses.textpad.Textbox` now supports entering and reading back the
   full Unicode range, including combining characters, when curses is built with
   wide-character support.
   (Contributed by Serhiy Storchaka in :gh:`133031`.)
+
+
+ctypes
+------
+
+* Add :func:`ctypes.util.struct` for generating :class:`~ctypes.Structure` types
+  from an annotation-based syntax, similar to how the :mod:`dataclasses` module
+  is used.
+  (Contributed by Peter Bierma in :gh:`104533`.)
+* Add :func:`ctypes.util.wrap_dll_function` for generating function pointers
+  through a function signature.
+  (Contributed by Peter Bierma in :gh:`153903`.)
+
+
+encodings
+---------
+
+* Add the ``utf-7-imap`` codec, implementing the modified UTF-7 encoding
+  used for international IMAP4 mailbox names (:rfc:`3501`).
+  (Contributed by Serhiy Storchaka in :gh:`66788`.)
+
 
 gzip
 ----
@@ -226,6 +277,65 @@ io
 
 * Add :meth:`io.BytesIO.peek` method to read without advancing position.
   (Contributed by Marcel Martin in :gh:`90533`.)
+
+
+imaplib
+-------
+
+* Add the :meth:`~imaplib.IMAP4.id` method,
+  a wrapper for the ``ID`` command (:rfc:`2971`).
+  (Contributed by Serhiy Storchaka in :gh:`98092`.)
+
+* Add the :meth:`~imaplib.IMAP4.move` method,
+  a wrapper for the ``MOVE`` command (:rfc:`6851`).
+  (Contributed by Serhiy Storchaka in :gh:`77508`.)
+
+* Add the :meth:`~imaplib.IMAP4.login_plain` method, which authenticates
+  using the ``PLAIN`` SASL mechanism (:rfc:`4616`) and supports non-ASCII
+  user names and passwords.
+  (Contributed by Przemysław Buczkowski and Serhiy Storchaka in :gh:`89869`.)
+
+* Non-ASCII mailbox names are now automatically encoded as modified UTF-7
+  (:rfc:`3501`, section 5.1.3) in the default mode, so international mailbox
+  names can be passed as ordinary :class:`str` without enabling ``UTF8=ACCEPT``
+  (under which they are sent as UTF-8).
+  (Contributed by Serhiy Storchaka in :gh:`49555`.)
+
+* The :meth:`~imaplib.IMAP4.copy`, :meth:`~imaplib.IMAP4.move`,
+  :meth:`~imaplib.IMAP4.fetch`, :meth:`~imaplib.IMAP4.store`,
+  :meth:`~imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.sort`,
+  :meth:`~imaplib.IMAP4.thread` and :meth:`~imaplib.IMAP4.expunge` methods
+  now accept a keyword-only *uid* argument that selects the corresponding
+  ``UID`` command, as a more convenient alternative to
+  :meth:`~imaplib.IMAP4.uid`.
+  (Contributed by Serhiy Storchaka in :gh:`153502`.)
+
+* :meth:`~imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.sort`
+  and :meth:`~imaplib.IMAP4.thread` (and the corresponding ``uid`` commands)
+  now encode :class:`str` search criteria to the declared *charset*,
+  so international search text can be passed as an ordinary :class:`str`.
+  When *charset* is ``None`` (as it must be under ``UTF8=ACCEPT``),
+  the criteria are sent using the connection encoding instead.
+  (Contributed by Serhiy Storchaka in :gh:`153494`.)
+
+* Command methods now accept structured arguments,
+  so the module takes care of quoting instead of the caller.
+  A *message_set* and lists of flags or other atoms
+  can be passed as sequences instead of preformatted strings,
+  and the :meth:`~imaplib.IMAP4.search`, :meth:`~imaplib.IMAP4.fetch`,
+  :meth:`~imaplib.IMAP4.sort`, :meth:`~imaplib.IMAP4.thread` and
+  :meth:`~imaplib.IMAP4.uid` methods accept a *params* keyword argument
+  that substitutes and quotes ``?`` placeholders,
+  in the manner of :mod:`sqlite3` parameter substitution.
+  (Contributed by Serhiy Storchaka in :gh:`153521`.)
+
+
+ipaddress
+---------
+
+Add :meth:`~ipaddress.IPv4Network.next_network` and
+:meth:`~ipaddress.IPv6Network.next_network` methods to find the next nearest
+network with a specific prefix size.
 
 
 logging
@@ -270,6 +380,17 @@ os
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`149464`.)
 
 
+pydoc
+-----
+
+* Modernize the HTML output of :mod:`pydoc`.  The pages generated by the
+  :mod:`pydoc` HTTP server now use semantic HTML5 markup and a new style
+  sheet based on the python-docs-theme used by `docs.python.org
+  <https://docs.python.org/>`__, with dark mode support.  Class members
+  inherited from other classes are collapsed by default.
+  (Contributed by Serhiy Storchaka in :gh:`153906`.)
+
+
 re
 --
 
@@ -295,6 +416,14 @@ shlex
 * Add keyword-only parameter *force* to :func:`shlex.quote` to force quoting
   a string, even if it is already safe for a shell without being quoted.
   (Contributed by Jay Berry in :gh:`148846`.)
+
+
+symtable
+--------
+
+* :func:`symtable.symtable` now accepts an AST object,
+  like the builtin :func:`compile`.
+  (Contributed by Serhiy Storchaka in :gh:`153844`.)
 
 
 tkinter
@@ -341,6 +470,11 @@ tkinter
   report the user idle time.
   (Contributed by Serhiy Storchaka in :gh:`151881`.)
 
+* Added the :meth:`!tk_print` method to :class:`tkinter.Canvas` and
+  :class:`tkinter.Text` which prints the contents of the widget using the
+  native print dialog.  It requires Tk 8.7/9.0 or newer.
+  (Contributed by Serhiy Storchaka in :gh:`153256`.)
+
 * Added new window-management methods :meth:`~tkinter.Misc.winfo_isdark`
   (dark mode detection), :meth:`~tkinter.Wm.wm_iconbadge` (application icon
   badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).
@@ -382,6 +516,43 @@ tkinter
   *detail* parameters, draws the standard icons with themed images in the
   ttk version, and accepts mappings of button options as *buttons* entries.
   (Contributed by Serhiy Storchaka in :gh:`59396`.)
+
+* The :class:`!tkinter.filedialog.FileDialog` dialog and its
+  :class:`!tkinter.filedialog.LoadFileDialog` and
+  :class:`!tkinter.filedialog.SaveFileDialog` subclasses are now built from the
+  themed :mod:`tkinter.ttk` widgets by default instead of the classic
+  :mod:`tkinter` widgets, and gained a *use_ttk* parameter to select between
+  them.
+  (Contributed by Serhiy Storchaka in :gh:`59396`.)
+
+* Added the :mod:`tkinter.systray` module which provides the
+  :class:`~tkinter.systray.SysTrayIcon` class as an interface to the system
+  tray icon and the :func:`~tkinter.systray.notify` function which sends a
+  desktop notification.  They require Tk 8.7/9.0 or newer.
+  (Contributed by Serhiy Storchaka in :gh:`153259`.)
+
+* :class:`tkinter.scrolledtext.ScrolledText` gained a *use_ttk* parameter to use
+  the themed :mod:`tkinter.ttk` frame and scroll bar instead of the classic
+  :mod:`tkinter` widgets.
+  (Contributed by Serhiy Storchaka in :gh:`59396`.)
+
+* :class:`tkinter.font.Font` can now wrap a font description without creating a
+  new named font, by passing it as *font* with ``exists=True`` and no *name*.
+  This avoids a loss of precision in :meth:`~tkinter.font.Font.actual`,
+  :meth:`~tkinter.font.Font.measure` and :meth:`~tkinter.font.Font.metrics`.
+  (Contributed by Serhiy Storchaka in :gh:`143990`.)
+
+* Added the :mod:`tkinter.fontchooser` module which provides the
+  :class:`~tkinter.fontchooser.FontChooser` class as an interface to the
+  native font selection dialog.
+  (Contributed by Serhiy Storchaka in :gh:`72880`.)
+
+* Values of several Tcl object types returned by :mod:`tkinter` are now
+  converted to the corresponding Python type instead of being wrapped in a
+  :class:`!_tkinter.Tcl_Obj`: ``index``, ``window``, ``nsName`` and
+  ``parsedVarName`` objects to :class:`str`, and ``pixel`` screen distances
+  with no unit suffix to :class:`int` or :class:`float`.
+  (Contributed by Serhiy Storchaka in :gh:`153513`.)
 
 xml
 ---
@@ -557,6 +728,22 @@ New deprecations
     two-letter forms ``'Zf'`` and ``'Zd'``.
     (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
+* :mod:`tempfile`
+
+  * The private ``tempfile._TemporaryFileWrapper`` name is deprecated
+    and is slated for removal in Python 3.21.
+    Use the new public :class:`tempfile.TemporaryFileWrapper` instead,
+    which is the return type of :func:`tempfile.NamedTemporaryFile`.
+
+* :mod:`tkinter`:
+
+  * :func:`tkinter.filedialog.askopenfiles` is deprecated and slated for
+    removal in Python 3.19.  Opening several files at once is error-prone, and
+    the returned list cannot be used in a :keyword:`with` statement.  Iterate
+    over the names returned by :func:`~tkinter.filedialog.askopenfilenames` and
+    open them one by one instead.
+    (Contributed by Serhiy Storchaka in :gh:`152638`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
@@ -607,6 +794,15 @@ Build changes
 
   (Contributed by Stefano Rivera in :gh:`131372`.)
 
+* Add the :option:`--with-curses` :program:`configure` option to select the
+  curses backend for the :mod:`curses` and :mod:`curses.panel` modules.
+  In addition to ``ncursesw`` and ``ncurses``, it can now build against the
+  system's native ``curses`` library (for example on NetBSD or Solaris), with
+  wide-character support when the library provides it.  :option:`--without-curses`
+  excludes the modules from the build.
+
+  (Contributed by Serhiy Storchaka in :gh:`136687`.)
+
 
 C API changes
 =============
@@ -619,7 +815,8 @@ New features
 Porting to Python 3.16
 ----------------------
 
-* TODO
+* :c:func:`PyType_ClearCache` is now a no-op as the type cache is now
+  implemented per-type. It still returns the current version tag.
 
 Deprecated C APIs
 -----------------
