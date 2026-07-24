@@ -75,6 +75,10 @@ New features
 Other language changes
 ======================
 
+* :meth:`memoryview.cast` now allows casting a multidimensional
+  F-contiguous view to a one-dimensional view.
+  (Contributed by Jaemin Park in :gh:`91484`.)
+
 * :ref:`Frame objects <frame-objects>` now support :mod:`weak references
   <weakref>`.  This allows associating extra data with active frames,
   for example in debuggers, without keeping the frames (and everything

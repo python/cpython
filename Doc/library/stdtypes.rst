@@ -4876,8 +4876,9 @@ copying.
       Cast a memoryview to a new format or shape. *shape* defaults to
       ``[byte_length//new_itemsize]``, which means that the result view
       will be one-dimensional. The return value is a new memoryview, but
-      the buffer itself is not copied. Supported casts are 1D -> C-:term:`contiguous`
-      and C-contiguous -> 1D.
+      the buffer itself is not copied. Supported casts are
+      1D -> C-:term:`contiguous`, C-contiguous -> 1D, and
+      F-contiguous -> 1D.
 
       The destination format is restricted to a single element native format in
       :mod:`struct` syntax. One of the formats must be a byte format
@@ -4963,6 +4964,10 @@ copying.
 
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
+
+      .. versionchanged:: next
+         Casting a multi-dimensional F-contiguous view to a one-dimensional
+         view is now supported.
 
    .. method:: count(value, /)
 
