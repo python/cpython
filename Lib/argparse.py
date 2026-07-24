@@ -87,12 +87,17 @@ __all__ = [
 
 
 import os as _os
-import re as _re
 import sys as _sys
-from gettext import gettext as _
-from gettext import ngettext
 
 lazy import _colorize
+lazy import copy as _copy
+lazy import difflib as _difflib
+lazy import re as _re
+lazy import shutil as _shutil
+lazy import textwrap as _textwrap
+lazy import warnings as _warnings
+lazy from gettext import gettext as _
+lazy from gettext import ngettext
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -143,11 +148,9 @@ def _copy_items(items):
         return []
     # The copy module is used only in the 'append' and 'append_const'
     # actions, and it is needed only when the default value isn't a list.
-    # Delay its import for speeding up the common case.
     if type(items) is list:
         return items[:]
-    import copy
-    return copy.copy(items)
+    return _copy.copy(items)
 
 
 def _identity(value):
@@ -186,8 +189,7 @@ class HelpFormatter(object):
     ):
         # default setting for width
         if width is None:
-            import shutil
-            width = shutil.get_terminal_size().columns
+            width = _shutil.get_terminal_size().columns
             width -= 2
 
         self._prog = prog
@@ -773,15 +775,11 @@ class HelpFormatter(object):
 
     def _split_lines(self, text, width):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        # The textwrap module is used only for formatting help.
-        # Delay its import for speeding up the common usage of argparse.
-        import textwrap
-        return textwrap.wrap(text, width)
+        return _textwrap.wrap(text, width)
 
     def _fill_text(self, text, width, indent):
         text = self._whitespace_matcher.sub(' ', text).strip()
-        import textwrap
-        return textwrap.fill(text, width,
+        return _textwrap.fill(text, width,
                              initial_indent=indent,
                              subsequent_indent=indent)
 
@@ -1458,8 +1456,7 @@ class FileType(object):
     """
 
     def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
-        import warnings
-        warnings.warn(
+        _warnings.warn(
             "FileType is deprecated. Simply open files after parsing arguments.",
             category=PendingDeprecationWarning,
             stacklevel=2
@@ -1865,12 +1862,11 @@ class _ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
         if 'prefix_chars' in kwargs:
-            import warnings
             depr_msg = (
                 "The use of the undocumented 'prefix_chars' parameter in "
                 "ArgumentParser.add_argument_group() is deprecated."
             )
-            warnings.warn(depr_msg, DeprecationWarning, stacklevel=3)
+            _warnings.warn(depr_msg, DeprecationWarning, stacklevel=3)
 
         # add any missing keyword arguments by checking the container
         update = kwargs.setdefault
@@ -2796,8 +2792,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
             if self.suggest_on_error and isinstance(value, str):
                 if all(isinstance(choice, str) for choice in action.choices):
-                    import difflib
-                    suggestions = difflib.get_close_matches(value, action.choices, 1)
+                    suggestions = _difflib.get_close_matches(value, action.choices, 1)
                     if suggestions:
                         args['closest'] = suggestions[0]
                         msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
@@ -2936,8 +2931,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
 def __getattr__(name):
     if name == "__version__":
-        from warnings import _deprecated
-
-        _deprecated("__version__", remove=(3, 20))
+        _warnings._deprecated("__version__", remove=(3, 20))
         return "1.1"  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
