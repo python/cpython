@@ -184,6 +184,7 @@ of correctness (using Lean) of the algorithm can be found here:
 
     https://github.com/mdickinson/snippets/tree/41ce2d256fef06fb32f24fe7014cfa95173ac5e0/proofs/isqrt
 
+
 Here's Python code equivalent to the C implementation below:
 
     def isqrt(n):
