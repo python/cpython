@@ -625,9 +625,13 @@ class TestBasicOps(unittest.TestCase):
         self.test_count_threading(step=5)
 
     def test_count_reentrant_step(self):
+        entered = False
         class Step(int):
             def __radd__(self, other):
-                next(c)
+                nonlocal entered
+                if not entered:
+                    entered = True
+                    next(c)
                 return other + 1
         c = count(1 << 100, Step())
         next(c)
