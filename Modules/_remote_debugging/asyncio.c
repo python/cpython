@@ -654,6 +654,7 @@ process_task_waiters(
                 return -1;
             }
             PyObject *waiter = PyList_GET_ITEM(waiters, j);
+            // CoroInfo item 1 holds the waiter task address stored by parse_task().
             PyObject *task_id = PyStructSequence_GET_ITEM(waiter, 1);
             void *task_ptr = PyLong_AsVoidPtr(task_id);
             if (task_ptr == NULL && PyErr_Occurred()) {
