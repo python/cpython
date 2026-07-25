@@ -424,15 +424,10 @@ sock.connect(('localhost', {port}))
         """Extract task name to awaited_by set mapping."""
         id_to_task = self._get_task_id_map(stack_trace)
 
-        def task_name(task_id):
-            task = id_to_task.get(task_id)
-            if task is None:
-                return f"<unknown object at {task_id:#x}>"
-            return task.task_name
-
         return {
             task.task_name: set(
-                task_name(awaited.task_name) for awaited in task.awaited_by
+                id_to_task[awaited.task_name].task_name
+                for awaited in task.awaited_by
             )
             for task in stack_trace[0].awaited_by
         }
