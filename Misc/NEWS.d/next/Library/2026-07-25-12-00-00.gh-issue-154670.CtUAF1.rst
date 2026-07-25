@@ -1,0 +1,2 @@
+Fix use-after-free in :func:`itertools.count` when the step object's
+``__radd__`` re-enters the iterator.  Patch by tonghuaroot.
