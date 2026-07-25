@@ -406,6 +406,25 @@ static PyObject *
 _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2)
 /*[clinic end generated code: output=82ddc6d62c76d618 input=693cd02bcbf38dd8]*/
 {
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    /* wchar_t is not Unicode in non-UTF-8 locales and the collation
+       tables are keyed by the raw locale values, so wcscoll() cannot
+       be used with Unicode wchar_t.  Encode to the locale encoding
+       and use strcoll(). */
+    PyObject *result = NULL;
+    PyObject *b1 = PyUnicode_EncodeLocale(os1, NULL);
+    if (b1 == NULL) {
+        return NULL;
+    }
+    PyObject *b2 = PyUnicode_EncodeLocale(os2, NULL);
+    if (b2 != NULL) {
+        result = PyLong_FromLong(strcoll(PyBytes_AS_STRING(b1),
+                                         PyBytes_AS_STRING(b2)));
+        Py_DECREF(b2);
+    }
+    Py_DECREF(b1);
+    return result;
+#else
     PyObject *result = NULL;
     wchar_t *ws1 = NULL, *ws2 = NULL;
 
@@ -423,6 +442,7 @@ _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2)
     if (ws1) PyMem_Free(ws1);
     if (ws2) PyMem_Free(ws2);
     return result;
+#endif
 }
 #endif
 
@@ -441,6 +461,44 @@ static PyObject *
 _locale_strxfrm_impl(PyObject *module, PyObject *str)
 /*[clinic end generated code: output=3081866ebffc01af input=1378bbe6a88b4780]*/
 {
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    /* wchar_t is not Unicode in non-UTF-8 locales and the collation
+       tables are keyed by the raw locale values, so wcsxfrm() cannot
+       be used with Unicode wchar_t.  Encode to the locale encoding
+       and use strxfrm().  The result is decoded as Latin-1: it maps
+       bytes to code points in the same order, so comparison of the
+       resulting strings compares the byte sequences. */
+    PyObject *bytes = PyUnicode_EncodeLocale(str, NULL);
+    if (bytes == NULL) {
+        return NULL;
+    }
+    const char *s = PyBytes_AS_STRING(bytes);
+    PyObject *result = NULL;
+    char dummy[1];
+    errno = 0;
+    size_t n = strxfrm(dummy, s, 1);
+    if (errno && errno != ERANGE) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        goto error;
+    }
+    char *buf = PyMem_Malloc(n + 1);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+    errno = 0;
+    n = strxfrm(buf, s, n + 1);
+    if (errno) {
+        PyErr_SetFromErrno(PyExc_OSError);
+    }
+    else {
+        result = PyUnicode_DecodeLatin1(buf, n, NULL);
+    }
+    PyMem_Free(buf);
+error:
+    Py_DECREF(bytes);
+    return result;
+#else
     Py_ssize_t n1;
     wchar_t *s = NULL, *buf = NULL;
     wchar_t dummy[1];
@@ -528,6 +586,7 @@ exit:
     PyMem_Free(buf);
     PyMem_Free(s);
     return result;
+#endif /* _Py_NON_UNICODE_WCHAR_T */
 }
 #endif
 

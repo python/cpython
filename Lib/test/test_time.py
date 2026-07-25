@@ -3,6 +3,7 @@ from test.support import warnings_helper
 import decimal
 import enum
 import fractions
+import locale
 import math
 import platform
 import sys
@@ -231,6 +232,41 @@ class TimeTestCase(unittest.TestCase):
                 self.fail('conversion specifier: %r failed.' % format)
 
         self.assertRaises(TypeError, time.strftime, b'%S', tt)
+
+    @support.thread_unsafe('setlocale is not thread-safe')
+    def test_strftime_locale_encodings(self):
+        # gh-154682: the result must be the same in locales which only
+        # differ in the encoding.
+        pairs = [
+            ('uk_UA.UTF-8', 'uk_UA.KOI8-U'),
+            ('uk_UA.UTF-8', 'uk_UA.CP1251'),
+            ('el_GR.UTF-8', 'el_GR.ISO8859-7'),
+            ('ja_JP.UTF-8', 'ja_JP.eucJP'),
+            ('de_DE.UTF-8', 'de_DE.ISO8859-1'),
+            ('tr_TR.UTF-8', 'tr_TR.ISO8859-9'),
+            ('ca_ES.UTF-8', 'ca_ES.ISO8859-1'),
+        ]
+        oldloc = locale.setlocale(locale.LC_ALL)
+        self.addCleanup(locale.setlocale, locale.LC_ALL, oldloc)
+        # Wednesday, March: non-ASCII in all tested locales
+        # (including Turkish and German)
+        tt = (2026, 3, 4, 12, 34, 56, 2, 63, 0)
+        tested = False
+        for utf8_loc, legacy_loc in pairs:
+            try:
+                locale.setlocale(locale.LC_ALL, utf8_loc)
+            except locale.Error:
+                continue
+            expected = time.strftime('%A, %B', tt)
+            try:
+                locale.setlocale(locale.LC_ALL, legacy_loc)
+            except locale.Error:
+                continue
+            with self.subTest(locale=legacy_loc):
+                self.assertEqual(time.strftime('%A, %B', tt), expected)
+            tested = True
+        if not tested:
+            self.skipTest('no suitable locales')
 
     def test_strftime_invalid_format(self):
         tt = time.gmtime(self.t)

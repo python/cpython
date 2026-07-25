@@ -454,6 +454,363 @@ decode_ascii(const char *arg, wchar_t **wstr, size_t *wlen,
 }
 #endif   /* !HAVE_MBRTOWC */
 
+#ifdef _Py_NON_UNICODE_WCHAR_T
+/* wchar_t is not Unicode in non-UTF-8 locales (see pycore_fileutils.h),
+   so mbstowcs() and wcstombs() cannot be used to convert locale-encoded
+   text.  Use iconv() instead. */
+#  include <iconv.h>
+#  include <limits.h>             // MB_LEN_MAX
+/* Native-endian UTF-32: a raw array of Unicode code points (unlike
+   "UCS-4", it also validates the converted values). */
+#  ifdef WORDS_BIGENDIAN
+#    define _Py_UTF32_NATIVE "UTF-32BE"
+#  else
+#    define _Py_UTF32_NATIVE "UTF-32LE"
+#  endif
+/* Fall back to mbstowcs()/wcstombs(). */
+#  define _Py_ICONV_FALLBACK (-9)
+
+static iconv_t
+locale_iconv_open(int decode)
+{
+    const char *codeset = nl_langinfo(CODESET);
+    if (!codeset || !*codeset
+        || strcmp(codeset, "UTF-8") == 0
+        || strcmp(codeset, "US-ASCII") == 0
+        || strcmp(codeset, "646") == 0)
+    {
+        /* mbstowcs() and wcstombs() are correct for these encodings */
+        return (iconv_t)-1;
+    }
+    return decode ? iconv_open(_Py_UTF32_NATIVE, codeset)
+                  : iconv_open(codeset, _Py_UTF32_NATIVE);
+}
+
+static int
+decode_locale_iconv(const char *arg, wchar_t **wstr, size_t *wlen,
+                    const char **reason, _Py_error_handler errors)
+{
+    int surrogateescape;
+    if (get_surrogateescape(errors, &surrogateescape) < 0) {
+        return -3;
+    }
+
+    size_t argsize = strlen(arg);
+    int ascii = 1;
+    for (size_t i = 0; i < argsize; i++) {
+        if ((unsigned char)arg[i] >= 0x80) {
+            ascii = 0;
+            break;
+        }
+    }
+    if (ascii) {
+        return _Py_ICONV_FALLBACK;
+    }
+
+    iconv_t cd = locale_iconv_open(1);
+    if (cd == (iconv_t)-1) {
+        return _Py_ICONV_FALLBACK;
+    }
+
+    if (argsize > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
+        iconv_close(cd);
+        return -1;
+    }
+    /* the output cannot be longer than the number of input bytes */
+    wchar_t *res = PyMem_RawMalloc((argsize + 1) * sizeof(wchar_t));
+    if (res == NULL) {
+        iconv_close(cd);
+        return -1;
+    }
+
+    char *in = (char *)arg;
+    size_t inleft = argsize;
+    wchar_t *wout = res;
+    while (inleft > 0) {
+        char *out = (char *)wout;
+        size_t outleft = (res + argsize - wout) * sizeof(wchar_t);
+        /* Cast through void*: iconv() declares its second argument as
+           "char **" on most systems, but "const char **" on some. */
+        size_t converted = iconv(cd, (void *)&in, &inleft, &out, &outleft);
+        wout = (wchar_t *)out;
+        if (converted == (size_t)-1) {
+            if (errno != EILSEQ && errno != EINVAL) {
+                /* unexpected error: fall back to mbstowcs() */
+                PyMem_RawFree(res);
+                iconv_close(cd);
+                return _Py_ICONV_FALLBACK;
+            }
+            if (!surrogateescape) {
+                PyMem_RawFree(res);
+                iconv_close(cd);
+                if (wlen != NULL) {
+                    *wlen = in - arg;
+                }
+                if (reason != NULL) {
+                    *reason = "decoding error";
+                }
+                return -2;
+            }
+            /* Escape the byte as UTF-8b, and start over in the initial
+               shift state. */
+            *wout++ = 0xdc00 + (unsigned char)*in++;
+            inleft--;
+            iconv(cd, NULL, NULL, NULL, NULL);
+        }
+    }
+    iconv_close(cd);
+    *wout = L'\0';
+    *wstr = res;
+    if (wlen != NULL) {
+        *wlen = wout - res;
+    }
+    return 0;
+}
+
+static int
+encode_locale_iconv(const wchar_t *text, char **str,
+                    size_t *error_pos, const char **reason,
+                    int raw_malloc, _Py_error_handler errors)
+{
+    int surrogateescape;
+    if (get_surrogateescape(errors, &surrogateescape) < 0) {
+        return -3;
+    }
+
+    size_t len = wcslen(text);
+    int ascii = 1;
+    for (size_t i = 0; i < len; i++) {
+        if ((unsigned long)text[i] >= 0x80) {
+            ascii = 0;
+            break;
+        }
+    }
+    if (ascii) {
+        return _Py_ICONV_FALLBACK;
+    }
+
+    iconv_t cd = locale_iconv_open(0);
+    if (cd == (iconv_t)-1) {
+        return _Py_ICONV_FALLBACK;
+    }
+
+    char *result = NULL;
+    int res = -1;
+    if (len > (PY_SSIZE_T_MAX - MB_LEN_MAX - 1) / MB_LEN_MAX) {
+        goto done;
+    }
+    /* reserve room for the final shift sequence and the null byte */
+    size_t size = len * MB_LEN_MAX + MB_LEN_MAX + 1;
+    result = raw_malloc ? PyMem_RawMalloc(size) : PyMem_Malloc(size);
+    if (result == NULL) {
+        goto done;
+    }
+
+    const wchar_t *win = text;
+    const wchar_t *wend = text + len;
+    char *out = result;
+    size_t outleft = size - 1;
+    while (win < wend) {
+        wchar_t c = *win;
+        if (c >= 0xdc80 && c <= 0xdcff) {
+            if (!surrogateescape) {
+                goto encode_error;
+            }
+            /* UTF-8b surrogate: write the raw byte, and start over in
+               the initial shift state */
+            *out++ = (char)(c - 0xdc00);
+            outleft--;
+            win++;
+            iconv(cd, NULL, NULL, NULL, NULL);
+            continue;
+        }
+        /* Note: iconv() can replace a character which cannot be encoded
+           with an approximation (e.g. "'e" for "é" or "?"), depending
+           on the implementation. */
+        char *in = (char *)win;
+        size_t inleft = (wend - win) * sizeof(wchar_t);
+        /* Cast through void*: iconv() declares its second argument as
+           "char **" on most systems, but "const char **" on some. */
+        size_t converted = iconv(cd, (void *)&in, &inleft, &out, &outleft);
+        win = (const wchar_t *)in;
+        if (converted == (size_t)-1) {
+            if (errno != EILSEQ && errno != EINVAL) {
+                /* unexpected error: fall back to wcstombs() */
+                goto fallback;
+            }
+            /* iconv() stopped at the first character which cannot be
+               encoded; an escaped surrogate is handled at the start of
+               the next iteration */
+            if (!(*win >= 0xdc80 && *win <= 0xdcff)) {
+                goto encode_error;
+            }
+        }
+    }
+    /* write the final shift sequence for stateful encodings */
+    if (iconv(cd, NULL, NULL, &out, &outleft) == (size_t)-1) {
+        goto fallback;
+    }
+    *out = '\0';
+    *str = result;
+    result = NULL;
+    res = 0;
+    goto done;
+
+fallback:
+    res = _Py_ICONV_FALLBACK;
+    goto done;
+
+encode_error:
+    res = -2;
+    if (error_pos != NULL) {
+        *error_pos = win - text;
+    }
+    if (reason != NULL) {
+        *reason = "encoding error";
+    }
+
+done:
+    if (result != NULL) {
+        if (raw_malloc) {
+            PyMem_RawFree(result);
+        }
+        else {
+            PyMem_Free(result);
+        }
+    }
+    iconv_close(cd);
+    return res;
+}
+
+/* Convert a wide character string in place from Unicode code points to
+   the native wchar_t form, for passing to C library functions which
+   expect the latter (such as the curses library).
+   Return 0 on success.  Return -1 with an exception set if a character
+   cannot be represented in the locale encoding. */
+int
+_Py_UnicodeToLocaleWchar_InPlace(wchar_t *str, Py_ssize_t size)
+{
+    iconv_t cd = (iconv_t)-1;
+    int res = 0;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        wchar_t wc = str[i];
+        if ((unsigned long)wc < 0x80
+            || ((unsigned long)wc >= 0xdc80 && (unsigned long)wc <= 0xdcff))
+        {
+            continue;
+        }
+        if (cd == (iconv_t)-1) {
+            cd = locale_iconv_open(0);
+            if (cd == (iconv_t)-1) {
+                /* wchar_t is Unicode for this locale encoding, or no
+                   conversion is possible */
+                return 0;
+            }
+        }
+        else {
+            /* reset cd to the initial shift state */
+            iconv(cd, NULL, NULL, NULL, NULL);
+        }
+        Py_UCS4 ch = (Py_UCS4)wc;
+        char buf[MB_LEN_MAX];
+        char *in = (char *)&ch;
+        size_t inleft = sizeof(ch);
+        char *out = buf;
+        size_t outleft = sizeof(buf);
+        mbstate_t mbs;
+        wchar_t converted;
+        size_t blen;
+        /* A non-zero result means that the character was replaced
+           with a substitute. */
+        if (iconv(cd, (void *)&in, &inleft, &out, &outleft) != 0
+            || inleft != 0)
+        {
+            goto encode_error;
+        }
+        /* locale bytes -> native form: exactly one wchar_t */
+        blen = sizeof(buf) - outleft;
+        memset(&mbs, 0, sizeof(mbs));
+        if (mbrtowc(&converted, buf, blen, &mbs) != blen) {
+            goto encode_error;
+        }
+        str[i] = converted;
+        continue;
+
+encode_error:
+        {
+            PyObject *obj = PyUnicode_FromOrdinal((int)wc);
+            if (obj != NULL) {
+                PyObject *exc = PyObject_CallFunction(
+                        PyExc_UnicodeEncodeError, "sOnns",
+                        nl_langinfo(CODESET), obj,
+                        (Py_ssize_t)0, (Py_ssize_t)1,
+                        "character maps to <undefined>");
+                if (exc != NULL) {
+                    PyCodec_StrictErrors(exc);
+                    Py_DECREF(exc);
+                }
+                Py_DECREF(obj);
+            }
+        }
+        res = -1;
+        break;
+    }
+    if (cd != (iconv_t)-1) {
+        iconv_close(cd);
+    }
+    return res;
+}
+
+/* The reverse conversion: from the native wchar_t form to Unicode
+   code points.  Values which cannot be converted are left unchanged. */
+void
+_Py_LocaleWcharToUnicode_InPlace(wchar_t *str, Py_ssize_t size)
+{
+    iconv_t cd = (iconv_t)-1;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        wchar_t wc = str[i];
+        if ((unsigned long)wc < 0x80
+            || ((unsigned long)wc >= 0xdc80 && (unsigned long)wc <= 0xdcff))
+        {
+            continue;
+        }
+        /* native form -> locale bytes */
+        char buf[MB_LEN_MAX];
+        mbstate_t mbs;
+        memset(&mbs, 0, sizeof(mbs));
+        size_t blen = wcrtomb(buf, wc, &mbs);
+        if (blen == (size_t)-1) {
+            continue;
+        }
+        /* locale bytes -> Unicode */
+        if (cd == (iconv_t)-1) {
+            cd = locale_iconv_open(1);
+            if (cd == (iconv_t)-1) {
+                return;
+            }
+        }
+        else {
+            /* reset cd to the initial shift state */
+            iconv(cd, NULL, NULL, NULL, NULL);
+        }
+        char *in = buf;
+        size_t inleft = blen;
+        Py_UCS4 ch;
+        char *out = (char *)&ch;
+        size_t outleft = sizeof(ch);
+        if (iconv(cd, (void *)&in, &inleft, &out, &outleft) == (size_t)-1
+            || inleft != 0 || outleft != 0)
+        {
+            continue;
+        }
+        str[i] = (wchar_t)ch;
+    }
+    if (cd != (iconv_t)-1) {
+        iconv_close(cd);
+    }
+}
+#endif /* _Py_NON_UNICODE_WCHAR_T */
+
 static int
 decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
                       const char **reason, _Py_error_handler errors)
@@ -465,6 +822,13 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
     unsigned char *in;
     wchar_t *out;
     mbstate_t mbs;
+#endif
+
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    int iconv_res = decode_locale_iconv(arg, wstr, wlen, reason, errors);
+    if (iconv_res != _Py_ICONV_FALLBACK) {
+        return iconv_res;
+    }
 #endif
 
     int surrogateescape;
@@ -682,6 +1046,14 @@ encode_current_locale(const wchar_t *text, char **str,
     char *result = NULL, *bytes = NULL;
     size_t i, size, converted;
     wchar_t c, buf[2];
+
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    int iconv_res = encode_locale_iconv(text, str, error_pos, reason,
+                                        raw_malloc, errors);
+    if (iconv_res != _Py_ICONV_FALLBACK) {
+        return iconv_res;
+    }
+#endif
 
     int surrogateescape;
     if (get_surrogateescape(errors, &surrogateescape) < 0) {

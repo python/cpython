@@ -770,6 +770,15 @@ the C library strftime function.\n"
 #  undef HAVE_WCSFTIME
 #endif
 
+// On FreeBSD, NetBSD, DragonFly BSD and macOS, wchar_t values are not
+// Unicode code points in non-UTF-8 locales, so the result of wcsftime()
+// cannot be used directly.  Use strftime() and decode its result with
+// PyUnicode_DecodeLocaleAndSize() (which handles such platforms).
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) \
+    || defined(__APPLE__)
+#  undef HAVE_WCSFTIME
+#endif
+
 #ifdef HAVE_WCSFTIME
 #define time_char wchar_t
 #define format_time wcsftime
