@@ -38,7 +38,9 @@ except ImportError:
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
            "ZIP_ZSTANDARD", "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile",
-           "LargeZipFile", "Path"]
+           "ZipExtractorBase", "ZipExtractorTime", "ZipExtractorTimeMode",
+           "ZipExtractorTimeModeSafe", "ZipExtractorTimeModeX", "LargeZipFile",
+           "Path"]
 
 class BadZipFile(Exception):
     pass
@@ -1864,6 +1866,91 @@ class _ZipRepacker:
             read_size += len(data)
 
 
+class ZipExtractorBase:
+    """The base extractor class that does not restore attributes."""
+    allowed_mode = 0o7777
+
+    def __init__(self, archive, path=None, pwd=None):
+        self.archive = archive
+        if path is None:
+            self.target_path = os.getcwd()
+        else:
+            self.target_path = os.fspath(path)
+        self.pwd = pwd
+        self._dirs = {}
+        self._in_ctx = False
+
+    def __enter__(self):
+        self._in_ctx = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            self.finalize(exc_type, exc_value, traceback)
+        finally:
+            self._in_ctx = False
+
+    def __call__(self, zinfo):
+        targetpath = self.archive._extract_member(zinfo, self.target_path, self.pwd)
+
+        # Delay restoring attributes for directories since permissions
+        # can interfere with extraction and extracting contents can
+        # reset mtime.
+        if zinfo.is_dir():
+            self._dirs[zinfo] = targetpath
+        else:
+            self.restore_attributes(targetpath, zinfo)
+
+        # auto-finalize for a standalone call
+        if not self._in_ctx:
+            self.finalize()
+
+        return targetpath
+
+    def finalize(self, exc_type=None, exc_value=None, traceback=None):
+        # restore attributes for directories from bottom to top
+        items = sorted(self._dirs.items(), key=lambda i: i[0].filename, reverse=True)
+        for zinfo, targetpath in items:
+            # skip if directory missing
+            if not os.path.isdir(targetpath):
+                continue
+
+            self.restore_attributes(targetpath, zinfo)
+
+        self._dirs.clear()
+
+    def restore_attributes(self, targetpath, zinfo):
+        pass
+
+    def utime(self, targetpath, zinfo):
+        dt = time.mktime(zinfo.date_time + (0, 0, -1))
+        os.utime(targetpath, (dt, dt))
+
+    def chmod(self, targetpath, zinfo):
+        mode = (zinfo.external_attr >> 16) & self.allowed_mode
+        mode = os.stat(targetpath).st_mode & ~self.allowed_mode | mode
+        os.chmod(targetpath, mode)
+
+class ZipExtractorTime(ZipExtractorBase):
+    """Restores time (if platform supports)."""
+    def restore_attributes(self, targetpath, zinfo):
+        self.utime(targetpath, zinfo)
+
+class ZipExtractorTimeMode(ZipExtractorTime):
+    """Restores time and all mode (if platform supports)."""
+    def restore_attributes(self, targetpath, zinfo):
+        self.utime(targetpath, zinfo)
+        self.chmod(targetpath, zinfo)
+
+class ZipExtractorTimeModeSafe(ZipExtractorTimeMode):
+    """Restores time and safe mode (if platform supports)."""
+    allowed_mode = 0o777
+
+class ZipExtractorTimeModeX(ZipExtractorTimeMode):
+    """Restores time and x mode (if platform supports)."""
+    allowed_mode = 0o111
+
+
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
 
@@ -2313,37 +2400,35 @@ class ZipFile:
         self._writing = True
         return _ZipWriteFile(self, zinfo, zip64)
 
-    def extract(self, member, path=None, pwd=None):
+    def extract(self, member, path=None, pwd=None, extractor=None):
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately
            as possible. 'member' may be a filename or a ZipInfo object. You can
            specify a different directory using 'path'. You can specify the
-           password to decrypt the file using 'pwd'.
+           password to decrypt the file using 'pwd'. 'extractor' specifies a
+           custom extractor class.
         """
-        if path is None:
-            path = os.getcwd()
-        else:
-            path = os.fspath(path)
+        if extractor is None:
+            extractor = ZipExtractorBase
+        zinfo = member if isinstance(member, ZipInfo) else self.getinfo(member)
+        return extractor(self, path, pwd=pwd)(zinfo)
 
-        return self._extract_member(member, path, pwd)
-
-    def extractall(self, path=None, members=None, pwd=None):
+    def extractall(self, path=None, members=None, pwd=None, extractor=None):
         """Extract all members from the archive to the current working
            directory. 'path' specifies a different directory to extract to.
            'members' is optional and must be a subset of the list returned
            by namelist(). You can specify the password to decrypt all files
-           using 'pwd'.
+           using 'pwd'. 'extractor' specifies a custom extractor class.
         """
         if members is None:
             members = self.namelist()
+        if extractor is None:
+            extractor = ZipExtractorBase
 
-        if path is None:
-            path = os.getcwd()
-        else:
-            path = os.fspath(path)
-
-        for zipinfo in members:
-            self._extract_member(zipinfo, path, pwd)
+        zinfos = [m if isinstance(m, ZipInfo) else self.getinfo(m) for m in members]
+        with extractor(self, path, pwd=pwd) as extr:
+            for zinfo in zinfos:
+                extr(zinfo)
 
     def remove(self, zinfo_or_arcname):
         """Remove a member from the archive."""
