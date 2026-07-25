@@ -1305,7 +1305,7 @@ test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
 }
 
 static PyObject *
-test_structseq_newtype_interspersed_unnamed(PyObject *Py_UNUSED(self),
+structseq_newtype_interspersed_unnamed(PyObject *Py_UNUSED(self),
                               PyObject *Py_UNUSED(args))
 {
     // gh-154387: unnamed fields may appear anywhere among the visible fields
@@ -3029,8 +3029,8 @@ static PyMethodDef TestMethods[] = {
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_structseq_newtype_null_descr_doc",
         test_structseq_newtype_null_descr_doc, METH_NOARGS},
-    {"test_structseq_newtype_interspersed_unnamed",
-        test_structseq_newtype_interspersed_unnamed, METH_NOARGS},
+    {"structseq_newtype_interspersed_unnamed",
+        structseq_newtype_interspersed_unnamed, METH_NOARGS},
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},

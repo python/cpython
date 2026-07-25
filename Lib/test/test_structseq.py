@@ -77,7 +77,7 @@ class StructSeqTest(unittest.TestCase):
         # shown at its own index rather than borrowing a neighbour's name.  The
         # trailing named field is hidden and must not appear in the repr.
         _testcapi = import_helper.import_module("_testcapi")
-        cls = _testcapi.test_structseq_newtype_interspersed_unnamed()
+        cls = _testcapi.structseq_newtype_interspersed_unnamed()
         self.assertEqual(cls.n_fields, 5)
         self.assertEqual(cls.n_sequence_fields, 4)
         self.assertEqual(cls.n_unnamed_fields, 2)
