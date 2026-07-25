@@ -1,1 +1,1 @@
-Fix use after free race condition when calling :func:`repr` on :class:`itertools.count` for large integers (slow mode) under the :term:`free-threaded build`.
+Fix use-after-free race condition when calling :func:`repr` on :class:`itertools.count` under the :term:`free-threaded build`.
