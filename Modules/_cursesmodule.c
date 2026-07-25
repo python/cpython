@@ -776,10 +776,10 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
     return rtn;
 }
 
-/* winch() returns the low 8 bits of the character's code point with no locale
-   conversion, unlike instr(), so recover the locale byte from the wide cell
-   when the character maps to exactly one byte, keeping the attribute and color
-   bits in RTN.  A character with no single-byte form is left to winch(). */
+/* winch() does not convert the character to its locale byte, and its bits above
+   the character may be code-point bits rather than attributes, so rebuild the
+   value from the locale byte plus getcchar()'s attributes and color pair.  A
+   character with no single-byte form is left to winch(). */
 static chtype
 curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
 {
@@ -795,7 +795,7 @@ curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
        when the character has none in this locale. */
     int byte = wctob(wstr[0]);
     if (byte != EOF) {
-        rtn = (rtn & ~(chtype)A_CHARTEXT) | (unsigned char)byte;
+        rtn = (unsigned char)byte | (attrs & ~(attr_t)A_COLOR) | COLOR_PAIR(pair);
     }
     return rtn;
 }
