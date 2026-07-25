@@ -1,6 +1,6 @@
 from unittest import mock
 from test import support
-from test.support import socket_helper, control_characters_c0
+from test.support import force_not_colorized, socket_helper, control_characters_c0
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -192,6 +192,7 @@ class IntegrationTests(TestCase):
             err.splitlines()[-2], "AssertionError"
         )
 
+    @force_not_colorized
     def test_bytes_validation(self):
         def app(e, s):
             s("200 OK", [
@@ -854,6 +855,25 @@ class HandlerTests(TestCase):
         self.assertIsNotNone(h.headers)
         self.assertIsNotNone(h.status)
         self.assertIsNotNone(h.environ)
+
+    def testRaisesControlCharacters(self):
+        for c0 in control_characters_c0():
+            with self.subTest(c0):
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response(c0, [('x', 'y')])
+
+                base = BaseHandler()
+                with self.assertRaises(ValueError):
+                    base.start_response('200 OK', [(c0, 'y')])
+
+                # HTAB (\x09) is allowed in header values, but not in names.
+                base = BaseHandler()
+                if c0 != "\t":
+                    with self.assertRaises(ValueError):
+                        base.start_response('200 OK', [('x', c0)])
+                else:
+                    base.start_response('200 OK', [('x', c0)])
 
 
 class TestModule(unittest.TestCase):

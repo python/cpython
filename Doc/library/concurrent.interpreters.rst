@@ -4,9 +4,6 @@
 .. module:: concurrent.interpreters
    :synopsis: Multiple interpreters in the same process
 
-.. moduleauthor:: Eric Snow <ericsnowcurrently@gmail.com>
-.. sectionauthor:: Eric Snow <ericsnowcurrently@gmail.com>
-
 .. versionadded:: 3.14
 
 **Source code:** :source:`Lib/concurrent/interpreters`
@@ -24,7 +21,7 @@ thread) and calling a function in that execution context.
 For concurrency, interpreters themselves (and this module) don't
 provide much more than isolation, which on its own isn't useful.
 Actual concurrency is available separately through
-:mod:`threads <threading>`  See `below <interp-concurrency_>`_
+:mod:`threads <threading>` -- see `below <interp-concurrency_>`_.
 
 .. seealso::
 

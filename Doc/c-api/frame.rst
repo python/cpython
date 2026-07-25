@@ -1,6 +1,6 @@
 .. highlight:: c
 
-Frame Objects
+Frame objects
 -------------
 
 .. c:type:: PyFrameObject
@@ -50,6 +50,7 @@ See also :ref:`Reflection <reflection>`.
 
    Return a :term:`strong reference`, or ``NULL`` if *frame* has no outer
    frame.
+   This raises no exceptions.
 
    .. versionadded:: 3.9
 
@@ -146,7 +147,7 @@ See also :ref:`Reflection <reflection>`.
    Return the line number that *frame* is currently executing.
 
 
-Frame Locals Proxies
+Frame locals proxies
 ^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 3.13
@@ -168,7 +169,7 @@ See :pep:`667` for more information.
    Return non-zero if *obj* is a frame :func:`locals` proxy.
 
 
-Legacy Local Variable APIs
+Legacy local variable APIs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These APIs are :term:`soft deprecated`. As of Python 3.13, they do nothing.
@@ -177,40 +178,34 @@ They exist solely for backwards compatibility.
 
 .. c:function:: void PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
-   This function is :term:`soft deprecated` and does nothing.
-
    Prior to Python 3.13, this function would copy the :attr:`~frame.f_locals`
    attribute of *f* to the internal "fast" array of local variables, allowing
    changes in frame objects to be visible to the interpreter. If *clear* was
    true, this function would process variables that were unset in the locals
    dictionary.
 
-   .. versionchanged:: 3.13
+   .. soft-deprecated:: 3.13
       This function now does nothing.
 
 
 .. c:function:: void PyFrame_FastToLocals(PyFrameObject *f)
-
-   This function is :term:`soft deprecated` and does nothing.
 
    Prior to Python 3.13, this function would copy the internal "fast" array
    of local variables (which is used by the interpreter) to the
    :attr:`~frame.f_locals` attribute of *f*, allowing changes in local
    variables to be visible to frame objects.
 
-   .. versionchanged:: 3.13
+   .. soft-deprecated:: 3.13
       This function now does nothing.
 
 
 .. c:function:: int PyFrame_FastToLocalsWithError(PyFrameObject *f)
 
-   This function is :term:`soft deprecated` and does nothing.
-
    Prior to Python 3.13, this function was similar to
    :c:func:`PyFrame_FastToLocals`, but would return ``0`` on success, and
    ``-1`` with an exception set on failure.
 
-   .. versionchanged:: 3.13
+   .. soft-deprecated:: 3.13
       This function now does nothing.
 
 
@@ -218,7 +213,7 @@ They exist solely for backwards compatibility.
    :pep:`667`
 
 
-Internal Frames
+Internal frames
 ^^^^^^^^^^^^^^^
 
 Unless using :pep:`523`, you will not need this.
@@ -249,4 +244,61 @@ Unless using :pep:`523`, you will not need this.
 
    .. versionadded:: 3.12
 
+
+.. c:var:: const PyTypeObject *PyUnstable_ExecutableKinds
+
+   An array of executable kinds (executor types) for frames, used for internal
+   debugging and tracing.
+
+   Tools like debuggers and profilers can use this to identify the type of execution
+   context associated with a frame (such as to filter out internal frames).
+   The entries are indexed by the following constants:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: auto
+
+      * - Constant
+        - Description
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
+        - The frame is internal (For example: inlined) and should be skipped by tools.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
+        - The frame corresponds to a standard Python function.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
+        - The frame corresponds to a function defined in native code.
+      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
+        - The frame corresponds to a method on a class instance.
+
+   However, Python's C API lacks a function to read the executable kind from
+   a frame. Instead, use this recipe:
+
+   .. code-block:: c
+
+      int
+      get_executable_kind(PyFrameObject *frame)
+      {
+         _PyInterpreterFrame *f = frame->f_frame;
+         PyObject *exec = PyStackRef_AsPyObjectBorrow(f->f_executable);
+
+         if (PyCode_Check(exec)) {
+            return PyUnstable_EXECUTABLE_KIND_PY_FUNCTION;
+         }
+         if (PyMethod_Check(exec)) {
+            return PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION;
+         }
+         if (Py_IS_TYPE(exec, &PyMethodDescr_Type)) {
+            return PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR;
+         }
+
+         return PyUnstable_EXECUTABLE_KIND_SKIP;
+      }
+
+   .. versionadded:: 3.13
+
+
+.. c:macro:: PyUnstable_EXECUTABLE_KINDS
+
+   The number of entries in :c:data:`PyUnstable_ExecutableKinds`.
+
+   .. versionadded:: 3.13
 

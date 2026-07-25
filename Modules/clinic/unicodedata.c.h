@@ -691,6 +691,42 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicodedata_block__doc__,
+"block($module, chr, /)\n"
+"--\n"
+"\n"
+"Return block assigned to the character chr.");
+
+#define UNICODEDATA_BLOCK_METHODDEF    \
+    {"block", (PyCFunction)unicodedata_block, METH_O, unicodedata_block__doc__},
+
+static PyObject *
+unicodedata_block_impl(PyObject *module, int chr);
+
+static PyObject *
+unicodedata_block(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int chr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("block", "argument", "a unicode character", arg);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(arg) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "block(): argument must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(arg));
+        goto exit;
+    }
+    chr = PyUnicode_READ_CHAR(arg, 0);
+    return_value = unicodedata_block_impl(module, chr);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicodedata_grapheme_cluster_break__doc__,
 "grapheme_cluster_break($module, chr, /)\n"
 "--\n"
@@ -798,4 +834,4 @@ unicodedata_extended_pictographic(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0f09cc90f06ace76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=482a87df218f07c1 input=a9049054013a1b77]*/

@@ -2,11 +2,7 @@
 ==========================================
 
 .. module:: tty
-   :platform: Unix
    :synopsis: Utility functions that perform common terminal control operations.
-
-.. moduleauthor:: Steen Lumholt
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/tty.py`
 

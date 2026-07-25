@@ -83,13 +83,20 @@ noted otherwise, all return values are floats.
 
 **Trigonometric functions**
 --------------------------------------------------------------------------------------------------
-:func:`acos(x) <acos>`                                Arc cosine of *x*
-:func:`asin(x) <asin>`                                Arc sine of *x*
-:func:`atan(x) <atan>`                                Arc tangent of *x*
-:func:`atan2(y, x) <atan2>`                           ``atan(y / x)``
-:func:`cos(x) <cos>`                                  Cosine of *x*
-:func:`sin(x) <sin>`                                  Sine of *x*
-:func:`tan(x) <tan>`                                  Tangent of *x*
+:func:`acos(x) <acos>`                                Arc cosine of *x*, in radians
+:func:`acospi(x) <acospi>`                            Arc cosine of *x*, in half-turns
+:func:`asin(x) <asin>`                                Arc sine of *x*, in radians
+:func:`asinpi(x) <asinpi>`                            Arc sine of *x*, in half-turns
+:func:`atan(x) <atan>`                                Arc tangent of *x*, in radians
+:func:`atanpi(x) <atanpi>`                            Arc tangent of *x*, in half-turns
+:func:`atan2(y, x) <atan2>`                           ``atan(y / x)``, in radians
+:func:`atan2pi(y, x) <atan2pi>`                       ``atan(y / x)``, in half-turns
+:func:`cos(x) <cos>`                                  Cosine of *x* radians
+:func:`cospi(x) <cospi>`                              Cosine of *x⋅π* radians
+:func:`sin(x) <sin>`                                  Sine of *x* radians
+:func:`sinpi(x) <sinpi>`                              Sine of *x⋅π* radians
+:func:`tan(x) <tan>`                                  Tangent of *x* radians
+:func:`tanpi(x) <tanpi>`                              Tangent of *x⋅π* radians
 
 **Hyperbolic functions**
 --------------------------------------------------------------------------------------------------
@@ -255,10 +262,12 @@ Floating point manipulation functions
 
 .. function:: frexp(x)
 
-   Return the mantissa and exponent of *x* as the pair ``(m, e)``.  *m* is a float
-   and *e* is an integer such that ``x == m * 2**e`` exactly. If *x* is zero,
-   returns ``(0.0, 0)``, otherwise ``0.5 <= abs(m) < 1``.  This is used to "pick
-   apart" the internal representation of a float in a portable way.
+   Return the mantissa and exponent of *x* as the pair ``(m, e)``.
+   If *x* is a finite nonzero number, then *m* is a float with
+   ``0.5 <= abs(m) < 1.0`` and an integer *e* is such that
+   ``x == m * 2**e`` exactly.  Else, return ``(x, 0)``.
+   This is used to "pick apart" the internal representation of
+   a float in a portable way.
 
    Note that :func:`frexp` has a different call/return pattern
    than its C equivalents: it takes a single argument and return a pair of
@@ -597,16 +606,40 @@ Trigonometric functions
    ``pi``.
 
 
+.. function:: acospi(x)
+
+   Return the arc cosine of *x*, in half-turns. The result is between ``0`` and
+   ``1``.
+
+   .. versionadded:: next
+
+
 .. function:: asin(x)
 
    Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
    ``pi/2``.
 
 
+.. function:: asinpi(x)
+
+   Return the arc sine of *x*, in half-turns. The result is between ``-0.5`` and
+   ``0.5``.
+
+   .. versionadded:: next
+
+
 .. function:: atan(x)
 
    Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
    ``pi/2``.
+
+
+.. function:: atanpi(x)
+
+   Return the arc tangent of *x*, in half-turns. The result is between ``-0.5`` and
+   ``0.5``.
+
+   .. versionadded:: next
 
 
 .. function:: atan2(y, x)
@@ -619,9 +652,28 @@ Trigonometric functions
    -1)`` is ``-3*pi/4``.
 
 
+.. function:: atan2pi(y, x)
+
+   Return ``atanpi(y / x)``, in half-turns. The result is between ``-1`` and ``1``.
+   The vector in the plane from the origin to point ``(x, y)`` makes this angle
+   with the positive X axis. The point of :func:`atan2pi` is that the signs of both
+   inputs are known to it, so it can compute the correct quadrant for the angle.
+   For example, ``atanpi(1)`` and ``atan2pi(1, 1)`` are both ``0.25``, but
+   ``atan2pi(-1, -1)`` is ``-0.75``.
+
+   .. versionadded:: next
+
+
 .. function:: cos(x)
 
    Return the cosine of *x* radians.
+
+
+.. function:: cospi(x)
+
+   Return the cosine of *x* half-turns (*x⋅π* radians).
+
+   .. versionadded:: next
 
 
 .. function:: sin(x)
@@ -629,9 +681,23 @@ Trigonometric functions
    Return the sine of *x* radians.
 
 
+.. function:: sinpi(x)
+
+   Return the sine of *x* half-turns (*x⋅π* radians).
+
+   .. versionadded:: next
+
+
 .. function:: tan(x)
 
    Return the tangent of *x* radians.
+
+
+.. function:: tanpi(x)
+
+   Return the tangent of *x* half-turns (*x⋅π* radians).
+
+   .. versionadded:: next
 
 
 Hyperbolic functions
@@ -781,9 +847,8 @@ the following functions from the :mod:`math.integer` module:
    Floats with integral values (like ``5.0``) are no longer accepted in the
    :func:`factorial` function.
 
-.. deprecated:: 3.15
-   These aliases are :term:`soft deprecated` in favor of the
-   :mod:`math.integer` functions.
+.. soft-deprecated:: 3.15
+   Use the :mod:`math.integer` functions instead of these aliases.
 
 
 Constants

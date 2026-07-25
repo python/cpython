@@ -454,16 +454,20 @@ math_integer_isqrt(PyObject *module, PyObject *n)
     /* The correct result is either a or a - 1. Figure out which, and
        decrement a if necessary. */
 
-    /* a_too_large = n < a * a */
+    /* a_too_large = n < a * a.  Compare by value: n can be an instance
+       of an int subclass with an overridden __lt__ method. */
     b = PyNumber_Multiply(a, a);
     if (b == NULL) {
         goto error;
     }
-    a_too_large = PyObject_RichCompareBool(n, b, Py_LT);
+    PyObject *cmp = PyLong_Type.tp_richcompare(n, b, Py_LT);
     Py_DECREF(b);
-    if (a_too_large == -1) {
+    if (cmp == NULL) {
         goto error;
     }
+    assert(PyBool_Check(cmp));
+    a_too_large = (cmp == Py_True);
+    Py_DECREF(cmp);
 
     if (a_too_large) {
         Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
@@ -1268,6 +1272,7 @@ math_integer_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot math_integer_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, math_integer_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
