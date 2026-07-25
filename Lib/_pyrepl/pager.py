@@ -35,7 +35,7 @@ def get_pager() -> Pager:
     if os.environ.get('TERM') in ('dumb', 'emacs'):
         return plain_pager
     if sys.platform == 'win32':
-        return lambda text, title='': tempfile_pager(plain(text), 'more <')
+        return lambda text, title='': tempfile_pager(plain(text), 'more')
     if hasattr(os, 'system') and os.system('(pager) 2>/dev/null') == 0:
         return lambda text, title='': pipe_pager(text, 'pager', title)
     if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
@@ -164,6 +164,8 @@ def pipe_pager(text: str, cmd: str, title: str = '') -> None:
 
 def tempfile_pager(text: str, cmd: str, title: str = '') -> None:
     """Page through text by invoking a program on a temporary file."""
+    import shlex
+    import subprocess
     import tempfile
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, 'pydoc.out')
@@ -172,4 +174,4 @@ def tempfile_pager(text: str, cmd: str, title: str = '') -> None:
                   sys.platform == 'win32' else None
                   ) as file:
             file.write(text)
-        os.system(cmd + ' "' + filename + '"')
+        subprocess.run(shlex.split(cmd) + [filename])
