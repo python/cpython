@@ -67,6 +67,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+#ifdef HAVE_ICONV
+#include <iconv.h>                 // iconv_open()
+#endif
+
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 #  include "pycore_fileutils.h"   // _Py_LocaleUsesNonUnicodeWchar()
 #endif
@@ -8192,6 +8196,384 @@ PyUnicode_AsMBCSString(PyObject *unicode)
 
 #endif /* MS_WINDOWS */
 
+/* --- iconv Codec -------------------------------------------------------- */
+
+#ifdef HAVE_ICONV
+
+/* iconv pivot: native-endian UTF-32, a raw array of Py_UCS4.  One input unit is
+   one code point, so error handlers get the exact position.  A platform whose
+   iconv lacks a UTF-32 endpoint (e.g. UTF-8-only OpenBSD) reports every encoding
+   as unavailable. */
+#if PY_BIG_ENDIAN
+#  define ICONV_PIVOT "UTF-32BE"
+#else
+#  define ICONV_PIVOT "UTF-32LE"
+#endif
+
+/* A 2-byte string can be fed to iconv as "UCS-2" only where that is a strict
+   array of independent code points.  Some implementations alias "UCS-2" to
+   "UTF-16" and would combine an adjacent surrogate pair (a 2-byte string may
+   hold one as two code points); there the 2-byte kind is widened to UTF-32.
+   glibc and GNU libiconv keep UCS-2 and UTF-16 separate. */
+#if defined(__GLIBC__) || defined(_LIBICONV_VERSION)
+#  if PY_BIG_ENDIAN
+#    define ICONV_UCS2_PIVOT "UCS-2BE"
+#  else
+#    define ICONV_UCS2_PIVOT "UCS-2LE"
+#  endif
+#endif
+
+static iconv_t
+iconv_open_or_set_error(const char *tocode, const char *fromcode,
+                        const char *encoding)
+{
+    iconv_t cd = iconv_open(tocode, fromcode);
+    if (cd == (iconv_t)-1) {
+        if (errno == EINVAL) {
+            PyErr_Format(PyExc_LookupError, "unknown encoding: %s", encoding);
+        }
+        else {
+            PyErr_SetFromErrno(PyExc_OSError);
+        }
+    }
+    return cd;
+}
+
+/*
+ * Decode bytes with iconv() into a str.
+ *
+ * The input is converted to native-endian UTF-32 one chunk at a time and
+ * appended to a _PyUnicodeWriter.  If *consumed* is non-NULL the decode is
+ * stateful: a trailing incomplete sequence stops and sets *consumed*.
+ */
+PyObject *
+_PyUnicode_DecodeIconv(const char *encoding,
+                       const char *s, Py_ssize_t size,
+                       const char *errors, Py_ssize_t *consumed)
+{
+    if (size < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    iconv_t cd = iconv_open_or_set_error(ICONV_PIVOT, encoding, encoding);
+    if (cd == (iconv_t)-1) {
+        return NULL;
+    }
+
+    /* Scratch buffer for one iconv() output chunk, as UTF-32 code points. */
+    Py_UCS4 chunk[1024];
+    const char *starts = s;
+    const char *in = s;
+    const char *inend = s + size;
+    _PyUnicodeWriter writer;
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
+
+    _PyUnicodeWriter_Init(&writer);
+    writer.min_length = size;
+
+    while (in < inend) {
+        char *inptr = (char *)in;
+        size_t inleft = (size_t)(inend - in);
+        char *outptr = (char *)chunk;
+        size_t outleft = sizeof(chunk);
+
+        /* Cast the input buffer through void*: iconv() declares its second
+           argument as "char **" on most systems but "const char **" on some
+           (e.g. illumos), and void* converts to either without a warning. */
+        size_t ret = iconv(cd, (void *)&inptr, &inleft, &outptr, &outleft);
+        int err = errno;
+        in = inptr;
+
+        /* Append whatever code points this call produced. */
+        Py_ssize_t nch = (Py_UCS4 *)outptr - chunk;
+        if (nch > 0 && PyUnicodeWriter_WriteUCS4((PyUnicodeWriter *)&writer,
+                                                 chunk, nch) < 0) {
+            goto error;
+        }
+
+        if (ret != (size_t)-1) {
+            assert(in == inend);
+            break;
+        }
+
+        if (err == E2BIG) {
+            /* The scratch buffer filled up; drain it and continue. */
+            continue;
+        }
+
+        const char *reason;
+        if (err == EINVAL) {
+            /* Incomplete multibyte sequence at the end of the input. */
+            if (consumed != NULL) {
+                /* Stateful decoding: stop and report the consumed bytes. */
+                break;
+            }
+            reason = "incomplete multibyte sequence";
+        }
+        else if (err == EILSEQ) {
+            reason = "invalid multibyte sequence";
+        }
+        else {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto error;
+        }
+
+        Py_ssize_t startinpos = in - starts;
+        Py_ssize_t endinpos = startinpos + 1;
+        if (unicode_decode_call_errorhandler_writer(
+                errors, &errorHandler, encoding, reason,
+                &starts, &inend, &startinpos, &endinpos, &exc, &in,
+                &writer)) {
+            goto error;
+        }
+        /* The error handler may have skipped bytes; reset the conversion
+           descriptor to the initial shift state before continuing. */
+        iconv(cd, NULL, NULL, NULL, NULL);
+    }
+
+    if (consumed != NULL) {
+        *consumed = in - starts;
+    }
+    iconv_close(cd);
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    return _PyUnicodeWriter_Finish(&writer);
+
+error:
+    iconv_close(cd);
+    _PyUnicodeWriter_Dealloc(&writer);
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    return NULL;
+}
+
+/* Grow the output buffer of a PyBytesWriter, keeping the raw cursor *pout and
+   the end pointer *poutend valid.  Returns 0 on success, -1 on error. */
+static int
+iconv_grow_writer(PyBytesWriter *writer, char **pout, char **poutend)
+{
+    char *base = PyBytesWriter_GetData(writer);
+    Py_ssize_t used = *pout - base;
+    Py_ssize_t cursize = PyBytesWriter_GetSize(writer);
+    Py_ssize_t growby = cursize > 0 ? cursize : 16;
+    if (PyBytesWriter_Grow(writer, growby) < 0) {
+        return -1;
+    }
+    base = PyBytesWriter_GetData(writer);
+    *pout = base + used;
+    *poutend = base + PyBytesWriter_GetSize(writer);
+    return 0;
+}
+
+/*
+ * Encode a str to bytes with iconv().
+ *
+ * The string's own buffer is fed to iconv() using the source encoding for its
+ * kind, avoiding a widening copy: Latin-1 for 1-byte (not ASCII: it may hold
+ * U+0080..U+00FF), UTF-32 for 4-byte, and UCS-2 -- or a UTF-32 copy where that
+ * is unsafe (see ICONV_UCS2_PIVOT) -- for 2-byte.  One input unit is one code
+ * point, so the unit index is the string position.
+ */
+PyObject *
+_PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
+                       const char *errors)
+{
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return NULL;
+    }
+
+    Py_ssize_t ulen = PyUnicode_GET_LENGTH(unicode);
+    const char *source;         /* iconv source encoding for this kind */
+    const char *data;           /* the units to encode */
+    Py_ssize_t unit;            /* bytes per code point in *data */
+    Py_UCS4 *widened = NULL;    /* owned UTF-32 copy of a 2-byte string */
+    int kind = PyUnicode_KIND(unicode);
+    if (kind == PyUnicode_1BYTE_KIND) {
+        source = "ISO-8859-1";
+        data = (const char *)PyUnicode_1BYTE_DATA(unicode);
+        unit = 1;
+    }
+    else if (kind == PyUnicode_4BYTE_KIND) {
+        source = ICONV_PIVOT;
+        data = (const char *)PyUnicode_4BYTE_DATA(unicode);
+        unit = 4;
+    }
+    else {
+#ifdef ICONV_UCS2_PIVOT
+        /* Known-strict UCS-2: feed the 2-byte buffer directly. */
+        source = ICONV_UCS2_PIVOT;
+        data = (const char *)PyUnicode_2BYTE_DATA(unicode);
+        unit = 2;
+#else
+        /* UCS-2 may be aliased to UTF-16 here; widen to UTF-32 to be safe. */
+        widened = PyUnicode_AsUCS4Copy(unicode);
+        if (widened == NULL) {
+            return NULL;
+        }
+        source = ICONV_PIVOT;
+        data = (const char *)widened;
+        unit = 4;
+#endif
+    }
+
+    iconv_t cd = iconv_open_or_set_error(encoding, source, encoding);
+    if (cd == (iconv_t)-1) {
+        PyMem_Free(widened);
+        return NULL;
+    }
+
+    PyBytesWriter *writer = NULL;
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
+    PyObject *result = NULL;
+    const char *ustart = data;
+    const char *up = data;
+    const char *uend = data + (size_t)ulen * unit;
+    int flushing = 0;
+    int careful = 0;            /* feed one code point per iconv() call */
+
+    /* A generous initial estimate for the output size. */
+    writer = PyBytesWriter_Create(ulen + (ulen >> 1) + 16);
+    if (writer == NULL) {
+        goto done;
+    }
+    char *out = PyBytesWriter_GetData(writer);
+    char *outend = out + PyBytesWriter_GetSize(writer);
+
+    for (;;) {
+        char *inptr = (char *)up;
+        size_t inleft = (size_t)(uend - up);
+        /* One code point at a time, to pin a substitution to its position. */
+        if (careful && inleft > (size_t)unit) {
+            inleft = (size_t)unit;
+        }
+        char *out_before = out;
+        size_t outleft = (size_t)(outend - out);
+        /* When the whole string is converted, a final iconv() call with a
+           NULL input flushes any pending shift sequence (e.g. ISO-2022). */
+        /* See the note above on the void* cast of the iconv() input buffer. */
+        size_t ret = iconv(cd, flushing ? NULL : (void *)&inptr, &inleft, &out, &outleft);
+        if (!flushing) {
+            up = inptr;
+        }
+
+        if (ret != (size_t)-1) {
+            /* A positive result counts nonreversible conversions: iconv()
+               substituted an unencodable character instead of failing with
+               EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
+               and re-run one code point at a time to locate it. */
+            if (ret > 0) {
+                if (!careful) {
+                    careful = 1;
+                    iconv(cd, NULL, NULL, NULL, NULL);
+                    out = PyBytesWriter_GetData(writer);
+                    outend = out + PyBytesWriter_GetSize(writer);
+                    up = ustart;
+                    continue;
+                }
+                /* This code point was substituted; drop it and report it. */
+                out = out_before;
+                up -= unit;
+            }
+            else if (flushing) {
+                break;
+            }
+            else if (careful && up < uend) {
+                continue;
+            }
+            else {
+                /* All input consumed; switch to flushing the shift state. */
+                flushing = 1;
+                continue;
+            }
+        }
+        else if (errno == E2BIG) {
+            if (iconv_grow_writer(writer, &out, &outend) < 0) {
+                goto done;
+            }
+            continue;
+        }
+        else if (errno != EILSEQ && errno != EINVAL) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto done;
+        }
+
+        /* An unencodable code point at *up; one input unit is one code point. */
+        Py_ssize_t pos = (up - ustart) / unit;
+        Py_ssize_t newpos;
+        PyObject *rep = unicode_encode_call_errorhandler(
+                errors, &errorHandler, encoding, "invalid character",
+                unicode, &exc, pos, pos + 1, &newpos);
+        if (rep == NULL) {
+            goto done;
+        }
+
+        const char *repdata;
+        Py_ssize_t replen;
+        PyObject *repbytes = NULL;
+        if (PyBytes_Check(rep)) {
+            repdata = PyBytes_AS_STRING(rep);
+            replen = PyBytes_GET_SIZE(rep);
+        }
+        else {
+            /* A str replacement is encoded through the same codec. */
+            assert(PyUnicode_Check(rep));
+            repbytes = _PyUnicode_EncodeIconv(encoding, rep, errors);
+            Py_DECREF(rep);
+            if (repbytes == NULL) {
+                goto done;
+            }
+            repdata = PyBytes_AS_STRING(repbytes);
+            replen = PyBytes_GET_SIZE(repbytes);
+        }
+
+        while (outend - out < replen) {
+            if (iconv_grow_writer(writer, &out, &outend) < 0) {
+                if (repbytes != NULL) {
+                    Py_DECREF(repbytes);
+                }
+                else {
+                    Py_DECREF(rep);
+                }
+                goto done;
+            }
+        }
+        memcpy(out, repdata, replen);
+        out += replen;
+        if (repbytes != NULL) {
+            Py_DECREF(repbytes);
+        }
+        else {
+            Py_DECREF(rep);
+        }
+        up = ustart + (size_t)newpos * unit;
+        /* Reset the shift state after the injected replacement bytes. */
+        iconv(cd, NULL, NULL, NULL, NULL);
+    }
+
+    if (PyBytesWriter_Resize(writer, out - (char *)PyBytesWriter_GetData(writer)) < 0) {
+        goto done;
+    }
+    result = PyBytesWriter_Finish(writer);
+    writer = NULL;
+
+done:
+    if (writer != NULL) {
+        PyBytesWriter_Discard(writer);
+    }
+    iconv_close(cd);
+    PyMem_Free(widened);
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    return result;
+}
+
+#endif /* HAVE_ICONV */
+
 /* --- Character Mapping Codec -------------------------------------------- */
 
 static int
@@ -10753,9 +11135,9 @@ replace(PyObject *self, PyObject *str1,
     }
 
   done:
-    assert(srelease == (sbuf != PyUnicode_DATA(self)));
-    assert(release1 == (buf1 != PyUnicode_DATA(str1)));
-    assert(release2 == (buf2 != PyUnicode_DATA(str2)));
+    assert(srelease == (sbuf != NULL && sbuf != PyUnicode_DATA(self)));
+    assert(release1 == (buf1 != NULL && buf1 != PyUnicode_DATA(str1)));
+    assert(release2 == (buf2 != NULL && buf2 != PyUnicode_DATA(str2)));
     if (srelease)
         PyMem_Free((void *)sbuf);
     if (release1)
@@ -10767,9 +11149,9 @@ replace(PyObject *self, PyObject *str1,
 
   nothing:
     /* nothing to replace; return original string (when possible) */
-    assert(srelease == (sbuf != PyUnicode_DATA(self)));
-    assert(release1 == (buf1 != PyUnicode_DATA(str1)));
-    assert(release2 == (buf2 != PyUnicode_DATA(str2)));
+    assert(srelease == (sbuf != NULL && sbuf != PyUnicode_DATA(self)));
+    assert(release1 == (buf1 != NULL && buf1 != PyUnicode_DATA(str1)));
+    assert(release2 == (buf2 != NULL && buf2 != PyUnicode_DATA(str2)));
     if (srelease)
         PyMem_Free((void *)sbuf);
     if (release1)
@@ -10779,9 +11161,9 @@ replace(PyObject *self, PyObject *str1,
     return unicode_result_unchanged(self);
 
   error:
-    assert(srelease == (sbuf != PyUnicode_DATA(self)));
-    assert(release1 == (buf1 != PyUnicode_DATA(str1)));
-    assert(release2 == (buf2 != PyUnicode_DATA(str2)));
+    assert(srelease == (sbuf != NULL && sbuf != PyUnicode_DATA(self)));
+    assert(release1 == (buf1 != NULL && buf1 != PyUnicode_DATA(str1)));
+    assert(release2 == (buf2 != NULL && buf2 != PyUnicode_DATA(str2)));
     if (srelease)
         PyMem_Free((void *)sbuf);
     if (release1)
@@ -14344,7 +14726,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     }
 #endif
 
-    FT_MUTEX_LOCK(INTERN_MUTEX);
+    FT_MUTEX_LOCK_FLAGS(INTERN_MUTEX, _Py_LOCK_DONT_DETACH);
     PyObject *t;
     {
         int res = PyDict_SetDefaultRef(interned, s, s, &t);

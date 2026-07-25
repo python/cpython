@@ -1060,7 +1060,7 @@ static Py_complex rect_special_values[7][7] = {
 };
 
 /*[clinic input]
-cmath.rect
+cmath.rect -> Py_complex_protected
 
     r: double
     phi: double
@@ -1069,9 +1069,9 @@ cmath.rect
 Convert from polar coordinates to rectangular coordinates.
 [clinic start generated code]*/
 
-static PyObject *
+static Py_complex
 cmath_rect_impl(PyObject *module, double r, double phi)
-/*[clinic end generated code: output=385a0690925df2d5 input=24c5646d147efd69]*/
+/*[clinic end generated code: output=74ff3d17585f3388 input=50e60c5d28c834e6]*/
 {
     Py_complex z;
     errno = 0;
@@ -1115,11 +1115,7 @@ cmath_rect_impl(PyObject *module, double r, double phi)
         z.imag = r * sin(phi);
         errno = 0;
     }
-
-    if (errno != 0)
-        return math_error();
-    else
-        return PyComplex_FromCComplex(z);
+    return z;
 }
 
 /*[clinic input]

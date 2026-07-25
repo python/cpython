@@ -2135,7 +2135,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The encoding and error handling are is initialized from
+   * The encoding and error handling are initialized from
      :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character
@@ -2240,8 +2240,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       The name of the lock implementation:
 
-      * ``"semaphore"``: a lock uses a semaphore
-      * ``"mutex+cond"``: a lock uses a mutex and a condition variable
+      * ``"semaphore"``: a lock uses a semaphore (Python 3.14 and older)
+      * ``"mutex+cond"``: a lock uses a mutex and a condition variable (Python 3.14 and older)
+      * ``"pymutex"``: a lock uses the :c:type:`PyMutex` implementation (Python 3.15 and newer)
       * ``None`` if this information is unknown
 
    .. attribute:: thread_info.version
