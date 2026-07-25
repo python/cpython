@@ -1305,7 +1305,7 @@ test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
 }
 
 static PyObject *
-test_structseq_newtype_negative_n_in_sequence(PyObject *Py_UNUSED(self),
+structseq_newtype_negative_n_in_sequence(PyObject *Py_UNUSED(self),
                               PyObject *Py_UNUSED(args))
 {
     // gh-154387: n_in_sequence must not be negative.
@@ -1329,7 +1329,7 @@ test_structseq_newtype_negative_n_in_sequence(PyObject *Py_UNUSED(self),
 }
 
 static PyObject *
-test_structseq_newtype_unnamed_hidden_field(PyObject *Py_UNUSED(self),
+structseq_newtype_unnamed_hidden_field(PyObject *Py_UNUSED(self),
                               PyObject *Py_UNUSED(args))
 {
     // gh-154387: an unnamed field is only allowed among the visible sequence
@@ -1355,7 +1355,7 @@ test_structseq_newtype_unnamed_hidden_field(PyObject *Py_UNUSED(self),
 }
 
 static PyObject *
-test_structseq_newtype_too_many_visible_fields(PyObject *Py_UNUSED(self),
+structseq_newtype_too_many_visible_fields(PyObject *Py_UNUSED(self),
                               PyObject *Py_UNUSED(args))
 {
     // gh-154387: n_in_sequence must not exceed the total number of fields.
@@ -3082,12 +3082,12 @@ static PyMethodDef TestMethods[] = {
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_structseq_newtype_null_descr_doc",
         test_structseq_newtype_null_descr_doc, METH_NOARGS},
-    {"test_structseq_newtype_negative_n_in_sequence",
-        test_structseq_newtype_negative_n_in_sequence, METH_NOARGS},
-    {"test_structseq_newtype_unnamed_hidden_field",
-        test_structseq_newtype_unnamed_hidden_field, METH_NOARGS},
-    {"test_structseq_newtype_too_many_visible_fields",
-        test_structseq_newtype_too_many_visible_fields, METH_NOARGS},
+    {"structseq_newtype_negative_n_in_sequence",
+        structseq_newtype_negative_n_in_sequence, METH_NOARGS},
+    {"structseq_newtype_unnamed_hidden_field",
+        structseq_newtype_unnamed_hidden_field, METH_NOARGS},
+    {"structseq_newtype_too_many_visible_fields",
+        structseq_newtype_too_many_visible_fields, METH_NOARGS},
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
