@@ -377,7 +377,7 @@ and reliable way to wait for all tasks in the group to finish.
 
       * call it from the task group body based on some condition or event
       * pass the task group instance to child tasks via :meth:`create_task`, allowing a child
-        task to conditionally cancel the entire entire group
+        task to conditionally cancel the entire group
       * pass the task group instance or bound :meth:`cancel` method to some other task *before*
         opening the task group, allowing remote cancellation
 
@@ -924,6 +924,9 @@ Waiting primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
+   If ``wait()`` is cancelled, the futures in *aws* are not cancelled
+   and continue to run.
+
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
@@ -980,6 +983,10 @@ Waiting primitives
    A :exc:`TimeoutError` is raised if the timeout occurs before all awaitables
    are done. This is raised by the ``async for`` loop during asynchronous
    iteration or by the coroutines yielded during plain iteration.
+
+   ``as_completed()`` does not cancel the tasks running the supplied
+   awaitables: if a timeout occurs or the iteration is cancelled, the
+   remaining tasks continue to run.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.

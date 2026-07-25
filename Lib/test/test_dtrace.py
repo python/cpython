@@ -1,6 +1,7 @@
 import dis
 import os.path
 import re
+import shlex
 import signal
 import subprocess
 import sys
@@ -73,6 +74,33 @@ def kill_process_group(proc):
     proc.communicate()  # Clean up
 
 
+def run_readelf(cmd):
+    # Force the C locale to disable localization.
+    env = dict(os.environ, LC_ALL="C")
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+        )
+    except OSError:
+        raise unittest.SkipTest("Couldn't find readelf on the path")
+
+    with proc:
+        stdout, stderr = proc.communicate()
+
+    if proc.returncode:
+        raise AssertionError(
+            f"Command {shlex.join(cmd)!r} failed "
+            f"with exit code {proc.returncode}: "
+            f"stdout={stdout!r} stderr={stderr!r}"
+        )
+
+    return stdout
+
+
 class TraceBackend:
     EXTENSION = None
     COMMAND = None
@@ -98,7 +126,8 @@ class TraceBackend:
             command += ["-c", subcommand]
         return command
 
-    def trace(self, script_file, subcommand=None, *, timeout=None):
+    def trace(self, script_file, subcommand=None, *, timeout=None,
+              check_returncode=False):
         command = self.generate_trace_command(script_file, subcommand)
         proc = create_process_group(command,
                                     stdout=subprocess.PIPE,
@@ -109,14 +138,20 @@ class TraceBackend:
         except subprocess.TimeoutExpired:
             kill_process_group(proc)
             raise
+        if check_returncode and proc.returncode:
+            raise AssertionError(
+                f"Command {shlex.join(command)!r} failed "
+                f"with exit code {proc.returncode}: output={stdout!r}"
+            )
         return stdout
 
     def trace_python(self, script_file, python_file, optimize_python=None):
         python_flags = []
         if optimize_python:
             python_flags.extend(["-O"] * optimize_python)
-        subcommand = " ".join([sys.executable] + python_flags + [python_file])
-        return self.trace(script_file, subcommand, timeout=60)
+        subcommand = shlex.join([sys.executable] + python_flags + [python_file])
+        return self.trace(script_file, subcommand, timeout=60,
+                          check_returncode=True)
 
     def assert_usable(self):
         try:
@@ -242,7 +277,7 @@ gc__done:1""",
 
         try:
             proc = create_process_group(
-                ["bpftrace", "-e", program, "-c", " ".join(subcommand)],
+                ["bpftrace", "-e", program, "-c", shlex.join(subcommand)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
@@ -280,7 +315,8 @@ gc__done:1""",
         program = f'usdt:{sys.executable}:python:function__entry {{ printf("probe: success\\n"); exit(); }}'
         try:
             proc = create_process_group(
-                ["bpftrace", "-e", program, "-c", f"{sys.executable} -c pass"],
+                ["bpftrace", "-e", program, "-c",
+                 shlex.join([sys.executable, "-c", "pass"])],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
@@ -408,28 +444,7 @@ class CheckDtraceProbes(unittest.TestCase):
 
     @staticmethod
     def get_readelf_version():
-        try:
-            cmd = ["readelf", "--version"]
-            # Force the C locale to disable localization.
-            env = dict(os.environ, LC_ALL="C")
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                env=env,
-            )
-            with proc:
-                version, stderr = proc.communicate()
-
-            if proc.returncode:
-                raise Exception(
-                    f"Command {' '.join(cmd)!r} failed "
-                    f"with exit code {proc.returncode}: "
-                    f"stdout={version!r} stderr={stderr!r}"
-                )
-        except OSError:
-            raise unittest.SkipTest("Couldn't find readelf on the path")
+        version = run_readelf(["readelf", "--version"])
 
         # Regex to parse:
         # 'GNU readelf (GNU Binutils) 2.40.0\n' -> 2.40
@@ -461,17 +476,7 @@ class CheckDtraceProbes(unittest.TestCase):
                         binary = libpython_path
                         break
 
-        command = ["readelf", "-n", binary]
-        # Force the C locale to disable localization.
-        env = dict(os.environ, LC_ALL="C")
-        stdout, _ = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            env=env,
-        ).communicate()
-        return stdout
+        return run_readelf(["readelf", "-n", binary])
 
     def test_check_probes(self):
         readelf_output = self.get_readelf_output()
