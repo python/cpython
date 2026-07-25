@@ -1147,16 +1147,24 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                 prev_instr = instr;
                 instr = &b->b_instr[i];
                 int prev_opcode = prev_instr ? prev_instr->i_opcode : 0;
+                int prev_oparg = prev_instr ? prev_instr->i_oparg : 0;
                 int opcode = instr->i_opcode;
+                bool is_redundant_pair = false;
                 if (opcode == POP_TOP) {
-                   if (loads_const(prev_opcode)
-                       || prev_opcode == COPY
-                       || prev_opcode == LOAD_FAST)
-                   {
-                        INSTR_SET_OP0(prev_instr, NOP);
-                        INSTR_SET_OP0(instr, NOP);
-                        done = false;
+                   if (loads_const(prev_opcode)) {
+                       is_redundant_pair = true;
                    }
+                   else if (prev_opcode == COPY && prev_oparg == 1) {
+                       is_redundant_pair = true;
+                   }
+                   else if (prev_opcode == LOAD_FAST) {
+                       is_redundant_pair = true;
+                   }
+                }
+                if (is_redundant_pair) {
+                    INSTR_SET_OP0(prev_instr, NOP);
+                    INSTR_SET_OP0(instr, NOP);
+                    done = false;
                 }
             }
             if ((instr && is_jump(instr)) || !BB_HAS_FALLTHROUGH(b)) {
@@ -2633,8 +2641,7 @@ remove_redundant_nops_and_jumps(cfg_builder *g)
 
 static int
 add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
-                                                int nlocals,
-                                                int nparams);
+                                                int nlocals, int nparams);
 
 static int
 optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache,
