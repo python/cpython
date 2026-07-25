@@ -423,10 +423,16 @@ sock.connect(('localhost', {port}))
     def _get_awaited_by_relationships(self, stack_trace):
         """Extract task name to awaited_by set mapping."""
         id_to_task = self._get_task_id_map(stack_trace)
+
+        def task_name(task_id):
+            task = id_to_task.get(task_id)
+            if task is None:
+                return f"<unknown object at {task_id:#x}>"
+            return task.task_name
+
         return {
             task.task_name: set(
-                id_to_task[awaited.task_name].task_name
-                for awaited in task.awaited_by
+                task_name(awaited.task_name) for awaited in task.awaited_by
             )
             for task in stack_trace[0].awaited_by
         }
@@ -1476,33 +1482,34 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
-    def test_async_global_awaited_by_skips_set_tombstones(self):
+    def test_async_awaited_by_skips_set_tombstones(self):
         script_body = """\
             import asyncio
 
-            class HashedTask(asyncio.Task):
-                def __init__(self, coro, task_hash, **kwargs):
-                    self.task_hash = task_hash
-                    super().__init__(coro, **kwargs)
-
+            class RemovedTask(asyncio.Task):
                 def __hash__(self):
-                    return self.task_hash
+                    return 0
+
+            class RemainingTask(asyncio.Task):
+                def __hash__(self):
+                    return 1
 
             async def main():
-                victim = asyncio.create_task(
-                    asyncio.sleep(10_000), name="victim"
+                victim = asyncio.current_task()
+                victim.set_name("victim")
+                removed = RemovedTask(
+                    asyncio.sleep(10_000), name="removed"
                 )
-                removed = HashedTask(
-                    asyncio.sleep(10_000), 0, name="removed"
-                )
-                remaining = HashedTask(
-                    asyncio.sleep(10_000), 1, name="remaining"
+                remaining = RemainingTask(
+                    asyncio.sleep(10_000), name="remaining"
                 )
 
                 asyncio.future_add_to_awaited_by(victim, removed)
                 asyncio.future_add_to_awaited_by(victim, remaining)
 
-                # Removing hash 0 leaves a dummy before the live hash-1 entry.
+                # Removing hash 0 leaves a dummy in slot 0 before the only
+                # active entry in slot 1. It must not count toward the set's
+                # used entries.
                 asyncio.future_discard_from_awaited_by(victim, removed)
 
                 sock.sendall(b"ready")
@@ -1511,20 +1518,28 @@ class TestGetStackTrace(RemoteInspectionTestBase):
             asyncio.run(main())
             """
 
-        with self._target_process(script_body) as (p, client_socket, _):
+        with self._target_process(script_body) as (
+            _,
+            client_socket,
+            make_unwinder,
+        ):
             _wait_for_signal(client_socket, b"ready")
 
-            all_awaited_by = get_all_awaited_by(p.pid)
-            tasks_by_name = {
-                task.task_name: task
-                for task in self._get_task_id_map(all_awaited_by).values()
-            }
-            victim = tasks_by_name["victim"]
-            remaining = tasks_by_name["remaining"]
-            self.assertEqual(
-                [waiter.task_name for waiter in victim.awaited_by],
-                [remaining.task_id],
-            )
+            for method_name in (
+                "get_async_stack_trace",
+                "get_all_awaited_by",
+            ):
+                with self.subTest(method=method_name):
+                    unwinder = make_unwinder(cache_frames=False)
+                    stack_trace = getattr(unwinder, method_name)()
+                    relationships = self._get_awaited_by_relationships(
+                        stack_trace
+                    )
+                    self.assertEqual(
+                        relationships["victim"],
+                        {"remaining"},
+                    )
+
             client_socket.sendall(b"done")
 
     @skip_if_not_supported
