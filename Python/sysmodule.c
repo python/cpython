@@ -1633,6 +1633,7 @@ static PyStructSequence_Field windows_version_fields[] = {
     {"suite_mask", "Bit mask identifying available product suites"},
     {"product_type", "System product type"},
     {"platform_version", "Diagnostic version number"},
+    {"device_family", "Desktop or UWP"},
     {0}
 };
 
@@ -1775,6 +1776,10 @@ sys_getwindowsversion_impl(PyObject *module)
     }
 
     SET_VERSION_INFO(realVersion);
+    SET_VERSION_INFO(PyUnicode_FromString("Desktop"));
+#else
+    SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
+    SET_VERSION_INFO(PyUnicode_FromString("UWP"));
 #endif
 
 #undef SET_VERSION_INFO
