@@ -1,0 +1,6 @@
+Fix the :func:`repr` of struct sequence objects that contain unnamed fields,
+such as :class:`os.stat_result`. Previously each unnamed field borrowed the
+name of a later, hidden field (for example the integer time slots of
+``os.stat_result`` were shown as ``st_atime``, ``st_mtime`` and ``st_ctime``,
+which are in fact separate hidden float fields); unnamed fields are now shown
+as ``<unnamed@N>``, where ``N`` is the sequence index. Patch by Xuehai Pan.

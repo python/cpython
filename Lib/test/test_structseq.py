@@ -48,6 +48,40 @@ class StructSeqTest(unittest.TestCase):
         self.assertIn("st_ino=", rep)
         self.assertIn("st_dev=", rep)
 
+    def test_repr_with_unnamed_fields(self):
+        # gh-154387: unnamed fields must not borrow the name of a later hidden
+        # field in repr; they are shown as "<unnamed@N>" instead.
+        self.assertEqual(os.stat_result.n_sequence_fields, 10)
+        self.assertEqual(os.stat_result.n_unnamed_fields, 3)
+
+        r = os.stat_result(range(os.stat_result.n_sequence_fields))
+        rep = repr(r)
+        self.assertEqual(rep,
+            "os.stat_result(st_mode=0, st_ino=1, st_dev=2, st_nlink=3, "
+            "st_uid=4, st_gid=5, st_size=6, <unnamed@7>=7, <unnamed@8>=8, "
+            "<unnamed@9>=9)")
+
+        # Regression guard: the hidden field names must not leak into the repr.
+        self.assertNotIn("st_atime=", rep)
+        self.assertNotIn("st_mtime=", rep)
+        self.assertNotIn("st_ctime=", rep)
+
+        # Supplying the hidden fields too must not change the repr.
+        r_full = os.stat_result(range(os.stat_result.n_fields))
+        self.assertEqual(repr(r_full), rep)
+        self.assertEqual(r_full[7], 7)
+        self.assertNotEqual(r_full[7], r_full.st_atime)
+
+    def test_repr_with_interspersed_unnamed_fields(self):
+        # gh-154387: unnamed fields need not be contiguous or trailing; each is
+        # shown at its own index rather than borrowing a neighbour's name.
+        _testcapi = import_helper.import_module("_testcapi")
+        cls = _testcapi.test_structseq_newtype_interspersed_unnamed()
+        self.assertEqual(cls.n_unnamed_fields, 2)
+        self.assertEqual(repr(cls(range(5))),
+            "_testcapi.Interspersed(first=0, <unnamed@1>=1, third=2, "
+            "<unnamed@3>=3, fifth=4)")
+
     def test_concat(self):
         t1 = time.gmtime()
         t2 = t1 + tuple(t1)
