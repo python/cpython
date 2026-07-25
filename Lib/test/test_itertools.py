@@ -625,7 +625,7 @@ class TestBasicOps(unittest.TestCase):
         self.test_count_threading(step=5)
 
     def test_count_reentrant_step(self):
-        class Step:
+        class Step(int):
             def __radd__(self, other):
                 next(c)
                 return other + 1
