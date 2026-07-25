@@ -1507,18 +1507,20 @@ class TestBasicOps(unittest.TestCase):
 
     def test_zip_longest_reentrant_iterator(self):
         # A re-entrant iterator exhaust must not cause use-after-free.
-        zl = None
-        class ReentrantFilter:
+        entered = False
+        class ReentrantIter:
             def __init__(self, it):
                 self.it = it
             def __iter__(self):
                 return self
             def __next__(self):
-                if zl is not None:
+                nonlocal entered
+                if not entered:
+                    entered = True
                     for _ in zl:
                         pass
                 return next(self.it)
-        zl = zip_longest(ReentrantFilter(iter([1])), iter([2, 3]))
+        zl = zip_longest(ReentrantIter(iter([1])), iter([2, 3]))
         list(zl)
 
     @support.cpython_only
