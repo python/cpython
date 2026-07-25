@@ -149,7 +149,7 @@ iterate_set_entries(
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle, table_ptr, sizeof(entry), &entry) < 0)
         {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read set entry key");
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read set entry");
             return -1;
         }
 
