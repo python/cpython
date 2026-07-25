@@ -87,6 +87,7 @@ lazy_import_getattro(PyObject *op, PyObject *name) {
     PyObject *value = _PyObject_GenericGetAttrWithDict(op, name, NULL, /* suppress */1);
     if (value == NULL) {
         if (PyErr_Occurred()) {
+            /* Bubble up earlier unrelated exception */
             return NULL;
         }
         PyObject *lz_name = _PyLazyImport_GetName(op);
