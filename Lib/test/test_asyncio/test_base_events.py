@@ -1092,7 +1092,11 @@ class BaseEventLoopTests(test_utils.TestCase):
                 await asyncio.sleep(1)
             sock.connect(address)
 
-        loop = asyncio.new_event_loop()
+        # gh-151540: use a selector event loop instead of the platform
+        # default; the Windows proactor loop would register the mocked
+        # socket with a real IOCP handle instead of the mocked
+        # _add_reader/_add_writer below.
+        loop = asyncio.SelectorEventLoop()
         loop._add_writer = mock.Mock()
         loop._add_writer = mock.Mock()
         loop._add_reader = mock.Mock()
@@ -1124,7 +1128,8 @@ class BaseEventLoopTests(test_utils.TestCase):
                 await asyncio.sleep(1)
             sock.connect(address)
 
-        loop = asyncio.new_event_loop()
+        # gh-151540: see test_create_connection_happy_eyeballs above.
+        loop = asyncio.SelectorEventLoop()
         loop._add_writer = mock.Mock()
         loop._add_writer = mock.Mock()
         loop._add_reader = mock.Mock()
