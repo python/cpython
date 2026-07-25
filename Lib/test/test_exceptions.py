@@ -10,6 +10,7 @@ import errno
 from codecs import BOM_UTF8
 from itertools import product
 from textwrap import dedent
+from types import ModuleType
 
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
@@ -440,10 +441,16 @@ class ExceptionTests(unittest.TestCase):
     def test_windows_message(self):
         """Should fill in unknown error code in Windows error message"""
         ctypes = import_module('ctypes')
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def PyErr_SetFromWindowsErr(ierr: ctypes.c_int) -> ctypes.py_object:
+            pass
+
         # this error code has no message, Python formats it as hexadecimal
         code = 3765269347
-        with self.assertRaisesRegex(OSError, 'Windows Error 0x%x' % code):
-            ctypes.pythonapi.PyErr_SetFromWindowsErr(code)
+        with self.assertRaisesRegex(OSError, f'Windows Error 0x{code:x}'):
+            PyErr_SetFromWindowsErr(code)
 
     def testAttributes(self):
         # test that exception attributes are happy
@@ -1517,6 +1524,7 @@ class ExceptionTests(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     @force_not_colorized
+    @support.skip_if_huge_c_stack()
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
@@ -1583,11 +1591,7 @@ class ExceptionTests(unittest.TestCase):
             sys.setrecursionlimit(recursionlimit)
 
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.nomemtest
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1714,6 +1718,20 @@ class ExceptionTests(unittest.TestCase):
         gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
+    def test_oserror_reinit_leak(self):
+        # gh-150988: Check for memory leak when re-initializing OSError.
+        # Previously, setting OSError attributes in a subclass
+        # before calling super().__init__() leaked memory.
+        class LeakingOSError(OSError):
+            def __init__(self, code, message, filename, filename2):
+                self.strerror = message
+                self.filename = filename
+                self.filename2 = filename2
+                super().__init__(code, message, filename, None, filename2)
+
+        exc = LeakingOSError(1, "some message", "filename.py", "filename2.py")
+        exc.__init__(2, "another message", "filename3.py", "filename4.py")
+
     def test_errno_ENOTDIR(self):
         # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
         with self.assertRaises(OSError) as cm:
@@ -1760,11 +1778,7 @@ class ExceptionTests(unittest.TestCase):
                     self.assertIn("test message", report)
                 self.assertEndsWith(report, "\n")
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.nomemtest
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1922,12 +1936,8 @@ class ExceptionTests(unittest.TestCase):
             exc2 = None
 
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.nomemtest
     def test_exec_set_nomemory_hang(self):
-        import_module("_testcapi")
         # gh-134163: A MemoryError inside code that was wrapped by a try/except
         # block would lead to an infinite loop.
 
@@ -2044,6 +2054,129 @@ class AttributeErrorTests(unittest.TestCase):
         except AttributeError as exc:
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
+
+    def test_getattr_error_message(self):
+        def fqn(type):
+            return f'{type.__module__}.{type.__qualname__}'
+
+        class RaiseWithName:
+            def __getattr__(self, name):
+                raise AttributeError(name)
+        obj = RaiseWithName()
+        with self.assertRaises(AttributeError) as cm:
+            getattr(obj, "missing1")
+        self.assertEqual(str(cm.exception),
+                         f"'{fqn(RaiseWithName)}' object has no attribute 'missing1'")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing1")
+
+        class BareRaise:
+            def __getattr__(self, name):
+                raise AttributeError
+        obj = BareRaise()
+        with self.assertRaises(AttributeError) as cm:
+            getattr(obj, "missing2")
+        self.assertEqual(str(cm.exception),
+                         f"'{fqn(BareRaise)}' object has no attribute 'missing2'")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing2")
+
+        class RaiseCustom:
+            def __getattr__(self, name):
+                raise AttributeError("custom")
+        obj = RaiseCustom()
+        with self.assertRaises(AttributeError) as cm:
+            getattr(obj, "missing3")
+        self.assertEqual(str(cm.exception), "custom")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing3")
+
+    def test_class_getattr_error_message(self):
+        def fqn(type):
+            return f'{type.__module__}.{type.__qualname__}'
+
+        class MetaclassRaiseWithName(type):
+            def __getattr__(self, name):
+                raise AttributeError(name)
+        cls = MetaclassRaiseWithName("spam", (), {})
+        with self.assertRaises(AttributeError) as cm:
+            getattr(cls, "missing1")
+        self.assertEqual(str(cm.exception),
+                         f"type object '{fqn(cls)}' has no attribute 'missing1'")
+        self.assertIs(cm.exception.obj, cls)
+        self.assertEqual(cm.exception.name, "missing1")
+
+        class MetaclassBareRaise(type):
+            def __getattr__(self, name):
+                raise AttributeError
+        cls = MetaclassBareRaise("eggs", (), {})
+        with self.assertRaises(AttributeError) as cm:
+            getattr(cls, "missing2")
+        self.assertEqual(str(cm.exception),
+                         f"type object '{fqn(cls)}' has no attribute 'missing2'")
+        self.assertIs(cm.exception.obj, cls)
+        self.assertEqual(cm.exception.name, "missing2")
+
+        class MetaclassRaiseCustom(type):
+            def __getattr__(self, name):
+                raise AttributeError("custom")
+        cls = MetaclassRaiseCustom("ham", (), {})
+        with self.assertRaises(AttributeError) as cm:
+            getattr(cls, "missing3")
+        self.assertEqual(str(cm.exception), "custom")
+        self.assertIs(cm.exception.obj, cls)
+        self.assertEqual(cm.exception.name, "missing3")
+
+    def test_module_getattr_error_message(self):
+        raisewithname_mod = ModuleType("raisewithname")
+        def raise_with_name(name):
+            raise AttributeError(name)
+        raisewithname_mod.__getattr__ = raise_with_name
+        with self.assertRaises(AttributeError) as cm:
+            getattr(raisewithname_mod, "missing1")
+        self.assertEqual(str(cm.exception),
+                         "module 'raisewithname' has no attribute 'missing1'")
+        self.assertIs(cm.exception.obj, raisewithname_mod)
+        self.assertEqual(cm.exception.name, "missing1")
+
+        bareraise_mod = ModuleType("bareraise")
+        def bare_raise(name):
+            raise AttributeError
+        bareraise_mod.__getattr__ = bare_raise
+        with self.assertRaises(AttributeError) as cm:
+            getattr(bareraise_mod, "missing2")
+        self.assertEqual(str(cm.exception),
+                         "module 'bareraise' has no attribute 'missing2'")
+        self.assertIs(cm.exception.obj, bareraise_mod)
+        self.assertEqual(cm.exception.name, "missing2")
+
+        custom_mod = ModuleType("custom")
+        def raise_custom(name):
+            raise AttributeError("custom")
+        custom_mod.__getattr__ = raise_custom
+        with self.assertRaises(AttributeError) as cm:
+            getattr(custom_mod, "missing3")
+        self.assertEqual(str(cm.exception), "custom")
+        self.assertIs(cm.exception.obj, custom_mod)
+        self.assertEqual(cm.exception.name, "missing3")
+
+        nameless_mod = ModuleType("forgettable")
+        del nameless_mod.__dict__["__name__"]
+        nameless_mod.__getattr__ = raise_with_name
+        with self.assertRaises(AttributeError) as cm:
+            getattr(nameless_mod, "missing4")
+        self.assertEqual(str(cm.exception), "module has no attribute 'missing4'")
+        self.assertIs(cm.exception.obj, nameless_mod)
+        self.assertEqual(cm.exception.name, "missing4")
+
+        nameless_mod = ModuleType("broken")
+        nameless_mod.__dict__["__name__"] = 10j
+        nameless_mod.__getattr__ = raise_with_name
+        with self.assertRaises(AttributeError) as cm:
+            getattr(nameless_mod, "missing4")
+        self.assertEqual(str(cm.exception), "module has no attribute 'missing4'")
+        self.assertIs(cm.exception.obj, nameless_mod)
+        self.assertEqual(cm.exception.name, "missing4")
 
     # Note: name suggestion tests live in `test_traceback`.
 

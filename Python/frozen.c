@@ -50,6 +50,7 @@
 #include "frozen_modules/encodings.aliases.h"
 #include "frozen_modules/encodings.utf_8.h"
 #include "frozen_modules/encodings._win_cp_codecs.h"
+#include "frozen_modules/encodings._iconv_codecs.h"
 #include "frozen_modules/io.h"
 #include "frozen_modules/_collections_abc.h"
 #include "frozen_modules/_sitebuiltins.h"
@@ -85,6 +86,7 @@ static const struct _frozen stdlib_modules[] = {
     {"encodings.aliases", _Py_M__encodings_aliases, (int)sizeof(_Py_M__encodings_aliases), false},
     {"encodings.utf_8", _Py_M__encodings_utf_8, (int)sizeof(_Py_M__encodings_utf_8), false},
     {"encodings._win_cp_codecs", _Py_M__encodings__win_cp_codecs, (int)sizeof(_Py_M__encodings__win_cp_codecs), false},
+    {"encodings._iconv_codecs", _Py_M__encodings__iconv_codecs, (int)sizeof(_Py_M__encodings__iconv_codecs), false},
     {"io", _Py_M__io, (int)sizeof(_Py_M__io), false},
 
     /* stdlib - startup, with site */

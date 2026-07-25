@@ -4147,6 +4147,15 @@ class ContextFlags:
 @requires_cdecimal
 class CContextFlags(ContextFlags, unittest.TestCase):
     decimal = C
+
+    def test_signaldict_repr(self):
+        Context = self.decimal.Context
+        ctx = Context(prec=7)
+        mapping = ctx.flags
+        del ctx
+        with self.assertRaisesRegex(ValueError, 'invalid signal dict'):
+            repr(mapping)
+
 class PyContextFlags(ContextFlags, unittest.TestCase):
     decimal = P
 
@@ -4966,6 +4975,14 @@ class CFunctionality(unittest.TestCase):
         c = Context(flags=C.DecClamped, traps=C.DecRounded)
         self.assertEqual(c._flags, C.DecClamped)
         self.assertEqual(c._traps, C.DecRounded)
+
+    @requires_extra_functionality
+    def test_c_context_apply(self):
+        c = C.Context(prec=3)
+        self.assertEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
+        # A higher precision won't see them as equal.
+        c = C.Context(prec=5)
+        self.assertNotEqual(c.apply(C.Decimal('1.23456')), C.Decimal('1.23'))
 
     @requires_extra_functionality
     def test_constants(self):
