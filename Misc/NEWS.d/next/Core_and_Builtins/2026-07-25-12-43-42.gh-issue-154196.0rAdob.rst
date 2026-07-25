@@ -1,0 +1,2 @@
+Improve :exc:`AttributeError` messages from unresolved lazy imports. Patch
+by Bartosz Sławecki.
