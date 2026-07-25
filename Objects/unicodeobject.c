@@ -2552,14 +2552,59 @@ escaped_char_size(Py_UCS4 ch, int flags)
     }
 }
 
+/* Write the escaped form of the character.
+   The writer buffer must have enough space reserved. */
+static void
+unicode_write_escaped_char(_PyUnicodeWriter *writer, Py_UCS4 ch, int flags)
+{
+    int kind = writer->kind;
+    void *data = writer->data;
+    Py_ssize_t o = writer->pos;
+    switch (escaped_char_size(ch, flags)) {
+    case 1:
+        PyUnicode_WRITE(kind, data, o++, ch);
+        break;
+    case 2:
+        PyUnicode_WRITE(kind, data, o++, '\\');
+        switch (ch) {
+        case '\t': ch = 't'; break;
+        case '\r': ch = 'r'; break;
+        case '\n': ch = 'n'; break;
+        }
+        PyUnicode_WRITE(kind, data, o++, ch);
+        break;
+    case 4:
+        PyUnicode_WRITE(kind, data, o++, '\\');
+        PyUnicode_WRITE(kind, data, o++, 'x');
+        PyUnicode_WRITE(kind, data, o++, Py_hexdigits[(ch >> 4) & 0xf]);
+        PyUnicode_WRITE(kind, data, o++, Py_hexdigits[ch & 0xf]);
+        break;
+    default:
+    {
+        int ndigits = (ch < 0x10000) ? 4 : 8;
+        PyUnicode_WRITE(kind, data, o++, '\\');
+        PyUnicode_WRITE(kind, data, o++, (ch < 0x10000) ? 'u' : 'U');
+        while (--ndigits >= 0) {
+            PyUnicode_WRITE(kind, data, o++,
+                            Py_hexdigits[(ch >> (4*ndigits)) & 0xf]);
+        }
+        break;
+    }
+    }
+    writer->pos = o;
+}
+
 /* Escape special and non-printable characters like repr() does, but
-   without surrounding quotes.  If the F_SIGN flag is set, also escape
-   all non-ASCII characters.  Characters are escaped with "\uHHHH" and
-   "\UHHHHHHHH", raw bytes (see F_RAWBYTES) -- with "\xHH".
-   If precision is non-negative, only the first precision characters of
-   str are escaped and returned. */
-static PyObject *
-unicode_fromformat_escape(PyObject *str, Py_ssize_t precision, int flags)
+   without surrounding quotes, and write the result to the writer.
+   If the F_SIGN flag is set, also escape all non-ASCII characters.
+   Characters are escaped with "\uHHHH" and "\UHHHHHHHH", raw bytes
+   (see F_RAWBYTES) -- with "\xHH".
+   The precision applies to the original string, the width -- to the
+   escaped one. */
+static int
+unicode_fromformat_write_escaped(_PyUnicodeWriter *writer, PyObject *str,
+                                 Py_ssize_t width, Py_ssize_t precision,
+                                 int flags)
 {
     Py_ssize_t isize = PyUnicode_GET_LENGTH(str);
     const void *idata = PyUnicode_DATA(str);
@@ -2568,7 +2613,7 @@ unicode_fromformat_escape(PyObject *str, Py_ssize_t precision, int flags)
         isize = precision;
     }
 
-    /* Compute the length and the maximum character of the output */
+    /* Compute the length and the maximum character of the escaped string */
     Py_ssize_t osize = 0;
     Py_UCS4 maxch = 127;
     for (Py_ssize_t i = 0; i < isize; i++) {
@@ -2579,56 +2624,36 @@ unicode_fromformat_escape(PyObject *str, Py_ssize_t precision, int flags)
         }
         if (osize > PY_SSIZE_T_MAX - incr) {
             PyErr_SetString(PyExc_OverflowError, "string is too long");
-            return NULL;
+            return -1;
         }
         osize += incr;
     }
 
-    PyObject *res = PyUnicode_New(osize, maxch);
-    if (res == NULL) {
-        return NULL;
-    }
-    int okind = PyUnicode_KIND(res);
-    void *odata = PyUnicode_DATA(res);
+    if (_PyUnicodeWriter_Prepare(writer, Py_MAX(osize, width), maxch) == -1)
+        return -1;
 
-    Py_ssize_t o = 0;
+    Py_ssize_t fill = Py_MAX(width - osize, 0);
+    if (fill && !(flags & F_LJUST)) {
+        if (PyUnicode_Fill(writer->buffer, writer->pos, fill, ' ') == -1)
+            return -1;
+        writer->pos += fill;
+    }
+
+    Py_ssize_t start = writer->pos;
     for (Py_ssize_t i = 0; i < isize; i++) {
         Py_UCS4 ch = PyUnicode_READ(ikind, idata, i);
-        switch (escaped_char_size(ch, flags)) {
-        case 1:
-            PyUnicode_WRITE(okind, odata, o++, ch);
-            break;
-        case 2:
-            PyUnicode_WRITE(okind, odata, o++, '\\');
-            switch (ch) {
-            case '\t': ch = 't'; break;
-            case '\r': ch = 'r'; break;
-            case '\n': ch = 'n'; break;
-            }
-            PyUnicode_WRITE(okind, odata, o++, ch);
-            break;
-        case 4:
-            PyUnicode_WRITE(okind, odata, o++, '\\');
-            PyUnicode_WRITE(okind, odata, o++, 'x');
-            PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xf]);
-            PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0xf]);
-            break;
-        default:
-        {
-            int ndigits = (ch < 0x10000) ? 4 : 8;
-            PyUnicode_WRITE(okind, odata, o++, '\\');
-            PyUnicode_WRITE(okind, odata, o++, (ch < 0x10000) ? 'u' : 'U');
-            while (--ndigits >= 0) {
-                PyUnicode_WRITE(okind, odata, o++,
-                                Py_hexdigits[(ch >> (4*ndigits)) & 0xf]);
-            }
-            break;
-        }
-        }
+        unicode_write_escaped_char(writer, ch, flags);
     }
-    assert(o == osize);
-    assert(_PyUnicode_CheckConsistency(res, 1));
-    return res;
+    assert(writer->pos - start == osize);
+    (void)start;
+
+    if (fill && (flags & F_LJUST)) {
+        if (PyUnicode_Fill(writer->buffer, writer->pos, fill, ' ') == -1)
+            return -1;
+        writer->pos += fill;
+    }
+
+    return 0;
 }
 
 static int
@@ -2639,15 +2664,8 @@ unicode_fromformat_write_str(_PyUnicodeWriter *writer, PyObject *str,
     Py_UCS4 maxchar;
 
     if (flags & F_ESCAPE) {
-        /* The precision applies to the original string,
-           the width -- to the escaped one. */
-        PyObject *escaped = unicode_fromformat_escape(str, precision, flags);
-        if (escaped == NULL)
-            return -1;
-        int res = unicode_fromformat_write_str(writer, escaped, width, -1,
-                                               flags & ~F_ESCAPE);
-        Py_DECREF(escaped);
-        return res;
+        return unicode_fromformat_write_escaped(writer, str, width, precision,
+                                                flags);
     }
 
     length = PyUnicode_GET_LENGTH(str);
@@ -2915,13 +2933,11 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             return NULL;
         }
         if (flags & F_ESCAPE) {
-            PyObject *str = PyUnicode_FromOrdinal(ordinal);
-            if (str == NULL)
+            Py_ssize_t len = escaped_char_size(ordinal, flags);
+            Py_UCS4 maxch = (len == 1) ? (Py_UCS4)ordinal : 127;
+            if (_PyUnicodeWriter_Prepare(writer, len, maxch) < 0)
                 return NULL;
-            int res = unicode_fromformat_write_str(writer, str, -1, -1, flags);
-            Py_DECREF(str);
-            if (res < 0)
-                return NULL;
+            unicode_write_escaped_char(writer, ordinal, flags);
         }
         else if (_PyUnicodeWriter_WriteCharInline(writer, ordinal) < 0)
             return NULL;
