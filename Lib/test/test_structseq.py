@@ -49,33 +49,9 @@ class StructSeqTest(unittest.TestCase):
         self.assertIn("st_dev=", rep)
 
     def test_repr_with_unnamed_fields(self):
-        # gh-154387: unnamed fields must not borrow the name of a later hidden
-        # field in repr; they are shown as "<unnamed@N>" instead.
-        self.assertEqual(os.stat_result.n_sequence_fields, 10)
-        self.assertEqual(os.stat_result.n_unnamed_fields, 3)
-
-        r = os.stat_result(range(os.stat_result.n_sequence_fields))
-        rep = repr(r)
-        self.assertEqual(rep,
-            "os.stat_result(st_mode=0, st_ino=1, st_dev=2, st_nlink=3, "
-            "st_uid=4, st_gid=5, st_size=6, <unnamed@7>=7, <unnamed@8>=8, "
-            "<unnamed@9>=9)")
-
-        # Regression guard: the hidden field names must not leak into the repr.
-        self.assertNotIn("st_atime=", rep)
-        self.assertNotIn("st_mtime=", rep)
-        self.assertNotIn("st_ctime=", rep)
-
-        # Supplying the hidden fields too must not change the repr.
-        r_full = os.stat_result(range(os.stat_result.n_fields))
-        self.assertEqual(repr(r_full), rep)
-        self.assertEqual(r_full[7], 7)
-        self.assertNotEqual(r_full[7], r_full.st_atime)
-
-    def test_repr_with_interspersed_unnamed_fields(self):
-        # gh-154387: unnamed fields need not be contiguous or trailing; each is
-        # shown at its own index rather than borrowing a neighbour's name.  The
-        # trailing named field is hidden and must not appear in the repr.
+        # gh-154387: each unnamed field is shown at its own index rather than
+        # borrowing a neighbour's name. Unnamed fields need not be contiguous or
+        # trailing.
         _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.structseq_newtype_interspersed_unnamed()
         self.assertEqual(cls.n_fields, 5)
@@ -107,6 +83,69 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(t2.first, 0)
         self.assertEqual(t2.third, 2)
         self.assertIsNone(t2.fifth)
+
+    def test_os_stat_result_has_custom_repr(self):
+        # gh-154387: os.stat_result has a custom repr (statresult_repr) showing
+        # the float times st_atime/st_mtime/st_ctime by name, not the unnamed
+        # integer slots with generic "<unnamed@N>".
+        self.assertEqual(os.stat_result.n_sequence_fields, 10)
+        self.assertEqual(os.stat_result.n_unnamed_fields, 3)
+
+        # All fields supplied: st_atime/st_mtime/st_ctime are the float slots.
+        r1 = os.stat_result(range(os.stat_result.n_fields))
+        rep = repr(r1)
+        self.assertEqual(rep,
+            "os.stat_result(st_mode=0, st_ino=1, st_dev=2, st_nlink=3, "
+            "st_uid=4, st_gid=5, st_size=6, st_atime=10, st_mtime=11, "
+            "st_ctime=12)")
+        self.assertNotIn("<unnamed@", rep)
+        self.assertEqual(r1.st_atime, 10)
+        self.assertEqual(r1.st_mtime, 11)
+        self.assertEqual(r1.st_ctime, 12)
+
+        # Only the visible slots supplied: statresult_new fills the float times
+        # from the integer slots, so the repr shows those filled values.
+        r2 = os.stat_result(range(10))
+        self.assertEqual(repr(r2),
+            "os.stat_result(st_mode=0, st_ino=1, st_dev=2, st_nlink=3, "
+            "st_uid=4, st_gid=5, st_size=6, st_atime=7, st_mtime=8, "
+            "st_ctime=9)")
+        self.assertEqual(r2.st_atime, 7)
+        self.assertEqual(r2.st_mtime, 8)
+        self.assertEqual(r2.st_ctime, 9)
+
+        # The st_atime/st_mtime slots are supplied, but st_ctime is not; the
+        # st_ctime float slot is filled from the st_ctime integer slot.
+        r3 = os.stat_result(range(12))
+        self.assertEqual(repr(r3),
+            "os.stat_result(st_mode=0, st_ino=1, st_dev=2, st_nlink=3, "
+            "st_uid=4, st_gid=5, st_size=6, st_atime=10, st_mtime=11, "
+            "st_ctime=9)")
+        self.assertEqual(r3.st_atime, 10)
+        self.assertEqual(r3.st_mtime, 11)
+        self.assertEqual(r3.st_ctime, 9)
+
+        # The st_mtime slot is supplied, but st_atime/st_ctime are not; the
+        # st_atime/st_ctime float slots are filled from the st_atime/st_ctime
+        # integer slots.
+        r4 = os.stat_result(range(10), {'st_mtime': -1.0})
+        self.assertEqual(repr(r4),
+            "os.stat_result(st_mode=0, st_ino=1, st_dev=2, st_nlink=3, "
+            "st_uid=4, st_gid=5, st_size=6, st_atime=7, st_mtime=-1.0, "
+            "st_ctime=9)")
+        self.assertEqual(r4.st_atime, 7)
+        self.assertEqual(r4.st_mtime, -1.0)
+        self.assertEqual(r4.st_ctime, 9)
+
+        # repr(), __repr__(), and str() must all resolve to the custom repr
+        # (a raw tp_repr override left __repr__() diverging).
+        for r in (r1, r2, r3, r4):
+            rep = repr(r)
+            self.assertEqual(r.__repr__(), rep)
+            self.assertEqual(type(r).__repr__(r), rep)
+            self.assertEqual(str(r), rep)
+            self.assertEqual(f"{r!r}", rep)
+            self.assertEqual(f"{r!s}", rep)
 
     def test_concat(self):
         t1 = time.gmtime()
