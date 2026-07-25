@@ -38,12 +38,7 @@ typedef struct _PyUOpInstruction{
 
 // Fitness is the target length of the trace we translate initially. The uop
 // buffer has a small amount of extra space for entry/loop-closing overhead.
-#if defined(Py_DEBUG) && defined(_Py_JIT)
-    // With asserts, the stencils are a lot larger
-#define FITNESS_INITIAL 1000
-#else
 #define FITNESS_INITIAL 2500
-#endif
 
 #define UOP_TRACE_BUFFER_OVERHEAD 10
 #define UOP_MAX_TRACE_LENGTH (FITNESS_INITIAL + UOP_TRACE_BUFFER_OVERHEAD)
