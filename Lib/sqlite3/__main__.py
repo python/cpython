@@ -87,14 +87,11 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
 
 def main(*args):
-    parser = ArgumentParser(
-        description="Python sqlite3 CLI",
-        color=True,
-    )
+    parser = ArgumentParser(description="Python sqlite3 CLI")
     parser.add_argument(
         "filename", type=str, default=":memory:", nargs="?",
         help=(
-            "SQLite database to open (defaults to ':memory:'). "
+            "SQLite database to open (defaults to `:memory:`). "
             "A new database is created if the file does not previously exist."
         ),
     )
@@ -102,7 +99,7 @@ def main(*args):
         "sql", type=str, nargs="?",
         help=(
             "An SQL query to execute. "
-            "Any returned rows are printed to stdout."
+            "Any returned rows are printed to `stdout`."
         ),
     )
     parser.add_argument(

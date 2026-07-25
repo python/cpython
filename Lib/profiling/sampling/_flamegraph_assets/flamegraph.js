@@ -6,6 +6,8 @@ let normalData = null;
 let invertedData = null;
 let currentThreadFilter = 'all';
 let isInverted = false;
+let useModuleNames = true;
+let zoomedNodeValue = null;
 
 // Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
 // and automatically switch with theme changes - no JS color arrays needed!
@@ -64,6 +66,12 @@ function resolveStringIndices(node, table) {
   if (typeof resolved.funcname === 'number') {
     resolved.funcname = resolveString(resolved.funcname, table);
   }
+  if (typeof resolved.module === 'number') {
+    resolved.module = resolveString(resolved.module, table);
+  }
+  if (typeof resolved.label === 'number') {
+    resolved.label = resolveString(resolved.label, table);
+  }
 
   if (Array.isArray(resolved.source)) {
     resolved.source = resolved.source.map(index =>
@@ -76,6 +84,19 @@ function resolveStringIndices(node, table) {
   }
 
   return resolved;
+}
+
+// Escape HTML special characters
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Get display path based on user preference (module or full path)
+function getDisplayName(moduleName, filename) {
+  if (useModuleNames) {
+    return moduleName || filename;
+  }
+  return filename;
 }
 
 function selectFlamegraphData() {
@@ -228,6 +249,7 @@ function setupLogos() {
 function updateStatusBar(nodeData, rootValue) {
   const funcname = resolveString(nodeData.funcname) || resolveString(nodeData.name) || "--";
   const filename = resolveString(nodeData.filename) || "";
+  const moduleName = resolveString(nodeData.module) || "";
   const lineno = nodeData.lineno;
   const timeMs = (nodeData.value / 1000).toFixed(2);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
@@ -249,8 +271,8 @@ function updateStatusBar(nodeData, rootValue) {
 
   const fileEl = document.getElementById('status-file');
   if (fileEl && filename && filename !== "~") {
-    const basename = filename.split('/').pop();
-    fileEl.textContent = lineno ? `${basename}:${lineno}` : basename;
+    const displayName = getDisplayName(moduleName, filename);
+    fileEl.textContent = lineno ? `${displayName}:${lineno}` : displayName;
   }
 
   const funcEl = document.getElementById('status-func');
@@ -295,12 +317,15 @@ function createPythonTooltip(data) {
     const selfSamples = d.data.self || 0;
     const selfMs = (selfSamples / 1000).toFixed(2);
     const percentage = ((d.data.value / data.value) * 100).toFixed(2);
+    const relativePercentage = Math.min(100, ((d.data.value / (zoomedNodeValue ?? data.value)) * 100)).toFixed(2);
     const calls = d.data.calls || 0;
     const childCount = d.children ? d.children.length : 0;
     const source = d.data.source;
 
     const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
     const filename = resolveString(d.data.filename) || "";
+    const moduleName = resolveString(d.data.module) || "";
+    const displayName = escapeHtml(useModuleNames ? (moduleName || filename) : filename);
     const isSpecialFrame = filename === "~";
 
     // Build source section
@@ -309,7 +334,7 @@ function createPythonTooltip(data) {
       const sourceLines = source
         .map((line) => {
           const isCurrent = line.startsWith("→");
-          const escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          const escaped = escapeHtml(line);
           return `<div class="tooltip-source-line${isCurrent ? ' current' : ''}">${escaped}</div>`;
         })
         .join("");
@@ -369,7 +394,7 @@ function createPythonTooltip(data) {
     }
 
     const fileLocationHTML = isSpecialFrame ? "" : `
-      <div class="tooltip-location">${filename}${d.data.lineno ? ":" + d.data.lineno : ""}</div>`;
+      <div class="tooltip-location">${displayName}${d.data.lineno ? ":" + d.data.lineno : ""}</div>`;
 
     // Differential stats section
     let diffSection = "";
@@ -415,6 +440,11 @@ function createPythonTooltip(data) {
 
         <span class="tooltip-stat-label">Percentage:</span>
         <span class="tooltip-stat-value accent">${percentage}%</span>
+
+        ${relativePercentage != percentage && relativePercentage != "100.00" ? `
+          <span class="tooltip-stat-label">Relative Percentage:</span>
+          <span class="tooltip-stat-value accent">${relativePercentage}%</span>
+        ` : ''}
 
         ${calls > 0 ? `
           <span class="tooltip-stat-label">Function Calls:</span>
@@ -586,6 +616,7 @@ function createFlamegraph(tooltip, rootValue, data) {
     .minFrameSize(1)
     .tooltip(tooltip)
     .inverted(true)
+    .getName(d => resolveString(useModuleNames ? d.data.label : d.data.name) || resolveString(d.data.name) || '')
     .setColorMapper(function (d) {
       if (d.depth === 0) return 'transparent';
 
@@ -596,6 +627,9 @@ function createFlamegraph(tooltip, rootValue, data) {
       const percentage = d.data.value / rootValue;
       const level = getHeatLevel(percentage);
       return heatColors[level];
+    })
+    .onClick(function (d) {
+      zoomedNodeValue = d.data.value;
     });
 
   return chart;
@@ -605,6 +639,7 @@ function renderFlamegraph(chart, data) {
   d3.select("#chart").datum(data).call(chart);
   window.flamegraphChart = chart;
   window.flamegraphData = data;
+  zoomedNodeValue = null;
   populateStats(data);
 }
 
@@ -628,25 +663,25 @@ function updateSearchHighlight(searchTerm, searchInput) {
         const name = resolveString(d.data.name) || "";
         const funcname = resolveString(d.data.funcname) || "";
         const filename = resolveString(d.data.filename) || "";
+        const moduleName = resolveString(d.data.module) || "";
+        const displayName = getDisplayName(moduleName, filename);
         const lineno = d.data.lineno;
         const term = searchTerm.toLowerCase();
 
-        // Check if search term looks like file:line pattern
+        // Check if search term looks like path:line pattern
         const fileLineMatch = term.match(/^(.+):(\d+)$/);
         let matches = false;
 
         if (fileLineMatch) {
-          // Exact file:line matching
           const searchFile = fileLineMatch[1];
           const searchLine = parseInt(fileLineMatch[2], 10);
-          const basename = filename.split('/').pop().toLowerCase();
-          matches = basename.includes(searchFile) && lineno === searchLine;
+          matches = displayName.toLowerCase().includes(searchFile) && lineno === searchLine;
         } else {
           // Regular substring search
           matches =
             name.toLowerCase().includes(term) ||
             funcname.toLowerCase().includes(term) ||
-            filename.toLowerCase().includes(term);
+            displayName.toLowerCase().includes(term);
         }
 
         if (matches) {
@@ -1047,6 +1082,7 @@ function populateStats(data) {
 
     let filename = resolveString(node.filename);
     let funcname = resolveString(node.funcname);
+    let moduleName = resolveString(node.module);
 
     if (!filename || !funcname) {
       const nameStr = resolveString(node.name);
@@ -1061,13 +1097,10 @@ function populateStats(data) {
 
     filename = filename || 'unknown';
     funcname = funcname || 'unknown';
+    moduleName = moduleName || 'unknown';
 
     if (filename !== 'unknown' && funcname !== 'unknown' && node.value > 0) {
-      let childrenValue = 0;
-      if (node.children) {
-        childrenValue = node.children.reduce((sum, child) => sum + child.value, 0);
-      }
-      const directSamples = Math.max(0, node.value - childrenValue);
+      const directSamples = node.self || 0;
 
       const funcKey = `${filename}:${node.lineno || '?'}:${funcname}`;
 
@@ -1077,12 +1110,14 @@ function populateStats(data) {
         existing.directPercent = (existing.directSamples / totalSamples) * 100;
         if (directSamples > existing.maxSingleSamples) {
           existing.filename = filename;
+          existing.module = moduleName;
           existing.lineno = node.lineno || '?';
           existing.maxSingleSamples = directSamples;
         }
       } else {
         functionMap.set(funcKey, {
           filename: filename,
+          module: moduleName,
           lineno: node.lineno || '?',
           funcname: funcname,
           directSamples,
@@ -1117,6 +1152,7 @@ function populateStats(data) {
       const h = hotSpots[i];
       const filename = h.filename || 'unknown';
       const lineno = h.lineno ?? '?';
+      const moduleName = h.module || 'unknown';
       const isSpecialFrame = filename === '~' && (lineno === 0 || lineno === '?');
 
       let funcDisplay = h.funcname || 'unknown';
@@ -1127,8 +1163,8 @@ function populateStats(data) {
         if (isSpecialFrame) {
           fileEl.textContent = '--';
         } else {
-          const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
-          fileEl.textContent = `${basename}:${lineno}`;
+          const displayName = getDisplayName(moduleName, filename);
+          fileEl.textContent = `${displayName}:${lineno}`;
         }
       }
       if (percentEl) percentEl.textContent = `${h.directPercent.toFixed(1)}%`;
@@ -1144,8 +1180,11 @@ function populateStats(data) {
     if (card) {
       if (i < hotSpots.length && hotSpots[i]) {
         const h = hotSpots[i];
-        const basename = h.filename !== 'unknown' ? h.filename.split('/').pop() : '';
-        const searchTerm = basename && h.lineno !== '?' ? `${basename}:${h.lineno}` : h.funcname;
+        const moduleName = h.module || 'unknown';
+        const filename = h.filename || 'unknown';
+        const displayName = getDisplayName(moduleName, filename);
+        const hasValidLocation = displayName !== 'unknown' && h.lineno !== '?';
+        const searchTerm = hasValidLocation ? `${displayName}:${h.lineno}` : h.funcname;
         card.dataset.searchterm = searchTerm;
         card.onclick = () => searchForHotspot(searchTerm);
         card.style.cursor = 'pointer';
@@ -1241,6 +1280,7 @@ function filterDataByThread(data, threadId) {
 
 function resetZoom() {
   if (window.flamegraphChart) {
+    zoomedNodeValue = null;
     window.flamegraphChart.resetZoom();
   }
 }
@@ -1277,10 +1317,12 @@ function accumulateInvertedNode(parent, stackFrame, leaf, isDifferential) {
   if (!parent.children[key]) {
     const newNode = {
       name: stackFrame.name,
+      label: stackFrame.label,
       value: 0,
       self: 0,
       children: {},
       filename: stackFrame.filename,
+      module: stackFrame.module,
       lineno: stackFrame.lineno,
       funcname: stackFrame.funcname,
       source: stackFrame.source,
@@ -1345,14 +1387,13 @@ function processLeaf(invertedRoot, path, leafNode, isDifferential) {
 }
 
 function traverseInvert(path, currentNode, invertedRoot, isDifferential) {
-  const children = currentNode.children || [];
-  const childThreads = new Set(children.flatMap(c => c.threads || []));
-  const selfThreads = (currentNode.threads || []).filter(t => !childThreads.has(t));
+  const selfValue = currentNode.self || 0;
 
-  if (selfThreads.length > 0) {
-    processLeaf(invertedRoot, path, { ...currentNode, threads: selfThreads }, isDifferential);
+  if (selfValue > 0) {
+    processLeaf(invertedRoot, path, { ...currentNode, value: selfValue }, isDifferential);
   }
 
+  const children = currentNode.children || [];
   children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot, isDifferential));
 }
 
@@ -1375,6 +1416,7 @@ function generateInvertedFlamegraph(data) {
 
   const invertedRoot = {
     name: data.name,
+    label: data.label,
     value: data.value,
     children: {},
     stats: data.stats,
@@ -1396,6 +1438,12 @@ function generateInvertedFlamegraph(data) {
 function toggleInvert() {
   isInverted = !isInverted;
   updateToggleUI('toggle-invert', isInverted);
+  updateFlamegraphView();
+}
+
+function togglePathDisplay() {
+  useModuleNames = !useModuleNames;
+  updateToggleUI('toggle-path-display', useModuleNames);
   updateFlamegraphView();
 }
 
@@ -1445,6 +1493,11 @@ function initFlamegraph() {
   const toggleInvertBtn = document.getElementById('toggle-invert');
   if (toggleInvertBtn) {
     toggleInvertBtn.addEventListener('click', toggleInvert);
+  }
+
+  const togglePathDisplayBtn = document.getElementById('toggle-path-display');
+  if (togglePathDisplayBtn) {
+    togglePathDisplayBtn.addEventListener('click', togglePathDisplay);
   }
 }
 

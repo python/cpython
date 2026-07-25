@@ -554,6 +554,11 @@ class CalendarTestCase(unittest.TestCase):
             "The 'January' attribute is deprecated, use 'JANUARY' instead"
         ):
             calendar.January
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The 'February' attribute is deprecated, use 'FEBRUARY' instead"
+        ):
+            calendar.February
 
     def test_isleap(self):
         # Make sure that the return is right for a few years, and
@@ -1068,6 +1073,7 @@ class LeapdaysTestCase(unittest.TestCase):
 def conv(s):
     return s.replace('\n', os.linesep).encode()
 
+@support.force_not_colorized_test_class
 class CommandLineTestCase(unittest.TestCase):
     def setUp(self):
         self.runners = [self.run_cli_ok, self.run_cmd_ok]
@@ -1121,7 +1127,6 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertCLIFails(*args)
         self.assertCmdFails(*args)
 
-    @support.force_not_colorized
     def test_help(self):
         stdout = self.run_cmd_ok('-h')
         self.assertIn(b'usage:', stdout)
@@ -1254,6 +1259,15 @@ class CommandLineTestCase(unittest.TestCase):
         for run in self.runners:
             output = run('-t', 'html', '--css', 'custom.css', '2004')
             self.assertIn(b'<link rel="stylesheet" href="custom.css">', output)
+
+
+@support.force_colorized_test_class
+class ColorTestCase(unittest.TestCase):
+    def test_formatmonth_color(self):
+        today = datetime.date(2026, 5, 4)
+        cal = calendar._CLIDemoCalendar(highlight_day=today)
+        output = cal.formatmonth(2026, 5)
+        self.assertIn("\x1b[30m\x1b[43mMay 2026\x1b[0m\n\x1b[36m", output)
 
 
 class MiscTestCase(unittest.TestCase):

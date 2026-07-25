@@ -25,6 +25,7 @@ import errno
 import os
 import select
 import socket
+import sys
 import time
 import unittest
 from test import support
@@ -52,12 +53,11 @@ class TestEPoll(unittest.TestCase):
     def _connected_pair(self):
         client = socket.socket()
         client.setblocking(False)
+        # The connection is either established immediately or in progress.
         try:
             client.connect(('127.0.0.1', self.serverSocket.getsockname()[1]))
         except OSError as e:
             self.assertEqual(e.args[0], errno.EINPROGRESS)
-        else:
-            raise AssertionError("Connect should have raised EINPROGRESS")
         server, addr = self.serverSocket.accept()
 
         self.connections.extend((client, server))
@@ -218,6 +218,9 @@ class TestEPoll(unittest.TestCase):
         self.assertRaises(ValueError, select.epoll().register, -1,
                           select.EPOLLIN)
 
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     'unregistering a closed file descriptor succeeds '
+                     'on Solaris')
     def test_unregister_closed(self):
         server, client = self._connected_pair()
         fd = server.fileno()
