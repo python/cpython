@@ -207,7 +207,7 @@ def _feed_data_to_buffered_proto(proto, data):
             raise RuntimeError('get_buffer() returned an empty buffer')
 
         if buf_len >= data_len:
-            buf[:data_len] = data[start:]
+            buf[:data_len] = data[start:] if start else data
             proto.buffer_updated(data_len)
             return
         else:
