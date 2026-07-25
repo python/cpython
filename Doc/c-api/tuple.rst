@@ -167,8 +167,8 @@ type.
 
    .. versionchanged:: next
       Raise :exc:`SystemError` if *desc* places an unnamed field outside the visible
-      sequence fields, or if :c:member:`~PyStructSequence_Desc.n_in_sequence` exceeds
-      the total number  of fields.
+      sequence fields, or if :c:member:`~PyStructSequence_Desc.n_in_sequence` is
+      negative or exceeds the total number of fields.
 
 
 .. c:function:: void PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
@@ -207,8 +207,8 @@ type.
 
    .. c:member:: int n_in_sequence
 
-      Number of fields visible to the Python side (if used as tuple).  Must not
-      exceed the total number of fields.
+      Number of fields visible to the Python side (if used as tuple).
+      Must be non-negative and must not exceed the total number of fields.
 
 
 .. c:type:: PyStructSequence_Field

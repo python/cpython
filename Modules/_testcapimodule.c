@@ -1305,6 +1305,30 @@ test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
 }
 
 static PyObject *
+test_structseq_newtype_negative_n_in_sequence(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    // gh-154387: n_in_sequence must not be negative.
+    PyStructSequence_Field descr_fields[] = {
+        {"a", "field a"},
+        {NULL, NULL},
+    };
+    PyStructSequence_Desc descr = {
+        "_testcapi.negative_n_in_sequence", NULL, descr_fields, -1,
+    };
+
+    PyTypeObject *type = PyStructSequence_NewType(&descr);
+    if (type != NULL) {
+        Py_DECREF(type);
+        PyErr_SetString(PyExc_AssertionError,
+                        "negative n_in_sequence was not rejected");
+        return NULL;
+    }
+    // NewType() failed and left the expected SystemError set; propagate it.
+    return NULL;
+}
+
+static PyObject *
 test_structseq_newtype_unnamed_hidden_field(PyObject *Py_UNUSED(self),
                               PyObject *Py_UNUSED(args))
 {
@@ -3058,6 +3082,8 @@ static PyMethodDef TestMethods[] = {
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_structseq_newtype_null_descr_doc",
         test_structseq_newtype_null_descr_doc, METH_NOARGS},
+    {"test_structseq_newtype_negative_n_in_sequence",
+        test_structseq_newtype_negative_n_in_sequence, METH_NOARGS},
     {"test_structseq_newtype_unnamed_hidden_field",
         test_structseq_newtype_unnamed_hidden_field, METH_NOARGS},
     {"test_structseq_newtype_too_many_visible_fields",

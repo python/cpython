@@ -469,6 +469,11 @@ static Py_ssize_t
 count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
     Py_ssize_t i;
 
+    if (desc->n_in_sequence < 0) {
+        PyErr_Format(PyExc_SystemError,
+            "%s: n_in_sequence=%d is negative", desc->name, desc->n_in_sequence);
+        return -1;
+    }
     *n_unnamed_members = 0;
     for (i = 0; desc->fields[i].name != NULL; ++i) {
         if (desc->fields[i].name == PyStructSequence_UnnamedField) {
@@ -476,7 +481,7 @@ count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
             if (i >= desc->n_in_sequence) {
                 PyErr_Format(PyExc_SystemError,
                     "%s: unnamed field %zd is not a visible sequence field "
-                    "(n_in_sequence=%zd)",
+                    "(n_in_sequence=%d)",
                     desc->name, i, desc->n_in_sequence);
                 return -1;
             }
@@ -485,7 +490,7 @@ count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
     }
     if (desc->n_in_sequence > i) {
         PyErr_Format(PyExc_SystemError,
-            "%s: n_in_sequence=%zd exceeds the total number of fields %zd",
+            "%s: n_in_sequence=%d exceeds the total number of fields %zd",
             desc->name, desc->n_in_sequence, i);
         return -1;
     }
