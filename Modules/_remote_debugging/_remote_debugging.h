@@ -524,7 +524,6 @@ extern int validate_debug_offsets(struct _Py_DebugOffsets *debug_offsets);
  * ============================================================================ */
 
 extern int read_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *result);
-extern int read_Py_ssize_t(RemoteUnwinderObject *unwinder, uintptr_t address, Py_ssize_t *result);
 extern int read_char(RemoteUnwinderObject *unwinder, uintptr_t address, char *result);
 extern int read_py_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *ptr_addr);
 
