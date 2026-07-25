@@ -606,3 +606,14 @@ if 'create-social-cards' not in tags:  # noqa: F821
         '<meta property="og:image:width" content="200">',
         '<meta property="og:image:height" content="200">',
     )
+
+def setup(app):
+    try:
+        import sphinx.builders.changes
+        # We are reaching into the installed library and forcing the
+        # missing key into the class-level typemap.
+        if hasattr(sphinx.builders.changes, 'ChangesBuilder'):
+            if hasattr(sphinx.builders.changes.ChangesBuilder, 'typemap'):
+                sphinx.builders.changes.ChangesBuilder.typemap['soft-deprecated'] = 'soft-deprecated'
+    except ImportError:
+        pass
