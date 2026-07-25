@@ -6,7 +6,7 @@ import re
 import textwrap
 import time
 import unittest
-from test.support import script_helper
+from test.support import import_helper, script_helper
 
 
 class StructSeqTest(unittest.TestCase):
