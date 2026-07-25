@@ -3811,7 +3811,7 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
     # Limits plus one, to exceed them (must match MAX_FRAME_CHAIN_DEPTH /
     # MAX_TASK_WAITER_WALK_TASKS from _remote_debugging.h)
     FRAME_CHAIN_DEPTH = 1024 + 512 + 1
-    TASK_WAITER_WALK_TASKS = 2**16 + 1
+    TASK_WAITER_WALK_TASKS = 2**14 + 1
 
     def _assert_unwinder_limit_error(self, unwind, expected_substring):
         """Call unwind() until it raises the frame chain limit error.
