@@ -1480,27 +1480,29 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         script_body = """\
             import asyncio
 
-            class RemovedTask(asyncio.Task):
-                def __hash__(self):
-                    return 0
+            class HashedTask(asyncio.Task):
+                def __init__(self, coro, task_hash, **kwargs):
+                    self.task_hash = task_hash
+                    super().__init__(coro, **kwargs)
 
-            class RemainingTask(asyncio.Task):
                 def __hash__(self):
-                    return 1
-
-            async def wait_forever():
-                await asyncio.Event().wait()
+                    return self.task_hash
 
             async def main():
-                victim = asyncio.create_task(wait_forever(), name="victim")
-                removed = RemovedTask(wait_forever(), name="removed")
-                remaining = RemainingTask(wait_forever(), name="remaining")
+                victim = asyncio.create_task(
+                    asyncio.sleep(10_000), name="victim"
+                )
+                removed = HashedTask(
+                    asyncio.sleep(10_000), 0, name="removed"
+                )
+                remaining = HashedTask(
+                    asyncio.sleep(10_000), 1, name="remaining"
+                )
 
                 asyncio.future_add_to_awaited_by(victim, removed)
                 asyncio.future_add_to_awaited_by(victim, remaining)
 
-                # Put a dummy in slot 0 before the only active entry in
-                # slot 1. It must not count toward the set's used entries.
+                # Removing hash 0 leaves a dummy before the live hash-1 entry.
                 asyncio.future_discard_from_awaited_by(victim, removed)
 
                 sock.sendall(b"ready")
