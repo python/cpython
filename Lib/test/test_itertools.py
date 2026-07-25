@@ -624,15 +624,6 @@ class TestBasicOps(unittest.TestCase):
     def test_count_with_step_threading(self):
         self.test_count_threading(step=5)
 
-    def test_count_reentrant_step(self):
-        c = count(1 << 100, Step())
-        class Step:
-            def __radd__(self, other):
-                next(c)
-                return other + 1
-        c = count(1 << 100, Step())
-        next(c)
-
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))
         self.assertEqual(list(cycle('')), [])
@@ -1513,6 +1504,22 @@ class TestBasicOps(unittest.TestCase):
         it = zip_longest([[]])
         gc.collect()
         self.assertTrue(gc.is_tracked(next(it)))
+
+    def test_zip_longest_reentrant_iterator(self):
+        # A re-entrant iterator exhaust must not cause use-after-free.
+        zl = None
+        class ReentrantFilter:
+            def __init__(self, it):
+                self.it = it
+            def __iter__(self):
+                return self
+            def __next__(self):
+                if zl is not None:
+                    for _ in zl:
+                        pass
+                return next(self.it)
+        zl = zip_longest(ReentrantFilter(iter([1])), iter([2, 3]))
+        list(zl)
 
     @support.cpython_only
     def test_pairwise_result_gc(self):

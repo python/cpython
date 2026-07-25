@@ -1,0 +1,2 @@
+Fix use-after-free in :func:`itertools.zip_longest` when a re-entrant
+iterator callback exhausts a sibling iterator.  Patch by tonghuaroot.

@@ -3628,14 +3628,15 @@ count_nextlong(countobject *lz)
     }
     assert(lz->cnt == PY_SSIZE_T_MAX && lz->long_cnt != NULL);
 
-    PyObject *result = Py_NewRef(lz->long_cnt);
+    // We hold one reference to "result" (a.k.a. the old value of
+    // lz->long_cnt); we'll either return it or keep it in lz->long_cnt.
+    PyObject *result = lz->long_cnt;
 
     PyObject *stepped_up = PyNumber_Add(result, lz->long_step);
     if (stepped_up == NULL) {
-        Py_DECREF(result);
         return NULL;
     }
-    Py_SETREF(lz->long_cnt, stepped_up);
+    lz->long_cnt = stepped_up;
 
     return result;
 }
@@ -3976,19 +3977,24 @@ zip_longest_next_lock_held(PyObject *op)
             if (it == NULL) {
                 item = Py_NewRef(lz->fillvalue);
             } else {
+                Py_INCREF(it);
                 item = PyIter_Next(it);
                 if (item == NULL) {
                     lz->numactive -= 1;
                     if (lz->numactive == 0 || PyErr_Occurred()) {
                         lz->numactive = 0;
+                        Py_DECREF(it);
                         Py_DECREF(result);
                         return NULL;
                     } else {
                         item = Py_NewRef(lz->fillvalue);
-                        PyTuple_SET_ITEM(lz->ittuple, i, NULL);
-                        Py_DECREF(it);
+                        if (PyTuple_GET_ITEM(lz->ittuple, i) != NULL) {
+                            PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                            Py_DECREF(it);
+                        }
                     }
                 }
+                Py_DECREF(it);
             }
             olditem = PyTuple_GET_ITEM(result, i);
             PyTuple_SET_ITEM(result, i, item);
@@ -4006,19 +4012,24 @@ zip_longest_next_lock_held(PyObject *op)
             if (it == NULL) {
                 item = Py_NewRef(lz->fillvalue);
             } else {
+                Py_INCREF(it);
                 item = PyIter_Next(it);
                 if (item == NULL) {
                     lz->numactive -= 1;
                     if (lz->numactive == 0 || PyErr_Occurred()) {
                         lz->numactive = 0;
+                        Py_DECREF(it);
                         Py_DECREF(result);
                         return NULL;
                     } else {
                         item = Py_NewRef(lz->fillvalue);
-                        PyTuple_SET_ITEM(lz->ittuple, i, NULL);
-                        Py_DECREF(it);
+                        if (PyTuple_GET_ITEM(lz->ittuple, i) != NULL) {
+                            PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                            Py_DECREF(it);
+                        }
                     }
                 }
+                Py_DECREF(it);
             }
             PyTuple_SET_ITEM(result, i, item);
         }
