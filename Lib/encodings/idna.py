@@ -234,13 +234,15 @@ class Codec(codecs.Codec):
         if errors != 'strict':
             raise UnicodeError(f"Unsupported error handling: {errors}")
 
+        if not isinstance(input, bytes):
+            try:
+                input = bytes(memoryview(input))
+            except TypeError:
+                raise TypeError("a bytes-like object is required, not "
+                                f"'{type(input).__name__}'") from None
+
         if not input:
             return "", 0
-
-        # IDNA allows decoding to operate on Unicode strings, too.
-        if not isinstance(input, bytes):
-            # XXX obviously wrong, see #3232
-            input = bytes(input)
 
         if ace_prefix not in input.lower():
             # Fast path
