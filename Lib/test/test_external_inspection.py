@@ -1476,6 +1476,60 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    def test_async_global_awaited_by_skips_set_tombstones(self):
+        script_body = """\
+            import asyncio
+
+            class RemovedTask(asyncio.Task):
+                def __hash__(self):
+                    return 0
+
+            class RemainingTask(asyncio.Task):
+                def __hash__(self):
+                    return 1
+
+            async def wait_forever():
+                await asyncio.Event().wait()
+
+            async def main():
+                victim = asyncio.create_task(wait_forever(), name="victim")
+                removed = RemovedTask(wait_forever(), name="removed")
+                remaining = RemainingTask(wait_forever(), name="remaining")
+
+                asyncio.future_add_to_awaited_by(victim, removed)
+                asyncio.future_add_to_awaited_by(victim, remaining)
+
+                # Put a dummy in slot 0 before the only active entry in
+                # slot 1. It must not count toward the set's used entries.
+                asyncio.future_discard_from_awaited_by(victim, removed)
+
+                sock.sendall(b"ready")
+                sock.recv(16)
+
+            asyncio.run(main())
+            """
+
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+
+            all_awaited_by = get_all_awaited_by(p.pid)
+            tasks_by_name = {
+                task.task_name: task
+                for task in self._get_task_id_map(all_awaited_by).values()
+            }
+            victim = tasks_by_name["victim"]
+            remaining = tasks_by_name["remaining"]
+            self.assertEqual(
+                [waiter.task_name for waiter in victim.awaited_by],
+                [remaining.task_id],
+            )
+            client_socket.sendall(b"done")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     def test_async_global_awaited_by_from_non_main_thread(self):
         port = find_unused_port()
         script = textwrap.dedent(

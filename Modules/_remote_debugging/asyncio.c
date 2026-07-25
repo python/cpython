@@ -145,19 +145,22 @@ iterate_set_entries(
     Py_ssize_t i = 0;
     Py_ssize_t els = 0;
     while (i < set_len && els < num_els) {
-        uintptr_t key_addr;
-        if (read_py_ptr(unwinder, table_ptr, &key_addr) < 0) {
+        setentry entry;
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &unwinder->handle, table_ptr, sizeof(entry), &entry) < 0)
+        {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read set entry key");
             return -1;
         }
 
-        if ((void*)key_addr != NULL) {
+        uintptr_t key_addr = (uintptr_t)entry.key;
+        if (key_addr != 0 && entry.hash != -1) {
             if (parse_task(unwinder, key_addr, awaited_by) < 0) {
                 return -1;
             }
             els++;
         }
-        table_ptr += sizeof(void*) * 2;
+        table_ptr += sizeof(entry);
         i++;
     }
 
