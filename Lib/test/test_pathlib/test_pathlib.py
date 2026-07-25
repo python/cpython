@@ -1454,7 +1454,6 @@ class PathTest(PurePathTest):
         self.assertFalse(target.exists())
 
     def test_copy_dir_into_itself_relative_source_absolute_target(self):
-        # ensure_distinct_paths() must not be fooled by relative vs absolute.
         with os_helper.change_cwd(self.base):
             source = self.cls('dirC')
             target = source.resolve() / 'copyC'
@@ -1480,6 +1479,22 @@ class PathTest(PurePathTest):
         self.assertRaises(OSError, source.copy, target)
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
         self.assertFalse((source / 'copyC').exists())
+
+    def test_copy_dir_into_itself_when_no_resolve(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = source / 'copyC'
+        with mock.patch.object(self.cls, 'resolve', side_effect=AttributeError):
+            self.assertRaises(OSError, source.copy, target)
+            self.assertFalse(target.exists())
+
+    def test_copy_dir_into_itself_when_resolve_raises_oserror(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = source / 'copyC'
+        with mock.patch.object(self.cls, 'resolve', side_effect=OSError):
+            self.assertRaises(OSError, source.copy, target)
+            self.assertFalse(target.exists())
 
     @needs_symlinks
     def test_copy_directory_symlink_to_existing_symlink(self):

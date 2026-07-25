@@ -275,9 +275,8 @@ def ensure_distinct_paths(source, target):
     try:
         source = source.resolve(strict=False)
         target = target.resolve(strict=False)
-    except (AttributeError, TypeError):
-        pass
-    except (OSError, ValueError, RuntimeError, NotImplementedError):
+    except (AttributeError, OSError):
+        # No resolve(), or realpath failed.
         pass
     if source == target:
         err = OSError(EINVAL, "Source and target are the same path")
