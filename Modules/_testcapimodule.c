@@ -1308,8 +1308,9 @@ static PyObject *
 test_structseq_newtype_interspersed_unnamed(PyObject *Py_UNUSED(self),
                               PyObject *Py_UNUSED(args))
 {
-    // gh-154387: unnamed fields may appear anywhere among the visible fields,
-    // not only contiguous or trailing.
+    // gh-154387: unnamed fields may appear anywhere among the visible fields
+    // (here at indices 1 and 3), and a named field may be hidden (here "fifth"
+    // at index 4, since n_in_sequence is 4).
     PyStructSequence_Field descr_fields[] = {
         {"first", "field 0"},
         {PyStructSequence_UnnamedField, "field 1"},
@@ -1319,7 +1320,7 @@ test_structseq_newtype_interspersed_unnamed(PyObject *Py_UNUSED(self),
         {NULL, NULL},
     };
     PyStructSequence_Desc descr = {
-        "_testcapi.Interspersed", NULL, descr_fields, 5,
+        "_testcapi.Interspersed", NULL, descr_fields, 4,
     };
 
     return (PyObject *)PyStructSequence_NewType(&descr);

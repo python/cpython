@@ -74,13 +74,39 @@ class StructSeqTest(unittest.TestCase):
 
     def test_repr_with_interspersed_unnamed_fields(self):
         # gh-154387: unnamed fields need not be contiguous or trailing; each is
-        # shown at its own index rather than borrowing a neighbour's name.
+        # shown at its own index rather than borrowing a neighbour's name.  The
+        # trailing named field is hidden and must not appear in the repr.
         _testcapi = import_helper.import_module("_testcapi")
         cls = _testcapi.test_structseq_newtype_interspersed_unnamed()
+        self.assertEqual(cls.n_fields, 5)
+        self.assertEqual(cls.n_sequence_fields, 4)
         self.assertEqual(cls.n_unnamed_fields, 2)
-        self.assertEqual(repr(cls(range(5))),
+        self.assertEqual(cls.__match_args__, ("first", "third"))
+
+        t1 = cls(range(5))
+        self.assertEqual(repr(t1),
             "_testcapi.Interspersed(first=0, <unnamed@1>=1, third=2, "
-            "<unnamed@3>=3, fifth=4)")
+            "<unnamed@3>=3)")
+        # Only the visible fields form the tuple; the hidden "fifth" is excluded.
+        self.assertEqual(tuple(t1), (0, 1, 2, 3))
+        self.assertEqual(len(t1), 4)
+        # Named fields are accessible by attribute, including the hidden one.
+        self.assertEqual(t1.first, 0)
+        self.assertEqual(t1.third, 2)
+        self.assertEqual(t1.fifth, 4)
+
+        t2 = cls(range(4))
+        self.assertEqual(repr(t2),
+            "_testcapi.Interspersed(first=0, <unnamed@1>=1, third=2, "
+            "<unnamed@3>=3)")
+        # Only the visible fields form the tuple; the hidden "fifth" is excluded.
+        self.assertEqual(tuple(t2), (0, 1, 2, 3))
+        self.assertEqual(len(t2), 4)
+        # Named fields are accessible by attribute, including the hidden one.
+        # The hidden "fifth" is not set, so it returns None.
+        self.assertEqual(t2.first, 0)
+        self.assertEqual(t2.third, 2)
+        self.assertIsNone(t2.fifth)
 
     def test_concat(self):
         t1 = time.gmtime()
