@@ -254,7 +254,7 @@ typedef struct {
        isn't ready for writing. */
     Py_off_t write_end;
 
-    PyThread_type_lock lock;
+    PyMutex mutex;
     volatile unsigned long owner;
 
     Py_ssize_t buffer_size;
@@ -304,8 +304,9 @@ _enter_buffered_busy(buffered *self)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     relax_locking = _Py_IsInterpreterFinalizing(interp);
     Py_BEGIN_ALLOW_THREADS
-    if (!relax_locking)
-        st = PyThread_acquire_lock(self->lock, 1);
+    if (!relax_locking) {
+        PyMutex_Lock(&self->mutex);
+    }
     else {
         /* When finalizing, we don't want a deadlock to happen with daemon
          * threads abruptly shut down while they owned the lock.
@@ -313,7 +314,7 @@ _enter_buffered_busy(buffered *self)
          * Note that non-daemon threads have already exited here, so this
          * shouldn't affect carefully written threaded I/O code.
          */
-        st = PyThread_acquire_lock_timed(self->lock, (PY_TIMEOUT_T)1e6, 0);
+        st = _PyMutex_LockTimed(&self->mutex, (PyTime_t)1e6, 0);
     }
     Py_END_ALLOW_THREADS
     if (relax_locking && st != PY_LOCK_ACQUIRED) {
@@ -327,14 +328,14 @@ _enter_buffered_busy(buffered *self)
 }
 
 #define ENTER_BUFFERED(self) \
-    ( (PyThread_acquire_lock(self->lock, 0) ? \
+    ( (_PyMutex_LockTimed(&self->mutex, (PyTime_t)0, 0) ? \
        1 : _enter_buffered_busy(self)) \
      && (self->owner = PyThread_get_thread_ident(), 1) )
 
 #define LEAVE_BUFFERED(self) \
     do { \
         self->owner = 0; \
-        PyThread_release_lock(self->lock); \
+        PyMutex_Unlock(&self->mutex); \
     } while(0);
 
 #define CHECK_INITIALIZED(self) \
@@ -435,10 +436,6 @@ buffered_dealloc(PyObject *op)
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
-    }
-    if (self->lock) {
-        PyThread_free_lock(self->lock);
-        self->lock = NULL;
     }
     (void)buffered_clear(op);
     tp->tp_free(self);
@@ -850,13 +847,7 @@ _buffered_init(buffered *self)
         PyErr_NoMemory();
         return -1;
     }
-    if (self->lock)
-        PyThread_free_lock(self->lock);
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "can't allocate read lock");
-        return -1;
-    }
+    self->mutex = (PyMutex){0};
     self->owner = 0;
     /* Find out whether buffer_size is a power of 2 */
     /* XXX is this optimization useful? */
