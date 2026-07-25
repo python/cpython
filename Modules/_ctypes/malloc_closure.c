@@ -68,10 +68,24 @@ static void more_core(void)
 
     /* allocate a memory block */
 #ifdef MS_WIN32
+#ifdef MS_WINDOWS_DESKTOP
     item = (ITEM *)VirtualAlloc(NULL,
                                            count * sizeof(ITEM),
                                            MEM_COMMIT,
                                            PAGE_EXECUTE_READWRITE);
+#else // UWP
+    /* Due security restrictions, UWP not allows request Read-Write-Execute permissions at once.
+       The correct flow in UWP for execute dynamic code in memmory is:
+         1. Alloate as Read-Write (PAGE_READWRITE) and write dynamic code to memmory.
+         2. Change to Executable (PAGE_EXECUTE_READ) with 'VirtualProtectFromApp'.
+         3. Flush cache with 'FlushInstructionCache' to ensure CPU instruction cache coherency
+            before executing the generated code.
+       !@todo implement points 2. 3. in the appropriate places */
+    item = (ITEM*)VirtualAllocFromApp(NULL,
+                                      count * sizeof(ITEM),
+                                      MEM_COMMIT | MEM_RESERVE,
+                                      PAGE_READWRITE);
+#endif // !MS_WINDOWS_DESKTOP
     if (item == NULL)
         return;
 #else
