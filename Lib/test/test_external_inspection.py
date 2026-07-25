@@ -423,7 +423,6 @@ sock.connect(('localhost', {port}))
     def _get_awaited_by_relationships(self, stack_trace):
         """Extract task name to awaited_by set mapping."""
         id_to_task = self._get_task_id_map(stack_trace)
-
         return {
             task.task_name: set(
                 id_to_task[awaited.task_name].task_name
