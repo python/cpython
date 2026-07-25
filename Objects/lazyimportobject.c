@@ -81,9 +81,9 @@ lazy_import_dealloc(PyObject *op)
     Py_TYPE(op)->tp_free(op);
 }
 
+/* Specialize the error message for failed attribute lookups. */
 static PyObject *
 lazy_import_getattro(PyObject *op, PyObject *name) {
-    /* Suppress to override the error message. */
     PyObject *value = _PyObject_GenericGetAttrWithDict(op, name, NULL, /* suppress */1);
     if (value == NULL) {
         if (PyErr_Occurred()) {
@@ -94,7 +94,7 @@ lazy_import_getattro(PyObject *op, PyObject *name) {
             return NULL;
         }
         PyErr_Format(PyExc_AttributeError,
-                     "cannot access attribute '%U' on unresolved lazy import '%U'",
+                     "cannot access attribute %R on unresolved lazy import %R",
                      name, lz_name);
         Py_DECREF(lz_name);
         return NULL;
