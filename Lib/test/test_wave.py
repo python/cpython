@@ -632,6 +632,12 @@ class WaveWriteValidationTest(unittest.TestCase):
         check_nframes(8)  
 
     def test_cannot_change_params_after_write(self):
+        w = self.open_writer()
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(44100)
+        w.writeframes(b'\x00\x00')
+
         setters = (
             ('setnchannels', (1,)),
             ('setsampwidth', (2,)),
@@ -643,11 +649,6 @@ class WaveWriteValidationTest(unittest.TestCase):
         )
         for name, args in setters:
             with self.subTest(setter=name):
-                w = self.open_writer()
-                w.setnchannels(1)
-                w.setsampwidth(2)
-                w.setframerate(44100)
-                w.writeframes(b'\x00\x00')
                 with self.assertRaisesRegex(wave.Error,
                                             'cannot change parameters'):
                     getattr(w, name)(*args)
