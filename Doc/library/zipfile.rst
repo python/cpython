@@ -1080,6 +1080,7 @@ ignores errors when restoring file attributes::
    with zipfile.ZipFile('spam.zip') as myzip:
        myzip.extractall('eggs', extractor=SafeZipExtractorTimeMode)
 
+
 .. class:: ZipExtractorBase(archive, path=None, pwd=None)
 
    The base extractor class that restores no file attributes.
