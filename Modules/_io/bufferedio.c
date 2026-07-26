@@ -314,7 +314,7 @@ _enter_buffered_busy(buffered *self)
          * Note that non-daemon threads have already exited here, so this
          * shouldn't affect carefully written threaded I/O code.
          */
-        st = _PyMutex_LockTimed(&self->mutex, (PyTime_t)1e6, 0);
+        st = _PyMutex_LockTimed(&self->mutex, (PyTime_t)1e9, 0);
     }
     Py_END_ALLOW_THREADS
     if (relax_locking && st != PY_LOCK_ACQUIRED) {
