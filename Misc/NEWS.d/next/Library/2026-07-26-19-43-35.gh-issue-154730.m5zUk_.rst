@@ -1,0 +1,2 @@
+Add timeout in :mod:`!_pyrepl` to distinguish between bare ``Esc`` and
+multibyte escape sequence.
