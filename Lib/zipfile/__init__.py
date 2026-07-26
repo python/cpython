@@ -1878,17 +1878,12 @@ class ZipExtractorBase:
             self.target_path = os.fspath(path)
         self.pwd = pwd
         self._dirs = {}
-        self._in_ctx = False
 
     def __enter__(self):
-        self._in_ctx = True
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        try:
-            self.finalize(exc_type, exc_value, traceback)
-        finally:
-            self._in_ctx = False
+        self.finalize(exc_type, exc_value, traceback)
 
     def __call__(self, zinfo):
         targetpath = self.archive._extract_member(zinfo, self.target_path, self.pwd)
@@ -1901,10 +1896,6 @@ class ZipExtractorBase:
         else:
             self.restore_attributes(targetpath, zinfo)
 
-        # auto-finalize for a standalone call
-        if not self._in_ctx:
-            self.finalize()
-
         return targetpath
 
     def finalize(self, exc_type=None, exc_value=None, traceback=None):
@@ -1916,8 +1907,6 @@ class ZipExtractorBase:
                 continue
 
             self.restore_attributes(targetpath, zinfo)
-
-        self._dirs.clear()
 
     def restore_attributes(self, targetpath, zinfo):
         pass
@@ -2411,7 +2400,8 @@ class ZipFile:
         if extractor is None:
             extractor = ZipExtractorBase
         zinfo = member if isinstance(member, ZipInfo) else self.getinfo(member)
-        return extractor(self, path, pwd=pwd)(zinfo)
+        with extractor(self, path, pwd=pwd) as extr:
+            return extr(zinfo)
 
     def extractall(self, path=None, members=None, pwd=None, extractor=None):
         """Extract all members from the archive to the current working
