@@ -1952,11 +1952,11 @@ class TestPasteEvent(TestCase):
         )
         # fmt: on
 
-        paste_start = "\x1b[200~"
+        paste_start = [Event(evt="key", data="bracketed paste", raw=bytearray(b"\x1b[200~"))]
         paste_end = "\x1b[201~"
 
         events = itertools.chain(
-            code_to_events(paste_start),
+            paste_start,
             code_to_events(input_code),
             code_to_events(paste_end),
             code_to_events("\n"),
@@ -1968,11 +1968,11 @@ class TestPasteEvent(TestCase):
     def test_bracketed_paste_single_line(self):
         input_code = "oneline"
 
-        paste_start = "\x1b[200~"
+        paste_start = [Event(evt="key", data="bracketed paste", raw=bytearray(b"\x1b[200~"))]
         paste_end = "\x1b[201~"
 
         events = itertools.chain(
-            code_to_events(paste_start),
+            paste_start,
             code_to_events(input_code),
             code_to_events(paste_end),
             code_to_events("\n"),
@@ -1982,7 +1982,11 @@ class TestPasteEvent(TestCase):
         self.assertEqual(output, input_code)
 
     def test_bracketed_paste_in_isearch(self):
-        paste_start = "\x1b[200~"
+        # The bracketed-paste *start* marker is translated into a synthetic
+        # ``bracketed paste`` event by the real event queue; the fake console
+        # used here does not run that translation, so we feed the
+        # ``bracketed paste`` event directly.
+        paste_start = [Event(evt="key", data="bracketed paste", raw=bytearray(b"\x1b[200~"))]
         paste_end = "\x1b[201~"
 
         events = itertools.chain(
@@ -1992,7 +1996,7 @@ class TestPasteEvent(TestCase):
             [
                 Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
             ],
-            code_to_events(paste_start),
+            paste_start,
             code_to_events("hello"),
             code_to_events(paste_end),
             [
@@ -2003,7 +2007,7 @@ class TestPasteEvent(TestCase):
                 Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
             ],
             # Search for 'world', which should not be found
-            code_to_events(paste_start),
+            paste_start,
             code_to_events("world"),
             code_to_events(paste_end),
             [
