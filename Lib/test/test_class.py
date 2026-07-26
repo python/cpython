@@ -1019,6 +1019,8 @@ class TestInlineValues(unittest.TestCase):
             import test.support
             import _testcapi
 
+            set_nomemory = _testcapi.set_nomemory  # eagerly load the function
+
             class A:
                 def __init__(self):
                     self.a = 1
@@ -1026,7 +1028,7 @@ class TestInlineValues(unittest.TestCase):
             a = A()
             d = a.__dict__
             with test.support.catch_unraisable_exception() as ex:
-                _testcapi.set_nomemory(0, 1)
+                set_nomemory(0, 1)
                 del a
                 assert ex.unraisable.exc_type is MemoryError
             try:
