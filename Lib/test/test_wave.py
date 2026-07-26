@@ -552,19 +552,23 @@ class WaveReadErrorTest(unittest.TestCase):
 class WaveWriteValidationTest(unittest.TestCase):
     """Cover parameter-validation paths of Wave_write."""
 
-    def open_writer(self):
-        w = wave.open(io.BytesIO(), 'wb')
-        self.addCleanup(self._close_quietly, w)
-        return w
+    @staticmethod  
+    def _close(w):  
+        try:  
+            # Make sure that all parameters are set  
+            w.setnchannels(1)  
+            w.setsampwidth(2)  
+            w.setframerate(44100)  
+        except wave.Error:  
+            # Ignore "cannot change parameters after starting to write" error  
+            pass  
 
-    @staticmethod
-    def _close_quietly(w):
-        # A writer whose required parameters are never set raises on close;
-        # swallow that so it does not mask the behaviour under test.
-        try:
-            w.close()
-        except wave.Error:
-            pass
+        w.close()  
+
+    def open_writer(self):  
+        w = wave.open(io.BytesIO(), 'wb')  
+        self.addCleanup(self._close, w)  
+        return w
 
     def test_setnchannels_rejects_nonpositive(self):
         w = self.open_writer()
@@ -609,14 +613,23 @@ class WaveWriteValidationTest(unittest.TestCase):
         with self.assertRaisesRegex(wave.Error, 'not all parameters set'):
             w.getparams()
 
-    def test_tell_reports_frames_written(self):
-        w = self.open_writer()
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(44100)
-        self.assertEqual(w.tell(), 0)
-        w.writeframes(b'\x00\x00' * 5)
-        self.assertEqual(w.tell(), 5)
+    def test_tell(self):  
+        def check_nframes(nframes):  
+            self.assertEqual(w.tell(), nframes)  
+            self.assertEqual(w.getnframes(), nframes)  
+
+        w = self.open_writer()  
+        w.setnchannels(1)  
+        w.setsampwidth(2)  
+        w.setframerate(44100)  
+        check_nframes(0)  
+
+        frame = b'\x00\x00'  
+        w.writeframes(frame * 5)  
+        check_nframes(5)  
+
+        w.writeframes(frame * 3)  
+        check_nframes(8)  
 
     def test_cannot_change_params_after_write(self):
         setters = (
@@ -638,7 +651,6 @@ class WaveWriteValidationTest(unittest.TestCase):
                 with self.assertRaisesRegex(wave.Error,
                                             'cannot change parameters'):
                     getattr(w, name)(*args)
-
 
 if __name__ == '__main__':
     unittest.main()
