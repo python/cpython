@@ -1216,6 +1216,31 @@ class ZlibDecompressorTest(unittest.TestCase):
             zlibd.__init__()
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
+    @support.nomemtest
+    @unittest.skipUnless(hasattr(zlib, '_ZlibDecompressor'),
+                         'requires zlib._ZlibDecompressor')
+    def test_decompress_memoryerror_no_dangling_input(self):
+        # gh-148395 / CVE-2026-6100: after MemoryError in decompress(), the
+        # decompressor must not keep a dangling pointer into the input buffer.
+        import _testcapi
+        data = zlib.compress(b'x' * 4096)
+        for start in range(0, 40):
+            d = zlib._ZlibDecompressor()
+            try:
+                _testcapi.set_nomemory(start, start + 1)
+                try:
+                    d.decompress(bytearray(data), max_length=0)
+                except MemoryError:
+                    pass
+            finally:
+                _testcapi.remove_mem_hooks()
+            try:
+                out = d.decompress(bytearray(data))
+            except (MemoryError, ValueError, EOFError, OSError, zlib.error):
+                continue
+            self.assertIsInstance(out, bytes)
+            self.assertNotIn(b'\x00' * 64, out)
+
 
 class CustomInt:
     def __index__(self):

@@ -1060,6 +1060,29 @@ class BZ2DecompressorTest(BaseTest):
         self.assertEqual(BZ2Decompressor.__new__(BZ2Decompressor).
                          decompress(bytes()), b'')
 
+    @support.nomemtest
+    def test_decompress_memoryerror_no_dangling_input(self):
+        # gh-148395 / CVE-2026-6100: after MemoryError in decompress(), the
+        # decompressor must not keep a dangling pointer into the input buffer.
+        import _testcapi
+        data = bz2.compress(b'x' * 4096)
+        for start in range(0, 40):
+            d = bz2.BZ2Decompressor()
+            try:
+                _testcapi.set_nomemory(start, start + 1)
+                try:
+                    d.decompress(bytearray(data), max_length=0)
+                except MemoryError:
+                    pass
+            finally:
+                _testcapi.remove_mem_hooks()
+            try:
+                out = d.decompress(bytearray(data))
+            except (MemoryError, ValueError, EOFError, OSError):
+                continue
+            self.assertIsInstance(out, bytes)
+            self.assertNotIn(b'\x00' * 64, out)
+
 
 class CompressDecompressTest(BaseTest):
     def testCompress(self):

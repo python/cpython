@@ -383,6 +383,29 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
                          decompress(bytes()), b'')
 
+    @support.nomemtest
+    def test_decompress_memoryerror_no_dangling_input(self):
+        # gh-148395 / CVE-2026-6100: after MemoryError in decompress(), the
+        # decompressor must not keep a dangling pointer into the input buffer.
+        import _testcapi
+        data = lzma.compress(b'x' * 4096)
+        for start in range(0, 40):
+            d = lzma.LZMADecompressor()
+            try:
+                _testcapi.set_nomemory(start, start + 1)
+                try:
+                    d.decompress(bytearray(data), max_length=0)
+                except MemoryError:
+                    pass
+            finally:
+                _testcapi.remove_mem_hooks()
+            try:
+                out = d.decompress(bytearray(data))
+            except (MemoryError, ValueError, EOFError, OSError, LZMAError):
+                continue
+            self.assertIsInstance(out, bytes)
+            self.assertNotIn(b'\x00' * 64, out)
+
     def test_riscv_filter_constant_exists(self):
         self.assertTrue(lzma.FILTER_RISCV)
 
