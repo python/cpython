@@ -1,0 +1,1 @@
+Fix a free-threading race in finalization by asserting the thread list is non-empty only after stopping the world.
