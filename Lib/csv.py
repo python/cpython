@@ -245,7 +245,7 @@ class Sniffer:
         """
         Returns a dialect (or None) corresponding to the sample
 
-        If several combinations fit the sample equally well, the
+        If several delimiters fit the sample equally well, the
         delimiters listed in the preferred attribute are preferred, in
         that order, no matter how many times each of them occurs.
         """
