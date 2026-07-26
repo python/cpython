@@ -1734,7 +1734,6 @@ class GeneralModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'AI_NUMERICSERV'),
                          'needs socket.AI_NUMERICSERV')
-    @support.thread_unsafe('setlocale is not thread-safe')
     @support.run_with_locales('LC_ALL',
         'uk_UA.KOI8-U', 'uk_UA', 'ja_JP.eucJP', 'ja_JP.SJIS', 'ja_JP',
         'ko_KR.eucKR', 'zh_CN.GB18030', 'el_GR.ISO8859-7',
