@@ -133,6 +133,7 @@ _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
 # Only NUL, CR and LF are unsafe (they cannot be represented even in
 # a quoted string); other control characters are sent quoted.
 _control_chars = re.compile(b'[\x00\r\n]')
+_control_chars_str = re.compile('[\x00\r\n]')
 _non_astring_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff%*\\"]')
 _non_list_char = re.compile(br'[(){ \x00-\x1f\x7f-\xff\\"]')
 _quoted = re.compile(br'"(?:[^"\\]|\\.)*+"')
@@ -142,6 +143,98 @@ def _paren_depth(data, depth=0):
     # Net parenthesis nesting of data, ignoring parentheses in quoted strings.
     data = _quoted.sub(b'', data)
     return depth + data.count(b'(') - data.count(b')')
+
+
+def _seq_number(n):
+    # A single message number; None or '*' is the last message.
+    if n is None or n == '*':
+        return '*'
+    if not isinstance(n, int):
+        raise TypeError('message number must be an integer, not %s'
+                        % type(n).__name__)
+    return str(n)
+
+
+def _seq_range(item):
+    if isinstance(item, range):
+        if item.step == 1 and len(item):
+            item = (item.start, item[-1])
+        else:
+            return ','.join(map(str, item))
+    if isinstance(item, tuple):
+        start, stop = item
+        return '%s:%s' % (_seq_number(start), _seq_number(stop))
+    return _seq_number(item)
+
+
+def _format_sequence_set(arg):
+    if isinstance(arg, (int, str)):
+        return str(arg)
+    # A sequence of message numbers and ranges.
+    return ','.join(map(_seq_range, arg))
+
+
+# Characters that prevent a string from being sent as a bare atom.
+_astring_special = re.compile(r'[(){ %*\\"\x00-\x1f\x7f-\U0010ffff]')
+# A flag: an atom, optionally prefixed by a backslash.
+_flag = re.compile(r'\\?[^(){ %*"\\\]\x00-\x1f\x7f-\U0010ffff]+')
+# A placeholder in a format string: '?', '?f', '?s' or the escape '??'.
+_placeholder = re.compile(r'\?[?fs]?')
+
+
+def _format_astring(value):
+    if isinstance(value, (list, tuple)):
+        return '(' + ' '.join(map(_format_astring, value)) + ')'
+    if not isinstance(value, bool) and isinstance(value, int):
+        return str(value)
+    if isinstance(value, (bytes, bytearray)):
+        value = str(value, 'ascii')
+    elif not isinstance(value, str):
+        raise TypeError('expected a string, an integer or a list, not %s'
+                        % type(value).__name__)
+    if value and _astring_special.search(value) is None:
+        return value                    # an atom, sent unquoted
+    if _control_chars_str.search(value):
+        raise ValueError('NUL, CR and LF cannot be represented inline: %r'
+                         % value)
+    return '"' + value.replace('\\', r'\\').replace('"', r'\"') + '"'
+
+
+def _format_flags(value):
+    if isinstance(value, (list, tuple)):
+        # A nested sequence is not part of the API; it produces invalid
+        # syntax that is rejected by the server.
+        return '(' + ' '.join(map(_format_flags, value)) + ')'
+    if isinstance(value, (bytes, bytearray)):
+        value = str(value, 'ascii')
+    elif not isinstance(value, str):
+        raise TypeError('expected a flag string or a list, not %s'
+                        % type(value).__name__)
+    if not _flag.fullmatch(value):
+        raise ValueError('invalid flag: %r' % value)
+    return value
+
+
+def _substitute(format, params):
+    params = iter(params)
+    def replace(match):
+        spec = match.group()
+        if spec == '??':                # an escaped literal '?'
+            return '?'
+        try:
+            value = next(params)
+        except StopIteration:
+            raise TypeError('not enough parameters for the format string') \
+                    from None
+        if spec == '?f':                # a flag or a list of flags
+            return _format_flags(value)
+        if spec == '?s':                # a message sequence set
+            return _format_sequence_set(value)
+        return _format_astring(value)   # an astring or a list of astrings
+    result = _placeholder.sub(replace, format)
+    for value in params:
+        raise TypeError('too many parameters for the format string')
+    return result
 
 
 class IMAP4:
@@ -665,7 +758,7 @@ class IMAP4:
         return self._untagged_response(typ, dat, name)
 
 
-    def fetch(self, message_set, message_parts, *, uid=False):
+    def fetch(self, message_set, message_parts, *, uid=False, params=None):
         """Fetch (parts of) messages.
 
         (typ, [data, ...]) = <instance>.fetch(message_set, message_parts)
@@ -673,12 +766,17 @@ class IMAP4:
         'message_parts' should be a string of selected parts
         enclosed in parentheses, eg: "(UID BODY[TEXT])".
 
+        If 'params' is given, '?' placeholders in 'message_parts' are
+        substituted with the quoted parameters.
+
         'data' are tuples of message part envelope and data.
 
         If 'uid' is true, 'message_set' is a set of UIDs and the message
         numbers in the response are UIDs (UID FETCH).
         """
         name = 'FETCH'
+        if params is not None:
+            message_parts = _substitute(message_parts, params)
         args = (self._sequence_set(message_set),
                 self._fetch_parts(message_parts))
         if uid:
@@ -941,7 +1039,7 @@ class IMAP4:
                                     self._mailbox(newmailbox))
 
 
-    def search(self, charset, *criteria, uid=False):
+    def search(self, charset, *criteria, uid=False, params=None):
         """Search mailbox for matching messages.
 
         (typ, [data]) = <instance>.search(charset, criterion, ...)
@@ -953,8 +1051,13 @@ class IMAP4:
 
         A 'criteria' passed as str is encoded to 'charset'; pass bytes to
         send criteria that are already encoded.
+
+        If 'params' is given, '?' placeholders in the criteria are
+        substituted with the quoted parameters.
         """
         name = 'SEARCH'
+        if params is not None:
+            criteria = (_substitute(' '.join(criteria), params),)
         if charset is not None:
             if self.utf8_enabled:
                 raise IMAP4.error("Non-None charset not valid in UTF8 mode")
@@ -1028,18 +1131,24 @@ class IMAP4:
         return self._untagged_response(typ, dat, 'QUOTA')
 
 
-    def sort(self, sort_criteria, charset, *search_criteria, uid=False):
+    def sort(self, sort_criteria, charset, *search_criteria, uid=False,
+             params=None):
         """IMAP4rev1 extension SORT command.
 
         (typ, [data]) = <instance>.sort(sort_criteria, charset, search_criteria, ...)
 
         If 'uid' is true, the message numbers in the response are UIDs
         (UID SORT).
+
+        If 'params' is given, '?' placeholders in the search criteria are
+        substituted with the quoted parameters.
         """
         name = 'SORT'
         #if not name in self.capabilities:      # Let the server decide!
         #       raise self.error('unimplemented extension command: %s' % name)
         sort_criteria = self._set_quote(sort_criteria)
+        if params is not None:
+            search_criteria = (_substitute(' '.join(search_criteria), params),)
         search_criteria = self._encode_criteria(charset, search_criteria)
         if charset is not None:
             charset = self._astring(charset)
@@ -1113,15 +1222,21 @@ class IMAP4:
         return self._simple_command('SUBSCRIBE', self._mailbox(mailbox))
 
 
-    def thread(self, threading_algorithm, charset, *search_criteria, uid=False):
+    def thread(self, threading_algorithm, charset, *search_criteria, uid=False,
+               params=None):
         """IMAPrev1 extension THREAD command.
 
         (type, [data]) = <instance>.thread(threading_algorithm, charset, search_criteria, ...)
 
         If 'uid' is true, the message numbers in the response are UIDs
         (UID THREAD).
+
+        If 'params' is given, '?' placeholders in the search criteria are
+        substituted with the quoted parameters.
         """
         name = 'THREAD'
+        if params is not None:
+            search_criteria = (_substitute(' '.join(search_criteria), params),)
         search_criteria = self._encode_criteria(charset, search_criteria)
         if charset is not None:
             charset = self._astring(charset)
@@ -1133,13 +1248,17 @@ class IMAP4:
         return self._untagged_response(typ, dat, name)
 
 
-    def uid(self, command, *args):
+    def uid(self, command, *args, params=None):
         """Execute "command arg ..." with messages identified by UID,
                 rather than message number.
 
         (typ, [data]) = <instance>.uid(command, arg1, arg2, ...)
 
         Returns response appropriate to 'command'.
+
+        If 'params' is given, '?' placeholders in the SEARCH, SORT and
+        THREAD criteria or in the FETCH parts are substituted with the
+        quoted parameters.
         """
         command = command.upper()
         if not command in Commands:
@@ -1156,6 +1275,8 @@ class IMAP4:
                     self._mailbox(new_mailbox))
         elif command == 'FETCH':
             message_set, message_parts = args
+            if params is not None:
+                message_parts = _substitute(message_parts, params)
             args = (self._sequence_set(message_set),
                     self._fetch_parts(message_parts))
         elif command == 'STORE':
@@ -1164,6 +1285,9 @@ class IMAP4:
                     self._set_quote(flags))
         elif command == 'SORT':
             sort_criteria, charset, *search_criteria = args
+            if params is not None:
+                search_criteria = (_substitute(' '.join(search_criteria),
+                                                    params),)
             search_criteria = self._encode_criteria(charset, search_criteria)
             if charset is not None:
                 charset = self._astring(charset)
@@ -1171,11 +1295,16 @@ class IMAP4:
                     *search_criteria)
         elif command == 'THREAD':
             threading_algorithm, charset, *search_criteria = args
+            if params is not None:
+                search_criteria = (_substitute(' '.join(search_criteria),
+                                                    params),)
             search_criteria = self._encode_criteria(charset, search_criteria)
             if charset is not None:
                 charset = self._astring(charset)
             args = (self._atom(threading_algorithm), charset,
                     *search_criteria)
+        elif command == 'SEARCH' and params is not None:
+            args = (_substitute(' '.join(args), params),)
         typ, dat = self._simple_command(name, self._atom(command), *args)
         if command in ('SEARCH', 'SORT', 'THREAD'):
             name = command
@@ -1570,9 +1699,13 @@ class IMAP4:
         return arg
 
     def _sequence_set(self, arg):
-        return arg
+        return _format_sequence_set(arg)
 
     def _set_quote(self, arg):
+        if not isinstance(arg, str):
+            # A sequence of atoms (flags, criteria, item names, etc.);
+            # wrap them in parentheses as a single argument.
+            return '(' + ' '.join(arg) + ')'
         if arg and arg[0] == '(' and arg[-1] == ')':
             return arg
         return '(' + arg + ')'
@@ -1580,7 +1713,7 @@ class IMAP4:
     def _fetch_parts(self, arg):
         # "ALL", "FULL" and "FAST" are macros, not data item names;
         # they cannot be enclosed in parentheses.
-        if arg.upper() in ('ALL', 'FULL', 'FAST'):
+        if isinstance(arg, str) and arg.upper() in ('ALL', 'FULL', 'FAST'):
             return arg
         return self._set_quote(arg)
 
