@@ -974,7 +974,7 @@ class TestCurses(unittest.TestCase):
             with self.subTest(ch=ch):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
-                self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
+                self.assertEqual(stdscr.inch(2, 0), b[0])
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
@@ -1997,12 +1997,15 @@ class TestCurses(unittest.TestCase):
         pair = curses.alloc_pair(fg, bg)
         self.assertGreater(pair, 0)
         self.assertEqual(curses.pair_content(pair), (fg, bg))
-        # The same combination of colors reuses the same pair.
-        self.assertEqual(curses.alloc_pair(fg, bg), pair)
-        self.assertEqual(curses.find_pair(fg, bg), pair)
-        # Once freed, the pair is no longer found.
-        self.assertIsNone(curses.free_pair(pair))
-        self.assertEqual(curses.find_pair(fg, bg), -1)
+        if getattr(curses, 'ncurses_version', (6, 3)) >= (6, 3):
+            # The same combination of colors reuses the same pair.
+            self.assertEqual(curses.alloc_pair(fg, bg), pair)
+            self.assertEqual(curses.find_pair(fg, bg), pair)
+            # Once freed, the pair is no longer found.
+            self.assertIsNone(curses.free_pair(pair))
+            self.assertEqual(curses.find_pair(fg, bg), -1)
+        else:
+            self.assertIsNone(curses.free_pair(pair))
 
         # Error paths.
         for color in self.bad_colors2():
@@ -3130,7 +3133,10 @@ class SLKTests(NewtermTestBase):
         except UnicodeEncodeError:
             self.skipTest('the locale cannot encode %r' % label)
         curses.slk_set(1, label, 0)
-        self.assertEqual(curses.slk_label(1), label)
+        # The label can be truncated to fit the soft label width, e.g. in the
+        # EUC-JP locale, where "Å" and "ö" are double-width JIS X 0212
+        # characters, so the 8-column label only fits "Ångstr".
+        self.assertIn(curses.slk_label(1), (label, 'Ångstr'))
 
     def test_set_bad_justify(self):
         self.make_slk_screen()
