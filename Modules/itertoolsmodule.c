@@ -772,13 +772,17 @@ teedataobject_newinternal(itertools_state *state, PyObject *it)
 static PyObject *
 teedataobject_jumplink(itertools_state *state, teedataobject *tdo)
 {
+    PyObject *link;
+    Py_BEGIN_CRITICAL_SECTION(tdo);
     if (tdo->nextlink == NULL)
         tdo->nextlink = teedataobject_newinternal(state, tdo->it);
-    return Py_XNewRef(tdo->nextlink);
+    link = Py_XNewRef(tdo->nextlink);
+    Py_END_CRITICAL_SECTION();
+    return link;
 }
 
 static PyObject *
-teedataobject_getitem(teedataobject *tdo, int i)
+teedataobject_getitem_lock_held(teedataobject *tdo, int i)
 {
     PyObject *value;
 
@@ -804,6 +808,16 @@ teedataobject_getitem(teedataobject *tdo, int i)
     return Py_NewRef(value);
 }
 
+static PyObject *
+teedataobject_getitem(teedataobject *tdo, int i)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(tdo);
+    result = teedataobject_getitem_lock_held(tdo, i);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static int
 teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 {
@@ -823,8 +837,11 @@ teedataobject_safe_decref(PyObject *obj)
 {
     while (obj && _PyObject_IsUniquelyReferenced(obj)) {
         teedataobject *tmp = teedataobject_CAST(obj);
-        PyObject *nextlink = tmp->nextlink;
+        PyObject *nextlink;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        nextlink = tmp->nextlink;
         tmp->nextlink = NULL;
+        Py_END_CRITICAL_SECTION();
         Py_SETREF(obj, nextlink);
     }
     Py_XDECREF(obj);
@@ -837,11 +854,13 @@ teedataobject_clear(PyObject *op)
     PyObject *tmp;
     teedataobject *tdo = teedataobject_CAST(op);
 
+    Py_BEGIN_CRITICAL_SECTION(op);
     Py_CLEAR(tdo->it);
     for (i=0 ; i<tdo->numread ; i++)
         Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
+    Py_END_CRITICAL_SECTION();
     teedataobject_safe_decref(tmp);
     return 0;
 }
@@ -934,20 +953,67 @@ static PyObject *
 tee_next(PyObject *op)
 {
     teeobject *to = teeobject_CAST(op);
-    PyObject *value, *link;
+    PyObject *value;
 
+#ifndef Py_GIL_DISABLED
+    /* The GIL already serializes access, so keep the simple path without the
+       snapshot and revalidation that the free-threaded build needs. */
     if (to->index >= LINKCELLS) {
-        link = teedataobject_jumplink(to->state, to->dataobj);
-        if (link == NULL)
+        PyObject *link = teedataobject_jumplink(to->state, to->dataobj);
+        if (link == NULL) {
             return NULL;
+        }
         Py_SETREF(to->dataobj, (teedataobject *)link);
         to->index = 0;
     }
     value = teedataobject_getitem(to->dataobj, to->index);
-    if (value == NULL)
+    if (value == NULL) {
         return NULL;
+    }
     to->index++;
     return value;
+#else
+    for (;;) {
+        teedataobject *dataobj;
+        int index;
+
+        /* Snapshot the branch position (strong ref to the shared data object)
+           under the tee lock; the data object is locked separately, not nested,
+           then the advance is revalidated. */
+        Py_BEGIN_CRITICAL_SECTION(op);
+        dataobj = (teedataobject *)Py_NewRef((PyObject *)to->dataobj);
+        index = to->index;
+        Py_END_CRITICAL_SECTION();
+
+        if (index < LINKCELLS) {
+            value = teedataobject_getitem(dataobj, index);
+            if (value != NULL) {
+                Py_BEGIN_CRITICAL_SECTION(op);
+                if (to->dataobj == dataobj && to->index == index) {
+                    to->index = index + 1;
+                }
+                Py_END_CRITICAL_SECTION();
+            }
+            Py_DECREF(dataobj);
+            return value;
+        }
+
+        PyObject *link = teedataobject_jumplink(to->state, dataobj);
+        if (link == NULL) {
+            Py_DECREF(dataobj);
+            return NULL;
+        }
+        Py_BEGIN_CRITICAL_SECTION(op);
+        if (to->dataobj == dataobj) {
+            Py_SETREF(to->dataobj, (teedataobject *)link);
+            to->index = 0;
+            link = NULL;
+        }
+        Py_END_CRITICAL_SECTION();
+        Py_XDECREF(link);
+        Py_DECREF(dataobj);
+    }
+#endif
 }
 
 static int
@@ -966,8 +1032,10 @@ tee_copy_impl(teeobject *to)
     if (newto == NULL) {
         return NULL;
     }
+    Py_BEGIN_CRITICAL_SECTION(to);
     newto->dataobj = (teedataobject *)Py_NewRef(to->dataobj);
     newto->index = to->index;
+    Py_END_CRITICAL_SECTION();
     newto->weakreflist = NULL;
     newto->state = to->state;
     PyObject_GC_Track(newto);
@@ -1143,7 +1211,6 @@ typedef struct {
     PyObject *it;
     PyObject *saved;
     Py_ssize_t index;
-    int firstpass;
 } cycleobject;
 
 #define cycleobject_CAST(op)    ((cycleobject *)(op))
@@ -1184,8 +1251,7 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
     }
     lz->it = it;
     lz->saved = saved;
-    lz->index = 0;
-    lz->firstpass = 0;
+    lz->index = -1;
 
     return (PyObject *)lz;
 }
@@ -1218,11 +1284,11 @@ cycle_next(PyObject *op)
     cycleobject *lz = cycleobject_CAST(op);
     PyObject *item;
 
-    if (lz->it != NULL) {
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->index);
+
+    if (index < 0) {
         item = PyIter_Next(lz->it);
         if (item != NULL) {
-            if (lz->firstpass)
-                return item;
             if (PyList_Append(lz->saved, item)) {
                 Py_DECREF(item);
                 return NULL;
@@ -1232,15 +1298,22 @@ cycle_next(PyObject *op)
         /* Note:  StopIteration is already cleared by PyIter_Next() */
         if (PyErr_Occurred())
             return NULL;
+        index = 0;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, 0);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(lz->it);
+#endif
     }
     if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
-    item = PyList_GET_ITEM(lz->saved, lz->index);
-    lz->index++;
-    if (lz->index >= PyList_GET_SIZE(lz->saved))
-        lz->index = 0;
-    return Py_NewRef(item);
+    item = PyList_GetItemRef(lz->saved, index);
+    assert(item);
+    index++;
+    if (index >= PyList_GET_SIZE(lz->saved)) {
+        index = 0;
+    }
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, index);
+    return item;
 }
 
 static PyType_Slot cycle_slots[] = {
@@ -1894,8 +1967,8 @@ chain_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-chain_next(PyObject *op)
+static inline PyObject *
+chain_next_lock_held(PyObject *op)
 {
     chainobject *lz = chainobject_CAST(op);
     PyObject *item;
@@ -1931,6 +2004,16 @@ chain_next(PyObject *op)
     }
     /* Everything had been consumed already. */
     return NULL;
+}
+
+static PyObject *
+chain_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = chain_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 PyDoc_STRVAR(chain_doc,
@@ -2104,7 +2187,7 @@ product_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-product_next(PyObject *op)
+product_next_lock_held(PyObject *op)
 {
     productobject *lz = productobject_CAST(op);
     PyObject *pool;
@@ -2188,6 +2271,16 @@ product_next(PyObject *op)
 empty:
     lz->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+product_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = product_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef product_methods[] = {
@@ -2337,7 +2430,7 @@ combinations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-combinations_next(PyObject *op)
+combinations_next_lock_held(PyObject *op)
 {
     combinationsobject *co = combinationsobject_CAST(op);
     PyObject *elem;
@@ -2420,6 +2513,16 @@ combinations_next(PyObject *op)
 empty:
     co->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+combinations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = combinations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef combinations_methods[] = {
@@ -2581,7 +2684,7 @@ cwr_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-cwr_next(PyObject *op)
+cwr_next_lock_held(PyObject *op)
 {
     cwrobject *co = cwrobject_CAST(op);
     PyObject *elem;
@@ -2658,6 +2761,16 @@ cwr_next(PyObject *op)
 empty:
     co->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+cwr_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = cwr_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef cwr_methods[] = {
@@ -2840,7 +2953,7 @@ permutations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-permutations_next(PyObject *op)
+permutations_next_lock_held(PyObject *op)
 {
     permutationsobject *po = permutationsobject_CAST(op);
     PyObject *elem;
@@ -2928,6 +3041,16 @@ permutations_next(PyObject *op)
 empty:
     po->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+permutations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = permutations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef permuations_methods[] = {
@@ -3037,7 +3160,7 @@ accumulate_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-accumulate_next(PyObject *op)
+accumulate_next_lock_held(PyObject *op)
 {
     accumulateobject *lz = accumulateobject_CAST(op);
     PyObject *val, *newtotal;
@@ -3067,6 +3190,16 @@ accumulate_next(PyObject *op)
     Py_INCREF(newtotal);
     Py_SETREF(lz->total, newtotal);
     return newtotal;
+}
+
+static PyObject *
+accumulate_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = accumulate_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyType_Slot accumulate_slots[] = {
@@ -3548,9 +3681,11 @@ static PyObject *
 count_repr(PyObject *op)
 {
     countobject *lz = countobject_CAST(op);
-    if (lz->long_cnt == NULL)
+    if (lz->long_cnt == NULL) {
+        Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
         return PyUnicode_FromFormat("%s(%zd)",
-                                    _PyType_Name(Py_TYPE(lz)), lz->cnt);
+                                    _PyType_Name(Py_TYPE(lz)), cnt);
+    }
 
     if (PyLong_Check(lz->long_step)) {
         long step = PyLong_AsLong(lz->long_step);
@@ -3827,7 +3962,7 @@ zip_longest_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-zip_longest_next(PyObject *op)
+zip_longest_next_lock_held(PyObject *op)
 {
     ziplongestobject *lz = ziplongestobject_CAST(op);
     Py_ssize_t i;
@@ -3895,6 +4030,16 @@ zip_longest_next(PyObject *op)
             PyTuple_SET_ITEM(result, i, item);
         }
     }
+    return result;
+}
+
+static PyObject *
+zip_longest_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = zip_longest_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
     return result;
 }
 

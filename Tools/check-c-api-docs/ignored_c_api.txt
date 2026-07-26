@@ -51,14 +51,6 @@ PY_VERSION
 Py_UNICODE_SIZE
 # cpython/methodobject.h
 PyCFunction_GET_CLASS
-# cpython/compile.h
-PyCF_ALLOW_INCOMPLETE_INPUT
-PyCF_COMPILE_MASK
-PyCF_DONT_IMPLY_DEDENT
-PyCF_IGNORE_COOKIE
-PyCF_MASK
-PyCF_MASK_OBSOLETE
-PyCF_SOURCE_IS_UTF8
 # cpython/descrobject.h
 PyDescr_COMMON
 PyDescr_NAME
@@ -66,18 +58,6 @@ PyDescr_TYPE
 PyWrapperFlag_KEYWORDS
 # cpython/fileobject.h
 Py_UniversalNewlineFgets
-# cpython/ceval.h
-PyUnstable_CopyPerfMapFile
-PyUnstable_PerfTrampoline_CompileCode
-PyUnstable_PerfTrampoline_SetPersistAfterFork
-# cpython/pyerrors.h
-PyException_HEAD
-# cpython/pyframe.h
-PyUnstable_EXECUTABLE_KINDS
-PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
-PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
-PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
-PyUnstable_EXECUTABLE_KIND_SKIP
 # cpython/pylifecycle.h
 Py_FrozenMain
 # pythonrun.h
@@ -122,3 +102,5 @@ PyUnicode_AsDecodedObject
 PyUnicode_AsDecodedUnicode
 PyUnicode_AsEncodedObject
 PyUnicode_AsEncodedUnicode
+# Soft-deprecated in 3.15; will remain undocumented in 3.14 and 3.13
+PyException_HEAD

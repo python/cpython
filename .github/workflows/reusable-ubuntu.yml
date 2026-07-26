@@ -43,6 +43,8 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Install Clang and BOLT
       if: ${{ fromJSON(inputs.bolt-optimizations) }}
+      # For BOLT jobs, https://apt.llvm.org/llvm.sh doesn't support LLVM 19
+      # on Ubuntu 26.04, so stick to Ubuntu 24.04 until LLVM is upgraded.
       run: |
         sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
         sudo apt-get install --no-install-recommends bolt-19

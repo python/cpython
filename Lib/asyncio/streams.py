@@ -217,6 +217,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         loop = self._loop
         self._transport = transport
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
+        reader = self._stream_reader
+        if reader is not None:
+            reader._replace_transport(transport)
 
     def connection_made(self, transport):
         if self._reject_connection:
@@ -475,6 +478,10 @@ class StreamReader:
 
     def set_transport(self, transport):
         assert self._transport is None, 'Transport already set'
+        self._transport = transport
+
+    def _replace_transport(self, transport):
+        assert self._transport is not None, 'Transport not set'
         self._transport = transport
 
     def _maybe_resume_transport(self):

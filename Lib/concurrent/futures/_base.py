@@ -676,5 +676,5 @@ class Executor(object):
 
 class BrokenExecutor(RuntimeError):
     """
-    Raised when a executor has become non-functional after a severe failure.
+    Raised when an executor has become non-functional after a severe failure.
     """

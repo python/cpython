@@ -57,7 +57,7 @@ the information :func:`init` sets up.
       Added support for *url* being a :term:`path-like object`.
 
    .. soft-deprecated:: 3.13
-      Passing a file path instead of URL is :term:`soft deprecated`.
+      Passing a file path instead of URL.
       Use :func:`guess_file_type` for this.
 
 
@@ -118,12 +118,13 @@ behavior of the module.
       Previously, Windows registry settings were ignored.
 
 
-.. function:: read_mime_types(filename)
+.. function:: read_mime_types(file)
 
-   Load the type map given in the file *filename*, if it exists.  The type map is
-   returned as a dictionary mapping filename extensions, including the leading dot
-   (``'.'``), to strings of the form ``'type/subtype'``.  If the file *filename*
-   does not exist or cannot be read, ``None`` is returned.
+   Load the type map given in the file named by *file*, if it exists.  *file*
+   must be a string specifying the name of the file to read.  The type map is
+   returned as a dictionary mapping file extensions, including the leading dot
+   (``'.'``), to strings of the form ``'type/subtype'``.  If the file does not
+   exist or cannot be read, ``None`` is returned.
 
 
 .. function:: add_type(type, ext, strict=True)

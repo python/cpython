@@ -1485,8 +1485,8 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
 
     def tag_has(self, tagname, item=None):
-        """If item is specified, returns 1 or 0 depending on whether the
-        specified item has the given tagname. Otherwise, returns a list of
+        """If item is specified, returns True if the specified item has the
+        given tagname, False otherwise. Otherwise, returns a list of
         all items which have the specified tag.
 
         * Availability: Tk 8.6"""

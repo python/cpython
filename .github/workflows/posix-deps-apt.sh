@@ -4,21 +4,20 @@ apt-get update
 apt-get -yq --no-install-recommends install \
     build-essential \
     pkg-config \
+    curl \
     gdb \
     lcov \
     libb2-dev \
     libbz2-dev \
     libffi-dev \
-    libgdbm-dev \
     libgdbm-compat-dev \
+    libgdbm-dev \
     liblzma-dev \
     libncurses5-dev \
     libreadline6-dev \
     libsqlite3-dev \
     libssl-dev \
     libzstd-dev \
-    lzma \
-    lzma-dev \
     strace \
     tk-dev \
     uuid-dev \

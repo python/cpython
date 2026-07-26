@@ -117,7 +117,8 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "Values are unpacked according to the format string Struct.format.\n"
 "\n"
 "The buffer\'s size in bytes, starting at position offset, must be\n"
-"at least Struct.size.\n"
+"at least Struct.size.  A negative offset counts from the end of the\n"
+"buffer.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
@@ -331,6 +332,7 @@ PyDoc_STRVAR(unpack_from__doc__,
 "Return a tuple containing values unpacked according to the format string.\n"
 "\n"
 "The buffer\'s size, minus offset, must be at least calcsize(format).\n"
+"A negative offset counts from the end of the buffer.\n"
 "\n"
 "See help(struct) for more on format strings.");
 
@@ -458,4 +460,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=caa7f36443e91cb9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=000e11080c1bc7ef input=a9049054013a1b77]*/

@@ -763,6 +763,13 @@ Other codes may be available on your platform.  See documentation for\n\
 the C library strftime function.\n"
 
 #ifdef HAVE_STRFTIME
+// gh-154460: OpenBSD's wcsftime() computes %V incorrectly: it returns 53
+// whenever the ISO 8601 week belongs to a different year than tm_year.
+// strftime() is not affected.
+#ifdef __OpenBSD__
+#  undef HAVE_WCSFTIME
+#endif
+
 #ifdef HAVE_WCSFTIME
 #define time_char wchar_t
 #define format_time wcsftime

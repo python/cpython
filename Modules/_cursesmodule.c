@@ -1871,6 +1871,27 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
     if (!PyCurses_ConvertToChtype(self, ch, &ch_))
         return NULL;
 
+#ifdef HAVE_NCURSESW
+    /* winsch() does not locale-decode a byte above 127 on a wide build,
+       unlike waddch(), so decode it here and insert it as a wide character. */
+    chtype cch = ch_ & A_CHARTEXT;
+    if (cch > 127) {
+        wint_t wc = btowc((int)cch);
+        if (wc != WEOF) {
+            cchar_t wch;
+            wchar_t wstr[2] = { (wchar_t)wc, L'\0' };
+            attr_t cattr = (attr_t)((ch_ | (attr_t)attr) & ~(chtype)A_CHARTEXT);
+            setcchar(&wch, wstr, cattr, PAIR_NUMBER(cattr), NULL);
+            if (!group_left_1) {
+                rtn = wins_wch(self->win, &wch);
+            }
+            else {
+                rtn = mvwins_wch(self->win, y, x, &wch);
+            }
+            return PyCursesCheckERR_ForWin(self, rtn, "insch");
+        }
+    }
+#endif
     if (!group_left_1) {
         rtn = winsch(self->win, ch_ | (attr_t)attr);
     }
@@ -1880,6 +1901,35 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
 
     return PyCursesCheckERR_ForWin(self, rtn, "insch");
 }
+
+#ifdef HAVE_NCURSESW
+/* ncursesw's winch() returns the character's whole code point instead of its
+   locale byte, overflowing the chtype's 8-bit character field into the color
+   and attribute bits, so rebuild the value from the locale byte plus the
+   attributes and color pair reported by getcchar(). */
+static chtype
+curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
+{
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attrs;
+    short pair;
+    /* getcchar() is not guaranteed to write the text of an empty cell. */
+    wstr[0] = L'\0';
+    if (getcchar(cell, wstr, &attrs, &pair, NULL) == ERR) {
+        return rtn;
+    }
+    /* wctob() mirrors ncurses' own _nc_to_char(): the single-byte form, or EOF
+       when the character has none in this locale (then use 0). */
+    int byte = 0;
+    if (wstr[0] != L'\0' && wstr[1] == L'\0') {
+        byte = wctob(wstr[0]);
+        if (byte == EOF) {
+            byte = 0;
+        }
+    }
+    return (chtype)byte | (attrs & ~(attr_t)A_COLOR) | COLOR_PAIR(pair);
+}
+#endif
 
 /*[clinic input]
 _curses.window.inch -> unsigned_long
@@ -1911,7 +1961,14 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     else {
         rtn = mvwinch(self->win, y, x);
     }
-
+#ifdef HAVE_NCURSESW
+    cchar_t cell = {0};
+    if ((group_right_1 ? mvwin_wch(self->win, y, x, &cell)
+                       : win_wch(self->win, &cell)) != ERR)
+    {
+        rtn = curses_cell_locale_byte(rtn, &cell);
+    }
+#endif
     return rtn;
 }
 

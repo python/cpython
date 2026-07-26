@@ -1082,6 +1082,11 @@ Window objects
    The bottom 8 bits are the character proper and the upper bits are the attributes;
    extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
    and the color pair with :func:`pair_number`.
+   The character byte is the locale-encoded byte of the cell's character,
+   consistent with :meth:`instr`.
+   On a wide-character build, a character that does not fit in a single byte
+   in the current locale has a character byte of ``0``;
+   use :meth:`instr` to read such characters.
 
 
 .. method:: window.insch(ch[, attr])

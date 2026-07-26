@@ -499,7 +499,7 @@ Advanced parameter control
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.
 
-   Parameters are optional; any omitted parameter will have it's value selected
+   Parameters are optional; any omitted parameter will have its value selected
    automatically.
 
    Example getting the lower and upper bound of :attr:`~.compression_level`::
@@ -728,7 +728,7 @@ Advanced parameter control
 
    An :class:`~enum.IntEnum` containing the advanced decompression parameter
    keys that can be used when decompressing data. Parameters are optional; any
-   omitted parameter will have it's value selected automatically.
+   omitted parameter will have its value selected automatically.
 
    The :meth:`~.bounds` method can be used on any attribute to get the valid
    values for that parameter.

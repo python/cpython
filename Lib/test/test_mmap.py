@@ -919,9 +919,10 @@ class MmapTests(unittest.TestCase):
 
         with mmap.mmap(-1, start_size) as m:
             m[:] = data
-            if sys.platform.startswith(('linux', 'android')):
-                # Can't expand a shared anonymous mapping on Linux.
-                # See https://bugzilla.kernel.org/show_bug.cgi?id=8691
+            if sys.platform.startswith(('linux', 'android', 'netbsd')):
+                # Can't expand a shared anonymous mapping on Linux
+                # (see https://bugzilla.kernel.org/show_bug.cgi?id=8691)
+                # or NetBSD.
                 with self.assertRaises(ValueError):
                     m.resize(new_size)
             else:
