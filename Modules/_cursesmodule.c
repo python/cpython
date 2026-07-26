@@ -6573,7 +6573,11 @@ _curses_initscr_impl(PyObject *module)
             _curses_set_null_error(state, "wrefresh", "initscr");
             return NULL;
         }
-        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL, NULL);
+        /* Attach the current screen, like newwin(), newpad() and getwin() do,
+           so that the window keeps its screen alive.  It is NULL for the
+           screen created by initscr(), which has no screen object. */
+        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL,
+                                              state->topscreen);
         if (winobj == NULL) {
             return NULL;
         }
