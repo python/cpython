@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='9.0.3'
-            tcl_checksum='2537ba0c86112c8c953f7c09d33f134dd45c0fb3a71f2d7f7691fd301d2c33a6'
+            tcl_tk_ver='9.0.4'
+            tcl_checksum='d0aed49230bc02a65c1e0229e65f34590a4b037ec40d546f32573b467f7551ea'
 
-            tk_checksum='bf344efadb618babb7933f69275620f72454d1c8220130da93e3f7feb0efbf9b'
+            tk_checksum='d7a146d2917eb8b5cc95276dbf0e3d03c7464d2b19c1675357857c989301dbb4'
             tk_patches = []
 
 
@@ -359,13 +359,14 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.53.2",
-              url="https://www.sqlite.org/2026/sqlite-autoconf-3530200.tar.gz",
-              checksum="588ad51949419a56ebe81fe56193d510c559eb94c9a57748387860b5d3069316",
+              name="SQLite 3.53.3",
+              url="https://www.sqlite.org/2026/sqlite-autoconf-3530300.tar.gz",
+              checksum="c917d7db16648ec95f714974ace5e5dcf46b7dc70e26600a0a102a3141125db0",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
+                            '-DSQLITE_ENABLE_PERCENTILE '
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '

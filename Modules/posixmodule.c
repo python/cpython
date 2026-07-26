@@ -4905,15 +4905,16 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 
 
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
+static wchar_t *
+join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
+                    int normalize);
+
 static PyObject *
 _listdir_windows_no_opendir(path_t *path, PyObject *list)
 {
     PyObject *v;
     HANDLE hFindFile = INVALID_HANDLE_VALUE;
     BOOL result, return_bytes;
-    wchar_t namebuf[MAX_PATH+4]; /* Overallocate for "\*.*" */
-    /* only claim to have space for MAX_PATH */
-    Py_ssize_t len = Py_ARRAY_LENGTH(namebuf)-4;
     wchar_t *wnamebuf = NULL;
 
     WIN32_FIND_DATAW wFileData;
@@ -4921,26 +4922,17 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
 
     if (!path->wide) { /* Default arg: "." */
         po_wchars = L".";
-        len = 1;
         return_bytes = 0;
     } else {
         po_wchars = path->wide;
-        len = wcslen(path->wide);
         return_bytes = PyBytes_Check(path->object);
     }
-    /* The +5 is so we can append "\\*.*\0" */
-    wnamebuf = PyMem_New(wchar_t, len + 5);
-    if (!wnamebuf) {
-        PyErr_NoMemory();
+
+    wnamebuf = join_path_filenameW(po_wchars, L"*.*", 1);
+    if (wnamebuf == NULL) {
         goto exit;
     }
-    wcscpy(wnamebuf, po_wchars);
-    if (len > 0) {
-        wchar_t wch = wnamebuf[len-1];
-        if (wch != SEP && wch != ALTSEP && wch != L':')
-            wnamebuf[len++] = SEP;
-        wcscpy(wnamebuf + len, L"*.*");
-    }
+
     if ((list = PyList_New(0)) == NULL) {
         goto exit;
     }
@@ -6144,6 +6136,9 @@ os__path_normpath_impl(PyObject *module, path_t *path)
     }
     else {
         result = PyUnicode_FromWideChar(norm_path, norm_len);
+    }
+    if (result == NULL) {
+        return NULL;
     }
     if (PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
@@ -8192,18 +8187,15 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     int i;
     Py_ssize_t argc;
     intptr_t spawnval;
-    PyObject *(*getitem)(PyObject *, Py_ssize_t);
 
     /* spawnv has three arguments: (mode, path, argv), where
        argv is a list or tuple of strings. */
 
     if (PyList_Check(argv)) {
         argc = PyList_Size(argv);
-        getitem = PyList_GetItem;
     }
     else if (PyTuple_Check(argv)) {
         argc = PyTuple_Size(argv);
-        getitem = PyTuple_GetItem;
     }
     else {
         PyErr_SetString(PyExc_TypeError,
@@ -8221,14 +8213,29 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
         return PyErr_NoMemory();
     }
     for (i = 0; i < argc; i++) {
-        if (!fsconvert_strdup((*getitem)(argv, i),
-                              &argvlist[i])) {
+        // The item must be a strong reference because of possible
+        // side-effects of PyUnicode_FS{Converter,Decoder}() in
+        // fsconvert_strdup(): an item's __fspath__() can mutate a list
+        // *argv*, releasing the list's reference to the item (gh-151416).
+        PyObject *item = PySequence_ITEM(argv, i);
+        if (item == NULL) {
             free_string_array(argvlist, i);
-            PyErr_SetString(
-                PyExc_TypeError,
-                "spawnv() arg 2 must contain only strings");
             return NULL;
         }
+        if (!fsconvert_strdup(item, &argvlist[i])) {
+            Py_DECREF(item);
+            free_string_array(argvlist, i);
+            // Add argument context to the converter's terse TypeError, but
+            // let MemoryError, codec errors, embedded-null ValueError, etc.
+            // propagate unmasked.
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_SetString(
+                    PyExc_TypeError,
+                    "spawnv() arg 2 must contain only strings");
+            }
+            return NULL;
+        }
+        Py_DECREF(item);
         if (i == 0 && !argvlist[0][0]) {
             free_string_array(argvlist, i + 1);
             PyErr_SetString(
@@ -8299,7 +8306,6 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     PyObject *res = NULL;
     Py_ssize_t argc, i, envc;
     intptr_t spawnval;
-    PyObject *(*getitem)(PyObject *, Py_ssize_t);
     Py_ssize_t lastarg = 0;
 
     /* spawnve has four arguments: (mode, path, argv, env), where
@@ -8308,11 +8314,9 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 
     if (PyList_Check(argv)) {
         argc = PyList_Size(argv);
-        getitem = PyList_GetItem;
     }
     else if (PyTuple_Check(argv)) {
         argc = PyTuple_Size(argv);
-        getitem = PyTuple_GetItem;
     }
     else {
         PyErr_SetString(PyExc_TypeError,
@@ -8336,12 +8340,21 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         goto fail_0;
     }
     for (i = 0; i < argc; i++) {
-        if (!fsconvert_strdup((*getitem)(argv, i),
-                              &argvlist[i]))
-        {
+        // The item must be a strong reference because of possible
+        // side-effects of PyUnicode_FS{Converter,Decoder}() in
+        // fsconvert_strdup(): an item's __fspath__() can mutate a list
+        // *argv*, releasing the list's reference to the item (gh-151416).
+        PyObject *item = PySequence_ITEM(argv, i);
+        if (item == NULL) {
             lastarg = i;
             goto fail_1;
         }
+        if (!fsconvert_strdup(item, &argvlist[i])) {
+            Py_DECREF(item);
+            lastarg = i;
+            goto fail_1;
+        }
+        Py_DECREF(item);
         if (i == 0 && !argvlist[0][0]) {
             lastarg = i + 1;
             PyErr_SetString(
@@ -9173,7 +9186,9 @@ os_posix_openpt_impl(PyObject *module, int oflag)
 {
     int fd;
 
-#if defined(O_CLOEXEC)
+    // OpenBSD posix_openpt() rejects any flag other than O_RDWR and
+    // O_NOCTTY; the fd is made non-inheritable below in any case.
+#if defined(O_CLOEXEC) && !defined(__OpenBSD__)
     oflag |= O_CLOEXEC;
 #endif
 
@@ -9416,11 +9431,30 @@ os_openpty_impl(PyObject *module)
         goto posix_error;
 
 #if defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC)
+    // Pushing "ptem" makes the slave a terminal, which a session leader
+    // without a controlling terminal then acquires as one despite O_NOCTTY.
+    // Note whether we already had one, so a new one can be disowned below.
+    int had_ctty = 0;
+#ifdef TIOCNOTTY
+    int tty_fd = open("/dev/tty", O_RDONLY | O_NOCTTY);
+    if (tty_fd >= 0) {
+        had_ctty = 1;
+        close(tty_fd);
+    }
+#endif
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
     ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
 #endif /* __hpux */
+#ifdef TIOCNOTTY
+    if (!had_ctty && getsid(0) == getpid()) {
+        // Disown it; TIOCNOTTY sends SIGHUP to the session leader.
+        PyOS_sighandler_t sig_saved = PyOS_setsig(SIGHUP, SIG_IGN);
+        ioctl(slave_fd, TIOCNOTTY);
+        PyOS_setsig(SIGHUP, sig_saved);
+    }
+#endif
 #endif /* defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC) */
 #endif /* HAVE_OPENPTY */
 
@@ -13441,6 +13475,10 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -13488,6 +13526,10 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -16558,13 +16600,19 @@ static PyType_Spec DirEntryType_spec = {
 
 #ifdef MS_WINDOWS
 
+static int
+is_extended_path(const wchar_t *path)
+{
+    return wcsncmp(path, L"\\\\?\\", 4) == 0;
+}
+
 static wchar_t *
-join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
+join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename,
+                    int normalize)
 {
     Py_ssize_t path_len;
-    Py_ssize_t size;
     wchar_t *result;
-    wchar_t ch;
+    wchar_t *path_allocated = NULL;
 
     if (!path_wide) { /* Default arg: "." */
         path_wide = L".";
@@ -16574,20 +16622,44 @@ join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
         path_len = wcslen(path_wide);
     }
 
-    /* The +1's are for the path separator and the NUL */
-    size = path_len + 1 + wcslen(filename) + 1;
+    if (path_len == 0) {
+        result = PyMem_New(wchar_t, 1);
+        if (result == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        result[0] = L'\0';
+        return result;
+    }
+
+    if (normalize && !is_extended_path(path_wide)) {
+        int err = _PyOS_getfullpathname(path_wide, &path_allocated);
+        if (err < 0) {
+            PyErr_SetFromWindowsErr(0);
+            return NULL;
+        }
+        if (path_allocated == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        path_wide = path_allocated;
+        path_len = wcslen(path_wide);
+    }
+
+    size_t size = (size_t)path_len + 1 + wcslen(filename) + 1;
     result = PyMem_New(wchar_t, size);
-    if (!result) {
+    if (result == NULL) {
+        PyMem_RawFree(path_allocated);
         PyErr_NoMemory();
         return NULL;
     }
     wcscpy(result, path_wide);
-    if (path_len > 0) {
-        ch = result[path_len - 1];
-        if (ch != SEP && ch != ALTSEP && ch != L':')
-            result[path_len++] = SEP;
-        wcscpy(result + path_len, filename);
+    wchar_t ch = result[path_len - 1];
+    if (ch != SEP && ch != ALTSEP && ch != L':') {
+        result[path_len++] = SEP;
     }
+    wcscpy(result + path_len, filename);
+    PyMem_RawFree(path_allocated);
     return result;
 }
 
@@ -16619,7 +16691,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
             goto error;
     }
 
-    joined_path = join_path_filenameW(path->wide, dataW->cFileName);
+    joined_path = join_path_filenameW(path->wide, dataW->cFileName, 0);
     if (!joined_path)
         goto error;
 
@@ -17055,7 +17127,7 @@ os_scandir_impl(PyObject *module, path_t *path)
 #ifdef MS_WINDOWS
     iterator->first_time = 1;
 
-    path_strW = join_path_filenameW(iterator->path.wide, L"*.*");
+    path_strW = join_path_filenameW(iterator->path.wide, L"*.*", 1);
     if (!path_strW)
         goto error;
 

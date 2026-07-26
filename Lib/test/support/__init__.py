@@ -35,7 +35,7 @@ __all__ = [
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
-    "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
+    "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
@@ -45,7 +45,7 @@ __all__ = [
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization", "thread_unsafe",
-    "skip_if_unlimited_stack_size",
+    "skip_if_unlimited_stack_size", "skip_if_huge_c_stack",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -1313,6 +1313,22 @@ def bigmemtest(size, memuse, dry_run=True):
         wrapper.memuse = memuse
         return wrapper
     return decorator
+
+def nomemtest(f):
+    """Check that we can use this test with `_testcapi.set_nomemory`."""
+    from .import_helper import import_module
+
+    @functools.wraps(f)
+    def internal(*args, **kwargs):
+        import_module('_testcapi')
+        return f(*args, **kwargs)
+
+    return unittest.skipIf(
+        # Python built with Py_TRACE_REFS fail with a fatal error in
+        # _PyRefchain_Trace() on memory allocation error.
+        Py_TRACE_REFS,
+        'cannot test Py_TRACE_REFS build',
+    )(cpython_only(internal))
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -2809,6 +2825,32 @@ def adjust_int_max_str_digits(max_digits):
 def exceeds_recursion_limit():
     """For recursion tests, easily exceeds default recursion limit."""
     return 150_000
+
+
+def skip_if_huge_c_stack(depth=150_000):
+    """Skip decorator for tests which cannot overflow the C stack.
+
+    Tests exhausting the C stack with *depth* recursive calls cannot
+    trigger the recursion protection if the C stack is too large (e.g.
+    with a large or unlimited RLIMIT_STACK), and either fail, or run
+    for a very long time, or crash, or consume all memory.
+    """
+    try:
+        from _testinternalcapi import get_c_recursion_remaining
+    except ImportError:
+        # Fall back to checking for an unlimited stack size.
+        huge = False
+        if not (is_emscripten or is_wasi) and os.name != "nt":
+            import resource
+            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+            huge = soft == hard and soft in (-1, 0xFFFF_FFFF_FFFF_FFFF)
+    else:
+        remaining = get_c_recursion_remaining()
+        # A negative value means integer overflow in the estimate
+        # (e.g. with an unlimited RLIMIT_STACK).
+        huge = remaining >= depth or remaining < 0
+    return unittest.skipIf(
+        huge, f"the C stack is large enough for {depth} recursive calls")
 
 
 # Windows doesn't have os.uname() but it doesn't support s390x.

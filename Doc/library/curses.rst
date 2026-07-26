@@ -324,6 +324,8 @@ The module :mod:`!curses` defines the following functions:
    Initialize the library. Return a :ref:`window <curses-window-objects>` object
    which represents the whole screen.
 
+   See :func:`setupterm` for a caveat about calling it before this function.
+
    .. note::
 
       If there is an error opening the terminal, the underlying curses library may
@@ -592,6 +594,13 @@ The module :mod:`!curses` defines the following functions:
    Raise a :exc:`curses.error` if the terminal could not be found or its
    terminfo database entry could not be read.  If the terminal has already
    been initialized, this function has no effect.
+
+   .. note::
+
+      Calling :func:`initscr` after :func:`setupterm`
+      leaks the terminal that :func:`setupterm` allocated:
+      the curses library keeps only a single current terminal
+      and does not free the previously allocated one.
 
 
 .. function:: start_color()
@@ -975,6 +984,7 @@ Window objects
 .. method:: window.getbkgd()
 
    Return the given window's current background character/attribute pair.
+   Its components can be extracted like those of :meth:`inch`.
 
 
 .. method:: window.getch([y, x])
@@ -1065,8 +1075,15 @@ Window objects
 
 .. method:: window.inch([y, x])
 
-   Return the character at the given position in the window. The bottom 8 bits are
-   the character proper, and upper bits are the attributes.
+   Return the character at the given position in the window.
+   The bottom 8 bits are the character proper and the upper bits are the attributes;
+   extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
+   and the color pair with :func:`pair_number`.
+   The character byte is the locale-encoded byte of the cell's character,
+   consistent with :meth:`instr`.
+   On a wide-character build, a character that does not fit in a single byte
+   in the current locale has a character byte of ``0``;
+   use :meth:`instr` to read such characters.
 
 
 .. method:: window.insch(ch[, attr])

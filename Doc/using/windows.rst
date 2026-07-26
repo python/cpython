@@ -128,7 +128,7 @@ difference between the two commands is when running without any arguments:
 help (``pymanager exec ...`` provides equivalent behaviour to ``py ...``).
 
 Each of these commands also has a windowed version that avoids creating a
-console window. These are ``pyw``, ``pythonw`` and ``pymanagerw``. A ``python3``
+console window. These are ``pyw``, ``pythonw`` and ``pywmanager``. A ``python3``
 command is also included that mimics the ``python`` command. It is intended to
 catch accidental uses of the typical POSIX command on Windows, but is not meant
 to be widely used or recommended.
@@ -162,7 +162,9 @@ omitted in cases where the tag refers to an official release and starts with
    $> py -V:3-arm64 ...
 
 Runtimes from other distributors may require the *company* to be included as
-well. This should be separated from the tag by a slash, and may be a prefix.
+well.
+It should be separated from the tag by a slash (either ``/`` or ``\``),
+and may be shortened to any prefix of its full value.
 Specifying the company is optional when it is ``PythonCore``, and specifying the
 tag is optional (but not the slash) when you want the latest release from a
 specific company.
@@ -1174,9 +1176,9 @@ on using nuget. What follows is a summary that is sufficient for Python
 developers.
 
 The ``nuget.exe`` command line tool may be downloaded directly from
-``https://aka.ms/nugetclidl``, for example, using curl or PowerShell. With the
-tool, the latest version of Python for 64-bit or 32-bit machines is installed
-using::
+``https://dist.nuget.org/win-x86-commandline/latest/nuget.exe``, for example,
+using curl or PowerShell. With the tool, the latest version of Python for
+64-bit or 32-bit machines is installed using::
 
    nuget.exe install python -ExcludeVersion -OutputDirectory .
    nuget.exe install pythonx86 -ExcludeVersion -OutputDirectory .

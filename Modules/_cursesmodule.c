@@ -1681,7 +1681,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
     return curses_window_check_err(self, rtn, funcname, "echochar");
 }
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
 /*[clinic input]
 @permit_long_summary
 _curses.window.enclose
@@ -2064,6 +2064,32 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
 
     const char *funcname;
+#ifdef HAVE_NCURSESW
+    /* winsch() does not locale-decode a byte above 127 on a wide build,
+       unlike waddch(), so decode it here and insert it as a wide character. */
+    chtype cch = ch_ & A_CHARTEXT;
+    if (cch > 127) {
+        wint_t wc = btowc((int)cch);
+        if (wc != WEOF) {
+            cchar_t wch;
+            wchar_t wstr[2] = { (wchar_t)wc, L'\0' };
+            attr_t cattr = (attr_t)((ch_ | (attr_t)attr) & ~(chtype)A_CHARTEXT);
+            if (setcchar(&wch, wstr, cattr, PAIR_NUMBER(cattr), NULL) == ERR) {
+                curses_window_set_error(self, "setcchar", "insch");
+                return NULL;
+            }
+            if (!group_left_1) {
+                rtn = wins_wch(self->win, &wch);
+                funcname = "wins_wch";
+            }
+            else {
+                rtn = mvwins_wch(self->win, y, x, &wch);
+                funcname = "mvwins_wch";
+            }
+            return curses_window_check_err(self, rtn, funcname, "insch");
+        }
+    }
+#endif
     if (!group_left_1) {
         rtn = winsch(self->win, ch_ | (attr_t)attr);
         funcname = "winsch";
@@ -2100,7 +2126,42 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
 {
     chtype rtn;
     const char *funcname;
-
+#ifdef HAVE_NCURSESW
+    /* ncursesw's winch() returns the character's whole code point instead of
+       its locale byte, overflowing the chtype's 8-bit character field into the
+       color and attribute bits; read the wide cell and rebuild it instead. */
+    cchar_t cell = {0};
+    int rc;
+    if (!group_right_1) {
+        rc = win_wch(self->win, &cell);
+        funcname = "win_wch";
+    }
+    else {
+        rc = mvwin_wch(self->win, y, x, &cell);
+        funcname = "mvwin_wch";
+    }
+    if (rc == ERR) {
+        curses_window_set_error(self, funcname, "inch");
+        return NULL;
+    }
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attrs;
+    short pair;
+    /* getcchar() is not guaranteed to write the text of an empty cell. */
+    wstr[0] = L'\0';
+    if (getcchar(&cell, wstr, &attrs, &pair, NULL) == ERR) {
+        curses_window_set_error(self, "getcchar", "inch");
+        return NULL;
+    }
+    int byte = 0;
+    if (wstr[0] != L'\0' && wstr[1] == L'\0') {
+        byte = wctob(wstr[0]);
+        if (byte == EOF) {
+            byte = 0;
+        }
+    }
+    rtn = (chtype)byte | (attrs & ~(attr_t)A_COLOR) | COLOR_PAIR(pair);
+#else
     if (!group_right_1) {
         rtn = winch(self->win);
         funcname = "winch";
@@ -2113,6 +2174,7 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
         curses_window_set_error(self, funcname, "inch");
         return NULL;
     }
+#endif
     return PyLong_FromUnsignedLong(rtn);
 }
 
@@ -3532,7 +3594,7 @@ _curses_getsyx_impl(PyObject *module)
 }
 #endif
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
 /*[clinic input]
 _curses.getmouse
 
@@ -4027,9 +4089,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     Py_RETURN_NONE;
 }
 
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
-// https://invisible-island.net/ncurses/NEWS.html#index-t20080119
-
+#ifdef HAVE_CURSES_ESCDELAY
 /*[clinic input]
 _curses.get_escdelay
 
@@ -4046,6 +4106,9 @@ _curses_get_escdelay_impl(PyObject *module)
 {
     return PyLong_FromLong(ESCDELAY);
 }
+#endif /* HAVE_CURSES_ESCDELAY */
+
+#ifdef HAVE_CURSES_SET_ESCDELAY
 /*[clinic input]
 _curses.set_escdelay
     ms: int
@@ -4070,7 +4133,9 @@ _curses_set_escdelay_impl(PyObject *module, int ms)
 
     return curses_check_err(module, set_escdelay(ms), "set_escdelay", NULL);
 }
+#endif /* HAVE_CURSES_SET_ESCDELAY */
 
+#ifdef HAVE_CURSES_TABSIZE
 /*[clinic input]
 _curses.get_tabsize
 
@@ -4086,6 +4151,9 @@ _curses_get_tabsize_impl(PyObject *module)
 {
     return PyLong_FromLong(TABSIZE);
 }
+#endif /* HAVE_CURSES_TABSIZE */
+
+#ifdef HAVE_CURSES_SET_TABSIZE
 /*[clinic input]
 _curses.set_tabsize
     size: int
@@ -4109,7 +4177,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 
     return curses_check_err(module, set_tabsize(size), "set_tabsize", NULL);
 }
-#endif
+#endif /* HAVE_CURSES_SET_TABSIZE */
 
 /*[clinic input]
 _curses.intrflush
@@ -4247,7 +4315,7 @@ _curses_meta_impl(PyObject *module, int yes)
     return curses_check_err(module, meta(stdscr, yes), "meta", NULL);
 }
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
 /*[clinic input]
 _curses.mouseinterval
 
@@ -5372,10 +5440,8 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
     _CURSES_SAVETTY_METHODDEF
-#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
     _CURSES_GET_ESCDELAY_METHODDEF
     _CURSES_SET_ESCDELAY_METHODDEF
-#endif
     _CURSES_GET_TABSIZE_METHODDEF
     _CURSES_SET_TABSIZE_METHODDEF
     _CURSES_SETSYX_METHODDEF
@@ -5681,7 +5747,7 @@ cursesmodule_exec(PyObject *module)
     SetDictInt("COLOR_CYAN",        COLOR_CYAN);
     SetDictInt("COLOR_WHITE",       COLOR_WHITE);
 
-#ifdef NCURSES_MOUSE_VERSION
+#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
     /* Mouse-related constants */
     SetDictInt("BUTTON1_PRESSED",          BUTTON1_PRESSED);
     SetDictInt("BUTTON1_RELEASED",         BUTTON1_RELEASED);
@@ -5707,7 +5773,7 @@ cursesmodule_exec(PyObject *module)
     SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
     SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
 
-#if NCURSES_MOUSE_VERSION > 1
+#ifdef BUTTON5_PRESSED
     SetDictInt("BUTTON5_PRESSED",          BUTTON5_PRESSED);
     SetDictInt("BUTTON5_RELEASED",         BUTTON5_RELEASED);
     SetDictInt("BUTTON5_CLICKED",          BUTTON5_CLICKED);

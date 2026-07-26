@@ -1594,7 +1594,12 @@ type_set_qualname(PyObject *tp, PyObject *value, void *context)
     }
 
     et = (PyHeapTypeObject*)type;
-    Py_SETREF(et->ht_qualname, Py_NewRef(value));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    PyObject *old_qualname = et->ht_qualname;
+    et->ht_qualname = Py_NewRef(value);
+    _PyEval_StartTheWorld(interp);
+    Py_DECREF(old_qualname);
     return 0;
 }
 
@@ -5026,6 +5031,13 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
 
     if (winner != ctx->metatype) {
         if (winner->tp_new != type_new) {
+            /* Check if tp_new is NULL (cannot instantiate this type) */
+            if (winner->tp_new == NULL) {
+                PyErr_Format(PyExc_TypeError,
+                             "cannot create '%.400s' instances",
+                             winner->tp_name);
+                return -1;
+            }
             /* Pass it to the winner */
             *type = winner->tp_new(winner, ctx->args, ctx->kwds);
             if (*type == NULL) {

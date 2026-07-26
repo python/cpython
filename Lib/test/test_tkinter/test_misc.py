@@ -1,11 +1,17 @@
 import collections.abc
 import functools
+import os
+import platform
+import sys
+import textwrap
 import unittest
+import weakref
 import tkinter
 from tkinter import TclError
 import enum
 from test import support
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
@@ -49,6 +55,33 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b3 = tkinter.Button(f2)
         b4 = Button2(f2)
         self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
+
+    def test_dealloc_in_wrong_thread(self):
+        # gh-83274: deallocating the interpreter in the wrong thread must not
+        # crash.
+        script = textwrap.dedent("""
+            import threading
+            import tkinter
+            root = tkinter.Tk()
+            root.destroy()
+            # Let another thread drop the last reference.
+            ready = threading.Event()
+            t = threading.Thread(target=lambda obj: ready.wait(), args=(root,))
+            t.start()
+            del root
+            ready.set()
+            t.join()
+            print('ok')
+        """)
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(out.strip(), b'ok')
+        if not support.Py_GIL_DISABLED:
+            # On the free-threaded build the interpreter may instead be
+            # deallocated in its own thread (deferred reference counting), so
+            # the warning is not necessarily emitted.  The crucial guarantee --
+            # no crash -- is already checked by assert_python_ok() above.
+            self.assertIn(b'RuntimeWarning', err)
+            self.assertIn(b'gh-83274', err)
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):
@@ -348,6 +381,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.deletecommand(name)
         self.assertRaises(TclError, self.root.tk.call, name)
 
+    def test_createcommand_no_leak(self):
+        # gh-80937: dropping the interpreter must release a command's callback,
+        # even without an explicit deletecommand().
+        interp = tkinter.Tcl()
+        callback = lambda: ''
+        ref = weakref.ref(callback)
+        interp.tk.createcommand('cb', callback)
+        del callback, interp
+        support.gc_collect()
+        self.assertIsNone(ref())
+
     def test_option(self):
         self.addCleanup(self.root.option_clear)
         self.root.option_add('*Button.background', 'red')
@@ -376,6 +420,32 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertIs(self.root.nametowidget(str(b)), b)
         self.assertRaises(KeyError, self.root.nametowidget, '.nonexistent')
 
+    def test_nametowidget_menu_clone(self):
+        # A menu used as a menubar or cascade is cloned by Tk under an
+        # auto-generated name (each path component is the original name
+        # prefixed with one or more '#' clone markers).  nametowidget()
+        # maps such a name back to the original widget (gh-38464).
+        menubar = tkinter.Menu(self.root)
+        filemenu = tkinter.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label='File', menu=filemenu)
+        submenu = tkinter.Menu(filemenu, tearoff=0)
+        filemenu.add_cascade(label='More', menu=submenu)
+        self.root['menu'] = menubar
+        self.root.update_idletasks()
+
+        originals = {menubar, filemenu, submenu}
+        clones = []
+        def collect(parent):
+            for name in self.root.tk.splitlist(
+                    self.root.tk.call('winfo', 'children', parent)):
+                clones.append(name)
+                collect(name)
+        collect('.')
+        # Every menu (originals and clones) resolves to an original widget.
+        self.assertTrue(any('#' in name for name in clones))
+        for name in clones:
+            self.assertIn(self.root.nametowidget(name), originals)
+
     def test_focus_methods(self):
         f = tkinter.Frame(self.root, width=150, height=100)
         f.pack()
@@ -392,6 +462,22 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b.focus_set()
         self.root.update()
         self.assertIs(self.root.focus_get(), b)
+
+    def test_focus_methods_unresolvable(self):
+        # The focus may be on a widget that tkinter did not create and so
+        # cannot map to an instance (e.g. a torn-off menu).  The focus
+        # methods return None instead of raising KeyError (gh-88758).
+        menu = tkinter.Menu(self.root, tearoff=1)
+        menu.add_command(label='Hello')
+        tearoff = self.root.tk.call('tk::TearOffMenu', str(menu), 0, 0)
+        self.addCleanup(self.root.tk.call, 'destroy', tearoff)
+        self.root.update()
+        self.assertRaises(KeyError, self.root.nametowidget, tearoff)
+
+        self.root.tk.call('focus', '-force', tearoff)
+        self.root.update()
+        self.assertIsNone(self.root.focus_get())
+        self.assertIsNone(self.root.focus_displayof())
 
     def test_grab(self):
         f = tkinter.Frame(self.root)
@@ -670,6 +756,26 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
 class TkTest(AbstractTkTest, unittest.TestCase):
 
+    def test_readprofile(self):
+        # gh-153333: profile scripts are decoded with their own coding cookie,
+        # not the locale encoding.  Two cookies so no locale can mask the bug.
+        profiles = {
+            '.RpClass.py': ('latin-1', "self._rp_latin1 = 'caf\xe9'"),
+            '.rpbase.py': ('utf-8', "self._rp_utf8 = 'caf\xe9'"),
+        }
+        self.addCleanup(self.root.__dict__.pop, '_rp_latin1', None)
+        self.addCleanup(self.root.__dict__.pop, '_rp_utf8', None)
+        with (os_helper.temp_dir() as home,
+              os_helper.EnvironmentVarGuard() as env):
+            env['HOME'] = home
+            for filename, (encoding, body) in profiles.items():
+                script = '# -*- coding: %s -*-\n%s\n' % (encoding, body)
+                with open(os.path.join(home, filename), 'wb') as f:
+                    f.write(script.encode(encoding))
+            self.root.readprofile('rpbase', 'RpClass')
+        self.assertEqual(self.root._rp_latin1, 'caf\xe9')
+        self.assertEqual(self.root._rp_utf8, 'caf\xe9')
+
     def test_className(self):
         # The className argument sets the class of the root window.  Tk
         # title-cases it: the first letter is upper-cased, the rest lower-cased.
@@ -892,12 +998,24 @@ class WmTest(AbstractTkTest, unittest.TestCase):
 
     def test_wm_iconbitmap(self):
         t = tkinter.Toplevel(self.root)
+        patchlevel = get_tk_patchlevel(t)
+
+        if (
+            t._windowingsystem == 'aqua'
+            and sys.platform == 'darwin'
+            and platform.machine() == 'x86_64'
+            and platform.mac_ver()[0].startswith('26.')
+        ):
+            # https://github.com/python/cpython/issues/146531
+            # Tk bug 4a2070f0d3a99aa412bc582d386d575ca2f37323
+            # Not fixed as of Tk 8.6.18 and 9.0.4.
+            self.skipTest('wm iconbitmap hangs on macOS 26 Intel')
+
         self.assertEqual(t.wm_iconbitmap(), '')
         t.wm_iconbitmap('hourglass')
         bug = False
         if t._windowingsystem == 'aqua':
             # Tk bug 13ac26b35dc55f7c37f70b39d59d7ef3e63017c8.
-            patchlevel = get_tk_patchlevel(t)
             if patchlevel < (8, 6, 17) or (9, 0) <= patchlevel < (9, 0, 2):
                 bug = True
         if not bug:

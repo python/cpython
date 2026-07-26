@@ -181,6 +181,16 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('i'))
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('P'))
 
+    def test_cache_bytes_vs_str_bb(self):
+        # Mixing str and bytes formats must not raise BytesWarning under -bb.
+        code = (
+            'import struct\n'
+            'struct.calcsize(b"!d"); struct.calcsize("!d")\n'
+            'struct.calcsize(">d"); struct.calcsize(b">d")\n'
+            'struct.Struct(b"i"); struct.Struct("i")\n'
+        )
+        assert_python_ok('-bb', '-c', code)
+
     def test_integers(self):
         # Integer tests (bBhHiIlLqQnN).
         import binascii

@@ -279,12 +279,12 @@ and the exception occurs in the :keyword:`!try` clause of the inner handler,
 the outer handler will not handle the exception.)
 
 When an exception has been assigned using ``as target``, it is cleared at the
-end of the :keyword:`!except` clause.  This is as if ::
+end of the :keyword:`!except` clause.  This is as if::
 
    except E as N:
        foo
 
-was translated to ::
+was translated to::
 
    except E as N:
        try:
@@ -341,7 +341,7 @@ can have either :keyword:`except` or :keyword:`!except*` clauses, but not both.
 The exception type for matching is mandatory in the case of :keyword:`!except*`,
 so ``except*:`` is a syntax error. The type is interpreted as in the case of
 :keyword:`!except`, but matching is performed on the exceptions contained in the
-group that is being handled. An :exc:`TypeError` is raised if a matching
+group that is being handled. A :exc:`TypeError` is raised if a matching
 type is a subclass of :exc:`!BaseExceptionGroup`, because that would have
 ambiguous semantics.
 
@@ -357,7 +357,7 @@ or the last :keyword:`!except*` clause has run.
 
 After all :keyword:`!except*` clauses execute, the group of unhandled exceptions
 is merged with any exceptions that were raised or re-raised from within
-:keyword:`!except*` clauses. This merged exception group propagates on.::
+:keyword:`!except*` clauses. This merged exception group propagates on::
 
    >>> try:
    ...     raise ExceptionGroup("eg",
@@ -1311,7 +1311,7 @@ mutable object, such as a list or a dictionary: if the function modifies the
 object (e.g. by appending an item to a list), the default parameter value is in effect
 modified.  This is generally not what was intended.  A way around this is to use
 ``None`` as the default, and explicitly test for it in the body of the function,
-e.g.::
+for example::
 
    def whats_on_the_telly(penguin=None):
        if penguin is None:

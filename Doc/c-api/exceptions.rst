@@ -499,11 +499,12 @@ Querying the error indicator
 .. c:function:: void PyErr_SetRaisedException(PyObject *exc)
 
    Set *exc* as the exception currently being raised,
-   clearing the existing exception if one is set.
+   clearing the existing exception if one is set.  If *exc* is ``NULL``,
+   just clear the existing exception.
 
-   .. warning::
+   *exc* must be a valid exception or ``NULL``.
 
-      This call steals a reference to *exc*, which must be a valid exception.
+   This call ":term:`steals <steal>`" a reference to *exc*.
 
    .. versionadded:: 3.12
 
@@ -641,7 +642,8 @@ Querying the error indicator
 
    Set the exception info, as known from ``sys.exc_info()``.  This refers
    to an exception that was *already caught*, not to an exception that was
-   freshly raised.  This function steals the references of the arguments.
+   freshly raised.  This function ":term:`steals <steal>`" the references
+   of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
    This function is kept for backwards compatibility. Prefer using
    :c:func:`PyErr_SetHandledException`.
@@ -658,8 +660,8 @@ Querying the error indicator
    .. versionchanged:: 3.11
       The ``type`` and ``traceback`` arguments are no longer used and
       can be NULL. The interpreter now derives them from the exception
-      instance (the ``value`` argument). The function still steals
-      references of all three arguments.
+      instance (the ``value`` argument). The function still
+      ":term:`steals <steal>`" references of all three arguments.
 
 
 Signal Handling
@@ -869,7 +871,7 @@ Exception Objects
 
    Set the context associated with the exception to *ctx*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *ctx* is an exception instance.
-   This steals a reference to *ctx*.
+   This ":term:`steals <steal>`" a reference to *ctx*.
 
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
@@ -884,7 +886,8 @@ Exception Objects
 
    Set the cause associated with the exception to *cause*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *cause* is either an exception
-   instance or ``None``.  This steals a reference to *cause*.
+   instance or ``None``.
+   This ":term:`steals <steal>`" a reference to *cause*.
 
    The :attr:`~BaseException.__suppress_context__` attribute is implicitly set
    to ``True`` by this function.

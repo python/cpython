@@ -3191,7 +3191,7 @@ static int
 batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
 {
     PyObject *item = NULL;
-    Py_ssize_t this_batch, total;
+    Py_ssize_t this_batch, total, list_size;
 
     const char append_op = APPEND;
     const char appends_op = APPENDS;
@@ -3200,14 +3200,18 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
     assert(obj != NULL);
     assert(self->proto > 0);
     assert(PyList_CheckExact(obj));
-    assert(PyList_GET_SIZE(obj));
+
+    list_size = PyList_GET_SIZE(obj);
 
     /* Write in batches of BATCHSIZE. */
     total = 0;
     do {
-        if (PyList_GET_SIZE(obj) - total == 1) {
-            item = PyList_GET_ITEM(obj, total);
-            Py_INCREF(item);
+        if (list_size - total == 1) {
+            item = PyList_GetItemRef(obj, total);
+            if (item == NULL) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
+                return -1;
+            }
             int err = save(state, self, item, 0);
             Py_DECREF(item);
             if (err < 0) {
@@ -3222,8 +3226,11 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         if (_Pickler_Write(self, &mark_op, 1) < 0)
             return -1;
         while (total < PyList_GET_SIZE(obj)) {
-            item = PyList_GET_ITEM(obj, total);
-            Py_INCREF(item);
+            item = PyList_GetItemRef(obj, total);
+            if (item == NULL) {
+                _PyErr_FormatNote("when serializing %T item %zd", obj, total);
+                return -1;
+            }
             int err = save(state, self, item, 0);
             Py_DECREF(item);
             if (err < 0) {
@@ -3236,8 +3243,14 @@ batch_list_exact(PickleState *state, PicklerObject *self, PyObject *obj)
         }
         if (_Pickler_Write(self, &appends_op, 1) < 0)
             return -1;
+        if (PyList_GET_SIZE(obj) != list_size) {
+            PyErr_Format(
+                PyExc_RuntimeError,
+                "list changed size during iteration");
+            return -1;
+        }
 
-    } while (total < PyList_GET_SIZE(obj));
+    } while (total < list_size);
 
     return 0;
 }
