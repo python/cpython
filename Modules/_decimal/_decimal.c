@@ -3657,18 +3657,18 @@ dotsep_as_utf8(const char *s)
 {
     PyObject *utf8;
     PyObject *tmp;
-    wchar_t buf[2];
-    size_t n;
 
-    n = mbstowcs(buf, s, 2);
-    if (n != 1) { /* Issue #7442 */
+    /* Do not use mbstowcs(): wchar_t values are not Unicode code points
+       in non-UTF-8 locales on some platforms (e.g. the BSDs and macOS). */
+    tmp = PyUnicode_DecodeLocale(s, NULL);
+    if (tmp == NULL) {
+        return NULL;
+    }
+    if (PyUnicode_GET_LENGTH(tmp) != 1) { /* Issue #7442 */
+        Py_DECREF(tmp);
         PyErr_SetString(PyExc_ValueError,
             "invalid decimal point or unsupported "
             "combination of LC_CTYPE and LC_NUMERIC");
-        return NULL;
-    }
-    tmp = PyUnicode_FromWideChar(buf, n);
-    if (tmp == NULL) {
         return NULL;
     }
     utf8 = PyUnicode_AsUTF8String(tmp);
