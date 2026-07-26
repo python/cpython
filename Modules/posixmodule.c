@@ -829,9 +829,9 @@ PyOS_AfterFork(void)
 #ifdef MS_WINDOWS
 /* defined in fileutils.c */
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
-void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *, ULONG,
-                                FILE_BASIC_INFO *, FILE_ID_INFO *,
-                                struct _Py_stat_struct *);
+void _Py_attribute_data_to_stat(FILE_STANDARD_INFO*, ULONG,
+                                FILE_BASIC_INFO*, FILE_ID_INFO*,
+                                struct _Py_stat_struct*);
 void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
                                  struct _Py_stat_struct *);
 #endif
@@ -2025,17 +2025,23 @@ win32_wchdir(LPCWSTR path)
 
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
-                       BY_HANDLE_FILE_INFORMATION *info,
+                       FILE_BASIC_INFO* basic_info,
+                       FILE_STANDARD_INFO* standard_info,
                        ULONG *reparse_tag)
 {
-    memset(info, 0, sizeof(*info));
-    info->dwFileAttributes = pFileData->dwFileAttributes;
-    info->ftCreationTime   = pFileData->ftCreationTime;
-    info->ftLastAccessTime = pFileData->ftLastAccessTime;
-    info->ftLastWriteTime  = pFileData->ftLastWriteTime;
-    info->nFileSizeHigh    = pFileData->nFileSizeHigh;
-    info->nFileSizeLow     = pFileData->nFileSizeLow;
-/*  info->nNumberOfLinks   = 1; */
+    memset(basic_info, 0, sizeof(*basic_info));
+    memset(standard_info, 0, sizeof(*standard_info));
+
+    basic_info->FileAttributes = pFileData->dwFileAttributes;
+    basic_info->CreationTime.HighPart = pFileData->ftCreationTime.dwHighDateTime;
+    basic_info->CreationTime.LowPart = pFileData->ftCreationTime.dwLowDateTime;
+    basic_info->LastAccessTime.HighPart = pFileData->ftLastAccessTime.dwHighDateTime;
+    basic_info->LastAccessTime.LowPart = pFileData->ftLastAccessTime.dwLowDateTime;
+    basic_info->LastWriteTime.HighPart = pFileData->ftLastWriteTime.dwHighDateTime;
+    basic_info->LastWriteTime.LowPart = pFileData->ftLastWriteTime.dwLowDateTime;
+    standard_info->EndOfFile.HighPart = pFileData->nFileSizeHigh;
+    standard_info->EndOfFile.LowPart = pFileData->nFileSizeLow;
+
     if (pFileData->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
         *reparse_tag = pFileData->dwReserved0;
     else
@@ -2043,7 +2049,7 @@ find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
 }
 
 static BOOL
-attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *reparse_tag)
+attributes_from_dir(LPCWSTR pszFile, FILE_BASIC_INFO* basic_info, FILE_STANDARD_INFO* standard_info, ULONG* reparse_tag)
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
@@ -2074,7 +2080,7 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
         return FALSE;
     }
     FindClose(hFindFile);
-    find_data_to_file_info(&FileData, info, reparse_tag);
+    find_data_to_file_info(&FileData, basic_info, standard_info, reparse_tag);
     return TRUE;
 }
 
@@ -2108,10 +2114,9 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
                       BOOL traverse)
 {
     HANDLE hFile;
-    BY_HANDLE_FILE_INFORMATION fileInfo;
-    FILE_BASIC_INFO basicInfo;
-    FILE_BASIC_INFO *pBasicInfo = NULL;
-    FILE_ID_INFO idInfo;
+    FILE_STANDARD_INFO standardInfo = {0};
+    FILE_BASIC_INFO basicInfo = {0};
+    FILE_ID_INFO idInfo = {0};
     FILE_ID_INFO *pIdInfo = NULL;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
@@ -2132,7 +2137,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
         case ERROR_ACCESS_DENIED:     /* Cannot sync or read attributes. */
         case ERROR_SHARING_VIOLATION: /* It's a paging file. */
             /* Try reading the parent directory. */
-            if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
+            if (!attributes_from_dir(path, &basicInfo, &standardInfo, &tagInfo.ReparseTag)) {
                 /* Cannot read the parent directory. */
                 switch (GetLastError()) {
                 case ERROR_FILE_NOT_FOUND: /* File cannot be found */
@@ -2147,7 +2152,7 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
                 return -1;
             }
-            if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            if (basicInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
                 if (traverse ||
                     !IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
                     /* The stat call has to traverse but cannot, so fail. */
@@ -2247,9 +2252,8 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             }
         }
 
-        if (!GetFileInformationByHandle(hFile, &fileInfo) ||
-            !GetFileInformationByHandleEx(hFile, FileBasicInfo,
-                                          &basicInfo, sizeof(basicInfo))) {
+        if (!GetFileInformationByHandleEx(hFile, FileStandardInfo, &standardInfo, sizeof(standardInfo)) ||
+            !GetFileInformationByHandleEx(hFile, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
             switch (GetLastError()) {
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
@@ -2264,17 +2268,14 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             goto cleanup;
         }
 
-        /* Successfully got FileBasicInfo, so we'll pass it along */
-        pBasicInfo = &basicInfo;
-
         if (GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
             /* Successfully got FileIdInfo, so pass it along */
             pIdInfo = &idInfo;
         }
     }
 
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, pBasicInfo, pIdInfo, result);
-    update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
+    _Py_attribute_data_to_stat(&standardInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
+    update_st_mode_from_path(path, basicInfo.FileAttributes, result);
 
 cleanup:
     if (hFile != INVALID_HANDLE_VALUE) {
@@ -5197,7 +5198,7 @@ os_listdrives_impl(PyObject *module)
 
 #endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
-#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 os.listvolumes
@@ -5260,7 +5261,7 @@ os_listvolumes_impl(PyObject *module)
     return result;
 }
 
-#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
@@ -9186,7 +9187,9 @@ os_posix_openpt_impl(PyObject *module, int oflag)
 {
     int fd;
 
-#if defined(O_CLOEXEC)
+    // OpenBSD posix_openpt() rejects any flag other than O_RDWR and
+    // O_NOCTTY; the fd is made non-inheritable below in any case.
+#if defined(O_CLOEXEC) && !defined(__OpenBSD__)
     oflag |= O_CLOEXEC;
 #endif
 
@@ -9429,11 +9432,30 @@ os_openpty_impl(PyObject *module)
         goto posix_error;
 
 #if defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC)
+    // Pushing "ptem" makes the slave a terminal, which a session leader
+    // without a controlling terminal then acquires as one despite O_NOCTTY.
+    // Note whether we already had one, so a new one can be disowned below.
+    int had_ctty = 0;
+#ifdef TIOCNOTTY
+    int tty_fd = open("/dev/tty", O_RDONLY | O_NOCTTY);
+    if (tty_fd >= 0) {
+        had_ctty = 1;
+        close(tty_fd);
+    }
+#endif
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
     ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
 #endif /* __hpux */
+#ifdef TIOCNOTTY
+    if (!had_ctty && getsid(0) == getpid()) {
+        // Disown it; TIOCNOTTY sends SIGHUP to the session leader.
+        PyOS_sighandler_t sig_saved = PyOS_setsig(SIGHUP, SIG_IGN);
+        ioctl(slave_fd, TIOCNOTTY);
+        PyOS_setsig(SIGHUP, sig_saved);
+    }
+#endif
 #endif /* defined(HAVE_STROPTS_H) && !defined(HAVE_DEV_PTC) */
 #endif /* HAVE_OPENPTY */
 
@@ -9933,6 +9955,7 @@ os_setpgrp_impl(PyObject *module)
 #include <winternl.h>
 #include <ProcessSnapshot.h>
 
+#ifdef MS_WINDOWS_DESKTOP
 // The structure definition in winternl.h may be incomplete.
 // This structure is the full version from the MSDN documentation.
 typedef struct _PROCESS_BASIC_INFORMATION_FULL {
@@ -10005,6 +10028,7 @@ win32_getppid_fast(void)
     cached_ppid = (ULONG) basic_information.InheritedFromUniqueProcessId;
     return cached_ppid;
 }
+#endif // MS_WINDOWS_DESKTOP
 
 static PyObject*
 win32_getppid(void)
@@ -10013,12 +10037,13 @@ win32_getppid(void)
     PyObject* result = NULL;
     HANDLE process = GetCurrentProcess();
     HPSS snapshot = NULL;
-    ULONG pid;
 
-    pid = win32_getppid_fast();
+#ifdef MS_WINDOWS_DESKTOP
+    ULONG pid = win32_getppid_fast();
     if (pid != 0) {
         return PyLong_FromUnsignedLong(pid);
     }
+#endif
 
     // If failure occurs in win32_getppid_fast(), fall back to using the PSS API.
 
@@ -12938,6 +12963,7 @@ following flags:
 - RWF_APPEND
 - RWF_DONTCACHE
 - RWF_ATOMIC
+- RWF_NOSIGNAL
 
 Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
@@ -12945,7 +12971,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=b2e352a22f030e9a]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=c202f24f01fa66c9]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -13483,6 +13509,10 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fallocate(fd, offset, length);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -13530,6 +13560,10 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
         Py_BEGIN_ALLOW_THREADS
         result = posix_fadvise(fd, offset, length, advice);
         Py_END_ALLOW_THREADS
+        // DragonFly BSD returns -1 and sets errno.
+        if (result == -1) {
+            result = errno;
+        }
     } while (result == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (result == 0)
@@ -16000,7 +16034,9 @@ os_cpu_count_impl(PyObject *module)
 # ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 # else
-    ncpu = 0;
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    ncpu = sysinfo.dwNumberOfProcessors;
 # endif
 
 #elif defined(__hpux)
@@ -16667,7 +16703,8 @@ static PyObject *
 DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 {
     DirEntry *entry;
-    BY_HANDLE_FILE_INFORMATION file_info;
+    FILE_BASIC_INFO basic_info;
+    FILE_STANDARD_INFO standard_info;
     ULONG reparse_tag;
     wchar_t *joined_path;
 
@@ -16705,8 +16742,8 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
             goto error;
     }
 
-    find_data_to_file_info(dataW, &file_info, &reparse_tag);
-    _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, NULL, &entry->win32_lstat);
+    find_data_to_file_info(dataW, &basic_info, &standard_info, &reparse_tag);
+    _Py_attribute_data_to_stat(&standard_info, reparse_tag, &basic_info, NULL, &entry->win32_lstat);
 
     /* ctime is only deprecated from 3.12, so we copy birthtime across */
     entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;
@@ -18240,6 +18277,9 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
+#endif
+#ifdef RWF_NOSIGNAL
+    if (PyModule_AddIntConstant(m, "RWF_NOSIGNAL", RWF_NOSIGNAL)) return -1;
 #endif
 
 /* constants for splice */

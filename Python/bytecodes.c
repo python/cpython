@@ -2131,13 +2131,15 @@ dummy_func(
             STORE_ATTR_WITH_HINT,
         };
 
-        specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
+        specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, v, owner -- v, owner)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                next_instr = this_instr;
-                _Py_Specialize_StoreAttr(owner, next_instr, name);
-                DISPATCH_SAME_OPARG();
+                if (!PyStackRef_IsNull(v)) {
+                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+                    next_instr = this_instr;
+                    _Py_Specialize_StoreAttr(owner, next_instr, name);
+                    DISPATCH_SAME_OPARG();
+                }
             }
             OPCODE_DEFERRED_INC(STORE_ATTR);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
@@ -2148,18 +2150,12 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(PyStackRef_AsPyObjectBorrow(owner),
                                        name, PyStackRef_AsPyObjectBorrow(v));
-            DECREF_INPUTS();
+            PyStackRef_CLOSE(owner);
+            PyStackRef_XCLOSE(v);
             ERROR_IF(err);
         }
 
         macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + unused/3 + _STORE_ATTR;
-
-        inst(DELETE_ATTR, (owner --)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err = PyObject_DelAttr(PyStackRef_AsPyObjectBorrow(owner), name);
-            PyStackRef_CLOSE(owner);
-            ERROR_IF(err);
-        }
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -4235,13 +4231,6 @@ dummy_func(
             DEAD(exc);
         }
 
-        op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
-            PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
-            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-            PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
-            EXIT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version);
-        }
-
         op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             /* Cached method object */
@@ -4258,7 +4247,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
-            _GUARD_KEYS_VERSION +
+            unused/2 +
             _LOAD_ATTR_METHOD_WITH_VALUES;
 
         op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
@@ -4292,7 +4281,7 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
-            _GUARD_KEYS_VERSION +
+            unused/2 +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 
         op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {

@@ -554,6 +554,11 @@ class CalendarTestCase(unittest.TestCase):
             "The 'January' attribute is deprecated, use 'JANUARY' instead"
         ):
             calendar.January
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The 'February' attribute is deprecated, use 'FEBRUARY' instead"
+        ):
+            calendar.February
 
     def test_isleap(self):
         # Make sure that the return is right for a few years, and

@@ -236,7 +236,7 @@ should_audit(PyInterpreterState *interp)
         return 0;
     }
     return (interp->runtime->audit_hooks.head
-            || interp->audit_hooks
+            || FT_ATOMIC_LOAD_PTR_ACQUIRE(interp->audit_hooks)
             || PyDTrace_AUDIT_ENABLED());
 }
 
@@ -306,13 +306,14 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
     }
 
     /* Call interpreter hooks */
-    if (is->audit_hooks) {
+    PyObject *audit_hooks = FT_ATOMIC_LOAD_PTR_ACQUIRE(is->audit_hooks);
+    if (audit_hooks) {
         eventName = PyUnicode_FromString(event);
         if (!eventName) {
             goto exit;
         }
 
-        hooks = PyObject_GetIter(is->audit_hooks);
+        hooks = PyObject_GetIter(audit_hooks);
         if (!hooks) {
             goto exit;
         }
@@ -536,20 +537,29 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     }
 
     PyInterpreterState *interp = tstate->interp;
+    PyMutex mutex = interp->audit_hooks_mutex;
+    PyMutex_Lock(&mutex);
+
     if (interp->audit_hooks == NULL) {
-        interp->audit_hooks = PyList_New(0);
-        if (interp->audit_hooks == NULL) {
-            return NULL;
+        PyObject *new_list = PyList_New(0);
+        if (new_list == NULL) {
+            goto error;
         }
         /* Avoid having our list of hooks show up in the GC module */
-        PyObject_GC_UnTrack(interp->audit_hooks);
+        PyObject_GC_UnTrack(new_list);
+        FT_ATOMIC_STORE_PTR_RELEASE(interp->audit_hooks, new_list);
     }
 
     if (PyList_Append(interp->audit_hooks, hook) < 0) {
-        return NULL;
+        goto error;
     }
 
+    PyMutex_Unlock(&mutex);
     Py_RETURN_NONE;
+
+error:
+    PyMutex_Unlock(&mutex);
+    return NULL;
 }
 
 /*[clinic input]
@@ -4641,8 +4651,8 @@ PySys_WriteStderr(const char *format, ...)
     va_end(va);
 }
 
-static void
-sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
+void
+_PySys_FormatV(PyObject *key, FILE *fp, const char *format, va_list va)
 {
     PyObject *file, *message;
     const char *utf8;
@@ -4664,13 +4674,14 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
     _PyErr_SetRaisedException(tstate, exc);
 }
 
+
 void
 PySys_FormatStdout(const char *format, ...)
 {
     va_list va;
 
     va_start(va, format);
-    sys_format(&_Py_ID(stdout), stdout, format, va);
+    _PySys_FormatV(&_Py_ID(stdout), stdout, format, va);
     va_end(va);
 }
 
@@ -4680,7 +4691,7 @@ PySys_FormatStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_format(&_Py_ID(stderr), stderr, format, va);
+    _PySys_FormatV(&_Py_ID(stderr), stderr, format, va);
     va_end(va);
 }
 
