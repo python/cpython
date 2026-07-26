@@ -1868,6 +1868,7 @@ class _ZipRepacker:
 
 class ZipExtractorBase:
     """The base extractor class that does not restore attributes."""
+    debug = 0
     allowed_mode = 0o7777
 
     def __init__(self, archive, path=None, pwd=None):
@@ -1878,6 +1879,10 @@ class ZipExtractorBase:
             self.target_path = os.fspath(path)
         self.pwd = pwd
         self._dirs = {}
+
+    def _debug(self, level, *msg, file=sys.stderr):
+        if level <= self.debug:
+            print(*msg, file=file)
 
     def __enter__(self):
         return self
@@ -1923,13 +1928,19 @@ class ZipExtractorBase:
 class ZipExtractorTime(ZipExtractorBase):
     """Restores time (if platform supports)."""
     def restore_attributes(self, targetpath, zinfo):
-        self.utime(targetpath, zinfo)
+        try:
+            self.utime(targetpath, zinfo)
+        except OSError as exc:
+            self._debug(1, f'zipfile: {exc}')
 
 class ZipExtractorTimeMode(ZipExtractorTime):
     """Restores time and all mode (if platform supports)."""
     def restore_attributes(self, targetpath, zinfo):
-        self.utime(targetpath, zinfo)
-        self.chmod(targetpath, zinfo)
+        try:
+            self.utime(targetpath, zinfo)
+            self.chmod(targetpath, zinfo)
+        except OSError as exc:
+            self._debug(1, f'zipfile: {exc}')
 
 class ZipExtractorTimeModeSafe(ZipExtractorTimeMode):
     """Restores time and safe mode (if platform supports)."""
