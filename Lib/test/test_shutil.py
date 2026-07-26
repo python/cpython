@@ -1583,6 +1583,19 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
                                shutil.copyfile, src_file, '/dev/null')
 
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_symlink_to_character_device(self):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'src')
+        dst = os.path.join(tmp_dir, 'dst')
+        os.symlink('/dev/null', src)
+
+        shutil.copyfile(src, dst, follow_symlinks=False)
+
+        self.assertTrue(os.path.islink(dst))
+        self.assertEqual(os.readlink(dst), '/dev/null')
+
     def test_copyfile_block_device(self):
         block_dev = None
         for dev in ['/dev/loop0', '/dev/sda', '/dev/vda', '/dev/disk0']:
