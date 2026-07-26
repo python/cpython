@@ -3072,6 +3072,18 @@ class ScreenTests(NewtermTestBase):
         del screen
         gc_collect()
 
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    def test_set_term_prescr_screen(self):
+        # A new_prescr() screen has no terminal, so it cannot become the
+        # current one.  It used to be accepted, and the next refresh then
+        # crashed inside curses.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        self.assertRaises(curses.error, curses.set_term, curses.new_prescr())
+        # The current screen is unchanged, so refreshing it still works.
+        screen.stdscr.refresh()
+
     @cpython_only
     def test_disallow_instantiation(self):
         # The screen type cannot be instantiated directly (bpo-43916).

@@ -6834,11 +6834,17 @@ _curses_set_term(PyObject *module, PyObject *screen)
     if (so == NULL) {
         return NULL;
     }
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (so->stdscr_win == NULL) {
+        /* A screen from new_prescr() has no terminal, so it cannot become the
+           current one: a later refresh would dereference NULL in curses. */
+        PyErr_SetString(state->error, "the screen has no terminal");
+        return NULL;
+    }
     set_term(so->screen);
     if (!update_lines_cols(module)) {
         return NULL;
     }
-    cursesmodule_state *state = get_cursesmodule_state(module);
     PyObject *prev = state->topscreen;          /* steal the owned reference */
     state->topscreen = Py_NewRef(screen);
     return prev != NULL ? prev : Py_NewRef(Py_None);
