@@ -9,20 +9,28 @@ The following modules have specific security considerations:
 
 * :mod:`base64`: :ref:`base64 security considerations <base64-security>` in
   :rfc:`4648`
+* :mod:`ftplib`: default TLS context does not verify server certificates;
+  pass a context from :func:`ssl.create_default_context` to verify them
 * :mod:`hashlib`: :ref:`all constructors take a "usedforsecurity" keyword-only
   argument disabling known insecure and blocked algorithms
   <hashlib-usedforsecurity>`
 * :mod:`http.server` is not suitable for production use, only implementing
   basic security checks. See the :ref:`security considerations <http.server-security>`.
+* :mod:`imaplib`: default TLS context does not verify server certificates;
+  pass a context from :func:`ssl.create_default_context` to verify them
 * :mod:`logging`: :ref:`Logging configuration uses eval()
   <logging-eval-security>`
 * :mod:`multiprocessing`: :ref:`Connection.recv() uses pickle
   <multiprocessing-recv-pickle-security>`
 * :mod:`pickle`: :ref:`Restricting globals in pickle <pickle-restrict>`
+* :mod:`poplib`: default TLS context does not verify server certificates;
+  pass a context from :func:`ssl.create_default_context` to verify them
 * :mod:`random` shouldn't be used for security purposes, use :mod:`secrets`
   instead
 * :mod:`shelve`: :ref:`shelve is based on pickle and thus unsuitable for
   dealing with untrusted sources <shelve-security>`
+* :mod:`smtplib`: default TLS context does not verify server certificates;
+  pass a context from :func:`ssl.create_default_context` to verify them
 * :mod:`ssl`: :ref:`SSL/TLS security considerations <ssl-security>`
 * :mod:`subprocess`: :ref:`Subprocess security considerations
   <subprocess-security>`

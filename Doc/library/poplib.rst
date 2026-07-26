@@ -60,6 +60,13 @@ The :mod:`!poplib` module provides two classes:
    single (potentially long-lived) structure.  Please read :ref:`ssl-security`
    for best practices.
 
+   .. note::
+
+      With the default *context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    .. audit-event:: poplib.connect self,host,port poplib.POP3_SSL
 
    .. audit-event:: poplib.putline self,line poplib.POP3_SSL
@@ -234,6 +241,13 @@ A :class:`POP3` instance has the following methods:
    bundling SSL configuration options, certificates and private keys into
    a single (potentially long-lived) structure.  Please read :ref:`ssl-security`
    for best practices.
+
+   .. note::
+
+      With the default *context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
 
    This method supports hostname checking via
    :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see

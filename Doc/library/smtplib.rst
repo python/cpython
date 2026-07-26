@@ -98,6 +98,13 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    aspects of the secure connection.  Please read :ref:`ssl-security` for
    best practices.
 
+   .. note::
+
+      With the default *context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    .. attribute:: SMTP_SSL.default_port
 
       The default port used for SMTP-over-SSL connections (465).
@@ -421,6 +428,13 @@ An :class:`SMTP` instance has the following methods:
    Optional *context* parameter is an :class:`ssl.SSLContext` object; This is
    an alternative to using a keyfile and a certfile and if specified both
    *keyfile* and *certfile* should be ``None``.
+
+   .. note::
+
+      With the default *context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
 
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.

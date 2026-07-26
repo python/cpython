@@ -480,6 +480,13 @@ FTP_TLS objects
       Please read :ref:`ssl-security` for best practices.
    :type context: :class:`ssl.SSLContext`
 
+   .. note::
+
+      With the default *context*, the connection is encrypted but the
+      server certificate and hostname are not verified.
+      To verify them, pass a context created by
+      :func:`ssl.create_default_context`.
+
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`~FTP.connect`
       (default: the global default timeout setting).
