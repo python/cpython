@@ -72,7 +72,7 @@ m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun
 #   time. The exit code of this test program is a result of indirectly reading
 #   and writing to the memory region where the special value is supposed to
 #   reside. The actual memory addresses used and the values to be written are
-#   derived from the the program input ("argv") and are therefore not known at
+#   derived from the program input ("argv") and are therefore not known at
 #   compile or link time. The compiler has no choice but to defer the
 #   computation to run time, and to prepare by allocating and populating the
 #   data segment with the special value. For further details, refer to the
