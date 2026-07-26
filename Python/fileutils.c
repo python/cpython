@@ -470,15 +470,37 @@ decode_ascii(const char *arg, wchar_t **wstr, size_t *wlen,
 /* Fall back to mbstowcs()/wcstombs(). */
 #  define _Py_ICONV_FALLBACK (-9)
 
+/* Return non-zero if wchar_t is not Unicode in the current locale, i.e. if
+   the locale encoding is neither UTF-8 nor ASCII.  The result is memoized:
+   this is called before every conversion, and in the common case (a UTF-8
+   locale) it is the only overhead. */
+int
+_Py_LocaleNeedsWcharConversion(void)
+{
+    const char *codeset = nl_langinfo(CODESET);
+    if (codeset == NULL) {
+        return 0;
+    }
+    struct _Py_wchar_conversion_state *state = &_PyRuntime.fileutils.wchar;
+    if (strcmp(codeset, state->codeset) == 0) {
+        return state->needed;
+    }
+    int needed = (*codeset != '\0'
+                  && strcmp(codeset, "UTF-8") != 0
+                  && strcmp(codeset, "US-ASCII") != 0
+                  && strcmp(codeset, "646") != 0);
+    if (strlen(codeset) < sizeof(state->codeset)) {
+        memcpy(state->codeset, codeset, strlen(codeset) + 1);
+        state->needed = needed;
+    }
+    return needed;
+}
+
 static iconv_t
 locale_iconv_open(int decode)
 {
     const char *codeset = nl_langinfo(CODESET);
-    if (!codeset || !*codeset
-        || strcmp(codeset, "UTF-8") == 0
-        || strcmp(codeset, "US-ASCII") == 0
-        || strcmp(codeset, "646") == 0)
-    {
+    if (!_Py_LocaleNeedsWcharConversion()) {
         /* mbstowcs() and wcstombs() are correct for these encodings */
         return (iconv_t)-1;
     }
@@ -490,6 +512,10 @@ static int
 decode_locale_iconv(const char *arg, wchar_t **wstr, size_t *wlen,
                     const char **reason, _Py_error_handler errors)
 {
+    if (!_Py_LocaleNeedsWcharConversion()) {
+        return _Py_ICONV_FALLBACK;
+    }
+
     int surrogateescape;
     if (get_surrogateescape(errors, &surrogateescape) < 0) {
         return -3;
@@ -569,6 +595,10 @@ encode_locale_iconv(const wchar_t *text, char **str,
                     size_t *error_pos, const char **reason,
                     int raw_malloc, _Py_error_handler errors)
 {
+    if (!_Py_LocaleNeedsWcharConversion()) {
+        return _Py_ICONV_FALLBACK;
+    }
+
     int surrogateescape;
     if (get_surrogateescape(errors, &surrogateescape) < 0) {
         return -3;
@@ -687,6 +717,10 @@ done:
 int
 _Py_UnicodeToLocaleWchar_InPlace(wchar_t *str, Py_ssize_t size)
 {
+    if (!_Py_LocaleNeedsWcharConversion()) {
+        return 0;
+    }
+
     iconv_t cd = (iconv_t)-1;
     int res = 0;
     for (Py_ssize_t i = 0; i < size; i++) {
@@ -763,6 +797,10 @@ encode_error:
 void
 _Py_LocaleWcharToUnicode_InPlace(wchar_t *str, Py_ssize_t size)
 {
+    if (!_Py_LocaleNeedsWcharConversion()) {
+        return;
+    }
+
     iconv_t cd = (iconv_t)-1;
     for (Py_ssize_t i = 0; i < size; i++) {
         wchar_t wc = str[i];

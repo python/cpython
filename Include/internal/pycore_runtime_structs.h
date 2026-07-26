@@ -52,6 +52,12 @@ struct pyhash_runtime_state {
 
 struct _fileutils_state {
     int force_ascii;
+    /* Memoized result of _Py_LocaleNeedsWcharConversion() with the locale
+       encoding it was computed for (see Python/fileutils.c). */
+    struct _Py_wchar_conversion_state {
+        char codeset[32];
+        int needed;
+    } wchar;
 };
 
 #include "pycore_interpframe_structs.h" // _PyInterpreterFrame

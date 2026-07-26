@@ -243,6 +243,7 @@ extern void _Py_ResetForceASCII(void);
 // Convert between Unicode code points and the native wchar_t form for
 // C library functions which use the latter (such as the curses library).
 // Export for '_curses'.
+PyAPI_FUNC(int) _Py_LocaleNeedsWcharConversion(void);
 PyAPI_FUNC(int) _Py_UnicodeToLocaleWchar_InPlace(wchar_t *str, Py_ssize_t size);
 PyAPI_FUNC(void) _Py_LocaleWcharToUnicode_InPlace(wchar_t *str, Py_ssize_t size);
 #endif

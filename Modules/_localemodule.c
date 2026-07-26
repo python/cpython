@@ -407,6 +407,7 @@ _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2)
 /*[clinic end generated code: output=82ddc6d62c76d618 input=693cd02bcbf38dd8]*/
 {
 #ifdef _Py_NON_UNICODE_WCHAR_T
+  if (_Py_LocaleNeedsWcharConversion()) {
     /* wchar_t is not Unicode in non-UTF-8 locales and the collation
        tables are keyed by the raw locale values, so wcscoll() cannot
        be used with Unicode wchar_t.  Encode to the locale encoding
@@ -424,7 +425,9 @@ _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2)
     }
     Py_DECREF(b1);
     return result;
-#else
+  }
+#endif
+    {
     PyObject *result = NULL;
     wchar_t *ws1 = NULL, *ws2 = NULL;
 
@@ -442,7 +445,7 @@ _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2)
     if (ws1) PyMem_Free(ws1);
     if (ws2) PyMem_Free(ws2);
     return result;
-#endif
+    }
 }
 #endif
 
@@ -462,6 +465,7 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
 /*[clinic end generated code: output=3081866ebffc01af input=1378bbe6a88b4780]*/
 {
 #ifdef _Py_NON_UNICODE_WCHAR_T
+  if (_Py_LocaleNeedsWcharConversion()) {
     /* wchar_t is not Unicode in non-UTF-8 locales and the collation
        tables are keyed by the raw locale values, so wcsxfrm() cannot
        be used with Unicode wchar_t.  Encode to the locale encoding
@@ -498,7 +502,9 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
 error:
     Py_DECREF(bytes);
     return result;
-#else
+  }
+#endif
+    {
     Py_ssize_t n1;
     wchar_t *s = NULL, *buf = NULL;
     wchar_t dummy[1];
@@ -586,7 +592,7 @@ exit:
     PyMem_Free(buf);
     PyMem_Free(s);
     return result;
-#endif /* _Py_NON_UNICODE_WCHAR_T */
+    }
 }
 #endif
 
