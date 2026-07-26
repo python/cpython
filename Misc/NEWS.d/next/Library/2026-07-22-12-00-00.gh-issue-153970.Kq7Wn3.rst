@@ -1,4 +1,3 @@
-Calling :func:`str` on a :exc:`subprocess.CalledProcessError` whose
-:attr:`!returncode` is ``None`` no longer raises :exc:`TypeError`.  The
-constructor now also raises :exc:`TypeError` when *returncode* is neither
-an integer nor ``None``.
+Calling :func:`str` on a :exc:`subprocess.CalledProcessError` no longer
+raises :exc:`TypeError` when its :attr:`!returncode` is not an integer, such
+as ``None``.

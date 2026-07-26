@@ -260,10 +260,6 @@ underlying :class:`Popen` interface can be used directly.
     .. versionchanged:: 3.5
         *stdout* and *stderr* attributes added
 
-    .. versionchanged:: 3.16
-        The constructor now raises :exc:`TypeError` if *returncode* is
-        neither an integer nor ``None``.
-
 
 .. _frequently-used-arguments:
 
