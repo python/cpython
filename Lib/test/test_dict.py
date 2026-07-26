@@ -1403,6 +1403,21 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(reversed(A(1, 0).__dict__)), ['x'])
         self.assertEqual(list(reversed(A(0, 1).__dict__)), ['y'])
 
+    def test_reversed_dict_after_clear_and_restore(self):
+        d = {}
+        for i in range(1000):
+            d[f"k{i}"] = i
+
+        for i in range(1, 1000):
+            del d[f"k{i}"]
+
+        it = reversed(d)
+
+        d.clear()
+        d["k0"] = 0
+
+        self.assertEqual(list(it), [])
+
     def test_dict_copy_order(self):
         # bpo-34320
         od = collections.OrderedDict([('a', 1), ('b', 2)])
