@@ -2364,7 +2364,9 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     _PyObject_SetMaybeWeakref((PyObject *)self);
 #endif
     if (eager_start) {
-        PyObject *res = PyObject_CallMethodNoArgs(loop, &_Py_ID(is_running));
+        // gh-154695: loop may be None here, future_init() resolved it into task_loop.
+        PyObject *res = PyObject_CallMethodNoArgs(self->task_loop,
+                                                  &_Py_ID(is_running));
         if (res == NULL) {
             return -1;
         }
