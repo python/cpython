@@ -31,7 +31,7 @@ if False:
 
 
 isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
-    [("\\%03o" % c, "isearch-end") for c in range(256) if chr(c) not in ("\\", "\x1b")]
+    [("\\%03o" % c, "isearch-end") for c in range(256) if chr(c) != "\\"]
     + [(c, "isearch-add-character") for c in map(chr, range(32, 127)) if c != "\\"]
     + [
         ("\\%03o" % c, "isearch-add-character")
@@ -45,7 +45,7 @@ isearch_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\C-c", "isearch-cancel"),
         (r"\C-g", "isearch-cancel"),
         (r"\<backspace>", "isearch-backspace"),
-        (r"\x1b[200~", "isearch-bracketed-paste"),
+        (r"\<bracketed paste>", "isearch-bracketed-paste"),
     ]
 )
 
