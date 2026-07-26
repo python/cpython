@@ -558,6 +558,12 @@ class UnixConsole(Console):
             return None
 
         while self.event_queue.empty():
+            if self.event_queue.pending():
+                if not self.wait(timeout=self.event_queue.esc_timeout):
+                    # Timed out waiting for the rest of a sequence: flush the
+                    # pending prefix as a complete key (e.g. a lone ESC).
+                    self.event_queue.flush()
+                    continue
             while True:
                 try:
                     self.push_char(self.__read(1))
