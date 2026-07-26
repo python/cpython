@@ -2733,6 +2733,18 @@ class BaseTaskTests:
             self.assertEqual(name, "example")
             await t
 
+    def test_eager_start_true_no_loop(self):
+        # gh-154695: eager_start must use the resolved loop, not loop=None.
+        async def asyncfn():
+            return 42
+
+        async def main():
+            t = self.__class__.Task(asyncfn(), eager_start=True)
+            self.assertTrue(t.done())
+            self.assertEqual(await t, 42)
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
     def test_eager_start_false(self):
         name = None
 
