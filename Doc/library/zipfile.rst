@@ -1068,15 +1068,17 @@ To create a custom extractor, subclass :class:`ZipExtractorBase` and override
 its :meth:`~ZipExtractorBase.restore_attributes`.  Here is an example that
 ignores errors when restoring file attributes::
 
-    class SafeZipExtractorTimeMode(zipfile.ZipExtractorTimeMode):
-        def restore_attributes(self, targetpath, zinfo):
-            try:
-                super().restore_attributes(targetpath, zinfo)
-            except (OSError, OverflowError, ValueError):
-                pass
+.. code-block:: python
 
-    with zipfile.ZipFile('spam.zip') as myzip:
-        myzip.extractall('eggs', extractor=SafeZipExtractorTimeMode)
+   class SafeZipExtractorTimeMode(zipfile.ZipExtractorTimeMode):
+       def restore_attributes(self, targetpath, zinfo):
+           try:
+               super().restore_attributes(targetpath, zinfo)
+           except (OSError, OverflowError, ValueError):
+               pass
+
+   with zipfile.ZipFile('spam.zip') as myzip:
+       myzip.extractall('eggs', extractor=SafeZipExtractorTimeMode)
 
 .. class:: ZipExtractorBase(archive, path=None, pwd=None):
 
