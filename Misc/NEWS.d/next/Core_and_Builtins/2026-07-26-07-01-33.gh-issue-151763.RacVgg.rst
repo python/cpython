@@ -1,0 +1,2 @@
+Fix a crash in the parser recovery path when an allocation failure leaves no
+exception set.

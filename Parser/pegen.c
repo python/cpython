@@ -1026,7 +1026,12 @@ _PyPegen_run_parser(Parser *p)
         if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             _PyPegen_set_syntax_error_metadata(p);
         }
-       return NULL;
+        if (!PyErr_Occurred()) {
+            /* Under OOM the recovery pass can clear the exception and fail
+               silently; restore the result/error contract. */
+            PyErr_NoMemory();
+        }
+        return NULL;
     }
 
     if (p->start_rule == Py_single_input && bad_single_statement(p)) {
