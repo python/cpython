@@ -1,0 +1,1 @@
+Fix a crash in t-string iteration when creating the iterator fails partway through due to memory pressure.
