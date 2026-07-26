@@ -1080,29 +1080,29 @@ ignores errors when restoring file attributes::
    with zipfile.ZipFile('spam.zip') as myzip:
        myzip.extractall('eggs', extractor=SafeZipExtractorTimeMode)
 
-.. class:: ZipExtractorBase(archive, path=None, pwd=None):
+.. class:: ZipExtractorBase(archive, path=None, pwd=None)
 
    The base extractor class that restores no file attributes.
 
 
-.. class:: ZipExtractorTime(archive, path=None, pwd=None):
+.. class:: ZipExtractorTime(archive, path=None, pwd=None)
 
    An extractor class that restores file mtime and atime.
 
 
-.. class:: ZipExtractorTimeModeX(archive, path=None, pwd=None):
+.. class:: ZipExtractorTimeModeX(archive, path=None, pwd=None)
 
    An extractor class that restores file mtime, atime, and executable bits
    (``0o111``).
 
 
-.. class:: ZipExtractorTimeModeSafe(archive, path=None, pwd=None):
+.. class:: ZipExtractorTimeModeSafe(archive, path=None, pwd=None)
 
    An extractor class that restores file mtime, atime, and safe file mode
    bits (``0o777``).
 
 
-.. class:: ZipExtractorTimeMode(archive, path=None, pwd=None):
+.. class:: ZipExtractorTimeMode(archive, path=None, pwd=None)
 
    An extractor class that restores file mtime, atime, and all mode bits
    (``0o7777``).
