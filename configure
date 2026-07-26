@@ -1102,6 +1102,7 @@ enable_framework
 with_app_store_compliance
 enable_wasm_dynamic_linking
 enable_wasm_pthreads
+enable_emscripten_syscalls
 with_suffix
 enable_shared
 with_static_libpython
@@ -1843,6 +1844,10 @@ Optional Features:
                           loader to handle imports
   --enable-wasm-pthreads  Enable pthread emulation for WebAssembly (default is
                           no)
+  --disable-emscripten-syscalls
+                          Disable the Emscripten syscall overrides in
+                          Python/emscripten_syscalls.c (default is enabled for
+                          Emscripten)
   --enable-shared         enable building a shared Python library (default is
                           no)
   --enable-static-libpython-for-interpreter
@@ -4809,6 +4814,13 @@ printf "%s\n" "#define _XOPEN_SOURCE_EXTENDED 1" >>confdefs.h
 
 printf "%s\n" "#define _POSIX_C_SOURCE 202405L" >>confdefs.h
 
+
+  # Defining _POSIX_C_SOURCE and _XOPEN_SOURCE hides C23 library
+  # declarations on FreeBSD (e.g. sinpi() in math.h) when compiling
+  # with -std=c11.  Defining _ISOC23_SOURCE makes them visible again.
+
+printf "%s\n" "#define _ISOC23_SOURCE 1" >>confdefs.h
+
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -6395,6 +6407,8 @@ else case e in #(
 cat > conftest.c <<EOF
 #if defined(__EMSCRIPTEN__)
   emcc
+#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+  icx
 #elif defined(__INTEL_COMPILER) || defined(__ICC)
   icc
 #elif defined(__ibmxl__) || defined(__xlc__) || defined(__xlC__)
@@ -6864,7 +6878,7 @@ else
   CXX="$ac_cv_path_CXX"
 fi
  ;;
-        clang)             if test -n "$ac_tool_prefix"; then
+        clang)  if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}clang++", so it can be a program name with args.
 set dummy ${ac_tool_prefix}clang++; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -6974,7 +6988,117 @@ else
   CXX="$ac_cv_path_CXX"
 fi
  ;;
-        icc)               if test -n "$ac_tool_prefix"; then
+        icx)    if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}icpx", so it can be a program name with args.
+set dummy ${ac_tool_prefix}icpx; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_CXX+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) case $CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CXX="$CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_CXX="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac ;;
+esac
+fi
+CXX=$ac_cv_path_CXX
+if test -n "$CXX"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
+printf "%s\n" "$CXX" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_CXX"; then
+  ac_pt_CXX=$CXX
+  # Extract the first word of "icpx", so it can be a program name with args.
+set dummy icpx; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_ac_pt_CXX+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) case $ac_pt_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_CXX="$ac_pt_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_CXX="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac ;;
+esac
+fi
+ac_pt_CXX=$ac_cv_path_ac_pt_CXX
+if test -n "$ac_pt_CXX"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_pt_CXX" >&5
+printf "%s\n" "$ac_pt_CXX" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+  if test "x$ac_pt_CXX" = x; then
+    CXX="notfound"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+printf "%s\n" "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    CXX=$ac_pt_CXX
+  fi
+else
+  CXX="$ac_cv_path_CXX"
+fi
+ ;;
+        icc)    if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}icpc", so it can be a program name with args.
 set dummy ${ac_tool_prefix}icpc; ac_word=$2
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -7500,6 +7624,30 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_wasm_pthreads" >&5
 printf "%s\n" "$enable_wasm_pthreads" >&6; }
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-emscripten-syscalls" >&5
+printf %s "checking for --enable-emscripten-syscalls... " >&6; }
+# Check whether --enable-emscripten-syscalls was given.
+if test ${enable_emscripten_syscalls+y}
+then :
+  enableval=$enable_emscripten_syscalls;
+  case $ac_sys_system in #(
+  Emscripten) :
+     ;; #(
+  *) :
+    as_fn_error $? "--enable-emscripten-syscalls only applies to Emscripten" "$LINENO" 5
+   ;;
+esac
+
+else case e in #(
+  e)
+  enable_emscripten_syscalls=yes
+ ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_emscripten_syscalls" >&5
+printf "%s\n" "$enable_emscripten_syscalls" >&6; }
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-suffix" >&5
 printf %s "checking for --with-suffix... " >&6; }
@@ -9122,7 +9270,7 @@ fi
 LLVM_PROF_ERR=no
 
 case "$ac_cv_cc_name" in
-  clang)
+  clang|icx)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
@@ -9807,7 +9955,6 @@ fi
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__PyEM_EMSCRIPTEN_TRAMPOLINE_OFFSET"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
-        as_fn_append LINKFORSHARED " -sGROWABLE_ARRAYBUFFERS=0"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -11408,6 +11555,10 @@ fi
 case "$ac_cv_cc_name" in
 mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
+    ;;
+icx)
+    # ICX needs fp-model=precise (the default in clang) or floats behave badly
+    CFLAGS_NODIST="$CFLAGS_NODIST -ffp-model=precise"
     ;;
 icc)
     # ICC needs -fp-model strict or floats behave badly
@@ -15288,9 +15439,10 @@ then :
 
 fi
 
-# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# gh-124228: While the libuuid library is available on NetBSD and OpenBSD,
+# it supports only UUID version 4.
 # This restriction inhibits the proper generation of time-based UUIDs.
-if test "$ac_sys_system" = "NetBSD"; then
+if test "$ac_sys_system" = "NetBSD" || test "$ac_sys_system" = "OpenBSD"; then
   have_uuid=missing
   printf "%s\n" "#define HAVE_UUID_H 0" >>confdefs.h
 
@@ -20036,7 +20188,13 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'
+    if test "x$enable_emscripten_syscalls" = xyes
+then :
+
+      as_fn_append PLATFORM_OBJS ' Python/emscripten_syscalls.o'
+
+fi
     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
   *) :
@@ -26943,8 +27101,8 @@ esac
 # rounding precision of 64 bits.  For gcc/x86, we can fix this by
 # using inline assembler to get and set the x87 FPU control word.
 
-# This inline assembler syntax may also work for suncc and icc,
-# so we try it on all platforms.
+# This inline assembler syntax works for icx and may also work for
+# suncc and icc, so we try it on all platforms.
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether we can use gcc inline assembler to get and set x87 control word" >&5
 printf %s "checking whether we can use gcc inline assembler to get and set x87 control word... " >&6; }

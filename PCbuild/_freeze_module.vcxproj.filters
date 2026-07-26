@@ -496,6 +496,9 @@
     <ClCompile Include="..\Python\tracemalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\typecache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\uniqueid.c">
       <Filter>Source Files</Filter>
     </ClCompile>
