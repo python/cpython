@@ -1,0 +1,3 @@
+Fix :mod:`asyncio` write pipe transports for named FIFOs on macOS.  Unread
+data sitting in the FIFO made the transport misinterpret a poll event as
+the reader disconnecting, wrongly closing the transport.
