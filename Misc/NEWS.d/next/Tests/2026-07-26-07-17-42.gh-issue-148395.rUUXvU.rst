@@ -1,0 +1,5 @@
+Add regression tests for the CVE-2026-6100 fix so a
+:class:`~bz2.BZ2Decompressor`, :class:`~lzma.LZMADecompressor`, or
+:class:`zlib._ZlibDecompressor` that raised :exc:`MemoryError` during
+:meth:`~bz2.BZ2Decompressor.decompress` cannot silently regain a dangling
+input pointer on the next call.
