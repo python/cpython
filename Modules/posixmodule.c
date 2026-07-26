@@ -504,6 +504,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
+#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, *)
+#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -589,6 +591,14 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #    define HAVE_PTSNAME_R_RUNTIME (ptsname_r != NULL)
 #  endif
 
+#  ifdef HAVE_DUP3
+#    define HAVE_DUP3_RUNTIME (dup3 != NULL)
+#  endif
+
+#  ifdef HAVE_PIPE2
+#    define HAVE_PIPE2_RUNTIME (pipe2 != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -619,6 +629,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME 1
 #  define HAVE_MKNODAT_RUNTIME 1
 #  define HAVE_PTSNAME_R_RUNTIME 1
+#  define HAVE_DUP3_RUNTIME 1
+#  define HAVE_PIPE2_RUNTIME 1
 #endif
 
 
@@ -11910,16 +11922,21 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 
 #ifdef HAVE_DUP3
     if (!inheritable && dup3_works != 0) {
-        Py_BEGIN_ALLOW_THREADS
-        res = dup3(fd, fd2, O_CLOEXEC);
-        Py_END_ALLOW_THREADS
-        if (res < 0) {
-            if (dup3_works == -1)
-                dup3_works = (errno != ENOSYS);
-            if (dup3_works) {
-                posix_error();
-                return -1;
+        if (HAVE_DUP3_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            res = dup3(fd, fd2, O_CLOEXEC);
+            Py_END_ALLOW_THREADS
+            if (res < 0) {
+                if (dup3_works == -1)
+                    dup3_works = (errno != ENOSYS);
+                if (dup3_works) {
+                    posix_error();
+                    return -1;
+                }
             }
+        }
+        else {
+            dup3_works = 0;
         }
     }
 
@@ -12779,9 +12796,13 @@ os_pipe_impl(PyObject *module)
 #else
 
 #ifdef HAVE_PIPE2
-    Py_BEGIN_ALLOW_THREADS
-    res = pipe2(fds, O_CLOEXEC);
-    Py_END_ALLOW_THREADS
+    res = -1;
+    errno = ENOSYS;
+    if (HAVE_PIPE2_RUNTIME) {
+        Py_BEGIN_ALLOW_THREADS
+        res = pipe2(fds, O_CLOEXEC);
+        Py_END_ALLOW_THREADS
+    }
 
     if (res != 0 && errno == ENOSYS)
     {
@@ -18806,6 +18827,18 @@ posixmodule_exec(PyObject *m)
             return -1;
         }
         if (PyDict_PopString(dct, "preadv", NULL) < 0) {
+            return -1;
+        }
+    }
+#endif
+
+#if defined(HAVE_PIPE2)
+    if (HAVE_PIPE2_RUNTIME) {} else {
+        PyObject *dct = PyModule_GetDict(m);
+        if (dct == NULL) {
+            return -1;
+        }
+        if (PyDict_PopString(dct, "pipe2", NULL) < 0) {
             return -1;
         }
     }

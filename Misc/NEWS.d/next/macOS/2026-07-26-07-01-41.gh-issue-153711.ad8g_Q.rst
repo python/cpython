@@ -1,0 +1,3 @@
+Guard ``os.dup2`` and ``os.pipe``/``os.pipe2`` against calling ``dup3``/``pipe2``
+when the symbols are weak-imported but unavailable at runtime (Xcode 27 SDKs on
+older macOS).

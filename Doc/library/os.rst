@@ -1448,7 +1448,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: Unix, not WASI, not macOS, not iOS.
+   .. availability:: Unix, not WASI.  Availability on macOS requires macOS 27.0
+      or later; availability on iOS requires iOS 27.0 or later.
 
    .. versionadded:: 3.3
 
