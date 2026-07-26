@@ -1102,27 +1102,23 @@ ignores errors when restoring file attributes:
 
 
 .. class:: ZipExtractorTime(archive, path=None, pwd=None)
-   :base: ZipExtractorBase
 
    An extractor class that restores file mtime and atime.
 
 
 .. class:: ZipExtractorTimeMode(archive, path=None, pwd=None)
-   :base: ZipExtractorTime
 
    An extractor class that restores file mtime, atime, and all mode bits
    (``0o7777``).
 
 
 .. class:: ZipExtractorTimeModeSafe(archive, path=None, pwd=None)
-   :base: ZipExtractorTimeMode
 
    An extractor class that restores file mtime, atime, and safe file mode
    bits (``0o777``).
 
 
 .. class:: ZipExtractorTimeModeX(archive, path=None, pwd=None)
-   :base: ZipExtractorTimeMode
 
    An extractor class that restores file mtime, atime, and executable bits
    (``0o111``).
