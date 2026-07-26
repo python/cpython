@@ -1065,7 +1065,7 @@ An extractor class can be passed to :meth:`ZipFile.extract` or
 :meth:`ZipFile.extractall` to handle file attribute restoration.
 
 To create a custom extractor, subclass :class:`ZipExtractorBase` and override
-its :meth:`~ZipExtractorBase.restore_attributes`.  Here is an example that
+its :meth:`!~ZipExtractorBase.restore_attributes`.  Here is an example that
 ignores errors when restoring file attributes:
 
 .. code-block:: python
