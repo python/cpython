@@ -1064,9 +1064,9 @@ Extractors
 An extractor class can be passed to :meth:`ZipFile.extract` or
 :meth:`ZipFile.extractall` to handle file attribute restoration.
 
-To create a custom extractor, subclass :class:`ZipExtractorBase` and override
-its :meth:`~ZipExtractorBase.restore_attributes`.  Here is an example that
-ignores errors when restoring file attributes:
+To create a custom extractor, subclass :class:`ZipExtractorBase` and implement
+the :meth:`~ZipExtractorBase.restore_attributes` method.  Here is an example
+that ignores errors when restoring file attributes:
 
 .. code-block:: python
 
@@ -1103,25 +1103,25 @@ ignores errors when restoring file attributes:
 
 .. class:: ZipExtractorTime(archive, path=None, pwd=None)
 
-   An extractor class that restores file mtime and atime.
+   A subclass of :class:`ZipExtractorBase` that restores file mtime and atime.
 
 
 .. class:: ZipExtractorTimeMode(archive, path=None, pwd=None)
 
-   An extractor class that restores file mtime, atime, and all mode bits
-   (``0o7777``).
+   A subclass of :class:`ZipExtractorTime` that restores file mtime, atime, and
+   all mode bits (``0o7777``).
 
 
 .. class:: ZipExtractorTimeModeSafe(archive, path=None, pwd=None)
 
-   An extractor class that restores file mtime, atime, and safe file mode
-   bits (``0o777``).
+   A subclass of :class:`ZipExtractorTimeMode` that restores file mtime, atime,
+   and safe file mode bits (``0o777``).
 
 
 .. class:: ZipExtractorTimeModeX(archive, path=None, pwd=None)
 
-   An extractor class that restores file mtime, atime, and executable bits
-   (``0o111``).
+   A subclass of :class:`ZipExtractorTimeMode` that restores file mtime, atime,
+   and executable bits (``0o111``).
 
 
 .. _zipfile-commandline:
