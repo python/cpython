@@ -24,20 +24,26 @@ OS-independent base for an event and VT sequence scanner
 See unix_eventqueue and windows_eventqueue for subclasses.
 """
 
+import os
 from collections import deque
 
 from . import keymap
 from .console import Event
 from .trace import trace
 
+ESC_TIMEOUT_DEFAULT = 0.1
+
 class BaseEventQueue:
-    def __init__(self, encoding: str, keymap_dict: dict[bytes, str]) -> None:
+    def __init__(self, encoding: str, keymap_dict: dict[bytes, str],
+                 esc_timeout: float | None = None) -> None:
         self.compiled_keymap = keymap.compile_keymap(keymap_dict)
         self.keymap = self.compiled_keymap
         trace("keymap {k!r}", k=self.keymap)
         self.encoding = encoding
         self.events: deque[Event] = deque()
         self.buf = bytearray()
+        default = float(os.environ.get("PYREPL_ESC_TIMEOUT", ESC_TIMEOUT_DEFAULT))
+        self.esc_timeout = esc_timeout if esc_timeout is not None else default
 
     def get(self) -> Event | None:
         """
