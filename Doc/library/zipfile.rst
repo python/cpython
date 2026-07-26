@@ -1066,7 +1066,7 @@ An extractor class can be passed to :meth:`ZipFile.extract` or
 
 To create a custom extractor, subclass :class:`ZipExtractorBase` and override
 its :meth:`~ZipExtractorBase.restore_attributes`.  Here is an example that
-ignores errors when restoring file attributes:
+ignores errors when restoring file attributes::
 
     class SafeZipExtractorTimeMode(zipfile.ZipExtractorTimeMode):
         def restore_attributes(self, targetpath, zinfo):
