@@ -1,0 +1,3 @@
+Fix a latent :exc:`AttributeError` in :mod:`asyncio` call-graph capture when
+walking an async generator's ``ag_await`` chain: the walker referenced
+``cr_frame`` instead of ``ag_frame``.
