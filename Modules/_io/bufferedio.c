@@ -306,6 +306,7 @@ _enter_buffered_busy(buffered *self)
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking) {
         PyMutex_Lock(&self->mutex);
+        st = PY_LOCK_ACQUIRED;
     }
     else {
         /* When finalizing, we don't want a deadlock to happen with daemon
