@@ -745,6 +745,16 @@ set_error(void)
 }
 
 
+#if defined(HAVE_HSTRERROR) || defined(HAVE_GAI_STRERROR)
+/* Decode a locale-encoded error message from the C library.
+   It can be localized and use a non-UTF-8 encoding. */
+static PyObject *
+decode_error_message(const char *str)
+{
+    return PyUnicode_DecodeLocale(str, "surrogateescape");
+}
+#endif
+
 #if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME) || defined (HAVE_GETHOSTBYADDR)
 static PyObject *
 set_herror(socket_state *state, int h_error)
@@ -752,7 +762,7 @@ set_herror(socket_state *state, int h_error)
     PyObject *v;
 
 #ifdef HAVE_HSTRERROR
-    v = Py_BuildValue("(is)", h_error, hstrerror(h_error));
+    v = Py_BuildValue("(iN)", h_error, decode_error_message(hstrerror(h_error)));
 #else
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
@@ -779,7 +789,7 @@ set_gaierror(socket_state *state, int error)
 #endif
 
 #ifdef HAVE_GAI_STRERROR
-    v = Py_BuildValue("(is)", error, gai_strerror(error));
+    v = Py_BuildValue("(iN)", error, decode_error_message(gai_strerror(error)));
 #else
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
