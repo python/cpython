@@ -1,0 +1,3 @@
+Whitespace immediately before ``}``, ``!``, ``:``, or ``=`` is now included
+in :attr:`string.templatelib.Interpolation.expression` for interpolations
+created from t-string literals.

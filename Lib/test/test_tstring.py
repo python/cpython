@@ -79,6 +79,28 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Name: Bob, Age: 30")
 
+    def test_interpolation_expression_whitespace(self):
+        x = 42
+        cases = [
+            (t"{x}", "x"),
+            (t"{x }", "x "),
+            (t"{ x}", " x"),
+            (t"{ x }", " x "),
+            (t"{  x  }", "  x  "),
+            (t"{x !r}", "x "),
+            (t"{x :}", "x "),
+            (t"{x = }", "x "),
+            (t"{x == 42 = }", "x == 42 "),
+            (t"""{
+  x
+}""", "\n  x\n"),
+        ]
+        for template, expected in cases:
+            with self.subTest(template=template):
+                self.assertEqual(
+                    template.interpolations[0].expression, expected
+                )
+
     def test_format_specifiers(self):
         # Test basic format specifiers
         value = 3.14159
@@ -136,7 +158,7 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         # Test white space in debug specifier
         t = t"Value: {value = }"
         self.assertTStringEqual(
-            t, ("Value: value = ", ""), [(value, "value", "r")]
+            t, ("Value: value = ", ""), [(value, "value ", "r")]
         )
         self.assertEqual(fstring(t), "Value: value = 42")
 
