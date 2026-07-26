@@ -541,15 +541,12 @@ decode_locale_iconv(const char *arg, wchar_t **wstr, size_t *wlen,
                 return _Py_ICONV_FALLBACK;
             }
             if (!surrogateescape) {
+                /* Leave it to mbstowcs() to decide whether the input is
+                   valid: it can be more permissive than iconv(), and a
+                   broken locale should not make the conversion fail. */
                 PyMem_RawFree(res);
                 iconv_close(cd);
-                if (wlen != NULL) {
-                    *wlen = in - arg;
-                }
-                if (reason != NULL) {
-                    *reason = "decoding error";
-                }
-                return -2;
+                return _Py_ICONV_FALLBACK;
             }
             /* Escape the byte as UTF-8b, and start over in the initial
                shift state. */
