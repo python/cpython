@@ -1035,6 +1035,9 @@ setup_context(Py_ssize_t stack_level,
         globals = interp->sysdict;
         *filename = PyUnicode_FromString("<sys>");
         *lineno = 0;
+        if (*filename == NULL) {
+            return 0;  /* nothing else allocated yet on this path */
+        }
     }
     else {
         globals = f->f_frame->f_globals;
