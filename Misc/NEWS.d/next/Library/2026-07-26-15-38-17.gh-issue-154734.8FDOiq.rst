@@ -1,0 +1,2 @@
+Fix a data race on :meth:`asyncio.Task.get_coro` with eager tasks in the
+:term:`free-threaded build`.

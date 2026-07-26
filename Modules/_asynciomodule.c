@@ -3498,10 +3498,13 @@ task_eager_start(_PyThreadStateImpl *ts, asyncio_state *state, TaskObj *task)
         retval = -1;
     }
 
+    // gh-154734: Task.get_coro() reads task_coro under this lock
+    Py_BEGIN_CRITICAL_SECTION(task);
     if (task->task_state != STATE_PENDING) {
         // This seems to really help performance on pyperformance benchmarks
         clear_task_coro(task);
     }
+    Py_END_CRITICAL_SECTION();
 
     return retval;
 }
