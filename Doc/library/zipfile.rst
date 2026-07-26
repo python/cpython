@@ -378,9 +378,9 @@ ZipFile objects
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object.  *path* specifies a
    different directory to extract to.  *pwd* is the password used for encrypted
-   files as a :class:`bytes` object.  *extractor* is a custom extractor class
-   that handles file attribute restoration (defaults to
-   :class:`ZipExtractorBase`, which restores no attributes).
+   files as a :class:`bytes` object.  *extractor* is a custom
+   :ref:`extractor class <extractors>` that handles file attribute restoration
+   (defaults to :class:`ZipExtractorBase`, which restores no attributes).
 
    Returns the normalized path created (a directory or new file).
 
@@ -417,8 +417,8 @@ ZipFile objects
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
    used for encrypted files as a :class:`bytes` object.  *extractor* is a custom
-   extractor class that handles file attribute restoration (defaults to
-   :class:`ZipExtractorBase`, which restores no attributes).
+   :ref:`extractor class <extractors>` that handles file attribute restoration
+   (defaults to :class:`ZipExtractorBase`, which restores no attributes).
 
    .. warning::
 
