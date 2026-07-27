@@ -103,13 +103,24 @@ _PyManagedBuffer_FromObject(PyObject *base, int flags)
     return (PyObject *)mbuf;
 }
 
+static inline int
+atomic_or(int *flags, int bit)
+{
+#ifdef Py_GIL_DISABLED
+    return (int)_Py_atomic_or_uint32((uint32_t *)flags, (uint32_t)bit);
+#else
+    int prev = *flags;
+    *flags = prev | bit;
+    return prev;
+#endif
+}
+
 static void
 mbuf_release(_PyManagedBufferObject *self)
 {
-    if (self->flags&_Py_MANAGED_BUFFER_RELEASED)
+    int prev_flags = atomic_or(&self->flags, _Py_MANAGED_BUFFER_RELEASED);
+    if (prev_flags & _Py_MANAGED_BUFFER_RELEASED)
         return;
-
-    self->flags |= _Py_MANAGED_BUFFER_RELEASED;
 
     /* PyBuffer_Release() decrements master->obj and sets it to NULL. */
     _PyObject_GC_UNTRACK(self);
@@ -1109,12 +1120,17 @@ static void
 _memory_release(PyMemoryViewObject *self)
 {
     assert(get_exports(self) == 0);
-    if (self->flags & _Py_MEMORYVIEW_RELEASED)
+    int prev_flags = atomic_or(&self->flags, _Py_MEMORYVIEW_RELEASED);
+    if (prev_flags & _Py_MEMORYVIEW_RELEASED)
         return;
 
-    self->flags |= _Py_MEMORYVIEW_RELEASED;
-    assert(self->mbuf->exports > 0);
-    if (--self->mbuf->exports == 0) {
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t prev_exports = _Py_atomic_add_ssize(&self->mbuf->exports, -1);
+#else
+    Py_ssize_t prev_exports = self->mbuf->exports--;
+#endif
+    assert(prev_exports > 0);
+    if (prev_exports == 1) {
         mbuf_release(self->mbuf);
     }
 }
