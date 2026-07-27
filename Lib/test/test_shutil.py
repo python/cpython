@@ -32,6 +32,7 @@ except ImportError:
 from test import support
 from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
+from test.support.import_helper import import_fresh_module
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -2320,6 +2321,66 @@ class TestArchives(BaseTest, unittest.TestCase):
         # let's leave a clean state
         unregister_unpack_format('Boo2')
         self.assertEqual(get_unpack_formats(), formats)
+
+
+@support.requires_bz2()
+@support.requires_lzma()
+@support.requires_zlib()
+@support.requires_zstd()
+class TestLazyArchiveDetection(unittest.TestCase):
+    # Test archive detection under 'all' lazy imports
+    # see: https://github.com/python/cpython/issues/150167
+    @support.thread_unsafe("Modifies global import state")
+    def test_lazy_success(self):
+        import_state = sys.get_lazy_imports()
+        try:
+            sys.set_lazy_imports("all")
+            lazy_shutil = import_fresh_module(
+                "shutil",
+                cleared=("bz2", "lzma", "zlib", "compression", "compression.zstd"),
+            )
+        finally:
+            sys.set_lazy_imports(import_state)
+
+        assert lazy_shutil is not None  # type narrowing
+
+        formats = {
+            "bz2": lazy_shutil._BZ2_SUPPORTED,
+            "lzma": lazy_shutil._LZMA_SUPPORTED,
+            "zlib": lazy_shutil._ZLIB_SUPPORTED,
+            "zstd": lazy_shutil._ZSTD_SUPPORTED,
+        }
+
+        expected = {k: True for k in formats}
+
+        self.assertEqual(formats, expected)
+
+
+    @support.thread_unsafe("Modifies global import state")
+    def test_lazy_failure(self):
+        import_state = sys.get_lazy_imports()
+        try:
+            sys.set_lazy_imports("all")
+            lazy_shutil = import_fresh_module(
+                "shutil",
+                blocked=("_bz2", "_lzma", "zlib", "_zstd"),
+                cleared=("bz2", "lzma", "compression", "compression.zstd"),
+            )
+        finally:
+            sys.set_lazy_imports(import_state)
+
+        assert lazy_shutil is not None  # type narrowing
+
+        formats = {
+            "bz2": lazy_shutil._BZ2_SUPPORTED,
+            "lzma": lazy_shutil._LZMA_SUPPORTED,
+            "zlib": lazy_shutil._ZLIB_SUPPORTED,
+            "zstd": lazy_shutil._ZSTD_SUPPORTED,
+        }
+
+        expected = {k: False for k in formats}
+
+        self.assertEqual(formats, expected)
 
 
 class TestMisc(BaseTest, unittest.TestCase):
