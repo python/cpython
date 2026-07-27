@@ -216,6 +216,11 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('t""')
         self.check_ast_roundtrip("t'{(lambda x: x)}'")
         self.check_ast_roundtrip("t'{t'{x}'}'")
+        self.check_ast_roundtrip(
+            r"""t'''{(
+                1,  # Force lexer metadata reconstruction.
+                "\"#")}'''"""
+        )
 
     def test_tstring_with_nonsensical_str_field(self):
         # `value` suggests that the original code is `t'{test1}`, but `str` suggests otherwise

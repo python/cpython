@@ -1,0 +1,4 @@
+Whitespace immediately before ``}``, ``!``, ``:``, or ``=`` is now included
+in :attr:`string.templatelib.Interpolation.expression` for interpolations
+created from t-string literals.  Preserve escaped quotes while reconstructing
+interpolation expression metadata containing comments.
