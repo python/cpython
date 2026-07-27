@@ -1087,6 +1087,32 @@ Libraries options
 
    .. versionadded:: 3.10
 
+.. option:: --with-curses=ncursesw|ncurses|curses
+
+   Designate a backend library for the :mod:`curses` and :mod:`curses.panel`
+   modules.
+
+   * ``ncursesw``: Use the wide-character ``libncursesw`` (and ``libpanelw``),
+     found via ``pkg-config``.
+   * ``ncurses``: Use ``libncurses`` (and ``libpanel``), found via
+     ``pkg-config``.
+   * ``curses``: Use the system's native ``libcurses`` (and ``libpanel``), such
+     as on NetBSD or Solaris.  It is built with wide-character support when the
+     library provides it.
+
+   Without this option (or with ``--with-curses=auto``, the default), Python
+   tries ``ncursesw`` and then ``ncurses``; the native ``curses`` is used only
+   when requested explicitly.
+
+   .. versionadded:: next
+
+.. option:: --without-curses
+
+   Don't build the :mod:`curses` and :mod:`curses.panel` modules, even when a
+   curses library is present (built by default when one is found).
+
+   .. versionadded:: next
+
 .. option:: --with-libm=STRING
 
    Override ``libm`` math library to *STRING* (default is system-dependent).

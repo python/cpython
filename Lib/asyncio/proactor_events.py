@@ -62,6 +62,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._closing = False  # Set when close() called.
         self._called_connection_lost = False
         self._eof_written = False
+        self._empty_waiter = None
         if self._server is not None:
             self._server._attach(self)
         self._loop.call_soon(self._protocol.connection_made, self)
@@ -331,10 +332,6 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     _start_tls_compatible = True
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self._empty_waiter = None
-
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(
@@ -465,7 +462,6 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None):
         self._address = address
-        self._empty_waiter = None
         self._buffer_size = 0
         # We don't need to call _protocol.connection_made() since our base
         # constructor does it for us.

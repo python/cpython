@@ -907,9 +907,10 @@ class MmapTests(unittest.TestCase):
 
         with mmap.mmap(-1, start_size) as m:
             m[:] = data
-            if sys.platform.startswith(('linux', 'android')):
-                # Can't expand a shared anonymous mapping on Linux.
-                # See https://bugzilla.kernel.org/show_bug.cgi?id=8691
+            if sys.platform.startswith(('linux', 'android', 'netbsd')):
+                # Can't expand a shared anonymous mapping on Linux
+                # (see https://bugzilla.kernel.org/show_bug.cgi?id=8691)
+                # or NetBSD.
                 with self.assertRaises(ValueError):
                     m.resize(new_size)
             else:
@@ -1175,8 +1176,8 @@ class MmapTests(unittest.TestCase):
             if hasattr(mmap, 'MS_INVALIDATE'):
                 m.flush(PAGESIZE * 2, flags=mmap.MS_INVALIDATE)
             if hasattr(mmap, 'MS_ASYNC') and hasattr(mmap, 'MS_INVALIDATE'):
-                if sys.platform == 'freebsd':
-                    # FreeBSD doesn't support this combination
+                if sys.platform.startswith(('freebsd', 'dragonfly')):
+                    # FreeBSD and DragonFly don't support this combination
                     with self.assertRaises(OSError) as cm:
                         m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
                     self.assertEqual(cm.exception.errno, errno.EINVAL)
