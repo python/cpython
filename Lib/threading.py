@@ -1033,10 +1033,9 @@ class Thread:
 
         *context* is the contextvars.Context value to use for the thread.
         The default value is None, which means to check
-        sys.flags.thread_inherit_context.  If that flag is true, use a copy
-        of the context of the caller.  If false, use a context containing only
-        the bindings of thread-inheritable context variables.  To explicitly
-        start with an empty context, pass a new instance of
+        sys.flags.thread_inherit_context.  Variables can override that flag
+        with the ContextVar constructor's thread_inheritable parameter.  To
+        explicitly start with an empty context, pass a new instance of
         contextvars.Context().  To explicitly start with a copy of the current
         context, pass the value from contextvars.copy_context().
 
@@ -1130,15 +1129,9 @@ class Thread:
 
         context_is_implicit = self._context is None
         if context_is_implicit:
-            # No context provided
-            if _sys.flags.thread_inherit_context:
-                # start with a copy of the context of the caller
-                self._context = _contextvars.copy_context()
-            else:
-                # Start with a context containing only the bindings of
-                # thread-inheritable context variables (see
-                # ContextVar.thread_inheritable); usually empty.
-                self._context = _contextvars._thread_start_context()
+            # Capture the caller's bindings selected for automatic thread
+            # inheritance by the global flag and per-variable overrides.
+            self._context = _contextvars._new_thread_context()
 
         try:
             # Start joinable thread

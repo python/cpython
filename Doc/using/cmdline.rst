@@ -674,13 +674,13 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
-   * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
-     to, by default, use a copy of the context of the caller of
-     ``Thread.start()`` when starting.  Otherwise, threads start with a context
-     containing only the caller's current bindings for context variables
-     created by :meth:`~contextvars.ContextVar.thread_inheritable`.  If unset, the
-     value of this option defaults to ``1`` on free-threaded builds and to ``0``
-     otherwise.  See also :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`.
+   * :samp:`-X thread_inherit_context={0,1}` controls whether
+     :class:`~threading.Thread` inherits context variable bindings from the
+     caller of ``Thread.start()`` by default.  Individual context variables can
+     override this setting with the :class:`~contextvars.ContextVar`
+     constructor's *thread_inheritable* parameter.  If unset, the value of this
+     option defaults to ``1`` on free-threaded builds and to ``0`` otherwise.
+     See also :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`.
 
      .. versionadded:: 3.14
 
@@ -1367,12 +1367,12 @@ conflict.
 
 .. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
 
-   If this variable is set to ``1`` then :class:`~threading.Thread` will,
-   by default, use a copy of the context of the caller of ``Thread.start()``
-   when starting.  Otherwise, new threads start with a context containing only
-   the caller's current bindings for context variables created by
-   :meth:`~contextvars.ContextVar.thread_inheritable`.  If unset, this variable
-   defaults to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
+   This variable controls whether :class:`~threading.Thread` inherits context
+   variable bindings from the caller of ``Thread.start()`` by default.
+   Individual context variables can override it with the
+   :class:`~contextvars.ContextVar` constructor's *thread_inheritable*
+   parameter.  If unset, this variable defaults to ``1`` on free-threaded
+   builds and to ``0`` otherwise.  See also
    :option:`-X thread_inherit_context<-X>`.
 
    .. versionadded:: 3.14

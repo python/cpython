@@ -539,13 +539,14 @@ since it is impossible to detect the termination of alien threads.
    the thread.  The default value is ``None`` which indicates that the
    :data:`sys.flags.thread_inherit_context` flag controls the behaviour.  If
    the flag is true, threads will start with a copy of the context of the
-   caller of :meth:`~Thread.start`.  If false, they will start with a
-   context containing only the caller's current bindings for context variables
-   created by :meth:`~contextvars.ContextVar.thread_inheritable`.  To explicitly
-   start with an empty context, pass a new instance of
-   :class:`~contextvars.Context()`.  To explicitly start with a copy of the
-   current context, pass the value from :func:`~contextvars.copy_context`. The
-   flag defaults true on free-threaded builds and false otherwise.
+   caller of :meth:`~Thread.start`; if false, they will not inherit bindings by
+   default.  The :class:`~contextvars.ContextVar` constructor's
+   *thread_inheritable* parameter can override the flag for an individual
+   variable.  To explicitly start with an empty context, pass a new instance
+   of :class:`~contextvars.Context()`.  To explicitly start with a copy of the
+   current context, pass the value from :func:`~contextvars.copy_context`.
+   Explicit contexts are not filtered by per-variable settings.  The flag
+   defaults true on free-threaded builds and false otherwise.
 
    If the subclass overrides the constructor, it must make sure to invoke the
    base class constructor (``Thread.__init__()``) before doing anything else to

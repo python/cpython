@@ -16,6 +16,11 @@ try:
 except ImportError:
     hamt = None
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 
 def isolated_context(func):
     """Needed to make reftracking test mode work."""
@@ -36,36 +41,53 @@ class ContextTest(unittest.TestCase):
 
         c = contextvars.ContextVar('aaa')
         self.assertEqual(c.name, 'aaa')
+        self.assertIsNone(c.thread_inheritable)
 
         with self.assertRaises(AttributeError):
             c.name = 'bbb'
+        with self.assertRaises(AttributeError):
+            c.thread_inheritable = True
 
-        inheritable = contextvars.ContextVar.thread_inheritable('inheritable')
+        inheritable = contextvars.ContextVar(
+            'inheritable', thread_inheritable=True)
         self.assertIs(type(inheritable), contextvars.ContextVar)
         self.assertEqual(inheritable.name, 'inheritable')
+        self.assertIs(inheritable.thread_inheritable, True)
 
-        inheritable_with_default = (
-            contextvars.ContextVar.thread_inheritable(
-                'inheritable_with_default', default=42,
-            )
+        inheritable_with_default = contextvars.ContextVar(
+            'inheritable_with_default', default=42,
+            thread_inheritable=True,
         )
         self.assertEqual(inheritable_with_default.get(), 42)
 
-        with self.assertRaisesRegex(TypeError, 'must be a str'):
-            contextvars.ContextVar.thread_inheritable(1)
+        # None and omission both select the interpreter-wide default.
+        default_policy = contextvars.ContextVar(
+            'default_policy', thread_inheritable=None)
+        non_inheritable = contextvars.ContextVar(
+            'non_inheritable', thread_inheritable=False)
+        self.assertIsNone(default_policy.thread_inheritable)
+        self.assertIs(non_inheritable.thread_inheritable, False)
+        with self.assertRaisesRegex(
+                TypeError,
+                'thread_inheritable must be a bool or None, not int'):
+            contextvars.ContextVar('var', thread_inheritable=1)
         with self.assertRaises(TypeError):
-            contextvars.ContextVar.thread_inheritable('var', None)
+            contextvars.ContextVar('var', None)
         with self.assertRaises(TypeError):
             contextvars.ContextVar('var', inherit=True)
+        # thread_inheritable is a read-only attribute, not a constructor.
+        with self.assertRaises(TypeError):
+            contextvars.ContextVar.thread_inheritable('var')
 
         self.assertNotEqual(hash(c), hash('aaa'))
 
-    def test_thread_inheritable_context_var_gc(self):
+    def test_context_var_thread_inheritable_gc(self):
         class Value:
             pass
 
         def make_cycle():
-            var = contextvars.ContextVar.thread_inheritable('var')
+            var = contextvars.ContextVar(
+                'var', thread_inheritable=True)
             ctx = contextvars.Context()
             value = Value()
             value_ref = weakref.ref(value)
@@ -100,6 +122,25 @@ class ContextTest(unittest.TestCase):
         self.assertNotIn(' used ', repr(t))
         c.reset(t)
         self.assertIn(' used ', repr(t))
+
+    @isolated_context
+    def test_context_var_repr_thread_inheritable(self):
+        # The policy is only shown when it overrides the flag.
+        c = contextvars.ContextVar('a')
+        self.assertNotIn('thread_inheritable', repr(c))
+        c = contextvars.ContextVar('a', thread_inheritable=None)
+        self.assertNotIn('thread_inheritable', repr(c))
+
+        c = contextvars.ContextVar('a', thread_inheritable=True)
+        self.assertRegex(
+            repr(c),
+            r"^<ContextVar name='a' thread_inheritable=True "
+            r"at 0x[0-9a-fA-F]+>$")
+        c = contextvars.ContextVar('a', default=123, thread_inheritable=False)
+        self.assertRegex(
+            repr(c),
+            r"^<ContextVar name='a' default=123 thread_inheritable=False "
+            r"at 0x[0-9a-fA-F]+>$")
 
     @isolated_context
     def test_token_repr_1(self):
@@ -641,10 +682,15 @@ class ThreadInheritableVarTest(unittest.TestCase):
             import threading
             from contextvars import ContextVar, copy_context
 
-            inh = ContextVar.thread_inheritable('inh', default='default')
+            inh = ContextVar('inh', default='default', thread_inheritable=True)
             plain = ContextVar('plain')
+            default_policy = ContextVar(
+                'default_policy', thread_inheritable=None)
+            excluded = ContextVar('excluded', thread_inheritable=False)
             inh.set('inherited')
             plain.set('not inherited')
+            default_policy.set('not inherited either')
+            excluded.set('explicitly excluded')
 
             def child():
                 # The binding is a real binding in the thread's context:
@@ -656,12 +702,15 @@ class ThreadInheritableVarTest(unittest.TestCase):
                 assert ctx.run(inh.get) == 'inherited'
                 # Non-inheritable vars are not visible.
                 assert plain not in ctx
-                try:
-                    plain.get()
-                except LookupError:
-                    pass
-                else:
-                    raise AssertionError('plain was inherited')
+                assert default_policy not in ctx
+                assert excluded not in ctx
+                for var in (plain, default_policy, excluded):
+                    try:
+                        var.get()
+                    except LookupError:
+                        pass
+                    else:
+                        raise AssertionError(f'{var.name} was inherited')
 
             t = threading.Thread(target=child)
             t.start()
@@ -673,7 +722,7 @@ class ThreadInheritableVarTest(unittest.TestCase):
             import threading
             from contextvars import Context, ContextVar
 
-            inh = ContextVar.thread_inheritable('inh')
+            inh = ContextVar('inh', thread_inheritable=True)
             values = []
 
             # The binding is captured by start(), not by Thread().
@@ -704,7 +753,7 @@ class ThreadInheritableVarTest(unittest.TestCase):
             import threading
             from contextvars import ContextVar
 
-            inh = ContextVar.thread_inheritable('inh')
+            inh = ContextVar('inh', thread_inheritable=True)
             inh.set('first attempt')
             values = []
             t = threading.Thread(target=lambda: values.append(inh.get()))
@@ -736,7 +785,7 @@ class ThreadInheritableVarTest(unittest.TestCase):
             import threading
             from contextvars import ContextVar
 
-            inh = ContextVar.thread_inheritable('inh')
+            inh = ContextVar('inh', thread_inheritable=True)
             inh.set('inherited')
 
             def child():
@@ -757,7 +806,7 @@ class ThreadInheritableVarTest(unittest.TestCase):
             import threading
             from contextvars import ContextVar
 
-            inh = ContextVar.thread_inheritable('inh')
+            inh = ContextVar('inh', thread_inheritable=True)
             inh.set('inherited')
 
             def grandchild():
@@ -775,13 +824,53 @@ class ThreadInheritableVarTest(unittest.TestCase):
             t.join()
             """)
 
+    def test_thread_non_inheritable_not_retained(self):
+        # An excluded binding must be dropped from the new thread's internal
+        # subset of thread-inheritable bindings, not just from its visible
+        # bindings.  Otherwise the excluded value stays reachable through the
+        # context of every descendant thread.
+        source = """if True:
+            import gc
+            import threading
+            import weakref
+            from contextvars import ContextVar, copy_context
+
+            excluded = ContextVar('excluded', thread_inheritable=False)
+            descendant = []
+
+            class Value:
+                pass
+
+            def chain(depth):
+                if depth:
+                    t = threading.Thread(target=chain, args=(depth - 1,))
+                    t.start()
+                    t.join()
+                else:
+                    descendant.append(copy_context())
+
+            value = Value()
+            ref = weakref.ref(value)
+            excluded.set(value)
+            chain(4)
+            del value
+            excluded.set(None)
+            gc.collect()
+
+            assert excluded not in descendant[0]
+            assert ref() is None, 'excluded value was retained by a thread'
+            """
+        for flag in (0, 1):
+            with self.subTest(thread_inherit_context=flag):
+                self.run_with_flag(flag, source)
+
     def test_thread_inheritance_unset_or_deleted(self):
         self.run_with_flag(0, """if True:
             import threading
             from contextvars import ContextVar
 
-            unset = ContextVar.thread_inheritable('unset', default='default')
-            deleted = ContextVar.thread_inheritable('deleted')
+            unset = ContextVar('unset', default='default', thread_inheritable=True)
+            deleted = ContextVar('deleted', thread_inheritable=True)
             token = deleted.set('inherited')
             deleted.reset(token)
 
@@ -804,7 +893,7 @@ class ThreadInheritableVarTest(unittest.TestCase):
             import threading
             from contextvars import ContextVar, Context
 
-            inh = ContextVar.thread_inheritable('inh', default='default')
+            inh = ContextVar('inh', default='default', thread_inheritable=True)
             inh.set('inherited')
 
             def child():
@@ -821,7 +910,7 @@ class ThreadInheritableVarTest(unittest.TestCase):
             import threading
             from contextvars import ContextVar
 
-            inh = ContextVar.thread_inheritable('inh')
+            inh = ContextVar('inh', thread_inheritable=True)
             plain = ContextVar('plain')
             inh.set('inherited')
             plain.set('not inherited')
@@ -864,22 +953,150 @@ class ThreadInheritableVarTest(unittest.TestCase):
     def test_thread_inherit_context_flag_true(self):
         self.run_with_flag(1, """if True:
             import threading
-            from contextvars import ContextVar
+            from contextvars import ContextVar, copy_context
 
-            inh = ContextVar.thread_inheritable('inh')
+            inh = ContextVar('inh', thread_inheritable=True)
             plain = ContextVar('plain')
+            default_policy = ContextVar(
+                'default_policy', thread_inheritable=None)
+            excluded = ContextVar('excluded', thread_inheritable=False)
             inh.set('inherited')
             plain.set('also inherited')
+            default_policy.set('also inherited by default')
+            excluded.set('not inherited')
 
             def child():
-                # With the flag set, the full context is copied.
                 assert inh.get() == 'inherited'
                 assert plain.get() == 'also inherited'
+                assert default_policy.get() == 'also inherited by default'
+                assert excluded.get(None) is None
+                assert excluded not in copy_context()
 
             t = threading.Thread(target=child)
             t.start()
             t.join()
+
+            # A supplied context is authoritative and is not filtered.
+            values = []
+            t = threading.Thread(
+                target=lambda: values.append(excluded.get()),
+                context=copy_context())
+            t.start()
+            t.join()
+            assert values == ['not inherited']
             """)
+
+    @unittest.skipIf(_testcapi is None, 'requires _testcapi')
+    def test_capi_thread_inheritance(self):
+        # The C API flags must override the global flag the same way the
+        # thread_inheritable keyword argument does.
+        source = """if True:
+            import threading
+            import _testcapi
+            from contextvars import copy_context
+
+            new_with_flags = _testcapi.contextvar_new_with_flags
+            always = _testcapi.Py_CONTEXTVAR_INHERIT_THREAD_ALWAYS
+            never = _testcapi.Py_CONTEXTVAR_INHERIT_THREAD_NEVER
+            inh = new_with_flags('inh', always)
+            excl = new_with_flags('excl', never)
+            plain = _testcapi.contextvar_new('plain')
+            inh.set('inh value')
+            excl.set('excl value')
+            plain.set('plain value')
+
+            values = []
+
+            def child():
+                values.append(
+                    (inh.get(None), excl.get(None), plain.get(None)))
+                assert excl not in copy_context()
+
+            t = threading.Thread(target=child)
+            t.start()
+            t.join()
+            assert values == [('inh value', None, expected_plain)], values
+            """
+        for flag, expected_plain in ((0, None), (1, 'plain value')):
+            with self.subTest(thread_inherit_context=flag):
+                self.run_with_flag(
+                    flag,
+                    f'expected_plain = {expected_plain!r}\n{source}')
+
+
+@unittest.skipIf(_testcapi is None, 'requires _testcapi')
+class CAPIContextVarTest(unittest.TestCase):
+
+    def constructors(self):
+        with_flags = _testcapi.contextvar_new_with_flags
+        return (
+            ('new', _testcapi.contextvar_new),
+            ('flags_default', lambda name, *default: with_flags(
+                name, _testcapi.Py_CONTEXTVAR_INHERIT_THREAD_DEFAULT,
+                *default)),
+            ('flags_never', lambda name, *default: with_flags(
+                name, _testcapi.Py_CONTEXTVAR_INHERIT_THREAD_NEVER,
+                *default)),
+            ('flags_always', lambda name, *default: with_flags(
+                name, _testcapi.Py_CONTEXTVAR_INHERIT_THREAD_ALWAYS,
+                *default)),
+        )
+
+    def test_new(self):
+        var = _testcapi.contextvar_new('plain')
+        self.assertIs(type(var), contextvars.ContextVar)
+        self.assertEqual(var.name, 'plain')
+        self.assertIsNone(var.thread_inheritable)
+
+    def test_new_with_flags(self):
+        cases = (
+            (_testcapi.Py_CONTEXTVAR_INHERIT_THREAD_DEFAULT, None),
+            (_testcapi.Py_CONTEXTVAR_INHERIT_THREAD_NEVER, False),
+            (_testcapi.Py_CONTEXTVAR_INHERIT_THREAD_ALWAYS, True),
+        )
+        for flags, expected in cases:
+            with self.subTest(flags=flags):
+                var = _testcapi.contextvar_new_with_flags('var', flags)
+                self.assertIs(type(var), contextvars.ContextVar)
+                self.assertEqual(var.name, 'var')
+                self.assertIs(var.thread_inheritable, expected)
+
+    def test_new_with_invalid_flags(self):
+        always = _testcapi.Py_CONTEXTVAR_INHERIT_THREAD_ALWAYS
+        never = _testcapi.Py_CONTEXTVAR_INHERIT_THREAD_NEVER
+        for flags in (-1, always | never, 4):
+            with self.subTest(flags=flags):
+                with self.assertRaisesRegex(
+                        ValueError, 'invalid ContextVar flags'):
+                    _testcapi.contextvar_new_with_flags('var', flags)
+
+    def test_no_default(self):
+        # A NULL default is not the same as a None default.
+        for name, new in self.constructors():
+            with self.subTest(new=name):
+                var = new('var')
+                with self.assertRaises(LookupError):
+                    var.get()
+                self.assertIsNone(var.get(None))
+
+    def test_default(self):
+        for name, new in self.constructors():
+            with self.subTest(new=name):
+                self.assertIsNone(new('var', None).get())
+                self.assertEqual(new('var', 42).get(), 42)
+
+    def test_default_refcount(self):
+        # Doc/data/refcounts.dat documents def as a +1 argument.
+        for name, new in self.constructors():
+            with self.subTest(new=name):
+                default = ['default']
+                before = sys.getrefcount(default)
+                var = new('var', default)
+                self.assertEqual(sys.getrefcount(default), before + 1)
+                self.assertIs(var.get(), default)
+                del var
+                support.gc_collect()
+                self.assertEqual(sys.getrefcount(default), before)
 
 
 # HAMT Tests

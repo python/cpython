@@ -1,6 +1,7 @@
-Add :meth:`contextvars.ContextVar.thread_inheritable`, an alternative
-constructor for context variables whose bindings are inherited by new
-:class:`threading.Thread` instances even when
-:data:`sys.flags.thread_inherit_context` is false.  This lets libraries opt
-individual context variables in to thread inheritance without requiring the
-application to enable the flag process-wide.
+Add the *thread_inheritable* keyword-only parameter and corresponding
+read-only attribute to :class:`contextvars.ContextVar`.  They let an
+individual variable force its bindings to be included in or excluded from
+implicit :class:`threading.Thread` context inheritance, independently of
+:data:`sys.flags.thread_inherit_context`. Add
+:c:func:`PyContextVar_NewWithFlags` for creating context variables which
+override automatic thread context inheritance.

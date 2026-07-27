@@ -26,19 +26,28 @@ struct _pycontextobject {
     PyHamtObject *ctx_vars;
     PyObject *ctx_weakreflist;
     int ctx_entered;
-    // Redundant subset of ctx_vars holding only the bindings of
-    // thread-inheritable context variables (see
-    // ContextVar.thread_inheritable()).  Used to efficiently create the
-    // starting context of a new thread.
-    PyHamtObject *ctx_thread_inheritable_vars;
+    // Redundant subset of ctx_vars holding exactly the bindings inherited by
+    // an implicitly created child thread.  Since the HAMT is immutable, it can
+    // be shared directly with the child's context.  While this and ctx_vars
+    // are the same object, one HAMT update serves both fields; adding a
+    // non-inheritable binding makes them diverge.  This relies on both
+    // var_thread_inherit and thread_inherit_context remaining immutable.
+    PyHamtObject *ctx_inheritable_vars;
 };
+
+
+typedef enum {
+    _Py_CONTEXTVAR_INHERIT_DEFAULT = 0,
+    _Py_CONTEXTVAR_INHERIT_FALSE = 1,
+    _Py_CONTEXTVAR_INHERIT_TRUE = 2,
+} _PyContextVarInherit;
 
 
 struct _pycontextvarobject {
     PyObject_HEAD
     PyObject *var_name;
     PyObject *var_default;
-    char var_thread_inheritable;
+    _PyContextVarInherit var_thread_inherit;
 #ifndef Py_GIL_DISABLED
     PyObject *var_cached;
     uint64_t var_cached_tsid;
@@ -60,7 +69,7 @@ struct _pycontexttokenobject {
 // _testinternalcapi.hamt() used by tests.
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyContext_NewHamtForTests(void);
-PyAPI_FUNC(PyObject*) _PyContext_NewThreadStartContext(void);
+PyAPI_FUNC(PyObject*) _PyContext_NewThreadContext(void);
 
 PyAPI_FUNC(int) _PyContext_Enter(PyThreadState *ts, PyObject *octx);
 PyAPI_FUNC(int) _PyContext_Exit(PyThreadState *ts, PyObject *octx);

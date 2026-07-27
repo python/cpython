@@ -68,12 +68,18 @@ PyAPI_FUNC(int) PyContext_ClearWatcher(int watcher_id);
 PyAPI_FUNC(PyObject *) PyContextVar_New(
     const char *name, PyObject *default_value);
 
-/* Create a new thread-inheritable context variable.
+/* Flags for PyContextVar_NewWithFlags(). */
+#define Py_CONTEXTVAR_INHERIT_THREAD_DEFAULT 0
+#define Py_CONTEXTVAR_INHERIT_THREAD_NEVER   1
+#define Py_CONTEXTVAR_INHERIT_THREAD_ALWAYS  2
 
-   default_value can be NULL.
+/* Create a new context variable with the specified flags.
+
+   default_value can be NULL.  flags must be one of the
+   Py_CONTEXTVAR_INHERIT_THREAD_* values.
 */
-PyAPI_FUNC(PyObject *) PyContextVar_NewThreadInheritable(
-    const char *name, PyObject *default_value);
+PyAPI_FUNC(PyObject *) PyContextVar_NewWithFlags(
+    const char *name, PyObject *default_value, int flags);
 
 
 /* Get a value for the variable.
