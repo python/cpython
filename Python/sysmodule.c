@@ -318,7 +318,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
             goto exit;
         }
 
-        hooks = PyObject_GetIter(audit_hooks);
+        hooks = PyObject_GetIter(is->audit_hooks);
         if (!hooks) {
             goto exit;
         }
@@ -542,7 +542,6 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     }
 
     PyInterpreterState *interp = tstate->interp;
-
     assert(interp->audit_hooks != NULL);
     if (PyList_Append(interp->audit_hooks, hook) < 0) {
         return NULL;

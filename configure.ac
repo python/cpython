@@ -1221,6 +1221,10 @@ AS_CASE([$ac_sys_system],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
 
+if test x$SOABI_PLATFORM != x; then
+    AC_DEFINE_UNQUOTED([SOABI_PLATFORM], ["${SOABI_PLATFORM}"], [Platform tag, used in binary module extension filenames.])
+fi
+
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
@@ -7248,12 +7252,18 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-dnl Native curses ("curses") may be wide-character capable (e.g. on NetBSD)
-dnl even though it is not ncursesw.  Probe for the wide API; if present, build
-dnl the module against it like ncursesw by defining HAVE_NCURSESW.  ncursesw
-dnl already defines HAVE_NCURSESW, and ncurses must stay narrow, so only the
-dnl native backend is probed here.
-AS_VAR_IF([with_curses], [curses], [
+dnl A curses that is not named "ncursesw" can still be wide-character capable:
+dnl the system curses of NetBSD, or an ncurses built with --enable-widec that
+dnl keeps the plain name (pkgsrc, macOS).  Probe for the wide API and, if
+dnl present, build the module wide by defining HAVE_NCURSESW.  The "ncursesw"
+dnl backend already defines it, so only the other backends are probed.
+AS_CASE([$with_curses], [ncursesw|no], [], [
+  dnl Use the adjusted CURSES_CFLAGS (e.g. macOS's -D_XOPEN_SOURCE_EXTENDED)
+  dnl so the wide-character declarations are visible to the probe.  This runs
+  dnl inside an outer WITH_SAVE_ENV, whose single CPPFLAGS save slot is not
+  dnl reentrant, so save and restore CPPFLAGS with a dedicated variable here.
+  save_curses_cppflags=$CPPFLAGS
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
   AC_CACHE_CHECK([whether curses supports wide characters],
     [ac_cv_curses_wide],
     [AC_LINK_IFELSE(
@@ -7264,6 +7274,7 @@ AS_VAR_IF([with_curses], [curses], [
       ]])],
       [ac_cv_curses_wide=yes],
       [ac_cv_curses_wide=no])])
+  CPPFLAGS=$save_curses_cppflags
   dnl HAVE_NCURSESW marks the wide (cchar_t) curses API; its template comes
   dnl from the ncursesw pkg-config check above, so no description here.
   AS_VAR_IF([ac_cv_curses_wide], [yes], [AC_DEFINE([HAVE_NCURSESW], [1])])

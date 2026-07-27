@@ -43,7 +43,6 @@ The module also extends gdb with some python-specific commands.
 
 import gdb
 import os
-import locale
 import sys
 
 
@@ -106,8 +105,6 @@ MAX_OUTPUT_LEN=1024
 hexdigits = "0123456789abcdef"
 
 USED_TAGS = 0b11
-
-ENCODING = locale.getpreferredencoding()
 
 FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
 UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
@@ -1504,6 +1501,10 @@ class PyUnicodeObjectPtr(PyObjectPtr):
     def write_repr(self, out, visited):
         # Write this out as a Python str literal
 
+        # gdb writes its output in the host charset, so a character is escaped
+        # unless it is printable and encodable in that charset.
+        encoding = gdb.host_charset()
+
         # Get a PyUnicodeObject* within the Python gdb process:
         proxy = self.proxyval(visited)
 
@@ -1551,8 +1552,10 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                 printable = ucs.isprintable()
                 if printable:
                     try:
-                        ucs.encode(ENCODING)
-                    except UnicodeEncodeError:
+                        ucs.encode(encoding)
+                    # LookupError or ValueError if the host charset is unknown
+                    # or invalid.
+                    except (UnicodeEncodeError, LookupError, ValueError):
                         printable = False
 
                 # Map Unicode whitespace and control characters
