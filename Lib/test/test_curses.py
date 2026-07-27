@@ -3072,8 +3072,7 @@ class ScreenTests(NewtermTestBase):
         del screen
         gc_collect()
 
-    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
-                         'requires curses.new_prescr()')
+    @requires_curses_func('new_prescr')
     def test_set_term_prescr_screen(self):
         # A new_prescr() screen has no terminal, so it cannot become the
         # current one.  It used to be accepted, and the next refresh then

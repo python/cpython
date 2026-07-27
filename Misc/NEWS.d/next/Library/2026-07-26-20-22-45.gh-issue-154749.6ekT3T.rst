@@ -1,3 +1,0 @@
-:func:`curses.set_term` now raises :exc:`curses.error` when given a screen with
-no terminal, such as one returned by :func:`curses.new_prescr`.  Such a screen
-was accepted before, and the next window refresh crashed the interpreter.
