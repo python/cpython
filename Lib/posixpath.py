@@ -250,7 +250,7 @@ def expanduser(path):
                 return path
             try:
                 userhome = pwd.getpwuid(os.getuid()).pw_dir
-            except KeyError:
+            except (KeyError, OSError):
                 # bpo-10496: if the current user identifier doesn't exist in the
                 # password database, return the path unchanged
                 return path
@@ -267,7 +267,7 @@ def expanduser(path):
             name = os.fsdecode(name)
         try:
             pwent = pwd.getpwnam(name)
-        except KeyError:
+        except (KeyError, OSError):
             # bpo-10496: if the user name from the path doesn't exist in the
             # password database, return the path unchanged
             return path
