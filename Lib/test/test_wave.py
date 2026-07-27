@@ -552,22 +552,22 @@ class WaveReadErrorTest(unittest.TestCase):
 class WaveWriteValidationTest(unittest.TestCase):
     """Cover parameter-validation paths of Wave_write."""
 
-    @staticmethod  
-    def _close(w):  
-        try:  
-            # Make sure that all parameters are set  
-            w.setnchannels(1)  
-            w.setsampwidth(2)  
-            w.setframerate(44100)  
-        except wave.Error:  
-            # Ignore "cannot change parameters after starting to write" error  
-            pass  
+    @staticmethod
+    def _close(w):
+        try:
+            # Make sure that all parameters are set
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(44100)
+        except wave.Error:
+            # Ignore "cannot change parameters after starting to write" error
+            pass
 
-        w.close()  
+        w.close()
 
-    def open_writer(self):  
-        w = wave.open(io.BytesIO(), 'wb')  
-        self.addCleanup(self._close, w)  
+    def open_writer(self):
+        w = wave.open(io.BytesIO(), 'wb')
+        self.addCleanup(self._close, w)
         return w
 
     def test_setnchannels_rejects_nonpositive(self):
@@ -613,23 +613,23 @@ class WaveWriteValidationTest(unittest.TestCase):
         with self.assertRaisesRegex(wave.Error, 'not all parameters set'):
             w.getparams()
 
-    def test_tell(self):  
-        def check_nframes(nframes):  
-            self.assertEqual(w.tell(), nframes)  
-            self.assertEqual(w.getnframes(), nframes)  
+    def test_tell(self):
+        def check_nframes(nframes):
+            self.assertEqual(w.tell(), nframes)
+            self.assertEqual(w.getnframes(), nframes)
 
-        w = self.open_writer()  
-        w.setnchannels(1)  
-        w.setsampwidth(2)  
-        w.setframerate(44100)  
-        check_nframes(0)  
+        w = self.open_writer()
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(44100)
+        check_nframes(0)
 
-        frame = b'\x00\x00'  
-        w.writeframes(frame * 5)  
-        check_nframes(5)  
+        frame = b'\x00\x00'
+        w.writeframes(frame * 5)
+        check_nframes(5)
 
-        w.writeframes(frame * 3)  
-        check_nframes(8)  
+        w.writeframes(frame * 3)
+        check_nframes(8)
 
     def test_cannot_change_params_after_write(self):
         w = self.open_writer()
