@@ -14,7 +14,9 @@ from compression._common import _streams
 import io
 import os
 
-import _bz2; _bz2  # Force the eager import of _bz2
+# Force the eager import of _bz2
+# See: https://github.com/python/cpython/issues/150167
+import _bz2; _bz2
 from _bz2 import BZ2Compressor, BZ2Decompressor
 
 
