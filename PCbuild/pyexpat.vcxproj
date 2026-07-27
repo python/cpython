@@ -95,6 +95,8 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Modules\expat\fallthrough.h" />
+    <ClInclude Include="..\Modules\expat\memory_sanitizer.h" />
     <ClInclude Include="..\Modules\expat\xmlrole.h" />
     <ClInclude Include="..\Modules\expat\xmltok.h" />
   </ItemGroup>
