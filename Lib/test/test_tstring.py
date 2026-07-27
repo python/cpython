@@ -162,6 +162,18 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Value: value = 42")
 
+    def test_debug_specifier_with_reconstructed_metadata(self):
+        regular = t'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")}'''
+        debug = t'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")=}'''
+        self.assertEqual(
+            debug.interpolations[0].expression,
+            regular.interpolations[0].expression,
+        )
+
     def test_raw_tstrings(self):
         path = r"C:\Users"
         t = rt"{path}\Documents"

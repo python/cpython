@@ -1552,7 +1552,10 @@ _strip_interpolation_debug_expr(PyObject *exprstr)
         }
         len--;
     }
-    assert(len > 0 && PyUnicode_READ_CHAR(exprstr, len - 1) == '=');
+    /* The debug marker may be absent from reconstructed lexer metadata. */
+    if (len == 0 || PyUnicode_READ_CHAR(exprstr, len - 1) != '=') {
+        return Py_NewRef(exprstr);
+    }
 
     return PyUnicode_Substring(exprstr, 0, len - 1);
 }
