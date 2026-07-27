@@ -3158,6 +3158,15 @@ class _PdbServer(Pdb):
         if self.quitting:
             self.detach()
 
+    @contextmanager
+    def _maybe_use_pyrepl_as_stdin(self):
+        # The server reads every command from the client over the socket, never
+        # from a local pyrepl. The base implementation swaps in pyrepl as stdin
+        # and blanks `self.prompt` to '' (pyrepl would draw the prompt itself),
+        # which here would transmit an empty prompt to the client whenever the
+        # target process happens to be pyrepl-capable. Keep the real prompt.
+        yield
+
     def detach(self):
         # Detach the debugger and close the socket without raising BdbQuit
         self.quitting = False
