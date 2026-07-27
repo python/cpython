@@ -36,10 +36,10 @@ def _apply_child_config(config):
     build on a modal dialog and hang the parent.
     """
     global runningInSubprocess
-    import json
+    import marshal
     import test.support as support
     runningInSubprocess = True
-    for name, value in json.loads(config).items():
+    for name, value in marshal.loads(bytes.fromhex(config)).items():
         setattr(support, name, value)
     support.suppress_msvcrt_asserts(support.verbose >= 2)
 
@@ -97,21 +97,24 @@ def _run_in_subprocess(module, qualname):
     ``{'outcomes': ..., 'durations': ...}`` mapping from the subprocess, or
     ``None`` if it did not run to completion (crash, import error, ...).
     """
-    import json
+    import marshal
     import subprocess
     import tempfile
     fd, result_path = tempfile.mkstemp(suffix='.json')
     os.close(fd)
     try:
         # Pass the config on the command line, not in the environment, so that
-        # the test cannot pass it on to the processes it spawns itself.
+        # the test cannot pass it on to the processes it spawns itself.  Use
+        # marshal, not json: it is built in, so the child imports nothing that
+        # the test would not see in a normal test run.
         cmd = [sys.executable, '-m', 'test.support.subprocess_runner',
-               module, qualname, result_path, json.dumps(_child_config())]
+               module, qualname, result_path,
+               marshal.dumps(_child_config()).hex()]
         proc = subprocess.run(cmd, capture_output=True)
         try:
-            with open(result_path, encoding='utf-8') as f:
-                payload = json.load(f)
-        except (OSError, ValueError):
+            with open(result_path, 'rb') as f:
+                payload = marshal.load(f)
+        except (OSError, EOFError, ValueError):
             payload = None
     finally:
         try:

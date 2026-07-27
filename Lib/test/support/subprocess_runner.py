@@ -1,13 +1,16 @@
 """Run a single test method in this (sub)process and report the result.
 
 Invoked as ``python -m test.support.subprocess_runner MODULE QUALNAME OUTFILE
-CONFIG`` by :func:`test.support.isolation.runInSubprocess`.  CONFIG is the JSON
-test.support configuration of the parent test run.  The outcome of the test
-(including that of each individual subtest) is written as JSON to OUTFILE.
-This module is not meant to be imported.
+CONFIG`` by :func:`test.support.isolation.runInSubprocess`.  CONFIG is the
+marshalled test.support configuration of the parent test run, as a hex string.
+The outcome of the test (including that of each individual subtest) is
+marshalled to OUTFILE.  This module is not meant to be imported.
+
+Import as little as possible before running the test: every module imported
+here is state that the test would not see in a normal test run.
 """
 
-import json
+import marshal
 import sys
 import unittest
 from unittest.case import _SubTest
@@ -39,7 +42,11 @@ class _Result(unittest.TestResult):
         self.id_durations.append((test.id(), elapsed))
 
 
-suite = unittest.TestLoader().loadTestsFromName(f'{module}.{qualname}')
+# Resolve the qualname in the imported module, rather than letting
+# loadTestsFromName() guess where the module name ends: it guesses by trying
+# imports that fail, and a failing import pulls in importlib.resources.
+__import__(module)
+suite = unittest.TestLoader().loadTestsFromName(qualname, sys.modules[module])
 result = _Result()
 suite.run(result)
 
@@ -66,7 +73,7 @@ outcomes += [_outcome('expected_failure', t, tb)
 outcomes += [_outcome('skipped', t, reason) for t, reason in result.skipped]
 
 payload = {'outcomes': outcomes, 'durations': result.id_durations}
-with open(outfile, 'w', encoding='utf-8') as f:
-    json.dump(payload, f)
+with open(outfile, 'wb') as f:
+    marshal.dump(payload, f)
 
 sys.exit(0)
