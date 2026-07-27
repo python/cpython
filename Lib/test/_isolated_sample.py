@@ -74,7 +74,7 @@ class DurationSample(unittest.TestCase):
 
 
 @isolation.runInSubprocess()
-class FixtureBindingSample(unittest.TestCase):
+class SubclassingSample(unittest.TestCase):
     # setUpClass must run bound to the runtime class, so a subclass sees its own
     # name here rather than the base class's.
 
@@ -82,9 +82,30 @@ class FixtureBindingSample(unittest.TestCase):
     def setUpClass(cls):
         cls.setup_class_name = cls.__name__
 
+    def setUp(self):
+        self.set_up = True
+
     def test_runtime_class(self):
         self.assertEqual(self.setup_class_name, type(self).__name__)
 
 
-class FixtureBindingSubclassSample(FixtureBindingSample):
-    pass
+class SubclassSample(SubclassingSample):
+    # What a subclass adds or overrides must run in the subprocess too.
+
+    def setUp(self):
+        super().setUp()
+        self.set_up_in_subclass = True
+
+    def test_added_in_subclass(self):
+        self.assertTrue(isolation.runningInSubprocess)
+        self.assertTrue(self.set_up)
+        self.assertTrue(self.set_up_in_subclass)
+
+
+class BrokenSubclassSample(SubclassingSample):
+    # An overriding setUpClass() that does not call super() bypasses the
+    # subprocess entirely.
+
+    @classmethod
+    def setUpClass(cls):
+        pass

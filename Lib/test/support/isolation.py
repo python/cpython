@@ -15,14 +15,6 @@ import unittest
 # subprocess traceback (attached as the cause) is shown, not the replay frames.
 __unittest = True
 
-# Environment variable set in the child process so that the decorated test
-# method runs its real body instead of spawning yet another subprocess.
-_RUN_IN_SUBPROCESS_ENV = '_PYTHON_RUN_IN_SUBPROCESS'
-
-# Environment variable carrying (as JSON) the regrtest-configured test.support
-# state, so that the bare subprocess honors -u, -M, -v, etc. like the parent.
-_CONFIG_ENV = '_PYTHON_ISOLATED_CONFIG'
-
 # test.support globals set by regrtest (libregrtest/setup.py) that affect how
 # tests run and which are skipped at runtime in the subprocess.
 _PROPAGATED_CONFIG = (
@@ -36,24 +28,25 @@ def _child_config():
     import test.support as support
     return {name: getattr(support, name) for name in _PROPAGATED_CONFIG}
 
-def _apply_child_config():
+def _apply_child_config(config):
     """Set up the child to run the test like a regrtest worker would.
 
-    Mirror the parent's -u/-M/-v config, then suppress the Windows CRT assertion
-    dialogs that would otherwise block a debug build on a modal dialog and hang
-    the parent.
+    Mark this process as the subprocess, mirror the parent's -u/-M/-v config,
+    then suppress the Windows CRT assertion dialogs, which would block a debug
+    build on a modal dialog and hang the parent.
     """
+    global runningInSubprocess
     import json
     import test.support as support
-    data = os.environ.get(_CONFIG_ENV)
-    if data:
-        for name, value in json.loads(data).items():
-            setattr(support, name, value)
+    runningInSubprocess = True
+    for name, value in json.loads(config).items():
+        setattr(support, name, value)
     support.suppress_msvcrt_asserts(support.verbose >= 2)
 
-# True inside the subprocess spawned by @runInSubprocess().  Fixtures can test
-# it to decide what to run in the subprocess as opposed to the parent process.
-runningInSubprocess = bool(os.environ.get(_RUN_IN_SUBPROCESS_ENV))
+# True inside the subprocess spawned by @runInSubprocess(), set by
+# _apply_child_config() before the test is imported.  Fixtures can test it to
+# decide what to run in the subprocess as opposed to the parent process.
+runningInSubprocess = False
 
 
 class _RemoteTraceback(Exception):
@@ -71,6 +64,16 @@ class _RemoteTraceback(Exception):
 
 class _SubprocessTestError(Exception):
     """Replay a subprocess error (as opposed to a failure) in the parent."""
+
+
+def _decode(data):
+    # Decode the child output, which is only ever shown as a diagnostic: an
+    # undecodable byte must not hide the failure it is part of.
+    if not data:
+        return ''
+    import locale
+    encoding = 'utf-8' if sys.flags.utf8_mode else locale.getencoding()
+    return data.decode(encoding, 'backslashreplace').replace('\r\n', '\n')
 
 
 def _remote(detail):
@@ -97,15 +100,14 @@ def _run_in_subprocess(module, qualname):
     import json
     import subprocess
     import tempfile
-    env = dict(os.environ)
-    env[_RUN_IN_SUBPROCESS_ENV] = '1'
-    env[_CONFIG_ENV] = json.dumps(_child_config())
     fd, result_path = tempfile.mkstemp(suffix='.json')
     os.close(fd)
     try:
+        # Pass the config on the command line, not in the environment, so that
+        # the test cannot pass it on to the processes it spawns itself.
         cmd = [sys.executable, '-m', 'test.support.subprocess_runner',
-               module, qualname, result_path]
-        proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
+               module, qualname, result_path, json.dumps(_child_config())]
+        proc = subprocess.run(cmd, capture_output=True)
         try:
             with open(result_path, encoding='utf-8') as f:
                 payload = json.load(f)
@@ -116,7 +118,7 @@ def _run_in_subprocess(module, qualname):
             os.unlink(result_path)
         except OSError:
             pass
-    return payload, (proc.stdout or '') + (proc.stderr or ''), proc.returncode
+    return payload, _decode(proc.stdout) + _decode(proc.stderr), proc.returncode
 
 
 def _replay_outcome(test, outcome):
@@ -185,9 +187,12 @@ def _isolate_class(cls):
     # and a subclass would run the fixtures bound to the base class.
     orig_setUpClass = cls.setUpClass.__func__
     orig_tearDownClass = cls.tearDownClass.__func__
-    orig_setUp = cls.setUp
-    orig_tearDown = cls.tearDown
-    orig_addDuration = getattr(cls, '_addDuration', None)
+    # Hook the _call*() indirections rather than setUp(), tearDown() and the
+    # test methods themselves, to cover what a subclass adds or overrides too.
+    orig_callSetUp = cls._callSetUp
+    orig_callTearDown = cls._callTearDown
+    orig_callTestMethod = cls._callTestMethod
+    orig_addDuration = cls._addDuration
 
     def setUpClass(cls):
         if runningInSubprocess:
@@ -195,7 +200,7 @@ def _isolate_class(cls):
             return
         _check_subprocess_support()
         # Run the whole class in a single subprocess and stash the outcomes
-        # for the wrapped test methods to replay.
+        # for the test methods to replay.
         payload, output, returncode = _run_in_subprocess(cls.__module__,
                                                          cls.__qualname__)
         if payload is None:
@@ -219,14 +224,25 @@ def _isolate_class(cls):
             cls._isolated_outcomes = None
             cls._isolated_durations = None
 
-    def setUp(self):
+    def _callSetUp(self):
         # In the parent the real test does not run, so neither should setUp().
         if runningInSubprocess:
-            orig_setUp(self)
+            orig_callSetUp(self)
 
-    def tearDown(self):
+    def _callTearDown(self):
         if runningInSubprocess:
-            orig_tearDown(self)
+            orig_callTearDown(self)
+
+    def _callTestMethod(self, method):
+        if runningInSubprocess:
+            orig_callTestMethod(self, method)
+            return
+        by_id = getattr(type(self), '_isolated_outcomes', None)
+        if by_id is None:
+            raise _SubprocessTestError(
+                f'{type(self).__name__} did not run in a subprocess; '
+                f'an overriding setUpClass() must call super().setUpClass()')
+        _replay_outcomes(self, by_id.get(self.id(), []))
 
     def _addDuration(self, result, elapsed):
         # In the parent, report the subprocess timing rather than the (instant)
@@ -236,24 +252,12 @@ def _isolate_class(cls):
             elapsed = durations.get(self.id(), elapsed)
         orig_addDuration(self, result, elapsed)
 
-    def replay(self):
-        by_id = getattr(type(self), '_isolated_outcomes', None) or {}
-        _replay_outcomes(self, by_id.get(self.id(), []))
-
     cls.setUpClass = classmethod(setUpClass)
     cls.tearDownClass = classmethod(tearDownClass)
-    cls.setUp = setUp
-    cls.tearDown = tearDown
-    if orig_addDuration is not None:
-        cls._addDuration = _addDuration
-    for name in unittest.TestLoader().getTestCaseNames(cls):
-        method = getattr(cls, name)
-        @functools.wraps(method)
-        def wrapper(self, /, *args, __func=method, **kwargs):
-            if runningInSubprocess:
-                return __func(self, *args, **kwargs)
-            replay(self)
-        setattr(cls, name, wrapper)
+    cls._callSetUp = _callSetUp
+    cls._callTearDown = _callTearDown
+    cls._callTestMethod = _callTestMethod
+    cls._addDuration = _addDuration
     return cls
 
 

@@ -1150,7 +1150,6 @@ class TestIsolated(unittest.TestCase):
     def test_durations_forwarded_for_class(self):
         from test._isolated_sample import DURATION_SLEEP
         result = unittest.TestResult()
-        result.collectedDurations = []
         suite = unittest.TestLoader().loadTestsFromName(
             'test._isolated_sample.DurationSample')
         suite.run(result)
@@ -1162,15 +1161,24 @@ class TestIsolated(unittest.TestCase):
         self.assertGreaterEqual(elapsed, DURATION_SLEEP / 2)
 
     @support.requires_subprocess()
-    def test_subclass_fixtures_bound_to_runtime_class(self):
-        # A decorated class and a subclass of it each run setUpClass bound to
-        # their own class; both samples pass only if that holds.
-        for name in ('FixtureBindingSample', 'FixtureBindingSubclassSample'):
+    def test_subclass_of_isolated_class(self):
+        # Both samples pass only if the fixtures are bound to the runtime class
+        # and what the subclass adds or overrides runs in the subprocess.
+        for name, count in (('SubclassingSample', 1), ('SubclassSample', 2)):
             with self.subTest(sample=name):
                 result = self._run(name)
-                self.assertEqual(result.testsRun, 1)
+                self.assertEqual(result.testsRun, count)
                 self.assertEqual(result.failures, [])
                 self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_subclass_bypassing_setupclass_is_reported(self):
+        # A class that never ran in a subprocess must error out, not pass with
+        # no outcome to replay.
+        result = self._run('BrokenSubclassSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn('did not run in a subprocess', result.errors[0][1])
 
     def test_skipped_without_subprocess_support(self):
         # On a platform without subprocess support the test is skipped in the

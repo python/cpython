@@ -1,9 +1,10 @@
 """Run a single test method in this (sub)process and report the result.
 
-Invoked as ``python -m test.support.subprocess_runner MODULE QUALNAME OUTFILE``
-by :func:`test.support.isolation.runInSubprocess`.  The outcome of the test (including
-that of each individual subtest) is written as JSON to OUTFILE.  This module is
-not meant to be imported.
+Invoked as ``python -m test.support.subprocess_runner MODULE QUALNAME OUTFILE
+CONFIG`` by :func:`test.support.isolation.runInSubprocess`.  CONFIG is the JSON
+test.support configuration of the parent test run.  The outcome of the test
+(including that of each individual subtest) is written as JSON to OUTFILE.
+This module is not meant to be imported.
 """
 
 import json
@@ -14,19 +15,16 @@ from unittest.case import _SubTest
 if __name__ != '__main__':
     raise ImportError('this module cannot be directly imported')
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 5:
     print('usage: python -m test.support.subprocess_runner '
-          'MODULE QUALNAME OUTFILE', file=sys.stderr)
+          'MODULE QUALNAME OUTFILE CONFIG', file=sys.stderr)
     sys.exit(2)
 
-module = sys.argv[1]
-qualname = sys.argv[2]
-outfile = sys.argv[3]
+module, qualname, outfile, config = sys.argv[1:]
 
-# Set up the child (mirror the parent's -u/-M/-v config, suppress Windows CRT
-# assertion dialogs, ...) before importing the test.
+# Set up the child before importing the test.
 from test.support.isolation import _apply_child_config
-_apply_child_config()
+_apply_child_config(config)
 
 
 class _Result(unittest.TestResult):
