@@ -453,6 +453,8 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
         PyMem_RawFree(e);
         e = n;
     }
+
+    Py_CLEAR(ts->interp->audit_hooks);
 }
 
 static void
@@ -4315,6 +4317,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     if (audit_hooks == NULL) {
         goto error;
     }
+    _PyObject_GC_UNTRACK(audit_hooks);
     interp->audit_hooks = audit_hooks;
 
     PyObject *modules = _PyImport_InitModules(interp);
