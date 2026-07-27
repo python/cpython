@@ -32,7 +32,7 @@ of any type, not just text, so long as the sequence elements are
 Junk heuristic
 --------------
 
-:mod:`!difflib` uses a :dfn:`junk` heuristic: Some items are deemed to be
+:mod:`!difflib` uses a :dfn:`junk` heuristic: some items are deemed to be
 :dfn:`junk`, and ignored when searching for similarities.
 Ideally, these are uninteresting or common items, such as blank lines
 or whitespace.
@@ -61,7 +61,7 @@ The :mod:`!difflib` algorithm
 -----------------------------
 
 The algorithm used in :class:`SequenceMatcher` predates, and is a little
-fancier than, an algorithm published in the late 1980's by Ratcliff and
+fancier than, an algorithm published in the late 1980s by Ratcliff and
 Obershelp under the hyperbolic name "gestalt pattern matching."
 The idea is to find the longest contiguous subsequence common to both inputs,
 then recursively handle the pieces of the sequences to the left and to the
@@ -156,8 +156,8 @@ Diff generation
 
       Each sequence must contain individual single-line strings ending with
       newlines.  Such sequences can be obtained from the
-      :meth:`~io.IOBase.readlines` method of file-like objects.  The delta
-      generated also consists of newline-terminated strings, ready to be
+      :meth:`~io.IOBase.readlines` method of file-like objects.  The generated
+      delta also consists of newline-terminated strings, ready to be
       printed as-is via the :meth:`~io.IOBase.writelines` method of a
       file-like object.
 
