@@ -1586,6 +1586,11 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertEqual(os.readlink(dst), target)
 
     @os_helper.skip_unless_symlink
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_symlink_to_character_device(self):
+        self._check_copyfile_symlink_to_special_file('/dev/null')
+
+    @os_helper.skip_unless_symlink
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @unittest.skipIf(sys.platform == "vxworks",
                     "fifo requires special path on VxWorks")
@@ -1618,11 +1623,6 @@ class TestCopy(BaseTest, unittest.TestCase):
         create_file(src_file, 'foo')
         self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
                                shutil.copyfile, src_file, '/dev/null')
-
-    @os_helper.skip_unless_symlink
-    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
-    def test_copyfile_symlink_to_character_device(self):
-        self._check_copyfile_symlink_to_special_file('/dev/null')
 
     def test_copyfile_block_device(self):
         block_dev = None
