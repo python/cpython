@@ -459,6 +459,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
     @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
     @unittest.skipIf(sys.platform == "win32", "Does not apply to Windows")
+    @unittest.skipIf(sysconfig.get_config_var('SOABI_PLATFORM') == 0,
+                     "SOABI_PLATFORM is undefined")
     def test_soabi_platform(self):
         soabi_platform = sysconfig.get_config_var('SOABI_PLATFORM')
         soabi = sysconfig.get_config_var('SOABI')
