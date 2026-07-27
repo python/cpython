@@ -974,7 +974,7 @@ class TestCurses(unittest.TestCase):
             with self.subTest(ch=ch):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
-                self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
+                self.assertEqual(stdscr.inch(2, 0), b[0])
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
@@ -3071,6 +3071,35 @@ class ScreenTests(NewtermTestBase):
         self.assertIsNone(screen.stdscr)
         del screen
         gc_collect()
+
+    @requires_curses_func('new_prescr')
+    def test_set_term_prescr_screen(self):
+        # A new_prescr() screen has no terminal, so it cannot become the
+        # current one.  It used to be accepted, and the next refresh then
+        # crashed inside curses.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        self.assertRaises(curses.error, curses.set_term, curses.new_prescr())
+        # The current screen is unchanged, so refreshing it still works.
+        screen.stdscr.refresh()
+
+    def test_initscr_after_newterm_keeps_screen_alive(self):
+        # initscr() called while a newterm() screen is current returns that
+        # screen's own standard window, so the window keeps the screen alive.
+        # It used to be a second wrapper created without a screen: using it
+        # after the screen was collected read freed memory, and both wrappers
+        # could delwin() the same window.
+        s1 = self.make_pty()
+        s2 = self.make_pty()
+        screen1 = curses.newterm('xterm', s1, s1)
+        screen2 = curses.newterm('xterm', s2, s2)
+        curses.set_term(screen1)
+        win = curses.initscr()
+        self.assertIs(win, screen1.stdscr)
+        curses.set_term(screen2)
+        del screen1
+        gc_collect()
+        win.addstr(0, 0, 'x')
 
     @cpython_only
     def test_disallow_instantiation(self):
