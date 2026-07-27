@@ -1,0 +1,9 @@
+On the free-threaded build, :class:`memoryview` operations are now thread safe:
+an operation that reads the buffer holds the managed buffer for its duration,
+so a concurrent :meth:`~memoryview.release` can no longer free the buffer under
+it; slicing a memoryview from several threads no longer loses buffer
+registrations and raises ``ValueError: operation forbidden on released
+memoryview object``; and :func:`hash` of a memoryview is no longer a data race.
+As a result :meth:`~memoryview.release` may now return while an operation
+started by another thread is still running, see
+:ref:`thread-safety-memoryview`.
