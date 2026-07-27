@@ -8279,7 +8279,10 @@ _PyUnicode_DecodeIconv(const char *encoding,
         char *outptr = (char *)chunk;
         size_t outleft = sizeof(chunk);
 
-        size_t ret = iconv(cd, &inptr, &inleft, &outptr, &outleft);
+        /* Cast the input buffer through void*: iconv() declares its second
+           argument as "char **" on most systems but "const char **" on some
+           (e.g. illumos), and void* converts to either without a warning. */
+        size_t ret = iconv(cd, (void *)&inptr, &inleft, &outptr, &outleft);
         int err = errno;
         in = inptr;
 
@@ -8452,7 +8455,8 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         size_t outleft = (size_t)(outend - out);
         /* When the whole string is converted, a final iconv() call with a
            NULL input flushes any pending shift sequence (e.g. ISO-2022). */
-        size_t ret = iconv(cd, flushing ? NULL : &inptr, &inleft, &out, &outleft);
+        /* See the note above on the void* cast of the iconv() input buffer. */
+        size_t ret = iconv(cd, flushing ? NULL : (void *)&inptr, &inleft, &out, &outleft);
         if (!flushing) {
             up = inptr;
         }

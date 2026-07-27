@@ -7722,7 +7722,7 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (FT_ATOMIC_LOAD_UINT8(values->valid)) {
             PyDictKeysObject *keys = CACHED_KEYS(tp);
-            for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            for (Py_ssize_t i = 0; i < LOAD_KEYS_NENTRIES(keys); i++) {
                 if (FT_ATOMIC_LOAD_PTR_RELAXED(values->values[i]) != NULL) {
                     return 0;
                 }
