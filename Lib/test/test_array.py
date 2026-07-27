@@ -244,7 +244,7 @@ class ArrayReconstructorTest(unittest.TestCase):
                     msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
 
     def test_float16_endianness(self):
-        # gh-issue: the slow-path decoder for IEEE_754_FLOAT16_LE/BE
+        # gh-154568: the slow-path decoder for IEEE_754_FLOAT16_LE/BE
         # compared mformat_code against the 32-bit float constant
         # (IEEE_754_FLOAT_LE) instead of the float16 one, so it always
         # decoded as big-endian regardless of what was requested.
