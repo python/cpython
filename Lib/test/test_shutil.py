@@ -1606,12 +1606,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         try:
             socket_helper.bind_unix_socket(sock, sock_path)
         except OSError as e:
-            if str(e) == "AF_UNIX path too long":
-                self.skipTest(
-                    "Pathname {0!a} is too long to serve as an AF_UNIX path"
-                    .format(sock_path))
-            else:
-                raise
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
         self.addCleanup(os_helper.unlink, sock_path)
         self._check_copyfile_symlink_to_special_file(sock_path)
 
