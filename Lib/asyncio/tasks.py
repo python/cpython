@@ -81,6 +81,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # status is still pending
     _log_destroy_pending = True
 
+    # If False, don't re-raise KeyboardInterrupt/SystemExit raised by the
+    # coroutine into the event loop (used by TaskGroup)
+    _reraise_base_exceptions = True
+
     def __init__(self, coro, *, loop=None, name=None, context=None,
                  eager_start=False):
         super().__init__(loop=loop)
@@ -302,7 +306,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             super().cancel()  # I.e., Future.cancel(self).
         except (KeyboardInterrupt, SystemExit) as exc:
             super().set_exception(exc)
-            raise
+            if self._reraise_base_exceptions:
+                raise
         except BaseException as exc:
             super().set_exception(exc)
         else:

@@ -608,31 +608,87 @@ class BaseTestTaskGroup:
             get_error_types(cm.exception), {MyBaseExc, ZeroDivisionError}
         )
 
-    async def _test_taskgroup_21(self):
-        # This test doesn't work as asyncio, currently, doesn't
-        # correctly propagate KeyboardInterrupt (or SystemExit) --
-        # those cause the event loop itself to crash.
-        # (Compare to the previous (passing) test -- that one raises
-        # a plain exception but raises KeyboardInterrupt in nested();
-        # this test does it the other way around.)
+    async def test_taskgroup_21(self):
+        # gh-102572: KeyboardInterrupt/SystemExit raised by a task in the
+        # group is re-raised in the parent task, not into the event loop.
+        for exc_type in (KeyboardInterrupt, SystemExit):
+            with self.subTest(exc_type=exc_type):
+                async def crash_soon():
+                    await asyncio.sleep(0.1)
+                    raise exc_type
 
-        async def crash_soon():
-            await asyncio.sleep(0.1)
-            raise KeyboardInterrupt
+                async def nested():
+                    try:
+                        await asyncio.sleep(10)
+                    finally:
+                        raise TypeError
 
-        async def nested():
-            try:
-                await asyncio.sleep(10)
-            finally:
-                raise TypeError
+                async def runner():
+                    async with taskgroups.TaskGroup() as g:
+                        g.create_task(crash_soon())
+                        await nested()
 
-        async def runner():
-            async with taskgroups.TaskGroup() as g:
-                g.create_task(crash_soon())
-                await nested()
+                with self.assertRaises(exc_type):
+                    await runner()
 
-        with self.assertRaises(KeyboardInterrupt):
-            await runner()
+                # The event loop is still running normally.
+                await asyncio.sleep(0)
+
+    async def test_taskgroup_21b(self):
+        # gh-102572: as above, but raised in response to cancellation
+        # after a regular exception aborted the group.
+        loop = asyncio.get_running_loop()
+        for exc_type in (KeyboardInterrupt, SystemExit):
+            with self.subTest(exc_type=exc_type):
+                fut = loop.create_future()
+                base_exc = exc_type()
+
+                async def coro():
+                    try:
+                        fut.set_exception(TypeError())
+                        await loop.create_future()
+                    except asyncio.CancelledError:
+                        raise base_exc
+
+                async def runner():
+                    async with taskgroups.TaskGroup() as g:
+                        g.create_task(coro())
+                        await fut
+
+                with self.assertRaises(exc_type) as cm:
+                    await runner()
+
+                self.assertIs(cm.exception, base_exc)
+
+                # The event loop is still running normally.
+                await asyncio.sleep(0)
+
+    async def test_taskgroup_21c(self):
+        # gh-102572: as above, but raised before the first await.
+        for exc_type in (KeyboardInterrupt, SystemExit):
+            with self.subTest(exc_type=exc_type):
+                children = []
+
+                async def crasher():
+                    children.append(asyncio.current_task())
+                    raise exc_type
+
+                async def runner():
+                    async with taskgroups.TaskGroup() as g:
+                        g.create_task(crasher())
+                        await asyncio.sleep(10)
+
+                with self.assertRaises(exc_type):
+                    await runner()
+
+                # With an eager task factory the child crashed inside
+                # create_task() before the group registered it; retrieve
+                # its exception to avoid a "never retrieved" warning.
+                for child in children:
+                    child.exception()
+
+                # The event loop is still running normally.
+                await asyncio.sleep(0)
 
     async def test_taskgroup_21a(self):
 
