@@ -3,10 +3,9 @@
 from ._bootstrap import _resolve_name
 from ._bootstrap import _find_spec
 
+import _imp
 import sys
 import types
-
-lazy import _imp
 
 
 # Public API
