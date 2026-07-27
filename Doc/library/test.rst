@@ -1637,7 +1637,7 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    imported.
 
    If "usefrozen" is False (the default) then the frozen importer is
-   disabled (except for essential modules like importlib._bootstrap).
+   disabled (except for essential modules like ``importlib._bootstrap``).
 
    Example use::
 
@@ -1649,6 +1649,8 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
       c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
 
    .. versionadded:: 3.1
+   .. versionchanged:: next
+      New optional argument *cleared*.
 
 
 .. function:: import_module(name, deprecated=False, *, required_on=())
