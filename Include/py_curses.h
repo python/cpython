@@ -43,6 +43,14 @@
 #  define PDC_NCMOUSE
 #endif
 
+/* <windows.h>, which Python.h includes, defines MOUSE_MOVED as a console input
+   flag; PDCurses gives the name to a mouse event mask of its own.  The module
+   uses the curses one, so drop the Windows definition before the header below
+   redefines it. */
+#ifdef MOUSE_MOVED
+#  undef MOUSE_MOVED
+#endif
+
 /* On Solaris/illumos, the SVr4 <curses.h> does "typedef char bool;", which
    clashes with C's bool from <stdbool.h>.  Define _BOOL to suppress it, and
    include <stdbool.h> for the bool the header then needs.  ncurses ignores

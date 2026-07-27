@@ -112,6 +112,11 @@
     <zlibDir Condition="$(zlibDir) == ''">$(ExternalsDir)\zlib-1.3.1\</zlibDir>
     <zlibNgDir Condition="$(zlibNgDir) == ''">$(ExternalsDir)\zlib-ng-2.2.4\</zlibNgDir>
     <zstdDir Condition="$(zstdDir) == ''">$(ExternalsDir)\zstd-1.5.7\</zstdDir>
+    <!-- PDCurses is not fetched by get_externals.bat; the curses module is
+         built only when the user points PDCursesDir (or the PDCURSES_DIR
+         environment variable) at a PDCurses source tree. -->
+    <PDCursesDir Condition="$(PDCursesDir) == ''">$(PDCURSES_DIR)</PDCursesDir>
+    <PDCursesDir Condition="$(PDCursesDir) != '' and !HasTrailingSlash($(PDCursesDir))">$(PDCursesDir)\</PDCursesDir>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -128,6 +133,10 @@
 
     <!-- Include Tkinter by default -->
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
+
+    <!-- Include the curses module only when a PDCurses tree is available -->
+    <IncludeCurses Condition="'$(IncludeCurses)' == '' and $(PDCursesDir) != '' and Exists('$(PDCursesDir)curses.h')">true</IncludeCurses>
+    <IncludeCurses Condition="'$(IncludeCurses)' == ''">false</IncludeCurses>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Platform)'=='ARM'" Label="ArmConfiguration">

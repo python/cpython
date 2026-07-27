@@ -13,6 +13,13 @@
     <IncludeCTypes Condition="'$(IncludeCTypes)' == ''">true</IncludeCTypes>
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
+    <!-- Curses is opt-in: built only when PDCursesDir (or the PDCURSES_DIR
+         environment variable) points at a PDCurses tree.  Mirror the detection
+         in python.props so the top-level module list agrees with the projects. -->
+    <PDCursesDir Condition="'$(PDCursesDir)' == ''">$(PDCURSES_DIR)</PDCursesDir>
+    <PDCursesDir Condition="'$(PDCursesDir)' != '' and !HasTrailingSlash('$(PDCursesDir)')">$(PDCursesDir)\</PDCursesDir>
+    <IncludeCurses Condition="'$(IncludeCurses)' == '' and '$(PDCursesDir)' != '' and Exists('$(PDCursesDir)curses.h')">true</IncludeCurses>
+    <IncludeCurses Condition="'$(IncludeCurses)' == ''">false</IncludeCurses>
     <IncludeUwp Condition="'$(IncludeUwp)' == ''">false</IncludeUwp>
   </PropertyGroup>
 
@@ -74,6 +81,7 @@
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
     <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
     <ExternalModules Include="_tkinter" Condition="$(IncludeTkinter)" />
+    <ExternalModules Include="_curses;_curses_panel" Condition="$(IncludeCurses)" />
     <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
     <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
     <!-- Test modules -->

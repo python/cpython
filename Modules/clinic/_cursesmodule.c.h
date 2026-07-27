@@ -1068,7 +1068,7 @@ exit:
     return return_value;
 }
 
-#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
+#if defined(HAVE_CURSES_GETMOUSE)
 
 PyDoc_STRVAR(_curses_window_enclose__doc__,
 "enclose($self, y, x, /)\n"
@@ -1111,9 +1111,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_GETMOUSE) */
 
-#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
+#if defined(HAVE_CURSES_GETMOUSE)
 
 PyDoc_STRVAR(_curses_window_mouse_trafo__doc__,
 "mouse_trafo($self, y, x, to_screen, /)\n"
@@ -1168,7 +1168,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_GETMOUSE) */
 
 PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 "getbkgd($self, /)\n"
@@ -2493,7 +2493,7 @@ exit:
     return return_value;
 }
 
-#if ((defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES))
+#if defined(HAVE_CURSES_IS_CBREAK)
 
 PyDoc_STRVAR(_curses_is_cbreak__doc__,
 "is_cbreak($module, /)\n"
@@ -2513,9 +2513,9 @@ _curses_is_cbreak(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_is_cbreak_impl(module);
 }
 
-#endif /* ((defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_IS_CBREAK) */
 
-#if ((defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES))
+#if defined(HAVE_CURSES_IS_CBREAK)
 
 PyDoc_STRVAR(_curses_is_echo__doc__,
 "is_echo($module, /)\n"
@@ -2535,9 +2535,9 @@ _curses_is_echo(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_is_echo_impl(module);
 }
 
-#endif /* ((defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_IS_CBREAK) */
 
-#if ((defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES))
+#if defined(HAVE_CURSES_IS_CBREAK)
 
 PyDoc_STRVAR(_curses_is_nl__doc__,
 "is_nl($module, /)\n"
@@ -2557,9 +2557,9 @@ _curses_is_nl(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_is_nl_impl(module);
 }
 
-#endif /* ((defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_IS_CBREAK) */
 
-#if ((defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES))
+#if defined(HAVE_CURSES_IS_CBREAK)
 
 PyDoc_STRVAR(_curses_is_raw__doc__,
 "is_raw($module, /)\n"
@@ -2579,7 +2579,7 @@ _curses_is_raw(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_is_raw_impl(module);
 }
 
-#endif /* ((defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_IS_CBREAK) */
 
 PyDoc_STRVAR(_curses_color_content__doc__,
 "color_content($module, color_number, /)\n"
@@ -2941,7 +2941,7 @@ _curses_getsyx(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(getsyx) */
 
-#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
+#if defined(HAVE_CURSES_GETMOUSE)
 
 PyDoc_STRVAR(_curses_getmouse__doc__,
 "getmouse($module, /)\n"
@@ -2964,9 +2964,9 @@ _curses_getmouse(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_getmouse_impl(module);
 }
 
-#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_GETMOUSE) */
 
-#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
+#if defined(HAVE_CURSES_GETMOUSE)
 
 PyDoc_STRVAR(_curses_ungetmouse__doc__,
 "ungetmouse($module, id, x, y, z, bstate, /)\n"
@@ -3053,7 +3053,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_GETMOUSE) */
 
 PyDoc_STRVAR(_curses_getwin__doc__,
 "getwin($module, file, /)\n"
@@ -4252,7 +4252,7 @@ exit:
     return return_value;
 }
 
-#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) && (defined(HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES))
+#if defined(HAVE_CURSES_GETMOUSE) && defined(HAVE_CURSES_HAS_MOUSE)
 
 PyDoc_STRVAR(_curses_has_mouse__doc__,
 "has_mouse($module, /)\n"
@@ -4272,9 +4272,9 @@ _curses_has_mouse(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_has_mouse_impl(module);
 }
 
-#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) && (defined(HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_GETMOUSE) && defined(HAVE_CURSES_HAS_MOUSE) */
 
-#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
+#if defined(HAVE_CURSES_GETMOUSE)
 
 PyDoc_STRVAR(_curses_mouseinterval__doc__,
 "mouseinterval($module, interval, /)\n"
@@ -4311,9 +4311,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_GETMOUSE) */
 
-#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
+#if defined(HAVE_CURSES_GETMOUSE)
 
 PyDoc_STRVAR(_curses_mousemask__doc__,
 "mousemask($module, newmask, /)\n"
@@ -4364,7 +4364,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_GETMOUSE) */
 
 PyDoc_STRVAR(_curses_napms__doc__,
 "napms($module, ms, /)\n"
@@ -5745,7 +5745,7 @@ exit:
     return return_value;
 }
 
-#if (defined(NCURSES_EXT_FUNCS) || defined(PDCURSES))
+#if defined(HAVE_CURSES_SLK_ATTR)
 
 PyDoc_STRVAR(_curses_slk_attr__doc__,
 "slk_attr($module, /)\n"
@@ -5765,7 +5765,7 @@ _curses_slk_attr(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_slk_attr_impl(module);
 }
 
-#endif /* (defined(NCURSES_EXT_FUNCS) || defined(PDCURSES)) */
+#endif /* defined(HAVE_CURSES_SLK_ATTR) */
 
 #if defined(HAVE_CURSES_SLK_ATTR_ON)
 
@@ -6234,4 +6234,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=cb5525c88ae5c440 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2add67dd6eecef3 input=a9049054013a1b77]*/
