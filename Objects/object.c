@@ -471,6 +471,10 @@ _Py_MergeZeroLocalRefcountSpecialized(PyObject *op, const destructor destruct)
 
     Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (shared == 0) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         destruct(op);
         return;
     }
@@ -484,6 +488,10 @@ _Py_MergeZeroLocalRefcountSpecialized(PyObject *op, const destructor destruct)
                                                 &shared, new_shared));
 
     if (new_shared == _Py_REF_MERGED) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        _PyReftracerTrack(op, PyRefTracer_DESTROY);
         destruct(op);
     }
 }
