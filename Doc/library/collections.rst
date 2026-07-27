@@ -268,7 +268,7 @@ For example::
         >>> c['sausage'] = 0                        # counter entry with a zero count
         >>> del c['sausage']                        # del actually removes the entry
 
-    Counters main insertion order internally but display from most common to
+    Counters maintain insertion order internally but display from most common to
     least common when possible:
 
         >>> c = Counter(a=1, b=2, c=3)
