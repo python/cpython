@@ -2689,7 +2689,7 @@ Removed
 
 .. _whatsnew311-pep624:
 
-* Remove the :c:type:`Py_UNICODE` encoder APIs,
+* Remove the :c:type:`!Py_UNICODE` encoder APIs,
   as they have been deprecated since Python 3.3,
   are little used
   and are inefficient relative to the recommended alternatives.
