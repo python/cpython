@@ -1,3 +1,0 @@
-Fix a use-after-free in :mod:`curses`.  :func:`curses.initscr` called while a
-screen from :func:`curses.newterm` is current now returns a window that keeps
-that screen alive, like :func:`curses.newwin` and :func:`curses.newpad` do.
