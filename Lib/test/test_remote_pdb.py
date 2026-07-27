@@ -1292,6 +1292,56 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertEqual(process.returncode, 0)
             self.assertEqual(stderr, "")
 
+    def test_colorized_list_has_no_caret_encoded_newlines(self):
+        """A colorized ``list`` must not append "^J" to each source line.
+
+        The remote server colorizes the source it sends to the client. The
+        colorizer renders control characters in caret notation, so a source
+        line's trailing newline has to be stripped *before* it is colorized;
+        otherwise every listed line ends with a spurious "^J". ``where`` was
+        unaffected because it strips the line before colorizing. See
+        gh-154470.
+        """
+        # colorize=True is what attaching from a color-capable terminal passes
+        # to the server, and it is what makes the server colorize ``list``.
+        script = textwrap.dedent(f"""
+            import pdb, sys
+            def helper():
+                x = 42
+                return x
+            def connect():
+                frame = sys._getframe()
+                pdb._connect(
+                    host='127.0.0.1',
+                    port={self.port},
+                    frame=frame,
+                    commands="",
+                    version=pdb._PdbServer.protocol_version(),
+                    signal_raising_thread=False,
+                    colorize=True,
+                )
+                return helper()
+            connect()
+        """)
+        self._create_script(script=script)
+        process, client_file = self._connect_and_get_client_file()
+
+        with kill_on_error(process):
+            self._read_until_prompt(client_file)
+            self._send_command(client_file, "l 1, 15")
+            messages = self._read_until_prompt(client_file)
+            source = "".join(m["message"] for m in messages if "message" in m)
+
+            # Sanity: we really did receive colorized source ...
+            self.assertIn("helper", source)
+            self.assertIn("\x1b[", source)  # ANSI color escapes are present
+            # ... and no trailing newline leaked through as caret notation.
+            self.assertNotIn("^J", source)
+
+            self._send_command(client_file, "c")
+            process.wait(timeout=SHORT_TIMEOUT)
+            self.assertEqual(process.returncode, 0)
+
     def test_protocol_version(self):
         """Test that incompatible protocol versions are properly detected."""
         # Create a script using an incompatible protocol version
