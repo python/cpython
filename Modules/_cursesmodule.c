@@ -776,30 +776,6 @@ curses_getcchar(const cchar_t *wcval, wchar_t *wstr, attr_t *attrs, int *pair)
     return rtn;
 }
 
-/* winch() returns the low 8 bits of the character's code point with no locale
-   conversion, unlike instr(), so recover the locale byte from the wide cell
-   when the character maps to exactly one byte, keeping the attribute and color
-   bits in RTN.  A character with no single-byte form is left to winch(). */
-static chtype
-curses_cell_locale_byte(chtype rtn, const cchar_t *cell)
-{
-    wchar_t wstr[CCHARW_MAX + 1];
-    attr_t attrs;
-    int pair;
-    if (curses_getcchar(cell, wstr, &attrs, &pair) == ERR
-        || wstr[0] == L'\0' || wstr[1] != L'\0')
-    {
-        return rtn;
-    }
-    /* wctob() mirrors ncurses' own _nc_to_char(): the single-byte form, or EOF
-       when the character has none in this locale. */
-    int byte = wctob(wstr[0]);
-    if (byte != EOF) {
-        rtn = (rtn & ~(chtype)A_CHARTEXT) | (unsigned char)byte;
-    }
-    return rtn;
-}
-
 /* Hash one cell by value (text, attributes, pair) -- consistent with the
    equality comparison, not the raw cchar_t whose padding and unused text tail
    it ignores.  Zero the key first so those bytes are deterministic, then
@@ -3650,7 +3626,40 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
 {
     chtype rtn;
     const char *funcname;
-
+#ifdef HAVE_NCURSESW
+    /* ncursesw's winch() returns the character's whole code point instead of
+       its locale byte, overflowing the chtype's 8-bit character field into the
+       color and attribute bits; read the wide cell and rebuild it instead. */
+    cchar_t cell = {0};
+    int rc;
+    if (!group_right_1) {
+        rc = win_wch(self->win, &cell);
+        funcname = "win_wch";
+    }
+    else {
+        rc = mvwin_wch(self->win, y, x, &cell);
+        funcname = "mvwin_wch";
+    }
+    if (rc == ERR) {
+        curses_window_set_error(self, funcname, "inch");
+        return NULL;
+    }
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attrs;
+    int pair;
+    if (curses_getcchar(&cell, wstr, &attrs, &pair) == ERR) {
+        curses_window_set_error(self, "getcchar", "inch");
+        return NULL;
+    }
+    int byte = 0;
+    if (wstr[0] != L'\0' && wstr[1] == L'\0') {
+        byte = wctob(wstr[0]);
+        if (byte == EOF) {
+            byte = 0;
+        }
+    }
+    rtn = (chtype)byte | (attrs & ~(attr_t)A_COLOR) | COLOR_PAIR(pair);
+#else
     if (!group_right_1) {
         rtn = winch(self->win);
         funcname = "winch";
@@ -3662,13 +3671,6 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     if (rtn == (chtype)ERR) {
         curses_window_set_error(self, funcname, "inch");
         return NULL;
-    }
-#ifdef HAVE_NCURSESW
-    curses_cell_t cell = {0};
-    if ((group_right_1 ? mvwin_wch(self->win, y, x, &cell)
-                       : win_wch(self->win, &cell)) != ERR)
-    {
-        rtn = curses_cell_locale_byte(rtn, &cell);
     }
 #endif
     return PyLong_FromUnsignedLong(rtn);
@@ -6571,7 +6573,23 @@ _curses_initscr_impl(PyObject *module)
             _curses_set_null_error(state, "wrefresh", "initscr");
             return NULL;
         }
-        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL, NULL);
+        if (state->topscreen != NULL) {
+            /* The current screen is one made by newterm(); return its own
+               standard window instead of a second wrapper over the same
+               WINDOW, which would delwin() it on its own. */
+            PyCursesScreenObject *so = (PyCursesScreenObject *)state->topscreen;
+            if (so->stdscr_win != NULL) {
+                if (curses_update_screen_encoding(so->stdscr_win) < 0) {
+                    return NULL;
+                }
+                return Py_NewRef(so->stdscr_win);
+            }
+        }
+        /* Attach the current screen, like newwin(), newpad() and getwin() do,
+           so that the window keeps its screen alive.  It is NULL for the
+           screen created by initscr(), which has no screen object. */
+        PyObject *winobj = PyCursesWindow_New(state, stdscr, NULL, NULL,
+                                              state->topscreen);
         if (winobj == NULL) {
             return NULL;
         }
@@ -6832,11 +6850,17 @@ _curses_set_term(PyObject *module, PyObject *screen)
     if (so == NULL) {
         return NULL;
     }
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (so->stdscr_win == NULL) {
+        /* A screen from new_prescr() has no terminal, so it cannot become the
+           current one: a later refresh would dereference NULL in curses. */
+        PyErr_SetString(state->error, "the screen has no terminal");
+        return NULL;
+    }
     set_term(so->screen);
     if (!update_lines_cols(module)) {
         return NULL;
     }
-    cursesmodule_state *state = get_cursesmodule_state(module);
     PyObject *prev = state->topscreen;          /* steal the owned reference */
     state->topscreen = Py_NewRef(screen);
     return prev != NULL ? prev : Py_NewRef(Py_None);

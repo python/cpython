@@ -1866,6 +1866,10 @@ like ``find_library("c")`` will fail and return ``None``.
 
    .. availability:: Windows
 
+   .. soft-deprecated:: 3.16
+      This function now always returns ``None``, as there are no more
+      VC runtime DLLs that are a single file and supported by Microsoft.
+
 
 .. _ctypes-listing-loaded-shared-libraries:
 
