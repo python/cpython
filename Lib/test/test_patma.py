@@ -2850,6 +2850,14 @@ class TestPatma(unittest.TestCase):
             case 0:
                 y = 1
         self.assertEqual(x, 0)
+    def test_patma_265(self):
+        x = 0
+        match x:
+            case +1e1000:
+                y = 0
+            case 0:
+                y = 1
+        self.assertEqual(x, 0)
         self.assertEqual(y, 1)
 
     def test_patma_frozendict_class_self(self):
