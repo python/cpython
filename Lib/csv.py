@@ -563,22 +563,40 @@ class Sniffer:
     def _detect_skipinitialspace(self, lines, delimiter, quotechar,
                                  escapechar, doublequote):
         """
-        True only if every field following a delimiter starts with
-        a space.
+        Detect whether the spaces following a delimiter are a part of
+        the format or of the data.
         """
-        skipinitialspace = False
-        try:
-            for row in self._make_reader(lines, delimiter, quotechar,
-                                         escapechar,
-                                         doublequote=doublequote,
-                                         skipinitialspace=False):
-                for field in row[1:]:
-                    if not field.startswith(' '):
-                        return False
-                    skipinitialspace = True
-        except Error:
-            pass
-        return skipinitialspace
+        results = []
+        for skipinitialspace in False, True:
+            rows = []
+            try:
+                rows.extend(self._make_reader(
+                    lines, delimiter, quotechar, escapechar,
+                    doublequote=doublequote,
+                    skipinitialspace=skipinitialspace))
+            except Error:
+                # Keep the rows parsed before the error.
+                pass
+            results.append([row for row in rows if row])
+        if results[0] == results[1]:
+            return False  # No evidence.
+        counts = [[len(row) for row in rows] for rows in results]
+        if counts[0] != counts[1]:
+            # Prefer the more consistent row widths.
+            return len(set(counts[1])) <= len(set(counts[0]))
+        # Only some spaces are stripped.  A field differs only if
+        # a space was skipped at its start, which tells the padding
+        # apart from the spaces inside quoted or escaped fields.
+        if not all(kept_field != skipped_field
+                   for kept_row, skipped_row in zip(*results)
+                   for kept_field, skipped_field in zip(kept_row[1:],
+                                                        skipped_row[1:])):
+            return False
+        # The first field of a row is commonly not padded ('a, b, c'),
+        # so the first fields need only agree with each other.
+        first = [kept_row[0] != skipped_row[0]
+                 for kept_row, skipped_row in zip(*results)]
+        return all(first) or not any(first)
 
     def has_header(self, sample):
         # Creates a dictionary of types of data in each column. If any
