@@ -312,6 +312,28 @@ The :mod:`!csv` module defines the following classes:
       is given, it is interpreted as a string containing possible valid
       delimiter characters.
 
+      The dialect is deduced by parsing the sample with every plausible
+      combination of parameters
+      and choosing the combination which splits the sample into rows
+      with the most consistent number of fields,
+      so the returned dialect is consistent with how :func:`reader`
+      will parse the sample.
+      Raise :exc:`Error` if no combination fits the sample,
+      in particular if it is a single column,
+      so there is no delimiter to find.
+
+      If several combinations fit the sample equally well ---
+      for example if both ``','`` and ``';'`` split every row consistently ---
+      the delimiters ``','``, ``'\t'``, ``';'``, ``' '`` and ``':'``
+      are preferred, in this order,
+      no matter how many times each of them occurs.
+
+      .. versionchanged:: next
+         The dialect is now deduced by trial parsing
+         and the results may differ from those of earlier Python versions.
+         The *escapechar* parameter can now be detected,
+         and the requested *delimiters* are not restricted to ASCII.
+
 
    .. method:: has_header(sample)
 

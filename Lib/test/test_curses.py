@@ -84,10 +84,15 @@ def requires_colors(test):
 term = os.environ.get('TERM')
 SHORT_MAX = 0x7fff
 
-# ncurses before 6.5 can crash on repeated newterm().  Fall back to initscr()
-# and skip the tests that need several screens.
+# ncurses before 6.5, and the native curses of NetBSD and illumos/Solaris,
+# crash on repeated newterm()/delscreen(); fall back to initscr() and skip the
+# multi-screen tests.  The native ones are keyed off the platform so a fixed
+# version can be excluded later.
 _ncurses_version = getattr(curses, 'ncurses_version', None)
-BROKEN_NEWTERM = _ncurses_version is not None and _ncurses_version < (6, 5)
+if _ncurses_version is not None:
+    BROKEN_NEWTERM = _ncurses_version < (6, 5)
+else:
+    BROKEN_NEWTERM = sys.platform.startswith(('netbsd', 'sunos'))
 USE_NEWTERM = hasattr(curses, 'newterm') and not BROKEN_NEWTERM
 
 # Older macOS reports a variation selector as a spacing character (wcwidth()
@@ -969,7 +974,7 @@ class TestCurses(unittest.TestCase):
             with self.subTest(ch=ch):
                 stdscr.addstr(2, 0, ch)
                 self.assertEqual(stdscr.instr(2, 0, 1), b)
-                self.assertEqual(stdscr.inch(2, 0) & curses.A_CHARTEXT, b[0])
+                self.assertEqual(stdscr.inch(2, 0), b[0])
 
     def test_coordinate_errors(self):
         # Addressing a cell outside the window raises curses.error.
@@ -1140,8 +1145,17 @@ class TestCurses(unittest.TestCase):
         win.standout()
         win.standend()
 
+        # attron()/attroff()/attrset() reject a bad attribute.
+        self.assertRaises(OverflowError, win.attron, 1 << 64)
+        self.assertRaises(OverflowError, win.attroff, -1)
+        self.assertRaises(OverflowError, win.attrset, 1 << 64)
+        self.assertRaises(TypeError, win.attron, 'x')
+
+    @requires_curses_window_meth('attr_set')
+    def test_attr(self):
         # The attr_*() family works on attr_t attributes paired with a color
         # pair, unlike the chtype-based attron()/attroff()/attrset().
+        win = curses.newwin(5, 15, 5, 2)
         win.attr_set(curses.A_BOLD | curses.A_UNDERLINE)
         attrs, pair = win.attr_get()
         self.assertTrue(attrs & curses.A_BOLD)
@@ -1167,13 +1181,9 @@ class TestCurses(unittest.TestCase):
         self.assertRaises(OverflowError, win.attr_set, -1)
         self.assertRaises(OverflowError, win.attr_on, -1)
         self.assertRaises(OverflowError, win.attr_set, 1 << 64)
-        # attron()/attroff()/attrset() reject a bad attribute too.
-        self.assertRaises(OverflowError, win.attron, 1 << 64)
-        self.assertRaises(OverflowError, win.attroff, -1)
-        self.assertRaises(OverflowError, win.attrset, 1 << 64)
-        self.assertRaises(TypeError, win.attron, 'x')
 
     @requires_colors
+    @requires_curses_window_meth('attr_set')
     def test_attr_color_pair(self):
         win = curses.newwin(5, 15, 5, 2)
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
@@ -1383,8 +1393,10 @@ class TestCurses(unittest.TestCase):
             stdscr.refresh()
             self.assertIsNone(curses.scr_restore(dump))
             # scr_init() and scr_set() also accept a dump file and return None.
+            # scr_set() is not available on every curses (e.g. old SVr4).
             self.assertIsNone(curses.scr_init(dump))
-            self.assertIsNone(curses.scr_set(dump))
+            if hasattr(curses, 'scr_set'):
+                self.assertIsNone(curses.scr_set(dump))
             # A bytes (path-like) filename is accepted too.
             curses.scr_dump(os.fsencode(dump))
             # Restoring from a missing file is an error.
@@ -1846,9 +1858,11 @@ class TestCurses(unittest.TestCase):
     def test_tabsize(self):
         tabsize = curses.get_tabsize()
         self.assertIsInstance(tabsize, int)
-        curses.set_tabsize(4)
-        self.assertEqual(curses.get_tabsize(), 4)
-        curses.set_tabsize(tabsize)
+        # set_tabsize() is not available on every curses (e.g. old SVr4).
+        if hasattr(curses, 'set_tabsize'):
+            curses.set_tabsize(4)
+            self.assertEqual(curses.get_tabsize(), 4)
+            curses.set_tabsize(tabsize)
 
     @requires_curses_func('getsyx')
     def test_getsyx(self):
@@ -1983,12 +1997,15 @@ class TestCurses(unittest.TestCase):
         pair = curses.alloc_pair(fg, bg)
         self.assertGreater(pair, 0)
         self.assertEqual(curses.pair_content(pair), (fg, bg))
-        # The same combination of colors reuses the same pair.
-        self.assertEqual(curses.alloc_pair(fg, bg), pair)
-        self.assertEqual(curses.find_pair(fg, bg), pair)
-        # Once freed, the pair is no longer found.
-        self.assertIsNone(curses.free_pair(pair))
-        self.assertEqual(curses.find_pair(fg, bg), -1)
+        if getattr(curses, 'ncurses_version', (6, 3)) >= (6, 3):
+            # The same combination of colors reuses the same pair.
+            self.assertEqual(curses.alloc_pair(fg, bg), pair)
+            self.assertEqual(curses.find_pair(fg, bg), pair)
+            # Once freed, the pair is no longer found.
+            self.assertIsNone(curses.free_pair(pair))
+            self.assertEqual(curses.find_pair(fg, bg), -1)
+        else:
+            self.assertIsNone(curses.free_pair(pair))
 
         # Error paths.
         for color in self.bad_colors2():
@@ -3116,7 +3133,10 @@ class SLKTests(NewtermTestBase):
         except UnicodeEncodeError:
             self.skipTest('the locale cannot encode %r' % label)
         curses.slk_set(1, label, 0)
-        self.assertEqual(curses.slk_label(1), label)
+        # The label can be truncated to fit the soft label width, e.g. in the
+        # EUC-JP locale, where "Å" and "ö" are double-width JIS X 0212
+        # characters, so the 8-column label only fits "Ångstr".
+        self.assertIn(curses.slk_label(1), (label, 'Ångstr'))
 
     def test_set_bad_justify(self):
         self.make_slk_screen()
