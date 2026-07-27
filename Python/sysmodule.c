@@ -537,7 +537,7 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     }
 
     PyInterpreterState *interp = tstate->interp;
-    PyMutex mutex = interp->audit_hooks_mutex;
+    PyMutex mutex = interp->runtime->audit_hooks.mutex;
     PyMutex_Lock(&mutex);
 
     if (interp->audit_hooks == NULL) {
