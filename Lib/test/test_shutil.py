@@ -2337,7 +2337,16 @@ class TestLazyArchiveDetection(unittest.TestCase):
             sys.set_lazy_imports("all")
             lazy_shutil = import_fresh_module(
                 "shutil",
-                cleared=("bz2", "lzma", "zlib", "compression", "compression.zstd"),
+                cleared=(
+                    "bz2",
+                    "lzma",
+                    "zlib",
+                    "compression",
+                    "compression.zstd",
+                    "_bz2",
+                    "_lzma",
+                    "_zstd",
+                ),
             )
         finally:
             sys.set_lazy_imports(import_state)
