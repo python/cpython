@@ -129,6 +129,8 @@ Initialization and termination
    and return the previously current screen.
    Returns ``None`` if the previous screen was the one created by
    :func:`initscr`.
+   Raises :exc:`error` if *screen* has no terminal,
+   as is the case for a screen returned by :func:`new_prescr`.
 
    .. versionadded:: next
 

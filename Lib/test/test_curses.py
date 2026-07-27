@@ -3072,6 +3072,17 @@ class ScreenTests(NewtermTestBase):
         del screen
         gc_collect()
 
+    @requires_curses_func('new_prescr')
+    def test_set_term_prescr_screen(self):
+        # A new_prescr() screen has no terminal, so it cannot become the
+        # current one.  It used to be accepted, and the next refresh then
+        # crashed inside curses.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        self.assertRaises(curses.error, curses.set_term, curses.new_prescr())
+        # The current screen is unchanged, so refreshing it still works.
+        screen.stdscr.refresh()
+
     def test_initscr_after_newterm_keeps_screen_alive(self):
         # initscr() called while a newterm() screen is current returns that
         # screen's own standard window, so the window keeps the screen alive.
