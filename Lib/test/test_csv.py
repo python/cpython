@@ -1688,6 +1688,60 @@ ghi\0jkl
         self.assertEqual(dialect.quotechar, "'")
         self.assertIs(dialect.skipinitialspace, True)
 
+    def test_sniff_skipinitialspace_quoted_fields(self):
+        # A quote is only a quote at the very start of a field, so not
+        # skipping the space splits the quoted field.
+        sniffer = csv.Sniffer()
+        sample = 'a, "b,c"\nd,e\nf,g\n'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.quotechar, '"')
+        self.assertIs(dialect.skipinitialspace, True)
+        self.assertEqual(next(csv.reader(StringIO(sample), dialect)),
+                         ['a', 'b,c'])
+
+        # But without a delimiter inside the quotes nothing is split,
+        # so only the padding counts.
+        sample = 'a, "b"\nd,e\nf,g\n'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.quotechar, '"')
+        self.assertIs(dialect.skipinitialspace, False)
+        self.assertEqual(next(csv.reader(StringIO(sample), dialect)),
+                         ['a', ' "b"'])
+
+    def test_sniff_skipinitialspace_data(self):
+        # The spaces are a part of the data if only some fields
+        # are padded.
+        sniffer = csv.Sniffer()
+        sample = 'a, b\nc,d\ne, f\n'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertIs(dialect.skipinitialspace, False)
+        self.assertEqual(next(csv.reader(StringIO(sample), dialect)),
+                         ['a', ' b'])
+
+    def test_sniff_skipinitialspace_not_skipped(self):
+        # A quoted or escaped space is not skipped, so it is not
+        # an evidence of the padding.
+        sniffer = csv.Sniffer()
+        sample = 'a," b"\nc, d\n'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.quotechar, '"')
+        self.assertIs(dialect.skipinitialspace, False)
+        self.assertEqual(list(csv.reader(StringIO(sample), dialect)),
+                         [['a', ' b'], ['c', ' d']])
+
+        # The escaped delimiter forces the escapechar detection.
+        sample = 'a,\\ b\\,c\nd, e\n'
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.escapechar, '\\')
+        self.assertIs(dialect.skipinitialspace, False)
+        self.assertEqual(list(csv.reader(StringIO(sample), dialect)),
+                         [['a', ' b,c'], ['d', ' e']])
+
     def test_sniff_regex_backtracking(self):
         # gh-109638: this artificial sample used to take minutes.
         sniffer = csv.Sniffer()
