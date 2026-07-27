@@ -7395,6 +7395,12 @@ case $ac_sys_system in #(
  ;;
 esac
 
+if test x$SOABI_PLATFORM != x; then
+
+printf "%s\n" "#define SOABI_PLATFORM \"${SOABI_PLATFORM}\"" >>confdefs.h
+
+fi
+
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
@@ -30910,9 +30916,13 @@ fi
 
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "x$with_curses" = xcurses
-then :
+case $with_curses in #(
+  ncursesw|no) :
+     ;; #(
+  *) :
 
+          save_curses_cppflags=$CPPFLAGS
+  as_fn_append CPPFLAGS " $CURSES_CFLAGS"
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether curses supports wide characters" >&5
 printf %s "checking whether curses supports wide characters... " >&6; }
 if test ${ac_cv_curses_wide+y}
@@ -30962,13 +30972,14 @@ esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_curses_wide" >&5
 printf "%s\n" "$ac_cv_curses_wide" >&6; }
+  CPPFLAGS=$save_curses_cppflags
       if test "x$ac_cv_curses_wide" = xyes
 then :
   printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
 
 fi
-
-fi
+ ;;
+esac
 
 # On Solaris, term.h requires curses.h
 ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
