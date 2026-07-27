@@ -278,6 +278,20 @@ _Py_CheckPython3t(void)
 
 #endif /* Py_ENABLE_SHARED */
 
+static wchar_t* _Py_AbsolutePath_To_RelativePath(wchar_t* abs_path)
+{
+    wchar_t* rel_path = NULL;
+    wchar_t process_path[512] = { 0 };
+    if (GetModuleFileNameW(NULL, process_path, 512))
+    {
+        wchar_t* path = wcsrchr(process_path, L'\\');
+        path[1] = L'\0'; // strip process name
+        if (wcsstr(abs_path, process_path))
+          rel_path = &abs_path[wcslen(process_path)];
+    }
+    return rel_path;
+}
+
 dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                                               const char *shortname,
                                               PyObject *pathname, FILE *fp)
@@ -307,7 +321,13 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 
         Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS_DESKTOP
-        hDLL = LoadPackagedLibrary(wpathname, 0);
+        // UWP does not allow absolute paths due security restrictions.
+        // If path is contained inside process path (sub folder), use the relative path instead.
+        wchar_t* rel_path = _Py_AbsolutePath_To_RelativePath(wpathname);
+        if (rel_path)
+            hDLL = LoadPackagedLibrary(rel_path, 0);
+        else
+            hDLL = LoadPackagedLibrary(wpathname, 0);
 #else
         /* bpo-36085: We use LoadLibraryEx with restricted search paths
            to avoid DLL preloading attacks and enable use of the
