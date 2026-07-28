@@ -889,6 +889,7 @@ curses_cell_attr_pair(cursesmodule_state *state, const curses_cell_t *cell,
         PyErr_SetString(state->error, "getcchar() returned ERR");
         return -1;
     }
+    *attr &= ~(attr_t)A_COLOR;
     return 0;
 #else
     *attr = *cell & A_ATTRIBUTES & ~(attr_t)A_COLOR;
