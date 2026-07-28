@@ -278,6 +278,14 @@ class TestCurses(unittest.TestCase):
         del win2
         gc_collect()
 
+    def test_getparent(self):
+        # getparent() calls no curses function, so it works with any backend
+        # and is not gated like the is_*() getters below.
+        stdscr = self.stdscr
+        self.assertIsNone(stdscr.getparent())
+        sub = stdscr.subwin(3, 3, 0, 0)
+        self.assertIs(sub.getparent(), stdscr)
+
     def test_dupwin(self):
         win = curses.newwin(5, 10, 2, 3)
         win.addstr(0, 0, 'ABCDE')
@@ -1717,14 +1725,6 @@ class TestCurses(unittest.TestCase):
         stdscr.timeout(-1)
         stdscr.timeout(0)
         stdscr.timeout(5)
-
-    def test_getparent(self):
-        # getparent() calls no curses function, so it works with any backend
-        # and is not gated like the is_*() getters below.
-        stdscr = self.stdscr
-        self.assertIsNone(stdscr.getparent())
-        sub = stdscr.subwin(3, 3, 0, 0)
-        self.assertIs(sub.getparent(), stdscr)
 
     @requires_curses_window_meth('is_scrollok')
     def test_state_getters(self):
