@@ -409,7 +409,7 @@ class TestConsole(TestCase):
         event = console.get_event()
         self.assertIsNotNone(event)
         self.assertEqual(event.evt, "key")
-        self.assertEqual(event.data, "\x0b")
+        self.assertEqual(event.data, "\x1b")
         self.assertEqual(event.raw, b"\x1b")
         console.restore()
 
