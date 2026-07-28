@@ -553,8 +553,8 @@ class Counter(dict):
     or multiset.  Elements are stored as dictionary keys and their counts
     are stored as dictionary values.
 
-    Note: If a Mapping or Counter is used to initialize a Counter object
-    the values from that object will be preserved.
+    When constructed from a Mapping or Counter, the original object's
+    values will be used as the initial counts.
 
     >>> c = Counter('abcdeabcdabcaba')  # count elements from a string
 
