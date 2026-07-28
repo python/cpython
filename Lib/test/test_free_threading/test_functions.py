@@ -2,7 +2,7 @@ import random
 import unittest
 from unittest import TestCase
 
-from test.support import threading_helper, Py_GIL_DISABLED
+from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
 
