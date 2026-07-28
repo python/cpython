@@ -1,0 +1,2 @@
+Fix a race condition when setting attributes of :class:`function` objects
+on the :term:`free threaded <free threading>` build.
