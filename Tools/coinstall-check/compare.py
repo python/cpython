@@ -99,11 +99,6 @@ def is_ignored(pathname: str, build_details: dict[str, Any]) -> bool:
         # not architectures.
         return True
 
-    in_site_packages = path.parent.name == "site-packages"
-    if in_site_packages and path.name.endswith((".abi3.so", ".abi3t.so")):
-        # abi3 and abi3t are not current co-installable (#122931)
-        return True
-
     return False
 
 
