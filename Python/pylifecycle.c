@@ -3820,8 +3820,8 @@ handle_thread_shutdown_exception(PyThreadState *tstate)
     assert(tstate != NULL);
     assert(_PyErr_Occurred(tstate));
     PyInterpreterState *interp = tstate->interp;
-    assert(interp->threads.head != NULL);
     _PyEval_StopTheWorld(interp);
+    assert(interp->threads.head != NULL);
 
     // We don't have to worry about locking this because the
     // world is stopped.
