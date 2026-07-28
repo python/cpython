@@ -24,6 +24,36 @@ except ImportError:
     _testcapi = None
 
 
+def noop_handler(signum, frame):
+    pass
+
+
+def requires_write_error_on_pipe_read_end(func):
+    """Skip the test if writing to the read end of a pipe does not fail.
+
+    Check this only in the parent process, so that the test is skipped without
+    first spawning a subprocess for it.
+    """
+    if isolation.runningInSubprocess:
+        return func
+
+    @functools.wraps(func)
+    def wrapper(self, /, *args, **kwargs):
+        r, w = os.pipe()
+        try:
+            os.write(r, b'x')
+        except OSError:
+            pass
+        else:
+            raise unittest.SkipTest(
+                "OS doesn't report write() error on the read end of a pipe")
+        finally:
+            os.close(r)
+            os.close(w)
+        return func(self, *args, **kwargs)
+    return wrapper
+
+
 class GenericTests(unittest.TestCase):
 
     def test_enums(self):
@@ -320,10 +350,7 @@ class WakeupSignalTests(unittest.TestCase):
 
         signals = tuple(int(s) for s in signals)
 
-        def handler(signum, frame):
-            pass
-
-        signal.signal(signal.SIGALRM, handler)
+        signal.signal(signal.SIGALRM, noop_handler)
         read, write = os.pipe()
         os.set_blocking(write, False)
         signal.set_wakeup_fd(write)
@@ -343,22 +370,12 @@ class WakeupSignalTests(unittest.TestCase):
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     @force_not_colorized
+    @requires_write_error_on_pipe_read_end
     @isolation.runInSubprocess()
     def test_wakeup_write_error(self):
         # Issue #16105: write() errors in the C signal handler should not
         # pass silently.
         # Use @runInSubprocess() to run in a subprocess with only one thread.
-        r, w = os.pipe()
-        try:
-            os.write(r, b'x')
-        except OSError:
-            pass
-        else:
-            self.skipTest("OS doesn't report write() error on the read end of a pipe")
-        finally:
-            os.close(r)
-            os.close(w)
-
         def handler(signum, frame):
             1/0
 
@@ -451,9 +468,7 @@ class WakeupSignalTests(unittest.TestCase):
     @isolation.runInSubprocess()
     def test_signum(self):
         def test(read):
-            def handler(signum, frame):
-                pass
-            signal.signal(signal.SIGUSR1, handler)
+            signal.signal(signal.SIGUSR1, noop_handler)
             signal.raise_signal(signal.SIGUSR1)
             signal.raise_signal(signal.SIGALRM)
         self.check_wakeup(test, signal.SIGUSR1, signal.SIGALRM)
@@ -467,10 +482,8 @@ class WakeupSignalTests(unittest.TestCase):
             signum1 = signal.SIGUSR1
             signum2 = signal.SIGUSR2
 
-            def handler(signum, frame):
-                pass
-            signal.signal(signum1, handler)
-            signal.signal(signum2, handler)
+            signal.signal(signum1, noop_handler)
+            signal.signal(signum2, noop_handler)
 
             signal.pthread_sigmask(signal.SIG_BLOCK, (signum1, signum2))
             signal.raise_signal(signum1)
@@ -492,10 +505,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signum = signal.SIGINT
         signals = (signum,)
 
-        def handler(signum, frame):
-            pass
-
-        signal.signal(signum, handler)
+        signal.signal(signum, noop_handler)
 
         read, write = socket.socketpair()
         write.setblocking(False)
@@ -522,10 +532,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
         signum = signal.SIGINT
 
-        def handler(signum, frame):
-            pass
-
-        signal.signal(signum, handler)
+        signal.signal(signum, noop_handler)
 
         read, write = socket.socketpair()
         read.setblocking(False)
@@ -558,10 +565,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 
         # This handler will be called, but we intentionally won't read from
         # the wakeup fd.
-        def handler(signum, frame):
-            pass
-
-        signal.signal(signum, handler)
+        signal.signal(signum, noop_handler)
 
         read, write = socket.socketpair()
 
