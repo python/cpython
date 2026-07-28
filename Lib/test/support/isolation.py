@@ -163,6 +163,16 @@ def _raise_fixture_outcome(outcome):
     raise exc from _remote(outcome['detail'])
 
 
+def _check_returncode(returncode, output, what):
+    # The subprocess writes its result before exiting, so a non-zero exit code
+    # means it died afterwards, during finalization, unnoticed by the result.
+    if returncode:
+        exc = _SubprocessTestError(
+            f'the subprocess exited with code {returncode} '
+            f'after running the {what}')
+        raise exc from _remote(output)
+
+
 def _isolate_method(func):
     @functools.wraps(func)
     def wrapper(self, /, *args, **kwargs):
@@ -180,7 +190,9 @@ def _isolate_method(func):
             raise exc from _remote(output)
         # The parent measures this method's own duration (the real cost of the
         # isolated run, subprocess startup included), so nothing to forward here.
+        # Replay the outcomes first: a failure of the test itself is more useful.
         _replay_outcomes(self, payload['outcomes'])
+        _check_returncode(returncode, output, 'test')
     return wrapper
 
 
@@ -219,13 +231,20 @@ def _isolate_class(cls):
             by_id.setdefault(outcome['id'], []).append(outcome)
         cls._isolated_outcomes = by_id
         cls._isolated_durations = dict(payload.get('durations', ()))
+        # Report the crash from tearDownClass(), after replaying the outcomes.
+        cls._isolated_exit = (returncode, output)
 
     def tearDownClass(cls):
         if runningInSubprocess:
             orig_tearDownClass(cls)
-        else:
-            cls._isolated_outcomes = None
-            cls._isolated_durations = None
+            return
+        cls._isolated_outcomes = None
+        cls._isolated_durations = None
+        # Missing if an overriding setUpClass() bypassed the subprocess.
+        exited = getattr(cls, '_isolated_exit', None)
+        cls._isolated_exit = None
+        if exited is not None:
+            _check_returncode(*exited, 'class')
 
     def _callSetUp(self):
         # In the parent the real test does not run, so neither should setUp().
