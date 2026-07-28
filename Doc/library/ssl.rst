@@ -1411,9 +1411,12 @@ SSL sockets also have the following additional methods and attributes:
 
    Return the actual SSL protocol version negotiated by the connection
    as a string, or ``None`` if no secure connection is established.
-   As of this writing, possible return values include ``"SSLv2"``,
-   ``"SSLv3"``, ``"TLSv1"``, ``"TLSv1.1"`` and ``"TLSv1.2"``.
-   Recent OpenSSL versions may define more return values.
+
+   The string comes directly from the underlying TLS library. The
+   possible values depend on which library and version Python is
+   linked against; see `SSL_get_version()
+   <https://docs.openssl.org/master/man3/SSL_get_version/#return-values>`_
+   for OpenSSL's values.
 
    .. versionadded:: 3.5
 
