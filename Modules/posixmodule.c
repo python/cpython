@@ -12581,27 +12581,35 @@ done:
         return PyLong_FromLong(0);
     }
 
-    // On illumos specifically sendfile() may perform a partial write but
-    // return -1/an error (in one confirmed case the destination socket
-    // had a 5 second timeout set and errno was EAGAIN) and it's on the client
-    // code to check if the offset parameter was modified by sendfile().
-    //
-    // We need this variable to track said change.
-    off_t original_offset = offset;
-#endif
+    // sendfile() may perform a partial write and still return -1, so the
+    // number of transferred bytes must be taken from the out parameter.
+    // sendfile() reports it by adding it to the offset, but does not
+    // initialize it when the transfer fails before writing any data, so use
+    // sendfilev(), which reports it explicitly.
+    sendfilevec_t vec;
+    size_t xferred;
+
+    vec.sfv_fd = in_fd;
+    vec.sfv_flag = 0;
+    vec.sfv_off = offset;
+    vec.sfv_len = count;
 
     do {
         Py_BEGIN_ALLOW_THREADS
-        ret = sendfile(out_fd, in_fd, &offset, count);
-#if defined(__sun) && defined(__SVR4)
-        // This handles illumos-specific sendfile() partial write behavior,
-        // see a comment above for more details.
-        if (ret < 0 && offset != original_offset) {
-            ret = offset - original_offset;
+        xferred = 0;
+        ret = sendfilev(out_fd, &vec, 1, &xferred);
+        if (ret < 0 && xferred != 0) {
+            ret = (Py_ssize_t)xferred;
         }
-#endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#else
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = sendfile(out_fd, in_fd, &offset, count);
+        Py_END_ALLOW_THREADS
+    } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#endif
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
     return PyLong_FromSsize_t(ret);
