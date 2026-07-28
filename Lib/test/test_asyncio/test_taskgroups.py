@@ -1250,8 +1250,9 @@ class BaseTestTaskGroup:
             async with asyncio.TaskGroup() as tg:
                 tg.create_task(t())
 
-        with self.assertRaises(BaseExceptionGroup):
+        with self.assertRaises(BaseExceptionGroup) as cm:
             await fn()
+        self.assertEqual(get_error_types(cm.exception), {GeneratorExit})
 
     async def test_taskgroup_generator_exit_03(self):
         # A GeneratorExit in one task and an error in another should
