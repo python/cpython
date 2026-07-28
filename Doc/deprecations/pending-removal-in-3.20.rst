@@ -53,3 +53,12 @@ Pending removal in Python 3.20
 
   * Creating instances of abstract AST nodes (such as :class:`ast.AST`
     or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
+
+* :mod:`typing`:
+
+  * It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+    protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+    but that inherit from a runtime-checkable protocol class.
+    This will raise a :exc:`TypeError` in Python 3.20.
+
+    (Contributed by Bartosz Sławecki in :gh:`132604`.)
