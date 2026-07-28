@@ -256,6 +256,9 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
+#ifdef Py_REF_DEBUG
+    Py_DECREF(op);
+#else
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
         _Py_DECREF_IMMORTAL_STAT_INC();
@@ -272,6 +275,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
     else {
         _Py_DecRefShared(op);
     }
+#endif
 }
 
 static inline int
