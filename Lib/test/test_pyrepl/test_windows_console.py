@@ -648,6 +648,19 @@ class WindowsConsoleGetEventTests(TestCase):
         self.assertTrue(console.wait(0.0))
         self.assertEqual(console.wait_for_event.call_count, 0)
 
+    def test_escape_timeout(self):
+        console = WindowsConsole()
+        # Simulate the read timing out before any follow-up bytes arrive.
+        console.wait_for_event = MagicMock(return_value=False)
+        console.event_queue.push(b"\x1b")
+        self.assertTrue(console.event_queue.pending())
+        event = console.get_event()
+        console.restore()
+        self.assertIsNotNone(event)
+        self.assertEqual(event.evt, "key")
+        self.assertEqual(event.data, "\x1b")
+        self.assertEqual(event.raw, b"\x1b")
+
 
 if __name__ == "__main__":
     unittest.main()
