@@ -509,6 +509,22 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(y, x)
         self.assertIsNot(y.foo, x.foo)
 
+    def test_deepcopy_inst_deepcopy_returns_none(self):
+        # gh-154594: the memo used to use None as its own "not cached"
+        # sentinel, so a __deepcopy__ that legitimately returns None was
+        # indistinguishable from a memo miss and got invoked again on
+        # every subsequent reference to the same object.
+        calls = []
+        class C:
+            def __deepcopy__(self, memo):
+                calls.append(1)
+                memo[id(self)] = None
+                return None
+        x = C()
+        y = copy.deepcopy([x, x, x])
+        self.assertEqual(y, [None, None, None])
+        self.assertEqual(len(calls), 1)
+
     def test_deepcopy_inst_getinitargs(self):
         class C:
             def __init__(self, foo):

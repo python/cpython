@@ -1,0 +1,3 @@
+Fix :func:`copy.deepcopy` re-invoking an object's :meth:`~object.__deepcopy__`
+on every subsequent reference to that object when it returns :const:`None`.
+The memo dict now distinguishes a cached ``None`` result from a cache miss.
