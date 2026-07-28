@@ -1042,6 +1042,60 @@ class BaseEventLoopTests(test_utils.TestCase):
         asyncio.create_task(iter_one())
         return status
 
+    def test_shutdown_asyncgens_reports_base_exceptions(self):
+        # gh-150866: shutdown_asyncgens silently swallowed exceptions that
+        # don't inherit from Exception raised during aclose() because the
+        # check was isinstance(result, Exception), but CancelledError inherits
+        # from BaseException.
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+
+        class MyBaseException(BaseException):
+            pass
+
+        async def agen_cancel():
+            try:
+                yield 1
+            finally:
+                raise asyncio.CancelledError("agen got cancelled during cleanup")
+
+        async def agen_base():
+            try:
+                yield 1
+            finally:
+                raise MyBaseException("base exc during cleanup")
+
+        async def agen_value_error():
+            try:
+                yield 1
+            finally:
+                raise ValueError("agen failed during cleanup")
+
+        caught = []
+
+        def handler(loop, context):
+            caught.append(context['exception'])
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(handler)
+
+            g1 = agen_cancel()
+            g2 = agen_base()
+            g3 = agen_value_error()
+            await g1.__anext__()
+            await g2.__anext__()
+            await g3.__anext__()
+
+            await loop.shutdown_asyncgens()
+
+        self.loop.run_until_complete(main())
+        self.assertEqual(len(caught), 3)
+        self.assertEqual(
+            {type(exc) for exc in caught},
+            {asyncio.CancelledError, MyBaseException, ValueError},
+        )
+
     def test_asyncgen_finalization_by_gc(self):
         # Async generators should be finalized when garbage collected.
         self.loop._process_events = mock.Mock()
