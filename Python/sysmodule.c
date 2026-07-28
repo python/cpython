@@ -1633,7 +1633,7 @@ static PyStructSequence_Field windows_version_fields[] = {
     {"suite_mask", "Bit mask identifying available product suites"},
     {"product_type", "System product type"},
     {"platform_version", "Diagnostic version number"},
-    {"device_family", "Desktop or UWP"},
+    {"device_family", "'Desktop', 'Xbox' or 'UWP'"},
     {0}
 };
 
@@ -1755,12 +1755,11 @@ sys_getwindowsversion_impl(PyObject *module)
     SET_VERSION_INFO(PyLong_FromLong(ver.wSuiteMask));
     SET_VERSION_INFO(PyLong_FromLong(ver.wProductType));
 
-#ifdef MS_WINDOWS_DESKTOP
+#if defined(MS_WINDOWS_DESKTOP)
     // GetVersion will lie if we are running in a compatibility mode.
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
     // just return whatever GetVersion said.
-    // UWP return correct version from GetVersionExW, this is not necessary.
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
@@ -1777,6 +1776,9 @@ sys_getwindowsversion_impl(PyObject *module)
 
     SET_VERSION_INFO(realVersion);
     SET_VERSION_INFO(PyUnicode_FromString("Desktop"));
+#elif defined (MS_WINDOWS_GAMES)
+    SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
+    SET_VERSION_INFO(PyUnicode_FromString("Xbox"));
 #else
     SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
     SET_VERSION_INFO(PyUnicode_FromString("UWP"));
