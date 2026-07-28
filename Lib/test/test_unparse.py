@@ -221,6 +221,10 @@ class UnparseTestCase(ASTTestCase):
                 1,  # Force lexer metadata reconstruction.
                 "\"#")}'''"""
         )
+        self.check_ast_roundtrip(
+            r'''t"""Value: {value =\
+}"""'''
+        )
 
     def test_tstring_with_nonsensical_str_field(self):
         # `value` suggests that the original code is `t'{test1}`, but `str` suggests otherwise

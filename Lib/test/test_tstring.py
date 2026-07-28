@@ -140,6 +140,43 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Value: value = 42")
 
+        # Explicit line continuations after the debug marker are part of
+        # the debug text, not the interpolation expression.
+        for template, strings, interpolation, rendered in (
+            (
+                t"""Value: {value =\
+}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n42",
+            ),
+            (
+                t"""Value: {value =\
+!r}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n42",
+            ),
+            (
+                t"""Value: {value =\
+:04}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", None, "04"),
+                "Value: value =\\\n0042",
+            ),
+            (
+                t"""Value: {value =\
+\
+}""",
+                ("Value: value =\\\n\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n\\\n42",
+            ),
+        ):
+            with self.subTest(template=template):
+                self.assertTStringEqual(template, strings, [interpolation])
+                self.assertEqual(fstring(template), rendered)
+
     def test_interpolation_expression_whitespace(self):
         x = 42
         for template, expected in (

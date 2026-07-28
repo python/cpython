@@ -1544,15 +1544,29 @@ _strip_interpolation_debug_expr(PyObject *exprstr)
 {
     Py_ssize_t len = PyUnicode_GET_LENGTH(exprstr);
 
-    /* Discard whitespace after the debug "=" but preserve whitespace before it. */
+    /* Discard whitespace and explicit line continuations after the debug "="
+       but preserve whitespace before it. */
     while (len > 0) {
-        Py_UCS4 c = PyUnicode_READ_CHAR(exprstr, len - 1);
-        if (!_PyUnicode_IsWhitespace(c)) {
+        int has_newline = 0;
+        while (len > 0) {
+            Py_UCS4 c = PyUnicode_READ_CHAR(exprstr, len - 1);
+            if (!_PyUnicode_IsWhitespace(c)) {
+                break;
+            }
+            if (c == '\r' || c == '\n') {
+                has_newline = 1;
+            }
+            len--;
+        }
+        if (!has_newline || len == 0 ||
+            PyUnicode_READ_CHAR(exprstr, len - 1) != '\\')
+        {
             break;
         }
         len--;
     }
-    /* The debug marker may be absent from reconstructed lexer metadata. */
+
+    /* Preserve unexpected metadata instead of dropping source text. */
     if (len == 0 || PyUnicode_READ_CHAR(exprstr, len - 1) != '=') {
         return Py_NewRef(exprstr);
     }
