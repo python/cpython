@@ -1790,13 +1790,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    callable or ``None`` to clear the filter.
 
    The filter function is called for every potentially lazy import to
-   determine whether it should actually be lazy. It must have the following
+   determine whether it should actually be lazy. It should have the following
    signature::
 
       def filter(importing_module: str, imported_module: str,
                  fromlist: tuple[str, ...] | None) -> bool
 
-   Where:
+   The function is called with three positional arguments:
 
    * *importing_module* is the name of the module doing the import
    * *imported_module* is the resolved name of the module being imported
