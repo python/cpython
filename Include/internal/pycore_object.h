@@ -262,9 +262,6 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
         return;
     }
     _Py_DECREF_STAT_INC();
-#ifdef Py_REF_DEBUG
-    _Py_DEC_REFTOTAL(PyInterpreterState_Get());
-#endif
     if (_Py_IsOwnedByCurrentThread(op)) {
         local--;
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
