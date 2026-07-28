@@ -4646,9 +4646,9 @@ codegen_comprehension_generator_helper(compiler *c, location elt_loc, int depth,
             VISIT(c, expr, elt);
             VISIT(c, expr, val);
             elt_loc = LOCATION(elt->lineno,
-                                val->end_lineno,
-                                elt->col_offset,
-                                val->end_col_offset);
+                               val->end_lineno,
+                               elt->col_offset,
+                               val->end_col_offset);
             ADDOP_I(c, elt_loc, MAP_ADD, depth + 1);
         }
         break;
@@ -4744,9 +4744,9 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                                                                avoid_creation));
         if (type == COMP_DICTCOMP && val != NULL) {
             elt_loc = LOCATION(elt->lineno,
-                                val->end_lineno,
-                                elt->col_offset,
-                                val->end_col_offset);
+                               val->end_lineno,
+                               elt->col_offset,
+                               val->end_col_offset);
         }
     }
 
@@ -4833,9 +4833,9 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                                                avoid_creation));
         if (type == COMP_DICTCOMP && val != NULL) {
             elt_loc = LOCATION(elt->lineno,
-                                val->end_lineno,
-                                elt->col_offset,
-                                val->end_col_offset);
+                               val->end_lineno,
+                               elt->col_offset,
+                               val->end_col_offset);
         }
     }
 
