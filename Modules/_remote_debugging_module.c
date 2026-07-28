@@ -28,6 +28,7 @@
 // issues.
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -807,7 +808,7 @@ static int append_awaited_by(RemoteUnwinderObject *unwinder, unsigned long tid, 
 #define set_exception_cause(unwinder, exc_type, message)                              \
     do {                                                                              \
         assert(PyErr_Occurred() && "function returned -1 without setting exception"); \
-        if (unwinder->debug) {                                                        \
+        if (unwinder->debug && !_Py_RemoteDebug_HasPermissionError()) {               \
             _set_debug_exception_cause(exc_type, message);                            \
         }                                                                             \
     } while (0)
@@ -1246,26 +1247,21 @@ read_py_long(
         return -1;
     }
 
-    // If the long object has inline digits, use them directly
-    digit *digits;
-    if (size <= _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS) {
-        // For small integers, digits are inline in the long_value.ob_digit array
-        digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
-        if (!digits) {
-            PyErr_NoMemory();
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for small PyLong");
-            return -1;
-        }
-        memcpy(digits, long_obj + unwinder->debug_offsets.long_object.ob_digit, size * sizeof(digit));
-    } else {
-        // For larger integers, we need to read the digits separately
-        digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
-        if (!digits) {
-            PyErr_NoMemory();
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for large PyLong");
-            return -1;
-        }
+    // Calculate how many digits fit inline in our local buffer
+    Py_ssize_t ob_digit_offset = unwinder->debug_offsets.long_object.ob_digit;
+    Py_ssize_t inline_digits_space = SIZEOF_LONG_OBJ - ob_digit_offset;
+    Py_ssize_t max_inline_digits = inline_digits_space / (Py_ssize_t)sizeof(digit);
 
+    digit *digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
+    if (!digits) {
+        PyErr_NoMemory();
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate digits for PyLong");
+        return -1;
+    }
+
+    if (size <= max_inline_digits && size <= _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS) {
+        memcpy(digits, long_obj + ob_digit_offset, size * sizeof(digit));
+    } else {
         bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
             &unwinder->handle,
             address + (uintptr_t)unwinder->debug_offsets.long_object.ob_digit,
@@ -1278,19 +1274,34 @@ read_py_long(
         }
     }
 
-    long long value = 0;
+    unsigned long limit = negative
+        ? (unsigned long)LONG_MAX + 1UL
+        : (unsigned long)LONG_MAX;
+    unsigned long value = 0;
 
-    // In theory this can overflow, but because of llvm/llvm-project#16778
-    // we can't use __builtin_mul_overflow because it fails to link with
-    // __muloti4 on aarch64. In practice this is fine because all we're
-    // testing here are task numbers that would fit in a single byte.
-    for (Py_ssize_t i = 0; i < size; ++i) {
-        long long factor = digits[i] * (1UL << (Py_ssize_t)(shift * i));
-        value += factor;
+    for (Py_ssize_t i = size; i-- > 0;) {
+        if (digits[i] >= PyLong_BASE) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Invalid PyLong digit: %u (base %u)", digits[i], PyLong_BASE);
+            set_exception_cause(unwinder, PyExc_RuntimeError,
+                "Invalid PyLong digit (corrupted remote memory)");
+            goto error;
+        }
+        if (value > ((limit - (unsigned long)digits[i]) >> shift)) {
+            PyErr_SetString(PyExc_OverflowError,
+                "Remote PyLong value does not fit in C long");
+            set_exception_cause(unwinder, PyExc_OverflowError,
+                "Remote PyLong value is too large");
+            goto error;
+        }
+        value = (value << shift) | (unsigned long)digits[i];
     }
     PyMem_RawFree(digits);
     if (negative) {
-        value *= -1;
+        if (value == (unsigned long)LONG_MAX + 1UL) {
+            return LONG_MIN;
+        }
+        return -(long)value;
     }
     return (long)value;
 error:
@@ -1312,32 +1323,35 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     // On Windows, search for asyncio debug in executable or DLL
     address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio", NULL);
     if (address == 0) {
-        // Error out: 'python' substring covers both executable and DLL
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-        _PyErr_ChainExceptions1(exc);
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
+            _PyErr_ChainExceptions1(exc);
+        }
     }
 #elif defined(__linux__)
     // On Linux, search for asyncio debug in executable or DLL
     address = search_linux_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython", NULL);
     if (address == 0) {
-        // Error out: 'python' substring covers both executable and DLL
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-        _PyErr_ChainExceptions1(exc);
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
+            _PyErr_ChainExceptions1(exc);
+        }
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
     address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython", NULL);
-    if (address == 0) {
+    if (address == 0 && !_Py_RemoteDebug_HasPermissionError()) {
         PyErr_Clear();
         address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython", NULL);
     }
     if (address == 0) {
-        // Error out: 'python' substring covers both executable and DLL
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
-        _PyErr_ChainExceptions1(exc);
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
+            _PyErr_ChainExceptions1(exc);
+        }
     }
 #else
     Py_UNREACHABLE();
@@ -1418,7 +1432,7 @@ parse_task_name(
 
     if ((GET_MEMBER(unsigned long, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_LONG_SUBCLASS)) {
         long res = read_py_long(unwinder, task_name_addr);
-        if (res == -1) {
+        if (res == -1 && PyErr_Occurred()) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Task name PyLong parsing failed");
             return NULL;
         }
@@ -3124,6 +3138,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
     if (async_debug_result < 0) {
+        if (_Py_RemoteDebug_HasPermissionError()) {
+            return -1;
+        }
         PyErr_Clear();
         memset(&self->async_debug_offsets, 0, sizeof(self->async_debug_offsets));
         self->async_debug_offsets_available = 0;
