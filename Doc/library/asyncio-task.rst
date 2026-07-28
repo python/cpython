@@ -460,7 +460,7 @@ reported by :meth:`asyncio.Task.cancelling`.
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
 
-.. versionchanged:: 3.16
+.. versionchanged:: 3.15
 
    Addition of the special case for :exc:`GeneratorExit`.
 
