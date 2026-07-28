@@ -1,0 +1,10 @@
+Fix corruption of locale-encoded text on FreeBSD, NetBSD, DragonFly BSD
+and macOS
+in non-UTF-8 locales,
+e.g. in the results of :func:`time.strftime` and :func:`locale.nl_langinfo`,
+in localized error messages,
+and in decoding of the command line arguments,
+fix wrong collation in :func:`locale.strcoll` and :func:`locale.strxfrm`,
+and fix display and input of non-ASCII characters in :mod:`curses`.
+``wchar_t`` values are not Unicode code points on these platforms,
+so ``iconv()`` is now used instead of ``mbstowcs()`` and ``wcstombs()``.

@@ -225,6 +225,29 @@ extern int _Py_GetForceASCII(void);
    encoding. */
 extern void _Py_ResetForceASCII(void);
 
+#ifdef HAVE_LANGINFO_H
+#  include <langinfo.h>           // CODESET
+#endif
+
+/* On FreeBSD, NetBSD, DragonFly BSD and macOS, wchar_t values are not
+   Unicode code points in non-UTF-8 locales.  Locale-encoded text is converted
+   with iconv() (see Python/fileutils.c), and the wide character
+   functions which use the locale (such as wcscoll()) cannot be used
+   with Unicode wchar_t. */
+#if (defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) \
+     || defined(__APPLE__)) \
+    && defined(HAVE_ICONV) \
+    && defined(HAVE_LANGINFO_H) && defined(CODESET) && SIZEOF_WCHAR_T == 4
+#  define _Py_NON_UNICODE_WCHAR_T
+
+// Convert between Unicode code points and the native wchar_t form for
+// C library functions which use the latter (such as the curses library).
+// Export for '_curses'.
+PyAPI_FUNC(int) _Py_LocaleNeedsWcharConversion(void);
+PyAPI_FUNC(int) _Py_UnicodeToLocaleWchar_InPlace(wchar_t *str, Py_ssize_t size);
+PyAPI_FUNC(void) _Py_LocaleWcharToUnicode_InPlace(wchar_t *str, Py_ssize_t size);
+#endif
+
 
 extern int _Py_GetLocaleconvNumeric(
     struct lconv *lc,

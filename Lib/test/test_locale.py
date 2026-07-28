@@ -350,6 +350,53 @@ class TestCollation(unittest.TestCase):
         self.assertRaises(ValueError, locale.strxfrm, 'a\0')
 
 
+class TestCollationAcrossEncodings(unittest.TestCase):
+    # gh-154682: collation must give the same results in locales which
+    # only differ in the encoding.
+
+    @support.thread_unsafe('setlocale is not thread-safe')
+    @unittest.skipIf(sys.platform.startswith("netbsd"),
+                     "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
+    @unittest.skipIf(sys.platform.startswith("dragonfly") or
+                     sys.platform == "darwin",
+                     "no collation data for non-UTF-8 locales")
+    def test_across_encodings(self):
+        def sign(x):
+            return (x > 0) - (x < 0)
+        cases = [
+            ('uk_UA.UTF-8', 'uk_UA.KOI8-U', 'гґдиіїя'),
+            ('uk_UA.UTF-8', 'uk_UA.CP1251', 'гґдиіїя'),
+            ('el_GR.UTF-8', 'el_GR.ISO8859-7', 'αβδω'),
+            ('de_DE.UTF-8', 'de_DE.ISO8859-1', 'aäbößz'),
+            ('tr_TR.UTF-8', 'tr_TR.ISO8859-9', 'cçdıisşz'),
+            ('ca_ES.UTF-8', 'ca_ES.ISO8859-1', 'cçde'),
+        ]
+        oldloc = locale.setlocale(locale.LC_ALL)
+        self.addCleanup(locale.setlocale, locale.LC_ALL, oldloc)
+        tested = False
+        for utf8_loc, legacy_loc, chars in cases:
+            try:
+                locale.setlocale(locale.LC_ALL, utf8_loc)
+            except locale.Error:
+                continue
+            expected_order = sorted(chars, key=locale.strxfrm)
+            expected_signs = [[sign(locale.strcoll(a, b)) for b in chars]
+                              for a in chars]
+            try:
+                locale.setlocale(locale.LC_ALL, legacy_loc)
+            except locale.Error:
+                continue
+            with self.subTest(locale=legacy_loc):
+                self.assertEqual(sorted(chars, key=locale.strxfrm),
+                                 expected_order)
+                signs = [[sign(locale.strcoll(a, b)) for b in chars]
+                         for a in chars]
+                self.assertEqual(signs, expected_signs)
+            tested = True
+        if not tested:
+            self.skipTest('no suitable locales')
+
+
 class TestEnUSCollation(BaseLocalizedTest, TestCollation):
     # Test string collation functions with a real English locale
 

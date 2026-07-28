@@ -125,6 +125,10 @@ class TestHistoryManipulation (unittest.TestCase):
             readline.append_history_file(-2147483648, hfilename)
 
     def test_nonascii_history(self):
+        try:
+            "entrée".encode(locale.getencoding())
+        except UnicodeEncodeError as err:
+            self.skipTest("Locale cannot encode test data: " + format(err))
         readline.clear_history()
         try:
             readline.add_history("entrée 1")

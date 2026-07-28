@@ -557,6 +557,11 @@ PyCurses_ConvertToWideCell(PyObject *obj, wchar_t *wch)
                      (int)CCHARW_MAX, PyUnicode_GET_LENGTH(obj));
         return -1;
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    if (_Py_UnicodeToLocaleWchar_InPlace(wch, nch) < 0) {
+        return -1;
+    }
+#endif
     /* A lone control character is allowed (like addch(ord('\n'))), but in a
        multi-character cell the base must be a printable spacing character and
        the rest zero-width combining characters.  Check explicitly: otherwise
@@ -652,6 +657,13 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
         *wstr = PyUnicode_AsWideCharString(obj, NULL);
         if (*wstr == NULL)
             return 0;
+#ifdef _Py_NON_UNICODE_WCHAR_T
+        if (_Py_UnicodeToLocaleWchar_InPlace(*wstr, wcslen(*wstr)) < 0) {
+            PyMem_Free(*wstr);
+            *wstr = NULL;
+            return 0;
+        }
+#endif
         return 2;
 #else
         assert (wstr == NULL);
@@ -910,6 +922,9 @@ curses_cell_text(cursesmodule_state *state, const curses_cell_t *cell)
         PyErr_SetString(state->error, "getcchar() returned ERR");
         return NULL;
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    _Py_LocaleWcharToUnicode_InPlace(wstr, wcslen(wstr));
+#endif
     return PyUnicode_FromWideChar(wstr, -1);
 #else
     char ch = (char)(*cell & A_CHARTEXT);
@@ -1326,6 +1341,12 @@ complexstr_from_string(cursesmodule_state *state, PyObject *str,
     if (wbuf == NULL) {
         return NULL;
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    if (_Py_UnicodeToLocaleWchar_InPlace(wbuf, n) < 0) {
+        PyMem_Free(wbuf);
+        return NULL;
+    }
+#endif
     curses_cell_t *cells = n > 0 ? PyMem_New(curses_cell_t, n) : NULL;
     if (n > 0 && cells == NULL) {
         PyMem_Free(wbuf);
@@ -1615,6 +1636,9 @@ complexstr_str(PyObject *self)
         }
         pos += wcslen(buf + pos);
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    _Py_LocaleWcharToUnicode_InPlace(buf, pos);
+#endif
     PyObject *res = PyUnicode_FromWideChar(buf, pos);
     PyMem_Free(buf);
     return res;
@@ -3354,6 +3378,13 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
         }
 #endif
 #endif
+#ifdef _Py_NON_UNICODE_WCHAR_T
+        {
+            wchar_t wch = (wchar_t)rtn;
+            _Py_LocaleWcharToUnicode_InPlace(&wch, 1);
+            return PyUnicode_FromOrdinal(wch);
+        }
+#endif
         return PyUnicode_FromOrdinal(rtn);
     } else {
         const char *knp = keyname(rtn);
@@ -3407,8 +3438,16 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
     }
     if (ct == KEY_CODE_YES)
         return PyLong_FromLong(rtn);
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    else {
+        wchar_t wch = (wchar_t)rtn;
+        _Py_LocaleWcharToUnicode_InPlace(&wch, 1);
+        return PyUnicode_FromOrdinal(wch);
+    }
+#else
     else
         return PyUnicode_FromOrdinal(rtn);
+#endif
 #else
     /* Without the wide library, read one key with wgetch(): a value above 255
        is a function key (returned as an int); a byte is decoded with the
@@ -3891,6 +3930,9 @@ PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
     for (Py_ssize_t i = 0; i < len; i++) {
         wbuf[i] = (wchar_t)buf[i];
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    _Py_LocaleWcharToUnicode_InPlace(wbuf, len);
+#endif
     PyObject *res = PyUnicode_FromWideChar(wbuf, len);
     PyMem_Free(wbuf);
     PyMem_Free(buf);
@@ -3956,6 +3998,9 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
         PyMem_Free(buf);
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    _Py_LocaleWcharToUnicode_InPlace(buf, wcslen(buf));
+#endif
     PyObject *res = PyUnicode_FromWideChar(buf, -1);
     PyMem_Free(buf);
     return res;
@@ -5952,6 +5997,9 @@ _curses_erasewchar_impl(PyObject *module)
         curses_set_error(module, "erasewchar", NULL);
         return NULL;
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    _Py_LocaleWcharToUnicode_InPlace(&ch, 1);
+#endif
     return PyUnicode_FromWideChar(&ch, 1);
 #else
     /* Without the wide library, decode the single-byte erase character
@@ -7196,6 +7244,9 @@ _curses_killwchar_impl(PyObject *module)
         curses_set_error(module, "killwchar", NULL);
         return NULL;
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    _Py_LocaleWcharToUnicode_InPlace(&ch, 1);
+#endif
     return PyUnicode_FromWideChar(&ch, 1);
 #else
     /* Without the wide library, decode the single-byte kill character
@@ -8138,6 +8189,19 @@ _curses_wunctrl(PyObject *module, PyObject *ch)
         curses_set_null_error(module, "wunctrl", NULL);
         return NULL;
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    {
+        /* wunctrl() returns a pointer to a static buffer; make a copy
+           before converting in place. */
+        wchar_t wbuf[8];
+        size_t len = wcslen(res);
+        if (len < Py_ARRAY_LENGTH(wbuf)) {
+            wcscpy(wbuf, res);
+            _Py_LocaleWcharToUnicode_InPlace(wbuf, len);
+            return PyUnicode_FromWideChar(wbuf, len);
+        }
+    }
+#endif
     return PyUnicode_FromWideChar(res, -1);
 #else
     /* Without the wide library, fall back to the single-byte unctrl() and
@@ -8227,6 +8291,10 @@ _curses_ungetch(PyObject *module, PyObject *ch)
         wchar_t wch;
         if (!PyCurses_ConvertToWchar_t(ch, &wch))
             return NULL;
+#ifdef _Py_NON_UNICODE_WCHAR_T
+        if (_Py_UnicodeToLocaleWchar_InPlace(&wch, 1) < 0)
+            return NULL;
+#endif
         return curses_check_err(module, unget_wch(wch), "unget_wch", "ungetch");
     }
 #endif
@@ -8258,6 +8326,10 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
     if (!PyCurses_ConvertToWchar_t(ch, &wch))
         return NULL;
 #ifdef HAVE_NCURSESW
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    if (_Py_UnicodeToLocaleWchar_InPlace(&wch, 1) < 0)
+        return NULL;
+#endif
     return curses_check_err(module, unget_wch(wch), "unget_wch", NULL);
 #else
     /* Without the wide library there is no unget_wch(): encode the character as
@@ -8346,6 +8418,12 @@ _curses_slk_set_impl(PyObject *module, int labnum, PyObject *label,
     if (wstr == NULL) {
         return NULL;
     }
+#ifdef _Py_NON_UNICODE_WCHAR_T
+    if (_Py_UnicodeToLocaleWchar_InPlace(wstr, wcslen(wstr)) < 0) {
+        PyMem_Free(wstr);
+        return NULL;
+    }
+#endif
     rtn = slk_wset(labnum, wstr, justify);
     PyMem_Free(wstr);
 #else
