@@ -159,7 +159,9 @@ _Py_RemoteDebug_ValidatePyRuntimeCookie(proc_handle_t *handle, uintptr_t address
     }
     char buf[sizeof(_Py_Debug_Cookie) - 1];
     if (_Py_RemoteDebug_ReadRemoteMemory(handle, address, sizeof(buf), buf) != 0) {
-        PyErr_Clear();
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            PyErr_Clear();
+        }
         return 0;
     }
     return memcmp(buf, _Py_Debug_Cookie, sizeof(buf)) == 0;
@@ -1062,12 +1064,14 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
     address = search_linux_map_for_section(handle, "PyRuntime", "python",
                                            _Py_RemoteDebug_ValidatePyRuntimeCookie);
     if (address == 0) {
-        // Error out: 'python' substring covers both executable and DLL
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_Format(PyExc_RuntimeError,
-            "Failed to find the PyRuntime section in process %d on Linux platform",
-            handle->pid);
-        _PyErr_ChainExceptions1(exc);
+        if (!_Py_RemoteDebug_HasPermissionError()) {
+            // Error out: 'python' substring covers both executable and DLL
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_Format(PyExc_RuntimeError,
+                "Failed to find the PyRuntime section in process %d on Linux platform",
+                handle->pid);
+            _PyErr_ChainExceptions1(exc);
+        }
     }
 #elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
