@@ -3850,7 +3850,7 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
     }
 
     n = Py_MIN(n, max_buf_size - 1);
-    wchar_t *buf = PyMem_Calloc(n + 1, sizeof(wchar_t));
+    wchar_t *buf = PyMem_New(wchar_t, n + 1);
     if (buf == NULL) {
         return PyErr_NoMemory();
     }
@@ -3866,7 +3866,7 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
         PyMem_Free(buf);
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
-    PyObject *res = PyUnicode_FromWideChar(buf, -1);
+    PyObject *res = PyUnicode_FromWideChar(buf, rtn);
     PyMem_Free(buf);
     return res;
 #else
