@@ -4832,45 +4832,35 @@ class OtherTests(unittest.TestCase):
         unlink(TESTFN2)
 
 
-@requires_subprocess()
-class BoundedDecompressTests(unittest.TestCase):
-    # gh-151857: ZipExtFile._read1() bounds the output of each decompress()
-    # call for DEFLATE members, but historically did not for bzip2/lzma/zstd.
-    # A small, spec-conformant member that declares a large uncompressed size
-    # could therefore expand into one unbounded allocation even when the
-    # consumer deliberately reads in small chunks.  Verify the bound now holds
-    # for every non-DEFLATE compression method.
-    @unittest.skipUnless(sys.platform.startswith("linux"),
-                         "RLIMIT_AS is only reliably enforced on Linux")
-    def test_decompress_is_chunk_bounded(self):
-        for comp in ("ZIP_BZIP2", "ZIP_LZMA", "ZIP_ZSTANDARD"):
-            with self.subTest(compression=comp):
-                child = f"""if True:
-                    import resource, io, zipfile
-                    comp = getattr(zipfile, {comp!r}, None)
-                    if comp is None:
-                        print("SKIP"); raise SystemExit
-                    buf = io.BytesIO()
-                    with zipfile.ZipFile(buf, "w", compression=comp) as z:
-                        z.writestr("big", b"\\0" * (256 * 1024 * 1024))
-                    data = buf.getvalue()
-                    # 512 MiB address-space cap: ample for a bounded streaming
-                    # read, far below the 256 MiB single-shot expansion the bug
-                    # would attempt on top of the interpreter's own footprint.
-                    soft, hard = resource.getrlimit(resource.RLIMIT_AS)
-                    resource.setrlimit(resource.RLIMIT_AS, (512*1024*1024, hard))
-                    with zipfile.ZipFile(io.BytesIO(data)) as z:
-                        got = z.open("big").read(8192)
-                    assert len(got) == 8192, len(got)
-                    print("OK")
-                    """
-                r = subprocess.run([sys.executable, "-c", child],
-                                   capture_output=True, text=True)
-                out = (r.stdout + r.stderr).strip()
-                if "SKIP" in out:
-                    self.skipTest(f"{comp} unavailable")
-                self.assertEqual(r.returncode, 0, out)
-                self.assertIn("OK", out)
+class AbstractBoundedDecompressTests:
+    # ZipExtFile._read1() bounds the output of each decompress() call so that a
+    # small member declaring a large uncompressed size cannot expand into one
+    # unbounded read.  DEFLATE was already bounded; check the other methods too.
+    def test_read1_output_is_bounded(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=self.compression) as zf:
+            zf.writestr("big", b"\0" * (4 * 1024 * 1024))
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf:
+            with zf.open("big") as f:
+                self.assertLessEqual(len(f._read1(100)), f.MIN_READ_SIZE)
+
+
+@requires_bz2()
+class Bzip2BoundedDecompressTests(AbstractBoundedDecompressTests,
+                                  unittest.TestCase):
+    compression = zipfile.ZIP_BZIP2
+
+
+@requires_lzma()
+class LzmaBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                 unittest.TestCase):
+    compression = zipfile.ZIP_LZMA
+
+
+@requires_zstd()
+class ZstdBoundedDecompressTests(AbstractBoundedDecompressTests,
+                                 unittest.TestCase):
+    compression = zipfile.ZIP_ZSTANDARD
 
 
 class AbstractBadCrcTests:
