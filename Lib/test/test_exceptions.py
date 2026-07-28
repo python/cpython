@@ -10,6 +10,7 @@ import errno
 from codecs import BOM_UTF8
 from itertools import product
 from textwrap import dedent
+from types import ModuleType
 
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
@@ -2053,6 +2054,129 @@ class AttributeErrorTests(unittest.TestCase):
         except AttributeError as exc:
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
+
+    def test_getattr_error_message(self):
+        def fqn(type):
+            return f'{type.__module__}.{type.__qualname__}'
+
+        class RaiseWithName:
+            def __getattr__(self, name):
+                raise AttributeError(name)
+        obj = RaiseWithName()
+        with self.assertRaises(AttributeError) as cm:
+            getattr(obj, "missing1")
+        self.assertEqual(str(cm.exception),
+                         f"'{fqn(RaiseWithName)}' object has no attribute 'missing1'")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing1")
+
+        class BareRaise:
+            def __getattr__(self, name):
+                raise AttributeError
+        obj = BareRaise()
+        with self.assertRaises(AttributeError) as cm:
+            getattr(obj, "missing2")
+        self.assertEqual(str(cm.exception),
+                         f"'{fqn(BareRaise)}' object has no attribute 'missing2'")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing2")
+
+        class RaiseCustom:
+            def __getattr__(self, name):
+                raise AttributeError("custom")
+        obj = RaiseCustom()
+        with self.assertRaises(AttributeError) as cm:
+            getattr(obj, "missing3")
+        self.assertEqual(str(cm.exception), "custom")
+        self.assertIs(cm.exception.obj, obj)
+        self.assertEqual(cm.exception.name, "missing3")
+
+    def test_class_getattr_error_message(self):
+        def fqn(type):
+            return f'{type.__module__}.{type.__qualname__}'
+
+        class MetaclassRaiseWithName(type):
+            def __getattr__(self, name):
+                raise AttributeError(name)
+        cls = MetaclassRaiseWithName("spam", (), {})
+        with self.assertRaises(AttributeError) as cm:
+            getattr(cls, "missing1")
+        self.assertEqual(str(cm.exception),
+                         f"type object '{fqn(cls)}' has no attribute 'missing1'")
+        self.assertIs(cm.exception.obj, cls)
+        self.assertEqual(cm.exception.name, "missing1")
+
+        class MetaclassBareRaise(type):
+            def __getattr__(self, name):
+                raise AttributeError
+        cls = MetaclassBareRaise("eggs", (), {})
+        with self.assertRaises(AttributeError) as cm:
+            getattr(cls, "missing2")
+        self.assertEqual(str(cm.exception),
+                         f"type object '{fqn(cls)}' has no attribute 'missing2'")
+        self.assertIs(cm.exception.obj, cls)
+        self.assertEqual(cm.exception.name, "missing2")
+
+        class MetaclassRaiseCustom(type):
+            def __getattr__(self, name):
+                raise AttributeError("custom")
+        cls = MetaclassRaiseCustom("ham", (), {})
+        with self.assertRaises(AttributeError) as cm:
+            getattr(cls, "missing3")
+        self.assertEqual(str(cm.exception), "custom")
+        self.assertIs(cm.exception.obj, cls)
+        self.assertEqual(cm.exception.name, "missing3")
+
+    def test_module_getattr_error_message(self):
+        raisewithname_mod = ModuleType("raisewithname")
+        def raise_with_name(name):
+            raise AttributeError(name)
+        raisewithname_mod.__getattr__ = raise_with_name
+        with self.assertRaises(AttributeError) as cm:
+            getattr(raisewithname_mod, "missing1")
+        self.assertEqual(str(cm.exception),
+                         "module 'raisewithname' has no attribute 'missing1'")
+        self.assertIs(cm.exception.obj, raisewithname_mod)
+        self.assertEqual(cm.exception.name, "missing1")
+
+        bareraise_mod = ModuleType("bareraise")
+        def bare_raise(name):
+            raise AttributeError
+        bareraise_mod.__getattr__ = bare_raise
+        with self.assertRaises(AttributeError) as cm:
+            getattr(bareraise_mod, "missing2")
+        self.assertEqual(str(cm.exception),
+                         "module 'bareraise' has no attribute 'missing2'")
+        self.assertIs(cm.exception.obj, bareraise_mod)
+        self.assertEqual(cm.exception.name, "missing2")
+
+        custom_mod = ModuleType("custom")
+        def raise_custom(name):
+            raise AttributeError("custom")
+        custom_mod.__getattr__ = raise_custom
+        with self.assertRaises(AttributeError) as cm:
+            getattr(custom_mod, "missing3")
+        self.assertEqual(str(cm.exception), "custom")
+        self.assertIs(cm.exception.obj, custom_mod)
+        self.assertEqual(cm.exception.name, "missing3")
+
+        nameless_mod = ModuleType("forgettable")
+        del nameless_mod.__dict__["__name__"]
+        nameless_mod.__getattr__ = raise_with_name
+        with self.assertRaises(AttributeError) as cm:
+            getattr(nameless_mod, "missing4")
+        self.assertEqual(str(cm.exception), "module has no attribute 'missing4'")
+        self.assertIs(cm.exception.obj, nameless_mod)
+        self.assertEqual(cm.exception.name, "missing4")
+
+        nameless_mod = ModuleType("broken")
+        nameless_mod.__dict__["__name__"] = 10j
+        nameless_mod.__getattr__ = raise_with_name
+        with self.assertRaises(AttributeError) as cm:
+            getattr(nameless_mod, "missing4")
+        self.assertEqual(str(cm.exception), "module has no attribute 'missing4'")
+        self.assertIs(cm.exception.obj, nameless_mod)
+        self.assertEqual(cm.exception.name, "missing4")
 
     # Note: name suggestion tests live in `test_traceback`.
 

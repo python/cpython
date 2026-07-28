@@ -1,0 +1,10 @@
+:meth:`csv.Sniffer.sniff` now deduces the dialect by trial parsing with the
+actual CSV parser instead of heuristics based on matching isolated fragments
+and on character frequencies.  It can now
+detect the *escapechar* parameter, accepts non-ASCII delimiters in the
+*delimiters* argument, no longer misdetects the delimiter when the sample
+contains delimiter characters inside quoted fields, handles samples
+truncated at an arbitrary point, and no longer takes quadratic time on
+quoted samples.  A sample consisting of a single column of quoted fields
+now raises :exc:`csv.Error` instead of guessing a delimiter from the
+content of the fields.
