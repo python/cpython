@@ -4459,6 +4459,8 @@ fi
 
 # Check for native half-float type.
 AC_CACHE_CHECK([for _Float16 support], [ac_cv_float16_supported],
+WITH_SAVE_ENV([
+CFLAGS="$CFLAGS -mf16c"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void)
 {
@@ -4467,11 +4469,11 @@ int main(void)
 }
 ]])], [ac_cv_float16_supported=yes],
 [ac_cv_float16_supported=no],
-[ac_cv_float16_supported=no]))
-if test "$ac_cv_float16_supported" = "yes"; then
-    AC_DEFINE([HAVE_FLOAT16], [1],
-              [Defined if _Float16 C type is supported])
-fi
+[ac_cv_float16_supported=no])]))
+AS_VAR_IF([ac_cv_float16_supported], [yes],
+          [AC_DEFINE([HAVE_FLOAT16], [1],
+                     [Defined if _Float16 C type is supported])
+           BASECFLAGS="$BASECFLAGS -mf16c"])
 
 dnl Check for libmpdec >= 2.5.0
 PKG_CHECK_MODULES([LIBMPDEC], [libmpdec >= 2.5.0], [have_mpdec=yes], [
