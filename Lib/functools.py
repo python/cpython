@@ -1146,18 +1146,6 @@ def _wrap_unbound_cached_method(ref, unbound_method, maxsize, typed):
 
 
 class _cached_method:
-    """
-    A caching decorator for use on instance methods.
-
-    Using cache or lru_cache on methods is problematic because the instance is put into
-    the cache and cannot be garbage collected until the cache is cleared. This decorator
-    uses a cache based on `id(self)` and a weakref to clear cache entries.
-
-    The instance must be weak-referencable.
-
-    By default, this provides an infinite sized cache similar to functools.cache. Use
-    *maxsize* and *typed* to set these attributes of the underlying LRU cache.
-    """
     def __init__(self, func, /, maxsize=None, typed=False):
         self._function_table = {}
 
@@ -1197,6 +1185,18 @@ class _cached_method:
 
 
 def cached_method(func=None, /, maxsize=None, typed=False):
+    """
+    A caching decorator for use on instance methods.
+
+    Using cache or lru_cache on methods is problematic because the instance is put into
+    the cache and cannot be garbage collected until the cache is cleared. This decorator
+    uses a cache based on `id(self)` and a weakref to clear cache entries.
+
+    The instance must be weak-referencable.
+
+    By default, this provides an infinite sized cache similar to functools.cache. Use
+    *maxsize* and *typed* to set these attributes of the underlying LRU cache.
+    """
     if maxsize is not None and not isinstance(maxsize, int) and not callable(maxsize):
         raise TypeError(
             'Expected maxsize to be an integer, a callable, or None')
