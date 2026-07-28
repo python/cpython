@@ -1,0 +1,1 @@
+Fix AST generation asymmetry where unary positive ``+`` was implicitly dropped in pattern match expressions, restoring parsing parity with unary negative ``-``.
