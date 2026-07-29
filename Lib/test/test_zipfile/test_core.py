@@ -1,6 +1,7 @@
 import _pyio
 import array
 import contextlib
+import errno
 import importlib.util
 import io
 import itertools
@@ -654,6 +655,12 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         try:
             os.utime(TESTFN, (ts, ts))
         except OverflowError:
+            self.skipTest('Host fs cannot set timestamp to required value.')
+        except OSError as exc:
+            # Some file systems (e.g. UFS and ZFS on illumos) do not
+            # support timestamps that do not fit in 32 bits.
+            if exc.errno != errno.EOVERFLOW:
+                raise
             self.skipTest('Host fs cannot set timestamp to required value.')
 
         mtime_ns = os.stat(TESTFN).st_mtime_ns
