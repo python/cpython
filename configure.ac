@@ -4465,6 +4465,8 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void)
 {
     _Float16 val = 1.0f16;
+    double d = 3.14;
+    val = d;
     return 0;
 }
 ]])], [ac_cv_float16_supported=yes],

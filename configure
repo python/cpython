@@ -16723,6 +16723,8 @@ else case e in #(
 int main(void)
 {
     _Float16 val = 1.0f16;
+    double d = 3.14;
+    val = d;
     return 0;
 }
 
