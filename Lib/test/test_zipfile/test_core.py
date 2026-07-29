@@ -3964,13 +3964,13 @@ class ExtractorTests(unittest.TestCase):
         with open(TESTFN, 'wb'):
             pass
         cls.fmode = os.stat(TESTFN).st_mode
-        os.unlink(TESTFN)
+        unlink(TESTFN)
 
     def setUp(self):
         os.mkdir(TESTFNDIR)
 
     def tearDown(self):
-        os.unlink(TESTFN)
+        unlink(TESTFN)
         rmtree(TESTFNDIR)
 
     def make_test_archive(self, data):
