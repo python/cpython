@@ -1333,6 +1333,14 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pathlib
+-------
+
+* :meth:`pathlib.Path.mkdir` now has a *parent_mode* parameter that allows
+  specifying the mode for intermediate directories when ``parents=True``.
+  (Contributed by Gregory P. Smith in :gh:`86533`.)
+
+
 pdb
 ---
 
@@ -2104,10 +2112,6 @@ importlib.resources
 
 pathlib
 -------
-
-* :meth:`pathlib.Path.mkdir` now has a *parent_mode* parameter that allows
-  specifying the mode for intermediate directories when ``parents=True``.
-  (Contributed by Gregory P. Smith in :gh:`86533`.)
 
 * Removed deprecated :meth:`!pathlib.PurePath.is_reserved`.
   Use :func:`os.path.isreserved` to detect reserved paths on Windows.
