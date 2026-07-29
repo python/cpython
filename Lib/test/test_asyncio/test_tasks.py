@@ -2924,6 +2924,10 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         with self.assertRaises(AttributeError):
             del task._log_destroy_pending
 
+    def test_get_context_uninitialized(self):
+        task = self.Task.__new__(self.Task)
+        self.assertIsNone(task.get_context())
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture') and
                      hasattr(tasks, '_CTask'),
