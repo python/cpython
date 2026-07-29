@@ -106,6 +106,7 @@ Doc/conf.py                   @AA-Turner @hugovk @StanFromIreland
 Doc/make.bat                  @AA-Turner @hugovk @StanFromIreland
 Doc/requirements.txt          @AA-Turner @hugovk @StanFromIreland
 Doc/tools/                    @AA-Turner @hugovk @StanFromIreland
+Doc/tools/removed-ids.txt     @AA-Turner @StanFromIreland
 
 # PR Previews
 .readthedocs.yml              @AA-Turner
