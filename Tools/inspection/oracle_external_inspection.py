@@ -86,15 +86,13 @@ def target_process(code, warmup):
     try:
         proc = subprocess.Popen(
             [sys.executable, tmp_name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
         time.sleep(warmup)
         if proc.poll() is not None:
-            out, err = proc.communicate()
             raise RuntimeError(
-                f"target exited unexpectedly\n"
-                f"stdout:\n{out.decode()}\nstderr:\n{err.decode()}"
+                f"target exited unexpectedly with code {proc.returncode}"
             )
         yield proc
     finally:
