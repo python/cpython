@@ -252,7 +252,7 @@ functools
 
 * Added :func:`functools.cached_method` decorator for applying a cache to
   instance methods.
-  (Contributed by Stephen Rosen in :gh:`150002`.)
+  (Contributed by Stephen Rosen in :gh:`102618`.)
 
 
 gzip
