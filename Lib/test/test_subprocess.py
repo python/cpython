@@ -4290,5 +4290,31 @@ class FastWaitTestCase(BaseTestCase):
             self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
         self.assertFalse(m.called)
 
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_huge_timeout(self):
+        # gh-154836: very large timeout values used to overflow the C
+        # timestamp conversion in poll() / kqueue.control() and raise
+        # OverflowError / TypeError.
+        for timeout in (10**10, sys.maxsize, float('inf')):
+            with self.subTest(timeout=timeout):
+                p = subprocess.Popen(ZERO_RETURN_CMD)
+                self.assertEqual(p.wait(timeout=timeout), 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_run_huge_timeout(self):
+        # gh-154836: same as test_wait_huge_timeout, via the
+        # subprocess.run() / communicate() code path.
+        cp = subprocess.run(ZERO_RETURN_CMD, timeout=1e10)
+        self.assertEqual(cp.returncode, 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_slices_do_not_expire_early(self):
+        # A clamped wait slice must not raise TimeoutExpired before the
+        # real deadline: with a tiny slice limit, a process that
+        # outlives many slices must still be waited for successfully.
+        with mock.patch.object(subprocess, "_MAXIMUM_WAIT_TIMEOUT", 0.01):
+            p = subprocess.Popen(self.COMMAND)  # sleeps 0.3s
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
+
 if __name__ == "__main__":
     unittest.main()
