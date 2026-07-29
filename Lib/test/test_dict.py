@@ -1411,12 +1411,18 @@ class DictTest(unittest.TestCase):
         for i in range(1, 1000):
             del d[f"k{i}"]
 
-        it = reversed(d)
+        iterators = (
+            reversed(d),
+            reversed(d.keys()),
+            reversed(d.values()),
+            reversed(d.items()),
+        )
 
         d.clear()
         d["k0"] = 0
 
-        self.assertEqual(list(it), [])
+        for it in iterators:
+            self.assertEqual(list(it), [])
 
     def test_dict_copy_order(self):
         # bpo-34320
