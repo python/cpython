@@ -603,6 +603,27 @@ class BasicTest(BaseTest):
             venv.create(self.env_dir)
             listxattr_mock.assert_not_called()
 
+    @unittest.skipIf(os.name == 'nt', 'POSIX-specific permission test')
+    def test_install_scripts_honors_umask(self):
+        """
+        gh-127172: Activation scripts must inherit the process umask (and any
+        default ACL) like every other created file, rather than a fixed mode
+        copied from the source template.
+        """
+        old_umask = os.umask(0o002)
+        try:
+            venv.create(self.env_dir, with_pip=False)
+            bindir = os.path.join(self.env_dir, self.bindir)
+            control = os.path.join(bindir, 'control')
+            with open(control, 'w'):
+                pass
+            expected = os.stat(control).st_mode & 0o777
+            for name in ('activate', 'activate.csh', 'activate.fish'):
+                mode = os.stat(os.path.join(bindir, name)).st_mode & 0o777
+                self.assertEqual(mode, expected)
+        finally:
+            os.umask(old_umask)
+
     def test_overwrite_existing(self):
         """
         Test creating environment in an existing directory.
