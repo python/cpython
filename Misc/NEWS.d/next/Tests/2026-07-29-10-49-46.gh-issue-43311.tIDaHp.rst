@@ -1,0 +1,4 @@
+Added a regression test for :mod:`smtplib` confirming that an error
+raised while resetting the connection after a rejected ``DATA`` command
+no longer masks the original :exc:`~smtplib.SMTPDataError` over a TLS
+connection.
