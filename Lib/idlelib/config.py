@@ -73,8 +73,9 @@ class IdleConfParser(ConfigParser):
 
     def Load(self):
         "Load the configuration file from disk."
-        if self.file:
-            self.read(self.file)
+        if self.file and os.path.exists(self.file):
+            with open(self.file, encoding='utf-8', errors='replace') as f:
+                self.read_file(f)
 
 class IdleUserConfParser(IdleConfParser):
     """
@@ -133,10 +134,10 @@ class IdleUserConfParser(IdleConfParser):
         if fname and fname[0] != '#':
             if not self.IsEmpty():
                 try:
-                    cfgFile = open(fname, 'w')
+                    cfgFile = open(fname, 'w', encoding='utf-8')
                 except OSError:
                     os.unlink(fname)
-                    cfgFile = open(fname, 'w')
+                    cfgFile = open(fname, 'w', encoding='utf-8')
                 with cfgFile:
                     self.write(cfgFile)
             elif os.path.exists(self.file):

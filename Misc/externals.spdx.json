@@ -112,42 +112,42 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "7a1d1f3a2b8f4484a9c2a027a157963c18f85a81785e85fcb5d1e3df6b6a4fd4"
+          "checksumValue": "3ac2acd65ddaaac0b2b8df321b558419d21da20bf67ab39149b8248c85f0d214"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-9.0.3.0.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-9.0.4.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:9.0.3.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:9.0.4.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tcl",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "9.0.3.0"
+      "versionInfo": "9.0.4.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tk",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "54fb59df12c489c6264f5b7d3d7444b150d1e3d6561fd59cdb11483440cec000"
+          "checksumValue": "66048966cfa88989333ff1632f454e10e9248516bb45efda7b4d2ae5a61642cb"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-9.0.3.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-9.0.4.1.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:9.0.3.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:9.0.4.1:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tk",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "9.0.3.1"
+      "versionInfo": "9.0.4.1"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-xz",

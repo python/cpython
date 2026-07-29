@@ -226,8 +226,14 @@ typedef struct {
 #define FRAME_CACHE_MAX_FRAMES 1024
 
 typedef struct {
+    uintptr_t frame;
+    uintptr_t seq;
+} FrameCacheAnchor;
+
+typedef struct {
     uint64_t thread_id;                      // 0 = empty slot
     uintptr_t thread_state_addr;
+    uintptr_t last_profiled_frame_seq;       // sequence paired with addrs[0]
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     Py_ssize_t num_addrs;
     PyObject *thread_id_obj;                 // owned reference, NULL if empty
@@ -434,7 +440,7 @@ typedef struct {
     uintptr_t thread_state_addr;    // Owning thread state address
     uintptr_t base_frame_addr;      // Sentinel at bottom (for validation)
     uintptr_t gc_frame;             // GC frame address (0 if not tracking)
-    uintptr_t last_profiled_frame;  // Last cached frame (0 if no cache)
+    FrameCacheAnchor last_profiled; // Last cached frame anchor
     StackChunkList *chunks;         // Pre-copied stack chunks
     int skip_first_frame;           // Skip frame_addr itself (continue from its caller)
     RemoteReadPrefetch prefetch;     // Optional already-read thread/frame buffers
@@ -622,15 +628,21 @@ extern void frame_cache_cleanup(RemoteUnwinderObject *unwinder);
 extern FrameCacheEntry *frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id);
 extern FrameCacheEntry *frame_cache_find_by_tstate(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr);
 extern int clear_last_profiled_frames(RemoteUnwinderObject *unwinder);
+extern int set_last_profiled_frame(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr, uintptr_t frame_addr);
 extern void frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result);
 extern int frame_cache_lookup_and_extend(
     RemoteUnwinderObject *unwinder,
     uint64_t thread_id,
-    uintptr_t last_profiled_frame,
+    uintptr_t thread_state_addr,
+    FrameCacheAnchor anchor,
     PyObject *frame_info,
     uintptr_t *frame_addrs,
     Py_ssize_t *num_addrs,
     Py_ssize_t max_addrs);
+extern int frame_cache_anchor_matches(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t thread_state_addr,
+    FrameCacheAnchor anchor);
 // Returns: 1 = stored, 0 = not stored (graceful), -1 = error
 // Only stores complete stacks that reach base_frame_addr
 extern int frame_cache_store(
@@ -640,6 +652,7 @@ extern int frame_cache_store(
     const uintptr_t *addrs,
     Py_ssize_t num_addrs,
     uintptr_t thread_state_addr,
+    uintptr_t last_profiled_frame_seq,
     uintptr_t base_frame_addr,
     uintptr_t last_frame_visited);
 

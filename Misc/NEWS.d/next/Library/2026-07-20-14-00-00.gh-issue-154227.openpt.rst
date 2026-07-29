@@ -1,0 +1,2 @@
+Fix :func:`os.posix_openpt` on OpenBSD, where it rejected the
+:data:`~os.O_CLOEXEC` flag.

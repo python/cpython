@@ -168,8 +168,9 @@ _ctypes_get_errobj(ctypes_state *st, int **pspace)
     }
     else {
         void *space = PyMem_Calloc(2, sizeof(int));
-        if (space == NULL)
-            return NULL;
+        if (space == NULL) {
+            return PyErr_NoMemory();
+        }
         errobj = PyCapsule_New(space, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
         if (errobj == NULL) {
             PyMem_Free(space);
