@@ -1105,6 +1105,8 @@ can be used to control the execution of the underlying generator function:
    exception), :meth:`close` returns :const:`None`.
    If the generator yields a value, a :exc:`RuntimeError` is raised.
    If the generator raises any other exception, it is propagated to the caller.
+   If a generator returns a value upon being closed, that value is returned
+   by :meth:`close`.
 
    When a generator iterator is garbage collected before it has exited,
    :meth:`~generator.close` is called automatically.
@@ -1113,7 +1115,7 @@ can be used to control the execution of the underlying generator function:
 
       If a generator returns a value upon being closed, the value is returned
       by :meth:`close`.
-      Previously, the value was returned from :meth:`~generator.close`.
+      Previously, it returned ``None``.
 
 
 Calling any of the generator methods (:meth:`~generator.__next__`,
@@ -1209,34 +1211,6 @@ the underlying generator function:
       may be removed in a future version of Python.
 
 
-   TODO::: reword agen.aclose()
-
-               Raises a :exc:`GeneratorExit` exception at the point where the generator
-               function is currently suspended (equivalent to calling ``throw(GeneratorExit)``).
-
-               If the generator function has already exited (due to an exception or
-               normal return), or raises :exc:`GeneratorExit` (by not catching the
-               exception), :meth:`close` returns :const:`None`.
-               If the generator yields a value, a :exc:`RuntimeError` is raised.
-               If the generator raises any other exception, it is propagated to the caller.
-
-               When a generator iterator is garbage collected before it has exited,
-               :meth:`~generator.close` is called automatically.
-
-               .. versionchanged:: 3.13
-
-                  If a generator returns a value upon being closed, the value is returned
-                  by :meth:`close`.
-                  Previously, the value was returned from :meth:`~generator.close`.
-
-
-            Calling any of the generator methods (:meth:`~generator.__next__`,
-            :meth:`~generator.send`, :meth:`~generator.throw`, :meth:`~generator.close`)
-            while one of these methods is already executing
-            raises a :exc:`ValueError` exception.
-
-
-
 .. index:: pair: exception; GeneratorExit
 
 .. method:: agen.aclose()
@@ -1252,12 +1226,14 @@ the underlying generator function:
    Any further awaitables returned by subsequent calls to the asynchronous
    generator will raise a :exc:`StopAsyncIteration` exception.
 
-   If the
-   asynchronous generator yields a value, a :exc:`RuntimeError` is raised
-   by the awaitable.  If the asynchronous generator raises any other exception,
-   it is propagated to the caller of the awaitable.  If the asynchronous
-   generator has already exited due to an exception or normal exit, then
-   further calls to :meth:`aclose` will return an awaitable that does nothing.
+   If the asynchronous generator yields a value, a :exc:`RuntimeError` is
+   raised by the awaitable.
+   If the asynchronous generator raises any other exception, that exception
+   is propagated to the caller of the awaitable.
+
+   If the asynchronous generator has already exited due to an exception or
+   normal exit, then further calls to :meth:`aclose` will return an awaitable
+   that does nothing.
 
 
 .. _typesseq:
