@@ -188,6 +188,8 @@ def run_mode(case, mode_name, args):
             result["samples"] += 1
             for unit in iter_units(trace, op):
                 frames = unit[3]
+                # Classifiers recognize selected impossible patterns; False
+                # does not imply that the complete stack is valid.
                 impossible = classify is not None and (
                     classify(unit) if classify_units else classify(frames)
                 )
