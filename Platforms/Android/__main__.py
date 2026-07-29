@@ -625,7 +625,8 @@ async def read_logcat(stream):
     except ValueError:
         priority = LogPriority.UNKNOWN
 
-    payload_fields = (await read_bytes(payload_len - 1)).split(b"\0")
+    payload = await read_bytes(payload_len - 1)
+    payload_fields = payload.split(b"\0")
     if len(payload_fields) < 2:
         raise ValueError(
             f"payload {payload!r} does not contain at least 2 "
