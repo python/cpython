@@ -6284,11 +6284,9 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
         assert (value != NULL);
     }
     else {
-        Py_ssize_t n = k->dk_nentries;
-        if (i >= n) {
+        if (i >= k->dk_nentries) {
             goto fail;
         }
-
         if (DK_IS_UNICODE(k)) {
             PyDictUnicodeEntry *entry_ptr = &DK_UNICODE_ENTRIES(k)[i];
             while (entry_ptr->me_value == NULL) {
