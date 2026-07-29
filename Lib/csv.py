@@ -330,8 +330,14 @@ class Sniffer:
 
         # if we see an extra quote between delimiters, we've got a
         # double quoted format
+        #
+        # The first character class must exclude the quote character.  If it
+        # can cross a quote, the engine has to try every way of splitting a
+        # run of quotes between the two classes, which is pathological on
+        # quote-heavy input (gh-109638).  The second class must keep admitting
+        # the quote, since that is what lets `"a""b"` match.
         dq_regexp = re.compile(
-                               r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
+                               r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s%(quote)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
                                {'delim':re.escape(delim), 'quote':quotechar}, re.MULTILINE)
 
 

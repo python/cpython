@@ -1501,6 +1501,12 @@ ghi\0jkl
         self.assertEqual(dialect.delimiter, ',')
         self.assertEqual(dialect.quotechar, '"')
 
+    def test_sniff_regex_backtracking(self):
+        # gh-109638: this artificial sample used to take about ten seconds.
+        sniffer = csv.Sniffer()
+        sample = '"",' * 60 + '"' * 60 + '0' + '"' * 60 + '0'
+        self.assertEqual(sniffer.sniff(sample).delimiter, ',')
+
     def test_doublequote(self):
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.header1)

@@ -1,0 +1,4 @@
+Fix excessive regular expression backtracking in :class:`csv.Sniffer` on
+quote-heavy samples.  Detecting a doubled-quote dialect could try every way of
+splitting a run of quotes between two character classes, making
+:meth:`~csv.Sniffer.sniff` take seconds on samples of a few hundred characters.
