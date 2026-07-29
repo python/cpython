@@ -208,6 +208,7 @@ def result_metrics(result, reference_obs, is_reference, op):
     skip_tvd = is_reference or op != "get_stack_trace"
     n_live = sum(result["observations"].values())
     raw_tvd = None if skip_tvd else tvd(result["observations"], reference_obs)
+    # IID heuristic, not a calibrated noise bound.
     floor = None if skip_tvd else tvd_floor(reference_obs, n_live)
     return {
         "samples": result["samples"],
@@ -279,6 +280,9 @@ def print_results(
             "impossible_pct": fmt_stat(
                 [item["impossible_percent"] for item in metrics], 2
             ),
+            "raw_tvd": "ref"
+            if mode == reference_mode
+            else fmt_stat([item["raw_tvd"] for item in metrics], 3),
             "tvd_excess": "ref"
             if mode == reference_mode
             else fmt_stat([item["tvd_excess"] for item in metrics], 3),
@@ -303,6 +307,7 @@ def print_results(
         ]
     if is_sync:
         columns += [
+            ("raw_tvd", ">12", "raw_tvd"),
             ("tvd_excess", ">12", "tvd_excess"),
             ("tvd_floor", ">10", "tvd_floor"),
         ]
