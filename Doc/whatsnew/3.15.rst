@@ -522,7 +522,7 @@ free-threading (``cp315t``) separately.
 Stable ABI for Free-Threaded Builds should typically
 be selected in a build tool (such as, for example, Setuptools, meson-python,
 scikit-build-core, or Maturin).
-At the time of writing, these tools did **not** support ``abi3t``.
+At the time of writing, these tools do **not** support ``abi3t``.
 If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
@@ -1874,8 +1874,8 @@ xml
   whether a string can be used as an element or attribute name in XML.
   (Contributed by Serhiy Storchaka in :gh:`139489`.)
 
-* Add the :func:`xml.is_valid_text` function, which allows to check
-  whether a string can be used in the XML document.
+* Add the :func:`xml.is_valid_text` function to check
+  whether a string can be used in an XML document.
   (Contributed by Serhiy Storchaka in :gh:`139489`.)
 
 
@@ -2156,8 +2156,8 @@ threading
 types
 -----
 
-* Removed deprecated in :pep:`626` since Python 3.12
-  :attr:`!codeobject.co_lnotab` from :class:`types.CodeType`.
+* Removed :attr:`!codeobject.co_lnotab` from :class:`types.CodeType`,
+  deprecated since Python 3.12 by :pep:`626`.
   (Contributed by Nikita Sobolev in :gh:`134690`.)
 
 
@@ -2309,8 +2309,8 @@ New deprecations
 
     (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
 
-  * Using ``'F'`` and ``'D'`` type codes now are :term:`soft deprecated`
-    in favor of two-letter forms ``'Zf'`` and ``'Zd'``.
+  * The ``'F'`` and ``'D'`` type codes are now :term:`soft deprecated`
+    in favor of the two-letter forms ``'Zf'`` and ``'Zd'``.
     (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
 
@@ -2724,10 +2724,11 @@ Build changes
   At runtime, huge pages must be explicitly enabled by setting the
   :envvar:`PYTHON_PYMALLOC_HUGEPAGES` environment variable to ``1``.
 
-* Annotating anonymous mmap usage is now supported if Linux kernel supports
+* Annotating anonymous mmap usage is now supported if the Linux kernel supports
   :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
-  and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
+  and :option:`-X dev <-X>` is passed to Python,
+  or Python is built in :ref:`debug mode <debug-build>`.
   (Contributed by Donghee Na in :gh:`141770`.)
 
 * CPython is now built with frame pointers enabled by default
