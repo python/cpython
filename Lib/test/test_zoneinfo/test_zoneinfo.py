@@ -499,6 +499,37 @@ class CZoneInfoTest(ZoneInfoTest):
                 self.assertEqual(dt_fromutc.fold, 1)
                 self.assertEqual(dt.fold, 0)
 
+    def test_datetime_subclass_negative_components(self):
+        """Regression test for gh-154892.
+
+        Datetime subclasses may return -1 for time components. The C
+        accelerator should treat -1 as a valid PyLong_AsLong() result unless
+        an exception is set, matching the pure-Python implementation.
+        """
+        class MinusOneDateTime(datetime):
+            @property
+            def hour(self):
+                return -1
+
+            @property
+            def minute(self):
+                return -1
+
+            @property
+            def second(self):
+                return -1
+
+        zi = self.zone_from_key("UTC")
+        dt = MinusOneDateTime(2024, 1, 1, tzinfo=zi)
+
+        self.assertEqual(dt.utcoffset(), ZERO)
+        self.assertEqual(dt.dst(), ZERO)
+        self.assertEqual(dt.tzname(), "UTC")
+        self.assertEqual(
+            zi.fromutc(dt),
+            datetime(2024, 1, 1, tzinfo=zi),
+        )
+
 
 class ZoneInfoDatetimeSubclassTest(DatetimeSubclassMixin, ZoneInfoTest):
     pass
