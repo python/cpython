@@ -34,7 +34,7 @@ __all__ = [
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma",
-    "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
+    "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "has_fork_support", "requires_fork",
     "has_subprocess_support", "requires_subprocess",
@@ -1214,6 +1214,22 @@ def bigmemtest(size, memuse, dry_run=True):
         wrapper.memuse = memuse
         return wrapper
     return decorator
+
+def nomemtest(f):
+    """Check that we can use this test with `_testcapi.set_nomemory`."""
+    from .import_helper import import_module
+
+    @functools.wraps(f)
+    def internal(*args, **kwargs):
+        import_module('_testcapi')
+        return f(*args, **kwargs)
+
+    return unittest.skipIf(
+        # Python built with Py_TRACE_REFS fail with a fatal error in
+        # _PyRefchain_Trace() on memory allocation error.
+        Py_TRACE_REFS,
+        'cannot test Py_TRACE_REFS build',
+    )(cpython_only(internal))
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -2863,3 +2879,18 @@ def control_characters_c0() -> list[str]:
     C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
     """
     return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
+
+
+STATUS_DLL_INIT_FAILED = 0xC0000142
+def skip_on_low_desktop_heap_memory_subprocess(returncode):
+    if sys.platform not in ('win32', 'cygwin'):
+        return
+    # On Windows, STATUS_DLL_INIT_FAILED is a generic error code that could
+    # come from any of the DLLs being loaded when a new Python process is
+    # created. In practice, it's likely a memory allocation failure in the
+    # desktop heap memory which caused the DLL init failure, especially on
+    # process created with CREATE_NEW_CONSOLE creation flag. See the article:
+    # https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/desktop-heap-limitation-out-of-memory
+    if returncode == STATUS_DLL_INIT_FAILED:
+        raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
+                                'of low desktop heap memory')

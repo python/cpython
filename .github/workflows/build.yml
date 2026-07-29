@@ -185,9 +185,14 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
-      - name: Check for undocumented C APIs
-        run: make check-c-api-docs
 
+  check-c-api-docs:
+    name: C API Docs
+    needs: build-context
+    if: >-
+      needs.build-context.outputs.run-tests == 'true'
+      || needs.build-context.outputs.run-docs == 'true'
+    uses: ./.github/workflows/reusable-check-c-api-docs.yml
 
   build-windows:
     name: >-
@@ -246,16 +251,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-26 is Apple Silicon, macos-15-intel is Intel.
-        # macos-15-intel only runs tests against the GIL-enabled CPython.
+        # macos-26 is Apple Silicon, macos-26-intel is Intel.
+        # macos-26-intel only runs tests against the GIL-enabled CPython.
         os:
         - macos-26
-        - macos-15-intel
+        - macos-26-intel
         free-threading:
         - false
         - true
         exclude:
-        - os: macos-15-intel
+        - os: macos-26-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
@@ -291,7 +296,7 @@ jobs:
         # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
         # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
         # supported by important vendors such as AWS-LC.
-        openssl_ver: [1.1.1w, 3.0.19, 3.3.6, 3.4.4, 3.5.5, 3.6.1]
+        openssl_ver: [1.1.1w, 3.0.21, 3.4.6, 3.5.7, 3.6.3]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -351,7 +356,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: JAVA_HOME="${JAVA_HOME_21_X64:-$JAVA_HOME_21_arm64}" ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-wasi:
     name: 'WASI'
@@ -366,7 +371,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.0.18
+      OPENSSL_VER: 3.0.21
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -473,7 +478,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.18
+      OPENSSL_VER: 3.0.21
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -486,10 +491,6 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Set up GCC-10 for ASAN
-      uses: egor-tensin/setup-gcc@a2861a8b8538f49cf2850980acccf6b05a1b2ae4 # v2.0
-      with:
-        version: 10
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
@@ -586,6 +587,7 @@ jobs:
     - check-docs
     - check-autoconf-regen
     - check-generated-files
+    - check-c-api-docs
     - build-windows
     - build-windows-msi
     - build-macos
@@ -616,6 +618,12 @@ jobs:
             check-autoconf-regen,
             check-generated-files,
             '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-tests)
+            && !fromJSON(needs.build-context.outputs.run-docs)
+            && 'check-c-api-docs,'
             || ''
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}

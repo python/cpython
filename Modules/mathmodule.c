@@ -1794,16 +1794,20 @@ math_isqrt(PyObject *module, PyObject *n)
     /* The correct result is either a or a - 1. Figure out which, and
        decrement a if necessary. */
 
-    /* a_too_large = n < a * a */
+    /* a_too_large = n < a * a.  Compare by value: n can be an instance
+       of an int subclass with an overridden __lt__ method. */
     b = PyNumber_Multiply(a, a);
     if (b == NULL) {
         goto error;
     }
-    a_too_large = PyObject_RichCompareBool(n, b, Py_LT);
+    PyObject *cmp = PyLong_Type.tp_richcompare(n, b, Py_LT);
     Py_DECREF(b);
-    if (a_too_large == -1) {
+    if (cmp == NULL) {
         goto error;
     }
+    assert(PyBool_Check(cmp));
+    a_too_large = (cmp == Py_True);
+    Py_DECREF(cmp);
 
     if (a_too_large) {
         Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
@@ -2095,13 +2099,14 @@ math.frexp
 
 Return the mantissa and exponent of x, as pair (m, e).
 
-m is a float and e is an int, such that x = m * 2.**e.
-If x is 0, m and e are both 0.  Else 0.5 <= abs(m) < 1.0.
+If x is a finite nonzero number, then m is a float with
+0.5 <= abs(m) < 1.0 and an integer e is such that
+x == m * 2**e exactly.  Else, return (x, 0).
 [clinic start generated code]*/
 
 static PyObject *
 math_frexp_impl(PyObject *module, double x)
-/*[clinic end generated code: output=03e30d252a15ad4a input=96251c9e208bc6e9]*/
+/*[clinic end generated code: output=03e30d252a15ad4a input=215cf8ea28a0959b]*/
 {
     int i;
     /* deal with special cases directly, to sidestep platform
@@ -3940,13 +3945,13 @@ Return the floating-point value the given number of steps after x towards y.
 
 If steps is not specified or is None, it defaults to 1.
 
-Raises a TypeError, if x or y is not a double, or if steps is not an integer.
-Raises ValueError if steps is negative.
+Raises a TypeError, if x or y is not a double, or if steps is not
+an integer.  Raises ValueError if steps is negative.
 [clinic start generated code]*/
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
-/*[clinic end generated code: output=cc6511f02afc099e input=7f2a5842112af2b4]*/
+/*[clinic end generated code: output=cc6511f02afc099e input=89764144d1a33160]*/
 {
 #if defined(_AIX)
     if (x == y) {

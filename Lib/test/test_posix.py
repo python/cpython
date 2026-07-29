@@ -46,7 +46,8 @@ def _supports_sched():
     try:
         posix.sched_getscheduler(0)
     except OSError as e:
-        if e.errno == errno.ENOSYS:
+        # DragonFly BSD requires privileges to use the scheduler API.
+        if e.errno in (errno.ENOSYS, errno.EPERM):
             return False
     return True
 
@@ -415,8 +416,10 @@ class PosixTester(unittest.TestCase):
             if inst.errno == errno.EINVAL and sys.platform.startswith(
                 ('sunos', 'freebsd', 'openbsd', 'gnukfreebsd')):
                 raise unittest.SkipTest("test may fail on ZFS filesystems")
-            elif inst.errno == errno.EOPNOTSUPP and sys.platform.startswith("netbsd"):
-                raise unittest.SkipTest("test may fail on FFS filesystems")
+            elif inst.errno == errno.EOPNOTSUPP:
+                # ZFS on FreeBSD, FFS on NetBSD, etc.
+                raise unittest.SkipTest(
+                    "the file system does not support posix_fallocate()")
             else:
                 raise
         finally:
@@ -838,7 +841,9 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(OSError, chown_func, first_param, 0, -1)
             check_stat(uid, gid)
             if hasattr(os, 'getgroups'):
-                if 0 not in os.getgroups():
+                # Also check the effective gid, which the kernel
+                # accepts for chown even if not in getgroups().
+                if 0 not in os.getgroups() and os.getegid() != 0:
                     self.assertRaises(OSError, chown_func, first_param, -1, 0)
                     check_stat(uid, gid)
         # test illegal types
@@ -1386,6 +1391,7 @@ class PosixTester(unittest.TestCase):
         del sched_priority, param  # should not crash
         support.gc_collect()  # just to be sure
 
+    @requires_sched
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
         try:

@@ -86,7 +86,8 @@ PyDoc_STRVAR(_asyncio_Future_result__doc__,
 "\n"
 "If the future has been cancelled, raises CancelledError.  If the\n"
 "future\'s result isn\'t yet available, raises InvalidStateError.  If\n"
-"the future is done and has an exception set, this exception is raised.");
+"the future is done and has an exception set, this exception is\n"
+"raised.");
 
 #define _ASYNCIO_FUTURE_RESULT_METHODDEF    \
     {"result", (PyCFunction)_asyncio_Future_result, METH_NOARGS, _asyncio_Future_result__doc__},
@@ -227,8 +228,8 @@ PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
 "\n"
 "Add a callback to be run when the future becomes done.\n"
 "\n"
-"The callback is called with a single argument - the future object. If\n"
-"the future is already done when this is called, the callback is\n"
+"The callback is called with a single argument - the future object.\n"
+"If the future is already done when this is called, the callback is\n"
 "scheduled with call_soon.");
 
 #define _ASYNCIO_FUTURE_ADD_DONE_CALLBACK_METHODDEF    \
@@ -340,9 +341,9 @@ PyDoc_STRVAR(_asyncio_Future_cancel__doc__,
 "\n"
 "Cancel the future and schedule callbacks.\n"
 "\n"
-"If the future is already done or cancelled, return False.  Otherwise,\n"
-"change the future\'s state to cancelled, schedule the callbacks and\n"
-"return True.");
+"If the future is already done or cancelled, return False.\n"
+"Otherwise, change the future\'s state to cancelled, schedule the\n"
+"callbacks and return True.");
 
 #define _ASYNCIO_FUTURE_CANCEL_METHODDEF    \
     {"cancel", _PyCFunction_CAST(_asyncio_Future_cancel), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_cancel__doc__},
@@ -423,8 +424,8 @@ PyDoc_STRVAR(_asyncio_Future_done__doc__,
 "\n"
 "Return True if the future is done.\n"
 "\n"
-"Done means either that a result / exception are available, or that the\n"
-"future was cancelled.");
+"Done means either that a result / exception are available, or that\n"
+"the future was cancelled.");
 
 #define _ASYNCIO_FUTURE_DONE_METHODDEF    \
     {"done", (PyCFunction)_asyncio_Future_done, METH_NOARGS, _asyncio_Future_done__doc__},
@@ -1487,4 +1488,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b26155080c82c472 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1842473913c9f884 input=a9049054013a1b77]*/

@@ -1013,17 +1013,22 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             has_separator = (c == ':');
         }
 
-        if (p >= p_end) {
+        if (c == '.' || c == ',') {
+            if (p >= p_end) {
+                return -3;  // Decimal mark not followed by any digit
+            }
+            break;
+        }
+        else if (p >= p_end) {
             return c != '\0';
         }
         else if (has_separator && (c == ':')) {
             continue;
         }
-        else if (c == '.' || c == ',') {
-            break;
-        } else if (!has_separator) {
+        else if (!has_separator) {
             --p;
-        } else {
+        }
+        else {
             return -4;  // Malformed time separator
         }
     }
@@ -1637,8 +1642,8 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
 {
     PyObject *tzinfo;
     if (rv == 1) {
-        // Create a timezone from offset in seconds (0 returns UTC)
-        if (tzoffset == 0) {
+        // Create a timezone from the offset (a zero offset returns UTC)
+        if (tzoffset == 0 && tz_useconds == 0) {
             return Py_NewRef(CONST_UTC(NO_STATE));
         }
 
@@ -3208,13 +3213,13 @@ datetime.date.fromtimestamp
 
 Create a date from a POSIX timestamp.
 
-The timestamp is a number, e.g. created via time.time(), that is interpreted
-as local time.
+The timestamp is a number, e.g. created via time.time(), that is
+interpreted as local time.
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=fd045fda58168869 input=eabb3fe7f40491fe]*/
+/*[clinic end generated code: output=fd045fda58168869 input=15720eef43b169a1]*/
 {
     return date_fromtimestamp((PyObject *) type, timestamp);
 }

@@ -875,15 +875,15 @@ zlib.Decompress.decompress
 
 Return a bytes object containing the decompressed version of the data.
 
-After calling this function, some of the input data may still be stored in
-internal buffers for later processing.
+After calling this function, some of the input data may still be
+stored in internal buffers for later processing.
 Call the flush() method to clear these buffers.
 [clinic start generated code]*/
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=b024a93c2c922d57 input=bfb37b3864cfb606]*/
+/*[clinic end generated code: output=b024a93c2c922d57 input=b8c9e2d124fe4720]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
@@ -1688,24 +1688,25 @@ zlib.ZlibDecompressor.decompress
 
 Decompress *data*, returning uncompressed data as bytes.
 
-If *max_length* is nonnegative, returns at most *max_length* bytes of
-decompressed data. If this limit is reached and further output can be
-produced, *self.needs_input* will be set to ``False``. In this case, the next
-call to *decompress()* may provide *data* as b'' to obtain more of the output.
+If *max_length* is nonnegative, returns at most *max_length* bytes
+of decompressed data.  If this limit is reached and further output
+can be produced, *self.needs_input* will be set to ``False``.  In
+this case, the next call to *decompress()* may provide *data* as b''
+to obtain more of the output.
 
-If all of the input data was decompressed and returned (either because this
-was less than *max_length* bytes, or because *max_length* was negative),
-*self.needs_input* will be set to True.
+If all of the input data was decompressed and returned (either
+because this was less than *max_length* bytes, or because
+*max_length* was negative), *self.needs_input* will be set to True.
 
-Attempting to decompress data after the end of stream is reached raises an
-EOFError.  Any data found after the end of the stream is ignored and saved in
-the unused_data attribute.
+Attempting to decompress data after the end of stream is reached
+raises an EOFError.  Any data found after the end of the stream is
+ignored and saved in the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
 zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
                                       Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=990d32787b775f85 input=0b29d99715250b96]*/
+/*[clinic end generated code: output=990d32787b775f85 input=6fb56d60b48cd843]*/
 
 {
     PyObject *result = NULL;

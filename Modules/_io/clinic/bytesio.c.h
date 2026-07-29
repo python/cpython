@@ -202,8 +202,8 @@ PyDoc_STRVAR(_io_BytesIO_read1__doc__,
 "\n"
 "Read at most size bytes, returned as a bytes object.\n"
 "\n"
-"If the size argument is negative or omitted, read until EOF is reached.\n"
-"Return an empty bytes object at EOF.");
+"If the size argument is negative or omitted, read until EOF is\n"
+"reached.  Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ1_METHODDEF    \
     {"read1", _PyCFunction_CAST(_io_BytesIO_read1), METH_FASTCALL, _io_BytesIO_read1__doc__},
@@ -452,8 +452,8 @@ PyDoc_STRVAR(_io_BytesIO_writelines__doc__,
 "Write lines to the file.\n"
 "\n"
 "Note that newlines are not added.  lines can be any iterable object\n"
-"producing bytes-like objects. This is equivalent to calling write() for\n"
-"each element.");
+"producing bytes-like objects.  This is equivalent to calling write()\n"
+"for each element.");
 
 #define _IO_BYTESIO_WRITELINES_METHODDEF    \
     {"writelines", (PyCFunction)_io_BytesIO_writelines, METH_O, _io_BytesIO_writelines__doc__},
@@ -534,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ef116925b8b9e535 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=502699cd403dd3a0 input=a9049054013a1b77]*/

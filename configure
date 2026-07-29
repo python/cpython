@@ -11155,6 +11155,12 @@ then :
   printf "%s\n" "#define HAVE_SYS_SYSCALL_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "sys/sysctl.h" "ac_cv_header_sys_sysctl_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_sysctl_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYS_SYSCTL_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "sys/sysmacros.h" "ac_cv_header_sys_sysmacros_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_sysmacros_h" = xyes
 then :
@@ -13885,9 +13891,10 @@ then :
 
 fi
 
-# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# gh-124228: While the libuuid library is available on NetBSD and OpenBSD,
+# it supports only UUID version 4.
 # This restriction inhibits the proper generation of time-based UUIDs.
-if test "$ac_sys_system" = "NetBSD"; then
+if test "$ac_sys_system" = "NetBSD" || test "$ac_sys_system" = "OpenBSD"; then
   have_uuid=missing
   printf "%s\n" "#define HAVE_UUID_H 0" >>confdefs.h
 
@@ -16262,8 +16269,8 @@ int
 main (void)
 {
 
-      void *x1 = Tcl_Init;
-      void *x2 = Tk_Init;
+      Tcl_Init(NULL);
+      Tk_Init(NULL);
 
   ;
   return 0;
@@ -18280,12 +18287,6 @@ then :
   printf "%s\n" "#define HAVE_DUP 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
-if test "x$ac_cv_func_dup3" = xyes
-then :
-  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "execv" "ac_cv_func_execv"
 if test "x$ac_cv_func_execv" = xyes
 then :
@@ -18760,12 +18761,6 @@ then :
   printf "%s\n" "#define HAVE_PIPE 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
-if test "x$ac_cv_func_pipe2" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "plock" "ac_cv_func_plock"
 if test "x$ac_cv_func_plock" = xyes
 then :
@@ -19198,6 +19193,12 @@ then :
   printf "%s\n" "#define HAVE_SYSCONF 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "sysctlbyname" "ac_cv_func_sysctlbyname"
+if test "x$ac_cv_func_sysctlbyname" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYSCTLBYNAME 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "tcgetpgrp" "ac_cv_func_tcgetpgrp"
 if test "x$ac_cv_func_tcgetpgrp" = xyes
 then :
@@ -19380,7 +19381,13 @@ fi
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
 if test "$ac_sys_system" != "iOS" ; then
-  ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
+  ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
+if test "x$ac_cv_func_dup3" = xyes
+then :
+  printf "%s\n" "#define HAVE_DUP3 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
 if test "x$ac_cv_func_getentropy" = xyes
 then :
   printf "%s\n" "#define HAVE_GETENTROPY 1" >>confdefs.h
@@ -19390,6 +19397,12 @@ ac_fn_c_check_func "$LINENO" "getgroups" "ac_cv_func_getgroups"
 if test "x$ac_cv_func_getgroups" = xyes
 then :
   printf "%s\n" "#define HAVE_GETGROUPS 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
+if test "x$ac_cv_func_pipe2" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "system" "ac_cv_func_system"
@@ -26958,6 +26971,8 @@ fi
 
 
 
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_pad" >&5
 printf %s "checking for curses function is_pad... " >&6; }
 if test ${ac_cv_lib_curses_is_pad+y}
@@ -27594,6 +27609,283 @@ fi
 
 
 
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function set_escdelay" >&5
+printf %s "checking for curses function set_escdelay... " >&6; }
+if test ${ac_cv_lib_curses_set_escdelay+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef set_escdelay
+        void *x=set_escdelay
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_set_escdelay=yes
+else $as_nop
+  ac_cv_lib_curses_set_escdelay=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_set_escdelay" >&5
+printf "%s\n" "$ac_cv_lib_curses_set_escdelay" >&6; }
+  if test "x$ac_cv_lib_curses_set_escdelay" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SET_ESCDELAY 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function set_tabsize" >&5
+printf %s "checking for curses function set_tabsize... " >&6; }
+if test ${ac_cv_lib_curses_set_tabsize+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef set_tabsize
+        void *x=set_tabsize
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_set_tabsize=yes
+else $as_nop
+  ac_cv_lib_curses_set_tabsize=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_set_tabsize" >&5
+printf "%s\n" "$ac_cv_lib_curses_set_tabsize" >&6; }
+  if test "x$ac_cv_lib_curses_set_tabsize" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_SET_TABSIZE 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses variable ESCDELAY" >&5
+printf %s "checking for curses variable ESCDELAY... " >&6; }
+if test ${ac_cv_lib_curses_ESCDELAY+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        int x = ESCDELAY; (void)x;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_ESCDELAY=yes
+else $as_nop
+  ac_cv_lib_curses_ESCDELAY=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_ESCDELAY" >&5
+printf "%s\n" "$ac_cv_lib_curses_ESCDELAY" >&6; }
+  if test "x$ac_cv_lib_curses_ESCDELAY" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_ESCDELAY 1" >>confdefs.h
+
+fi
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses variable TABSIZE" >&5
+printf %s "checking for curses variable TABSIZE... " >&6; }
+if test ${ac_cv_lib_curses_TABSIZE+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        int x = TABSIZE; (void)x;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_TABSIZE=yes
+else $as_nop
+  ac_cv_lib_curses_TABSIZE=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_TABSIZE" >&5
+printf "%s\n" "$ac_cv_lib_curses_TABSIZE" >&6; }
+  if test "x$ac_cv_lib_curses_TABSIZE" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_TABSIZE 1" >>confdefs.h
+
+fi
+
+
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncurses-style curses function getmouse" >&5
+printf %s "checking for ncurses-style curses function getmouse... " >&6; }
+if test ${ac_cv_lib_curses_getmouse+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+MEVENT event; (void)getmouse(&event);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_lib_curses_getmouse=yes
+else $as_nop
+  ac_cv_lib_curses_getmouse=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_getmouse" >&5
+printf "%s\n" "$ac_cv_lib_curses_getmouse" >&6; }
+if test "x$ac_cv_lib_curses_getmouse" = xyes
+then :
+
+printf "%s\n" "#define HAVE_CURSES_GETMOUSE 1" >>confdefs.h
+
+fi
 CPPFLAGS=$ac_save_cppflags
 
 fi

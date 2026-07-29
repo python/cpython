@@ -573,8 +573,9 @@ PyDoc_STRVAR(bytearray_translate__doc__,
 "  table\n"
 "    Translation table, which must be a bytes object of length 256.\n"
 "\n"
-"All characters occurring in the optional argument delete are removed.\n"
-"The remaining characters are mapped through the given translation table.");
+"All characters occurring in the optional argument delete are\n"
+"removed.  The remaining characters are mapped through the given\n"
+"translation table.");
 
 #define BYTEARRAY_TRANSLATE_METHODDEF    \
     {"translate", _PyCFunction_CAST(bytearray_translate), METH_FASTCALL|METH_KEYWORDS, bytearray_translate__doc__},
@@ -639,8 +640,8 @@ PyDoc_STRVAR(bytearray_maketrans__doc__,
 "\n"
 "Return a translation table usable for the bytes or bytearray translate method.\n"
 "\n"
-"The returned table will be one where each byte in frm is mapped to the byte at\n"
-"the same position in to.\n"
+"The returned table will be one where each byte in frm is mapped to\n"
+"the byte at the same position in to.\n"
 "\n"
 "The bytes objects frm and to must be of the same length.");
 
@@ -757,8 +758,8 @@ PyDoc_STRVAR(bytearray_split__doc__,
 "\n"
 "  sep\n"
 "    The delimiter according which to split the bytearray.\n"
-"    None (the default value) means split on ASCII whitespace characters\n"
-"    (space, tab, return, newline, formfeed, vertical tab).\n"
+"    None (the default value) means split on ASCII whitespace\n"
+"    characters (space, tab, return, newline, formfeed, vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.");
@@ -842,12 +843,13 @@ PyDoc_STRVAR(bytearray_partition__doc__,
 "\n"
 "Partition the bytearray into three parts using the given separator.\n"
 "\n"
-"This will search for the separator sep in the bytearray. If the separator is\n"
-"found, returns a 3-tuple containing the part before the separator, the\n"
-"separator itself, and the part after it as new bytearray objects.\n"
+"This will search for the separator sep in the bytearray.  If the\n"
+"separator is found, returns a 3-tuple containing the part before the\n"
+"separator, the separator itself, and the part after it as new\n"
+"bytearray objects.\n"
 "\n"
-"If the separator is not found, returns a 3-tuple containing the copy of the\n"
-"original bytearray object and two empty bytearray objects.");
+"If the separator is not found, returns a 3-tuple containing the copy\n"
+"of the original bytearray object and two empty bytearray objects.");
 
 #define BYTEARRAY_PARTITION_METHODDEF    \
     {"partition", (PyCFunction)bytearray_partition, METH_O, bytearray_partition__doc__},
@@ -858,13 +860,14 @@ PyDoc_STRVAR(bytearray_rpartition__doc__,
 "\n"
 "Partition the bytearray into three parts using the given separator.\n"
 "\n"
-"This will search for the separator sep in the bytearray, starting at the end.\n"
-"If the separator is found, returns a 3-tuple containing the part before the\n"
-"separator, the separator itself, and the part after it as new bytearray\n"
-"objects.\n"
+"This will search for the separator sep in the bytearray, starting at\n"
+"the end.  If the separator is found, returns a 3-tuple containing\n"
+"the part before the separator, the separator itself, and the part\n"
+"after it as new bytearray objects.\n"
 "\n"
-"If the separator is not found, returns a 3-tuple containing two empty bytearray\n"
-"objects and the copy of the original bytearray object.");
+"If the separator is not found, returns a 3-tuple containing two\n"
+"empty bytearray objects and the copy of the original bytearray\n"
+"object.");
 
 #define BYTEARRAY_RPARTITION_METHODDEF    \
     {"rpartition", (PyCFunction)bytearray_rpartition, METH_O, bytearray_rpartition__doc__},
@@ -877,13 +880,14 @@ PyDoc_STRVAR(bytearray_rsplit__doc__,
 "\n"
 "  sep\n"
 "    The delimiter according which to split the bytearray.\n"
-"    None (the default value) means split on ASCII whitespace characters\n"
-"    (space, tab, return, newline, formfeed, vertical tab).\n"
+"    None (the default value) means split on ASCII whitespace\n"
+"    characters (space, tab, return, newline, formfeed, vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
-"Splitting is done starting at the end of the bytearray and working to the front.");
+"Splitting is done starting at the end of the bytearray and working\n"
+"to the front.");
 
 #define BYTEARRAY_RSPLIT_METHODDEF    \
     {"rsplit", _PyCFunction_CAST(bytearray_rsplit), METH_FASTCALL|METH_KEYWORDS, bytearray_rsplit__doc__},
@@ -1151,7 +1155,8 @@ PyDoc_STRVAR(bytearray_strip__doc__,
 "\n"
 "Strip leading and trailing bytes contained in the argument.\n"
 "\n"
-"If the argument is omitted or None, strip leading and trailing ASCII whitespace.");
+"If the argument is omitted or None, strip leading and trailing ASCII\n"
+"whitespace.");
 
 #define BYTEARRAY_STRIP_METHODDEF    \
     {"strip", _PyCFunction_CAST(bytearray_strip), METH_FASTCALL, bytearray_strip__doc__},
@@ -1256,11 +1261,11 @@ PyDoc_STRVAR(bytearray_decode__doc__,
 "  encoding\n"
 "    The encoding with which to decode the bytearray.\n"
 "  errors\n"
-"    The error handling scheme to use for the handling of decoding errors.\n"
-"    The default is \'strict\' meaning that decoding errors raise a\n"
-"    UnicodeDecodeError. Other possible values are \'ignore\' and \'replace\'\n"
-"    as well as any other name registered with codecs.register_error that\n"
-"    can handle UnicodeDecodeErrors.");
+"    The error handling scheme to use for the handling of decoding\n"
+"    errors.  The default is \'strict\' meaning that decoding errors\n"
+"    raise a UnicodeDecodeError.  Other possible values are \'ignore\'\n"
+"    and \'replace\' as well as any other name registered with\n"
+"    codecs.register_error that can handle UnicodeDecodeErrors.");
 
 #define BYTEARRAY_DECODE_METHODDEF    \
     {"decode", _PyCFunction_CAST(bytearray_decode), METH_FASTCALL|METH_KEYWORDS, bytearray_decode__doc__},
@@ -1354,7 +1359,8 @@ PyDoc_STRVAR(bytearray_join__doc__,
 "\n"
 "Concatenate any number of bytes/bytearray objects.\n"
 "\n"
-"The bytearray whose method is called is inserted in between each pair.\n"
+"The bytearray whose method is called is inserted in between each\n"
+"pair.\n"
 "\n"
 "The result is returned as a new bytearray object.");
 
@@ -1367,8 +1373,8 @@ PyDoc_STRVAR(bytearray_splitlines__doc__,
 "\n"
 "Return a list of the lines in the bytearray, breaking at line boundaries.\n"
 "\n"
-"Line breaks are not included in the resulting list unless keepends is given and\n"
-"true.");
+"Line breaks are not included in the resulting list unless keepends\n"
+"is given and true.");
 
 #define BYTEARRAY_SPLITLINES_METHODDEF    \
     {"splitlines", _PyCFunction_CAST(bytearray_splitlines), METH_FASTCALL|METH_KEYWORDS, bytearray_splitlines__doc__},
@@ -1434,7 +1440,8 @@ PyDoc_STRVAR(bytearray_fromhex__doc__,
 "Create a bytearray object from a string of hexadecimal numbers.\n"
 "\n"
 "Spaces between two numbers are accepted.\n"
-"Example: bytearray.fromhex(\'B9 01EF\') -> bytearray(b\'\\\\xb9\\\\x01\\\\xef\')");
+"Example:\n"
+"    bytearray.fromhex(\'B9 01EF\') -> bytearray(b\'\\\\xb9\\\\x01\\\\xef\')");
 
 #define BYTEARRAY_FROMHEX_METHODDEF    \
     {"fromhex", (PyCFunction)bytearray_fromhex, METH_O|METH_CLASS, bytearray_fromhex__doc__},
@@ -1468,8 +1475,8 @@ PyDoc_STRVAR(bytearray_hex__doc__,
 "  sep\n"
 "    An optional single character or byte to separate hex bytes.\n"
 "  bytes_per_sep\n"
-"    How many bytes between separators.  Positive values count from the\n"
-"    right, negative values count from the left.\n"
+"    How many bytes between separators.  Positive values count from\n"
+"    the right, negative values count from the left.\n"
 "\n"
 "Example:\n"
 ">>> value = bytearray([0xb9, 0x01, 0xef])\n"
@@ -1616,4 +1623,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=5f861b02e3fa278b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ba624d41653ce07 input=a9049054013a1b77]*/

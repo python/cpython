@@ -1,0 +1,5 @@
+The :mod:`curses` module now detects ``set_escdelay()``, ``set_tabsize()`` and
+the ``ESCDELAY`` and ``TABSIZE`` variables with :program:`configure` capability
+probes instead of the ncurses-specific ``NCURSES_EXT_FUNCS`` macro, so they are
+exposed when building against other curses implementations such as NetBSD curses
+that provide them.

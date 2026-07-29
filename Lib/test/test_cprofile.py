@@ -116,8 +116,9 @@ class CProfileTest(ProfileTest):
         pr = self.profilerclass()
         pr2 = self.profilerclass()
         pr.enable()
-        self.assertRaises(ValueError, pr2.enable)
-        pr.disable()
+        self.addCleanup(pr.disable)
+        msg = f"tool {sys.monitoring.PROFILER_ID} is already in use"
+        self.assertRaisesRegex(ValueError, msg, pr2.enable)
 
     def test_throw(self):
         """

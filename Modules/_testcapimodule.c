@@ -15,6 +15,10 @@
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
+#ifdef bool
+#  error "The public headers should not include <stdbool.h>, see gh-90904"
+#endif
+
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 #include <stddef.h>               // offsetof()
@@ -22,9 +26,8 @@
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE
 #endif
-
-#ifdef bool
-#  error "The public headers should not include <stdbool.h>, see gh-48924"
+#ifdef HAVE_SYS_SYSCTL_H
+#  include <sys/sysctl.h>         // sysctlbyname()
 #endif
 
 #include "_testcapi/util.h"
@@ -3486,6 +3489,31 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+
+#ifdef HAVE_SYSCTLBYNAME
+static PyObject*
+uptime_bsd(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    struct timeval tv;
+    size_t size = sizeof(tv);
+    int res = sysctlbyname("kern.boottime", &tv, &size, NULL, 0);
+    if (res != 0) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    double boottime = (double)tv.tv_sec + tv.tv_usec * 1e-6;
+
+    PyTime_t now_t;
+    if (PyTime_Time(&now_t) < 0) {
+        return NULL;
+    }
+    double now = PyTime_AsSecondsDouble(now_t);
+
+    double uptime = now - boottime;
+    return PyFloat_FromDouble(uptime);
+}
+#endif
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3632,6 +3660,9 @@ static PyMethodDef TestMethods[] = {
     {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
+#ifdef HAVE_SYSCTLBYNAME
+    {"uptime_bsd", uptime_bsd, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
@@ -4327,6 +4358,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Object(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Weakref(m) < 0) {
         return NULL;
     }
 

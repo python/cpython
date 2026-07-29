@@ -512,8 +512,9 @@ The special characters are:
    *name* exists, and with ``no-pattern`` if it doesn't. ``no-pattern`` is
    optional and can be omitted. For example,
    ``(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)`` is a poor email matching pattern, which
-   will match with ``'<user@host.com>'`` as well as ``'user@host.com'``, but
-   not with ``'<user@host.com'`` nor ``'user@host.com>'``.
+   matches ``'<user@host.com>'`` as well as ``'user@host.com'``, but does not
+   match ``'<user@host.com'`` nor ``'user@host.com>'`` in their entirety
+   (:func:`re.search` finds only ``'user@host.com'`` in the former).
 
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
@@ -1238,6 +1239,9 @@ Regular Expression Objects
 
    Compiled regular expression object returned by :func:`re.compile`.
 
+   Patterns are :ref:`generic <generics>` over the type of string they handle
+   (:class:`str` or :class:`bytes`).
+
    .. versionchanged:: 3.9
       :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
       See :ref:`types-genericalias`.
@@ -1380,6 +1384,9 @@ when there is no match, you can test whether there was a match with a simple
 .. class:: Match
 
    Match object returned by successful ``match``\ es and ``search``\ es.
+
+   Matches are :ref:`generic <generics>` over the type of string which was
+   matched (:class:`str` or :class:`bytes`).
 
    .. versionchanged:: 3.9
       :py:class:`re.Match` supports ``[]`` to indicate a Unicode (str) or bytes match.

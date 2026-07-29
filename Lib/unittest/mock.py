@@ -2991,7 +2991,7 @@ def mock_open(mock=None, read_data=''):
             return handle.readline.return_value
         return next(_state[0])
 
-    def _exit_side_effect(exctype, excinst, exctb):
+    def _exit_side_effect(*args):
         handle.close()
 
     global file_spec
@@ -3101,6 +3101,10 @@ class ThreadingMixin(Base):
         self._mock_event.set()
 
         return ret_value
+
+    def _increment_mock_call(self, /, *args, **kwargs):
+        with self._mock_calls_events_lock:
+            super()._increment_mock_call(*args, **kwargs)
 
     def wait_until_called(self, *, timeout=_timeout_unset):
         """Wait until the mock object is called.

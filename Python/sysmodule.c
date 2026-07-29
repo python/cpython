@@ -1782,7 +1782,7 @@ sys_getwindowsversion_impl(PyObject *module)
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
         if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
-            return NULL;
+            goto error;
         }
 
         PyErr_Clear();
@@ -2329,12 +2329,13 @@ sys._stats_dump -> bool
 
 Dump stats to file, and clears the stats.
 
-Return False if no statistics were not dumped because stats gathering was off.
+Return False if no statistics were not dumped because stats gathering
+was off.
 [clinic start generated code]*/
 
 static int
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=6e346b4ba0de4489 input=31a489e39418b2a5]*/
+/*[clinic end generated code: output=6e346b4ba0de4489 input=7f3b7758cb59d2ff]*/
 {
     int res = _Py_PrintSpecializationStats(1);
     _Py_StatsClear();

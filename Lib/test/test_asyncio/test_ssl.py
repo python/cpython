@@ -1544,6 +1544,9 @@ class TestSSL(test_utils.TestCase):
             # This triggers bug gh-115514, also tested using mocks in
             # test.test_asyncio.test_selector_events.SelectorSocketTransportTests.test_write_buffer_after_close
             socket_transport = writer.transport._ssl_protocol._transport
+            # connection_lost may have already cleared _transport.
+            if socket_transport is None:
+                return
 
             class SocketWrapper:
                 def __init__(self, sock) -> None:

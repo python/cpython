@@ -97,7 +97,7 @@ class TestFunctions(unittest.TestCase):
         try:
             termios.tcsendbreak(self.fd, 1)
         except termios.error as exc:
-            if exc.args[0] == errno.ENOTTY and sys.platform.startswith(('freebsd', "netbsd")):
+            if exc.args[0] == errno.ENOTTY and sys.platform.startswith(('freebsd', 'netbsd', 'openbsd', 'dragonfly')):
                 self.skipTest('termios.tcsendbreak() is not supported '
                               'with pseudo-terminals (?) on this platform')
             raise
@@ -169,6 +169,9 @@ class TestFunctions(unittest.TestCase):
         termios.tcflow(self.fd, termios.TCOON)
         termios.tcflow(self.fd, termios.TCIOFF)
         termios.tcflow(self.fd, termios.TCION)
+        # Discard the transmitted STOP and START characters,
+        # otherwise closing the pseudo-terminal can block.
+        termios.tcflush(self.fd, termios.TCOFLUSH)
 
     def test_tcflow_errors(self):
         self.assertRaisesTermiosError(errno.EINVAL, termios.tcflow, self.fd, -1)

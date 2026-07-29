@@ -56,11 +56,18 @@ or on combining URL components into a URL string.
    :class:`SplitResult` or :class:`SplitResultBytes`.
    This corresponds to the general structure of a URL:
    ``scheme://netloc/path?query#fragment``.
-   Each tuple item is a string, possibly empty. The components are not broken up
-   into smaller parts (for example, the network location is a single string), and %
-   escapes are not expanded. The delimiters as shown above are not part of the
-   result, except for a leading slash in the *path* component, which is retained if
-   present.  For example:
+   Each tuple item is a string, possibly empty.
+
+   The delimiters as shown above are not part of the result, except for a
+   leading slash in the *path* component, which is retained if present.
+
+   Additionally, the netloc property is broken down into these additional
+   attributes added to the returned object: username, password, hostname, and
+   port.
+
+   Percent-encoded sequences are not decoded.
+
+   For example:
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
@@ -586,8 +593,9 @@ task isn't already covered by the URL parsing functions above.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.
-   *encoding* defaults to ``'utf-8'``.
-   *errors* defaults to ``'strict'``, meaning unsupported characters raise a
+   Although these parameters default to ``None`` in the function signature,
+   when processing :class:`str` inputs, *encoding* effectively defaults to ``'utf-8'``
+   and *errors* to ``'strict'``, meaning unsupported characters raise a
    :class:`UnicodeEncodeError`.
    *encoding* and *errors* must not be supplied if *string* is a
    :class:`bytes`, or a :class:`TypeError` is raised.

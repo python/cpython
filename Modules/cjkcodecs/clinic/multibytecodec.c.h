@@ -14,10 +14,11 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "\n"
 "Return an encoded string version of `input\'.\n"
 "\n"
-"\'errors\' may be given to set a different error handling scheme. Default is\n"
-"\'strict\' meaning that encoding errors raise a UnicodeEncodeError. Other possible\n"
-"values are \'ignore\', \'replace\' and \'xmlcharrefreplace\' as well as any other name\n"
-"registered with codecs.register_error that can handle UnicodeEncodeErrors.");
+"\'errors\' may be given to set a different error handling scheme.\n"
+"Default is \'strict\' meaning that encoding errors raise\n"
+"a UnicodeEncodeError.  Other possible values are \'ignore\', \'replace\'\n"
+"and \'xmlcharrefreplace\' as well as any other name registered with\n"
+"codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define _MULTIBYTECODEC_MULTIBYTECODEC_ENCODE_METHODDEF    \
     {"encode", _PyCFunction_CAST(_multibytecodec_MultibyteCodec_encode), METH_FASTCALL|METH_KEYWORDS, _multibytecodec_MultibyteCodec_encode__doc__},
@@ -100,9 +101,10 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_decode__doc__,
 "\n"
 "Decodes \'input\'.\n"
 "\n"
-"\'errors\' may be given to set a different error handling scheme. Default is\n"
-"\'strict\' meaning that encoding errors raise a UnicodeDecodeError. Other possible\n"
-"values are \'ignore\' and \'replace\' as well as any other name registered with\n"
+"\'errors\' may be given to set a different error handling scheme.\n"
+"Default is \'strict\' meaning that encoding errors raise\n"
+"a UnicodeDecodeError.  Other possible values are \'ignore\' and\n"
+"\'replace\' as well as any other name registered with\n"
 "codecs.register_error that is able to handle UnicodeDecodeErrors.\"");
 
 #define _MULTIBYTECODEC_MULTIBYTECODEC_DECODE_METHODDEF    \
@@ -682,4 +684,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=ee767a6d93c7108a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de24dedc0342de51 input=a9049054013a1b77]*/

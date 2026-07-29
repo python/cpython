@@ -416,7 +416,7 @@ class ModuleChecker:
     def _check_file(self, modinfo: ModuleInfo, spec: ModuleSpec) -> None:
         """Check that the module file is present and not empty"""
         if spec.loader is BuiltinImporter:  # type: ignore[comparison-overlap]
-            return
+            return  # type: ignore[unreachable]
         try:
             assert spec.origin is not None
             st = os.stat(spec.origin)

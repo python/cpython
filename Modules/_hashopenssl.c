@@ -1870,13 +1870,13 @@ _hashlib.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
 
-This may be used to exchange the value safely in email or other non-binary
-environments.
+This may be used to exchange the value safely in email or other
+non-binary environments.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self)
-/*[clinic end generated code: output=80d825be1eaae6a7 input=5abc42702874ddcf]*/
+/*[clinic end generated code: output=80d825be1eaae6a7 input=865e6128c7ec0781]*/
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int digest_size = _hashlib_hmac_digest_size(self);
@@ -2038,8 +2038,8 @@ _hashlib.get_fips_mode -> int
 Determine the OpenSSL FIPS mode of operation.
 
 For OpenSSL 3.0.0 and newer it returns the state of the default provider
-in the default OSSL context. It's not quite the same as FIPS_mode() but good
-enough for unittests.
+in the default OSSL context. It's not quite the same as FIPS_mode() but
+good enough for unittests.
 
 Effectively any non-zero return value indicates FIPS mode;
 values other than 1 may have additional significance.
@@ -2047,7 +2047,7 @@ values other than 1 may have additional significance.
 
 static int
 _hashlib_get_fips_mode_impl(PyObject *module)
-/*[clinic end generated code: output=87eece1bab4d3fa9 input=2db61538c41c6fef]*/
+/*[clinic end generated code: output=87eece1bab4d3fa9 input=a6cdb6901421d122]*/
 
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L

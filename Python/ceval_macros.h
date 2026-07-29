@@ -359,14 +359,15 @@ do { \
 // for an exception handler, displaying the traceback, and so on
 #define INSTRUMENTED_JUMP(src, dest, event) \
 do { \
+    _Py_CODEUNIT *_dest = (dest); \
     if (tstate->tracing) {\
-        next_instr = dest; \
+        next_instr = _dest; \
     } else { \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, _dest); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
-            next_instr = (dest)+1; \
+            next_instr = _dest + 1; \
             goto error; \
         } \
     } \

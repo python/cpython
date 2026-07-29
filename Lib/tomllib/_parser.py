@@ -6,8 +6,9 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 import string
+import sys
 from types import MappingProxyType
-from typing import Any, BinaryIO, NamedTuple
+from typing import Any, BinaryIO, NamedTuple, Final
 
 from ._re import (
     RE_DATETIME,
@@ -18,6 +19,13 @@ from ._re import (
     match_to_number,
 )
 from ._types import Key, ParseFloat, Pos
+
+# Pathologically excessive number of parts in a key runs into quadratic
+# behavior (e.g. in Flags.is_).
+# Even if keys aren't currently parsed using recursion, they name a
+# recursive structure, so it makes sense to limit it using getrecursionlimit()
+# and RecursionError.
+MAX_KEY_PARTS: Final = sys.getrecursionlimit()
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -385,6 +393,10 @@ def parse_key(src: str, pos: Pos) -> tuple[Pos, Key]:
         pos = skip_chars(src, pos, TOML_WS)
         pos, key_part = parse_key_part(src, pos)
         key += (key_part,)
+        if len(key) > MAX_KEY_PARTS:
+            raise RecursionError(
+                f"TOML key has more than the allowed {MAX_KEY_PARTS} parts"
+            )
         pos = skip_chars(src, pos, TOML_WS)
 
 

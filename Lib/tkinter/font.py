@@ -1,3 +1,5 @@
+"""Utilities to help work with fonts in Tkinter."""
+
 # Tkinter font wrapper
 #
 # written by Fredrik Lundh, February 1998
@@ -72,8 +74,15 @@ class Font:
             root = tkinter._get_default_root('use font')
         tk = getattr(root, 'tk', root)
         if font:
-            # get actual settings corresponding to the given font
-            font = tk.splitlist(tk.call("font", "actual", font))
+            # start from the settings of the given font
+            try:
+                # a named font: copy its options, preserving the size,
+                # which can be negative (specified in pixels)
+                font = tk.splitlist(tk.call("font", "configure", font))
+            except tkinter.TclError:
+                # a font description: resolve it ("font configure" only
+                # accepts a font name); this loses a size in pixels
+                font = tk.splitlist(tk.call("font", "actual", font))
         else:
             font = self._set(options)
         if not name:
@@ -124,7 +133,7 @@ class Font:
 
     def copy(self):
         "Return a distinct copy of the current font"
-        return Font(self._tk, **self.actual())
+        return Font(self._tk, self.name)
 
     def actual(self, option=None, displayof=None):
         "Return actual font attributes"

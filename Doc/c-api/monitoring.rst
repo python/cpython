@@ -199,6 +199,4 @@ would typically correspond to a Python function.
 
    .. versionadded:: 3.13
 
-   .. deprecated:: 3.13.3
-
-      This function is :term:`soft deprecated`.
+   .. soft-deprecated:: 3.13.3

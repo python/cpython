@@ -626,13 +626,16 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/expat.h \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \
+		Modules/expat/fallthrough.h \
 		Modules/expat/iasciitab.h \
 		Modules/expat/internal.h \
 		Modules/expat/latin1tab.h \
+		Modules/expat/memory_sanitizer.h \
 		Modules/expat/nametab.h \
 		Modules/expat/pyexpatns.h \
 		Modules/expat/siphash.h \
 		Modules/expat/utf8tab.h \
+		Modules/expat/xcsinc.c \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h \
@@ -714,7 +717,7 @@ check-clean-src:
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
 		echo "Build artifacts such as .o files, executables, and Python/frozen_modules/*.h must not exist within $(srcdir)." ; \
 		echo "Try to run:" ; \
-		echo "  (cd \"$(srcdir)\" && make clean || git clean -fdx -e Doc/venv)" ; \
+		echo "  (cd \"$(srcdir)\" && make distclean || git clean -fdx -e Doc/venv)" ; \
 		exit 1; \
 	fi
 
@@ -955,7 +958,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
 	$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
 		-all_load $(LIBRARY) \
-		-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
+		-install_name $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
 		-compatibility_version $(VERSION) \
 		-current_version $(VERSION) \
 		-framework CoreFoundation $(LIBS);
@@ -1452,6 +1455,8 @@ Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) 
 _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
 	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+	# Dummy pybuilddir.txt  is needed for _bootstrap_python to be runnable
+	@echo "none" > ./pybuilddir.txt
 
 
 ############################################################################

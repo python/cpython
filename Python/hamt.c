@@ -718,6 +718,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             PyHamtNode_Bitmap *ret = hamt_node_bitmap_clone(self);
             if (ret == NULL) {
+                Py_DECREF(sub_node);
                 return NULL;
             }
             Py_SETREF(ret->b_array[val_idx], (PyObject*)sub_node);
@@ -1010,6 +1011,7 @@ hamt_node_bitmap_without(PyHamtNode_Bitmap *self,
 
                 PyHamtNode_Bitmap *clone = hamt_node_bitmap_clone(self);
                 if (clone == NULL) {
+                    Py_DECREF(sub_node);
                     return W_ERROR;
                 }
 

@@ -50,9 +50,9 @@ PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
 "\n"
 "Remove a shared memory object (similar to unlink()).\n"
 "\n"
-"Remove a shared memory object name, and, once all processes  have  unmapped\n"
-"the object, de-allocates and destroys the contents of the associated memory\n"
-"region.");
+"Remove a shared memory object name, and, once all processes have\n"
+"unmapped the object, de-allocates and destroys the contents of the\n"
+"associated memory region.");
 
 #define _POSIXSHMEM_SHM_UNLINK_METHODDEF    \
     {"shm_unlink", (PyCFunction)(void(*)(void))_posixshmem_shm_unlink, METH_VARARGS|METH_KEYWORDS, _posixshmem_shm_unlink__doc__},
@@ -85,4 +85,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=be0661dbed83ea23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=12fb6a177b317c7f input=a9049054013a1b77]*/

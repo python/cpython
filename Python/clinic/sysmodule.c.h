@@ -1305,7 +1305,8 @@ PyDoc_STRVAR(sys__stats_dump__doc__,
 "\n"
 "Dump stats to file, and clears the stats.\n"
 "\n"
-"Return False if no statistics were not dumped because stats gathering was off.");
+"Return False if no statistics were not dumped because stats gathering\n"
+"was off.");
 
 #define SYS__STATS_DUMP_METHODDEF    \
     {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
@@ -1614,4 +1615,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=9cc9069aef1482bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea92bafc107d8521 input=a9049054013a1b77]*/

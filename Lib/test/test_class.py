@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+from test import support
 from test.support import cpython_only, import_helper, script_helper
 
 testmeths = [
@@ -447,7 +448,6 @@ class ClassTests(unittest.TestCase):
 
     def testHasAttrString(self):
         import sys
-        from test.support import import_helper
         _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
         class A:
@@ -995,11 +995,8 @@ class TestInlineValues(unittest.TestCase):
         C.a = X()
         C.a = X()
 
-    @cpython_only
+    @support.nomemtest
     def test_detach_materialized_dict_no_memory(self):
-        # Skip test if _testcapi is not available:
-        import_helper.import_module('_testcapi')
-
         code = """if 1:
             import test.support
             import _testcapi

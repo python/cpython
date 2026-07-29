@@ -38,6 +38,9 @@ PyInit__testlimitedcapi(void)
     if (_PyTestLimitedCAPI_Init_Bytes(mod) < 0) {
         return NULL;
     }
+    if (_PyTestLimitedCAPI_Init_Capsule(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_Complex(mod) < 0) {
         return NULL;
     }
@@ -84,6 +87,12 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_File(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Weakref(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Run(mod) < 0) {
         return NULL;
     }
     return mod;

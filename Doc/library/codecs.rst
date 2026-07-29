@@ -1144,7 +1144,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp857           | 857, IBM857                    | Turkish                        |
 +-----------------+--------------------------------+--------------------------------+
-| cp858           | 858, IBM858                    | Western Europe                 |
+| cp858           | 858, IBM00858                  | Western Europe                 |
 +-----------------+--------------------------------+--------------------------------+
 | cp860           | 860, IBM860                    | Portuguese                     |
 +-----------------+--------------------------------+--------------------------------+
@@ -1181,7 +1181,7 @@ particular, the following variants typically exist:
 |                 |                                |                                |
 |                 |                                | .. versionadded:: 3.4          |
 +-----------------+--------------------------------+--------------------------------+
-| cp1140          | ibm1140                        | Western Europe                 |
+| cp1140          | IBM01140                       | Western Europe                 |
 +-----------------+--------------------------------+--------------------------------+
 | cp1250          | windows-1250                   | Central and Eastern Europe     |
 +-----------------+--------------------------------+--------------------------------+
@@ -1385,6 +1385,14 @@ encodings.
 | punycode           |         | Implement :rfc:`3492`.    |
 |                    |         | Stateful codecs are not   |
 |                    |         | supported.                |
+|                    |         |                           |
+|                    |         | .. warning::              |
+|                    |         |                           |
+|                    |         |    The decoding and       |
+|                    |         |    encoding algorithms    |
+|                    |         |    scale poorly, so       |
+|                    |         |    limit the length of    |
+|                    |         |    untrusted input.       |
 +--------------------+---------+---------------------------+
 | raw_unicode_escape |         | Latin-1 encoding with     |
 |                    |         | :samp:`\\u{XXXX}` and     |

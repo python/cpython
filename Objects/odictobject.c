@@ -1128,12 +1128,13 @@ OrderedDict.popitem
 
 Remove and return a (key, value) pair from the dictionary.
 
-Pairs are returned in LIFO order if last is true or FIFO order if false.
+Pairs are returned in LIFO order if last is true or FIFO order if
+false.
 [clinic start generated code]*/
 
 static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last)
-/*[clinic end generated code: output=98e7d986690d49eb input=d992ac5ee8305e1a]*/
+/*[clinic end generated code: output=98e7d986690d49eb input=9cc253963e351588]*/
 {
     PyObject *key, *value, *item = NULL;
     _ODictNode *node;
@@ -1223,36 +1224,52 @@ odict_copy(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (od_copy == NULL)
         return NULL;
 
+    /* The loop body may run arbitrary Python code which could mutate od and
+       free its nodes (gh-148660); detect that the same way __eq__ does. */
+    size_t state = od->od_state;
+
     if (PyODict_CheckExact(od)) {
         _odict_FOREACH(od, node) {
-            PyObject *key = _odictnode_KEY(node);
-            PyObject *value = _odictnode_VALUE(node, od);
+            PyObject *key = Py_NewRef(_odictnode_KEY(node));
+            Py_hash_t hash = _odictnode_HASH(node);
+            PyObject *value = PyODict_GetItemWithError((PyObject *)od, key);
             if (value == NULL) {
                 if (!PyErr_Occurred())
                     PyErr_SetObject(PyExc_KeyError, key);
+                Py_DECREF(key);
                 goto fail;
             }
-            if (_PyODict_SetItem_KnownHash((PyObject *)od_copy, key, value,
-                                           _odictnode_HASH(node)) != 0)
+            int res = _PyODict_SetItem_KnownHash((PyObject *)od_copy,
+                                                 key, value, hash);
+            Py_DECREF(key);
+            if (res != 0)
                 goto fail;
+            if (od->od_state != state)
+                goto mutated;
         }
     }
     else {
         _odict_FOREACH(od, node) {
-            int res;
-            PyObject *value = PyObject_GetItem((PyObject *)od,
-                                               _odictnode_KEY(node));
-            if (value == NULL)
+            PyObject *key = Py_NewRef(_odictnode_KEY(node));
+            PyObject *value = PyObject_GetItem((PyObject *)od, key);
+            if (value == NULL) {
+                Py_DECREF(key);
                 goto fail;
-            res = PyObject_SetItem((PyObject *)od_copy,
-                                   _odictnode_KEY(node), value);
+            }
+            int res = PyObject_SetItem((PyObject *)od_copy, key, value);
             Py_DECREF(value);
+            Py_DECREF(key);
             if (res != 0)
                 goto fail;
+            if (od->od_state != state)
+                goto mutated;
         }
     }
     return od_copy;
 
+mutated:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "OrderedDict mutated during iteration");
 fail:
     Py_DECREF(od_copy);
     return NULL;

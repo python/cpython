@@ -16,6 +16,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -801,26 +802,31 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 /*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
 {
     Py_ssize_t i;
-    ElementObject* element;
+    ElementObject* element = NULL;
     PyObject* tag;
     PyObject* attrib;
     PyObject* text;
     PyObject* tail;
     PyObject* id;
 
+    if (_Py_EnterRecursiveCall(" in Element.__deepcopy__")) {
+        return NULL;
+    }
+
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
     // The deepcopy() helper takes care of incrementing the refcount
     // of the object to copy so to avoid use-after-frees.
     tag = deepcopy(st, self->tag, memo);
-    if (!tag)
-        return NULL;
+    if (!tag) {
+        goto error;
+    }
 
     if (self->extra && self->extra->attrib) {
         attrib = deepcopy(st, self->extra->attrib, memo);
         if (!attrib) {
             Py_DECREF(tag);
-            return NULL;
+            goto error;
         }
     } else {
         attrib = NULL;
@@ -831,8 +837,9 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     Py_DECREF(tag);
     Py_XDECREF(attrib);
 
-    if (!element)
-        return NULL;
+    if (!element) {
+        goto error;
+    }
 
     text = deepcopy(st, JOIN_OBJ(self->text), memo);
     if (!text)
@@ -894,10 +901,12 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     if (i < 0)
         goto error;
 
+    _Py_LeaveRecursiveCall();
     return (PyObject*) element;
 
   error:
-    Py_DECREF(element);
+    _Py_LeaveRecursiveCall();
+    Py_XDECREF(element);
     return NULL;
 }
 
@@ -2264,6 +2273,10 @@ elementiter_next(ElementIterObject *it)
             return NULL;
         }
         if (it->gettext) {
+            if (elem->tag != Py_None && !PyUnicode_Check(elem->tag)) {
+                Py_DECREF(elem);
+                continue;
+            }
             text = element_get_text(elem);
             goto gettext;
         }
@@ -3683,8 +3696,12 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
         PyErr_NoMemory();
         return -1;
     }
-    /* expat < 2.1.0 has no XML_SetHashSalt() */
-    if (EXPAT(st, SetHashSalt) != NULL) {
+    // Prefer 16-byte entropy, only expat >= 2.8.0. See gh-149018
+    if (EXPAT(st, SetHashSalt16Bytes) != NULL) {
+        EXPAT(st, SetHashSalt16Bytes)(self->parser,
+                                      _Py_HashSecret.expat.hashsalt16);
+    }
+    else if (EXPAT(st, SetHashSalt) != NULL) {
         EXPAT(st, SetHashSalt)(self->parser,
                            (unsigned long)_Py_HashSecret.expat.hashsalt);
     }

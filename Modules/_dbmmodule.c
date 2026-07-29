@@ -374,13 +374,14 @@ _dbm.dbm.setdefault
 
 Return the value for key if present, otherwise default.
 
-If key is not in the database, it is inserted with default as the value.
+If key is not in the database, it is inserted with default as the
+value.
 [clinic start generated code]*/
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                          Py_ssize_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=9c2f6ea6d0fb576c input=126a3ff15c5f8232]*/
+/*[clinic end generated code: output=9c2f6ea6d0fb576c input=87f3abca9f55f59d]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;

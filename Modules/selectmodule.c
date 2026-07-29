@@ -252,7 +252,8 @@ select.select
 
 Wait until one or more file descriptors are ready for some kind of I/O.
 
-The first three arguments are iterables of file descriptors to be waited for:
+The first three arguments are iterables of file descriptors to be waited
+for:
 rlist -- wait until ready for reading
 wlist -- wait until ready for writing
 xlist -- wait for an "exceptional condition"
@@ -265,9 +266,9 @@ The optional 4th argument specifies a timeout in seconds; it may be
 a floating-point number to specify fractions of seconds.  If it is absent
 or None, the call will never time out.
 
-The return value is a tuple of three lists corresponding to the first three
-arguments; each contains the subset of the corresponding file descriptors
-that are ready.
+The return value is a tuple of three lists corresponding to the first
+three arguments; each contains the subset of the corresponding file
+descriptors that are ready.
 
 *** IMPORTANT NOTICE ***
 On Windows, only sockets are supported; on Unix, all file
@@ -277,7 +278,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=1199d5e101abca4a]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=34a2c2075ca9830e]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -612,13 +613,13 @@ select.poll.poll
 
 Polls the set of registered file descriptors.
 
-Returns a list containing any descriptors that have events or errors to
-report, as a list of (fd, event) 2-tuples.
+Returns a list containing any descriptors that have events or errors
+to report, as a list of (fd, event) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=876e837d193ed7e4 input=54310631457efdec]*/
+/*[clinic end generated code: output=876e837d193ed7e4 input=e0a9c0aa283de8c8]*/
 {
     PyObject *result_list = NULL;
     int poll_result, i, j;
@@ -936,19 +937,19 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
 @critical_section
 select.devpoll.poll
     timeout as timeout_obj: object = None
-      The maximum time to wait in milliseconds, or else None (or a negative
-      value) to wait indefinitely.
+      The maximum time to wait in milliseconds, or else None (or
+      a negative value) to wait indefinitely.
     /
 
 Polls the set of registered file descriptors.
 
-Returns a list containing any descriptors that have events or errors to
-report, as a list of (fd, event) 2-tuples.
+Returns a list containing any descriptors that have events or errors
+to report, as a list of (fd, event) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=2654e5457cca0b3c input=fe7a3f6dcbc118c5]*/
+/*[clinic end generated code: output=2654e5457cca0b3c input=9e1672658d728539]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL;
@@ -1196,13 +1197,13 @@ select.poll
 
 Returns a polling object.
 
-This object supports registering and unregistering file descriptors, and then
-polling them for I/O events.
+This object supports registering and unregistering file descriptors, and
+then polling them for I/O events.
 [clinic start generated code]*/
 
 static PyObject *
 select_poll_impl(PyObject *module)
-/*[clinic end generated code: output=16a665a4e1d228c5 input=3f877909d5696bbf]*/
+/*[clinic end generated code: output=16a665a4e1d228c5 input=0aefd4527e99e0aa]*/
 {
     return (PyObject *)newPollObject(module);
 }
@@ -1214,13 +1215,13 @@ select.devpoll
 
 Returns a polling object.
 
-This object supports registering and unregistering file descriptors, and then
-polling them for I/O events.
+This object supports registering and unregistering file descriptors, and
+then polling them for I/O events.
 [clinic start generated code]*/
 
 static PyObject *
 select_devpoll_impl(PyObject *module)
-/*[clinic end generated code: output=ea9213cc87fd9581 input=53a1af94564f00a3]*/
+/*[clinic end generated code: output=ea9213cc87fd9581 input=4c2ac27d10248526]*/
 {
     return (PyObject *)newDevPollObject(module);
 }
@@ -1558,14 +1559,14 @@ select.epoll.poll
 
 Wait for events on the epoll file descriptor.
 
-Returns a list containing any descriptors that have events to report,
-as a list of (fd, events) 2-tuples.
+Returns a list containing any descriptors that have events to
+report, as a list of (fd, events) 2-tuples.
 [clinic start generated code]*/
 
 static PyObject *
 select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
                        int maxevents)
-/*[clinic end generated code: output=e02d121a20246c6c input=33d34a5ea430fd5b]*/
+/*[clinic end generated code: output=e02d121a20246c6c input=5a49d65788c70c7a]*/
 {
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;

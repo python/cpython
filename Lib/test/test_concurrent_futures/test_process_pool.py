@@ -2,6 +2,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 import unittest
 from concurrent import futures
 from concurrent.futures.process import BrokenProcessPool
@@ -42,6 +43,31 @@ class ProcessPoolExecutorTest(ExecutorTest):
             self.assertRaises(BrokenProcessPool, fut.result)
         # Submitting other jobs fails as well.
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
+
+    def test_broken_process_pool_traceback(self):
+        # When a child process is abruptly terminated, the whole pool gets
+        # "broken", and a BrokenProcessPool exception should be created
+        # for each future instead of sharing one exception among all futures.
+        event = self.create_event()
+        futures = [self.executor.submit(event.wait) for _ in range(3)]
+        p = next(iter(self.executor._processes.values()))
+        p.terminate()
+        for fut in futures:
+            # Don't use assertRaises(): it clears the traceback off exc.
+            try:
+                fut.result()
+            except BrokenProcessPool as exc:
+                tb = exc.__traceback__
+            else:
+                self.fail("BrokenProcessPool not raised")
+            count = sum(
+                1
+                for frame_summary in traceback.extract_tb(tb)
+                if frame_summary.filename == __file__
+            )
+            # This code file should appear exactly once in the traceback.
+            # A shared exception would accumulate a frame per result() call.
+            self.assertEqual(count, 1)
 
     def test_map_chunksize(self):
         def bad_map():
@@ -174,6 +200,33 @@ class ProcessPoolExecutorTest(ExecutorTest):
         # arguably this could go in another class w/o that mixin.
         executor = self.executor_type(1, max_tasks_per_child=3)
         self.assertEqual(executor._mp_context.get_start_method(), "spawn")
+
+    def test_max_tasks_per_child_pending_tasks_gh115634(self):
+        # gh-115634: A worker exiting at its max_tasks_per_child limit left a
+        # stale token in the idle worker semaphore, so no replacement worker
+        # was spawned and the remaining queued tasks deadlocked.  Submit more
+        # tasks than the pool can run at once so a backlog is queued while
+        # workers hit their task limit.
+        context = self.get_context()
+        if context.get_start_method(allow_none=False) == "fork":
+            raise unittest.SkipTest("Incompatible with the fork start method.")
+
+        for max_workers, max_tasks, num_tasks in [(1, 2, 6), (2, 2, 8)]:
+            with self.subTest(max_workers=max_workers, max_tasks=max_tasks):
+                executor = self.executor_type(
+                        max_workers, mp_context=context,
+                        max_tasks_per_child=max_tasks)
+                try:
+                    futures = [executor.submit(mul, i, 2)
+                               for i in range(num_tasks)]
+                    # If the deadlock regresses, the result() calls time out,
+                    # and the shutdown below hangs until the test timeout.
+                    results = [f.result(timeout=support.SHORT_TIMEOUT)
+                               for f in futures]
+                    self.assertEqual(results,
+                                     [i * 2 for i in range(num_tasks)])
+                finally:
+                    executor.shutdown(wait=True, cancel_futures=True)
 
     def test_max_tasks_early_shutdown(self):
         context = self.get_context()

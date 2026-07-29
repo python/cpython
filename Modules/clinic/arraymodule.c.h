@@ -252,8 +252,8 @@ PyDoc_STRVAR(array_array_buffer_info__doc__,
 "\n"
 "Return a tuple (address, length) giving the current memory address and the length in items of the buffer used to hold array\'s contents.\n"
 "\n"
-"The length should be multiplied by the itemsize attribute to calculate\n"
-"the buffer length in bytes.");
+"The length should be multiplied by the itemsize attribute to\n"
+"calculate the buffer length in bytes.");
 
 #define ARRAY_ARRAY_BUFFER_INFO_METHODDEF    \
     {"buffer_info", (PyCFunction)array_array_buffer_info, METH_NOARGS, array_array_buffer_info__doc__},
@@ -282,8 +282,8 @@ PyDoc_STRVAR(array_array_byteswap__doc__,
 "\n"
 "Byteswap all items of the array.\n"
 "\n"
-"If the items in the array are not 1, 2, 4, or 8 bytes in size, RuntimeError is\n"
-"raised.");
+"If the items in the array are not 1, 2, 4, or 8 bytes in size,\n"
+"RuntimeError is raised.");
 
 #define ARRAY_ARRAY_BYTESWAP_METHODDEF    \
     {"byteswap", (PyCFunction)array_array_byteswap, METH_NOARGS, array_array_byteswap__doc__},
@@ -498,9 +498,9 @@ PyDoc_STRVAR(array_array_fromunicode__doc__,
 "\n"
 "Extends this array with data from the unicode string ustr.\n"
 "\n"
-"The array must be a unicode type array; otherwise a ValueError is raised.\n"
-"Use array.frombytes(ustr.encode(...)) to append Unicode data to an array of\n"
-"some other type.");
+"The array must be a unicode type array; otherwise a ValueError is\n"
+"raised.  Use array.frombytes(ustr.encode(...)) to append Unicode\n"
+"data to an array of some other type.");
 
 #define ARRAY_ARRAY_FROMUNICODE_METHODDEF    \
     {"fromunicode", (PyCFunction)array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
@@ -531,9 +531,10 @@ PyDoc_STRVAR(array_array_tounicode__doc__,
 "\n"
 "Extends this array with data from the unicode string ustr.\n"
 "\n"
-"Convert the array to a unicode string.  The array must be a unicode type array;\n"
-"otherwise a ValueError is raised.  Use array.tobytes().decode() to obtain a\n"
-"unicode string from an array of some other type.");
+"Convert the array to a unicode string.  The array must be a unicode\n"
+"type array; otherwise a ValueError is raised.  Use\n"
+"array.tobytes().decode() to obtain a unicode string from an array of\n"
+"some other type.");
 
 #define ARRAY_ARRAY_TOUNICODE_METHODDEF    \
     {"tounicode", (PyCFunction)array_array_tounicode, METH_NOARGS, array_array_tounicode__doc__},
@@ -688,4 +689,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=f675e0d433ae34b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc424975be474308 input=a9049054013a1b77]*/

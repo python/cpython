@@ -1,0 +1,2 @@
+Out-of-range float and integer timestamps now raise :exc:`OverflowError`
+with the same message. Patch by tonghuaroot.

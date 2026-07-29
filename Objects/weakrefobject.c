@@ -486,7 +486,8 @@ static PyMemberDef weakref_members[] = {
 
 static PyMethodDef weakref_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,
+    PyDoc_STR("Weakrefs are generic over the type of the referenced object.")},
     {NULL} /* Sentinel */
 };
 

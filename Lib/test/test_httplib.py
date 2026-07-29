@@ -370,6 +370,51 @@ class HeaderTests(TestCase, ExtraAssertions):
                 with self.assertRaisesRegex(ValueError, 'Invalid header'):
                     conn.putheader(name, value)
 
+    def test_invalid_tunnel_headers(self):
+        cases = (
+            ('Invalid\r\nName', 'ValidValue'),
+            ('Invalid\rName', 'ValidValue'),
+            ('Invalid\nName', 'ValidValue'),
+            ('\r\nInvalidName', 'ValidValue'),
+            ('\rInvalidName', 'ValidValue'),
+            ('\nInvalidName', 'ValidValue'),
+            (' InvalidName', 'ValidValue'),
+            ('\tInvalidName', 'ValidValue'),
+            ('Invalid:Name', 'ValidValue'),
+            (':InvalidName', 'ValidValue'),
+            ('ValidName', 'Invalid\r\nValue'),
+            ('ValidName', 'Invalid\rValue'),
+            ('ValidName', 'Invalid\nValue'),
+            ('ValidName', 'InvalidValue\r\n'),
+            ('ValidName', 'InvalidValue\r'),
+            ('ValidName', 'InvalidValue\n'),
+        )
+        for name, value in cases:
+            with self.subTest((name, value)):
+                conn = client.HTTPConnection('example.com')
+                conn.set_tunnel('tunnel', headers={
+                    name: value
+                })
+                conn.sock = FakeSocket('')
+                with self.assertRaisesRegex(ValueError, 'Invalid header'):
+                    conn._tunnel()  # Called in .connect()
+
+    def test_invalid_tunnel_host(self):
+        cases = (
+            'invalid\r.host',
+            '\ninvalid.host',
+            'invalid.host\r\n',
+            'invalid.host\x00',
+            'invalid host',
+        )
+        for tunnel_host in cases:
+            with self.subTest(tunnel_host):
+                conn = client.HTTPConnection('example.com')
+                conn.set_tunnel(tunnel_host)
+                conn.sock = FakeSocket('')
+                with self.assertRaisesRegex(ValueError, 'Tunnel host can\'t contain control characters'):
+                    conn._tunnel()  # Called in .connect()
+
     def test_headers_debuglevel(self):
         body = (
             b'HTTP/1.1 200 OK\r\n'
@@ -1277,6 +1322,35 @@ class BasicTest(TestCase, ExtraAssertions):
         self.assertIn('got more than ', str(cm.exception))
         self.assertIn('headers', str(cm.exception))
 
+    def test_too_many_interim_responses(self):
+        # A server streaming "100 Continue" responses forever must not
+        # hang getresponse().
+        body = (
+            'HTTP/1.1 100 Continue\r\n\r\n'
+            * (client._MAXINTERIMRESPONSES + 1)
+        )
+        resp = client.HTTPResponse(FakeSocket(body))
+        with self.assertRaises(client.HTTPException) as cm:
+            resp.begin()
+        self.assertIn('got more than ', str(cm.exception))
+        self.assertIn('interim responses', str(cm.exception))
+
+    def test_multiple_interim_responses(self):
+        # A reasonable number of interim responses before the final
+        # response is skipped as before.
+        body = (
+            'HTTP/1.1 100 Continue\r\n\r\n' * 3 +
+            'HTTP/1.1 200 OK\r\n'
+            'Content-Length: 5\r\n'
+            '\r\n'
+            'hello'
+        )
+        resp = client.HTTPResponse(FakeSocket(body), method="GET")
+        resp.begin()
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.read(), b'hello')
+        resp.close()
+
     def test_overflowing_chunked_line(self):
         body = (
             'HTTP/1.1 200 OK\r\n'
@@ -1346,6 +1420,35 @@ class BasicTest(TestCase, ExtraAssertions):
         self.assertEqual(resp.read(), expected)
         # we should have reached the end of the file
         self.assertEqual(sock.file.read(), b"") #we read to the end
+        resp.close()
+
+    def test_chunked_too_many_trailers(self):
+        """A response streaming endless trailer lines must raise, not hang"""
+        too_many_trailers = "".join(
+            f"X-Trailer{i}: {i}\r\n" for i in range(client._MAXHEADERS + 1)
+        )
+        # An unbounded read() reaches the trailers via the final 0 chunk.
+        sock = FakeSocket(
+            chunked_start + last_chunk + too_many_trailers + chunked_end)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        with self.assertRaisesRegex(
+            client.HTTPException,
+            f"got more than {client._MAXHEADERS} trailers",
+        ):
+            resp.read()
+        resp.close()
+
+        # A bounded read(amt) larger than the body hits the same limit.
+        sock = FakeSocket(
+            chunked_start + last_chunk + too_many_trailers + chunked_end)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        with self.assertRaisesRegex(
+            client.HTTPException,
+            f"got more than {client._MAXHEADERS} trailers",
+        ):
+            resp.read(len(chunked_expected) + 1)
         resp.close()
 
     def test_chunked_sync(self):

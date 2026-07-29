@@ -2728,8 +2728,14 @@ class LiteralTests(BaseTestCase):
         self.assertEqual(Literal[1, 2, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, 2, 3, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, Literal[2], Literal[3, 4]].__args__, (1, 2, 3, 4))
-        # Mutable arguments will not be deduplicated
-        self.assertEqual(Literal[[], []].__args__, ([], []))
+        # Unhashable arguments will be deduplicated too
+        self.assertEqual(Literal[[], []].__args__, ([],))
+        self.assertEqual(Literal[{"a": 1}, {"a": 1}].__args__, ({"a": 1},))
+        self.assertEqual(
+            Literal[1, {'a': 'b'}, 2, {'a': 'b'}, 3].__args__,
+            (1, {'a': 'b'}, 2, 3),
+        )
+        self.assertEqual(Literal[{1}, {1}, {2}, {2}].__args__, ({1}, {2}))
 
     def test_flatten(self):
         l1 = Literal[Literal[1], Literal[2], Literal[3]]
@@ -5582,6 +5588,27 @@ class GenericTests(BaseTestCase):
             self.assertEqual(c.label, x)
 
         foo(42)
+
+    def test_genericalias_instance_isclass(self):
+        # test against user-defined generic classes
+        T = TypeVar('T')
+
+        class Node(Generic[T]):
+            def __init__(self, label: T,
+                         left: 'Node[T] | None' = None,
+                         right: 'Node[T] | None' = None):
+                self.label = label
+                self.left = left
+                self.right = right
+
+        self.assertTrue(inspect.isclass(Node))
+        self.assertFalse(inspect.isclass(Node[int]))
+        self.assertFalse(inspect.isclass(Node[str]))
+
+        # test against standard generic classes
+        self.assertFalse(inspect.isclass(set[int]))
+        self.assertFalse(inspect.isclass(list[bytes]))
+        self.assertFalse(inspect.isclass(dict[str, str]))
 
     def test_implicit_any(self):
         T = TypeVar('T')
@@ -10025,6 +10052,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G2[[int, str], float], list[C])
         self.assertEqual(G3[[int, str], float], list[C] | int)
 
+    def test_paramspec_bound(self):
+        P = ParamSpec('P', bound=[int, str])
+        self.assertEqual(P.__bound__, [int, str])
+        P2 = ParamSpec('P2', bound=(int, str))
+        self.assertEqual(P2.__bound__, (int, str))
+        obj = object()
+        P3 = ParamSpec('P3', bound=obj)
+        self.assertIs(P3.__bound__, obj)
+        P4 = ParamSpec('P4')
+        self.assertIs(P4.__bound__, None)
+
     def test_paramspec_gets_copied(self):
         # bpo-46581
         P = ParamSpec('P')
@@ -10569,6 +10607,10 @@ class NoDefaultTests(BaseTestCase):
             type(NoDefault).foo = 3
         with self.assertRaises(AttributeError):
             type(NoDefault).foo
+
+    def test_no_subclassing(self):
+        with self.assertRaises(TypeError):
+            class Test(type(NoDefault)): ...
 
 
 class AllTests(BaseTestCase):

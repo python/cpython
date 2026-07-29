@@ -457,11 +457,16 @@ class OutputTestCase(unittest.TestCase):
             calendar.TextCalendar().formatmonth(0, 2),
             result_0_02_text
         )
+
     def test_formatmonth_with_invalid_month(self):
         with self.assertRaises(calendar.IllegalMonthError):
             calendar.TextCalendar().formatmonth(2017, 13)
         with self.assertRaises(calendar.IllegalMonthError):
             calendar.TextCalendar().formatmonth(2017, -1)
+
+    def test_illegal_month_error_bases(self):
+        self.assertTrue(issubclass(calendar.IllegalMonthError, ValueError))
+        self.assertTrue(issubclass(calendar.IllegalMonthError, IndexError))
 
     def test_formatmonthname_with_year(self):
         self.assertEqual(
@@ -504,6 +509,11 @@ class CalendarTestCase(unittest.TestCase):
             "The 'January' attribute is deprecated, use 'JANUARY' instead"
         ):
             calendar.January
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The 'February' attribute is deprecated, use 'FEBRUARY' instead"
+        ):
+            calendar.February
 
     def test_isleap(self):
         # Make sure that the return is right for a few years, and

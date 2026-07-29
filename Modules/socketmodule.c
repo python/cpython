@@ -676,6 +676,16 @@ set_error(void)
 }
 
 
+#if defined(HAVE_HSTRERROR) || defined(HAVE_GAI_STRERROR)
+/* Decode a locale-encoded error message from the C library.
+   It can be localized and use a non-UTF-8 encoding. */
+static PyObject *
+decode_error_message(const char *str)
+{
+    return PyUnicode_DecodeLocale(str, "surrogateescape");
+}
+#endif
+
 #if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME) || defined (HAVE_GETHOSTBYADDR)
 static PyObject *
 set_herror(socket_state *state, int h_error)
@@ -683,7 +693,7 @@ set_herror(socket_state *state, int h_error)
     PyObject *v;
 
 #ifdef HAVE_HSTRERROR
-    v = Py_BuildValue("(is)", h_error, hstrerror(h_error));
+    v = Py_BuildValue("(iN)", h_error, decode_error_message(hstrerror(h_error)));
 #else
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
@@ -710,7 +720,7 @@ set_gaierror(socket_state *state, int error)
 #endif
 
 #ifdef HAVE_GAI_STRERROR
-    v = Py_BuildValue("(is)", error, gai_strerror(error));
+    v = Py_BuildValue("(iN)", error, decode_error_message(gai_strerror(error)));
 #else
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
@@ -4296,17 +4306,19 @@ sock_recvmsg_into(PySocketSockObject *s, PyObject *args)
     struct iovec *iovs = NULL;
     Py_ssize_t i, nitems, nbufs = 0;
     Py_buffer *bufs = NULL;
-    PyObject *buffers_arg, *fast, *retval = NULL;
+    PyObject *buffers_arg, *buffers_tuple, *retval = NULL;
 
     if (!PyArg_ParseTuple(args, "O|ni:recvmsg_into",
                           &buffers_arg, &ancbufsize, &flags))
         return NULL;
 
-    if ((fast = PySequence_Fast(buffers_arg,
-                                "recvmsg_into() argument 1 must be an "
-                                "iterable")) == NULL)
+    buffers_tuple = PySequence_Tuple(buffers_arg);
+    if (buffers_tuple == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "recvmsg_into() argument 1 must be an iterable");
         return NULL;
-    nitems = PySequence_Fast_GET_SIZE(fast);
+    }
+    nitems = PyTuple_GET_SIZE(buffers_tuple);
     if (nitems > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "recvmsg_into() argument 1 is too long");
         goto finally;
@@ -4320,7 +4332,7 @@ sock_recvmsg_into(PySocketSockObject *s, PyObject *args)
         goto finally;
     }
     for (; nbufs < nitems; nbufs++) {
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(fast, nbufs),
+        if (!PyArg_Parse(PyTuple_GET_ITEM(buffers_tuple, nbufs),
                          "w*;recvmsg_into() argument 1 must be an iterable "
                          "of single-segment read-write buffers",
                          &bufs[nbufs]))
@@ -4336,7 +4348,7 @@ finally:
         PyBuffer_Release(&bufs[i]);
     PyMem_Free(bufs);
     PyMem_Free(iovs);
-    Py_DECREF(fast);
+    Py_DECREF(buffers_tuple);
     return retval;
 }
 
@@ -4629,14 +4641,14 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
 
     /* Fill in an iovec for each message part, and save the Py_buffer
        structs to release afterwards. */
-    data_fast = PySequence_Fast(data_arg,
-                                "sendmsg() argument 1 must be an "
-                                "iterable");
+    data_fast = PySequence_Tuple(data_arg);
     if (data_fast == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "sendmsg() argument 1 must be an iterable");
         goto finally;
     }
 
-    ndataparts = PySequence_Fast_GET_SIZE(data_fast);
+    ndataparts = PyTuple_GET_SIZE(data_fast);
     if (ndataparts > INT_MAX) {
         PyErr_SetString(PyExc_OSError, "sendmsg() argument 1 is too long");
         goto finally;
@@ -4658,7 +4670,7 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         }
     }
     for (; ndatabufs < ndataparts; ndatabufs++) {
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
+        if (!PyArg_Parse(PyTuple_GET_ITEM(data_fast, ndatabufs),
                          "y*;sendmsg() argument 1 must be an iterable of "
                          "bytes-like objects",
                          &databufs[ndatabufs]))
@@ -8939,6 +8951,10 @@ socket_exec(PyObject *m)
     /* Initialize gethostbyname lock */
 #if defined(USE_GETHOSTBYNAME_LOCK)
     netdb_lock = PyThread_allocate_lock();
+    if (netdb_lock == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
 #endif
 
 #ifdef MS_WINDOWS

@@ -3033,7 +3033,8 @@ AC_CHECK_HEADERS([ \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
-  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysctl.h \
+  sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
   termios.h util.h utime.h utmp.h \
 ])
@@ -3835,9 +3836,10 @@ AS_VAR_IF([ac_cv_have_uuid_generate_time_safe], [yes], [
   AC_DEFINE([HAVE_UUID_GENERATE_TIME_SAFE], [1])
 ])
 
-# gh-124228: While the libuuid library is available on NetBSD, it supports only UUID version 4.
+# gh-124228: While the libuuid library is available on NetBSD and OpenBSD,
+# it supports only UUID version 4.
 # This restriction inhibits the proper generation of time-based UUIDs.
-if test "$ac_sys_system" = "NetBSD"; then
+if test "$ac_sys_system" = "NetBSD" || test "$ac_sys_system" = "OpenBSD"; then
   have_uuid=missing
   AC_DEFINE([HAVE_UUID_H], [0])
 fi
@@ -4444,8 +4446,8 @@ WITH_SAVE_ENV([
       #  error "Tk older than 8.5.12 not supported"
       #endif
     ], [
-      void *x1 = Tcl_Init;
-      void *x2 = Tk_Init;
+      Tcl_Init(NULL);
+      Tk_Init(NULL);
     ])
   ], [
     have_tcltk=yes
@@ -5242,7 +5244,7 @@ fi
 # checks for library functions
 AC_CHECK_FUNCS([ \
   accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
-  copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
+  copy_file_range ctermid dup execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
@@ -5252,7 +5254,7 @@ AC_CHECK_FUNCS([ \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
-  pipe2 plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
+  plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
   pthread_kill ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
@@ -5263,7 +5265,7 @@ AC_CHECK_FUNCS([ \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
-  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  sysconf sysctlbyname tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
@@ -5280,7 +5282,7 @@ fi
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
 if test "$ac_sys_system" != "iOS" ; then
-  AC_CHECK_FUNCS([getentropy getgroups system])
+  AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
 fi
 
 AC_CHECK_DECL([dirfd],
@@ -6936,6 +6938,30 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_CURSES_VAR(VARIABLE)
+dnl Like PY_CHECK_CURSES_FUNC, but for an integer variable (or macro), such as
+dnl ESCDELAY, which a function probe cannot detect.
+AC_DEFUN([PY_CHECK_CURSES_VAR],
+[ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
+  AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AC_CACHE_CHECK(
+    [for curses variable $1],
+    [py_var],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(_CURSES_INCLUDES, [
+        int x = $1; (void)x;
+      ])],
+      [AS_VAR_SET([py_var], [yes])],
+      [AS_VAR_SET([py_var], [no])])]
+  )
+  AS_VAR_IF(
+    [py_var],
+    [yes],
+    [AC_DEFINE([py_define], [1], [Define if you have the '$1' variable.])])
+  AS_VAR_POPDEF([py_var])
+  AS_VAR_POPDEF([py_define])
+])
+
 PY_CHECK_CURSES_FUNC([is_pad])
 PY_CHECK_CURSES_FUNC([is_term_resized])
 PY_CHECK_CURSES_FUNC([resize_term])
@@ -6947,6 +6973,22 @@ PY_CHECK_CURSES_FUNC([filter])
 PY_CHECK_CURSES_FUNC([has_key])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
+PY_CHECK_CURSES_FUNC([set_escdelay])
+PY_CHECK_CURSES_FUNC([set_tabsize])
+PY_CHECK_CURSES_VAR([ESCDELAY])
+PY_CHECK_CURSES_VAR([TABSIZE])
+
+dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
+dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
+AC_CACHE_CHECK([for ncurses-style curses function getmouse],
+  [ac_cv_lib_curses_getmouse],
+  [AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM(_CURSES_INCLUDES, [MEVENT event; (void)getmouse(&event);])],
+    [ac_cv_lib_curses_getmouse=yes],
+    [ac_cv_lib_curses_getmouse=no])])
+AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
+  [AC_DEFINE([HAVE_CURSES_GETMOUSE], [1],
+    [Define if you have the 'getmouse' function with the X/Open signature.])])
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

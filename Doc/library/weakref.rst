@@ -125,6 +125,9 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    This is a subclassable type rather than a factory function.
 
+   Weak references are :ref:`generic <generics>` over the type of the object they
+   reference.
+
    .. attribute:: __callback__
 
       This read-only attribute returns the callback currently associated to the
@@ -329,17 +332,17 @@ same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    .. versionadded:: 3.4
 
 
-.. data:: ReferenceType
+.. class:: ReferenceType
 
    The type object for weak references objects.
 
 
-.. data:: ProxyType
+.. class:: ProxyType
 
    The type object for proxies of objects which are not callable.
 
 
-.. data:: CallableProxyType
+.. class:: CallableProxyType
 
    The type object for proxies of callable objects.
 

@@ -80,15 +80,15 @@ _posixshmem.shm_unlink
 
 Remove a shared memory object (similar to unlink()).
 
-Remove a shared memory object name, and, once all processes  have  unmapped
-the object, de-allocates and destroys the contents of the associated memory
-region.
+Remove a shared memory object name, and, once all processes have
+unmapped the object, de-allocates and destroys the contents of the
+associated memory region.
 
 [clinic start generated code]*/
 
 static PyObject *
 _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=42f8b23d134b9ff5 input=8dc0f87143e3b300]*/
+/*[clinic end generated code: output=42f8b23d134b9ff5 input=239da7d9ea49e7db]*/
 {
     int rv;
     int async_err = 0;

@@ -14,15 +14,15 @@ PyDoc_STRVAR(subprocess_fork_exec__doc__,
 "\n"
 "Spawn a fresh new child process.\n"
 "\n"
-"Fork a child process, close parent file descriptors as appropriate in the\n"
-"child and duplicate the few that are needed before calling exec() in the\n"
-"child process.\n"
+"Fork a child process, close parent file descriptors as appropriate in\n"
+"the child and duplicate the few that are needed before calling exec() in\n"
+"the child process.\n"
 "\n"
-"If close_fds is True, close file descriptors 3 and higher, except those listed\n"
-"in the sorted tuple pass_fds.\n"
+"If close_fds is True, close file descriptors 3 and higher, except those\n"
+"listed in the sorted tuple pass_fds.\n"
 "\n"
-"The preexec_fn, if supplied, will be called immediately before closing file\n"
-"descriptors and exec.\n"
+"The preexec_fn, if supplied, will be called immediately before closing\n"
+"file descriptors and exec.\n"
 "\n"
 "WARNING: preexec_fn is NOT SAFE if your application uses threads.\n"
 "         It may trigger infrequent, difficult to debug deadlocks.\n"
@@ -155,4 +155,4 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=48555f5965a871be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47682cb62b0b08b2 input=a9049054013a1b77]*/

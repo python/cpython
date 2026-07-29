@@ -1760,6 +1760,9 @@ parse_abbr(const char **p, PyObject **abbr)
             ptr++;
         }
         str_end = ptr;
+        if (str_end == str_start) {
+            return -1;
+        }
         ptr++;
     }
     else {

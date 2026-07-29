@@ -1419,6 +1419,20 @@ context_traverse(PyDecContextObject *self, visitproc visit, void *arg)
 static int
 context_clear(PyDecContextObject *self)
 {
+    /* Since traps and flags hold a borrowed reference to the
+       flags stored in the context object, these references need
+       to be cleared when the context object is deallocated
+       because traps and flags can survive. See gh-146011. */
+    PyDecSignalDictObject *traps = (PyDecSignalDictObject *)self->traps;
+    PyDecSignalDictObject *flags = (PyDecSignalDictObject *)self->flags;
+
+    if (traps != NULL) {
+        traps->flags = NULL;
+    }
+    if (flags != NULL) {
+        flags->flags = NULL;
+    }
+
     Py_CLEAR(self->traps);
     Py_CLEAR(self->flags);
     return 0;

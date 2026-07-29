@@ -26,6 +26,10 @@ The different font weights and slants are:
    fonts as a single object, rather than specifying a font by its attributes
    with each occurrence.
 
+   .. versionchanged:: 3.10
+      Two fonts now compare equal (``==``) only when both are :class:`Font`
+      instances with the same name belonging to the same Tcl interpreter.
+
     arguments:
 
        | *font* - font specifier tuple (family, size, options)
@@ -34,7 +38,7 @@ The different font weights and slants are:
 
     additional keyword options (ignored if *font* is specified):
 
-       | *family* - font family i.e. Courier, Times
+       | *family* - font family, for example, Courier, Times
        | *size* - font size
        |     If *size* is positive it is interpreted as size in points.
        |     If *size* is a negative number its absolute value is treated
@@ -46,29 +50,47 @@ The different font weights and slants are:
 
    .. method:: actual(option=None, displayof=None)
 
-      Return the attributes of the font.
+      Return the actual attributes of the font, which may differ from the
+      requested ones because of platform limitations.
+      With no *option*, return a dictionary of all the attributes; if *option*
+      is given, return the value of that single attribute.
+      The attributes are resolved on the display of the *displayof* widget,
+      or the main application window if it is not specified.
 
    .. method:: cget(option)
 
       Retrieve an attribute of the font.
 
    .. method:: config(**options)
+      :no-typesetting:
 
-      Modify attributes of the font.
+   .. method:: configure(**options)
+
+      Modify one or more attributes of the font.
+      With no arguments, return a dictionary of the current attributes.
+
+      :meth:`config` is an alias of :meth:`!configure`.
 
    .. method:: copy()
 
-      Return new instance of the current font.
+      Return a distinct copy of the current font:
+      a new named font with the same attributes but a different name,
+      which can be reconfigured independently of the original.
+      If the current font wraps a font description,
+      the copy is instead a named font with its resolved attributes.
 
    .. method:: measure(text, displayof=None)
 
       Return amount of space the text would occupy on the specified display
-      when formatted in the current font. If no display is specified then the
-      main application window is assumed.
+      when formatted in the current font, as an integer number of pixels.
+      If no display is specified then the main application window is assumed.
 
    .. method:: metrics(*options, **kw)
 
       Return font-specific data.
+      With no options, return a dictionary mapping each metric name to its
+      integer value; if one option name is given, return that metric's value as
+      an integer.
       Options include:
 
       *ascent* - distance between baseline and highest point that a
@@ -84,15 +106,17 @@ The different font weights and slants are:
 
 .. function:: families(root=None, displayof=None)
 
-   Return the different font families.
+   Return a tuple of the names of the available font families.
 
 .. function:: names(root=None)
 
-   Return the names of defined fonts.
+   Return a tuple of the names of all the defined fonts.
 
 .. function:: nametofont(name, root=None)
 
-   Return a :class:`Font` representation of a tk named font.
+   Return a :class:`Font` representation of the existing named font *name*.
+   *root* is the widget whose Tcl interpreter owns the font; if omitted, the
+   default root window is used.
 
    .. versionchanged:: 3.10
       The *root* parameter was added.

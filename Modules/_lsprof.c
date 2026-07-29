@@ -759,7 +759,6 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
                                           "use_tool_id", "is",
                                           self->tool_id, "cProfile");
     if (check == NULL) {
-        PyErr_Format(PyExc_ValueError, "Another profiling tool is already active");
         goto error;
     }
     Py_DECREF(check);
