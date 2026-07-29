@@ -365,7 +365,10 @@ def parse_args():
             "period"
         ),
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.runs < 1:
+        parser.error("--runs must be greater than zero")
+    return args
 
 
 def main():
