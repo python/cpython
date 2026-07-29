@@ -1109,7 +1109,9 @@ static const double
 bigtens[] = { 1e16, 1e32, 1e64, 1e128, 1e256 };
 static const double tinytens[] = { 1e-16, 1e-32, 1e-64, 1e-128,
                                    8.112963841460668e-225
-                                   /* = 2^106 * 1e-256 */
+                                   /* 2^106 * 1e-256, precomputed for
+                                      MSVC /fp:strict; binary64
+                                      0x1168062864ac6f43 */
 };
 /* The factor of 2^53 in tinytens[4] helps us avoid setting the underflow */
 /* flag unnecessarily.  It leads to a song and dance at the end of strtod. */
