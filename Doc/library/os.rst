@@ -1642,6 +1642,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_APPEND`
    - :data:`RWF_DONTCACHE`
    - :data:`RWF_ATOMIC`
+   - :data:`RWF_NOSIGNAL`
 
    Return the total number of bytes actually written.
 
@@ -1689,6 +1690,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Linux >= 4.16.
 
    .. versionadded:: 3.10
+
+
+.. data:: RWF_NOSIGNAL
+
+   Prevent pipe and socket writes from raising :const:`~signal.SIGPIPE`.
+   This flag is meaningful only for :func:`os.pwritev`.
+
+   .. availability:: Linux >= 6.18.
+
+   .. versionadded:: 3.16
 
 
 .. function:: read(fd, n, /)
@@ -2179,6 +2190,11 @@ features:
    :exc:`FileNotFoundError`, :exc:`PermissionError`, and :exc:`NotADirectoryError`.
 
    .. audit-event:: os.chdir path os.chdir
+
+   .. seealso::
+
+      The :func:`contextlib.chdir` context manager, which changes the current
+      working directory on entering and restores the previous one on exit.
 
    .. versionchanged:: 3.3
       Added support for specifying *path* as a file descriptor
@@ -3032,10 +3048,16 @@ features:
 
    .. attribute:: path
 
-      The entry's full path name: equivalent to ``os.path.join(scandir_path,
-      entry.name)`` where *scandir_path* is the :func:`scandir` *path*
-      argument.  The path is only absolute if the :func:`scandir` *path*
-      argument was absolute.  If the :func:`scandir` *path*
+      The entry's path name: equivalent to ``os.path.join(scandir_path,
+      entry.name)`` where *scandir_path* is the original :func:`scandir`
+      *path* argument.  Apart from the filename, the path preserves the
+      original :func:`scandir` argument.  If the :func:`scandir` *path*
+      argument was relative, the :attr:`path` attribute is also relative.
+      Changing the current working directory after creating the
+      :func:`scandir` iterator may cause later uses of :attr:`path` to resolve
+      differently.  On some platforms, the constructed path may not be valid
+      if the original :func:`scandir` argument was usable for enumeration but
+      not for joining with the entry name.  If the :func:`scandir` *path*
       argument was a :ref:`file descriptor <path_fd>`, the :attr:`path`
       attribute is the same as the :attr:`name` attribute.
 

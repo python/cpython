@@ -36,21 +36,25 @@ def coding_checker(self, coder):
         self.assertEqual(coder(input), (expect, len(input)))
     return check
 
-# On small versions of Windows like Windows IoT or Windows Nano Server not all codepages are present
+# On small versions of Windows like Windows IoT or Windows Nano Server,
+# not all codepages are present
 def is_code_page_present(cp):
-    from ctypes import POINTER, WINFUNCTYPE, WinDLL, Structure
+    from ctypes import POINTER, WINFUNCTYPE, WinDLL
+    from ctypes.util import struct
     from ctypes.wintypes import BOOL, BYTE, WCHAR, UINT, DWORD
 
     MAX_LEADBYTES = 12  # 5 ranges, 2 bytes ea., 0 term.
     MAX_DEFAULTCHAR = 2 # single or double byte
     MAX_PATH = 260
-    class CPINFOEXW(Structure):
-        _fields_ = [("MaxCharSize", UINT),
-                    ("DefaultChar", BYTE*MAX_DEFAULTCHAR),
-                    ("LeadByte", BYTE*MAX_LEADBYTES),
-                    ("UnicodeDefaultChar", WCHAR),
-                    ("CodePage", UINT),
-                    ("CodePageName", WCHAR*MAX_PATH)]
+
+    @struct
+    class CPINFOEXW:
+        MaxCharSize: UINT
+        DefaultChar: BYTE * MAX_DEFAULTCHAR
+        LeadByte: BYTE * MAX_LEADBYTES
+        UnicodeDefaultChar: WCHAR
+        CodePage: UINT
+        CodePageName: WCHAR * MAX_PATH
 
     prototype = WINFUNCTYPE(BOOL, UINT, DWORD, POINTER(CPINFOEXW))
     GetCPInfoEx = prototype(("GetCPInfoExW", WinDLL("kernel32")))
@@ -1399,6 +1403,73 @@ class PunycodeTest(unittest.TestCase):
                     self.assertEqual(exc.end, expected.end)
                 else:
                     self.assertEqual(puny.decode("punycode", errors), expected)
+
+
+utf_7_imap_testcases = [
+    # (unicode, modified UTF-7)
+    ('', b''),
+    ('INBOX', b'INBOX'),
+    # Printable US-ASCII represents itself.
+    ('abcABC123 !#$%()*+,-./:;<=>?@[]^_`{|}~', b'abcABC123 !#$%()*+,-./:;<=>?@[]^_`{|}~'),
+    # "&" is escaped as "&-".
+    ('&', b'&-'),
+    ('&&', b'&-&-'),
+    ('A&B', b'A&-B'),
+    # "+" and "+-" are literal, unlike in UTF-7 where "+" is the shift character.
+    ('+', b'+'),
+    ('+-', b'+-'),
+    # RFC 3501 section 5.1.3 example.
+    ('~peter/mail/台北/日本語',
+     b'~peter/mail/&U,BTFw-/&ZeVnLIqe-'),
+    # Non-printable ASCII (including TAB) is Base64-encoded, not direct.
+    ('a\tb', b'a&AAk-b'),
+    ('\x00', b'&AAA-'),
+    ('Entw\xfcrfe', b'Entw&APw-rfe'),
+    ('ϰ', b'&A,A-'),                     # "," in the Base64 alphabet ("&A/A-" is invalid)
+    ('☃', b'&JgM-'),                     # snowman
+    ('\U0001f600', b'&2D3eAA-'),              # non-BMP (surrogate pair)
+    ('Sent &\N{DELETE}', b'Sent &-&AH8-'),
+]
+
+class Utf7ImapTest(unittest.TestCase):
+    @support.subTests('uni,encoded', utf_7_imap_testcases)
+    def test_encode(self, uni, encoded):
+        self.assertEqual(uni.encode('utf-7-imap'), encoded)
+
+    @support.subTests('uni,encoded', utf_7_imap_testcases)
+    def test_decode(self, uni, encoded):
+        self.assertEqual(encoded.decode('utf-7-imap'), uni)
+
+    # 'start' is the position of the first offending byte in each case.
+    @support.subTests('encoded,start', [
+        (b'x&', 1),             # "&" just before the end, unterminated
+        (b'&AAAA', 0),          # unterminated, though the Base64 is valid
+        (b'&AB-', 0),           # Base64 length not a multiple of a code unit
+        (b'&A/A-', 0),          # "/" not in the alphabet ("&A,A-" is valid)
+        (b'&@@@-', 0),          # invalid Base64
+        (b'a\x80b', 1),         # 8-bit byte outside a shift sequence
+        (b'a\x1fb', 1),         # control byte outside a shift sequence
+    ])
+    def test_decode_invalid(self, encoded, start):
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            encoded.decode('utf-7-imap')
+        self.assertEqual(cm.exception.encoding, 'utf-7-imap')
+        self.assertEqual(cm.exception.start, start)
+
+    def test_encode_lone_surrogate(self):
+        with self.assertRaises(UnicodeEncodeError):
+            '\ud800'.encode('utf-7-imap')
+
+    def test_only_strict_errors(self):
+        with self.assertRaises(UnicodeError):
+            'x'.encode('utf-7-imap', 'replace')
+        with self.assertRaises(UnicodeError):
+            b'x'.decode('utf-7-imap', 'ignore')
+
+    def test_stateless(self):
+        # The codec is registered and exposes the standard interface.
+        info = codecs.lookup('utf-7-imap')
+        self.assertEqual(info.name, 'utf-7-imap')
 
 
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
@@ -3584,6 +3655,178 @@ class CodePageTest(unittest.TestCase):
         self.assertEqual(len(decoded[0]), size)
         self.assertEqual(decoded[0][:10], '0123456\ud10001')
         self.assertEqual(decoded[0][-11:], '56\ud1000123456\ud100')
+
+
+def iconv_encoding_available(name):
+    # The encodings iconv provides are platform-dependent, so tests must probe
+    # availability rather than assume it.
+    try:
+        codecs.iconv_encode(name, '')
+    except (LookupError, OSError):
+        return False
+    return True
+
+
+# Candidate encodings with sample text; tests probe several and skip only when a
+# whole category is unavailable.
+_ICONV_SINGLE_BYTE = [
+    ('KOI8-U', 'Привіт, світ!'),
+    ('ISO-8859-7', 'Καλημέρα'),
+    ('ISO-8859-2', 'Zażółć gęślą jaźń'),
+    ('ISO-8859-1', 'Grüße'),
+]
+_ICONV_MULTIBYTE = ['EUC-JP', 'SHIFT_JIS', 'GBK', 'GB18030', 'BIG5']
+# Encodings iconv may provide but for which CPython has no built-in codec
+# (cp1047 is EBCDIC, i.e. not ASCII-compatible).
+_ICONV_ONLY = ['cp1047', 'cp1133', 'GEORGIAN-PS', 'ARMSCII-8']
+
+
+@unittest.skipUnless(hasattr(codecs, 'iconv_encode'),
+                     'the iconv codec is not available')
+class IconvTest(unittest.TestCase):
+
+    def require(self, *names):
+        for name in names:
+            if iconv_encoding_available(name):
+                return name
+        self.skipTest('no suitable iconv encoding is available')
+
+    def require_single_byte(self):
+        for enc, text in _ICONV_SINGLE_BYTE:
+            if iconv_encoding_available(enc):
+                return enc, text
+        self.skipTest('no single-byte iconv encoding is available')
+
+    def test_unknown_encoding(self):
+        self.assertRaises(LookupError, codecs.iconv_encode, 'no-such-enc-42', 'a')
+        self.assertRaises(LookupError, codecs.iconv_decode, 'no-such-enc-42', b'a')
+        self.assertRaises(LookupError, codecs.lookup, 'iconv:no-such-enc-42')
+
+    def test_roundtrip(self):
+        cases = _ICONV_SINGLE_BYTE + [(enc, '日本語') for enc in _ICONV_MULTIBYTE]
+        tested = False
+        for enc, text in cases:
+            if not iconv_encoding_available(enc):
+                continue
+            tested = True
+            with self.subTest(encoding=enc):
+                data = codecs.iconv_encode(enc, text)[0]
+                decoded, consumed = codecs.iconv_decode(enc, data, 'strict', True)
+                self.assertEqual(decoded, text)
+                self.assertEqual(consumed, len(data))
+        if not tested:
+            self.skipTest('none of the test encodings are available')
+
+    def test_encode_errors(self):
+        # A non-ASCII character is not representable in ASCII.
+        enc = self.require('ASCII')
+        with self.assertRaises(UnicodeEncodeError) as cm:
+            codecs.iconv_encode(enc, 'a€b')
+        self.assertEqual((cm.exception.encoding, cm.exception.start,
+                          cm.exception.end), (enc, 1, 2))
+        self.assertEqual(codecs.iconv_encode(enc, 'a€b', 'replace')[0], b'a?b')
+        self.assertEqual(codecs.iconv_encode(enc, 'a€b', 'ignore')[0], b'ab')
+        self.assertEqual(codecs.iconv_encode(enc, 'a€b', 'backslashreplace')[0],
+                         b'a\\u20acb')
+        self.assertEqual(codecs.iconv_encode(enc, 'a€b', 'xmlcharrefreplace')[0],
+                         b'a&#8364;b')
+
+    def test_decode_errors(self):
+        enc = self.require('ASCII')
+        bad = b'a\xffb'
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            codecs.iconv_decode(enc, bad, 'strict', True)
+        self.assertEqual((cm.exception.encoding, cm.exception.start), (enc, 1))
+        self.assertEqual(codecs.iconv_decode(enc, bad, 'replace', True)[0],
+                         'a\ufffdb')
+        self.assertEqual(codecs.iconv_decode(enc, bad, 'ignore', True)[0], 'ab')
+        self.assertEqual(codecs.iconv_decode(enc, bad, 'backslashreplace', True)[0],
+                         'a\\xffb')
+
+    def test_stateful_decode(self):
+        enc = self.require(*_ICONV_MULTIBYTE)
+        full = codecs.iconv_encode(enc, '日本')[0]
+        # A trailing incomplete multibyte sequence is deferred when final is
+        # false, and reported through *consumed*.
+        text, consumed = codecs.iconv_decode(enc, full[:-1], 'strict', False)
+        self.assertEqual(text, '日')
+        self.assertEqual(consumed, len(full) - 2)
+        # With final=True the same input is an error.
+        self.assertRaises(UnicodeDecodeError,
+                          codecs.iconv_decode, enc, full[:-1], 'strict', True)
+
+    def test_empty(self):
+        enc = self.require('ASCII')
+        self.assertEqual(codecs.iconv_encode(enc, ''), (b'', 0))
+        self.assertEqual(codecs.iconv_decode(enc, b'', 'strict', True), ('', 0))
+
+    def test_lookup_bare_name(self):
+        # An encoding that iconv knows but Python has no built-in codec for.
+        for name in _ICONV_ONLY:
+            if (iconv_encoding_available(name)
+                    and encodings.search_function(name) is None):
+                break
+        else:
+            self.skipTest('no iconv-only encoding is available')
+        info = codecs.lookup(name)
+        self.assertEqual(info.name, name.lower())
+        # The encoding need not be ASCII-compatible (e.g. EBCDIC), so just
+        # check that it round-trips.
+        self.assertEqual('abc'.encode(name).decode(name), 'abc')
+
+    def test_lookup_does_not_shadow_builtin(self):
+        # Built-in codecs must win over the iconv fallback.
+        self.assertEqual(codecs.lookup('utf-8').name, 'utf-8')
+        self.assertEqual(codecs.lookup('ascii').name, 'ascii')
+
+    def test_iconv_prefix_forces_engine(self):
+        # These candidates all have a built-in codec to compare against.
+        enc, text = self.require_single_byte()
+        info = codecs.lookup('iconv:' + enc)
+        # The registry lower-cases the requested name.
+        self.assertEqual(info.name, ('iconv:' + enc).lower())
+        self.assertEqual(text.encode('iconv:' + enc), text.encode(enc))
+        self.assertEqual(text.encode('iconv:' + enc).decode('iconv:' + enc), text)
+
+    def test_incremental_decode(self):
+        enc = self.require(*_ICONV_MULTIBYTE)
+        text = '日本語'
+        data = codecs.encode(text, 'iconv:' + enc)
+        dec = codecs.getincrementaldecoder('iconv:' + enc)()
+        out = ''.join(dec.decode(data[i:i+1]) for i in range(len(data)))
+        out += dec.decode(b'', True)
+        self.assertEqual(out, text)
+
+    def test_stream(self):
+        enc = self.require(*_ICONV_MULTIBYTE)
+        text = '日本語'
+        raw = codecs.encode(text, 'iconv:' + enc)
+        reader = codecs.getreader('iconv:' + enc)(io.BytesIO(raw))
+        self.assertEqual(reader.read(), text)
+
+    def test_encode_kinds(self):
+        # The string's own buffer is fed to iconv per storage kind; check each
+        # of the 1-, 2- and 4-byte kinds against the built-in codec.
+        enc = self.require('UTF-8')
+        for text in ('Gr\xfc\xdfe', 'ĀāĂ', 'A\U0001f389B'):
+            with self.subTest(text=text):
+                self.assertEqual(text.encode('iconv:' + enc), text.encode(enc))
+
+    def test_encode_surrogateescape(self):
+        # A lone surrogate lives in the 2-byte kind and round-trips.
+        enc = self.require('ASCII')
+        data = b'ab\xff'
+        s = data.decode(enc, 'surrogateescape')
+        self.assertEqual(s.encode('iconv:' + enc, 'surrogateescape'), data)
+
+    def test_encode_surrogate_pair(self):
+        # A surrogate pair must stay two code points, never combined into an
+        # astral character (as UTF-16 would): backslashreplace escapes each
+        # surrogate separately, not the escape of a single combined character.
+        pair = '\ud83c\udf89'
+        latin1 = self.require('ISO-8859-1', 'ASCII')
+        self.assertEqual(pair.encode('iconv:' + latin1, 'backslashreplace'),
+                         rb'\ud83c\udf89')
 
 
 class ASCIITest(unittest.TestCase):

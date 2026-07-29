@@ -76,6 +76,8 @@ Initialization and termination
    Initialize the library. Return a :ref:`window <curses-window-objects>` object
    which represents the whole screen.
 
+   See :func:`setupterm` for a caveat about calling it before this function.
+
    .. note::
 
       If there is an error opening the terminal, the underlying curses library may
@@ -106,6 +108,8 @@ Initialization and termination
    The new screen becomes the current one.
    Use :func:`set_term` to switch between screens.
 
+   See :func:`setupterm` for a caveat about calling it before this function.
+
    .. versionadded:: next
 
 .. function:: new_prescr()
@@ -125,6 +129,8 @@ Initialization and termination
    and return the previously current screen.
    Returns ``None`` if the previous screen was the one created by
    :func:`initscr`.
+   Raises :exc:`error` if *screen* has no terminal,
+   as is the case for a screen returned by :func:`new_prescr`.
 
    .. versionadded:: next
 
@@ -959,6 +965,13 @@ Terminfo database
    terminfo database entry could not be read.  If the terminal has already
    been initialized, this function has no effect.
 
+   .. note::
+
+      Calling :func:`initscr` or :func:`newterm` after :func:`setupterm`
+      leaks the terminal that :func:`setupterm` allocated:
+      the curses library keeps only a single current terminal
+      and does not free the previously allocated one.
+
 .. function:: tigetflag(capname)
 
    Return the value of the Boolean capability corresponding to the terminfo
@@ -1310,6 +1323,8 @@ Reading window contents
    The bottom 8 bits are the character proper and the upper bits are the attributes;
    extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
    and the color pair with :func:`pair_number`.
+   The character byte is the locale-encoded byte of the cell's character,
+   consistent with :meth:`instr`.
    It cannot represent a cell holding combining characters, a character that does
    not fit in a single byte, or a color pair outside the :func:`color_pair`
    range; use :meth:`in_wch` for those, which returns it as a :class:`complexchar`.
