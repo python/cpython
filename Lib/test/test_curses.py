@@ -3248,7 +3248,7 @@ class SLKTests(NewtermTestBase):
                  f"$TERM={term!r}, newterm() may not work")
 @unittest.skipIf(sys.platform == "cygwin",
                  "cygwin's curses mostly just hangs")
-class TermAttrsTests(NewtermTestBase):
+class TermattrsTests(NewtermTestBase):
     # A signed termattrs() only differs from an unsigned one on a terminal
     # that advertises the topmost bit of the mask, which is A_ITALIC.  Drive
     # a terminal type that supports italics over a pseudo-terminal instead of
