@@ -27,7 +27,9 @@ def compare_trees(base: Path) -> bool:
             data = json.load(f)
         build_details = data["build_details"]
         hashes = data["hashes"]
-        tags_seen_by_platform.setdefault(build_details["platform"], set()).add(frozenset(build_details["abi"]["flags"]))
+        tags_seen_by_platform.setdefault(build_details["platform"], set()).add(
+            frozenset(build_details["abi"]["flags"])
+        )
 
         for path, digest in hashes.items():
             if is_ignored(path, build_details):
@@ -42,9 +44,7 @@ def compare_trees(base: Path) -> bool:
 
     # Did we see enough builds to make a useful comparison?
     if len(tags_seen_by_platform) < 2:
-        print(
-            "Insufficient platforms (architectures) to compare. Expected >= 2"
-        )
+        print("Insufficient platforms (architectures) to compare. Expected >= 2")
         success = False
 
     for platform, tagsets in tags_seen_by_platform.items():
