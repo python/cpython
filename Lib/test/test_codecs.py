@@ -3679,6 +3679,10 @@ _ICONV_MULTIBYTE = ['EUC-JP', 'SHIFT_JIS', 'GBK', 'GB18030', 'BIG5']
 # Encodings iconv may provide but for which CPython has no built-in codec
 # (cp1047 is EBCDIC, i.e. not ASCII-compatible).
 _ICONV_ONLY = ['cp1047', 'cp1133', 'GEORGIAN-PS', 'ARMSCII-8']
+# Encodings that leave a shift state pending, so encoding ends with a flush.
+_ICONV_SHIFT_STATE = [('ISO-2022-CN-EXT', 'ABC\u4e2dDEF'),
+                      ('ISO-2022-CN', 'ABC\u4e2dDEF'),
+                      ('ISO-2022-JP', 'ABC\u65e5DEF')]
 
 
 @unittest.skipUnless(hasattr(codecs, 'iconv_encode'),
@@ -3811,6 +3815,25 @@ class IconvTest(unittest.TestCase):
         for text in ('Gr\xfc\xdfe', 'ĀāĂ', 'A\U0001f389B'):
             with self.subTest(text=text):
                 self.assertEqual(text.encode('iconv:' + enc), text.encode(enc))
+
+    def test_encode_shift_state_flush(self):
+        # Encoding ends with a flush that emits the pending shift sequence.  Its
+        # return value counts nonreversible conversions, which some iconv
+        # implementations make positive for the flush itself (glibc does for
+        # ISO-2022-CN-EXT); that must not be read as a substituted character,
+        # which used to discard the whole output.
+        tested = False
+        for enc, text in _ICONV_SHIFT_STATE:
+            if not iconv_encoding_available(enc):
+                continue
+            tested = True
+            with self.subTest(encoding=enc):
+                data = codecs.iconv_encode(enc, text)[0]
+                self.assertNotEqual(data, b'')
+                self.assertEqual(
+                    codecs.iconv_decode(enc, data, 'strict', True)[0], text)
+        if not tested:
+            self.skipTest('no shift-state iconv encoding is available')
 
     def test_encode_surrogateescape(self):
         # A lone surrogate lives in the 2-byte kind and round-trips.
