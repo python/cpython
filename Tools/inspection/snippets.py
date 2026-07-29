@@ -128,24 +128,18 @@ def create_threads(n):
 
 # Start with 5 threads
 active_threads = create_threads(5)
-thread_count = 5
 
 # Main thread manages threads and does work
 while True:
-    # Randomly add or remove threads
+    # Randomly add threads up to the limit
     if random.random() < 0.1:  # 10% chance each iteration
-        if random.random() < 0.5 and thread_count < 100:
-            # Add 1-5 new threads
-            new_count = random.randint(1, 5)
+        if random.random() < 0.5 and len(active_threads) < 100:
+            new_count = min(
+                random.randint(1, 5),
+                100 - len(active_threads),
+            )
             new_threads = create_threads(new_count)
             active_threads.extend(new_threads)
-            thread_count += new_count
-        elif thread_count > 10:
-            # Remove 1-3 threads
-            remove_count = random.randint(1, 5)
-            # The threads will terminate naturally since they're daemons
-            active_threads = active_threads[remove_count:]
-            thread_count -= remove_count
 
     cpu_intensive_work()
     time.sleep(0.05)
