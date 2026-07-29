@@ -6274,14 +6274,10 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
     }
 
     if (_PyDict_HasSplitTable(d)) {
-        if (i >= d->ma_used) {
-            goto fail;
-        }
-
         int index = get_index_from_order(d, i);
         key = LOAD_SHARED_KEY(DK_UNICODE_ENTRIES(k)[index].me_key);
         value = d->ma_values->values[index];
-        assert (value != NULL);
+        assert(value != NULL);
     }
     else {
         if (i >= k->dk_nentries) {
