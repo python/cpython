@@ -1,0 +1,1 @@
+Exclude invalid token ``<>`` from :mod:`tokenize` output.

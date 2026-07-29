@@ -137,6 +137,7 @@ struct tok_state {
 #ifdef Py_DEBUG
     int debug;
 #endif
+    int BARRY_AS_BDFL;
 };
 
 int _PyLexer_type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
