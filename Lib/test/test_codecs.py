@@ -3676,6 +3676,10 @@ _ICONV_SINGLE_BYTE = [
     ('ISO-8859-1', 'Grüße'),
 ]
 _ICONV_MULTIBYTE = ['EUC-JP', 'SHIFT_JIS', 'GBK', 'GB18030', 'BIG5']
+# Stateful encodings: the shift state set by an escape sequence has to survive
+# from one incremental call to the next.  CPython has no built-in codec for
+# these, so the plain name reaches the iconv codec.
+_ICONV_STATEFUL = ['ISO-2022-CN']
 # Encodings iconv may provide but for which CPython has no built-in codec
 # (cp1047 is EBCDIC, i.e. not ASCII-compatible).
 _ICONV_ONLY = ['cp1047', 'cp1133', 'GEORGIAN-PS', 'ARMSCII-8']
@@ -3803,6 +3807,26 @@ class IconvTest(unittest.TestCase):
         raw = codecs.encode(text, 'iconv:' + enc)
         reader = codecs.getreader('iconv:' + enc)(io.BytesIO(raw))
         self.assertEqual(reader.read(), text)
+
+    def test_incremental_decode_shift_state(self):
+        enc = self.require(*_ICONV_STATEFUL)
+        text = 'ABC\u4e2d\u6587DEF'
+        data = codecs.encode(text, 'iconv:' + enc)
+        self.assertEqual(codecs.decode(data, 'iconv:' + enc), text)
+        dec = codecs.getincrementaldecoder('iconv:' + enc)()
+        out = ''.join(dec.decode(data[i:i+1]) for i in range(len(data)))
+        out += dec.decode(b'', True)
+        self.assertEqual(out, text)
+        # reset() starts a new conversion, so decoding can begin again.
+        dec.reset()
+        self.assertEqual(dec.decode(data, True), text)
+
+    def test_stream_shift_state(self):
+        enc = self.require(*_ICONV_STATEFUL)
+        text = 'ABC\u4e2d\u6587DEF'
+        raw = codecs.encode(text, 'iconv:' + enc)
+        reader = codecs.getreader('iconv:' + enc)(io.BytesIO(raw))
+        self.assertEqual(''.join(iter(lambda: reader.read(1), '')), text)
 
     def test_encode_kinds(self):
         # The string's own buffer is fed to iconv per storage kind; check each

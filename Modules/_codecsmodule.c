@@ -644,24 +644,89 @@ _codecs_code_page_decode_impl(PyObject *module, int codepage,
 
 #ifdef HAVE_ICONV
 
+#ifdef HAVE_ICONV
+#define ICONV_STATE_CAPSULE "_codecs.iconv_state"
+
+static void
+iconv_state_destructor(PyObject *capsule)
+{
+    iconv_t *cdp = PyCapsule_GetPointer(capsule, ICONV_STATE_CAPSULE);
+    if (cdp == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    iconv_close(*cdp);
+    PyMem_Free(cdp);
+}
+#endif
+
+/*[clinic input]
+_codecs.iconv_state
+
+    encoding: str
+    /
+
+Open an iconv conversion for decoding, to reuse across calls.
+
+The result is an opaque object.  Reusing one conversion keeps the
+shift state of a stateful encoding, such as ISO-2022-CN, across calls.
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_iconv_state_impl(PyObject *module, const char *encoding)
+/*[clinic end generated code: output=4100a9b65a64d65c input=6ffbfa5bb1d2d208]*/
+{
+#ifdef HAVE_ICONV
+    iconv_t *cdp = PyMem_Malloc(sizeof(iconv_t));
+    if (cdp == NULL) {
+        return PyErr_NoMemory();
+    }
+    *cdp = _PyUnicode_IconvOpenDecoder(encoding);
+    if (*cdp == (iconv_t)-1) {
+        PyMem_Free(cdp);
+        return NULL;
+    }
+    PyObject *capsule = PyCapsule_New(cdp, ICONV_STATE_CAPSULE,
+                                      iconv_state_destructor);
+    if (capsule == NULL) {
+        iconv_close(*cdp);
+        PyMem_Free(cdp);
+        return NULL;
+    }
+    return capsule;
+#else
+    PyErr_SetString(PyExc_LookupError, "iconv is not available");
+    return NULL;
+#endif
+}
+
 /*[clinic input]
 _codecs.iconv_decode
     encoding: str
     data: Py_buffer
     errors: str(accept={str, NoneType}) = None
     final: bool = False
+    state: object = None
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_iconv_decode_impl(PyObject *module, const char *encoding,
-                          Py_buffer *data, const char *errors, int final)
-/*[clinic end generated code: output=6c6145a9decc2ba8 input=d15a04d7d3a3e0cd]*/
+                          Py_buffer *data, const char *errors, int final,
+                          PyObject *state)
+/*[clinic end generated code: output=ed99087a9b21d007 input=b23f4298c963f9c5]*/
 {
+    iconv_t *cdp = NULL;
+    if (state != Py_None) {
+        cdp = PyCapsule_GetPointer(state, ICONV_STATE_CAPSULE);
+        if (cdp == NULL) {
+            return NULL;
+        }
+    }
     Py_ssize_t consumed = data->len;
     PyObject *decoded = _PyUnicode_DecodeIconv(encoding, data->buf, data->len,
                                                errors,
-                                               final ? NULL : &consumed);
+                                               final ? NULL : &consumed, cdp);
     return codec_tuple(decoded, consumed);
 }
 
@@ -1155,6 +1220,7 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_ICONV_ENCODE_METHODDEF
     _CODECS_ICONV_DECODE_METHODDEF
+    _CODECS_ICONV_STATE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF

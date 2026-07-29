@@ -8239,26 +8239,42 @@ iconv_open_or_set_error(const char *tocode, const char *fromcode,
     return cd;
 }
 
+iconv_t
+_PyUnicode_IconvOpenDecoder(const char *encoding)
+{
+    return iconv_open_or_set_error(ICONV_PIVOT, encoding, encoding);
+}
+
 /*
  * Decode bytes with iconv() into a str.
  *
  * The input is converted to native-endian UTF-32 one chunk at a time and
  * appended to a _PyUnicodeWriter.  If *consumed* is non-NULL the decode is
  * stateful: a trailing incomplete sequence stops and sets *consumed*.
+ *
+ * If *cdp* is non-NULL the conversion it points to is used and left open, so
+ * that a shift state survives from one call to the next.
  */
 PyObject *
 _PyUnicode_DecodeIconv(const char *encoding,
                        const char *s, Py_ssize_t size,
-                       const char *errors, Py_ssize_t *consumed)
+                       const char *errors, Py_ssize_t *consumed,
+                       iconv_t *cdp)
 {
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
-    iconv_t cd = iconv_open_or_set_error(ICONV_PIVOT, encoding, encoding);
-    if (cd == (iconv_t)-1) {
-        return NULL;
+    iconv_t cd;
+    if (cdp != NULL) {
+        cd = *cdp;
+    }
+    else {
+        cd = _PyUnicode_IconvOpenDecoder(encoding);
+        if (cd == (iconv_t)-1) {
+            return NULL;
+        }
     }
 
     /* Scratch buffer for one iconv() output chunk, as UTF-32 code points. */
@@ -8337,13 +8353,17 @@ _PyUnicode_DecodeIconv(const char *encoding,
     if (consumed != NULL) {
         *consumed = in - starts;
     }
-    iconv_close(cd);
+    if (cdp == NULL) {
+        iconv_close(cd);
+    }
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     return _PyUnicodeWriter_Finish(&writer);
 
 error:
-    iconv_close(cd);
+    if (cdp == NULL) {
+        iconv_close(cd);
+    }
     _PyUnicodeWriter_Dealloc(&writer);
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
