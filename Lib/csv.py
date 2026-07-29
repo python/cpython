@@ -332,20 +332,57 @@ class Sniffer:
             delim = ''
             skipinitialspace = 0
 
-        # if we see an extra quote between delimiters, we've got a
-        # double quoted format
-        dq_regexp = re.compile(
-                               r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
-                               {'delim':re.escape(delim), 'quote':quotechar}, re.MULTILINE)
-
-
-
-        if dq_regexp.search(data):
-            doublequote = True
-        else:
-            doublequote = False
+        doublequote = self._detect_doublequote(data, delim, quotechar)
 
         return (quotechar, doublequote, delim, skipinitialspace)
+
+
+    def _detect_doublequote(self, data, delimiter, quotechar):
+        """
+        Return whether a doubled quote occurs inside a quoted field.
+
+        The first regexp is a fast, linear pre-filter. Since it is not
+        anchored, a match can start at a delimiter inside another quoted
+        field. The second regexp rules out well-formed input without doubled
+        quotes. Both regexps use possessive repetition to avoid backtracking.
+        """
+        import re
+
+        escaped_delimiter = re.escape(delimiter)
+        escaped_quote = re.escape(quotechar)
+        values = {'delim': escaped_delimiter, 'quote': escaped_quote}
+        if delimiter:
+            candidate = re.compile(
+                    r"(?:%(delim)s|\r|^) *+%(quote)s"
+                    r"[^%(quote)s]*+%(quote)s%(quote)s"
+                    r"(?:%(quote)s%(quote)s|[^%(quote)s]++)*+"
+                    r"%(quote)s(?:%(delim)s|(?=\r)|$)"
+                    % values, re.MULTILINE)
+            separator = rf"(?:{escaped_delimiter}|\r\n|\r|\n)"
+            plain = (
+                    rf"(?! *+{escaped_quote})"
+                    rf"[^{escaped_delimiter}\r\n]*+")
+        else:
+            # An empty delimiter must not create a zero-width alternative
+            # which makes re.search() retry the pattern at every position.
+            candidate = re.compile(
+                    r"(?:[\r\n]|\A) *+%(quote)s"
+                    r"[^%(quote)s]*+%(quote)s%(quote)s"
+                    r"(?:%(quote)s%(quote)s|[^%(quote)s]++)*+"
+                    r"%(quote)s(?=[\r\n]|\Z)"
+                    % values, re.MULTILINE)
+            separator = r"(?:\r\n|\r|\n)"
+            plain = rf"(?! *+{escaped_quote})[^\r\n]*+"
+
+        if candidate.search(data) is None:
+            return False
+
+        quoted = (
+                rf" *+{escaped_quote}[^{escaped_quote}]*+{escaped_quote}")
+        field = rf"(?:{quoted}|{plain})"
+        without_doublequote = re.compile(
+                rf"\A{field}(?:{separator}{field})*+\Z")
+        return without_doublequote.match(data) is None
 
 
     def _guess_delimiter(self, data, delimiters):

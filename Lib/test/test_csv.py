@@ -1501,6 +1501,12 @@ ghi\0jkl
         self.assertEqual(dialect.delimiter, ',')
         self.assertEqual(dialect.quotechar, '"')
 
+    def test_sniff_regex_backtracking(self):
+        # gh-109638: this artificial sample used to take minutes.
+        sniffer = csv.Sniffer()
+        sample = '"",' * 100 + '"' * 100 + '0' + '"' * 100 + '0'
+        self.assertEqual(sniffer.sniff(sample).delimiter, ',')
+
     def test_doublequote(self):
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.header1)
@@ -1513,6 +1519,81 @@ ghi\0jkl
         self.assertFalse(dialect.doublequote)
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
+
+    def test_doublequote_without_delimiter(self):
+        sniffer = csv.Sniffer()
+        for quotechar in ('"', "'"):
+            with self.subTest(quotechar=quotechar):
+                self.assertEqual(
+                    sniffer._guess_quote_and_delimiter(
+                        f'{quotechar}a{quotechar}{quotechar}b{quotechar}',
+                        None,
+                    ),
+                    (quotechar, True, '', 0),
+                )
+                self.assertEqual(
+                    sniffer._guess_quote_and_delimiter(
+                        f'{quotechar}ab{quotechar}',
+                        None,
+                    ),
+                    (quotechar, False, '', 0),
+                )
+                self.assertEqual(
+                    sniffer._guess_quote_and_delimiter(
+                        f'{quotechar}a{quotechar}\n'
+                        f'x{quotechar}{quotechar}{quotechar}{quotechar}x',
+                        None,
+                    ),
+                    (quotechar, False, '', 0),
+                )
+
+    def test_doublequote_with_carriage_return(self):
+        sniffer = csv.Sniffer()
+        for record_delimiter in ('\r\n', '\r'):
+            for quotechar in ('"', "'"):
+                with self.subTest(
+                    record_delimiter=record_delimiter,
+                    quotechar=quotechar,
+                ):
+                    data = (
+                        f'x,{quotechar}plain{quotechar}{record_delimiter}'
+                        f'{quotechar}a{quotechar}{quotechar}b{quotechar},y'
+                        f'{record_delimiter}'
+                    )
+                    self.assertEqual(
+                        sniffer._guess_quote_and_delimiter(data, None),
+                        (quotechar, True, ',', 0),
+                    )
+                    self.assertIs(sniffer.sniff(data).doublequote, True)
+
+    def test_doublequote_across_quoted_fields(self):
+        sniffer = csv.Sniffer()
+        for delimiter in (',', ' ', ''):
+            for quotechar in ('"', "'"):
+                with self.subTest(
+                    delimiter=delimiter,
+                    quotechar=quotechar,
+                ):
+                    separator = delimiter or '\n'
+                    data = separator.join((
+                        f'{quotechar}{separator}{quotechar}',
+                        quotechar * 2,
+                        f'{quotechar}{separator}{quotechar}',
+                    ))
+                    result = sniffer._guess_quote_and_delimiter(data, None)
+                    self.assertEqual(result[0], quotechar)
+                    self.assertIs(result[1], False)
+                    self.assertEqual(result[2], delimiter)
+                    if delimiter:
+                        self.assertIs(
+                            sniffer.sniff(data).doublequote,
+                            False,
+                        )
+                    self.assertFalse(sniffer._detect_doublequote(
+                        f'a{quotechar}b{separator}{data}',
+                        delimiter,
+                        quotechar,
+                    ))
 
     def test_guess_delimiter_crlf_not_chosen(self):
         # Ensure that we pick the real delimiter ("|") over "\r" in a tie.

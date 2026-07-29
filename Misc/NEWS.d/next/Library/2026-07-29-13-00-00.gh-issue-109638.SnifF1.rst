@@ -1,0 +1,3 @@
+Prevent pathological regular expression backtracking in :class:`csv.Sniffer`
+when detecting doubled quote characters. Improve detection for quoted fields,
+avoid matching across quoted fields, and handle CRLF or CR record delimiters.
