@@ -1391,6 +1391,35 @@ class TestBasicOps(unittest.TestCase):
         )
         script_helper.assert_python_ok("-c", script)
 
+    @support.cpython_only
+    def test_tee_releases_passed_items(self):
+        # gh-138765: an item is released once every branch has passed it,
+        # not when the internal buffer which caches it is recycled.
+        class Item:
+            pass
+
+        refs = []
+        def source():
+            for i in range(200):
+                item = Item()
+                refs.append(weakref.ref(item))
+                yield item
+                del item
+
+        a, b = tee(source())
+        for i in range(150):
+            next(a)
+        for i in range(150):
+            next(b)
+        # The generator is suspended at the yield of the last consumed item,
+        # so its local variable still keeps that one alive.
+        alive = [i for i, ref in enumerate(refs[:149]) if ref() is not None]
+        self.assertEqual(alive, [])
+        # Items which the lagging branch has not passed yet are kept.
+        for i in range(10):
+            next(a)
+        self.assertTrue(all(ref() is not None for ref in refs[150:160]))
+
     # Issue 13454: Crash when deleting backward iterator from tee()
     def test_tee_del_backward(self):
         forward, backward = tee(repeat(None, 20000000))

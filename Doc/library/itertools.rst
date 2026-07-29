@@ -757,6 +757,9 @@ loops that truncate the stream.
    most or all of the data before another iterator starts, it is faster to use
    :func:`list` instead of :func:`tee`.
 
+   .. versionchanged:: 3.16
+      An item is released as soon as every returned iterator has passed it.
+
 
 .. function:: zip_longest(*iterables, fillvalue=None)
 
