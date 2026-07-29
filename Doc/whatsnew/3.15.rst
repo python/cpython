@@ -494,8 +494,8 @@ drive it with :meth:`~site.StartupState.addsitedir`,
 
 .. _whatsnew315-abi3t:
 
-:pep:`803` -- Stable ABI for free-threaded builds
--------------------------------------------------
+:pep:`803`: Stable ABI for free-threaded builds
+-----------------------------------------------
 
 C extensions that target the :ref:`Stable ABI <stable-abi>` can now be
 compiled for the new *Stable ABI for Free-Threaded Builds* (also known
@@ -1239,7 +1239,7 @@ importlib.metadata
 ------------------
 
 * Previously, when accessing a distribution metadata directory not
-  containing a metadata file, ``metadata()`` and ``Distribution.metadata()``
+  containing a metadata file, ``metadata()`` and ``Distribution.metadata``
   would return an empty ``PackageMetadata`` object as if the file
   was present but empty. Now, a ``MetadataNotFound`` exception is raised.
   See `importlib_metadata#493 <https://github.com/python/importlib_metadata/issues/493>`_
@@ -1465,7 +1465,7 @@ ssl
   supports "External PSKs" in TLSv1.3, as described in :rfc:`9258`.
   (Contributed by Will Childs-Klein in :gh:`133624`.)
 
-* Added new methods for managing groups used for SSL key agreement
+* Added new methods for managing groups used for SSL key agreement:
 
   * :meth:`ssl.SSLContext.set_groups` sets the groups allowed for doing
     key agreement, extending the previous
@@ -2457,7 +2457,7 @@ New features
 
   (Contributed in :gh:`149227`.)
 
-* Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating
+* Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C API for creating
   a module from a *spec* and *initfunc*.
   (Contributed by Itamar Oren in :gh:`116146`.)
 
@@ -2531,7 +2531,7 @@ New features
   thread state.
   (Contributed by Victor Stinner in :gh:`139653`.)
 
-* Add :c:func:`PyUnstable_SetImmortal` C-API function to mark objects as :term:`immortal`.
+* Add :c:func:`PyUnstable_SetImmortal` C API function to mark objects as :term:`immortal`.
   (Contributed by Kumar Aditya in :gh:`143300`.)
 
 * Restore private provisional ``_Py_InitializeMain()`` function removed in
