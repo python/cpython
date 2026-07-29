@@ -8,6 +8,7 @@
 
 #include "Python.h"
 #include "pycore_complexobject.h" // _Py_c_neg()
+#include "pycore_lock.h"          // _PyOnceFlag_CallOnce()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
@@ -147,11 +148,11 @@ special_type(double d)
     }
 
 #define P Py_MATH_PI
-#define P14 0.25*Py_MATH_PI
-#define P12 0.5*Py_MATH_PI
-#define P34 0.75*Py_MATH_PI
+#define P14 0.78539816339744830962
+#define P12 1.57079632679489661923
+#define P34 2.35619449019234492885
 #define INF INFINITY
-#define N Py_NAN
+#define N 9.5426319407711027e33 /* finite placeholder for NaN */
 #define U -9.5426319407711027e33 /* unlikely value, used as placeholder */
 
 /* First, the C functions that do the real work.  Each of the c_*
@@ -1230,6 +1231,41 @@ PyDoc_STRVAR(module_doc,
 "This module provides access to mathematical functions for complex\n"
 "numbers.");
 
+static _PyOnceFlag special_values_init_once = {0};
+
+static int
+init_special_values(void *Py_UNUSED(arg))
+{
+    Py_complex *tables[] = {
+        acos_special_values[0],
+        acosh_special_values[0],
+        asinh_special_values[0],
+        atanh_special_values[0],
+        cosh_special_values[0],
+        exp_special_values[0],
+        log_special_values[0],
+        sinh_special_values[0],
+        sqrt_special_values[0],
+        tanh_special_values[0],
+        rect_special_values[0],
+    };
+
+    /* MSVC with /fp:strict does not treat NAN as a constant expression.
+       Replace its finite placeholders once all static initialization is
+       complete. */
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(tables); i++) {
+        for (size_t j = 0; j < 7 * 7; j++) {
+            if (tables[i][j].real == N) {
+                tables[i][j].real = Py_NAN;
+            }
+            if (tables[i][j].imag == N) {
+                tables[i][j].imag = Py_NAN;
+            }
+        }
+    }
+    return 0;
+}
+
 static PyMethodDef cmath_methods[] = {
     CMATH_ACOS_METHODDEF
     CMATH_ACOSH_METHODDEF
@@ -1260,6 +1296,10 @@ static PyMethodDef cmath_methods[] = {
 static int
 cmath_exec(PyObject *mod)
 {
+    /* init cannot fail */
+    (void)_PyOnceFlag_CallOnce(
+        &special_values_init_once, init_special_values, NULL);
+
     if (PyModule_Add(mod, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }

@@ -2610,8 +2610,8 @@ math_pow_impl(PyObject *module, double x, double y)
 }
 
 
-static const double degToRad = Py_MATH_PI / 180.0;
-static const double radToDeg = 180.0 / Py_MATH_PI;
+static const double degToRad = 0.017453292519943295769236907684886;
+static const double radToDeg = 57.295779513082320876798154814105;
 
 /*[clinic input]
 math.degrees
