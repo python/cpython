@@ -1,4 +1,6 @@
 #include "Python.h"
+#include "pycore_ast.h"           // PyAST_Check()
+#include "pycore_pyarena.h"       // _PyArena_New()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_symtable.h"      // struct symtable
 
@@ -7,6 +9,29 @@
 module _symtable
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=f4685845a7100605]*/
+
+
+static struct symtable *
+symtable_from_ast(PyObject *source, PyObject *filename, int compile_mode)
+{
+    PyArena *arena = _PyArena_New();
+    if (arena == NULL) {
+        return NULL;
+    }
+    struct symtable *st = NULL;
+    mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+    if (mod == NULL || !_PyAST_Validate(mod)) {
+        goto finally;
+    }
+    _PyFutureFeatures future;
+    if (!_PyFuture_FromAST(mod, filename, &future)) {
+        goto finally;
+    }
+    st = _PySymtable_Build(mod, filename, &future);
+finally:
+    _PyArena_Free(arena);
+    return st;
+}
 
 
 /*[clinic input]
@@ -20,37 +45,29 @@ _symtable.symtable
     module as modname: object = None
 
 Return symbol and scope dictionaries used internally by compiler.
+
+The source can be a string, a bytes object, or an AST object.
 [clinic start generated code]*/
 
 static PyObject *
 _symtable_symtable_impl(PyObject *module, PyObject *source,
                         PyObject *filename, const char *startstr,
                         PyObject *modname)
-/*[clinic end generated code: output=235ec5a87a9ce178 input=fbf9adaa33c7070d]*/
+/*[clinic end generated code: output=235ec5a87a9ce178 input=6cadac0485f576a7]*/
 {
     struct symtable *st;
     PyObject *t;
-    int start;
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    PyObject *source_copy = NULL;
-
-    cf.cf_flags = PyCF_SOURCE_IS_UTF8;
-
-    const char *str = _Py_SourceAsString(source, "symtable", "string or bytes", &cf, &source_copy);
-    if (str == NULL) {
-        return NULL;
-    }
+    int compile_mode;
 
     if (strcmp(startstr, "exec") == 0)
-        start = Py_file_input;
+        compile_mode = 0;
     else if (strcmp(startstr, "eval") == 0)
-        start = Py_eval_input;
+        compile_mode = 1;
     else if (strcmp(startstr, "single") == 0)
-        start = Py_single_input;
+        compile_mode = 2;
     else {
         PyErr_SetString(PyExc_ValueError,
            "symtable() arg 3 must be 'exec' or 'eval' or 'single'");
-        Py_XDECREF(source_copy);
         return NULL;
     }
     if (modname == Py_None) {
@@ -60,11 +77,30 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
         PyErr_Format(PyExc_TypeError,
                      "symtable() argument 'module' must be str or None, not %T",
                      modname);
-        Py_XDECREF(source_copy);
         return NULL;
     }
-    st = _Py_SymtableStringObjectFlags(str, filename, start, &cf, modname);
-    Py_XDECREF(source_copy);
+
+    if (PyAST_Check(source)) {
+        st = symtable_from_ast(source, filename, compile_mode);
+    }
+    else {
+        static const int starts[] = {
+            Py_file_input, Py_eval_input, Py_single_input};
+        PyCompilerFlags cf = _PyCompilerFlags_INIT;
+        PyObject *source_copy = NULL;
+
+        cf.cf_flags = PyCF_SOURCE_IS_UTF8;
+        const char *str = _Py_SourceAsString(source, "symtable",
+                                             "string, bytes or AST",
+                                             &cf, &source_copy);
+        if (str == NULL) {
+            return NULL;
+        }
+        st = _Py_SymtableStringObjectFlags(str, filename,
+                                           starts[compile_mode], &cf,
+                                           modname);
+        Py_XDECREF(source_copy);
+    }
     if (st == NULL) {
         return NULL;
     }

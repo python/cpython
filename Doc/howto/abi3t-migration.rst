@@ -8,14 +8,14 @@ Migrating to Stable ABI for free threading (``abi3t``)
 
 Starting with the 3.15 release, CPython supports a variant of the Stable ABI
 that supports :term:`free-threaded <free threading>` Python:
-Stable ABI for Free-Threaded Builds, or ``abi3t`` for short.
+the Stable ABI for Free-Threaded Builds, or ``abi3t`` for short.
 This document describes how to adapt C API extensions to support free threading.
 
 Why do this
 ===========
 
-The typical reason to use Stable ABI is to reduce the number of artifacts that
-you need to build and distribute for each version of your library.
+The typical reason to use the Stable ABI is to reduce the number of artifacts
+that you need to build and distribute for each version of your library.
 
 Without the Stable ABI, you must build a separate shared library, and typically
 a *wheel* distribution, for each feature version of CPython you wish
@@ -87,16 +87,16 @@ builds; even the 3.15+ ones that this table "attributes" to ``abi3t``.)
 Why *not* do this
 -----------------
 
-There are two main downsides to Stable ABI.
+There are two main downsides to the Stable ABI.
 
-First, you extension may become slower, since Stable ABI prioritizes
+First, your extension may become slower, since the Stable ABI prioritizes
 compatibility over performance.
 The difference is usually not noticeable, and often can be mitigated by
 using the same source to build both a Stable ABI build and a few
 version-specific ones for "tier 1" CPython versions.
 
 Second, not all of the C API is available.
-Extensions need to be ported to build for Stable ABI, which may be difficult
+Extensions need to be ported to build for the Stable ABI, which may be difficult
 or, in rare cases, impossible.
 
 Specifically, ``abi3t`` requires APIs added in CPython 3.15.
@@ -127,7 +127,7 @@ Prerequisites
 This guide assumes that you have an extension written directly in C (or C++),
 which you want to port to ``abi3t``.
 
-If your extenstion uses a code generator (like Cython) or language binding
+If your extension uses a code generator (like Cython) or language binding
 (like PyO3), it's best to wait until that tool has support for ``abi3t``.
 If you maintain such a tool, you might be able to adapt the instructions
 here for your tool.
@@ -135,7 +135,7 @@ here for your tool.
 Non-free-threaded Stable ABI
 ----------------------------
 
-Your extension should support the Stable ABI (``abi3t``).
+Your extension should support the non-free-threaded Stable ABI (``abi3``).
 If not, either port it first, or follow this guide but be prepared to fix
 issues it does not mention.
 
@@ -183,7 +183,7 @@ following just after ``#include <Python.h>``::
    #error "abi3t define is not set!"
    #endif
 
-This should result in a different error than "``abt3t`` define is not set".
+This should result in a different error than "``abi3t`` define is not set".
 
 .. note::
 
@@ -705,7 +705,7 @@ Testing
 Note that when you build an extension compatible with multiple versions of
 CPython, you should always *test* it with each version it supports (for
 example, 3.15, 3.16, and so on).
-Stable ABI only guarantees *ABI* compatibility; there may also be behavior
+The Stable ABI only guarantees *ABI* compatibility; there may also be behavior
 changes -- both intentional ones (covered by :pep:`387`) and bugs.
 
 Be sure to run tests on both free-threaded and non-free-threaded builds
