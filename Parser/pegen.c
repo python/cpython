@@ -1054,7 +1054,9 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
                              PyCompilerFlags *flags, int *errcode,
                              PyObject **interactive_src, PyArena *arena)
 {
-    struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
+    int parser_flags = compute_parser_flags(flags);
+    struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2,
+                                                  parser_flags & PyPARSE_BARRY_AS_BDFL);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
             _PyTokenizer_raise_init_error(filename_ob);
@@ -1080,7 +1082,6 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
         goto error;
     }
 
-    int parser_flags = compute_parser_flags(flags);
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
                                     errcode, NULL, arena);
     if (p == NULL) {
