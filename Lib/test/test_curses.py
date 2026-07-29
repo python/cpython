@@ -3242,5 +3242,33 @@ class SLKTests(NewtermTestBase):
         curses.slk_color(0)
 
 
+@unittest.skipUnless(hasattr(curses, 'newterm'), 'requires curses.newterm()')
+@unittest.skipIf(BROKEN_NEWTERM, 'ncurses < 6.5 mishandles repeated newterm()')
+@unittest.skipIf(not term or term == 'unknown',
+                 f"$TERM={term!r}, newterm() may not work")
+@unittest.skipIf(sys.platform == "cygwin",
+                 "cygwin's curses mostly just hangs")
+class TermAttrsTests(NewtermTestBase):
+    # A_ITALIC is the topmost bit of a 32-bit attribute mask, so termattrs()
+    # only tells a signed result from an unsigned one on a terminal that
+    # advertises it.  Drive a known terminal type over a pseudo-terminal
+    # instead of relying on whatever $TERM happens to be.
+
+    def test_termattrs_is_not_negative(self):
+        s = self.make_pty()
+        try:
+            curses.newterm('xterm-256color', s, s)
+        except curses.error:
+            self.skipTest('no xterm-256color terminfo entry')
+        attrs = curses.termattrs()
+        italic = getattr(curses, 'A_ITALIC', 0)
+        if not italic or not attrs & italic:
+            self.skipTest('the terminal advertises no attribute in the top bit')
+        self.assertGreaterEqual(attrs, 0)
+        # termattrs() exists to be passed back to the attribute functions,
+        # which reject a negative mask.
+        curses.newwin(1, 1).attrset(attrs)
+
+
 if __name__ == '__main__':
     unittest.main()
