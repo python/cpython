@@ -1,0 +1,3 @@
+Fix :func:`curses.termattrs` returning a negative value on a terminal that
+supports :const:`curses.A_ITALIC`. The attribute mask is now returned
+unsigned, so it can be passed back to the attribute functions.

@@ -5495,6 +5495,10 @@ static PyType_Spec PyCursesScreen_Type_spec = {
     return curses_check_err(module, rtn, funcname, # X);    \
 }
 
+/* Only for a function returning an int that may be ERR.  A function returning
+   an attribute mask must not use this: the mask is unsigned and its topmost
+   bit is a valid attribute, so storing it in an int makes the result both
+   negative and, for an all-bits-set mask, indistinguishable from ERR. */
 #define NoArgReturnIntFunctionBody(X)           \
 {                                               \
     PyCursesStatefulInitialised(module);        \
@@ -7899,7 +7903,15 @@ Return a logical OR of all video attributes supported by the terminal.
 static PyObject *
 _curses_termattrs_impl(PyObject *module)
 /*[clinic end generated code: output=b06f437fce1b6fc4 input=0559882a04f84d1d]*/
-NoArgReturnIntFunctionBody(termattrs)
+{
+    PyCursesStatefulInitialised(module);
+
+    /* termattrs() returns a chtype mask, not a status, so there is no ERR to
+       check for.  Go through chtype rather than int: A_ITALIC is the topmost
+       bit of a 32-bit mask, and sign-extending it would make the result
+       negative and unusable as an attribute. */
+    return PyLong_FromUnsignedLong((unsigned long)(chtype)termattrs());
+}
 
 #ifdef HAVE_CURSES_TERM_ATTRS
 /*[clinic input]
