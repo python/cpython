@@ -85,7 +85,7 @@ Summary -- Release highlights
 * :pep:`728`: :ref:`TypedDict with typed extra items <whatsnew315-typeddict>`
 * :pep:`747`: :ref:`Annotating type forms with TypeForm
   <whatsnew315-typeform>`
-* :pep:`800`: Disjoint bases in the type system
+* :pep:`800`: :ref:`Disjoint bases in the type system <whatsnew315-disjoint-base>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pybyteswriter>`
 * :pep:`803`, :pep:`820 <820>`, :pep:`793 <793>`:
@@ -1725,6 +1725,8 @@ typing
   type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
   as it was incorrectly inferred at runtime before.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+  .. _whatsnew315-disjoint-base:
 
 * :pep:`800`: Add :deco:`typing.disjoint_base`, a new decorator marking a class
   as a disjoint base. This is an advanced feature primarily intended to allow
