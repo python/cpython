@@ -2924,8 +2924,14 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         with self.assertRaises(AttributeError):
             del task._log_destroy_pending
 
-    def test_get_context_uninitialized(self):
-        task = self.Task.__new__(self.Task)
+    def test_get_context_uninitialized_segfault(self):
+        # https://github.com/python/cpython/issues/154871
+
+        class UninitializedTask(self.Task):
+            def __init__(self, *args, **kwargs):
+                pass
+
+        task = UninitializedTask()
         self.assertIsNone(task.get_context())
 
 
