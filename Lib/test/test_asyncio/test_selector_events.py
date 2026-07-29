@@ -421,6 +421,45 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.assertEqual(self.loop.call_exception_handler.call_count, 1)
         self.assertEqual(self.loop.call_later.call_count, 1)
 
+    def test_accept_connection2_server_already_closed(self):
+        # gh-109564: Server.close() sets Server._sockets = None
+        # synchronously, but _accept_connection2() only starts running at
+        # least one event-loop iteration after it's scheduled (it's a
+        # Task). If close() lands in that gap, attaching a transport to
+        # the now-closed server used to raise an uncatchable
+        # AssertionError deep inside transport construction instead of
+        # just dropping the already-accepted connection.
+        conn = mock.Mock()
+        protocol_factory = mock.Mock()
+        server = mock.Mock()
+        server._sockets = None
+
+        coro = self.loop._accept_connection2(
+            protocol_factory, conn, {}, server=server)
+        self.loop.run_until_complete(coro)
+
+        conn.close.assert_called_with()
+        protocol_factory.assert_not_called()
+
+    def test_accept_connection2_no_server(self):
+        # _accept_connection2's server parameter defaults to None (no
+        # Server object to check), which must not itself raise -- only
+        # an actual closed Server should short-circuit.
+        conn = mock.Mock()
+        protocol = mock.Mock()
+        protocol_factory = mock.Mock(return_value=protocol)
+        waiter = self.loop.create_future()
+        waiter.set_result(None)
+        self.loop.create_future = mock.Mock(return_value=waiter)
+        self.loop._make_socket_transport = mock.Mock()
+
+        coro = self.loop._accept_connection2(
+            protocol_factory, conn, {}, server=None)
+        self.loop.run_until_complete(coro)
+
+        protocol_factory.assert_called_with()
+        conn.close.assert_not_called()
+
 class SelectorTransportTests(test_utils.TestCase):
 
     def setUp(self):
