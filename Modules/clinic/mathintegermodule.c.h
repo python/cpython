@@ -2,7 +2,11 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(math_integer_gcd__doc__,
 "gcd($module, /, *integers)\n"
@@ -66,6 +70,109 @@ PyDoc_STRVAR(math_integer_isqrt__doc__,
 
 #define MATH_INTEGER_ISQRT_METHODDEF    \
     {"isqrt", (PyCFunction)math_integer_isqrt, METH_O, math_integer_isqrt__doc__},
+
+PyDoc_STRVAR(math_integer_isprime__doc__,
+"isprime($module, n, /)\n"
+"--\n"
+"\n"
+"Return True if n is a prime number, False otherwise.\n"
+"\n"
+"The argument must be less than 2**64.");
+
+#define MATH_INTEGER_ISPRIME_METHODDEF    \
+    {"isprime", (PyCFunction)math_integer_isprime, METH_O, math_integer_isprime__doc__},
+
+static int
+math_integer_isprime_impl(PyObject *module, PyObject *n);
+
+static PyObject *
+math_integer_isprime(PyObject *module, PyObject *n)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = math_integer_isprime_impl(module, n);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_integer_primes__doc__,
+"primes($module, /, start=2, stop=None)\n"
+"--\n"
+"\n"
+"Return an iterator of the prime numbers in the range [start, stop).\n"
+"\n"
+"If stop is None, the iteration does not stop.\n"
+"The bounds must be less than 2**64.");
+
+#define MATH_INTEGER_PRIMES_METHODDEF    \
+    {"primes", _PyCFunction_CAST(math_integer_primes), METH_FASTCALL|METH_KEYWORDS, math_integer_primes__doc__},
+
+static PyObject *
+math_integer_primes_impl(PyObject *module, PyObject *start, PyObject *stop);
+
+static PyObject *
+math_integer_primes(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(start), &_Py_ID(stop), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"start", "stop", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "primes",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *start = NULL;
+    PyObject *stop = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        start = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    stop = args[1];
+skip_optional_pos:
+    return_value = math_integer_primes_impl(module, start, stop);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(math_integer_factorial__doc__,
 "factorial($module, n, /)\n"
@@ -156,4 +263,4 @@ math_integer_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=34697570c923a3af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=172b302a40542e1c input=a9049054013a1b77]*/

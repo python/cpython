@@ -13,8 +13,9 @@ These functions accept integers and objects that implement the
 :meth:`~object.__index__` method which is used to convert the object to an integer
 number.
 
-The following functions are provided by this module.  All return values are
-computed exactly and are integers.
+The following functions are provided by this module.
+Unless stated otherwise below,
+all return values are computed exactly and are integers.
 
 
 .. function:: comb(n, k, /)
@@ -44,6 +45,20 @@ computed exactly and are integers.
    positive integer that is a divisor of all arguments.  If all arguments
    are zero, then the returned value is ``0``.  ``gcd()`` without arguments
    returns ``0``.
+
+
+.. function:: isprime(n, /)
+
+   Return ``True`` if *n* is a prime number, ``False`` otherwise.
+
+   A prime number is a natural number greater than 1
+   that is not a product of two smaller natural numbers.
+   Negative numbers, ``0`` and ``1`` are not prime.
+
+   The argument must be less than 2\ :sup:`64`;
+   raises :exc:`OverflowError` otherwise.
+
+   .. versionadded:: next
 
 
 .. function:: isqrt(n, /)
@@ -83,3 +98,21 @@ computed exactly and are integers.
    and the function returns ``n!``.
 
    Raises :exc:`ValueError` if either of the arguments are negative.
+
+
+.. function:: primes(start=2, stop=None)
+
+   Return an iterator of the prime numbers *p* with ``start <= p < stop``,
+   in increasing order.
+   If *stop* is ``None`` (the default), the iteration does not stop.
+
+   Roughly equivalent to
+   ``(p for p in itertools.count(start) if isprime(p))``
+   for the unbounded form.
+
+   The bounds must be less than 2\ :sup:`64`;
+   raises :exc:`OverflowError` otherwise.
+   Unbounded iteration raises :exc:`OverflowError`
+   if the candidates reach that limit.
+
+   .. versionadded:: next

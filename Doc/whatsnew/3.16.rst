@@ -376,6 +376,15 @@ math
   (Contributed by Jeff Epler in :gh:`150534`.)
 
 
+math.integer
+------------
+
+* Added :func:`math.integer.isprime` for primality testing of integers
+  less than 2**64 and
+  :func:`math.integer.primes` for iterating over prime numbers.
+  (Contributed by Serhiy Storchaka in :gh:`153222`.)
+
+
 os
 --
 

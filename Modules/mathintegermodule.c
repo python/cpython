@@ -5,11 +5,24 @@
 #endif
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_bitutils.h"      // _Py_bit_length()
-#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_abstract.h"          // _PyNumber_Index()
+#include "pycore_bitutils.h"          // _Py_bit_length()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"              // _PyLong_GetZero()
 
 #include "clinic/mathintegermodule.c.h"
+
+typedef struct {
+    PyTypeObject *primes_iter_type;
+} math_integer_state;
+
+static inline math_integer_state *
+get_math_integer_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (math_integer_state *)state;
+}
 
 /*[clinic input]
 module math
@@ -478,6 +491,323 @@ math_integer_isqrt(PyObject *module, PyObject *n)
     Py_XDECREF(a);
     Py_DECREF(n);
     return NULL;
+}
+
+
+/* Primality testing with the deterministic Miller-Rabin test.
+
+   A strong probable prime test is exact for n < 4759123141 with the
+   bases {2, 7, 61} (G. Jaeschke, "On strong pseudoprimes to several
+   bases", Mathematics of Computation 61 (1993), 915-926), and for all
+   n < 2**64 with the seven bases below, found by Jim Sinclair and
+   verified against the Feitsma-Galway exhaustive list of base-2 strong
+   pseudoprimes below 2**64 (see http://miller-rabin.appspot.com/ and
+   http://ntheory.org/pseudoprimes.html).
+*/
+
+static const uint8_t small_primes[] = {
+    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
+};
+
+static const uint32_t mr_bases_small[] = {2, 7, 61};
+static const uint32_t mr_bases[] = {
+    2, 325, 9375, 28178, 450775, 9780504, 1795265022,
+};
+
+#if defined(HAVE_GCC_UINT128_T)
+static inline uint64_t
+mulmod_u64(uint64_t a, uint64_t b, uint64_t n)
+{
+    return (uint64_t)((__uint128_t)a * b % n);
+}
+#elif defined(_MSC_VER) && defined(_M_X64)
+#  include <intrin.h>
+#  pragma intrinsic(_umul128, _udiv128)
+static inline uint64_t
+mulmod_u64(uint64_t a, uint64_t b, uint64_t n)
+{
+    /* Since a, b < n, the high 64 bits of a*b are less than n and
+       _udiv128() cannot fault. */
+    uint64_t hi, rem;
+    uint64_t lo = _umul128(a, b, &hi);
+    (void)_udiv128(hi, lo, n, &rem);
+    return rem;
+}
+#else
+/* No fast 128-bit multiplication: fall back to shift-and-add, with the
+   modular additions written to avoid overflow for n close to 2**64.
+   Assumes a < n. */
+static inline uint64_t
+mulmod_u64(uint64_t a, uint64_t b, uint64_t n)
+{
+    uint64_t result = 0;
+    while (b) {
+        if (b & 1) {
+            result = (result >= n - a) ? result - (n - a) : result + a;
+        }
+        a = (a >= n - a) ? a - (n - a) : a + a;
+        b >>= 1;
+    }
+    return result;
+}
+#endif
+
+static uint64_t
+powmod_u64(uint64_t b, uint64_t e, uint64_t n)
+{
+    uint64_t result = 1;
+    b %= n;
+    while (e) {
+        if (e & 1) {
+            result = mulmod_u64(result, b, n);
+        }
+        b = mulmod_u64(b, b, n);
+        e >>= 1;
+    }
+    return result;
+}
+
+/* Strong probable prime test to the given base.  n must be odd and
+   coprime to the base (a base divisible by n gives no information and
+   is treated as passing). */
+static int
+sprp_u64(uint64_t n, uint64_t base)
+{
+    base %= n;
+    if (base == 0) {
+        return 1;
+    }
+    uint64_t d = n - 1;
+    int s = 0;
+    while ((d & 1) == 0) {
+        d >>= 1;
+        s++;
+    }
+    uint64_t a = powmod_u64(base, d, n);
+    if (a == 1 || a == n - 1) {
+        return 1;
+    }
+    for (int r = 1; r < s; r++) {
+        a = mulmod_u64(a, a, n);
+        if (a == n - 1) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+isprime_u64(uint64_t n)
+{
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(small_primes); i++) {
+        if (n % small_primes[i] == 0) {
+            return n == small_primes[i];
+        }
+    }
+    if (n < 67 * 67) {
+        return n > 1;
+    }
+    const uint32_t *bases = mr_bases;
+    size_t num_bases = Py_ARRAY_LENGTH(mr_bases);
+    if (n < 4759123141) {
+        bases = mr_bases_small;
+        num_bases = Py_ARRAY_LENGTH(mr_bases_small);
+    }
+    for (size_t i = 0; i < num_bases; i++) {
+        if (!sprp_u64(n, bases[i])) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/*[clinic input]
+math.integer.isprime -> bool
+
+    n: object
+    /
+
+Return True if n is a prime number, False otherwise.
+
+The argument must be less than 2**64.
+[clinic start generated code]*/
+
+static int
+math_integer_isprime_impl(PyObject *module, PyObject *n)
+/*[clinic end generated code: output=c808dc14d8d86875 input=bab96f73b765d9cf]*/
+{
+    n = _PyNumber_Index(n);
+    if (n == NULL) {
+        return -1;
+    }
+    int result;
+    uint64_t m;
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
+        result = 0;
+    }
+    else if (PyLong_AsUInt64(n, &m) < 0) {
+        result = -1;
+    }
+    else {
+        result = isprime_u64(m);
+    }
+    Py_DECREF(n);
+    return result;
+}
+
+
+/* The iterator returned by primes(). */
+
+typedef struct {
+    PyObject_HEAD
+    uint64_t candidate;     /* next candidate to test; 2 or odd */
+    uint64_t stop;          /* exclusive upper bound; ignored if unbounded */
+    char unbounded;
+    char done;
+    char overflowed;        /* unbounded iteration ran out of the domain */
+} primesiterobject;
+
+static void
+primes_iter_dealloc(PyObject *op)
+{
+    PyTypeObject *tp = Py_TYPE(op);
+    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
+    free_func(op);
+    Py_DECREF(tp);
+}
+
+static PyObject *
+primes_iter_next(PyObject *op)
+{
+    primesiterobject *it = (primesiterobject *)op;
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    for (;;) {
+        if (it->done) {
+            if (it->overflowed) {
+                /* The whole supported range has been iterated without
+                   reaching a bound.  Only reachable with stop=None. */
+                it->overflowed = 0;
+                PyErr_SetString(PyExc_OverflowError,
+                                "primes() argument must be less than 2**64");
+            }
+            break;
+        }
+        if (PyErr_CheckSignals() < 0) {
+            break;
+        }
+        uint64_t cand = it->candidate;
+        if (!it->unbounded && cand >= it->stop) {
+            it->done = 1;
+            break;
+        }
+        /* Advance to the next candidate: 2 -> 3, odd -> odd + 2. */
+        if (cand == 2) {
+            it->candidate = 3;
+        }
+        else if (cand == UINT64_MAX) {
+            it->done = 1;
+            it->overflowed = it->unbounded;
+        }
+        else {
+            it->candidate = cand + 2;
+        }
+        if (isprime_u64(cand)) {
+            result = PyLong_FromUnsignedLongLong(cand);
+            break;
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static PyType_Slot primes_iter_slots[] = {
+    {Py_tp_dealloc, primes_iter_dealloc},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, primes_iter_next},
+    {0, NULL},
+};
+
+static PyType_Spec primes_iter_spec = {
+    .name = "math.integer.primes_iterator",
+    .basicsize = sizeof(primesiterobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
+              | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+    .slots = primes_iter_slots,
+};
+
+/*[clinic input]
+math.integer.primes
+
+    start: object(c_default="NULL") = 2
+    stop: object = None
+
+Return an iterator of the prime numbers in the range [start, stop).
+
+If stop is None, the iteration does not stop.
+The bounds must be less than 2**64.
+[clinic start generated code]*/
+
+static PyObject *
+math_integer_primes_impl(PyObject *module, PyObject *start, PyObject *stop)
+/*[clinic end generated code: output=b92270dab45a6b84 input=b5abd91fb58a8d90]*/
+{
+    uint64_t candidate = 2;
+    uint64_t stopval = 0;
+    char unbounded = 0;
+    char done = 0;
+
+    if (stop == Py_None) {
+        unbounded = 1;
+    }
+    else {
+        PyObject *s = _PyNumber_Index(stop);
+        if (s == NULL) {
+            return NULL;
+        }
+        if (_PyLong_IsNegative((PyLongObject *)s)) {
+            done = 1;
+        }
+        else if (PyLong_AsUInt64(s, &stopval) < 0) {
+            Py_DECREF(s);
+            return NULL;
+        }
+        Py_DECREF(s);
+    }
+    if (start != NULL) {
+        PyObject *s = _PyNumber_Index(start);
+        if (s == NULL) {
+            return NULL;
+        }
+        if (_PyLong_IsNegative((PyLongObject *)s)) {
+            /* The first prime is 2. */
+        }
+        else if (PyLong_AsUInt64(s, &candidate) < 0) {
+            Py_DECREF(s);
+            return NULL;
+        }
+        Py_DECREF(s);
+        if (candidate < 2) {
+            candidate = 2;
+        }
+        else if (candidate > 2) {
+            /* Round an even start up to the next odd number. */
+            candidate |= 1;
+        }
+    }
+
+    math_integer_state *state = get_math_integer_state(module);
+    primesiterobject *it = PyObject_New(primesiterobject,
+                                        state->primes_iter_type);
+    if (it == NULL) {
+        return NULL;
+    }
+    it->candidate = candidate;
+    it->stop = stopval;
+    it->unbounded = unbounded;
+    it->done = done;
+    it->overflowed = 0;
+    return (PyObject *)it;
 }
 
 
@@ -1233,15 +1563,24 @@ static PyMethodDef math_integer_methods[] = {
     MATH_INTEGER_COMB_METHODDEF
     MATH_INTEGER_FACTORIAL_METHODDEF
     MATH_INTEGER_GCD_METHODDEF
+    MATH_INTEGER_ISPRIME_METHODDEF
     MATH_INTEGER_ISQRT_METHODDEF
     MATH_INTEGER_LCM_METHODDEF
     MATH_INTEGER_PERM_METHODDEF
+    MATH_INTEGER_PRIMES_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
 static int
 math_integer_exec(PyObject *module)
 {
+    math_integer_state *state = get_math_integer_state(module);
+    state->primes_iter_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &primes_iter_spec, NULL);
+    if (state->primes_iter_type == NULL) {
+        return -1;
+    }
+
     /* Fix the __name__ attribute of the module and the __module__ attribute
      * of its functions.
      */
@@ -1270,6 +1609,28 @@ math_integer_exec(PyObject *module)
     return 0;
 }
 
+static int
+math_integer_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    math_integer_state *state = get_math_integer_state(module);
+    Py_VISIT(state->primes_iter_type);
+    return 0;
+}
+
+static int
+math_integer_clear(PyObject *module)
+{
+    math_integer_state *state = get_math_integer_state(module);
+    Py_CLEAR(state->primes_iter_type);
+    return 0;
+}
+
+static void
+math_integer_free(void *module)
+{
+    (void)math_integer_clear((PyObject *)module);
+}
+
 static PyModuleDef_Slot math_integer_slots[] = {
     _Py_ABI_SLOT,
     {Py_mod_exec, math_integer_exec},
@@ -1285,9 +1646,12 @@ static struct PyModuleDef math_integer_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "math.integer",
     .m_doc = module_doc,
-    .m_size = 0,
+    .m_size = sizeof(math_integer_state),
     .m_methods = math_integer_methods,
     .m_slots = math_integer_slots,
+    .m_traverse = math_integer_traverse,
+    .m_clear = math_integer_clear,
+    .m_free = math_integer_free,
 };
 
 PyMODINIT_FUNC
