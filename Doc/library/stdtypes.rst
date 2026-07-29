@@ -1203,7 +1203,7 @@ the underlying generator function:
    For backwards compatibility, however, the second signature is
    supported.
    An exception instance is created from three arguments in the same way as in
-   :meth:`generator.__throw__`
+   :meth:`generator.throw`
 
    .. versionchanged:: 3.12
 
