@@ -26837,8 +26837,8 @@ PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 if test "x$have_curses" = xno
 then :
 
-else case e in #(
-  e)
+else $as_nop
+
           save_curses_cppflags=$CPPFLAGS
   as_fn_append CPPFLAGS " $CURSES_CFLAGS"
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether curses supports wide characters" >&5
@@ -26846,8 +26846,8 @@ printf %s "checking whether curses supports wide characters... " >&6; }
 if test ${ac_cv_curses_wide+y}
 then :
   printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #define NCURSES_OPAQUE 0
@@ -26880,13 +26880,11 @@ _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
   ac_cv_curses_wide=yes
-else case e in #(
-  e) ac_cv_curses_wide=no ;;
-esac
+else $as_nop
+  ac_cv_curses_wide=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext ;;
-esac
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_curses_wide" >&5
 printf "%s\n" "$ac_cv_curses_wide" >&6; }
@@ -26896,8 +26894,7 @@ then :
   printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
 
 fi
- ;;
-esac
+
 fi
 
 # On Solaris, term.h requires curses.h
