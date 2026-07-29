@@ -158,7 +158,7 @@ def android_env(host):
         f"PREFIX={prefix}; "
         f". {ENV_SCRIPT}; "
         f"export",
-        check=True, shell=True, capture_output=True, encoding='utf-8',
+        check=True, shell=True, stdout=subprocess.PIPE, encoding='utf-8',
     ).stdout
 
     env = {}
