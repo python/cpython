@@ -404,18 +404,19 @@ class Sniffer:
 
             # build a list of possible delimiters
             modeList = modes.items()
-            total = float(min(chunkLength * iteration, len(data)))
-            # (rows of consistent data) / (number of rows) = 100%
-            consistency = 1.0
-            # minimum consistency threshold
-            threshold = 0.9
-            while len(delims) == 0 and consistency >= threshold:
+            total = min(chunkLength * iteration, len(data))
+            # (rows of consistent data) / (number of rows) = 100%, counted down
+            # in whole percent to a minimum consistency threshold of 90%.
+            # Integer arithmetic: subtracting 0.01 from a float stopped at
+            # 0.9099999999999999, so the pass at the threshold never ran.
+            for consistency in range(100, 89, -1):
+                if delims:
+                    break
                 for k, v in modeList:
                     if v[0] > 0 and v[1] > 0:
-                        if ((v[1]/total) >= consistency and
+                        if (v[1] * 100 >= consistency * total and
                             (delimiters is None or k in delimiters)):
                             delims[k] = v
-                consistency -= 0.01
 
             if len(delims) == 1:
                 delim = list(delims.keys())[0]
