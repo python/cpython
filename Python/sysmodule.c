@@ -1776,7 +1776,7 @@ sys_getwindowsversion_impl(PyObject *module)
 
     SET_VERSION_INFO(realVersion);
     SET_VERSION_INFO(PyUnicode_FromString("Desktop"));
-#elif defined (MS_WINDOWS_GAMES)
+#elif defined(MS_WINDOWS_GAMES)
     SET_VERSION_INFO(Py_BuildValue("(kkk)", ver.dwMajorVersion, ver.dwMinorVersion, ver.dwBuildNumber));
     SET_VERSION_INFO(PyUnicode_FromString("Xbox"));
 #else
