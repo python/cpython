@@ -159,19 +159,21 @@ def run_mode(case, mode_name, args):
         rate_hz = args.rate_khz * 1000
         period = 1.0 / rate_hz if rate_hz else 0
         next_sample = time.perf_counter()
-        deadline = time.perf_counter() + args.duration
+        deadline = next_sample + args.duration
 
         while time.perf_counter() < deadline:
-            result["attempts"] += 1
             if period:
                 if args.poisson_sampling:
-                    time.sleep(random.expovariate(rate_hz))
-                else:
-                    now = time.perf_counter()
-                    if next_sample > now:
-                        time.sleep(next_sample - now)
+                    next_sample += random.expovariate(rate_hz)
+                if next_sample >= deadline:
+                    break
+                now = time.perf_counter()
+                if next_sample > now:
+                    time.sleep(next_sample - now)
+                if not args.poisson_sampling:
                     next_sample += period
 
+            result["attempts"] += 1
             work_start = time.perf_counter()
             try:
                 trace = get_trace(unwinder, blocking, op)
