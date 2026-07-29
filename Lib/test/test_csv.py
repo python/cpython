@@ -1564,6 +1564,13 @@ ghi\0jkl
             sniffer.sniff(sample)
 
 
+    def test_sniff_regex_backtracking(self):
+        # gh-109638: this artificial sample used to take minutes.
+        sniffer = csv.Sniffer()
+        sample = '"",' * 100 + '"' * 100 + '0' + '"' * 100 + '0'
+        self.assertEqual(sniffer.sniff(sample).delimiter, ',')
+
+
 class NUL:
     def write(s, *args):
         pass
