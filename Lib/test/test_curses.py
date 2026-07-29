@@ -278,6 +278,14 @@ class TestCurses(unittest.TestCase):
         del win2
         gc_collect()
 
+    def test_getparent(self):
+        # getparent() calls no curses function, so it works with any backend
+        # and is not gated like the is_*() getters below.
+        stdscr = self.stdscr
+        self.assertIsNone(stdscr.getparent())
+        sub = stdscr.subwin(3, 3, 0, 0)
+        self.assertIs(sub.getparent(), stdscr)
+
     def test_dupwin(self):
         win = curses.newwin(5, 10, 2, 3)
         win.addstr(0, 0, 'ABCDE')
@@ -513,6 +521,12 @@ class TestCurses(unittest.TestCase):
                     stdscr.addstr(0, 0, s)
                     self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
                     self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
+
+        # Reading no characters gives an empty string, like instr() and
+        # in_wchstr() do.  curses does not terminate the buffer in this case.
+        stdscr.addstr(0, 0, 'abz')
+        self.assertEqual(stdscr.in_wstr(0, 0, 0), '')
+        self.assertEqual(stdscr.in_wstr(0), '')
 
     def test_complexchar(self):
         # A complexchar is a styled wide-character cell: str() is its text,
@@ -1771,13 +1785,11 @@ class TestCurses(unittest.TestCase):
         stdscr.setscrreg(5, 10)
         self.assertEqual(stdscr.getscrreg(), (5, 10))
 
-        # is_pad()/is_subwin()/getparent().
+        # is_pad()/is_subwin().
         self.assertIs(stdscr.is_pad(), False)
         self.assertIs(stdscr.is_subwin(), False)
-        self.assertIsNone(stdscr.getparent())
         sub = stdscr.subwin(3, 3, 0, 0)
         self.assertIs(sub.is_subwin(), True)
-        self.assertIs(sub.getparent(), stdscr)
         pad = curses.newpad(5, 5)
         self.assertIs(pad.is_pad(), True)
 
@@ -3071,6 +3083,59 @@ class ScreenTests(NewtermTestBase):
         self.assertIsNone(screen.stdscr)
         del screen
         gc_collect()
+
+    @requires_curses_func('new_prescr')
+    def test_set_term_prescr_screen(self):
+        # A new_prescr() screen has no terminal, so it cannot become the
+        # current one.  It used to be accepted, and the next refresh then
+        # crashed inside curses.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        self.assertRaises(curses.error, curses.set_term, curses.new_prescr())
+        # The current screen is unchanged, so refreshing it still works.
+        screen.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
+    @unittest.skipUnless(hasattr(curses.screen, 'use'),
+                         'requires curses.screen.use()')
+    def test_use_prescr_screen(self):
+        # use() makes its screen current for the callback, so a new_prescr()
+        # screen is current there without having a terminal.  Operations that
+        # need one used to crash inside curses.
+        s = self.make_pty()
+        screen = curses.newterm('xterm', s, s)
+        prescr = curses.new_prescr()
+        for func in [
+            lambda scr: curses.doupdate(),
+            lambda scr: curses.newwin(3, 3),
+            lambda scr: screen.stdscr.refresh(),
+            lambda scr: screen.stdscr.getch(),
+        ]:
+            with self.assertRaises(curses.error):
+                prescr.use(func)
+        # Affecting the state before initscr() is what such a screen is for.
+        prescr.use(lambda scr: curses.use_env(False))
+        # The current screen is unchanged.
+        screen.stdscr.refresh()
+
+    def test_initscr_after_newterm_keeps_screen_alive(self):
+        # initscr() called while a newterm() screen is current returns that
+        # screen's own standard window, so the window keeps the screen alive.
+        # It used to be a second wrapper created without a screen: using it
+        # after the screen was collected read freed memory, and both wrappers
+        # could delwin() the same window.
+        s1 = self.make_pty()
+        s2 = self.make_pty()
+        screen1 = curses.newterm('xterm', s1, s1)
+        screen2 = curses.newterm('xterm', s2, s2)
+        curses.set_term(screen1)
+        win = curses.initscr()
+        self.assertIs(win, screen1.stdscr)
+        curses.set_term(screen2)
+        del screen1
+        gc_collect()
+        win.addstr(0, 0, 'x')
 
     @cpython_only
     def test_disallow_instantiation(self):
