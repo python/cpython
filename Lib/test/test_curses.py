@@ -522,6 +522,12 @@ class TestCurses(unittest.TestCase):
                     self.assertEqual(stdscr.in_wstr(0, 0, len(s)), s)
                     self.assertIsInstance(stdscr.instr(0, 0, len(s)), bytes)
 
+        # Reading no characters gives an empty string, like instr() and
+        # in_wchstr() do.  curses does not terminate the buffer in this case.
+        stdscr.addstr(0, 0, 'abz')
+        self.assertEqual(stdscr.in_wstr(0, 0, 0), '')
+        self.assertEqual(stdscr.in_wstr(0), '')
+
     def test_complexchar(self):
         # A complexchar is a styled wide-character cell: str() is its text,
         # and the attr and pair attributes are its rendition.

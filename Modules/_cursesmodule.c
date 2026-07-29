@@ -3956,7 +3956,7 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
         PyMem_Free(buf);
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
-    PyObject *res = PyUnicode_FromWideChar(buf, -1);
+    PyObject *res = PyUnicode_FromWideChar(buf, rtn);
     PyMem_Free(buf);
     return res;
 #else
