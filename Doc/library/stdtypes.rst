@@ -891,6 +891,8 @@ many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, 
 However, relying on this is discouraged; explicitly convert using :func:`int`
 instead.
 
+.. _iterator-types:
+
 .. _typeiter:
 
 Iteration-related Types
