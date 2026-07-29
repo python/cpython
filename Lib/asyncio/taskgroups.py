@@ -174,10 +174,23 @@ class TaskGroup:
                 self._parent_task.uncancel()
                 self._parent_task.cancel()
             try:
-                raise BaseExceptionGroup(
-                    'unhandled errors in a TaskGroup',
-                    self._errors,
-                ) from None
+                # If the *only* error is a GeneratorExit from the body
+                # of the group, then instead of raising an
+                # ExceptionGroup we raise GeneratorExit. This ensures
+                # that async generators that use TaskGroup properly
+                # swallow the exception on `aclose()` while ensuring
+                # that no exceptions from subtasks are swallowed.
+                if (
+                    et is not None
+                    and issubclass(et, GeneratorExit)
+                    and len(self._errors) == 1
+                ):
+                    raise exc
+                else:
+                    raise BaseExceptionGroup(
+                        'unhandled errors in a TaskGroup',
+                        self._errors,
+                    ) from None
             finally:
                 exc = None
 
