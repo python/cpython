@@ -11,7 +11,7 @@ import gzip
 import json
 
 
-def compare_trees(base: Path) -> bool:
+def compare_install_manifests(base: Path) -> bool:
     """Compare all json manifests inside the directory at base."""
     hashes_seen: dict[str, str] = {}
     tags_seen_by_platform: dict[str, set[frozenset[str]]] = {}
@@ -110,7 +110,7 @@ def main() -> None:
         help="Directory containing hashes of Python installs.",
     )
     args = p.parse_args()
-    if not compare_trees(args.base_directory):
+    if not compare_install_manifests(args.base_directory):
         raise SystemExit(1)
 
 
