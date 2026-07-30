@@ -1678,6 +1678,11 @@ except Exception:
         self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
         self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
 
+        # A real comment after a string that ends with an escaped quote must
+        # still be stripped (gh-154711).
+        self.assertEqual(f"{'\'' = # comment
+}", "'\\'' = \n" + repr("'"))
+
         self.assertEqual(f'{ # some comment goes here
   """hello"""=}',  ' \n  """hello"""=\'hello\'')
         self.assertEqual(f'{"""# this is not a comment
