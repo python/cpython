@@ -4465,7 +4465,7 @@ fi
 # Check for native half-float type.
 AC_CACHE_CHECK([for _Float16 support], [ac_cv_float16_supported],
 WITH_SAVE_ENV([
-CFLAGS="$CFLAGS -mf16c"
+CFLAGS="$CFLAGS -mf16c -O0"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void)
 {
