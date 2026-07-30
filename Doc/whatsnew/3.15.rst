@@ -513,10 +513,6 @@ specifically:
   purpose in :pep:`793`, with a new :c:type:`PySlot` structure
   introduced in :pep:`820`.
 
-The reference documentation for these features is complete, but currently
-aimed at early adopters.
-A migration guide is planned for an upcoming beta release.
-
 Note that Stable ABI does not offer all the functionality that CPython
 has to offer.
 Extensions that cannot switch to ``abi3t`` should continue to build for
@@ -531,6 +527,9 @@ If this is the case for your tool, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
+
+A practical :ref:`migration guide <abi3t-migration-howto>` for switching to
+``abi3t`` is available.
 
 .. seealso:: :pep:`803` for further details.
 
@@ -873,6 +872,14 @@ Other language changes
   ``pkg.sub.mod`` could each block the other when ``pkg/sub/__init__.py``
   imports ``pkg.sub.mod``.
   (Contributed by Gregory P. Smith in :gh:`83065`.)
+
+* File names of Stable ABI extensions that use the ``.so`` suffix may now
+  include a multiarch tuple, for example, ``foo.abi3-x86-64-linux-gnu.so``.
+  This permits stable ABI extensions for multiple architectures to be
+  co-installed into the same directory, without clashing with each
+  other, as regular dynamic extensions do.
+  (Contributed by Stefano Rivera in :gh:`122931`.)
+
 
 
 Default interactive shell
@@ -1226,7 +1233,7 @@ importlib.metadata
   would return an empty ``PackageMetadata`` object as if the file
   was present but empty. Now, a ``MetadataNotFound`` exception is raised.
   See `importlib_metadata#493 <https://github.com/python/importlib_metadata/issues/493>`_
-  for background and rationale and and :gh:`143387` for rationale on the
+  for background and rationale and :gh:`143387` for rationale on the
   compatibility concerns.
   (Contributed by Jason R. Coombs.)
 
@@ -1399,6 +1406,14 @@ shelve
   (Contributed by Furkan Onder in :gh:`99631`.)
 
 
+shutil
+------
+
+* :func:`shutil.copyfile` now also raises :exc:`~shutil.SpecialFileError` for
+  sockets and device files.
+  (Contributed by Savannah Ostrowski in :gh:`142693`.)
+
+
 socket
 ------
 
@@ -1542,6 +1557,9 @@ tarfile
   now replace slashes with backslashes in symlink targets on Windows to prevent
   creation of corrupted links.
   (Contributed by Christoph Walcher in :gh:`57911`.)
+* :func:`~tarfile.TarFile.gettarinfo` now replaces backslashes with slashes in
+  symlink targets on Windows to conform to the tar format standard. (Contributed
+  by Daniele Nicolodi in :gh:`151669`.)
 
 
 threading
@@ -2152,7 +2170,7 @@ typing
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
 
-* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+* Deprecated :deco:`!typing.no_type_check_decorator` has been removed.
   (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 
@@ -2281,6 +2299,11 @@ New deprecations
 
     (Contributed by Sergey B Kirpichev and Serhiy Storchaka in :gh:`143715`.)
 
+  * Using ``'F'`` and ``'D'`` type codes now are :term:`soft deprecated`
+    in favor of two-letter forms ``'Zf'`` and ``'Zd'``.
+    (Contributed by Sergey B Kirpichev in :gh:`121249`.)
+
+
 * :mod:`typing`:
 
   * The following statements now cause ``DeprecationWarning``\ s to be emitted
@@ -2293,6 +2316,13 @@ New deprecations
     was subclassed or used as the second argument to :func:`isinstance` or
     :func:`issubclass`, but warnings were not previously emitted if it was
     merely imported or accessed from the :mod:`!typing` module.
+
+  * It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+    protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+    but that inherit from a runtime-checkable protocol class.
+    This will raise a :exc:`TypeError` in Python 3.20.
+
+    (Contributed by Bartosz Sławecki in :gh:`132604`.)
 
 
 * :mod:`webbrowser`:
@@ -2476,6 +2506,12 @@ New features
   * :c:func:`PyModule_FromDefAndSpec`
   * :c:func:`PyModule_FromDefAndSpec2`
   * :c:func:`PyModule_ExecDef`
+
+
+  The slots :c:macro:`Py_tp_bases` and :c:macro:`Py_tp_base` are now
+  equivalent: they can be set either to a single type or a tuple of types.
+  The :c:macro:`Py_tp_bases` slot is preferred; the other is ignored if both
+  are specified.
 
   (Contributed by Petr Viktorin in :gh:`149044`.)
 

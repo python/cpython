@@ -2821,6 +2821,13 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
         return 0;
     }
 
+    if (!PyObject_GC_IsTracked(op)) {
+        // When deferred refcount is enabled, the object will only be
+        // deallocated by the tracing garbage collector. So it must be tracked
+        // by the garbage collector.
+        return 0;
+    }
+
     uint8_t bits = _Py_atomic_load_uint8(&op->ob_gc_bits);
     if ((bits & _PyGC_BITS_DEFERRED) != 0)
     {
@@ -3285,13 +3292,20 @@ _Py_Dealloc(PyObject *op)
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
     destructor dealloc = type->tp_dealloc;
-    PyThreadState *tstate = _PyThreadState_GET();
-    intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
-    if (margin < 2 && gc_flag) {
-        _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
-        return;
+    PyThreadState *tstate = NULL;
+    intptr_t margin = 0;
+    if (gc_flag) {
+        tstate = _PyThreadState_GET();
+        margin = _Py_RecursionLimit_GetMargin(tstate);
+        if (margin < 2) {
+            _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
+            return;
+        }
     }
 #ifdef Py_DEBUG
+    if (tstate == NULL) {
+        tstate = _PyThreadState_GET();
+    }
 #if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
@@ -3333,7 +3347,7 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
-    if (tstate->delete_later && margin >= 4 && gc_flag) {
+    if (gc_flag && tstate->delete_later && margin >= 4) {
         _PyTrash_thread_destroy_chain(tstate);
     }
 }

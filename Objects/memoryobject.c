@@ -1485,9 +1485,11 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
     CHECK_RESTRICTED(self);
 
     if (!MV_C_CONTIGUOUS(self->flags)) {
-        PyErr_SetString(PyExc_TypeError,
-            "memoryview: casts are restricted to C-contiguous views");
-        return NULL;
+        if (shape || !MV_F_CONTIGUOUS(self->flags)) {
+            PyErr_SetString(PyExc_TypeError,
+                "memoryview: casts are restricted to contiguous views");
+            return NULL;
+        }
     }
     if ((shape || self->view.ndim != 1) && zero_in_shape(self)) {
         PyErr_SetString(PyExc_TypeError,
@@ -3579,7 +3581,8 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("memoryviews are generic over the type of their underlying data")},
     {NULL,          NULL}
 };
 
