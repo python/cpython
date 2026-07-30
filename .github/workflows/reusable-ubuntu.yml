@@ -8,11 +8,6 @@ on:
         required: false
         type: boolean
         default: false
-      debug:
-        description: Whether to create a Debug Build
-        required: false
-        type: boolean
-        default: true
       free-threading:
         description: Whether to use free-threaded mode
         required: false
@@ -50,9 +45,7 @@ jobs:
           inputs.os
         }}-${{
           case(inputs.free-threading, 't', '')
-        }}${{
-          case(inputs.debug, 'd', '')
-        }}.json.gz
+        }}d.json.gz
       OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
@@ -102,10 +95,10 @@ jobs:
         PROFILE_TASK='-m test --pgo --ignore test_unpickle_module_race'
         ../cpython-ro-srcdir/configure
         --config-cache
+        --with-pydebug
         --enable-slower-safety
         --enable-safety
         --with-openssl="$OPENSSL_DIR"
-        ${{ fromJSON(inputs.debug) && '--with-pydebug' || '' }}
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
         ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
         ${{ fromJSON(inputs.upload-install-hashes) && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
