@@ -2138,6 +2138,45 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         self.addCleanup(os_helper.unlink, self.address)
         SysLogHandlerTest.setUp(self)
 
+    def test_bytes_address(self):
+        # The Unix socket address can also be specified as bytes.
+        if self.server_exception:
+            self.skipTest(self.server_exception)
+        hdlr = logging.handlers.SysLogHandler(os.fsencode(self.address))
+        self.addCleanup(hdlr.close)
+        self.assertTrue(hdlr.unixsocket)
+        logger = logging.getLogger("slh-bytes")
+        logger.addHandler(hdlr)
+        self.addCleanup(logger.removeHandler, hdlr)
+        logger.error("sp\xe4m")
+        self.handled.wait(support.LONG_TIMEOUT)
+        self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
+
+@unittest.skipUnless(sys.platform in ('linux', 'android'),
+                     'Linux specific test')
+class AbstractNamespaceSysLogHandlerTest(BaseTest):
+
+    """Test for SysLogHandler with a socket in the abstract namespace."""
+
+    def check(self, address):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+        sock.bind(address)
+        sock.settimeout(support.LONG_TIMEOUT)
+        hdlr = logging.handlers.SysLogHandler(address)
+        self.addCleanup(hdlr.close)
+        self.assertTrue(hdlr.unixsocket)
+        hdlr.emit(logging.makeLogRecord({'msg': 'sp\xe4m'}))
+        self.assertEqual(sock.recv(1024), b'<12>sp\xc3\xa4m\x00')
+
+    def test_str_address(self):
+        # A str address is encoded with the filesystem encoding.
+        self.check('\0' + os_helper.TESTFN)
+
+    def test_bytes_address(self):
+        # The name is an arbitrary byte sequence, it need not be decodable.
+        self.check(b'\0test_logging_%d_\xff\xfe' % os.getpid())
+
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
@@ -3643,14 +3682,14 @@ class ConfigDictTest(BaseTest):
         # Ask for a randomly assigned port (by using port 0)
         t = logging.config.listen(0, verify)
         t.start()
-        t.ready.wait()
+        self.assertTrue(t.ready.wait(support.LONG_TIMEOUT),
+                        msg='the listener did not start')
         # Now get the port allocated
         port = t.port
         t.ready.clear()
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2.0)
-            sock.connect(('localhost', port))
+            # The server can listen on IPv6, so do not force a family.
+            sock = socket.create_connection(('localhost', port), timeout=2.0)
 
             slen = struct.pack('>L', len(text))
             s = slen + text
@@ -3764,6 +3803,18 @@ class ConfigDictTest(BaseTest):
             ('INFO', '1'),
             ('ERROR', '2'),
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
+
+    @support.requires_working_socket()
+    def test_listen_server_error(self):
+        # The "ready" event should be set even if the server fails to start.
+        t = logging.config.listen(-1)
+        t.daemon = True
+        with threading_helper.catch_threading_exception() as cm:
+            t.start()
+            self.assertTrue(t.ready.wait(support.SHORT_TIMEOUT),
+                            msg='the listener did not report the failure')
+            threading_helper.join_thread(t)
+            self.assertIs(cm.exc_type, OverflowError)
 
     def test_bad_format(self):
         self.assertRaises(ValueError, self.apply_config, self.bad_format)
@@ -6704,7 +6755,14 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         self.assertTrue(found, msg=msg)
 
     def test_rollover_at_midnight(self, weekly=False):
+        # Create the log file in a fresh directory under a never used name:
+        # on Windows, NTFS file tunneling restores the original creation time
+        # of a file recreated with the same name.
         os_helper.unlink(self.fn)
+        dirname = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dirname)
+        self.fn = os.path.join(dirname, 'test_rollover.log')
+
         # Emit the first records a little after the beginning of a whole
         # second, so that their file times fall inside that second and not the
         # previous one, which would cause an unwanted rollover.
@@ -6730,7 +6788,24 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         # changed, so the rollover cannot be forced by back-dating the file.
         # Wait until the clock reaches a rollover time set one second ahead.
         rollover = int(time.time()) + 1
+        if rollover - time.time() < 0.1:
+            # Leave time to emit a record before the rollover time.
+            rollover += 1
         atTime = datetime.datetime.fromtimestamp(rollover).time()
+        rolloverDate = (datetime.datetime.fromtimestamp(rollover)
+                        - datetime.timedelta(days=7 if weekly else 1))
+        otherfn = f'{self.fn}.{rolloverDate:%Y-%m-%d}'
+
+        # A record emitted before the rollover time is not rolled over.
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when=when, atTime=atTime)
+        fh.setFormatter(fmt)
+        r2 = logging.makeLogRecord({'msg': 'testing1 3'})
+        fh.emit(r2)
+        fh.close()
+        self.assertFalse(os.path.exists(otherfn),
+                         msg=f'{otherfn} was rolled over too early')
+
         while time.time() < rollover:
             time.sleep(rollover - time.time())
         for i in range(2):
@@ -6740,9 +6815,6 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             r2 = logging.makeLogRecord({'msg': f'testing2 {i}'})
             fh.emit(r2)
             fh.close()
-        rolloverDate = (datetime.datetime.fromtimestamp(rollover)
-                        - datetime.timedelta(days=7 if weekly else 1))
-        otherfn = f'{self.fn}.{rolloverDate:%Y-%m-%d}'
         self.assertLogFile(otherfn)
         with open(self.fn, encoding="utf-8") as f:
             for i, line in enumerate(f):

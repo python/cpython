@@ -277,10 +277,13 @@ enum_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     enumobject *en = _enumobject_CAST(op);
     PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(en);
-    if (en->en_longindex != NULL)
+    if (en->en_longindex != NULL) {
         result = Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
-    else
-        result = Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en->en_index);
+    }
+    else {
+        Py_ssize_t en_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(en->en_index);
+        result = Py_BuildValue("O(On)", Py_TYPE(en), en->en_sit, en_index);
+    }
     Py_END_CRITICAL_SECTION();
     return result;
 }

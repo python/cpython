@@ -37,6 +37,10 @@ Type Objects
 
    Clear the internal lookup cache. Return the current version tag.
 
+   .. versionchanged:: 3.16
+      This function is now a no-op as the type cache is now implemented
+      per-type. It still returns the current version tag.
+
 .. c:function:: unsigned long PyType_GetFlags(PyTypeObject* type)
 
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
@@ -699,7 +703,7 @@ but need extra remarks for use as slots:
 
    .. soft-deprecated:: 3.15
 
-      When not targetting older Python versions, pefer :c:macro:`!Py_tp_bases`.
+      When not targeting older Python versions, prefer :c:macro:`!Py_tp_bases`.
 
 The following slots do not correspond to public fields in the
 underlying structures:

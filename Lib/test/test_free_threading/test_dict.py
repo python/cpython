@@ -336,6 +336,26 @@ class TestDict(TestCase):
         with threading_helper.start_threads([t1, t2]):
             pass
 
+    def test_getstate_race_with_shared_keys(self):
+        box = [None]
+        enter = Barrier(2)
+        leave = Barrier(2)
+
+        def reader():
+            for _ in range(1000):
+                enter.wait()
+                box[0].__getstate__()
+                leave.wait()
+
+        def writer():
+            for i in range(1000):
+                box[0] = type(f"C{i}", (), {})()
+                enter.wait()
+                setattr(box[0], str(i), 1)
+                leave.wait()
+
+        threading_helper.run_concurrently([reader, writer])
+
     def test_racing_dict_update_and_method_lookup_with_inline_values(self):
         # gh-149816: sub-case 108
         # The race below checks that setattr() does not write into a detached
