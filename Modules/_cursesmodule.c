@@ -677,7 +677,7 @@ PyCursesWindow_New(WINDOW *win, const char *encoding,
 
     if (encoding == NULL) {
 #if defined(MS_WINDOWS)
-        char *buffer[100];
+        char buffer[100];
         UINT cp;
         cp = GetConsoleOutputCP();
         if (cp != 0) {
