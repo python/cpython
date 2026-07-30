@@ -1,0 +1,7 @@
+Fix undefined behaviour in :meth:`!io.StringIO.read` after an overseek.
+Reading from a position past the end of the buffer formed the pointer
+``self->buf + self->pos`` before returning the empty string; for a large
+enough position the arithmetic wrapped and produced a pointer below the
+buffer. :class:`io.StringIO` now returns the empty string early, as
+``_stringio_readline()`` already did, which removes the
+``Modules/_io/stringio.c`` entry from ``Tools/ubsan/suppressions.txt``.
