@@ -643,7 +643,7 @@ class MagicNumberTests(unittest.TestCase):
 
         # In exceptional cases, it may be required to change the MAGIC_NUMBER
         # for a maintenance release. In this case the change should be
-        # discussed in on Discourse. If a change is required, community
+        # discussed on Discourse. If a change is required, community
         # stakeholders such as OS package maintainers must be notified
         # in advance. Such exceptional releases will then require an
         # adjustment to this test case.
