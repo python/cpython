@@ -20,7 +20,6 @@ def compare_install_manifests(base: Path) -> bool:
         if not tree.is_file():
             continue
 
-        hashes: dict[str, str] = {}
         print(f"Examining {tree}")
         with gzip.open(tree) as f:
             data = json.load(f)
