@@ -24,9 +24,12 @@ class PyMemDebugTests(unittest.TestCase):
             out = assert_python_failure(
                 '-c', code,
                 PYTHONMALLOC=self.PYTHONMALLOC,
-                # FreeBSD: instruct jemalloc to not fill freed() memory
-                # with junk byte 0x5a, see JEMALLOC(3)
+                # Instruct the system allocator to not fill freed() memory
+                # with junk bytes:
+                # FreeBSD: jemalloc, see JEMALLOC(3).
                 MALLOC_CONF="junk:false",
+                # OpenBSD: see MALLOC.CONF(5).
+                MALLOC_OPTIONS="j",
             )
         stderr = out.err
         return stderr.decode('ascii', 'replace')
@@ -102,7 +105,9 @@ class PyMemDebugTests(unittest.TestCase):
         assert_python_ok(
             '-c', code,
             PYTHONMALLOC=self.PYTHONMALLOC,
+            # See the comment in check() above.
             MALLOC_CONF="junk:false",
+            MALLOC_OPTIONS="j",
         )
 
     def test_pyobject_null_is_freed(self):

@@ -215,6 +215,8 @@ The following exceptions are the exceptions that are usually raised.
 
       The object that was accessed for the named attribute.
 
+   When possible, :attr:`name` and :attr:`obj` are set automatically.
+
    .. versionchanged:: 3.10
       Added the :attr:`name` and :attr:`obj` attributes.
 

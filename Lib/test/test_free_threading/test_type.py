@@ -4,8 +4,10 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Thread
 from unittest import TestCase
+import sys
+from test.support import import_helper, threading_helper
 
-from test.support import threading_helper
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 
 
@@ -84,6 +86,24 @@ class TestType(TestCase):
 
         self.run_one(writer_func, reader_func)
 
+    def test_attr_cache_mortal(self):
+        class C:
+            x = object()
+
+        class D(C):
+            pass
+
+        def writer_func():
+            for _ in range(3000):
+                C.x = object()
+
+        def reader_func():
+            for _ in range(3000):
+                C.x
+                D.x
+
+        self.run_one(writer_func, reader_func)
+
     def test___class___modification(self):
         loops = 200
 
@@ -159,6 +179,51 @@ class TestType(TestCase):
                 Derived.__base__
 
         self.run_one(writer, reader)
+
+    def test_per_type_cache_concurrent_reads(self):
+        class C:
+            pass
+
+        names = [sys.intern(f"attr_{i}") for i in range(
+            _testinternalcapi._Py_TYPECACHE_MINSIZE * 4)]
+        for name in names:
+            setattr(C, name, name)
+        # Prime the cache.
+        for name in names:
+            getattr(C, name)
+
+        lookup = _testinternalcapi.type_cache_lookup
+
+        def reader():
+            for _ in range(500):
+                for name in names:
+                    hit, value, _ = lookup(C, name)
+                    self.assertEqual(hit, 1, name)
+                    self.assertEqual(value, name)
+
+        threading_helper.run_concurrently(reader, nthreads=NTHREADS)
+
+    def test_per_type_cache_concurrent_invalidate(self):
+        class C:
+            x = "value"
+
+        # Prime the cache.
+        C.x
+        hit, value, version = _testinternalcapi.type_cache_lookup(C, "x")
+        self.assertEqual(hit, 1)
+        self.assertIs(value, "value")
+        self.assertGreater(version, 0)
+
+        def reader():
+            for _ in range(10_000):
+                self.assertIs(C.x, "value")
+
+        def invalidator():
+            for _ in range(10_000):
+                _testinternalcapi.type_cache_invalidate(C)
+
+        workers = [invalidator] + [reader] * (NTHREADS - 1)
+        threading_helper.run_concurrently(workers)
 
     def test_race_type_attr_added(self):
         NROUNDS = 50
