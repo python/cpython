@@ -26,7 +26,9 @@ except ImportError:
 
 from test import support
 from test.support import os_helper
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, skip_if_unlimited_stack_size
+from test.support import (skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow,
+                          skip_if_unlimited_stack_size, skip_if_huge_c_stack)
 from test.support.ast_helper import ASTTestMixin
 from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
@@ -1023,7 +1025,7 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
-    @skip_if_unlimited_stack_size
+    @support.skip_if_huge_c_stack(100_000 if sys.platform == "android" else 500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
@@ -1098,10 +1100,17 @@ class AST_Tests(unittest.TestCase):
         ):
             compile(expr_with_wrong_body, "<test>", "eval")
 
+        variable = ast.parse("test", mode="eval")
+        variable.body.id = b'test'
+        with self.assertRaisesRegex(TypeError,
+            "field 'id' was expecting a string object, got bytes"
+        ):
+            compile(variable, "<test>", "eval")
+
         constant = ast.parse("u'test'", mode="eval")
         constant.body.kind = 0xFF
-        with self.assertRaisesRegex(
-            TypeError, "field 'kind' was expecting a string or bytes object"
+        with self.assertRaisesRegex(TypeError,
+            "field 'kind' was expecting a string or bytes object, got int"
         ):
             compile(constant, "<test>", "eval")
 
@@ -2089,7 +2098,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
-    @skip_if_unlimited_stack_size
+    @skip_if_huge_c_stack()
     @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2098,7 +2107,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
-    @skip_if_unlimited_stack_size
+    @skip_if_huge_c_stack()
     @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
