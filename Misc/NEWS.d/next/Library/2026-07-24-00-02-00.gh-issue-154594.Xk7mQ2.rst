@@ -1,4 +1,2 @@
 Fix :func:`copy.deepcopy` so that an object whose deep copy is ``None`` is
-still memoized. The memo miss was detected with ``None``, which is a valid
-result, so such objects were copied again on every reference. Patch by
-tonghuaroot.
+still memoized. Patch by tonghuaroot.

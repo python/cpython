@@ -941,15 +941,14 @@ class TestCopy(unittest.TestCase):
 
     def test_deepcopy_memo_none_result(self):
         # Objects whose deepcopy result is None must still be memoized.
-        call_count = 0
         class C:
+            call_count = 0
             def __deepcopy__(self, memo):
-                nonlocal call_count
-                call_count += 1
+                C.call_count += 1
                 return None
         obj = C()
         copy.deepcopy([obj, obj, obj])
-        self.assertEqual(call_count, 1)
+        self.assertEqual(C.call_count, 1)
 
 
 class TestReplace(unittest.TestCase):
