@@ -969,10 +969,13 @@ mmap_mmap_resize_impl(mmap_object *self, Py_ssize_t new_size)
 #ifdef UNIX
         void *newmap;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__NetBSD__)
+        // Linux mremap() refuses to grow a shared anonymous mapping, and
+        // NetBSD mremap() returns a mapping whose grown region is not backed,
+        // so accessing it crashes.  Reject it here in both cases.
         if (self->fd == -1 && !(self->flags & MAP_PRIVATE) && new_size > self->size) {
             PyErr_Format(PyExc_ValueError,
-                "mmap: can't expand a shared anonymous mapping on Linux");
+                "mmap: can't expand a shared anonymous mapping");
             return NULL;
         }
 #endif
