@@ -545,7 +545,7 @@ by default** except for rules with the special marker `memo` after the rule
 name (and type, if present):
 
 ```
-rule_name[typr] (memo):
+rule_name[return_type] (memo):
   ...
 ```
 
