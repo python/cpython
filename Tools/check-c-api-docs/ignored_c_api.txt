@@ -62,6 +62,9 @@ PyStdPrinter_Type
 Py_UniversalNewlineFgets
 # cpython/pylifecycle.h
 Py_FrozenMain
+# cpython/unicodeobject.h
+PyUnicode_IS_COMPACT
+PyUnicode_IS_COMPACT_ASCII
 # cpython/objimpl.h
 PyObject_GET_WEAKREFS_LISTPTR
 # cpython/pythonrun.h
