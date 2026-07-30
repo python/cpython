@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Export a SHA-512 manifest of installed files, so that we can ensure that
 # multiple installs of Python don't have conflicting files.
 #
