@@ -1073,7 +1073,7 @@ in the Unix build, compiler optimization is disabled.
 In addition to the reference count debugging described below, extra checks are
 performed, see :ref:`Python Debug Build <debug-build>`.
 
-Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
+Defining ``Py_TRACE_REFS`` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
 When defined, a circular doubly linked list of active objects is maintained by adding two extra
 fields to every :c:type:`PyObject`.  Total allocations are tracked as well.  Upon
