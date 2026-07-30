@@ -946,7 +946,6 @@ class TestCopy(unittest.TestCase):
             def __deepcopy__(self, memo):
                 nonlocal call_count
                 call_count += 1
-                memo[id(self)] = None
                 return None
         obj = C()
         copy.deepcopy([obj, obj, obj])

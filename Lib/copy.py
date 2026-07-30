@@ -59,8 +59,6 @@ error = Error   # backward compatibility
 
 __all__ = ["Error", "copy", "deepcopy", "replace"]
 
-_MEMO_MISS = object()
-
 def copy(x):
     """Shallow copy operation on arbitrary Python objects.
 
@@ -124,9 +122,8 @@ def deepcopy(x, memo=None):
     if memo is None:
         memo = {}
     else:
-        y = memo.get(d, _MEMO_MISS)
-        if y is not _MEMO_MISS:
-            return y
+        if d in memo:
+            return memo[d]
 
     copier = _deepcopy_dispatch.get(cls)
     if copier is not None:
