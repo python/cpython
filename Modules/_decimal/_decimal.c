@@ -5935,11 +5935,13 @@ static Py_hash_t
 dec_hash(PyObject *op)
 {
     PyDecObject *self = _PyDecObject_CAST(op);
-    if (self->hash == -1) {
-        self->hash = _dec_hash(self);
-    }
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hash);
 
-    return self->hash;
+    if (hash == -1) {
+        hash = _dec_hash(self);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self->hash, hash);
+    }
+    return hash;
 }
 
 /*[clinic input]
