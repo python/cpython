@@ -16762,7 +16762,6 @@ then :
 
 printf "%s\n" "#define HAVE_FLOAT16 1" >>confdefs.h
 
-           BASECFLAGS="$BASECFLAGS -mf16c"
 fi
 
 
