@@ -37,8 +37,6 @@ PyWrapperFlag_KEYWORDS
 Py_UniversalNewlineFgets
 # cpython/pylifecycle.h
 Py_FrozenMain
-# pythonrun.h
-PyErr_Display
 # cpython/objimpl.h
 PyObject_GET_WEAKREFS_LISTPTR
 # cpython/pythonrun.h
