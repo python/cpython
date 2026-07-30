@@ -1570,6 +1570,18 @@ ghi\0jkl
         sample = '"",' * 100 + '"' * 100 + '0' + '"' * 100 + '0'
         self.assertEqual(sniffer.sniff(sample).delimiter, ',')
 
+    def test_sniff_doublequote_across_fields(self):
+        # A quoted field which contains the delimiter, followed by
+        # an empty quoted field, is not a doubled quote.
+        sniffer = csv.Sniffer()
+        sample = '",","",","\n' * 4
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.quotechar, '"')
+        self.assertIs(dialect.doublequote, False)
+        self.assertEqual(next(csv.reader(StringIO(sample), dialect)),
+                         [',', '', ','])
+
 
 class NUL:
     def write(s, *args):
