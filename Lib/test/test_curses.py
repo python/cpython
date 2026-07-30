@@ -1023,6 +1023,20 @@ class TestCurses(unittest.TestCase):
         self.assertIsInstance(c, bytes)
         self.assertEqual(len(c), 1)
 
+    def test_termattrs_is_not_negative(self):
+        # A_ITALIC is the topmost bit of a 32-bit attribute mask, so termattrs()
+        # only tells a signed result from an unsigned one on a terminal that
+        # advertises it.  3.15 lacks the newterm()/pty harness used on main, so
+        # exercise the current screen: skip when the top bit is not advertised.
+        attrs = curses.termattrs()
+        italic = getattr(curses, 'A_ITALIC', 0)
+        if not italic or not attrs & italic:
+            self.skipTest('the terminal advertises no attribute in the top bit')
+        self.assertGreaterEqual(attrs, 0)
+        # termattrs() exists to be passed back to the attribute functions,
+        # which reject a negative mask.
+        self.stdscr.attrset(attrs)
+
     def test_output_options(self):
         stdscr = self.stdscr
 
