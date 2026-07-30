@@ -1589,11 +1589,16 @@ ghi\0jkl
                             sniffer.sniff(data).doublequote,
                             False,
                         )
-                    self.assertFalse(sniffer._detect_doublequote(
-                        f'a{quotechar}b{separator}{data}',
-                        delimiter,
-                        quotechar,
-                    ))
+                    for literal_quote_count in range(1, 5):
+                        with self.subTest(
+                            literal_quote_count=literal_quote_count,
+                        ):
+                            self.assertFalse(sniffer._detect_doublequote(
+                                f'a{quotechar * literal_quote_count}b'
+                                f'{separator}{data}',
+                                delimiter,
+                                quotechar,
+                            ))
 
     def test_guess_delimiter_crlf_not_chosen(self):
         # Ensure that we pick the real delimiter ("|") over "\r" in a tie.
