@@ -1,3 +1,8 @@
+"""Scripts and classifiers for external inspection validation.
+
+Classifiers detect only recognized impossible patterns. They do not validate
+entire stacks. False does not imply that the stack as a whole is valid.
+"""
 import os
 
 
