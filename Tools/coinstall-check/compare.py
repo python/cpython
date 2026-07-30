@@ -12,7 +12,7 @@ import json
 
 def compare_install_manifests(base: Path) -> bool:
     """Compare all json manifests inside the directory at base."""
-    hashes_seen: dict[str, str] = {}
+    hashes_seen: dict[str, tuple[str, str]] = {}
     tags_seen_by_platform: dict[str, set[frozenset[str]]] = {}
 
     success: bool = True
@@ -34,11 +34,12 @@ def compare_install_manifests(base: Path) -> bool:
             if is_ignored(path, build_details):
                 continue
             if path not in hashes_seen:
-                hashes_seen[path] = digest
+                hashes_seen[path] = (digest, tree.name)
                 continue
-            if digest != hashes_seen[path]:
-                print(f"Mismatch found in {tree}: {path}")
-                print(f"{digest} != {hashes_seen[path]}")
+            expected, source_name = hashes_seen[path]
+            if digest != expected:
+                print(f"Mismatch found: {path}")
+                print(f"{digest} ({tree.name}) != {expected} ({source_name})")
                 success = False
 
     # Did we see enough builds to make a useful comparison?
