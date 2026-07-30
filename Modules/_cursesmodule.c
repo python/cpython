@@ -356,6 +356,35 @@ _PyCursesStatefulCheckFunction(PyObject *module,
     return 0;
 }
 
+/*
+ * Function to check that the current screen has a terminal, by testing
+ * stdscr, which a screen made by new_prescr() does not have.  If an error
+ * occurs, a PyCursesError is set and this returns 0.  Otherwise this
+ * returns 1.
+ */
+static int
+_PyCursesStatefulCheckTerminal(PyObject *module)
+{
+    if (stdscr != NULL) {
+        return 1;
+    }
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    PyErr_SetString(state->error, "the current screen has no terminal");
+    return 0;
+}
+
+/* Same as _PyCursesStatefulCheckTerminal() for a Window object. */
+static int
+curses_window_check_terminal(PyCursesWindowObject *win)
+{
+    if (stdscr != NULL) {
+        return 1;
+    }
+    cursesmodule_state *state = get_cursesmodule_state_by_win(win);
+    PyErr_SetString(state->error, "the current screen has no terminal");
+    return 0;
+}
+
 #define PyCursesStatefulSetupTermCalled(MODULE)                         \
     do {                                                                \
         if (!_PyCursesStatefulCheckFunction(MODULE,                     \
@@ -370,7 +399,8 @@ _PyCursesStatefulCheckFunction(PyObject *module,
     do {                                                            \
         if (!_PyCursesStatefulCheckFunction(MODULE,                 \
                                             curses_initscr_called,  \
-                                            "initscr"))             \
+                                            "initscr")              \
+            || !_PyCursesStatefulCheckTerminal(MODULE))             \
         {                                                           \
             return 0;                                               \
         }                                                           \
@@ -1793,6 +1823,42 @@ curses_window_put_cells(PyCursesWindowObject *self, PyObject *obj,
         Py_RETURN_NONE;                                                 \
     }
 
+/* Same as Window_OneArgNoReturnVoidFunction() for a function that needs
+   a terminal. */
+#define Window_OneArgNoReturnVoidTerminalFunction(X, TYPE, PARSESTR)    \
+    static PyObject * PyCursesWindow_ ## X                              \
+    (PyObject *op, PyObject *args)                                      \
+    {                                                                   \
+        TYPE arg1;                                                      \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) {                 \
+            return NULL;                                                \
+        }                                                               \
+        PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);    \
+        if (!curses_window_check_terminal(self)) {                      \
+            return NULL;                                                \
+        }                                                               \
+        X(self->win, arg1);                                             \
+        Py_RETURN_NONE;                                                 \
+    }
+
+/* Same as Window_OneArgNoReturnFunction() for a function that needs
+   a terminal. */
+#define Window_OneArgNoReturnTerminalFunction(X, TYPE, PARSESTR)        \
+    static PyObject * PyCursesWindow_ ## X                              \
+    (PyObject *op, PyObject *args)                                      \
+    {                                                                   \
+        TYPE arg1;                                                      \
+        if (!PyArg_ParseTuple(args, PARSESTR, &arg1)) {                 \
+            return NULL;                                                \
+        }                                                               \
+        PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);    \
+        if (!curses_window_check_terminal(self)) {                      \
+            return NULL;                                                \
+        }                                                               \
+        int code = X(self->win, arg1);                                  \
+        return curses_window_check_err(self, code, # X, NULL);          \
+    }
+
 #define Window_OneArgNoReturnFunction(X, TYPE, PARSESTR)                \
     static PyObject * PyCursesWindow_ ## X                              \
     (PyObject *op, PyObject *args)                                      \
@@ -1870,6 +1936,7 @@ PyCursesWindow_getscrreg(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
     return Py_BuildValue("(ii)", top, bottom);
 }
+#endif /* NCURSES_EXT_FUNCS >= 20110404 || PDCURSES */
 
 static PyObject *
 PyCursesWindow_getparent(PyObject *op, PyObject *Py_UNUSED(ignored))
@@ -1882,7 +1949,6 @@ PyCursesWindow_getparent(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
     return Py_NewRef((PyObject *)self->orig);
 }
-#endif /* NCURSES_EXT_FUNCS >= 20110404 || PDCURSES */
 
 Window_NoArgNoReturnVoidFunction(wsyncup)
 Window_NoArgNoReturnVoidFunction(wsyncdown)
@@ -1893,7 +1959,7 @@ Window_NoArgNoReturnVoidFunction(wclrtoeol)
 Window_NoArgNoReturnVoidFunction(wclrtobot)
 Window_NoArgNoReturnVoidFunction(wclear)
 
-Window_OneArgNoReturnVoidFunction(idcok, int, "i;True(1) or False(0)")
+Window_OneArgNoReturnVoidTerminalFunction(idcok, int, "i;True(1) or False(0)")
 #ifdef HAVE_CURSES_IMMEDOK
 Window_OneArgNoReturnVoidFunction(immedok, int, "i;True(1) or False(0)")
 #endif
@@ -1905,8 +1971,8 @@ Window_NoArg2TupleReturnFunction(getmaxyx, int, "ii")
 Window_NoArg2TupleReturnFunction(getparyx, int, "ii")
 
 Window_OneArgNoReturnFunction(clearok, int, "i;True(1) or False(0)")
-Window_OneArgNoReturnFunction(idlok, int, "i;True(1) or False(0)")
-Window_OneArgNoReturnFunction(keypad, int, "i;True(1) or False(0)")
+Window_OneArgNoReturnTerminalFunction(idlok, int, "i;True(1) or False(0)")
+Window_OneArgNoReturnTerminalFunction(keypad, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(leaveok, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(nodelay, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(notimeout, int, "i;True(1) or False(0)")
@@ -2960,6 +3026,10 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
                              int group_right_1, attr_t attr)
 /*[clinic end generated code: output=ab03afa580aa6a2a input=cd74c42aadcc7e30]*/
 {
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
+
     chtype ch_;
 #ifdef HAVE_NCURSESW
     cchar_t wch;
@@ -3206,6 +3276,10 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
 {
     int rtn;
 
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     if (!group_right_1) {
         rtn = wgetch(self->win);
@@ -3253,6 +3327,10 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
 /*[clinic end generated code: output=8490a182db46b10f input=bd24a7da1ed9c73b]*/
 {
     int rtn;
+
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     if (!group_right_1) {
@@ -3305,6 +3383,10 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
                             int y, int x)
 /*[clinic end generated code: output=9f4f86e91fe50ef3 input=dd7e5367fb49dc48]*/
 {
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
+
 #ifdef HAVE_NCURSESW
     int ct;
     wint_t rtn;
@@ -3454,6 +3536,10 @@ static PyObject *
 PyCursesWindow_getstr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
     return curses_window_getstr_bytes(self, args, "_curses.window.getstr");
 }
 
@@ -3755,6 +3841,10 @@ static PyObject *
 PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
 {
     PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
 #ifdef HAVE_NCURSESW
     int rtn, use_xy = 0, y = 0, x = 0;
     unsigned int max_buf_size = 2048;
@@ -3866,7 +3956,7 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
         PyMem_Free(buf);
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
-    PyObject *res = PyUnicode_FromWideChar(buf, -1);
+    PyObject *res = PyUnicode_FromWideChar(buf, rtn);
     PyMem_Free(buf);
     return res;
 #else
@@ -4271,6 +4361,10 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
 {
     int rtn;
 
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
+
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
@@ -4500,6 +4594,10 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
 /*[clinic end generated code: output=42199543115e6e63 input=ff2e900c6b2696b1]*/
 {
     int rtn;
+
+    if (!curses_window_check_terminal(self)) {
+        return NULL;
+    }
 
 #ifdef py_is_pad
     if (py_is_pad(self->win)) {
@@ -4963,11 +5061,9 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"getmaxyx", PyCursesWindow_getmaxyx, METH_NOARGS,
      "getmaxyx($self, /)\n--\n\n"
      "Return a tuple (y, x) of the window height and width."},
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
     {"getparent", PyCursesWindow_getparent, METH_NOARGS,
      "getparent($self, /)\n--\n\n"
      "Return the parent window, or None if this is not a subwindow."},
-#endif
     {"getparyx", PyCursesWindow_getparyx, METH_NOARGS,
      "getparyx($self, /)\n--\n\n"
      "Return (y, x) relative to the parent window, or (-1, -1) if none."},

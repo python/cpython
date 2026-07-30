@@ -398,6 +398,9 @@
 /* Define to 1 if you have the 'dlopen' function. */
 #undef HAVE_DLOPEN
 
+/* Define to 1 if you have the 'dl_iterate_phdr' function. */
+#undef HAVE_DL_ITERATE_PHDR
+
 /* Define to 1 if you have the 'dup' function. */
 #undef HAVE_DUP
 
