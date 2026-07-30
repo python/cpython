@@ -23,6 +23,20 @@ class TestKQueue(unittest.TestCase):
         self.assertTrue(kq.closed)
         self.assertRaises(ValueError, kq.fileno)
 
+    def test_control_overflowing_timeout(self):
+        # gh-154836: out-of-range timeouts must raise OverflowError,
+        # not a (misleading) TypeError, like select(), poll() and
+        # epoll() do.
+        kq = select.kqueue()
+        self.addCleanup(kq.close)
+        for timeout in (1e300, float('inf'), 2**200):
+            with self.subTest(timeout=timeout):
+                with self.assertRaises(OverflowError):
+                    kq.control(None, 0, timeout)
+        # Non-numbers still raise TypeError.
+        with self.assertRaises(TypeError):
+            kq.control(None, 0, "0.1")
+
     def test_create_event(self):
         from operator import lt, le, gt, ge
 
