@@ -12,10 +12,13 @@ with imports_under_tool("inspection"):
 
 
 def frame(funcname, *, filename="", lineno=None):
+    location = (
+        None if lineno is None else SimpleNamespace(lineno=lineno)
+    )
     return SimpleNamespace(
         funcname=funcname,
         filename=filename,
-        location=SimpleNamespace(lineno=lineno),
+        location=location,
     )
 
 
