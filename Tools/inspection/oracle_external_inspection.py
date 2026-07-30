@@ -104,7 +104,6 @@ def target_process(code, warmup):
         proc = subprocess.Popen(
             [sys.executable, tmp_name],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
         )
         time.sleep(warmup)
         if proc.poll() is not None:
