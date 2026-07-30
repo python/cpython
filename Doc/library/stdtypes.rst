@@ -1720,7 +1720,11 @@ category.
 |                          |  :meth:`str.strip`                        |  :meth:`bytes.strip`                              |
 |                          +--------------------+----------------------+----------------------+----------------------------+
 |                          | :meth:`str.lstrip` | :meth:`str.rstrip`   | :meth:`bytes.lstrip` | :meth:`bytes.rstrip`       |
-+--------------------------+--------------------+----------------------+----------------------+----------------------------+
+|                          +--------------------+----------------------+----------------------+----------------------------+
+|                          |  :meth:`str.removeprefix`                 |  :meth:`bytes.removeprefix`                       |
+|                          +-------------------------------------------+---------------------------------------------------+
+|                          |  :meth:`str.removesuffix`                 |  :meth:`bytes.removesuffix`                       |
++--------------------------+-------------------------------------------+---------------------------------------------------+
 | Translation and Encoding |  :meth:`str.translate`                    |  :meth:`bytes.translate`                          |
 |                          +-------------------------------------------+---------------------------------------------------+
 |                          |  :meth:`str.maketrans`                    |  :meth:`bytes.maketrans`                          |
@@ -2174,8 +2178,24 @@ expression support in the :mod:`re` module).
    character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
-   like the Kharosthi numbers.  Formally, a digit is a character that has the
+   like the `Kharosthi numbers <https://en.wikipedia.org/wiki/Kharosthi#Numerals>`__.
+   Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit()  # Arabic-Indic digits zero to nine
+      True
+      >>> '⅕'.isdigit()  # Vulgar fraction one fifth
+      False
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isnumeric`.
 
 
 .. method:: str.isidentifier()
@@ -2217,15 +2237,14 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-Indic digits zero to nine
       True
       >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
-   a superset of decimal numbers.
+   See also :meth:`isdecimal` and :meth:`isdigit`.
 
 
 .. method:: str.isprintable()
@@ -2376,7 +2395,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a prefix; rather, all combinations of its values are stripped::
 
       >>> '   spacious   '.lstrip()
@@ -2579,7 +2599,8 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
-   or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
+   or ``None``, the *chars* argument defaults to removing whitespace, that is
+   characters for which :meth:`str.isspace` is true.  The *chars*
    argument is not a suffix; rather, all combinations of its values are stripped.
    For example:
 
@@ -2755,11 +2776,9 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
-   If omitted or ``None``, the *chars* argument defaults to removing whitespace.
-   The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped.
-
-   Whitespace characters are defined by :meth:`str.isspace`.
+   If omitted or ``None``, the *chars* argument defaults to removing whitespace,
+   that is characters for which :meth:`str.isspace` is true.  The *chars* argument
+   is not a prefix or suffix; rather, all combinations of its values are stripped.
 
    For example:
 
@@ -4857,8 +4876,9 @@ copying.
       Cast a memoryview to a new format or shape. *shape* defaults to
       ``[byte_length//new_itemsize]``, which means that the result view
       will be one-dimensional. The return value is a new memoryview, but
-      the buffer itself is not copied. Supported casts are 1D -> C-:term:`contiguous`
-      and C-contiguous -> 1D.
+      the buffer itself is not copied. Supported casts are
+      1D -> C-:term:`contiguous`, C-contiguous -> 1D, and
+      F-contiguous -> 1D.
 
       The destination format is restricted to a single element native format in
       :mod:`struct` syntax. One of the formats must be a byte format
@@ -4944,6 +4964,10 @@ copying.
 
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
+
+      .. versionchanged:: next
+         Casting a multi-dimensional F-contiguous view to a one-dimensional
+         view is now supported.
 
    .. method:: count(value, /)
 
@@ -5741,6 +5765,13 @@ Frozen dictionaries
 
    Like dictionaries, frozendicts are :ref:`generic <generics>` over two types,
    signifying (respectively) the types of the frozendict's keys and values.
+
+   .. classmethod:: fromkeys(iterable, value=None, /)
+
+      Similar to :meth:`dict.fromkeys`, but call again the type constructor
+      with an initialized :class:`frozendict` if the type is a
+      :class:`frozendict` subclass or if the constructor returned a
+      :class:`frozendict`.
 
    .. versionadded:: 3.15
 

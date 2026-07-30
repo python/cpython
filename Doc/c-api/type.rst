@@ -37,6 +37,10 @@ Type Objects
 
    Clear the internal lookup cache. Return the current version tag.
 
+   .. versionchanged:: 3.16
+      This function is now a no-op as the type cache is now implemented
+      per-type. It still returns the current version tag.
+
 .. c:function:: unsigned long PyType_GetFlags(PyTypeObject* type)
 
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
@@ -563,10 +567,10 @@ but need extra remarks for use as slots:
    :c:member:`Slot ID <PySlot.sl_id>` for the name of the type,
    used to set :c:member:`PyTypeObject.tp_name`.
 
-   This slot (or :c:func:`PyType_Spec.name`) is required to create a type.
+   This slot (or :c:member:`PyType_Spec.name`) is required to create a type.
 
    This may not be used in :c:member:`PyType_Spec.slots`.
-   Use :c:func:`PyType_Spec.name` instead.
+   Use :c:member:`PyType_Spec.name` instead.
 
    .. impl-detail::
 
@@ -585,7 +589,7 @@ but need extra remarks for use as slots:
    The value must be positive.
 
    This may not be used in :c:member:`PyType_Spec.slots`.
-   Use :c:func:`PyType_Spec.basicsize` instead.
+   Use :c:member:`PyType_Spec.basicsize` instead.
 
    This slot may not be used with :c:func:`PyType_GetSlot`.
    Use :c:member:`PyTypeObject.tp_basicsize` instead if needed, but be aware
@@ -616,7 +620,7 @@ but need extra remarks for use as slots:
    :c:macro:`!Py_tp_extra_basicsize` is an error.
 
    This may not be used in :c:member:`PyType_Spec.slots`.
-   Use negative :c:func:`PyType_Spec.basicsize` instead.
+   Use negative :c:member:`PyType_Spec.basicsize` instead.
 
    This slot may not be used with :c:func:`PyType_GetSlot`.
 
@@ -639,7 +643,7 @@ but need extra remarks for use as slots:
    in the following situations:
 
    - The base is not variable-sized (its
-     :c:member:`~PyTypeObject.tp_itemsize`).
+     :c:member:`~PyTypeObject.tp_itemsize` is zero).
    - The requested :c:member:`PyType_Spec.basicsize` is positive,
      suggesting that the memory layout of the base class is known.
    - The requested :c:member:`PyType_Spec.basicsize` is zero,
@@ -648,7 +652,7 @@ but need extra remarks for use as slots:
    - With the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag.
 
    This may not be used in :c:member:`PyType_Spec.slots`.
-   Use :c:func:`PyType_Spec.itemsize` instead.
+   Use :c:member:`PyType_Spec.itemsize` instead.
 
    This slot may not be used with :c:func:`PyType_GetSlot`.
 
@@ -663,12 +667,43 @@ but need extra remarks for use as slots:
    :c:func:`PyType_FromSpecWithBases` sets it automatically.
 
    This may not be used in :c:member:`PyType_Spec.slots`.
-   Use negative :c:func:`PyType_Spec.basicsize` instead.
+   Use negative :c:member:`PyType_Spec.basicsize` instead.
 
    This slot may not be used with :c:func:`PyType_GetSlot`.
    Use :c:func:`PyType_GetFlags` instead.
 
    .. versionadded:: 3.15
+
+.. c:macro:: Py_tp_bases
+
+   :c:member:`Slot ID <PySlot.sl_id>` for type flags, used to set
+   :c:member:`PyTypeObject.tp_bases`.
+
+   The slot can be set to a tuple of type objects which the newly created
+   type should inherit from, like the "positional arguments" of
+   a Python :ref:`class definition <class>`.
+
+   Alternately, the slot can be set to a single type object to specify
+   a single base.
+   The effect is the same as specifying a one-element tuple.
+
+   .. versionchanged:: 3.15
+
+      Previously, :c:macro:`!Py_tp_bases` required a tuple of types.
+
+.. c:macro:: Py_tp_base
+
+   Equivalent to :c:macro:`Py_tp_bases` (with ``s`` at the end).
+   If both are specified, :c:macro:`!Py_tp_bases` takes priority and
+   this slot is ignored.
+
+   .. versionchanged:: 3.15
+
+      Previously, :c:macro:`!Py_tp_base` required a single type, not a tuple.
+
+   .. soft-deprecated:: 3.15
+
+      When not targeting older Python versions, prefer :c:macro:`!Py_tp_bases`.
 
 The following slots do not correspond to public fields in the
 underlying structures:

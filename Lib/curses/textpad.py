@@ -28,7 +28,8 @@ class Textbox:
     Ctrl-F      Cursor right, wrapping to next line when appropriate.
     Ctrl-G      Terminate, returning the window contents.
     Ctrl-H      Delete character backward.
-    Ctrl-J      Terminate if the window is 1 line, otherwise insert newline.
+    Ctrl-J      Terminate if the window is 1 line, otherwise move to start
+                of next line.
     Ctrl-K      If line is blank, delete it, otherwise clear to end of line.
     Ctrl-L      Refresh screen.
     Ctrl-N      Cursor down; move down one line.
@@ -55,13 +56,24 @@ class Textbox:
         self.maxy = maxy - 1
         self.maxx = maxx - 1
 
+    def _decode(self, ch):
+        # Decode an integer keystroke or byte to text with the window's encoding.
+        # A_CHARTEXT drops any attribute bits.
+        return bytes([ch & curses.A_CHARTEXT]).decode(self.win.encoding, 'replace')
+
+    def _printable_key(self, ch):
+        # Whether the integer keystroke is a printable character, not a key code:
+        # 0..255 are character bytes, larger values are function keys.
+        return ch <= 0xff and self._decode(ch).isprintable()
+
     def _end_of_line(self, y):
         """Go to the location of the first blank on the given line,
         returning the index of the last non-blank character."""
         self._update_max_yx()
         last = self.maxx
         while True:
-            if curses.ascii.ascii(self.win.inch(y, last)) != curses.ascii.SP:
+            # The text of the cell at (y, last).
+            if str(self.win.in_wch(y, last)) != ' ':
                 last = min(self.maxx, last+1)
                 break
             elif last == 0:
@@ -73,17 +85,24 @@ class Textbox:
         self._update_max_yx()
         (y, x) = self.win.getyx()
         backyx = None
-        while y < self.maxy or x < self.maxx:
+        while True:
             if self.insert_mode:
-                oldch = self.win.inch()
-            # The try-catch ignores the error we trigger from some curses
-            # versions by trying to write into the lowest-rightmost spot
-            # in the window.
-            try:
-                self.win.addch(ch)
-            except curses.error:
-                pass
-            if not self.insert_mode or not curses.ascii.isprint(oldch):
+                # The displaced cell, as a complexchar so addch() can rewrite it
+                # with its rendition.
+                oldch = self.win.in_wch()
+            if y >= self.maxy and x >= self.maxx:
+                # Use insch() in the lower-right cell; addch() there would push
+                # the cursor out of the window (an error, and it scrolls a
+                # scrollable window).  insch() does not decode an int byte
+                # through the locale on a wide build, so pass it as text.
+                if isinstance(ch, int):
+                    self.win.insch(self._decode(ch), ch & curses.A_ATTRIBUTES)
+                else:
+                    self.win.insch(ch)
+                break
+            self.win.addch(ch)
+            # In insert mode keep shifting cells right until a blank one.
+            if not self.insert_mode or not str(oldch).isprintable():
                 break
             ch = oldch
             (y, x) = self.win.getyx()
@@ -99,10 +118,17 @@ class Textbox:
         self._update_max_yx()
         (y, x) = self.win.getyx()
         self.lastcmd = ch
-        if curses.ascii.isprint(ch):
-            if y < self.maxy or x < self.maxx:
+        if isinstance(ch, str):
+            # A character from get_wch(); a control character is dispatched
+            # below by its code point.
+            if ch.isprintable():
                 self._insert_printable_char(ch)
-        elif ch == curses.ascii.SOH:                           # ^a
+                return 1
+            ch = ord(ch)
+        elif self._printable_key(ch):
+            self._insert_printable_char(ch)
+            return 1
+        if ch == curses.ascii.SOH:                             # ^a
             self.win.move(y, 0)
         elif ch in (curses.ascii.STX,curses.KEY_LEFT,
                     curses.ascii.BS,
@@ -174,7 +200,7 @@ class Textbox:
             for x in range(self.maxx+1):
                 if self.stripspaces and x > stop:
                     break
-                result = result + chr(curses.ascii.ascii(self.win.inch(y, x)))
+                result = result + str(self.win.in_wch(y, x))
             if self.maxy > 0:
                 result = result + "\n"
         return result
@@ -182,7 +208,12 @@ class Textbox:
     def edit(self, validate=None):
         "Edit in the widget window and collect the results."
         while 1:
-            ch = self.win.getch()
+            ch = self.win.get_wch()
+            # Represent an ASCII keystroke by its code point, the way getch()
+            # always has, so that existing validators and the command dispatch
+            # keep working; only non-ASCII characters are passed as strings.
+            if isinstance(ch, str) and ch.isascii():
+                ch = ord(ch)
             if validate:
                 ch = validate(ch)
             if not ch:

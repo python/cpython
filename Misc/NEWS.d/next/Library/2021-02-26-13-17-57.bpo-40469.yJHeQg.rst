@@ -1,6 +1,5 @@
-A bug has been fixed that made the ``TimedRotatingFileHandler`` use the
-MTIME attribute of the configured log file to to detect whether it has to be
-rotated yet or not. In cases when the file was changed within the rotation
-period the value of the MTIME was also updated to the current time and as a
-result the rotation never happened. The file creation time (CTIME) is used
-instead that makes the rotation file modification independent.
+:class:`~logging.handlers.TimedRotatingFileHandler` now uses the creation time
+instead of the last modification time of an existing log file as the basis
+for the first rotation after handler creation, if supported by the OS and file system.
+This allows it to be used in short-running programs that start and end before
+the rotation interval expires.

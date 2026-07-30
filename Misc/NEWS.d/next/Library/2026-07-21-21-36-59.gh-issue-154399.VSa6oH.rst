@@ -1,0 +1,3 @@
+Fix :mod:`venv` activation in a non-interactive csh:
+``activate.csh`` no longer fails
+when the ``prompt`` variable is not set.
