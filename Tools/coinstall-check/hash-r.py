@@ -42,17 +42,18 @@ def write_json(destdir: Path, output: Path) -> None:
 
 
 def main() -> None:
-    p = ArgumentParser("Hash a python install for comparison later")
+    p = ArgumentParser("Hash a Python install for comparison later")
+    p.add_argument(
+        "destdir",
+        type=Path,
+        help="Directory below which Python is installed",
+    )
     p.add_argument(
         "-o",
         "--output",
         type=Path,
         help="Output file (gzipped)",
-    )
-    p.add_argument(
-        "destdir",
-        type=Path,
-        help="Directory below which Python is installed",
+        required=True,
     )
     args = p.parse_args()
     write_json(args.destdir, args.output)
