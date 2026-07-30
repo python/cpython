@@ -139,6 +139,7 @@ jobs:
       env:
         TEST_OPTS: ${{ inputs.test-opts }}
     - name: Use the commit timestamp for timestamps the install
+      # we do this after test execution, as some tests are broken by it. GH-154948
       if: inputs.upload-install-hashes
       run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $GITHUB_ENV
     - name: Install Python
