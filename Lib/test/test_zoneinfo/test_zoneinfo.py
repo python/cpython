@@ -317,12 +317,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertEqual(dt.dst(), offset.dst, dt)
 
     def test_datetime_subclass_negative_components(self):
-        """Regression test for gh-154892.
-
-        Datetime subclasses may return -1 for time components. The C
-        accelerator should treat -1 as a valid PyLong_AsLong() result unless
-        an exception is set, matching the pure-Python implementation.
-        """
+        # Regression test for gh-154892.
         class MinusOneDateTime(datetime):
             @property
             def hour(self):
