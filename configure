@@ -16718,7 +16718,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-CFLAGS="$CFLAGS -mf16c -O0"
+CFLAGS="$CFLAGS -O0"
 if test "$cross_compiling" = yes
 then :
   ac_cv_float16_supported=no
