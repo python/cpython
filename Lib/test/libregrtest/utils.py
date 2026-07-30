@@ -272,8 +272,7 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        for f in typing._cleanups:
-            f()
+        typing._clear_caches()
 
         import inspect
         abs_classes = filter(inspect.isabstract, typing.__dict__.values())

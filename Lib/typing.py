@@ -19,6 +19,7 @@ that may be changed without notice. Use at your own risk!
 """
 
 from abc import abstractmethod, ABCMeta
+import atexit
 import collections
 from collections import defaultdict
 import collections.abc
@@ -390,6 +391,16 @@ def _flatten_literal_params(parameters):
 
 _cleanups = []
 _caches = {}
+
+
+def _clear_caches():
+    for cleanup in _cleanups:
+        cleanup()
+
+
+# Release the LRU caches at shutdown, they otherwise redistribute reference
+# leaks of one extension to types of unrelated ones. See GH-151728.
+atexit.register(_clear_caches)
 
 
 def _tp_cache(func=None, /, *, typed=False):
