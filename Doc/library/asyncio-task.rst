@@ -433,6 +433,10 @@ unless it is :exc:`asyncio.CancelledError`,
 is also included in the exception group.
 The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
+There is an additional special case made only for the body of the
+``async with``: if it raises :exc:`GeneratorExit` and none of the
+other tasks raise exceptions that would be reported, then the
+:exc:`GeneratorExit` is reraised.
 
 Task groups are careful not to mix up the internal cancellation used to
 "wake up" their :meth:`~object.__aexit__` with cancellation requests
@@ -455,6 +459,10 @@ reported by :meth:`asyncio.Task.cancelling`.
 
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
+
+.. versionchanged:: 3.15
+
+   Addition of the special case for :exc:`GeneratorExit`.
 
 Sleeping
 ========

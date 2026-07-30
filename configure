@@ -20229,6 +20229,15 @@ then :
 fi
 
 
+# Used by ctypes.util.dllist().
+ac_fn_c_check_func "$LINENO" "dl_iterate_phdr" "ac_cv_func_dl_iterate_phdr"
+if test "x$ac_cv_func_dl_iterate_phdr" = xyes
+then :
+  printf "%s\n" "#define HAVE_DL_ITERATE_PHDR 1" >>confdefs.h
+
+fi
+
+
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
 
