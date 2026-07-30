@@ -173,7 +173,7 @@ provide the public methods described below.
 
 .. method:: Queue.get_nowait()
 
-   Equivalent to ``get(False)``.
+   Equivalent to ``get(block=False)``.
 
 Two methods are offered to support tracking whether enqueued tasks have been
 fully processed by daemon consumer threads.
