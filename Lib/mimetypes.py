@@ -127,7 +127,6 @@ class MimeTypes:
         # Lazy import to improve module import time
         import os
         import urllib.parse
-        import warnings
 
         url = os.fspath(url)
         p = urllib.parse.urlparse(url)
@@ -135,6 +134,7 @@ class MimeTypes:
             scheme = p.scheme
             url = p.path
         else:
+            import warnings
             warnings.warn(
                 "Passing a file path to guess_type() is deprecated and will be "
                 "removed in a future version. Use guess_file_type() instead.",
@@ -758,8 +758,13 @@ def _main(args=None):
                 results.append(f"error: unknown type {gtype}")
         return results
     else:
+        import urllib.parse
         for gtype in args.type:
-            guess, encoding = guess_file_type(gtype, strict=not args.lenient)
+            p = urllib.parse.urlparse(gtype)
+            if p.scheme and len(p.scheme) > 1:
+                guess, encoding = guess_type(gtype, strict=not args.lenient)
+            else:
+                guess, encoding = guess_file_type(gtype, strict=not args.lenient)
             if guess:
                 results.append(f"type: {guess} encoding: {encoding}")
             else:

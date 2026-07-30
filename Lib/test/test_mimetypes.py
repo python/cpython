@@ -1,7 +1,6 @@
 import io
 import mimetypes
 import os
-
 import shlex
 import sys
 import unittest

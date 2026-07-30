@@ -28,8 +28,7 @@ the information :func:`init` sets up.
 
    .. index:: pair: MIME; headers
 
-   Guess the type of a file based on its URL, given by *url*.
-   URL can be a string.
+   Guess the type of a file based on its URL, given as a string.
 
    The return value is a tuple ``(type, encoding)`` where *type* is ``None`` if the
    type can't be guessed (missing or unknown suffix) or a string of the form
@@ -54,10 +53,9 @@ the information :func:`init` sets up.
    .. versionchanged:: 3.8
       Added support for *url* being a :term:`path-like object`.
 
-   .. deprecated:: 3.16
+   .. deprecated-removed:: 3.16 3.21
       Passing a file path (or path-like object) instead of a URL.
       Use :func:`guess_file_type` instead.
-      Soft-deprecated since Python 3.13, scheduled for removal in Python 3.21.
 
 
 .. function:: guess_file_type(path, *, strict=True)
@@ -263,10 +261,9 @@ than one MIME-type database; it provides an interface similar to the one of the
       Similar to the :func:`guess_type` function, using the tables stored as part of
       the object.
 
-      .. deprecated:: 3.16
+      .. deprecated-removed:: 3.16 3.21
          Passing a file path (or path-like object) instead of a URL.
-         Use :meth:`guess_file_type` instead.
-         Soft-deprecated since Python 3.13, scheduled for removal in Python 3.21.
+         Use :func:`guess_file_type` instead.
 
    .. method:: MimeTypes.guess_file_type(path, *, strict=True)
 
