@@ -5,12 +5,12 @@
 # This is a requirement for Debian's Multi-Arch installs of Python
 # https://www.debian.org/doc/debian-policy/ch-controlfields.html#multi-arch
 
+import gzip
+import json
 from argparse import ArgumentParser
 from hashlib import file_digest
 from pathlib import Path
 from typing import Any, cast
-import gzip
-import json
 
 
 def load_build_details(base: Path) -> dict[str, Any]:

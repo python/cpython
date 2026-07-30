@@ -5,8 +5,8 @@
 # https://www.debian.org/doc/debian-policy/ch-controlfields.html#multi-arch
 
 from argparse import ArgumentParser
-from typing import Any
 from pathlib import Path
+from typing import Any
 import gzip
 import json
 
