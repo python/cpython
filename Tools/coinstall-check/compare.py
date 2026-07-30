@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Compare that multiple installs of Python don't have conflicting files
+# Compare that multiple installs of Python don't have conflicting files.
 #
 # This is a requirement for Debian's Multi-Arch installs of Python
 # https://www.debian.org/doc/debian-policy/ch-controlfields.html#multi-arch

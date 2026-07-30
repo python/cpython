@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Export a SHA512 manifest of installed files, so that we can ensure that
-# multiple installs of Python don't have conflicting files
+# Export a SHA-512 manifest of installed files, so that we can ensure that
+# multiple installs of Python don't have conflicting files.
 #
 # This is a requirement for Debian's Multi-Arch installs of Python
 # https://www.debian.org/doc/debian-policy/ch-controlfields.html#multi-arch
