@@ -31,7 +31,7 @@ class PythonTestRunner(val context: Context) {
         // We leave argument 0 as an empty string, which is a placeholder for the
         // executable name in embedded mode.
         val argsJsonArray = JSONArray(args)
-        val argsStringArray = Array<String>(argsJsonArray.length() + 1) { it -> ""}
+        val argsStringArray = Array<String>(argsJsonArray.length() + 1) { _ -> ""}
         for (i in 0..<argsJsonArray.length()) {
             argsStringArray[i + 1] = argsJsonArray.getString(i)
         }
