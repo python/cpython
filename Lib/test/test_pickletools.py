@@ -157,14 +157,14 @@ class GenopsTests(unittest.TestCase):
         # An opcode argument that straddles a frame boundary is ignored by
         # default, but rejected when check_frames is true.  See gh-154848.
         # FRAME 3; SHORT_BINBYTES argument straddles the frame.
-        data = b'\x80\x05\x95\x03\x00\x00\x00\x00\x00\x00\x00C\x0ahelloworld.'
+        data = b'\x80\x04\x95\x03\x00\x00\x00\x00\x00\x00\x00C\x0ahelloworld.'
         self.assertEqual(list(pickletools.genops(data))[-1][0].name, 'STOP')
         with self.assertRaisesRegex(ValueError,
                 'expected 10 bytes in a bytes1, but only 1 remain'):
             list(pickletools.genops(data, check_frames=True))
 
         # FRAME 6; UNICODE argument (read by readline) straddles the frame.
-        data = b'\x80\x05\x95\x06\x00\x00\x00\x00\x00\x00\x00Vhelloworld\n.'
+        data = b'\x80\x04\x95\x06\x00\x00\x00\x00\x00\x00\x00Vhelloworld\n.'
         self.assertEqual(list(pickletools.genops(data))[-1][0].name, 'STOP')
         with self.assertRaisesRegex(ValueError,
                 'no newline found when trying to read unicodestringnl'):
@@ -173,7 +173,7 @@ class GenopsTests(unittest.TestCase):
     def test_check_frames_nested(self):
         # A new frame beginning before the current one ends is rejected only
         # when check_frames is true.
-        data = (b'\x80\x05\x95\x0c\x00\x00\x00\x00\x00\x00\x00'
+        data = (b'\x80\x04\x95\x0c\x00\x00\x00\x00\x00\x00\x00'
                 b'N\x95\x00\x00\x00\x00\x00\x00\x00\x00NN.')
         self.assertEqual(list(pickletools.genops(data))[-1][0].name, 'STOP')
         with self.assertRaisesRegex(ValueError,
