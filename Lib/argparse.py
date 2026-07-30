@@ -713,7 +713,7 @@ class HelpFormatter(object):
         return result
 
     def _expand_help(self, action):
-        help_string = self._get_help_string(action)
+        help_string = str(self._get_help_string(action))
         if '%' not in help_string:
             return self._apply_text_markup(help_string)
         params = dict(vars(action), prog=self._prog)
@@ -760,7 +760,7 @@ class HelpFormatter(object):
             return spec % params
 
         return self._apply_text_markup(
-            _re.sub(fmt_spec, colorize, str(help_string), flags=_re.VERBOSE)
+            _re.sub(fmt_spec, colorize, help_string, flags=_re.VERBOSE)
         )
 
     def _iter_indented_subactions(self, action):

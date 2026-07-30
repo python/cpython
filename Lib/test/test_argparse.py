@@ -7921,6 +7921,10 @@ class TestColorized(TestCase):
             default="bar",
             help=LazyStr("foo (default: %(default)s)"),
         )
+        parser.add_argument(
+            "--baz",
+            help=LazyStr("baz plain text"),
+        )
 
         interp = self.theme.interpolated_value
         reset = self.theme.reset
