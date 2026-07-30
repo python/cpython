@@ -15937,6 +15937,13 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 
 #ifdef TERMSIZE_USE_IOCTL
     {
+        // On Android, stdout is probably not connected, and calling TIOCGWINSZ
+        // on an invalid file descriptor causes a log message "avc:  denied  {
+        // ioctl }". Some common tools such as pytest call get_terminal_size
+        // very often, so check it's a TTY first to avoid cluttering the log.
+        if (!isatty(fd))
+            return PyErr_SetFromErrno(PyExc_OSError);
+
         struct winsize w;
         if (ioctl(fd, TIOCGWINSZ, &w))
             return PyErr_SetFromErrno(PyExc_OSError);
