@@ -997,8 +997,19 @@ ga_iter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
-    if (gi->obj)
-        return Py_BuildValue("N(O)", iter, gi->obj);
+    /* ga_iternext takes gi->obj out with an atomic exchange and then drops the
+     * reference, so a plain read here is not just a data race: the two reads of
+     * gi->obj below could straddle that exchange and hand Py_BuildValue a
+     * pointer whose last reference is already gone. Take a strong reference
+     * once instead. Racing with next() may legitimately observe either the
+     * object or the exhausted iterator; both reductions are correct. */
+#ifdef Py_GIL_DISABLED
+    PyObject *obj = _Py_XGetRef(&gi->obj);
+#else
+    PyObject *obj = Py_XNewRef(gi->obj);
+#endif
+    if (obj != NULL)
+        return Py_BuildValue("N(N)", iter, obj);
     else
         return Py_BuildValue("N(())", iter);
 }
@@ -1030,6 +1041,11 @@ ga_iter(PyObject *self) {
         return NULL;
     }
     gi->obj = Py_NewRef(self);
+#ifdef Py_GIL_DISABLED
+    /* _Py_XGetRef in ga_iter_reduce needs the stored object to be flagged, or
+     * its try-incref cannot succeed from another thread and it would spin. */
+    _PyObject_SetMaybeWeakref(self);
+#endif
     PyObject_GC_Track(gi);
     return (PyObject *)gi;
 }

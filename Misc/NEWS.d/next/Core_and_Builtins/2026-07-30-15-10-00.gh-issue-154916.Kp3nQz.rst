@@ -1,0 +1,3 @@
+Fix a data race in :meth:`!__reduce__` of a shared :class:`types.GenericAlias`
+iterator under the :term:`free-threaded build`. Follow-up to
+:gh:`154043`, which only covered iteration itself.
