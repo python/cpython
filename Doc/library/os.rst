@@ -802,9 +802,9 @@ process and user.
    Returns information identifying the current operating system.
    The return value is a :class:`uname_result`.
 
-   On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
+   On macOS, iOS and Android, this returns the *kernel* name and release (i.e.,
    ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android). :func:`platform.uname`
-   can be used to get the user-facing operating system name and version on iOS and
+   can be used to get the user-facing operating system name and release on iOS and
    Android.
 
    .. seealso::
