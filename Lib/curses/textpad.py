@@ -57,14 +57,17 @@ class Textbox:
         self.maxx = maxx - 1
 
     def _decode(self, ch):
-        # Decode an integer keystroke or byte to text with the window's encoding.
-        # A_CHARTEXT drops any attribute bits.
-        return bytes([ch & curses.A_CHARTEXT]).decode(self.win.encoding, 'replace')
+        # An integer keystroke is a byte: get_wch() passes a character as a
+        # string, and getch() reports one as its bytes in the encoding.
+        return bytes([ch & 0xff]).decode(self.win.encoding, 'replace')
 
     def _printable_key(self, ch):
-        # Whether the integer keystroke is a printable character, not a key code:
-        # 0..255 are character bytes, larger values are function keys.
-        return ch <= 0xff and self._decode(ch).isprintable()
+        # Whether the integer keystroke is a printable character rather than a
+        # key code.  Key codes occupy [curses.KEY_MIN, curses.KEY_MAX], which
+        # may start above a byte.
+        return (ch <= 0xff
+                and not curses.KEY_MIN <= ch <= curses.KEY_MAX
+                and self._decode(ch).isprintable())
 
     def _end_of_line(self, y):
         """Go to the location of the first blank on the given line,
@@ -93,14 +96,18 @@ class Textbox:
             if y >= self.maxy and x >= self.maxx:
                 # Use insch() in the lower-right cell; addch() there would push
                 # the cursor out of the window (an error, and it scrolls a
-                # scrollable window).  insch() does not decode an int byte
-                # through the locale on a wide build, so pass it as text.
+                # scrollable window).
                 if isinstance(ch, int):
                     self.win.insch(self._decode(ch), ch & curses.A_ATTRIBUTES)
                 else:
                     self.win.insch(ch)
                 break
-            self.win.addch(ch)
+            # Pass the character as text: an integer is a byte, which addch()
+            # takes as a code point on a wide build.
+            if isinstance(ch, int):
+                self.win.addch(self._decode(ch), ch & curses.A_ATTRIBUTES)
+            else:
+                self.win.addch(ch)
             # In insert mode keep shifting cells right until a blank one.
             if not self.insert_mode or not str(oldch).isprintable():
                 break
