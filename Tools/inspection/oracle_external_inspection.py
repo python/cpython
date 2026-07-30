@@ -173,6 +173,9 @@ def run_mode(case, mode_name, args):
                 if not args.poisson_sampling:
                     next_sample += period
 
+            if time.perf_counter() >= deadline:
+                break
+
             result["attempts"] += 1
             work_start = time.perf_counter()
             try:
