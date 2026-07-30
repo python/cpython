@@ -1,3 +1,20 @@
+"""Compare external inspection modes against a reference mode ("Oracle").
+
+This script reports the following validation metrics:
+
+- impossible: Number of stacks matching a known impossible pattern. The
+  classifiers are not exhaustive.
+
+- raw_tvd: Total variation distance between this mode's stack distribution
+  and the reference's distribution. Stacks classified as impossible are
+  excluded.
+
+- tvd_excess: raw_tvd minus tvd_floor.
+
+- tvd_floor: IID heuristic for the TVD expected from finite sampling of both
+  distributions. This is not a lower bound.
+"""
+
 import argparse
 import contextlib
 import math
