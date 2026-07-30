@@ -46,7 +46,8 @@ def _supports_sched():
     try:
         posix.sched_getscheduler(0)
     except OSError as e:
-        if e.errno == errno.ENOSYS:
+        # DragonFly BSD requires privileges to use the scheduler API.
+        if e.errno in (errno.ENOSYS, errno.EPERM):
             return False
     return True
 
@@ -142,8 +143,8 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.initgroups, "foo", 3, object())
 
         # If a non-privileged user invokes it, it should fail with OSError
-        # EPERM.
-        if os.getuid() != 0:
+        # EPERM. On Cygwin, initgroups(name, 13) does not fail.
+        if os.getuid() != 0 and sys.platform != 'cygwin':
             try:
                 name = pwd.getpwuid(posix.getuid()).pw_name
             except KeyError:
@@ -415,8 +416,10 @@ class PosixTester(unittest.TestCase):
             if inst.errno == errno.EINVAL and sys.platform.startswith(
                 ('sunos', 'freebsd', 'openbsd', 'gnukfreebsd')):
                 raise unittest.SkipTest("test may fail on ZFS filesystems")
-            elif inst.errno == errno.EOPNOTSUPP and sys.platform.startswith("netbsd"):
-                raise unittest.SkipTest("test may fail on FFS filesystems")
+            elif inst.errno == errno.EOPNOTSUPP:
+                # ZFS on FreeBSD, FFS on NetBSD, etc.
+                raise unittest.SkipTest(
+                    "the file system does not support posix_fallocate()")
             else:
                 raise
         finally:
@@ -597,7 +600,9 @@ class PosixTester(unittest.TestCase):
             posix.sysconf(1.23)
 
         arg_max = posix.sysconf("SC_ARG_MAX")
-        self.assertGreater(arg_max, 0)
+        # SC_ARG_MAX is -1 on Cygwin
+        if sys.platform != 'cygwin':
+            self.assertGreater(arg_max, 0)
         self.assertEqual(
             posix.sysconf(posix.sysconf_names["SC_ARG_MAX"]), arg_max)
 
@@ -819,8 +824,7 @@ class PosixTester(unittest.TestCase):
         # a special case for NODEV, on others this is just an implementation
         # artifact.
         if (hasattr(posix, 'NODEV') and
-            sys.platform.startswith(('linux', 'macos', 'freebsd', 'dragonfly',
-                                     'sunos'))):
+            sys.platform.startswith(('linux', 'macos', 'freebsd', 'sunos'))):
             NODEV = posix.NODEV
             self.assertEqual(posix.major(NODEV), NODEV)
             self.assertEqual(posix.minor(NODEV), NODEV)
@@ -899,7 +903,9 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(OSError, chown_func, first_param, 0, -1)
             check_stat(uid, gid)
             if hasattr(os, 'getgroups'):
-                if 0 not in os.getgroups():
+                # Also check the effective gid, which the kernel
+                # accepts for chown even if not in getgroups().
+                if 0 not in os.getgroups() and os.getegid() != 0:
                     self.assertRaises(OSError, chown_func, first_param, -1, 0)
                     check_stat(uid, gid)
         # test illegal types
@@ -1447,6 +1453,7 @@ class PosixTester(unittest.TestCase):
         del sched_priority, param  # should not crash
         support.gc_collect()  # just to be sure
 
+    @requires_sched
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
         try:
@@ -1601,6 +1608,34 @@ class PosixTester(unittest.TestCase):
             self.skipTest(f"pidfd_open syscall blocked: {cm.exception!r}")
         self.assertEqual(cm.exception.errno, errno.EINVAL)
         os.close(os.pidfd_open(os.getpid(), 0))
+
+    @unittest.skipUnless(hasattr(os, "pidfd_getfd"), "pidfd_getfd unavailable")
+    def test_pidfd_getfd(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        pidfd = os.pidfd_open(os.getpid(), 0)
+        self.addCleanup(os.close, pidfd)
+        try:
+            dupfd = os.pidfd_getfd(pidfd, fd)
+        except OSError as exc:
+            if exc.errno == errno.ENOSYS:
+                self.skipTest("system does not support pidfd_getfd")
+            if isinstance(exc, PermissionError):
+                self.skipTest(f"pidfd_getfd syscall blocked: {exc!r}")
+            raise
+        self.addCleanup(os.close, dupfd)
+
+        self.assertFalse(os.get_inheritable(dupfd))     # PEP 446
+        self.assertEqual(os.fstat(fd), os.fstat(dupfd))
+
+        with self.assertRaises(OSError) as cm:
+            os.pidfd_getfd(-1, 0)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
+        with self.assertRaises(OSError) as cm:
+            bad_fd = os_helper.make_bad_fd()
+            os.pidfd_getfd(pidfd, bad_fd)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     @os_helper.skip_unless_hardlink
     @os_helper.skip_unless_symlink
@@ -1943,6 +1978,14 @@ class _PosixSpawnMixin:
         # directories in the $PATH that are not accessible.
         except (FileNotFoundError, PermissionError) as exc:
             self.assertEqual(exc.filename, no_such_executable)
+
+            # On Cygwin, os.posix_spawn() creates a child process even if the
+            # executable doesn't exist. We have to reap this process.
+            if sys.platform == 'cygwin':
+                for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                    pid, status = os.waitpid(-1, os.WNOHANG)
+                    if pid != 0:
+                        break
         else:
             pid2, status = os.waitpid(pid, 0)
             self.assertEqual(pid2, pid)

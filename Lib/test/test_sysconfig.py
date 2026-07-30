@@ -371,11 +371,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         sys.platform = 'android'
         get_config_vars()['ANDROID_API_LEVEL'] = 9
         for machine, abi in {
-            'x86_64': 'x86_64',
-            'i686': 'x86',
             'aarch64': 'arm64_v8a',
+            'arm': 'armeabi_v7a',
             'armv7l': 'armeabi_v7a',
             'armv8l': 'armeabi_v7a',
+            'i686': 'x86',
+            'x86_64': 'x86_64',
         }.items():
             with self.subTest(machine):
                 self._set_uname(('Linux', 'localhost', '3.18.91+',
@@ -455,6 +456,15 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
     def test_soabi(self):
         soabi = sysconfig.get_config_var('SOABI')
         self.assertIn(soabi, _imp.extension_suffixes()[0])
+
+    @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
+    @unittest.skipIf(sys.platform == "win32", "Does not apply to Windows")
+    @unittest.skipIf(sysconfig.get_config_var('SOABI_PLATFORM') == 0,
+                     "SOABI_PLATFORM is undefined")
+    def test_soabi_platform(self):
+        soabi_platform = sysconfig.get_config_var('SOABI_PLATFORM')
+        soabi = sysconfig.get_config_var('SOABI')
+        self.assertIn(soabi_platform, soabi)
 
     def test_library(self):
         library = sysconfig.get_config_var('LIBRARY')
@@ -575,16 +585,23 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
             self.assertEndsWith(suffix, expected_suffixes)
 
+    @unittest.skipIf(sysconfig.get_config_var('PY_BUILTIN_HASHLIB_HASHES') is None,
+                     'PY_BUILTIN_HASHLIB_HASHES required for this test')
+    def test_PY_BUILTIN_HASHLIB_HASHES_in_vars(self):
+        vars = sysconfig.get_config_vars()
+        self.assertFalse(vars['PY_BUILTIN_HASHLIB_HASHES'].startswith('"'))
+
     @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
     def test_android_ext_suffix(self):
         machine = platform.machine()
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         expected_triplet = {
-            "x86_64": "x86_64-linux-android",
-            "i686": "i686-linux-android",
             "aarch64": "aarch64-linux-android",
+            "arm": "arm-linux-androideabi",
             "armv7l": "arm-linux-androideabi",
             "armv8l": "arm-linux-androideabi",
+            "i686": "i686-linux-android",
+            "x86_64": "x86_64-linux-android",
         }[machine]
         self.assertEndsWith(suffix, f"-{expected_triplet}.so")
 

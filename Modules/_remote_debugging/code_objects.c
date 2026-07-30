@@ -7,6 +7,8 @@
 
 #include "_remote_debugging.h"
 
+#define MAX_LINETABLE_SIZE (64 * 1024)
+
 /* ============================================================================
  * TLBC CACHING FUNCTIONS (Py_GIL_DISABLED only)
  * ============================================================================ */
@@ -47,7 +49,6 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
 
     // Read the TLBC array pointer
     if (read_ptr(unwinder, tlbc_array_addr, &tlbc_array_ptr) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array pointer");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array pointer");
         return 0; // Read error
     }
@@ -61,7 +62,6 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     // Read the TLBC array size
     Py_ssize_t tlbc_size;
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, tlbc_array_ptr, sizeof(tlbc_size), &tlbc_size) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array size");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array size");
         return 0; // Read error
     }
@@ -188,11 +188,7 @@ parse_linetable(const uintptr_t addrq, const char* linetable, Py_ssize_t linetab
     int computed_line = firstlineno;  // Running accumulator, separate from output
     int val;  // Temporary for varint results
     uint8_t byte;  // Temporary for byte reads
-    const size_t MAX_LINETABLE_ENTRIES = 65536;
-    size_t entry_count = 0;
-
-    while (ptr < end && *ptr != '\0' && entry_count < MAX_LINETABLE_ENTRIES) {
-        entry_count++;
+    while (ptr < end && *ptr != '\0') {
         uint8_t first_byte = *(ptr++);
         uint8_t code = (first_byte >> 3) & 15;
         size_t length = (first_byte & 7) + 1;
@@ -389,7 +385,8 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         }
 
         linetable = read_py_bytes(unwinder,
-            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable), 4096);
+            GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.linetable),
+            MAX_LINETABLE_SIZE);
         if (!linetable) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read linetable from code object");
             goto error;
@@ -405,6 +402,8 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         meta->func_name = func;
         meta->file_name = file;
         meta->linetable = linetable;
+        meta->last_frame_info = NULL;
+        meta->last_addrq = -1;
         meta->first_lineno = GET_MEMBER(int, code_object, unwinder->debug_offsets.code_object.firstlineno);
         meta->addr_code_adaptive = real_address + (uintptr_t)unwinder->debug_offsets.code_object.co_code_adaptive;
 
@@ -432,7 +431,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 
 #ifdef Py_GIL_DISABLED
     // Handle thread-local bytecode (TLBC) in free threading builds
-    if (ctx->tlbc_index == 0 || unwinder->debug_offsets.code_object.co_tlbc == 0 || unwinder == NULL) {
+    if (ctx->tlbc_index == 0 || unwinder == NULL || unwinder->debug_offsets.code_object.co_tlbc == 0) {
         // No TLBC or no unwinder - use main bytecode directly
         addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
         goto done_tlbc;
@@ -482,6 +481,12 @@ done_tlbc:
     addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
 #endif
     ;  // Empty statement to avoid C23 extension warning
+
+    if (!unwinder->opcodes && meta->last_frame_info != NULL && meta->last_addrq == addrq) {
+        *result = Py_NewRef(meta->last_frame_info);
+        return 0;
+    }
+
     LocationInfo info = {0};
     bool ok = parse_linetable(addrq, PyBytes_AS_STRING(meta->linetable),
                               PyBytes_GET_SIZE(meta->linetable),
@@ -527,6 +532,11 @@ done_tlbc:
     Py_XDECREF(opcode_obj);
     if (!tuple) {
         goto error;
+    }
+
+    if (!unwinder->opcodes) {
+        Py_XSETREF(meta->last_frame_info, Py_NewRef(tuple));
+        meta->last_addrq = addrq;
     }
 
     *result = tuple;
