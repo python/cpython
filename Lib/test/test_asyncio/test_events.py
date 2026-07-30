@@ -1727,6 +1727,48 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'requires os.mkfifo()')
+    def test_write_named_fifo_unread_data(self):
+        # gh-145030: on macOS, the write end of a named FIFO polls as
+        # readable while unread data sits in the FIFO, which made the
+        # transport misinterpret the event as the reader hanging up
+        # and close itself.
+        path = os_helper.TESTFN
+        os.mkfifo(path)
+        self.assertNotEqual(os.stat(path).st_nlink, 0)
+        self.addCleanup(os_helper.unlink, path)
+        rfd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+        self.addCleanup(os.close, rfd)
+        wfd = os.open(path, os.O_WRONLY | os.O_NONBLOCK)
+        pipeobj = io.open(wfd, 'wb', 1024)
+
+        proto = MyWritePipeProto(loop=self.loop)
+        connect = self.loop.connect_write_pipe(lambda: proto, pipeobj)
+        transport, p = self.loop.run_until_complete(connect)
+        self.assertIs(p, proto)
+        self.assertEqual('CONNECTED', proto.state)
+
+        transport.write(b'1')
+        # Iterate the event loop while the data stays unread in the FIFO;
+        # the transport must not detect a false disconnection.
+        for _ in range(10):
+            test_utils.run_briefly(self.loop)
+        self.assertEqual('CONNECTED', proto.state)
+        self.assertFalse(transport.is_closing())
+        self.assertEqual(b'1', os.read(rfd, 1024))
+
+        transport.write(b'2345')
+        for _ in range(10):
+            test_utils.run_briefly(self.loop)
+        self.assertEqual('CONNECTED', proto.state)
+        self.assertEqual(b'2345', os.read(rfd, 1024))
+
+        transport.close()
+        self.loop.run_until_complete(proto.done)
+        self.assertEqual('CLOSED', proto.state)
+
+    @unittest.skipUnless(sys.platform != 'win32',
+                         "Don't support pipes for Windows")
     def test_write_pipe_disconnect_on_close(self):
         rsock, wsock = socket.socketpair()
         rsock.setblocking(False)

@@ -871,11 +871,8 @@ case $ac_sys_system/$ac_sys_release in
   # Marc Recht
   NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
     define_xopen_source=no;;
-  # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
-  # request to enable features supported by the standard as a request
-  # to disable features not supported by the standard.  The best way
-  # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
-  # entirely and define __EXTENSIONS__ instead.
+  # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
+  # A lower level is defined below.
   SunOS/*)
     define_xopen_source=no;;
   # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
@@ -941,6 +938,14 @@ then
   # with -std=c11.  Defining _ISOC23_SOURCE makes them visible again.
   AC_DEFINE([_ISOC23_SOURCE], [1],
             [Define to activate ISO C23 library declarations])
+elif test "$ac_sys_system" = "SunOS"
+then
+  # On illumos the socket ancillary-data API (CMSG_*, sendmsg(), recvmsg())
+  # is declared only with _XOPEN_SOURCE >= 600; Solaris declares it anyway.
+  # __EXTENSIONS__ keeps the platform specific features which _XOPEN_SOURCE
+  # would otherwise hide.  See gh-57208.
+  AC_DEFINE([_XOPEN_SOURCE], [600],
+            [Define to the level of X/Open that your system supports])
 fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
@@ -1221,6 +1226,10 @@ AS_CASE([$ac_sys_system],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
 
+if test x$SOABI_PLATFORM != x; then
+    AC_DEFINE_UNQUOTED([SOABI_PLATFORM], ["${SOABI_PLATFORM}"], [Platform tag, used in binary module extension filenames.])
+fi
+
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
@@ -1364,6 +1373,20 @@ AC_ARG_ENABLE([wasm-pthreads],
   enable_wasm_pthreads=missing
 ])
 AC_MSG_RESULT([$enable_wasm_pthreads])
+
+AC_MSG_CHECKING([for --enable-emscripten-syscalls])
+AC_ARG_ENABLE([emscripten-syscalls],
+  [AS_HELP_STRING([--disable-emscripten-syscalls],
+                  [Disable the Emscripten syscall overrides in Python/emscripten_syscalls.c (default is enabled for Emscripten)])],
+[
+  AS_CASE([$ac_sys_system],
+    [Emscripten], [],
+    [AC_MSG_ERROR([--enable-emscripten-syscalls only applies to Emscripten])]
+  )
+], [
+  enable_emscripten_syscalls=yes
+])
+AC_MSG_RESULT([$enable_emscripten_syscalls])
 
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
@@ -5380,7 +5403,10 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o'])
+    AS_VAR_IF([enable_emscripten_syscalls], [yes], [
+      AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
+    ])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
@@ -5394,6 +5420,9 @@ DLINCLDIR=.
 # the dlopen() function means we might want to use dynload_shlib.o. some
 # platforms have dlopen(), but don't want to use it.
 AC_CHECK_FUNCS([dlopen])
+
+# Used by ctypes.util.dllist().
+AC_CHECK_FUNCS([dl_iterate_phdr])
 
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
@@ -7231,12 +7260,18 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
 dnl pyconfig.h defines _XOPEN_SOURCE=700
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-dnl Native curses ("curses") may be wide-character capable (e.g. on NetBSD)
-dnl even though it is not ncursesw.  Probe for the wide API; if present, build
-dnl the module against it like ncursesw by defining HAVE_NCURSESW.  ncursesw
-dnl already defines HAVE_NCURSESW, and ncurses must stay narrow, so only the
-dnl native backend is probed here.
-AS_VAR_IF([with_curses], [curses], [
+dnl A curses that is not named "ncursesw" can still be wide-character capable:
+dnl the system curses of NetBSD, or an ncurses built with --enable-widec that
+dnl keeps the plain name (pkgsrc, macOS).  Probe for the wide API and, if
+dnl present, build the module wide by defining HAVE_NCURSESW.  The "ncursesw"
+dnl backend already defines it, so only the other backends are probed.
+AS_CASE([$with_curses], [ncursesw|no], [], [
+  dnl Use the adjusted CURSES_CFLAGS (e.g. macOS's -D_XOPEN_SOURCE_EXTENDED)
+  dnl so the wide-character declarations are visible to the probe.  This runs
+  dnl inside an outer WITH_SAVE_ENV, whose single CPPFLAGS save slot is not
+  dnl reentrant, so save and restore CPPFLAGS with a dedicated variable here.
+  save_curses_cppflags=$CPPFLAGS
+  AS_VAR_APPEND([CPPFLAGS], [" $CURSES_CFLAGS"])
   AC_CACHE_CHECK([whether curses supports wide characters],
     [ac_cv_curses_wide],
     [AC_LINK_IFELSE(
@@ -7247,6 +7282,7 @@ AS_VAR_IF([with_curses], [curses], [
       ]])],
       [ac_cv_curses_wide=yes],
       [ac_cv_curses_wide=no])])
+  CPPFLAGS=$save_curses_cppflags
   dnl HAVE_NCURSESW marks the wide (cchar_t) curses API; its template comes
   dnl from the ncursesw pkg-config check above, so no description here.
   AS_VAR_IF([ac_cv_curses_wide], [yes], [AC_DEFINE([HAVE_NCURSESW], [1])])
