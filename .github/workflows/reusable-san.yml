@@ -55,7 +55,7 @@ jobs:
         SAN_LOG_OPTION: log_path=${{ github.workspace }}/san_log
         SUPPRESSIONS_SUFFIX: >-
           ${{
-            fromJSON(inputs.free-threading)
+            inputs.free-threading
             && '_free_threading'
             || ''
           }}
@@ -101,7 +101,7 @@ jobs:
         }}
         --with-pydebug
         ${{ inputs.sanitizer == 'TSan' && '--with-openssl="$OPENSSL_DIR" --with-openssl-rpath=auto' || '' }}
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -114,7 +114,7 @@ jobs:
     - name: Parallel tests
       if: >-
         inputs.sanitizer == 'TSan'
-        && fromJSON(inputs.free-threading)
+        && inputs.free-threading
       run: ./python -m test --tsan-parallel --parallel-threads=4 -j4 -W --timeout=600 --slowest
     - name: Display logs
       if: always()
@@ -125,7 +125,7 @@ jobs:
       with:
         name: >-
           ${{ inputs.sanitizer }}-logs-${{
-            fromJSON(inputs.free-threading)
+            inputs.free-threading
             && 'free-threading'
             || 'default'
           }}

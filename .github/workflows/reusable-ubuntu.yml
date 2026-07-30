@@ -14,14 +14,14 @@ on:
         type: boolean
         default: false
       os:
-         description: OS to run the job
-         required: true
-         type: string
+        description: OS to run the job
+        required: true
+        type: string
       test-opts:
-         description: Extra options to pass to the test runner via TESTOPTS
-         required: false
-         type: string
-         default: ''
+        description: Extra options to pass to the test runner via TESTOPTS
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -47,7 +47,7 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Install Clang and BOLT
-      if: ${{ fromJSON(inputs.bolt-optimizations) }}
+      if: inputs.bolt-optimizations
       run: |
         # On ubuntu-26.04 image, LLVM is LLVM-21 by default
         sudo apt-get install --no-install-recommends bolt-21
@@ -88,10 +88,10 @@ jobs:
         --enable-slower-safety
         --enable-safety
         --with-openssl="$OPENSSL_DIR"
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
-        ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
+        ${{ inputs.bolt-optimizations && '--enable-bolt' || '' }}
     - name: Build CPython out-of-tree
-      if: ${{ inputs.free-threading }}
+      if: inputs.free-threading
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make -j
     - name: Build CPython out-of-tree (for compiler warning check)
