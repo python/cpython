@@ -9,7 +9,6 @@
 #include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
-#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
@@ -622,23 +621,13 @@ static PyObject *
 descr_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyDescrObject *descr = (PyDescrObject *)self;
-
-    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(descr->d_qualname);
-    if (qualname != NULL) {
-        return Py_NewRef(qualname);
-    }
-
+    PyObject *qualname;
     Py_BEGIN_CRITICAL_SECTION(self);
-    qualname = FT_ATOMIC_LOAD_PTR_RELAXED(descr->d_qualname);
-    if (qualname == NULL) {
-        qualname = calculate_qualname(descr);
-        if (qualname != NULL) {
-            FT_ATOMIC_STORE_PTR_RELEASE(descr->d_qualname, qualname);
-        }
+    if (descr->d_qualname == NULL) {
+        descr->d_qualname = calculate_qualname(descr);
     }
-    Py_XINCREF(qualname);
+    qualname = Py_XNewRef(descr->d_qualname);
     Py_END_CRITICAL_SECTION();
-
     return qualname;
 }
 
