@@ -10,6 +10,7 @@ import os
 import os.path
 import errno
 import functools
+import importlib
 import socket
 import subprocess
 import random
@@ -32,6 +33,7 @@ except ImportError:
 from test import support
 from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
+from test.support.script_helper import assert_python_ok
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -2320,6 +2322,40 @@ class TestArchives(BaseTest, unittest.TestCase):
         # let's leave a clean state
         unregister_unpack_format('Boo2')
         self.assertEqual(get_unpack_formats(), formats)
+
+    def test_compression_supported_flags(self):
+        # shutil determines compression support by probing the extension
+        # modules (_bz2, _lzma, _zstd) rather than importing the pure Python
+        # wrappers.  The answer must match what importing the wrapper does,
+        # including on builds where the extension is missing or fails to load.
+        for wrapper, supported in (
+            ('zlib', shutil._ZLIB_SUPPORTED),
+            ('bz2', shutil._BZ2_SUPPORTED),
+            ('lzma', shutil._LZMA_SUPPORTED),
+            ('compression.zstd', shutil._ZSTD_SUPPORTED),
+        ):
+            with self.subTest(wrapper=wrapper):
+                try:
+                    importlib.import_module(wrapper)
+                except ImportError:
+                    importable = False
+                else:
+                    importable = True
+                self.assertEqual(supported, importable)
+
+    def test_compression_wrappers_not_imported_by_shutil(self):
+        # Importing shutil must not pull in the compression wrappers: they are
+        # only needed once an archive is actually created or extracted, and
+        # importing them measurably slows down every process that uses shutil.
+        wrappers = ('bz2', 'lzma', 'compression', 'compression.zstd')
+        script = (
+            'import sys, shutil; '
+            f'print([m for m in {wrappers!r} if m in sys.modules])'
+        )
+        # -I so that a sitecustomize/usercustomize importing one of these
+        # cannot make the test fail spuriously.
+        rc, stdout, stderr = assert_python_ok('-I', '-c', script)
+        self.assertEqual(stdout.decode().strip(), '[]', stderr)
 
 
 class TestMisc(BaseTest, unittest.TestCase):
