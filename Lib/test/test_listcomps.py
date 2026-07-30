@@ -793,6 +793,75 @@ class ListComprehensionTest(unittest.TestCase):
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
 
+    def test_optimization_with_side_effects(self):
+        # List comprehensions that aren't used as a value are optimized
+        # to avoid creating a list. Ensure that side effects are still
+        # retained when this happens.
+        with self.assertRaises(ZeroDivisionError):
+            [0/0 for _ in [1]]
+
+        count = 0
+        def increment():
+            nonlocal count
+            count += 1
+
+        [increment() for _ in range(5)]
+        self.assertEqual(count, 5)
+
+    def test_async_optimization_with_side_effects(self):
+        async def gen1(aiterator):
+            with self.assertRaises(ZeroDivisionError):
+                [0/0 async for _ in aiterator]
+
+        async def gen2(aiterator):
+            [increment() async for _ in aiterator]
+
+        async def numbers():
+            for i in range(5):
+                yield i
+
+        count = 0
+        def increment():
+            nonlocal count
+            count += 1
+
+        def exhaust(coro):
+            try:
+                coro.send(None)
+            except StopIteration:
+                pass
+
+        exhaust(gen1(numbers()))
+        exhaust(gen2(numbers()))
+        self.assertEqual(count, 5)
+
+    def test_optimization_with_starred_unpack(self):
+        with self.assertRaises(TypeError):
+            [*i for i in [1, 2, 3]]
+
+        async def coro():
+            async def gen():
+                yield 1
+
+            with self.assertRaises(TypeError):
+                [*i async for i in gen()]
+
+        c = coro()
+        while True:
+            try:
+                c.send(None)
+            except StopIteration:
+                break
+
+        count = 0
+        def weird():
+            nonlocal count
+            count += 1
+            yield 0
+
+        [*weird() for _ in range(5)]
+        self.assertEqual(count, 5)
+
 __test__ = {'doctests' : doctests}
 
 def load_tests(loader, tests, pattern):

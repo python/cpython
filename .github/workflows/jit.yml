@@ -29,10 +29,10 @@ env:
 jobs:
   interpreter:
     name: Interpreter (Debug)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Install dependencies
@@ -72,7 +72,7 @@ jobs:
             architecture: ARM64
             runner: windows-11-arm
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -102,11 +102,11 @@ jobs:
           - false
         include:
           - target: x86_64-apple-darwin/clang
-            runner: macos-15-intel
+            runner: macos-26-intel
           - target: aarch64-apple-darwin/clang
-            runner: macos-15
+            runner: macos-26
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -145,11 +145,11 @@ jobs:
           - false
         include:
           - target: x86_64-unknown-linux-gnu/gcc
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
           - target: aarch64-unknown-linux-gnu/gcc
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -160,8 +160,7 @@ jobs:
           sudo ./.github/workflows/posix-deps-apt.sh
       - name: Build
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          # On ubuntu-26.04 image, clang is clang-21 by default
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
       - name: Test
@@ -171,7 +170,7 @@ jobs:
   linux-extras:
     name: ${{ matrix.name }}
 
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -191,7 +190,7 @@ jobs:
             use_clang: true
             run_tests: false
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -202,8 +201,7 @@ jobs:
           sudo ./.github/workflows/posix-deps-apt.sh
       - name: Build
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          # On ubuntu-26.04 image, clang is clang-21 by default
           if [ "${{ matrix.use_clang }}" = "true" ]; then
             export CC=clang-${{ env.LLVM_VERSION }}
           fi

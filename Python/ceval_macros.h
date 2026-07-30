@@ -528,6 +528,22 @@ check_periodics(PyThreadState *tstate) {
     return 0;
 }
 
+static inline int
+check_periodics_at_end(PyThreadState *tstate, _PyInterpreterFrame *frame) {
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+    QSBR_QUIESCENT_STATE(tstate);
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+        // Do not handle pending interrupts if the previous instruction was LOAD_SPECIAL
+        // This may also not handle interrupts if a cache looks like LOAD_SPECIAL,
+        // but this is benign as we won't skip periodic checks indefinitely.
+        if (frame->instr_ptr[-1].op.code == LOAD_SPECIAL) {
+            return 0;
+        }
+        return _Py_HandlePending(tstate);
+    }
+    return 0;
+}
+
 // Mark the generator as executing. Returns true if the state was changed,
 // false if it was already executing or finished.
 static inline bool

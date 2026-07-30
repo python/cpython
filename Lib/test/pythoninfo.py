@@ -452,6 +452,12 @@ def collect_readline(info_add):
 
 def run_command(cmd, check=True, **kwargs):
     import subprocess
+    from test.support import has_subprocess_support
+
+    if not has_subprocess_support:
+        # subprocess is not supported by the current platform
+        return ''
+
     timeout = COMMAND_TIMEOUT
 
     cmd_str = ' '.join(cmd)
@@ -564,6 +570,7 @@ def collect_sysconfig(info_add):
 
     for name in (
         'ABIFLAGS',
+        'ALT_SOABI',
         'ANDROID_API_LEVEL',
         'CC',
         'CCSHARED',
@@ -589,6 +596,7 @@ def collect_sysconfig(info_add):
         'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
+        'SOABI_PLATFORM',
         'TEST_MODULES',
         'VAPTH',
         'abs_builddir',
@@ -963,6 +971,24 @@ def winreg_query(path):
         return None
 
 
+def wmi_query(query):
+    try:
+        import _wmi
+    except ImportError:
+        return {}
+
+    try:
+        data = _wmi.exec_query(query)
+    except OSError:
+        return {}
+
+    dict_data = {}
+    for item in data.split("\0"):
+        key, _, value = item.partition("=")
+        dict_data[key] = value
+    return dict_data
+
+
 def collect_windows(info_add):
     if not MS_WINDOWS:
         # Code specific to Windows
@@ -971,7 +997,7 @@ def collect_windows(info_add):
     # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
     # windows.is_admin: IsUserAnAdmin()
     try:
-        import ctypes
+        import ctypes.util
         if not hasattr(ctypes, 'WinDLL'):
             raise ImportError
     except ImportError:
@@ -980,20 +1006,19 @@ def collect_windows(info_add):
         ntdll = ctypes.WinDLL('ntdll')
         BOOLEAN = ctypes.c_ubyte
         try:
-            RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+            @ctypes.util.wrap_dll_function(ntdll)
+            def RtlAreLongPathsEnabled() -> BOOLEAN:
+                pass
         except AttributeError:
             res = '<function not available>'
         else:
-            RtlAreLongPathsEnabled.restype = BOOLEAN
-            RtlAreLongPathsEnabled.argtypes = ()
             res = bool(RtlAreLongPathsEnabled())
         info_add('windows.RtlAreLongPathsEnabled', res)
 
-        shell32 = ctypes.windll.shell32
-        IsUserAnAdmin = shell32.IsUserAnAdmin
-        IsUserAnAdmin.restype = BOOLEAN
-        IsUserAnAdmin.argtypes = ()
-        info_add('windows.is_admin', IsUserAnAdmin())
+        @ctypes.util.wrap_dll_function(ctypes.windll.shell32)
+        def IsUserAnAdmin() -> BOOLEAN:
+            pass
+        info_add('windows.is_admin', bool(IsUserAnAdmin()))
 
     try:
         import _winapi
@@ -1009,22 +1034,14 @@ def collect_windows(info_add):
         call_func(info_add, 'windows.ansi_code_page', _winapi, 'GetACP')
         call_func(info_add, 'windows.oem_code_page', _winapi, 'GetOEMCP')
 
-    # windows.version_caption: "wmic os get Caption,Version /value" command
-    output = run_command(["wmic", "os", "get", "Caption,Version", "/value"],
-                         # When wmic.exe output is redirected to a pipe,
-                         # it uses the OEM code page
-                         encoding="oem")
-    if output:
-        for line in output.splitlines():
-            line = line.strip()
-            if line.startswith('Caption='):
-                line = line.removeprefix('Caption=').strip()
-                if line:
-                    info_add('windows.version_caption', line)
-            elif line.startswith('Version='):
-                line = line.removeprefix('Version=').strip()
-                if line:
-                    info_add('windows.version', line)
+    # Get operating system caption and version using WMI
+    data = wmi_query("SELECT Caption, Version FROM Win32_OperatingSystem")
+    caption = data.get('Caption', '')
+    if caption:
+        info_add('windows.version_caption', caption)
+    version = data.get('Version', '')
+    if version:
+        info_add('windows.version', version)
 
     # windows.ver: "ver" command
     output = run_command(["ver"], shell=True)
@@ -1142,7 +1159,97 @@ def get_machine_id():
     return None
 
 
-def detect_virt():
+def detect_virt_windows(info_add):
+    # On Windows, use WMI to detect the virtualization.
+    #
+    # Microsoft Hyper-V:
+    # - Win32_Bios.Version = 'VRTUAL - 12001807'
+    # - Win32_Bios.Manufacturer = 'American Megatrends Inc.'
+    # - Win32_ComputerSystem.Model = 'Virtual Machine'
+    # - Win32_ComputerSystem.Manufacturer = 'Microsoft Corporation'
+    #
+    # VMware:
+    # - Win32_ComputerSystem.Model = 'VMware'
+    # - Win32_ComputerSystem.Manufacturer = 'VMWare' (uppercase W in Ware)
+    # - Win32_Bios.SerialNumber starts with 'VMware-'
+    #
+    # QEMU:
+    # - Win32_ComputerSystem.Manufacturer = 'QEMU'
+    # - Win32_ComputerSystem.Model = 'Standard PC (Q35 + ICH9, 2009)'
+    # - Win32_Bios.Version = 'BOCHS  - 1'
+    # - Win32_Bios.Manufacturer = 'EDK II'
+    #
+    # Parallels:
+    # - Win32_Bios.Version = 'PARALLELS'
+    #
+    # VirtualBox:
+    # - Win32_Bios.Version = 'VBOX'
+    # - Win32_ComputerSystem.Model = 'VirtualBox'
+    # - Win32_ComputerSystem.Manufacturer = 'innotek GmbH'
+    #
+    # Amazon EC2:
+    # - Win32_Bios.Version = 'AMAZON - 1'
+    # - Win32_Bios.Manufacturer = 'Amazon EC2'
+    # - Win32_ComputerSystem.Model = 'm7i.4xlarge'
+    # - Win32_ComputerSystem.Manufacturer = 'Amazon EC2'
+
+    KNOWN_VIRT = (
+        'Amazon EC2',
+        'QEMU',
+        'VMware',
+        'VirtualBox',
+        'Xen',
+        'oVirt',
+    )
+    KNOWN_BIOS_VERSIONS = {
+        'PARALLELS': 'Parallels',
+        'VBOX': 'VirtualBox',
+    }
+
+    computer = wmi_query('SELECT Model, Manufacturer FROM Win32_ComputerSystem')
+    computer_model = computer.get('Model', '')
+    computer_manufacturer = computer.get('Manufacturer', '')
+    if computer_manufacturer == 'Amazon EC2':
+        # Log the VM model (ex: 'm7i.4xlarge')
+        info_add('system.computer.model', computer_model)
+        return computer_manufacturer
+    if computer_model in KNOWN_VIRT:
+        return computer_model
+    if computer_manufacturer in KNOWN_VIRT:
+        return computer_manufacturer
+
+    bios = wmi_query('SELECT Version, Manufacturer FROM Win32_Bios')
+
+    bios_version = bios.get('Version', '')
+    if bios_version in KNOWN_VIRT:
+        return bios_version
+    if (bios_version.startswith('VRTUAL - ')
+        and computer_manufacturer == 'Microsoft Corporation'):
+        return 'Microsoft Hyper-V'
+    try:
+        return KNOWN_BIOS_VERSIONS[bios_version]
+    except KeyError:
+        pass
+
+    bios_manufacturer = bios.get('Manufacturer', '')
+    if bios_manufacturer in KNOWN_VIRT:
+        return bios_manufacturer
+
+    # Log the values to update the code if a new VM is discovered
+    if computer_model:
+        info_add('system.computer.model', computer_model)
+    if computer_manufacturer:
+        info_add('system.computer.manufacturer', computer_manufacturer)
+    if bios_version:
+        info_add('system.bios.version', bios_version)
+    if bios_manufacturer:
+        info_add('system.bios.manufacturer', bios_manufacturer)
+
+
+def detect_virt(info_add):
+    if MS_WINDOWS:
+        return detect_virt_windows(info_add)
+
     # Run systemd-detect-virt command
     virt = run_command(["systemd-detect-virt"], check=False)
     if virt and virt != "none":
@@ -1200,7 +1307,7 @@ def collect_system(info_add):
             uptime = f'{uptime} sec'
         info_add('system.uptime', uptime)
 
-    virt = detect_virt()
+    virt = detect_virt(info_add)
     if virt:
         info_add('system.virt', virt)
 
@@ -1208,6 +1315,12 @@ def collect_system(info_add):
         hardware = run_command(['sysctl', '-n', 'hw.model'])
         if hardware:
             info_add('system.hardware', hardware)
+
+
+def collect_importlib(info_add):
+    import importlib.machinery
+    info_add('importlib.extension_suffixes',
+             importlib.machinery.EXTENSION_SUFFIXES)
 
 
 def collect_info(info):
@@ -1252,6 +1365,7 @@ def collect_info(info):
         collect_zstd,
         collect_libregrtest_utils,
         collect_system,
+        collect_importlib,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
