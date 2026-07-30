@@ -7931,6 +7931,7 @@ class TestColorized(TestCase):
 
         help_text = parser.format_help()
         self.assertIn(f"foo (default: {interp}bar{reset})", help_text)
+        self.assertIn("baz plain text", help_text)
 
     def test_help_with_format_specifiers(self):
         # GH-142950: format specifiers like %x should work with color=True
