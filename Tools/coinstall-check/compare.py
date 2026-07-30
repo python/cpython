@@ -47,7 +47,7 @@ def compare_install_manifests(base: Path) -> bool:
         print("Insufficient platforms (architectures) to compare. Expected >= 2")
         success = False
 
-    for platform, tagsets in tags_seen_by_platform.items():
+    for tagsets in tags_seen_by_platform.values():
         if len(tagsets) >= 2:
             break
     else:
