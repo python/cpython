@@ -328,20 +328,17 @@ class Sniffer:
             delim = ''
             skipinitialspace = 0
 
-        # if we see an extra quote between delimiters, we've got a
-        # double quoted format
+        # A doubled quote character inside a quoted field means
+        # a double quoted format.  Match whole fields, so that a match
+        # cannot slide across field boundaries.
         dq_regexp = re.compile(
-                r"(?:%(delim)s|^) *+%(quote)s"              # ,"
-                r"[^%(quote)s]*+%(quote)s%(quote)s"         # the doubled quote
-                r"(?:%(quote)s%(quote)s|[^%(quote)s]++)*+"  # the rest of the field
-                r"%(quote)s(?:%(delim)s|$)"                 # ",
+                r"(?:(?<=%(delim)s)|^) *+%(quote)s"           # ,"
+                r"((?:%(quote)s%(quote)s|[^%(quote)s]++)*+)"  # the body
+                r"%(quote)s(?:%(delim)s|$)"                   # ",
                 % {'delim': re.escape(delim), 'quote': quotechar},
                 re.MULTILINE)
-
-        if dq_regexp.search(data):
-            doublequote = True
-        else:
-            doublequote = False
+        dquotechar = quotechar * 2
+        doublequote = any(dquotechar in m[1] for m in dq_regexp.finditer(data))
 
         return (quotechar, doublequote, delim, skipinitialspace)
 
