@@ -1246,6 +1246,48 @@ class AbstractUnpickleTests:
         #   15: .    STOP
         self.assertEqual(self.loads(pickled), 42)
 
+    def test_frame_ends_at_opcode_boundary(self):
+        # A frame may end exactly between two opcodes; the following opcodes
+        # are then read from outside the frame.
+        for pickled in [
+            b'\x80\x04\x95\x01\x00\x00\x00\x00\x00\x00\x00N.',  # FRAME 1, NONE, STOP
+            b'\x80\x04\x95\x00\x00\x00\x00\x00\x00\x00\x00N.',  # empty FRAME, NONE, STOP
+        ]:
+            with self.subTest(pickled=pickled):
+                self.assertIsNone(self.loads(pickled))
+
+    def test_frame_does_not_straddle_boundary(self):
+        # An opcode or its argument must not cross a frame boundary
+        # (PEP 3154).  Such a pickle must be rejected rather than silently
+        # reading past the declared frame length, which would make the
+        # meaning of the pickle diverge from its pickletools disassembly.
+        # See gh-154848.
+        for pickled in [
+            # FRAME 6; UNICODE argument read by readline() straddles the frame.
+            b'\x80\x04\x95\x06\x00\x00\x00\x00\x00\x00\x00Vhelloworld\n.',
+            # FRAME 6; BINUNICODE argument straddles the frame.
+            b'\x80\x04\x95\x06\x00\x00\x00\x00\x00\x00\x00'
+            b'X\x0a\x00\x00\x00helloworld.',
+            # FRAME 3; SHORT_BINBYTES argument straddles the frame.
+            b'\x80\x04\x95\x03\x00\x00\x00\x00\x00\x00\x00C\x0ahelloworld.',
+            # FRAME 9; GLOBAL argument (second line) straddles the frame.
+            b'\x80\x04\x95\x09\x00\x00\x00\x00\x00\x00\x00cbuiltins\nprint\n.',
+        ]:
+            self.check_unpickling_error(self.truncated_errors, pickled)
+
+    def test_nested_frame(self):
+        # A new frame must not begin before the current one has ended: here
+        # the outer frame still has data left after the inner frame header.
+        pickled = (b'\x80\x04\x95\x0c\x00\x00\x00\x00\x00\x00\x00'
+                   b'N\x95\x00\x00\x00\x00\x00\x00\x00\x00NN.')
+        self.check_unpickling_error(self.truncated_errors, pickled)
+
+        # But the inner frame header may lie inside the outer frame as long as
+        # it exactly consumes it.
+        pickled = (b'\x80\x04\x95\x0a\x00\x00\x00\x00\x00\x00\x00'
+                   b'N\x95\x00\x00\x00\x00\x00\x00\x00\x00N.')
+        self.assertIsNone(self.loads(pickled))
+
     def test_compat_unpickle(self):
         # xrange(1, 7)
         pickled = b'\x80\x02c__builtin__\nxrange\nK\x01K\x07K\x01\x87R.'
