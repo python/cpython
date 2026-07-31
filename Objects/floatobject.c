@@ -1929,7 +1929,7 @@ PyFloat_Pack2(double x, char *data, int le)
          * canonical NaN of the new type".  The canonical NaN here
          * is a positive qNaN with zero payload. */
         if (v & (1ULL << 63)) {
-            u16 |= (1 << 15); /* set sign */
+            u16 |= (1U << 15); /* set sign */
         }
         /* add payload */
         u16 -= (u16 & 0x1ff);
@@ -2196,7 +2196,7 @@ PyFloat_Unpack2(const char *data, int le)
             u64 &= ~(1ULL << 51);
         }
         /* Workaround RISC-V, see PyFloat_Pack4() */
-        if (v & (1 << 15)) {
+        if (v & (1U << 15)) {
             u64 |= (1ULL << 63); /* set sign */
         }
         /* add payload */
