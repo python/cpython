@@ -1,5 +1,8 @@
 name: Reusable Ubuntu co-install comparison
 
+on:
+  workflow_call: {}
+
 permissions:
   contents: read
 
