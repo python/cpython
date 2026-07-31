@@ -7257,6 +7257,12 @@ case $ac_sys_system in #(
  ;;
 esac
 
+if test x$SOABI_PLATFORM != x; then
+
+printf "%s\n" "#define SOABI_PLATFORM \"${SOABI_PLATFORM}\"" >>confdefs.h
+
+fi
+
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
@@ -19875,6 +19881,15 @@ ac_fn_c_check_func "$LINENO" "dlopen" "ac_cv_func_dlopen"
 if test "x$ac_cv_func_dlopen" = xyes
 then :
   printf "%s\n" "#define HAVE_DLOPEN 1" >>confdefs.h
+
+fi
+
+
+# Used by ctypes.util.dllist().
+ac_fn_c_check_func "$LINENO" "dl_iterate_phdr" "ac_cv_func_dl_iterate_phdr"
+if test "x$ac_cv_func_dl_iterate_phdr" = xyes
+then :
+  printf "%s\n" "#define HAVE_DL_ITERATE_PHDR 1" >>confdefs.h
 
 fi
 
