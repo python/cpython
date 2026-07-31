@@ -45,7 +45,7 @@ jobs:
         -e -v
         ${{ inputs.interpreter == 'switch-case' && '-d' || '--tail-call-interp -c Release' }}
         -p "${ARCH}"
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
       shell: bash
     - name: Display build info
       run: .\\python.bat -m test.pythoninfo
@@ -55,5 +55,5 @@ jobs:
         -p "${ARCH}"
         -q --fast-ci
         ${{ inputs.interpreter == 'switch-case' && '-d' || '' }}
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
       shell: bash
