@@ -35,6 +35,22 @@ The :mod:`!gc` module provides the following functions:
    Return ``True`` if automatic collection is enabled.
 
 
+.. function:: ensure_disabled()
+
+   Return a context manager that temporarily disables the garbage
+   collector.  The collector is disabled at the start of the ``with``
+   block and restored to its previous state on exit::
+
+      with gc.ensure_disabled():
+          ...  # GC is disabled during this block
+
+   Nesting is supported — each level saves and restores its own state.
+   If the collector was already disabled before entering the block, it
+   remains disabled after exit.
+
+   .. versionadded:: 3.16
+
+
 .. function:: collect(generation=2)
 
    With no arguments, run a full collection.  The optional argument *generation*
