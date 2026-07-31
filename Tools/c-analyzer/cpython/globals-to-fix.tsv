@@ -454,3 +454,4 @@ Modules/rotatingtree.c	-	random_value	-
 Modules/rotatingtree.c	-	random_mutex	-
 Modules/socketmodule.c	-	accept4_works	-
 Modules/socketmodule.c	-	sock_cloexec_works	-
+Modules/gcmodule.c	-	_GCEnsureDisabled_Type	-

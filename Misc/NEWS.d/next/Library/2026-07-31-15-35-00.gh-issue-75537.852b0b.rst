@@ -1,2 +1,2 @@
 Add :func:`gc.ensure_disabled` context manager to temporarily disable
-the garbage collector.  By Saksham Kapoor in :issue:`75537`.
+the garbage collector.
