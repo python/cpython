@@ -13,7 +13,7 @@ import sys
 import tempfile
 from functools import partial
 from pkgutil import ModuleInfo
-from unittest import TestCase, skipUnless, skipIf, SkipTest
+from unittest import TestCase, skipUnless, SkipTest
 from unittest.mock import Mock, patch
 import warnings
 from test.support import (
@@ -37,6 +37,7 @@ from .support import (
     code_to_events,
 )
 from _colorize import ANSIColors, get_theme
+from _pyrepl import terminfo
 from _pyrepl.console import Event
 from _pyrepl.completing_reader import stripcolor
 from _pyrepl._module_completer import (
@@ -1998,8 +1999,20 @@ class TestDumbTerminal(ReplTestCase):
         self.assertNotIn("Traceback", output)
 
 
+def supports_pyrepl():
+    # pyrepl falls back to the basic REPL if the terminal lacks any of the
+    # capabilities which UnixConsole requires.  This covers an unset or
+    # "dumb" TERM as well, they are resolved to the "dumb" capabilities.
+    try:
+        info = terminfo.TermInfo(None)
+    except Exception:
+        return False
+    return all(info.get(cap) is not None
+               for cap in ("bel", "clear", "cup", "el"))
+
+
 @skipUnless(pty, "requires pty")
-@skipIf((os.environ.get("TERM") or "dumb") == "dumb", "can't use pyrepl in dumb terminal")
+@skipUnless(supports_pyrepl(), "can't use pyrepl in this terminal")
 class TestMain(ReplTestCase):
     def setUp(self):
         # Cleanup from PYTHON* variables to isolate from local

@@ -24,9 +24,12 @@ class PyMemDebugTests(unittest.TestCase):
             out = assert_python_failure(
                 '-c', code,
                 PYTHONMALLOC=self.PYTHONMALLOC,
-                # FreeBSD: instruct jemalloc to not fill freed() memory
-                # with junk byte 0x5a, see JEMALLOC(3)
+                # Instruct the system allocator to not fill freed() memory
+                # with junk bytes:
+                # FreeBSD: jemalloc, see JEMALLOC(3).
                 MALLOC_CONF="junk:false",
+                # OpenBSD: see MALLOC.CONF(5).
+                MALLOC_OPTIONS="j",
             )
         stderr = out.err
         return stderr.decode('ascii', 'replace')
@@ -102,7 +105,9 @@ class PyMemDebugTests(unittest.TestCase):
         assert_python_ok(
             '-c', code,
             PYTHONMALLOC=self.PYTHONMALLOC,
+            # See the comment in check() above.
             MALLOC_CONF="junk:false",
+            MALLOC_OPTIONS="j",
         )
 
     def test_pyobject_null_is_freed(self):
@@ -117,9 +122,7 @@ class PyMemDebugTests(unittest.TestCase):
     def test_pyobject_freed_is_freed(self):
         self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
 
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.nomemtest
     def test_set_nomemory(self):
         code = """if 1:
             import _testcapi

@@ -1,6 +1,21 @@
 Pending removal in Python 3.21
 ------------------------------
 
+* The ``__getformat__()`` class method of the :class:`float` is deprecated and
+  will be removed in Python 3.21.  On CPython, ``float.__getformat__()`` always
+  return a string, prefixed with ``"IEEE"``: to build CPython, you need support
+  for IEEE 754 floating-point numbers since Python 3.11.  (Contributed by
+  Sergey B Kirpichev in :gh:`85989`.)
+
+* :mod:`abc`
+
+   * Soft-deprecated since Python 3.3 :class:`abc.abstractclassmethod`,
+     :class:`abc.abstractstaticmethod`, and :class:`abc.abstractproperty`
+     now raise a :exc:`DeprecationWarning`.
+     These classes will be removed in Python 3.21, instead
+     use :func:`abc.abstractmethod` with :func:`classmethod`,
+     :func:`staticmethod`, and :class:`property` respectively.
+
 * :mod:`ast`:
 
   * Classes ``slice``, ``Index``, ``ExtSlice``, ``Suite``, ``Param``,
@@ -9,8 +24,13 @@ Pending removal in Python 3.21
   * The ``dims`` property of ``ast.Tuple`` will be removed in Python 3.21. Use
     the ``ast.Tuple.elts`` property instead.
 
-* The ``__getformat__()`` class method of the :class:`float` is deprecated and
-  will be removed in Python 3.21.  On CPython, ``float.__getformat__()`` always
-  return a string, prefixed with ``"IEEE"``: to build CPython, you need support
-  for IEEE 754 floating-point numbers since Python 3.11.  (Contributed by
-  Sergey B Kirpichev in :gh:`85989`.)
+* :mod:`struct`:
+
+  * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now
+    deprecated.  These codes will be removed in Python 3.21.  Use instead
+    two-letter forms ``'Zf'`` and ``'Zd'``.
+
+* :mod:`tempfile`:
+
+  * ``tempfile._TemporaryFileWrapper`` will be removed in Python 3.21. Use the
+    public :class:`tempfile.TemporaryFileWrapper` instead.

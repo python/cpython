@@ -165,6 +165,7 @@ class JsonlCollector(StackTraceCollector):
             )
             self._write_message(output, self._build_end_record())
         print(f"JSONL profile written to {filename}")
+        return True
 
     def _build_meta_record(self):
         record = {

@@ -1,5 +1,6 @@
 import os
 import time
+from typing import Callable
 
 from test.support import MS_WINDOWS
 from .results import TestResults
@@ -19,16 +20,27 @@ class Logger:
         self._results: TestResults = results
         self._quiet: bool = quiet
         self._pgo: bool = pgo
+        self.get_mem_usage: Callable[[], int | None] | None = None
 
     def log(self, line: str = '') -> None:
         empty = not line
 
-        # add the system load prefix: "load avg: 1.80 "
+        # Add the memory usage: "mem: 1 GiB "
+        if self.get_mem_usage is not None:
+            mem = self.get_mem_usage()
+            if mem:
+                mib = mem / (1024*1024)
+                if mib >= 1024:
+                    line = f"mem: {mib / 1024:.1f} GiB {line}"
+                else:
+                    line = f"mem: {mib:.1f} MiB {line}"
+
+        # Add the system load prefix: "load avg: 1.80 "
         load_avg = self.get_load_avg()
         if load_avg is not None:
             line = f"load avg: {load_avg:.2f} {line}"
 
-        # add the timestamp prefix:  "0:01:05 "
+        # Add the timestamp prefix:  "0:01:05 "
         log_time = time.perf_counter() - self.start_time
 
         mins, secs = divmod(int(log_time), 60)
