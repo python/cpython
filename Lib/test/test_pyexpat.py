@@ -956,6 +956,13 @@ class ParentParserLifetimeTest(unittest.TestCase):
         del parser
         del subparser
 
+    def test_subparser_inherits_reparse_deferral(self):
+        for enabled in (True, False):
+            parser = expat.ParserCreate()
+            parser.SetReparseDeferralEnabled(enabled)
+            subparser = parser.ExternalEntityParserCreate(None)
+            self.assertEqual(subparser.GetReparseDeferralEnabled(), enabled)
+
 
 class ExternalEntityParserCreateErrorTest(unittest.TestCase):
     """ExternalEntityParserCreate error paths should not crash or leak
