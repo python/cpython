@@ -2201,7 +2201,7 @@ PyFloat_Unpack2(const char *data, int le)
         }
         /* add payload */
         u64 -= (u64 & 0x7ffffffffffffULL);
-        u64 += ((v & 0x1ff) << 42);
+        u64 += ((v & 0x1ffULL) << 42);
 
         memcpy(&y, &u64, 8);
         return y;
