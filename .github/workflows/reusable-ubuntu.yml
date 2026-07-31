@@ -58,7 +58,7 @@ jobs:
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Install Clang and BOLT
-      if: fromJSON(inputs.bolt-optimizations)
+      if: inputs.bolt-optimizations
       run: |
         # On ubuntu-26.04 image, LLVM is LLVM-21 by default
         sudo apt-get install --no-install-recommends bolt-21
@@ -99,9 +99,9 @@ jobs:
         --enable-slower-safety
         --enable-safety
         --with-openssl="$OPENSSL_DIR"
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
-        ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
-        ${{ fromJSON(inputs.upload-install-hashes) && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
+        ${{ inputs.bolt-optimizations && '--enable-bolt' || '' }}
+        ${{ inputs.upload-install-hashes && '--prefix=/usr --libdir=/usr/lib/$(gcc --print-multiarch) --with-build-details-suffix' || '' }}
     - name: Build CPython out-of-tree
       if: inputs.free-threading
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
