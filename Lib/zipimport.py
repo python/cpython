@@ -584,12 +584,13 @@ def _get_zlib_decompress_func():
 
 _importing_zstd = False
 _zstd_decompressor_class = None
+_zstd_get_frame_size = None
 
 # Return the _zstd.ZstdDecompressor function object, or NULL if _zstd couldn't
 # be imported. The result is cached when found.
 def _get_zstd_decompressor_class():
-    global _zstd_decompressor_class
-    if _zstd_decompressor_class:
+    global _zstd_decompressor_class, _zstd_get_frame_size
+    if _zstd_decompressor_class and _zstd_get_frame_size:
         return _zstd_decompressor_class
 
     global _importing_zstd
@@ -601,7 +602,10 @@ def _get_zstd_decompressor_class():
 
     _importing_zstd = True
     try:
-        from _zstd import ZstdDecompressor as _zstd_decompressor_class
+        from _zstd import (
+            ZstdDecompressor as _zstd_decompressor_class,
+            get_frame_size as _zstd_get_frame_size,
+        )
     except Exception:
         _bootstrap._verbose_message("zipimport: zstd UNAVAILABLE")
         raise ZipImportError("can't decompress data; zstd not available")
@@ -615,16 +619,24 @@ def _get_zstd_decompressor_class():
 def _zstd_decompress(data):
     # A simple version of compression.zstd.decompress() as we cannot import
     # that here as the stdlib itself could be being zipimported.
+    decomp_class = _get_zstd_decompressor_class()
+    data = memoryview(data)
+    if not data:
+        raise ZipImportError("zipimport: zstd compressed data ended before "
+                             "the end-of-stream marker")
     results = []
-    while True:
-        decomp = _get_zstd_decompressor_class()()
-        results.append(decomp.decompress(data))
+    while data:
+        try:
+            frame_size = _zstd_get_frame_size(data)
+        except Exception:
+            raise ZipImportError("zipimport: zstd compressed data ended before "
+                                 "the end-of-stream marker") from None
+        decomp = decomp_class()
+        results.append(decomp.decompress(data[:frame_size]))
         if not decomp.eof:
             raise ZipImportError("zipimport: zstd compressed data ended before "
                                  "the end-of-stream marker")
-        data = decomp.unused_data
-        if not data:
-            break
+        data = data[frame_size:]
     return b"".join(results)
 
 
