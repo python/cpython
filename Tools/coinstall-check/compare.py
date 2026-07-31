@@ -6,6 +6,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
+import _colorize
 import gzip
 import json
 
@@ -14,6 +15,7 @@ def compare_install_manifests(base: Path) -> bool:
     """Compare all json manifests inside the directory at base."""
     hashes_seen: dict[str, tuple[str, str]] = {}
     tags_seen_by_platform: dict[str, set[frozenset[str]]] = {}
+    colors = _colorize.get_colors()
 
     success: bool = True
     for tree in base.iterdir():
@@ -37,20 +39,26 @@ def compare_install_manifests(base: Path) -> bool:
                 continue
             expected, source_name = hashes_seen[path]
             if digest != expected:
-                print(f"Mismatch found: {path}")
+                print(f"{colors.RED}Mismatch found{colors.RESET}: {path}")
                 print(f"{digest} ({tree.name}) != {expected} ({source_name})")
                 success = False
 
     # Did we see enough builds to make a useful comparison?
     if len(tags_seen_by_platform) < 2:
-        print("Insufficient platforms (architectures) to compare. Expected >= 2")
+        print(
+            f"{colors.RED}ERROR{colors.RESET}: Insufficient platforms "
+            "(architectures) to compare. Expected >= 2."
+        )
         success = False
 
     for tagsets in tags_seen_by_platform.values():
         if len(tagsets) >= 2:
             break
     else:
-        print("Insufficient configuration variants tested. Expected >= 2")
+        print(
+            f"{colors.RED}ERROR{colors.RESET}: Insufficient configuration "
+            f"variants tested. Expected >= 2."
+        )
         success = False
 
     return success
@@ -111,6 +119,9 @@ def main() -> None:
     args = p.parse_args()
     if not compare_install_manifests(args.base_directory):
         raise SystemExit(1)
+
+    colors = _colorize.get_colors()
+    print(f"{args.base_directory} {colors.GREEN}OK{colors.RESET}")
 
 
 if __name__ == "__main__":
