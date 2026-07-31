@@ -243,6 +243,10 @@ class Sniffer:
     def sniff(self, sample, delimiters=None):
         """
         Returns a dialect (or None) corresponding to the sample
+
+        If several delimiters fit the sample equally well, the
+        delimiters listed in the preferred attribute are preferred, in
+        that order, no matter how many times each of them occurs.
         """
 
         quotechar, doublequote, delimiter, skipinitialspace = \
