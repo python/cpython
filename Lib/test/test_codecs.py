@@ -3679,10 +3679,11 @@ _ICONV_MULTIBYTE = ['EUC-JP', 'SHIFT_JIS', 'GBK', 'GB18030', 'BIG5']
 # Encodings iconv may provide but for which CPython has no built-in codec
 # (cp1047 is EBCDIC, i.e. not ASCII-compatible).
 _ICONV_ONLY = ['cp1047', 'cp1133', 'GEORGIAN-PS', 'ARMSCII-8']
-# Encodings that leave a shift state pending, so encoding ends with a flush.
-_ICONV_SHIFT_STATE = [('ISO-2022-CN-EXT', 'ABC\u4e2dDEF'),
-                      ('ISO-2022-CN', 'ABC\u4e2dDEF'),
-                      ('ISO-2022-JP', 'ABC\u65e5DEF')]
+# Stateful encodings, with a character that leaves a shift state pending.
+_ICONV_SHIFT_STATE = [('ISO-2022-CN-EXT', '\u4e2d'),
+                      ('ISO-2022-CN', '\u4e2d'),
+                      ('ISO-2022-JP', '\u65e5'),
+                      ('ISO-2022-KR', '\ud55c')]
 
 
 @unittest.skipUnless(hasattr(codecs, 'iconv_encode'),
@@ -3734,6 +3735,31 @@ class IconvTest(unittest.TestCase):
                          b'a\\u20acb')
         self.assertEqual(codecs.iconv_encode(enc, 'a€b', 'xmlcharrefreplace')[0],
                          b'a&#8364;b')
+
+    def test_encode_errors_shift_state(self):
+        # A replacement must not land inside a shifted region.
+        cases = [('replace', '?'),
+                 ('ignore', ''),
+                 ('backslashreplace', '\\U0001f600'),
+                 ('xmlcharrefreplace', '&#128512;')]
+        tested = False
+        for enc, char in _ICONV_SHIFT_STATE:
+            if not iconv_encoding_available(enc):
+                continue
+            data = codecs.iconv_encode(enc, char)[0]
+            if codecs.iconv_decode(enc, data, 'strict', True)[0] != char:
+                # iconv substituted the character instead of encoding it.
+                continue
+            tested = True
+            text = char + '\U0001f600' + char
+            for errors, replacement in cases:
+                with self.subTest(encoding=enc, errors=errors):
+                    data = codecs.iconv_encode(enc, text, errors)[0]
+                    self.assertEqual(
+                        codecs.iconv_decode(enc, data, 'strict', True)[0],
+                        char + replacement + char)
+        if not tested:
+            self.skipTest('no stateful iconv encoding is available')
 
     def test_decode_errors(self):
         enc = self.require('ASCII')
@@ -3827,12 +3853,12 @@ class IconvTest(unittest.TestCase):
         # An iconv that cannot represent the character either rejects it or
         # substitutes for it silently, as macOS does for ISO-2022-CN.
         tested = False
-        for enc, text in _ICONV_SHIFT_STATE:
+        for enc, char in _ICONV_SHIFT_STATE:
             if not iconv_encoding_available(enc):
                 continue
             with self.subTest(encoding=enc):
                 try:
-                    data = codecs.iconv_encode(enc, text)[0]
+                    data = codecs.iconv_encode(enc, 'ABC' + char + 'DEF')[0]
                 except UnicodeEncodeError:
                     continue
                 tested = True

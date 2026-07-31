@@ -8368,6 +8368,29 @@ iconv_grow_writer(PyBytesWriter *writer, char **pout, char **poutend)
     return 0;
 }
 
+/* Return the output and the conversion to the initial shift state; a stateless
+   encoding writes nothing.  Returns 0 on success, -1 on error. */
+static int
+iconv_reset_shift_state(iconv_t cd, PyBytesWriter *writer,
+                        char **pout, char **poutend)
+{
+    for (;;) {
+        size_t outleft = (size_t)(*poutend - *pout);
+        /* Only -1 is a failure; a positive result counts nonreversible
+           conversions. */
+        if (iconv(cd, NULL, NULL, pout, &outleft) != (size_t)-1) {
+            return 0;
+        }
+        if (errno != E2BIG) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        if (iconv_grow_writer(writer, pout, poutend) < 0) {
+            return -1;
+        }
+    }
+}
+
 /*
  * Encode a str to bytes with iconv().
  *
@@ -8531,28 +8554,27 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
             replen = PyBytes_GET_SIZE(repbytes);
         }
 
-        while (outend - out < replen) {
-            if (iconv_grow_writer(writer, &out, &outend) < 0) {
-                if (repbytes != NULL) {
-                    Py_DECREF(repbytes);
-                }
-                else {
-                    Py_DECREF(rep);
-                }
-                goto done;
-            }
+        /* The replacement is copied verbatim, so the output must return to the
+           initial shift state first, or it reads back as encoded data. */
+        int failed = replen > 0
+                     && iconv_reset_shift_state(cd, writer, &out, &outend) < 0;
+        while (!failed && outend - out < replen) {
+            failed = iconv_grow_writer(writer, &out, &outend) < 0;
         }
-        memcpy(out, repdata, replen);
-        out += replen;
+        if (!failed) {
+            memcpy(out, repdata, replen);
+            out += replen;
+        }
         if (repbytes != NULL) {
             Py_DECREF(repbytes);
         }
         else {
             Py_DECREF(rep);
         }
+        if (failed) {
+            goto done;
+        }
         up = ustart + (size_t)newpos * unit;
-        /* Reset the shift state after the injected replacement bytes. */
-        iconv(cd, NULL, NULL, NULL, NULL);
     }
 
     if (PyBytesWriter_Resize(writer, out - (char *)PyBytesWriter_GetData(writer)) < 0) {
