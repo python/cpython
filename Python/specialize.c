@@ -1457,6 +1457,14 @@ _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
     _Py_CODEUNIT *instr, PyObject *name)
 {
+#ifdef Py_GIL_DISABLED
+    if (PyMutex_IsLocked(&globals->ob_mutex) || PyMutex_IsLocked(&builtins->ob_mutex)) {
+        // Skip specialization if either dictionary is locked to avoid lock
+        // contention.
+        unspecialize(instr);
+        return;
+    }
+#endif
     Py_BEGIN_CRITICAL_SECTION2(globals, builtins);
     specialize_load_global_lock_held(globals, builtins, instr, name);
     Py_END_CRITICAL_SECTION2();
