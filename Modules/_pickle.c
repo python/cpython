@@ -664,6 +664,10 @@ typedef struct UnpicklerObject {
     Py_ssize_t input_len;
     Py_ssize_t next_read_idx;
     Py_ssize_t prefetched_idx;  /* index of first prefetched byte */
+    Py_ssize_t frame_end;       /* End of the current frame, or -1 if not in a
+                                   frame.  While in a frame, input_len is capped
+                                   here so reads can't cross it (PEP 3154). */
+    Py_ssize_t saved_input_len; /* input_len to restore when the frame ends. */
 
     PyObject *read;             /* read() method of the input stream. */
     PyObject *readinto;         /* readinto() method of the input stream. */
@@ -1240,6 +1244,7 @@ _Unpickler_SetStringInput(UnpicklerObject *self, PyObject *input)
     self->input_len = self->buffer.len;
     self->next_read_idx = 0;
     self->prefetched_idx = self->input_len;
+    self->frame_end = -1;
     return self->input_len;
 }
 
@@ -1248,6 +1253,30 @@ bad_readline(PickleState *st)
 {
     PyErr_SetString(st->UnpicklingError, "pickle data was truncated");
     return -1;
+}
+
+/* End the current frame, uncapping input_len.  The frame must be fully read. */
+static void
+_Unpickler_EndFrame(UnpicklerObject *self)
+{
+    assert(self->frame_end >= 0);
+    assert(self->next_read_idx == self->frame_end);
+    self->input_len = self->saved_input_len;
+    self->frame_end = -1;
+}
+
+/* Reached the end of the current frame.  If straddle, the read crosses the
+   frame boundary (PEP 3154) and fails; otherwise end the frame. */
+static int
+_Unpickler_LeaveFrame(PickleState *st, UnpicklerObject *self, int straddle)
+{
+    if (straddle) {
+        PyErr_SetString(st->UnpicklingError,
+                        "pickle exhausted before end of frame");
+        return -1;
+    }
+    _Unpickler_EndFrame(self);
+    return 0;
 }
 
 /* Skip any consumed data that was only prefetched using peek() */
@@ -1355,6 +1384,19 @@ _Unpickler_ReadImpl(UnpicklerObject *self, PickleState *st, char **s, Py_ssize_t
         return -1;
     }
 
+    if (self->frame_end >= 0) {
+        if (_Unpickler_LeaveFrame(st, self,
+                                  self->next_read_idx < self->frame_end) < 0) {
+            return -1;
+        }
+        /* Frame ended; the read may now be satisfied from the buffer. */
+        if (n <= self->input_len - self->next_read_idx) {
+            *s = self->input_buffer + self->next_read_idx;
+            self->next_read_idx += n;
+            return n;
+        }
+    }
+
     /* This case is handled by the _Unpickler_Read() macro for efficiency */
     assert(self->next_read_idx + n > self->input_len);
 
@@ -1397,6 +1439,25 @@ _Unpickler_ReadInto(PickleState *state, UnpicklerObject *self, char *buf,
         if (n == 0) {
             /* Entire read was satisfied from buffer */
             return n;
+        }
+    }
+
+    if (self->frame_end >= 0) {
+        /* in_buffer > 0 is next_read_idx < frame_end on entry: frame data was
+           consumed above, so the read crosses the frame boundary. */
+        if (_Unpickler_LeaveFrame(state, self, in_buffer > 0) < 0) {
+            return -1;
+        }
+        in_buffer = self->input_len - self->next_read_idx;
+        if (in_buffer > 0) {
+            Py_ssize_t to_read = Py_MIN(in_buffer, n);
+            memcpy(buf, self->input_buffer + self->next_read_idx, to_read);
+            self->next_read_idx += to_read;
+            buf += to_read;
+            n -= to_read;
+            if (n == 0) {
+                return n;
+            }
         }
     }
 
@@ -1508,6 +1569,7 @@ _Unpickler_Readline(PickleState *state, UnpicklerObject *self, char **result)
 {
     Py_ssize_t i, num_read;
 
+rescan:
     for (i = self->next_read_idx; i < self->input_len; i++) {
         if (self->input_buffer[i] == '\n') {
             char *line_start = self->input_buffer + self->next_read_idx;
@@ -1515,6 +1577,14 @@ _Unpickler_Readline(PickleState *state, UnpicklerObject *self, char **result)
             self->next_read_idx = i + 1;
             return _Unpickler_CopyLine(self, line_start, num_read, result);
         }
+    }
+    if (self->frame_end >= 0) {
+        if (_Unpickler_LeaveFrame(state, self,
+                                  self->next_read_idx < self->frame_end) < 0) {
+            return -1;
+        }
+        /* Frame ended; continue the line past its end. */
+        goto rescan;
     }
     if (!self->read)
         return bad_readline(state);
@@ -1645,6 +1715,8 @@ _Unpickler_New(PyObject *module)
     self->input_len = 0;
     self->next_read_idx = 0;
     self->prefetched_idx = 0;
+    self->frame_end = -1;
+    self->saved_input_len = 0;
     self->read = NULL;
     self->readinto = NULL;
     self->readline = NULL;
@@ -6844,6 +6916,17 @@ load_frame(PickleState *state, UnpicklerObject *self)
     if (_Unpickler_Read(self, state, &s, 8) < 0)
         return -1;
 
+    /* A new frame must not begin before the current one ends (PEP 3154).  Its
+       header may lie at the tail of the current frame if it drains it. */
+    if (self->frame_end >= 0) {
+        if (self->next_read_idx < self->frame_end) {
+            PyErr_SetString(state->UnpicklingError,
+                    "beginning of a new frame before end of current frame");
+            return -1;
+        }
+        _Unpickler_EndFrame(self);
+    }
+
     frame_len = calc_binsize(s, 8);
     if (frame_len < 0) {
         PyErr_Format(PyExc_OverflowError,
@@ -6857,6 +6940,12 @@ load_frame(PickleState *state, UnpicklerObject *self)
 
     /* Rewind to start of frame */
     self->next_read_idx -= frame_len;
+
+    /* Cap input_len at the frame end so reads can't cross it (PEP 3154);
+       _Unpickler_EndFrame() restores it when the frame is fully read. */
+    self->frame_end = self->next_read_idx + frame_len;
+    self->saved_input_len = self->input_len;
+    self->input_len = self->frame_end;
     return 0;
 }
 
