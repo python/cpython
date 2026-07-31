@@ -8520,11 +8520,19 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
             replen = PyBytes_GET_SIZE(rep);
         }
         else {
-            /* A str replacement is encoded through the same codec. */
+            /* A str replacement is encoded through the same codec, but
+               strictly: handling its errors in turn could never terminate. */
             assert(PyUnicode_Check(rep));
-            repbytes = _PyUnicode_EncodeIconv(encoding, rep, errors);
+            repbytes = _PyUnicode_EncodeIconv(encoding, rep, NULL);
             Py_DECREF(rep);
             if (repbytes == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                    /* Report the input the caller knows about, not the
+                       replacement. */
+                    PyErr_Clear();
+                    raise_encode_exception(&exc, encoding, unicode, pos, pos + 1,
+                            "unable to encode error handler result");
+                }
                 goto done;
             }
             repdata = PyBytes_AS_STRING(repbytes);
