@@ -1929,14 +1929,14 @@ PyFloat_Pack2(double x, char *data, int le)
          * canonical NaN of the new type".  The canonical NaN here
          * is a positive qNaN with zero payload. */
         if (v & (1ULL << 63)) {
-            u16 |= (1U << 15); /* set sign */
+            u16 |= (uint16_t)(1U << 15); /* set sign */
         }
         /* add payload */
         u16 -= (u16 & 0x1ff);
         u16 += (uint16_t)((v & 0x7ffffffffffffULL) >> 42);
         /* if have payload, make sNaN */
         if ((v & (1ULL << 51)) == 0 && (u16 & 0x1ff)) {
-            u16 &= ~(1 << 9);
+            u16 &= ~(uint16_t)(1 << 9);
         }
 
         memcpy(&y, &u16, 2);
