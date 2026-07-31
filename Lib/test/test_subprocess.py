@@ -2428,26 +2428,26 @@ class POSIXProcessTestCase(BaseTestCase):
             p.wait()
         self.assertEqual(-p.returncode, signal.SIGABRT)
 
-    def test_CalledProcessError_str_signal(self):
-        err = subprocess.CalledProcessError(-int(signal.SIGABRT), "fake cmd")
-        error_string = str(err)
-        # We're relying on the repr() of the signal.Signals intenum to provide
-        # the word signal, the signal name and the numeric value.
-        self.assertIn("signal", error_string.lower())
-        # We're not being specific about the signal name as some signals have
-        # multiple names and which name is revealed can vary.
-        self.assertIn("SIG", error_string)
-        self.assertIn(str(signal.SIGABRT), error_string)
-
-    def test_CalledProcessError_str_unknown_signal(self):
-        err = subprocess.CalledProcessError(-9876543, "fake cmd")
-        error_string = str(err)
-        self.assertIn("unknown signal 9876543.", error_string)
-
-    def test_CalledProcessError_str_non_zero(self):
+    def test_CalledProcessError_str(self):
+        # command string
         err = subprocess.CalledProcessError(2, "fake cmd")
-        error_string = str(err)
-        self.assertIn("non-zero exit status 2.", error_string)
+        self.assertEqual(str(err), "Command 'fake cmd' returned non-zero exit status 2.")
+
+        # command string with a single-quote
+        err = subprocess.CalledProcessError(2, "fake ' cmd")
+        self.assertEqual(str(err), 'Command "fake \' cmd" returned non-zero exit status 2.')
+
+        # command list
+        err = subprocess.CalledProcessError(2, ["fake", "cmd"])
+        self.assertEqual(str(err), "Command ['fake', 'cmd'] returned non-zero exit status 2.")
+
+        # signal
+        err = subprocess.CalledProcessError(-int(signal.SIGABRT), "fake cmd")
+        self.assertEqual(str(err), f"Command 'fake cmd' died with {signal.SIGABRT!r}.")
+
+        # unknown signal
+        err = subprocess.CalledProcessError(-9876543, "fake cmd")
+        self.assertEqual(str(err), "Command 'fake cmd' died with unknown signal 9876543.")
 
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
@@ -4299,6 +4299,32 @@ class FastWaitTestCase(BaseTestCase):
                 p.wait(self.WAIT_TIMEOUT)
             self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
         self.assertFalse(m.called)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_huge_timeout(self):
+        # gh-154836: very large timeout values used to overflow the C
+        # timestamp conversion in poll() / kqueue.control() and raise
+        # OverflowError / TypeError.
+        for timeout in (10**10, sys.maxsize, float('inf')):
+            with self.subTest(timeout=timeout):
+                p = subprocess.Popen(ZERO_RETURN_CMD)
+                self.assertEqual(p.wait(timeout=timeout), 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_run_huge_timeout(self):
+        # gh-154836: same as test_wait_huge_timeout, via the
+        # subprocess.run() / communicate() code path.
+        cp = subprocess.run(ZERO_RETURN_CMD, timeout=1e10)
+        self.assertEqual(cp.returncode, 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_slices_do_not_expire_early(self):
+        # A clamped wait slice must not raise TimeoutExpired before the
+        # real deadline: with a tiny slice limit, a process that
+        # outlives many slices must still be waited for successfully.
+        with mock.patch.object(subprocess, "_MAXIMUM_WAIT_TIMEOUT", 0.01):
+            p = subprocess.Popen(self.COMMAND)  # sleeps 0.3s
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
 
 if __name__ == "__main__":
     unittest.main()

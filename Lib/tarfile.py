@@ -546,7 +546,9 @@ class _Stream:
         if pos - self.pos >= 0:
             blocks, remainder = divmod(pos - self.pos, self.bufsize)
             for i in range(blocks):
-                self.read(self.bufsize)
+                data = self.read(self.bufsize)
+                if not data:
+                    break
             self.read(remainder)
         else:
             raise StreamError("seeking backwards is not allowed")
@@ -2127,7 +2129,7 @@ class TarFile(object):
             if mode == 'r':
                 raise ReadError("not a zstd file") from e
             raise
-        except Exception:
+        except:
             fileobj.close()
             raise
         t._extfileobj = False
@@ -2253,7 +2255,7 @@ class TarFile(object):
             type = FIFOTYPE
         elif stat.S_ISLNK(stmd):
             type = SYMTYPE
-            linkname = os.readlink(name)
+            linkname = os.readlink(name).replace(os.sep, "/")
         elif stat.S_ISCHR(stmd):
             type = CHRTYPE
         elif stat.S_ISBLK(stmd):
@@ -2532,7 +2534,8 @@ class TarFile(object):
         tarinfo, unfiltered = self._get_extract_tarinfo(
             member, filter_function, path)
         if tarinfo is not None:
-            self._extract_one(tarinfo, path, set_attrs, numeric_owner)
+            self._extract_one(tarinfo, path, set_attrs, numeric_owner,
+                              filter_function=filter_function)
 
     def _get_extract_tarinfo(self, member, filter_function, path):
         """Get (filtered, unfiltered) TarInfos from *member*
@@ -2810,6 +2813,9 @@ class TarFile(object):
                     "makelink_with_filter: if filter_function is not None, "
                     + "extraction_root must also not be None")
             try:
+                filter_function(
+                    unfiltered.replace(name=tarinfo.name, deep=False),
+                    extraction_root)
                 filtered = filter_function(unfiltered, extraction_root)
             except _FILTER_ERRORS as cause:
                 raise LinkFallbackError(tarinfo, unfiltered.name) from cause
