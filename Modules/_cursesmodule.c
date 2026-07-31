@@ -463,7 +463,7 @@ curses_window_check_err(PyCursesWindowObject *win, int code,
 static int
 PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
 {
-    long value;
+    unsigned long long value;
     if (PyBytes_Check(obj)) {
         if (PyBytes_GET_SIZE(obj) != 1) {
             PyErr_Format(PyExc_TypeError,
@@ -493,20 +493,18 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
             bytes = PyUnicode_AsEncodedString(obj, encoding, NULL);
             if (bytes == NULL)
                 return 0;
-            if (PyBytes_GET_SIZE(bytes) == 1)
-                value = (unsigned char)PyBytes_AS_STRING(bytes)[0];
-            else
-                value = -1;
-            Py_DECREF(bytes);
-            if (value < 0)
+            if (PyBytes_GET_SIZE(bytes) != 1) {
+                Py_DECREF(bytes);
                 goto overflow;
+            }
+            value = (unsigned char)PyBytes_AS_STRING(bytes)[0];
+            Py_DECREF(bytes);
         }
     }
     else if (PyLong_CheckExact(obj)) {
-        int long_overflow;
-        value = PyLong_AsLongAndOverflow(obj, &long_overflow);
-        if (long_overflow)
-            goto overflow;
+        value = PyLong_AsUnsignedLongLong(obj);
+        if (value == (unsigned long long)-1 && PyErr_Occurred())
+            return 0;
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -515,7 +513,7 @@ PyCurses_ConvertToChtype(PyCursesWindowObject *win, PyObject *obj, chtype *ch)
         return 0;
     }
     *ch = (chtype)value;
-    if ((long)*ch != value)
+    if ((unsigned long long)*ch != value)
         goto overflow;
     return 1;
 
@@ -587,7 +585,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
 #endif
                           )
 {
-    long value;
+    unsigned long long value;
 
     if (PyUnicode_Check(obj)) {
 #ifdef HAVE_NCURSESW
@@ -610,11 +608,8 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
         value = (unsigned char)PyBytes_AsString(obj)[0];
     }
     else if (PyLong_CheckExact(obj)) {
-        int overflow;
-        value = PyLong_AsLongAndOverflow(obj, &overflow);
-        if (overflow) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "int doesn't fit in long");
+        value = PyLong_AsUnsignedLongLong(obj);
+        if (value == (unsigned long long)-1 && PyErr_Occurred()) {
             return 0;
         }
     }
@@ -626,7 +621,7 @@ PyCurses_ConvertToCchar_t(PyCursesWindowObject *win, PyObject *obj,
     }
 
     *ch = (chtype)value;
-    if ((long)*ch != value) {
+    if ((unsigned long long)*ch != value) {
         PyErr_Format(PyExc_OverflowError,
                      "byte doesn't fit in chtype");
         return 0;
@@ -1082,14 +1077,14 @@ attr_converter(PyObject *arg, void *ptr)
 {
     /* attr_t is unsigned and at least as wide as chtype, so an attribute
        value must be a non-negative integer that fits in attr_t. */
-    unsigned long attr = PyLong_AsUnsignedLong(arg);
-    if (attr == (unsigned long)-1 && PyErr_Occurred()) {
+    unsigned long long attr = PyLong_AsUnsignedLongLong(arg);
+    if (attr == (unsigned long long)-1 && PyErr_Occurred()) {
         return 0;
     }
-    if (attr > (unsigned long)(attr_t)-1) {
+    if (attr > (unsigned long long)(attr_t)-1) {
         PyErr_Format(PyExc_OverflowError,
-                     "attribute value is greater than maximum (%lu)",
-                     (unsigned long)(attr_t)-1);
+                     "attribute value is greater than maximum (%llu)",
+                     (unsigned long long)(attr_t)-1);
         return 0;
     }
     *(attr_t *)ptr = (attr_t)attr;
@@ -1224,7 +1219,7 @@ complexchar_get_attr(PyObject *self, void *Py_UNUSED(closure))
             &_PyCursesComplexCharObject_CAST(self)->cval, &attrs, &pair) < 0) {
         return NULL;
     }
-    return PyLong_FromUnsignedLong((unsigned long)attrs);
+    return PyLong_FromUnsignedLongLong((unsigned long long)attrs);
 }
 
 static PyObject *
@@ -1998,7 +1993,7 @@ PyCursesWindow_New(cursesmodule_state *state,
 {
     if (encoding == NULL) {
 #if defined(MS_WINDOWS)
-        char *buffer[100];
+        char buffer[100];
         UINT cp;
         cp = GetConsoleOutputCP();
         if (cp != 0) {
@@ -2603,7 +2598,7 @@ static PyObject *
 _curses_window_getattrs_impl(PyCursesWindowObject *self)
 /*[clinic end generated code: output=835f499205204ec4 input=bf56a0af5b730bd1]*/
 {
-    return PyLong_FromUnsignedLong((unsigned long)(attr_t)getattrs(self->win));
+    return PyLong_FromUnsignedLongLong((unsigned long long)(attr_t)getattrs(self->win));
 }
 
 /*[clinic input]
@@ -3142,7 +3137,7 @@ _curses_window_getbkgd_impl(PyCursesWindowObject *self)
         curses_window_set_error(self, "getbkgd", NULL);
         return NULL;
     }
-    return PyLong_FromLong(rtn);
+    return PyLong_FromUnsignedLongLong(rtn);
 }
 
 /*[clinic input]
@@ -3713,9 +3708,8 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     chtype rtn;
     const char *funcname;
 #ifdef HAVE_NCURSESW
-    /* ncursesw's winch() returns the character's whole code point instead of
-       its locale byte, overflowing the chtype's 8-bit character field into the
-       color and attribute bits; read the wide cell and rebuild it instead. */
+    /* ncursesw's winch() returns the whole code point, which overflows the
+       chtype's 8-bit character field into the color and attribute bits. */
     cchar_t cell = {0};
     int rc;
     if (!group_right_1) {
@@ -3759,7 +3753,7 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
         return NULL;
     }
 #endif
-    return PyLong_FromUnsignedLong(rtn);
+    return PyLong_FromUnsignedLongLong(rtn);
 }
 
 PyDoc_STRVAR(_curses_window_instr__doc__,
@@ -5776,7 +5770,7 @@ _curses_color_pair_impl(PyObject *module, int pair_number)
                      pair_number, (int)PAIR_NUMBER(A_COLOR));
         return NULL;
     }
-    return PyLong_FromLong(attr);
+    return PyLong_FromUnsignedLongLong(attr);
 }
 
 /*[clinic input]
@@ -6562,9 +6556,14 @@ curses_init_dict(PyObject *module)
     }
     /* This was moved from initcurses() because it core dumped on SGI,
        where they're not defined until you've called initscr() */
+    /* Use long long, not long: a chtype constant (the A_* attributes, ACS_*
+       and key codes) can set bits beyond a 32-bit long, which is what long is
+       on LLP64 platforms such as Windows -- A_DIM (0x80000000) would otherwise
+       be sign-extended to a negative number.  long long is at least 64 bits
+       everywhere and still represents the negative ERR (-1). */
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
-        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
         if (value == NULL) {                                        \
             return -1;                                              \
         }                                                           \
@@ -7531,7 +7530,7 @@ _curses_pair_content_impl(PyObject *module, int pair_number)
 @permit_long_summary
 _curses.pair_number
 
-    attr: int
+    attr: attr
     /
 
 Return the number of the color-pair set by the specified attribute value.
@@ -7540,8 +7539,8 @@ color_pair() is the counterpart to this function.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_pair_number_impl(PyObject *module, int attr)
-/*[clinic end generated code: output=85bce7d65c0aa3f4 input=b11152a78c2f9abf]*/
+_curses_pair_number_impl(PyObject *module, attr_t attr)
+/*[clinic end generated code: output=04cafc9083329197 input=562273b1a12a06d2]*/
 {
     PyCursesStatefulInitialised(module);
     PyCursesStatefulInitialisedColor(module);
@@ -7872,7 +7871,7 @@ _curses_start_color_impl(PyObject *module)
     }
 #define DICT_ADD_INT_VALUE(NAME, VALUE)                             \
     do {                                                            \
-        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
         if (value == NULL) {                                        \
             return NULL;                                            \
         }                                                           \
@@ -7899,7 +7898,11 @@ Return a logical OR of all video attributes supported by the terminal.
 static PyObject *
 _curses_termattrs_impl(PyObject *module)
 /*[clinic end generated code: output=b06f437fce1b6fc4 input=0559882a04f84d1d]*/
-NoArgReturnIntFunctionBody(termattrs)
+{
+    PyCursesStatefulInitialised(module);
+
+    return PyLong_FromUnsignedLong((unsigned long)(chtype)termattrs());
+}
 
 #ifdef HAVE_CURSES_TERM_ATTRS
 /*[clinic input]
@@ -7917,7 +7920,7 @@ _curses_term_attrs_impl(PyObject *module)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyLong_FromUnsignedLong(term_attrs());
+    return PyLong_FromUnsignedLongLong(term_attrs());
 }
 #endif /* HAVE_CURSES_TERM_ATTRS */
 
@@ -8437,15 +8440,15 @@ NoArgNoReturnFunctionBody(slk_touch)
 /*[clinic input]
 _curses.slk_attron
 
-    attr: long
+    attr: attr
     /
 
 Add the given chtype attributes to the soft labels.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_slk_attron_impl(PyObject *module, long attr)
-/*[clinic end generated code: output=01aa29848a58ab50 input=fa198a604e3eec04]*/
+_curses_slk_attron_impl(PyObject *module, attr_t attr)
+/*[clinic end generated code: output=c2a4bfac8ddbbf20 input=c2cfffeb7ce6a86e]*/
 {
     PyCursesStatefulInitialised(module);
     return curses_check_err(module, slk_attron((chtype)attr),
@@ -8455,15 +8458,15 @@ _curses_slk_attron_impl(PyObject *module, long attr)
 /*[clinic input]
 _curses.slk_attroff
 
-    attr: long
+    attr: attr
     /
 
 Remove the given chtype attributes from the soft labels.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_slk_attroff_impl(PyObject *module, long attr)
-/*[clinic end generated code: output=7b172cc37a17811f input=21dab55d43d30b8f]*/
+_curses_slk_attroff_impl(PyObject *module, attr_t attr)
+/*[clinic end generated code: output=321a3b4dc61119bb input=2593027e03cbd302]*/
 {
     PyCursesStatefulInitialised(module);
     return curses_check_err(module, slk_attroff((chtype)attr),
@@ -8473,15 +8476,15 @@ _curses_slk_attroff_impl(PyObject *module, long attr)
 /*[clinic input]
 _curses.slk_attrset
 
-    attr: long
+    attr: attr
     /
 
 Set the chtype attributes of the soft labels.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_slk_attrset_impl(PyObject *module, long attr)
-/*[clinic end generated code: output=1139e2b0f757edfd input=d5c798956a5f046a]*/
+_curses_slk_attrset_impl(PyObject *module, attr_t attr)
+/*[clinic end generated code: output=f396b745cb23fc01 input=5faafda445b2b158]*/
 {
     PyCursesStatefulInitialised(module);
     return curses_check_err(module, slk_attrset((chtype)attr),
@@ -8500,7 +8503,7 @@ _curses_slk_attr_impl(PyObject *module)
 /*[clinic end generated code: output=6d47752f82bdc29f input=be38805fdec52149]*/
 {
     PyCursesStatefulInitialised(module);
-    return PyLong_FromUnsignedLong((unsigned long)slk_attr());
+    return PyLong_FromUnsignedLongLong((unsigned long long)slk_attr());
 }
 #endif
 
@@ -9080,6 +9083,17 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
 
+    /* Whether a cell holds a character or a single byte of the locale
+       encoding, decided when the module is built. */
+#ifdef HAVE_NCURSESW
+    rc = PyDict_SetItemString(module_dict, "_wide_character_support", Py_True);
+#else
+    rc = PyDict_SetItemString(module_dict, "_wide_character_support", Py_False);
+#endif
+    if (rc < 0) {
+        return -1;
+    }
+
     /* Make the version available */
     PyObject *curses_version = PyBytes_FromString(PyCursesVersion);
     if (curses_version == NULL) {
@@ -9118,7 +9132,7 @@ cursesmodule_exec(PyObject *module)
 
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
-        PyObject *value = PyLong_FromLong((long)(VALUE));           \
+        PyObject *value = PyLong_FromUnsignedLongLong((unsigned long long)(VALUE));  \
         if (value == NULL) {                                        \
             return -1;                                              \
         }                                                           \
