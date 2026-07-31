@@ -65,6 +65,80 @@ gc_isenabled_impl(PyObject *module)
     return PyGC_IsEnabled();
 }
 
+
+/* Context manager to temporarily disable the garbage collector. */
+
+typedef struct {
+    PyObject_HEAD
+    int old_state;
+} _gc_ensure_disabled_state;
+
+static void
+_gc_ensure_disabled_dealloc(PyObject *self)
+{
+    PyObject_Free(self);
+}
+
+static PyObject *
+_gc_ensure_disabled_enter(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+_gc_ensure_disabled_exit(PyObject *self, PyObject *args)
+{
+    _gc_ensure_disabled_state *s = (_gc_ensure_disabled_state *)self;
+    if (s->old_state) {
+        PyGC_Enable();
+    }
+    Py_RETURN_NONE;
+    if (s->old_state) {
+        PyGC_Enable();
+    }
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef _gc_ensure_disabled_methods[] = {
+    {"__enter__", _gc_ensure_disabled_enter, METH_NOARGS, NULL},
+    {"__exit__", _gc_ensure_disabled_exit, METH_VARARGS, NULL},
+    {NULL, NULL, 0, NULL}
+};
+
+static PyTypeObject _GCEnsureDisabled_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "gc._ensure_disabled",
+    .tp_basicsize = sizeof(_gc_ensure_disabled_state),
+    .tp_dealloc = _gc_ensure_disabled_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = _gc_ensure_disabled_methods,
+};
+
+
+PyDoc_STRVAR(gc_ensure_disabled__doc__,
+"ensure_disabled() -> context manager\n"
+"\n"
+"Context manager to temporarily disable the garbage collector.\n"
+"\n"
+"At the start of the block the garbage collector is disabled.\n"
+"On exit, it is restored to its previous state.\n"
+"\n"
+"Example:\n"
+"    with gc.ensure_disabled():\n"
+"        ...  # GC is disabled during this block\n");
+
+static PyObject *
+gc_ensure_disabled(PyObject *module, PyObject *Py_UNUSED(args))
+{
+    _gc_ensure_disabled_state *ctx = PyObject_New(
+        _gc_ensure_disabled_state, &_GCEnsureDisabled_Type);
+    if (ctx == NULL) {
+        return NULL;
+    }
+    ctx->old_state = PyGC_Disable();
+    return (PyObject *)ctx;
+}
+
 /*[clinic input]
 gc.collect -> Py_ssize_t
 
@@ -521,7 +595,8 @@ PyDoc_STRVAR(gc__doc__,
 "get_referents() -- Return the list of objects that an object refers to.\n"
 "freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
 "unfreeze() -- Unfreeze all objects in the permanent generation.\n"
-"get_freeze_count() -- Return the number of objects in the permanent generation.\n");
+"get_freeze_count() -- Return the number of objects in the permanent generation.\n"
+"ensure_disabled() -- Context manager to temporarily disable the garbage collector.\n");
 
 static PyMethodDef GcMethods[] = {
     GC_ENABLE_METHODDEF
@@ -542,6 +617,7 @@ static PyMethodDef GcMethods[] = {
     GC_FREEZE_METHODDEF
     GC_UNFREEZE_METHODDEF
     GC_GET_FREEZE_COUNT_METHODDEF
+    {"ensure_disabled", gc_ensure_disabled, METH_NOARGS, gc_ensure_disabled__doc__},
     {NULL,      NULL}           /* Sentinel */
 };
 
@@ -549,6 +625,10 @@ static int
 gcmodule_exec(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
+
+    if (PyType_Ready(&_GCEnsureDisabled_Type) < 0) {
+        return -1;
+    }
 
     /* garbage and callbacks are initialized by _PyGC_Init() early in
      * interpreter lifecycle. */

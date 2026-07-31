@@ -1680,6 +1680,38 @@ class GCTogglingTests(unittest.TestCase):
 
         self.assertEqual(i, 50001)
 
+    def test_ensure_disabled(self):
+        # gc.ensure_disabled() context manager
+        self.assertTrue(gc.isenabled())
+        with gc.ensure_disabled():
+            self.assertFalse(gc.isenabled())
+        self.assertTrue(gc.isenabled())
+
+    def test_ensure_disabled_nesting(self):
+        self.assertTrue(gc.isenabled())
+        with gc.ensure_disabled():
+            self.assertFalse(gc.isenabled())
+            with gc.ensure_disabled():
+                self.assertFalse(gc.isenabled())
+            self.assertFalse(gc.isenabled())
+        self.assertTrue(gc.isenabled())
+
+    def test_ensure_disabled_already_disabled(self):
+        gc.disable()
+        self.assertFalse(gc.isenabled())
+        with gc.ensure_disabled():
+            self.assertFalse(gc.isenabled())
+        self.assertFalse(gc.isenabled())
+        gc.enable()
+
+    def test_ensure_disabled_exception(self):
+        self.assertTrue(gc.isenabled())
+        with self.assertRaises(ValueError):
+            with gc.ensure_disabled():
+                self.assertFalse(gc.isenabled())
+                raise ValueError("test")
+        self.assertTrue(gc.isenabled())
+
 
 class PythonFinalizationTests(unittest.TestCase):
     def test_ast_fini(self):
