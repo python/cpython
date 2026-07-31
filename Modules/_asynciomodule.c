@@ -769,7 +769,6 @@ future_get_result(asyncio_state *state, FutureObj *fut, PyObject **result)
             return -1;
         }
         *result = Py_NewRef(fut->fut_exception);
-        Py_CLEAR(fut->fut_exception_tb);
         return 1;
     }
 
