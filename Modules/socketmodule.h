@@ -96,7 +96,7 @@ typedef int socklen_t;
 
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
-#elif HAVE_AFUNIX_H
+#elif defined(HAVE_AFUNIX_H)
 # include <afunix.h>
 #else
 # undef AF_UNIX

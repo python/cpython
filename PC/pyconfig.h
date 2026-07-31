@@ -674,10 +674,10 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #define HAVE_SYS_UN_H 1 */
 
 /* Define if you have the <afunix.h> header file.  */
-#if defined(__has_include) && __has_include(<afunix.h>)
-    #define HAVE_AFUNIX_H 1
-#else
-    #define HAVE_AFUNIX_H 0
+#ifdef __has_include
+#  if __has_include(<afunix.h>)
+#    define HAVE_AFUNIX_H 1
+#  endif
 #endif
 
 /* Define if you have the <sys/utime.h> header file.  */
