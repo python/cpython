@@ -646,7 +646,14 @@ _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
         assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
         return inst;
     }
+    /* The code object may have been created with hand-crafted bytecode
+     * containing opcodes that only the instrumentation machinery is supposed
+     * to write. In that case the data needed to recover the base code unit
+     * does not exist, so return the code unit as-is. */
     if (opcode == ENTER_EXECUTOR) {
+        if (code->co_executors == NULL || inst.op.arg >= code->co_executors->size) {
+            return inst;
+        }
         _PyExecutorObject *exec = code->co_executors->executors[inst.op.arg];
         opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
         inst.op.code = opcode;
@@ -655,9 +662,17 @@ _Py_GetBaseCodeUnit(PyCodeObject *code, int i)
         return inst;
     }
     if (opcode == INSTRUMENTED_LINE) {
+        if (code->_co_monitoring == NULL || code->_co_monitoring->lines == NULL) {
+            return inst;
+        }
         opcode = _PyCode_GetOriginalOpcode(code->_co_monitoring->lines, i);
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
+        if (code->_co_monitoring == NULL ||
+            code->_co_monitoring->per_instruction_opcodes == NULL)
+        {
+            return inst;
+        }
         opcode = code->_co_monitoring->per_instruction_opcodes[i];
     }
     CHECK(opcode != INSTRUMENTED_INSTRUCTION);

@@ -1,0 +1,5 @@
+Fix a crash when hashing or comparing a code object whose bytecode was
+hand-crafted to contain ``INSTRUMENTED_LINE``, ``INSTRUMENTED_INSTRUCTION``
+or ``ENTER_EXECUTOR``. Such a code object has no instrumentation or executor
+data attached to it, so the corresponding pointers were dereferenced while
+still ``NULL``.

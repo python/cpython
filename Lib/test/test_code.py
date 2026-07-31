@@ -631,6 +631,24 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(hash(c), hash(c1))
 
     @cpython_only
+    def test_code_hash_with_crafted_instrumented_bytecode(self):
+        # gh-154985: hashing or comparing a code object with hand-crafted
+        # bytecode containing opcodes that are normally only written by the
+        # instrumentation machinery must not crash, even though the code
+        # object has no monitoring data attached to it.
+        code = (lambda x, y: x + y).__code__
+        opcodes = [op for name, op in opmap.items()
+                   if name.startswith('INSTRUMENTED_')]
+        opcodes.append(opmap['ENTER_EXECUTOR'])
+        for op in opcodes:
+            with self.subTest(opname[op]):
+                co_code = bytes([op, 0, opmap['RETURN_VALUE'], 0])
+                crafted = code.replace(co_code=co_code)
+                self.assertIsInstance(hash(crafted), int)
+                self.assertEqual(crafted, code.replace(co_code=co_code))
+                self.assertNotEqual(crafted, code)
+
+    @cpython_only
     def test_code_equal_with_instrumentation(self):
         """ GH-109052
 
