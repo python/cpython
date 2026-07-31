@@ -6379,7 +6379,8 @@ class TestUnixDomain(unittest.TestCase):
                 raise
 
     @unittest.skipIf(sys.platform == 'win32',
-                     'Windows will raise Error if is not bound')
+                     'getsockname() raises OSError on an unbound socket on '
+                     'Windows')
     def testUnbound(self):
         # Issue #30205 (note getsockname() can return None on OS X)
         self.assertIn(self.sock.getsockname(), ('', None))
@@ -6406,7 +6407,9 @@ class TestUnixDomain(unittest.TestCase):
         self.assertEqual(self.sock.getsockname(), path)
 
     @unittest.skipIf(sys.platform == 'win32',
-                     'surrogateescape file path is not supported on Windows')
+                     'Windows replaces invalid UTF-8 sequences in the path '
+                     'with U+FFFD, so the socket file is created under a '
+                     'different name')
     def testSurrogateescapeBind(self):
         # Test binding to a valid non-ASCII pathname, with the
         # non-ASCII bytes supplied using surrogateescape encoding.
@@ -6417,8 +6420,9 @@ class TestUnixDomain(unittest.TestCase):
         self.assertEqual(self.sock.getsockname(), path)
 
     @unittest.skipIf(sys.platform == 'win32',
-                     'Windows has a bug which can\'t unlink sock file with '
-                     'TESTFN_UNENCODABLE in its name')
+                     'Windows replaces invalid UTF-8 sequences in the path '
+                     'with U+FFFD, so the socket file is created under a '
+                     'different name')
     def testUnencodableAddr(self):
         # Test binding to a pathname that cannot be encoded in the
         # file system encoding.
@@ -6432,7 +6436,7 @@ class TestUnixDomain(unittest.TestCase):
     @unittest.skipIf(sys.platform in ('linux', 'android'),
                      'Linux behavior is tested by TestLinuxAbstractNamespace')
     @unittest.skipIf(sys.platform == 'win32',
-                     'Windows allow bind on empty path')
+                     'Windows allows binding to an empty path')
     def testEmptyAddress(self):
         # Test that binding empty address fails.
         self.assertRaises(OSError, self.sock.bind, "")
