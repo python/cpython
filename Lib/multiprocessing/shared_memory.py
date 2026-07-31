@@ -65,7 +65,6 @@ class SharedMemory:
 
     # Defaults; enables close() and unlink() to run without errors.
     _name = None
-    _fd = -1
     _mmap = None
     _buf = None
     _flags = os.O_RDWR
@@ -92,7 +91,7 @@ class SharedMemory:
                 while True:
                     name = _make_filename()
                     try:
-                        self._fd = _posixshmem.shm_open(
+                        fd = _posixshmem.shm_open(
                             name,
                             self._flags,
                             mode=self._mode
@@ -103,7 +102,7 @@ class SharedMemory:
                     break
             else:
                 name = "/" + name if self._prepend_leading_slash else name
-                self._fd = _posixshmem.shm_open(
+                fd = _posixshmem.shm_open(
                     name,
                     self._flags,
                     mode=self._mode
@@ -111,13 +110,16 @@ class SharedMemory:
                 self._name = name
             try:
                 if create and size:
-                    os.ftruncate(self._fd, size)
-                stats = os.fstat(self._fd)
+                    os.ftruncate(fd, size)
+                stats = os.fstat(fd)
                 size = stats.st_size
-                self._mmap = mmap.mmap(self._fd, size)
+                self._mmap = mmap.mmap(fd, size)
             except OSError:
                 self.unlink()
                 raise
+            finally:
+                os.close(fd)
+
             if self._track:
                 resource_tracker.register(self._name, "shared_memory")
 
@@ -184,12 +186,6 @@ class SharedMemory:
         self._size = size
         self._buf = memoryview(self._mmap)
 
-    def __del__(self):
-        try:
-            self.close()
-        except OSError:
-            pass
-
     def __reduce__(self):
         return (
             self.__class__,
@@ -231,9 +227,6 @@ class SharedMemory:
         if self._mmap is not None:
             self._mmap.close()
             self._mmap = None
-        if _USE_POSIX and self._fd >= 0:
-            os.close(self._fd)
-            self._fd = -1
 
     def unlink(self):
         """Requests that the underlying shared memory block be destroyed.
