@@ -1,0 +1,2 @@
+Fix the pure Python :mod:`json` decoder to report the correct position for
+invalid literal control characters in JSON strings.
