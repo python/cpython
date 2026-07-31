@@ -93,10 +93,6 @@ _gc_ensure_disabled_exit(PyObject *self, PyObject *args)
         PyGC_Enable();
     }
     Py_RETURN_NONE;
-    if (s->old_state) {
-        PyGC_Enable();
-    }
-    Py_RETURN_NONE;
 }
 
 static PyMethodDef _gc_ensure_disabled_methods[] = {
