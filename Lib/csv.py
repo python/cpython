@@ -243,6 +243,8 @@ class Sniffer:
         Returns a dialect (or None) corresponding to the sample
         """
 
+        sample = sample.replace('\r\n', '\n').replace('\r', '\n')
+
         quotechar, doublequote, delimiter, skipinitialspace = \
                    self._guess_quote_and_delimiter(sample, delimiters)
         if not delimiter:
@@ -331,14 +333,17 @@ class Sniffer:
         # A doubled quote character inside a quoted field means
         # a double quoted format.  Match whole fields, so that a match
         # cannot slide across field boundaries.
-        dq_regexp = re.compile(
-                r"(?:(?<=%(delim)s)|^) *+%(quote)s"           # ,"
-                r"((?:%(quote)s%(quote)s|[^%(quote)s]++)*+)"  # the body
-                r"%(quote)s(?:%(delim)s|$)"                   # ",
-                % {'delim': re.escape(delim), 'quote': quotechar},
-                re.MULTILINE)
-        dquotechar = quotechar * 2
-        doublequote = any(dquotechar in m[1] for m in dq_regexp.finditer(data))
+        doublequote = False
+        if delim:
+            dq_regexp = re.compile(
+                    r"(?:(?<=%(delim)s)|^) *+%(quote)s"           # ,"
+                    r"((?:%(quote)s%(quote)s|[^%(quote)s]++)*+)"  # the body
+                    r"%(quote)s(?:%(delim)s|$)"                   # ",
+                    % {'delim': re.escape(delim), 'quote': quotechar},
+                    re.MULTILINE)
+            dquotechar = quotechar * 2
+            doublequote = any(dquotechar in m[1]
+                              for m in dq_regexp.finditer(data))
 
         return (quotechar, doublequote, delim, skipinitialspace)
 

@@ -1582,6 +1582,23 @@ ghi\0jkl
         self.assertEqual(next(csv.reader(StringIO(sample), dialect)),
                          [',', '', ','])
 
+    def test_sniff_doublequote_record_separators(self):
+        # The record separator ends a field as a delimiter does.
+        sniffer = csv.Sniffer()
+        for sep in '\n', '\r\n', '\r':
+            with self.subTest(sep=sep):
+                sample = ('x,"a""b"' + sep + 'y,"c"' + sep) * 2
+                self.assertIs(sniffer.sniff(sample).doublequote, True)
+                sample = ('"",","' + sep) * 4
+                self.assertIs(sniffer.sniff(sample).doublequote, False)
+
+    def test_sniff_single_column(self):
+        # This sample used to be quadratic.
+        sniffer = csv.Sniffer()
+        sample = '"a"\n' + ' ' * 100000
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
+            sniffer.sniff(sample, delimiters=',;')
+
 
 class NUL:
     def write(s, *args):
