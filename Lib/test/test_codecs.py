@@ -3746,7 +3746,11 @@ class IconvTest(unittest.TestCase):
         for enc, char in _ICONV_SHIFT_STATE:
             if not iconv_encoding_available(enc):
                 continue
-            data = codecs.iconv_encode(enc, char)[0]
+            try:
+                data = codecs.iconv_encode(enc, char)[0]
+            except UnicodeEncodeError:
+                # This iconv cannot represent the character.
+                continue
             if codecs.iconv_decode(enc, data, 'strict', True)[0] != char:
                 # iconv substituted the character instead of encoding it.
                 continue
