@@ -1,3 +1,3 @@
-:cls:`multiprocessing.shared_memory.SharedMemory` no longer holds on to a
+:class:`multiprocessing.shared_memory.SharedMemory` no longer holds on to a
 file descriptor on Posix platforms, and does not forcibly close its buffer
 when finalized.
