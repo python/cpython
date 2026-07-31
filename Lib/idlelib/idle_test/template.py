@@ -16,7 +16,7 @@ class Test(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.root.update_idletasks()
-##        for id in cls.root.tk.call('after', 'info'):
+##        for id in cls.root.after_info():
 ##            cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root

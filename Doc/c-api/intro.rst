@@ -737,9 +737,12 @@ the caller is said to *borrow* the reference. Nothing needs to be done for a
 
 Conversely, when a calling function passes in a reference to an  object, there
 are two possibilities: the function *steals* a  reference to the object, or it
-does not.  *Stealing a reference* means that when you pass a reference to a
-function, that function assumes that it now owns that reference, and you are not
-responsible for it any longer.
+does not.
+
+*Stealing a reference* means that when you pass a reference to a
+function, that function assumes that it now owns that reference.
+Since the new owner can use :c:func:`!Py_DECREF` at its discretion,
+you (the caller) must not use that reference after the call.
 
 .. index::
    single: PyList_SetItem (C function)
@@ -1160,7 +1163,7 @@ when defined by the compiler, will also implicitly enable :c:macro:`!Py_DEBUG`.
 In addition to the reference count debugging described below, extra checks are
 performed. See :ref:`Python Debug Build <debug-build>` for more details.
 
-Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
+Defining ``Py_TRACE_REFS`` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
 When defined, a circular doubly linked list of active objects is maintained by adding two extra
 fields to every :c:type:`PyObject`.  Total allocations are tracked as well.  Upon
