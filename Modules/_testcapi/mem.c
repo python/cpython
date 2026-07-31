@@ -345,6 +345,53 @@ test_setallocators(PyMemAllocatorDomain domain)
         goto fail;
     }
 
+    /* realloc(NULL, size) should behave like malloc(size) */
+    size_t size3 = 100;
+    void *ptr3;
+    switch(domain) {
+        case PYMEM_DOMAIN_RAW:
+            ptr3 = PyMem_RawRealloc(NULL, size3);
+            break;
+        case PYMEM_DOMAIN_MEM:
+            ptr3 = PyMem_Realloc(NULL, size3);
+            break;
+        case PYMEM_DOMAIN_OBJ:
+            ptr3 = PyObject_Realloc(NULL, size3);
+            break;
+        default:
+            ptr3 = NULL;
+            break;
+    }
+
+    CHECK_CTX("realloc(NULL, size)");
+    if (ptr3 == NULL) {
+        error_msg = "realloc(NULL, size) failed";
+        goto fail;
+    }
+    if (hook.realloc_ptr != NULL || hook.realloc_new_size != size3) {
+        error_msg = "realloc(NULL, size) invalid parameters";
+        goto fail;
+    }
+
+    hook.free_ptr = NULL;
+    switch(domain) {
+        case PYMEM_DOMAIN_RAW:
+            PyMem_RawFree(ptr3);
+            break;
+        case PYMEM_DOMAIN_MEM:
+            PyMem_Free(ptr3);
+            break;
+        case PYMEM_DOMAIN_OBJ:
+            PyObject_Free(ptr3);
+            break;
+    }
+
+    CHECK_CTX("realloc(NULL, size) free");
+    if (hook.free_ptr != ptr3) {
+        error_msg = "unexpected pointer passed to free";
+        goto fail;
+    }
+
     res = Py_NewRef(Py_None);
     goto finally;
 

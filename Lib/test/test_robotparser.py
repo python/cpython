@@ -188,6 +188,8 @@ class BaseRequestRateTest(BaseRobotTest):
                         parsed_request_rate.seconds,
                         self.request_rate.seconds
                     )
+                else:
+                    self.assertIsNone(parsed_request_rate)
 
 
 class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
@@ -244,6 +246,32 @@ Crawl-delay: pears
     good = ['/foo.html']
     # bug report says "/" should be denied, but that is not in the RFC
     bad = []
+
+
+class NonDecimalDigitsTest(BaseRequestRateTest, unittest.TestCase):
+    # Non-decimal Unicode digits pass str.isdigit() but int() rejects
+    # them, so the directive must be silently ignored, not raise.
+    robots_txt = """\
+User-Agent: *
+Disallow: /tmp/
+Crawl-delay: ²
+Request-rate: ²/5
+    """
+    good = ['/foo.html']
+    bad = ['/tmp/']
+    crawl_delay = None
+    request_rate = None
+
+
+class NonDecimalDenominatorTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /tmp/
+Request-rate: 5/²
+    """
+    good = ['/foo.html']
+    request_rate = None
+    bad = ['/tmp/']
 
 
 class AnotherInvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
@@ -771,6 +799,37 @@ class HttpErrorsTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         parser.read()
         self.assertFalse(parser.can_fetch("*", robots_url))
         self.assertFalse(parser.can_fetch("*", url + '/path/file.html'))
+
+
+class UserAgentSiteTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
+
+    class RobotHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.headers.get('User-Agent').startswith('Python-urllib'):
+                self.send_error(403, "Forbidden access")
+            else:
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"User-agent: *\nDisallow:")
+
+        def log_message(self, format, *args):
+            pass
+
+    def testUserAgentFilteringSite(self):
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        file_url = url + "/document"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(robots_url)
+        parser.read()
+        self.assertTrue(parser.disallow_all)
+        self.assertFalse(parser.can_fetch("*", file_url))
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(urllib.request.Request(robots_url, headers={'User-Agent': 'cybermapper'}))
+        parser.read()
+        self.assertFalse(parser.disallow_all)
+        self.assertTrue(parser.can_fetch("*", file_url))
 
 
 @support.requires_working_socket()

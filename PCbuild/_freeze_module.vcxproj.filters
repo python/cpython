@@ -463,6 +463,12 @@
     <ClCompile Include="..\Parser\lexer\lexer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\lexer\number.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\lexer\string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\lexer\buffer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -488,6 +494,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\tracemalloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\typecache.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\uniqueid.c">
@@ -559,6 +568,9 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\encodings\_win_cp_codecs.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\encodings\_iconv_codecs.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\io.py">

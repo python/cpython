@@ -184,10 +184,11 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*; the caller will own the new reference.  The reference to
-   the old value of *bytes* will be stolen.  If the new object cannot be
-   created, the old reference to *bytes* will still be discarded and the value
-   of *\*bytes* will be set to ``NULL``; the appropriate exception will be set.
+   appended to *bytes*; the caller will own the new reference.
+   The reference to the old value of *bytes* will be ":term:`stolen <steal>`".
+   If the new object cannot be created, the old reference to *bytes* will still
+   be "stolen", the value of *\*bytes* will be set to ``NULL``, and
+   the appropriate exception will be set.
 
    .. note::
       If *newpart* implements the buffer protocol, then the buffer
@@ -384,14 +385,18 @@ Getters
 
    Get the writer size.
 
+   The function does not invalidate pointers returned by
+   :c:func:`PyBytesWriter_GetData`.
+
    The function cannot fail.
 
 .. c:function:: void* PyBytesWriter_GetData(PyBytesWriter *writer)
 
    Get the writer data: start of the internal buffer.
 
-   The pointer is valid until :c:func:`PyBytesWriter_Finish` or
-   :c:func:`PyBytesWriter_Discard` is called on *writer*.
+   The pointer remains valid until a :c:type:`PyBytesWriter` function other
+   than :c:func:`PyBytesWriter_GetData` or :c:func:`PyBytesWriter_GetSize` is
+   called on *writer*.
 
    The function cannot fail.
 

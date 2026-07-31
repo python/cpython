@@ -180,10 +180,9 @@ that the bound `(a - 1)**2 < (n >> s) < (a + 1)**2` is maintained from one
 iteration to the next. A sketch of the proof of this is given below.
 
 In addition to the proof sketch, a formal, computer-verified proof
-of correctness (using Lean) of an equivalent recursive algorithm can be found
-here:
+of correctness (using Lean) of the algorithm can be found here:
 
-    https://github.com/mdickinson/snippets/blob/master/proofs/isqrt/src/isqrt.lean
+    https://github.com/mdickinson/snippets/tree/41ce2d256fef06fb32f24fe7014cfa95173ac5e0/proofs/isqrt
 
 
 Here's Python code equivalent to the C implementation below:
@@ -455,16 +454,20 @@ _isqrt_rem(PyObject *n, PyObject **rem)
     /* The correct result is either a or a - 1. Figure out which, and
        decrement a if necessary. */
 
-    /* a_too_large = n < a * a */
+    /* a_too_large = n < a * a.  Compare by value: n can be an instance
+       of an int subclass with an overridden __lt__ method. */
     b = PyNumber_Multiply(a, a);
     if (b == NULL) {
         goto error;
     }
-    a_too_large = PyObject_RichCompareBool(n, b, Py_LT);
-    if (a_too_large == -1) {
+    PyObject *cmp = PyLong_Type.tp_richcompare(n, b, Py_LT);
+    if (cmp == NULL) {
         Py_DECREF(b);
         goto error;
     }
+    assert(PyBool_Check(cmp));
+    a_too_large = (cmp == Py_True);
+    Py_DECREF(cmp);
 
     if (a_too_large) {
         if (rem) {
