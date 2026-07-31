@@ -3679,6 +3679,10 @@ _ICONV_MULTIBYTE = ['EUC-JP', 'SHIFT_JIS', 'GBK', 'GB18030', 'BIG5']
 # Encodings iconv may provide but for which CPython has no built-in codec
 # (cp1047 is EBCDIC, i.e. not ASCII-compatible).
 _ICONV_ONLY = ['cp1047', 'cp1133', 'GEORGIAN-PS', 'ARMSCII-8']
+# Encodings that leave a shift state pending, so encoding ends with a flush.
+_ICONV_SHIFT_STATE = [('ISO-2022-CN-EXT', 'ABC\u4e2dDEF'),
+                      ('ISO-2022-CN', 'ABC\u4e2dDEF'),
+                      ('ISO-2022-JP', 'ABC\u65e5DEF')]
 
 
 @unittest.skipUnless(hasattr(codecs, 'iconv_encode'),
@@ -3811,6 +3815,33 @@ class IconvTest(unittest.TestCase):
         for text in ('Gr\xfc\xdfe', 'ĀāĂ', 'A\U0001f389B'):
             with self.subTest(text=text):
                 self.assertEqual(text.encode('iconv:' + enc), text.encode(enc))
+
+    def test_encode_shift_state_flush(self):
+        # Encoding ends with a flush that emits the pending shift sequence.  Its
+        # return value counts nonreversible conversions, and some iconv
+        # implementations make it positive for the flush itself (glibc does for
+        # ISO-2022-CN-EXT).  That must not be read as a substituted character:
+        # doing so discarded the whole output, ASCII included.
+        #
+        # Only the ASCII around the character is checked, not a full round-trip.
+        # An iconv that cannot represent the character either rejects it or
+        # substitutes for it silently, as macOS does for ISO-2022-CN.
+        tested = False
+        for enc, text in _ICONV_SHIFT_STATE:
+            if not iconv_encoding_available(enc):
+                continue
+            with self.subTest(encoding=enc):
+                try:
+                    data = codecs.iconv_encode(enc, text)[0]
+                except UnicodeEncodeError:
+                    continue
+                tested = True
+                self.assertNotEqual(data, b'')
+                decoded = codecs.iconv_decode(enc, data, 'strict', True)[0]
+                self.assertStartsWith(decoded, 'ABC')
+                self.assertEndsWith(decoded, 'DEF')
+        if not tested:
+            self.skipTest('no shift-state iconv encoding is available')
 
     def test_encode_surrogateescape(self):
         # A lone surrogate lives in the 2-byte kind and round-trips.
