@@ -1910,6 +1910,7 @@ PyFloat_Pack2(double x, char *data, int le)
         uint64_t v;
 
         memcpy(&v, &x, 8);
+#ifndef __riscv
         if ((v & (1ULL << 51)) == 0) {
             uint16_t u16;
             memcpy(&u16, &y, 2);
@@ -1919,6 +1920,27 @@ PyFloat_Pack2(double x, char *data, int le)
             }
             memcpy(&y, &u16, 2);
         }
+#else
+        uint16_t u16;
+
+        memcpy(&u16, &y, 2);
+        /* Workaround RISC-V: "If a NaN value is converted to a
+         * different floating-point type, the result is the
+         * canonical NaN of the new type".  The canonical NaN here
+         * is a positive qNaN with zero payload. */
+        if (v & (1ULL << 63)) {
+            u16 |= (1 << 15); /* set sign */
+        }
+        /* add payload */
+        u16 -= (u16 & 0x1ff);
+        u16 += (uint16_t)((v & 0x7ffffffffffffULL) >> 42);
+        /* if have payload, make sNaN */
+        if ((v & (1ULL << 51)) == 0 && (u16 & 0x1ff)) {
+            u16 &= ~(1 << 9);
+        }
+
+        memcpy(&y, &u16, 2);
+#endif
     }
 
     unsigned char s[sizeof(_Float16)];
@@ -2152,8 +2174,9 @@ PyFloat_Unpack2(const char *data, int le)
     /* return sNaN double if x was sNaN float */
     if (isnan(x)) {
         uint16_t v;
-
         memcpy(&v, &x, 2);
+
+#ifndef __riscv
         if ((v & (1 << 9)) == 0) {
             double y = x; /* will make qNaN double */
             uint64_t u64;
@@ -2163,6 +2186,26 @@ PyFloat_Unpack2(const char *data, int le)
             memcpy(&y, &u64, 8);
             return y;
         }
+
+#else
+        double y = x;
+        uint64_t u64;
+
+        memcpy(&u64, &y, 8);
+        if ((v & (1 << 9)) == 0) {
+            u64 &= ~(1ULL << 51);
+        }
+        /* Workaround RISC-V, see PyFloat_Pack4() */
+        if (v & (1 << 15)) {
+            u64 |= (1ULL << 63); /* set sign */
+        }
+        /* add payload */
+        u64 -= (u64 & 0x7ffffffffffffULL);
+        u64 += ((v & 0x1ff) << 42);
+
+        memcpy(&y, &u64, 8);
+        return y;
+#endif
     }
 
     return x;
