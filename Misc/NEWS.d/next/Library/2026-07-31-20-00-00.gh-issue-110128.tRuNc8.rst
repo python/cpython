@@ -1,0 +1,2 @@
+Fix :meth:`csv.Sniffer.sniff` failing to detect the delimiter when a sample
+is truncated in the middle of its final row.
