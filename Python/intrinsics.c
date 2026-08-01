@@ -275,7 +275,7 @@ add_conditional_annotation(PyThreadState* tstate, PyObject *conditional_annotati
                            PyObject *index)
 {
     // gh-154902: user code can rebind __conditional_annotations__ to any object
-    if (!PySet_Check(conditional_annotations)) {
+    if (!PySet_CheckExact(conditional_annotations)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "__conditional_annotations__ must be a set, not %T",
                       conditional_annotations);
