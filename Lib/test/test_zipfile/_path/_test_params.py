@@ -1,6 +1,6 @@
 import functools
 import types
-from contextlib import AbstractContextManager, ExitStack
+from contextlib import AbstractContextManager
 
 from ._itertools import always_iterable
 
