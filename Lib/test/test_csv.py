@@ -1507,6 +1507,19 @@ ghi\0jkl
         sample = '"",' * 100 + '"' * 100 + '0' + '"' * 100 + '0'
         self.assertEqual(sniffer.sniff(sample).delimiter, ',')
 
+    def test_sniff_space_delimiter(self):
+        # This sample used to be quadratic.
+        sniffer = csv.Sniffer()
+        sample = '"a" "b"\n' + ' ' * 100_000
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ' ')
+        self.assertIs(dialect.doublequote, False)
+
+        # A quoted field can still start after multiple space delimiters.
+        dialect = sniffer.sniff('"a"   "b""c"')
+        self.assertEqual(dialect.delimiter, ' ')
+        self.assertIs(dialect.doublequote, True)
+
     def test_doublequote(self):
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(self.header1)

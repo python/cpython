@@ -352,8 +352,10 @@ class Sniffer:
         escaped_quote = re.escape(quotechar)
         values = {'delim': escaped_delimiter, 'quote': escaped_quote}
         if delimiter:
+            # Spaces after a space delimiter are delimiters, not padding.
+            values['space'] = '' if delimiter == ' ' else ' *+'
             candidate = re.compile(
-                    r"(?:%(delim)s|\r|^) *+%(quote)s"
+                    r"(?:%(delim)s|\r|^)%(space)s%(quote)s"
                     r"[^%(quote)s]*+%(quote)s%(quote)s"
                     r"(?:%(quote)s%(quote)s|[^%(quote)s]++)*+"
                     r"%(quote)s(?:%(delim)s|(?=\r)|$)"
