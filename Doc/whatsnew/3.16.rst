@@ -75,6 +75,10 @@ New features
 Other language changes
 ======================
 
+* :meth:`memoryview.cast` now allows casting a multidimensional
+  F-contiguous view to a one-dimensional view.
+  (Contributed by Jaemin Park in :gh:`91484`.)
+
 * :ref:`Frame objects <frame-objects>` now support :mod:`weak references
   <weakref>`.  This allows associating extra data with active frames,
   for example in debuggers, without keeping the frames (and everything
@@ -100,6 +104,21 @@ codecs
   Prefixing an encoding name with ``iconv:`` forces the ``iconv``-based codec
   even when a built-in codec of the same name exists.
   (Contributed by Serhiy Storchaka in :gh:`152997`.)
+
+csv
+---
+
+* :meth:`csv.Sniffer.sniff` now deduces the dialect by trial parsing
+  instead of heuristics based on matching isolated fragments
+  and on character frequencies,
+  so the result is consistent with how :func:`csv.reader` will parse the sample.
+  It can now detect the *escapechar* parameter,
+  accepts non-ASCII delimiters in the *delimiters* argument,
+  no longer misdetects the delimiter
+  when the sample contains delimiter characters inside quoted fields,
+  and no longer takes quadratic time on quoted samples.
+  The results may differ from those of earlier Python versions.
+  (Contributed by Serhiy Storchaka in :gh:`83273`.)
 
 curses
 ------
@@ -357,6 +376,22 @@ math
   (Contributed by Jeff Epler in :gh:`150534`.)
 
 
+multiprocessing
+---------------
+
+* Add the optional ``buffersize`` parameter to
+  :meth:`multiprocessing.pool.Pool.imap` and
+  :meth:`multiprocessing.pool.Pool.imap_unordered` to limit the number of
+  submitted tasks whose results have not yet been yielded. If the buffer is
+  full, iteration over the *iterables* pauses until a result is yielded from
+  the buffer. To fully utilize pool's capacity when using this feature, set
+  *buffersize* at least to the number of processes in pool (to consume
+  *iterable* as you go), or even higher (to prefetch the next
+  ``N=buffersize-processes`` arguments).
+
+  (Contributed by Oleksandr Baltian in :gh:`136871`.)
+
+
 os
 --
 
@@ -587,7 +622,7 @@ module_name
 
 
 Removed
-=======
+========
 
 annotationlib
 -------------
@@ -800,7 +835,8 @@ New features
 Porting to Python 3.16
 ----------------------
 
-* TODO
+* :c:func:`PyType_ClearCache` is now a no-op as the type cache is now
+  implemented per-type. It still returns the current version tag.
 
 Deprecated C APIs
 -----------------

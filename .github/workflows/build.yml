@@ -181,22 +181,6 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       interpreter: ${{ matrix.interpreter }}
 
-  build-windows-msi:
-    # ${{ '' } is a hack to nest jobs under the same sidebar category.
-    name: Windows MSI${{ '' }}  # zizmor: ignore[obfuscation]
-    needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-windows-msi)
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-        - x86
-        - x64
-        - arm64
-    uses: ./.github/workflows/reusable-windows-msi.yml
-    with:
-      arch: ${{ matrix.arch }}
-
   build-macos:
     name: >-
       macOS
@@ -650,7 +634,6 @@ jobs:
     - check-generated-files
     - check-c-api-docs
     - build-windows
-    - build-windows-msi
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests
@@ -671,7 +654,6 @@ jobs:
         allowed-failures: >-
           build-android,
           build-emscripten,
-          build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
           cifuzz,

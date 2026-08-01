@@ -8462,6 +8462,9 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         }
 
         if (ret != (size_t)-1) {
+            if (flushing) {
+                break;
+            }
             /* A positive result counts nonreversible conversions: iconv()
                substituted an unencodable character instead of failing with
                EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
@@ -8478,9 +8481,6 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
                 /* This code point was substituted; drop it and report it. */
                 out = out_before;
                 up -= unit;
-            }
-            else if (flushing) {
-                break;
             }
             else if (careful && up < uend) {
                 continue;

@@ -6276,9 +6276,12 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
         int index = get_index_from_order(d, i);
         key = LOAD_SHARED_KEY(DK_UNICODE_ENTRIES(k)[index].me_key);
         value = d->ma_values->values[index];
-        assert (value != NULL);
+        assert(value != NULL);
     }
     else {
+        if (i >= k->dk_nentries) {
+            goto fail;
+        }
         if (DK_IS_UNICODE(k)) {
             PyDictUnicodeEntry *entry_ptr = &DK_UNICODE_ENTRIES(k)[i];
             while (entry_ptr->me_value == NULL) {
@@ -7722,7 +7725,7 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (FT_ATOMIC_LOAD_UINT8(values->valid)) {
             PyDictKeysObject *keys = CACHED_KEYS(tp);
-            for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+            for (Py_ssize_t i = 0; i < LOAD_KEYS_NENTRIES(keys); i++) {
                 if (FT_ATOMIC_LOAD_PTR_RELAXED(values->values[i]) != NULL) {
                     return 0;
                 }
