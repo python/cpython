@@ -1960,7 +1960,6 @@ async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
             FT_ATOMIC_STORE_INT8_RELAXED(gen->ag_closed, 1);
         }
 
-        FT_ATOMIC_STORE_INT8_RELAXED(gen->ag_running_async, 0);
         return NULL;
     }
 
@@ -1968,7 +1967,6 @@ async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
         /* async yield */
         _PyGen_SetStopIterationValue(((_PyAsyncGenWrappedValue*)result)->agw_val);
         Py_DECREF(result);
-        FT_ATOMIC_STORE_INT8_RELAXED(gen->ag_running_async, 0);
         return NULL;
     }
 
@@ -2047,6 +2045,7 @@ do_send:;
 
     if (result == NULL) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
+        FT_ATOMIC_STORE_INT8_RELEASE(o->ags_gen->ag_running_async, 0);
     }
 
     return result;
@@ -2107,7 +2106,7 @@ do_throw:;
 
     if (result == NULL) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
-        FT_ATOMIC_STORE_INT8_RELAXED(o->ags_gen->ag_running_async, 0);
+        FT_ATOMIC_STORE_INT8_RELEASE(o->ags_gen->ag_running_async, 0);
     }
 
     return result;
@@ -2399,14 +2398,14 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
 
     if (FT_ATOMIC_LOAD_INT8_RELAXED(o->agt_gen->ag_closed)) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-        FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_running_async, 0);
+        FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
         PyErr_SetNone(PyExc_StopAsyncIteration);
         return NULL;
     }
 
     if (arg != Py_None) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_INIT);
-        FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_running_async, 0);
+        FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
         PyErr_SetString(PyExc_RuntimeError, NON_INIT_CORO_MSG);
         return NULL;
     }
@@ -2439,7 +2438,11 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
 do_send:
     retval = gen_send((PyObject *)gen, arg);
     if (o->agt_typ) {
-        return async_gen_unwrap_value(o->agt_gen, retval);
+        retval = async_gen_unwrap_value(o->agt_gen, retval);
+        if (retval == NULL) {
+            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
+        }
+        return retval;
     } else {
         /* aclose() mode */
         if (retval) {
@@ -2457,15 +2460,15 @@ do_send:
     }
 
 yield_close:
-FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_running_async, 0);
+    FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
+    FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
     PyErr_SetString(
         PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
     return NULL;
 
 check_error:
-    FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_running_async, 0);
     FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
+    FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
     if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
             PyErr_ExceptionMatches(PyExc_GeneratorExit))
     {
@@ -2524,7 +2527,7 @@ do_throw:;
         retval = async_gen_unwrap_value(o->agt_gen, retval);
         if (retval == NULL) {
             FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_running_async, 0);
+            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
         }
         return retval;
     }
@@ -2532,14 +2535,14 @@ do_throw:;
         /* aclose() mode */
         if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
             FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_running_async, 0);
+            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
             Py_DECREF(retval);
             PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
             return NULL;
         }
         if (retval == NULL) {
             FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_running_async, 0);
+            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
         }
         if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
             PyErr_ExceptionMatches(PyExc_GeneratorExit))

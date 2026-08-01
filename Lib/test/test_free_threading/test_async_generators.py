@@ -26,7 +26,7 @@ class TestFTAsyncGenerators(unittest.TestCase):
                     values.append(e.value)
                 except StopAsyncIteration:
                     break
-                except (RuntimeError, ValueError):
+                except RuntimeError:
                     # Another thread is currently driving the generator.
                     continue
 
@@ -58,7 +58,7 @@ class TestFTAsyncGenerators(unittest.TestCase):
                 except StopIteration as e:
                     # The generator received the exception and yielded again.
                     delivered.append(e.value)
-                except (RuntimeError, ValueError):
+                except RuntimeError:
                     # Another thread is currently driving the generator.
                     pass
 
@@ -89,7 +89,7 @@ class TestFTAsyncGenerators(unittest.TestCase):
             except StopAsyncIteration:
                 # The generator was already closed.
                 pass
-            except (RuntimeError, ValueError):
+            except RuntimeError:
                 # Another thread is currently driving the generator.
                 pass
 
