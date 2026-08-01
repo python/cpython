@@ -341,6 +341,23 @@ class MemoryTestMixin:
         memio.write(buf)
         self.assertEqual(memio.getvalue(), buf + self.buftype('\0') + buf)
 
+    def test_overseek_far_past_end(self):
+        # gh-148286: the existing test_overseek only seeks one past the
+        # end. StringIO.read() formed ``self->buf + self->pos`` before
+        # returning the empty string, which is undefined behaviour for
+        # any overseek -- and for a position above PY_SSIZE_T_MAX // 4
+        # the multiplication by sizeof(Py_UCS4) wrapped, yielding a
+        # pointer below the buffer. Only large offsets exercise that.
+        buf = self.buftype("1234567890")
+        for pos in (2 ** 31, 2 ** 62, sys.maxsize):
+            with self.subTest(pos=pos):
+                memio = self.ioclass(buf)
+                self.assertEqual(memio.seek(pos), pos)
+                self.assertEqual(memio.read(), self.EOF)
+                self.assertEqual(memio.read(10), self.EOF)
+                self.assertEqual(memio.tell(), pos)
+                self.assertEqual(memio.getvalue(), buf)
+
     def test_tell(self):
         buf = self.buftype("1234567890")
         memio = self.ioclass(buf)
