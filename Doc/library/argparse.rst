@@ -1683,7 +1683,7 @@ The Namespace object
    which returns a copy of the object with the specified attributes replaced.
 
    .. versionchanged:: next
-      Added support of :func:`copy.replace`.
+      Added support for :func:`copy.replace`.
 
    This class is deliberately simple, just an :class:`object` subclass with a
    readable string representation. If you prefer to have dict-like view of the
