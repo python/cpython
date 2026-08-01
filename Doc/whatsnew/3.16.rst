@@ -120,6 +120,11 @@ csv
   The results may differ from those of earlier Python versions.
   (Contributed by Serhiy Storchaka in :gh:`83273`.)
 
+* CSV dialects now support :func:`copy.replace`,
+  which returns a copy of the dialect
+  with the specified formatting parameters replaced.
+  (Contributed by Serhiy Storchaka in :gh:`155033`.)
+
 curses
 ------
 
