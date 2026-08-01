@@ -1045,7 +1045,7 @@ Instances have the following methods and attributes:
 which returns a copy of the object with the specified attributes replaced.
 
 .. versionchanged:: next
-   Added support of :func:`copy.replace`.
+   Added support for :func:`copy.replace`.
 
 
 .. _zipfile-commandline:
