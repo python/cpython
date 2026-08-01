@@ -8375,10 +8375,13 @@ iconv_reset_shift_state(iconv_t cd, PyBytesWriter *writer,
                         char **pout, char **poutend)
 {
     for (;;) {
+        /* A NULL input buffer means the reset, but its size is passed as a
+           real pointer: some implementations do not accept a NULL there. */
+        size_t inleft = 0;
         size_t outleft = (size_t)(*poutend - *pout);
         /* Only -1 is a failure; a positive result counts nonreversible
            conversions. */
-        if (iconv(cd, NULL, NULL, pout, &outleft) != (size_t)-1) {
+        if (iconv(cd, NULL, &inleft, pout, &outleft) != (size_t)-1) {
             return 0;
         }
         if (errno != E2BIG) {
