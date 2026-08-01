@@ -257,7 +257,7 @@ added matters.  To illustrate::
       This method is also used by :func:`copy.replace`.
 
       .. versionchanged:: next
-         Added support of :func:`copy.replace`.
+         Added support for :func:`copy.replace`.
 
 
    The remaining :class:`Policy` methods are called by the email package code,
