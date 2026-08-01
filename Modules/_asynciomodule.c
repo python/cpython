@@ -2482,7 +2482,11 @@ static PyObject *
 _asyncio_Task_get_context_impl(TaskObj *self)
 /*[clinic end generated code: output=6996f53d3dc01aef input=87c0b209b8fceeeb]*/
 {
-    return Py_NewRef(self->task_context);
+    if (self->task_context) {
+        return Py_NewRef(self->task_context);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
