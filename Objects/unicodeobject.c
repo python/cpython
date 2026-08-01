@@ -14726,6 +14726,15 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     }
 #endif
 
+    // Why _Py_LOCK_DONT_DETACH is used here: waiting for the interned mutex
+    // must not detach the thread state. Extension code is expected to
+    // detach before blocking on opaque external synchronization. However,
+    // the lock used for C++ static initialization is hidden, making
+    // that difficult, and it is common for C++ extensions to call
+    // PyUnicode_InternFromString() from static initializers. Detaching here
+    // can therefore deadlock: a stop-the-world pause may prevent the lock
+    // owner from reattaching while the pause waits for another attached
+    // thread blocked on the hidden lock.
     FT_MUTEX_LOCK_FLAGS(INTERN_MUTEX, _Py_LOCK_DONT_DETACH);
     PyObject *t;
     {

@@ -34,6 +34,11 @@ _PyMutex_at_fork_reinit(PyMutex *m)
 
 typedef enum _PyLockFlags {
     // Do not detach/release the GIL when waiting on the lock.
+    //
+    // Note that code executed while holding a mutex with this flag must
+    // not detach, reach a safepoint or initiate a stop-the-world pause.
+    // Otherwise, a non-detaching waiter may remain waiting for this mutex and
+    // prevent the pause from completing.
     _Py_LOCK_DONT_DETACH = 0,
 
     // Detach/release the GIL while waiting on the lock.
