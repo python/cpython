@@ -53,7 +53,7 @@ jobs:
     name: 'Check if Autoconf files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     container:
       image: ghcr.io/python/autoconf:2025.01.02.12581854023
     timeout-minutes: 60
@@ -96,7 +96,7 @@ jobs:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
@@ -181,22 +181,6 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       interpreter: ${{ matrix.interpreter }}
 
-  build-windows-msi:
-    # ${{ '' } is a hack to nest jobs under the same sidebar category.
-    name: Windows MSI${{ '' }}  # zizmor: ignore[obfuscation]
-    needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-windows-msi)
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-        - x86
-        - x64
-        - arm64
-    uses: ./.github/workflows/reusable-windows-msi.yml
-    with:
-      arch: ${{ matrix.arch }}
-
   build-macos:
     name: >-
       macOS
@@ -239,18 +223,18 @@ jobs:
         - false
         - true
         os:
-        - ubuntu-24.04
-        - ubuntu-24.04-arm
+        - ubuntu-26.04
+        - ubuntu-26.04-arm
         exclude:
         # Do not test BOLT with free-threading, to conserve resources
         - bolt: true
           free-threading: true
         # BOLT currently crashes during instrumentation on aarch64
-        - os: ubuntu-24.04-arm
+        - os: ubuntu-26.04-arm
           bolt: true
         include:
         # Enable CPU-intensive tests on ARM (default build only)
-        - os: ubuntu-24.04-arm
+        - os: ubuntu-26.04-arm
           bolt: false
           free-threading: false
           test-opts: '-u cpu'
@@ -270,7 +254,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-26.04]
         ssllib:
           # See Tools/ssl/make_ssl_data.py for notes on adding a new version
           ## OpenSSL
@@ -346,7 +330,7 @@ jobs:
           - arch: aarch64
             runs-on: macos-26
           - arch: x86_64
-            runs-on: ubuntu-24.04
+            runs-on: ubuntu-26.04
 
     runs-on: ${{ matrix.runs-on }}
     steps:
@@ -361,23 +345,14 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ios == 'true'
     timeout-minutes: 60
-    runs-on: macos-14
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
-      # GitHub recommends explicitly selecting the desired Xcode version:
-      # https://github.com/actions/runner-images/issues/12541#issuecomment-3083850140
-      # This became a necessity as a result of
-      # https://github.com/actions/runner-images/issues/12541 and
-      # https://github.com/actions/runner-images/issues/12751.
-      - name: Select Xcode version
-        run: |
-          sudo xcode-select --switch /Applications/Xcode_15.4.app
-
       - name: Build and test
-        run: python3 Platforms/Apple ci iOS --fast-ci --simulator 'iPhone SE (3rd generation),OS=17.5'
+        run: python3 Platforms/Apple ci iOS --fast-ci
 
   build-emscripten:
     name: 'Emscripten'
@@ -393,7 +368,7 @@ jobs:
 
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
@@ -504,7 +479,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-26.04]
     env:
       OPENSSL_VER: 3.5.7
       PYTHONSTRICTEXTENSIONBUILD: 1
@@ -568,7 +543,7 @@ jobs:
 
   cross-build-linux:
     name: Cross build Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
@@ -659,7 +634,6 @@ jobs:
     - check-generated-files
     - check-c-api-docs
     - build-windows
-    - build-windows-msi
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests
@@ -680,7 +654,6 @@ jobs:
         allowed-failures: >-
           build-android,
           build-emscripten,
-          build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
           cifuzz,

@@ -2149,13 +2149,6 @@
             break;
         }
 
-        case _DELETE_ATTR: {
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
         case _STORE_GLOBAL: {
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
@@ -3926,10 +3919,6 @@
             stack_pointer[0] = new_exc;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            break;
-        }
-
-        case _GUARD_KEYS_VERSION: {
             break;
         }
 

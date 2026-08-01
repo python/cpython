@@ -20,6 +20,8 @@ Generating Symbol Tables
 .. function:: symtable(code, filename, compile_type, *, module=None)
 
    Return the toplevel :class:`SymbolTable` for the Python source *code*.
+   *code* can be a string, a bytes object, or an AST object,
+   as for the builtin :func:`compile`.
    *filename* is the name of the file containing the code.  *compile_type* is
    like the *mode* argument to :func:`compile`.
    The optional argument *module* specifies the module name.
@@ -28,6 +30,9 @@ Generating Symbol Tables
 
    .. versionadded:: 3.15
       Added the *module* parameter.
+
+   .. versionchanged:: next
+      *code* can now be an AST object.
 
 
 Examining Symbol Tables
