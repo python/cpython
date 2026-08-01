@@ -20,12 +20,11 @@ def parameterize(names, value_groups):
             for values in value_groups:
                 resolved = map(Invoked.eval, always_iterable(values))
                 params = dict(zip(always_iterable(names), resolved))
-                with ExitStack() as fixtures:
-                    for value in params.values():
-                        if isinstance(value, AbstractContextManager):
-                            fixtures.enter_context(value)
-                    with self.subTest(**params):
-                        func(self, **params)
+                for value in params.values():
+                    if isinstance(value, AbstractContextManager):
+                        self.enterContext(value)
+                with self.subTest(**params):
+                    func(self, **params)
 
         return wrapped
 
