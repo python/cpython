@@ -2428,6 +2428,14 @@ class TestKDE(unittest.TestCase):
         data.append(100)
         self.assertGreater(f_hat(100), 0.0)
 
+        for cumulative in (False, True):
+            with self.subTest(cumulative=cumulative):
+                data = [1, 2, 3]
+                estimate = kde(data, 1.0, 'triangular', cumulative=cumulative)
+                data[0] = 5
+                expected = kde(data, 1.0, 'triangular', cumulative=cumulative)
+                self.assertEqual(estimate(1.5), expected(1.5))
+
     def test_kde_kernel_specs(self):
         # White-box test for the kernel formulas in isolation from
         # their downstream use in kde() and kde_random()

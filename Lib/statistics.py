@@ -1060,24 +1060,27 @@ def kde(data, h, kernel='normal', *, cumulative=False):
 
     else:
 
-        sample = sorted(data)
+        data_snapshot = tuple(data)
+        sample = sorted(data_snapshot)
         bandwidth = h * support
 
+        def refresh():
+            nonlocal n, data_snapshot, sample
+            updated_data = tuple(data)
+            if updated_data != data_snapshot:
+                data_snapshot = updated_data
+                sample = sorted(updated_data)
+                n = len(updated_data)
+
         def pdf(x):
-            nonlocal n, sample
-            if len(data) != n:
-                sample = sorted(data)
-                n = len(data)
+            refresh()
             i = bisect_left(sample, x - bandwidth)
             j = bisect_right(sample, x + bandwidth)
             supported = sample[i : j]
             return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
 
         def cdf(x):
-            nonlocal n, sample
-            if len(data) != n:
-                sample = sorted(data)
-                n = len(data)
+            refresh()
             i = bisect_left(sample, x - bandwidth)
             j = bisect_right(sample, x + bandwidth)
             supported = sample[i : j]

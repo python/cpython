@@ -1,0 +1,2 @@
+Fix :func:`statistics.kde` with a bounded-support kernel to refresh its cached
+sample when the contents of the input data change without changing its length.
