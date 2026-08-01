@@ -1560,10 +1560,11 @@ class time:
                 return 2 # arbitrary non-zero value
             else:
                 raise TypeError("cannot compare naive and aware times")
-        myhhmm = self._hour * 60 + self._minute - myoff//timedelta(minutes=1)
-        othhmm = other._hour * 60 + other._minute - otoff//timedelta(minutes=1)
-        return _cmp((myhhmm, self._second, self._microsecond),
-                    (othhmm, other._second, other._microsecond))
+        myus = (((self._hour * 60 + self._minute) * 60 + self._second)
+                * 1000000 + self._microsecond - myoff._to_microseconds())
+        otus = (((other._hour * 60 + other._minute) * 60 + other._second)
+                * 1000000 + other._microsecond - otoff._to_microseconds())
+        return _cmp(myus, otus)
 
     def __hash__(self):
         """Hash."""
@@ -1573,17 +1574,13 @@ class time:
             else:
                 t = self
             tzoff = t.utcoffset()
-            if not tzoff:  # zero or None
+            if tzoff is None:
                 self._hashcode = hash(t._getstate()[0])
             else:
-                h, m = divmod(timedelta(hours=self.hour, minutes=self.minute) - tzoff,
-                              timedelta(hours=1))
-                assert not m % timedelta(minutes=1), "whole minute"
-                m //= timedelta(minutes=1)
-                if 0 <= h < 24:
-                    self._hashcode = hash(time(h, m, self.second, self.microsecond))
-                else:
-                    self._hashcode = hash((h, m, self.second, self.microsecond))
+                self._hashcode = hash(timedelta(hours=t.hour,
+                                                minutes=t.minute,
+                                                seconds=t.second,
+                                                microseconds=t.microsecond) - tzoff)
         return self._hashcode
 
     # Conversion to string

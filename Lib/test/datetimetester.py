@@ -4676,6 +4676,48 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         Badtzname.tz = '\ud800'
         self.assertEqual(t.strftime("%Z"), '\ud800')
 
+    def test_subminute_offset_equality(self):
+        t1 = self.theclass(12, tzinfo=timezone.utc)
+        t2 = self.theclass(
+            12, 0, 1, tzinfo=timezone(timedelta(seconds=1))
+        )
+        self.assertEqual(t1, t2)
+        t2 = self.theclass(
+            12, 0, 0, 1,
+            tzinfo=timezone(timedelta(microseconds=1)),
+        )
+        self.assertEqual(t1, t2)
+        t2 = self.theclass(
+            11, 59, 59, 999999,
+            tzinfo=timezone(timedelta(microseconds=-1)),
+        )
+        self.assertEqual(t1, t2)
+
+    def test_subminute_offset_ordering(self):
+        t1 = self.theclass(0, tzinfo=timezone.utc)
+        t2 = self.theclass(
+            0, tzinfo=timezone(timedelta(microseconds=1))
+        )
+        self.assertNotEqual(t1, t2)
+        self.assertGreater(t1, t2)
+
+    def test_subminute_offset_hash(self):
+        t1 = self.theclass(12, tzinfo=timezone.utc)
+        t2 = self.theclass(
+            12, 0, 1, tzinfo=timezone(timedelta(seconds=1))
+        )
+        self.assertEqual(hash(t1), hash(t2))
+        t2 = self.theclass(
+            12, 0, 0, 1,
+            tzinfo=timezone(timedelta(microseconds=1)),
+        )
+        self.assertEqual(hash(t1), hash(t2))
+        t2 = self.theclass(
+            11, 59, 59, 999999,
+            tzinfo=timezone(timedelta(microseconds=-1)),
+        )
+        self.assertEqual(hash(t1), hash(t2))
+
     def test_hash_edge_cases(self):
         # Offsets that overflow a basic time.
         t1 = self.theclass(0, 1, 2, 3, tzinfo=FixedOffset(1439, ""))
