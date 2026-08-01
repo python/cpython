@@ -1,7 +1,2 @@
-Fix undefined behaviour in the :mod:`ctypes` bit field accessors. The
-``BIT_MASK``, ``GET_BITFIELD`` and ``SET`` macros in
-``Modules/_ctypes/cfield.c`` shifted negative values left and shifted ones
-into the sign bit of a signed type. The bit manipulation is now done in
-``uint64_t`` and converted back to the field's own type, which removes the
-two ``Modules/_ctypes/cfield.c`` entries from
-``Tools/ubsan/suppressions.txt``.
+Fix undefined behaviour when reading and writing :mod:`ctypes` bit fields of
+a signed type.
