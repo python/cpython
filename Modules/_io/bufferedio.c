@@ -471,16 +471,6 @@ buffered_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-/* Because this can call arbitrary code, it shouldn't be called when
-   the refcount is 0 (that is, not directly from tp_dealloc unless
-   the refcount has been temporarily re-incremented). */
-/*[clinic input]
-_io._Buffered._dealloc_warn
-
-    source: object
-    /
-
-[clinic start generated code]*/
 static PyObject *
 raw_access_safe(buffered *self)
 {
@@ -504,6 +494,16 @@ raw_access_safe(buffered *self)
     return self->raw;
 }
 
+/* Because this can call arbitrary code, it shouldn't be called when
+   the refcount is 0 (that is, not directly from tp_dealloc unless
+   the refcount has been temporarily re-incremented). */
+/*[clinic input]
+_io._Buffered._dealloc_warn
+
+    source: object
+    /
+
+[clinic start generated code]*/
 static PyObject *
 _io__Buffered__dealloc_warn_impl(buffered *self, PyObject *source)
 /*[clinic end generated code: output=d8db21c6dec0e614 input=8f845f2a4786391c]*/
