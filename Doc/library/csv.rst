@@ -299,9 +299,19 @@ The :mod:`!csv` module defines the following classes:
    .. versionadded:: 3.2
 
 
-.. class:: Sniffer()
+.. class:: Sniffer(delimiters=None)
 
    The :class:`Sniffer` class is used to deduce the format of a CSV file.
+
+   If the optional *delimiters* parameter is given,
+   it is interpreted as a string containing possible valid
+   delimiter characters,
+   used by both methods below.
+   Its characters are also preferred, in the given order,
+   if several combinations fit the sample equally well.
+
+   .. versionchanged:: next
+      Added the *delimiters* parameter.
 
    The :class:`Sniffer` class provides two methods:
 
@@ -310,7 +320,8 @@ The :mod:`!csv` module defines the following classes:
       Analyze the given *sample* and return a :class:`Dialect` subclass
       reflecting the parameters found.  If the optional *delimiters* parameter
       is given, it is interpreted as a string containing possible valid
-      delimiter characters.
+      delimiter characters;
+      it overrides the *delimiters* argument of the constructor.
 
       The dialect is deduced by parsing the sample with every plausible
       combination of parameters
@@ -327,6 +338,8 @@ The :mod:`!csv` module defines the following classes:
       the delimiters ``','``, ``'\t'``, ``';'``, ``' '`` and ``':'``
       are preferred, in this order,
       no matter how many times each of them occurs.
+      If the *delimiters* argument was given to the constructor,
+      its characters are preferred instead, in the given order.
 
       .. versionchanged:: next
          The dialect is now deduced by trial parsing

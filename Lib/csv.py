@@ -232,15 +232,27 @@ class Sniffer:
     '''
     "Sniffs" the format of a CSV file (i.e. delimiter, quotechar)
     Returns a Dialect object.
+
+    If the optional delimiters argument is given, it is interpreted as
+    a string containing possible valid delimiter characters.  It is
+    used by the sniff() and has_header() methods unless sniff() is
+    called with its own delimiters argument.
+
+    It also sets the preferred attribute: the delimiters which are
+    preferred, in that order, if several combinations fit the sample
+    equally well.
     '''
     # Characters which can be guessed as a delimiter if the delimiters
     # argument is not specified.
-    _delimiter_candidates = [c for c in map(chr, range(128))
-                             if not c.isalnum()]
+    delimiters = [c for c in map(chr, range(128)) if not c.isalnum()]
 
-    def __init__(self):
-        # in case there is more than one possible delimiter
-        self.preferred = [',', '\t', ';', ' ', ':']
+    def __init__(self, delimiters=None):
+        if delimiters is None:
+            # in case there is more than one possible delimiter
+            self.preferred = [',', '\t', ';', ' ', ':']
+        else:
+            self.delimiters = delimiters
+            self.preferred = delimiters
 
 
     def sniff(self, sample, delimiters=None):
@@ -248,7 +260,8 @@ class Sniffer:
         Analyze the sample and return a Dialect subclass reflecting the
         parameters found.  If the optional delimiters parameter is
         given, it is interpreted as a string containing possible valid
-        delimiter characters.  Raises Error if the dialect cannot be
+        delimiter characters; it overrides the delimiters attribute set
+        in the constructor.  Raises Error if the dialect cannot be
         determined.
 
         The dialect is guessed by parsing the sample with every
@@ -275,7 +288,7 @@ class Sniffer:
 
         chars = set(sample)
         if delimiters is None:
-            delimiters = self._delimiter_candidates
+            delimiters = self.delimiters
         delimiters = [d for d in delimiters
                       if d in chars and d not in '\r\n"\'\\']
         # Combinations to try, numbered by preference for breaking

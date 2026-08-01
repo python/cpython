@@ -120,6 +120,14 @@ csv
   The results may differ from those of earlier Python versions.
   (Contributed by Serhiy Storchaka in :gh:`83273`.)
 
+* The :class:`csv.Sniffer` constructor now accepts
+  an optional *delimiters* argument.
+  It is used by both :meth:`~csv.Sniffer.sniff` and
+  :meth:`~csv.Sniffer.has_header`,
+  and its characters are preferred, in the given order,
+  if several of them fit the sample equally well.
+  (Contributed by Serhiy Storchaka in :gh:`155059`.)
+
 curses
 ------
 
