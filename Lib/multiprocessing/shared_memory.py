@@ -72,7 +72,7 @@ class SharedMemory:
     _prepend_leading_slash = True if _USE_POSIX else False
     _track = True
 
-    def __init__(self, name=None, create=False, size=0, *, track=True):
+    def __init__(self, name=None, create=False, size=0, *, track=True, reserve=False):
         if not size >= 0:
             raise ValueError("'size' must be a positive integer")
         if create:
@@ -110,7 +110,11 @@ class SharedMemory:
                 self._name = name
             try:
                 if create and size:
-                    os.ftruncate(fd, size)
+                    if hasattr(os, 'posix_fallocate') and reserve:
+                        # Ensures the requested size is available
+                        os.posix_fallocate(fd, 0, size)
+                    else:
+                        os.ftruncate(fd, size)
                 stats = os.fstat(fd)
                 size = stats.st_size
                 self._mmap = mmap.mmap(fd, size)
