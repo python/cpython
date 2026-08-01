@@ -1333,32 +1333,37 @@ context_setattr(PyObject *self, PyObject *name, PyObject *value)
     return PyObject_GenericSetAttr(self, name, value);
 }
 
+/* In the constructor and in localcontext() None means "not specified". */
+#define NONE_TO_NULL(x) ((x) == Py_None ? NULL : (x))
+
+/* Set the given attributes.  An attribute is left unchanged if the
+   corresponding argument is NULL. */
 static int
 context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
                  PyObject *emin, PyObject *emax, PyObject *capitals,
                  PyObject *clamp, PyObject *status, PyObject *traps) {
 
     int ret;
-    if (prec != Py_None && context_setprec(self, prec, NULL) < 0) {
+    if (prec != NULL && context_setprec(self, prec, NULL) < 0) {
         return -1;
     }
-    if (rounding != Py_None && context_setround(self, rounding, NULL) < 0) {
+    if (rounding != NULL && context_setround(self, rounding, NULL) < 0) {
         return -1;
     }
-    if (emin != Py_None && context_setemin(self, emin, NULL) < 0) {
+    if (emin != NULL && context_setemin(self, emin, NULL) < 0) {
         return -1;
     }
-    if (emax != Py_None && context_setemax(self, emax, NULL) < 0) {
+    if (emax != NULL && context_setemax(self, emax, NULL) < 0) {
         return -1;
     }
-    if (capitals != Py_None && context_setcapitals(self, capitals, NULL) < 0) {
+    if (capitals != NULL && context_setcapitals(self, capitals, NULL) < 0) {
         return -1;
     }
-    if (clamp != Py_None && context_setclamp(self, clamp, NULL) < 0) {
+    if (clamp != NULL && context_setclamp(self, clamp, NULL) < 0) {
        return -1;
     }
 
-    if (traps != Py_None) {
+    if (traps != NULL) {
         if (PyList_Check(traps)) {
             ret = context_settraps_list(self, traps);
         }
@@ -1374,7 +1379,7 @@ context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
             return ret;
         }
     }
-    if (status != Py_None) {
+    if (status != NULL) {
         if (PyList_Check(status)) {
             ret = context_setstatus_list(self, status);
         }
@@ -1559,10 +1564,11 @@ context_init_impl(PyObject *self, PyObject *prec, PyObject *rounding,
                   PyObject *clamp, PyObject *status, PyObject *traps)
 /*[clinic end generated code: output=8bfdc59fbe862f44 input=45c704b93cd02959]*/
 {
+    /* The context has already been initialized with the default values. */
     return context_setattrs(
-        self, prec, rounding,
-        emin, emax, capitals,
-        clamp, status, traps
+        self, NONE_TO_NULL(prec), NONE_TO_NULL(rounding),
+        NONE_TO_NULL(emin), NONE_TO_NULL(emax), NONE_TO_NULL(capitals),
+        NONE_TO_NULL(clamp), NONE_TO_NULL(status), NONE_TO_NULL(traps)
     );
 }
 
@@ -1714,6 +1720,47 @@ _decimal_Context___copy___impl(PyObject *self, PyTypeObject *cls)
     decimal_state *state = PyType_GetModuleState(cls);
 
     return context_copy(state, self);
+}
+
+/*[clinic input]
+@text_signature "($self, /, **changes)"
+_decimal.Context.__replace__
+
+    cls: defining_class
+    *
+    prec: object = NULL
+    rounding: object = NULL
+    Emin as emin: object = NULL
+    Emax as emax: object = NULL
+    capitals: object = NULL
+    clamp: object = NULL
+    flags as status: object = NULL
+    traps: object = NULL
+
+Return a copy of the context with the specified attributes replaced.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context___replace___impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *prec, PyObject *rounding,
+                                  PyObject *emin, PyObject *emax,
+                                  PyObject *capitals, PyObject *clamp,
+                                  PyObject *status, PyObject *traps)
+/*[clinic end generated code: output=375ef0392df682ec input=414d9d00b25af6f3]*/
+{
+    decimal_state *state = PyType_GetModuleState(cls);
+
+    PyObject *result = context_copy(state, self);
+    if (result == NULL) {
+        return NULL;
+    }
+    if (context_setattrs(result, prec, rounding, emin, emax, capitals,
+                         clamp, status, traps) < 0)
+    {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
 }
 
 /*[clinic input]
@@ -2095,9 +2142,9 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
     }
 
     int ret = context_setattrs(
-        local_copy, prec, rounding,
-        Emin, Emax, capitals,
-        clamp, flags, traps
+        local_copy, NONE_TO_NULL(prec), NONE_TO_NULL(rounding),
+        NONE_TO_NULL(Emin), NONE_TO_NULL(Emax), NONE_TO_NULL(capitals),
+        NONE_TO_NULL(clamp), NONE_TO_NULL(flags), NONE_TO_NULL(traps)
     );
     if (ret < 0) {
         Py_DECREF(local_copy);
@@ -7557,6 +7604,7 @@ static PyMethodDef context_methods [] =
 
   /* Miscellaneous */
   _DECIMAL_CONTEXT___COPY___METHODDEF
+  _DECIMAL_CONTEXT___REPLACE___METHODDEF
   _DECIMAL_CONTEXT___REDUCE___METHODDEF
   _DECIMAL_CONTEXT_COPY_METHODDEF
   _DECIMAL_CONTEXT_CREATE_DECIMAL_METHODDEF
