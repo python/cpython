@@ -512,14 +512,14 @@ _decimal_localcontext(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *argsbuf[9];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *local = Py_None;
-    PyObject *prec = Py_None;
-    PyObject *rounding = Py_None;
-    PyObject *Emin = Py_None;
-    PyObject *Emax = Py_None;
-    PyObject *capitals = Py_None;
-    PyObject *clamp = Py_None;
-    PyObject *flags = Py_None;
-    PyObject *traps = Py_None;
+    PyObject *prec = NULL;
+    PyObject *rounding = NULL;
+    PyObject *Emin = NULL;
+    PyObject *Emax = NULL;
+    PyObject *capitals = NULL;
+    PyObject *clamp = NULL;
+    PyObject *flags = NULL;
+    PyObject *traps = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -6984,4 +6984,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=0eb835634388294e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1928815cb039f2a2 input=a9049054013a1b77]*/

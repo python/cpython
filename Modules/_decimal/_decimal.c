@@ -1333,32 +1333,37 @@ context_setattr(PyObject *self, PyObject *name, PyObject *value)
     return PyObject_GenericSetAttr(self, name, value);
 }
 
+/* In the constructor None means "not specified". */
+#define NONE_TO_NULL(x) ((x) == Py_None ? NULL : (x))
+
+/* Set the given attributes.  An attribute is left unchanged if the
+   corresponding argument is NULL. */
 static int
 context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
                  PyObject *emin, PyObject *emax, PyObject *capitals,
                  PyObject *clamp, PyObject *status, PyObject *traps) {
 
     int ret;
-    if (prec != Py_None && context_setprec(self, prec, NULL) < 0) {
+    if (prec != NULL && context_setprec(self, prec, NULL) < 0) {
         return -1;
     }
-    if (rounding != Py_None && context_setround(self, rounding, NULL) < 0) {
+    if (rounding != NULL && context_setround(self, rounding, NULL) < 0) {
         return -1;
     }
-    if (emin != Py_None && context_setemin(self, emin, NULL) < 0) {
+    if (emin != NULL && context_setemin(self, emin, NULL) < 0) {
         return -1;
     }
-    if (emax != Py_None && context_setemax(self, emax, NULL) < 0) {
+    if (emax != NULL && context_setemax(self, emax, NULL) < 0) {
         return -1;
     }
-    if (capitals != Py_None && context_setcapitals(self, capitals, NULL) < 0) {
+    if (capitals != NULL && context_setcapitals(self, capitals, NULL) < 0) {
         return -1;
     }
-    if (clamp != Py_None && context_setclamp(self, clamp, NULL) < 0) {
+    if (clamp != NULL && context_setclamp(self, clamp, NULL) < 0) {
        return -1;
     }
 
-    if (traps != Py_None) {
+    if (traps != NULL) {
         if (PyList_Check(traps)) {
             ret = context_settraps_list(self, traps);
         }
@@ -1374,7 +1379,7 @@ context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
             return ret;
         }
     }
-    if (status != Py_None) {
+    if (status != NULL) {
         if (PyList_Check(status)) {
             ret = context_setstatus_list(self, status);
         }
@@ -1559,10 +1564,11 @@ context_init_impl(PyObject *self, PyObject *prec, PyObject *rounding,
                   PyObject *clamp, PyObject *status, PyObject *traps)
 /*[clinic end generated code: output=8bfdc59fbe862f44 input=45c704b93cd02959]*/
 {
+    /* The context has already been initialized with the default values. */
     return context_setattrs(
-        self, prec, rounding,
-        emin, emax, capitals,
-        clamp, status, traps
+        self, NONE_TO_NULL(prec), NONE_TO_NULL(rounding),
+        NONE_TO_NULL(emin), NONE_TO_NULL(emax), NONE_TO_NULL(capitals),
+        NONE_TO_NULL(clamp), NONE_TO_NULL(status), NONE_TO_NULL(traps)
     );
 }
 
@@ -2052,14 +2058,14 @@ _decimal.localcontext
 
     ctx as local: object = None
     *
-    prec: object = None
-    rounding: object = None
-    Emin: object = None
-    Emax: object = None
-    capitals: object = None
-    clamp: object = None
-    flags: object = None
-    traps: object = None
+    prec: object = NULL
+    rounding: object = NULL
+    Emin: object = NULL
+    Emax: object = NULL
+    capitals: object = NULL
+    clamp: object = NULL
+    flags: object = NULL
+    traps: object = NULL
 
 Return a context manager for a copy of the supplied context.
 
@@ -2074,7 +2080,7 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
                            PyObject *rounding, PyObject *Emin,
                            PyObject *Emax, PyObject *capitals,
                            PyObject *clamp, PyObject *flags, PyObject *traps)
-/*[clinic end generated code: output=9bf4e47742a809b0 input=490307b9689c3856]*/
+/*[clinic end generated code: output=9bf4e47742a809b0 input=616abb6ee1654373]*/
 {
     PyObject *global;
 

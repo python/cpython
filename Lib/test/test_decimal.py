@@ -3763,6 +3763,13 @@ class ContextWithStatement:
         self.assertRaises(TypeError, self.decimal.localcontext, Emin="")
         self.assertRaises(TypeError, self.decimal.localcontext, Emax="")
 
+        # None is not a valid value for any of these attributes.
+        for name in ('prec', 'rounding', 'Emin', 'Emax', 'capitals', 'clamp',
+                     'flags', 'traps'):
+            with self.subTest(name=name):
+                self.assertRaises(TypeError, self.decimal.localcontext,
+                                  **{name: None})
+
     def test_local_context_kwargs_does_not_overwrite_existing_argument(self):
         ctx = self.decimal.getcontext()
         orig_prec = ctx.prec
