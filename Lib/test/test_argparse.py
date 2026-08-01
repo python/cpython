@@ -2,6 +2,7 @@
 
 import _colorize
 import contextlib
+import copy
 import functools
 import io
 import operator
@@ -6266,6 +6267,19 @@ class TestNamespace(TestCase):
         ns = argparse.Namespace(a=1, b=2)
         self.assertIs(ns.__eq__(None), NotImplemented)
         self.assertIs(ns.__ne__(None), NotImplemented)
+
+    def test_replace(self):
+        ns = argparse.Namespace(a=1, b=2)
+        new = copy.replace(ns, b=3, c=4)
+        self.assertIsInstance(new, argparse.Namespace)
+        self.assertEqual(new, argparse.Namespace(a=1, b=3, c=4))
+        self.assertEqual(ns, argparse.Namespace(a=1, b=2))
+
+        class MyNamespace(argparse.Namespace):
+            pass
+        new = copy.replace(MyNamespace(a=1), a=2)
+        self.assertIsInstance(new, MyNamespace)
+        self.assertEqual(new.a, 2)
 
 
 # ===================
