@@ -328,10 +328,15 @@ The :mod:`!csv` module defines the following classes:
       are preferred, in this order,
       no matter how many times each of them occurs.
 
+      The *lineterminator* parameter is deduced separately,
+      by a majority vote among the line endings of the sample.
+      A tie is broken in the order ``'\r\n'``, ``'\n'``, ``'\r'``,
+      so a sample without a complete line gives ``'\r\n'``.
+
       .. versionchanged:: next
          The dialect is now deduced by trial parsing
          and the results may differ from those of earlier Python versions.
-         The *escapechar* parameter can now be detected,
+         The *escapechar* and *lineterminator* parameters can now be detected,
          and the requested *delimiters* are not restricted to ASCII.
 
 
