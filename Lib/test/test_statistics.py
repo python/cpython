@@ -3105,6 +3105,12 @@ class TestNormalDist:
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
 
+    def test_quantiles_invalid_n(self):
+        Z = self.module.NormalDist()
+        with self.assertRaises(self.module.StatisticsError) as cm:
+            Z.quantiles(0)
+        self.assertEqual(str(cm.exception), 'n must be at least 1')
+
     def test_overlap(self):
         NormalDist = self.module.NormalDist
 
