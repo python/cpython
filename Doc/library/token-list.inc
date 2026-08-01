@@ -102,3 +102,7 @@
      - ``":="``
    * - .. data:: EXCLAMATION
      - ``"!"``
+   * - .. data:: DOLLAR
+     - ``"$"``
+   * - .. data:: TERNARY
+     - ``"?"``

@@ -68,20 +68,22 @@ extern "C" {
 #define ELLIPSIS        52
 #define COLONEQUAL      53
 #define EXCLAMATION     54
-#define OP              55
-#define TYPE_IGNORE     56
-#define TYPE_COMMENT    57
-#define SOFT_KEYWORD    58
-#define FSTRING_START   59
-#define FSTRING_MIDDLE  60
-#define FSTRING_END     61
-#define TSTRING_START   62
-#define TSTRING_MIDDLE  63
-#define TSTRING_END     64
-#define COMMENT         65
-#define NL              66
-#define ERRORTOKEN      67
-#define N_TOKENS        69
+#define DOLLAR          55
+#define TERNARY         56
+#define OP              57
+#define TYPE_IGNORE     58
+#define TYPE_COMMENT    59
+#define SOFT_KEYWORD    60
+#define FSTRING_START   61
+#define FSTRING_MIDDLE  62
+#define FSTRING_END     63
+#define TSTRING_START   64
+#define TSTRING_MIDDLE  65
+#define TSTRING_END     66
+#define COMMENT         67
+#define NL              68
+#define ERRORTOKEN      69
+#define N_TOKENS        71
 #define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */

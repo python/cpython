@@ -119,6 +119,7 @@ simple_stmts[asdl_stmt_seq*]:
 # NOTE: assignment MUST precede expression, else parsing a simple assignment
 # will throw a SyntaxError.
 simple_stmt[stmt_ty] (memo):
+    | dollar_stmt
     | assignment
     | &"type" type_alias
     | &('import' | 'from' | "lazy") import_stmt
@@ -134,6 +135,20 @@ simple_stmt[stmt_ty] (memo):
     | &'global' global_stmt
     | &'nonlocal' nonlocal_stmt
 
+dollar_stmt[stmt_ty]:
+    | '$' n=NAME {
+        _PyAST_Assign(
+            CHECK(asdl_expr_seq*,
+                _PyPegen_singleton_seq(
+                    p,
+                    _PyAST_Name(n->v.Name.id, Store, EXTRA)
+                )
+            ),
+            _PyAST_Constant(Py_None, NULL, EXTRA),
+            NULL,
+            EXTRA
+        )
+    }
 compound_stmt[stmt_ty]:
     | &('def' | '@' | 'async') function_def
     | &'if' if_stmt
@@ -717,13 +732,25 @@ expression[expr_ty] (memo):
     | invalid_if_expression
     | invalid_expression
     | invalid_legacy_expression
+    | question_if_expression
     | if_expression
     | disjunction
     | lambdef
 
+# IMPORTANT:
+# The 'no' branch must be 'expression' (which includes question_if_expression
+# as one of its alternatives), NOT question_if_expression directly.
+# question_if_expression only matches "X ? Y : Z" shape; using it directly
+# for 'no' forces the false-branch to ALSO be a ternary, breaking simple
+# cases like "12 > 2 ? 5 : 4" where 4 is just a plain expression.
+question_if_expression[expr_ty]:
+    | cond=disjunction '?' yes=expression ':' no=expression {
+        _PyAST_IfExp(cond, yes, no, EXTRA)
+    }
 if_expression[expr_ty]:
-    | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
-
+    | a=disjunction 'if' b=disjunction 'else' c=expression {
+        _PyAST_IfExp(b, a, c, EXTRA)
+    }
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _PyAST_YieldFrom(a, EXTRA) }
     | 'yield' a=[star_expressions] { _PyAST_Yield(a, EXTRA) }
@@ -1239,11 +1266,17 @@ invalid_kwarg:
     | a='**' expression '=' b=expression {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to keyword argument unpacking") }
 
-# IMPORTANT: Note that the "_without_invalid" suffix causes the rule to not call invalid rules under it
+# IMPORTANT:
+# expression_without_invalid must ALSO recognize question_if_expression,
+# otherwise the invalid_* rules (which run BEFORE question_if_expression
+# in the main `expression` rule) will treat '?' as a syntax error before
+# ever letting question_if_expression get a chance to parse it.
 expression_without_invalid[expr_ty]:
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | question_if_expression
     | disjunction
     | lambdef
+
 invalid_legacy_expression:
     | a=NAME !'(' b=star_expressions {
         _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b,
