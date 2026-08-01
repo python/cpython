@@ -1599,6 +1599,14 @@ ghi\0jkl
         with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
             sniffer.sniff(sample, delimiters=',;')
 
+    def test_sniff_space_delimiter(self):
+        # This sample used to be quadratic.
+        sniffer = csv.Sniffer()
+        sample = '"a" "b"\n' + ' ' * 100000
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ' ')
+        self.assertIs(dialect.doublequote, False)
+
 
 class NUL:
     def write(s, *args):
