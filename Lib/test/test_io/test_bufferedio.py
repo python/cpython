@@ -1220,6 +1220,60 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
         # self->raw and crashed with SIGSEGV.
         self.assertEqual(raw.tell_calls, 1)
 
+    def test_reentrant_detach_during_raw_seek(self):
+        # gh-154997: After detach(), seek() calls _buffered_raw_seek().
+        # Verify the guarded path by checking raw.seek() is not called
+        # again after detach().
+
+        class B(self.tp):
+            def flush(self):
+                return None
+
+        class Raw(io.RawIOBase):
+            def __init__(self):
+                super().__init__()
+                self.fired = False
+                self.seek_calls = 0
+
+            def readable(self):
+                return False
+
+            def writable(self):
+                return True
+
+            def seekable(self):
+                return True
+
+            def tell(self):
+                return 0
+
+            def seek(self, pos, whence=0):
+                self.seek_calls += 1
+                return 0
+
+            def write(self, b):
+                return len(b)
+
+            def truncate(self, pos=None):
+                if not self.fired:
+                    self.fired = True
+                    self.buf.detach()
+                return 0
+
+        raw = Raw()
+        buf = B(raw, buffer_size=64)
+        raw.buf = buf
+
+        # _buffered_init() performs one seek() during initialization.
+        initial_seek_calls = raw.seek_calls
+
+        buf.write(b"012")
+        self.assertEqual(buf.truncate(1), 0)
+
+        # _buffered_raw_seek() should not dispatch through a detached raw
+        # object, so no additional seek() should have occurred.
+        self.assertEqual(raw.seek_calls, initial_seek_calls)
+
 
 class PyBufferedWriterTest(BufferedWriterTest, PyTestCase):
     tp = pyio.BufferedWriter

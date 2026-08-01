@@ -475,7 +475,16 @@ static PyObject *
 raw_access_safe(buffered *self)
 {
     /* Similar to textio.c's buffer_access_safe(), but preserves
-       _Buffered's detached and uninitialized error semantics. */
+       _Buffered's detached and uninitialized error semantics.
+
+       Unlike buffer_access_safe(), we do not assert that a critical
+       section is held. This helper protects against same-thread
+       reentrant detach(), and it is also used during __init__,
+       where no critical section is held.
+
+       Return a new reference so callers safely hold the raw object
+       across callbacks that may detach it.
+    */
     if (self->raw == NULL) {
         if (self->detached) {
             PyErr_SetString(PyExc_ValueError,
@@ -488,10 +497,7 @@ raw_access_safe(buffered *self)
         return NULL;
     }
 
-    /* Returning a borrowed reference is safe since BufferedIO methods are
-       protected by critical sections. */
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    return self->raw;
+    return Py_NewRef(self->raw);
 }
 
 /* Because this can call arbitrary code, it shouldn't be called when
@@ -612,11 +618,10 @@ _io__Buffered_close_impl(buffered *self)
     }
 
     PyObject *raw = raw_access_safe(self);
-    if (raw == NULL) {
-        goto end;
+    if (raw != NULL) {
+        res = PyObject_CallMethodNoArgs(raw, &_Py_ID(close));
+        Py_DECREF(raw);
     }
-
-    res = PyObject_CallMethodNoArgs(raw, &_Py_ID(close));
 
     if (self->buffer) {
         PyMem_Free(self->buffer);
@@ -820,6 +825,7 @@ _buffered_raw_tell(buffered *self)
     }
 
     res = PyObject_CallMethodNoArgs(raw, &_Py_ID(tell));
+    Py_DECREF(raw);
     if (res == NULL)
         return -1;
 
@@ -861,6 +867,7 @@ _buffered_raw_seek(buffered *self, Py_off_t target, int whence)
 
     res = PyObject_CallMethodObjArgs(raw, &_Py_ID(seek),
                                      posobj, whenceobj, NULL);
+    Py_DECREF(raw);
     Py_DECREF(posobj);
     Py_DECREF(whenceobj);
 
@@ -1537,6 +1544,7 @@ _io__Buffered_truncate_impl(buffered *self, PyTypeObject *cls, PyObject *pos)
     }
 
     res = PyObject_CallMethodOneArg(raw, &_Py_ID(truncate), pos);
+    Py_DECREF(raw);
     if (res == NULL)
         goto end;
     /* Reset cached position */
@@ -1690,14 +1698,15 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
        We then retry reading, ignoring the signal if no handler has
        raised (see issue #10956).
     */
-    PyObject *raw = raw_access_safe(self);
-    if (raw == NULL) {
-        Py_DECREF(memobj);
-        return -1;
-    }
-
     do {
+        PyObject *raw = raw_access_safe(self);
+        if (raw == NULL) {
+            Py_DECREF(memobj);
+            return -1;
+        }
+
         res = PyObject_CallMethodOneArg(raw, &_Py_ID(readinto), memobj);
+        Py_DECREF(raw);
     } while (res == NULL && _PyIO_trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
@@ -1811,6 +1820,7 @@ _bufferedreader_read_all(buffered *self)
         }
 
         data = PyObject_CallMethodNoArgs(raw, &_Py_ID(read));
+        Py_DECREF(raw);
         if (data == NULL)
             goto cleanup;
         if (data != Py_None && !PyBytes_Check(data)) {
@@ -2056,16 +2066,17 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
        We then retry writing, ignoring the signal if no handler has
        raised (see issue #10956).
     */
-    PyObject *raw = raw_access_safe(self);
-    if (raw == NULL) {
-        Py_DECREF(memobj);
-        return -1;
-    }
-
     do {
+        PyObject *raw = raw_access_safe(self);
+        if (raw == NULL) {
+            Py_DECREF(memobj);
+            return -1;
+        }
+
         errno = 0;
         res = PyObject_CallMethodOneArg(raw, &_Py_ID(write), memobj);
         errnum = errno;
+        Py_DECREF(raw);
     } while (res == NULL && _PyIO_trap_eintr());
     Py_DECREF(memobj);
     if (res == NULL)
