@@ -756,7 +756,11 @@ _io__Buffered_isatty_impl(buffered *self)
 
 /* Forward decls */
 static PyObject *
+raw_access_safe(buffered *self);
+
+static PyObject *
 _bufferedwriter_flush_unlocked(buffered *);
+
 static Py_ssize_t
 _bufferedreader_fill_buffer(buffered *self);
 static void
