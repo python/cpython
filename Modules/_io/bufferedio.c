@@ -504,6 +504,7 @@ _io._Buffered._dealloc_warn
     /
 
 [clinic start generated code]*/
+
 static PyObject *
 _io__Buffered__dealloc_warn_impl(buffered *self, PyObject *source)
 /*[clinic end generated code: output=d8db21c6dec0e614 input=8f845f2a4786391c]*/
