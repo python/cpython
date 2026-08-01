@@ -1077,7 +1077,7 @@ As you can see, most actions involve storing or updating a value somewhere.
    which returns a copy of the object with the specified attributes replaced.
 
    .. versionchanged:: next
-      Added support of :func:`copy.replace`.
+      Added support for :func:`copy.replace`.
 
 Option
 arguments (and various other values) are stored as attributes of this object,
