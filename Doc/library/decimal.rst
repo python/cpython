@@ -1188,7 +1188,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       they have in the original context.
 
       .. versionchanged:: next
-         Added support of :func:`copy.replace`.
+         Added support for :func:`copy.replace`.
 
    .. method:: copy_decimal(num, /)
 
