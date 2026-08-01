@@ -966,7 +966,7 @@ A ``TarInfo`` object has the following public data attributes:
    This method is also used by :func:`copy.replace`.
 
    .. versionchanged:: next
-      Added support of :func:`copy.replace`.
+      Added support for :func:`copy.replace`.
 
 A :class:`TarInfo` object also provides some convenient query methods:
 
