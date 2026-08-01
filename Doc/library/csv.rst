@@ -533,7 +533,7 @@ which returns a copy of the dialect
 with the specified formatting parameters replaced.
 
 .. versionchanged:: next
-   Added support of :func:`copy.replace`.
+   Added support for :func:`copy.replace`.
 
 .. _reader-objects:
 
