@@ -1,2 +1,0 @@
-Fix libc thread safety issues with :mod:`dbm` by performing stateful
-operations in critical sections.

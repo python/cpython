@@ -1,4 +1,0 @@
-Fix an issue where defining a class with an :func:`@warnings.deprecated
-<warnings.deprecated>`-decorated base class may not invoke the correct
-:meth:`~object.__init_subclass__` method in cases involving multiple
-inheritance. Patch by Brian Schubert.

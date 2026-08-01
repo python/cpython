@@ -93,6 +93,13 @@ def runtest_refleak(test_name, test_func,
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = _get_dump(obj)[0]
 
+    # `ByteString` is not included in `collections.abc.__all__`
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        ByteString = collections.abc.ByteString
+    # Mypy doesn't even think `ByteString` is a class, hence the `type: ignore`
+    for obj in ByteString.__subclasses__() + [ByteString]:  # type: ignore[attr-defined]
+        abcs[obj] = _get_dump(obj)[0]
+
     # bpo-31217: Integer pool to get a single integer object for the same
     # value. The pool is used to prevent false alarm when checking for memory
     # block leaks. Fill the pool with values in -1000..1000 which are the most
@@ -254,6 +261,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data):
 
     # Clear ABC registries, restoring previously saved ABC registries.
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
+    with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
+        abs_classes.append(collections.abc.ByteString)
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:

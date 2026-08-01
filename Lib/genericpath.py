@@ -105,6 +105,15 @@ def getctime(filename, /):
 # Return the longest prefix of all list elements.
 def commonprefix(m, /):
     "Given a list of pathnames, returns the longest common leading component"
+    import warnings
+    warnings.warn('os.path.commonprefix() is deprecated. Use '
+                  'os.path.commonpath() for longest path prefix.',
+                  category=DeprecationWarning,
+                  stacklevel=2)
+    return _commonprefix(m)
+
+def _commonprefix(m, /):
+    "Internal implementation of commonprefix()"
     if not m: return ''
     # Some people pass in a list of pathname parts to operate in an OS-agnostic
     # fashion; don't try to translate in that case as that's an abuse of the

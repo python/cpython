@@ -1,5 +1,0 @@
-The :meth:`~mmap.mmap.size` method of the :class:`mmap.mmap` class now
-returns the size of an anonymous mapping on both Unix and Windows.
-Previously, the size would be returned on Windows and an :exc:`OSError`
-would be raised on Unix. :exc:`ValueError` is now raised instead of
-:exc:`OSError` when ``trackfd=False``.

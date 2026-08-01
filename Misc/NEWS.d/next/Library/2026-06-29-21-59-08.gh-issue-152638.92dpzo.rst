@@ -1,0 +1,4 @@
+Deprecate :func:`tkinter.filedialog.askopenfiles`.  Opening several files at
+once is error-prone and the returned list cannot be used in a :keyword:`with`
+statement; iterate over the names returned by
+:func:`tkinter.filedialog.askopenfilenames` and open them one by one instead.

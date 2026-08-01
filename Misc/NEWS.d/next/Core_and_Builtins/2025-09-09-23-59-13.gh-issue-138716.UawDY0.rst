@@ -1,2 +1,0 @@
-Improve :exc:`SyntaxError` message for :keyword:`assert` in cases like
-``assert a := b``.

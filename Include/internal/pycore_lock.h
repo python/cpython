@@ -34,6 +34,11 @@ _PyMutex_at_fork_reinit(PyMutex *m)
 
 typedef enum _PyLockFlags {
     // Do not detach/release the GIL when waiting on the lock.
+    //
+    // Note that code executed while holding a mutex with this flag must
+    // not detach, reach a safepoint or initiate a stop-the-world pause.
+    // Otherwise, a non-detaching waiter may remain waiting for this mutex and
+    // prevent the pause from completing.
     _Py_LOCK_DONT_DETACH = 0,
 
     // Detach/release the GIL while waiting on the lock.
@@ -69,6 +74,9 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
 // Unlock a mutex, returns -1 if the mutex is not locked (used for improved
 // error messages) otherwise returns 0.
 extern int _PyMutex_TryUnlock(PyMutex *m);
+
+// Yield the processor to other threads (e.g., sched_yield).
+extern void _Py_yield(void);
 
 
 // PyEvent is a one-time event notification

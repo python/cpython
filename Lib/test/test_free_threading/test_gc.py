@@ -62,6 +62,97 @@ class TestGC(TestCase):
         with threading_helper.start_threads(gcs + mutators):
             pass
 
+    def test_freeze_object_in_brc_queue(self):
+        # GH-142975: Freezing objects in the BRC queue could result in some
+        # objects having a zero refcount without being deallocated.
+
+        class Weird:
+            # We need a destructor to trigger the check for object resurrection
+            def __del__(self):
+                pass
+
+        # This is owned by the main thread, so the subthread will have to increment
+        # this object's reference count.
+        weird = Weird()
+
+        def evil():
+            gc.freeze()
+
+            # Decrement the reference count from this thread, which will trigger the
+            # slow path during resurrection and add our weird object to the BRC queue.
+            nonlocal weird
+            del weird
+
+            # Collection will merge the object's reference count and make it zero.
+            gc.collect()
+
+            # Unfreeze the object, making it visible to the GC.
+            gc.unfreeze()
+            gc.collect()
+
+        thread = Thread(target=evil)
+        thread.start()
+        thread.join()
+
+    def test_set_threshold(self):
+        # GH-148613: Setting the GC threshold from another thread could cause a
+        # race between the `gc_should_collect` and `gc_set_threshold` functions.
+        NUM_THREADS = 8
+        NUM_ITERS = 100_000
+        barrier = threading.Barrier(NUM_THREADS)
+
+        class CyclicReference:
+            def __init__(self):
+                self.r = self
+
+        def allocator():
+            barrier.wait()
+            for _ in range(NUM_ITERS):
+                CyclicReference()
+
+        def setter():
+            barrier.wait()
+            for i in range(NUM_ITERS):
+                gc.set_threshold(100 + (i % 100), 10 + (i % 10), 10 + (i % 10))
+
+        current_threshold = gc.get_threshold()
+        try:
+            threads = [Thread(target=allocator) for _ in range(NUM_THREADS - 1)]
+            threads.append(Thread(target=setter))
+            with threading_helper.start_threads(threads):
+                pass
+        finally:
+            gc.set_threshold(*current_threshold)
+
+    def test_get_count(self):
+        class CyclicReference:
+            def __init__(self):
+                self.ref = self
+
+        NUM_ALLOCATORS = 7
+        NUM_READERS = 1
+        NUM_THREADS = NUM_ALLOCATORS + NUM_READERS
+        NUM_ITERS = 1000
+
+        barrier = threading.Barrier(NUM_THREADS)
+
+        def allocator():
+            barrier.wait()
+            for _ in range(NUM_ITERS):
+                CyclicReference()
+
+
+        def reader():
+            barrier.wait()
+            for _ in range(NUM_ITERS):
+                gc.get_count()
+
+        threads = [Thread(target=allocator) for _ in range(NUM_ALLOCATORS)]
+        threads.extend(Thread(target=reader) for _ in range(NUM_READERS))
+
+        with threading_helper.start_threads(threads):
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()

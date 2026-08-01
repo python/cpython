@@ -160,7 +160,7 @@ to calculate those doing pointer arithmetic.
 .. date: 2022-10-06-15-45-57
 .. gh-issue: 96078
 .. nonce: fS-6mU
-.. section: Core and Builtins
+.. section: Library
 
 :func:`os.sched_yield` now release the GIL while calling sched_yield(2).
 Patch by Donghee Na.
@@ -170,7 +170,7 @@ Patch by Donghee Na.
 .. date: 2022-10-06-14-14-28
 .. gh-issue: 97955
 .. nonce: Nq5VXD
-.. section: Core and Builtins
+.. section: Library
 
 Migrate :mod:`zoneinfo` to Argument Clinic.
 
@@ -361,7 +361,7 @@ branching conditions.
 .. date: 2022-09-19-03-35-01
 .. gh-issue: 96821
 .. nonce: izK6JA
-.. section: Core and Builtins
+.. section: Library
 
 Fix undefined behaviour in ``audioop.c``.
 
@@ -481,7 +481,7 @@ Fix case of undefined behavior in ceval.c
 .. date: 2022-09-08-20-58-10
 .. gh-issue: 64373
 .. nonce: AfCi36
-.. section: Core and Builtins
+.. section: Library
 
 Convert :mod:`!_functools` to argument clinic.
 
@@ -490,7 +490,7 @@ Convert :mod:`!_functools` to argument clinic.
 .. date: 2022-09-07-13-38-37
 .. gh-issue: 96641
 .. nonce: wky0Fc
-.. section: Core and Builtins
+.. section: Library
 
 Do not expose ``KeyWrapper`` in :mod:`!_functools`.
 
@@ -990,7 +990,7 @@ bytecode compiler.
 .. date: 2022-07-20-09-04-55
 .. gh-issue: 95023
 .. nonce: bs-xd7
-.. section: Core and Builtins
+.. section: Library
 
 Implement :func:`os.setns` and  :func:`os.unshare` for Linux. Patch by Noam
 Cohen.
@@ -1021,7 +1021,7 @@ Previously it could cause SystemError or other undesired behavior.
 .. date: 2022-07-19-04-34-56
 .. gh-issue: 94996
 .. nonce: dV564A
-.. section: Core and Builtins
+.. section: Library
 
 :func:`ast.parse` will no longer parse function definitions with
 positional-only params when passed ``feature_version`` less than ``(3, 8)``.
@@ -1041,7 +1041,7 @@ Allow jumping within, out of, and across exception handlers in the debugger.
 .. date: 2022-07-18-05-10-29
 .. gh-issue: 94949
 .. nonce: OsZ7_s
-.. section: Core and Builtins
+.. section: Library
 
 :func:`ast.parse` will no longer parse parenthesized context managers when
 passed ``feature_version`` less than ``(3, 9)``. Patch by Shantanu Jain.
@@ -1051,7 +1051,7 @@ passed ``feature_version`` less than ``(3, 9)``. Patch by Shantanu Jain.
 .. date: 2022-07-18-04-48-34
 .. gh-issue: 94947
 .. nonce: df9gUw
-.. section: Core and Builtins
+.. section: Library
 
 :func:`ast.parse` will no longer parse assignment expressions when passed
 ``feature_version`` less than ``(3, 8)``. Patch by Shantanu Jain.
@@ -1394,7 +1394,7 @@ calls. Previously, the end column could precede the column offset.
 .. date: 2022-06-09-19-19-02
 .. gh-issue: 93461
 .. nonce: 5DqP1e
-.. section: Core and Builtins
+.. section: Library
 
 :func:`importlib.invalidate_caches` now drops entries from
 :data:`sys.path_importer_cache` with a relative path as name. This solves a
@@ -1729,7 +1729,7 @@ tracing functions implemented in C.
 .. date: 2022-05-11-09-16-54
 .. gh-issue: 91102
 .. nonce: lenv9h
-.. section: Core and Builtins
+.. section: Library
 
 :meth:`!_warnings.warn_explicit` is ported to Argument Clinic.
 
@@ -1759,7 +1759,7 @@ no longer does anything.
 .. date: 2022-05-03-20-12-18
 .. gh-issue: 92261
 .. nonce: aigLnb
-.. section: Core and Builtins
+.. section: Library
 
 Fix hang when trying to iterate over a ``typing.Union``.
 

@@ -1,8 +1,0 @@
-:ref:`curses.window <curses-window-objects>`: Consistently report failures
-of curses C API calls in Window methods by raising a :exc:`curses.error`.
-This affects :meth:`~curses.window.addch`, :meth:`~curses.window.addnstr`,
-:meth:`~curses.window.addstr`, :meth:`~curses.window.border`,
-:meth:`~curses.window.box`, :meth:`~curses.window.chgat`,
-:meth:`~curses.window.getbkgd`, :meth:`~curses.window.inch`,
-:meth:`~curses.window.insstr` and :meth:`~curses.window.insnstr`.
-Patch by Bénédikt Tran.

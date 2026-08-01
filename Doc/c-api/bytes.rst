@@ -47,6 +47,10 @@ called with a non-bytes parameter.
    *len* on success, and ``NULL`` on failure.  If *v* is ``NULL``, the contents of
    the bytes object are uninitialized.
 
+   .. soft-deprecated:: 3.15
+      Use the :c:type:`PyBytesWriter` API instead of
+      ``PyBytes_FromStringAndSize(NULL, len)``.
+
 
 .. c:function:: PyObject* PyBytes_FromFormat(const char *format, ...)
 
@@ -123,6 +127,10 @@ called with a non-bytes parameter.
    Return the bytes representation of object *o* that implements the buffer
    protocol.
 
+   .. note::
+      If the object implements the buffer protocol, then the buffer
+      must not be mutated while the bytes object is being created.
+
 
 .. c:function:: Py_ssize_t PyBytes_Size(PyObject *o)
 
@@ -176,17 +184,25 @@ called with a non-bytes parameter.
 .. c:function:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
-   appended to *bytes*; the caller will own the new reference.  The reference to
-   the old value of *bytes* will be stolen.  If the new object cannot be
-   created, the old reference to *bytes* will still be discarded and the value
-   of *\*bytes* will be set to ``NULL``; the appropriate exception will be set.
+   appended to *bytes*; the caller will own the new reference.
+   The reference to the old value of *bytes* will be ":term:`stolen <steal>`".
+   If the new object cannot be created, the old reference to *bytes* will still
+   be "stolen", the value of *\*bytes* will be set to ``NULL``, and
+   the appropriate exception will be set.
 
+   .. note::
+      If *newpart* implements the buffer protocol, then the buffer
+      must not be mutated while the new bytes object is being created.
 
 .. c:function:: void PyBytes_ConcatAndDel(PyObject **bytes, PyObject *newpart)
 
    Create a new bytes object in *\*bytes* containing the contents of *newpart*
    appended to *bytes*.  This version releases the :term:`strong reference`
    to *newpart* (i.e. decrements its reference count).
+
+   .. note::
+      If *newpart* implements the buffer protocol, then the buffer
+      must not be mutated while the new bytes object is being created.
 
 
 .. c:function:: PyObject* PyBytes_Join(PyObject *sep, PyObject *iterable)
@@ -206,6 +222,9 @@ called with a non-bytes parameter.
 
    .. versionadded:: 3.14
 
+   .. note::
+      If *iterable* objects implement the buffer protocol, then the buffers
+      must not be mutated while the new bytes object is being created.
 
 .. c:function:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
 
@@ -220,13 +239,54 @@ called with a non-bytes parameter.
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
 
+   .. soft-deprecated:: 3.15
+      Use the :c:type:`PyBytesWriter` API instead.
+
+
+.. c:function:: PyObject *PyBytes_Repr(PyObject *bytes, int smartquotes)
+
+   Get the string representation of *bytes*. This function is currently used to
+   implement :meth:`!bytes.__repr__` in Python.
+
+   This function does not do type checking; it is undefined behavior to pass
+   *bytes* as a non-bytes object or ``NULL``.
+
+   If *smartquotes* is true, the representation will use a double-quoted string
+   instead of single-quoted string when single-quotes are present in *bytes*.
+   For example, the byte string ``'Python'`` would be represented as
+   ``b"'Python'"`` when *smartquotes* is true, or ``b'\'Python\''`` when it is
+   false.
+
+   On success, this function returns a :term:`strong reference` to a
+   :class:`str` object containing the representation. On failure, this
+   returns ``NULL`` with an exception set.
+
+
+.. c:function:: PyObject *PyBytes_DecodeEscape(const char *s, Py_ssize_t len, const char *errors, Py_ssize_t unicode, const char *recode_encoding)
+
+   Unescape a backslash-escaped string *s*. *s* must not be ``NULL``.
+   *len* must be the size of *s*.
+
+   *errors* must be one of ``"strict"``, ``"replace"``, or ``"ignore"``. If
+   *errors* is ``NULL``, then ``"strict"`` is used by default.
+
+   On success, this function returns a :term:`strong reference` to a Python
+   :class:`bytes` object containing the unescaped string. On failure, this
+   function returns ``NULL`` with an exception set.
+
+   .. versionchanged:: 3.9
+      *unicode* and *recode_encoding* are now unused.
+
+
+.. _pybyteswriter:
+
 PyBytesWriter
 -------------
 
 The :c:type:`PyBytesWriter` API can be used to create a Python :class:`bytes`
 object.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 .. c:type:: PyBytesWriter
 
@@ -249,8 +309,9 @@ Create, Finish, Discard
    If *size* is greater than zero, allocate *size* bytes, and set the
    writer size to *size*. The caller is responsible to write *size*
    bytes using :c:func:`PyBytesWriter_GetData`.
+   This function does not overallocate.
 
-   On error, set an exception and return NULL.
+   On error, set an exception and return ``NULL``.
 
    *size* must be positive or zero.
 
@@ -324,12 +385,20 @@ Getters
 
    Get the writer size.
 
+   The function does not invalidate pointers returned by
+   :c:func:`PyBytesWriter_GetData`.
+
+   The function cannot fail.
+
 .. c:function:: void* PyBytesWriter_GetData(PyBytesWriter *writer)
 
    Get the writer data: start of the internal buffer.
 
-   The pointer is valid until :c:func:`PyBytesWriter_Finish` or
-   :c:func:`PyBytesWriter_Discard` is called on *writer*.
+   The pointer remains valid until a :c:type:`PyBytesWriter` function other
+   than :c:func:`PyBytesWriter_GetData` or :c:func:`PyBytesWriter_GetSize` is
+   called on *writer*.
+
+   The function cannot fail.
 
 
 Low-level API
@@ -339,6 +408,8 @@ Low-level API
 
    Resize the writer to *size* bytes. It can be used to enlarge or to
    shrink the writer.
+   This function typically overallocates to achieve amortized performance when
+   resizing multiple times.
 
    Newly allocated bytes are left uninitialized.
 
@@ -350,6 +421,8 @@ Low-level API
 .. c:function:: int PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t grow)
 
    Resize the writer by adding *grow* bytes to the current writer size.
+   This function typically overallocates to achieve amortized performance when
+   resizing multiple times.
 
    Newly allocated bytes are left uninitialized.
 
