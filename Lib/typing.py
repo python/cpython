@@ -392,6 +392,11 @@ _cleanups = []
 _caches = {}
 
 
+def _clear_caches():
+    for cleanup in _cleanups:
+        cleanup()
+
+
 def _tp_cache(func=None, /, *, typed=False):
     """Internal wrapper caching __getitem__ of generic types.
 
