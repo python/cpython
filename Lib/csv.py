@@ -336,10 +336,12 @@ class Sniffer:
         doublequote = False
         if delim:
             dq_regexp = re.compile(
-                    r"(?:(?<=%(delim)s)|^) *+%(quote)s"           # ,"
+                    r"(?:(?<=%(delim)s)|^)%(space)s%(quote)s"     # ,"
                     r"((?:%(quote)s%(quote)s|[^%(quote)s]++)*+)"  # the body
                     r"%(quote)s(?:%(delim)s|$)"                   # ",
-                    % {'delim': re.escape(delim), 'quote': quotechar},
+                    % {'delim': re.escape(delim), 'quote': quotechar,
+                       # Skipping spaces after a space rescans them.
+                       'space': ' *+' if delim != ' ' else ''},
                     re.MULTILINE)
             dquotechar = quotechar * 2
             doublequote = any(dquotechar in m[1]
