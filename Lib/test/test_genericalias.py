@@ -1,6 +1,8 @@
 """Tests for C-implemented GenericAlias."""
 
 import unittest
+from test import support
+from test.support import import_helper
 import pickle
 from array import array
 import copy
@@ -62,10 +64,11 @@ except ImportError:
 from string.templatelib import Template, Interpolation
 
 import typing
-from typing import TypeVar, Unpack
+from typing import TypeVar, TypeVarTuple, Unpack
 T = TypeVar('T')
 K = TypeVar('K')
 V = TypeVar('V')
+Ts = TypeVarTuple("Ts")
 
 _UNPACKED_TUPLES = [
     # Unpacked tuple using `*`
@@ -97,6 +100,7 @@ _UNPACKED_TUPLES = [
     tuple[*tuple[Unpack[tuple[int, ...]]]],
 ]
 
+_testcapi = import_helper.import_module("_testcapi")
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
@@ -627,6 +631,29 @@ class BaseTest(unittest.TestCase):
                 x = container[TypeVar("")]
                 with self.assertRaises(TypeError):
                     x[*typing.Mapping[..., ...]]
+
+    @support.nomemtest
+    def test_subs_tvars_nomemory(self):
+        alias = dict[str, tuple[*Ts]]
+        key = (int, str)
+
+        # Warm the code path to stabilize the allocation window.
+        # This injection point was determined experimentally for this build.
+        try:
+            dict[str, tuple[int, str]]
+        except Exception:
+            pass
+
+        _testcapi.set_nomemory(24, 25)
+        raised = False
+        try:
+            alias[key]
+        except MemoryError:
+            raised = True
+        finally:
+            _testcapi.remove_mem_hooks()
+
+        self.assertTrue(raised, "MemoryError not raised")
 
 
 class TypeIterationTests(unittest.TestCase):
