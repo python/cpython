@@ -1,5 +1,6 @@
 import annotationlib
 import inspect
+import itertools
 import textwrap
 import types
 import unittest
@@ -900,30 +901,14 @@ class RegressionTests(unittest.TestCase):
     # gh-154902
     def test_conditional_annotations_rebound(self):
         # user code can rebind __conditional_annotations__ to any object
-        for value in ("0", "{}", "[]", "''", "object()"):
-            with self.subTest(value=value):
+        lefts = ("__conditional_annotations__",
+                 'globals()["__conditional_annotations__"]')
+        values = ("0", "{}", "[]", "''", "object()", "frozenset()")
+        for left, value in itertools.product(lefts, values):
+            with self.subTest(left=left, value=value):
                 code = f"""
-                    __conditional_annotations__ = {value}
+                    {left} = {value}
                     x: int
                 """
                 with self.assertRaises(TypeError):
                     run_code(code)
-
-    # gh-154902
-    def test_conditional_annotations_rebound_via_globals(self):
-        code = """
-            globals()["__conditional_annotations__"] = 0
-            x: int
-        """
-        with self.assertRaises(TypeError):
-            run_code(code)
-
-    # gh-154902
-    def test_conditional_annotations_rebound_to_frozenset(self):
-        marker = frozenset()
-        code = """
-            __conditional_annotations__ = marker
-            x: int
-        """
-        with self.assertRaises(TypeError):
-            run_code(code, {"marker": marker})
