@@ -11422,7 +11422,7 @@
             v = stack_pointer[-1];
             set = stack_pointer[-2 - (oparg-1)];
             PyObject *set_o = PyStackRef_AsPyObjectBorrow(set);
-            if (!PySet_Check(set_o)) {
+            if (!PySet_CheckExact(set_o)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'%T' object is not a set", set_o);

@@ -8213,7 +8213,7 @@
             v = _stack_item_0;
             set = stack_pointer[-1 - (oparg-1)];
             PyObject *set_o = PyStackRef_AsPyObjectBorrow(set);
-            if (!PySet_Check(set_o)) {
+            if (!PySet_CheckExact(set_o)) {
                 stack_pointer[0] = v;
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

@@ -1380,7 +1380,7 @@ dummy_func(
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             PyObject *set_o = PyStackRef_AsPyObjectBorrow(set);
             // gh-154902: user code can rebind __conditional_annotations__
-            if (!PySet_Check(set_o)) {
+            if (!PySet_CheckExact(set_o)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'%T' object is not a set", set_o);
                 PyStackRef_CLOSE(v);
