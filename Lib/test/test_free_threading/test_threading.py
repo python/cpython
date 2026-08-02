@@ -38,24 +38,28 @@ class TestShutdown(unittest.TestCase):
                     pass
 
         def startup_worker():
-            handles = []
             for _ in range(ITERATIONS):
                 handle = _thread.start_joinable_thread(
                     lambda: None,
                     daemon=False,
                 )
-                handles.append(handle)
-            for handle in handles:
                 handle.join()
 
+        # The workers must be daemon threads so _thread._shutdown() ignores them
+        # and only scans the non-daemon handles created by startup_worker().
         workers = [
-        threading.Thread(target=shutdown_worker, daemon=True),
-        *[threading.Thread(
-            target=startup_worker, daemon=True) for _ in range(STARTUP_THREADS)],
+            threading.Thread(target=shutdown_worker, daemon=True),
+            *[
+                threading.Thread(target=startup_worker, daemon=True)
+                for _ in range(STARTUP_THREADS)
+            ],
         ]
 
-        with threading_helper.start_threads(workers):
-            pass
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(workers):
+                pass
+            if cm.exc_value is not None:
+                raise cm.exc_value
 
 if __name__ == "__main__":
     unittest.main()
