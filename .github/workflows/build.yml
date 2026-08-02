@@ -338,7 +338,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: JAVA_HOME="${JAVA_HOME_21_X64:-$JAVA_HOME_21_arm64}" python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
+        run: python3 Platforms/Android ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
     name: iOS
