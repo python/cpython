@@ -60,10 +60,22 @@ extern "C" {
 #define FT_STAT_MUTEX_SLEEP_INC() _Py_STATS_EXPR(ft_stats.mutex_sleeps++)
 #define FT_STAT_QSBR_POLL_INC() _Py_STATS_EXPR(ft_stats.qsbr_polls++)
 #define FT_STAT_WORLD_STOP_INC() _Py_STATS_EXPR(ft_stats.world_stops++)
+#define FT_STAT_WORLD_STOP_TIME(ns) \
+    do { \
+        PyStats *s = _PyStats_GET(); \
+        if (s != NULL) { \
+            uint64_t stw_ns = (uint64_t)(ns); \
+            s->ft_stats.world_stop_total_ns += stw_ns; \
+            if (stw_ns > s->ft_stats.world_stop_max_ns) { \
+                s->ft_stats.world_stop_max_ns = stw_ns; \
+            } \
+        } \
+    } while (0)
 #else
 #define FT_STAT_MUTEX_SLEEP_INC()
 #define FT_STAT_QSBR_POLL_INC()
 #define FT_STAT_WORLD_STOP_INC()
+#define FT_STAT_WORLD_STOP_TIME(ns)
 #endif
 
 // Export for '_opcode' shared extension
@@ -91,6 +103,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define FT_STAT_MUTEX_SLEEP_INC()
 #define FT_STAT_QSBR_POLL_INC()
 #define FT_STAT_WORLD_STOP_INC()
+#define FT_STAT_WORLD_STOP_TIME(ns)
 #endif  // !Py_STATS
 
 
