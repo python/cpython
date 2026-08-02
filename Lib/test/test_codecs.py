@@ -3761,7 +3761,7 @@ class IconvTest(unittest.TestCase):
                     data = codecs.iconv_encode(enc, text, errors)[0]
                     self.assertEqual(
                         codecs.iconv_decode(enc, data, 'strict', True)[0],
-                        char + replacement + char, data)
+                        char + replacement + char, ascii(data))
         if not tested:
             self.skipTest('no stateful iconv encoding is available')
 
