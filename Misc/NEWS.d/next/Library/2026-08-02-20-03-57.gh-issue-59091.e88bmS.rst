@@ -1,0 +1,3 @@
+Make the pure-Python :mod:`json` encoder use an object's actual type hierarchy
+rather than a spoofed ``__class__`` when recognizing containers, matching the C
+accelerator.

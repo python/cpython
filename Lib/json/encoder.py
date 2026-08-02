@@ -306,9 +306,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     yield buf + _floatstr(value)
                 else:
                     yield buf
-                    if isinstance(value, (list, tuple)):
+                    if issubclass(type(value), (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
-                    elif isinstance(value, (dict, frozendict)):
+                    elif issubclass(type(value), (dict, frozendict)):
                         chunks = _iterencode_dict(value, _current_indent_level)
                     else:
                         chunks = _iterencode(value, _current_indent_level)
@@ -393,9 +393,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     # see comment for int/float in _make_iterencode
                     yield _floatstr(value)
                 else:
-                    if isinstance(value, (list, tuple)):
+                    if issubclass(type(value), (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
-                    elif isinstance(value, (dict, frozendict)):
+                    elif issubclass(type(value), (dict, frozendict)):
                         chunks = _iterencode_dict(value, _current_indent_level)
                     else:
                         chunks = _iterencode(value, _current_indent_level)
@@ -427,9 +427,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         elif isinstance(o, float):
             # see comment for int/float in _make_iterencode
             yield _floatstr(o)
-        elif isinstance(o, (list, tuple)):
+        elif issubclass(type(o), (list, tuple)):
             yield from _iterencode_list(o, _current_indent_level)
-        elif isinstance(o, (dict, frozendict)):
+        elif issubclass(type(o), (dict, frozendict)):
             yield from _iterencode_dict(o, _current_indent_level)
         else:
             if markers is not None:
