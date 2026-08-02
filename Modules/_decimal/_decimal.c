@@ -1333,7 +1333,7 @@ context_setattr(PyObject *self, PyObject *name, PyObject *value)
     return PyObject_GenericSetAttr(self, name, value);
 }
 
-/* In the constructor and in localcontext() None means "not specified". */
+/* In the constructor None means "not specified". */
 #define NONE_TO_NULL(x) ((x) == Py_None ? NULL : (x))
 
 /* Set the given attributes.  An attribute is left unchanged if the
@@ -2099,14 +2099,14 @@ _decimal.localcontext
 
     ctx as local: object = None
     *
-    prec: object = None
-    rounding: object = None
-    Emin: object = None
-    Emax: object = None
-    capitals: object = None
-    clamp: object = None
-    flags: object = None
-    traps: object = None
+    prec: object = NULL
+    rounding: object = NULL
+    Emin: object = NULL
+    Emax: object = NULL
+    capitals: object = NULL
+    clamp: object = NULL
+    flags: object = NULL
+    traps: object = NULL
 
 Return a context manager for a copy of the supplied context.
 
@@ -2121,7 +2121,7 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
                            PyObject *rounding, PyObject *Emin,
                            PyObject *Emax, PyObject *capitals,
                            PyObject *clamp, PyObject *flags, PyObject *traps)
-/*[clinic end generated code: output=9bf4e47742a809b0 input=490307b9689c3856]*/
+/*[clinic end generated code: output=9bf4e47742a809b0 input=616abb6ee1654373]*/
 {
     PyObject *global;
 
@@ -2142,9 +2142,9 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
     }
 
     int ret = context_setattrs(
-        local_copy, NONE_TO_NULL(prec), NONE_TO_NULL(rounding),
-        NONE_TO_NULL(Emin), NONE_TO_NULL(Emax), NONE_TO_NULL(capitals),
-        NONE_TO_NULL(clamp), NONE_TO_NULL(flags), NONE_TO_NULL(traps)
+        local_copy, prec, rounding,
+        Emin, Emax, capitals,
+        clamp, flags, traps
     );
     if (ret < 0) {
         Py_DECREF(local_copy);

@@ -1,0 +1,3 @@
+:func:`decimal.localcontext` now raises :exc:`TypeError` if a keyword argument
+is ``None``, as the pure Python implementation already did.  Previously the C
+implementation silently ignored it.
