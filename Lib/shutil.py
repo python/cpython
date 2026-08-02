@@ -292,8 +292,11 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
+    copy_symlink = not follow_symlinks and _islink(src)
     file_size = 0
     for i, fn in enumerate([src, dst]):
+        if copy_symlink and i == 0:
+            continue
         try:
             st = _stat(fn)
         except OSError:
@@ -315,7 +318,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
             if _WINDOWS and i == 0:
                 file_size = st.st_size
 
-    if not follow_symlinks and _islink(src):
+    if copy_symlink:
         os.symlink(os.readlink(src), dst)
     else:
         with open(src, 'rb') as fsrc:

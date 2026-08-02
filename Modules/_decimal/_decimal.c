@@ -1723,6 +1723,47 @@ _decimal_Context___copy___impl(PyObject *self, PyTypeObject *cls)
 }
 
 /*[clinic input]
+@text_signature "($self, /, **changes)"
+_decimal.Context.__replace__
+
+    cls: defining_class
+    *
+    prec: object = NULL
+    rounding: object = NULL
+    Emin as emin: object = NULL
+    Emax as emax: object = NULL
+    capitals: object = NULL
+    clamp: object = NULL
+    flags as status: object = NULL
+    traps: object = NULL
+
+Return a copy of the context with the specified attributes replaced.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context___replace___impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *prec, PyObject *rounding,
+                                  PyObject *emin, PyObject *emax,
+                                  PyObject *capitals, PyObject *clamp,
+                                  PyObject *status, PyObject *traps)
+/*[clinic end generated code: output=375ef0392df682ec input=414d9d00b25af6f3]*/
+{
+    decimal_state *state = PyType_GetModuleState(cls);
+
+    PyObject *result = context_copy(state, self);
+    if (result == NULL) {
+        return NULL;
+    }
+    if (context_setattrs(result, prec, rounding, emin, emax, capitals,
+                         clamp, status, traps) < 0)
+    {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
+}
+
+/*[clinic input]
 _decimal.Context.__reduce__ = _decimal.Context.copy
 
 [clinic start generated code]*/
@@ -7563,6 +7604,7 @@ static PyMethodDef context_methods [] =
 
   /* Miscellaneous */
   _DECIMAL_CONTEXT___COPY___METHODDEF
+  _DECIMAL_CONTEXT___REPLACE___METHODDEF
   _DECIMAL_CONTEXT___REDUCE___METHODDEF
   _DECIMAL_CONTEXT_COPY_METHODDEF
   _DECIMAL_CONTEXT_CREATE_DECIMAL_METHODDEF
