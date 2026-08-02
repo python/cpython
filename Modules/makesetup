@@ -87,6 +87,32 @@ esac
 NL='\
 '
 
+# Map a module name as written in Setup to its three distinct attributes.
+# Submodules use dotted names (math.integer); a package's initializer is
+# written with an explicit __init__ leaf (math.__init__).
+#   mod_regname: import/registration name   math.integer  -> math.integer
+#                                           math.__init__ -> math
+#   mod_path:    path under srcdir (no ext)  math.integer  -> math/integer
+#                                           math.__init__ -> math/__init__
+#   mod_sym:     static PyInit_<sym> symbol  math.integer  -> math_integer
+#                                           math.__init__ -> math
+# mod_sym (the static inittab symbol) uses the full dotted name so it stays
+# unique across packages; shared submodules instead export
+# PyInit_<last component> (see Py_BUILD_CORE_BUILTIN).
+mod_regname() {
+	case $1 in
+	*.__init__)	echo "${1%.__init__}";;
+	*)		echo "$1";;
+	esac
+}
+mod_path() {
+	echo "$1" | tr '.' '/'
+}
+mod_sym() {
+	reg=`mod_regname "$1"`
+	echo "$reg" | tr '.' '_'
+}
+
 # Main loop
 for i in ${*-Setup}
 do
@@ -183,21 +209,35 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$\(*_RPATH\))		libs="$libs $arg";;
 			\$*)		libs="$libs $arg"
 					cpps="$cpps $arg";;
-			*.*)		echo 1>&2 "bad word $arg in $line"
-					exit 1;;
 			-u)		skip=libs; libs="$libs -u";;
 			[a-zA-Z_]*)
-					mods="$mods $arg"
-					mods_upper=$(echo $mods | tr '[a-z]' '[A-Z]');;
+					# Module name, possibly dotted (math.integer) or a
+					# package initializer (math.__init__).  Only identifier
+					# characters and dots are allowed.
+					case $arg in
+					*[!a-zA-Z0-9_.]*)
+						echo 1>&2 "bad word $arg in $line"
+						exit 1;;
+					esac
+					mods="$mods $arg";;
 			*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			esac
 		done
+		regmods=
+		for mod in $mods
+		do
+			regmods="$regmods `mod_regname $mod`"
+		done
+		# MODULE_<NAME>_* variables are keyed by the registration name with
+		# dots replaced by underscores (math.integer -> MODULE_MATH_INTEGER,
+		# math.__init__ -> MODULE_MATH).
+		mods_upper=`echo $regmods | tr 'a-z' 'A-Z' | tr '.' '_'`
 		if test -z "$cpps" -a -z "$libs"; then
 			cpps="\$(MODULE_${mods_upper}_CFLAGS)"
 			libs="\$(MODULE_${mods_upper}_LDFLAGS)"
 		fi
-		for mod in $mods
+		for mod in $regmods
 		do
 			case $CONFIGURED in
 			*,${mod},*)
@@ -211,14 +251,14 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		case $doconfig in
 		yes)
 			LIBS="$LIBS $libs"
-			MODS="$MODS $mods"
-			BUILT="$BUILT $mods"
+			MODS="$MODS $regmods"
+			BUILT="$BUILT $regmods"
 			;;
 		no)
-			BUILT="$BUILT $mods"
+			BUILT="$BUILT $regmods"
 			;;
 		disabled)
-			DISABLED="$DISABLED $mods"
+			DISABLED="$DISABLED $regmods"
 			continue
 			;;
 		esac
@@ -269,15 +309,17 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		esac
 		for mod in $mods
 		do
-			file="$srcdir/$mod\$(EXT_SUFFIX)"
+			file="$srcdir/`mod_path $mod`\$(EXT_SUFFIX)"
 			case $doconfig in
 			no)
 				SHAREDMODS="$SHAREDMODS $file"
-				BUILT_SHARED="$BUILT_SHARED $mod"
+				BUILT_SHARED="$BUILT_SHARED `mod_regname $mod`"
 				;;
 			esac
 			rule="$file: $objs \$(MODULE_${mods_upper}_LDEPS)"
-			rule="$rule; \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
+			# Submodules/packages land in a sub-directory (math/integer,
+			# math/__init__); create it before linking.
+			rule="$rule; \$(MKDIR_P) \$(@D); \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done
@@ -299,8 +341,11 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	INITBITS=
 	for mod in $MODS
 	do
-		EXTDECLS="${EXTDECLS}extern PyObject* PyInit_$mod(void);$NL"
-		INITBITS="${INITBITS}    {\"$mod\", PyInit_$mod},$NL"
+		# $mod is the registration name (e.g. math.integer); the C init
+		# symbol is named after its last component only (PyInit_integer).
+		modsym=`mod_sym $mod`
+		EXTDECLS="${EXTDECLS}extern PyObject* PyInit_$modsym(void);$NL"
+		INITBITS="${INITBITS}    {\"$mod\", PyInit_$modsym},$NL"
 	done
 
 
