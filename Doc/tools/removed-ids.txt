@@ -6,6 +6,7 @@ c-api/file.html: deprecated-api
 
 # Removed sections
 library/asyncio-task.html: terminating-a-task-group
+library/dis.html: opcode-DELETE_ATTR
 library/dis.html: opcode-DELETE_GLOBAL
 library/dis.html: opcode-DELETE_NAME
 library/asyncio-llapi-index.html: event-loop-policies
@@ -42,3 +43,19 @@ c-api/typeobj.html: c.Py_tp_bases
 
 # Removed pages
 library/asyncio-policy.html: (page missing)
+
+# Removed old Windows installer docs
+using/windows.html: diagnostics
+using/windows.html: dry-run
+using/windows.html: from-a-script
+using/windows.html: from-file-associations
+using/windows.html: from-the-command-line
+using/windows.html: install-on-demand
+using/windows.html: install-quiet-option
+using/windows.html: installing-without-ui
+using/windows.html: modifying-an-install
+using/windows.html: python-launcher-for-windows-deprecated
+using/windows.html: return-codes
+using/windows.html: the-full-installer-deprecated
+using/windows.html: virtual-environments
+using/windows.html: windows-full

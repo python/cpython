@@ -939,7 +939,10 @@ class CBytesIOTest(PyBytesIOTest):
 
     @support.cpython_only
     def test_sizeof(self):
-        basesize = support.calcobjsize('P2n2Pn')
+        if support.Py_GIL_DISABLED:
+            basesize = support.calcobjsize('P2n2Pni')
+        else:
+            basesize = support.calcobjsize('P2n2Pn')
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
         check(io.BytesIO(), basesize )

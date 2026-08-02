@@ -5,7 +5,7 @@
 import collections.abc
 import unittest
 from test import support
-from test.support import import_helper
+from test.support import import_helper, script_helper
 from test.support import os_helper
 from test.support import _2G
 from test.support import subTests
@@ -31,6 +31,11 @@ typecodes = array.typecodes
 
 class MiscTest(unittest.TestCase):
 
+    def test_array_type_importable(self):
+        from array import ArrayType
+
+        self.assertIs(array.array, ArrayType)
+
     def test_array_is_sequence(self):
         self.assertIsInstance(array.array("B"), collections.abc.MutableSequence)
         self.assertIsInstance(array.array("B"), collections.abc.Reversible)
@@ -41,6 +46,23 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(ValueError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
         self.assertRaises(ValueError, array.array, 'Z')
+
+    @support.cpython_only
+    def test_does_not_crash_on_broken_imports(self):
+        # gh-153210
+        code = """if 1:
+            import collections.abc
+
+            del collections.abc.MutableSequence
+
+            try:
+                import array  # it used to crash before
+            except AttributeError:
+                pass
+            else:
+                raise AssertionError('AttributeError was not raised')
+        """
+        script_helper.assert_python_ok('-c', code)
 
     @support.cpython_only
     def test_disallow_instantiation(self):

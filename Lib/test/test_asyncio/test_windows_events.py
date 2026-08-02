@@ -5,6 +5,7 @@ import sys
 import time
 import threading
 import unittest
+import warnings
 from unittest import mock
 
 if sys.platform != 'win32':
@@ -15,6 +16,9 @@ import _winapi
 
 import asyncio
 from asyncio import windows_events
+from asyncio import windows_utils
+from test import support
+from test.support import os_helper
 from test.test_asyncio import utils as test_utils
 
 
@@ -322,6 +326,111 @@ class ProactorTests(WindowsEventsTestCase):
 
         stop.set()
         thr.join()
+
+
+class ProactorPipeObjectSupportTests(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.ProactorEventLoop()
+        self.addCleanup(self.loop.close)
+        self.errors = []
+        self.loop.set_exception_handler(
+            lambda loop, context: self.errors.append(context))
+
+    def check_read_rejected(self, pipe):
+        self.addCleanup(pipe.close)
+        lost = self.loop.create_future()
+
+        class Proto(asyncio.Protocol):
+            def connection_lost(self, exc):
+                if not lost.done():
+                    lost.set_result(exc)
+
+        async def run():
+            transport, _ = await self.loop.connect_read_pipe(Proto, pipe)
+            exc = await lost
+            transport.close()
+            return exc
+
+        exc = self.loop.run_until_complete(run())
+        self.assertIsInstance(exc, OSError)
+
+    def check_write_rejected(self, pipe):
+        self.addCleanup(pipe.close)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', ResourceWarning)
+            with self.assertRaises(OSError):
+                self.loop.run_until_complete(
+                    self.loop.connect_write_pipe(asyncio.BaseProtocol, pipe))
+            support.gc_collect()
+
+    def check_accepted(self, rpipe, wpipe):
+        self.addCleanup(rpipe.close)
+        self.addCleanup(wpipe.close)
+
+        chunks = []
+        lost = self.loop.create_future()
+
+        class ReadProto(asyncio.Protocol):
+            def data_received(self, data):
+                chunks.append(data)
+
+            def connection_lost(self, exc):
+                if not lost.done():
+                    lost.set_result(exc)
+
+        async def run():
+            rtransport, _ = await self.loop.connect_read_pipe(ReadProto, rpipe)
+            wtransport, _ = await self.loop.connect_write_pipe(
+                asyncio.BaseProtocol, wpipe)
+            wtransport.write(b'spam')
+            wtransport.close()
+            await lost
+            rtransport.close()
+
+        self.loop.run_until_complete(run())
+        self.assertEqual(b''.join(chunks), b'spam')
+        self.assertFalse(self.errors)
+
+    def test_overlapped_pipe(self):
+        rhandle, whandle = windows_utils.pipe(duplex=True, overlapped=(True, True))
+        self.check_accepted(windows_utils.PipeHandle(rhandle),
+                            windows_utils.PipeHandle(whandle))
+
+    def test_socketpair(self):
+        rsock, wsock = socket.socketpair()
+        self.check_accepted(rsock, wsock)
+
+    def test_read_non_overlapped_pipe(self):
+        rhandle, whandle = windows_utils.pipe(overlapped=(False, False))
+        self.addCleanup(windows_utils.PipeHandle(whandle).close)
+        self.check_read_rejected(windows_utils.PipeHandle(rhandle))
+
+    def test_write_non_overlapped_pipe(self):
+        rhandle, whandle = windows_utils.pipe(overlapped=(False, False))
+        self.addCleanup(windows_utils.PipeHandle(rhandle).close)
+        self.check_write_rejected(windows_utils.PipeHandle(whandle))
+
+    def test_read_regular_file(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'wb') as f:
+            f.write(b'spam')
+        self.check_read_rejected(open(os_helper.TESTFN, 'rb', 0))
+
+    def test_write_regular_file(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        self.check_write_rejected(open(os_helper.TESTFN, 'wb', 0))
+
+    def test_read_os_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, wfd)
+        self.check_read_rejected(open(rfd, 'rb', 0))
+
+    def test_write_os_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.check_write_rejected(open(wfd, 'wb', 0))
 
 
 if __name__ == '__main__':

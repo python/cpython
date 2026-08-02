@@ -1056,6 +1056,7 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject 
         // +1 in case PY_VECTORCALL_ARGUMENTS_OFFSET is set.
         result = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
         if (result == NULL) {
+            PyErr_NoMemory();
             return NULL;
         }
     }

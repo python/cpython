@@ -3312,6 +3312,16 @@ Changes in the Python API
   This temporary change affects other threads.
   (Contributed by Serhiy Storchaka in :gh:`69998`.)
 
+* :func:`pickle.dump` and :func:`pickle.dumps` now raise
+  :exc:`~pickle.PicklingError` for some failures that previously raised
+  :exc:`AttributeError`, :exc:`ImportError`, :exc:`ValueError`,
+  :exc:`UnicodeEncodeError` or :exc:`!PicklingError`,
+  depending on the implementation
+  (for example, pickling a local object, or an object whose module cannot be imported).
+  The original exception is chained to the :exc:`!PicklingError`.
+  Code that caught these exceptions should also catch :exc:`!PicklingError`.
+  (Contributed by Serhiy Storchaka in :gh:`122311`.)
+
 * :class:`types.UnionType` is now an alias for :class:`typing.Union`,
   causing changes in some behaviors.
   See :ref:`above <whatsnew314-typing-union>` for more details.
