@@ -8526,25 +8526,15 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
             }
             /* A positive result counts nonreversible conversions: iconv()
                substituted an unencodable character instead of failing with
-               EILSEQ (musl and *BSD citrus do this).  Treat it as unencodable
-               and re-run one code point at a time to locate it. */
+               EILSEQ (musl and *BSD citrus do this). */
             if (ret > 0) {
-                if (!careful) {
-                    careful = 1;
-                    probe_cd = iconv_open_or_set_error(encoding, source,
-                                                       encoding);
-                    if (probe_cd == (iconv_t)-1) {
-                        goto done;
-                    }
-                    iconv(cd, NULL, NULL, NULL, NULL);
-                    out = PyBytesWriter_GetData(writer);
-                    outend = out + PyBytesWriter_GetSize(writer);
-                    up = ustart;
-                    continue;
+                if (careful) {
+                    /* The probe reported the code point as encodable, but it
+                       was substituted in the current shift state; drop it and
+                       report it. */
+                    out = out_before;
+                    up -= unit;
                 }
-                /* This code point was substituted; drop it and report it. */
-                out = out_before;
-                up -= unit;
             }
             else if (careful && up < uend) {
                 continue;
@@ -8564,6 +8554,23 @@ _PyUnicode_EncodeIconv(const char *encoding, PyObject *unicode,
         else if (errno != EILSEQ && errno != EINVAL) {
             PyErr_SetFromErrno(PyExc_OSError);
             goto done;
+        }
+
+        if (!careful) {
+            /* iconv() can reset the shift state of cd on an unencodable code
+               point, while the output written for the preceding code points
+               stays in the shifted state.  Re-run one code point at a time:
+               then nothing is written for the failed one. */
+            careful = 1;
+            probe_cd = iconv_open_or_set_error(encoding, source, encoding);
+            if (probe_cd == (iconv_t)-1) {
+                goto done;
+            }
+            iconv(cd, NULL, NULL, NULL, NULL);
+            out = PyBytesWriter_GetData(writer);
+            outend = out + PyBytesWriter_GetSize(writer);
+            up = ustart;
+            continue;
         }
 
         /* An unencodable code point at *up; one input unit is one code point. */
