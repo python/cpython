@@ -13,56 +13,19 @@ lazy from ctypes import Structure, BigEndianStructure, LittleEndianStructure
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
-
-    def _get_build_version():
-        """Return the version of MSVC that was used to build Python.
-
-        For Python 2.3 and up, the version number is included in
-        sys.version.  For earlier versions, assume the compiler is MSVC 6.
-        """
-        # This function was copied from Lib/distutils/msvccompiler.py
-        prefix = "MSC v."
-        i = sys.version.find(prefix)
-        if i == -1:
-            return 6
-        i = i + len(prefix)
-        s, rest = sys.version[i:].split(" ", 1)
-        majorVersion = int(s[:-2]) - 6
-        if majorVersion >= 13:
-            majorVersion += 1
-        minorVersion = int(s[2:3]) / 10.0
-        # I don't think paths are affected by minor version in version 6
-        if majorVersion == 6:
-            minorVersion = 0
-        if majorVersion >= 6:
-            return majorVersion + minorVersion
-        # else we don't know what version of the compiler this is
-        return None
-
     def find_msvcrt():
-        """Return the name of the VC runtime dll"""
-        version = _get_build_version()
-        if version is None:
-            # better be safe than sorry
-            return None
-        if version <= 6:
-            clibname = 'msvcrt'
-        elif version <= 13:
-            clibname = 'msvcr%d' % (version * 10)
-        else:
-            # CRT is no longer directly loadable. See issue23606 for the
-            # discussion about alternative approaches.
-            return None
-
-        # If python was built with in debug mode
-        import importlib.machinery
-        if '_d.pyd' in importlib.machinery.EXTENSION_SUFFIXES:
-            clibname += 'd'
-        return clibname+'.dll'
+        """Return the name of the VC runtime dll.
+           This is soft deprecated as of Python 3.16."""
+        # See gh-154199. In short, this function wasn't able to return
+        # newer msvcrt versions (because there was no single msvcrt DLL),
+        # and the versions that are a single DLL are no longer supported
+        # by Microsoft.
+        return None
 
     def find_library(name):
         if name in ('c', 'm'):
-            return find_msvcrt()
+            # See gh-67794; there is no single VC runtime DLL anymore.
+            return None
         # See MSDN for the REAL search order.
         for directory in os.environ['PATH'].split(os.pathsep):
             fname = os.path.join(directory, name)
@@ -429,8 +392,7 @@ elif os.name == "posix":
             result = None
             try:
                 p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     universal_newlines=True)
+                                     stderr=subprocess.PIPE)
                 out, _ = p.communicate()
                 res = re.findall(expr, os.fsdecode(out))
                 for file in res:
@@ -450,53 +412,12 @@ elif os.name == "posix":
                    _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name))
 
 
-# Listing loaded libraries on other systems will try to use
-# functions common to Linux and a few other Unix-like systems.
-# See the following for several platforms' documentation of the same API:
-# https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html
-# https://man.freebsd.org/cgi/man.cgi?query=dl_iterate_phdr
-# https://man.openbsd.org/dl_iterate_phdr
-# https://docs.oracle.com/cd/E88353_01/html/E37843/dl-iterate-phdr-3c.html
-if (os.name == "posix" and
-    sys.platform not in {"darwin", "ios", "tvos", "watchos"}):
-    import ctypes
-    if hasattr((_libc := ctypes.CDLL(None)), "dl_iterate_phdr"):
-
-        class _dl_phdr_info(ctypes.Structure):
-            _fields_ = [
-                ("dlpi_addr", ctypes.c_void_p),
-                ("dlpi_name", ctypes.c_char_p),
-                ("dlpi_phdr", ctypes.c_void_p),
-                ("dlpi_phnum", ctypes.c_ushort),
-            ]
-
-        _dl_phdr_callback = ctypes.CFUNCTYPE(
-            ctypes.c_int,
-            ctypes.POINTER(_dl_phdr_info),
-            ctypes.c_size_t,
-            ctypes.POINTER(ctypes.py_object),
-        )
-
-        @_dl_phdr_callback
-        def _info_callback(info, _size, data):
-            libraries = data.contents.value
-            name = os.fsdecode(info.contents.dlpi_name)
-            libraries.append(name)
-            return 0
-
-        _dl_iterate_phdr = _libc["dl_iterate_phdr"]
-        _dl_iterate_phdr.argtypes = [
-            _dl_phdr_callback,
-            ctypes.POINTER(ctypes.py_object),
-        ]
-        _dl_iterate_phdr.restype = ctypes.c_int
-
-        def dllist():
-            """Return a list of loaded shared libraries in the current process."""
-            libraries = []
-            _dl_iterate_phdr(_info_callback,
-                             ctypes.byref(ctypes.py_object(libraries)))
-            return libraries
+# On platforms which provide dl_iterate_phdr(), dllist() is implemented
+# in _ctypes.
+try:
+    from _ctypes import dllist
+except ImportError:
+    pass
 
 
 @dataclass(slots=True, frozen=True)
@@ -590,6 +511,8 @@ def wrap_dll_function(dll):
 
         ptr.restype = restype
         ptr.argtypes = tuple(annotations.values())
+        functools.update_wrapper(ptr, func, updated=())
+
         return ptr
 
     return decorator

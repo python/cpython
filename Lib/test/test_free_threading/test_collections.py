@@ -1,5 +1,5 @@
 import unittest
-from collections import deque, defaultdict
+from collections import OrderedDict, deque, defaultdict
 from copy import copy
 from test.support import threading_helper
 
@@ -75,6 +75,31 @@ class TestDefaultDict(unittest.TestCase):
                 dd.default_factory = lambda: 0
 
         threading_helper.run_concurrently([reprer, setter])
+
+
+class TestOrderedDict(unittest.TestCase):
+    def test_iterator_update_clear_race(self):
+        # gh-151627: OrderedDict iterator construction must not race with
+        # concurrent clear()/update() operations that mutate the linked list.
+        od = OrderedDict((i, i) for i in range(100))
+
+        def mutate():
+            for i in range(5000):
+                od.clear()
+                od.update(((i, i), (i + 1, i + 1), (i + 2, i + 2)))
+
+        def iterate():
+            for _ in range(5000):
+                try:
+                    for _ in od:
+                        pass
+                    list(reversed(od))
+                except RuntimeError:
+                    pass
+
+        threading_helper.run_concurrently(
+            [mutate, *[iterate for _ in range(8)]],
+        )
 
 
 if __name__ == "__main__":
