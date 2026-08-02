@@ -1692,3 +1692,4 @@ invalid_bitwise_or:
         ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(b, c, "invalid syntax.  Maybe you meant 'or' or '|' instead of '||'?")
         : NULL
     }
+
