@@ -1182,6 +1182,14 @@ In addition to the three supplied contexts, new contexts can be created with the
 
       Return a duplicate of the context.
 
+      :class:`!Context` objects also support :func:`copy.replace`,
+      which returns a duplicate with the specified fields replaced.
+      Fields which are not specified keep the values
+      they have in the original context.
+
+      .. versionchanged:: next
+         Added support for :func:`copy.replace`.
+
    .. method:: copy_decimal(num, /)
 
       Return a copy of the Decimal instance num.
