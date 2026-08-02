@@ -8219,8 +8219,7 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_Format(tstate, PyExc_TypeError,
-                              "__conditional_annotations__ must be a set, not %T",
-                              set_o);
+                              "'%T' object is not a set", set_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

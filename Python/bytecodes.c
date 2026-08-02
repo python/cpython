@@ -1382,8 +1382,7 @@ dummy_func(
             // gh-154902: user code can rebind __conditional_annotations__
             if (!PySet_Check(set_o)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
-                              "__conditional_annotations__ must be a set, not %T",
-                              set_o);
+                              "'%T' object is not a set", set_o);
                 PyStackRef_CLOSE(v);
                 ERROR_IF(true);
             }
