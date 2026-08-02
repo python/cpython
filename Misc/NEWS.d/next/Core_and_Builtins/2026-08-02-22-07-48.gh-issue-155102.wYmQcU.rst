@@ -1,0 +1,3 @@
+Preserve TypeError exceptions raised during equality comparison in
+set.discard() and set.remove() when using hashable set subclasses as lookup
+keys.
