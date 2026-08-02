@@ -1610,11 +1610,10 @@
             v = stack_pointer[-1];
             set = stack_pointer[-2 - (oparg-1)];
             PyObject *set_o = PyStackRef_AsPyObjectBorrow(set);
-            if (!PySet_Check(set_o)) {
+            if (!PySet_CheckExact(set_o)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_Format(tstate, PyExc_TypeError,
-                              "__conditional_annotations__ must be a set, not %T",
-                              set_o);
+                              "'%T' object is not a set", set_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
