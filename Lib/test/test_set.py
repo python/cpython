@@ -471,6 +471,29 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertNotIn(self.thetype(self.word), s)
         s.discard(self.thetype(self.word))
 
+    def test_discard_remove_hashable_set_subclass_eq_typeerror(self):
+        class Bad:
+            def __hash__(self):
+                return 1
+
+            def __eq__(self, other):
+                raise TypeError("boom from __eq__")
+
+        class HashableSet(set):
+            def __hash__(self):
+                return 1
+
+        probe = HashableSet()
+
+        with self.assertRaisesRegex(TypeError, "boom from __eq__"):
+            probe in {Bad()}
+
+        with self.assertRaisesRegex(TypeError, "boom from __eq__"):
+            {Bad()}.discard(probe)
+
+        with self.assertRaisesRegex(TypeError, "boom from __eq__"):
+            {Bad()}.remove(probe)
+
     def test_pop(self):
         for i in range(len(self.s)):
             elem = self.s.pop()

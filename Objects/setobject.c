@@ -2653,19 +2653,21 @@ set_remove_impl(PySetObject *so, PyObject *key)
 {
     int rv;
 
-    rv = set_discard_key(so, key);
-    if (rv < 0) {
-        if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1) {
+        if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
+            set_unhashable_type(key);
             return NULL;
+        }
         PyErr_Clear();
-        Py_hash_t hash;
         Py_BEGIN_CRITICAL_SECTION(key);
         hash = frozenset_hash_impl(key);
         Py_END_CRITICAL_SECTION();
-        rv = set_discard_entry(so, key, hash);
-        if (rv < 0)
-            return NULL;
     }
+
+    rv = set_discard_entry(so, key, hash);
+    if (rv < 0)
+        return NULL;
 
     if (rv == DISCARD_NOTFOUND) {
         _PyErr_SetKeyError(key);
@@ -2693,19 +2695,21 @@ set_discard_impl(PySetObject *so, PyObject *key)
 {
     int rv;
 
-    rv = set_discard_key(so, key);
-    if (rv < 0) {
-        if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1) {
+        if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
+            set_unhashable_type(key);
             return NULL;
+        }
         PyErr_Clear();
-        Py_hash_t hash;
         Py_BEGIN_CRITICAL_SECTION(key);
         hash = frozenset_hash_impl(key);
         Py_END_CRITICAL_SECTION();
-        rv = set_discard_entry(so, key, hash);
-        if (rv < 0)
-            return NULL;
     }
+
+    rv = set_discard_entry(so, key, hash);
+    if (rv < 0)
+        return NULL;
     Py_RETURN_NONE;
 }
 
