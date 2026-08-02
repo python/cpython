@@ -7100,4 +7100,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=07ec694c7fd6b048 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=718b1f6c20412350 input=a9049054013a1b77]*/
