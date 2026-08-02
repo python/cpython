@@ -302,6 +302,8 @@ subs_tvars(PyObject *obj, PyObject *params,
                                     PyTuple_GET_SIZE(arg));
                     if (j < 0) {
                         Py_DECREF(subparams);
+                        /* tuple_extend() clears subargs on failure, so there is no
+                           reference left to decref here. */
                         return NULL;
                     }
                     continue;
