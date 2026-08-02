@@ -209,7 +209,7 @@ and work with streams:
    .. versionchanged:: 3.13
       Added the *cleanup_socket* parameter.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: 3.16
       Added the *mode* parameter.
 
 

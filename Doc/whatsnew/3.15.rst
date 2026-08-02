@@ -973,11 +973,6 @@ asyncio
   raising a custom exception which is then suppressed as it exits the task group.
   (Contributed by John Belmonte in :gh:`127214`.)
 
-* Added the *mode* parameter to :meth:`asyncio.loop.create_unix_server` and
-  :func:`asyncio.start_unix_server` to set the permissions of the Unix
-  socket file created for *path*.
-  (Contributed by Sam Bull in :gh:`94984`.)
-
 
 base64
 ------
