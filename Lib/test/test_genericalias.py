@@ -97,6 +97,7 @@ _UNPACKED_TUPLES = [
     tuple[*tuple[Unpack[tuple[int, ...]]]],
 ]
 
+
 class BaseTest(unittest.TestCase):
     """Test basics."""
     generic_types = [type, tuple, list, dict, frozendict,
