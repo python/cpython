@@ -4005,6 +4005,20 @@ class Context(object):
         return nc
     __copy__ = copy
 
+    def __replace__(self, /, **changes):
+        """Returns a copy of self with the specified attributes replaced."""
+        unexpected = changes.keys() - _context_attributes
+        if unexpected:
+            raise TypeError(f'__replace__() got an unexpected keyword '
+                            f'argument {min(unexpected)!r}')
+        nc = self.copy()
+        for name, value in changes.items():
+            if name in ('flags', 'traps') and isinstance(value, list):
+                # As in the constructor, accept a list of signals.
+                value = dict((s, int(s in value)) for s in _signals + value)
+            setattr(nc, name, value)
+        return nc
+
     def _raise_error(self, condition, explanation = None, *args):
         """Handles an error
 
