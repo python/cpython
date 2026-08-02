@@ -445,34 +445,21 @@ class TestUnixConsoleInputHook(TestCase):
 
     def test_input_hook_output_is_cooked(self):
         master_fd, slave_fd = pty.openpty()
+        self.addCleanup(os.close, master_fd)
 
-        # Drain the master continuously: on some platforms (e.g. macOS)
-        # tcsetattr(TCSADRAIN) blocks until the master side is read, so an
-        # undrained pty would deadlock the mode switch.
-        chunks = []
-        reading = True
-
-        def reader():
-            while reading:
-                r, _, _ = select.select([master_fd], [], [], 0.1)
-                if master_fd in r:
-                    try:
-                        data = os.read(master_fd, 4096)
-                    except OSError:
-                        break
-                    if not data:
-                        break
-                    chunks.append(data)
-
-        reader_thread = threading.Thread(target=reader)
-        reader_thread.start()
-
-        def cleanup():
-            nonlocal reading
-            reading = False
-            reader_thread.join()
-            os.close(master_fd)
-        self.addCleanup(cleanup)
+        # tcsetattr(TCSADRAIN) blocks on some platforms (e.g. macOS) while the
+        # master still holds unread output, so empty it before each mode switch.
+        def drain():
+            out = b""
+            while select.select([master_fd], [], [], 0)[0]:
+                try:
+                    data = os.read(master_fd, 4096)
+                except OSError:
+                    break
+                if not data:
+                    break
+                out += data
+            return out
 
         # Start from a cooked terminal so there are saved flags to restore.
         attr = _termios.tcgetattr(slave_fd)
@@ -482,6 +469,7 @@ class TestUnixConsoleInputHook(TestCase):
         console = UnixConsole(slave_fd, slave_fd, term="xterm")
         console.prepare()
         try:
+            drain()  # discard prepare()'s own setup sequences
             # pyrepl's own rendering runs with OPOST cleared.
             self.assertFalse(_termios.tcgetattr(slave_fd)[1] & _termios.OPOST)
 
@@ -490,6 +478,7 @@ class TestUnixConsoleInputHook(TestCase):
             def fake_hook():
                 observed["oflag"] = _termios.tcgetattr(slave_fd)[1]
                 os.write(slave_fd, b"line1\nline2\n")
+                observed["output"] = drain()
                 return 0
 
             with patch("_pyrepl.unix_console.posix") as mock_posix:
@@ -503,24 +492,27 @@ class TestUnixConsoleInputHook(TestCase):
             self.assertTrue(observed["oflag"] & _termios.OPOST)
             # ...and raw mode was restored afterwards.
             self.assertFalse(_termios.tcgetattr(slave_fd)[1] & _termios.OPOST)
+            # The tty translated the hook's bare '\n' into '\r\n'.
+            self.assertEqual(observed["output"], b"line1\r\nline2\r\n")
         finally:
-            console.restore()
-            os.close(slave_fd)
+            # restore() writes and only then switches modes, so there is no
+            # point left to drain from here; keep the master empty elsewhere.
+            stop = threading.Event()
 
-        # The switch back to raw mode already drained the hook's output, so
-        # joining the reader is enough -- no sleep needed.
-        reading = False
-        reader_thread.join()
-        while select.select([master_fd], [], [], 0)[0]:
+            def pump():
+                while not stop.is_set():
+                    if select.select([master_fd], [], [], 0.05)[0]:
+                        try:
+                            if not os.read(master_fd, 4096):
+                                break
+                        except OSError:
+                            break
+
+            pump_thread = threading.Thread(target=pump)
+            pump_thread.start()
             try:
-                extra = os.read(master_fd, 4096)
-            except OSError:
-                break
-            if not extra:
-                break
-            chunks.append(extra)
-
-        data = b"".join(chunks)
-        # The tty translated the hook's bare '\n' into '\r\n'.
-        self.assertIn(b"line1\r\nline2\r\n", data)
-        self.assertNotIn(b"line1\nline2\n", data)
+                console.restore()
+            finally:
+                stop.set()
+                pump_thread.join()
+                os.close(slave_fd)
