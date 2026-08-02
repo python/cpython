@@ -22,5 +22,40 @@ class TestRlock(unittest.TestCase):
         threading_helper.run_concurrently([repr_thread, mutate_thread])
 
 
+class TestShutdown(unittest.TestCase):
+    def test_shutdown_race(self):
+        import _thread
+        import threading
+
+        ITERATIONS = 1_000
+        STARTUP_THREADS = 4
+
+        def shutdown_worker():
+            for _ in range(ITERATIONS):
+                try:
+                    _thread._shutdown()
+                except RuntimeError:
+                    pass
+
+        def startup_worker():
+            handles = []
+            for _ in range(ITERATIONS):
+                handle = _thread.start_joinable_thread(
+                    lambda: None,
+                    daemon=False,
+                )
+                handles.append(handle)
+            for handle in handles:
+                handle.join()
+
+        workers = [
+        threading.Thread(target=shutdown_worker, daemon=True),
+        *[threading.Thread(
+            target=startup_worker, daemon=True) for _ in range(STARTUP_THREADS)],
+        ]
+
+        with threading_helper.start_threads(workers):
+            pass
+
 if __name__ == "__main__":
     unittest.main()
