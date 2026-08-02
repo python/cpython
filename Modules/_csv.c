@@ -127,6 +127,8 @@ typedef struct {
 
     DialectObj *dialect;    /* parsing dialect */
 
+    PyObject *converter;    /* called to convert an unquoted field, or NULL */
+
     PyObject *fields;           /* field list for current record */
     ParserState state;          /* current CSV parse state */
     Py_UCS4 *field;             /* temporary buffer */
@@ -142,6 +144,8 @@ typedef struct {
     PyObject *write;    /* write output lines to this file */
 
     DialectObj *dialect;    /* parsing dialect */
+
+    PyObject *formatter;    /* called to convert a value to a string, or NULL */
 
     Py_UCS4 *rec;            /* buffer for parser.join */
     Py_ssize_t rec_size;        /* size of allocated record */
@@ -651,6 +655,40 @@ _call_dialect(_csvstate *module_state, PyObject *dialect_inst, PyObject *kwargs)
     }
 }
 
+/* Pop the callable *name* out of *kwargs, replacing it with a copy.
+   *result is set to NULL if it is not given or is None. */
+static int
+pop_callable_kwarg(const char *name, PyObject **kwargs, PyObject **result)
+{
+    PyObject *value;
+    *result = NULL;
+    if (*kwargs == NULL) {
+        return 0;
+    }
+    int rc = PyDict_GetItemStringRef(*kwargs, name, &value);
+    if (rc <= 0) {  /* not found or error */
+        return rc;
+    }
+    if (value == Py_None) {
+        Py_CLEAR(value);
+    }
+    else if (!PyCallable_Check(value)) {
+        PyErr_Format(PyExc_TypeError,
+                     "\"%s\" must be callable or None, not %T", name, value);
+        Py_DECREF(value);
+        return -1;
+    }
+    PyObject *copy = PyDict_Copy(*kwargs);
+    if (copy == NULL || PyDict_DelItemString(copy, name) < 0) {
+        Py_XDECREF(copy);
+        Py_XDECREF(value);
+        return -1;
+    }
+    *kwargs = copy;
+    *result = value;
+    return 0;
+}
+
 /*
  * READER
  */
@@ -676,7 +714,14 @@ parse_save_field(ReaderObj *self)
             self->field_len != 0 &&
             (quoting == QUOTE_NONNUMERIC || quoting == QUOTE_STRINGS))
         {
-            PyObject *tmp = PyNumber_Float(field);
+            PyObject *tmp;
+            if (self->converter != NULL) {
+                tmp = PyObject_CallFunction(self->converter, "nO",
+                                            PyList_GET_SIZE(self->fields), field);
+            }
+            else {
+                tmp = PyNumber_Float(field);
+            }
             Py_DECREF(field);
             if (tmp == NULL) {
                 return -1;
@@ -1025,6 +1070,7 @@ Reader_traverse(PyObject *op, visitproc visit, void *arg)
 {
     ReaderObj *self = _ReaderObj_CAST(op);
     Py_VISIT(self->dialect);
+    Py_VISIT(self->converter);
     Py_VISIT(self->input_iter);
     Py_VISIT(self->fields);
     Py_VISIT(Py_TYPE(self));
@@ -1036,6 +1082,7 @@ Reader_clear(PyObject *op)
 {
     ReaderObj *self = _ReaderObj_CAST(op);
     Py_CLEAR(self->dialect);
+    Py_CLEAR(self->converter);
     Py_CLEAR(self->input_iter);
     Py_CLEAR(self->fields);
     return 0;
@@ -1096,6 +1143,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         return NULL;
 
     self->dialect = NULL;
+    self->converter = NULL;
     self->fields = NULL;
     self->input_iter = NULL;
     self->field = NULL;
@@ -1116,8 +1164,15 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->dialect = (DialectObj *)_call_dialect(module_state, dialect,
-                                                keyword_args);
+    PyObject *kwargs = keyword_args;
+    if (pop_callable_kwarg("converter", &kwargs, &self->converter) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    self->dialect = (DialectObj *)_call_dialect(module_state, dialect, kwargs);
+    if (kwargs != keyword_args) {
+        Py_DECREF(kwargs);
+    }
     if (self->dialect == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -1344,6 +1399,7 @@ csv_writerow_lock_held(PyObject *op, PyObject *seq)
     /* Join all fields in internal buffer.
      */
     join_reset(self);
+    Py_ssize_t field_index = 0;
     while ((field = PyIter_Next(iter))) {
         int append_ok;
         int quoted;
@@ -1378,7 +1434,18 @@ csv_writerow_lock_held(PyObject *op, PyObject *seq)
         else {
             PyObject *str;
 
-            str = PyObject_Str(field);
+            if (self->formatter != NULL) {
+                str = PyObject_CallFunction(self->formatter, "nO",
+                                            field_index, field);
+                if (str != NULL && !PyUnicode_Check(str)) {
+                    PyErr_Format(self->error_obj,
+                                 "formatter must return a string, not %T", str);
+                    Py_CLEAR(str);
+                }
+            }
+            else {
+                str = PyObject_Str(field);
+            }
             Py_DECREF(field);
             if (str == NULL) {
                 Py_DECREF(iter);
@@ -1391,6 +1458,7 @@ csv_writerow_lock_held(PyObject *op, PyObject *seq)
             Py_DECREF(iter);
             return NULL;
         }
+        field_index++;
     }
     Py_DECREF(iter);
     if (PyErr_Occurred())
@@ -1496,6 +1564,7 @@ Writer_traverse(PyObject *op, visitproc visit, void *arg)
 {
     WriterObj *self = _WriterObj_CAST(op);
     Py_VISIT(self->dialect);
+    Py_VISIT(self->formatter);
     Py_VISIT(self->write);
     Py_VISIT(self->error_obj);
     Py_VISIT(Py_TYPE(self));
@@ -1507,6 +1576,7 @@ Writer_clear(PyObject *op)
 {
     WriterObj *self = _WriterObj_CAST(op);
     Py_CLEAR(self->dialect);
+    Py_CLEAR(self->formatter);
     Py_CLEAR(self->write);
     Py_CLEAR(self->error_obj);
     return 0;
@@ -1564,6 +1634,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 
     self->dialect = NULL;
     self->write = NULL;
+    self->formatter = NULL;
 
     self->rec = NULL;
     self->rec_size = 0;
@@ -1588,8 +1659,15 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->dialect = (DialectObj *)_call_dialect(module_state, dialect,
-                                                keyword_args);
+    PyObject *kwargs = keyword_args;
+    if (pop_callable_kwarg("formatter", &kwargs, &self->formatter) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    self->dialect = (DialectObj *)_call_dialect(module_state, dialect, kwargs);
+    if (kwargs != keyword_args) {
+        Py_DECREF(kwargs);
+    }
     if (self->dialect == NULL) {
         Py_DECREF(self);
         return NULL;

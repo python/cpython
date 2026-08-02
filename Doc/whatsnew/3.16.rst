@@ -120,6 +120,13 @@ csv
   The results may differ from those of earlier Python versions.
   (Contributed by Serhiy Storchaka in :gh:`83273`.)
 
+* Add the *converter* parameter in :func:`csv.reader`
+  and the *formatter* parameter in :func:`csv.writer`.
+  They are used instead of :func:`float` and :func:`str`
+  for converting between fields and values,
+  and allow to convert and format the fields depending on the column.
+  (Contributed by Serhiy Storchaka in :gh:`155097`.)
+
 curses
 ------
 
