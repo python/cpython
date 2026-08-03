@@ -595,12 +595,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
         with open(flamegraph_out.name, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # The raw </script> must not appear unescaped in the output
-        # (it would break out of the inline <script> block)
-        idx = content.find("EMBEDDED_DATA")
-        if idx != -1:
-            after_embed = content[idx:]
-            self.assertNotIn("</script><b>", after_embed.split("</script>")[0])
+        # The funcname's </script> must be escaped in the embedded data so it
+        # cannot close the inline <script> block; the raw form must be absent.
+        self.assertIn(r"\u003c/script\u003e\u003cb\u003e", content)
+        self.assertNotIn("</script><b>", content)
 
     def test_flamegraph_collector_empty_export_fails(self):
         """Test empty flamegraph export reports no output."""
