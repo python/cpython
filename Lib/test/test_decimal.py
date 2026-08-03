@@ -3070,6 +3070,41 @@ class ContextAPItests:
         self.assertEqual(k1, k2)
         self.assertEqual(c.flags, d.flags)
 
+    def test_replace(self):
+        Context = self.decimal.Context
+        Inexact = self.decimal.Inexact
+        Overflow = self.decimal.Overflow
+        ROUND_UP = self.decimal.ROUND_UP
+
+        c = Context(prec=10, Emin=-99, capitals=0)
+        c.flags[Inexact] = True
+        d = copy.replace(c, prec=20, rounding=ROUND_UP)
+        self.assertEqual(d.prec, 20)
+        self.assertEqual(d.rounding, ROUND_UP)
+        # Not replaced attributes are inherited from the original context.
+        self.assertEqual(d.Emin, -99)
+        self.assertEqual(d.capitals, 0)
+        self.assertEqual(d.Emax, c.Emax)
+        self.assertEqual(d.clamp, c.clamp)
+        self.assertTrue(d.flags[Inexact])
+        self.assertEqual(d.traps, c.traps)
+        # The copy is deep and the original context is left unchanged.
+        self.assertIsNot(d.flags, c.flags)
+        self.assertIsNot(d.traps, c.traps)
+        self.assertEqual(c.prec, 10)
+        self.assertEqual(c.rounding, Context().rounding)
+
+        # As in the constructor, flags and traps can be given as a list.
+        d = copy.replace(c, flags=[Overflow])
+        self.assertTrue(d.flags[Overflow])
+        self.assertFalse(d.flags[Inexact])
+
+        self.assertRaises(TypeError, copy.replace, c, prek=1)
+        self.assertRaises(TypeError, copy.replace, c, prec='spam')
+        # Unlike in the constructor, None is not a valid value.
+        self.assertRaises(TypeError, copy.replace, c, prec=None)
+        self.assertRaises(TypeError, copy.replace, c, flags=None)
+
     def test__clamp(self):
         # In Python 3.2, the private attribute `_clamp` was made
         # public (issue 8540), with the old `_clamp` becoming a
@@ -3762,6 +3797,13 @@ class ContextWithStatement:
         self.assertRaises(TypeError, self.decimal.localcontext, traps="")
         self.assertRaises(TypeError, self.decimal.localcontext, Emin="")
         self.assertRaises(TypeError, self.decimal.localcontext, Emax="")
+
+        # None is not a valid value for any of these attributes.
+        for name in ('prec', 'rounding', 'Emin', 'Emax', 'capitals', 'clamp',
+                     'flags', 'traps'):
+            with self.subTest(name=name):
+                self.assertRaises(TypeError, self.decimal.localcontext,
+                                  **{name: None})
 
     def test_local_context_kwargs_does_not_overwrite_existing_argument(self):
         ctx = self.decimal.getcontext()
