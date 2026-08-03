@@ -1690,12 +1690,12 @@ _decimal.Context.copy
 
     cls: defining_class
 
-Return a duplicate of the context with all flags cleared.
+Return a duplicate of the context.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_copy_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=31c9c8eeb0c0cf77 input=aef1c0bddabdf8f0]*/
+/*[clinic end generated code: output=31c9c8eeb0c0cf77 input=87f8b92b1c7462a5]*/
 {
     decimal_state *state = PyType_GetModuleState(cls);
 

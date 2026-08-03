@@ -312,6 +312,11 @@ The :mod:`!csv` module defines the following classes:
       is given, it is interpreted as a string containing possible valid
       delimiter characters.
 
+      If several delimiters fit the sample equally well ---
+      for example if both ``','`` and ``';'`` split every row consistently ---
+      the delimiters ``','``, ``'\t'``, ``';'``, ``' '`` and ``':'``
+      are preferred, in this order,
+      no matter how many times each of them occurs.
 
    .. method:: has_header(sample)
 

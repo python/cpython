@@ -371,7 +371,7 @@ PyDoc_STRVAR(_decimal_Context_copy__doc__,
 "copy($self, /)\n"
 "--\n"
 "\n"
-"Return a duplicate of the context with all flags cleared.");
+"Return a duplicate of the context.");
 
 #define _DECIMAL_CONTEXT_COPY_METHODDEF    \
     {"copy", _PyCFunction_CAST(_decimal_Context_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_copy__doc__},
@@ -6984,4 +6984,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=0eb835634388294e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=72f619bdb52660d6 input=a9049054013a1b77]*/
