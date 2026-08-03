@@ -657,19 +657,19 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # On AIX, the reader trick (to be notified when the read end of the
         # socket is closed) only works for sockets. On other platforms it
         # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
-        # On macOS, the trick misfires for named FIFOs (but not for pipes
-        # created with os.pipe(), which have st_nlink == 0): the write end
-        # polls as readable whenever unread data sits in the FIFO, and no
+        # On macOS and Solaris, the trick misfires for named FIFOs (but not for
+        # pipes created with os.pipe(), which have st_nlink == 0): the write
+        # end polls as readable whenever unread data sits in the FIFO, and no
         # event is delivered when the read end is closed, so it can only
-        # ever report a false disconnection (gh-145030). The same xnu
+        # ever report a false disconnection (gh-145030). The same XNU
         # behaviour applies on iOS/tvOS/watchOS (sys.platform is not
         # "darwin" there).
-        is_named_fifo_on_apple = (
-            sys.platform in {"darwin", "ios", "tvos", "watchos"}
+        is_named_fifo_without_close_event = (
+            sys.platform in {"darwin", "ios", "tvos", "watchos", "sunos5"}
             and is_fifo and pipe_stat.st_nlink > 0)
         if is_socket or (is_fifo
                          and not sys.platform.startswith("aix")
-                         and not is_named_fifo_on_apple):
+                         and not is_named_fifo_without_close_event):
             # only start reading when connection_made() has been called
             self._loop.call_soon(self._loop._add_reader,
                                  self._fileno, self._read_ready)
