@@ -568,6 +568,7 @@ HAVE_IEEE_754 = _have_ieee_doubles()
 requires_IEEE_754 = unittest.skipUnless(
     HAVE_IEEE_754,
     "test requires IEEE 754 doubles")
+del HAVE_IEEE_754
 
 # detect evidence of double-rounding:
 x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
