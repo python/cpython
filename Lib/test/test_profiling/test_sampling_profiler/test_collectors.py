@@ -583,14 +583,16 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [MockThreadInfo(
                     1,
-                    [MockFrameInfo("test.py", 1, '</script><b>')]
+                    [MockFrameInfo("test.py", 1, "root"),
+                     MockFrameInfo("test.py", 2, '</script><b>')]
                 )],
             )
         ]
         collector.collect(frames)
 
         with captured_stdout(), captured_stderr():
-            collector.export(flamegraph_out.name)
+            export_ok = collector.export(flamegraph_out.name)
+        self.assertTrue(export_ok)
 
         with open(flamegraph_out.name, "r", encoding="utf-8") as f:
             content = f.read()
