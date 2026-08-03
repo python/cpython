@@ -1928,9 +1928,6 @@ PyFloat_Pack2(double x, char *data, int le)
          * different floating-point type, the result is the
          * canonical NaN of the new type".  The canonical NaN here
          * is a positive qNaN with zero payload. */
-        if (v & (1ULL << 63)) {
-            u16 |= (uint16_t)(1U << 15); /* set sign */
-        }
         /* add payload */
         u16 -= (u16 & 0x1ff);
         u16 += (uint16_t)((v & 0x7ffffffffffffULL) >> 42);
@@ -1938,7 +1935,9 @@ PyFloat_Pack2(double x, char *data, int le)
         if ((v & (1ULL << 51)) == 0 && (u16 & 0x1ff)) {
             u16 &= ~(uint16_t)(1 << 9);
         }
-
+        if (v & (1ULL << 63)) {
+            u16 |= (uint16_t)(1U << 15); /* set sign */
+        }
         memcpy(&y, &u16, 2);
 #endif
     }
