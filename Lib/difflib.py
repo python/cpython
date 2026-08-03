@@ -664,7 +664,7 @@ class SequenceMatcher:
     __class_getitem__ = classmethod(GenericAlias)
 
 
-def get_close_matches(word, possibilities, n=3, cutoff=0.6, autojunk=True):
+def get_close_matches(word, possibilities, n=3, cutoff=0.6, *, autojunk=True):
     """Use SequenceMatcher to return list of the best "good enough" matches.
 
     word is a sequence for which close matches are desired (typically a
@@ -810,7 +810,7 @@ class Differ:
     +   5. Flat is better than nested.
     """
 
-    def __init__(self, linejunk=None, charjunk=None, autojunk=True):
+    def __init__(self, linejunk=None, charjunk=None, *, autojunk=True):
         """
         Construct a text differencer, with optional filters.
 
@@ -1102,7 +1102,7 @@ def _format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
-                 tofiledate='', n=3, lineterm='\n', *, color=False, autojunk=True):
+                 tofiledate='', n=3, lineterm='\n', *, autojunk=True, color=False):
     r"""
     Compare two sequences of lines; generate the delta as a unified diff.
 
@@ -1156,7 +1156,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
 
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     started = False
-    for group in SequenceMatcher(None,a,b,autojunk=autojunk).get_grouped_opcodes(n):
+    for group in SequenceMatcher(None, a, b, autojunk=autojunk).get_grouped_opcodes(n):
         if not started:
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
@@ -1199,7 +1199,7 @@ def _format_range_context(start, stop):
 
 # See http://www.unix.org/single_unix_specification/
 def context_diff(a, b, fromfile='', tofile='',
-                 fromfiledate='', tofiledate='', n=3, lineterm='\n', autojunk=True):
+                 fromfiledate='', tofiledate='', n=3, lineterm='\n', *, autojunk=True):
     r"""
     Compare two sequences of lines; generate the delta as a context diff.
 
@@ -1249,7 +1249,7 @@ def context_diff(a, b, fromfile='', tofile='',
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     prefix = dict(insert='+ ', delete='- ', replace='! ', equal='  ')
     started = False
-    for group in SequenceMatcher(None,a,b, autojunk=autojunk).get_grouped_opcodes(n):
+    for group in SequenceMatcher(None, a, b, autojunk=autojunk).get_grouped_opcodes(n):
         if not started:
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
@@ -1331,7 +1331,7 @@ def diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'',
     for line in lines:
         yield line.encode('ascii', 'surrogateescape')
 
-def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, autojunk=True):
+def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
     r"""
     Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
 
