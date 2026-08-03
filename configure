@@ -27625,18 +27625,21 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 printf "%s\n" "$LDVERSION" >&6; }
 
 # Configure the flags and dependencies used when compiling shared modules.
-# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
-# systems (e.g. Meson) to decide whether to link extension modules against
-# libpython.
 
 
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
+# On most platforms, extension modules aren't linked against libpython, so
+# LIBPYTHON must be empty.
 LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
+# LIBPYTHON is used by python-config, python3.pc, the commands for building the
+# stdlib's own extension modules, and external package build systems via
+# sysconfig, so its value must be suitable for all those contexts.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  LIBPYTHON="\$(BLDLIBRARY)"
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
