@@ -1930,13 +1930,13 @@ PyFloat_Pack2(double x, char *data, int le)
          * is a positive qNaN with zero payload. */
         /* add payload */
         u16 -= (u16 & 0x1ff);
-        u16 += (uint16_t)((v & 0x7ffffffffffffULL) >> 42);
+        u16 += ((v & 0x7ffffffffffffULL) >> 42);
         /* if have payload, make sNaN */
         if ((v & (1ULL << 51)) == 0 && (u16 & 0x1ff)) {
-            u16 &= ~(uint16_t)(1 << 9);
+            u16 &= ~(1 << 9);
         }
         if (v & (1ULL << 63)) {
-            u16 |= (uint16_t)(1U << 15); /* set sign */
+            u16 |= (1 << 15); /* set sign */
         }
         memcpy(&y, &u16, 2);
 #endif
