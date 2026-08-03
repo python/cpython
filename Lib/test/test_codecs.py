@@ -1,3 +1,4 @@
+import _codecs
 import codecs
 import contextlib
 import copy
@@ -3734,6 +3735,17 @@ class IconvTest(unittest.TestCase):
                          b'a\\u20acb')
         self.assertEqual(codecs.iconv_encode(enc, 'a€b', 'xmlcharrefreplace')[0],
                          b'a&#8364;b')
+
+    def test_encode_errors_unencodable_replacement(self):
+        # Encoding the replacement must not call the error handler again.
+        enc = self.require('ASCII')
+        codecs.register_error('test.iconv', lambda exc: ('€', exc.end))
+        self.addCleanup(_codecs._unregister_error, 'test.iconv')
+        with self.assertRaises(UnicodeEncodeError) as cm:
+            codecs.iconv_encode(enc, 'a€b', 'test.iconv')
+        self.assertEqual((cm.exception.start, cm.exception.end), (1, 2))
+        self.assertEqual(cm.exception.reason,
+                         'unable to encode error handler result')
 
     def test_decode_errors(self):
         enc = self.require('ASCII')
