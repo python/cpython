@@ -382,6 +382,16 @@ StreamWriter
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
 
+      .. note::
+
+         When the write buffer is below the high watermark,
+         :meth:`drain` returns immediately without yielding to
+         the event loop.  As a result, code which repeatedly calls
+         ``write()`` followed by ``await drain()`` may prevent other
+         tasks from running.  To prevent blocking behavior, yield
+         to the event loop explicitly with ``await asyncio.sleep(0)``
+         (see :func:`asyncio.sleep`).
+
    .. method:: start_tls(sslcontext, *, server_hostname=None, \
                          ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
       :async:
