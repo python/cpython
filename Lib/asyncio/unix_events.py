@@ -276,7 +276,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            start_serving=True, cleanup_socket=True):
+            start_serving=True, cleanup_socket=True, mode=None):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
@@ -294,6 +294,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     'path and sock can not be specified at the same time')
 
             path = os.fspath(path)
+            if mode is not None and path and path[0] in (0, '\x00'):
+                raise ValueError(
+                    'mode is not supported for abstract sockets')
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
             # Check for abstract socket. `str` and `bytes` paths are supported.
@@ -322,10 +325,25 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             except:
                 sock.close()
                 raise
+
+            if mode is not None:
+                # The socket cannot accept connections until listen() is
+                # called, which happens later in Server._start_serving(),
+                # so no connection can be accepted while the socket still
+                # has the default permissions.
+                try:
+                    os.chmod(path, mode)
+                except:
+                    sock.close()
+                    raise
         else:
             if sock is None:
                 raise ValueError(
                     'path was not specified, and no sock specified')
+
+            if mode is not None:
+                raise ValueError(
+                    'mode is only meaningful with path')
 
             if (sock.family != socket.AF_UNIX or
                     sock.type != socket.SOCK_STREAM):

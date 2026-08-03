@@ -95,6 +95,15 @@ New modules
 Improved modules
 ================
 
+asyncio
+-------
+
+* Add the *mode* parameter to :meth:`asyncio.loop.create_unix_server` and
+  :func:`asyncio.start_unix_server` to set the permissions of the Unix
+  socket file created for *path*.
+  (Contributed by Sam Bull in :gh:`94984`.)
+
+
 codecs
 ------
 
