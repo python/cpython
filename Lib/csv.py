@@ -246,7 +246,7 @@ class Sniffer:
     # argument is not specified.
     delimiters = [c for c in map(chr, range(128)) if not c.isalnum()]
 
-    def __init__(self, delimiters=None):
+    def __init__(self, *, delimiters=None):
         if delimiters is None:
             # in case there is more than one possible delimiter
             self.preferred = [',', '\t', ';', ' ', ':']

@@ -299,7 +299,7 @@ The :mod:`!csv` module defines the following classes:
    .. versionadded:: 3.2
 
 
-.. class:: Sniffer(delimiters=None)
+.. class:: Sniffer(*, delimiters=None)
 
    The :class:`Sniffer` class is used to deduce the format of a CSV file.
 

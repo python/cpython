@@ -1505,13 +1505,14 @@ ghi\0jkl
         self.assertEqual(dialect.quotechar, '"')
 
     def test_delimiters_in_constructor(self):
-        dialect = csv.Sniffer("?,").sniff(self.sample3)
+        dialect = csv.Sniffer(delimiters="?,").sniff(self.sample3)
         self.assertEqual(dialect.delimiter, "?")
         dialect = csv.Sniffer(delimiters="/,").sniff(self.sample3)
         self.assertEqual(dialect.delimiter, "/")
         # The argument of sniff() takes precedence.
-        dialect = csv.Sniffer("/,").sniff(self.sample3, "?,")
+        dialect = csv.Sniffer(delimiters="/,").sniff(self.sample3, "?,")
         self.assertEqual(dialect.delimiter, "?")
+        self.assertRaises(TypeError, csv.Sniffer, "?,")
         # has_header() uses them as well.
         sniffer = csv.Sniffer(delimiters=",")
         self.assertIs(sniffer.has_header(self.header1 + self.sample1), True)
@@ -1524,10 +1525,12 @@ ghi\0jkl
         self.assertEqual(csv.Sniffer().sniff(sample).delimiter, ',')
         # The delimiters given to the constructor are preferred in the
         # given order.
-        self.assertEqual(csv.Sniffer(";,").sniff(sample).delimiter, ';')
-        self.assertEqual(csv.Sniffer(",;").sniff(sample).delimiter, ',')
+        sniffer = csv.Sniffer(delimiters=";,")
+        self.assertEqual(sniffer.sniff(sample).delimiter, ';')
+        self.assertEqual(csv.Sniffer(delimiters=",;").sniff(sample).delimiter,
+                         ',')
         # The argument of sniff() does not affect the preference.
-        self.assertEqual(csv.Sniffer(";,").sniff(sample, ",;").delimiter, ';')
+        self.assertEqual(sniffer.sniff(sample, ",;").delimiter, ';')
 
     def test_sniff_escapechar(self):
         # gh-83273: escaped delimiters make the delimiter frequencies
