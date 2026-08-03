@@ -1,4 +1,6 @@
 import unittest
+import threading
+import _thread
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
@@ -7,7 +9,6 @@ threading_helper.requires_working_threading(module=True)
 class TestRlock(unittest.TestCase):
     def test_repr_race(self):
         # gh-153292
-        import _thread
         r = _thread.RLock()
 
         def repr_thread():
@@ -24,9 +25,6 @@ class TestRlock(unittest.TestCase):
 
 class TestShutdown(unittest.TestCase):
     def test_shutdown_race(self):
-        import _thread
-        import threading
-
         ITERATIONS = 1_000
         STARTUP_THREADS = 4
 
@@ -60,6 +58,7 @@ class TestShutdown(unittest.TestCase):
                 pass
             if cm.exc_value is not None:
                 raise cm.exc_value
+
 
 if __name__ == "__main__":
     unittest.main()
