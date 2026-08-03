@@ -1400,11 +1400,12 @@ copy_shape(Py_ssize_t *shape, const PyObject *seq, Py_ssize_t ndim,
     return len;
 }
 
-/* Cast a 1-D array to a new shape. The result array will be C-contiguous.
-   If the result array does not have exactly the same byte length as the
-   input array, raise ValueError. */
+/* Cast a 1-D array to a new shape. The result array will be C-contiguous
+   ('C') or Fortran-contiguous ('F') according to 'order'.  If the result
+   array does not have exactly the same byte length as the input array, raise
+   TypeError. */
 static int
-cast_to_ND(PyMemoryViewObject *mv, const PyObject *shape, int ndim)
+cast_to_ND(PyMemoryViewObject *mv, const PyObject *shape, int ndim, char order)
 {
     Py_buffer *view = &mv->view;
     Py_ssize_t len;
@@ -1425,7 +1426,10 @@ cast_to_ND(PyMemoryViewObject *mv, const PyObject *shape, int ndim)
         len = copy_shape(view->shape, shape, ndim, view->itemsize);
         if (len < 0)
             return -1;
-        init_strides_from_shape(view);
+        if (order == 'F')
+            init_fortran_strides_from_shape(view);
+        else
+            init_strides_from_shape(view);
     }
 
     if (view->len != len) {
@@ -1469,20 +1473,31 @@ memoryview.cast
 
     format: unicode
     shape: object = NULL
+    *
+    order: int(accept={str}) = 'C'
 
 Cast a memoryview to a new format or shape.
+
+With a multidimensional *shape*, *order* selects the result
+layout: 'C' for C-contiguous (row-major, the default) or 'F'
+for Fortran-contiguous (column-major).
 [clinic start generated code]*/
 
 static PyObject *
 memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
-                     PyObject *shape)
-/*[clinic end generated code: output=bae520b3a389cbab input=138936cc9041b1a3]*/
+                     PyObject *shape, int order)
+/*[clinic end generated code: output=6410d87141f6bb56 input=4a1a2326c59caeb3]*/
 {
     PyMemoryViewObject *mv = NULL;
     Py_ssize_t ndim = 1;
 
     CHECK_RELEASED(self);
     CHECK_RESTRICTED(self);
+
+    if (order != 'C' && order != 'F') {
+        PyErr_SetString(PyExc_ValueError, "order must be 'C' or 'F'");
+        return NULL;
+    }
 
     if (!MV_C_CONTIGUOUS(self->flags)) {
         if (shape || !MV_F_CONTIGUOUS(self->flags)) {
@@ -1519,7 +1534,7 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
 
     if (cast_to_1D(mv, format) < 0)
         goto error;
-    if (shape && cast_to_ND(mv, shape, (int)ndim) < 0)
+    if (shape && cast_to_ND(mv, shape, (int)ndim, (char)order) < 0)
         goto error;
 
     return (PyObject *)mv;
