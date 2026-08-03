@@ -2875,9 +2875,10 @@ def skip_if_huge_c_stack(depth=150_000):
         f"the C stack is large enough for {depth} recursive calls")
 
 
-# Large enough to run a test, but small enough to be exhausted by tens
-# of thousands of recursive calls.
-C_STACK_SIZE = 2 * 1024 * 1024
+# Small enough to be exhausted by tens of thousands of recursive calls,
+# but not smaller than Py_C_STACK_SIZE (4 MiB) which the interpreter
+# assumes if it cannot query the thread stack size.
+C_STACK_SIZE = 8 * 1024 * 1024
 
 
 def run_with_limited_c_stack(depth=150_000, size=C_STACK_SIZE):
