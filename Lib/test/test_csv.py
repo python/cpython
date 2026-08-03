@@ -1501,6 +1501,50 @@ ghi\0jkl
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
 
+    def test_sniff_regex_backtracking(self):
+        # gh-109638: this artificial sample used to take minutes.
+        sniffer = csv.Sniffer()
+        sample = '"",' * 100 + '"' * 100 + '0' + '"' * 100 + '0'
+        self.assertEqual(sniffer.sniff(sample).delimiter, ',')
+
+    def test_sniff_doublequote_across_fields(self):
+        # A quoted field which contains the delimiter, followed by
+        # an empty quoted field, is not a doubled quote.
+        sniffer = csv.Sniffer()
+        sample = '",","",","\n' * 4
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.quotechar, '"')
+        self.assertIs(dialect.doublequote, False)
+        self.assertEqual(next(csv.reader(StringIO(sample), dialect)),
+                         [',', '', ','])
+
+    def test_sniff_doublequote_record_separators(self):
+        # The record separator ends a field as a delimiter does.
+        sniffer = csv.Sniffer()
+        for sep in '\n', '\r\n', '\r':
+            with self.subTest(sep=sep):
+                sample = ('x,"a""b"' + sep + 'y,"c"' + sep) * 2
+                self.assertIs(sniffer.sniff(sample).doublequote, True)
+                sample = ('"",","' + sep) * 4
+                self.assertIs(sniffer.sniff(sample).doublequote, False)
+
+    def test_sniff_single_column(self):
+        # This sample used to be quadratic.
+        sniffer = csv.Sniffer()
+        sample = '"a"\n' + ' ' * 100000
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
+            sniffer.sniff(sample, delimiters=',;')
+
+    def test_sniff_space_delimiter(self):
+        # This sample used to be quadratic.
+        sniffer = csv.Sniffer()
+        sample = '"a" "b"\n' + ' ' * 100000
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ' ')
+        self.assertIs(dialect.doublequote, False)
+
+
 class NUL:
     def write(s, *args):
         pass
