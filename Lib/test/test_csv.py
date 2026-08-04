@@ -1199,6 +1199,13 @@ class MiscTestCase(unittest.TestCase):
         extra = {'__doc__', '__version__'}
         support.check__all__(self, csv, ('csv', '_csv'), extra=extra)
 
+    def test_sniff_quoted_single_column(self):
+        # gh-98820: this sample used to take minutes.
+        sniffer = csv.Sniffer()
+        sample = '"abcdefghijklmnopqrstuvwxyz"\n' * 10000
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
+            sniffer.sniff(sample, delimiters=',:|\t')
+
 
 if __name__ == '__main__':
     unittest.main()

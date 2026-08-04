@@ -1,0 +1,2 @@
+Fix quadratic time in :meth:`csv.Sniffer.sniff` for a sample which contains
+quoted fields, in particular for a single column of quoted fields.
