@@ -2063,7 +2063,7 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
         return NULL;
     }
 
-    const int positional = nargs > 1; // False iff nargs == 1
+    const int positional = nargs > 1; // False if nargs == 1
     if (positional && defaultval != NULL) {
         PyErr_Format(PyExc_TypeError,
                         "Cannot specify a default for %s() with multiple "
