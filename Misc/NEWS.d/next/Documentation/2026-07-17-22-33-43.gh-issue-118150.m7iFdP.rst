@@ -1,2 +1,0 @@
-Clarify in the :mod:`difflib` documentation what *junk* actually does, its
-drawbacks, and how to control it.
