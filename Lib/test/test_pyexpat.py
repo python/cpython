@@ -904,7 +904,7 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
 
-    @support.skip_if_huge_c_stack(800_000)
+    @support.run_with_limited_c_stack(800_000)
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deeply_nested_content_model(self):
@@ -1044,6 +1044,13 @@ class ParentParserLifetimeTest(unittest.TestCase):
         # while they are still being referenced by a related subparser.
         del parser
         del subparser
+
+    def test_subparser_inherits_reparse_deferral(self):
+        for enabled in (True, False):
+            parser = expat.ParserCreate()
+            parser.SetReparseDeferralEnabled(enabled)
+            subparser = parser.ExternalEntityParserCreate(None)
+            self.assertEqual(subparser.GetReparseDeferralEnabled(), enabled)
 
 
 class ExternalEntityParserCreateErrorTest(unittest.TestCase):
