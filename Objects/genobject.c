@@ -1620,6 +1620,12 @@ async_gen_try_set_state(int8_t *state, int8_t *expected, int8_t new_state)
 
 // Try to transition the async generator to the running state.
 // Returns false if it is already running.
+//
+// There are two ways to concurrently iterate an async generator: by
+// sharing a single asend()/athrow() object across threads, or with
+// multiple asend()/athrow() objects sending to the same generator.
+// The CAS on ags_state/agt_state handles the first case; the CAS on
+// ag_running_async here handles the second.
 static bool
 async_gen_try_claim_running(PyAsyncGenObject *agen)
 {
@@ -2026,7 +2032,9 @@ async_gen_asend_send(PyObject *self, PyObject *arg)
     } while (!_Py_ASYNC_GEN_TRY_SET_STATE(o->ags_state, state,
                                           AWAITABLE_STATE_ITER));
 
-    // INIT -> ITER transition succeeded, this is the first send.
+    // The transition above only guards this object, the generator may
+    // still be running through another asend()/athrow() object so
+    // try to claim it before running.
     if (!async_gen_try_claim_running(o->ags_gen)) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
         PyErr_SetString(
@@ -2092,6 +2100,9 @@ async_gen_asend_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     } while (!_Py_ASYNC_GEN_TRY_SET_STATE(o->ags_state, state,
                                           AWAITABLE_STATE_ITER));
 
+    // The transition above only guards this object, the generator may
+    // still be running through another asend()/athrow() object so
+    // try to claim it before running.
     if (!async_gen_try_claim_running(o->ags_gen)) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
         PyErr_SetString(
@@ -2380,7 +2391,9 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
     } while (!_Py_ASYNC_GEN_TRY_SET_STATE(o->agt_state, state,
                                           AWAITABLE_STATE_ITER));
 
-    // INIT -> ITER transition succeeded, this is the first send.
+    // The transition above only guards this object, the generator may
+    // still be running through another asend()/athrow() object so
+    // try to claim it before running.
     if (!async_gen_try_claim_running(o->agt_gen)) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
         if (o->agt_typ == NULL) {
@@ -2506,6 +2519,9 @@ async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     } while (!_Py_ASYNC_GEN_TRY_SET_STATE(o->agt_state, state,
                                           AWAITABLE_STATE_ITER));
 
+    // The transition above only guards this object, the generator may
+    // still be running through another asend()/athrow() object so
+    // try to claim it before running.
     if (!async_gen_try_claim_running(o->agt_gen)) {
         FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
         if (o->agt_typ == NULL) {
