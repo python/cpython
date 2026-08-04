@@ -1905,6 +1905,11 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
     }
 #endif
 
+    if (bufobj->len < (Py_ssize_t)size) {
+        PyErr_SetString(PyExc_ValueError, "nbytes is greater than the length of the buffer");
+        return NULL;
+    }
+
     wsabuf.buf = bufobj->buf;
     wsabuf.len = size;
 
