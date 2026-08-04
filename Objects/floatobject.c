@@ -1913,12 +1913,13 @@ PyFloat_Pack2(double x, char *data, int le)
 #ifndef __riscv
         if ((v & (1ULL << 51)) == 0) {
             uint16_t u16;
+
             memcpy(&u16, &y, 2);
             /* if have payload, make sNaN */
             if (u16 & 0x1ff) {
                 u16 &= ~(1 << 9);
+                memcpy(&y, &u16, 2);
             }
-            memcpy(&y, &u16, 2);
         }
 #else
         uint16_t u16;
@@ -2173,8 +2174,8 @@ PyFloat_Unpack2(const char *data, int le)
     /* return sNaN double if x was sNaN float */
     if (isnan(x)) {
         uint16_t v;
-        memcpy(&v, &x, 2);
 
+        memcpy(&v, &x, 2);
 #ifndef __riscv
         if ((v & (1 << 9)) == 0) {
             double y = x; /* will make qNaN double */
@@ -2185,7 +2186,6 @@ PyFloat_Unpack2(const char *data, int le)
             memcpy(&y, &u64, 8);
             return y;
         }
-
 #else
         double y = x;
         uint64_t u64;
