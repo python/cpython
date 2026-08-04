@@ -104,6 +104,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     bz_stream bzs;
+    int bzerror;
     char eof;           /* T_BOOL expects a char */
     PyObject *unused_data;
     char needs_input;
@@ -461,8 +462,11 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
 
         d->bzs_avail_in_real += bzs->avail_in;
 
-        if (catch_bz2_error(bzret))
+        if (catch_bz2_error(bzret)) {
+            d->bzerror = bzret;
+            d->needs_input = 0;
             goto error;
+        }
         if (bzret == BZ_STREAM_END) {
             d->eof = 1;
             break;
@@ -630,10 +634,17 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
     PyObject *result = NULL;
 
     ACQUIRE_LOCK(self);
-    if (self->eof)
+    if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
-    else
+    }
+    else if (self->bzerror) {
+        // Re-entering BZ2_bzDecompress() after an error can write out of bounds.
+        PyErr_SetString(PyExc_ValueError,
+                        "Decompressor is unusable after a previous error");
+    }
+    else {
         result = decompress(self, data->buf, data->len, max_length);
+    }
     RELEASE_LOCK(self);
     return result;
 }
@@ -655,6 +666,7 @@ _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
     }
     self->lock = lock;
 
+    self->bzerror = 0;
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
