@@ -1,0 +1,2 @@
+Fix a data race on a descriptor's ``__qualname__`` cache in the
+:term:`free-threaded build`.
