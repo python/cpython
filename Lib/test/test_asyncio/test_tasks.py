@@ -2109,7 +2109,7 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         self.assertTrue(outer.cancelled())
         self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
-        self.assertEqual(0, 0 if inner._asyncio_awaited_by is None else len(inner._asyncio_awaited_by))
+        self.assertFalse(inner._asyncio_awaited_by)
         self.assertTrue({f for f, _ctx in inner._callbacks or []} <= {asyncio.tasks._log_on_exception})
 
     def test_shield_cancel_outer_result(self):
