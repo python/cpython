@@ -288,12 +288,16 @@ class Sniffer:
         """
         import re
 
+        # The body of a quoted field ends at the first quote which is
+        # not doubled, as it does for a reader.  A lazy ".*?" scans to
+        # the end of the sample instead, from every start: quadratically.
+        body = r'(?:(?P=quote){2}|(?!(?P=quote)).)*+'
         matches = []
-        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',   # ,".*?",
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',     #  ".*?",
-                      r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\r|\n)',  # ,".*?"
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\r|\n)'):                           #  ".*?" (no delim, no space)
-            regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
+        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\'])%s(?P=quote)(?P=delim)',   # ,"...",
+                      r'(?:^|\n)(?P<quote>["\'])%s(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',     #  "...",
+                      r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\'])%s(?P=quote)(?:$|\n)',  # ,"..."
+                      r'(?:^|\n)(?P<quote>["\'])%s(?P=quote)(?:$|\n)'):                           #  "..." (no delim, no space)
+            regexp = re.compile(restr % body, re.DOTALL | re.MULTILINE)
             matches = regexp.findall(data)
             if matches:
                 break
