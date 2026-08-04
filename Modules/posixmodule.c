@@ -11882,9 +11882,12 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     /* dup3() is available on Linux 2.6.27+ and glibc 2.9 and macOS 27.0;
      * it needs runtime detection for the case of running on older kernels.
      * Values: -1: unknown; 0: doesn't work; 1: works
+     * For thread safety, use a process-global with one read & one store,
+     * both relaxed. (It's fine if two threads race and do the detection
+     * simultaneously; they should get the same result.)
      */
-    static int dup3_works = -1;
-    (void) dup3_works;  // unused on some platforms
+    static int dup3_works_atomic = -1;
+    (void) dup3_works_atomic;  // unused on some platforms
 
     /* dup2() can fail with EINTR if the target FD is already open, because it
      * then has to be closed. See os_close_impl() for why we don't handle EINTR
@@ -11923,6 +11926,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #else
 
 #ifdef HAVE_DUP3
+    int dup3_works = FT_ATOMIC_LOAD_INT_RELAXED(dup3_works_atomic);
     if (!inheritable && dup3_works != 0) {
         if (HAVE_DUP3_RUNTIME) {
             Py_BEGIN_ALLOW_THREADS
@@ -11931,6 +11935,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
             if (res < 0) {
                 if (dup3_works == -1) {
                     dup3_works = (errno != ENOSYS);
+                    FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
                 }
                 if (dup3_works) {
                     posix_error();
@@ -11940,6 +11945,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
         }
         else {
             dup3_works = 0;
+            FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
         }
     }
 
@@ -12784,11 +12790,10 @@ os_pipe_impl(PyObject *module)
     int res = -1;
 
     /* pipe2() is available on some newer linux/glibc & macOS;
-     * it needs runtime detection for the case of running on older kernels.
-     * Values: -1: unknown; 0: doesn't work; 1: works
+     * use the same runtime detection as for dup3 above.
      */
-    static int pipe2_works = -1;
-    (void) pipe2_works;  // unused on some platforms
+    static int pipe2_works_atomic = -1;
+    (void) pipe2_works_atomic;  // unused on some platforms
 #endif
 
 #ifdef MS_WINDOWS
@@ -12814,6 +12819,7 @@ os_pipe_impl(PyObject *module)
 #else
 
 #ifdef HAVE_PIPE2
+    int pipe2_works = FT_ATOMIC_LOAD_INT_RELAXED(pipe2_works_atomic);
     if (pipe2_works != 0) {
         if (HAVE_PIPE2_RUNTIME) {
             Py_BEGIN_ALLOW_THREADS
@@ -12827,10 +12833,12 @@ os_pipe_impl(PyObject *module)
                     // pipe2 is present but this call failed
                     pipe2_works = 1;
                 }
+                FT_ATOMIC_STORE_INT_RELAXED(pipe2_works_atomic, pipe2_works);
             }
         }
         else {
             pipe2_works = 0;
+            FT_ATOMIC_STORE_INT_RELAXED(pipe2_works_atomic, pipe2_works);
         }
     }
 
