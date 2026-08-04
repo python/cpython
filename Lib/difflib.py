@@ -1368,7 +1368,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
     + tree
     + emu
     """
-    return Differ(linejunk, charjunk, autojunk).compare(a, b)
+    return Differ(linejunk, charjunk, autojunk=autojunk).compare(a, b)
 
 def _mdiff(fromlines, tolines, context=None, linejunk=None,
            charjunk=IS_CHARACTER_JUNK, autojunk=True):
