@@ -1,4 +1,5 @@
 import annotationlib
+import atexit
 import contextlib
 import collections
 import collections.abc
@@ -6550,6 +6551,14 @@ class NoTypeCheckTests(BaseTestCase):
 class InternalsTests(BaseTestCase):
     def test_collect_parameters(self):
         typing = import_helper.import_fresh_module("typing")
+        # Importing typing registers an internal function named _clear_caches
+        # with atexit. The throwaway module created here installs its own
+        # handler, which holds the module alive and keeps references until
+        # interpreter shutdown even after the test finishes. Each repetition
+        # of this test under -R would therefore leak another module copy. To
+        # avoid this, we unregister the handler once the test is done.
+        self.addCleanup(atexit.unregister, typing._clear_caches)
+
         with self.assertWarnsRegex(
             DeprecationWarning,
             "The private _collect_parameters function is deprecated"
@@ -7719,6 +7728,10 @@ class CollectionsAbcTests(BaseTestCase):
 
         with self.assertWarns(DeprecationWarning):
             from typing import ByteString
+        # Drop the exit handler of this throwaway copy, see the comment in
+        # InternalsTests.test_collect_parameters.
+        self.addCleanup(atexit.unregister, sys.modules["typing"]._clear_caches)
+
         with self.assertWarns(DeprecationWarning):
             self.assertIsInstance(b'', ByteString)
         with self.assertWarns(DeprecationWarning):
