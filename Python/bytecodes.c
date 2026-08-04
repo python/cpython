@@ -1378,7 +1378,15 @@ dummy_func(
         }
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
-            int err = _PySet_AddTakeRef((PySetObject *)PyStackRef_AsPyObjectBorrow(set),
+            PyObject *set_o = PyStackRef_AsPyObjectBorrow(set);
+            // gh-154902: user code can rebind __conditional_annotations__
+            if (!PySet_CheckExact(set_o)) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'%T' object is not a set", set_o);
+                PyStackRef_CLOSE(v);
+                ERROR_IF(true);
+            }
+            int err = _PySet_AddTakeRef((PySetObject *)set_o,
                                         PyStackRef_AsPyObjectSteal(v));
             ERROR_IF(err);
         }
