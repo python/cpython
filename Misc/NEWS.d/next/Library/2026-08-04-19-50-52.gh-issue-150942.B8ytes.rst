@@ -1,0 +1,2 @@
+Improve the performance of :meth:`io.BytesIO.readlines`, particularly in
+free-threaded builds.
