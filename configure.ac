@@ -2627,6 +2627,8 @@ AC_ARG_WITH([frame-pointers],
   [with_frame_pointers=yes])
 AC_MSG_RESULT([$with_frame_pointers])
 
+AC_SUBST([FRAME_POINTER_CFLAGS])
+FRAME_POINTER_CFLAGS=
 AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     dnl Keep frame pointers in CPython, stdlib objects, and third-party
     dnl extensions built against this Python (BASECFLAGS propagates via
@@ -2658,7 +2660,8 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
       ])
     ], [], [-Werror])
     if test -n "$frame_pointer_cflags" && test "x$with_frame_pointers" != xno; then
-      BASECFLAGS="$frame_pointer_cflags $BASECFLAGS"
+      FRAME_POINTER_CFLAGS="$frame_pointer_cflags"
+      BASECFLAGS="$FRAME_POINTER_CFLAGS $BASECFLAGS"
       AC_DEFINE([_Py_WITH_FRAME_POINTERS], [1],
                 [Define to 1 if frame unwinding via pointers is expected
                  to work, 0 if not. Leave undefined if unknown.])
