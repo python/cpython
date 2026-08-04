@@ -4747,11 +4747,8 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
   # Marc Recht
   NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6[A-S])
     define_xopen_source=no;;
-  # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
-  # request to enable features supported by the standard as a request
-  # to disable features not supported by the standard.  The best way
-  # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
-  # entirely and define __EXTENSIONS__ instead.
+  # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
+  # A lower level is defined below.
   SunOS/*)
     define_xopen_source=no;;
   # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
@@ -4820,6 +4817,15 @@ printf "%s\n" "#define _POSIX_C_SOURCE 202405L" >>confdefs.h
   # with -std=c11.  Defining _ISOC23_SOURCE makes them visible again.
 
 printf "%s\n" "#define _ISOC23_SOURCE 1" >>confdefs.h
+
+elif test "$ac_sys_system" = "SunOS"
+then
+  # On illumos the socket ancillary-data API (CMSG_*, sendmsg(), recvmsg())
+  # is declared only with _XOPEN_SOURCE >= 600; Solaris declares it anyway.
+  # __EXTENSIONS__ keeps the platform specific features which _XOPEN_SOURCE
+  # would otherwise hide.  See gh-57208.
+
+printf "%s\n" "#define _XOPEN_SOURCE 600" >>confdefs.h
 
 fi
 
@@ -7394,6 +7400,12 @@ case $ac_sys_system in #(
     SOABI_PLATFORM=$PLATFORM_TRIPLET
  ;;
 esac
+
+if test x$SOABI_PLATFORM != x; then
+
+printf "%s\n" "#define SOABI_PLATFORM \"${SOABI_PLATFORM}\"" >>confdefs.h
+
+fi
 
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
@@ -20217,6 +20229,15 @@ then :
 fi
 
 
+# Used by ctypes.util.dllist().
+ac_fn_c_check_func "$LINENO" "dl_iterate_phdr" "ac_cv_func_dl_iterate_phdr"
+if test "x$ac_cv_func_dl_iterate_phdr" = xyes
+then :
+  printf "%s\n" "#define HAVE_DL_ITERATE_PHDR 1" >>confdefs.h
+
+fi
+
+
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
 
@@ -27969,18 +27990,21 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 printf "%s\n" "$LDVERSION" >&6; }
 
 # Configure the flags and dependencies used when compiling shared modules.
-# Do not rename LIBPYTHON - it's accessed via sysconfig by package build
-# systems (e.g. Meson) to decide whether to link extension modules against
-# libpython.
 
 
 MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
+# On most platforms, extension modules aren't linked against libpython, so
+# LIBPYTHON must be empty.
 LIBPYTHON=''
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
+# LIBPYTHON is used by python-config, python3.pc, the commands for building the
+# stdlib's own extension modules, and external package build systems via
+# sysconfig, so its value must be suitable for all those contexts.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-  LIBPYTHON="\$(BLDLIBRARY)"
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
 # On iOS the shared libraries must be linked with the Python framework
@@ -30910,9 +30934,13 @@ fi
 
 PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "x$with_curses" = xcurses
-then :
+case $with_curses in #(
+  ncursesw|no) :
+     ;; #(
+  *) :
 
+          save_curses_cppflags=$CPPFLAGS
+  as_fn_append CPPFLAGS " $CURSES_CFLAGS"
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether curses supports wide characters" >&5
 printf %s "checking whether curses supports wide characters... " >&6; }
 if test ${ac_cv_curses_wide+y}
@@ -30962,13 +30990,14 @@ esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_curses_wide" >&5
 printf "%s\n" "$ac_cv_curses_wide" >&6; }
+  CPPFLAGS=$save_curses_cppflags
       if test "x$ac_cv_curses_wide" = xyes
 then :
   printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
 
 fi
-
-fi
+ ;;
+esac
 
 # On Solaris, term.h requires curses.h
 ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
