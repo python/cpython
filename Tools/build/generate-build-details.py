@@ -10,6 +10,7 @@ import collections
 import importlib.machinery
 import json
 import os
+import shlex
 import sys
 import sysconfig
 
@@ -128,6 +129,11 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     data['c_api']['headers'] = INCLUDEPY
     if LIBPC:
         data['c_api']['pkgconfig_path'] = LIBPC
+
+    frame_pointer_cflags = sysconfig.get_config_var('FRAME_POINTER_CFLAGS') or ''
+    data['arbitrary_data']['extension_compiler_flags'] = shlex.split(
+        frame_pointer_cflags
+    )
 
     return data
 
