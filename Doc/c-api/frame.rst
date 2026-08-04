@@ -270,7 +270,7 @@ Unless using :pep:`523`, you will not need this.
         - The frame corresponds to a method on a class instance.
 
    Note that reading the executable kind from a frame is currently only
-   possible with undocumented internal API.
+   possible with undocumented internal APIs.
 
    .. versionadded:: 3.13
 
