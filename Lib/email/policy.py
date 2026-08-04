@@ -160,7 +160,7 @@ class EmailPolicy(Policy):
         Otherwise the name and the value with any linesep characters removed
         are passed to the header_factory method, and the resulting custom
         header object is returned.  Any surrogateescaped bytes get turned
-        into the unicode unknown-character glyph.
+        into the Unicode unknown-character glyph.
 
         """
         if hasattr(value, 'name'):
@@ -201,7 +201,7 @@ class EmailPolicy(Policy):
         data consists of single byte characters or multibyte characters.
 
         If utf8 is true, headers are encoded to utf8, otherwise to ascii with
-        non-ASCII unicode rendered as encoded words.
+        non-ASCII characters rendered as encoded words.
 
         """
         folded = self._fold(name, value, refold_binary=self.cte_type=='7bit')
