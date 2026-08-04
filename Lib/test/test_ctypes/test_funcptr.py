@@ -134,12 +134,14 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
     def test_wrap_dll_function(self):
         @wrap_dll_function(ctypes.pythonapi)
         def PyObject_GetAttr(op: ctypes.py_object, attr: ctypes.py_object) -> ctypes.py_object:
+            """Call the PythonAPI function underlying getattr"""
             pass
 
         class Foo:
             a = "abc"
 
         self.assertEqual(PyObject_GetAttr(Foo, "a"), "abc")
+        self.assertEqual(PyObject_GetAttr.__doc__, "Call the PythonAPI function underlying getattr")
 
         with self.assertRaises(AttributeError):
             @wrap_dll_function(ctypes.pythonapi)
@@ -150,6 +152,11 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
             @wrap_dll_function(ctypes.pythonapi)
             def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p):
                 pass
+
+    def test_wrap_dll_function_str_ann(self):
+        from test.test_ctypes import wrap_str_ann
+        version = wrap_str_ann.Py_GetVersion()
+        self.assertIsInstance(version, bytes)
 
 
 if __name__ == '__main__':

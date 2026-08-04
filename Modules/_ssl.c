@@ -3863,6 +3863,10 @@ _ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
 #ifdef OPENSSL_IS_AWSLC
     _setSSLError(get_state_ctx(self), "can't set client sigalgs on AWS-LC", 0, __FILE__, __LINE__);
     return NULL;
+#elif defined(LIBRESSL_VERSION_NUMBER)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "setting client sigalgs is not supported by LibreSSL");
+    return NULL;
 #else
     if (!SSL_CTX_set1_client_sigalgs_list(self->ctx, sigalgslist)) {
         _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
@@ -3884,11 +3888,17 @@ _ssl__SSLContext_set_server_sigalgs_impl(PySSLContext *self,
                                          const char *sigalgslist)
 /*[clinic end generated code: output=31ecb1d310285644 input=653b752e4f8d801b]*/
 {
+#ifdef LIBRESSL_VERSION_NUMBER
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "setting server sigalgs is not supported by LibreSSL");
+    return NULL;
+#else
     if (!SSL_CTX_set1_sigalgs_list(self->ctx, sigalgslist)) {
         _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
         return NULL;
     }
     Py_RETURN_NONE;
+#endif
 }
 
 static int
