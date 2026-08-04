@@ -1183,10 +1183,6 @@ using curl or PowerShell. With the tool, the latest version of Python for
    nuget.exe install python -ExcludeVersion -OutputDirectory .
    nuget.exe install pythonx86 -ExcludeVersion -OutputDirectory .
 
-Resolve error ``Unable to find package 'python'`` from a misconfigured ``nuget.config`` using::
-
-   nuget.exe sources add -Name "nuget.org" -source "https://api.nuget.org/v3/index.json"
-
 To select a particular version, add a ``-Version 3.x.y``. The output directory
 may be changed from ``.``, and the package will be installed into a
 subdirectory. By default, the subdirectory is named the same as the package,
@@ -1220,6 +1216,10 @@ for the 64-bit version, `www.nuget.org/packages/pythonx86
 <https://www.nuget.org/packages/pythonx86>`_ for the 32-bit version, and
 `www.nuget.org/packages/pythonarm64
 <https://www.nuget.org/packages/pythonarm64>`_ for the ARM64 version
+
+Resolve error ``Unable to find package 'python'`` from a misconfigured ``nuget.config`` using::
+
+   nuget.exe sources add -Name "nuget.org" -source "https://api.nuget.org/v3/index.json"
 
 Free-threaded packages
 ----------------------
