@@ -2047,8 +2047,9 @@ async_gen_asend_send(PyObject *self, PyObject *arg)
         arg = o->ags_sendval;
     }
 
+    PyObject *result;
 do_send:
-    PyObject *result = gen_send((PyObject*)o->ags_gen, arg);
+    result = gen_send((PyObject*)o->ags_gen, arg);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
     if (result == NULL) {
@@ -2111,8 +2112,9 @@ async_gen_asend_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 
+    PyObject *result;
 do_throw:
-    PyObject *result = gen_throw((PyObject*)o->ags_gen, args, nargs);
+    result = gen_throw((PyObject*)o->ags_gen, args, nargs);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
     if (result == NULL) {
@@ -2537,8 +2539,9 @@ async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 
+    PyObject *retval;
 do_throw:
-    PyObject *retval = gen_throw((PyObject*)o->agt_gen, args, nargs);
+    retval = gen_throw((PyObject*)o->agt_gen, args, nargs);
     if (o->agt_typ) {
         retval = async_gen_unwrap_value(o->agt_gen, retval);
         if (retval == NULL) {
