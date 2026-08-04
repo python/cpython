@@ -16,7 +16,7 @@ from libclinic import (
     fail, warn, unspecified, unknown, NULL)
 from libclinic.function import (
     Module, Class, Function, Parameter,
-    FunctionKind,
+    FunctionKind, VectorcallOptions,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
     GETTER, SETTER)
 from libclinic.converter import (
@@ -302,6 +302,7 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
         self.disable_fastcall = False
+        self.vectorcall: VectorcallOptions | None = None
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -466,6 +467,17 @@ class DSLParser:
             fail("Can't set @staticmethod, function is not a normal callable")
         self.kind = STATIC_METHOD
 
+    def at_vectorcall(self, *args: str) -> None:
+        if self.vectorcall is not None:
+            fail("Called @vectorcall twice!")
+        flags = list(args)
+        exact_only = 'exact_only' in flags
+        if exact_only:
+            flags.remove('exact_only')
+        if flags:
+            fail(f"@vectorcall: unknown argument {flags[0]!r}")
+        self.vectorcall = VectorcallOptions(exact_only=exact_only)
+
     def at_coexist(self) -> None:
         if self.coexist:
             fail("Called @coexist twice!")
@@ -599,6 +611,10 @@ class DSLParser:
         elif name == '__init__':
             self.kind = METHOD_INIT
 
+        # Validate @vectorcall usage.
+        if self.vectorcall and not self.kind.new_or_init:
+            fail("@vectorcall can only be used with __init__ and __new__ methods currently")
+
     def resolve_return_converter(
         self, full_name: str, forced_converter: str
     ) -> CReturnConverter:
@@ -723,7 +739,8 @@ class DSLParser:
             critical_section=self.critical_section,
             disable_fastcall=self.disable_fastcall,
             target_critical_section=self.target_critical_section,
-            forced_text_signature=self.forced_text_signature
+            forced_text_signature=self.forced_text_signature,
+            vectorcall=self.vectorcall,
         )
         self.add_function(func)
 
@@ -1620,6 +1637,24 @@ class DSLParser:
             fail(f"Function {self.function.name!r} uses '*' more than once.")
 
 
+    def check_vectorcall_parameters(self, lineno: int) -> None:
+        assert self.function is not None
+        if not self.function.vectorcall:
+            return
+        for i, p in enumerate(self.function.parameters.values()):
+            if p.is_vararg() or p.is_var_keyword():
+                continue
+            if isinstance(p.converter, (self_converter,
+                                        defining_class_converter)):
+                continue
+            parse_arg = p.converter.parse_arg(f'args[{i}]',
+                                              p.get_displayname(i),
+                                              limited_capi=False)
+            if parse_arg is None:
+                fail("@vectorcall requires all converters to support "
+                     f"parse_arg(); parameter {p.name!r} does not",
+                     line_number=lineno)
+
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
         Called when processing the block is done.
@@ -1628,6 +1663,7 @@ class DSLParser:
             return
 
         self.check_remaining_star(lineno)
+        self.check_vectorcall_parameters(lineno)
         try:
             self.function.docstring = self.format_docstring()
         except ClinicError as exc:

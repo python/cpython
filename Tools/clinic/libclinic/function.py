@@ -78,6 +78,11 @@ GETTER: Final = FunctionKind.GETTER
 SETTER: Final = FunctionKind.SETTER
 
 
+@dc.dataclass
+class VectorcallOptions:
+    exact_only: bool = False
+
+
 @dc.dataclass(repr=False)
 class Function:
     """
@@ -111,6 +116,7 @@ class Function:
     critical_section: bool = False
     disable_fastcall: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
+    vectorcall: VectorcallOptions | None = None
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -125,6 +131,21 @@ class Function:
             return self.cls.name
         else:
             return self.name
+
+    @functools.cached_property
+    def c_basename_vectorcall(self) -> str:
+        """C function name for vectorcall parser.
+
+        Strips the __init__/__new__ suffix from c_basename and appends
+        _vectorcall.  Respects 'as' renaming in clinic input, e.g.
+        'str.__new__ as unicode_new' produces 'unicode_vectorcall'.
+        """
+        name = self.c_basename
+        for suffix in ('___init__', '___new__', '_new', '_init'):
+            if name.endswith(suffix):
+                name = name[:-len(suffix)]
+                break
+        return f'{name}_vectorcall'
 
     @functools.cached_property
     def fulldisplayname(self) -> str:
