@@ -1019,16 +1019,16 @@ class TestInlineValues(unittest.TestCase):
             import test.support
             import _testcapi
 
-            set_nomemory = _testcapi.set_nomemory  # eagerly load the function
-
             class A:
                 def __init__(self):
                     self.a = 1
                     self.b = 2
             a = A()
             d = a.__dict__
+
+            test.support.gc_collect()
             with test.support.catch_unraisable_exception() as ex:
-                set_nomemory(0, 1)
+                _testcapi.set_nomemory(0, 1)
                 del a
                 assert ex.unraisable.exc_type is MemoryError
             try:
