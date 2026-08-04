@@ -1,2 +1,0 @@
-Split the completion status handling out of ``IocpProactor._poll()`` into a
-separate ``IocpProactor._process_completion_status()`` method.
