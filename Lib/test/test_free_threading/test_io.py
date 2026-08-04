@@ -213,7 +213,10 @@ class TextIOWrapperTest(TestCase):
 
         def reader():
             for _ in range(1000):
-                slot[0].buffer
+                try:
+                    slot[0].buffer
+                except ValueError:
+                    pass
 
         def detacher():
             for _ in range(1000):
