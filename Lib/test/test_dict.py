@@ -1869,6 +1869,26 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(d2, frozendict(x=1, y=2))
         self.assertEqual(type(d2), frozendict)
 
+    def test_gc_tracking(self):
+        self.assertFalse(gc.is_tracked(frozendict()))
+        self.assertFalse(gc.is_tracked(frozendict({1: 2})))
+        self.assertFalse(gc.is_tracked(frozendict.fromkeys('ab', 1)))
+        self.assertFalse(gc.is_tracked(frozendict({1: 2}) | {3: 4}))
+
+        self.assertTrue(gc.is_tracked(frozendict({1: [2]})))
+        # subclasses can create reference cycles, they are always tracked
+        self.assertTrue(gc.is_tracked(FrozenDict({1: 2})))
+
+        # a reference cycle through a tracked frozendict is collectable
+        class Obj:
+            pass
+        obj = Obj()
+        obj.fd = frozendict({1: obj})
+        ref = weakref.ref(obj)
+        del obj
+        gc.collect()
+        self.assertIsNone(ref())
+
     def test_merge(self):
         # test "a | b" operator
         self.assertEqual(frozendict(x=1) | frozendict(y=2),
