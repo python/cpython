@@ -107,6 +107,109 @@ static const char PyCursesVersion[] = "2.2";
 #define CURSES_MODULE
 #include "py_curses.h"
 
+#if defined(MS_WINDOWS) && defined(PDC_WIDE)
+#  include <locale.h>            // setlocale()
+#endif
+
+#ifdef PDCURSES
+/* configure does not run on Windows, so declare the capabilities of the
+   PDCurses library the module is built against.  These enable the matching
+   "#ifdef HAVE_CURSES_X" feature guards below.  Only the functions that
+   PDCurses actually provides are listed -- terminfo (setupterm() and friends)
+   is supplied by the bundled PC/pdcurses stubs.  Functions PDCurses lacks
+   (the terminfo-based state getters, the reentrant use_window()/use_screen()
+   family, define_key(), ...) stay disabled because their macros are absent. */
+#  ifndef HAVE_TERM_H
+#    define HAVE_TERM_H 1
+#  endif
+   /* When PDCurses is built with PDC_WIDE it provides the wide-character
+      (cchar_t) API, which the module gates on HAVE_NCURSESW.  PDCurses'
+      cchar_t is a scalar chtype, not a struct with a combining-character array:
+      PDCursesMod defines CCHARW_MAX (20), but without a 64-bit chtype a cell
+      holds a single code point and setcchar() keeps only the base character. */
+#  ifdef PDC_WIDE
+#    define HAVE_NCURSESW 1
+   /* The Microsoft C runtime has no wcwidth(); PDCurses carries one as
+      PDC_wcwidth(), declared in its private curspriv.h and compiled with
+      PDC_WIDE, so it is there whenever the module needs it.  It takes an
+      int32_t rather than a wchar_t, which on Windows is 16 bits wide. */
+PDCEX int PDC_wcwidth(const int32_t ucs);
+#    define wcwidth PDC_wcwidth
+#  endif
+   /* PDCursesMod defines CCHARW_MAX; PDCurses has no combining-character
+      support, so a cell holds a single character there. */
+#  ifndef CCHARW_MAX
+#    define CCHARW_MAX 1
+#  endif
+#  define HAVE_CURSES_FILTER 1
+   /* py_curses.h asks PDCurses for the ncurses mouse API (PDC_NCMOUSE), which
+      is the getmouse(MEVENT *) the module calls. */
+#  define HAVE_CURSES_GETMOUSE 1
+#  define HAVE_CURSES_HAS_KEY 1
+#  define HAVE_CURSES_HAS_MOUSE 1
+#  define HAVE_CURSES_IS_KEYPAD 1
+#  define HAVE_CURSES_IS_LEAVEOK 1
+#  define HAVE_CURSES_IS_PAD 1
+#  define HAVE_CURSES_RESIZE_TERM 1
+#  define HAVE_CURSES_RESIZETERM 1
+#  define HAVE_CURSES_IS_TERM_RESIZED 1
+#  define HAVE_CURSES_SCR_DUMP 1
+#  define HAVE_CURSES_SCR_SET 1
+#  define HAVE_CURSES_TABSIZE 1
+#  define HAVE_CURSES_SET_TABSIZE 1
+#  define HAVE_CURSES_TERM_ATTRS 1
+#  define HAVE_CURSES_TYPEAHEAD 1
+#  define HAVE_CURSES_USE_ENV 1
+#  define HAVE_CURSES_WATTR_GET 1
+#  define HAVE_CURSES_WATTR_SET 1
+#  define HAVE_CURSES_WATTR_ON 1
+#  define HAVE_CURSES_WATTR_OFF 1
+#  define HAVE_CURSES_WCOLOR_SET 1
+#  define HAVE_CURSES_WCHGAT 1
+#  define HAVE_CURSES_SLK_ATTR_ON 1
+#  define HAVE_CURSES_SLK_ATTR_OFF 1
+#  define HAVE_CURSES_SLK_ATTR_SET 1
+#  define HAVE_CURSES_SLK_COLOR 1
+
+/* PDCurses provides resize_term() but not the ncurses extensions resizeterm()
+   and is_term_resized() (neither is in X/Open Curses).  resizeterm() is
+   resize_term() plus SIGWINCH and soft-key bookkeeping, which does not apply on
+   Windows: a resize is delivered as KEY_RESIZE, which PDCurses' wgetch() already
+   handles by calling resize_term(0, 0).  is_term_resized() is a pure predicate --
+   resize_term() changes the window structures exactly when the new size differs
+   from the current one. */
+static int
+resizeterm(int nlines, int ncols)
+{
+    return resize_term(nlines, ncols);
+}
+
+static int
+is_term_resized(int nlines, int ncols)
+{
+    return nlines != LINES || ncols != COLS;
+}
+#endif
+
+/* Capabilities that came in one release rather than one function at a time,
+   where a version test stands in for the configure probe. */
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) \
+    || defined(PDCURSES)
+   /* is_cleared() and the other window state predicates, wgetdelay(),
+      wgetscrreg(). */
+#  define HAVE_CURSES_IS_CLEARED 1
+#endif
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) \
+    || PDC_BUILD+0 >= 4500
+   /* is_cbreak(), is_echo(), is_nl() and is_raw() were added in ncurses 6.5
+      and in PDCursesMod 4.5; the original PDCurses does not have them. */
+#  define HAVE_CURSES_IS_CBREAK 1
+#endif
+#if defined(NCURSES_EXT_FUNCS) || PDC_BUILD+0 >= 4305
+   /* slk_attr() is an ncurses extension, added in PDCursesMod 4.3.5. */
+#  define HAVE_CURSES_SLK_ATTR 1
+#endif
+
 #if defined(HAVE_TERM_H) || defined(__sgi)
 /* For termname, longname, putp, tigetflag, tigetnum, tigetstr, tparm
    which are not declared in SysV curses and for setupterm. */
@@ -130,6 +233,11 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #endif
 
 #if defined(HAVE_NCURSESW) && NCURSES_EXT_FUNCS+0 >= 20170401 && NCURSES_EXT_COLORS+0 >= 20170401
+#define _NCURSES_EXTENDED_COLOR_FUNCS   1
+#elif defined(PDCURSES) && PDC_BUILD+0 >= 4300
+// PDCursesMod 4.2 added the int-based extended color API
+// (init_extended_pair() etc.), which lifts the color-pair count above the
+// short-based limit of SHORT_MAX, and 4.3 added reset_color_pairs().
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
@@ -702,6 +810,33 @@ typedef struct {
 
 #define _PyCursesComplexStrObject_CAST(op)  ((PyCursesComplexStrObject *)(op))
 
+#ifdef HAVE_NCURSESW
+
+/* Pack a wide-character cell, routing the color pair through the
+   extended-color opts slot so it is not limited to a short (unlike the
+   chtype COLOR_PAIR field).  Without that slot the pair must fit in the
+   short that setcchar() takes; raise OverflowError instead of silently
+   truncating a larger one. */
+static int
+curses_setcchar(cchar_t *wcval, const wchar_t *wstr, attr_t attrs, int pair)
+{
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    /* The pair passed through the opts slot is authoritative and may exceed
+       a short; ncurses then ignores the short argument, but clamp it into
+       range so the int-to-short narrowing stays well-defined. */
+    short spair = pair <= SHRT_MAX ? (short)pair : SHRT_MAX;
+    return setcchar(wcval, wstr, attrs, spair, &pair);
+#else
+    if (pair > SHRT_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+                     "color pair %d does not fit in a short", pair);
+        return ERR;
+    }
+    return setcchar(wcval, wstr, attrs, (short)pair, NULL);
+#endif
+}
+#endif
+
 /* Build a single character cell from obj.
 
    On a wide build, return 1 and store a chtype in *pch for an int or bytes, or
@@ -741,7 +876,8 @@ PyCurses_ConvertToCell(PyCursesWindowObject *win, PyObject *obj, attr_t attr,
     wchar_t wstr[CCHARW_MAX + 1];
     int type = PyCurses_ConvertToCchar_t(win, obj, pch, wstr);
     if (type == 2) {
-        if (setcchar(pwc, wstr, (attr_t)attr, PAIR_NUMBER(attr), NULL) == ERR) {
+        if (curses_setcchar(pwc, wstr, (attr_t)attr,
+                            (int)PAIR_NUMBER(attr)) == ERR) {
             curses_window_set_error(win, "setcchar", funcname);
             return 0;
         }
@@ -753,30 +889,6 @@ PyCurses_ConvertToCell(PyCursesWindowObject *win, PyObject *obj, attr_t attr,
 }
 
 #ifdef HAVE_NCURSESW
-
-/* Pack a wide-character cell, routing the color pair through the
-   extended-color opts slot so it is not limited to a short (unlike the
-   chtype COLOR_PAIR field).  Without that slot the pair must fit in the
-   short that setcchar() takes; raise OverflowError instead of silently
-   truncating a larger one. */
-static int
-curses_setcchar(cchar_t *wcval, const wchar_t *wstr, attr_t attrs, int pair)
-{
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-    /* The pair passed through the opts slot is authoritative and may exceed
-       a short; ncurses then ignores the short argument, but clamp it into
-       range so the int-to-short narrowing stays well-defined. */
-    short spair = pair <= SHRT_MAX ? (short)pair : SHRT_MAX;
-    return setcchar(wcval, wstr, attrs, spair, &pair);
-#else
-    if (pair > SHRT_MAX) {
-        PyErr_Format(PyExc_OverflowError,
-                     "color pair %d does not fit in a short", pair);
-        return ERR;
-    }
-    return setcchar(wcval, wstr, attrs, (short)pair, NULL);
-#endif
-}
 
 /* Unpack a wide-character cell into its text, attributes and color pair.
    The pair is read through the extended-color opts slot when available, so
@@ -860,7 +972,7 @@ curses_cell_pack(cursesmodule_state *state, curses_cell_t *cell,
        only that they are inverses).  A wide build, or color_set(), can use
        larger pairs. */
     chtype color = COLOR_PAIR(pair);
-    if (pair < 0 || PAIR_NUMBER(color) != pair) {
+    if (pair < 0 || (int)PAIR_NUMBER(color) != pair) {
         PyErr_Format(PyExc_OverflowError,
                      "%s(): color pair %d does not fit in a chtype "
                      "(color_pair() can encode only pairs 0 to %d)",
@@ -1367,7 +1479,7 @@ complexstr_from_string(cursesmodule_state *state, PyObject *str,
     /* Validate the pair once (it is the same for every cell); see
        curses_cell_pack() for the round-trip rationale. */
     chtype color = COLOR_PAIR(pair);
-    if (pair < 0 || PAIR_NUMBER(color) != pair) {
+    if (pair < 0 || (int)PAIR_NUMBER(color) != pair) {
         PyErr_Format(PyExc_OverflowError,
                      "complexstr(): color pair %d does not fit in a chtype "
                      "(color_pair() can encode only pairs 0 to %d)",
@@ -1891,7 +2003,7 @@ Window_NoArgNoReturnFunction(wdeleteln)
 
 Window_NoArgTrueFalseFunction(is_wintouched)
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_CLEARED
 Window_NoArgTrueFalseFunction(is_cleared)
 Window_NoArgTrueFalseFunction(is_idcok)
 Window_NoArgTrueFalseFunction(is_idlok)
@@ -1902,17 +2014,17 @@ Window_NoArgTrueFalseFunction(is_scrollok)
 Window_NoArgTrueFalseFunction(is_subwin)
 Window_NoArgTrueFalseFunction(is_syncok)
 #endif
-#if defined(HAVE_CURSES_IS_KEYPAD) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_KEYPAD
 Window_NoArgTrueFalseFunction(is_keypad)
 #endif
-#if defined(HAVE_CURSES_IS_LEAVEOK) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_LEAVEOK
 Window_NoArgTrueFalseFunction(is_leaveok)
 #endif
-#if defined(HAVE_CURSES_IS_PAD) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_PAD
 Window_NoArgTrueFalseFunction(is_pad)
 #endif
 
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_CLEARED
 static PyObject *
 PyCursesWindow_getdelay(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
@@ -1931,7 +2043,7 @@ PyCursesWindow_getscrreg(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
     return Py_BuildValue("(ii)", top, bottom);
 }
-#endif /* NCURSES_EXT_FUNCS >= 20110404 || PDCURSES */
+#endif /* HAVE_CURSES_IS_CLEARED */
 
 static PyObject *
 PyCursesWindow_getparent(PyObject *op, PyObject *Py_UNUSED(ignored))
@@ -1991,11 +2103,48 @@ PyCursesWindow_New(cursesmodule_state *state,
                    WINDOW *win, const char *encoding,
                    PyCursesWindowObject *orig, PyObject *screen)
 {
+#ifdef PDCURSES
     if (encoding == NULL) {
-#if defined(MS_WINDOWS)
+        /* PDCurses built with PDC_FORCE_UTF8 encodes a cell as UTF-8 for its
+           byte API whatever the locale is.  Ask at run time: the module may be
+           compiled without that macro. */
+        PDC_VERSION pdcurses_version;
+        PDC_get_version(&pdcurses_version);
+        if (pdcurses_version.flags & PDC_VFLAG_UTF8) {
+            encoding = "utf-8";
+        }
+    }
+#endif
+    if (encoding == NULL) {
+#ifdef MS_WINDOWS
         char buffer[100];
         UINT cp;
+#  ifdef PDC_WIDE
+        /* On the wide build a cell holds a Unicode code point and output goes
+           to the console as Unicode (WriteConsoleW), so the console output code
+           page is not involved.  The byte API -- instr(), addstr(bytes) -- goes
+           through PDCurses' wcstombs()/mbtowc(), which use the C runtime's
+           current LC_CTYPE code page -- the locale the program set -- not the
+           system ANSI code page. */
+        cp = 0;
+        /* setlocale(LC_CTYPE, NULL) reports the CURRENT locale (per-thread on
+           this CRT), matching what wcstombs() uses; parse its code page. */
+        const char *lc = setlocale(LC_CTYPE, NULL);
+        const char *dot = (lc != NULL) ? strrchr(lc, '.') : NULL;
+        if (dot == NULL) {
+            /* the "C" locale (no code page): wcstombs() maps a wide character
+               below 256 to its own byte value, i.e. Latin-1. */
+            encoding = "latin-1";
+        }
+        else if (_stricmp(dot + 1, "utf8") == 0 || strcmp(dot + 1, "65001") == 0) {
+            encoding = "utf-8";
+        }
+        else {
+            cp = (UINT)atoi(dot + 1);
+        }
+#  else
         cp = GetConsoleOutputCP();
+#  endif
         if (cp != 0) {
             PyOS_snprintf(buffer, sizeof(buffer), "cp%u", cp);
             encoding = buffer;
@@ -3070,7 +3219,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
     return curses_window_check_err(self, rtn, funcname, "echochar");
 }
 
-#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
+#ifdef HAVE_CURSES_GETMOUSE
 /*[clinic input]
 @permit_long_summary
 _curses.window.enclose
@@ -3638,9 +3787,11 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
     if (type == 1) {
-        /* winsch() does not locale-decode a byte above 127 on a wide build,
-           unlike waddch(), so decode it here and insert it as a wide
-           character. (gh-153864) */
+#ifndef PDCURSES
+        /* ncurses winsch() does not locale-decode a byte above 127 on a wide
+           build, unlike waddch(), so decode it here and insert it as a wide
+           character. (gh-153864)  PDCurses winsch() stores the value as a code
+           point (like waddch()), so it needs no decoding. */
         chtype cch = ch_ & A_CHARTEXT;
         if (cch > 127) {
             wint_t wc = btowc((int)cch);
@@ -3654,6 +3805,7 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
                 type = 2;
             }
         }
+#endif
     }
     if (type == 2) {
         if (!group_left_1) {
@@ -3707,9 +3859,10 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
 {
     chtype rtn;
     const char *funcname;
-#ifdef HAVE_NCURSESW
+#if defined(HAVE_NCURSESW) && !defined(PDCURSES)
     /* ncursesw's winch() returns the whole code point, which overflows the
-       chtype's 8-bit character field into the color and attribute bits. */
+       chtype's 8-bit character field into the color and attribute bits.
+       PDCurses stores a code point in a cell, so its winch() is correct. */
     cchar_t cell = {0};
     int rc;
     if (!group_right_1) {
@@ -5046,7 +5199,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_GETCH_METHODDEF
     _CURSES_WINDOW_GETKEY_METHODDEF
     _CURSES_WINDOW_GET_WCH_METHODDEF
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_CLEARED
     {"getdelay", PyCursesWindow_getdelay, METH_NOARGS,
      "getdelay($self, /)\n--\n\n"
      "Return the window's read timeout in milliseconds.\n\n"
@@ -5061,7 +5214,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"getparyx", PyCursesWindow_getparyx, METH_NOARGS,
      "getparyx($self, /)\n--\n\n"
      "Return (y, x) relative to the parent window, or (-1, -1) if none."},
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_CLEARED
     {"getscrreg", PyCursesWindow_getscrreg, METH_NOARGS,
      "getscrreg($self, /)\n--\n\n"
      "Return a tuple (top, bottom) of the current scrolling region."},
@@ -5116,7 +5269,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     {"is_wintouched", PyCursesWindow_is_wintouched, METH_NOARGS,
      "is_wintouched($self, /)\n--\n\n"
      "Return True if the window changed since the last refresh()."},
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20110404) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_CLEARED
     {"is_cleared", PyCursesWindow_is_cleared, METH_NOARGS,
      "is_cleared($self, /)\n--\n\n"
      "Return the current value set by clearok()."},
@@ -5145,17 +5298,17 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "is_syncok($self, /)\n--\n\n"
      "Return the current value set by syncok()."},
 #endif
-#if defined(HAVE_CURSES_IS_KEYPAD) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_KEYPAD
     {"is_keypad", PyCursesWindow_is_keypad, METH_NOARGS,
      "is_keypad($self, /)\n--\n\n"
      "Return the current value set by keypad()."},
 #endif
-#if defined(HAVE_CURSES_IS_LEAVEOK) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_LEAVEOK
     {"is_leaveok", PyCursesWindow_is_leaveok, METH_NOARGS,
      "is_leaveok($self, /)\n--\n\n"
      "Return the current value set by leaveok()."},
 #endif
-#if defined(HAVE_CURSES_IS_PAD) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_PAD
     {"is_pad", PyCursesWindow_is_pad, METH_NOARGS,
      "is_pad($self, /)\n--\n\n"
      "Return True if the window is a pad."},
@@ -5645,8 +5798,7 @@ _curses_cbreak_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=9f9dee9664769751 input=42d81687f11ddbf3]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
-/* is_cbreak()/is_echo()/is_nl()/is_raw() were added in ncurses 6.5. */
-#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20240427) || defined(PDCURSES)
+#ifdef HAVE_CURSES_IS_CBREAK
 /*[clinic input]
 _curses.is_cbreak
 
@@ -5702,7 +5854,7 @@ _curses_is_raw_impl(PyObject *module)
     PyCursesStatefulInitialised(module);
     return PyBool_FromLong(is_raw());
 }
-#endif /* NCURSES_EXT_FUNCS >= 20240427 || PDCURSES */
+#endif /* HAVE_CURSES_IS_CBREAK */
 
 /*[clinic input]
 _curses.color_content
@@ -5763,7 +5915,7 @@ _curses_color_pair_impl(PyObject *module, int pair_number)
        macros are inverses).  color_set()/attr_set()/complexchar can still
        display larger pairs. */
     chtype attr = COLOR_PAIR(pair_number);
-    if (pair_number < 0 || PAIR_NUMBER(attr) != pair_number) {
+    if (pair_number < 0 || (int)PAIR_NUMBER(attr) != pair_number) {
         PyErr_Format(PyExc_OverflowError,
                      "color pair %d does not fit in a chtype "
                      "(color_pair() can encode only pairs 0 to %d)",
@@ -6006,7 +6158,7 @@ _curses_getsyx_impl(PyObject *module)
 }
 #endif
 
-#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
+#ifdef HAVE_CURSES_GETMOUSE
 /*[clinic input]
 _curses.getmouse
 
@@ -7238,8 +7390,8 @@ _curses_meta_impl(PyObject *module, int yes)
     return curses_check_err(module, meta(stdscr, yes), "meta", NULL);
 }
 
-#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
-#if defined(HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES)
+#ifdef HAVE_CURSES_GETMOUSE
+#ifdef HAVE_CURSES_HAS_MOUSE
 /*[clinic input]
 _curses.has_mouse
 
@@ -7254,7 +7406,7 @@ _curses_has_mouse_impl(PyObject *module)
 
     return PyBool_FromLong(has_mouse());
 }
-#endif /* HAVE_CURSES_HAS_MOUSE || PDCURSES */
+#endif /* HAVE_CURSES_HAS_MOUSE */
 
 /*[clinic input]
 _curses.mouseinterval
@@ -7901,7 +8053,7 @@ _curses_termattrs_impl(PyObject *module)
 {
     PyCursesStatefulInitialised(module);
 
-    return PyLong_FromUnsignedLong((unsigned long)(chtype)termattrs());
+    return PyLong_FromUnsignedLongLong((unsigned long long)(chtype)termattrs());
 }
 
 #ifdef HAVE_CURSES_TERM_ATTRS
@@ -8236,7 +8388,7 @@ _curses_ungetch(PyObject *module, PyObject *ch)
     if (!PyCurses_ConvertToChtype(NULL, ch, &ch_))
         return NULL;
 
-    return curses_check_err(module, ungetch(ch_), "ungetch", NULL);
+    return curses_check_err(module, ungetch((int)ch_), "ungetch", NULL);
 }
 
 /*[clinic input]
@@ -8491,7 +8643,7 @@ _curses_slk_attrset_impl(PyObject *module, attr_t attr)
                             "slk_attrset", NULL);
 }
 
-#if defined(NCURSES_EXT_FUNCS) || defined(PDCURSES)
+#ifdef HAVE_CURSES_SLK_ATTR
 /*[clinic input]
 _curses.slk_attr
 
@@ -8670,60 +8822,82 @@ _curses_assume_default_colors_impl(PyObject *module, int fg, int bg)
 #endif /* STRICT_SYSV_CURSES */
 
 
+/* Only one curses library is compiled against, so a single named tuple
+   reports its version, named after that library.  Both ncurses and PDCurses
+   provide curses_version(), with version strings the same scan handles. */
+#if defined(NCURSES_VERSION) || defined(PDCURSES)
+
 #ifdef NCURSES_VERSION
+#  define CURSES_LIB_NAME           "ncurses"
+#  define CURSES_LIB_VERSION_ATTR   "ncurses_version"
+#  define CURSES_LIB_VERSION_MAJOR  NCURSES_VERSION_MAJOR
+#  define CURSES_LIB_VERSION_MINOR  NCURSES_VERSION_MINOR
+#  define CURSES_LIB_VERSION_PATCH  NCURSES_VERSION_PATCH
+#else
+#  define CURSES_LIB_NAME           "PDCurses"
+#  define CURSES_LIB_VERSION_ATTR   "pdcurses_version"
+#  define CURSES_LIB_VERSION_MAJOR  PDC_VER_MAJOR
+#  define CURSES_LIB_VERSION_MINOR  PDC_VER_MINOR
+#  ifdef PDC_VER_CHANGE
+#    define CURSES_LIB_VERSION_PATCH  PDC_VER_CHANGE
+#  else
+     /* PDCurses numbers its releases with two components. */
+#    define CURSES_LIB_VERSION_PATCH  0
+#  endif
+#endif
 
-PyDoc_STRVAR(ncurses_version__doc__,
-"curses.ncurses_version\n\
+PyDoc_STRVAR(curses_lib_version__doc__,
+"curses." CURSES_LIB_VERSION_ATTR "\n\
 \n\
-Ncurses version information as a named tuple.");
+" CURSES_LIB_NAME " version information as a named tuple.");
 
-static PyStructSequence_Field ncurses_version_fields[] = {
+static PyStructSequence_Field curses_lib_version_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
     {"patch", "Patch release number"},
     {0}
 };
 
-static PyStructSequence_Desc ncurses_version_desc = {
-    "curses.ncurses_version",  /* name */
-    ncurses_version__doc__,    /* doc */
-    ncurses_version_fields,    /* fields */
+static PyStructSequence_Desc curses_lib_version_desc = {
+    "curses." CURSES_LIB_VERSION_ATTR,  /* name */
+    curses_lib_version__doc__,          /* doc */
+    curses_lib_version_fields,          /* fields */
     3
 };
 
 static PyObject *
-make_ncurses_version(PyTypeObject *type)
+make_curses_lib_version(PyTypeObject *type)
 {
-    PyObject *ncurses_version = PyStructSequence_New(type);
-    if (ncurses_version == NULL) {
+    PyObject *lib_version = PyStructSequence_New(type);
+    if (lib_version == NULL) {
         return NULL;
     }
     const char *str = curses_version();
     unsigned long major = 0, minor = 0, patch = 0;
     if (!str || sscanf(str, "%*[^0-9]%lu.%lu.%lu", &major, &minor, &patch) < 3) {
         // Fallback to header version, which cannot be that wrong
-        major = NCURSES_VERSION_MAJOR;
-        minor = NCURSES_VERSION_MINOR;
-        patch = NCURSES_VERSION_PATCH;
+        major = CURSES_LIB_VERSION_MAJOR;
+        minor = CURSES_LIB_VERSION_MINOR;
+        patch = CURSES_LIB_VERSION_PATCH;
     }
 #define SET_VERSION_COMPONENT(INDEX, VALUE)                     \
     do {                                                        \
         PyObject *o = PyLong_FromLong(VALUE);                   \
         if (o == NULL) {                                        \
-            Py_DECREF(ncurses_version);                         \
+            Py_DECREF(lib_version);                             \
             return NULL;                                        \
         }                                                       \
-        PyStructSequence_SET_ITEM(ncurses_version, INDEX, o);   \
+        PyStructSequence_SET_ITEM(lib_version, INDEX, o);       \
     } while (0)
 
     SET_VERSION_COMPONENT(0, major);
     SET_VERSION_COMPONENT(1, minor);
     SET_VERSION_COMPONENT(2, patch);
 #undef SET_VERSION_COMPONENT
-    return ncurses_version;
+    return lib_version;
 }
 
-#endif /* NCURSES_VERSION */
+#endif /* NCURSES_VERSION || PDCURSES */
 
 /*[clinic input]
 @permit_long_summary
@@ -9110,25 +9284,25 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
 
-#ifdef NCURSES_VERSION
-    /* ncurses_version */
+#if defined(NCURSES_VERSION) || defined(PDCURSES)
+    /* ncurses_version or pdcurses_version */
     PyTypeObject *version_type;
-    version_type = _PyStructSequence_NewType(&ncurses_version_desc,
+    version_type = _PyStructSequence_NewType(&curses_lib_version_desc,
                                              Py_TPFLAGS_DISALLOW_INSTANTIATION);
     if (version_type == NULL) {
         return -1;
     }
-    PyObject *ncurses_version = make_ncurses_version(version_type);
+    PyObject *lib_version = make_curses_lib_version(version_type);
     Py_DECREF(version_type);
-    if (ncurses_version == NULL) {
+    if (lib_version == NULL) {
         return -1;
     }
-    rc = PyDict_SetItemString(module_dict, "ncurses_version", ncurses_version);
-    Py_CLEAR(ncurses_version);
+    rc = PyDict_SetItemString(module_dict, CURSES_LIB_VERSION_ATTR, lib_version);
+    Py_CLEAR(lib_version);
     if (rc < 0) {
         return -1;
     }
-#endif /* NCURSES_VERSION */
+#endif /* NCURSES_VERSION || PDCURSES */
 
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
@@ -9255,7 +9429,7 @@ cursesmodule_exec(PyObject *module)
     SetDictInt("COLOR_CYAN",        COLOR_CYAN);
     SetDictInt("COLOR_WHITE",       COLOR_WHITE);
 
-#if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
+#ifdef HAVE_CURSES_GETMOUSE
     /* Mouse-related constants */
     SetDictInt("BUTTON1_PRESSED",          BUTTON1_PRESSED);
     SetDictInt("BUTTON1_RELEASED",         BUTTON1_RELEASED);

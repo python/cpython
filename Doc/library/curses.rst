@@ -2211,6 +2211,17 @@ The :mod:`!curses` module defines the following data members:
 
    .. versionadded:: 3.8
 
+.. data:: pdcurses_version
+
+   A named tuple containing the three components of the PDCurses library
+   version: *major*, *minor*, and *patch*.  All values are integers.  The
+   components can also be accessed by name, so ``curses.pdcurses_version[0]``
+   is equivalent to ``curses.pdcurses_version.major`` and so on.
+
+   Availability: if the PDCurses library is used.
+
+   .. versionadded:: next
+
 .. data:: COLORS
 
    The maximum number of colors the terminal can support.
