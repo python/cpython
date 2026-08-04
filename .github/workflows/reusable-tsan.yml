@@ -43,7 +43,7 @@ jobs:
     - name: TSAN option setup
       run: |
         echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${{
-            fromJSON(inputs.free-threading)
+            inputs.free-threading
             && '_free_threading'
             || ''
           }}.txt" >> "$GITHUB_ENV"
@@ -63,7 +63,7 @@ jobs:
         --config-cache
         --with-thread-sanitizer
         --with-pydebug
-        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ inputs.free-threading && '--disable-gil' || '' }}
     - name: Build CPython
       run: make -j4
     - name: Display build info

@@ -1645,6 +1645,7 @@ decompress(ZlibDecompressor *self, uint8_t *data,
     return result;
 
 error:
+    self->zst.next_in = NULL;
     Py_XDECREF(result);
     return NULL;
 }
