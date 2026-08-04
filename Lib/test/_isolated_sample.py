@@ -5,6 +5,8 @@ This module is imported, never run as a test file, so that
 a subprocess.  Several of these tests fail, error or are skipped on purpose.
 """
 
+import atexit
+import os
 import time
 import unittest
 from test.support import isolation
@@ -109,3 +111,33 @@ class BrokenSubclassSample(SubclassingSample):
     @classmethod
     def setUpClass(cls):
         pass
+
+
+# The exit code the samples below die with, after their tests have run.
+EXIT_CODE = 3
+
+
+def _die_at_exit():
+    atexit.register(os._exit, EXIT_CODE)
+
+
+class MethodExitSample(unittest.TestCase):
+
+    @isolation.runInSubprocess()
+    def test_passes_then_dies(self):
+        _die_at_exit()
+
+    @isolation.runInSubprocess()
+    def test_fails_and_dies(self):
+        _die_at_exit()
+        self.fail('the test itself failed')
+
+
+@isolation.runInSubprocess()
+class ClassExitSample(unittest.TestCase):
+
+    def test_pass(self):
+        pass
+
+    def test_dies(self):
+        _die_at_exit()
