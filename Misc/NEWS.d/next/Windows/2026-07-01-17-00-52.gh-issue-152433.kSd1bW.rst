@@ -1,1 +1,1 @@
-``_ctypes`` module: improve UWP compatibility.
+Allow build :mod:`!_ctypes` for Universal Windows Platform.

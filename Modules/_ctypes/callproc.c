@@ -1418,14 +1418,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-#ifndef MS_WINDOWS_DESKTOP
-    hMod = LoadPackagedLibrary(name, 0);
-#else
     /* bpo-36085: Limit DLL search directories to avoid pre-loading
      * attacks and enable use of the AddDllDirectory function.
      */
     hMod = LoadLibraryExW(name, NULL, (DWORD)load_flags);
-#endif
     err = hMod ? 0 : GetLastError();
     Py_END_ALLOW_THREADS
 
