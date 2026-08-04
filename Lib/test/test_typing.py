@@ -52,8 +52,8 @@ import types
 from test.support import (
     captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper, run_code,
     EqualToForwardRef,
-    exceeds_recursion_limit, skip_if_huge_c_stack, skip_wasi_stack_overflow,
-    skip_emscripten_stack_overflow,
+    exceeds_recursion_limit, run_with_limited_c_stack,
+    skip_wasi_stack_overflow, skip_emscripten_stack_overflow,
 )
 from test.typinganndata import (
     ann_module695, mod_generics_cache, _typed_dict_helper,
@@ -4929,7 +4929,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     @cpython_only
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_parameters_deep_recursion(self):
