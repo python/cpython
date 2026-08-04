@@ -22,6 +22,7 @@ Python/fileutils.c	set_inheritable	ioctl_works	-
 # (set lazily, *after* first init)
 # XXX Is this thread-safe?
 Modules/posixmodule.c	os_dup2_impl	dup3_works	-
+Modules/posixmodule.c	os_pipe_impl	pipe2_works	-
 
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
