@@ -12,6 +12,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\abstract.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\bytearray.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\bytes.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\capsule.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\complex.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\dict.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\eval.c" />
@@ -30,6 +31,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\file.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\weakref.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\run.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi.c" />
   </ItemGroup>
   <ItemGroup>

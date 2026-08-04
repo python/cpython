@@ -337,7 +337,7 @@ complete listing.
    implemented with ``__builtin_unreachable()`` on GCC in release mode.
 
    A use for ``Py_UNREACHABLE()`` is following a call to a function that
-   never returns but that is not declared :c:macro:`_Py_NO_RETURN`.
+   never returns but that is not declared ``_Py_NO_RETURN``.
 
    If a code path is very unlikely code but can be reached under exceptional
    case, this macro must not be used.  For example, under low memory condition
@@ -1024,7 +1024,7 @@ in the Unix build, compiler optimization is disabled.
 In addition to the reference count debugging described below, extra checks are
 performed, see :ref:`Python Debug Build <debug-build>`.
 
-Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
+Defining ``Py_TRACE_REFS`` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
 When defined, a circular doubly linked list of active objects is maintained by adding two extra
 fields to every :c:type:`PyObject`.  Total allocations are tracked as well.  Upon

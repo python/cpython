@@ -25,6 +25,7 @@
 int _PyTestLimitedCAPI_Init_Abstract(PyObject *module);
 int _PyTestLimitedCAPI_Init_ByteArray(PyObject *module);
 int _PyTestLimitedCAPI_Init_Bytes(PyObject *module);
+int _PyTestLimitedCAPI_Init_Capsule(PyObject *module);
 int _PyTestLimitedCAPI_Init_Complex(PyObject *module);
 int _PyTestLimitedCAPI_Init_Dict(PyObject *module);
 int _PyTestLimitedCAPI_Init_Eval(PyObject *module);
@@ -42,5 +43,6 @@ int _PyTestLimitedCAPI_Init_Unicode(PyObject *module);
 int _PyTestLimitedCAPI_Init_VectorcallLimited(PyObject *module);
 int _PyTestLimitedCAPI_Init_File(PyObject *module);
 int _PyTestLimitedCAPI_Init_Weakref(PyObject *module);
+int _PyTestLimitedCAPI_Init_Run(PyObject *module);
 
 #endif // Py_TESTLIMITEDCAPI_PARTS_H

@@ -1,0 +1,3 @@
+Fix exponential time in :meth:`csv.Sniffer.sniff` for a sample which contains
+many quote characters.  A doubled quote character is now also detected in
+a field which contains the delimiter or a line break.

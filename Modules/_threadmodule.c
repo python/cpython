@@ -2349,7 +2349,7 @@ thread_shutdown(PyObject *self, PyObject *args)
         struct llist_node *node;
         llist_for_each_safe(node, &state->shutdown_handles) {
             ThreadHandle *cur = llist_data(node, ThreadHandle, shutdown_node);
-            if (cur->ident != ident) {
+            if (ThreadHandle_ident(cur) != ident) {
                 ThreadHandle_incref(cur);
                 handle = cur;
                 break;

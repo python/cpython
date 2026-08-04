@@ -29,9 +29,165 @@ def tearDownModule():
     mimetypes.knownfiles = knownfiles
 
 
-class MimeTypesTestCase(unittest.TestCase):
+class MimeTypesModuleTestCase(unittest.TestCase):
+    def setUp(self):
+        mimetypes.inited = False
+        mimetypes._default_mime_types()
+        mimetypes._db = None
+
+    def test_read_mime_types(self):
+        eq = self.assertEqual
+
+        # Unreadable file returns None
+        self.assertIsNone(mimetypes.read_mime_types("non-existent"))
+
+        with os_helper.temp_dir() as directory:
+            data = "x-application/x-unittest pyunit\n"
+            file = os.path.join(directory, "sample.mimetype")
+            with open(file, 'w', encoding="utf-8") as f:
+                f.write(data)
+            mime_dict = mimetypes.read_mime_types(file)
+            eq(mime_dict[".pyunit"], "x-application/x-unittest")
+
+            data = "x-application/x-unittest2 pyunit2\n"
+            file = os.path.join(directory, "sample2.mimetype")
+            with open(file, 'w', encoding="utf-8") as f:
+                f.write(data)
+            mime_dict = mimetypes.read_mime_types(os_helper.FakePath(file))
+            eq(mime_dict[".pyunit2"], "x-application/x-unittest2")
+
+        # bpo-41048: read_mime_types should read the rule file with 'utf-8' encoding.
+        # Not with locale encoding. _bootlocale has been imported because io.open(...)
+        # uses it.
+        data = "application/no-mans-land  Fran\u00E7ais"
+        filename = "filename"
+        fp = io.StringIO(data)
+        with unittest.mock.patch.object(mimetypes, 'open',
+                                        return_value=fp) as mock_open:
+            mime_dict = mimetypes.read_mime_types(filename)
+            mock_open.assert_called_with(filename, encoding='utf-8')
+        eq(mime_dict[".Français"], "application/no-mans-land")
+
+    def test_init_reinitializes(self):
+        # Issue 4936: make sure an init starts clean
+        # First, put some poison into the types table
+        mimetypes.add_type('foo/bar', '.foobar')
+        self.assertEqual(mimetypes.guess_extension('foo/bar'), '.foobar')
+        # Reinitialize
+        mimetypes.init()
+        # Poison should be gone.
+        self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
+
+    @unittest.skipIf(sys.platform.startswith("win"), "Non-Windows only")
+    def test_guess_known_extensions(self):
+        # Issue 37529
+        # The test fails on Windows because Windows adds mime types from the Registry
+        # and that creates some duplicates.
+        from mimetypes import types_map
+        for v in types_map.values():
+            self.assertIsNotNone(mimetypes.guess_extension(v))
+
+    def test_preferred_extension(self):
+        def check_extensions():
+            self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
+            self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
+            self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
+            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-excel'), '.xls')
+            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-powerpoint'), '.ppt')
+            self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
+            self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
+            self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
+            self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
+            self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
+            self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
+            self.assertEqual(mimetypes.guess_extension('image/jpeg'), '.jpg')
+            self.assertEqual(mimetypes.guess_extension('image/tiff'), '.tiff')
+            self.assertEqual(mimetypes.guess_extension('message/rfc822'), '.eml')
+            self.assertEqual(mimetypes.guess_extension('text/html'), '.html')
+            self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
+            self.assertEqual(mimetypes.guess_extension('text/rtf'), '.rtf')
+            self.assertEqual(mimetypes.guess_extension('text/x-rst'), '.rst')
+            self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
+            self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
+
+        check_extensions()
+        mimetypes.init()
+        check_extensions()
+
+    def test_init_stability(self):
+        mimetypes.init()
+
+        suffix_map = mimetypes.suffix_map
+        encodings_map = mimetypes.encodings_map
+        types_map = mimetypes.types_map
+        common_types = mimetypes.common_types
+
+        mimetypes.init()
+        self.assertIsNot(suffix_map, mimetypes.suffix_map)
+        self.assertIsNot(encodings_map, mimetypes.encodings_map)
+        self.assertIsNot(types_map, mimetypes.types_map)
+        self.assertIsNot(common_types, mimetypes.common_types)
+        self.assertEqual(suffix_map, mimetypes.suffix_map)
+        self.assertEqual(encodings_map, mimetypes.encodings_map)
+        self.assertEqual(types_map, mimetypes.types_map)
+        self.assertEqual(common_types, mimetypes.common_types)
+
+    def test_init_files(self):
+        guess_file_type = mimetypes.guess_file_type
+        self.assertEqual(guess_file_type("file.test2")[0], None)
+
+        filename = support.findfile("mime.types2")
+        mimetypes.init([filename])
+        self.assertEqual(guess_file_type("file.test2")[0], "testing/test2")
+
+        mimetypes.init()
+        self.assertEqual(guess_file_type("file.test2")[0], None)
+
+    def test_init_knownfiles(self):
+        guess_file_type = mimetypes.guess_file_type
+        self.assertEqual(guess_file_type("file.test2")[0], None)
+
+        filename = support.findfile("mime.types2")
+        mimetypes.knownfiles = [filename, "non-existent"]
+        self.addCleanup(mimetypes.knownfiles.clear)
+
+        mimetypes.init()
+        self.assertEqual(guess_file_type("file.test2")[0], "testing/test2")
+
+    def test_added_types_are_used(self):
+        mimetypes.add_type('testing/default-type', '')
+        mime_type, _ = mimetypes.guess_type('')
+        self.assertEqual(mime_type, 'testing/default-type')
+
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, None)
+
+        mimetypes.add_type('testing/type', '.myext')
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, 'testing/type')
+
+
+class MimeTypesClassTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
+
+    def test_init_files(self):
+        guess_file_type = self.db.guess_file_type
+        self.assertEqual(guess_file_type("file.test2")[0], None)
+
+        filename = support.findfile("mime.types2")
+        db = mimetypes.MimeTypes([filename])
+        guess_file_type = db.guess_file_type
+        self.assertEqual(guess_file_type("file.test2")[0], "testing/test2")
+
+    def test_init_knownfiles(self):
+        filename = support.findfile("mime.types2")
+        mimetypes.knownfiles = [filename, "non-existent"]
+        self.addCleanup(mimetypes.knownfiles.clear)
+
+        db = mimetypes.MimeTypes()
+        guess_file_type = db.guess_file_type
+        self.assertEqual(guess_file_type("file.test2")[0], None)
 
     def test_case_sensitivity(self):
         eq = self.assertEqual
@@ -73,39 +229,6 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_file_type("foo.pyunit"),
            ("x-application/x-unittest", None))
         eq(self.db.guess_extension("x-application/x-unittest"), ".pyunit")
-
-    def test_read_mime_types(self):
-        eq = self.assertEqual
-
-        # Unreadable file returns None
-        self.assertIsNone(mimetypes.read_mime_types("non-existent"))
-
-        with os_helper.temp_dir() as directory:
-            data = "x-application/x-unittest pyunit\n"
-            file = os.path.join(directory, "sample.mimetype")
-            with open(file, 'w', encoding="utf-8") as f:
-                f.write(data)
-            mime_dict = mimetypes.read_mime_types(file)
-            eq(mime_dict[".pyunit"], "x-application/x-unittest")
-
-            data = "x-application/x-unittest2 pyunit2\n"
-            file = os.path.join(directory, "sample2.mimetype")
-            with open(file, 'w', encoding="utf-8") as f:
-                f.write(data)
-            mime_dict = mimetypes.read_mime_types(os_helper.FakePath(file))
-            eq(mime_dict[".pyunit2"], "x-application/x-unittest2")
-
-        # bpo-41048: read_mime_types should read the rule file with 'utf-8' encoding.
-        # Not with locale encoding. _bootlocale has been imported because io.open(...)
-        # uses it.
-        data = "application/no-mans-land  Fran\u00E7ais"
-        filename = "filename"
-        fp = io.StringIO(data)
-        with unittest.mock.patch.object(mimetypes, 'open',
-                                        return_value=fp) as mock_open:
-            mime_dict = mimetypes.read_mime_types(filename)
-            mock_open.assert_called_with(filename, encoding='utf-8')
-        eq(mime_dict[".Français"], "application/no-mans-land")
 
     def test_non_standard_types(self):
         eq = self.assertEqual
@@ -201,70 +324,6 @@ class MimeTypesTestCase(unittest.TestCase):
         exts = mimes.guess_all_extensions('application/vnd.geocube+xml',
                                           strict=True)
         self.assertEqual(exts, ['.g3', '.g\xb3'])
-
-    def test_init_reinitializes(self):
-        # Issue 4936: make sure an init starts clean
-        # First, put some poison into the types table
-        mimetypes.add_type('foo/bar', '.foobar')
-        self.assertEqual(mimetypes.guess_extension('foo/bar'), '.foobar')
-        # Reinitialize
-        mimetypes.init()
-        # Poison should be gone.
-        self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
-
-    @unittest.skipIf(sys.platform.startswith("win"), "Non-Windows only")
-    def test_guess_known_extensions(self):
-        # Issue 37529
-        # The test fails on Windows because Windows adds mime types from the Registry
-        # and that creates some duplicates.
-        from mimetypes import types_map
-        for v in types_map.values():
-            self.assertIsNotNone(mimetypes.guess_extension(v))
-
-    def test_preferred_extension(self):
-        def check_extensions():
-            self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
-            self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-excel'), '.xls')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-powerpoint'), '.ppt')
-            self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
-            self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
-            self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
-            self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
-            self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
-            self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
-            self.assertEqual(mimetypes.guess_extension('image/jpeg'), '.jpg')
-            self.assertEqual(mimetypes.guess_extension('image/tiff'), '.tiff')
-            self.assertEqual(mimetypes.guess_extension('message/rfc822'), '.eml')
-            self.assertEqual(mimetypes.guess_extension('text/html'), '.html')
-            self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
-            self.assertEqual(mimetypes.guess_extension('text/rtf'), '.rtf')
-            self.assertEqual(mimetypes.guess_extension('text/x-rst'), '.rst')
-            self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
-            self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
-
-        check_extensions()
-        mimetypes.init()
-        check_extensions()
-
-    def test_init_stability(self):
-        mimetypes.init()
-
-        suffix_map = mimetypes.suffix_map
-        encodings_map = mimetypes.encodings_map
-        types_map = mimetypes.types_map
-        common_types = mimetypes.common_types
-
-        mimetypes.init()
-        self.assertIsNot(suffix_map, mimetypes.suffix_map)
-        self.assertIsNot(encodings_map, mimetypes.encodings_map)
-        self.assertIsNot(types_map, mimetypes.types_map)
-        self.assertIsNot(common_types, mimetypes.common_types)
-        self.assertEqual(suffix_map, mimetypes.suffix_map)
-        self.assertEqual(encodings_map, mimetypes.encodings_map)
-        self.assertEqual(types_map, mimetypes.types_map)
-        self.assertEqual(common_types, mimetypes.common_types)
 
     def test_path_like_ob(self):
         filename = "LICENSE.txt"

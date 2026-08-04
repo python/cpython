@@ -175,18 +175,15 @@ specific value.
 
 .. class:: Open(master=None, **options)
            SaveAs(master=None, **options)
+           Directory(master=None, **options)
 
-   The above two classes provide native dialog windows for saving and loading
-   files.
+   The above three classes provide native dialog windows for loading and saving
+   files and for selecting a directory.
 
 **Convenience classes**
 
 The below classes are used for creating file/directory windows from scratch.
 These do not emulate the native look-and-feel of the platform.
-
-.. class:: Directory(master=None, **options)
-
-   Create a dialog prompting the user to select a directory.
 
 .. note::  The *FileDialog* class should be subclassed for custom event
    handling and behaviour.
@@ -311,23 +308,25 @@ the classic (non-themed) Tk widgets.
 
 .. data:: DIALOG_ICON
 
-   The name of the default bitmap (``'questhead'``) displayed by a
-   :class:`Dialog`.
+   The name of a bitmap (``'questhead'``) suitable for use as the *bitmap*
+   of a :class:`Dialog`.
 
 .. class:: Dialog(master=None, cnf={}, **kw)
 
    Display a modal dialog box built from the classic (non-themed) Tk widgets
    and wait for the user to press one of its buttons.
-   The options, given through *cnf* or as keyword arguments, include *title*
-   (the window title), *text* (the message), *bitmap* (an icon,
-   :data:`DIALOG_ICON` by default), *default* (the index of the default button)
-   and *strings* (the sequence of button labels).
+   The options, given through *cnf* or as keyword arguments, are all required:
+   *title* (the window title), *text* (the message), *bitmap* (the name of a
+   bitmap icon, such as :data:`DIALOG_ICON`), *default* (the index of the
+   default button) and *strings* (the sequence of button labels).
    After construction, the :attr:`!num` attribute holds the index of the button
    the user pressed.
 
    .. method:: destroy()
 
-      Destroy the dialog window.
+      Do nothing.
+      The dialog window is destroyed automatically before the constructor
+      returns, so there is nothing left for this method to do.
 
 
 .. seealso::

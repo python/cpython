@@ -282,6 +282,17 @@ Creating tasks
               # completion:
               task.add_done_callback(background_tasks.discard)
 
+      Note that this approach never awaits the tasks, so if a task
+      fails, its exception is never retrieved and asyncio logs a
+      "Task exception was never retrieved" message when the task is
+      garbage collected.  To avoid this, use :class:`asyncio.TaskGroup`
+      which keeps a strong reference to each task, awaits them and
+      propagates their exceptions::
+
+          async with asyncio.TaskGroup() as tg:
+              for i in range(10):
+                  tg.create_task(some_coro(param=i))
+
    .. versionadded:: 3.7
 
    .. versionchanged:: 3.8
@@ -929,6 +940,9 @@ Waiting primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
+   If ``wait()`` is cancelled, the futures in *aws* are not cancelled
+   and continue to run.
+
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
@@ -985,6 +999,10 @@ Waiting primitives
    A :exc:`TimeoutError` is raised if the timeout occurs before all awaitables
    are done. This is raised by the ``async for`` loop during asynchronous
    iteration or by the coroutines yielded during plain iteration.
+
+   ``as_completed()`` does not cancel the tasks running the supplied
+   awaitables: if a timeout occurs or the iteration is cancelled, the
+   remaining tasks continue to run.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.

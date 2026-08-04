@@ -594,9 +594,10 @@ are always available.  They are listed here in alphabetical order.
       untrusted user-supplied input will lead to security vulnerabilities.
 
    The *source* argument is parsed and evaluated as a Python expression
-   (technically speaking, a condition list) using the *globals* and *locals*
-   mappings as global and local namespace.  If the *globals* dictionary is
-   present and does not contain a value for the key ``__builtins__``, a
+   (technically speaking, an :ref:`expression list <exprlists>`)
+   using the *globals* and *locals* mappings as global and local namespace.
+   If the *globals* dictionary is present and does not contain a value for the
+   key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *source* is parsed.
    Overriding ``__builtins__`` can be used to restrict or change the available
@@ -615,6 +616,9 @@ are always available.  They are listed here in alphabetical order.
       >>> x = 1
       >>> eval('x+1')
       2
+
+      >>> eval("1, 2")
+      (1, 2)
 
    This function can also be used to execute arbitrary code objects (such as
    those created by :func:`compile`).  In this case, pass a code object instead
@@ -1663,7 +1667,7 @@ are always available.  They are listed here in alphabetical order.
 
    If given, *doc* will be the docstring of the property attribute. Otherwise, the
    property will copy *fget*'s docstring (if it exists).  This makes it possible to
-   create read-only properties easily using :func:`property` as a :term:`decorator`::
+   create read-only properties easily using :deco:`property` as a :term:`decorator`::
 
       class Parrot:
           def __init__(self):
@@ -1904,7 +1908,7 @@ are always available.  They are listed here in alphabetical order.
    be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
-   :func:`classmethod` for a variant that is useful for creating alternate class
+   :deco:`classmethod` for a variant that is useful for creating alternate class
    constructors.
 
    Like all decorators, it is also possible to call ``staticmethod`` as
@@ -2086,6 +2090,11 @@ are always available.  They are listed here in alphabetical order.
    appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
    in the same way that keywords in a class
    definition (besides *metaclass*) would.
+
+   Unlike a :keyword:`class` statement, the three argument form does not
+   call the metaclass ``__prepare__`` method (see :ref:`prepare`).  Use
+   :func:`types.new_class` to dynamically create a class using the
+   appropriate metaclass.
 
    See also :ref:`class-customization`.
 

@@ -512,7 +512,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.close()
         self.terminate_subprocess()
         console = self.tkconsole
-        was_executing = console.executing
         console.executing = False
         self.spawn_subprocess()
         try:
