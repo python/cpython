@@ -67,8 +67,49 @@ class MimeTypesModuleTestCase(unittest.TestCase):
         with unittest.mock.patch.object(mimetypes, 'open',
                                         return_value=fp) as mock_open:
             mime_dict = mimetypes.read_mime_types(filename)
-            mock_open.assert_called_with(filename, encoding='utf-8')
+            mock_open.assert_called_with(filename, encoding='utf-8',
+                                         errors='surrogateescape')
         eq(mime_dict[".Français"], "application/no-mans-land")
+
+    def test_read_mime_types_invalid_utf8_comment(self):
+        with os_helper.temp_dir() as directory:
+            data = (b"# non-UTF-8 comment: \x83\n"
+                    b"x-application/x-unittest pyunit\n")
+            file = os.path.join(directory, "sample.mimetype")
+            with open(file, "wb") as f:
+                f.write(data)
+
+            mime_dict = mimetypes.read_mime_types(file)
+            self.assertEqual(
+                mime_dict[".pyunit"], "x-application/x-unittest")
+
+            db = mimetypes.MimeTypes()
+            db.read(file)
+            self.assertEqual(
+                db.guess_file_type("sample.pyunit")[0],
+                "x-application/x-unittest")
+
+            mimetypes.init(files=[file])
+            self.assertEqual(
+                mimetypes.guess_file_type("sample.pyunit")[0],
+                "x-application/x-unittest")
+
+    def test_read_mime_types_invalid_utf8_type(self):
+        # A non-UTF-8 byte in a type or extension (not only in a comment) is
+        # preserved via surrogateescape, so the mapping is not corrupted.
+        with os_helper.temp_dir() as directory:
+            data = (b"x-application/x-unittest pyunit\n"
+                    b"application/bad\x83 badext\x83\n")
+            file = os.path.join(directory, "sample.mimetype")
+            with open(file, "wb") as f:
+                f.write(data)
+
+            bad_type = b"application/bad\x83".decode("utf-8", "surrogateescape")
+            bad_ext = b".badext\x83".decode("utf-8", "surrogateescape")
+
+            mime_dict = mimetypes.read_mime_types(file)
+            self.assertEqual(mime_dict[".pyunit"], "x-application/x-unittest")
+            self.assertEqual(mime_dict[bad_ext], bad_type)
 
     def test_init_reinitializes(self):
         # Issue 4936: make sure an init starts clean
