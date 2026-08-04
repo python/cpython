@@ -530,7 +530,7 @@ The following exceptions are the exceptions that are usually raised.
 
       This is given as an argument when constructing the exception, and
       defaults to :const:`None`. This is used for the result of
-      ``async yield from`` expressions (see :ref:`async-yield-from`).
+      ``yield from`` expressions (see :ref:`async-yield-from`).
 
       .. versionadded:: next
 
