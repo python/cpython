@@ -1025,7 +1025,8 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
-    @support.skip_if_huge_c_stack(100_000 if sys.platform == "android" else 500_000)
+    @support.run_with_limited_c_stack(
+        100_000 if sys.platform == "android" else 500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
