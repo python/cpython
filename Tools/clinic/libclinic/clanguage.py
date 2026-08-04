@@ -12,7 +12,7 @@ from libclinic import (
 from libclinic.codegen import CRenderData, TemplateDict, CodeGen
 from libclinic.language import Language
 from libclinic.function import (
-    Module, Class, Function, Parameter,
+    Module, Class, Function, Parameter, ParamTuple,
     permute_optional_groups,
     GETTER, SETTER, METHOD_INIT)
 from libclinic.converters import self_converter
@@ -304,14 +304,34 @@ class CLanguage(Language):
         count_min = sys.maxsize
         count_max = -1
 
+        # Trailing parameters with a default value which are not in any group
+        # can be omitted, so a subset matches a range of argument counts.
+        subsets: list[tuple[ParamTuple, int]] = []
+        for subset in permute_optional_groups(left, required, right):
+            first_optional = len(subset)
+            for p in reversed(subset):
+                if p.group or not p.is_optional():
+                    break
+                first_optional -= 1
+            subsets.append((subset, first_optional))
+
+        seen: set[int] = set()
+        for subset, first_optional in subsets:
+            for count in range(first_optional, len(subset) + 1):
+                if count in seen:
+                    fail(f"Function {f.full_name!r} has an ambiguous group "
+                         f"configuration: a call with {count} argument(s) "
+                         f"can be parsed in more than one way.")
+                seen.add(count)
+
         if limited_capi:
             nargs = 'PyTuple_Size(args)'
         else:
             nargs = 'PyTuple_GET_SIZE(args)'
         out.append(f"switch ({nargs}) {{\n")
-        for subset in permute_optional_groups(left, required, right):
+        for subset, first_optional in subsets:
             count = len(subset)
-            count_min = min(count_min, count)
+            count_min = min(count_min, first_optional)
             count_max = max(count_max, count)
 
             if count == 0:
@@ -322,9 +342,11 @@ class CLanguage(Language):
 
             group_ids = {p.group for p in subset}  # eliminate duplicates
             d: dict[str, str | int] = {}
-            d['count'] = count
             d['name'] = f.name
-            d['format_units'] = "".join(p.converter.format_unit for p in subset)
+            format_units = [p.converter.format_unit for p in subset]
+            if first_optional < count:
+                format_units.insert(first_optional, '|')
+            d['format_units'] = "".join(format_units)
 
             parse_arguments: list[str] = []
             for p in subset:
@@ -337,8 +359,13 @@ class CLanguage(Language):
                 for g in group_ids
             ])
 
+            d['cases'] = "\n".join([
+                f"    case {n}:"
+                for n in range(first_optional, count + 1)
+            ])
+
             s = """\
-    case {count}:
+{cases}
         if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
             goto exit;
         }}
