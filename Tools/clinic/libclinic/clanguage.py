@@ -288,29 +288,44 @@ class CLanguage(Language):
         # What if the number of arguments leads us to an ambiguous result?
         # Clinic prefers groups on the left.  So in the above example,
         # five arguments would map to B+C, not C+D.
+        #
+        # A nested group can only be omitted together with the group
+        # containing it, but groups on the same level, like G and H in
+        #
+        # [ G1 G2 ] [ H1 ] I1 I2
+        #
+        # can be omitted independently of each other.
 
         out = []
         parameters = list(f.parameters.values())
         if isinstance(parameters[0].converter, self_converter):
             del parameters[0]
 
+        # Groups are collected into chains of nested groups.  A group which
+        # is not nested in the preceding one starts a new chain.
         group: list[Parameter] | None = None
-        left = []
-        right = []
+        left: list[list[list[Parameter]]] = []
+        right: list[list[list[Parameter]]] = []
         required: list[Parameter] = []
         last: int | Literal[Sentinels.unspecified] = unspecified
+        last_depth = 0
 
         for p in parameters:
             group_id = p.group
             if group_id != last:
                 last = group_id
                 group = []
-                if group_id < 0:
-                    left.append(group)
-                elif group_id == 0:
+                if group_id == 0:
                     group = required
                 else:
-                    right.append(group)
+                    chains = left if group_id < 0 else right
+                    nested = ((p.group_depth < last_depth) if group_id < 0
+                              else (p.group_depth > last_depth))
+                    if chains and nested:
+                        chains[-1].append(group)
+                    else:
+                        chains.append([group])
+                last_depth = p.group_depth
             assert group is not None
             group.append(p)
 

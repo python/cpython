@@ -835,7 +835,7 @@ class ClinicGroupPermuterTest(TestCase):
         self.assertEqual(output, computed)
 
     def test_range(self):
-        self._test([['start']], ['stop'], [['step']],
+        self._test([[['start']]], ['stop'], [[['step']]],
           (
             ('stop',),
             ('start', 'stop',),
@@ -843,7 +843,7 @@ class ClinicGroupPermuterTest(TestCase):
           ))
 
     def test_add_window(self):
-        self._test([['x', 'y']], ['ch'], [['attr']],
+        self._test([[['x', 'y']]], ['ch'], [[['attr']]],
           (
             ('ch',),
             ('ch', 'attr'),
@@ -852,7 +852,8 @@ class ClinicGroupPermuterTest(TestCase):
           ))
 
     def test_ludicrous(self):
-        self._test([['a1', 'a2', 'a3'], ['b1', 'b2']], ['c1'], [['d1', 'd2'], ['e1', 'e2', 'e3']],
+        self._test([[['a1', 'a2', 'a3'], ['b1', 'b2']]], ['c1'],
+                   [[['d1', 'd2'], ['e1', 'e2', 'e3']]],
           (
           ('c1',),
           ('b1', 'b2', 'c1'),
@@ -863,7 +864,7 @@ class ClinicGroupPermuterTest(TestCase):
           ))
 
     def test_right_only(self):
-        self._test([], [], [['a'],['b'],['c']],
+        self._test([], [], [[['a'],['b'],['c']]],
           (
           (),
           ('a',),
@@ -871,9 +872,28 @@ class ClinicGroupPermuterTest(TestCase):
           ('a', 'b', 'c')
           ))
 
+    def test_chgat(self):
+        # Two independent groups on the left.
+        self._test([[['y', 'x']], [['n']]], ['attr'], [],
+          (
+          ('attr',),
+          ('n', 'attr'),
+          ('y', 'x', 'attr'),
+          ('y', 'x', 'n', 'attr'),
+          ))
+
+    def test_independent_groups_on_the_right(self):
+        self._test([], ['a'], [[['b']], [['c', 'd']]],
+          (
+          ('a',),
+          ('a', 'b'),
+          ('a', 'c', 'd'),
+          ('a', 'b', 'c', 'd'),
+          ))
+
     def test_have_left_options_but_required_is_empty(self):
         def fn():
-            permute_optional_groups(['a'], [], [])
+            permute_optional_groups([[['a']]], [], [])
         self.assertRaises(ValueError, fn)
 
 
@@ -1714,41 +1734,74 @@ class ClinicParserTest(TestCase):
                 Attributes for the character.
         """)
 
-    def test_disallowed_grouping__two_top_groups_on_left(self):
-        err = (
-            "Function 'two_top_groups_on_left' has an unsupported group "
-            "configuration. (Unexpected state 2.b)"
+    def test_two_top_groups_on_left(self):
+        function = self.parse_function("""
+            module curses
+            curses.chgat
+                [
+                y: int
+                    Y-coordinate.
+                x: int
+                    X-coordinate.
+                ]
+                [
+                num: int
+                    Number of characters.
+                ]
+                attr: long
+                    Attributes for the characters.
+                /
+        """)
+        dataset = (
+            ('y', -1), ('x', -1),
+            ('num', -2),
+            ('attr', 0),
         )
-        block = """
-            module foo
-            foo.two_top_groups_on_left
-                [
-                group1 : int
-                ]
-                [
-                group2 : int
-                ]
-                param: int
-        """
-        self.expect_failure(block, err, lineno=5)
+        for name, group in dataset:
+            with self.subTest(name=name, group=group):
+                p = function.parameters[name]
+                self.assertEqual(p.group, group)
+                self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+        self.checkDocstring(function, """
+            chgat([y, x,] [num,] attr)
 
-    def test_disallowed_grouping__two_top_groups_on_right(self):
-        block = """
+
+              y
+                Y-coordinate.
+              x
+                X-coordinate.
+              num
+                Number of characters.
+              attr
+                Attributes for the characters.
+        """)
+
+    def test_two_top_groups_on_right(self):
+        function = self.parse_function("""
             module foo
             foo.two_top_groups_on_right
                 param: int
                 [
-                group1 : int
+                group1: int
                 ]
                 [
-                group2 : int
+                group2: int
                 ]
-        """
-        err = (
-            "Function 'two_top_groups_on_right' has an unsupported group "
-            "configuration. (Unexpected state 6.b)"
+                /
+        """)
+        dataset = (
+            ('param', 0),
+            ('group1', 1),
+            ('group2', 2),
         )
-        self.expect_failure(block, err)
+        for name, group in dataset:
+            with self.subTest(name=name, group=group):
+                p = function.parameters[name]
+                self.assertEqual(p.group, group)
+                self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+        self.checkDocstring(function, """
+            two_top_groups_on_right(param, [group1,] [group2])
+        """)
 
     def test_disallowed_grouping__parameter_after_group_on_right(self):
         block = """
@@ -3904,6 +3957,26 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(1, 2, 3, 4, 5), (True, 1, 2, 3, 4, 5))
         self.assertRaises(TypeError, fn, 1, 2, 3, 4, 5, 6)
 
+    def test_two_groups_on_left(self):
+        # fn([a, b,] [c,] d)
+        fn = ac_tester.two_groups_on_left
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(1), (False, None, None, False, None, 1))
+        self.assertEqual(fn(1, 2), (False, None, None, True, 1, 2))
+        self.assertEqual(fn(1, 2, 3), (True, 1, 2, False, None, 3))
+        self.assertEqual(fn(1, 2, 3, 4), (True, 1, 2, True, 3, 4))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4, 5)
+
+    def test_two_groups_on_right(self):
+        # fn(a, [b,] [c, d])
+        fn = ac_tester.two_groups_on_right
+        self.assertRaises(TypeError, fn)
+        self.assertEqual(fn(1), (1, False, None, False, None, None))
+        self.assertEqual(fn(1, 2), (1, True, 2, False, None, None))
+        self.assertEqual(fn(1, 2, 3), (1, False, None, True, 2, 3))
+        self.assertEqual(fn(1, 2, 3, 4), (1, True, 2, True, 3, 4))
+        self.assertRaises(TypeError, fn, 1, 2, 3, 4, 5)
+
     def test_gh_32092_oob(self):
         ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
 
@@ -4506,21 +4579,21 @@ class PermutationTests(unittest.TestCase):
             "expected": ((),),
         }
         noleft1 = {
-            "left": (), "required": ("b",), "right": ("c",),
+            "left": (), "required": ("b",), "right": (("c",),),
             "expected": (
                 ("b",),
                 ("b", "c"),
             ),
         }
         noleft2 = {
-            "left": (), "required": ("b", "c",), "right": ("d",),
+            "left": (), "required": ("b", "c",), "right": (("d",),),
             "expected": (
                 ("b", "c"),
                 ("b", "c", "d"),
             ),
         }
         noleft3 = {
-            "left": (), "required": ("b", "c",), "right": ("d", "e"),
+            "left": (), "required": ("b", "c",), "right": (("d", "e"),),
             "expected": (
                 ("b", "c"),
                 ("b", "c", "d"),
@@ -4528,21 +4601,21 @@ class PermutationTests(unittest.TestCase):
             ),
         }
         noright1 = {
-            "left": ("a",), "required": ("b",), "right": (),
+            "left": (("a",),), "required": ("b",), "right": (),
             "expected": (
                 ("b",),
                 ("a", "b"),
             ),
         }
         noright2 = {
-            "left": ("a",), "required": ("b", "c"), "right": (),
+            "left": (("a",),), "required": ("b", "c"), "right": (),
             "expected": (
                 ("b", "c"),
                 ("a", "b", "c"),
             ),
         }
         noright3 = {
-            "left": ("a", "b"), "required": ("c",), "right": (),
+            "left": (("a", "b"),), "required": ("c",), "right": (),
             "expected": (
                 ("c",),
                 ("b", "c"),
@@ -4550,7 +4623,7 @@ class PermutationTests(unittest.TestCase):
             ),
         }
         leftandright1 = {
-            "left": ("a",), "required": ("b",), "right": ("c",),
+            "left": (("a",),), "required": ("b",), "right": (("c",),),
             "expected": (
                 ("b",),
                 ("a", "b"),  # Prefer left.
@@ -4558,7 +4631,7 @@ class PermutationTests(unittest.TestCase):
             ),
         }
         leftandright2 = {
-            "left": ("a", "b"), "required": ("c", "d"), "right": ("e", "f"),
+            "left": (("a", "b"),), "required": ("c", "d"), "right": (("e", "f"),),
             "expected": (
                 ("c", "d"),
                 ("b", "c", "d"),       # Prefer left.
@@ -4567,11 +4640,28 @@ class PermutationTests(unittest.TestCase):
                 ("a", "b", "c", "d", "e", "f"),
             ),
         }
+        independentleft = {
+            "left": (("a",), ("b",)), "required": ("c",), "right": (),
+            "expected": (
+                ("c",),
+                ("b", "c"),
+                ("a", "b", "c"),
+            ),
+        }
+        independentright = {
+            "left": (), "required": ("a",), "right": (("b",), ("c",)),
+            "expected": (
+                ("a",),
+                ("a", "b"),
+                ("a", "b", "c"),
+            ),
+        }
         dataset = (
             empty,
             noleft1, noleft2, noleft3,
             noright1, noright2, noright3,
             leftandright1, leftandright2,
+            independentleft, independentright,
         )
         for params in dataset:
             with self.subTest(**params):
