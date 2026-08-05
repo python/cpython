@@ -322,7 +322,7 @@ in a REPL or a lambda should not be expected to work.
       *max_workers* uses :func:`os.process_cpu_count` by default, instead of
       :func:`os.cpu_count`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.15
       Fixed a deadlock (:gh:`115634`) where the executor could hang after
       a worker process exited upon reaching its *max_tasks_per_child*
       limit while tasks remained queued.

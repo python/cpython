@@ -1,3 +1,0 @@
-Fix :class:`string.Template` raising a spurious :exc:`ValueError` when the
-*pattern* attribute is a compiled regular expression object, which the
-documentation allows.
