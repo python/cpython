@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 def count_required(subset: ParamTuple) -> int:
     """Return the number of arguments which cannot be omitted.
 
-    Trailing parameters with a default value which are not in an optional
-    group can be omitted.
+    A parameter in an optional group is passed together with its group,
+    so only trailing parameters with a default value can be omitted.
     """
     count = len(subset)
     for p in reversed(subset):
@@ -314,9 +314,7 @@ class CLanguage(Language):
             assert group is not None
             group.append(p)
 
-        # Map the number of arguments to the subset which accepts them.
-        # A subset accepts a range of counts, because its trailing parameters
-        # with a default value which are not in any group can be omitted.
+        # Map the number of arguments to the subset which accepts it.
         subsets: dict[int, ParamTuple] = {}
         for subset in permute_optional_groups(left, required, right):
             for count in range(count_required(subset), len(subset) + 1):
@@ -333,8 +331,7 @@ class CLanguage(Language):
         out.append(f"switch ({nargs}) {{\n")
         for count, subset in sorted(subsets.items()):
             if count < len(subset):
-                # Some of the trailing parameters are omitted;
-                # they are parsed together with the following case.
+                # The omitted parameters are parsed by the following case.
                 out.append(f"    case {count}:\n")
                 continue
 
