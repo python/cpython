@@ -15,6 +15,7 @@ import os.path
 import re
 import sys
 import unittest
+import warnings
 
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
@@ -4748,8 +4749,15 @@ class ClinicFunctionalTest(unittest.TestCase):
                              f"is deprecated. "
                              f"It will be removed in Python 3.14.")
         self.check_depr(errmsg('b'), fn, 1, 2)
-        self.check_depr(errmsg('c'), fn, 1, 2, 3)
         self.check_depr(errmsg('d'), fn, 1, d=4)
+        # Each deprecated parameter is reported on its own.
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            self.assertEqual(fn(1, 2, 3), (1, 2, 3, None))
+        self.assertEqual(len(caught), 2)
+        for warning, name in zip(caught, 'bc'):
+            self.assertIs(warning.category, DeprecationWarning)
+            self.assertRegex(str(warning.message), errmsg(name))
 
     def test_lone_kwds(self):
         with self.assertRaises(TypeError):
