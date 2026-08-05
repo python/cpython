@@ -213,6 +213,8 @@ class Parameter:
     # (`None` signifies that there is no deprecation)
     deprecated_positional: VersionTuple | None = None
     deprecated_keyword: VersionTuple | None = None
+    # The release in which the parameter will be removed.
+    deprecated_until: VersionTuple | None = None
     right_bracket_count: int = dc.field(init=False, default=0)
 
     def __repr__(self) -> str:

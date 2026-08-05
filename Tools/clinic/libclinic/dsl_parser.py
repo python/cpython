@@ -251,6 +251,7 @@ class DSLParser:
     positional_only: bool
     deprecated_positional: VersionTuple | None
     deprecated_keyword: VersionTuple | None
+    deprecated_until: VersionTuple | None
     group_stack: list[int]
     group_count: int
     parameter_state: ParamState
@@ -264,6 +265,7 @@ class DSLParser:
     target_critical_section: list[str]
     disable_fastcall: bool
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
+    until_version_re = re.compile(r'\[until +(.+?)\] +(.+)')
     permit_long_summary = False
     permit_long_docstring_body = False
 
@@ -292,6 +294,7 @@ class DSLParser:
         self.positional_only = False
         self.deprecated_positional = None
         self.deprecated_keyword = None
+        self.deprecated_until = None
         self.group_stack = []
         self.group_count = 0
         self.parameter_state: ParamState = ParamState.START
@@ -865,6 +868,12 @@ class DSLParser:
             line = match[1]
             version = self.parse_version(match[2])
 
+        self.deprecated_until = None
+        match = self.until_version_re.fullmatch(line)
+        if match:
+            self.deprecated_until = self.parse_version(match[1], 'until')
+            line = match[2]
+
         func = self.function
         match line:
             case '*':
@@ -1114,6 +1123,7 @@ class DSLParser:
 
         p = Parameter(parameter_name, kind, function=self.function,
                       converter=converter, default=value,
+                      deprecated_until=self.deprecated_until,
                       group=self.group_stack[-1] if self.group_stack else 0,
                       group_depth=len(self.group_stack),
                       deprecated_positional=self.deprecated_positional)
@@ -1123,6 +1133,26 @@ class DSLParser:
             fail(f"You can't have two parameters named {parameter_name!r}!")
         elif names and parameter_name == names[0] and c_name is None:
             fail(f"Parameter {parameter_name!r} requires a custom C name")
+
+        # A parameter which shares the C variable of a preceding parameter
+        # is an alternative name (an alias) of it.
+        for existing in self.function.parameters.values():
+            if existing.converter.name == converter.name:
+                if not self.keyword_only:
+                    fail(f"Alias {parameter_name!r} of the parameter "
+                         f"{existing.name!r} must be keyword-only.")
+                if value is unspecified:
+                    fail(f"Alias {parameter_name!r} of the parameter "
+                         f"{existing.name!r} must have a default value.")
+                converter.alias_of = existing
+                break
+
+        # A deprecated parameter is going away, so calls which do not pass
+        # it must already be valid.
+        if self.deprecated_until is not None and value is unspecified:
+            fail(f"Deprecated parameter {parameter_name!r} "
+                 f"must have a default value.")
+
 
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
@@ -1153,17 +1183,18 @@ class DSLParser:
                     "Annotations must be either a name, a function call, or a string."
                 )
 
-    def parse_version(self, thenceforth: str) -> VersionTuple:
-        """Parse Python version in `[from ...]` marker."""
+    def parse_version(self, version: str, marker: str = 'from') -> VersionTuple:
+        """Parse Python version in `[from ...]` or `[until ...]` marker."""
         assert isinstance(self.function, Function)
 
         try:
-            major, minor = thenceforth.split(".")
+            major, minor = version.split(".")
             return int(major), int(minor)
         except ValueError:
             fail(
-                f"Function {self.function.name!r}: expected format '[from major.minor]' "
-                f"where 'major' and 'minor' are integers; got {thenceforth!r}"
+                f"Function {self.function.name!r}: expected format "
+                f"'[{marker} major.minor]' where 'major' and 'minor' are "
+                f"integers; got {version!r}"
             )
 
     def parse_star(self, function: Function, version: VersionTuple | None) -> None:
@@ -1285,12 +1316,23 @@ class DSLParser:
             fail(f"Function {function.name!r} has an unsupported group configuration. "
                  f"(Unexpected state {self.parameter_state}.d)")
         # fixup preceding parameters
+        deprecated = None
         for p in function.parameters.values():
             if p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD:
                 if version is None:
                     p.kind = inspect.Parameter.POSITIONAL_ONLY
                 elif p.deprecated_keyword is None:
                     p.deprecated_keyword = version
+            if p.kind is inspect.Parameter.POSITIONAL_ONLY:
+                # A positional-only argument can only be passed after all
+                # preceding ones, so removing a parameter would leave no
+                # way to pass those which follow it.
+                if p.deprecated_until is not None:
+                    deprecated = p
+                elif deprecated is not None:
+                    fail(f"Parameter {p.name!r} cannot follow the deprecated "
+                         f"parameter {deprecated.name!r}: only the last "
+                         f"positional-only parameters can be deprecated.")
 
     def state_parameter_docstring_start(self, line: str) -> None:
         assert self.indent.margin is not None, "self.margin.infer() has not yet been called to set the margin"
@@ -1602,7 +1644,10 @@ class DSLParser:
         lines.insert(0, '{signature}')
 
         # finalize docstring
-        params = f.render_parameters
+        # An alias is not shown in the signature: only one of the
+        # alternative names can be used in a call.
+        params = [p for p in f.render_parameters
+                  if p.converter.alias_of is None]
         parameters = self.format_docstring_parameters(params)
         signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
