@@ -1,0 +1,2 @@
+Do not attempt to use the `dup3` and `pipe2` system calls introduced in
+macOS 27 to prevent problems when running on older systems.
