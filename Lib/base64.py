@@ -164,7 +164,7 @@ def urlsafe_b64encode(s, *, padded=True):
     return binascii.b2a_base64(s, padded=padded, newline=False,
                                alphabet=binascii.URLSAFE_BASE64_ALPHABET)
 
-def urlsafe_b64decode(s, *, padded=False):
+def urlsafe_b64decode(s, *, padded=False, canonical=False):
     """Decode bytes using the URL- and filesystem-safe Base64 alphabet.
 
     Argument s is a bytes-like object or ASCII string to decode.  The result
@@ -175,6 +175,9 @@ def urlsafe_b64decode(s, *, padded=False):
 
     If padded is false, padding in input is not required.
 
+    If canonical is true, non-canonical encodings (non-zero padding bits or
+    other non-canonical forms) are rejected.
+
     The alphabet uses '-' instead of '+' and '_' instead of '/'.
     """
     s = _bytes_from_decode_data(s)
@@ -184,7 +187,8 @@ def urlsafe_b64decode(s, *, padded=False):
             badchar = b
             break
     s = s.translate(_urlsafe_decode_translation)
-    result = binascii.a2b_base64(s, strict_mode=False, padded=padded)
+    result = binascii.a2b_base64(s, strict_mode=False, padded=padded,
+                                  canonical=canonical)
     if badchar is not None:
         import warnings
         warnings.warn(f'invalid character {chr(badchar)!a} in URL-safe Base64 data '
