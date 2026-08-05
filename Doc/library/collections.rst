@@ -268,6 +268,15 @@ For example::
         >>> c['sausage'] = 0                        # counter entry with a zero count
         >>> del c['sausage']                        # del actually removes the entry
 
+    Counters maintain insertion order internally but display from most common to
+    least common when possible:
+
+        >>> c = Counter(a=1, b=2, c=3)
+        >>> c                                       # display most common to least
+        Counter({'c': 3, 'b': 2, 'a': 1})
+        >>> list(c.items())                         # original insertion order
+        [('a', 1), ('b', 2), ('c', 3)]
+
     .. versionadded:: 3.1
 
     .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`

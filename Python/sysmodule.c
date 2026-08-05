@@ -236,7 +236,7 @@ should_audit(PyInterpreterState *interp)
         return 0;
     }
     return (interp->runtime->audit_hooks.head
-            || FT_ATOMIC_LOAD_PTR_ACQUIRE(interp->audit_hooks)
+            || interp->audit_hooks
             || PyDTrace_AUDIT_ENABLED());
 }
 
@@ -306,14 +306,13 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
     }
 
     /* Call interpreter hooks */
-    PyObject *audit_hooks = FT_ATOMIC_LOAD_PTR_ACQUIRE(is->audit_hooks);
-    if (audit_hooks) {
+    if (is->audit_hooks) {
         eventName = PyUnicode_FromString(event);
         if (!eventName) {
             goto exit;
         }
 
-        hooks = PyObject_GetIter(audit_hooks);
+        hooks = PyObject_GetIter(is->audit_hooks);
         if (!hooks) {
             goto exit;
         }
@@ -528,8 +527,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
 
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     if (_PySys_Audit(tstate, "sys.addaudithook", NULL) < 0) {
-        if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-            /* We do not report errors derived from Exception */
+        if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
+            /* We do not report errors derived from RuntimeError */
             _PyErr_Clear(tstate);
             Py_RETURN_NONE;
         }
@@ -537,29 +536,20 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     }
 
     PyInterpreterState *interp = tstate->interp;
-    PyMutex mutex = interp->audit_hooks_mutex;
-    PyMutex_Lock(&mutex);
-
     if (interp->audit_hooks == NULL) {
-        PyObject *new_list = PyList_New(0);
-        if (new_list == NULL) {
-            goto error;
+        interp->audit_hooks = PyList_New(0);
+        if (interp->audit_hooks == NULL) {
+            return NULL;
         }
         /* Avoid having our list of hooks show up in the GC module */
-        PyObject_GC_UnTrack(new_list);
-        FT_ATOMIC_STORE_PTR_RELEASE(interp->audit_hooks, new_list);
+        PyObject_GC_UnTrack(interp->audit_hooks);
     }
 
     if (PyList_Append(interp->audit_hooks, hook) < 0) {
-        goto error;
+        return NULL;
     }
 
-    PyMutex_Unlock(&mutex);
     Py_RETURN_NONE;
-
-error:
-    PyMutex_Unlock(&mutex);
-    return NULL;
 }
 
 /*[clinic input]

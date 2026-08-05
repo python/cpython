@@ -1,0 +1,3 @@
+Fix :func:`os.sendfile` on illumos:
+it no longer reports a successful transfer
+when the underlying system call failed without writing any data.
