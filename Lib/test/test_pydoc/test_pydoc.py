@@ -430,7 +430,7 @@ class PydocDocTest(unittest.TestCase):
         expected_lines = [line.strip() for line in expected_lines if line]
         self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
-        mod_url = urllib.parse.quote(mod_file)
+        mod_url = urllib.request.pathname2url(mod_file)
         self.assertIn(mod_url, result)
         self.assertIn(mod_file, result)
         self.assertIn(doc_loc, result)
@@ -1044,7 +1044,7 @@ class PydocDocTest(unittest.TestCase):
                 with captured_stdout():
                     pydoc.writedoc(mod)
             # The link contains the percent-encoded path...
-            path = os.fsdecode(os.path.join(subdir, b'undecodable_mod.py'))
+            path = inspect.getabsfile(mod)
             self.assertIn(urllib.request.pathname2url(path), doc)
             # ...and the page can be written and served as UTF-8.
             with open('undecodable_mod.html', encoding='utf-8') as f:
