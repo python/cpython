@@ -69,11 +69,11 @@ def parse_file(
     except KeyError:
         raise ClinicError(f"Can't identify file type for file {filename!r}")
 
-    try:
-        with open(filename, encoding="utf-8") as f:
-            raw = f.read()
-    except IsADirectoryError:
+    if os.path.isdir(filename):
         raise ClinicError(f"Can't read file {filename!r}: it is a directory")
+
+    with open(filename, encoding="utf-8") as f:
+        raw = f.read()
 
     # exit quickly if there are no clinic markers in the file
     find_start_re = BlockParser("", language).find_start_re
