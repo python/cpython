@@ -733,9 +733,8 @@ class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
                 with self.assertRaises(TypeError) as cm:
                     method(other)
                 self.assertIn('network', str(cm.exception))
-                # The error should not be a swallowed AttributeError.
-                self.assertNotIsInstance(cm.exception.__context__,
-                                         AttributeError)
+                # The internal AttributeError is not shown to the caller.
+                self.assertTrue(cm.exception.__suppress_context__)
 
 
 class NetmaskTestMixin_v6(CommonTestMixin_v6):
