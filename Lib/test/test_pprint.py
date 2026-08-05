@@ -1150,7 +1150,8 @@ frozenset2({0,
     def test_unencodable(self):
         # with encoding and buffer
         with io.BytesIO() as bio, \
-             io.TextIOWrapper(bio, encoding='latin1') as stream:
+             io.TextIOWrapper(bio, encoding='latin1',
+                              newline='') as stream:
             stream.write('\xab')
             pprint.pprint('\xa3\u20ac', stream)
             stream.flush()
@@ -1174,8 +1175,8 @@ frozenset2({0,
             self.assertEqual(stream.getvalue(), "\xab'\xa3\u20ac'\n")
         # the error handler of the stream is used if it is not strict
         with io.BytesIO() as bio, \
-             io.TextIOWrapper(bio, encoding='latin1',
-                              errors='replace') as stream:
+             io.TextIOWrapper(bio, encoding='latin1', errors='replace',
+                              newline='') as stream:
             pprint.pprint('\u20ac', stream)
             stream.flush()
             self.assertEqual(bio.getvalue(), b"'?'\n")
@@ -1186,7 +1187,8 @@ frozenset2({0,
                 return '\udcff'
 
         with io.BytesIO() as bio, \
-             io.TextIOWrapper(bio, encoding='utf-8') as stream:
+             io.TextIOWrapper(bio, encoding='utf-8',
+                              newline='') as stream:
             pprint.pprint(Surrogate(), stream)
             stream.flush()
             self.assertEqual(bio.getvalue(), b"\\udcff\n")
