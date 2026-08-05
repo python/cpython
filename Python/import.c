@@ -1308,6 +1308,8 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2)
         return NULL;
     }
 
+    /* Clear the padding: the key is hashed and compared as raw bytes. */
+    memset(key, 0, sizeof(struct hashtable_key));
     key->size = size;
     key->kind1 = (unsigned char)kind1;
     key->kind2 = (unsigned char)kind2;
