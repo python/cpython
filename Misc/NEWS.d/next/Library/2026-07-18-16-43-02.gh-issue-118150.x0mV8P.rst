@@ -1,4 +1,4 @@
-Expose automated junk heuristic kwarg-only flag `autojunk` from
+Expose automated junk heuristic kwarg-only flag ``autojunk`` from
 :class:`difflib.SequenceMatcher` to the public functions
 and class methods in the :mod:`difflib`.
 See :class:`difflib.SequenceMatcher` documentation for details
