@@ -3059,6 +3059,14 @@ class ClinicExternalTest(TestCase):
             f.write(self.DRY_RUN_CODE)
         return fn
 
+    @staticmethod
+    def dest_file(fn):
+        # The default destination for the generated code.  Its path is
+        # built from the "{dirname}/clinic/{basename}.h" template, so it
+        # always uses forward slashes, even on Windows.
+        dirname, basename = os.path.split(fn)
+        return f"{dirname}/clinic/{basename}.h"
+
     def check_unchanged(self, tmp_dir, fn, pre_mtime):
         # Neither the source file nor the destination file
         # nor its directory is created or modified.
@@ -3073,7 +3081,7 @@ class ClinicExternalTest(TestCase):
             pre_mtime = os.stat(fn).st_mtime_ns
             out = self.expect_success("--dry-run", fn)
             self.assertEqual(out.splitlines(), [
-                f"would create {os.path.join(tmp_dir, 'clinic', 'test.c.h')}",
+                f"would create {self.dest_file(fn)}",
                 f"would update {fn}",
             ])
             self.check_unchanged(tmp_dir, fn, pre_mtime)
@@ -3118,7 +3126,7 @@ class ClinicExternalTest(TestCase):
             # contains only the report.
             self.assertEqual(err.splitlines(), [fn])
             self.assertEqual(out.splitlines(), [
-                f"would create {os.path.join(tmp_dir, 'clinic', 'test.c.h')}",
+                f"would create {self.dest_file(fn)}",
                 f"would update {fn}",
             ])
 
@@ -3155,7 +3163,7 @@ class ClinicExternalTest(TestCase):
             self.check_unchanged(tmp_dir, fn, pre_mtime)
 
             # A new file is created by the patch.
-            dest_fn = os.path.join(tmp_dir, "clinic", "test.c.h")
+            dest_fn = self.dest_file(fn)
             self.assertStartsWith(out, f"--- /dev/null\n+++ {dest_fn}\n@@ -0,0 +1,")
             self.assertIn(f"--- {fn}\n+++ {fn}\n", out)
             self.assertIn("+/*[clinic end generated code:", out)
