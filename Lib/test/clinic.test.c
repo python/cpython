@@ -5831,6 +5831,85 @@ group_and_optional_parameter_impl(PyObject *module, int group_left_1,
 
 
 /*[clinic input]
+two_groups_on_the_same_level
+    [
+    a: object
+    b: object
+    ]
+    [
+    c: object
+    ]
+    d: object
+    /
+Groups on the same level are independent of each other.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(two_groups_on_the_same_level__doc__,
+"two_groups_on_the_same_level([a, b,] [c,] d)\n"
+"Groups on the same level are independent of each other.");
+
+#define TWO_GROUPS_ON_THE_SAME_LEVEL_METHODDEF    \
+    {"two_groups_on_the_same_level", (PyCFunction)two_groups_on_the_same_level, METH_VARARGS, two_groups_on_the_same_level__doc__},
+
+static PyObject *
+two_groups_on_the_same_level_impl(PyObject *module, int group_left_1,
+                                  PyObject *a, PyObject *b, int group_left_2,
+                                  PyObject *c, PyObject *d);
+
+static PyObject *
+two_groups_on_the_same_level(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    int group_left_2 = 0;
+    PyObject *c = NULL;
+    PyObject *d;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:two_groups_on_the_same_level", &d)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "OO:two_groups_on_the_same_level", &c, &d)) {
+                goto exit;
+            }
+            group_left_2 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "OOO:two_groups_on_the_same_level", &a, &b, &d)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        case 4:
+            if (!PyArg_ParseTuple(args, "OOOO:two_groups_on_the_same_level", &a, &b, &c, &d)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            group_left_2 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "two_groups_on_the_same_level requires 1 to 4 arguments");
+            goto exit;
+    }
+    return_value = two_groups_on_the_same_level_impl(module, group_left_1, a, b, group_left_2, c, d);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+two_groups_on_the_same_level_impl(PyObject *module, int group_left_1,
+                                  PyObject *a, PyObject *b, int group_left_2,
+                                  PyObject *c, PyObject *d)
+/*[clinic end generated code: output=508a61ee582da21e input=1b45d9b675b32d1a]*/
+
+
+/*[clinic input]
 Test._pyarg_parsestackandkeywords
     cls: defining_class
     key: str(accept={str, robuffer}, zeroes=True)

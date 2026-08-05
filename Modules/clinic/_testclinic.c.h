@@ -3520,6 +3520,120 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(two_groups_on_left__doc__,
+"two_groups_on_left([a, b,] [c,] d)");
+
+#define TWO_GROUPS_ON_LEFT_METHODDEF    \
+    {"two_groups_on_left", (PyCFunction)two_groups_on_left, METH_VARARGS, two_groups_on_left__doc__},
+
+static PyObject *
+two_groups_on_left_impl(PyObject *module, int group_left_1, PyObject *a,
+                        PyObject *b, int group_left_2, PyObject *c,
+                        PyObject *d);
+
+static PyObject *
+two_groups_on_left(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    int group_left_2 = 0;
+    PyObject *c = NULL;
+    PyObject *d;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:two_groups_on_left", &d)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "OO:two_groups_on_left", &c, &d)) {
+                goto exit;
+            }
+            group_left_2 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "OOO:two_groups_on_left", &a, &b, &d)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        case 4:
+            if (!PyArg_ParseTuple(args, "OOOO:two_groups_on_left", &a, &b, &c, &d)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            group_left_2 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "two_groups_on_left requires 1 to 4 arguments");
+            goto exit;
+    }
+    return_value = two_groups_on_left_impl(module, group_left_1, a, b, group_left_2, c, d);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(two_groups_on_right__doc__,
+"two_groups_on_right(a, [b,] [c, d])");
+
+#define TWO_GROUPS_ON_RIGHT_METHODDEF    \
+    {"two_groups_on_right", (PyCFunction)two_groups_on_right, METH_VARARGS, two_groups_on_right__doc__},
+
+static PyObject *
+two_groups_on_right_impl(PyObject *module, PyObject *a, int group_right_1,
+                         PyObject *b, int group_right_2, PyObject *c,
+                         PyObject *d);
+
+static PyObject *
+two_groups_on_right(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    int group_right_1 = 0;
+    PyObject *b = NULL;
+    int group_right_2 = 0;
+    PyObject *c = NULL;
+    PyObject *d = NULL;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:two_groups_on_right", &a)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "OO:two_groups_on_right", &a, &b)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "OOO:two_groups_on_right", &a, &c, &d)) {
+                goto exit;
+            }
+            group_right_2 = 1;
+            break;
+        case 4:
+            if (!PyArg_ParseTuple(args, "OOOO:two_groups_on_right", &a, &b, &c, &d)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            group_right_2 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "two_groups_on_right requires 1 to 4 arguments");
+            goto exit;
+    }
+    return_value = two_groups_on_right_impl(module, a, group_right_1, b, group_right_2, c, d);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(group_and_two_opt__doc__,
 "group_and_two_opt([a, b, c,] d=None, e=None)");
 
@@ -4690,4 +4804,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f6a3b617130c4e3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d9d4091b2f2ed359 input=a9049054013a1b77]*/
