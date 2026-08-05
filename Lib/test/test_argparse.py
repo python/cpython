@@ -2,6 +2,7 @@
 
 import _colorize
 import contextlib
+import copy
 import functools
 import io
 import operator
@@ -6267,6 +6268,19 @@ class TestNamespace(TestCase):
         self.assertIs(ns.__eq__(None), NotImplemented)
         self.assertIs(ns.__ne__(None), NotImplemented)
 
+    def test_replace(self):
+        ns = argparse.Namespace(a=1, b=2)
+        new = copy.replace(ns, b=3, c=4)
+        self.assertIsInstance(new, argparse.Namespace)
+        self.assertEqual(new, argparse.Namespace(a=1, b=3, c=4))
+        self.assertEqual(ns, argparse.Namespace(a=1, b=2))
+
+        class MyNamespace(argparse.Namespace):
+            pass
+        new = copy.replace(MyNamespace(a=1), a=2)
+        self.assertIsInstance(new, MyNamespace)
+        self.assertEqual(new.a, 2)
+
 
 # ===================
 # File encoding tests
@@ -7345,6 +7359,19 @@ class TestProgName(TestCase):
 
     def test_module_compiled(self):
         self.test_module(compiled=True)
+
+    def test_module_as_main_without_altering_argv(self):
+        basename = 'module' + os_helper.FS_NONASCII
+        modulename = f'{self.dirname}.{basename}'
+        self.make_script(self.dirname, basename)
+        runner_source = textwrap.dedent(f'''\
+            import runpy
+            runpy._run_module_as_main({modulename!r}, alter_argv=False)
+        ''')
+        runner = script_helper.make_script(
+            self.dirname, 'runner', runner_source)
+        self.check_usage(os.path.basename(runner), runner,
+                         PYTHONPATH=os.curdir)
 
     def test_package(self, compiled=False):
         basename = 'subpackage' + os_helper.FS_NONASCII
