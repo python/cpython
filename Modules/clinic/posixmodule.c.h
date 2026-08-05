@@ -3940,8 +3940,8 @@ PyDoc_STRVAR(os_posix_spawn__doc__,
 "  resetids\n"
 "    If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.\n"
 "  setsid\n"
-"    If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP\n"
-"    will be activated.\n"
+"    If the value is `true` the POSIX_SPAWN_SETSID or\n"
+"    POSIX_SPAWN_SETSID_NP will be activated.\n"
 "  setsigmask\n"
 "    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
 "  setsigdef\n"
@@ -4094,8 +4094,8 @@ PyDoc_STRVAR(os_posix_spawnp__doc__,
 "  resetids\n"
 "    If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.\n"
 "  setsid\n"
-"    If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP\n"
-"    will be activated.\n"
+"    If the value is `True` the POSIX_SPAWN_SETSID or\n"
+"    POSIX_SPAWN_SETSID_NP will be activated.\n"
 "  setsigmask\n"
 "    The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.\n"
 "  setsigdef\n"
@@ -6874,7 +6874,8 @@ PyDoc_STRVAR(os_timerfd_create__doc__,
 "\n"
 "    os.TFD_NONBLOCK\n"
 "        If *TFD_NONBLOCK* is set as a flag, read doesn\'t blocks.\n"
-"        If *TFD_NONBLOCK* is not set as a flag, read block until the timer fires.\n"
+"        If *TFD_NONBLOCK* is not set as a flag, read block until\n"
+"        the timer fires.\n"
 "\n"
 "    os.TFD_CLOEXEC\n"
 "        If *TFD_CLOEXEC* is set as a flag, enable the close-on-exec flag");
@@ -13734,4 +13735,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=d641f02a97057666 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6fdef8d3b0bc5468 input=a9049054013a1b77]*/

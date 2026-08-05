@@ -539,14 +539,14 @@ zlib.compressobj
     method: int(c_default="DEFLATED") = DEFLATED
         The compression algorithm.  If given, this must be DEFLATED.
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
-        +9 to +15: The base-two logarithm of the window size.  Include a zlib
-            container.
+        +9 to +15: The base-two logarithm of the window size.
+            Include a zlib container.
         -9 to -15: Generate a raw stream.
         +25 to +31: Include a gzip container.
     memLevel: int(c_default="DEF_MEM_LEVEL") = DEF_MEM_LEVEL
         Controls the amount of memory used for internal compression state.
-        Valid values range from 1 to 9.  Higher values result in higher memory
-        usage, faster compression, and smaller output.
+        Valid values range from 1 to 9.  Higher values result in higher
+        memory usage, faster compression, and smaller output.
     strategy: int(c_default="Z_DEFAULT_STRATEGY") = Z_DEFAULT_STRATEGY
         Used to tune the compression algorithm.  Possible values are
         Z_DEFAULT_STRATEGY, Z_FILTERED, and Z_HUFFMAN_ONLY.
@@ -560,7 +560,7 @@ Return a compressor object.
 static PyObject *
 zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
                       int memLevel, int strategy, Py_buffer *zdict)
-/*[clinic end generated code: output=8b5bed9c8fc3814d input=1a6f61d8a8885c0d]*/
+/*[clinic end generated code: output=8b5bed9c8fc3814d input=fc941e14bc50ddf3]*/
 {
     zlibstate *state = get_zlib_state(module);
     if (zdict->buf != NULL && (size_t)zdict->len > UINT_MAX) {
@@ -1727,15 +1727,15 @@ zlib._ZlibDecompressor.__new__
         (such as a bytes object) containing subsequences that are expected
         to occur frequently in the data that is to be compressed. Those
         subsequences that are expected to be most common should come at the
-        end of the dictionary. This must be the same dictionary as used by the
-        compressor that produced the input data.
+        end of the dictionary. This must be the same dictionary as used by
+        the compressor that produced the input data.
 
 Create a decompressor object for decompressing data incrementally.
 [clinic start generated code]*/
 
 static PyObject *
 zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
-/*[clinic end generated code: output=1065607df0d33baa input=9ebad0be6de226e2]*/
+/*[clinic end generated code: output=1065607df0d33baa input=c174bee81ce1209c]*/
 {
     assert(type != NULL && type->tp_alloc != NULL);
     zlibstate *state = PyType_GetModuleState(type);

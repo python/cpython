@@ -55,13 +55,14 @@ PyDoc_STRVAR(warnings_warn__doc__,
 "  category\n"
 "    The Warning category subclass. Defaults to UserWarning.\n"
 "  stacklevel\n"
-"    How far up the call stack to make this warning appear. A value of 2 for\n"
-"    example attributes the warning to the caller of the code calling warn().\n"
+"    How far up the call stack to make this warning appear. A value of 2\n"
+"    for example attributes the warning to the caller of the code calling\n"
+"    warn().\n"
 "  source\n"
 "    If supplied, the destroyed object which emitted a ResourceWarning\n"
 "  skip_file_prefixes\n"
-"    An optional tuple of module filename prefixes indicating frames to skip\n"
-"    during stacklevel computations for stack frame attribution.");
+"    An optional tuple of module filename prefixes indicating frames to\n"
+"    skip during stacklevel computations for stack frame attribution.");
 
 #define WARNINGS_WARN_METHODDEF    \
     {"warn", _PyCFunction_CAST(warnings_warn), METH_FASTCALL|METH_KEYWORDS, warnings_warn__doc__},
@@ -284,4 +285,4 @@ warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored
 {
     return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=610ed5764bf40bb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2be7de582544b099 input=a9049054013a1b77]*/

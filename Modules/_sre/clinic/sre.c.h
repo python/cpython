@@ -1157,8 +1157,8 @@ PyDoc_STRVAR(_sre_template__doc__,
 "\n"
 "\n"
 "  template\n"
-"    A list containing interleaved literal strings (str or bytes) and group\n"
-"    indices (int), as returned by re._parser.parse_template():\n"
+"    A list containing interleaved literal strings (str or bytes) and\n"
+"    group indices (int), as returned by re._parser.parse_template():\n"
 "        [literal1, group1, ..., literalN, groupN]");
 
 #define _SRE_TEMPLATE_METHODDEF    \
@@ -1568,4 +1568,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=0c867efb64e020aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6a6c09db286a372 input=a9049054013a1b77]*/

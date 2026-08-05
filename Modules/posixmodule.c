@@ -8070,8 +8070,8 @@ os.posix_spawn
     resetids: bool = False
         If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.
     setsid: bool = False
-        If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP
-        will be activated.
+        If the value is `true` the POSIX_SPAWN_SETSID or
+        POSIX_SPAWN_SETSID_NP will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
@@ -8088,7 +8088,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, int resetids, int setsid,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=14a1098c566bc675 input=c7592dcbc96e8114]*/
+/*[clinic end generated code: output=14a1098c566bc675 input=ddf326d12aa98d13]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -8117,8 +8117,8 @@ os.posix_spawnp
     resetids: bool = False
         If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
     setsid: bool = False
-        If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP
-        will be activated.
+        If the value is `True` the POSIX_SPAWN_SETSID or
+        POSIX_SPAWN_SETSID_NP will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
     setsigdef: object(c_default='NULL') = ()
@@ -8135,7 +8135,7 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *setpgroup, int resetids, int setsid,
                      PyObject *setsigmask, PyObject *setsigdef,
                      PyObject *scheduler)
-/*[clinic end generated code: output=7b9aaefe3031238d input=43ccc1452cae2be3]*/
+/*[clinic end generated code: output=7b9aaefe3031238d input=2fa6fb7dabd3dedd]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -11417,7 +11417,8 @@ os.timerfd_create
 
         os.TFD_NONBLOCK
             If *TFD_NONBLOCK* is set as a flag, read doesn't blocks.
-            If *TFD_NONBLOCK* is not set as a flag, read block until the timer fires.
+            If *TFD_NONBLOCK* is not set as a flag, read block until
+            the timer fires.
 
         os.TFD_CLOEXEC
             If *TFD_CLOEXEC* is set as a flag, enable the close-on-exec flag
@@ -11427,7 +11428,7 @@ Create and return a timer file descriptor.
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=64b7020c5ac0b8f4]*/
+/*[clinic end generated code: output=1caae80fb168004a input=41ec2d5ea5c041a5]*/
 
 {
     int fd;

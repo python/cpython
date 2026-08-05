@@ -2539,7 +2539,8 @@ is_int_config(const int op)
 _sqlite3.Connection.setconfig as setconfig
 
     op: int
-        The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.
+        The configuration verb;
+        one of the sqlite3.SQLITE_DBCONFIG codes.
     enable: bool = True
     /
 
@@ -2548,7 +2549,7 @@ Set a boolean connection configuration option.
 
 static PyObject *
 setconfig_impl(pysqlite_Connection *self, int op, int enable)
-/*[clinic end generated code: output=c60b13e618aff873 input=a10f1539c2d7da6b]*/
+/*[clinic end generated code: output=c60b13e618aff873 input=8f00e4c0d499abcb]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2574,7 +2575,8 @@ setconfig_impl(pysqlite_Connection *self, int op, int enable)
 _sqlite3.Connection.getconfig as getconfig -> bool
 
     op: int
-        The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.
+        The configuration verb;
+        one of the sqlite3.SQLITE_DBCONFIG codes.
     /
 
 Query a boolean connection configuration option.
@@ -2582,7 +2584,7 @@ Query a boolean connection configuration option.
 
 static int
 getconfig_impl(pysqlite_Connection *self, int op)
-/*[clinic end generated code: output=25ac05044c7b78a3 input=b0526d7e432e3f2f]*/
+/*[clinic end generated code: output=25ac05044c7b78a3 input=835b01bdd9069c02]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return -1;

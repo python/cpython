@@ -11910,16 +11910,17 @@ str.encode as unicode_encode
     errors: str(c_default="NULL") = 'strict'
         The error handling scheme to use for encoding errors.
         The default is 'strict' meaning that encoding errors raise a
-        UnicodeEncodeError.  Other possible values are 'ignore', 'replace'
-        and 'xmlcharrefreplace' as well as any other name registered with
-        codecs.register_error that can handle UnicodeEncodeErrors.
+        UnicodeEncodeError.  Other possible values are 'ignore',
+        'replace' and 'xmlcharrefreplace' as well as any other name
+        registered with codecs.register_error that can handle
+        UnicodeEncodeErrors.
 
 Encode the string using the codec registered for encoding.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_encode_impl(PyObject *self, const char *encoding, const char *errors)
-/*[clinic end generated code: output=bf78b6e2a9470e3c input=b85a9645cb33b729]*/
+/*[clinic end generated code: output=bf78b6e2a9470e3c input=7279de0853abd720]*/
 {
     return PyUnicode_AsEncodedString(self, encoding, errors);
 }

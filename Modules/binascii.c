@@ -732,8 +732,9 @@ binascii.a2b_base64
     *
     strict_mode: bool(c_default="-1", py_default="<unrepresentable>") = False
         When set to true, bytes that are not part of the base64 standard are
-        not allowed.  The same applies to excess data after padding (= / ==).
-        Set to True by default if ignorechars is specified, False otherwise.
+        not allowed.  The same applies to excess data after padding
+        (= / ==).  Set to True by default if ignorechars is specified,
+        False otherwise.
     padded: bool = True
         When set to false, padding in input is not required.
     alphabet: PyBytesObject(c_default="NULL") = BASE64_ALPHABET
@@ -741,7 +742,8 @@ binascii.a2b_base64
         A byte string containing characters to ignore from the input when
         strict_mode is true.
     canonical: bool = False
-        When set to true, reject non-zero padding bits per RFC 4648 section 3.5.
+        When set to true, reject non-zero padding bits
+        per RFC 4648 section 3.5.
 
 Decode a line of base64 data.
 [clinic start generated code]*/
@@ -750,7 +752,7 @@ static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode,
                          int padded, PyBytesObject *alphabet,
                          Py_buffer *ignorechars, int canonical)
-/*[clinic end generated code: output=77c46dcbf4239527 input=c99096d071deeec8]*/
+/*[clinic end generated code: output=77c46dcbf4239527 input=da635e0c9a1deb1f]*/
 {
     assert(data->len >= 0);
 
@@ -1648,7 +1650,8 @@ binascii.a2b_base32
     ignorechars: Py_buffer = b''
         A byte string containing characters to ignore from the input.
     canonical: bool = False
-        When set to true, reject non-zero padding bits per RFC 4648 section 3.5.
+        When set to true, reject non-zero padding bits
+        per RFC 4648 section 3.5.
 
 Decode a line of base32 data.
 [clinic start generated code]*/
@@ -1657,7 +1660,7 @@ static PyObject *
 binascii_a2b_base32_impl(PyObject *module, Py_buffer *data, int padded,
                          PyBytesObject *alphabet, Py_buffer *ignorechars,
                          int canonical)
-/*[clinic end generated code: output=bc70f2bb6001fb55 input=5bfe6d1ea2f30e3b]*/
+/*[clinic end generated code: output=bc70f2bb6001fb55 input=6b823712b3ab1322]*/
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
