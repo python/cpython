@@ -205,7 +205,11 @@ class Parameter:
     converter: CConverter
     annotation: object = inspect.Parameter.empty
     docstring: str = ''
+    # Identifier of the optional group containing the parameter (0 if none).
+    # It is negative for groups before the required parameters.
     group: int = 0
+    # Nesting level of that group (0 if none).
+    group_depth: int = 0
     # (`None` signifies that there is no deprecation)
     deprecated_positional: VersionTuple | None = None
     deprecated_keyword: VersionTuple | None = None
@@ -301,14 +305,17 @@ def permute_right_option_groups(
 
 
 def permute_optional_groups(
-    left: Sequence[Iterable[Parameter]],
+    left: Sequence[Sequence[Iterable[Parameter]]],
     required: Iterable[Parameter],
-    right: Sequence[Iterable[Parameter]]
+    right: Sequence[Sequence[Iterable[Parameter]]]
 ) -> tuple[ParamTuple, ...]:
     """
     Generator function that computes the set of acceptable
     argument lists for the provided iterables of
     argument groups.  (Actually it generates a tuple of tuples.)
+
+    "left" and "right" are sequences of chains of nested groups.
+    Groups of different chains are independent of each other.
 
     Algorithm: prefer left options over right options.
 
@@ -319,10 +326,21 @@ def permute_optional_groups(
         if left:
             raise ValueError("required is empty but left is not")
 
+    left_options: list[ParamTuple] = [()]
+    for chain in left:
+        left_options = [option + t
+                        for option in left_options
+                        for t in permute_left_option_groups(chain)]
+    right_options: list[ParamTuple] = [()]
+    for chain in reversed(right):
+        right_options = [t + option
+                         for option in right_options
+                         for t in permute_right_option_groups(chain)]
+
     accumulator: list[ParamTuple] = []
     counts = set()
-    for r in permute_right_option_groups(right):
-        for l in permute_left_option_groups(left):
+    for r in right_options:
+        for l in left_options:
             t = l + required + r
             if len(t) in counts:
                 continue

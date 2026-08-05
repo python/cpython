@@ -1260,6 +1260,58 @@ group_and_opt_impl(PyObject *module, int group_left_1, PyObject *a,
 
 
 /*[clinic input]
+two_groups_on_left
+
+    [
+    a: object
+    b: object
+    ]
+    [
+    c: object
+    ]
+    d: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+two_groups_on_left_impl(PyObject *module, int group_left_1, PyObject *a,
+                        PyObject *b, int group_left_2, PyObject *c,
+                        PyObject *d)
+/*[clinic end generated code: output=3a43d6542864e3d8 input=79fc792669696ac7]*/
+{
+    return pack_arguments_newref(6, group_left_1 ? Py_True : Py_False, a, b,
+                                 group_left_2 ? Py_True : Py_False, c, d);
+}
+
+
+/*[clinic input]
+two_groups_on_right
+
+    a: object
+    [
+    b: object
+    ]
+    [
+    c: object
+    d: object
+    ]
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+two_groups_on_right_impl(PyObject *module, PyObject *a, int group_right_1,
+                         PyObject *b, int group_right_2, PyObject *c,
+                         PyObject *d)
+/*[clinic end generated code: output=045f60f127c6e448 input=96895285f29bb501]*/
+{
+    return pack_arguments_newref(6, a, group_right_1 ? Py_True : Py_False, b,
+                                 group_right_2 ? Py_True : Py_False, c, d);
+}
+
+
+/*[clinic input]
 group_and_two_opt
 
     [
@@ -2503,6 +2555,8 @@ static PyMethodDef tester_methods[] = {
     POSONLY_POSKW_VARPOS_ARRAY_METHODDEF
     GROUP_AND_OPT_METHODDEF
     GROUP_AND_TWO_OPT_METHODDEF
+    TWO_GROUPS_ON_LEFT_METHODDEF
+    TWO_GROUPS_ON_RIGHT_METHODDEF
 
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
