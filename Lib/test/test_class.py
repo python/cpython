@@ -2,7 +2,7 @@
 
 import unittest
 from test import support
-from test.support import cpython_only, import_helper, script_helper
+from test.support import cpython_only, import_helper, isolation
 
 testmeths = [
 
@@ -1014,32 +1014,43 @@ class TestInlineValues(unittest.TestCase):
         C.a = X()
 
     @support.nomemtest
+    @isolation.runInSubprocess()
     def test_detach_materialized_dict_no_memory(self):
-        code = """if 1:
-            import test.support
-            import _testcapi
+        import _testcapi
 
-            class A:
-                def __init__(self):
-                    self.a = 1
-                    self.b = 2
+        class A:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+
+        # The failing allocation should be the one which detaches the
+        # dictionary from the object, but other allocations can happen
+        # first, so try to fail every one of the first allocations.
+        raised = False
+        for n in range(20):
             a = A()
             d = a.__dict__
-            with test.support.catch_unraisable_exception() as ex:
-                _testcapi.set_nomemory(0, 1)
-                del a
-                assert ex.unraisable.exc_type is MemoryError
             try:
-                d["a"]
-            except KeyError:
-                pass
-            else:
-                assert False, "KeyError not raised"
-        """
-        rc, out, err = script_helper.assert_python_ok("-c", code)
-        self.assertEqual(rc, 0)
-        self.assertFalse(out, msg=out.decode('utf-8'))
-        self.assertFalse(err, msg=err.decode('utf-8'))
+                with support.catch_unraisable_exception() as ex:
+                    _testcapi.set_nomemory(n, n + 1)
+                    try:
+                        del a
+                    finally:
+                        _testcapi.remove_mem_hooks()
+                    exc_type = ex.unraisable and ex.unraisable.exc_type
+            except MemoryError:
+                # The failing allocation was not in the deallocation code.
+                continue
+            if exc_type is not MemoryError:
+                continue
+            raised = True
+            if "a" not in d:
+                # The dictionary was cleared, as expected.
+                break
+        else:
+            if not raised:
+                self.fail("MemoryError was not raised during deallocation")
+            self.fail("the dictionary was not cleared")
 
 if __name__ == '__main__':
     unittest.main()
