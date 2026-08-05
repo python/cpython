@@ -167,13 +167,15 @@ filling can be turned on and off::
 
 Next we'll create a loop::
 
+    start = pos()
+
     while True:
         forward(200)
         left(170)
-        if abs(pos()) < 1:
+        if distance(start) < 1:
             break
 
-``abs(pos()) < 1`` is a good way to know when the turtle is back at its
+``distance(start) < 1`` is a good way to know when the turtle is back at its
 home position.
 
 Finally, complete the filling::
