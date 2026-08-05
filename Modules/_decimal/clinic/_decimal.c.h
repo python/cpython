@@ -371,7 +371,7 @@ PyDoc_STRVAR(_decimal_Context_copy__doc__,
 "copy($self, /)\n"
 "--\n"
 "\n"
-"Return a duplicate of the context with all flags cleared.");
+"Return a duplicate of the context.");
 
 #define _DECIMAL_CONTEXT_COPY_METHODDEF    \
     {"copy", _PyCFunction_CAST(_decimal_Context_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context_copy__doc__},
@@ -408,6 +408,122 @@ _decimal_Context___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         return NULL;
     }
     return _decimal_Context___copy___impl(self, cls);
+}
+
+PyDoc_STRVAR(_decimal_Context___replace____doc__,
+"__replace__($self, /, **changes)\n"
+"--\n"
+"\n"
+"Return a copy of the context with the specified attributes replaced.");
+
+#define _DECIMAL_CONTEXT___REPLACE___METHODDEF    \
+    {"__replace__", _PyCFunction_CAST(_decimal_Context___replace__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Context___replace____doc__},
+
+static PyObject *
+_decimal_Context___replace___impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *prec, PyObject *rounding,
+                                  PyObject *emin, PyObject *emax,
+                                  PyObject *capitals, PyObject *clamp,
+                                  PyObject *status, PyObject *traps);
+
+static PyObject *
+_decimal_Context___replace__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 8
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(prec), &_Py_ID(rounding), &_Py_ID(Emin), &_Py_ID(Emax), &_Py_ID(capitals), &_Py_ID(clamp), &_Py_ID(flags), &_Py_ID(traps), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"prec", "rounding", "Emin", "Emax", "capitals", "clamp", "flags", "traps", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__replace__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[8];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *prec = NULL;
+    PyObject *rounding = NULL;
+    PyObject *emin = NULL;
+    PyObject *emax = NULL;
+    PyObject *capitals = NULL;
+    PyObject *clamp = NULL;
+    PyObject *status = NULL;
+    PyObject *traps = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        prec = args[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[1]) {
+        rounding = args[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        emin = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        emax = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        capitals = args[4];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[5]) {
+        clamp = args[5];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[6]) {
+        status = args[6];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    traps = args[7];
+skip_optional_kwonly:
+    return_value = _decimal_Context___replace___impl(self, cls, prec, rounding, emin, emax, capitals, clamp, status, traps);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_decimal_Context___reduce____doc__,
@@ -512,14 +628,14 @@ _decimal_localcontext(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *argsbuf[9];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *local = Py_None;
-    PyObject *prec = Py_None;
-    PyObject *rounding = Py_None;
-    PyObject *Emin = Py_None;
-    PyObject *Emax = Py_None;
-    PyObject *capitals = Py_None;
-    PyObject *clamp = Py_None;
-    PyObject *flags = Py_None;
-    PyObject *traps = Py_None;
+    PyObject *prec = NULL;
+    PyObject *rounding = NULL;
+    PyObject *Emin = NULL;
+    PyObject *Emax = NULL;
+    PyObject *capitals = NULL;
+    PyObject *clamp = NULL;
+    PyObject *flags = NULL;
+    PyObject *traps = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -6984,4 +7100,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=0eb835634388294e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=718b1f6c20412350 input=a9049054013a1b77]*/
