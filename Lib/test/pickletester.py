@@ -848,9 +848,9 @@ class AbstractUnpickleTests:
 
     def test_load_bad_constructor(self):
         # gh-154002: a TypeError raised by an old-style instance constructor
-        # during INST/OBJ unpickling must be reported with proper exception
-        # chaining, not with the traceback object stored in the exception's
-        # args (which used to happen in the pure-Python unpickler).
+        # during INST/OBJ unpickling propagates unchanged.  The pure-Python
+        # unpickler used to replace it with one that carried the traceback
+        # object in its args.
         #  0: (    MARK
         #  1: I        INT        1
         #  4: i        INST       '__main__ BadConstructor' (MARK at 0)
@@ -858,17 +858,7 @@ class AbstractUnpickleTests:
         data = b'(I1\ni__main__\nBadConstructor\n.'
         with self.assertRaises(TypeError) as cm:
             self.loads(data)
-        exc = cm.exception
-        # A traceback object must never leak into the exception's args.
-        self.assertNotIn(types.TracebackType, [type(a) for a in exc.args])
-        # Only the pure-Python unpickler wraps the failure; the C one lets the
-        # original TypeError propagate. When it wraps, it must chain the cause.
-        if str(exc).startswith("in constructor for "):
-            self.assertEqual(
-                exc.args,
-                ("in constructor for BadConstructor: bad constructor",))
-            self.assertIsInstance(exc.__cause__, TypeError)
-            self.assertEqual(str(exc.__cause__), "bad constructor")
+        self.assertEqual(cm.exception.args, ("bad constructor",))
 
     def test_maxint64(self):
         maxint64 = (1 << 63) - 1
