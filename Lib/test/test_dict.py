@@ -1875,10 +1875,22 @@ class FrozenDictTests(unittest.TestCase):
         self.assertFalse(gc.is_tracked(frozendict.fromkeys('ab', 1)))
         self.assertFalse(gc.is_tracked(frozendict({1: 2}) | {3: 4}))
 
+        # a tuple is tracked by the GC when created; a collection untracks
+        # it if it contains no gc-tracked items, and then it can never be
+        # tracked again, so the frozendict is left untracked as well
+        t = (2,)
+        gc.collect()
+        self.assertFalse(gc.is_tracked(t))
+        self.assertFalse(gc.is_tracked(frozendict({1: t})))
+
         self.assertTrue(gc.is_tracked(frozendict({1: [2]})))
+        class Key:
+            pass
+        self.assertTrue(gc.is_tracked(frozendict({Key(): 1})))
         # subclasses can create reference cycles, they are always tracked
         self.assertTrue(gc.is_tracked(FrozenDict({1: 2})))
 
+    def test_gc_collect_reference_cycle(self):
         # a reference cycle through a tracked frozendict is collectable
         class Obj:
             pass
