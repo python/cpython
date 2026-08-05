@@ -1032,7 +1032,10 @@ class PydocDocTest(unittest.TestCase):
         with os_helper.temp_cwd() as test_dir:
             subdir = os.path.join(os.fsencode(test_dir),
                                   os_helper.TESTFN_UNDECODABLE)
-            os.mkdir(subdir)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                self.skipTest('undecodable paths are not supported')
             with open(os.path.join(subdir, b'undecodable_mod.py'), 'w') as f:
                 f.write('"""Module docstring."""\n')
             with import_helper.DirsOnSysPath(os.fsdecode(subdir)):
