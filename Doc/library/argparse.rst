@@ -1679,6 +1679,12 @@ The Namespace object
    Simple class used by default by :meth:`~ArgumentParser.parse_args` to create
    an object holding attributes and return it.
 
+   :class:`!Namespace` objects support :func:`copy.replace`,
+   which returns a copy of the object with the specified attributes replaced.
+
+   .. versionchanged:: next
+      Added support for :func:`copy.replace`.
+
    This class is deliberately simple, just an :class:`object` subclass with a
    readable string representation. If you prefer to have dict-like view of the
    attributes, you can use the standard Python idiom, :func:`vars`::

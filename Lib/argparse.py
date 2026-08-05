@@ -1545,6 +1545,12 @@ class Namespace(_AttributeHolder):
     def __contains__(self, key):
         return key in self.__dict__
 
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
+
 
 class _ActionsContainer(object):
 
