@@ -6,7 +6,7 @@ import inspect
 import os
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from typing import NoReturn
 
 
@@ -69,6 +69,9 @@ def parse_file(
     except KeyError:
         raise ClinicError(f"Can't identify file type for file {filename!r}")
 
+    if os.path.isdir(filename):
+        raise ClinicError(f"Can't read file {filename!r}: it is a directory")
+
     with open(filename, encoding="utf-8") as f:
         raw = f.read()
 
@@ -115,7 +118,9 @@ For more information see https://devguide.python.org/development-tools/clinic/""
                                "of the changes to the standard output"))
     cmdline.add_argument("--converters", action='store_true',
                          help=("print a list of all supported converters "
-                               "and return converters"))
+                               "and return converters; if files are "
+                               "specified, print only the converters "
+                               "which they define"))
     cmdline.add_argument("--make", action='store_true',
                          help="walk --srcdir to run over all relevant files")
     cmdline.add_argument("--srcdir", type=str, default=os.curdir,
@@ -154,117 +159,137 @@ def report_changes(writer: libclinic.FileWriter, *, diff: bool) -> None:
             print(f"would {action} {change.filename}")
 
 
+AnyConverterType = ConverterType | ReturnConverterType
+
+
+def defined_in_files(
+    registry: Mapping[str, AnyConverterType],
+    builtin: Mapping[str, AnyConverterType],
+) -> dict[str, AnyConverterType]:
+    """Return the converters which the parsed files define or redefine."""
+    return {name: cls for name, cls in registry.items()
+            if builtin.get(name) is not cls}
+
+
+def print_converter_list(
+    title: str,
+    attribute: str,
+    registry: Mapping[str, AnyConverterType],
+) -> None:
+    print(title + ":")
+    for name, cls in sorted(registry.items(), key=lambda item: item[0].lower()):
+        callable = getattr(cls, attribute, None)
+        if not callable:
+            continue
+        signature = inspect.signature(callable)
+        parameters = []
+        for parameter_name, parameter in signature.parameters.items():
+            if parameter.kind == inspect.Parameter.KEYWORD_ONLY:
+                if parameter.default != inspect.Parameter.empty:
+                    s = f'{parameter_name}={parameter.default!r}'
+                else:
+                    s = parameter_name
+                parameters.append(s)
+        print('    {}({})'.format(name, ', '.join(parameters)))
+    print()
+
+
+def print_converters(
+    converters: Mapping[str, AnyConverterType],
+    legacy_converters: Mapping[str, AnyConverterType],
+    return_converters: Mapping[str, AnyConverterType],
+) -> None:
+    if not (converters or legacy_converters or return_converters):
+        return
+    print()
+    if legacy_converters:
+        print("Legacy converters:")
+        legacy = sorted(legacy_converters)
+        # A converter defined in a file can use any string, even a C
+        # expression, as its format unit, not only a letter.
+        groups = ([c for c in legacy if c[0].isupper()],
+                  [c for c in legacy if c[0].islower()],
+                  [c for c in legacy if not c[0].isalpha()])
+        for group in groups:
+            if group:
+                print('    ' + ' '.join(group))
+        print()
+    if converters:
+        print_converter_list("Converters", 'converter_init', converters)
+    if return_converters:
+        print_converter_list("Return converters", 'return_converter_init',
+                             return_converters)
+    print("All converters also accept (c_default=None, py_default=None, annotation=None).")
+    print("All return converters also accept (py_default=None).")
+
+
+def walk_srcdir(srcdir: str, exclude: list[str] | None) -> Iterator[str]:
+    """Yield the C files in the source directory tree."""
+    if exclude:
+        excludes = [os.path.normpath(os.path.join(srcdir, f)) for f in exclude]
+    else:
+        excludes = []
+    for root, dirs, files in os.walk(srcdir):
+        for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
+            if rcs_dir in dirs:
+                dirs.remove(rcs_dir)
+        for filename in files:
+            # handle .c, .cpp and .h files
+            if not filename.endswith(('.c', '.cpp', '.h')):
+                continue
+            path = os.path.normpath(os.path.join(root, filename))
+            if path in excludes:
+                continue
+            yield path
+
+
 def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
     dry_run = ns.dry_run or ns.diff
     # The report is written to the standard output, so the progress
     # is written to the standard error stream to not mix them.
     verbose_file = sys.stderr if dry_run else sys.stdout
 
-    if ns.converters:
-        if ns.filename:
-            parser.error(
-                "can't specify --converters and a filename at the same time"
-            )
-        if dry_run:
-            parser.error("can't use --dry-run or --diff with --converters")
-        AnyConverterType = ConverterType | ReturnConverterType
-        converter_list: list[tuple[str, AnyConverterType]] = []
-        return_converter_list: list[tuple[str, AnyConverterType]] = []
-
-        for name, converter in converters.items():
-            converter_list.append((
-                name,
-                converter,
-            ))
-        for name, return_converter in return_converters.items():
-            return_converter_list.append((
-                name,
-                return_converter
-            ))
-
-        print()
-
-        print("Legacy converters:")
-        legacy = sorted(legacy_converters)
-        print('    ' + ' '.join(c for c in legacy if c[0].isupper()))
-        print('    ' + ' '.join(c for c in legacy if c[0].islower()))
-        print()
-
-        for title, attribute, ids in (
-            ("Converters", 'converter_init', converter_list),
-            ("Return converters", 'return_converter_init', return_converter_list),
-        ):
-            print(title + ":")
-
-            ids.sort(key=lambda item: item[0].lower())
-            longest = -1
-            for name, _ in ids:
-                longest = max(longest, len(name))
-
-            for name, cls in ids:
-                callable = getattr(cls, attribute, None)
-                if not callable:
-                    continue
-                signature = inspect.signature(callable)
-                parameters = []
-                for parameter_name, parameter in signature.parameters.items():
-                    if parameter.kind == inspect.Parameter.KEYWORD_ONLY:
-                        if parameter.default != inspect.Parameter.empty:
-                            s = f'{parameter_name}={parameter.default!r}'
-                        else:
-                            s = parameter_name
-                        parameters.append(s)
-                print('    {}({})'.format(name, ', '.join(parameters)))
-            print()
-        print("All converters also accept (c_default=None, py_default=None, annotation=None).")
-        print("All return converters also accept (py_default=None).")
-        return
-
+    filenames: Iterable[str]
     if ns.make:
         if ns.output or ns.filename:
             parser.error("can't use -o or filenames with --make")
         if not ns.srcdir:
             parser.error("--srcdir must not be empty with --make")
-        if ns.exclude:
-            excludes = [os.path.join(ns.srcdir, f) for f in ns.exclude]
-            excludes = [os.path.normpath(f) for f in excludes]
-        else:
-            excludes = []
-        writer = libclinic.FileWriter(dry_run=dry_run)
-        for root, dirs, files in os.walk(ns.srcdir):
-            for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
-                if rcs_dir in dirs:
-                    dirs.remove(rcs_dir)
-            for filename in files:
-                # handle .c, .cpp and .h files
-                if not filename.endswith(('.c', '.cpp', '.h')):
-                    continue
-                path = os.path.join(root, filename)
-                path = os.path.normpath(path)
-                if path in excludes:
-                    continue
-                if ns.verbose:
-                    print(path, file=verbose_file)
-                parse_file(path,
-                           verify=not ns.force, limited_capi=ns.limited_capi,
-                           writer=writer)
-        report_changes(writer, diff=ns.diff)
-        return
+        filenames = walk_srcdir(ns.srcdir, ns.exclude)
+    else:
+        if not ns.filename and not ns.converters:
+            parser.error("no input files")
+        if ns.output and len(ns.filename) > 1:
+            parser.error("can't use -o with multiple filenames")
+        filenames = ns.filename
 
-    if not ns.filename:
-        parser.error("no input files")
+    if ns.converters:
+        if dry_run:
+            parser.error("can't use --dry-run or --diff with --converters")
+        if not ns.make and not ns.filename:
+            print_converters(converters, legacy_converters, return_converters)
+            return
+        # Converters defined in a file are added to the same registries
+        # as the built-in ones, so remember the latter to tell them apart.
+        builtin_converters = dict(converters)
+        builtin_legacy_converters = dict(legacy_converters)
+        builtin_return_converters = dict(return_converters)
 
-    if ns.output and len(ns.filename) > 1:
-        parser.error("can't use -o with multiple filenames")
-
-    writer = libclinic.FileWriter(dry_run=dry_run)
-    for filename in ns.filename:
+    writer = libclinic.FileWriter(dry_run=dry_run or ns.converters)
+    for filename in filenames:
         if ns.verbose:
             print(filename, file=verbose_file)
         parse_file(filename, output=ns.output,
                    verify=not ns.force, limited_capi=ns.limited_capi,
                    writer=writer)
-    report_changes(writer, diff=ns.diff)
+
+    if ns.converters:
+        print_converters(
+            defined_in_files(converters, builtin_converters),
+            defined_in_files(legacy_converters, builtin_legacy_converters),
+            defined_in_files(return_converters, builtin_return_converters))
+    else:
+        report_changes(writer, diff=ns.diff)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:
