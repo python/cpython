@@ -247,8 +247,8 @@ _curses_window_addch(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:addch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addch requires 1 to 4 arguments");
@@ -319,8 +319,8 @@ _curses_window_addstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:addstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addstr requires 1 to 4 arguments");
@@ -394,8 +394,8 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:addnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addnstr requires 2 to 5 arguments");
@@ -1451,8 +1451,8 @@ _curses_window_hline(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:hline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.hline requires 2 to 5 arguments");
@@ -1521,8 +1521,8 @@ _curses_window_insch(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:insch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insch requires 1 to 4 arguments");
@@ -1640,8 +1640,8 @@ _curses_window_insstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:insstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insstr requires 1 to 4 arguments");
@@ -1717,8 +1717,8 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:insnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insnstr requires 2 to 5 arguments");
@@ -2328,8 +2328,8 @@ _curses_window_vline(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:vline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.vline requires 2 to 5 arguments");
@@ -6234,4 +6234,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=cb5525c88ae5c440 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1f85ec415c303bf input=a9049054013a1b77]*/
