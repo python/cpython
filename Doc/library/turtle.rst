@@ -176,7 +176,7 @@ Next we'll create a loop::
             break
 
 ``distance(start) < 1`` is a good way to know when the turtle is back at its
-home position.
+start position.
 
 Finally, complete the filling::
 
