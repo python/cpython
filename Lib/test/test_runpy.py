@@ -14,9 +14,6 @@ import unittest
 import warnings
 from test.support import (
     force_not_colorized_test_class,
-    infinite_recursion,
-    no_tracing,
-    requires_resource,
     requires_subprocess,
     verbose,
 )
@@ -771,17 +768,17 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             msg = "can't find '__main__' module in %r" % zip_name
             self._check_import_error(zip_name, msg)
 
-    @no_tracing
-    @requires_resource('cpu')
-    def test_main_recursion_error(self):
+    def test_main_no_recursion(self):
+        # gh-75221: __main__ is searched only in the executed directory or
+        # zipfile, so running a directory without __main__ from a zipfile's
+        # __main__ fails instead of recursing.
         with temp_dir() as script_dir, temp_dir() as dummy_dir:
             mod_name = '__main__'
             source = ("import runpy\n"
                       "runpy.run_path(%r)\n") % dummy_dir
             script_name = self._make_test_script(script_dir, mod_name, source)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
-            with infinite_recursion(25):
-                self.assertRaises(RecursionError, run_path, zip_name)
+            self.assertRaises(ImportError, run_path, zip_name)
 
     def test_encoding(self):
         with temp_dir() as script_dir:

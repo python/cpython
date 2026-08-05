@@ -114,10 +114,9 @@ The :mod:`!runpy` module provides two functions:
    For a simple script, the specified code is simply executed in a fresh
    module namespace. For a valid :data:`sys.path` entry (typically a zipfile or
    directory), the entry is first added to the beginning of ``sys.path``. The
-   function then looks for and executes a :mod:`__main__` module using the
-   updated path. Note that there is no special protection against invoking
-   an existing ``__main__`` entry located elsewhere on ``sys.path`` if
-   there is no such module at the specified location.
+   function then looks for and executes a :mod:`__main__` module in that
+   entry.  :exc:`ImportError` is raised if there is no such module at the
+   specified location.
 
    The optional dictionary argument *init_globals* may be used to pre-populate
    the module's globals dictionary before the code is executed.
@@ -176,6 +175,9 @@ The :mod:`!runpy` module provides two functions:
 
    .. versionchanged:: 3.15
       ``__cached__`` is no longer set.
+
+   .. versionchanged:: next
+      The ``__main__`` module is now searched only in *path_name*.
 
 .. seealso::
 
