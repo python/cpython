@@ -2821,73 +2821,50 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 /* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
 #ifdef HAVE_CURSES_WCHGAT
 
-PyDoc_STRVAR(_curses_window_chgat__doc__,
-"chgat([y, x,] [n=-1,] attr)\n"
-"Set the attributes of characters.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Number of characters.\n"
-"  attr\n"
-"    Attributes for characters.\n"
-"\n"
-"Set the attributes of num characters at the current cursor position, or at\n"
-"position (y, x) if supplied.  If no value of num is given or num = -1, the\n"
-"attribute will be set on all the characters to the end of the line.  This\n"
-"function does not move the cursor.  The changed line will be touched using\n"
-"the touchline() method so that the contents will be redisplayed by the next\n"
-"window refresh.");
+/*[clinic input]
+_curses.window.chgat
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    [
+    n: int = -1
+        Number of characters.
+    ]
+    attr: attr
+        Attributes for characters.
+    /
+
+Set the attributes of characters.
+
+Set the attributes of n characters at the current cursor position,
+or at position (y, x) if supplied.  If no value of n is given or
+n = -1, the attribute will be set on all the characters to the end
+of the line.  This function does not move the cursor.  The changed
+line will be touched using the touchline() method so that the
+contents will be redisplayed by the next window refresh.
+[clinic start generated code]*/
 
 static PyObject *
-PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
+_curses_window_chgat_impl(PyCursesWindowObject *self, int group_left_1,
+                          int y, int x, int group_left_2, int n, attr_t attr)
+/*[clinic end generated code: output=b990d21c13383874 input=e5ad3c2716927e44]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-
     int rtn;
     const char *funcname;
-    int x, y;
-    int num = -1;
-    short color;
-    attr_t attr = A_NORMAL;
-    int use_xy = FALSE;
+    short color = (short) PAIR_NUMBER(attr);
 
-    switch (PyTuple_Size(args)) {
-    case 1:
-        if (!PyArg_ParseTuple(args,"O&;attr", attr_converter, &attr))
-            return NULL;
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args,"iO&;n,attr", &num, attr_converter, &attr))
-            return NULL;
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args,"iiO&;y,x,attr", &y, &x, attr_converter, &attr))
-            return NULL;
-        use_xy = TRUE;
-        break;
-    case 4:
-        if (!PyArg_ParseTuple(args,"iiiO&;y,x,n,attr", &y, &x, &num, attr_converter, &attr))
-            return NULL;
-        use_xy = TRUE;
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError,
-                        "_curses.window.chgat requires 1 to 4 arguments");
-        return NULL;
-    }
-
-    color = (short) PAIR_NUMBER(attr);
     attr = attr & A_ATTRIBUTES;
 
-    if (use_xy) {
-        rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
+    if (group_left_1) {
+        rtn = mvwchgat(self->win,y,x,n,attr,color,NULL);
         funcname = "mvwchgat";
     } else {
         getyx(self->win,y,x);
-        rtn = wchgat(self->win,num,attr,color,NULL);
+        rtn = wchgat(self->win,n,attr,color,NULL);
         funcname = "wchgat";
     }
     if (rtn == ERR) {
@@ -3430,71 +3407,14 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 #endif
 }
 
-/*
- * Helper function for parsing parameters from getstr() and instr().
- * This function is necessary because Argument Clinic does not know
- * how to handle nested optional groups with default values inside.
- *
- * Return 1 on success and 0 on failure, similar to PyArg_ParseTuple().
- */
-static int
-curses_clinic_parse_optional_xy_n(PyObject *args,
-                                  int *y, int *x, unsigned int *n, int *use_xy,
-                                  const char *qualname)
-{
-    switch (PyTuple_GET_SIZE(args)) {
-        case 0: {
-            *use_xy = 0;
-            return 1;
-        }
-        case 1: {
-            *use_xy = 0;
-            return PyArg_ParseTuple(args, "O&;n",
-                                    _PyLong_UnsignedInt_Converter, n);
-        }
-        case 2: {
-            *use_xy = 1;
-            return PyArg_ParseTuple(args, "ii;y,x", y, x);
-        }
-        case 3: {
-            *use_xy = 1;
-            return PyArg_ParseTuple(args, "iiO&;y,x,n", y, x,
-                                    _PyLong_UnsignedInt_Converter, n);
-        }
-        default: {
-            *use_xy = 0;
-            PyErr_Format(PyExc_TypeError, "%s requires 0 to 3 arguments",
-                         qualname);
-            return 0;
-        }
-    }
-}
-
-PyDoc_STRVAR(_curses_window_getstr__doc__,
-"getstr([[y, x,] n=2047])\n"
-"Read a string from the user, with primitive line editing capacity.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of characters.");
-
 /* Read user input into a new bytes object (empty on ERR), with primitive line
    editing.  Shared by getstr() and, without the wide library, by get_wstr(). */
 static PyObject *
-curses_window_getstr_bytes(PyCursesWindowObject *self, PyObject *args,
-                           const char *funcname)
+curses_window_getstr_bytes(PyCursesWindowObject *self, int use_xy,
+                           int y, int x, unsigned int n)
 {
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy, funcname))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
@@ -3527,15 +3447,31 @@ curses_window_getstr_bytes(PyCursesWindowObject *self, PyObject *args,
     return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
-static PyObject *
-PyCursesWindow_getstr(PyObject *op, PyObject *args)
-{
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
+/*[clinic input]
+_curses.window.getstr
 
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of characters.
+    /
+
+Read a string from the user, with primitive line editing capacity.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_getstr_impl(PyCursesWindowObject *self, int group_left_1,
+                           int y, int x, unsigned int n)
+/*[clinic end generated code: output=bea9b0ab7e8f34d9 input=c0fc273c2277a985]*/
+{
     if (!curses_window_check_terminal(self)) {
         return NULL;
     }
-    return curses_window_getstr_bytes(self, args, "_curses.window.getstr");
+    return curses_window_getstr_bytes(self, group_left_1, y, x, n);
 }
 
 /*[clinic input]
@@ -3756,39 +3692,15 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     return PyLong_FromUnsignedLongLong(rtn);
 }
 
-PyDoc_STRVAR(_curses_window_instr__doc__,
-"instr([y, x,] n=2047)\n"
-"Return a string of characters, extracted from the window.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of characters.\n"
-"\n"
-"Return a string of characters, extracted from the window starting\n"
-"at the current cursor position, or at y, x if specified, and\n"
-"stopping at the end of the line.  Attributes and color\n"
-"information are stripped from the characters.  If n is specified,\n"
-"instr() returns a string at most n characters long (exclusive of\n"
-"the trailing NUL).");
-
 /* Extract characters from the window into a new bytes object (empty on ERR),
    with attributes and color stripped.  Shared by instr() and, without the wide
    library, by in_wstr(). */
 static PyObject *
-curses_window_instr_bytes(PyCursesWindowObject *self, PyObject *args,
-                          const char *funcname)
+curses_window_instr_bytes(PyCursesWindowObject *self, int use_xy,
+                          int y, int x, unsigned int n)
 {
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy, funcname))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     PyBytesWriter *writer = PyBytesWriter_Create(n + 1);
@@ -3811,44 +3723,66 @@ curses_window_instr_bytes(PyCursesWindowObject *self, PyObject *args,
     return PyBytesWriter_FinishWithSize(writer, strlen(buf));
 }
 
+/*[clinic input]
+_curses.window.instr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of characters.
+    /
+
+Return a string of characters, extracted from the window.
+
+Return a string of characters, extracted from the window starting
+at the current cursor position, or at y, x if specified, and
+stopping at the end of the line.  Attributes and color
+information are stripped from the characters.  If n is specified,
+instr() returns a string at most n characters long (exclusive of
+the trailing NUL).
+[clinic start generated code]*/
+
 static PyObject *
-PyCursesWindow_instr(PyObject *op, PyObject *args)
+_curses_window_instr_impl(PyCursesWindowObject *self, int group_left_1,
+                          int y, int x, unsigned int n)
+/*[clinic end generated code: output=40081f67070132da input=85e62048d2d92642]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-    return curses_window_instr_bytes(self, args, "_curses.window.instr");
+    return curses_window_instr_bytes(self, group_left_1, y, x, n);
 }
 
-PyDoc_STRVAR(_curses_window_get_wstr__doc__,
-"get_wstr([[y, x,] n=2047])\n"
-"Read a string from the user, with primitive line editing capacity.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of characters.\n"
-"\n"
-"This is the wide-character variant of getstr(); it returns a str.");
+/*[clinic input]
+_curses.window.get_wstr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of characters.
+    /
+
+Read a string from the user, with primitive line editing capacity.
+
+This is the wide-character variant of getstr(); it returns a str.
+[clinic start generated code]*/
 
 static PyObject *
-PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
+_curses_window_get_wstr_impl(PyCursesWindowObject *self, int group_left_1,
+                             int y, int x, unsigned int n)
+/*[clinic end generated code: output=e0a6670551cbe79f input=874fc230c4e82ca7]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-
     if (!curses_window_check_terminal(self)) {
         return NULL;
     }
 #ifdef HAVE_NCURSESW
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.get_wstr"))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     wint_t *buf = PyMem_New(wint_t, n + 1);
@@ -3856,7 +3790,7 @@ PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    if (use_xy) {
+    if (group_left_1) {
         Py_BEGIN_ALLOW_THREADS
         rtn = mvwgetn_wstr(self->win, y, x, buf, n);
         Py_END_ALLOW_THREADS
@@ -3892,8 +3826,7 @@ PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
 #else
     /* Without the wide library, read the bytes as getstr() does and decode them
        with the window's encoding. */
-    PyObject *bytes = curses_window_getstr_bytes(self, args,
-                                                 "_curses.window.get_wstr");
+    PyObject *bytes = curses_window_getstr_bytes(self, group_left_1, y, x, n);
     if (bytes == NULL) {
         return NULL;
     }
@@ -3905,33 +3838,32 @@ PyCursesWindow_get_wstr(PyObject *op, PyObject *args)
 #endif /* HAVE_NCURSESW */
 }
 
-PyDoc_STRVAR(_curses_window_in_wstr__doc__,
-"in_wstr([y, x,] n=2047)\n"
-"Return a string of characters, extracted from the window.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of characters.\n"
-"\n"
-"This is the wide-character variant of instr(); it returns a str.");
+/*[clinic input]
+_curses.window.in_wstr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of characters.
+    /
+
+Return a string of characters, extracted from the window.
+
+This is the wide-character variant of instr(); it returns a str.
+[clinic start generated code]*/
 
 static PyObject *
-PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
+_curses_window_in_wstr_impl(PyCursesWindowObject *self, int group_left_1,
+                            int y, int x, unsigned int n)
+/*[clinic end generated code: output=e3db72a1f10b9875 input=196703989dc57361]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
 #ifdef HAVE_NCURSESW
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.in_wstr"))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     wchar_t *buf = PyMem_New(wchar_t, n + 1);
@@ -3939,7 +3871,7 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    if (use_xy) {
+    if (group_left_1) {
         rtn = mvwinnwstr(self->win, y, x, buf, n);
     }
     else {
@@ -3956,8 +3888,7 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
 #else
     /* Without the wide library, read the bytes as instr() does and decode them
        with the window's encoding. */
-    PyObject *bytes = curses_window_instr_bytes(self, args,
-                                                "_curses.window.in_wstr");
+    PyObject *bytes = curses_window_instr_bytes(self, group_left_1, y, x, n);
     if (bytes == NULL) {
         return NULL;
     }
@@ -3969,33 +3900,33 @@ PyCursesWindow_in_wstr(PyObject *op, PyObject *args)
 #endif
 }
 
-PyDoc_STRVAR(_curses_window_in_wchstr__doc__,
-"in_wchstr([y, x,] n=2047)\n"
-"Return a complexstr of the styled cells extracted from the window.\n"
-"\n"
-"  y\n"
-"    Y-coordinate.\n"
-"  x\n"
-"    X-coordinate.\n"
-"  n\n"
-"    Maximal number of cells.\n"
-"\n"
-"This is the wide-character variant of instr() and in_wstr() that keeps\n"
-"each cell's attributes and color pair; it returns a complexstr.");
+/*[clinic input]
+_curses.window.in_wchstr
+
+    [
+    y: int
+        Y-coordinate.
+    x: int
+        X-coordinate.
+    ]
+    n: unsigned_int = 2047
+        Maximal number of cells.
+    /
+
+Return a complexstr of the styled cells extracted from the window.
+
+This is the wide-character variant of instr() and in_wstr() that
+keeps each cell's attributes and color pair; it returns a
+complexstr.
+[clinic start generated code]*/
 
 static PyObject *
-PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
+_curses_window_in_wchstr_impl(PyCursesWindowObject *self, int group_left_1,
+                              int y, int x, unsigned int n)
+/*[clinic end generated code: output=7fb5216f2088835b input=b725c0b8abff62c2]*/
 {
-    PyCursesWindowObject *self = _PyCursesWindowObject_CAST(op);
-    int rtn, use_xy = 0, y = 0, x = 0;
+    int rtn;
     unsigned int max_buf_size = 2048;
-    unsigned int n = max_buf_size - 1;
-
-    if (!curses_clinic_parse_optional_xy_n(args, &y, &x, &n, &use_xy,
-                                           "_curses.window.in_wchstr"))
-    {
-        return NULL;
-    }
 
     n = Py_MIN(n, max_buf_size - 1);
     cursesmodule_state *state = get_cursesmodule_state_by_win(self);
@@ -4008,7 +3939,7 @@ PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
     }
 
 #ifdef HAVE_NCURSESW
-    if (use_xy) {
+    if (group_left_1) {
         rtn = mvwin_wchnstr(self->win, y, x, buf, n);
     }
     else {
@@ -4040,7 +3971,7 @@ PyCursesWindow_in_wchstr(PyObject *op, PyObject *args)
        it and stop at the first empty cell; a painted cell always holds at least
        a space, never 0. */
     memset(buf, 0, ((size_t)n + 1) * sizeof(curses_cell_t));
-    if (use_xy) {
+    if (group_left_1) {
         rtn = mvwinchnstr(self->win, y, x, buf, n);
     }
     else {
@@ -4136,7 +4067,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
-        if (use_xy) {
+        if (group_left_1) {
             rtn = mvwins_wstr(self->win,y,x,wstr);
             funcname = "mvwins_wstr";
         }
@@ -4150,7 +4081,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
 #endif
     {
         const char *str = PyBytes_AS_STRING(bytesobj);
-        if (use_xy) {
+        if (group_left_1) {
             rtn = mvwinsstr(self->win,y,x,str);
             funcname = "mvwinsstr";
         }
@@ -4248,7 +4179,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     }
 #ifdef HAVE_NCURSESW
     if (strtype == 2) {
-        if (use_xy) {
+        if (group_left_1) {
             rtn = mvwins_nwstr(self->win,y,x,wstr,n);
             funcname = "mvwins_nwstr";
         }
@@ -4262,7 +4193,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
 #endif
     {
         const char *str = PyBytes_AS_STRING(bytesobj);
-        if (use_xy) {
+        if (group_left_1) {
             rtn = mvwinsnstr(self->win,y,x,str,n);
             funcname = "mvwinsnstr";
         }
@@ -5002,12 +4933,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_COLOR_SET_METHODDEF
     _CURSES_WINDOW_GETATTRS_METHODDEF
     _CURSES_WINDOW_BKGD_METHODDEF
-#ifdef HAVE_CURSES_WCHGAT
-    {
-        "chgat", PyCursesWindow_ChgAt, METH_VARARGS,
-        _curses_window_chgat__doc__
-    },
-#endif
+    _CURSES_WINDOW_CHGAT_METHODDEF
     _CURSES_WINDOW_BKGDSET_METHODDEF
     _CURSES_WINDOW_BORDER_METHODDEF
     _CURSES_WINDOW_BOX_METHODDEF
@@ -5066,14 +4992,8 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "getscrreg($self, /)\n--\n\n"
      "Return a tuple (top, bottom) of the current scrolling region."},
 #endif
-    {
-        "getstr", PyCursesWindow_getstr, METH_VARARGS,
-        _curses_window_getstr__doc__
-    },
-    {
-        "get_wstr", PyCursesWindow_get_wstr, METH_VARARGS,
-        _curses_window_get_wstr__doc__
-    },
+    _CURSES_WINDOW_GETSTR_METHODDEF
+    _CURSES_WINDOW_GET_WSTR_METHODDEF
     {"getyx", PyCursesWindow_getyx, METH_NOARGS,
      "getyx($self, /)\n--\n\n"
      "Return a tuple (y, x) of the current cursor position."},
@@ -5100,18 +5020,9 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "Insert a blank line under the cursor; move following lines down."},
     _CURSES_WINDOW_INSNSTR_METHODDEF
     _CURSES_WINDOW_INSSTR_METHODDEF
-    {
-        "instr", PyCursesWindow_instr, METH_VARARGS,
-        _curses_window_instr__doc__
-    },
-    {
-        "in_wstr", PyCursesWindow_in_wstr, METH_VARARGS,
-        _curses_window_in_wstr__doc__
-    },
-    {
-        "in_wchstr", PyCursesWindow_in_wchstr, METH_VARARGS,
-        _curses_window_in_wchstr__doc__
-    },
+    _CURSES_WINDOW_INSTR_METHODDEF
+    _CURSES_WINDOW_IN_WSTR_METHODDEF
+    _CURSES_WINDOW_IN_WCHSTR_METHODDEF
     _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF
     {"is_wintouched", PyCursesWindow_is_wintouched, METH_NOARGS,
      "is_wintouched($self, /)\n--\n\n"
