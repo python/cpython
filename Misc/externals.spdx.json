@@ -94,18 +94,18 @@
           "checksumValue": "0000000000000000000000000000000000000000000000000000000000000000"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.53.3.0.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.53.4.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.53.3.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.53.4.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "sqlite",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.53.3.0"
+      "versionInfo": "3.53.4.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tcl",
