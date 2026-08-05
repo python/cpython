@@ -356,9 +356,8 @@ class CLanguage(Language):
 """)
                 continue
 
-            # Deduplicate the groups, but keep the order of parameters:
-            # the iteration order of a set of small negative integers
-            # depends on the platform.
+            # A set would eliminate duplicates too, but the iteration
+            # order of small negative integers depends on the platform.
             group_ids = dict.fromkeys(p.group for p in subset)
             d: dict[str, str | int] = {}
             d['count'] = count
