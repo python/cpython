@@ -1965,7 +1965,7 @@ def _prog_name(prog=None):
         # simple script
         return _os.path.basename(arg0)
     if modspec.name != '__main__' and arg0 != modspec.origin:
-        # imported module executed as main without altering sys.argv[0]
+        # named module executed as main without altering sys.argv[0]
         return _os.path.basename(arg0)
     py = _os.path.basename(_sys.executable)
     if modspec.name != '__main__':
