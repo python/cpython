@@ -87,6 +87,7 @@ impl_definition block
         filename: str,
         limited_capi: bool,
         verify: bool = True,
+        writer: libclinic.FileWriter | None = None,
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -95,6 +96,7 @@ impl_definition block
         if printer:
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
+        self.writer = writer or libclinic.FileWriter()
         self.verify = verify
         self.limited_capi = limited_capi
         self.filename = filename
@@ -213,7 +215,7 @@ impl_definition block
                     try:
                         dirname = os.path.dirname(destination.filename)
                         try:
-                            os.makedirs(dirname)
+                            self.writer.makedirs(dirname)
                         except FileExistsError:
                             if not os.path.isdir(dirname):
                                 fail(f"Can't write to destination "
@@ -234,8 +236,8 @@ impl_definition block
 
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, header_includes=includes)
-                    libclinic.write_file(destination.filename,
-                                         printer_2.f.getvalue())
+                    self.writer.write(destination.filename,
+                                      printer_2.f.getvalue())
                     continue
 
         return printer.f.getvalue()
