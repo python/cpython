@@ -32,16 +32,45 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "Python.h"
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
+#include "pycore_pymem.h"         // _PyMem_Strdup()
 #include "pycore_unicodeobject.h" // _PyUnicode_EncodeCharmap
 
 #ifdef MS_WINDOWS
 #include <windows.h>
 #endif
 
+typedef struct {
+    PyTypeObject *IconvDecoderType;
+} _codecs_state;
+
+static inline _codecs_state *
+get_codecs_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_codecs_state *)state;
+}
+
+static struct PyModuleDef codecsmodule;
+
+#define get_codecs_state_by_type(type) \
+    (get_codecs_state(PyType_GetModuleByDef(type, &codecsmodule)))
+
+#ifdef HAVE_ICONV
+typedef struct {
+    PyObject_HEAD
+    iconv_t cd;
+    char *encoding;
+} iconv_decoder_object;
+
+#define iconv_decoder_CAST(op)  ((iconv_decoder_object *)(op))
+#endif
+
 /*[clinic input]
 module _codecs
+class _codecs.IconvDecoder "iconv_decoder_object *" "get_codecs_state_by_type(type)->IconvDecoderType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e1390e3da3cb9deb]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=17a98f0bef095afe]*/
 
 #include "pycore_runtime.h"
 #include "clinic/_codecsmodule.c.h"
@@ -644,61 +673,107 @@ _codecs_code_page_decode_impl(PyObject *module, int codepage,
 
 #ifdef HAVE_ICONV
 
-#ifdef HAVE_ICONV
-#define ICONV_STATE_CAPSULE "_codecs.iconv_state"
-
-static void
-iconv_state_destructor(PyObject *capsule)
-{
-    iconv_t *cdp = PyCapsule_GetPointer(capsule, ICONV_STATE_CAPSULE);
-    if (cdp == NULL) {
-        PyErr_Clear();
-        return;
-    }
-    iconv_close(*cdp);
-    PyMem_Free(cdp);
-}
-#endif
-
 /*[clinic input]
-_codecs.iconv_state
+@classmethod
+_codecs.IconvDecoder.__new__
 
     encoding: str
     /
 
-Open an iconv conversion for decoding, to reuse across calls.
+Decoder holding one iconv conversion, to reuse across calls.
 
-The result is an opaque object.  Reusing one conversion keeps the
-shift state of a stateful encoding, such as ISO-2022-CN, across calls.
+Reusing one conversion keeps the shift state of a stateful encoding,
+such as ISO-2022-CN, from one call to the next.
 [clinic start generated code]*/
 
 static PyObject *
-_codecs_iconv_state_impl(PyObject *module, const char *encoding)
-/*[clinic end generated code: output=4100a9b65a64d65c input=6ffbfa5bb1d2d208]*/
+_codecs_IconvDecoder_impl(PyTypeObject *type, const char *encoding)
+/*[clinic end generated code: output=6e5181abedc4ae7c input=c53769050ff2b196]*/
 {
-#ifdef HAVE_ICONV
-    iconv_t *cdp = PyMem_Malloc(sizeof(iconv_t));
-    if (cdp == NULL) {
+    char *name = _PyMem_Strdup(encoding);
+    if (name == NULL) {
         return PyErr_NoMemory();
     }
-    *cdp = _PyUnicode_IconvOpenDecoder(encoding);
-    if (*cdp == (iconv_t)-1) {
-        PyMem_Free(cdp);
+    iconv_t cd = _PyUnicode_IconvOpenDecoder(encoding);
+    if (cd == (iconv_t)-1) {
+        PyMem_Free(name);
         return NULL;
     }
-    PyObject *capsule = PyCapsule_New(cdp, ICONV_STATE_CAPSULE,
-                                      iconv_state_destructor);
-    if (capsule == NULL) {
-        iconv_close(*cdp);
-        PyMem_Free(cdp);
+    iconv_decoder_object *self = (iconv_decoder_object *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        iconv_close(cd);
+        PyMem_Free(name);
         return NULL;
     }
-    return capsule;
-#else
-    PyErr_SetString(PyExc_LookupError, "iconv is not available");
-    return NULL;
-#endif
+    self->cd = cd;
+    self->encoding = name;
+    return (PyObject *)self;
 }
+
+/*[clinic input]
+_codecs.IconvDecoder.decode
+
+    data: Py_buffer
+    errors: str(accept={str, NoneType}) = None
+    final: bool = False
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_IconvDecoder_decode_impl(iconv_decoder_object *self, Py_buffer *data,
+                                 const char *errors, int final)
+/*[clinic end generated code: output=0e8812b6b422fc97 input=9bea42dd438d03af]*/
+{
+    Py_ssize_t consumed = data->len;
+    PyObject *decoded = _PyUnicode_DecodeIconv(self->encoding, data->buf,
+                                               data->len, errors,
+                                               final ? NULL : &consumed,
+                                               &self->cd);
+    return codec_tuple(decoded, consumed);
+}
+
+static int
+iconv_decoder_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
+
+static void
+iconv_decoder_dealloc(PyObject *op)
+{
+    iconv_decoder_object *self = iconv_decoder_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    if (self->cd != (iconv_t)-1) {
+        iconv_close(self->cd);
+    }
+    PyMem_Free(self->encoding);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyMethodDef iconv_decoder_methods[] = {
+    _CODECS_ICONVDECODER_DECODE_METHODDEF
+    {NULL, NULL}
+};
+
+static PyType_Slot iconv_decoder_slots[] = {
+    {Py_tp_new, _codecs_IconvDecoder},
+    {Py_tp_dealloc, iconv_decoder_dealloc},
+    {Py_tp_traverse, iconv_decoder_traverse},
+    {Py_tp_methods, iconv_decoder_methods},
+    {Py_tp_doc, (void *)_codecs_IconvDecoder__doc__},
+    {0, NULL}
+};
+
+static PyType_Spec iconv_decoder_spec = {
+    .name = "_codecs.IconvDecoder",
+    .basicsize = sizeof(iconv_decoder_object),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE
+              | Py_TPFLAGS_HAVE_GC),
+    .slots = iconv_decoder_slots,
+};
 
 /*[clinic input]
 _codecs.iconv_decode
@@ -706,27 +781,18 @@ _codecs.iconv_decode
     data: Py_buffer
     errors: str(accept={str, NoneType}) = None
     final: bool = False
-    state: object = None
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_iconv_decode_impl(PyObject *module, const char *encoding,
-                          Py_buffer *data, const char *errors, int final,
-                          PyObject *state)
-/*[clinic end generated code: output=ed99087a9b21d007 input=b23f4298c963f9c5]*/
+                          Py_buffer *data, const char *errors, int final)
+/*[clinic end generated code: output=6c6145a9decc2ba8 input=d15a04d7d3a3e0cd]*/
 {
-    iconv_t *cdp = NULL;
-    if (state != Py_None) {
-        cdp = PyCapsule_GetPointer(state, ICONV_STATE_CAPSULE);
-        if (cdp == NULL) {
-            return NULL;
-        }
-    }
     Py_ssize_t consumed = data->len;
     PyObject *decoded = _PyUnicode_DecodeIconv(encoding, data->buf, data->len,
                                                errors,
-                                               final ? NULL : &consumed, cdp);
+                                               final ? NULL : &consumed, NULL);
     return codec_tuple(decoded, consumed);
 }
 
@@ -1220,7 +1286,6 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_ICONV_ENCODE_METHODDEF
     _CODECS_ICONV_DECODE_METHODDEF
-    _CODECS_ICONV_STATE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
@@ -1228,23 +1293,60 @@ static PyMethodDef _codecs_functions[] = {
     {NULL, NULL}                /* sentinel */
 };
 
+static int
+_codecs_exec(PyObject *module)
+{
+#ifdef HAVE_ICONV
+    _codecs_state *state = get_codecs_state(module);
+    state->IconvDecoderType = (PyTypeObject *)PyType_FromModuleAndSpec(
+            module, &iconv_decoder_spec, NULL);
+    if (state->IconvDecoderType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->IconvDecoderType) < 0) {
+        return -1;
+    }
+#endif
+    return 0;
+}
+
+static int
+_codecs_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    Py_VISIT(get_codecs_state(module)->IconvDecoderType);
+    return 0;
+}
+
+static int
+_codecs_clear(PyObject *module)
+{
+    Py_CLEAR(get_codecs_state(module)->IconvDecoderType);
+    return 0;
+}
+
+static void
+_codecs_free(void *module)
+{
+    (void)_codecs_clear((PyObject *)module);
+}
+
 static PyModuleDef_Slot _codecs_slots[] = {
     _Py_ABI_SLOT,
+    {Py_mod_exec, _codecs_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
 static struct PyModuleDef codecsmodule = {
-        PyModuleDef_HEAD_INIT,
-        "_codecs",
-        NULL,
-        0,
-        _codecs_functions,
-        _codecs_slots,
-        NULL,
-        NULL,
-        NULL
+        .m_base = PyModuleDef_HEAD_INIT,
+        .m_name = "_codecs",
+        .m_size = sizeof(_codecs_state),
+        .m_methods = _codecs_functions,
+        .m_slots = _codecs_slots,
+        .m_traverse = _codecs_traverse,
+        .m_clear = _codecs_clear,
+        .m_free = _codecs_free,
 };
 
 PyMODINIT_FUNC

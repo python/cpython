@@ -1631,33 +1631,38 @@ exit:
 
 #if defined(HAVE_ICONV)
 
-PyDoc_STRVAR(_codecs_iconv_state__doc__,
-"iconv_state($module, encoding, /)\n"
+PyDoc_STRVAR(_codecs_IconvDecoder__doc__,
+"IconvDecoder(encoding, /)\n"
 "--\n"
 "\n"
-"Open an iconv conversion for decoding, to reuse across calls.\n"
+"Decoder holding one iconv conversion, to reuse across calls.\n"
 "\n"
-"The result is an opaque object.  Reusing one conversion keeps the\n"
-"shift state of a stateful encoding, such as ISO-2022-CN, across calls.");
-
-#define _CODECS_ICONV_STATE_METHODDEF    \
-    {"iconv_state", (PyCFunction)_codecs_iconv_state, METH_O, _codecs_iconv_state__doc__},
+"Reusing one conversion keeps the shift state of a stateful encoding,\n"
+"such as ISO-2022-CN, from one call to the next.");
 
 static PyObject *
-_codecs_iconv_state_impl(PyObject *module, const char *encoding);
+_codecs_IconvDecoder_impl(PyTypeObject *type, const char *encoding);
 
 static PyObject *
-_codecs_iconv_state(PyObject *module, PyObject *arg)
+_codecs_IconvDecoder(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = get_codecs_state_by_type(type)->IconvDecoderType;
     const char *encoding;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("iconv_state", "argument", "str", arg);
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("IconvDecoder", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("IconvDecoder", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 0))) {
+        _PyArg_BadArgument("IconvDecoder", "argument 1", "str", PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
     Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
+    encoding = PyUnicode_AsUTF8AndSize(PyTuple_GET_ITEM(args, 0), &encoding_length);
     if (encoding == NULL) {
         goto exit;
     }
@@ -1665,7 +1670,7 @@ _codecs_iconv_state(PyObject *module, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = _codecs_iconv_state_impl(module, encoding);
+    return_value = _codecs_IconvDecoder_impl(type, encoding);
 
 exit:
     return return_value;
@@ -1675,9 +1680,78 @@ exit:
 
 #if defined(HAVE_ICONV)
 
+PyDoc_STRVAR(_codecs_IconvDecoder_decode__doc__,
+"decode($self, data, errors=None, final=False, /)\n"
+"--\n"
+"\n");
+
+#define _CODECS_ICONVDECODER_DECODE_METHODDEF    \
+    {"decode", _PyCFunction_CAST(_codecs_IconvDecoder_decode), METH_FASTCALL, _codecs_IconvDecoder_decode__doc__},
+
+static PyObject *
+_codecs_IconvDecoder_decode_impl(iconv_decoder_object *self, Py_buffer *data,
+                                 const char *errors, int final);
+
+static PyObject *
+_codecs_IconvDecoder_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+    const char *errors = NULL;
+    int final = 0;
+
+    if (!_PyArg_CheckPositional("decode", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        errors = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("decode", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _codecs_IconvDecoder_decode_impl((iconv_decoder_object *)self, &data, errors, final);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_ICONV) */
+
+#if defined(HAVE_ICONV)
+
 PyDoc_STRVAR(_codecs_iconv_decode__doc__,
-"iconv_decode($module, encoding, data, errors=None, final=False,\n"
-"             state=None, /)\n"
+"iconv_decode($module, encoding, data, errors=None, final=False, /)\n"
 "--\n"
 "\n");
 
@@ -1686,8 +1760,7 @@ PyDoc_STRVAR(_codecs_iconv_decode__doc__,
 
 static PyObject *
 _codecs_iconv_decode_impl(PyObject *module, const char *encoding,
-                          Py_buffer *data, const char *errors, int final,
-                          PyObject *state);
+                          Py_buffer *data, const char *errors, int final);
 
 static PyObject *
 _codecs_iconv_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1697,9 +1770,8 @@ _codecs_iconv_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
     int final = 0;
-    PyObject *state = Py_None;
 
-    if (!_PyArg_CheckPositional("iconv_decode", nargs, 2, 5)) {
+    if (!_PyArg_CheckPositional("iconv_decode", nargs, 2, 4)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1746,12 +1818,8 @@ _codecs_iconv_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (final < 0) {
         goto exit;
     }
-    if (nargs < 5) {
-        goto skip_optional;
-    }
-    state = args[4];
 skip_optional:
-    return_value = _codecs_iconv_decode_impl(module, encoding, &data, errors, final, state);
+    return_value = _codecs_iconv_decode_impl(module, encoding, &data, errors, final);
 
 exit:
     /* Cleanup for data */
@@ -3065,9 +3133,9 @@ exit:
     #define _CODECS_CODE_PAGE_DECODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_DECODE_METHODDEF) */
 
-#ifndef _CODECS_ICONV_STATE_METHODDEF
-    #define _CODECS_ICONV_STATE_METHODDEF
-#endif /* !defined(_CODECS_ICONV_STATE_METHODDEF) */
+#ifndef _CODECS_ICONVDECODER_DECODE_METHODDEF
+    #define _CODECS_ICONVDECODER_DECODE_METHODDEF
+#endif /* !defined(_CODECS_ICONVDECODER_DECODE_METHODDEF) */
 
 #ifndef _CODECS_ICONV_DECODE_METHODDEF
     #define _CODECS_ICONV_DECODE_METHODDEF
@@ -3088,4 +3156,4 @@ exit:
 #ifndef _CODECS_ICONV_ENCODE_METHODDEF
     #define _CODECS_ICONV_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_ICONV_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=30b2a2c3eb23dfc1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b51735946040ff2 input=a9049054013a1b77]*/
