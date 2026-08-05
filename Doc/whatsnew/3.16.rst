@@ -257,6 +257,15 @@ ctypes
   (Contributed by Peter Bierma in :gh:`153903`.)
 
 
+difflib
+-------
+
+* Expose *autojunk* parameter from :class:`difflib.SequenceMatcher` in public
+  functions and class methods which allows to modifty behavior of automatic
+  junk heuristic in :mod:`difflib`.
+  (Contributed by Tomasz Kazimierczak in :gh:`118150`)
+
+
 encodings
 ---------
 
