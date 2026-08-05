@@ -34,7 +34,7 @@ of any type, not just text, so long as the sequence elements are
 
    See :gh:`118150` for motivation and reasons.
 
-      
+
 .. _difflib-junk:
 
 Junk heuristic
@@ -64,7 +64,7 @@ Depending on your data, you should consider turning this heuristic off
 or tuning it (using the *isjunk* argument, perhaps to one of the
 :ref:`predefined functions <difflib-isjunk-functions>`).
 
-     
+
 The :mod:`!difflib` algorithm
 -----------------------------
 
