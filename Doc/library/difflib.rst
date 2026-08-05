@@ -23,7 +23,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Exposed *autojunk* parameter of :class:`SequenceMatcher` in public functions
    and classes of this module (:class:`Differ`, :class:`HtmlDiff`, :func:`ndiff`,
     :func:`unified_diff`, :func:`context_diff`). For backward compatibility
-   this parameter is set everywhere to be `True` by default.
+   this parameter is set everywhere to be ``True`` by default.
 
    See :gh:`118150` for motivation and reasons.
 
@@ -118,11 +118,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       (used by :class:`HtmlDiff` to generate the side by side HTML differences).
       See :func:`ndiff` documentation for argument default values and descriptions.
 
-      .. versionadded:: 3.16
-         *autojunk* parameter
+      .. versionchanged:: 3.16
+         Added keyword-only *autojunk* parameter.
 
-      Keyword-only *autojunk* flag is for setting on/off automatic junk heuristic
-      of :class:`SequenceMatcher`.
+      *autojunk* flag is for setting on/off automatic junk heuristic of :class:`SequenceMatcher`.
 
    The following methods are public:
 
@@ -183,11 +182,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
 
-   .. versionadded:: 3.16
-      *autojunk* kwarg
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
 
-   The kwarg-only parameter *autojunk* sets up automatic junk heuristic of
-   :class:`SequenceMatcher`.
+   Optional *autojunk* flag sets on/off automatic junk heuristic of :class:`SequenceMatcher`.
 
    The context diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
@@ -230,10 +228,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Optional argument *cutoff* (default ``0.6``) is a float in the range [0, 1].
    Possibilities that don't score at least that similar to *word* are ignored.
 
-   .. versionadded:: 3.16
-      *autojunk* parameter
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
 
-   Keyword-only optional *autojunk* param is a flag for turning on/off
+   Optional *autojunk* param is a flag for turning on/off
    an automatic junk heuristic of :class:`SequenceMatcher`.
 
    The best (no more than *n*) matches among the possibilities are returned in a
@@ -271,10 +269,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; it's a bad idea to include newline in this!).
 
-   .. versionadded:: 3.16
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
 
-      *autojunk*: keyword-only parameter for setting on/off automatic junk heuristic
-      of :class:`SequenceMatcher`.
+   *autojunk*: An optional parameter for setting on/off automatic junk heuristic
+   of :class:`SequenceMatcher`.
 
    Example:
 
@@ -338,13 +337,6 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    :program:`git diff --color`. Even if enabled, it can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
-   .. versionadded:: 3.16
-
-      keyword-only *autojunk* parameter.
-
-   Set *autojunk* to ``False`` to disable automatic junk heuristic
-   of underlying :class:`SequenceMatcher`.
-
    The unified diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
    *tofile*, *fromfiledate*, and *tofiledate*.  The modification times are normally
@@ -369,6 +361,13 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    .. versionchanged:: 3.15
       Added the *color* parameter.
+
+   .. versionchanged:: 3.16
+      Added keyword-only *autojunk* parameter.
+
+   Set *autojunk* to ``False`` in order to disable automatic junk heuristic
+   of underlying :class:`SequenceMatcher`.
+
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
 
