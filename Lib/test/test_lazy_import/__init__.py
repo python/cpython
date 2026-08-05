@@ -701,7 +701,7 @@ class ErrorHandlingTests(LazyImportTestCase):
         assert_python_ok("-c", code)
 
     def test_non_package_lazily_imported(self):
-        """Accessing a nonexistent lazy submodule via parent attr raises AttributeError."""
+        """Accessing a nonexistent lazy submodule via parent attr raises ModuleNotFoundError."""
         code = textwrap.dedent("""
             lazy import math.pi
 
@@ -711,6 +711,20 @@ class ErrorHandlingTests(LazyImportTestCase):
                 pass
             else:
                 raise AssertionError("ModuleNotFoundError was not raised")
+        """)
+        assert_python_ok("-c", code)
+
+    def test_missing_attribute_raises_import_error(self):
+        """Accessing a nonexistent lazy submodule via from import raises ImportError."""
+        code = textwrap.dedent("""
+            lazy from sys import doesnotexist
+
+            try:
+                _ = doesnotexist
+            except ImportError:
+                pass
+            else:
+                raise AssertionError("ImportError was not raised")
         """)
         assert_python_ok("-c", code)
 
