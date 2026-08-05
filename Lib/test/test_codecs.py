@@ -3824,11 +3824,20 @@ class IconvTest(unittest.TestCase):
         reader = codecs.getreader('iconv:' + enc)(io.BytesIO(raw))
         self.assertEqual(reader.read(), text)
 
-    def test_incremental_decode_shift_state(self):
+    def require_stateful(self):
+        # Encoded here rather than by the platform: an iconv that provides the
+        # encoding may still be unable to encode the sample, as macOS and iOS
+        # cannot for ISO-2022-CN.  Decoding is what these tests are about, so
+        # the bytes are fixed and only decoding has to work.
         enc = self.require(*_ICONV_STATEFUL)
         text = 'ABC\u4e2d\u6587DEF'
-        data = codecs.encode(text, 'iconv:' + enc)
-        self.assertEqual(codecs.decode(data, 'iconv:' + enc), text)
+        data = b'ABC\x1b$)A\x0eVPND\x0fDEF\x0f'
+        if codecs.decode(data, 'iconv:' + enc) != text:
+            self.skipTest('%s: this iconv cannot decode the sample' % enc)
+        return enc, text, data
+
+    def test_incremental_decode_shift_state(self):
+        enc, text, data = self.require_stateful()
         dec = codecs.getincrementaldecoder('iconv:' + enc)()
         out = ''.join(dec.decode(data[i:i+1]) for i in range(len(data)))
         out += dec.decode(b'', True)
@@ -3838,10 +3847,8 @@ class IconvTest(unittest.TestCase):
         self.assertEqual(dec.decode(data, True), text)
 
     def test_stream_shift_state(self):
-        enc = self.require(*_ICONV_STATEFUL)
-        text = 'ABC\u4e2d\u6587DEF'
-        raw = codecs.encode(text, 'iconv:' + enc)
-        reader = codecs.getreader('iconv:' + enc)(io.BytesIO(raw))
+        enc, text, data = self.require_stateful()
+        reader = codecs.getreader('iconv:' + enc)(io.BytesIO(data))
         self.assertEqual(''.join(iter(lambda: reader.read(1), '')), text)
 
     def test_encode_kinds(self):
