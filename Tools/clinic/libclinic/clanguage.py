@@ -1,6 +1,5 @@
 from __future__ import annotations
 import itertools
-import sys
 import textwrap
 from typing import TYPE_CHECKING, Literal, Final
 from operator import attrgetter
@@ -19,6 +18,20 @@ from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
     from libclinic.app import Clinic
+
+
+def count_required(subset: ParamTuple) -> int:
+    """Return the number of arguments which cannot be omitted.
+
+    Trailing parameters with a default value which are not in an optional
+    group can be omitted.
+    """
+    count = len(subset)
+    for p in reversed(subset):
+        if p.group or not p.is_optional():
+            break
+        count -= 1
+    return count
 
 
 def c_id(name: str) -> str:
@@ -301,38 +314,29 @@ class CLanguage(Language):
             assert group is not None
             group.append(p)
 
-        count_min = sys.maxsize
-        count_max = -1
-
-        # Trailing parameters with a default value which are not in any group
-        # can be omitted, so a subset matches a range of argument counts.
-        subsets: list[tuple[ParamTuple, int]] = []
+        # Map the number of arguments to the subset which accepts them.
+        # A subset accepts a range of counts, because its trailing parameters
+        # with a default value which are not in any group can be omitted.
+        subsets: dict[int, ParamTuple] = {}
         for subset in permute_optional_groups(left, required, right):
-            first_optional = len(subset)
-            for p in reversed(subset):
-                if p.group or not p.is_optional():
-                    break
-                first_optional -= 1
-            subsets.append((subset, first_optional))
-
-        seen: set[int] = set()
-        for subset, first_optional in subsets:
-            for count in range(first_optional, len(subset) + 1):
-                if count in seen:
+            for count in range(count_required(subset), len(subset) + 1):
+                if count in subsets:
                     fail(f"Function {f.full_name!r} has an ambiguous group "
                          f"configuration: a call with {count} argument(s) "
                          f"can be parsed in more than one way.")
-                seen.add(count)
+                subsets[count] = subset
 
         if limited_capi:
             nargs = 'PyTuple_Size(args)'
         else:
             nargs = 'PyTuple_GET_SIZE(args)'
         out.append(f"switch ({nargs}) {{\n")
-        for subset, first_optional in subsets:
-            count = len(subset)
-            count_min = min(count_min, first_optional)
-            count_max = max(count_max, count)
+        for count, subset in sorted(subsets.items()):
+            if count < len(subset):
+                # Some of the trailing parameters are omitted;
+                # they are parsed together with the following case.
+                out.append(f"    case {count}:\n")
+                continue
 
             if count == 0:
                 out.append("""    case 0:
@@ -342,10 +346,12 @@ class CLanguage(Language):
 
             group_ids = {p.group for p in subset}  # eliminate duplicates
             d: dict[str, str | int] = {}
+            d['count'] = count
             d['name'] = f.name
             format_units = [p.converter.format_unit for p in subset]
-            if first_optional < count:
-                format_units.insert(first_optional, '|')
+            n_required = count_required(subset)
+            if n_required < count:
+                format_units.insert(n_required, '|')
             d['format_units'] = "".join(format_units)
 
             parse_arguments: list[str] = []
@@ -359,13 +365,8 @@ class CLanguage(Language):
                 for g in group_ids
             ])
 
-            d['cases'] = "\n".join([
-                f"    case {n}:"
-                for n in range(first_optional, count + 1)
-            ])
-
             s = """\
-{cases}
+    case {count}:
         if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
             goto exit;
         }}
@@ -378,7 +379,7 @@ class CLanguage(Language):
 
         out.append("    default:\n")
         s = '        PyErr_SetString(PyExc_TypeError, "{} requires {} to {} arguments");\n'
-        out.append(s.format(f.full_name, count_min, count_max))
+        out.append(s.format(f.full_name, min(subsets), max(subsets)))
         out.append('        goto exit;\n')
         out.append("}")
 
