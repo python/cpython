@@ -477,6 +477,8 @@ def urlparse(url, scheme=None, allow_fragments=True, *, missing_as_none=_MISSING
         if query is None: query = ''
         if fragment is None: fragment = ''
     result = ParseResult(scheme, netloc, url, params, query, fragment)
+    if netloc and ':' in netloc:
+        result.port     # check that the port is valid
     result = _coerce_result(result)
     result._keep_empty = missing_as_none
     return result
@@ -586,6 +588,8 @@ def urlsplit(url, scheme=None, allow_fragments=True, *, missing_as_none=_MISSING
         if query is None: query = ''
         if fragment is None: fragment = ''
     result = SplitResult(scheme, netloc, url, query, fragment)
+    if netloc and ':' in netloc:
+        result.port     # check that the port is valid
     result = _coerce_result(result)
     result._keep_empty = missing_as_none
     return result
