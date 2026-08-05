@@ -20,6 +20,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 import textwrap
 import threading
 import time
@@ -1272,23 +1273,25 @@ os.does_not_exist
         origin = _testsinglephase.__file__
         # The module is cached by its path, so restore it afterwards.
         self.addCleanup(restore__testsinglephase)
-        with os_helper.temp_dir() as tempdir:
-            subdir = os.path.join(os.fsencode(tempdir),
-                                  os_helper.TESTFN_UNDECODABLE)
-            try:
-                os.mkdir(subdir)
-            except OSError:
-                self.skipTest('undecodable paths are not supported')
-            path = os.path.join(subdir, os.fsencode(os.path.basename(origin)))
-            shutil.copyfile(origin, path)
-            path = os.fsdecode(path)
-            spec = importlib.util.spec_from_file_location('_testsinglephase',
-                                                          path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            self.assertEqual(module.__name__, '_testsinglephase')
-            self.assertEqual(module.__file__, path)
-            _testinternalcapi.clear_extension('_testsinglephase', path)
+        tempdir = tempfile.mkdtemp()
+        # The copied extension module stays loaded, so on Windows it cannot
+        # be removed.
+        self.addCleanup(shutil.rmtree, tempdir, ignore_errors=True)
+        subdir = os.path.join(os.fsencode(tempdir),
+                              os_helper.TESTFN_UNDECODABLE)
+        try:
+            os.mkdir(subdir)
+        except OSError:
+            self.skipTest('undecodable paths are not supported')
+        path = os.path.join(subdir, os.fsencode(os.path.basename(origin)))
+        shutil.copyfile(origin, path)
+        path = os.fsdecode(path)
+        spec = importlib.util.spec_from_file_location('_testsinglephase', path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.__name__, '_testsinglephase')
+        self.assertEqual(module.__file__, path)
+        _testinternalcapi.clear_extension('_testsinglephase', path)
 
     def test_create_builtin(self):
         class Spec:
