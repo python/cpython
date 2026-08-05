@@ -1,2 +1,2 @@
 Improve the performance of :meth:`~io.IOBase.readlines` for
-:class:`io.BytesIO`, particularly in free-threaded builds.
+:class:`io.BytesIO`.
