@@ -1851,7 +1851,7 @@ os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os_listvolumes__doc__,
 "listvolumes($module, /)\n"
@@ -1873,7 +1873,7 @@ os_listvolumes(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_listvolumes_impl(module);
 }
 
-#endif /* (defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
@@ -8801,6 +8801,7 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "- RWF_APPEND\n"
 "- RWF_DONTCACHE\n"
 "- RWF_ATOMIC\n"
+"- RWF_NOSIGNAL\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -13733,4 +13734,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=250ea2e34fdd133f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d641f02a97057666 input=a9049054013a1b77]*/

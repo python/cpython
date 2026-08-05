@@ -310,6 +310,7 @@ MAX_SIZES = {
     # default: (10_000, 200)
     # First match wins.
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
+    _abs('Modules/_cursesmodule.c'): (20_000, 300),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
     _abs('Modules/_hacl/*.c'): (200_000, 500),
     _abs('Modules/posixmodule.c'): (20_000, 500),
@@ -317,6 +318,7 @@ MAX_SIZES = {
     _abs('Modules/_remote_debugging/debug_offsets_validation.h'): (25_000, 1000),
     _abs('Modules/_remote_debugging/*.h'): (20_000, 1000),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
+    _abs('Modules/_testclinic.c'): (20_000, 400),
     _abs('Modules/expat/expat.h'): (10_000, 400),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (380_000, 13_000),
