@@ -2,7 +2,7 @@ import collections
 import types
 import unittest
 from test.support import (skip_emscripten_stack_overflow,
-                          skip_wasi_stack_overflow, skip_if_huge_c_stack,
+                          skip_wasi_stack_overflow, run_with_limited_c_stack,
                           exceeds_recursion_limit)
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
@@ -549,7 +549,7 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
             e = ExceptionGroup('eg', [e])
         return e
 
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_deep_split(self):
@@ -557,7 +557,7 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
         with self.assertRaises(RecursionError):
             e.split(TypeError)
 
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_deep_subgroup(self):
