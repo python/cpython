@@ -19,6 +19,15 @@ about file differences in various formats, including HTML and context and unifie
 diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 
+.. versionchanged:: 3.16
+   Exposed *autojunk* parameter of :class:`SequenceMatcher` in public functions
+   and classes of this module (:class:`Differ`, :class:`HtmlDiff`, :func:`ndiff`,
+    :func:`unified_diff`, :func:`context_diff`). For backward compatibility
+   this parameter is set everywhere to be `True` by default.
+
+   See :gh:`118150` for motivation and reasons.
+
+
 .. class:: SequenceMatcher
    :noindex:
 
@@ -78,6 +87,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    the sequences contain whitespace characters, such as spaces, tabs or line breaks.
 
 
+
+
 .. class:: HtmlDiff
 
    This class can be used to create an HTML table (or a complete HTML file
@@ -93,7 +104,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    The constructor for this class is:
 
 
-   .. method:: __init__(tabsize=8, wrapcolumn=None, linejunk=None, charjunk=IS_CHARACTER_JUNK)
+   .. method:: __init__(tabsize=8, wrapcolumn=None, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
 
       Initializes instance of :class:`HtmlDiff`.
 
@@ -104,8 +115,14 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       broken and wrapped, defaults to ``None`` where lines are not wrapped.
 
       *linejunk* and *charjunk* are optional keyword arguments passed into :func:`ndiff`
-      (used by :class:`HtmlDiff` to generate the side by side HTML differences).  See
-      :func:`ndiff` documentation for argument default values and descriptions.
+      (used by :class:`HtmlDiff` to generate the side by side HTML differences).
+      See :func:`ndiff` documentation for argument default values and descriptions.
+
+      .. versionadded:: 3.16
+         *autojunk* parameter
+
+      Keyword-only *autojunk* flag is for setting on/off automatic junk heuristic
+      of :class:`SequenceMatcher`.
 
    The following methods are public:
 
@@ -148,7 +165,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 
 
-.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
+.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, autojunk=True)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in context diff format.
@@ -165,6 +182,12 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
+
+   .. versionadded:: 3.16
+      *autojunk* kwarg
+
+   The kwarg-only parameter *autojunk* sets up automatic junk heuristic of
+   :class:`SequenceMatcher`.
 
    The context diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
@@ -195,7 +218,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    See :ref:`difflib-interface` for a more detailed example.
 
 
-.. function:: get_close_matches(word, possibilities, n=3, cutoff=0.6)
+.. function:: get_close_matches(word, possibilities, n=3, cutoff=0.6, *, autojunk=True)
 
    Return a list of the best "good enough" matches.  *word* is a sequence for which
    close matches are desired (typically a string), and *possibilities* is a list of
@@ -206,6 +229,12 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    Optional argument *cutoff* (default ``0.6``) is a float in the range [0, 1].
    Possibilities that don't score at least that similar to *word* are ignored.
+
+   .. versionadded:: 3.16
+      *autojunk* parameter
+
+   Keyword-only optional *autojunk* param is a flag for turning on/off
+   an automatic junk heuristic of :class:`SequenceMatcher`.
 
    The best (no more than *n*) matches among the possibilities are returned in a
    list, sorted by similarity score, most similar first.
@@ -221,7 +250,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       ['except']
 
 
-.. function:: ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK)
+.. function:: ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True)
 
    Compare *a* and *b* (lists of strings); return a :class:`Differ`\ -style
    delta (a :term:`generator` generating the delta lines).
@@ -241,6 +270,13 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    returns if the character is junk, or false if not. The default is module-level
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; it's a bad idea to include newline in this!).
+
+   .. versionadded:: 3.16
+
+      *autojunk*: keyword-only parameter for setting on/off automatic junk heuristic
+      of :class:`SequenceMatcher`.
+
+   Example:
 
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
       ...              'ore\ntree\nemu\n'.splitlines(keepends=True))
@@ -279,7 +315,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       emu
 
 
-.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, color=False)
+.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, autojunk=True, color=False)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
@@ -301,6 +337,13 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    Set *color* to ``True`` to enable output in color, similar to
    :program:`git diff --color`. Even if enabled, it can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
+
+   .. versionadded:: 3.16
+
+      keyword-only *autojunk* parameter.
+
+   Set *autojunk* to ``False`` to disable automatic junk heuristic
+   of underlying :class:`SequenceMatcher`.
 
    The unified diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
@@ -326,7 +369,6 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    .. versionchanged:: 3.15
       Added the *color* parameter.
-
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
 
@@ -658,7 +700,7 @@ locality, at the occasional cost of producing a longer diff.
 The :class:`Differ` class has this constructor:
 
 
-.. class:: Differ(linejunk=None, charjunk=None)
+.. class:: Differ(linejunk=None, charjunk=None, *, autojunk=True)
    :noindex:
 
    Optional keyword parameters *linejunk* and *charjunk* are for filter functions
@@ -671,6 +713,9 @@ The :class:`Differ` class has this constructor:
    *charjunk*: A function that accepts a single character argument (a string of
    length 1), and returns true if the character is junk. The default is ``None``,
    meaning that no character is considered junk.
+
+   *autojunk*: Flag for automatic junk heuristic (refer to :class:`SequenceMatcher`
+   for specifics).
 
    These junk-filtering functions speed up matching to find
    differences and do not cause any differing lines or characters to

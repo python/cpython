@@ -1371,7 +1371,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
     return Differ(linejunk, charjunk, autojunk=autojunk).compare(a, b)
 
 def _mdiff(fromlines, tolines, context=None, linejunk=None,
-           charjunk=IS_CHARACTER_JUNK, autojunk=True):
+           charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
     r"""Returns generator yielding marked up from/to side by side differences.
 
     Arguments:
@@ -1751,7 +1751,7 @@ class HtmlDiff(object):
     _default_prefix = 0
 
     def __init__(self,tabsize=8,wrapcolumn=None,linejunk=None,
-                 charjunk=IS_CHARACTER_JUNK, autojunk=True):
+                 charjunk=IS_CHARACTER_JUNK, *, autojunk=True):
         """HtmlDiff instance initializer
 
         Arguments:
