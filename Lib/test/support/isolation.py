@@ -78,7 +78,11 @@ def _decode(data):
 
 def _remote(detail):
     # Wrap the subprocess traceback the way concurrent.futures does, so it is
-    # clearly delimited when shown as the cause.
+    # clearly delimited when shown as the cause.  Return None if the subprocess
+    # said nothing (a hung one usually does not), so that "raise ... from None"
+    # suppresses an empty cause.
+    if not detail:
+        return None
     return _RemoteTraceback(f'\n"""\n{detail}"""')
 
 
@@ -90,7 +94,21 @@ def _check_subprocess_support():
         raise unittest.SkipTest('requires subprocess support')
 
 
-def _run_in_subprocess(module, qualname):
+def _child_environ(env):
+    # Start from the inherited environment, so that *env* only has to name what
+    # the test changes.
+    if not env:
+        return None
+    environ = dict(os.environ)
+    for name, value in env.items():
+        if value is None:
+            environ.pop(name, None)
+        else:
+            environ[name] = value
+    return environ
+
+
+def _run_in_subprocess(module, qualname, options, env, timeout):
     """Run module.qualname (a test method or class) in a fresh subprocess.
 
     Return ``(payload, output, returncode)``, where *payload* is the decoded
@@ -104,13 +122,22 @@ def _run_in_subprocess(module, qualname):
     os.close(fd)
     try:
         # Pass the config on the command line, not in the environment, so that
-        # the test cannot pass it on to the processes it spawns itself.  Use
-        # marshal, not json: it is built in, so the child imports nothing that
-        # the test would not see in a normal test run.
-        cmd = [sys.executable, '-m', 'test.support.subprocess_runner',
+        # the test cannot pass it on to the processes it spawns itself, and so
+        # that it survives the -E and -I options.  Use marshal, not json: it is
+        # built in, so the child imports nothing that the test would not see in
+        # a normal test run.
+        cmd = [sys.executable, *options, '-m', 'test.support.subprocess_runner',
                module, qualname, result_path,
                marshal.dumps(_child_config()).hex()]
-        proc = subprocess.run(cmd, capture_output=True)
+        try:
+            proc = subprocess.run(cmd, capture_output=True,
+                                  env=_child_environ(env), timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            # Report the hang rather than leaving the test runner stuck.
+            output = _decode(exc.stdout) + _decode(exc.stderr)
+            raise _SubprocessTestError(
+                f'test did not complete in a subprocess '
+                f'within {timeout} seconds') from _remote(output)
         try:
             with open(result_path, 'rb') as f:
                 payload = marshal.load(f)
@@ -173,7 +200,7 @@ def _check_returncode(returncode, output, what):
         raise exc from _remote(output)
 
 
-def _isolate_method(func):
+def _isolate_method(func, options, env, timeout):
     @functools.wraps(func)
     def wrapper(self, /, *args, **kwargs):
         if runningInSubprocess:
@@ -183,7 +210,8 @@ def _isolate_method(func):
         cls = type(self)
         qualname = f'{cls.__qualname__}.{func.__name__}'
         payload, output, returncode = _run_in_subprocess(cls.__module__,
-                                                         qualname)
+                                                         qualname, options,
+                                                         env, timeout)
         if payload is None:
             exc = _SubprocessTestError(
                 f'test did not complete in a subprocess (exit code {returncode})')
@@ -196,7 +224,7 @@ def _isolate_method(func):
     return wrapper
 
 
-def _isolate_class(cls):
+def _isolate_class(cls, options, env, timeout):
     # Unwrap to the plain functions so the replacements can call them with the
     # runtime cls; a bound classmethod would freeze the decoration-time class
     # and a subclass would run the fixtures bound to the base class.
@@ -217,7 +245,8 @@ def _isolate_class(cls):
         # Run the whole class in a single subprocess and stash the outcomes
         # for the test methods to replay.
         payload, output, returncode = _run_in_subprocess(cls.__module__,
-                                                         cls.__qualname__)
+                                                         cls.__qualname__,
+                                                         options, env, timeout)
         if payload is None:
             exc = _SubprocessTestError(
                 f'class did not complete in a subprocess (exit code {returncode})')
@@ -283,7 +312,7 @@ def _isolate_class(cls):
     return cls
 
 
-def runInSubprocess():
+def runInSubprocess(*, options=(), env=None, timeout=None):
     """Decorator to run a test method or class in a fresh subprocess.
 
     The decorated test runs in a separate, fresh Python process, so it does not
@@ -292,6 +321,16 @@ def runInSubprocess():
     single subprocess and its ``setUpClass()``/``setUpModule()`` fixtures run
     once there; when a method is decorated, only that method runs in a
     subprocess.  Decorated methods must take no extra arguments.
+
+    *options* is a sequence of interpreter command line options for the
+    subprocess, and *env* is a mapping of environment variables to set in it,
+    on top of the inherited environment; a value of ``None`` unsets a variable.
+    Note that ``-E`` and ``-I`` make the subprocess ignore the ``PYTHON*``
+    variables, including ``PYTHONPATH``.
+
+    *timeout* is the number of seconds to wait for the subprocess; the test is
+    reported as an error if it does not complete in time.  By default there is
+    no timeout, and a hung test is left to the timeout of the test runner.
 
     A failure, error or skip of the whole test is reported for the test, and
     individual subtests (:meth:`~unittest.TestCase.subTest`) that fail or are
@@ -304,6 +343,6 @@ def runInSubprocess():
     """
     def decorator(obj):
         if isinstance(obj, type) and issubclass(obj, unittest.TestCase):
-            return _isolate_class(obj)
-        return _isolate_method(obj)
+            return _isolate_class(obj, options, env, timeout)
+        return _isolate_method(obj, options, env, timeout)
     return decorator
