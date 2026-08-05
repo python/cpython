@@ -1,5 +1,5 @@
-This is Python version 3.13.15
-==============================
+This is Python version 3.13.15+
+===============================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
