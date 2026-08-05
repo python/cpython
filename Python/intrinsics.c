@@ -270,6 +270,23 @@ make_typevar_with_constraints(PyThreadState* Py_UNUSED(ignored), PyObject *name,
     return _Py_make_typevar(name, NULL, evaluate_constraints);
 }
 
+static PyObject *
+add_conditional_annotation(PyThreadState* tstate, PyObject *conditional_annotations,
+                           PyObject *index)
+{
+    // gh-154902: user code can rebind __conditional_annotations__ to any object
+    if (!PySet_CheckExact(conditional_annotations)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__conditional_annotations__ must be a set, not %T",
+                      conditional_annotations);
+        return NULL;
+    }
+    if (PySet_Add(conditional_annotations, index) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 const intrinsic_func2_info
 _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_2_INVALID, no_intrinsic2)
@@ -278,6 +295,7 @@ _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR_WITH_CONSTRAINTS, make_typevar_with_constraints)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_FUNCTION_TYPE_PARAMS, _Py_set_function_type_params)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_TYPEPARAM_DEFAULT, _Py_set_typeparam_default)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_ADD_CONDITIONAL_ANNOTATION, add_conditional_annotation)
 };
 
 #undef INTRINSIC_FUNC_ENTRY

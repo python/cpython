@@ -395,12 +395,12 @@ dis_annot_stmt_str = """\
                STORE_NAME               1 (x)
                LOAD_NAME                0 (__conditional_annotations__)
                LOAD_SMALL_INT           0
-               SET_ADD                  1
+               CALL_INTRINSIC_2         6 (INTRINSIC_ADD_CONDITIONAL_ANNOTATION)
                POP_TOP
 
    3           LOAD_NAME                0 (__conditional_annotations__)
                LOAD_SMALL_INT           1
-               SET_ADD                  1
+               CALL_INTRINSIC_2         6 (INTRINSIC_ADD_CONDITIONAL_ANNOTATION)
                POP_TOP
 
    4           LOAD_SMALL_INT           1
