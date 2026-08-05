@@ -1411,7 +1411,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     change_re = re.compile(r'(\++|\-+|\^+)')
 
     # create the difference iterator to generate the differences
-    diff_lines_iterator = ndiff(fromlines, tolines, linejunk, charjunk, autojunk)
+    diff_lines_iterator = ndiff(fromlines, tolines, linejunk, charjunk, autojunk=autojunk)
 
     def _make_line(lines, format_key, side, num_lines=[0,0]):
         """Returns line of text with user's change markup and line formatting.

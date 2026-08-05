@@ -56,7 +56,7 @@ class TestWithAscii(unittest.TestCase):
 
 
 class TestAutojunk(unittest.TestCase):
-    """Tests for the autojunk parameter added in 2.7"""
+    """Tests for the autojunk parameter added in SequenceMatcher and higher-level difflib APIs"""
     def test_one_insert_homogenous_sequence(self):
         # By default autojunk=True and the heuristic kicks in for a sequence
         # of length 200+
@@ -71,6 +71,88 @@ class TestAutojunk(unittest.TestCase):
         sm = difflib.SequenceMatcher(None, seq1, seq2, autojunk=False)
         self.assertAlmostEqual(sm.ratio(), 0.9975, places=3)
         self.assertEqual(sm.bpopular, set())
+
+    def test_get_close_matches(self):
+        word = 'a' + 'b' * 200
+        possibilities = ['b' * 200]
+
+        # By default autojunk=True, so 'b' is junk -> ratio ~ 0 -> no matches
+        self.assertEqual(difflib.get_close_matches(word, possibilities, cutoff=0.6), [])
+        self.assertEqual(difflib.get_close_matches(word, possibilities, cutoff=0.6, autojunk=True), [])
+
+        # With autojunk=False, ratio ~ 0.9975 -> match returned
+        self.assertEqual(difflib.get_close_matches(word, possibilities, cutoff=0.6, autojunk=False), ['b' * 200])
+
+    def test_differ_and_ndiff(self):
+        lines1 = ["x\n"] * 200 + ["a\n", "b\n", "c\n"] + ["x\n"] * 50
+        lines2 = ["a\n", "b\n", "c\n"] + ["x\n"] * 250
+
+        # Line-level autojunk propagation
+        d_true = difflib.Differ(autojunk=True)
+        d_false = difflib.Differ(autojunk=False)
+        res_true = list(d_true.compare(lines1, lines2))
+        res_false = list(d_false.compare(lines1, lines2))
+        self.assertNotEqual(res_true, res_false)
+
+        ndiff_true = list(difflib.ndiff(lines1, lines2, autojunk=True))
+        ndiff_false = list(difflib.ndiff(lines1, lines2, autojunk=False))
+        self.assertNotEqual(ndiff_true, ndiff_false)
+        self.assertEqual(ndiff_true, res_true)
+        self.assertEqual(ndiff_false, res_false)
+
+        # Character-level autojunk propagation in Differ (_fancy_replace)
+        line1 = "x" * 200 + "abc" + "x" * 50 + "\n"
+        line2 = "abc" + "x" * 250 + "\n"
+        fancy_true = list(difflib.Differ(autojunk=True).compare([line1], [line2]))
+        fancy_false = list(difflib.Differ(autojunk=False).compare([line1], [line2]))
+        self.assertNotEqual(fancy_true, fancy_false)
+
+    def test_unified_and_context_diff(self):
+        lines1 = ["x\n"] * 200 + ["a\n", "b\n", "c\n"] + ["x\n"] * 50
+        lines2 = ["a\n", "b\n", "c\n"] + ["x\n"] * 250
+
+        u_true = list(difflib.unified_diff(lines1, lines2, autojunk=True))
+        u_false = list(difflib.unified_diff(lines1, lines2, autojunk=False))
+        self.assertNotEqual(u_true, u_false)
+
+        c_true = list(difflib.context_diff(lines1, lines2, autojunk=True))
+        c_false = list(difflib.context_diff(lines1, lines2, autojunk=False))
+        self.assertNotEqual(c_true, c_false)
+
+    def test_htmldiff(self):
+        lines1 = ["x\n"] * 200 + ["a\n", "b\n", "c\n"] + ["x\n"] * 50
+        lines2 = ["a\n", "b\n", "c\n"] + ["x\n"] * 250
+
+        old_prefix = difflib.HtmlDiff._default_prefix
+        try:
+            html_true = difflib.HtmlDiff(autojunk=True).make_file(lines1, lines2)
+            html_false = difflib.HtmlDiff(autojunk=False).make_file(lines1, lines2)
+            self.assertNotEqual(html_true, html_false)
+        finally:
+            difflib.HtmlDiff._default_prefix = old_prefix
+
+    def test_autojunk_signatures(self):
+        import inspect
+
+        funcs = [
+            difflib.get_close_matches,
+            difflib.unified_diff,
+            difflib.context_diff,
+            difflib.ndiff,
+        ]
+        for func in funcs:
+            sig = inspect.signature(func)
+            self.assertIn('autojunk', sig.parameters)
+            param = sig.parameters['autojunk']
+            self.assertEqual(param.default, True)
+            self.assertEqual(param.kind, inspect.Parameter.KEYWORD_ONLY)
+
+        for cls in [difflib.Differ, difflib.HtmlDiff]:
+            sig = inspect.signature(cls.__init__)
+            self.assertIn('autojunk', sig.parameters)
+            param = sig.parameters['autojunk']
+            self.assertEqual(param.default, True)
+
 
 
 class TestSFbugs(unittest.TestCase):
