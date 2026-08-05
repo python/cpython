@@ -1,6 +1,5 @@
 from __future__ import annotations
 import itertools
-import sys
 import textwrap
 from typing import TYPE_CHECKING, Literal, Final
 from operator import attrgetter
@@ -12,13 +11,27 @@ from libclinic import (
 from libclinic.codegen import CRenderData, TemplateDict, CodeGen
 from libclinic.language import Language
 from libclinic.function import (
-    Module, Class, Function, Parameter,
+    Module, Class, Function, Parameter, ParamTuple,
     permute_optional_groups,
     GETTER, SETTER, METHOD_INIT)
 from libclinic.converters import self_converter
 from libclinic.parse_args import ParseArgsCodeGen
 if TYPE_CHECKING:
     from libclinic.app import Clinic
+
+
+def count_required(subset: ParamTuple) -> int:
+    """Return the number of arguments which cannot be omitted.
+
+    A parameter in an optional group is passed together with its group,
+    so only trailing parameters with a default value can be omitted.
+    """
+    count = len(subset)
+    for p in reversed(subset):
+        if p.group or not p.is_optional():
+            break
+        count -= 1
+    return count
 
 
 def c_id(name: str) -> str:
@@ -301,18 +314,26 @@ class CLanguage(Language):
             assert group is not None
             group.append(p)
 
-        count_min = sys.maxsize
-        count_max = -1
+        # Map the number of arguments to the subset which accepts it.
+        subsets: dict[int, ParamTuple] = {}
+        for subset in permute_optional_groups(left, required, right):
+            for count in range(count_required(subset), len(subset) + 1):
+                if count in subsets:
+                    fail(f"Function {f.full_name!r} has an ambiguous group "
+                         f"configuration: a call with {count} argument(s) "
+                         f"can be parsed in more than one way.")
+                subsets[count] = subset
 
         if limited_capi:
             nargs = 'PyTuple_Size(args)'
         else:
             nargs = 'PyTuple_GET_SIZE(args)'
         out.append(f"switch ({nargs}) {{\n")
-        for subset in permute_optional_groups(left, required, right):
-            count = len(subset)
-            count_min = min(count_min, count)
-            count_max = max(count_max, count)
+        for count, subset in sorted(subsets.items()):
+            if count < len(subset):
+                # The omitted parameters are parsed by the following case.
+                out.append(f"    case {count}:\n")
+                continue
 
             if count == 0:
                 out.append("""    case 0:
@@ -320,18 +341,24 @@ class CLanguage(Language):
 """)
                 continue
 
-            group_ids = {p.group for p in subset}  # eliminate duplicates
+            # A set would eliminate duplicates too, but the iteration
+            # order of small negative integers depends on the platform.
+            group_ids = dict.fromkeys(p.group for p in subset)
             d: dict[str, str | int] = {}
             d['count'] = count
             d['name'] = f.name
-            d['format_units'] = "".join(p.converter.format_unit for p in subset)
+            format_units = [p.converter.format_unit for p in subset]
+            n_required = count_required(subset)
+            if n_required < count:
+                format_units.insert(n_required, '|')
+            d['format_units'] = "".join(format_units)
 
             parse_arguments: list[str] = []
             for p in subset:
                 p.converter.parse_argument(parse_arguments)
             d['parse_arguments'] = ", ".join(parse_arguments)
 
-            group_ids.discard(0)
+            group_ids.pop(0, None)
             lines = "\n".join([
                 self.group_to_variable_name(g) + " = 1;"
                 for g in group_ids
@@ -351,7 +378,7 @@ class CLanguage(Language):
 
         out.append("    default:\n")
         s = '        PyErr_SetString(PyExc_TypeError, "{} requires {} to {} arguments");\n'
-        out.append(s.format(f.full_name, count_min, count_max))
+        out.append(s.format(f.full_name, min(subsets), max(subsets)))
         out.append('        goto exit;\n')
         out.append("}")
 

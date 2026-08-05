@@ -247,8 +247,8 @@ _curses_window_addch(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:addch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addch requires 1 to 4 arguments");
@@ -319,8 +319,8 @@ _curses_window_addstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:addstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addstr requires 1 to 4 arguments");
@@ -394,8 +394,8 @@ _curses_window_addnstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:addnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.addnstr requires 2 to 5 arguments");
@@ -1451,8 +1451,8 @@ _curses_window_hline(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:hline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.hline requires 2 to 5 arguments");
@@ -1521,8 +1521,8 @@ _curses_window_insch(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:insch", &y, &x, &ch, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insch requires 1 to 4 arguments");
@@ -1640,8 +1640,8 @@ _curses_window_insstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOO&:insstr", &y, &x, &str, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insstr requires 1 to 4 arguments");
@@ -1717,8 +1717,8 @@ _curses_window_insnstr(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:insnstr", &y, &x, &str, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.insnstr requires 2 to 5 arguments");
@@ -2328,8 +2328,8 @@ _curses_window_vline(PyObject *self, PyObject *args)
             if (!PyArg_ParseTuple(args, "iiOiO&:vline", &y, &x, &ch, &n, attr_converter, &attr)) {
                 goto exit;
             }
-            group_right_1 = 1;
             group_left_1 = 1;
+            group_right_1 = 1;
             break;
         default:
             PyErr_SetString(PyExc_TypeError, "_curses.window.vline requires 2 to 5 arguments");
@@ -4684,16 +4684,15 @@ PyDoc_STRVAR(_curses_pair_number__doc__,
     {"pair_number", (PyCFunction)_curses_pair_number, METH_O, _curses_pair_number__doc__},
 
 static PyObject *
-_curses_pair_number_impl(PyObject *module, int attr);
+_curses_pair_number_impl(PyObject *module, attr_t attr);
 
 static PyObject *
 _curses_pair_number(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    int attr;
+    attr_t attr;
 
-    attr = PyLong_AsInt(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_pair_number_impl(module, attr);
@@ -5675,16 +5674,15 @@ PyDoc_STRVAR(_curses_slk_attron__doc__,
     {"slk_attron", (PyCFunction)_curses_slk_attron, METH_O, _curses_slk_attron__doc__},
 
 static PyObject *
-_curses_slk_attron_impl(PyObject *module, long attr);
+_curses_slk_attron_impl(PyObject *module, attr_t attr);
 
 static PyObject *
 _curses_slk_attron(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_slk_attron_impl(module, attr);
@@ -5703,16 +5701,15 @@ PyDoc_STRVAR(_curses_slk_attroff__doc__,
     {"slk_attroff", (PyCFunction)_curses_slk_attroff, METH_O, _curses_slk_attroff__doc__},
 
 static PyObject *
-_curses_slk_attroff_impl(PyObject *module, long attr);
+_curses_slk_attroff_impl(PyObject *module, attr_t attr);
 
 static PyObject *
 _curses_slk_attroff(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_slk_attroff_impl(module, attr);
@@ -5731,16 +5728,15 @@ PyDoc_STRVAR(_curses_slk_attrset__doc__,
     {"slk_attrset", (PyCFunction)_curses_slk_attrset, METH_O, _curses_slk_attrset__doc__},
 
 static PyObject *
-_curses_slk_attrset_impl(PyObject *module, long attr);
+_curses_slk_attrset_impl(PyObject *module, attr_t attr);
 
 static PyObject *
 _curses_slk_attrset(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    long attr;
+    attr_t attr;
 
-    attr = PyLong_AsLong(arg);
-    if (attr == -1 && PyErr_Occurred()) {
+    if (!attr_converter(arg, &attr)) {
         goto exit;
     }
     return_value = _curses_slk_attrset_impl(module, attr);
@@ -6238,4 +6234,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=ae1359964feefd64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1f85ec415c303bf input=a9049054013a1b77]*/
