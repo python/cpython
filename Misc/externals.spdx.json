@@ -91,7 +91,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "0000000000000000000000000000000000000000000000000000000000000000"
+          "checksumValue": "acc27a72ca7745781bb902269370303e778736a090585cc13acd2ea9ab785666"
         }
       ],
       "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.53.4.0.tar.gz",
