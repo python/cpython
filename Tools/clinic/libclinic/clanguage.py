@@ -320,7 +320,9 @@ class CLanguage(Language):
 """)
                 continue
 
-            group_ids = {p.group for p in subset}  # eliminate duplicates
+            # A set would eliminate duplicates too, but the iteration
+            # order of small negative integers depends on the platform.
+            group_ids = dict.fromkeys(p.group for p in subset)
             d: dict[str, str | int] = {}
             d['count'] = count
             d['name'] = f.name
@@ -331,7 +333,7 @@ class CLanguage(Language):
                 p.converter.parse_argument(parse_arguments)
             d['parse_arguments'] = ", ".join(parse_arguments)
 
-            group_ids.discard(0)
+            group_ids.pop(0, None)
             lines = "\n".join([
                 self.group_to_variable_name(g) + " = 1;"
                 for g in group_ids
