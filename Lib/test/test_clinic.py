@@ -6,6 +6,7 @@ from functools import partial
 from test import support, test_tools
 from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
+from test.support.testcase import ExtraAssertions
 from textwrap import dedent
 from unittest import TestCase
 import difflib
@@ -2609,7 +2610,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
 
-class ClinicExternalTest(TestCase):
+class ClinicExternalTest(TestCase, ExtraAssertions):
     maxDiff = None
 
     def setUp(self):
