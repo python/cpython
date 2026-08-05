@@ -997,7 +997,6 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     Py_ssize_t idx = start;
     int is_float = 0;
     PyObject *rval;
-    PyObject *numstr = NULL;
     PyObject *custom_func;
 
     str = PyUnicode_DATA(pystr);
@@ -1064,32 +1063,62 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 
     if (custom_func) {
         /* copy the section we determined to be a number */
-        numstr = PyUnicode_FromKindAndData(kind,
-                                           (char*)str + kind * start,
-                                           idx - start);
+        PyObject *numstr = PyUnicode_FromKindAndData(kind,
+                                                    (char*)str + kind * start,
+                                                    idx - start);
         if (numstr == NULL)
             return NULL;
         rval = PyObject_CallOneArg(custom_func, numstr);
+        Py_DECREF(numstr);
     }
     else {
         Py_ssize_t i, n;
-        char *buf;
+
+        /* Fast path for integers with at most 19 digits (excluding the
+           optional minus sign): the magnitude always fits in an unsigned
+           long long, so we construct the result from it directly. */
+        int neg = (PyUnicode_READ(kind, str, start) == '-');
+        if (!is_float && idx - start - neg <= 19) {
+            unsigned long long value = 0;
+            for (i = start + neg; i < idx; i++) {
+                value = value * 10 + (PyUnicode_READ(kind, str, i) - '0');
+            }
+            *next_idx_ptr = idx;
+            rval = PyLong_FromUnsignedLongLong(value);
+            if (neg && rval != NULL) {
+                Py_SETREF(rval, PyNumber_Negative(rval));
+            }
+            return rval;
+        }
+
         /* Straight conversion to ASCII, to avoid costly conversion of
            decimal unicode digits (which cannot appear here) */
         n = idx - start;
-        numstr = PyBytes_FromStringAndSize(NULL, n);
-        if (numstr == NULL)
-            return NULL;
-        buf = PyBytes_AS_STRING(numstr);
+        char stackbuf[64];
+        PyObject *numstr = NULL;
+        char *buf;
+        if (n < (Py_ssize_t)sizeof(stackbuf)) {
+            buf = stackbuf;
+            buf[n] = '\0';
+        }
+        else {
+            numstr = PyBytes_FromStringAndSize(NULL, n);
+            if (numstr == NULL)
+                return NULL;
+            buf = PyBytes_AS_STRING(numstr);
+        }
         for (i = 0; i < n; i++) {
             buf[i] = (char) PyUnicode_READ(kind, str, i + start);
         }
-        if (is_float)
-            rval = PyFloat_FromString(numstr);
-        else
+        if (is_float) {
+            double d = PyOS_string_to_double(buf, NULL, NULL);
+            rval = (d == -1.0 && PyErr_Occurred()) ? NULL : PyFloat_FromDouble(d);
+        }
+        else {
             rval = PyLong_FromString(buf, NULL, 10);
+        }
+        Py_XDECREF(numstr);
     }
-    Py_DECREF(numstr);
     *next_idx_ptr = idx;
     return rval;
 }
