@@ -591,11 +591,11 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #    define HAVE_PTSNAME_R_RUNTIME (ptsname_r != NULL)
 #  endif
 
-#  ifdef HAVE_DUP3_RUNTIME
+#  ifdef HAVE_DUP3
 #    define HAVE_DUP3_RUNTIME (dup3 != NULL)
 #  endif
 
-#  ifdef HAVE_PIPE2_RUNTIME
+#  ifdef HAVE_PIPE2
 #    define HAVE_PIPE2_RUNTIME (pipe2 != NULL)
 #  endif
 
