@@ -6591,7 +6591,10 @@ class TestModuleCLI(unittest.TestCase):
         # of stdout.
         with temp_cwd() as test_dir:
             subdir = os.path.join(os.fsencode(test_dir), TESTFN_UNDECODABLE)
-            os.mkdir(subdir)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                self.skipTest('undecodable paths are not supported')
             with open(os.path.join(subdir, b'undecodable_mod.py'), 'w') as f:
                 f.write('"""Module docstring."""\n')
             rc, out, err = assert_python_ok('-X', 'utf8=0', '-m', 'inspect',
