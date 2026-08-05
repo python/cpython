@@ -2771,6 +2771,96 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(group_and_opt__doc__,
+"group_and_opt([a, b,] c=None)");
+
+#define GROUP_AND_OPT_METHODDEF    \
+    {"group_and_opt", (PyCFunction)group_and_opt, METH_VARARGS, group_and_opt__doc__},
+
+static PyObject *
+group_and_opt_impl(PyObject *module, int group_left_1, PyObject *a,
+                   PyObject *b, PyObject *c);
+
+static PyObject *
+group_and_opt(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    PyObject *c = Py_None;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+            if (!PyArg_ParseTuple(args, "|O:group_and_opt", &c)) {
+                goto exit;
+            }
+            break;
+        case 2:
+        case 3:
+            if (!PyArg_ParseTuple(args, "OO|O:group_and_opt", &a, &b, &c)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "group_and_opt requires 0 to 3 arguments");
+            goto exit;
+    }
+    return_value = group_and_opt_impl(module, group_left_1, a, b, c);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(group_and_two_opt__doc__,
+"group_and_two_opt([a, b, c,] d=None, e=None)");
+
+#define GROUP_AND_TWO_OPT_METHODDEF    \
+    {"group_and_two_opt", (PyCFunction)group_and_two_opt, METH_VARARGS, group_and_two_opt__doc__},
+
+static PyObject *
+group_and_two_opt_impl(PyObject *module, int group_left_1, PyObject *a,
+                       PyObject *b, PyObject *c, PyObject *d, PyObject *e);
+
+static PyObject *
+group_and_two_opt(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    PyObject *c = NULL;
+    PyObject *d = Py_None;
+    PyObject *e = Py_None;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+        case 2:
+            if (!PyArg_ParseTuple(args, "|OO:group_and_two_opt", &d, &e)) {
+                goto exit;
+            }
+            break;
+        case 3:
+        case 4:
+        case 5:
+            if (!PyArg_ParseTuple(args, "OOO|OO:group_and_two_opt", &a, &b, &c, &d, &e)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "group_and_two_opt requires 0 to 5 arguments");
+            goto exit;
+    }
+    return_value = group_and_two_opt_impl(module, group_left_1, a, b, c, d, e);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(gh_32092_oob__doc__,
 "gh_32092_oob($module, /, pos1, pos2, *varargs, kw1=None, kw2=None)\n"
 "--\n"
@@ -3385,4 +3475,4 @@ _testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c556818496a3ec72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eafedd2a830669f5 input=a9049054013a1b77]*/
