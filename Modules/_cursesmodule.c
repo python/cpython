@@ -1412,9 +1412,9 @@ _curses.complexstr.__new__ as complexstr_new
     cells: object
         An iterable of cells, each a complexchar or a str.
     /
-    attr: object = NULL
+    attr: object(c_default="NULL") = None
         Attributes applied to every cell (only with a string).
-    pair: object = NULL
+    pair: object(c_default="NULL") = None
         Color pair applied to every cell (only with a string).
 
 An immutable string of styled wide-character cells.
@@ -1431,7 +1431,7 @@ rendition, and attr and pair must be omitted.
 static PyObject *
 complexstr_new_impl(PyTypeObject *type, PyObject *cells, PyObject *attr,
                     PyObject *pair)
-/*[clinic end generated code: output=ef8a53143d35a32a input=9b75aee973cc6565]*/
+/*[clinic end generated code: output=ef8a53143d35a32a input=f152717ac17b5b88]*/
 {
     cursesmodule_state *state = get_cursesmodule_state_by_cls(type);
     /* A string is split into cells (grouping combining characters), not

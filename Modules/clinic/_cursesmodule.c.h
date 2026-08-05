@@ -102,7 +102,7 @@ exit:
 }
 
 PyDoc_STRVAR(complexstr_new__doc__,
-"complexstr(cells, /, attr=<unrepresentable>, pair=<unrepresentable>)\n"
+"complexstr(cells, /, attr=None, pair=None)\n"
 "--\n"
 "\n"
 "An immutable string of styled wide-character cells.\n"
@@ -6585,4 +6585,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=680f621e7c1f101b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1b79ac96624e268 input=a9049054013a1b77]*/

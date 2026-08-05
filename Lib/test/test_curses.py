@@ -696,6 +696,10 @@ class TestCurses(unittest.TestCase):
                           lambda: curses.complexstr([cc('A')], attr=B))
         self.assertRaises(TypeError,
                           lambda: curses.complexstr(['A'], pair=0))
+        # The signature is introspectable: attr and pair have a default that
+        # can be rendered.
+        self.assertEqual(str(inspect.signature(curses.complexstr)),
+                         '(cells, /, attr=None, pair=None)')
 
     def test_in_wchstr(self):
         # in_wchstr() returns a complexstr -- the styled-cell counterpart of
