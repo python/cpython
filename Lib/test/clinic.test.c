@@ -5642,6 +5642,67 @@ Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
 
 
 /*[clinic input]
+group_and_optional_parameter
+    [
+    a: object
+    b: object
+    ]
+    c: object = None
+    /
+The optional parameter can be omitted with or without the group.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(group_and_optional_parameter__doc__,
+"group_and_optional_parameter([a, b,] c=None)\n"
+"The optional parameter can be omitted with or without the group.");
+
+#define GROUP_AND_OPTIONAL_PARAMETER_METHODDEF    \
+    {"group_and_optional_parameter", (PyCFunction)group_and_optional_parameter, METH_VARARGS, group_and_optional_parameter__doc__},
+
+static PyObject *
+group_and_optional_parameter_impl(PyObject *module, int group_left_1,
+                                  PyObject *a, PyObject *b, PyObject *c);
+
+static PyObject *
+group_and_optional_parameter(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+    PyObject *c = Py_None;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+        case 1:
+            if (!PyArg_ParseTuple(args, "|O:group_and_optional_parameter", &c)) {
+                goto exit;
+            }
+            break;
+        case 2:
+        case 3:
+            if (!PyArg_ParseTuple(args, "OO|O:group_and_optional_parameter", &a, &b, &c)) {
+                goto exit;
+            }
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "group_and_optional_parameter requires 0 to 3 arguments");
+            goto exit;
+    }
+    return_value = group_and_optional_parameter_impl(module, group_left_1, a, b, c);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+group_and_optional_parameter_impl(PyObject *module, int group_left_1,
+                                  PyObject *a, PyObject *b, PyObject *c)
+/*[clinic end generated code: output=3faea69eafd5bbbe input=7f0fbb6124f5a972]*/
+
+
+/*[clinic input]
 Test._pyarg_parsestackandkeywords
     cls: defining_class
     key: str(accept={str, robuffer}, zeroes=True)
