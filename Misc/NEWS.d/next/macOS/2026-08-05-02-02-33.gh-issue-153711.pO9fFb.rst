@@ -1,3 +1,0 @@
-On macOS, do not attempt to use the :manpage:`dup3(2)` and
-:manpage:`pipe2(2)` system calls introduced in
-macOS 27 to prevent problems when running on older systems.

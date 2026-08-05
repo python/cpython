@@ -1,3 +1,0 @@
-:meth:`!tkinter.Misc.nametowidget` now resolves the auto-generated names of
-cloned menus (a menu used as a menubar or a cascade) back to the original
-widget.
