@@ -1066,8 +1066,9 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
         PyObject *numstr = PyUnicode_FromKindAndData(kind,
                                                     (char*)str + kind * start,
                                                     idx - start);
-        if (numstr == NULL)
+        if (numstr == NULL) {
             return NULL;
+        }
         rval = PyObject_CallOneArg(custom_func, numstr);
         Py_DECREF(numstr);
     }
