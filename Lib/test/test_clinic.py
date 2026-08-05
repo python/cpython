@@ -3364,10 +3364,66 @@ class ClinicExternalTest(TestCase):
             with self.subTest(converter=converter):
                 self.assertStartsWith(line, converter)
 
-    def test_cli_fail_converters_and_filename(self):
-        _, err = self.expect_failure("--converters", "test.c")
-        msg = "can't specify --converters and a filename at the same time"
-        self.assertIn(msg, err)
+    def test_cli_converters_file(self):
+        code = dedent("""
+            /*[python input]
+            class my_type_converter(CConverter):
+                type = 'my_type'
+                converter = 'my_type_converter'
+
+                def converter_init(self, *, strict=False):
+                    pass
+
+            class my_result_return_converter(CReturnConverter):
+                type = 'my_result'
+            [python start generated code]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(code)
+            out = self.expect_success("--converters", fn)
+            self.assertIn("Converters:\n    my_type(strict=False)\n", out)
+            self.assertIn("Return converters:\n    my_result()\n", out)
+            # Only the converters defined in the file are listed.
+            self.assertNotIn("Legacy converters:", out)
+            self.assertNotIn("bool(", out)
+            # Listing the converters does not write anything.
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), code)
+            self.assertEqual(os.listdir(tmp_dir), ["test.c"])
+
+    def test_cli_converters_make(self):
+        code = dedent("""
+            /*[python input]
+            class my_type_converter(CConverter):
+                type = 'my_type'
+                converter = 'my_type_converter'
+            [python start generated code]*/
+        """)
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write(code)
+            out = self.expect_success("--converters", "--make",
+                                      "--srcdir", tmp_dir)
+            self.assertIn("Converters:\n    my_type()\n", out)
+            with open(fn, encoding="utf-8") as f:
+                self.assertEqual(f.read(), code)
+
+    def test_cli_converters_no_converters(self):
+        with os_helper.temp_dir() as tmp_dir:
+            fn = os.path.join(tmp_dir, "test.c")
+            with open(fn, "w", encoding="utf-8") as f:
+                f.write("/*[clinic input]\n[clinic start generated code]*/\n")
+            self.assertEqual(self.expect_success("--converters", fn), "")
+
+    def test_cli_fail_directory(self):
+        with os_helper.temp_dir() as tmp_dir:
+            subdir = os.path.join(tmp_dir, "test.c")
+            os.mkdir(subdir)
+            _, err = self.expect_failure(subdir)
+            self.assertIn(f"Can't read file {subdir!r}: it is a directory", err)
 
     def test_cli_fail_no_filename(self):
         _, err = self.expect_failure()
