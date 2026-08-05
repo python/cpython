@@ -3463,8 +3463,7 @@ def _main():
 
     # The printed text can contain characters unencodable in the encoding
     # of stdout, e.g. undecodable bytes of a file name.
-    if getattr(sys.stdout, 'errors', None) == 'strict':
-        sys.stdout.reconfigure(errors='backslashreplace')
+    sys.stdout.reconfigure(errors='backslashreplace')
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
