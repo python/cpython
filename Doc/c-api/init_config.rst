@@ -373,10 +373,14 @@ Configuration Options
      - :c:member:`install_signal_handlers <PyConfig.install_signal_handlers>`
      - ``bool``
      - Read-only
-   * - ``"int_max_str_digits"``
-     - :c:member:`int_max_str_digits <PyConfig.int_max_str_digits>`
-     - ``int``
-     - Public
+    * - ``"int_max_str_digits"``
+      - :c:member:`int_max_str_digits <PyConfig.int_max_str_digits>`
+      - ``int``
+      - Public
+    * - ``"lazy_imports"``
+      - :c:member:`lazy_imports <PyConfig.lazy_imports>`
+      - ``int``
+      - Public
    * - ``"interactive"``
      - :c:member:`interactive <PyConfig.interactive>`
      - ``bool``
@@ -1542,6 +1546,24 @@ PyConfig
       (:data:`sys.int_info.default_max_str_digits`) in isolated mode.
 
       .. versionadded:: 3.12
+
+   .. c:member:: int lazy_imports
+
+      Controls the global lazy imports mode.
+
+      * ``-1``: ``"normal"`` - only imports explicitly marked with the ``lazy``
+        keyword are lazy (the default).
+      * ``1``: ``"all"`` - all top-level imports become potentially lazy.
+      * ``0``: rejected; not a valid value.
+
+      Configured by the :option:`-X lazy_imports <-X>` command line flag or
+      the :envvar:`PYTHON_LAZY_IMPORTS` environment variable.
+
+      See also :func:`sys.set_lazy_imports` and :pep:`810`.
+
+      Default: ``-1``.
+
+      .. versionadded:: 3.15
 
    .. c:member:: int cpu_count
 
