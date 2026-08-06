@@ -806,7 +806,8 @@ Comprehensions
    List and set comprehensions, generator expressions, and dictionary
    comprehensions. ``elt`` (or ``key`` and ``value``) is a single node
    representing the part that will be evaluated for each item.
-
+   For dictionary comprehensions using unpacking, for example
+   ``{**item for item in items}``, ``value`` is ``None``,
    ``generators`` is a list of :class:`comprehension` nodes.
 
    .. doctest::

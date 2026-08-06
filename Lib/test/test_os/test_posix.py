@@ -2388,6 +2388,22 @@ class TestPosixWeaklinking(unittest.TestCase):
             self.assertNotHasAttr(os, "pwritev")
             self.assertNotHasAttr(os, "preadv")
 
+    def test_pipe2(self):
+        self._verify_available("HAVE_PIPE2")
+        if self.mac_ver >= (27, 0):
+            self.assertHasAttr(os, "pipe2")
+        else:
+            self.assertNotHasAttr(os, "pipe2")
+
+    def test_dup3(self):
+        self._verify_available("HAVE_DUP3")
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        # Must not crash even when dup3 unavailable at runtime.
+        # os.dup2 returns fd2 (here w); do not double-close.
+        os.dup2(r, w, inheritable=False)
+
     def test_stat(self):
         self._verify_available("HAVE_FSTATAT")
         if self.mac_ver >= (10, 10):
