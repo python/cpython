@@ -79,6 +79,12 @@ Other language changes
   F-contiguous view to a one-dimensional view.
   (Contributed by Jaemin Park in :gh:`91484`.)
 
+* :meth:`memoryview.cast` now accepts an *order* parameter.  With
+  ``order='F'`` it returns a zero-copy Fortran-contiguous (column-major)
+  view of a flat buffer, which is useful for interfacing with column-major
+  libraries.
+  (Contributed by Serhiy Storchaka in :gh:`78959`.)
+
 * :ref:`Frame objects <frame-objects>` now support :mod:`weak references
   <weakref>`.  This allows associating extra data with active frames,
   for example in debuggers, without keeping the frames (and everything
@@ -94,6 +100,15 @@ New modules
 
 Improved modules
 ================
+
+asyncio
+-------
+
+* Add the *mode* parameter to :meth:`asyncio.loop.create_unix_server` and
+  :func:`asyncio.start_unix_server` to set the permissions of the Unix
+  socket file created for *path*.
+  (Contributed by Sam Bull in :gh:`94984`.)
+
 
 codecs
 ------
@@ -376,6 +391,22 @@ math
   (Contributed by Jeff Epler in :gh:`150534`.)
 
 
+multiprocessing
+---------------
+
+* Add the optional ``buffersize`` parameter to
+  :meth:`multiprocessing.pool.Pool.imap` and
+  :meth:`multiprocessing.pool.Pool.imap_unordered` to limit the number of
+  submitted tasks whose results have not yet been yielded. If the buffer is
+  full, iteration over the *iterables* pauses until a result is yielded from
+  the buffer. To fully utilize pool's capacity when using this feature, set
+  *buffersize* at least to the number of processes in pool (to consume
+  *iterable* as you go), or even higher (to prefetch the next
+  ``N=buffersize-processes`` arguments).
+
+  (Contributed by Oleksandr Baltian in :gh:`136871`.)
+
+
 os
 --
 
@@ -606,7 +637,7 @@ module_name
 
 
 Removed
-=======
+========
 
 annotationlib
 -------------
@@ -841,3 +872,12 @@ Deprecated C APIs
 
 Removed C APIs
 --------------
+
+* The :c:var:`!PyUnstable_ExecutableKinds` array, as well as the macros
+  :c:macro:`!PyUnstable_EXECUTABLE_KIND_SKIP`,
+  :c:macro:`!PyUnstable_EXECUTABLE_KIND_PY_FUNCTION`,
+  :c:macro:`!PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION`,
+  :c:macro:`!PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR` and
+  :c:macro:`!PyUnstable_EXECUTABLE_KINDS`, were removed.
+
+  (Contributed by Peters Bierma and Viktorin in :gh:`152105`.)
