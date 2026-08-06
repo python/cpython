@@ -1594,6 +1594,7 @@ extern "C" {
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
     INIT_ID(asend), \
+    INIT_ID(assoclen), \
     INIT_ID(ast), \
     INIT_ID(athrow), \
     INIT_ID(attr), \
@@ -1809,6 +1810,7 @@ extern "C" {
     INIT_ID(headers), \
     INIT_ID(hi), \
     INIT_ID(hook), \
+    INIT_ID(host), \
     INIT_ID(hour), \
     INIT_ID(hours), \
     INIT_ID(id), \
@@ -1857,6 +1859,7 @@ extern "C" {
     INIT_ID(iter), \
     INIT_ID(iterable), \
     INIT_ID(iterations), \
+    INIT_ID(iv), \
     INIT_ID(join), \
     INIT_ID(jump), \
     INIT_ID(keepends), \
@@ -1935,6 +1938,7 @@ extern "C" {
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
     INIT_ID(native), \
+    INIT_ID(nbytes), \
     INIT_ID(ndigits), \
     INIT_ID(nested), \
     INIT_ID(new_file_name), \
@@ -1959,6 +1963,7 @@ extern "C" {
     INIT_ID(onceregistry), \
     INIT_ID(only_active_thread), \
     INIT_ID(only_keys), \
+    INIT_ID(op), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
     INIT_ID(opcodes), \
@@ -1993,6 +1998,7 @@ extern "C" {
     INIT_ID(pidfd), \
     INIT_ID(pointer_bits), \
     INIT_ID(policy), \
+    INIT_ID(port), \
     INIT_ID(pos), \
     INIT_ID(pos1), \
     INIT_ID(pos2), \
