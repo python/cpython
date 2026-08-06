@@ -11,6 +11,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_codecs.h"        // export _PyCodec_LookupTextEncoding()
+#include "pycore_initconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -1686,6 +1687,8 @@ _PyCodec_InitRegistry(PyInterpreterState *interp)
     // search functions, so this is done after everything else is initialized.
     PyObject *mod = PyImport_ImportModule("encodings");
     if (mod == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        _Py_DumpPathConfig(tstate);
         return PyStatus_Error("Failed to import encodings module");
     }
     Py_DECREF(mod);

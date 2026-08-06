@@ -551,7 +551,7 @@ object with an :attr:`!_as_parameter_` attribute::
    >>>
 
 If you don't want to store the instance's data in the :attr:`!_as_parameter_`
-instance variable, you could define a :class:`property` which makes the
+instance variable, you could define a :deco:`property` which makes the
 attribute available on request.
 
 
@@ -692,6 +692,45 @@ get the string representation of an error code, and *returns* an exception.
 Please note that a much more powerful error checking mechanism is available
 through the :attr:`~_CFuncPtr.errcheck` attribute;
 see the reference manual for details.
+
+
+Specifying function pointers using type annotations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. decorator:: wrap_dll_function(dll)
+   :module: ctypes.util
+
+   A :term:`decorator` that generates :attr:`~ctypes._CFuncPtr.argtypes` and
+   :attr:`~ctypes._CFuncPtr.restype` from a function signature, using the
+   :attr:`~function.__name__` of the function and its :term:`type annotations <annotation>`.
+
+   The decorated function should look like this::
+
+      @wrap_dll_function(dll_to_wrap)
+      def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
+         """Optional docstring. There should be no function body."""
+
+   The body of the decorated function is ignored, and any parameters that are
+   missing type annotations are skipped. The names of the parameters are ignored
+   and do not have to match the underlying C implementation.
+
+   If the decorated function does not have a return type annotation, a
+   :exc:`ValueError` is raised. If the name of the function does not exist
+   in *dll*, an :exc:`AttributeError` is raised.
+
+   For example::
+
+      import ctypes
+      from ctypes.util import wrap_dll_function
+
+      @wrap_dll_function(ctypes.pythonapi)
+      def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p) -> ctypes.py_object:
+         pass
+
+      PyObject_GetAttrString(42, b"real")
+
+
+   .. versionadded:: next
 
 
 .. _ctypes-passing-pointers:
@@ -1826,6 +1865,10 @@ like ``find_library("c")`` will fail and return ``None``.
    function in the same library that allocated the memory.
 
    .. availability:: Windows
+
+   .. soft-deprecated:: 3.16
+      This function now always returns ``None``, as there are no more
+      VC runtime DLLs that are a single file and supported by Microsoft.
 
 
 .. _ctypes-listing-loaded-shared-libraries:
@@ -3161,6 +3204,72 @@ fields, or any other data types containing pointer type fields.
       that should be merged into a containing structure or union.
 
 
+.. decorator:: struct(*, align=None, layout, endian='native', pack=None)
+   :module: ctypes.util
+
+   A :term:`decorator` that allows generating structure types using an
+   annotation-based syntax, similar to the :mod:`dataclasses` module.
+
+   For example:
+
+   .. code-block:: python
+
+      from ctypes.util import struct
+      from ctypes import c_int
+
+      @struct
+      class Point:
+          x: c_int
+          y: c_int
+
+      point = Point(1, 2)
+
+   *align*, *layout*, and *pack* supply the value for the :attr:`~ctypes.Structure._align_`,
+   :attr:`~ctypes.Structure._layout_`, and :attr:`~ctypes.Structure._pack_`
+   attributes, respectively.
+
+   *endian* controls which structure class will be used as the base.
+
+   - If *endian* is ``'native'``, :class:`~ctypes.Structure` will be used.
+   - If *endian* is ``'big'``, :class:`~ctypes.BigEndianStructure` will be used.
+   - If *endian* is ``'little'``, :class:`~ctypes.LittleEndianStructure` will be used.
+
+   Any other value will raise a :class:`ValueError`.
+
+   For controlling field-specific data, wrap the annotation in :class:`typing.Annotated`
+   with :class:`CFieldInfo` as the second argument, like so:
+
+   .. code-block:: python
+
+      @struct
+      class PyObject:
+         ob_refcnt: c_ssize_t
+         ob_type: c_void_p
+
+      @struct
+      class PyHovercraftObject:
+         ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
+
+   .. versionadded:: next
+
+
+.. class:: CFieldInfo(anonymous=False, bit_width=None)
+   :module: ctypes.util
+
+   Information regarding a structure field defined by the :func:`struct`
+   decorator. This should be used in the second argument of a
+   :class:`typing.Annotated` wrapping a ctypes type.
+
+   *anonymous* specifies whether the field will be present in the
+   :attr:`~ctypes.Structure._anonymous_` attribute of the generated class.
+
+   If *bit_width* is non-``None``, the annotated field will be *bit_width*
+   number of bits in the generated structure. This is equivalent to passing
+   a third item in :attr:`~ctypes.Structure._fields_`.
+
+   .. versionadded:: next
+
+
 .. _ctypes-arrays-pointers:
 
 Arrays and pointers
@@ -3176,6 +3285,8 @@ Arrays and pointers
    Array elements can be read and written using standard
    subscript and slice accesses; for slice reads, the resulting object is
    *not* itself an :class:`Array`.
+
+   Arrays are :ref:`generic <generics>` over the type of their elements.
 
 
    .. attribute:: _length_
