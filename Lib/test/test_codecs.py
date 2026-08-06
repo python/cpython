@@ -1695,6 +1695,12 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual("pyth\xf6n.org".encode("idna"), b"xn--pythn-mua.org")
         self.assertEqual("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
 
+    def test_new_unicode_case_folding(self):
+        self.assertEqual("ᎠᎠ".encode("idna"), b"xn--58da")
+        self.assertEqual("Ⴀ.".encode("idna"), b"xn--7md.")
+        self.assertEqual("Ӏ.example".encode("idna"), b"xn--d5a.example")
+        self.assertEqual("Ↄ.example.".encode("idna"), b"xn--q5g.example.")
+
     def test_builtin_encode_invalid(self):
         for case, expected in self.invalid_encode_testcases:
             with self.subTest(case=case, expected=expected):
