@@ -971,7 +971,7 @@ def test_unary(method, prec, exp_range, restricted_range, itr, stat):
         try:
             if not convert(t):
                 continue
-            if t.funcname == '__hash__' and t.cop[0].is_nan():
+            if t.funcname == '__hash__' and t.cop[0].is_qnan():
                 continue
             callfuncs(t)
             verify(t, stat)
