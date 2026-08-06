@@ -1,0 +1,2 @@
+Speed up :func:`repr` and :func:`str` for :class:`float` by using the Zmij
+algorithm to compute the shortest decimal representation.
