@@ -106,6 +106,7 @@ module marshal
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
 #define WFERR_CODE_NOT_ALLOWED 4
+#define WFERR_EXCEPTION 5  // An exception is already set.
 
 typedef struct {
     FILE *fp;
@@ -694,7 +695,8 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         PyCodeObject *co = (PyCodeObject *)v;
         PyObject *co_code = _PyCode_GetCode(co);
         if (co_code == NULL) {
-            p->error = WFERR_NOMEMORY;
+            assert(PyErr_Occurred());
+            p->error = WFERR_EXCEPTION;
             return;
         }
         W_TYPE(TYPE_CODE, p);
@@ -1940,6 +1942,9 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
         case WFERR_CODE_NOT_ALLOWED:
             PyErr_SetString(PyExc_ValueError,
                             "marshalling code objects is disallowed");
+            break;
+        case WFERR_EXCEPTION:
+            assert(PyErr_Occurred());
             break;
         default:
         case WFERR_UNMARSHALLABLE:

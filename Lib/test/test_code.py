@@ -499,6 +499,7 @@ class CodeTest(unittest.TestCase):
             with self.subTest(opcode_name=opcode_name):
                 script = textwrap.dedent(f"""
                     import dis
+                    import marshal
 
                     def func():
                         pass
@@ -506,12 +507,17 @@ class CodeTest(unittest.TestCase):
                     bytecode = bytearray(func.__code__.co_code)
                     bytecode[0] = dis._all_opmap[{opcode_name!r}]
                     code = func.__code__.replace(co_code=bytes(bytecode))
-                    try:
-                        code.co_code
-                    except SystemError as exc:
-                        assert str(exc) == "cannot de-instrument code object with invalid monitoring data"
-                    else:
-                        raise AssertionError("expected malformed code object to be rejected")
+                    operations = (
+                        lambda: code.co_code,
+                        lambda: marshal.dumps(code),
+                    )
+                    for operation in operations:
+                        try:
+                            operation()
+                        except SystemError as exc:
+                            assert str(exc) == "cannot de-instrument code object with invalid monitoring data"
+                        else:
+                            raise AssertionError("expected malformed code object to be rejected")
                 """)
                 assert_python_ok("-c", script)
 
