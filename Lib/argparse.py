@@ -2890,7 +2890,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if file is None:
             file = _sys.stderr
         if file is not None:
-            file.write(message)
+            try:
+                file.write(message)
+            except OSError:
+                pass
 
     def _get_theme(self, file=None):
         # If self.color is False, _colorize is not imported
