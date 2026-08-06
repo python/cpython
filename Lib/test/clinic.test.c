@@ -5770,6 +5770,56 @@ Test___init___impl(TestObj *self, PyObject *a, int group_right_1,
 
 
 /*[clinic input]
+only_optional_group
+    [
+    a: object
+    ]
+    /
+The only parameter is in an optional group.
+[clinic start generated code]*/
+
+PyDoc_STRVAR(only_optional_group__doc__,
+"only_optional_group([a])\n"
+"The only parameter is in an optional group.");
+
+#define ONLY_OPTIONAL_GROUP_METHODDEF    \
+    {"only_optional_group", (PyCFunction)only_optional_group, METH_VARARGS, only_optional_group__doc__},
+
+static PyObject *
+only_optional_group_impl(PyObject *module, int group_right_1, PyObject *a);
+
+static PyObject *
+only_optional_group(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    PyObject *a = NULL;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+            break;
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:only_optional_group", &a)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "only_optional_group requires 0 to 1 arguments");
+            goto exit;
+    }
+    return_value = only_optional_group_impl(module, group_right_1, a);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+only_optional_group_impl(PyObject *module, int group_right_1, PyObject *a)
+/*[clinic end generated code: output=e7546b9441793d7d input=426c64055af7bcab]*/
+
+
+/*[clinic input]
 group_and_optional_parameter
     [
     a: object
