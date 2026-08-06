@@ -745,6 +745,16 @@ set_error(void)
 }
 
 
+#if defined(HAVE_HSTRERROR) || defined(HAVE_GAI_STRERROR)
+/* Decode a locale-encoded error message from the C library.
+   It can be localized and use a non-UTF-8 encoding. */
+static PyObject *
+decode_error_message(const char *str)
+{
+    return PyUnicode_DecodeLocale(str, "surrogateescape");
+}
+#endif
+
 #if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME) || defined (HAVE_GETHOSTBYADDR)
 static PyObject *
 set_herror(socket_state *state, int h_error)
@@ -752,7 +762,7 @@ set_herror(socket_state *state, int h_error)
     PyObject *v;
 
 #ifdef HAVE_HSTRERROR
-    v = Py_BuildValue("(is)", h_error, hstrerror(h_error));
+    v = Py_BuildValue("(iN)", h_error, decode_error_message(hstrerror(h_error)));
 #else
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
@@ -779,7 +789,7 @@ set_gaierror(socket_state *state, int error)
 #endif
 
 #ifdef HAVE_GAI_STRERROR
-    v = Py_BuildValue("(is)", error, gai_strerror(error));
+    v = Py_BuildValue("(iN)", error, decode_error_message(gai_strerror(error)));
 #else
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
@@ -1170,7 +1180,7 @@ new_sockobject(socket_state *state, SOCKET_T fd, int family, int type,
 /* Lock to allow python interpreter to continue, but only allow one
    thread to be in gethostbyname or getaddrinfo */
 #if defined(USE_GETHOSTBYNAME_LOCK)
-static PyThread_type_lock netdb_lock;
+static PyMutex netdb_lock = {0};
 #endif
 
 
@@ -6219,7 +6229,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
-    PyThread_acquire_lock(netdb_lock, 1);
+    PyMutex_Lock(&netdb_lock);
 #endif
     _Py_COMP_DIAG_PUSH
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
@@ -6235,7 +6245,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr),
                          sa->sa_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
-    PyThread_release_lock(netdb_lock);
+    PyMutex_Unlock(&netdb_lock);
 #endif
 finally:
     PyMem_Free(name);
@@ -6326,7 +6336,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
-    PyThread_acquire_lock(netdb_lock, 1);
+    PyMutex_Lock(&netdb_lock);
 #endif
     _Py_COMP_DIAG_PUSH
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
@@ -6336,7 +6346,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
     ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af);
 #ifdef USE_GETHOSTBYNAME_LOCK
-    PyThread_release_lock(netdb_lock);
+    PyMutex_Unlock(&netdb_lock);
 #endif
 finally:
     PyMem_Free(ip_num);
@@ -9291,15 +9301,6 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, RCVALL_MAX);
 #endif
 #endif /* _MSTCPIP_ */
-
-    /* Initialize gethostbyname lock */
-#if defined(USE_GETHOSTBYNAME_LOCK)
-    netdb_lock = PyThread_allocate_lock();
-    if (netdb_lock == NULL) {
-        PyErr_NoMemory();
-        goto error;
-    }
-#endif
 
 #ifdef MS_WINDOWS
     /* remove some flags on older version Windows during run-time */

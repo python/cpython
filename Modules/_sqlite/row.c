@@ -232,7 +232,15 @@ static Py_hash_t
 pysqlite_row_hash(PyObject *op)
 {
     pysqlite_Row *self = _pysqlite_Row_CAST(op);
-    return PyObject_Hash(self->description) ^ PyObject_Hash(self->data);
+    Py_hash_t hash_description = PyObject_Hash(self->description);
+    if (hash_description == -1) {
+        return -1;
+    }
+    Py_hash_t hash_data = PyObject_Hash(self->data);
+    if (hash_data == -1) {
+        return -1;
+    }
+    return hash_description ^ hash_data;
 }
 
 static PyObject *
