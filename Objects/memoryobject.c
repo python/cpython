@@ -3290,9 +3290,9 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
     /* Prevent memoryview object from being released and its underlying buffer
        reshaped during a mixed format comparison loop. */
     // See https://github.com/python/cpython/issues/142663.
-    ((PyMemoryViewObject *)v)->exports++;
+    _PyMemoryView_CAST(v)->exports++;
     if (w_is_mv) {
-        ((PyMemoryViewObject *)w)->exports++;
+        _PyMemoryView_CAST(w)->exports++;
     }
 
     if (vv->ndim == 0) {
@@ -3312,9 +3312,9 @@ memory_richcompare(PyObject *v, PyObject *w, int op)
                         vfmt, unpack_v, unpack_w);
     }
 
-    ((PyMemoryViewObject *)v)->exports--;
+    _PyMemoryView_CAST(v)->exports--;
     if (w_is_mv) {
-        ((PyMemoryViewObject *)w)->exports--;
+        _PyMemoryView_CAST(w)->exports--;
     }
 
 result:
