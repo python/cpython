@@ -20,8 +20,3 @@ For more information see the :ref:`IDLE docs <idle>`.
 
 Other Editors and IDEs
 ======================
-
-Python's community wiki has information submitted by the community on Editors and IDEs.
-Please go to `Python Editors <https://wiki.python.org/moin/PythonEditors>`_ and
-`Integrated Development Environments <https://wiki.python.org/moin/IntegratedDevelopmentEnvironments>`_
-for a comprehensive list.

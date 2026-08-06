@@ -28,8 +28,7 @@ of CPython that are written in C can use this document to learn how to use the
 
    This document assumes that you are familiar with the basics of GDB and the
    CPython C API. It consolidates guidance from the
-   `devguide <https://devguide.python.org>`_  and the
-   `Python wiki <https://wiki.python.org/moin/DebuggingWithGdb>`_.
+   `devguide <https://devguide.python.org>`_.
 
 
 Prerequisites

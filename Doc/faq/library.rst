@@ -591,19 +591,11 @@ See the chapters titled :ref:`internet` and :ref:`netdata` in the Library
 Reference Manual.  Python has many modules that will help you build server-side
 and client-side web systems.
 
-.. XXX check if wiki page is still up to date
-
-A summary of available frameworks is maintained by Paul Boddie at
-https://wiki.python.org/moin/WebProgramming\ .
-
 
 What module should I use to help with generating HTML?
 ------------------------------------------------------
 
 .. XXX add modern template languages
-
-You can find a collection of useful links on the `Web Programming wiki page
-<https://wiki.python.org/moin/WebProgramming>`_.
 
 
 How do I send mail from a Python script?
@@ -692,9 +684,7 @@ Interfaces to disk-based hashes such as :mod:`DBM <dbm.ndbm>` and :mod:`GDBM
 :mod:`sqlite3` module, which provides a lightweight disk-based relational
 database.
 
-Support for most relational databases is available.  See the
-`DatabaseProgramming wiki page
-<https://wiki.python.org/moin/DatabaseProgramming>`_ for details.
+Support for most relational databases is available.
 
 
 How do you implement persistent objects in Python?

@@ -833,8 +833,7 @@ functools
   >>> # locale-aware sort order
   >>> sorted(iterable, key=cmp_to_key(locale.strcoll)) # doctest: +SKIP
 
-  For sorting examples and a brief sorting tutorial, see the `Sorting HowTo
-  <https://wiki.python.org/moin/HowTo/Sorting/>`_ tutorial.
+  For sorting examples and a brief sorting tutorial, see the :ref:`sortinghowto`.
 
   (Contributed by Raymond Hettinger.)
 
