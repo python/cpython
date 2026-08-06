@@ -690,7 +690,7 @@
     <ClCompile Include="..\Python\qsbr.c" />
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\zmij\zmij.c">
-      <!-- Vendored code (https://github.com/vitaut/zmij) needs C11. -->
+      <!-- `zmij` needs C11. -->
       <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <ClCompile Include="..\Python\Python-ast.c" />

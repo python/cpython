@@ -1084,7 +1084,7 @@ format_float_short(double d, char format_code,
 
     decpt = (Py_ssize_t)decpt_as_int;
     if (mode != 0 && digits == NULL) {
-        /* Only failure mode is no memory. */
+        /* The only failure mode is no memory. */
         PyErr_NoMemory();
         goto exit;
     }
