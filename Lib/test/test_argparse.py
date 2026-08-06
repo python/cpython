@@ -89,6 +89,15 @@ class StdStreamTest(unittest.TestCase):
                 ):
                     func(file=invalid_f)
 
+    def test_exit_when_stderr_oserror(self):
+        parser = argparse.ArgumentParser()
+        with (mock.patch('argparse._sys.stderr.write',
+                         side_effect=OSError('not raise this')),
+              self.assertRaises(SystemExit),
+              ):
+            parser.exit(status=0, message='foo')
+
+
 class TestLazyImports(unittest.TestCase):
     LAZY_IMPORTS = {
         "_colorize",
