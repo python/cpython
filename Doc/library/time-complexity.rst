@@ -11,8 +11,8 @@ instances of subclasses may have different costs.
 
 We use |big O notation|_ to describe how the running time of an operation grows
 with the size of its input. Unless stated otherwise, *n* denotes the number of
-elements currently in the container, and *k* is either the value of a parameter
-or the number of elements in the parameter.
+elements currently in the container, and *k* is the value of a parameter, the
+number of elements in a parameter, or the length of a slice.
 
 For a pragmatic approach to assessing time complexity, see Ned Batchelder's
 `Big-O: How Code Slows as Data Grows <https://nedbatchelder.com/text/bigo>`__
@@ -63,6 +63,8 @@ If you need to add or remove at both ends, consider using a
      - *O*\ (*k*)
    * - Sort (``s.sort()``) [3]_
      - *O*\ (*n* log *n*)
+   * - Concatenate (``s + t``)
+     - *O*\ (*n* + *k*)
    * - Multiply (``s * k``)
      - *O*\ (*nk*)
    * - ``x in s``
@@ -116,8 +118,8 @@ to the same value, each of the *O*\ (1) operations below instead takes
 *O*\ (*n*) time. For more detail on the implementation, see
 :ref:`how-are-dictionaries-implemented`.
 
-A :class:`frozendict` is immutable, so it does not support setting or deleting
-items; the other operations below apply to it at the same costs.
+A :class:`frozendict` is immutable, so it does not support setting, deleting,
+or updating items; the other operations below apply to it at the same costs.
 
 .. list-table::
    :header-rows: 1
@@ -134,6 +136,8 @@ items; the other operations below apply to it at the same costs.
      - *O*\ (1)
    * - Delete item (``del d[key]``)
      - *O*\ (1)
+   * - Update (``d.update(t)``) [1]_ [6]_
+     - *O*\ (*k*)
    * - Iteration [6]_
      - *O*\ (*n*)
    * - Get length (``len(d)``) [4]_
@@ -159,6 +163,8 @@ the same costs.
      - Complexity
    * - ``x in s``
      - *O*\ (1)
+   * - Copy (``s.copy()``) [5]_ [6]_
+     - *O*\ (*n*)
    * - Add (``s.add(x)``) [1]_
      - *O*\ (1)
    * - Discard (``s.discard(x)``)
@@ -183,11 +189,11 @@ the same costs.
 ===================================================
 
 :class:`str` and :class:`bytes` objects are immutable sequences of characters and
-bytes respectively; As with tuples, copying one returns the original object.
+bytes, respectively. As with tuples, copying one returns the original object.
 A :class:`bytearray` is mutable, and additionally supports the mutating operations
 of :class:`list` (except :meth:`!sort`), at the same costs. However, deleting at
-the front only advances the start of the buffer instead of moving the remaining
-bytes, and is amortized *O*\ (1).
+the front with ``del`` (``del b[0]``, ``del b[:k]``) only advances the start of
+the buffer instead of moving the remaining bytes, and is amortized *O*\ (1).
 
 .. list-table::
    :header-rows: 1
@@ -198,11 +204,11 @@ bytes, and is amortized *O*\ (1).
      - *O*\ (1)
    * - Get slice (``s[i:j]``)
      - *O*\ (*k*)
-   * - Concatenate (``s + t``)
+   * - Concatenate (``s + t``) [9]_
      - *O*\ (*n* + *k*)
    * - Multiply (``s * k``)
      - *O*\ (*nk*)
-   * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``) [9]_
+   * - Substring search (``x in s``, ``s.find(x)``, ``s.index(x)``) [10]_
      - *O*\ (*n*)
    * - Encode or decode
      - *O*\ (*n*)
@@ -252,9 +258,9 @@ A :class:`range` object computes its items on demand from its *start*, *stop* an
      - *O*\ (1)
    * - Get slice (``s[i:j]``)
      - *O*\ (1)
-   * - ``x in s`` [10]_
+   * - ``x in s`` [11]_
      - *O*\ (1)
-   * - Index and count (``s.index(x)``, ``s.count(x)``) [10]_
+   * - Index and count (``s.index(x)``, ``s.count(x)``) [11]_
      - *O*\ (1)
    * - Iteration
      - *O*\ (*n*)
@@ -287,7 +293,8 @@ Notes
 .. [4] The number of elements is stored in the object, so ``len()`` does
    not need to count them.
 
-.. [5] Copying a :class:`frozendict` is *O*\ (1) as it returns the original object.
+.. [5] Copying a :class:`frozendict` or a :class:`frozenset` is *O*\ (1) as it
+   returns the original object.
 
 .. [6] These operations scan the container's internal hash table, which is
    not shrunk when elements are removed. After removing most elements, they
@@ -298,11 +305,16 @@ Notes
 
 .. [8] *O*\ (len(*s*) + len(*t*)) if *t* is not a set.
 
-.. [9] A naive substring search would need *O*\ (*nk*) comparisons in the
+.. [9] Each concatenation builds a new object, so building a string by
+   concatenating many pieces in a loop is quadratic in the total length.
+   See the :ref:`note on concatenating immutable sequences
+   <typesseq-repeated-concatenation>` for alternatives.
+
+.. [10] A naive substring search would need *O*\ (*nk*) comparisons in the
    worst case, where *k* is the length of the substring searched for, but
    CPython uses search algorithms with a linear worst case for forward
    searches. See :source:`Objects/stringlib/stringlib_find_two_way_notes.txt`
    for details.
 
-.. [10] Assuming :class:`int` or :class:`bool` arguments. For other types,
+.. [11] Assuming :class:`int` or :class:`bool` arguments. For other types,
    the range is searched like any other sequence in *O*\ (*n*) time.

@@ -1124,6 +1124,8 @@ Notes:
    "end" values (which end depends on the sign of *k*).  Note, *k* cannot be zero.
    If *k* is ``None``, it is treated like ``1``.
 
+.. _typesseq-repeated-concatenation:
+
 (6)
    Concatenating immutable sequences always results in a new object.  This
    means that building up a sequence by repeated concatenation will have a
