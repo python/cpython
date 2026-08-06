@@ -6318,12 +6318,13 @@ class TestSignatureDefinitions(unittest.TestCase):
         no_signature = {'SocketType'}
         # The C default is NULL and None is not accepted
         unsupported_signature = {'getservbyname', 'getservbyport'}
+        # Not all functions and methods are available on all platforms.
+        unsupported_signature &= vars(socket).keys()
         # These cannot be converted to Argument Clinic: their behaviour
         # depends on the number of the arguments.
         methods_no_signature = {'ioctl', 'sendto', 'setsockopt'}
         # These have parameters with unrepresentable default values.
         methods_unsupported_signature = {'listen', 'sendmsg', 'sendmsg_afalg'}
-        # Not all methods are available on all platforms.
         defined = vars(socket.SocketType).keys()
         self._test_module_has_signatures(socket,
                 no_signature, unsupported_signature,
