@@ -1,0 +1,5 @@
+Fix the specialized ``CALL_EX_PY`` and ``CALL_KW_BOUND_METHOD`` instructions
+entering the callee at the recursion limit, where the generic
+``CALL_FUNCTION_EX`` and ``CALL_KW`` raise :exc:`RecursionError`.  Both now
+check the remaining recursion depth before pushing the new frame, so warming
+a call site no longer changes whether the target is executed.

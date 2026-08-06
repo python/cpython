@@ -6,7 +6,7 @@ import threading
 import types
 import unittest
 from test.support import (threading_helper, check_impl_detail,
-                          requires_specialization,
+                          infinite_recursion, requires_specialization,
                           cpython_only, requires_jit_disabled, reset_code)
 from test.support.import_helper import import_module
 
@@ -567,6 +567,86 @@ class TestCallCache(TestBase):
 
         with self.assertRaises(RecursionError):
             test()
+
+    # gh-155151: a specialized call opcode must not enter the callee where the
+    # generic one raises RecursionError. Warming a call site must not change
+    # whether the target runs. The probes below drive the recursion limit and
+    # then make the specialized call from the deepest live frame; the target
+    # bumps the counter with plain bytecode, so reaching it cannot itself be
+    # stopped by a second recursion check.
+
+    @requires_jit_disabled
+    @requires_specialization
+    def test_recursion_check_for_call_ex_py(self):
+        hits = 0
+        deepest_frame_claimed = False
+
+        def target(*args):
+            nonlocal hits
+            hits += 1
+            return 42
+
+        def probe(at_limit):
+            nonlocal deepest_frame_claimed
+            while not at_limit:
+                try:
+                    return probe(False)
+                except RecursionError:
+                    # Only the deepest live frame makes the call. Outer frames
+                    # re-raise, so the count is not taken after a frame has
+                    # unwound and freed recursion budget.
+                    if deepest_frame_claimed:
+                        raise
+                    deepest_frame_claimed = True
+                    at_limit = True
+            args = ()
+            return target(*args)
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            probe(True)
+        self.assert_specialized(probe, "CALL_EX_PY")
+
+        hits_before = hits
+        with infinite_recursion(50):
+            with self.assertRaises(RecursionError):
+                probe(False)
+        self.assertEqual(hits, hits_before)
+
+    @requires_jit_disabled
+    @requires_specialization
+    def test_recursion_check_for_call_kw_bound_method(self):
+        hits = 0
+        deepest_frame_claimed = False
+
+        class Receiver:
+            def target(self, *, value):
+                nonlocal hits
+                hits += 1
+                return value
+
+        bound_target = Receiver().target
+
+        def probe(at_limit):
+            nonlocal deepest_frame_claimed
+            while not at_limit:
+                try:
+                    return probe(False)
+                except RecursionError:
+                    if deepest_frame_claimed:
+                        raise
+                    deepest_frame_claimed = True
+                    at_limit = True
+            return bound_target(value=43)
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            probe(True)
+        self.assert_specialized(probe, "CALL_KW_BOUND_METHOD")
+
+        hits_before = hits
+        with infinite_recursion(50):
+            with self.assertRaises(RecursionError):
+                probe(False)
+        self.assertEqual(hits, hits_before)
 
     def test_dont_specialize_custom_vectorcall(self):
         def f():
