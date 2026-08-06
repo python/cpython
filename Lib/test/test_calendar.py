@@ -2,6 +2,7 @@ import calendar
 import unittest
 
 from test import support
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import contextlib
 import datetime
@@ -11,6 +12,7 @@ import os
 import platform
 import sys
 import time
+from unittest import mock
 
 # From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
 result_0_02_text = """\
@@ -643,6 +645,26 @@ class CalendarTestCase(unittest.TestCase):
                                  list(calendar.standalone_month_name))
             self.assertListEqual(list(calendar.month_abbr),
                                  list(calendar.standalone_month_abbr))
+
+    def test_standalone_month_fallback_when_specifier_rejected(self):
+        # gh-155245: _localized_month stores the format string and only calls
+        # strftime when a name is first read, so a platform that rejects
+        # '%OB' raises ValueError while the fallback below is being computed,
+        # not while the object is being built. Importing calendar has to fall
+        # back to the regular names instead of failing outright.
+        class _RejectsStandalone(datetime.date):
+            def strftime(self, format):
+                if 'O' in format:
+                    raise ValueError(f'Invalid format string: {format}')
+                return super().strftime(format)
+
+        with mock.patch.object(datetime, 'date', _RejectsStandalone):
+            fresh_calendar = import_helper.import_fresh_module('calendar')
+
+        self.assertListEqual(list(fresh_calendar.standalone_month_name),
+                             list(fresh_calendar.month_name))
+        self.assertListEqual(list(fresh_calendar.standalone_month_abbr),
+                             list(fresh_calendar.month_abbr))
 
     def test_locale_text_calendar(self):
         try:

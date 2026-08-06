@@ -146,10 +146,10 @@ month_abbr = _localized_month('%b')
 try:
     standalone_month_name = _localized_month('%OB')
     standalone_month_abbr = _localized_month('%Ob')
-except ValueError:
-    standalone_month_name = month_name
-    standalone_month_abbr = month_abbr
-else:
+    # _localized_month only stores the format; strftime is called lazily when
+    # the names are first read, so systems that reject '%OB' raise ValueError
+    # here rather than above.
+    #
     # Some systems that do not support '%OB' will keep it as-is (i.e.,
     # we get [..., '%OB', '%OB', '%OB']), so for non-distinct names,
     # we fall back to month_name/month_abbr.
@@ -157,6 +157,9 @@ else:
         standalone_month_name = month_name
     if len(set(standalone_month_abbr)) != len(set(month_abbr)):
         standalone_month_abbr = month_abbr
+except ValueError:
+    standalone_month_name = month_name
+    standalone_month_abbr = month_abbr
 
 
 def isleap(year):

@@ -1,0 +1,5 @@
+Fix :mod:`calendar` failing to import on platforms whose ``strftime``
+rejects the ``%OB`` and ``%Ob`` format specifiers.  The names are computed
+lazily, so the resulting :exc:`ValueError` was raised outside the ``try``
+block that was meant to catch it, instead of falling back to the regular
+month names.
