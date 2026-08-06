@@ -3,6 +3,7 @@
 #include <Python.h>
 #include "pycore_dtoa.h"          // _Py_dg_strtod()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+#include "zmij/zmij-c.h"          // zmij_detail_write_double()
 
 #include <locale.h>               // localeconv()
 
@@ -936,6 +937,81 @@ static const char * const uc_float_strings[] = {
     "E",
 };
 
+static char *
+zmij_shortest_digits(double d, int *decpt, int *sign, char **digits_end)
+{
+    char buffer[zmij_double_buffer_size];
+    char *digits;
+    Py_ssize_t ndigits = 0, lead = 0;
+    int decpt_pos = 0, seen_dot = 0;
+    char *p, *end;
+
+    if (!Py_IS_FINITE(d)) {
+        const char *name = Py_IS_INFINITY(d) ? "Infinity" : "NaN";
+        size_t namelen = strlen(name);
+        digits = (char *)PyMem_Malloc(namelen + 1);
+        if (digits == NULL) {
+            return NULL;
+        }
+        memcpy(digits, name, namelen + 1);
+        *decpt = 9999;
+        *sign = Py_IS_INFINITY(d) && d < 0.0;
+        *digits_end = digits + namelen;
+        return digits;
+    }
+
+    end = zmij_detail_write_double(d, buffer);
+    p = buffer;
+    *sign = (*p == '-');
+    p += *sign;
+
+    digits = (char *)PyMem_Malloc((size_t)(end - p) + 1);
+    if (digits == NULL) {
+        return NULL;
+    }
+
+    /* Żmij's shortest output is [-]ddd[.ddd][e[+-]ddd]; collect the digits
+       and the decimal point position */
+    for (; p < end; p++) {
+        if (*p >= '0' && *p <= '9') {
+            digits[ndigits++] = *p;
+            if (!seen_dot) {
+                decpt_pos++;
+            }
+        }
+        else if (*p == '.') {
+            seen_dot = 1;
+        }
+        else {
+            assert(*p == 'e');
+            decpt_pos += (int)strtol(p + 1, NULL, 10);
+            break;
+        }
+    }
+
+    /* Strip leading zeros, adjusting the decimal point positio */
+    while (lead < ndigits && digits[lead] == '0') {
+        lead++;
+    }
+    if (lead == ndigits) {
+        digits[0] = '0';
+        ndigits = 1;
+        *decpt = 1;
+    }
+    else {
+        ndigits -= lead;
+        memmove(digits, digits + lead, ndigits);
+        /* 100.0 -> digits "1", decpt 3 */
+        while (ndigits > 0 && digits[ndigits - 1] == '0') {
+            ndigits--;
+        }
+        *decpt = decpt_pos - (int)lead;
+    }
+    digits[ndigits] = '\0';
+    *digits_end = digits + ndigits;
+    return digits;
+}
+
 
 /* Convert a double d to a string, and return a PyMem_Malloc'd block of
    memory contain the resulting string.
@@ -981,10 +1057,17 @@ format_float_short(double d, char format_code,
     _Py_SET_53BIT_PRECISION_HEADER;
 
     /* _Py_dg_dtoa returns a digit string (no decimal point or exponent).
-       Must be matched by a call to _Py_dg_freedtoa. */
+       Must be matched by a call to _Py_dg_freedtoa.  Mode 0 (shortest
+       representation, used by repr/str) goes through the faster Żmij
+       algorithm instead; its buffer is PyMem_Malloc'd. */
     _Py_SET_53BIT_PRECISION_START;
-    digits = _Py_dg_dtoa(d, mode, precision, &decpt_as_int, &sign,
-                         &digits_end);
+    if (mode == 0) {
+        digits = zmij_shortest_digits(d, &decpt_as_int, &sign, &digits_end);
+    }
+    else {
+        digits = _Py_dg_dtoa(d, mode, precision, &decpt_as_int, &sign,
+                             &digits_end);
+    }
     _Py_SET_53BIT_PRECISION_END;
 
     decpt = (Py_ssize_t)decpt_as_int;
@@ -1211,8 +1294,14 @@ format_float_short(double d, char format_code,
            memory that isn't ours. But it's an okay debugging test. */
         assert(p-buf < bufsize);
     }
-    if (digits)
-        _Py_dg_freedtoa(digits);
+    if (digits) {
+        if (mode == 0) {
+            PyMem_Free(digits);
+        }
+        else {
+            _Py_dg_freedtoa(digits);
+        }
+    }
 
     return buf;
 }

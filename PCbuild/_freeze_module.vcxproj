@@ -211,6 +211,10 @@
     <ClCompile Include="..\Python\critical_section.c" />
     <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\dtoa.c" />
+    <ClCompile Include="..\Python\zmij\zmij.c">
+      <!-- `zmij` needs C11. -->
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
