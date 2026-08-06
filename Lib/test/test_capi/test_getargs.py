@@ -1,6 +1,7 @@
 import string
 import sys
 import unittest
+from functools import partial
 from test import support
 from test.support import import_helper
 from test.support import script_helper
@@ -825,6 +826,80 @@ class KeywordOnly_TestCase(unittest.TestCase):
             getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
 
 
+class RequiredKeywordOnly_TestCase(unittest.TestCase):
+    # '%' marks the start of the keyword-only arguments, which are required
+    # until '|', so that required and optional ones can be mixed.
+
+    def parse(self, format, args, kwargs, keywords=('a', 'b', 'c', 'd')):
+        return _testcapi.parse_tuple_and_keywords(args, kwargs,
+                                                  format, list(keywords))
+
+    def test_required_after_optional(self):
+        # f(a, b=None, *, c, d=None)
+        parse = partial(self.parse, "O|O%O|O")
+        self.assertEqual(parse((1, 2), {'c': 3, 'd': 4}), (1, 2, 3, 4))
+        self.assertEqual(parse((1,), {'c': 3}), (1, None, 3, None))
+        with self.assertRaisesRegex(TypeError, "missing required argument 'c'"):
+            parse((1,), {})
+        with self.assertRaisesRegex(TypeError, "missing required argument 'c'"):
+            parse((1,), {'d': 4})
+        with self.assertRaisesRegex(TypeError, "at most 2 positional"):
+            parse((1, 2, 3), {'c': 3})
+
+    def test_all_keyword_only_required(self):
+        # f(a, b=None, *, c, d)
+        parse = partial(self.parse, "O|O%OO")
+        self.assertEqual(parse((1,), {'c': 3, 'd': 4}), (1, None, 3, 4))
+        with self.assertRaisesRegex(TypeError, "missing required argument 'd'"):
+            parse((1,), {'c': 3})
+
+    def test_all_positional_required(self):
+        # f(a, b, *, c, d=None)
+        parse = partial(self.parse, "OO%O|O")
+        self.assertEqual(parse((1, 2), {'c': 3}), (1, 2, 3, None))
+        with self.assertRaisesRegex(TypeError, "missing required argument 'c'"):
+            parse((1, 2), {})
+
+    def test_cached_parser(self):
+        # The same format, parsed once and cached in a _PyArg_Parser.
+        f = _testcapi.getargs_fast_required_kwonly
+        self.assertEqual(f(1, 2, c=3, d=4), (1, 2, 3, 4))
+        self.assertEqual(f(1, c=3), (1, None, 3, None))
+        with self.assertRaisesRegex(TypeError, "missing required argument 'c'"):
+            f(1)
+        with self.assertRaisesRegex(TypeError, "missing required argument 'c'"):
+            f(1, d=4)
+
+    def test_invalid_format(self):
+        for format, msg in (
+            ("O%O%O", r"\$ specified twice"),
+            ("O%O$O", r"\$ specified twice"),
+            ("O%O|O|O", r"\| specified twice"),
+            ("O$O|O", r"\$ before \|"),
+        ):
+            with self.subTest(format=format):
+                n = format.count('O')
+                npos = len(format) - len(format.lstrip('O'))
+                args = tuple(range(npos))
+                kwargs = {'abcd'[i]: i for i in range(npos, n)}
+                with self.assertRaisesRegex(SystemError, msg):
+                    self.parse(format, args, kwargs, 'abcd'[:n])
+
+    def test_unchanged_meaning_of_dollar(self):
+        # '$' still inherits the state of the positional arguments.
+        parse = partial(self.parse, "O|O$O", keywords=('a', 'b', 'c'))
+        self.assertEqual(parse((1,), {}), (1, None, None))
+        parse = partial(self.parse, "OO$O", keywords=('a', 'b', 'c'))
+        self.assertEqual(parse((1, 2), {'c': 3}), (1, 2, 3))
+        with self.assertRaisesRegex(TypeError, "missing required argument 'c'"):
+            parse((1, 2), {})
+        # The same with a cached parser.
+        f = _testcapi.getargs_fast_kwonly
+        self.assertEqual(f(1, 2, c=3, d=4), (1, 2, 3, 4))
+        with self.assertRaisesRegex(TypeError, "missing required argument 'c'"):
+            f(1, 2)
+
+
 class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
     from _testcapi import getargs_positional_only_and_keywords as getargs
 
@@ -1164,8 +1239,8 @@ class SkipitemTest(unittest.TestCase):
 
             # skip parentheses, the error reporting is inconsistent about them
             # skip 'e' and 'w', they're always two-character codes
-            # skip '|' and '$', they don't represent arguments anyway
-            if c in '()ew|$':
+            # skip '|', '$' and '%', they don't represent arguments anyway
+            if c in '()ew|$%':
                 continue
 
             # test the format unit when not skipped
