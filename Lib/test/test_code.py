@@ -493,6 +493,28 @@ class CodeTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
+    @cpython_only
+    def test_co_code_with_invalid_monitoring_data(self):
+        for opcode_name in ("INSTRUMENTED_LINE", "INSTRUMENTED_INSTRUCTION"):
+            with self.subTest(opcode_name=opcode_name):
+                script = textwrap.dedent(f"""
+                    import dis
+
+                    def func():
+                        pass
+
+                    bytecode = bytearray(func.__code__.co_code)
+                    bytecode[0] = dis._all_opmap[{opcode_name!r}]
+                    code = func.__code__.replace(co_code=bytes(bytecode))
+                    try:
+                        code.co_code
+                    except SystemError as exc:
+                        assert str(exc) == "cannot de-instrument code object with invalid monitoring data"
+                    else:
+                        raise AssertionError("expected malformed code object to be rejected")
+                """)
+                assert_python_ok("-c", script)
+
     @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
         import dis

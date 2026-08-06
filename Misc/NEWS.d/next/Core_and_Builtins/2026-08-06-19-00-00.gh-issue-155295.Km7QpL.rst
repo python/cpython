@@ -1,0 +1,2 @@
+Prevent a crash when accessing ``code.co_code`` on a malformed code object
+that contains instrumented opcodes without the corresponding monitoring data.

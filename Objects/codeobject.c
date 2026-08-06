@@ -2199,11 +2199,23 @@ _PyCode_Clear_Executors(PyCodeObject *code)
 
 #endif
 
-static void
+static int
 deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
 {
     Py_ssize_t len = Py_SIZE(code);
     for (int i = 0; i < len; i++) {
+        int opcode = _PyCode_CODE(code)[i].op.code;
+        _PyCoMonitoringData *monitoring = code->_co_monitoring;
+        if ((opcode == INSTRUMENTED_LINE &&
+             (monitoring == NULL || monitoring->lines == NULL)) ||
+            (opcode == INSTRUMENTED_INSTRUCTION &&
+             (monitoring == NULL || monitoring->per_instruction_opcodes == NULL))) {
+            PyErr_SetString(
+                PyExc_SystemError,
+                "cannot de-instrument code object with invalid monitoring data");
+            return -1;
+        }
+
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code, i);
         assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
         int caches = _PyOpcode_Caches[inst.op.code];
@@ -2213,6 +2225,7 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
         }
         i += caches;
     }
+    return 0;
 }
 
 PyObject *
@@ -2234,9 +2247,13 @@ _PyCode_GetCode(PyCodeObject *co)
         code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
                                          _PyCode_NBYTES(co));
         if (code != NULL) {
-            deopt_code(co, (_Py_CODEUNIT *)PyBytes_AS_STRING(code));
-            assert(cached->_co_code == NULL);
-            FT_ATOMIC_STORE_PTR(cached->_co_code, code);
+            if (deopt_code(co, (_Py_CODEUNIT *)PyBytes_AS_STRING(code)) < 0) {
+                Py_CLEAR(code);
+            }
+            else {
+                assert(cached->_co_code == NULL);
+                FT_ATOMIC_STORE_PTR(cached->_co_code, code);
+            }
         }
     }
     Py_END_CRITICAL_SECTION();
