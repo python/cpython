@@ -81,6 +81,13 @@ The :mod:`!csv` module defines the following functions:
       Spam, Spam, Spam, Spam, Spam, Baked Beans
       Spam, Lovely Spam, Wonderful Spam
 
+   where :file:`eggs.csv` contains:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
+
 
 .. function:: writer(csvfile, /, dialect='excel', **fmtparams)
 
@@ -109,6 +116,13 @@ The :mod:`!csv` module defines the following functions:
                                   quotechar='|', quoting=csv.QUOTE_MINIMAL)
           spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
           spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+
+   which writes :file:`eggs.csv` containing:
+
+   .. code-block:: text
+
+      Spam Spam Spam Spam Spam |Baked Beans|
+      Spam |Lovely Spam| |Wonderful Spam|
 
 
 .. function:: register_dialect(name, /, dialect='excel', **fmtparams)
@@ -191,6 +205,14 @@ The :mod:`!csv` module defines the following classes:
        >>> print(row)
        {'first_name': 'John', 'last_name': 'Cleese'}
 
+   where :file:`names.csv` contains:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Eric,Idle
+      John,Cleese
+
 
 .. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
                       dialect='excel', *args, **kwds)
@@ -227,6 +249,15 @@ The :mod:`!csv` module defines the following classes:
            writer.writerow({'first_name': 'Baked', 'last_name': 'Beans'})
            writer.writerow({'first_name': 'Lovely', 'last_name': 'Spam'})
            writer.writerow({'first_name': 'Wonderful', 'last_name': 'Spam'})
+
+   which writes :file:`names.csv` containing:
+
+   .. code-block:: text
+
+      first_name,last_name
+      Baked,Beans
+      Lovely,Spam
+      Wonderful,Spam
 
 
 .. class:: Dialect
@@ -280,6 +311,28 @@ The :mod:`!csv` module defines the following classes:
       reflecting the parameters found.  If the optional *delimiters* parameter
       is given, it is interpreted as a string containing possible valid
       delimiter characters.
+
+      The dialect is deduced by parsing the sample with every plausible
+      combination of parameters
+      and choosing the combination which splits the sample into rows
+      with the most consistent number of fields,
+      so the returned dialect is consistent with how :func:`reader`
+      will parse the sample.
+      Raise :exc:`Error` if no combination fits the sample,
+      in particular if it is a single column,
+      so there is no delimiter to find.
+
+      If several combinations fit the sample equally well ---
+      for example if both ``','`` and ``';'`` split every row consistently ---
+      the delimiters ``','``, ``'\t'``, ``';'``, ``' '`` and ``':'``
+      are preferred, in this order,
+      no matter how many times each of them occurs.
+
+      .. versionchanged:: next
+         The dialect is now deduced by trial parsing
+         and the results may differ from those of earlier Python versions.
+         The *escapechar* parameter can now be detected,
+         and the requested *delimiters* are not restricted to ASCII.
 
 
    .. method:: has_header(sample)

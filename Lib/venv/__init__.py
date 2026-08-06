@@ -319,6 +319,14 @@ class EnvBuilder:
                     if not os.path.islink(path):
                         os.chmod(path, 0o755)
 
+            if not self.symlinks and sys.platform == 'cygwin':
+                # Copy libpython DLL
+                libpython_dll = sysconfig.get_config_var('DLLLIBRARY')
+                if not os.path.exists(os.path.join(binpath, libpython_dll)):
+                    exe_path = os.path.dirname(sys.executable)
+                    shutil.copy(os.path.join(exe_path, libpython_dll),
+                                os.path.join(binpath, libpython_dll))
+
     else:
         def setup_python(self, context):
             """

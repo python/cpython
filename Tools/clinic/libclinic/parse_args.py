@@ -303,6 +303,7 @@ class ParseArgsCodeGen:
     def use_meth_o(self) -> bool:
         return (len(self.parameters) == 1
                 and self.parameters[0].is_positional_only()
+                and not self.has_option_groups()
                 and not self.converters[0].is_optional()
                 and not self.varpos
                 and not self.requires_defining_class

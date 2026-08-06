@@ -119,6 +119,21 @@ Printing and clearing
    .. versionadded:: 3.12
 
 
+.. c:function:: void PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
+
+   Legacy variant of :c:func:`PyErr_DisplayException`.
+
+   Print the exception *value* with its traceback to :data:`sys.stderr`.
+   If *value* has no traceback set, *tb* is used as its traceback.
+   The first argument is ignored.
+
+   If :data:`sys.stderr` is ``None``, nothing is printed.
+   If :data:`sys.stderr` is not set, the exception is dumped to the
+   C ``stderr`` stream instead.
+
+   .. deprecated:: 3.12
+      Use :c:func:`PyErr_DisplayException` instead.
+
 Raising exceptions
 ==================
 
@@ -412,7 +427,7 @@ an error value).
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
 
-   Function similar to :c:func:`PyErr_WarnEx`, but use
+   Function similar to :c:func:`PyErr_WarnEx`, but uses
    :c:func:`PyUnicode_FromFormat` to format the warning message.  *format* is
    an ASCII-encoded string.
 
@@ -499,11 +514,12 @@ Querying the error indicator
 .. c:function:: void PyErr_SetRaisedException(PyObject *exc)
 
    Set *exc* as the exception currently being raised,
-   clearing the existing exception if one is set.
+   clearing the existing exception if one is set.  If *exc* is ``NULL``,
+   just clear the existing exception.
 
-   .. warning::
+   *exc* must be a valid exception or ``NULL``.
 
-      This call steals a reference to *exc*, which must be a valid exception.
+   This call ":term:`steals <steal>`" a reference to *exc*.
 
    .. versionadded:: 3.12
 
@@ -641,7 +657,8 @@ Querying the error indicator
 
    Set the exception info, as known from ``sys.exc_info()``.  This refers
    to an exception that was *already caught*, not to an exception that was
-   freshly raised.  This function steals the references of the arguments.
+   freshly raised.  This function ":term:`steals <steal>`" the references
+   of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
    This function is kept for backwards compatibility. Prefer using
    :c:func:`PyErr_SetHandledException`.
@@ -658,8 +675,8 @@ Querying the error indicator
    .. versionchanged:: 3.11
       The ``type`` and ``traceback`` arguments are no longer used and
       can be NULL. The interpreter now derives them from the exception
-      instance (the ``value`` argument). The function still steals
-      references of all three arguments.
+      instance (the ``value`` argument). The function still
+      ":term:`steals <steal>`" references of all three arguments.
 
 
 Signal Handling
@@ -869,7 +886,7 @@ Exception Objects
 
    Set the context associated with the exception to *ctx*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *ctx* is an exception instance.
-   This steals a reference to *ctx*.
+   This ":term:`steals <steal>`" a reference to *ctx*.
 
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
@@ -884,7 +901,8 @@ Exception Objects
 
    Set the cause associated with the exception to *cause*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *cause* is either an exception
-   instance or ``None``.  This steals a reference to *cause*.
+   instance or ``None``.
+   This ":term:`steals <steal>`" a reference to *cause*.
 
    The :attr:`~BaseException.__suppress_context__` attribute is implicitly set
    to ``True`` by this function.
@@ -1038,7 +1056,7 @@ Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requ
 special recursion handling.  In addition to protecting the stack,
 :c:member:`~PyTypeObject.tp_repr` also needs to track objects to prevent cycles.  The
 following two functions facilitate this functionality.  Effectively,
-these are the C equivalent to :func:`reprlib.recursive_repr`.
+these are the C equivalent to :deco:`reprlib.recursive_repr`.
 
 .. c:function:: int Py_ReprEnter(PyObject *object)
 
@@ -1392,7 +1410,7 @@ Tracebacks
 
    This function will return ``NULL`` on success, or an error message on error.
 
-   This function is meant to debug debug situations such as segfaults, fatal
+   This function is meant to debug situations such as segfaults, fatal
    errors, and similar. It calls :c:func:`PyUnstable_DumpTraceback` for each
    thread. It only writes the tracebacks of the first *max_threads* threads,
    further output is truncated with the line ``...``. If *max_threads* is 0, the
