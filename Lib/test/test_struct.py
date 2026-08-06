@@ -7,6 +7,7 @@ import operator
 import unittest
 import struct
 import sys
+import warnings
 import weakref
 
 from test import support
@@ -180,6 +181,16 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertLessEqual(struct.calcsize('l'), struct.calcsize('q'))
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('i'))
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('P'))
+
+    def test_cache_bytes_vs_str_bb(self):
+        # Mixing str and bytes formats must not raise BytesWarning under -bb.
+        code = (
+            'import struct\n'
+            'struct.calcsize(b"!d"); struct.calcsize("!d")\n'
+            'struct.calcsize(">d"); struct.calcsize(b">d")\n'
+            'struct.Struct(b"i"); struct.Struct("i")\n'
+        )
+        assert_python_ok('-bb', '-c', code)
 
     def test_integers(self):
         # Integer tests (bBhHiIlLqQnN).
@@ -995,14 +1006,26 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
         for z in values:
-            for f in [
-                'F', 'D', 'Zf', 'Zd',
-                '>F', '>D', '>Zf', '>Zd',
-                '<F', '<D', '<Zf', '<Zd',
-            ]:
+            for f in ['Zf', 'Zd', '>Zf', '>Zd', '<Zf', '<Zd']:
                 with self.subTest(z=z, format=f):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
+        z = 1+1j
+        for fmt in ['F', 'D', '>F', '>D', '<F', '<D']:
+            with self.subTest(format=fmt):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", DeprecationWarning)
+                    self.assertRaises(DeprecationWarning, struct.pack, fmt, z)
+                with warnings.catch_warnings():
+                    with self.assertWarns(DeprecationWarning):
+                        b = struct.pack(fmt, z)
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", DeprecationWarning)
+                    self.assertRaises(DeprecationWarning, struct.unpack, fmt, b)
+                with self.assertWarns(DeprecationWarning):
+                    round_trip = struct.unpack(fmt, b)[0]
+                self.assertComplexesAreIdentical(z, round_trip)
 
     @unittest.skipIf(
         support.is_android or support.is_apple_mobile,

@@ -1,0 +1,11 @@
+The new :class:`site.StartupState` class lets callers batch-process
+:pep:`829` startup configuration files across multiple site directories
+before any startup code runs, with public
+:meth:`~site.StartupState.addsitedir`,
+:meth:`~site.StartupState.addusersitepackages`,
+:meth:`~site.StartupState.addsitepackages`, and
+:meth:`~site.StartupState.process` methods.  The signature of
+:func:`site.addsitedir` is unchanged from Python 3.14.  The
+:data:`!defer_processing_start_files` argument and the
+``process_startup_files()`` function added earlier in the 3.15 cycle have
+been removed; use :class:`!site.StartupState` instead.

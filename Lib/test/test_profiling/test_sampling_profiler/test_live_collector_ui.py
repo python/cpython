@@ -825,17 +825,34 @@ class TestLiveCollectorWithMockDisplayHelpers(unittest.TestCase):
 class TestLiveModeErrors(unittest.TestCase):
     """Tests running error commands in the live mode fails gracefully."""
 
+    class QuitWhenFinishedDisplay(MockDisplay):
+        def __init__(self, collector):
+            super().__init__()
+            self.collector = collector
+
+        def get_input(self):
+            ch = super().get_input()
+            if ch != -1:
+                return ch
+            # Sampling only stops once the target process has exited, at
+            # which point the collector is marked finished. Quit then so the
+            # run can surface the target's stderr. We must not rely on the
+            # target's pid still being signalable: once it exits it lingers
+            # as a zombie (it is reaped after sample_live returns), so a
+            # liveness check would never observe it gone and would hang.
+            if self.collector.finished:
+                return ord('q')
+            return -1
+
     def mock_curses_wrapper(self, func):
         func(mock.MagicMock())
 
     def mock_init_curses_side_effect(self, n_times, mock_self, stdscr):
-        mock_self.display = MockDisplay()
-        # Allow the loop to run for a bit (approx 0.5s) before quitting
-        # This ensures we don't exit too early while the subprocess is
-        # still failing
+        mock_self.display = self.QuitWhenFinishedDisplay(mock_self)
+        # Feed non-input events so live mode keeps polling while the target
+        # process is still running; once it exits the display quits on its own.
         for _ in range(n_times):
             mock_self.display.simulate_input(-1)
-        mock_self.display.simulate_input(ord('q'))
 
     def test_run_failed_module_live(self):
         """Test that running a existing module that fails exits with clean error."""

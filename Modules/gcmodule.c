@@ -167,6 +167,8 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
         gcstate->generations[2].threshold = threshold2;
     }
 #else
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
     gcstate->young.threshold = threshold0;
     if (group_right_1) {
         gcstate->old[0].threshold = threshold1;
@@ -174,6 +176,7 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
     if (group_right_2) {
         gcstate->old[1].threshold = threshold2;
     }
+    _PyEval_StartTheWorld(interp);
 #endif
     Py_RETURN_NONE;
 }
@@ -230,7 +233,7 @@ gc_get_count_impl(PyObject *module)
                          gcstate->generations[2].count);
 #else
     return Py_BuildValue("(iii)",
-                         gcstate->young.count,
+                         _Py_atomic_load_int_relaxed(&gcstate->young.count),
                          gcstate->old[0].count,
                          gcstate->old[1].count);
 #endif
@@ -371,9 +374,15 @@ gc_get_stats_impl(PyObject *module)
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
     GCState *gcstate = get_gc_state();
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&gcstate->stats_mutex);
+#endif
     stats[0] = gcstate->generation_stats->young.items[gcstate->generation_stats->young.index];
     stats[1] = gcstate->generation_stats->old[0].items[gcstate->generation_stats->old[0].index];
     stats[2] = gcstate->generation_stats->old[1].items[gcstate->generation_stats->old[1].index];
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&gcstate->stats_mutex);
+#endif
 
     PyObject *result = PyList_New(0);
     if (result == NULL)
