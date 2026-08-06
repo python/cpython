@@ -1205,6 +1205,32 @@ class TestIsolated(unittest.TestCase):
         self.assertIn('tearDownClass', str(result.errors[0][0]))
         self.assertIn(f'exited with code {EXIT_CODE}', result.errors[0][1])
 
+    @support.requires_subprocess()
+    def test_options_passed_to_subprocess(self):
+        result = self._run('OptionsSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_env_passed_to_subprocess(self):
+        # The samples check the variable, so set it here to let them tell
+        # env= from the inherited environment.
+        with os_helper.EnvironmentVarGuard() as env:
+            env['_PYTHON_ISOLATION_PROBE'] = 'set-by-parent'
+            result = self._run('EnvSample')
+        self.assertEqual(result.testsRun, 3)
+        self.assertEqual(result.failures, [])
+        self.assertEqual(result.errors, [])
+
+    @support.requires_subprocess()
+    def test_timeout_reported_as_error(self):
+        from test._isolated_sample import TIMEOUT
+        result = self._run('TimeoutSample')
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn(f'within {TIMEOUT} seconds', result.errors[0][1])
+
     def test_skipped_without_subprocess_support(self):
         # On a platform without subprocess support the test is skipped in the
         # parent, before any subprocess is spawned.
