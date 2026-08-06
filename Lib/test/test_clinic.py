@@ -4135,6 +4135,14 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(1, a=2, b=3), ((1,), 2, 3, False))
         self.assertEqual(fn(1, a=2, b=3, c=4), ((1,), 2, 3, 4))
 
+    def test_only_group(self):
+        # fn([a])
+        fn = ac_tester.only_group
+        self.assertEqual(fn(), (False, None))
+        self.assertEqual(fn(1), (True, 1))
+        self.assertRaises(TypeError, fn, 1, 2)
+        self.assertRaises(TypeError, fn, a=1)
+
     def test_group_and_opt(self):
         # fn([a, b,] c=None)
         fn = ac_tester.group_and_opt
